@@ -18,7 +18,8 @@ from glue.ligolw.utils import process as ligolw_process
 from pycbc import version as pycbc_version
 from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
-from pycbc import pnutils
+from pycbc import events, pnutils
+
 
 class FileData(object):
 
@@ -92,6 +93,7 @@ class FileData(object):
         else:
             return vals[:]
 
+
 class DataFromFiles(object):
 
     def __init__(self, filelist, group=None, columnlist=None, filter_func=None):
@@ -126,6 +128,127 @@ class DataFromFiles(object):
             d.close()
         logging.info('- got %i values' % sum(len(v) for v in vals))
         return np.concatenate(vals)
+
+
+class SingleDetTriggers(object):
+    """
+    Provides easy access to the parameters of single-detector CBC triggers.
+    """
+    def __init__(self, trig_file, bank_file, veto_file, segment_name, filter_func, detector):
+        logging.info('Loading triggers')
+        self.trigs_f = h5py.File(trig_file, 'r')
+        self.trigs = self.trigs_f[detector]
+        logging.info('Loading bank')
+        self.bank = h5py.File(bank_file, 'r')
+
+        if veto_file:
+            logging.info('Applying veto segments')
+            # veto_mask is an array of indices into the trigger arrays
+            # giving the surviving triggers 
+            self.veto_mask, segs = events.veto.indices_outside_segments(
+                self.trigs['end_time'][:], [veto_file],
+                ifo=detector, segment_name=segment_name)
+            logging.info('%i triggers remain after vetoes',
+                          len(self.veto_mask))
+        else:
+            self.veto_mask = slice(len(self.trigs['end_time']))
+
+        if filter_func:
+            # get required columns into the namespace with dummy attribute
+            # names to avoid confusion with other class properties
+            for c in self.trigs.keys():
+                if c in filter_func:
+                    setattr(self, '_'+c, self.trigs[c][:])
+            for c in self.bank.keys():
+                if c in filter_func:
+                    # get template parameters corresponding to triggers
+                    setattr(self, '_'+c,
+                          np.array(self.bank[c])[self.trigs['template_id'][:]])
+            self.filter_mask = eval(filter_func.replace('self.', 'self._'))
+            # remove the dummy attributes
+            for c in self.trigs.keys() + self.bank.keys():
+                if c in filter_func: delattr(self, '_'+c)
+            self.boolean_veto = np.in1d(np.arange(len(self.trigs['end_time'])),
+                  self.veto_mask, assume_unique=True)
+            self.mask = np.logical_and(self.boolean_veto, self.filter_mask)
+            logging.info('%i triggers remain after cut on %s',
+                          len(self.trigs['end_time'][self.mask]), filter_func)
+
+    @classmethod
+    def get_param_names(cls):
+        "Returns a list of plottable CBC parameter variables."
+        return [m[0] for m in inspect.getmembers(cls) \
+            if type(m[1]) == property]
+
+    @property
+    def template_id(self):
+        return np.array(self.trigs['template_id'])[self.mask]
+
+    @property
+    def mass1(self):
+        return np.array(self.bank['mass1'])[self.template_id]
+
+    @property
+    def mass2(self):
+        return np.array(self.bank['mass2'])[self.template_id]
+
+    @property
+    def spin1z(self):
+        return np.array(self.bank['spin1z'])[self.template_id]
+
+    @property
+    def spin2z(self):
+        return np.array(self.bank['spin2z'])[self.template_id]
+
+    @property
+    def mtotal(self):
+        return self.mass1 + self.mass2
+
+    @property
+    def mchirp(self):
+        mchirp, eta = pnutils.mass1_mass2_to_mchirp_eta(
+            self.mass1, self.mass2)
+        return mchirp
+
+    @property
+    def eta(self):
+        mchirp, eta = pnutils.mass1_mass2_to_mchirp_eta(
+            self.mass1, self.mass2)
+        return eta
+
+    @property
+    def effective_spin(self):
+        # FIXME assumes aligned spins
+        return (self.spin1z * self.mass1 + self.spin2z * self.mass2) \
+            / self.mtotal
+
+    @property
+    def end_time(self):
+        return np.array(self.trigs['end_time'])[self.mask]
+
+    @property
+    def template_duration(self):
+        return np.array(self.trigs['template_duration'])[self.mask]
+
+    @property
+    def snr(self):
+        return np.array(self.trigs['snr'])[self.mask]
+
+    @property
+    def rchisq(self):
+        return np.array(self.trigs['chisq'])[self.mask] \
+            / (np.array(self.trigs['chisq_dof'])[self.mask] * 2 - 2)
+
+    @property
+    def newsnr(self):
+        return events.newsnr(self.snr, self.rchisq)
+
+    def get_column(self, cname):
+        if hasattr(self, cname):
+            return getattr(self, cname)
+        else:
+            return np.array(self.trigs[cname])[self.mask]
+
 
 class ForegroundTriggers(object):
     # FIXME: A lot of this is hardcoded to expect two ifos
@@ -242,7 +365,7 @@ class ForegroundTriggers(object):
         for name in bank_col_names:
             bank_col_vals[name] = self.get_bankfile_array(name)
 
-        coinc_event_names = ['ifar','time1','fap', 'stat']
+        coinc_event_names = ['ifar', 'time1', 'fap', 'stat']
         coinc_event_vals = {}
         for name in coinc_event_names:
             coinc_event_vals[name] = self.get_coincfile_array(name)
