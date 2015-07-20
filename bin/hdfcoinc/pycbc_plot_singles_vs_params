@@ -22,7 +22,6 @@ Plot PyCBC's single-detector triggers over the search parameter space.
 
 import logging
 import argparse
-import inspect
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
@@ -33,97 +32,7 @@ import h5py
 import pycbc.pnutils
 import pycbc.events
 import pycbc.results
-
-
-class SingleDetTriggerSet(object):
-    """
-    Provides easy access to the parameters of single-detector CBC triggers.
-    """
-
-    def __init__(self, trig_file, bank_file, veto_file, segment_name, detector):
-        logging.info('Loading triggers')
-        self.trigs_f = h5py.File(trig_file, 'r')
-        self.trigs = self.trigs_f[detector]
-
-        if veto_file:
-            logging.info('Loading veto segments')
-            self.veto_mask, segs = pycbc.events.veto.indices_outside_segments(
-                self.trigs['end_time'][:], [veto_file], 
-                ifo=detector, segment_name=segment_name)
-        else:
-            self.veto_mask = slice(len(self.trigs['end_time']))
-
-        logging.info('Loading bank')
-        self.bank = h5py.File(bank_file, 'r')
-
-    @classmethod
-    def get_param_names(cls):
-        "Returns a list of plottable CBC parameter variables."
-        return [m[0] for m in inspect.getmembers(cls) \
-            if type(m[1]) == property]
-
-    @property
-    def template_id(self):
-        return np.array(self.trigs['template_id'])[self.veto_mask]
-
-    @property
-    def mass1(self):
-        return np.array(self.bank['mass1'])[self.template_id]
-
-    @property
-    def mass2(self):
-        return np.array(self.bank['mass2'])[self.template_id]
-
-    @property
-    def spin1z(self):
-        return np.array(self.bank['spin1z'])[self.template_id]
-
-    @property
-    def spin2z(self):
-        return np.array(self.bank['spin2z'])[self.template_id]
-
-    @property
-    def mtotal(self):
-        return self.mass1 + self.mass2
-
-    @property
-    def mchirp(self):
-        mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
-            self.mass1, self.mass2)
-        return mchirp
-
-    @property
-    def eta(self):
-        mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
-            self.mass1, self.mass2)
-        return eta
-
-    @property
-    def effective_spin(self):
-        # FIXME assumes aligned spins
-        return (self.spin1z * self.mass1 + self.spin2z * self.mass2) \
-            / self.mtotal
-
-    @property
-    def end_time(self):
-        return np.array(self.trigs['end_time'])[self.veto_mask]
-
-    @property
-    def template_duration(self):
-        return np.array(self.trigs['template_duration'])[self.veto_mask]
-
-    @property
-    def snr(self):
-        return np.array(self.trigs['snr'])[self.veto_mask]
-
-    @property
-    def rchisq(self):
-        return np.array(self.trigs['chisq'])[self.veto_mask] \
-            / (np.array(self.trigs['chisq_dof'])[self.veto_mask] * 2 - 2)
-
-    @property
-    def newsnr(self):
-        return pycbc.events.newsnr(self.snr, self.rchisq)
+import pycbc.io
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -138,10 +47,10 @@ parser.add_argument('--segment-name', default=None, type=str,
 parser.add_argument('--output-file', type=str, required=True,
                     help='Destination path for plot')
 parser.add_argument('--x-var', required=True,
-                    choices=SingleDetTriggerSet.get_param_names(),
+                    choices=pycbc.io.SingleDetTriggers.get_param_names(),
                     help='Parameter to plot on the x-axis')
 parser.add_argument('--y-var', required=True,
-                    choices=SingleDetTriggerSet.get_param_names(),
+                    choices=pycbc.io.SingleDetTriggers.get_param_names(),
                     help='Parameter to plot on the y-axis')
 parser.add_argument('--z-var', required=True,
                     help='Quantity to plot on the color scale',
@@ -160,8 +69,9 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-trigs = SingleDetTriggerSet(opts.single_trig_file, opts.bank_file,
-                            opts.veto_file, opts.segment_name, opts.detector)
+filter_func = None # placeholder for a general filter function for the triggers
+trigs = pycbc.io.SingleDetTriggers(opts.single_trig_file, opts.bank_file,
+                  opts.veto_file, opts.segment_name, filterfunc, opts.detector)
 
 x = getattr(trigs, opts.x_var)
 y = getattr(trigs, opts.y_var)
