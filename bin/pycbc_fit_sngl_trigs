@@ -105,9 +105,17 @@ parser.add_argument("--stat-factor", type=float,
                     help="Adjustable magic number used in some sngl "
                     "statistics.  Values commonly used: 6 for new_snr, 250 "
                     "or 50 for effective_snr")
-parser.add_argument("--snr-threshold", default=5.5,
-                    help="Only fit triggers with SNR above this threshold. "
-                    "Default 5.5")
+default_thresh = 5.5
+cuts = parser.add_mutually_exclusive_group()
+cuts.add_argument("--snr-threshold", type=float,
+                  help="Only fit triggers with SNR above this threshold. "
+                  "Default %.1f" % default_thresh)
+cuts.add_argument("--trig-filter", default=None,
+                  help="Filter function applied to trigger properties: only "
+                  "implemented for hdf format.  May include names from math, "
+                  "numpy as 'np', pycbc.events and pycbc.pnutils.  Ex. "
+                  "'events.newsnr(self.snr, self.bank_chisq/self.bank_chisq_"
+                  "dof) > 6.)'")
 parser.add_argument("--stat-threshold", nargs="+", type=float,
                     help="Only fit triggers with statistic value above this "
                     "threshold : can be a space-separated list, then a fit "
@@ -173,6 +181,17 @@ else:
     print 'inputs:', opt.inputs
     raise RuntimeError("I didn't recognize the file format for the inputs!")
 
+if opt.trig_filter and trigformat != "hdf":
+    raise NotImplementedError("Trigger filtering not available for xml and sqlite!")
+# hack default values of SNR threshold and filter function
+if not opt.snr_threshold and not opt.trig_filter:
+    opt.snr_threshold = default_thresh
+    filter_func = 'self.snr > %f' % opt.snr_threshold
+elif opt.snr_threshold:
+    filter_func = 'self.snr > %f' % opt.snr_threshold
+else:
+    filter_func = opt.trig_filter
+
 # initialize result storage
 parbins = {}
 counts = {}
@@ -206,12 +225,12 @@ for ifo in opt.ifos:
             # io function can currently only handle 1 file
             sngls = io.hdf.SingleDetTriggers(opt.inputs[0], 
                   opt.template_file, opt.veto_file, opt.veto_segment_name,
-                  "self.snr>"+str(opt.snr_threshold), ifo)
+                  filter_func, ifo)
             done_vetoing = True
         else:
             sngls = io.hdf.DataFromFiles(opt.inputs, group=ifo,
                   columnlist=cols,
-                  filter_func="self.snr>"+str(opt.snr_threshold))
+                  filter_func=filter_func)
     if opt.plot_dir:
         plotbase = outdir + ifo + "-" + opt.user_tag
 
