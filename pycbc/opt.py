@@ -184,6 +184,6 @@ def verify_optimization_options(opt, parser):
         if retcode != 0:
             logging.error('taskset command <%s> failed with return code %d' % \
                           (command, retcode))
-            sys,exit(1)
+            sys.exit(1)
 
         logging.info("Pinned to CPUs %s " % requested_cpus)
