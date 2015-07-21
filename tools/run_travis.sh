@@ -63,7 +63,7 @@ test $? -ne 0 && RESULT=1
 python test/test_timeseries.py
 test $? -ne 0 && RESULT=1
 
-#python test/test_tmpltbank.py
-#test $? -ne 0 && RESULT=1
+python test/test_tmpltbank.py
+test $? -ne 0 && RESULT=1
 
 exit ${RESULT}
