@@ -23,7 +23,8 @@ from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_
 from pycbc.filter import MatchedFilterControl, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.fft.fftw, pycbc.version
-import pycbc.opt as pycbc_opt
+import pycbc.opt
+import pycbc.weave
 
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
@@ -141,7 +142,8 @@ strain.insert_strain_option_group(parser)
 strain.StrainSegments.insert_segment_option_group(parser)
 scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
-pycbc_opt.insert_optimization_option_group(parser)
+pycbc.opt.insert_optimization_option_group(parser)
+pycbc.weave.insert_weave_option_group(parser)
 
 opt = parser.parse_args()
 
@@ -151,7 +153,8 @@ strain.verify_strain_options(opt, parser)
 strain.StrainSegments.verify_segment_options(opt, parser)
 scheme.verify_processing_options(opt, parser)
 fft.verify_fft_options(opt,parser)
-pycbc_opt.verify_optimization_options(opt, parser)
+pycbc.opt.verify_optimization_options(opt, parser)
+pycbc.weave.verify_weave_options(opt, parser)
 
 def associate_psd(strain_segments, gwstrain, segments, nsegs, flen, delta_f, flow):
     logging.info("Computing noise PSD")
