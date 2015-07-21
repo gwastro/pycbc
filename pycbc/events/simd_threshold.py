@@ -636,6 +636,10 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
       curr_mloc = mlocs[i];
       cnt = 1;
     } else if (norms[i] > curr_norm) {
+      // Note that we required strictly greater than:
+      // if there is a sequence of several equal values
+      // all within a window, only the greatest in index
+      // will be marked (rightmost).
       curr_mark = i;
       curr_norm = norms[i];
       curr_mloc = mlocs[i];
@@ -675,7 +679,11 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
       curr_norm = norms[i];
       curr_mloc = mlocs[i];
       curr_mark = marks[i];
-    } else if (norms[i] > curr_norm) {
+    } else if (norms[i] >= curr_norm) {
+      // Here we allow greater-than or equal-to, since
+      // only the rightmost may have been marked in the
+      // first pass, we want the rightmost in a sequence
+      // of equal values to count as the maximum.
       curr_cval = cvals[i];
       curr_norm = norms[i];
       curr_mloc = mlocs[i];
