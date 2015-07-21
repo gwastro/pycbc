@@ -653,6 +653,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   cnt = 0;
   curr_norm = norms[0];
   curr_mloc = mlocs[0];
+  curr_cval = cvals[0];
   // Note that in this pass, we treat 'curr_mark' as a
   // boolean, to know whether our forward potential
   // maximum was also marked on the reverse loop earlier.
