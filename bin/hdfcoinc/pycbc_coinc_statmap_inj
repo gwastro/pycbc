@@ -11,24 +11,85 @@ from itertools import izip
 from pycbc.events import veto, coinc
 import pycbc.version
 
-def load_coincs(coinc_files):
-    cols = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2', 
-            'timeslide_id', 'template_id', 'decimation_factor']
-    data = {}
-    for key in cols:
-        data[key] = []   
-    for cfile in coinc_files:
-        try:
-            logging.info('reading %s' % cfile)
-            f = h5py.File(cfile, "r")
-            for key in data:
-                data[key].append(f[key][:])        
-        except:
-            continue            
-    for key in data:
-        data[key] = numpy.concatenate(data[key])              
-    return data, dict(f.attrs), f['segments/coinc/start'][:], f['segments/coinc/end'][:], f['segments']
+def apply_bank_statistic(data, name, bank_file):
+    bank = h5py.File(bank_file)
+    if name == 'mchirp_bin':
+        b = [0, 1, 2, 3, 4]
+        data = mchirp_bin(data, bank, b)           
+    return data
+    
+def mchirp_bin(data, bank, bins):
+    logging.info("applying mchirp binning")
+    r = []
+    mc, et = pycbc.pnutils.mass1_mass2_to_mchirp_eta(bank['mass1'][:], bank['mass2'][:])
+    for i in range(len(bins)-1):
+        loc = numpy.where(numpy.logical_and(mc > bins[i], mc <= bins[i+1]))[0]
+        d = data.select(numpy.in1d(data.template_id, loc))
+        if len(d) > 0:
+            d = d.cluster()
+            fan = calculate_fan_map(d.stat, d.decimation_factor)(d.stat)
+            d.data['stat'] = 1.0 / fan
+        r.append(ArrayData(d.interval, d.window, data=d.data))
+    return numpy.sum(r)            
 
+class ArrayData(object):
+    def __init__(self, interval, window, data=None, files=None, groups=None):
+        self.data = data
+        self.interval = interval
+        self.window = window
+        
+        if files:
+            self.data = {}
+            for g in groups:
+                self.data[g] = []
+            
+            for f in files:
+                d = h5py.File(f)
+                print f
+                print numpy.where(d['time1'][:] == 0)[0]
+                for g in groups:
+                    if g in d:
+                        self.data[g].append(d[g][:])
+                    
+            for k in self.data:
+                self.data[k] = numpy.concatenate(self.data[k])
+
+        for k in self.data:
+            setattr(self, k, self.data[k])
+
+    def __len__(self):
+        return len(self.data[self.data.keys()[0]])
+
+    def __add__(self, other):
+        data = {}
+        for k in self.data:
+            data[k] = numpy.concatenate([self.data[k], other.data[k]])
+        return ArrayData(self.interval, self.window, data=data)
+
+    def select(self, idx):
+        data = {}
+        for k in self.data:
+            data[k] = self.data[k][idx]
+        return ArrayData(self.interval, self.window, data=data)
+   
+    def remove(self, idx):
+        data = {}
+        for k in self.data:
+            data[k] = numpy.delete(self.data[k], idx)
+        return ArrayData(self.interval, self.window, data=data)
+
+    def cluster(self):
+        cid = coinc.cluster_coincs(self.stat, self.time1, self.time2,
+                                 self.timeslide_id, self.interval, self.window)
+        return self.select(cid) 
+         
+def load_coincs(coinc_files, window):
+    columns = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2', 
+               'template_id', 'decimation_factor', 'timeslide_id']
+    f = h5py.File(coinc_files[0])
+    d = ArrayData(f.attrs['timeslide_interval'], window, files=coinc_files, groups=columns)
+    return (d, dict(f.attrs), f['segments'])
+           
 def calculate_fan_map(combined_stat, dec):
     """ Return a function to map between false alarm number (FAN) and the
     combined ranking statistic.
@@ -70,20 +131,17 @@ if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 logging.info("Loading coinc zerolag triggers")    
-zdata, attrs, start, end, seg = load_coincs(args.zero_lag_coincs)   
-interval = attrs['timeslide_interval']
-zcid = coinc.cluster_coincs(zdata['stat'], zdata['time1'], zdata['time2'], 
-                          zdata['timeslide_id'], interval, args.cluster_window)
+zdata, attrs, seg = load_coincs(args.zero_lag_coincs, args.cluster_window)   
+print zdata.time1, zdata.time2
+print numpy.where(zdata.time1 == 0)[0]
+
+zdata = zdata.cluster()
                      
 logging.info("Loading coinc full inj triggers")    
-fidata, _, _, _, _ = load_coincs(args.mixed_coincs_full_inj)   
-ficid = coinc.cluster_coincs(fidata['stat'], fidata['time1'], fidata['time2'], 
-                         fidata['timeslide_id'], interval, args.cluster_window)
+fidata = load_coincs(args.mixed_coincs_full_inj, args.cluster_window)[0].cluster()
                      
 logging.info("Loading coinc inj full triggers")    
-izdata, _, _, _, _ = load_coincs(args.mixed_coincs_inj_full)   
-ifcid = coinc.cluster_coincs(izdata['stat'], izdata['time1'], izdata['time2'], 
-                         izdata['timeslide_id'], interval, args.cluster_window)
+ifdata = load_coincs(args.mixed_coincs_inj_full, args.cluster_window)[0].cluster() 
 
 f = h5py.File(args.output_file, "w")
 
@@ -95,16 +153,15 @@ f.attrs['timeslide_interval'] = attrs['timeslide_interval']
 for key in seg.keys():
     f['segments/%s/start' % key] = seg[key]['start'][:]
     f['segments/%s/end' % key] = seg[key]['end'][:]
-
+    
 logging.info('writing zero lag triggers')
-
-if len(zdata['stat']) > 0:
-    for key in zdata:
-        f['foreground/%s' % key] = zdata[key][zcid]
-        
+if len(zdata) > 0:
+    for key in zdata.data:
+        f['foreground/%s' % key] = zdata.data[key]
 
 logging.info('calculating statistics excluding zerolag')
 fb = h5py.File(args.full_data_background, "r")
+
 background_time = float(fb.attrs['background_time_exc'])
 coinc_time = float(fb.attrs['foreground_time_exc'])
 back_stat = fb['background_exc/stat'][:]
@@ -116,9 +173,8 @@ f.attrs['foreground_time_exc'] = coinc_time
 f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 
-if len(zdata['stat']) > 0:
-    
-    fore_fan = fanmap_exc(zdata['stat'][zcid])
+if len(zdata) > 0:
+    fore_fan = fanmap_exc(zdata.stat)
     ifar_exc = background_time / fore_fan
     fap_exc = numpy.clip(coinc_time / ifar_exc, 0, 1)
     f['foreground/fan_exc'] = fore_fan
@@ -126,10 +182,9 @@ if len(zdata['stat']) > 0:
     f['foreground/fap_exc'] = fap_exc
     
     logging.info('calculating injection backgrounds')
-    ftimes = (zdata['time1'][zcid] + zdata['time2'][zcid]) / 2
-    fstats = zdata['stat'][zcid]
+    ftimes = (zdata.time1 + zdata.time2) / 2.0
     start, end = ftimes - args.veto_window, ftimes + args.veto_window
-    
+    print ftimes
     fan = numpy.zeros(len(ftimes), dtype=numpy.float32)
     ifar = numpy.zeros(len(ftimes), dtype=numpy.float32)
     fap = numpy.zeros(len(ftimes), dtype=numpy.float32)
@@ -137,37 +192,39 @@ if len(zdata['stat']) > 0:
     # We are relying on the injection data set to be the first one, 
     # this is determined
     # by the argument order to pycbc_coinc_findtrigs
-    ifstat = izdata['stat'][ifcid]
-    if_time = izdata['time1'][ifcid]
-    ifsort = if_time.argsort()
-    ifsorted = if_time[ifsort]
+    ifsort = ifdata.time1.argsort()
+    ifsorted = ifdata.time1[ifsort]
     if_start, if_end = numpy.searchsorted(ifsorted, start), numpy.searchsorted(ifsorted, end)
     
-    fistat = fidata['stat'][ficid]
-    fi_time = fidata['time1'][ficid]
-    fisort = fi_time.argsort()
-    fisorted = fi_time[fisort]
+    print ifsorted, start
+    fisort = fidata.time1.argsort()
+    fisorted = fidata.time1[fisort]
     fi_start, fi_end = numpy.searchsorted(fisorted, start), numpy.searchsorted(fisorted, end)
-    
-    for i, fstat in enumerate(fstats):
+    #print start, end
+    #print fisorted
+    for i, fstat in enumerate(zdata.stat):
         # If the trigger is quiet enough, then don't calculate a separate 
         # background type, as it would not be significantly different
         if args.ranking_statistic_threshold and fstat < args.ranking_statistic_threshold:
             fan[i] = fore_fan[i]
             ifar[i] = ifar_exc[i]
-            fap[i] = fap_exc[i]    
+            fap[i] = fap_exc[i]
+            continue
             
         v1 = fisort[fi_start[i]:fi_end[i]]
         v2 = ifsort[if_start[i]:if_end[i]]
         
-        inj_stat = numpy.concatenate([ifstat[v2], fistat[v1], back_stat])
+        inj_stat = numpy.concatenate([ifdata.stat[v2], fidata.stat[v1], back_stat])
         inj_dec = numpy.concatenate([numpy.repeat(1, len(v1) + len(v2)), dec_fac])
         fanmap = calculate_fan_map(inj_stat, inj_dec)
         
         fan[i] = fanmap(fstat)
         ifar[i] = background_time / fan[i]
         fap[i] = numpy.clip(coinc_time / ifar[i], 0, 1)
-
+        
+        #print len(v1), len(v2)
+        print  fstat, ifar[i], ifar_exc[i]
+        
     f['foreground/fan'] = fan
     f['foreground/ifar'] = sec_to_year(ifar)
     f['foreground/fap'] = fap                                                
