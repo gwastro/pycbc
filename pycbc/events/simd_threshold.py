@@ -532,7 +532,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   */
 
   int64_t i, nsegs, nwins_ps, last_arrlen, last_nwins_ps, outlen, curr_mloc;
-  int64_t *seglens, *mlocs, cnt, s_segsize, s_arrlen, s_winsize, curr_mark;
+  int64_t *seglens, *mlocs, cnt, s_segsize, s_arrlen, s_winsize, curr_mark, cluster_win;
   float *norms, thr_sqr, curr_norm;
   std::complex<float> *cvals, curr_cval;
   short int *marks;
@@ -540,9 +540,12 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   thr_sqr = (thresh * thresh);
   // Signed versions of all our array length inputs, so loop
   // logic and calls to other functions are safe.
-  s_segsize = (int64_t) segsize;
+  s_segsize = (int64_t) segsize; 
   s_arrlen = (int64_t) arrlen;
-  s_winsize = (int64_t) winsize;
+  // We divide segsize by two since our initial pass must be with a segment
+  // half the length of that we will use for clustering.
+  s_winsize = (int64_t) winsize/2;
+  cluster_win = (int64_t) winsize;
 
   // If segsize divides arrlen evenly, then the number of segments 'nsegs' is that
   // ratio; if not, it is one more than the floor of that ratio and the last segment
@@ -629,7 +632,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   // our last potential local maximum.
   cnt = 0;
   for (i = outlen-2; i >= 0; i--){
-    if ( (curr_mloc - mlocs[i]) > s_winsize){
+    if ( (curr_mloc - mlocs[i]) > cluster_win){
       marks[curr_mark] = 1;
       curr_mark = i;
       curr_norm = norms[i];
@@ -664,7 +667,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   curr_mark = marks[0];
 
   for (i = 1; i < outlen; i++){    
-    if ( (mlocs[i] - curr_mloc) > s_winsize){
+    if ( (mlocs[i] - curr_mloc) > cluster_win){
       // The last one is a maximum for all points following,
       // so if also for points preceding (curr_mark) and
       // if above threshold, then write it out.
