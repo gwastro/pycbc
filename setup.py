@@ -383,6 +383,7 @@ setup (
                'bin/hdfcoinc/pycbc_coinc_statmap_inj',
                'bin/hdfcoinc/pycbc_page_foreground',
                'bin/hdfcoinc/pycbc_page_foundmissed',
+               'bin/hdfcoinc/pycbc_page_ifar',
                'bin/hdfcoinc/pycbc_page_snrifar',
                'bin/hdfcoinc/pycbc_page_sensitivity',
                'bin/hdfcoinc/pycbc_page_banktriggerrate',
