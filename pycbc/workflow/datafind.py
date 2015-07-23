@@ -29,7 +29,7 @@ documentation for this function can be found here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html
 """
 
-import os
+import os, copy
 import urlparse
 import logging
 from glue import segments, lal
@@ -132,6 +132,27 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
         datafindcaches, datafindouts = \
             setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
                                                             outputDir, tag=tag)
+
+    using_backup_server = False
+    if datafindMethod == "AT_RUNTIME_MULTIPLE_FRAMES" or \
+                                  datafindMethod == "AT_RUNTIME_SINGLE_FRAMES":
+        if cp.has_option_tags("workflow-datafind",
+                          "datafind-backup-datafind-server", [tag]):
+            using_backup_server = True
+            backup_server = cp.get_opt_tags("workflow-datafind",
+                                      "datafind-backup-datafind-server", [tag])
+            cp_new = copy.deepcopy(cp)
+            cp_new.set("workflow-datafind",
+                                "datafind-ligo-datafind-server", backup_server)
+            cp_new.set('datafind', 'urltype', 'gsiftp')
+            backup_datafindcaches, backup_datafindouts =\
+                setup_datafind_runtime_frames_single_call_perifo(cp_new,
+                                               scienceSegs, outputDir, tag=tag)
+            backup_datafindouts = datafind_keep_unique_backups(\
+                                             backup_datafindouts, datafindouts)
+            datafindcaches.extend(backup_datafindcaches)
+            datafindouts.extend(backup_datafindouts)
+
     elif datafindMethod == "FROM_PREGENERATED_LCF_FILES":
         ifos = scienceSegs.keys()
         datafindcaches, datafindouts = \
@@ -201,10 +222,36 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
         missingFrSegs, missingFrames = \
                           get_missing_segs_from_frame_file_cache(datafindcaches)
         missingFlag = False
-        for ifo in scienceSegs.keys():
+        for ifo in missingFrames.keys():
             # If no data in the input then do nothing
             if not scienceSegs[ifo]:
                 continue
+            # If using a backup server, does the frame exist remotely?
+            if using_backup_server:
+                # WARNING: This will be slow, but hopefully it will not occur
+                #          for too many frames. This could be optimized if
+                #          it becomes necessary.
+                new_list = []
+                for frame in missingFrames[ifo]:
+                    for dfout in datafindouts:
+                        dfout_pfns = list(dfout.pfns)
+                        dfout_urls = [a.url for a in dfout_pfns]
+                        if frame.url in dfout_urls:
+                            pfn = dfout_pfns[dfout_urls.index(frame.url)]
+                            dfout.removePFN(pfn)
+                            if len(dfout.pfns) == 0:
+                                new_list.append(frame)
+                            else:
+                                msg = "Frame %s not found locally. "\
+                                                                  %(frame.url,)
+                                msg += "Replacing with remote url(s) "
+                                msg += "%s." \
+                                           %(str([a.url for a in dfout.pfns]),)
+                                logging.info(msg)
+                            break
+                    else:
+                        new_list.append(frame)
+                missingFrames[ifo] = new_list
             if missingFrames[ifo]:
                 msg = "From ifo %s we are missing the following frames:" %(ifo)
                 msg +='\n'.join([a.url for a in missingFrames[ifo]])
@@ -618,9 +665,15 @@ def convert_cachelist_to_filelist(datafindcache_list):
             if prev_file and prev_file.cache_entry.url == frame.url:
                 continue
 
+            # Pegasus doesn't like "localhost" in URLs.
+            frame.url = frame.url.replace('file://localhost','file://')
+
             currFile = File(curr_ifo, frame.description,
                     frame.segment, file_url=frame.url, use_tmp_subdirs=True)
-            currFile.PFN(frame.path, site='local')
+            if frame.url.startswith('file://'):
+                currFile.PFN(frame.url, site='local')
+            else:
+                currFile.PFN(frame.url, site='notlocal')
             datafind_filelist.append(currFile)
             prev_file = currFile
     return datafind_filelist
@@ -652,8 +705,6 @@ def get_science_segs_from_datafind_outs(datafindcaches):
                 newScienceSegs[ifo] = groupSegs
             else:
                 newScienceSegs[ifo].extend(groupSegs)
-                # NOTE: This .coalesce probably isn't needed as the segments should
-                # be disjoint. If speed becomes an issue maybe remove it?
                 newScienceSegs[ifo].coalesce()
     return newScienceSegs
 
@@ -679,6 +730,13 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
     missingFrames = {}
     for cache in datafindcaches:
         if len(cache) > 0:
+            # Don't bother if these are not file:// urls, assume all urls in
+            # one cache file must be the same type
+            if not cache[0].scheme == 'file':
+                warn_msg = "We have %s entries in the " %(cache[0].scheme,)
+                warn_msg += "cache file. I do not check if these exist."
+                logging.info(warn_msg)
+                continue
             _, currMissingFrames = cache.checkfilesexist(on_missing="warn")
             missingSegs = segments.segmentlist(e.segment \
                                          for e in currMissingFrames).coalesce()
@@ -900,3 +958,44 @@ def log_datafind_command(observatory, frameType, startTime, endTime,
     fP = open(filePath, 'w')
     fP.write(' '.join(gw_command))
     fP.close()
+
+def datafind_keep_unique_backups(backup_outs, orig_outs):
+    """This function will take a list of backup datafind files, presumably
+    obtained by querying a remote datafind server, e.g. CIT, and compares
+    these against a list of original datafind files, presumably obtained by
+    querying the local datafind server. Only the datafind files in the backup
+    list that do not appear in the original list are returned. This allows us
+    to use only files that are missing from the local cluster.
+
+    Parameters
+    -----------
+    backup_outs : FileList
+        List of datafind files from the remote datafind server.
+    orig_outs : FileList
+        List of datafind files from the local datafind server.
+
+    Returns
+    --------
+    FileList
+        List of datafind files in backup_outs and not in orig_outs.
+    """
+    # NOTE: This function is not optimized and could be made considerably
+    #       quicker if speed becomes in issue. With 4s frame files this might
+    #       be slow, but for >1000s files I don't foresee any issue, so I keep
+    #       this simple.
+    return_list = FileList([])
+    # We compare the LFNs to determine uniqueness
+    # Is there a way to associate two paths with one LFN??
+    orig_names = [f.name for f in orig_outs]
+    for file in backup_outs:
+        if file.name not in orig_names:
+            return_list.append(file)
+        else:
+            index_num = orig_names.index(file.name)
+            orig_out = orig_outs[index_num]
+            pfns = list(file.pfns)
+            # This shouldn't happen, but catch if it does
+            assert(len(pfns) == 1)
+            orig_out.PFN(pfns[0].url, site='notlocal')
+
+    return return_list
