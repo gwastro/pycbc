@@ -208,7 +208,13 @@ onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir,
                                                           sciSegs)
 # FIXME: The following lines are crude hacks.
 ifo = sciSegs.keys()[0]
-wflow.analysis_time = sciSegs[ifo][0]
+padding = int(wflow.cp.get("inspiral", "pad-data"))
+buffer = [int(wflow.cp.get("workflow-exttrig_segments",
+                           "num-buffer-before")) * int(abs(onSrc[ifo])),
+          int(wflow.cp.get("workflow-exttrig_segments",
+                           "num-buffer-after")) * int(abs(onSrc[ifo]))]
+wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + buffer[0] + padding,
+                              int(sciSegs[ifo][0][1]) - buffer[1] - padding)
 wflow.cp = set_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
                          int(sciSegs[ifo][0][1]))
 ext_file = None
@@ -218,6 +224,7 @@ dfDir = os.path.join(currDir, "datafind")
 datafind_files, sciSegs = _workflow.setup_datafind_workflow(wflow, sciSegs,
                                                             dfDir,
                                                             segsFileList)
+ifo = sciSegs.keys()[0]
 ifos = ''.join(sciSegs.keys())
 
 # If using coh_PTF_inspiral we need bank_veto_bank.xml

@@ -853,8 +853,8 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
     padding = int(os.path.basename(cp.get('inspiral', 'pad-data')))
     quanta = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                          'quanta')))
-    bufferleft = int(cp.get('workflow-exttrig_segments', 'num-buffer-left'))
-    bufferright = int(cp.get('workflow-exttrig_segments', 'num-buffer-right'))
+    bufferleft = int(cp.get('workflow-exttrig_segments', 'num-buffer-before'))
+    bufferright = int(cp.get('workflow-exttrig_segments', 'num-buffer-after'))
 
     # Check available data segments meet criteria specified in arguments
     sciencesegs = segments.segmentlistdict(sciencesegs)

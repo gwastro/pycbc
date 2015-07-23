@@ -288,7 +288,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
         # Set the input and output files
-        node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file',
+        node.new_output_file_opt(data_seg, '.xml.gz', '--output-file',
                                  tags=tags, store_file=self.retain_files)
         node.add_input_opt('--non-spin-bank', parent, )
 
