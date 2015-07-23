@@ -451,3 +451,45 @@ class ForegroundTriggers(object):
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
         ligolw_utils.write_filename(outdoc, file_name)
+
+chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad',
+                 'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']
+
+def get_chisq_from_file_choice(hdfile, chisq_choice):
+    f = hdfile
+    if chisq_choice in ['traditional','max_cont_trad', 'max_bank_trad',
+                             'max_bank_cont_trad']:
+        trad_chisq = f['chisq'][:]
+        # We now need to handle the case where chisq is not actually calculated
+        # 0 is used as a sentinel value
+        l = trad_chisq == 0
+        trad_chisq_dof = f['chisq_dof'][:]
+        trad_chisq /= (trad_chisq_dof * 2 - 2)
+    if chisq_choice in ['cont', 'max_cont_trad', 'max_bank_cont',
+                             'max_bank_cont_trad']:
+        cont_chisq = f['cont_chisq'][:]
+        cont_chisq_dof = f['cont_chisq_dof'][:]
+        cont_chisq /= cont_chisq_dof
+    if chisq_choice in ['bank', 'max_bank_cont', 'max_bank_trad',
+                             'max_bank_cont_trad']:
+        bank_chisq = f['bank_chisq'][:]
+        bank_chisq_dof = f['bank_chisq_dof'][:]
+        bank_chisq /= bank_chisq_dof
+    if chisq_choice == 'traditional':
+        chisq = trad_chisq
+    elif chisq_choice == 'cont':
+        chisq = cont_chisq
+    elif chisq_choice == 'bank':
+        chisq = bank_chisq
+    elif chisq_choice == 'max_cont_trad':
+        chisq = np.maximum(trad_chisq, cont_chisq)
+    elif chisq_choice == 'max_bank_cont':
+        chisq = np.maximum(bank_chisq, cont_chisq)
+    elif chisq_choice == 'max_bank_trad':
+        chisq = np.maximum(bank_chisq, trad_chisq)
+    elif chisq_choice == 'max_bank_cont_trad':
+        chisq = np.maximum(np.maximum(bank_chisq, cont_chisq), trad_chisq)
+    else:
+        err_msg="Do not recognized --chisq-choice %s" %(args.chisq_choice,)
+        raise ValueError(err_msg)
+    return chisq
