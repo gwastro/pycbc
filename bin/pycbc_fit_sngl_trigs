@@ -67,7 +67,11 @@ parser.add_argument("--inputs", nargs="+",
                     help="Input file or space-separated list of input files "
                     "containing single triggers.  Currently .xml(.gz), "
                     ".sqlite and .hdf supported.  Required")
-parser.add_argument("--veto-file",
+parser.add_argument("--template-file", default=None,
+                    help="hdf file containing template parameters; required "
+                    "if fitting over trigger masses and/or spins with hdf "
+                    "format triggers")
+parser.add_argument("--veto-file", default=None,
                     help="File in .xml format with veto segments to apply to "
                     "triggers before fitting")
 parser.add_argument("--veto-segment-name", default=None,
@@ -101,9 +105,17 @@ parser.add_argument("--stat-factor", type=float,
                     help="Adjustable magic number used in some sngl "
                     "statistics.  Values commonly used: 6 for new_snr, 250 "
                     "or 50 for effective_snr")
-parser.add_argument("--snr-threshold", default=5.5,
-                    help="Only fit triggers with SNR above this threshold. "
-                    "Default 5.5")
+default_thresh = 5.5
+cuts = parser.add_mutually_exclusive_group()
+cuts.add_argument("--snr-threshold", type=float,
+                  help="Only fit triggers with SNR above this threshold. "
+                  "Default %.1f" % default_thresh)
+cuts.add_argument("--trig-filter", default=None,
+                  help="Filter function applied to trigger properties: only "
+                  "implemented for hdf format.  May include names from math, "
+                  "numpy as 'np', pycbc.events and pycbc.pnutils.  Ex. "
+                  "'events.newsnr(self.snr, self.bank_chisq/self.bank_chisq_"
+                  "dof) > 6.)'")
 parser.add_argument("--stat-threshold", nargs="+", type=float,
                     help="Only fit triggers with statistic value above this "
                     "threshold : can be a space-separated list, then a fit "
@@ -163,10 +175,22 @@ elif opt.inputs[0].split('.')[-1] == "xml" or \
     trigformat = "xml"
 elif "hdf" in opt.inputs[0]:
     trigformat = "hdf"
+    # columns for reading triggers without template file info
     cols = ["snr", "chisq", "template_duration", "template_id", "end_time"]
 else:
     print 'inputs:', opt.inputs
     raise RuntimeError("I didn't recognize the file format for the inputs!")
+
+if opt.trig_filter and trigformat != "hdf":
+    raise NotImplementedError("Trigger filtering not available for xml and sqlite!")
+# hack default values of SNR threshold and filter function
+if not opt.snr_threshold and not opt.trig_filter:
+    opt.snr_threshold = default_thresh
+    filter_func = 'self.snr > %f' % opt.snr_threshold
+elif opt.snr_threshold:
+    filter_func = 'self.snr > %f' % opt.snr_threshold
+else:
+    filter_func = opt.trig_filter
 
 # initialize result storage
 parbins = {}
@@ -181,6 +205,7 @@ histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m','k',(0.8,0.25,0),(0.25,0.8,0)]
 # header
 outfile.write("# ifo threshold lower upper templates triggers alpha sig_alpha ks_prob\n")
 
+done_vetoing = False
 for ifo in opt.ifos:
     # FIXME: Would like a uniform input interface from trigger files
     # to the 'get_column' syntax used by SnglInspiralUtils
@@ -196,8 +221,16 @@ for ifo in opt.ifos:
             verbose=opt.verbose)
         sngls.ifocut(ifo, inplace=True)
     elif trigformat == "hdf":
-        sngls = io.hdf.DataFromFiles(opt.inputs, group=ifo, columnlist=cols,
-            filter_func="self.snr>"+str(opt.snr_threshold))
+        if opt.template_file:
+            # io function can currently only handle 1 file
+            sngls = io.hdf.SingleDetTriggers(opt.inputs[0], 
+                  opt.template_file, opt.veto_file, opt.veto_segment_name,
+                  filter_func, ifo)
+            done_vetoing = True
+        else:
+            sngls = io.hdf.DataFromFiles(opt.inputs, group=ifo,
+                  columnlist=cols,
+                  filter_func=filter_func)
     if opt.plot_dir:
         plotbase = outdir + ifo + "-" + opt.user_tag
 
@@ -207,7 +240,7 @@ for ifo in opt.ifos:
         continue
     chisq = sngls.get_column("chisq")
     chisq_dof = sngls.get_column("chisq_dof")
-    # FIXME: Get mass, spin values from hdf files ..
+    # template_id or mass1,mass2 are used to count templates
     if trigformat == "hdf":
         tid = sngls.get_column("template_id")
         mass1 = None
@@ -221,7 +254,7 @@ for ifo in opt.ifos:
     #bank_rchisq = sngls.get_column('bank_chisq') / sngls.get_column('bank_chisq_dof')
     #rchisq = np.maximum(rchisq, bank_rchisq)
 
-    if opt.veto_file:
+    if opt.veto_file and not done_vetoing:
         logging.info("Applying vetoes from %s for ifo %s" % 
                      (opt.veto_file, ifo))
         keep_idx, segs = events.veto.indices_outside_segments(
@@ -252,7 +285,6 @@ for ifo in opt.ifos:
     pbins = get_bins(opt, 0.99 * min(parvals), 1.01 * max(parvals))
     # list of bin indices
     binind = [pbins[c] for c in pbins.centres()]
-    # determine bin indices for trigger param values
     logging.info("Assigning trigger param values to bins")
     # FIXME: This is slow!! either find a better way of using pylal.rate
     # or write faster binning routime 
@@ -275,7 +307,6 @@ for ifo in opt.ifos:
     stdev[ifo] = {}
     ks_prob[ifo] = {}
 
-    # now do fits and plot them
     for th in opt.stat_threshold:
         logging.info("Fitting above threshold %f" % th)
         counts[ifo][th] = {}
