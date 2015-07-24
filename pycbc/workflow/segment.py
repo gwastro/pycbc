@@ -959,7 +959,8 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
     offsrc = segments.segmentlist([offsrc])
 
     # Put segments into segmentlistdicts
-    onsource = offsource = segments.segmentlistdict()
+    onsource = segments.segmentlistdict()
+    offsource = segments.segmentlistdict()
     ifos = ''
     for iifo in sciencesegs.keys():
         ifos += str(iifo)

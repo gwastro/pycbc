@@ -305,7 +305,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         return node
 
     def get_valid_times(self):
-        overlap = 64
+        overlap = int(self.get_opt('segment-duration')) / 4
         pad_data = int(self.get_opt('pad-data'))
         
         valid_start = self.data_seg[0] + pad_data + overlap
