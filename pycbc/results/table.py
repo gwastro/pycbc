@@ -23,7 +23,7 @@
 #
 """ This module provides functions to generate sortable html tables
 """
-import mako.template, numpy, uuid
+import mako.template, uuid
 
 google_table_template = mako.template.Template("""
     <script type='text/javascript' src='https://www.google.com/jsapi'></script>

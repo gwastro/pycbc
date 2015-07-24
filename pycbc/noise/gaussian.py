@@ -26,7 +26,7 @@
 """This module contains functions to generate gaussian noise colored with a 
 noise spectrum. 
 """
-from pycbc.types import TimeSeries, zeros, Array
+from pycbc.types import TimeSeries, zeros
 from pycbc.types import complex_same_precision_as, FrequencySeries
 from lalsimulation import SimNoise
 import lal

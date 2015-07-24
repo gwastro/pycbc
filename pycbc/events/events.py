@@ -25,7 +25,7 @@
 produces event triggers
 """
 import glue.ligolw.utils.process
-import lal, numpy, copy, os.path, pycbc
+import lal, numpy, copy, os.path
 
 from pycbc.types import Array
 from pycbc.types import convert_to_process_params_dict

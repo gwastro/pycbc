@@ -15,9 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from __future__ import division
-import os
 import numpy
-from pycbc.tmpltbank.lambda_mapping import *
+from pycbc.tmpltbank.lambda_mapping import generate_mapping
         
 
 def determine_eigen_directions(metricParams, preserveMoments=False,

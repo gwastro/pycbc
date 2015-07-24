@@ -27,7 +27,7 @@
 provides additional abstraction and argument handling.
 """
 import Pegasus.DAX3 as dax
-import os, logging
+import os
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information

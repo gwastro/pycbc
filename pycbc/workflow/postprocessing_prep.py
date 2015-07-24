@@ -30,10 +30,7 @@ module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/postprocprep.html
 """
 
-import os
-import os.path
 import logging
-from glue import segments
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.core import get_random_label

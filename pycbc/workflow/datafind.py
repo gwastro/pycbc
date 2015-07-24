@@ -29,10 +29,10 @@ documentation for this function can be found here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html
 """
 
-import os, sys, optparse
-import urlparse,urllib
+import os
+import urlparse
 import logging
-from glue import segments, segmentsUtils, git_version, lal
+from glue import segments, lal
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.workflow.core import OutSegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection

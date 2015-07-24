@@ -25,7 +25,7 @@
 This module is responsible for setting up plotting jobs.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
-from pycbc.workflow.core import FileList, makedir, Executable, Node
+from pycbc.workflow.core import FileList, makedir, Executable
  
 def excludestr(tags, substr):
     if substr is None:

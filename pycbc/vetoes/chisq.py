@@ -23,8 +23,8 @@
 #
 import numpy, logging, math, pycbc.fft
 
-from pycbc.types import Array, zeros, real_same_precision_as, TimeSeries, complex_same_precision_as, FrequencySeries
-from pycbc.filter import sigmasq_series, make_frequency_series, sigmasq, matched_filter_core, get_cutoff_indices
+from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
+from pycbc.filter import sigmasq_series, make_frequency_series, matched_filter_core, get_cutoff_indices
 from pycbc.scheme import schemed
 
 BACKEND_PREFIX="pycbc.vetoes.chisq_"

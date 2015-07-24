@@ -14,10 +14,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from pycbc.types import zeros, complex64, complex128, float32, float64, Array
+from pycbc.types import float32
 from scipy.weave import inline
 import numpy as _np
-from numpy import log
 import pycbc.opt
 from pycbc.opt import omp_support, omp_libs, omp_flags
 
@@ -446,7 +445,7 @@ if pycbc.opt.HAVE_GETCONF:
     # Since we need 3 vectors fitting in L2 cache, divide by 3
     # We find the nearest power-of-two that fits, and the length
     # of the single-precision complex array that fits into that size.
-    pow2 = int( log( pycbc.opt.LEVEL2_CACHE_SIZE/3.0 )/log(2.0) )
+    pow2 = int( _np.log( pycbc.opt.LEVEL2_CACHE_SIZE/3.0 )/_np.log(2.0) )
     default_segsize = pow(2, pow2)/ _np.dtype( _np.complex64).itemsize
 else:
     # Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?

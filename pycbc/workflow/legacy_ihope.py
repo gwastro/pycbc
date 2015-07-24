@@ -29,8 +29,7 @@ For details about pycbc.workflow see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
-import os, types
-import logging
+import os
 import urlparse
 from glue import segments
 from pycbc.workflow.core import Executable, File, Node

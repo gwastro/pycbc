@@ -27,15 +27,14 @@ utilities.
 """
 
 import logging
-from math import log, ceil, sqrt
-from pycbc.types import TimeSeries, FrequencySeries, zeros, Array, complex64
+from math import sqrt
+from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import complex_same_precision_as, real_same_precision_as
 from pycbc.fft import fft, ifft, IFFT
 import pycbc.scheme
 from pycbc import events
 import pycbc
 import numpy
-from scipy import interpolate
 
 BACKEND_PREFIX="pycbc.filter.matchedfilter_"
 

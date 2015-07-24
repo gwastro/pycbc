@@ -29,7 +29,6 @@ implementations within PyCBC.
 import pycbc
 import pycbc.scheme
 
-from optparse import OptionGroup
 
 # These are global variables, that are modified by the various scheme-
 # dependent submodules, to maintain a list of all possible backends

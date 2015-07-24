@@ -31,7 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 
 import logging
 from pycbc.workflow.core import File, FileList, make_analysis_dir
-from glue.ligolw import ligolw, table, utils
+from glue.ligolw import ligolw, utils
 from glue.ligolw.utils import process
 from glue.segmentdb import segmentdb_utils
 from glue.segments import segmentlist

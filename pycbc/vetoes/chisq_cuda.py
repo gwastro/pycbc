@@ -21,14 +21,11 @@
 #
 # =============================================================================
 #
-import pycuda.driver, pycbc.types, numpy
+import pycuda.driver, numpy
 from pycuda.elementwise import ElementwiseKernel
-from pycuda.tools import get_or_register_dtype, context_dependent_memoize, dtype_to_ctype
-from pytools import match_precision, memoize_method
-from pycuda.gpuarray import _get_common_dtype, empty, GPUArray
+from pycuda.tools import context_dependent_memoize, dtype_to_ctype
 import pycuda.gpuarray
 from mako.template import Template
-from pycbc.types import Array
 from pycuda.compiler import SourceModule
 
 @context_dependent_memoize

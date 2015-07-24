@@ -31,7 +31,6 @@ BACKEND_PREFIX="pycbc.types.array_"
 import logging, h5py
 import os as _os
 
-import functools as _functools
 from decorator import decorator
 
 import lal as _lal
@@ -39,7 +38,6 @@ import numpy as _numpy
 from numpy import float32, float64, complex64, complex128, ones
 from numpy.linalg import norm
 
-import pycbc as _pycbc
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
 from pycbc.types.aligned import ArrayWithAligned

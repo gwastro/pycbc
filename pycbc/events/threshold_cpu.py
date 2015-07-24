@@ -22,7 +22,6 @@
 # =============================================================================
 #
 import numpy
-import events, pycbc
 from scipy.weave import inline
 from .simd_threshold import thresh_cluster_support, default_segsize
 from .events import _BaseThresholdCluster

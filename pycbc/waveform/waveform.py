@@ -26,8 +26,7 @@
 waveforms.
 """
 import lal, lalsimulation
-from pycbc.types import TimeSeries,FrequencySeries,zeros,Array
-from pycbc.types import complex64, float32, complex128
+from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.types import real_same_precision_as
 import pycbc.scheme as _scheme
 import inspect

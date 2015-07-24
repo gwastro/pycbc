@@ -8,7 +8,7 @@ from glue.ligolw import ilwd
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from pycbc import pnutils
-from pycbc.tmpltbank.lambda_mapping import *
+from pycbc.tmpltbank.lambda_mapping import ethinca_order_from_string
 
 def return_empty_sngl():
     """

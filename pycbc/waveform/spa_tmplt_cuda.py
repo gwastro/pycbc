@@ -21,17 +21,9 @@
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
 
-import lal
-import numpy
-from numpy import sqrt, log
-
-import pycuda.tools
 from pycuda.elementwise import ElementwiseKernel
-from pycuda.gpuarray import to_gpu
 
 from pycbc.setuputils import pkg_config_header_strings
-from pycbc.types import FrequencySeries, zeros, Array, complex64
-import pycbc.pnutils
 
 preamble = """
 #include <lal/LALConstants.h>

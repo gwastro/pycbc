@@ -28,7 +28,6 @@ for the PyCBC package.
 
 import pycbc.scheme
 from pyfft.cuda import Plan
-import numpy
 
 _plans = {}
 
