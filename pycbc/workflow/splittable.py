@@ -104,8 +104,8 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=[]):
     if splitMethod == "IN_WORKFLOW":
         # Scope here for choosing different options
         logging.info("Adding split output file jobs to workflow.")
-        split_table_outs = setup_splittable_dax_generated(workflow, input_tables,
-                                                          out_dir, tags)
+        split_table_outs = setup_splittable_dax_generated(workflow,
+                input_tables, out_dir, tags)
     elif splitMethod == "NOOP":
         # Probably better not to call the module at all, but this option will
         # return the input file list.
@@ -139,8 +139,20 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
     cp = workflow.cp
     
     # Get values from ini file
-    num_splits = cp.get_opt_tags("workflow-splittable", "splittable-num-banks",
-                                 tags)
+    try:
+        num_splits = cp.get_opt_tags("workflow-splittable",
+                                     "splittable-num-banks", tags)
+    #except Exception as e:
+    #    import traceback,sys
+    #    top = traceback.extract_tb(sys.exc_info()[2])[-1]
+    #    logging.info(','.join([type(e).__name__, os.path.basename(top[0]), str(top[1])]))
+    except BaseException:
+        inj_interval = int(cp.get_opt_tags("workflow-splittable",
+                                           "splitinjtable-interval", tags))
+        num_injs = int(cp.get_opt_tags("workflow-injections", "num-injs",
+                                       tags))
+        inj_tspace = float(abs(workflow.analysis_time)) / num_injs
+        num_splits = int(inj_interval // inj_tspace) + 1
 
     split_exe_tag = cp.get_opt_tags("workflow-splittable",
                                     "splittable-exe-tag", tags)

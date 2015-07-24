@@ -2,29 +2,44 @@
 
 # Copyright (C) 2014 Andrew Lundgren
 import sys
+import argparse
 import glue.ligolw.utils
 import glue.ligolw.table
 from glue.ligolw import ligolw, lsctables
 from itertools import cycle
 
 
-tabletype = lsctables.SimInspiralTable
+
 
 # The following is required for reasons
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
 
+# Parse command line
+parser = argparse.ArgumentParser()
+
+group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument("-n", "--num-splits", type=int,
+                   help="Number of files to be generated")
+group.add_argument("-f", "--output-files", nargs='*', default=None,
+                   help="Names of output files")
+
+parser.add_argument("-i", "--input-file", help="Injection file to be split")
+parser.add_argument("-o", "--output-dir", default=None,
+                    help="Location of output files")
+
+args = parser.parse_args()
+
+if args.output_files and args.output_dir:
+    parser.error("Provide only one of --output-dir or --output-files")
+
 # The XML reading will hang if you forget this line
 lsctables.use_in(LIGOLWContentHandler)
 
-if len(sys.argv) < 4:
-    print "Arguments: XML_file num_splits out_dir"
-    sys.exit()
-inj_xml = sys.argv[1]
-num_split = int(sys.argv[2])
-out_dir = sys.argv[3]
-
-xmldoc = glue.ligolw.utils.load_filename(inj_xml, contenthandler = LIGOLWContentHandler, verbose=True)
+# Read in input file
+xmldoc = glue.ligolw.utils.load_filename(args.input_file, verbose=True,
+                                         contenthandler=LIGOLWContentHandler)
+tabletype = lsctables.SimInspiralTable
 allinjs = tabletype.get_table(xmldoc)
 
 # The sim_inspiral table is a grandchild of the document, I guess
@@ -32,19 +47,32 @@ xmlroot = xmldoc.childNodes[0]
 
 xmlroot.removeChild(allinjs)
 
-new_inj_tables = [lsctables.New(tabletype, columns=allinjs.columnnames) for idx in xrange(num_split)]
+if args.num_splits:
+    num_splits = args.num_splits
+else:
+    num_splits = len(args.output_files)
+
+print num_splits
+
+new_inj_tables = [lsctables.New(tabletype, columns=allinjs.columnnames) \
+                  for idx in xrange(num_splits)]
 
 table_cycle = cycle(new_inj_tables)
 for inj in sorted(allinjs, key=lambda x: x.get_time_geocent()):
     table_cycle.next().append(inj)
 
-temp = inj_xml.split('-')
-temp[1] += '_%.4u'
-filename_pattern = '-'.join(temp)
+if not args.output_files:
+    temp = args.input_file.split('-')
+    temp[1] += '_%.4u'
+    filename_pattern = '-'.join(temp)
+
 for idx, simtable in enumerate(new_inj_tables):
     print "Output", idx, "with", len(simtable), "injections"
     xmlroot.appendChild(simtable)
-    out_path = out_dir + '/' + filename_pattern % idx
+    if not args.output_files:
+        out_path = args.output_dir + '/' + filename_pattern % idx
+    else:
+        out_path = args.output_files[idx]
     glue.ligolw.utils.write_filename(xmldoc, out_path,
                                      gz=out_path.endswith('gz'))
     xmlroot.removeChild(simtable)

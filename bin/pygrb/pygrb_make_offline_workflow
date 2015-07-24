@@ -274,8 +274,12 @@ if wflow.cp.has_section("workflow-injections"):
 
     # Split the injection files
     if wflow.cp.has_section("workflow-splittable-split_inspinj"):
-        inj_split_files = _workflow.setup_splittable_workflow(wflow, inj_files,
-                injDir, tags=["split_inspinj"])
+        inj_split_files = _workflow.FileList([])
+        for inj_file, inj_tag in zip(inj_files, inj_tags):
+            file = _workflow.FileList([inj_file])
+            inj_splits = _workflow.setup_splittable_workflow(wflow, file,
+                    injDir, tags=["split_inspinj", inj_tag])
+            inj_split_files.extend(inj_splits)
         all_files.extend(inj_split_files)
         injs = inj_split_files
 

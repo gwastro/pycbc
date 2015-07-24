@@ -1116,9 +1116,7 @@ class PycbcSplitInspinjExecutable(Executable):
     def create_node(self, parent):
         node = Node(self)
 
-        node.add_input_arg(parent)
-        node.add_arg(self.num_splits)
-        node.add_arg(self.out_dir)
+        node.add_input_opt('--input-file', parent)
         
         if parent.name.endswith("gz"):
             ext = ".xml.gz"
