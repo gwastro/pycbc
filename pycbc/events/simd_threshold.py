@@ -21,9 +21,35 @@ import pycbc.opt
 from pycbc.opt import omp_support, omp_libs, omp_flags
 
 """
-This module contains various long-strings of code intended to be used by other
-modules when they implement the thresholding and clustering steps of matched
-filtering.
+This module defines several C functions that are weave compiled and compute
+a combined thresholding and time clustering of a complex array using a
+multithreaded, SIMD vectoried code.
+
+This module also defines several classes that call this function, of which the
+last, ThreshClusterObject, is used in the matched filtering control object to
+perform the time clustering and thresholding on the output SNR time series
+of the matched filtering.
+
+There are three C functions defined:
+
+max_simd: A single-threaded function that uses SIMD vectorization to compute
+          the maximum ov a complex time series over a given window.
+
+windowed_max: A single threaded (but not vectorized) function that finds the
+              locations, norms, and complex values of the maxima in each of
+              a set of predefined windows in a given complex array. It does
+              this by calling max_simd on each window with the appropriate
+              parameters.
+
+parallel_thresh_cluster: A multithreaded function that finds the maxima in
+                         each of a set of contiguous, fixed-length windows
+                         by calling windowed_max in parallel. It then sweeps
+                         through the results of that (single-threaded) and
+                         tests for above threshold, and time-clusters the
+                         surviving triggers.
+
+A user calls only the last function; the other two exist to conveniently
+compartmentalize SIMD code from OpenMP code.
 """
 
 tc_common_support = omp_support + pycbc.opt.simd_intel_intrin_support + """
@@ -43,6 +69,19 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
               float * __restrict norm, int64_t *mloc,
               int64_t nstart, int64_t howmany){
 
+  /*
+
+   This function, using SIMD vectorization, takes an input float
+   array (which consists of alternating real and imaginary parts
+   of a complex array) and writes the two-float value of the maximum
+   into 'mval', the single-float norm of the maximum into 'norm', and
+   the location of the maximum (as an index into a *complex* array)
+   into 'mloc'. The number 'nstart' is added to whatever location is
+   found for the maximum (returned in mloc), and 'howmany' is the length
+   of inarr (as a *real* array).
+
+  */
+
   int64_t i, curr_mloc;
   float re, im, curr_norm, curr, curr_mval[2], *arrptr;
 
@@ -52,6 +91,35 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   curr_mval[1] = 0.0;
   curr_mloc = 0;
   arrptr = inarr;
+
+  /*
+
+   Note that at most one of _HAVE_AVX and _HAVE_SSE4_1 will be defined (in
+   'pycbc.opt.simd_intel_intrin_support' prepended above); if neither is,
+   then a non-vectorized code path will be executed.
+
+   As of this writing, documentation on the SIMD instrinsic functions may
+   be found at:
+
+      https://software.intel.com/sites/landingpage/IntrinsicsGuide/
+
+   though Intel websites change frequently.
+
+  */
+
+  /*
+
+   The basic vectorized algorithm is to read in complex elements of the input
+   array several at a time, using vectorized reads. We then compute the norm
+   of the array on an SIMD vector chunk, and compare to the current maximum,
+   obtaining a mask for where this vector is larger. Iterating give us the maximum
+   over elements 0, V, 2V, 3V, etc; 1, V+1, 2V+1, 3V+1, etc; and so forth, where
+   V is the vector length (or a multiple of it, when we are able to unroll the loop).
+   After this vectorized maximum, a non-vectorized comparison takes the max over the
+   V distinct elements that are the respective maxima for the different array elements
+   modulo V.
+
+  */
 
 #if _HAVE_AVX
 
@@ -65,10 +133,18 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   double curr_mloc_dbl;
   int64_t peel, misalgn, j;
 
+  // We calculate size of our various pointers modulo our alignment size
+
   misalgn = (int64_t)  (((uintptr_t) inarr) % ALGN);
+
+  // Some kinds of misalignment are impossible to handle
+
   if (misalgn % 2*sizeof(float)) {
     error(EXIT_FAILURE, 0, "Array given to max_simd must be aligned on a least a complex float boundary\\n");
   }
+
+  // 'peel' is how many elements must be handled before we get to
+  // something aligned on an SIMD boundary.
   peel = ( misalgn ? ((ALGN - misalgn) / (sizeof(float))) : 0 );
   peel = (peel > howmany ? howmany : peel);
 
@@ -103,14 +179,16 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   // Note that the "set_p{s,d}" functions take their arguments from
   // most-significant value to least.
 
-  incr_lo = _mm256_set_pd(6.0, 4.0, 2.0, 0.0);
-  count_lo = _mm256_set1_pd( (double) i);
-  count_lo = _mm256_add_pd(count_lo, incr_lo);
+  incr_lo = _mm256_set_pd(6.0, 4.0, 2.0, 0.0); // incr_lo = [0, 2, 4, 6]
+  count_lo = _mm256_set1_pd( (double) i);      // count_lo = [i, i, i, i]
+  count_lo = _mm256_add_pd(count_lo, incr_lo); // count_lo = [i, i+2, i+4, i+6]
   incr_lo = _mm256_set_pd(1.0*ALGN_FLT, 1.0*ALGN_FLT, 1.0*ALGN_FLT, 1.0*ALGN_FLT);
-  count_hi = _mm256_add_pd(count_lo, incr_lo);
+                                               // incr_lo = [8, 8, 8, 8]
+  count_hi = _mm256_add_pd(count_lo, incr_lo); // count_hi = [i+8, i+10, i+12, i+14]
   incr_lo = _mm256_set_pd(2.0*ALGN_FLT, 2.0*ALGN_FLT, 2.0*ALGN_FLT, 2.0*ALGN_FLT);
+                                               // incr_lo = [16, 16, 16, 16]
   incr_hi = _mm256_set_pd(2.0*ALGN_FLT, 2.0*ALGN_FLT, 2.0*ALGN_FLT, 2.0*ALGN_FLT);
-
+                                               // incr_hi = [16, 16, 16, 16]
   // Now count_lo and count_hi have the current indices into the array
 
   // We don't need to initialize to what we found in the peel-off loop,
@@ -149,8 +227,8 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
       norm_hi = _mm256_blendv_ps(norm_hi, reg0_hi, reg1_hi);
       cval_hi = _mm256_blendv_ps(cval_hi, arr_hi, reg1_hi);
 
-      count_lo = _mm256_add_pd(count_lo, incr_lo);
-      count_hi = _mm256_add_pd(count_hi, incr_hi);
+      count_lo = _mm256_add_pd(count_lo, incr_lo); // count_lo += [16, 16, 16, 16]
+      count_hi = _mm256_add_pd(count_hi, incr_hi); // count_hi += [16, 16, 16, 16]
       arrptr += 2*ALGN_FLT;
   }
 
@@ -213,10 +291,18 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   double curr_mloc_dbl;
   int64_t peel, misalgn, j;
 
+  // We calculate size of our various pointers modulo our alignment size
+
   misalgn = (int64_t)  (((uintptr_t) inarr) % ALGN);
+
+  // Some kinds of misalignment are impossible to handle
+
   if (misalgn % 2*sizeof(float)) {
     error(EXIT_FAILURE, 0, "Array given to max_simd must be aligned on a least a complex float boundary");
   }
+
+  // 'peel' is how many elements must be handled before we get to
+  // something aligned on an SIMD boundary.
   peel = ( misalgn ? ((ALGN - misalgn) / (sizeof(float))) : 0 );
   peel = (peel > howmany ? howmany : peel);
 
@@ -241,10 +327,10 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
   // Note that the "set_p{s,d}" functions take their arguments from
   // most-significant value to least.
 
-  incr_lo = _mm_set_pd(2.0, 0.0);
-  count_lo = _mm_set1_pd( (double) i);
-  count_lo = _mm_add_pd(count_lo, incr_lo);
-  incr_lo = _mm_set_pd(1.0*ALGN_FLT, 1.0*ALGN_FLT);
+  incr_lo = _mm_set_pd(2.0, 0.0);                   // incr_lo = [0, 2]
+  count_lo = _mm_set1_pd( (double) i);              // count_lo = [i, i]
+  count_lo = _mm_add_pd(count_lo, incr_lo);         // count_lo = [i, i+2]
+  incr_lo = _mm_set_pd(1.0*ALGN_FLT, 1.0*ALGN_FLT); // incr_lo = [4, 4]
 
   // Now count_lo has the current indices into the array
 
@@ -269,7 +355,7 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
       norm_lo = _mm_blendv_ps(norm_lo, reg0_lo, reg1_lo);
       cval_lo = _mm_blendv_ps(cval_lo, arr_lo, reg1_lo);
 
-      count_lo = _mm_add_pd(count_lo, incr_lo);
+      count_lo = _mm_add_pd(count_lo, incr_lo); // count_lo += [4, 4]
       arrptr += ALGN_FLT;
   }
 
@@ -331,6 +417,60 @@ void max_simd(float * __restrict inarr, float * __restrict mval,
 
 }
 
+void max_simple(float * __restrict inarr, float * __restrict mval,
+                float * __restrict norm, int64_t *mloc,
+                int64_t nstart, int64_t howmany){
+
+  /*
+
+   This function does *NOT* use explicit SIMD vectorization, and
+   takes an input float array (which consists of alternating real and
+   imaginary parts of a complex array) and writes the two-float value
+   of the maximum into 'mval', the single-float norm of the maximum into
+   'norm', and the location of the maximum (as an index into a *complex* array)
+   into 'mloc'. The number 'nstart' is added to whatever location is
+   found for the maximum (returned in mloc), and 'howmany' is the length
+   of inarr (as a *real* array).
+
+  */
+
+  int64_t i, curr_mloc;
+  float re, im, curr_norm, curr, curr_mval[2], *arrptr;
+
+  // Set everything up.
+  curr_norm = 0.0;
+  curr_mval[0] = 0.0;
+  curr_mval[1] = 0.0;
+  curr_mloc = 0;
+  arrptr = inarr;
+
+  for (i = 0; i < howmany; i += 2){
+    re = *arrptr;
+    im = *(arrptr+1);
+    curr = re*re + im*im;
+    if (curr > curr_norm){
+        curr_mval[0] = re;
+        curr_mval[1] = im;
+        curr_mloc = i;
+        curr_norm = curr;
+    }
+    arrptr += 2;
+  }
+
+  // Store our answers and return
+  *mval = curr_mval[0];
+  *(mval+1) = curr_mval[1];
+  *norm = curr_norm;
+
+  // Note that curr_mloc is a real array index, but we
+  // must return the index into the complex array.
+  *mloc = (curr_mloc/2) + nstart;
+
+  return;
+
+}
+
+
 void windowed_max(std::complex<float> * __restrict inarr, const int64_t arrlen,
                   std::complex<float> * __restrict cvals, float * __restrict norms,
                   int64_t * __restrict locs, const int64_t winsize,
@@ -364,12 +504,12 @@ void windowed_max(std::complex<float> * __restrict inarr, const int64_t arrlen,
   for (i = 0; i < nwindows-1; i++){
     // The factor of 2 multiplying lengths[i] is because max_simd needs its length as a real
     // length, not complex.  But startpts and startoffset are complex values.
-    max_simd((float *) &inarr[i*winsize], (float *) &cvals[i],
-             &norms[i], &locs[i], startoffset + i*winsize, 2*winsize);
+    max_simple((float *) &inarr[i*winsize], (float *) &cvals[i],
+               &norms[i], &locs[i], startoffset + i*winsize, 2*winsize);
   }
   // Now the last window (which will be the only window if arrlen <= winzise)
-  max_simd((float *) &inarr[i*winsize], (float *) &cvals[i],
-             &norms[i], &locs[i], startoffset + i*winsize, 2*(arrlen - i*winsize));
+  max_simple((float *) &inarr[i*winsize], (float *) &cvals[i],
+              &norms[i], &locs[i], startoffset + i*winsize, 2*(arrlen - i*winsize));
 
   return;
 }
@@ -378,21 +518,51 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
                             std::complex<float> * __restrict values, uint32_t * __restrict locs,
                             const float thresh, const uint32_t winsize, const uint32_t segsize){
 
-  uint32_t i, nsegs, nwins_ps, last_arrlen, last_nwins_ps, outlen;
-  int64_t *seglens, *mlocs, curr_loc;
+  /*
+
+  This function takes a complex input array 'inarr', of length 'arrlen', and returns
+  in the complex array 'values' the time-clustered values of all maxima within a window
+  of size 'winsize'. The locations (as indices into the original array) are returned in
+  the array 'locs'. Both 'values' and 'locs' must be pre-allocated. The time-clustered
+  triggers are only returned when their norm is above the value 'thresh'. The last argument,
+  'segsize', specifies in what size chunks the array should be processed, and should be no
+  larger than what can fit in the cache local to a single processor core (the parallelization
+  will call 'windowed_max' in parallel on chunks of this size).
+
+  */
+
+  int64_t i, nsegs, nwins_ps, last_arrlen, last_nwins_ps, outlen, curr_mloc;
+  int64_t *seglens, *mlocs, cnt, s_segsize, s_arrlen, s_winsize, curr_mark, cluster_win;
   float *norms, thr_sqr, curr_norm;
   std::complex<float> *cvals, curr_cval;
-  int cnt;
+  short int *marks;
 
   thr_sqr = (thresh * thresh);
+  // Signed versions of all our array length inputs, so loop
+  // logic and calls to other functions are safe.
+  s_segsize = (int64_t) segsize; 
+  s_arrlen = (int64_t) arrlen;
+  // We divide segsize by two since our initial pass must be with a segment
+  // half the length of that we will use for clustering.
+  s_winsize = (int64_t) winsize/2;
+  cluster_win = (int64_t) winsize;
 
-  nsegs = ( (arrlen % segsize) ? (arrlen/segsize) + 1 : (arrlen/segsize) );
-  nwins_ps = ( (segsize % winsize) ? (segsize/winsize) + 1 : (segsize/winsize) );
-  // Our logic will be to treat the last segment differently always.  However if
+  // If segsize divides arrlen evenly, then the number of segments 'nsegs' is that
+  // ratio; if not, it is one more than the floor of that ratio and the last segment
+  // will be shorter than all of the others.
+  nsegs = ( (s_arrlen % s_segsize) ? (s_arrlen/s_segsize) + 1 : (s_arrlen/s_segsize) );
+
+  // If winsize divides segsize evenly, then the number of windows per segment
+  // 'nwins_ps' is that ratio; if not, it is one more than the floor of that ratio
+  // and the last window in each segment will be shorter than all of the others.
+  nwins_ps = ( (s_segsize % s_winsize) ? (s_segsize/s_winsize) + 1 : (s_segsize/s_winsize) );
+
+  // Our code will always handle the last segment separately.  However if
   // segsize evenly divides arrlen, then the last segment will be no different.
   // The following ternary operator captures that logic:
-  last_arrlen = ( (arrlen % segsize) ? (arrlen - (nsegs-1) * segsize) : (segsize) );
-  last_nwins_ps = ( (last_arrlen % winsize) ? (last_arrlen/winsize) + 1 : (last_arrlen/winsize) );
+  last_arrlen = ( (s_arrlen % s_segsize) ? (s_arrlen - (nsegs-1) * s_segsize) : (s_segsize) );
+  last_nwins_ps = ( (last_arrlen % s_winsize) ? (last_arrlen/s_winsize) + 1 : (last_arrlen/s_winsize) );
+
   // Then the total length of the working arrays we must dynamically allocate is:
   outlen = (nsegs-1) * nwins_ps + last_nwins_ps;
 
@@ -403,77 +573,143 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   norms = (float *) malloc(outlen * sizeof(float) );
   mlocs = (int64_t *) malloc(outlen * sizeof(int64_t) );
 
+  // The next array will be used in our forward/reverse algorithm for
+  // clustering.  Note the calloc, rather than malloc!
+  marks = (short int *) calloc((size_t) outlen, sizeof(short int));
+
   // The next array allows us to dynamically communicate possibly changed sizes to the
   // many parallel calls to windowed_max:
 
   seglens = (int64_t *) malloc(nsegs * sizeof(int64_t) );
 
   // check to see if anything failed
-  if ( (cvals == NULL) || (norms == NULL) || (mlocs == NULL) || (seglens == NULL) ){
+  if ( (cvals == NULL) || (norms == NULL) || (mlocs == NULL) || (seglens == NULL) || (marks == NULL) ){
     error(EXIT_FAILURE, ENOMEM, "Could not allocate temporary memory needed by parallel_thresh_cluster");
   }
 
   for (i = 0; i < (nsegs-1); i++){
-    seglens[i] = (int64_t) segsize;
+    seglens[i] = segsize;
   }
-  seglens[i] = (int64_t) last_arrlen;
+  seglens[i] = last_arrlen;
 
   // Now the real work, in an OpenMP parallel for loop:
 #pragma omp parallel for schedule(dynamic,1)
   for (i = 0; i < nsegs; i++){
     windowed_max(&inarr[i*segsize], seglens[i], &cvals[i*nwins_ps],
                  &norms[i*nwins_ps], &mlocs[i*nwins_ps],
-                 (int64_t) winsize, (int64_t) i*segsize);
+                 s_winsize, i*s_segsize);
   }
 
-  // We should now have the requisite maxima in cvals, norms, and mlocs.
-  // So one last loop...
+  /*
+
+  We have now the requisite maxima over our windows in cvals,
+  norms, and mlocs. We want to apply the threshold and cluster over
+  time.
+
+  Our time clustering algorithm is that we should keep a candidate
+  trigger if it is above threshold and louder than anything before
+  or after it within 'window' in index. We test this by sliding through
+  our candidate triggers and comparing to what comes before and after.
+
+  */
+
+  // First, go through the data *backwards*, and mark as valid anything
+  // that survives a sliding window in this direction. These candidates
+  // are guaranteed to be larger than anything that comes *earlier* than
+  // them within a window size.
+
+  curr_norm = norms[outlen-1];
+  curr_mloc = mlocs[outlen-1];
+  curr_mark = outlen - 1;
+
+  // For this pass we just use 'cnt' as a logical, noting
+  // whether we have found a point larger than something
+  // after it.  Otherwise writing out 'marks' after the loop
+  // could be mistaken.
+  //
+  // Note that in this reverse loop, 'curr_mark' records
+  // where in the arrays (of lengths 'outlen') we found
+  // our last potential local maximum.
   cnt = 0;
-  curr_norm = 0.0;
-  curr_loc = 0;
-  for (i = 0; i < outlen; i++){
-    if (norms[i] > thr_sqr){
-      if (cnt == 0){
-        // We only do this the first time we find a point above threshold.
-        cnt = 1;
-        curr_norm = norms[i];
-        curr_loc = mlocs[i];
-        curr_cval = cvals[i];
-      }
-      if ( (mlocs[i] - curr_loc) > (int64_t) winsize){
-        // The last one survived, so write
-        // it out.
-        values[cnt-1] = curr_cval;
-        locs[cnt-1] = (uint32_t) curr_loc;
-        curr_cval = cvals[i];
-        curr_norm = norms[i];
-        curr_loc = mlocs[i];
-        // Note that we only increment 'cnt' *after* we write out
-        // the previous clustered trigger, so we maintain that if
-        // cnt > 0, then cnt-1 triggers have been written.
+  for (i = outlen-2; i >= 0; i--){
+    if ( (curr_mloc - mlocs[i]) > cluster_win){
+      marks[curr_mark] = 1;
+      curr_mark = i;
+      curr_norm = norms[i];
+      curr_mloc = mlocs[i];
+      cnt = 1;
+    } else if (norms[i] > curr_norm) {
+      // Note that we required strictly greater than:
+      // if there is a sequence of several equal values
+      // all within a window, only the greatest in index
+      // will be marked (rightmost).
+      curr_mark = i;
+      curr_norm = norms[i];
+      curr_mloc = mlocs[i];
+      cnt = 1;
+    }
+  }
+  // We may not have marked the last point, so do so:
+  if (cnt) marks[curr_mark] = 1;
+
+  // Now we have a sliding forward window; if something
+  // is marked and survives this, then it is a clustered
+  // trigger. This is also the only place where we apply
+  // the threshold condition.
+
+  cnt = 0;
+  curr_norm = norms[0];
+  curr_mloc = mlocs[0];
+  curr_cval = cvals[0];
+  // Note that in this pass, we treat 'curr_mark' as a
+  // boolean, to know whether our forward potential
+  // maximum was also marked on the reverse loop earlier.
+  curr_mark = marks[0];
+
+  for (i = 1; i < outlen; i++){    
+    if ( (mlocs[i] - curr_mloc) > cluster_win){
+      // The last one is a maximum for all points following,
+      // so if also for points preceding (curr_mark) and
+      // if above threshold, then write it out.
+      if ( (curr_norm > thr_sqr) && curr_mark){
         cnt += 1;
-      } else if (norms[i] > curr_norm) {
-        curr_cval = cvals[i];
-        curr_norm = norms[i];
-        curr_loc = mlocs[i];
+        values[cnt-1] = curr_cval;
+        locs[cnt-1] = (uint32_t) curr_mloc;
       }
+      // Even if we didn't write it out, we still update
+      // our current max
+      curr_cval = cvals[i];
+      curr_norm = norms[i];
+      curr_mloc = mlocs[i];
+      curr_mark = marks[i];
+    } else if (norms[i] >= curr_norm) {
+      // Here we allow greater-than or equal-to, since
+      // only the rightmost may have been marked in the
+      // first pass, we want the rightmost in a sequence
+      // of equal values to count as the maximum.
+      curr_cval = cvals[i];
+      curr_norm = norms[i];
+      curr_mloc = mlocs[i];
+      curr_mark = marks[i];
     }
   }
 
-  // Note that in the above logic, we have only written
-  // values out if we found another point above threshold
-  // after the current one and further away. So if we found
-  // *anything*, we have one more point to write.
+  // It's possible that the last point would survive as a trigger,
+  // so we need a separate test for that.
 
-  if (cnt > 0){
-    values[cnt-1] = curr_cval;
-    locs[cnt-1] = (uint32_t) curr_loc;
+  if ((cnt > 0) && (curr_mloc != locs[cnt-1])){
+    if ((curr_norm > thr_sqr) && curr_mark){
+      cnt += 1;
+      values[cnt-1] = curr_cval;
+      locs[cnt-1] = (uint32_t) curr_mloc;
+    }
   }
 
   free(cvals);
   free(norms);
   free(mlocs);
   free(seglens);
+  free(marks);
 
   return cnt;
 }
@@ -581,7 +817,7 @@ class ThreshClusterObject(object):
     the SNR time series will be filled new inputs many times, and execute() called
     repeatedly.
     """
-    def __init__(self, series, threshold, window, segsize = default_segsize, verbose=0):
+    def __init__(self, series, window, segsize = default_segsize, verbose=0):
         self.series = _np.array(series.data, copy=False)
         self.slen = len(self.series)
         nwindows = int( self.slen / window)
@@ -590,19 +826,17 @@ class ThreshClusterObject(object):
         self.nwindows = nwindows
         self.values = _np.zeros(self.nwindows, dtype = complex64)
         self.locs = _np.zeros(self.nwindows, dtype = _np.uint32)
-        self.thresh = threshold
         self.window = window
         self.segsize = segsize
         self.code = thresh_cluster_code
         self.support = thresh_cluster_support
         self.verbose = verbose
 
-    def execute(self):
+    def execute(self, thresh):
         series = self.series
         slen = self.slen
         values = self.values
         locs = self.locs
-        thresh = self.thresh
         window = self.window
         segsize = self.segsize
         nthr = inline(self.code, ['series', 'slen', 'values', 'locs', 'thresh', 'window', 'segsize'],

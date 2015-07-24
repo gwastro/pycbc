@@ -2,6 +2,7 @@
 """ Make interactive visualization of segments
 """
 import argparse, pycbc.version
+from itertools import cycle
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
@@ -12,7 +13,6 @@ args = parser.parse_args()
 import matplotlib
 matplotlib.use('Agg')
 import numpy, pylab, pycbc.events, mpld3, mpld3.plugins
-import itertools, datetime, time
 from matplotlib.patches import Rectangle
 from pycbc.results.mpld3_utils import MPLSlide, Tooltip
 
@@ -33,8 +33,6 @@ def timestr(s):
 
 def get_name(segment_file):
     from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
-    from glue import segments
-    from glue.segments import segment, segmentlist
     # dummy class needed for loading LIGOLW files
     class KF(ligolw.LIGOLWContentHandler):
         pass
@@ -44,20 +42,19 @@ def get_name(segment_file):
     return "%s:%s:%s" % (n.ifos, n.name, n.version)
 
 def plot_segs(start, end, color=None, y=0, h=1):
-    from itertools import cycle
     patches = []
     if not hasattr(plot_segs, 'colors'):
         plot_segs.colors = cycle(['red', 'blue', 'green', 'yellow', 'cyan', 'violet'])
-        
+
     if color is None:
         color = plot_segs.colors.next()
-        
+
     for s, e in zip(start, end):
         ax = pylab.gca()
         patch = Rectangle((s, y), (e-s), h, facecolor=color)
         ax.add_patch(patch)
-        patches += [patch]
-        
+        patches.append(patch)
+
     return patches
 
 # Define some CSS to control our custom labels
@@ -84,18 +81,23 @@ css = """
 
 mpld3.plugins.DEFAULT_PLUGINS = []
 fig = pylab.figure(figsize=[10, 5])
-     
+ax = fig.gca()
+
 names = []
 smin, smax = numpy.inf, -numpy.inf
-for i, seg_file in enumerate(args.segment_files):
+for i, seg_file in enumerate(sorted(args.segment_files)[::-1]):
     y = i + .05
     h = .7
     name = get_name(seg_file)
     start, end = pycbc.events.start_end_from_segments(seg_file)
-    
+
+    # remove duplicate segments, e.g. inspiral jobs with split banks
+    unique_startend = numpy.array(list(set(zip(start, end))))
+    start, end = unique_startend[:,0], unique_startend[:,1]
+
     dur = end - start
     total = timestr(abs(pycbc.events.start_end_to_segments(start, end).coalesce()))
-    
+
     label = """<table>
              <tr><th>Start</th><td>%.0f</td></tr>
              <tr><th>End</th><td>%.0f</td></tr>
@@ -104,7 +106,7 @@ for i, seg_file in enumerate(args.segment_files):
     """
     smin = start.min() if len(start) and start.min() < smin else smin
     smax = end.max() if len(end) and end.max() > smax else smax
-    
+
     names += [(name, total, y + h + .1)]
 
     patches = plot_segs(start, end, y=y, h=h)
@@ -116,11 +118,12 @@ for i, seg_file in enumerate(args.segment_files):
             mpld3.plugins.connect(fig, Tooltip(p, [l], css=css))
 
 for name, total, h in names:
-     pylab.text(smin, h, "%s: %s" % (name, total))
-     
-pylab.ylim(0, h + 0.2)
-pylab.xlim(smin, smax)
-pylab.xlabel('GPS Time (s)')
+    ax.text(smin, h, "%s: %s" % (name, total))
+
+ax.set_ylim(0, h + 0.2)
+ax.set_xlim(smin, smax)
+ax.set_yticks([])
+ax.set_xlabel('GPS Time (s)')
 
 mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14, fmt='10f'))
 mpld3.plugins.connect(fig, mpld3.plugins.BoxZoom())

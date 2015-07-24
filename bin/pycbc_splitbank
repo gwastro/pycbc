@@ -36,10 +36,7 @@ __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
 __program__ = "pycbc_splitbank"
 
-
 import time
-import os
-import sys
 import argparse
 from glue import gpstime
 from glue.ligolw import ligolw
@@ -47,9 +44,7 @@ from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
-from glue import pidfile as pidfile
 from glue import git_version
-from numpy import loadtxt
 from numpy import random, ceil
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
@@ -76,10 +71,15 @@ parser.add_argument("-o", "--output-prefix", default=None, help="Prefix to add t
 parser.add_argument("-z", "--write-compress", action="store_true", help="Write compressed xml.gz files.")
 
 parser.add_argument("-V", "--verbose", action="store_true", help="Print extra debugging information", default=False )
-parser.add_argument("-t", "--bank-file", metavar='INPUT_FILE', help='Template bank to split')
+parser.add_argument("-t", "--bank-file", metavar='INPUT_FILE',
+                    help='Template bank to split', required=True)
 
-parser.add_argument("--sort-mchirp",action="store_true",default=False)
-parser.add_argument("--random-sort",action="store_true",default=False)
+parser.add_argument("--sort-mchirp", action="store_true", default=False,
+                    help='Sort templates by chirp mass before splitting')
+parser.add_argument("--random-sort", action="store_true", default=False,
+                    help='Sort templates randomly before splitting')
+parser.add_argument("--random-seed", type=int,
+                    help='Random seed to use when sorting randomly')
 
 args = parser.parse_args()
 
@@ -115,10 +115,11 @@ def mchirp_sort(x,y):
 tt = template_bank_table
 
 if args.sort_mchirp:
-    print " SORTING"
     tt = sorted(template_bank_table,cmp=mchirp_sort)
 
 if args.random_sort:
+    if args.random_seed is not None:
+        random.seed(args.random_seed)
     random.shuffle(template_bank_table)
 
 if args.number_of_banks:

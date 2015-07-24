@@ -3,6 +3,7 @@ import numpy, h5py, argparse, matplotlib
 from matplotlib import colors
 matplotlib.use('Agg')
 import pylab, pycbc.results
+from pycbc.io import get_chisq_from_file_choice, chisq_choices
 
 def snr_from_chisq(chisq, newsnr, q=6.):
     snr = numpy.zeros(len(chisq)) + float(newsnr)
@@ -20,7 +21,7 @@ parser.add_argument('--coinc-statistic-file', help='HDF format statistic file')
 parser.add_argument('--single-trigger-file', help='Single detector triggers files from the zero lag run')
 parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values to draw contours at.", default=[])
 parser.add_argument('--background-front', action='store_true', default=False)
-parser.add_argument('--chisq-choice', choices=['traditional','max_cont_trad'],
+parser.add_argument('--chisq-choice', choices=chisq_choices,
                     default='traditional',
                     help='Which chisquared to plot. Default=traditional')
 parser.add_argument('--output-file')
@@ -38,29 +39,12 @@ f = h5py.File(args.single_trigger_file)
 ifo = f.keys()[0]
 f = f[ifo]
 tid = b_tids[ifo][:]
-snr = f['snr'][:][tid]
+bkg_snr = f['snr'][:][tid]
 
-if args.chisq_choice in ['traditional','max_cont_trad']:
-    trad_chisq = f['chisq'][:][tid]
-    chisq_not_calc = trad_chisq == 0
-    trad_chisq_dof = f['chisq_dof'][:][tid]
-    trad_chisq /= (trad_chisq_dof * 2 - 2)
-    # deal badly with triggers where chisq was not calculated and set to 0
-    trad_chisq[chisq_not_calc] = 0.1
-if args.chisq_choice in ['max_cont_trad']:
-    cont_chisq = f['cont_chisq'][:][tid]
-    cont_chisq_dof = f['cont_chisq_dof'][:][tid]
-    cont_chisq /= cont_chisq_dof
-if args.chisq_choice == 'traditional':
-    chisq = trad_chisq
-elif args.chisq_choice == 'max_cont_trad':
-    chisq = numpy.maximum(trad_chisq, cont_chisq)
-else:
-    err_msg="Do not recognized --chisq-choice %s" %(args.chisq_choice,)
-    raise ValueError(err_msg)
+bkg_chisq = get_chisq_from_file_choice(f, args.chisq_choice)[tid]
 
 fig = pylab.figure()
-pylab.scatter(snr, chisq, marker='o', color='black',
+pylab.scatter(bkg_snr, bkg_chisq, marker='o', color='black',
               linewidth=0, s=2.0, label='background', 
               zorder=args.background_front)
 
@@ -75,28 +59,16 @@ eff_dist = f['injections'][eff_map[ifo]][:][inj_idx]
 
 f = h5py.File(args.single_injection_file)[ifo]
 tid = inj_tids[ifo][:]
-snr = f['snr'][:][tid]
+inj_snr = f['snr'][:][tid]
 
-if args.chisq_choice in ['traditional','max_cont_trad']:
-    trad_chisq = f['chisq'][:][tid]
-    chisq_not_calc = trad_chisq == 0
-    trad_chisq_dof = f['chisq_dof'][:][tid]
-    trad_chisq /= (trad_chisq_dof * 2 - 2)
-    trad_chisq[chisq_not_calc] = 0.1
-if args.chisq_choice in ['max_cont_trad']:
-    cont_chisq = f['cont_chisq'][:][tid]
-    cont_chisq_dof = f['cont_chisq_dof'][:][tid]
-    cont_chisq /= cont_chisq_dof
-if args.chisq_choice == 'traditional':
-    chisq = trad_chisq
-elif args.chisq_choice == 'max_cont_trad':
-    chisq = numpy.maximum(trad_chisq, cont_chisq)
+inj_chisq = get_chisq_from_file_choice(f, args.chisq_choice)[tid]
 
-pylab.scatter(snr, chisq, c=eff_dist, norm=colors.LogNorm(), 
+pylab.scatter(inj_snr, inj_chisq, c=eff_dist, norm=colors.LogNorm(),
               marker='^', linewidth=0, label="Injections", 
               zorder= not args.background_front)
     
-r = numpy.logspace(numpy.log(chisq.min()*0.9), numpy.log(chisq.max()*1.1), 200)   
+r = numpy.logspace(numpy.log(min(bkg_chisq.min(), inj_chisq.min())*0.9),
+                   numpy.log(max(bkg_chisq.max(), inj_chisq.max())*1.1), 200)
 for cval in args.newsnr_contours:
     snrv = snr_from_chisq(r, cval)
     pylab.plot(snrv, r, '--', color='grey', linewidth=1)
@@ -109,11 +81,13 @@ cb.set_label('Effective Distance (Mpc)', size='large')
 pylab.title('%s Coincident Triggers' % ifo, size='large')
 pylab.xlabel('SNR', size='large')
 pylab.ylabel('Reduced $\chi^2$', size='large')
-pylab.xlim(snr.min()*0.9, snr.max()*1.4)
-pylab.ylim(chisq.min()*0.7, chisq.max()*1.4)
+pylab.xlim(min(inj_snr.min(),bkg_snr.min())*0.9,
+           max(inj_snr.max(),bkg_snr.max())*1.4)
+pylab.ylim(min(bkg_chisq.min(), inj_chisq.min())*0.7,
+           max(bkg_chisq.max(), inj_chisq.max())*1.4)
 pylab.legend(loc='lower right', prop={'size': 12})
 pylab.grid(which='major', ls='solid', alpha=0.7, linewidth=.5)
 pylab.grid(which='minor', ls='solid', alpha=0.7, linewidth=.1)
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-                                     title='%s background with injections %s' % (ifo.upper(), 'behind' if args.background_front else 'ontop'), 
+                                     title='%s %s chisq vs SNR. Background with injections %s' % (ifo.upper(), args.chisq_choice, 'behind' if args.background_front else 'ontop'), 
                                      caption='')

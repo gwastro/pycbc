@@ -23,17 +23,19 @@ from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_
 from pycbc.filter import MatchedFilterControl, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.fft.fftw, pycbc.version
+import pycbc.opt
+import pycbc.weave
 
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
 
-parser.add_argument('--version', action='version', 
+parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument("-V", "--verbose", action="store_true", 
+parser.add_argument("-V", "--verbose", action="store_true",
                   help="print extra debugging information", default=False )
 parser.add_argument("--output", type=str, help="FIXME: ADD")
 parser.add_argument("--bank-file", type=str, help="FIXME: ADD")
-parser.add_argument("--snr-threshold", 
+parser.add_argument("--snr-threshold",
                   help="SNR threshold for trigger generation", type=float)
 parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                     help="Cut triggers with NewSNR less than THRESHOLD")
@@ -50,7 +52,7 @@ parser.add_argument("--approximant", type=str,
 parser.add_argument("--order", type=int,
                   help="The integer half-PN order at which to generate"
                        " the approximant. Default is -1 which indicates to use"
-                       " approximant defined default.", default=-1, 
+                       " approximant defined default.", default=-1,
                        choices = numpy.arange(-1, 9, 1))
 taper_choices = ["start","end","startend"]
 parser.add_argument("--taper-template", choices=taper_choices,
@@ -59,7 +61,8 @@ parser.add_argument("--taper-template", choices=taper_choices,
 parser.add_argument("--cluster-method", choices=["template", "window"],
                     help="FIXME: ADD")
 parser.add_argument("--cluster-window", type=float, default = -1,
-                    help="Length of clustering window in seconds")
+                    help="Length of clustering window in seconds."
+                    " Set to 0 to disable clustering.")
 parser.add_argument("--maximization-interval", type=float, default=0,
                     help="Maximize triggers over the template bank (ms)")
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
@@ -113,24 +116,24 @@ parser.add_argument("--autochi-max-valued-dof", action="store", metavar="INT",
                     help="If using --autochi-max-valued this value denotes "
                          "the pre-calculated mean value that will be stored "
                          "as the auto-chisq degrees-of-freedom value.")
-parser.add_argument("--downsample-factor", type=int, 
+parser.add_argument("--downsample-factor", type=int,
                     help="Factor that determines the interval between the "
                          "initial SNR sampling. If not set (or 1) no sparse sample "
                          "is created, and the standard full SNR is calculated.", default=1)
-parser.add_argument("--upsample-threshold", type=float, 
+parser.add_argument("--upsample-threshold", type=float,
                     help="The fraction of the SNR threshold to check the sparse SNR sample.")
 parser.add_argument("--upsample-method", choices=["pruned_fft"],
-                    help="The method to find the SNR points between the sparse SNR sample.", 
+                    help="The method to find the SNR points between the sparse SNR sample.",
                     default='pruned_fft')
 parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
-                    This is used to identify FULL_DATA jobs for 
-                    compatibility with pipedown post-processing. 
+                    This is used to identify FULL_DATA jobs for
+                    compatibility with pipedown post-processing.
                     Option will be removed when no longer needed.""")
-parser.add_argument("--psd-recalculate-segments", type=int, 
+parser.add_argument("--psd-recalculate-segments", type=int,
                     help="Number of segments to use before recalculating the PSD", default=0)
-parser.add_argument("--keep-loudest-interval", type=float, 
+parser.add_argument("--keep-loudest-interval", type=float,
                     help="Window in seconds to maximize triggers over bank")
-parser.add_argument("--keep-loudest-num", type=int, 
+parser.add_argument("--keep-loudest-num", type=int,
                     help="Number of triggers to keep from each maximization interval")
 parser.add_argument("--gpu-callback-method", default='none')
 
@@ -140,6 +143,8 @@ strain.insert_strain_option_group(parser)
 strain.StrainSegments.insert_segment_option_group(parser)
 scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
+pycbc.opt.insert_optimization_option_group(parser)
+pycbc.weave.insert_weave_option_group(parser)
 
 opt = parser.parse_args()
 
@@ -149,7 +154,8 @@ strain.verify_strain_options(opt, parser)
 strain.StrainSegments.verify_segment_options(opt, parser)
 scheme.verify_processing_options(opt, parser)
 fft.verify_fft_options(opt,parser)
-
+pycbc.opt.verify_optimization_options(opt, parser)
+pycbc.weave.verify_weave_options(opt, parser)
 
 def associate_psd(strain_segments, gwstrain, segments, nsegs, flen, delta_f, flow):
     logging.info("Computing noise PSD")
@@ -190,7 +196,7 @@ with ctx:
 
     logging.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
-    psds = associate_psd(strain_segments, gwstrain, segments, 
+    psds = associate_psd(strain_segments, gwstrain, segments,
                   opt.psd_recalculate_segments, flen, delta_f, flow)
 
     # storage for values and types to be passed to event manager
@@ -227,22 +233,27 @@ with ctx:
     template_mem = zeros(tlen, dtype = complex64)
     cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
 
+    if opt.cluster_window == 0.0:
+        use_cluster = False
+    else:
+        use_cluster = True
+
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
                                    opt.snr_threshold, tlen, delta_f, complex64,
-                                   segments, template_mem, cluster_window,
+                                   segments, template_mem, use_cluster,
                                    downsample_factor=opt.downsample_factor,
                                    upsample_threshold=opt.upsample_threshold,
                                    upsample_method=opt.upsample_method,
                                    gpu_callback_method=opt.gpu_callback_method)
 
     bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file,
-                                          flen, delta_f, flow, complex64, 
-                                          phase_order=opt.order, 
+                                          flen, delta_f, flow, complex64,
+                                          phase_order=opt.order,
                                           approximant=opt.approximant)
 
     power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins, opt.chisq_snr_threshold)
     autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride,
-                                 opt.autochi_number_points, 
+                                 opt.autochi_number_points,
                                  onesided=opt.autochi_onesided,
                                  twophase=opt.autochi_two_phase,
                                  reverse_template=opt.autochi_reverse_template,
@@ -259,21 +270,23 @@ with ctx:
                     taper = opt.taper_template, approximant = opt.approximant,
                     out = template_mem)
 
+    # Note: in the class-based approach used now, 'template' is not explicitly used
+    # within the loop.  Rather, the iteration simply fills the memory specifed in
+    # the 'template_mem' argument to MatchedFilterControl with the next template
+    # from the bank.
     for t_num, template in enumerate(bank):
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(segments[0].psd))
-        #if opt.cluster_method == "window":
-            # At present, moved above with class-based approach
-            #cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
+        if opt.cluster_method == "window":
+            cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
         if opt.cluster_method == "template":
-            #cluster_window = int(template.chirp_length * gwstrain.sample_rate)
-            raise ValueError("FIXME: template clustering not supported yet with optimizations!")
+            cluster_window = int(template.chirp_length * gwstrain.sample_rate)
 
         for s_num, stilde in enumerate(segments):
-            logging.info("Filtering template %d/%d segment %d/%d" % 
+            logging.info("Filtering template %d/%d segment %d/%d" %
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
             snr, norm, corr, idx, snrv = \
-               matched_filter.matched_filter_and_cluster(s_num, template.sigmasq(stilde.psd))
+               matched_filter.matched_filter_and_cluster(s_num, template.sigmasq(stilde.psd), cluster_window)
 
             if not len(idx):
                 continue
@@ -318,14 +331,14 @@ if opt.keep_loudest_interval:
     logging.info("Removing triggers that are not within the top %s loudest"
                  " of a %s second interval" % (opt.keep_loudest_num,
                                                opt.keep_loudest_interval))
-    event_mgr.keep_loudest_in_interval(opt.keep_loudest_interval * opt.sample_rate, 
+    event_mgr.keep_loudest_in_interval(opt.keep_loudest_interval * opt.sample_rate,
                                        opt.keep_loudest_num)
     logging.info("%d remaining triggers" % len(event_mgr.events))
 
 if opt.injection_window and hasattr(gwstrain, 'injections'):
     logging.info("Keeping triggers within %s seconds of injection" % opt.injection_window)
     event_mgr.keep_near_injection(opt.injection_window, gwstrain.injections)
-    logging.info("%d remaining triggers" % len(event_mgr.events))   
+    logging.info("%d remaining triggers" % len(event_mgr.events))
 
 if opt.maximization_interval:
     logging.info("Maximizing triggers over %s ms window" % opt.maximization_interval)
