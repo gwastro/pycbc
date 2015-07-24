@@ -253,9 +253,8 @@ def threshold_and_cluster(series, threshold, window):
     return cv[w], cl[w]
     
 class CUDAThresholdCluster(_BaseThresholdCluster):
-    def __init__(self, series, window):
+    def __init__(self, series):
         self.series = series.data.gpudata
-        self.window = numpy.int32(window)
 
         self.outl = tl.gpudata
         self.outv = tv.gpudata
@@ -266,15 +265,16 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         self.cl = loc[0:self.nb]
         self.cv = val[0:self.nb]
 
-    def threshold_and_cluster(self, threshold):
+    def threshold_and_cluster(self, threshold, window):
         threshold = numpy.float32(threshold * threshold)
-    
-        self.fn((self.nb, 1), (self.nt, 1, 1), self.series, self.outv, self.outl, self.window, threshold,)
-        self.fn2((1, 1), (self.nb, 1, 1), self.outv, self.outl, threshold, self.window)   
+        window = numpy.int32(window)
+
+        self.fn((self.nb, 1), (self.nt, 1, 1), self.series, self.outv, self.outl, window, threshold,)
+        self.fn2((1, 1), (self.nb, 1, 1), self.outv, self.outl, threshold, window)   
         pycbc.scheme.mgr.state.context.synchronize()
         w = (self.cl != -1)
         return self.cv[w], self.cl[w]
     
-def _threshold_cluster_factory(series, window):
+def _threshold_cluster_factory(series):
     return CUDAThresholdCluster
 

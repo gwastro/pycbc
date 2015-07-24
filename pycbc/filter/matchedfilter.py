@@ -131,14 +131,20 @@ class MatchedFilterControl(object):
         self.gpu_callback_method = gpu_callback_method
 
         if downsample_factor == 1:
-            if use_cluster:
-                self.matched_filter_and_cluster = self.full_matched_filter_and_cluster
-            else:
-                self.matched_filter_and_cluster = self.full_matched_filter_thresh_only
             self.snr_mem = zeros(self.tlen, dtype=self.dtype)
             self.corr_mem = zeros(self.tlen, dtype=self.dtype)
             self.segments = segment_list
 
+            if use_cluster:
+                self.matched_filter_and_cluster = self.full_matched_filter_and_cluster
+                # setup the threasholding/clustering operations for each segment
+                self.threshold_and_clusterers = []
+                for seg in self.segments:
+                    thresh = events.ThresholdCluster(self.snr_mem[seg.analyze])
+                    self.threshold_and_clusterers.append(thresh)
+            else:
+                self.matched_filter_and_cluster = self.full_matched_filter_thresh_only
+                
             # Assuming analysis time is constant across templates and segments, also
             # delta_f is constant across segments.
             self.htilde = template_output
@@ -156,13 +162,6 @@ class MatchedFilterControl(object):
             
             # setup up the ifft we will do
             self.ifft = IFFT(self.corr_mem, self.snr_mem)
-            
-            # setup the threasholding/clustering operations for each segment
-            self.threshold_and_clusterers = []
-            for seg in self.segments:
-                thresh = events.ThresholdCluster(self.snr_mem[seg.analyze], window)
-                self.threshold_and_clusterers.append(thresh)
-
 
         elif downsample_factor >= 1:
             self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster

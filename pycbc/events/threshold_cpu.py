@@ -93,8 +93,8 @@ def threshold_inline(series, value):
 threshold=threshold_inline
 
 class CPUThresholdCluster(_BaseThresholdCluster):
-    def __init__(self, series, window):
-        self.series = series.data
+    def __init__(self, series):
+        self.series = numpy.array(series.data, copy=False)
 
         self.slen = len(series)
         self.outv = numpy.zeros(self.slen, numpy.complex64)
