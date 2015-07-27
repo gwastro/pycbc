@@ -144,7 +144,6 @@ def setup_injection_workflow(workflow, output_dir=None,
 
             if workflow.cp.has_option("workflow-injections",
                                       "do-jitter-skyloc"):
-                nodeTags = inj_file.tag_str
                 jitter_job = LigolwCBCJitterSkylocExecutable(workflow.cp, 
                                                              'jitter_skyloc',
                                                              tags=curr_tags,

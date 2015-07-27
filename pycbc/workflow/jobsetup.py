@@ -1135,7 +1135,7 @@ class PycbcSplitInspinjExecutable(Executable):
                             tags=curr_tags, store_file=self.retain_files)
             out_files.append(out_file)
         
-        node.add_output_list_opt('--output-filenames', out_files)
+        node.add_output_list_opt('--output-files', out_files)
         return node
 
 class PycbcPickleHorizonDistsExecutable(Executable):
