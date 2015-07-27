@@ -436,7 +436,7 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
             node._add_input(inj_file)
 
         node.add_opt('--exclude-segments', '%s/buffer_segs.txt' % seg_dir)
-        node.add_opt('--output_dir', self.output_dir)
+        node.add_opt('--output-dir', self.output_dir)
 
         return node
 

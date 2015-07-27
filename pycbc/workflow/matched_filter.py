@@ -228,10 +228,10 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     return inspiral_outs
 
 def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
-                                    tmplt_banks, output_dir,
-                                    injection_file=None,
-                                    tags=[], link_to_tmpltbank=False,
-                                    compatibility_mode=False):
+                                          tmplt_banks, output_dir,
+                                          injection_file=None,
+                                          tags=[], link_to_tmpltbank=False,
+                                          compatibility_mode=False):
     '''
     Setup matched-filter jobs that are generated as part of the workflow in
     which a single job reads in and generates triggers over multiple ifos.
@@ -290,6 +290,9 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
 
     if match_fltr_exe == 'lalapps_coh_PTF_inspiral':
         #TODO: Have antenna.py automatically copied over into run directory.
+
+        #FIXME: There should be once class for inspiral jobs, perhaps one
+        #       also for the inspiral injection jobs
         cp.set('inspiral', 'right-ascension', cp.get('workflow', 'ra'))
         cp.set('inspiral', 'declination', cp.get('workflow', 'dec'))
         cp.set('inspiral', 'sky-error', cp.get('workflow', 'sky-error'))
