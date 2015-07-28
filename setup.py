@@ -408,6 +408,7 @@ setup (
                'bin/hdfcoinc/pycbc_page_coinc_snrchi',
                'bin/hdfcoinc/pycbc_stat_dtphase',
                'bin/hdfcoinc/pycbc_plot_singles_vs_params',
+               'bin/hdfcoinc/pycbc_plot_singles_timefreq',
                'bin/mvsc/pycbc_mvsc_get_features',
                'bin/hdfcoinc/pycbc_plot_background_coincs',
                ],
