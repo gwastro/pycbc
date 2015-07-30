@@ -71,7 +71,7 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 filter_func = None # placeholder for a general filter function for the triggers
 trigs = pycbc.io.SingleDetTriggers(opts.single_trig_file, opts.bank_file,
-                  opts.veto_file, opts.segment_name, filterfunc, opts.detector)
+                  opts.veto_file, opts.segment_name, filter_func, opts.detector)
 
 x = getattr(trigs, opts.x_var)
 y = getattr(trigs, opts.y_var)
