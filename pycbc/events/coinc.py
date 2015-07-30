@@ -167,10 +167,40 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
     left = numpy.searchsorted(time, time - window)
     right = numpy.searchsorted(time, time + window)
     logging.info('done sorting')
-    indices = []
-    for i, (l, r) in enumerate(izip(left, right)):
-        if stat[l:r].argmax() + l == i:
-            indices += [i]
+    indices = numpy.zeros(len(left), dtype=numpy.uint32)
+    
+    # i is the index we are inspecting, j is the next one to save
+    i = 0
+    j = 0
+    while i < len(left):
+        l = left[i]
+        r = right[i]
+        
+        # If there are no other points to compare it is obviosly the max
+        if (r - l) == 1:
+            indices[j] = i
+            j += 1
+            i += 1            
+            continue            
+        
+        # Find the location of the maximum within the time interval around i
+        max_loc = stat[l:r].argmax() + l 
+        
+        # If this point is the max, we can skip to the right boundary
+        if max_loc == i:
+            indices[j] = i
+            i = r
+            j += 1
+        
+        # If the max is later than i, we can skip to it
+        elif max_loc > i:
+            i = max_loc 
+            
+        elif max_loc < i:
+            i += 1
+
+    indices = indices[:j]
+            
     logging.info('done clustering coinc triggers: %s triggers remaining' % len(indices))
-    return time_sorting[numpy.array(indices)]
+    return time_sorting[indices]
 
