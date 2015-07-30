@@ -177,6 +177,8 @@ class SingleDetTriggers(object):
             self.mask = np.logical_and(self.boolean_veto, self.filter_mask)
             logging.info('%i triggers remain after cut on %s',
                           len(self.trigs['end_time'][self.mask]), filter_func)
+        else:
+            self.mask = self.veto_mask
 
     @classmethod
     def get_param_names(cls):
