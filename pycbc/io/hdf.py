@@ -21,6 +21,69 @@ from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, pnutils
 
+class DictArray(object):
+    """ Utility for organizing sets of arrays of equal length. 
+    
+    Manages a dictionary of arrays of equal length. This can also
+    be instantiated with a set of hdf5 files and the key values. The full
+    data is always in memory and all operations create new instances of the
+    DictArray.
+    """
+    def __init__(self, data=None, files=None, groups=None):
+        """ Create a DictArray
+        
+        Parameters
+        ----------
+        data: dict, optional
+            Dictionary of equal length numpy arrays
+        files: list of filenames, optional
+            List of hdf5 file filenames. Incompatibile with the `data` option.
+        groups: list of strings
+            List of keys into each file. Required by the files options.
+        """
+        self.data = data
+        
+        if files:
+            self.data = {}
+            for g in groups:
+                self.data[g] = []
+            
+            for f in files:
+                d = h5py.File(f)
+                for g in groups:
+                    if g in d:
+                        self.data[g].append(d[g][:])
+                    
+            for k in self.data:
+                self.data[k] = np.concatenate(self.data[k])
+
+        for k in self.data:
+            setattr(self, k, self.data[k])
+
+    def __len__(self):
+        return len(self.data[self.data.keys()[0]])
+
+    def __add__(self, other):
+        data = {}
+        for k in self.data:
+            data[k] = np.concatenate([self.data[k], other.data[k]])
+        return self.__class__(data=data)
+
+    def select(self, idx):
+        """ Return a new DictArray containing only the indexed values
+        """
+        data = {}
+        for k in self.data:
+            data[k] = self.data[k][idx]
+        return self.__class__(data=data)
+   
+    def remove(self, idx):
+        """ Return a new DictArray that does not contain the indexed values
+        """
+        data = {}
+        for k in self.data:
+            data[k] = np.delete(self.data[k], idx)
+        return self.__class__(data=data)
 
 class FileData(object):
 

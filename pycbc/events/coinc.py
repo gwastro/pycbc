@@ -24,8 +24,35 @@
 """ This modules contains functions for calculating and manipulating
 coincident triggers.
 """
-import numpy, logging
+import numpy, logging, h5py
 from itertools import izip
+from scipy.interpolate import interp1d  
+
+def load_coincs(coinc_files):
+    import pycbc.io
+    class StatmapData(pycbc.io.DictArray):
+        def cluster(self, interval, window):
+            """ Cluster the dict array, assuming it has the relevant Coinc colums,
+            time1, time2, stat, and timeslide_id
+            """
+            cid = cluster_coincs(self.stat, self.time1, self.time2,
+                                     self.timeslide_id, interval, window)
+            return self.select(cid) 
+
+    columns = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2', 
+               'template_id', 'decimation_factor', 'timeslide_id']
+    f = h5py.File(coinc_files[0])
+    d = StatmapData(files=coinc_files, groups=columns)
+    return (d, dict(f.attrs), f['segments'])
+           
+def calculate_fan_map(combined_stat, dec):
+    """ Return a function to map between false alarm number (FAN) and the
+    combined ranking statistic.
+    """
+    stat_sorting = combined_stat.argsort()    
+    combined_stat = combined_stat[stat_sorting]
+    fan = dec[stat_sorting][::-1].cumsum()[::-1]    
+    return interp1d(combined_stat, fan, fill_value=1, bounds_error=False) 
 
 def timeslide_durations(start1, start2, end1, end2, timeslide_offsets):
     """ Find the coincident time for each timeslide.
