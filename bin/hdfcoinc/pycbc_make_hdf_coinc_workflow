@@ -200,8 +200,8 @@ for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
                                         final_veto_file[0], final_veto_name[0],
                                         output_dir, tags = ctags)
         found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
-                                        wf.FileList([inj_file]), final_veto_file[0], 
-                                        final_veto_name[0],
+                                        wf.FileList([inj_file]), censored_veto, 
+                                        'closed_box',
                                         output_dir, tags=ctags)
         inj_coincs += [inj_coinc]                      
         wf.make_sensitivity_plot(workflow, found_inj, 
