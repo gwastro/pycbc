@@ -9,7 +9,7 @@ parser.add_argument("--verbose", action="count")
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument("--veto-files", nargs='*',
                     help="Optional veto file. Triggers within these times are ignored")
-parser_add_argument("--strict-coinc-time", action='store_true',
+parser.add_argument("--strict-coinc-time", action='store_true',
                     help="Optional, only allow coincidences between triggers that are "
                          "in coincident time after applying vetoes ")
 parser.add_argument('--segment-name', default=None, type=str,

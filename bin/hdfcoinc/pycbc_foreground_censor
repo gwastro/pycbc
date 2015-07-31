@@ -14,6 +14,8 @@ parser.add_argument('--veto-file',
 parser.add_argument('--segment-name', 
                     help="Segment name to use from the input veto file")
 parser.add_argument('--output-file', help='Name of the output segment file')
+parser.add_argument('--strict-coinc-time', action='store_true',
+                    help="Veto any time that is vetoed in either detector")
 parser.add_argument('--output-segment-name',    
                     help="(optional), Name of output segment file list",
                     default="censor_foreground")
@@ -36,5 +38,10 @@ for ifo in [ifo1, ifo2]:
     fsegs += [(segs + vsegs).coalesce()]
     names += [args.output_segment_name]
     ifos += [ifo]
+
+if args.strict_coinc_time:
+    fsegs[0] = (fsegs[0] + fsegs[1]).coalesce()
+    fsegs[1] = fsegs[0]
+
 pycbc.events.multi_segments_to_file(fsegs, args.output_file, names, ifos)
 logging.info('done')
