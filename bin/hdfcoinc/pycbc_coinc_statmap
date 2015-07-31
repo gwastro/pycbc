@@ -40,9 +40,13 @@ ft1, ft2 = d.time1[fore_locs], d.time2[fore_locs]
 vt = (ft1 + ft2) / 2.0
 veto_start, veto_end = vt - args.veto_window, vt + args.veto_window
 veto_time = abs(veto.start_end_to_segments(veto_start, veto_end).coalesce())  
+
 v1 = veto.indices_within_times(d.time1, veto_start, veto_end) 
-v2 = veto.indices_within_times(d.time2, veto_start, veto_end) 
-e = d.remove(v1).remove(v2)
+e = d.remove(v1).
+
+v2 = veto.indices_within_times(e.time2, veto_start, veto_end) 
+e = e.remove(v2)
+
 logging.info("Clustering coinc triggers (exclusive of zerolag)")
 e = e.cluster(attrs['timeslide_interval'], args.cluster_window)
 
