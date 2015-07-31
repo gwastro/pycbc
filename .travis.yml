@@ -10,7 +10,7 @@ addons:
             - libgsl0-dev
 cache:
   directories:
-    - $HOME/.ccache
+    - $HOME/inst
 install:
   - ./tools/install_travis.sh
 script:
