@@ -31,13 +31,10 @@ for psd_file in args.psd_files:
     keys = f[ifo + '/psds'].keys()
     start, end = f[ifo + '/start_time'][:], f[ifo + '/end_time'][:]
     f.close()
-
     ranges = {}  
-    for key in keys:
-        name = ifo + '/psds/' + key
+    for i in range(len(keys)):
+        name = ifo + '/psds/' + str(i)
         psd = pycbc.types.load_frequencyseries(psd_file, group=name)
-        start_time = psd.epoch
-        end_time = start_time + 1.0 / psd.delta_f
         delta_t = 1.0 / ((len(psd) - 1) * 2 * psd.delta_f)
         out = pycbc.types.zeros(len(psd), dtype=numpy.complex64)
       
