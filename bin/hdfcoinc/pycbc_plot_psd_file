@@ -4,13 +4,14 @@
 import matplotlib
 matplotlib.use('Agg')
 import h5py, numpy, argparse, pylab, pycbc.results, sys
-from pycbc.psd import aLIGOZeroDetHighPower
+import pycbc.psd
 
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--psd-files", nargs='+', required=True,
-                    help='HDF file(s) containing PSDs')
+                    help='HDF file(s) containing the PSDs to plot')
 parser.add_argument("--output-file", required=True, help='Output file name')
+pycbc.psd.insert_psd_option_group(parser, output=False)
 args = parser.parse_args()
 
 fig = pylab.figure(0)
@@ -46,9 +47,10 @@ for psd_file in args.psd_files:
     ax.loglog(samples, middle, linewidth=0.3, color=color, label=ifo)
     ax.set_xlim(flow, samples[-1])
 
-zdhp = aLIGOZeroDetHighPower(2048, 1., 10.)
-ax.loglog(zdhp.sample_frequencies, zdhp ** 0.5, '-k', lw=0.3,
-          label='aLIGO design')
+reference_psd = pycbc.psd.from_cli(args, 2048, 1., 10., None)
+if reference_psd is not None:
+    ax.loglog(reference_psd.sample_frequencies, reference_psd ** 0.5,
+              '-k', lw=0.3, label='Reference')
 
 ax.set_ylim(y_min * 0.5, y_min * 100)
 

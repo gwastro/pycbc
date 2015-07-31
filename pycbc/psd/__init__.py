@@ -88,6 +88,9 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
 
         if delta_f != psd.delta_f:
             psd = interpolate(psd, delta_f)
+    else:
+        # no PSD options given
+        return None
 
     if opt.psd_inverse_length:
         psd = inverse_spectrum_truncation(psd, 
