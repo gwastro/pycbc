@@ -66,4 +66,39 @@ test $? -ne 0 && RESULT=1
 python test/test_tmpltbank.py
 test $? -ne 0 && RESULT=1
 
+# check for trivial failures of important executables
+
+pycbc_inspiral --help > /dev/null
+test $? -ne 0 && RESULT=1
+
+pycbc_geom_nonspinbank --help > /dev/null
+test $? -ne 0 && RESULT=1
+
+pycbc_aligned_stoch_bank --help > /dev/null
+test $? -ne 0 && RESULT=1
+
+pycbc_geom_aligned_bank --help > /dev/null
+test $? -ne 0 && RESULT=1
+
+pycbc_coinc_mergetrigs --help > /dev/null
+test $? -ne 0 && RESULT=1
+
+pycbc_coinc_findtrigs --help > /dev/null
+test $? -ne 0 && RESULT=1
+
+pycbc_coinc_hdfinjfind --help > /dev/null
+test $? -ne 0 && RESULT=1
+
+pycbc_coinc_statmap --help > /dev/null
+test $? -ne 0 && RESULT=1
+
+pycbc_coinc_statmap_inj --help > /dev/null
+test $? -ne 0 && RESULT=1
+
+pycbc_plot_singles_vs_params --help > /dev/null
+test $? -ne 0 && RESULT=1
+
+pycbc_plot_psd_file --help > /dev/null
+test $? -ne 0 && RESULT=1
+
 exit ${RESULT}
