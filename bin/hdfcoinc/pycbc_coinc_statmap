@@ -42,7 +42,7 @@ veto_start, veto_end = vt - args.veto_window, vt + args.veto_window
 veto_time = abs(veto.start_end_to_segments(veto_start, veto_end).coalesce())  
 
 v1 = veto.indices_within_times(d.time1, veto_start, veto_end) 
-e = d.remove(v1).
+e = d.remove(v1)
 
 v2 = veto.indices_within_times(e.time2, veto_start, veto_end) 
 e = e.remove(v2)
