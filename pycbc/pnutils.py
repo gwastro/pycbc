@@ -27,7 +27,7 @@
 between quantities.
 """
 from __future__ import division
-import lal, lalsimulation, lalinspiral
+import lal, lalsimulation
 from numpy import log
 import numpy
 from scipy.optimize import bisect
@@ -491,10 +491,12 @@ def get_inspiral_tf(tc, mass1, mass2, f_low, f_high, n_points=50, pn_2order=7):
     Return a tuple of time and frequency vectors tracking the evolution of an
     inspiral signal in the time-frequency plane.
     """
+    from pycbc.waveform.spa_tmplt import findchirp_chirptime
+    
     # FIXME spins are not taken into account
     track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high), n_points)
-    track_t = numpy.array([lalinspiral.FindChirpChirpTime(
-            float(mass1), float(mass2), float(f), pn_2order) for f in track_f])
+    track_t = numpy.array([findchirp_chirptime(float(mass1), float(mass2), 
+                                        float(f), pn_2order) for f in track_f])
     return (tc - track_t, track_f)
 
 
