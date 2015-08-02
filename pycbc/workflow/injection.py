@@ -30,8 +30,22 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
 import logging, urllib, urlparse
-from pycbc.workflow.core import File, FileList, make_analysis_dir
+from pycbc.workflow.core import File, FileList, make_analysis_dir, Executable
 from pycbc.workflow.jobsetup import LalappsInspinjExecutable
+
+def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None)
+    tags = [] if tags is None else tags
+    make_analysis_dir(output_dir)
+    
+    node = Executable(workflow.cp, 'strip_injections', ifos=workflow.ifo_list,
+                          out_dir=out_dir, tags=tags).create_node()
+    node.add_opt('--segment-name', veto_name)
+    node.add_input_opt('--veto-file', veto_file)
+    node.add_input_opt('--injection-file', inj_file)
+    node.add_opt('--ifos', ' '.join(workflow.ifo_list))
+    node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
+    workflow += node
+    return node.output_files[0]  
 
 def setup_injection_workflow(workflow, output_dir=None,
                              inj_section_name='injections', tags =[]):
