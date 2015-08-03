@@ -37,7 +37,7 @@
 
 <!--configuration files-->
 {% elif filename.endswith('.ini') %}
-    <pre>{{content}}</pre>
+    <pre>{{ open(path, 'rb').read() }}</pre>
 
 <!--html file fragments-->
 {% elif filename.endswith('.htmlf') %}
