@@ -150,8 +150,8 @@ def make_cache(input_files, ifos, name, seg, cacheDir, tags=[]):
     # Dump output to file
     fP = open(cache_file.storage_path, "w")
     for entry in input_files:
-        start = str(int(entry.segment[0]))
-        duration = str(int(abs(entry.segment)))
+        start = str(int(seg[0]))
+        duration = str(int(abs(seg)))
         print >> fP, "%s %s %s %s file://localhost%s" \
             %(ifos, entry.description.upper(), start, duration,
               entry.storage_path)
@@ -268,6 +268,10 @@ if wflow.cp.has_section("workflow-injections"):
     if wflow.cp.has_section("workflow-splittable-injections"):
         inj_splitbank_files = _workflow.setup_splittable_workflow(wflow,
                 bank_files, injDir, tags=["injections"])
+        for inj_split in inj_splitbank_files:
+            inj_split.description += '%s_%d' \
+                    % (inj_split.tag_str,
+                       int(inj_split.name.split('_')[-2][4:]))
         all_files.extend(inj_splitbank_files)
     else:
         inj_splitbank_files = _workflow.FileList(splitbank_files)
@@ -279,6 +283,10 @@ if wflow.cp.has_section("workflow-injections"):
             file = _workflow.FileList([inj_file])
             inj_splits = _workflow.setup_splittable_workflow(wflow, file,
                     injDir, tags=["split_inspinj", inj_tag])
+            for inj_split in inj_splits:
+                inj_split.description += '_%s_%d' \
+                        % (inj_tag,
+                           int(inj_split.name.split('_')[-1].split('-')[0][5:]))
             inj_split_files.extend(inj_splits)
         all_files.extend(inj_split_files)
         injs = inj_split_files
@@ -286,6 +294,9 @@ if wflow.cp.has_section("workflow-injections"):
     # Generate injection matched filter workflow
     inj_insp_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
             datafind_veto_files, inj_splitbank_files, injDir, injs)
+    for inj_insp_file in inj_insp_files:
+        inj_insp_file.description += '_%d' \
+                % int(inj_insp_file.name.split('_')[-3][5:])
 
     # Make cache files (needed for post-processing)
     for inj_tag in inj_tags:
@@ -329,9 +340,6 @@ if post_proc_method == "COH_PTF_WORKFLOW":
                              file_url=cp_file_url)
     cp_file.PFN(cp_file.cache_entry.path, site="local")
 
-    # Retrieve style files for webpage
-    summary_files = get_coh_PTF_files(wflow.cp, ifos, runDir,
-                                      summary_files=True)
 
     # Generate post-processing workflow
     pp_files = _workflow.setup_coh_PTF_post_processing(wflow, inspiral_files,
@@ -339,6 +347,10 @@ if post_proc_method == "COH_PTF_WORKFLOW":
             injection_files=injs, injection_trigger_caches=inj_insp_caches,
             injection_caches=inj_caches, config_file=cp_file, ifos=ifos,
             inj_tags=inj_tags)
+
+    # Retrieve style files for webpage
+    summary_files = get_coh_PTF_files(wflow.cp, ifos, ppDir,
+                                      summary_files=True)
 
     pp_files.extend(_workflow.FileList([cp_file]))
     pp_files.extend(summary_files)

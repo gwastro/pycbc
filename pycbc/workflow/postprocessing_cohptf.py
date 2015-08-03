@@ -123,6 +123,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, inj_trig_files,
     
     """
     cp = workflow.cp
+    full_segment = trig_files[0].segment
     post_proc_outs = FileList([])
     pp_nodes = []
 
@@ -150,8 +151,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, inj_trig_files,
     html_summary_class = select_generic_executable(workflow, "html_summary")
 
     # Set up trig_combiner job
-    trig_combiner_jobs = trig_combiner_class(workflow.cp, "trig_combiner",
-                                             ifo=ifos, 
+    trig_combiner_jobs = trig_combiner_class(cp, "trig_combiner", ifo=ifos, 
                                              out_dir=output_dir, tags=tags)
     trig_combiner_node = trig_combiner_jobs.create_node(trig_files,
                                                         segment_dir, tags=tags)
@@ -163,21 +163,25 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, inj_trig_files,
 
     # Initialise trig_cluster class
     trig_cluster_outs = FileList([])
-    trig_cluster_jobs = trig_cluster_class(workflow.cp, "trig_cluster",
-                                           ifo=ifos,
+    trig_cluster_jobs = trig_cluster_class(cp, "trig_cluster", ifo=ifos,
                                            out_dir=output_dir, tags=tags)
 
     # Set up injfinder jobs
     if cp.has_section("workflow-injections"):
+        injfinder_nodes = []
+
         injfinder_exe = os.path.basename(cp.get("executables", "injfinder"))
         injfinder_class = select_generic_executable(workflow, "injfinder")
-        """
+        injfinder_jobs = injfinder_class(cp, "injfinder", ifo=ifos,
+                                         out_dir=output_dir, tags=tags)
+
         injcombiner_exe = os.path.basename(cp.get("executables",
                                                   "injcombiner"))
         injcombiner_class = select_generic_executable(workflow, "injcombiner")
-        """
-        injfinder_jobs = injfinder_class(workflow.cp, "injfinder", ifo=ifos,
-                                         out_dir=output_dir, tags=tags)
+        injcombiner_jobs = injcombiner_class(cp, "injcombiner", ifo=ifos,
+                                             out_dir=output_dir, tags=tags)
+
+        injfinder_outs = FileList([])
         for inj_tag in inj_tags:
             triggers = FileList([file for file in inj_trig_files \
                                  if inj_tag in file.tag_str])
@@ -187,24 +191,62 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, inj_trig_files,
                           if inj_tag in file.tag_str][0]
             inj_cache = [file for file in inj_caches \
                          if inj_tag in file.tag_str][0]
-            injfinder_node = injfinder_jobs.create_node(triggers,
-                    injections, trig_cache, inj_cache, segment_dir,
-                    tags=tags)
+            injfinder_node = injfinder_jobs.create_node(triggers, injections,
+                    trig_cache, inj_cache, segment_dir, tags=tags)
+            injfinder_nodes.append(injfinder_node)
             pp_nodes.append(injfinder_node)
             workflow.add_node(injfinder_node)
 
+            # Add post-processing files as File objects and make cache
+            name_string = injections[0].tagged_description.rsplit('_', 1)[0]
+            found_file_name = name_string + "_FOUND"
+            found_file = File(ifos, found_file_name, full_segment,
+                              extension="xml", directory=output_dir, tags=[])
+            missed_file_name = name_string + "_MISSED"
+            missed_file = File(ifos, missed_file_name, full_segment,
+                               extension="xml", directory=output_dir, tags=[])
+
+            injfinder_outs.extend(FileList([found_file, missed_file]))
+
+        fm_cache = File(ifos, "foundmissed", full_segment,
+                        extension="lcf", directory=output_dir)
+        fm_cache.PFN(fm_cache.cache_entry.path, site="local")
+        fP = open(fm_cache.storage_path, "w")
+        for entry in injfinder_outs:
+            start = str(int(full_segment[0]))
+            duration = str(int(abs(full_segment)))
+            print >> fP, "%s %s %s %s file://localhost%s" \
+                %(ifos, entry.description.upper(), start, duration,
+                  entry.storage_path)
+        fP.close()
+
+        injcombiner_tags = [inj_tag for inj_tag in inj_tags \
+                            if "DETECTION" not in inj_tag]
+        for injcombiner_tag in injcombiner_tags:
+            max_inc = cp.get_opt_tags("injections", "max-inc",
+                                      [injcombiner_tag])
+            inj_str = injcombiner_tag[:4]
+            injcombiner_node = injcombiner_jobs.create_node(fm_cache, inj_str,
+                    max_inc, workflow.analysis_time)
+            pp_nodes.append(injcombiner_node)
+            workflow.add_node(injcombiner_node)
+            for injfinder_node in injfinder_nodes:
+                dep = dax.Dependency(parent=injfinder_node._dax_node,
+                                     child=injcombiner_node._dax_node)
+                workflow._adag.addDependency(dep)
+
     # Initialise sbv_plotter class
     sbv_plotter_outs = FileList([])
-    sbv_plotter_jobs = sbv_plotter_class(workflow.cp, "sbv_plotter", ifo=ifos,
+    sbv_plotter_jobs = sbv_plotter_class(cp, "sbv_plotter", ifo=ifos,
                                          out_dir=output_dir, tags=tags)
 
     # Initialise efficiency class
     efficiency_outs = FileList([])
-    efficiency_jobs = efficiency_class(workflow.cp, "efficiency", ifo=ifos,
+    efficiency_jobs = efficiency_class(cp, "efficiency", ifo=ifos,
                                        out_dir=output_dir, tags=tags)
 
     # Initialise html_summary class
-    html_summary_jobs = html_summary_class(workflow.cp, "html_summary", ifo=ifos,
+    html_summary_jobs = html_summary_class(cp, "html_summary", ifo=ifos,
                                            out_dir=output_dir, tags=tags)
 
     # Add trig_cluster jobs and their corresponding plotting jobs
@@ -303,7 +345,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, inj_trig_files,
 
     # Initialise html_summary class and set up job
     #FIXME: We may want this job to run even if some jobs fail
-    html_summary_jobs = html_summary_class(workflow.cp, "html_summary", ifo=ifos,
+    html_summary_jobs = html_summary_class(cp, "html_summary", ifo=ifos,
                                            out_dir=output_dir, tags=tags)
     html_summary_node = html_summary_jobs.create_node(config_file=config_file)
     workflow.add_node(html_summary_node)

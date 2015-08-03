@@ -435,7 +435,7 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
         for inj_file in inj_files:
             node._add_input(inj_file)
 
-        node.add_opt('--exclude-segments', '%s/buffer_segs.txt' % seg_dir)
+        node.add_opt('--exclude-segments', '%s/bufferSeg.txt' % seg_dir)
         node.add_opt('--output-dir', self.output_dir)
 
         return node
@@ -455,6 +455,17 @@ class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
         self.ifos = ifo
         self.output_dir = out_dir
         self.num_threads = 1
+
+    def create_node(self, parent, inj_string, max_inc, segment):
+        node = Node(self)
+
+        trig_name = self.cp.get('workflow', 'trigger-name')
+        node.add_opt('--inj-string', inj_string)
+        node.add_opt('--max-inclination', max_inc)
+        node.add_opt('--inj-cache', '%s/%s' % (self.output_dir, parent.name))
+        node.add_opt('--output-dir', self.output_dir)
+
+        return node
 
 
 class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
