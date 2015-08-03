@@ -91,9 +91,10 @@ for i, seg_file in enumerate(sorted(args.segment_files)[::-1]):
     name = get_name(seg_file)
     start, end = pycbc.events.start_end_from_segments(seg_file)
 
-    # remove duplicate segments, e.g. inspiral jobs with split banks
-    unique_startend = numpy.array(list(set(zip(start, end))))
-    start, end = unique_startend[:,0], unique_startend[:,1]
+    if len(start) > 0:
+        # remove duplicate segments, e.g. inspiral jobs with split banks
+        unique_startend = numpy.array(list(set(zip(start, end))))
+        start, end = unique_startend[:,0], unique_startend[:,1]
 
     dur = end - start
     total = timestr(abs(pycbc.events.start_end_to_segments(start, end).coalesce()))
