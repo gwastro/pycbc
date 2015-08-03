@@ -155,7 +155,7 @@ class SingleDetTriggers(object):
             logging.info('%i triggers remain after vetoes',
                           len(self.veto_mask))
         else:
-            self.veto_mask = slice(len(self.trigs['end_time']))
+            self.veto_mask = np.arange(len(self.trigs['end_time']))
 
         if filter_func:
             # get required columns into the namespace with dummy attribute
