@@ -318,6 +318,8 @@ wf.makedir(base)
 ini_file_path = os.path.join(base, 'configuration.ini')
 with open(ini_file_path, 'wb') as ini_fh:
     container.cp.write(ini_fh)
+ini_file = wf.FileList([wf.File(ifos, '', workflow.analysis_time, file_url='file://'+ini_file_path)])
+single_layout(base, ini_file)
 
 wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), rdir.base))
 
