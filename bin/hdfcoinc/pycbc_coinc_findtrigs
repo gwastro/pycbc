@@ -9,6 +9,9 @@ parser.add_argument("--verbose", action="count")
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument("--veto-files", nargs='*',
                     help="Optional veto file. Triggers within these times are ignored")
+parser.add_argument("--strict-coinc-time", action='store_true',
+                    help="Optional, only allow coincidences between triggers that are "
+                         "in coincident time after applying vetoes ")
 parser.add_argument('--segment-name', default=None, type=str,
                     help='Optional, name of segment list to use for vetoes')
 parser.add_argument("--trigger-files", nargs=2,
@@ -241,6 +244,12 @@ logging.info('Opening second trigger file: %s' % args.trigger_files[1])
 trigs1 = ReadByTemplate(args.trigger_files[1], 
                         args.template_bank, args.segment_name, args.veto_files)
 coinc_segs = (trigs0.segs & trigs1.segs).coalesce()
+
+if args.strict_coinc_time:
+    trigs0.segs = coinc_segs
+    trigs1.segs = coinc_segs
+    trigs0.valid = veto.segments_to_start_end(trigs0.segs)
+    trigs1.valid = veto.segments_to_start_end(trigs1.segs)
 
 rank_method = get_statistic(args.ranking_statistic, args.statistic_files)
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
