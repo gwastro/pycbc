@@ -84,7 +84,7 @@ for segment_name in opts.segment_names:
         logging.info('Did not find a segment definition for %s', segment_name)
         continue
 
-    # get second segments for each IFO if subtracting two segments
+    # get second segments for each IFO if comparing two segments
     if len(names) == 2:
         segs_tmp = segments.segmentlistdict()
         for ifo in ifos:
