@@ -249,18 +249,17 @@ wf.make_segments_plot(workflow, science_seg_file,
                  rdir['analysis_time/segments'], tags=['SCIENCE_MINUS_CAT1'])
 
 # get data segments to write to segment summary XML file
-seg_summ_names   = ['DATA', 'ANALYZABLE_DATA', 'TRIGGERS_PRODUCED']
+seg_summ_names    = ['DATA', 'ANALYZABLE_DATA', 'TRIGGERS_PRODUCED']
 seg_summ_seglists = [data_segs, science_segs, insp_segs]
 
-# get other segments to write to segment summary XML file
-veto_summ_names  = ['DATA-ANALYZABLE_DATA']
-veto_summ_names  += ['ANALYZABLE_DATA-TRIGGERS_PRODUCED']
-veto_summ_seglists = [data_segs.coalesce() - science_segs.coalesce()]
-veto_summ_seglists += [science_segs.coalesce() - insp_segs.coalesce()]
+# declare comparasion segments for table on summary page
+veto_summ_names = ['TRIGGERS_PRODUCED&CUMULATIVE_CAT_1H',
+                   'TRIGGERS_PRODUCED&CUMULATIVE_CAT_12H',
+                   'TRIGGERS_PRODUCED&CUMULATIVE_CAT_123H']
 
 # write segment summary XML file
-seg_list = [], names = [], ifos = []
-for segment_list,segment_name in zip(seg_summ_seglists+veto_summ_seglists, seg_summ_names+veto_summ_names):
+seg_list = []; names = []; ifos = []
+for segment_list,segment_name in zip(seg_summ_seglists, seg_summ_names):
     for ifo in workflow.ifos:
         seg_list.append(segment_list[ifo])
         names.append(segment_name)
@@ -271,8 +270,10 @@ seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
 # make segment table for summary page
 seg_summ_table = wf.make_seg_table(workflow, [seg_summ_file], seg_summ_names,
                         rdir['analysis_time/segments'], ['SUMMARY'])
-veto_summ_table = wf.make_seg_table(workflow, [seg_summ_file], veto_summ_names,
-                        rdir['analysis_time/segments'], ['VETO_SUMMARY'])
+veto_summ_table = wf.make_seg_table(workflow,
+                        [seg_summ_file] + final_veto_file + cum_veto_files,
+                        veto_summ_names, rdir['analysis_time/segments'],
+                        ['VETO_SUMMARY'])
 
 # make segment plot for summary page
 seg_summ_plot = wf.make_seg_plot(workflow, [seg_summ_file],

@@ -22,6 +22,7 @@ import logging
 import numpy
 import pycbc.results
 import sys
+from glue import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import table
@@ -67,25 +68,41 @@ for segment_file in opts.segment_files:
 # loop over segment names
 for segment_name in opts.segment_names:
 
-    # get segments
-    segs = {}
+    # allow user to subtract two segments if they use a '-' on the command line
+    names = segment_name.split('&')
+    if len(names) > 2:
+        logging.info('You can only compare two segments but was provided %s', segment_name)
+        continue
+
+    # get segments for each IFO
+    segs = segments.segmentlistdict()
     for ifo in ifos:
         for key in seg_dict.keys():
-            if key.startswith(ifo+':'+segment_name):
+            if key.startswith(ifo+':'+names[0]):
                 segs[ifo] = seg_dict[key]
     if not len(segs.keys()):
-        logging.info('Did not find a segment definition for %s',
-            segment_name)
+        logging.info('Did not find a segment definition for %s', segment_name)
         continue
+
+    # get second segments for each IFO if subtracting two segments
+    if len(names) == 2:
+        segs_tmp = segments.segmentlistdict()
+        for ifo in ifos:
+            for key in seg_dict.keys():
+                if key.startswith(ifo+':'+names[1]):
+                    segs_tmp[ifo] = seg_dict[key]
+        if not len(segs.keys()):
+            logging.info('Did not find a segment definition for %s', segment_name)
+            continue
+
+        # find overlap
+        segs = segs.coalesce() & segs_tmp.coalesce()
 
     # put comment in caption
     caption += segment_name
     if comment_dict[key] != None:
         caption += " ("+comment_dict[key]+")"
     caption += " "
-
-    # coalesce segments
-    segs = segs.coalesce()
 
     # get length of time of segments in seconds
     h1_len = abs(segs['H1'])
