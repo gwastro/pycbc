@@ -68,7 +68,7 @@ for segment_file in opts.segment_files:
 # loop over segment names
 for segment_name in opts.segment_names:
 
-    # allow user to subtract find the and of two segments if they use a '&' on the command line
+    # allow user to find the and of two segments if they use a '&' on the command line
     names = segment_name.split('&')
     if len(names) > 2:
         logging.info('You can only compare two segments but was provided %s', segment_name)
