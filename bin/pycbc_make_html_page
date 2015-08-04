@@ -214,9 +214,12 @@ for cwd in dirs:
                'plots_dir'         : opts.plots_dir}
     output = template.render(context)
 
-    # save html page
+    # if directory does not exist make it and copy directory permissions
     if not os.path.exists(opts.output_path+cwd.path):
         os.makedirs(opts.output_path+cwd.path)
+        shutil.copymode(opts.plots_dir+cwd.path, opts.output_path+'/'+cwd.path)
+
+    # save html page
     with open(opts.output_path+cwd.path+'/index.html', "wb") as fp:
         fp.write(output)
 
