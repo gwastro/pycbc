@@ -84,6 +84,9 @@ for segment_name in opts.segment_names:
         caption += " ("+comment_dict[key]+")"
     caption += " "
 
+    # coalesce segments
+    segs = segs.coalesce()
+
     # get length of time of segments in seconds
     h1_len = abs(segs['H1'])
     l1_len = abs(segs['L1'])
