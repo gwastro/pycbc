@@ -161,6 +161,20 @@ def make_seg_plot(workflow, seg_files, out_dir, seg_names=None, tags=None):
     workflow += node
     return node.output_files[0]
 
+def make_ifar_plot(workflow, trigger_file, out_dir, tags=None):
+    """ Creates a node in the workflow for plotting cumlative histogram
+    of IFAR values.
+    """
+
+    if tags is None: tags = []
+    makedir(out_dir)
+    node = PlotExecutable(workflow.cp, 'page_ifar', ifos=workflow.ifos,
+                    out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--trigger-file', trigger_file)
+    node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+    workflow += node
+    return node.output_files[0]
+
 def make_snrchi_plot(workflow, trig_files, veto_file, veto_name, 
                      out_dir, exclude=None, require=None, tags=[]):
     makedir(out_dir)    
