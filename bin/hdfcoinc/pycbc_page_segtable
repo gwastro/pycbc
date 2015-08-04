@@ -60,9 +60,9 @@ seg_dict = {}
 comment_dict = {}
 for segment_file in opts.segment_files:
 
-   # read segment definer table
-   seg_dict.update(fromsegmentxml(open(segment_file, 'rb'), return_dict=True))
-   comment_dict.update(get_segment_definer_comments(open(segment_file, 'rb')))
+    # read segment definer table
+    seg_dict.update(fromsegmentxml(open(segment_file, 'rb'), return_dict=True))
+    comment_dict.update(get_segment_definer_comments(open(segment_file, 'rb')))
 
 # loop over segment names
 for segment_name in opts.segment_names:
