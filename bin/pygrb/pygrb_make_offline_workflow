@@ -322,10 +322,10 @@ inspDir = os.path.join(currDir, "inspiral")
 inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
                                                       datafind_veto_files,
                                                       splitbank_files, inspDir)
+all_files.extend(inspiral_files)
 inspiral_cache = make_cache(inspiral_files, ifos, "inspiral", sciSegs[ifo][0],
                             inspDir)
-inspiral_files.extend(_workflow.FileList([inspiral_cache]))
-all_files.extend(inspiral_files)
+all_files.extend(_workflow.FileList([inspiral_cache]))
 
 # POST-PROCESSING
 ppDir = os.path.join(currDir, "post_processing")
@@ -343,8 +343,9 @@ if post_proc_method == "COH_PTF_WORKFLOW":
 
     # Generate post-processing workflow
     pp_files = _workflow.setup_coh_PTF_post_processing(wflow, inspiral_files,
-            ppDir, segDir, injection_trigger_files=inj_insp_files,
-            injection_files=injs, injection_trigger_caches=inj_insp_caches,
+            inspiral_cache, ppDir, segDir,
+            injection_trigger_files=inj_insp_files, injection_files=injs,
+            injection_trigger_caches=inj_insp_caches,
             injection_caches=inj_caches, config_file=cp_file, ifos=ifos,
             inj_tags=inj_tags)
 
