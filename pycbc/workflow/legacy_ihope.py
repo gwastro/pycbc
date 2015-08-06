@@ -317,14 +317,13 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
     The class responsible for setting up jobs for legacy coh_PTF_trig_combiner
     executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  out_dir=None, tags=[]):
         super(LegacyCohPTFTrigCombiner, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
         self.cp = cp
         self.ifos = ifo
-        self.output_dir = out_dir
         self.num_threads = 1
 
     def create_node(self, cache_file=None, trig_files=None, segment_dir=None,
@@ -352,25 +351,28 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         node.add_opt('--user-tag', 'INSPIRAL')
 
         # Set input / output options
-        node.add_input_opt('--cache', cache_file)
+        node.add_opt('--cache', '%s' % cache_file.storage_path)
+        node._add_input(cache_file)
         for trig_file in trig_files:
             node._add_input(trig_file)
 
         node.add_opt('--segment-dir', segment_dir)
-        node.add_opt('--output-dir', self.output_dir)
+        node.add_opt('--output-dir', self.out_dir)
 
         for out_tag in out_tags:
             out_file = File(self.ifos, 'INSPIRAL', cache_file.segment,
-                            directory=self.output_dir, extension='xml.gz',
-                            tags=["GRB%s" % trig_name, out_tag])
-            out_file.PFN(out_file.cache_entry.path, site="local")
+                            directory=self.out_dir, extension='xml.gz',
+                            tags=["GRB%s" % trig_name, out_tag],
+                            store_file=self.retain_files)
+            #out_file.PFN(out_file.cache_entry.path, site="local")
             node._add_output(out_file)
 
         for trial in range(1, num_trials + 1):
             out_file = File(self.ifos, 'INSPIRAL', cache_file.segment,
-                            directory=self.output_dir, extension='xml.gz',
-                            tags=["GRB%s" % trig_name, "OFFTRIAL_%d" % trial])
-            out_file.PFN(out_file.cache_entry.path, site="local")
+                            directory=self.out_dir, extension='xml.gz',
+                            tags=["GRB%s" % trig_name, "OFFTRIAL_%d" % trial],
+                            store_file=self.retain_files)
+            #out_file.PFN(out_file.cache_entry.path, site="local")
             node._add_output(out_file)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
@@ -383,30 +385,31 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
     The class responsible for setting up jobs for legacy coh_PTF_trig_cluster
     executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  out_dir=None, tags=[]):
         super(LegacyCohPTFTrigCluster, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
         self.cp = cp
         self.ifos = ifo
-        self.output_dir = out_dir
         self.num_threads = 1
  
     def create_node(self, parent, tags=[]):
         node = Node(self)
 
         # Set input / output options
-        node.add_input_opt('--trig-file', parent)
-        node.add_opt('--output-dir', self.output_dir)
+        node.add_opt('--trig-file', '%s' % parent.storage_path)
+        node._add_input(parent)
+        node.add_opt('--output-dir', self.out_dir)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
         # Adding output files as pycbc.workflow.core.File objects
         out_file = File(self.ifos, 'INSPIRAL', parent.segment,
-                        directory=self.output_dir, extension='xml.gz',
-                        tags=[parent.tag_str, 'CLUSTERED'])
-        out_file.PFN(out_file.cache_entry.path, site="local")
+                        directory=self.out_dir, extension='xml.gz',
+                        tags=[parent.tag_str, 'CLUSTERED'],
+                        store_file=self.retain_files)
+        #out_file.PFN(out_file.cache_entry.path, site="local")
         node._add_output(out_file)
 
         return node
@@ -424,7 +427,6 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
               ifo=ifo, out_dir=out_dir, tags=tags)
         self.cp = cp
         self.ifos = ifo
-        self.output_dir = out_dir
         self.num_threads = 1
 
     def create_node(self, trig_files, inj_files, trig_cache, inj_cache,
@@ -441,7 +443,7 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
             node._add_input(inj_file)
 
         node.add_opt('--exclude-segments', '%s/bufferSeg.txt' % seg_dir)
-        node.add_opt('--output-dir', self.output_dir)
+        node.add_opt('--output-dir', self.out_dir)
 
         # Create output files as File objects
         name_string = inj_files[0].description.rsplit('_', 2)[0]
@@ -450,15 +452,17 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
         found_tags = list(tags)
         found_tags.append("FOUND")
         found_file = File(self.ifos, name_string, seg, extension="xml",
-                          directory=self.output_dir, tags=found_tags)
-        found_file.PFN(found_file.cache_entry.path, site="local")
+                          directory=self.out_dir, tags=found_tags,
+                          store_file=self.retain_files)
+        #found_file.PFN(found_file.cache_entry.path, site="local")
         node._add_output(found_file)
 
         missed_tags = list(tags)
         missed_tags.append("MISSED")
         missed_file = File(self.ifos, name_string, seg, extension="xml",
-                           directory=self.output_dir, tags=missed_tags)
-        missed_file.PFN(missed_file.cache_entry.path, site="local")
+                           directory=self.out_dir, tags=missed_tags,
+                           store_file=self.retain_files)
+        #missed_file.PFN(missed_file.cache_entry.path, site="local")
         node._add_output(missed_file)
         return node
 
@@ -475,7 +479,6 @@ class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
               ifo=ifo, out_dir=out_dir, tags=tags)
         self.cp = cp
         self.ifos = ifo
-        self.output_dir = out_dir
         self.num_threads = 1
 
     def create_node(self, parent, inj_trigs, inj_string, max_inc, segment):
@@ -484,18 +487,19 @@ class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
         trig_name = self.cp.get('workflow', 'trigger-name')
         node.add_opt('--inj-string', inj_string)
         node.add_opt('--max-inclination', max_inc)
-        node.add_opt('--inj-cache', parent)
-        
+        node.add_opt('--inj-cache', '%s' % parent.storage_path)
+        node._add_input(parent)
+
         for inj_trig in inj_trigs:
             node._add_input(inj_trig)
             out_file_tag = [inj_string, "FILTERED", max_inc,
                             inj_trig.tag_str.rsplit('_', 1)[-1]]
             out_file = File(self.ifos, inj_trig.description, inj_trig.segment,
-                            extension="xml", directory=self.output_dir,
+                            extension="xml", directory=self.out_dir,
                             tags=out_file_tag)
             out_file.PFN(out_file.cache_entry.path, site="local")
             node._add_output(out_file)
-        node.add_opt('--output-dir', self.output_dir)
+        node.add_opt('--output-dir', self.out_dir)
 
         return node
 
@@ -512,7 +516,6 @@ class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
               ifo=ifo, out_dir=out_dir, tags=tags)
         self.cp = cp
         self.ifos = ifo
-        self.output_dir = out_dir
         self.num_threads = 1
 
     def create_node(self, parent=None, seg_dir=None, tags=[]):
@@ -523,19 +526,18 @@ class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
                              % self.name)
 
         if isinstance(parent, str) and tags[1]=="_unclustered":
-            node.add_opt('--trig-file', parent)
+            node.add_opt('--trig-file', '%s' % parent.storage_path)
             tags[1] = ""
         else:
             node._add_input(parent)
-            node.add_opt('--trig-file', '%s/%s' % (self.output_dir,
-                                                   parent.name))
+            node.add_opt('--trig-file', '%s' % parent.storage_path)
 
         node.add_opt('--grb-name', self.cp.get('workflow', 'trigger-name'))
 
         # Set input / output options
         node.add_opt('--veto-directory', seg_dir)
         node.add_opt('--segment-dir', seg_dir)
-        out_dir = "%s/output/%s/plots%s" % (self.output_dir, tags[0], tags[1])
+        out_dir = "%s/output/%s/plots%s" % (self.out_dir, tags[0], tags[1])
         node.add_opt('--output-path', out_dir)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
@@ -555,7 +557,6 @@ class LegacyCohPTFEfficiency(LegacyAnalysisExecutable):
               ifo=ifo, out_dir=out_dir, tags=tags)
         self.cp = cp
         self.ifos = ifo
-        self.output_dir = out_dir
         self.num_threads = 1
 
     def create_node(self, parent=None, offsource_file=None, seg_dir=None,
@@ -566,21 +567,22 @@ class LegacyCohPTFEfficiency(LegacyAnalysisExecutable):
             raise ValueError("%s must be supplied with trigger files"
                              % self.name)
 
-        #node._add_input(parent)
-        node.add_input_opt('--onsource-file', parent)#'%s/%s' % (self.output_dir,
-                                                #   parent.name))
-
         # Set input / output options
-        node.add_input_opt('--offsource-file', offsource_file)#'%s/%s' % (self.output_dir,
-                                                   # offsource_file.name))
+        node.add_opt('--onsource-file', '%s' % parent.storage_path)
+        node._add_input(parent)
+
+        node.add_opt('--offsource-file', '%s' % offsource_file.storage_path)
+        node._add_input(offsource_file)
         node.add_opt('--veto-directory', seg_dir)
         node.add_opt('--segment-dir', seg_dir)
-        out_dir = "%s/output/%s/efficiency" % (self.output_dir, tags[0])
+        out_dir = "%s/output/%s/efficiency" % (self.out_dir, tags[0])
         
 
         if found_file and missed_file:
-            node.add_input_opt('--found-file', found_file)
-            node.add_input_opt('--missed-file', missed_file)
+            node.add_opt('--found-file', '%s' % found_file.storage_path)
+            node._add_input(found_file)
+            node.add_opt('--missed-file', '%s' % missed_file.storage_path)
+            node._add_input(missed_file)
             out_dir += "_%s" % tags[1]
         elif found_file or missed_file:
             if found_file:

@@ -153,13 +153,12 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     html_summary_class = select_generic_executable(workflow, "html_summary")
 
     # Set up trig_combiner job
-    trig_combiner_outs = FileList([])
     trig_combiner_out_tags = ["OFFSOURCE", "ONSOURCE", "ALL_TIMES"]
     trig_combiner_jobs = trig_combiner_class(cp, "trig_combiner", ifo=ifos, 
                                              out_dir=output_dir, tags=tags)
     trig_combiner_node = trig_combiner_jobs.create_node(trig_cache, trig_files,
             segment_dir, out_tags=trig_combiner_out_tags, tags=tags)
-    trig_combiner_outs.extend(trig_combiner_node.output_files)
+    trig_combiner_outs = trig_combiner_node.output_files
     pp_nodes.append(trig_combiner_node)
     workflow.add_node(trig_combiner_node)
     pp_outs.append(trig_combiner_outs)
@@ -199,18 +198,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
             injfinder_nodes.append(injfinder_node)
             pp_nodes.append(injfinder_node)
             workflow.add_node(injfinder_node)
-            '''
-            # Add found/missed injfinder output files as File objects
-            name_string = injections[0].description.rsplit('_', 2)[0]
-            found_file = File(ifos, name_string, full_segment, extension="xml",
-                              directory=output_dir, tags=[inj_tag, "FOUND"])
-            found_file.PFN(found_file.cache_entry.path, site="local")
-            missed_file = File(ifos, name_string, full_segment,
-                               extension="xml", directory=output_dir,
-                               tags=[inj_tag, "MISSED"])
-            missed_file.PFN(missed_file.cache_entry.path, site="local")
-            '''
-            injfinder_outs.extend(injfinder_node.output_files)#FileList([found_file, missed_file]))
+            injfinder_outs.extend(injfinder_node.output_files)
         pp_outs.extend(injfinder_outs)
 
         # Make injfinder output cache
@@ -219,6 +207,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
         fm_cache.PFN(fm_cache.cache_entry.path, site="local")
         injfinder_outs.convert_to_lal_cache().tofile(\
                 open(fm_cache.storage_path, "w"))
+        pp_outs.extend(FileList([fm_cache]))
 
         # Set up injcombiner jobs
         injcombiner_outs = FileList([file for file in injfinder_outs \
@@ -234,29 +223,18 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
             inj_str = injcombiner_tag[:4]
             inputs = FileList([file for file in injfinder_outs \
                                if injcombiner_tag in file.tagged_description])
+            #                   if any(tag in file.tagged_description \
+            #                          for tag in injcombiner_tags)])
             injcombiner_node = injcombiner_jobs.create_node(fm_cache, inputs,
                     inj_str, max_inc, workflow.analysis_time)
             injcombiner_nodes.append(injcombiner_node)
             injcombiner_out_tags.append("%s_FILTERED_%s" % (inj_str, max_inc))
-            '''
-            for file in files:
-                out_file_tag = [inj_str, "FILTERED", max_inc,
-                                file.tag_str.rsplit('_', 1)[-1]]
-                out_file = File(ifos, file.description, full_segment,
-                                extension="xml", directory=output_dir,
-                                tags=out_file_tag)
-                out_file.PFN(out_file.cache_entry.path, site="local")
-            '''
-            injcombiner_outs.extend(injcombiner_node.output_files)#FileList([out_file]))
+            injcombiner_outs.extend(injcombiner_node.output_files)
             pp_outs.extend(injcombiner_node.output_files)
             pp_nodes.append(injcombiner_node)
             workflow.add_node(injcombiner_node)
 
-        logging.info(injcombiner_outs)
-        for f in injcombiner_outs:
-            logging.info(f.name)
-            logging.info(f.tag_str)
-            logging.info(f.description)
+        # Initialise injection_efficiency class
         inj_efficiency_jobs = efficiency_class(cp, "inj_efficiency", ifo=ifos,
                                                out_dir=output_dir, tags=tags)
 

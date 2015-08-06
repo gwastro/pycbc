@@ -142,10 +142,6 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
     try:
         num_splits = cp.get_opt_tags("workflow-splittable",
                                      "splittable-num-banks", tags)
-    #except Exception as e:
-    #    import traceback,sys
-    #    top = traceback.extract_tb(sys.exc_info()[2])[-1]
-    #    logging.info(','.join([type(e).__name__, os.path.basename(top[0]), str(top[1])]))
     except BaseException:
         inj_interval = int(cp.get_opt_tags("workflow-splittable",
                                            "splitinjtable-interval", tags))
