@@ -302,6 +302,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
 
         if self.injection_file is not None:
             node.add_input_opt('--injection-file', self.injection_file)
+            node.add_opt('--analyze-inj-segs-only')
         return node
 
     def get_valid_times(self):
