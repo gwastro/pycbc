@@ -86,7 +86,7 @@ f.attrs['foreground_time'] = coinc_time
 if len(zdata) > 0:
     fore_fan = fanmap_exc(zdata.stat)
     ifar_exc = background_time / fore_fan
-    fap_exc = numpy.clip(coinc_time / ifar_exc, 0, 1)
+    fap_exc = 1 - numpy.exp(- coinc_time / ifar_exc)
     f['foreground/fan_exc'] = fore_fan
     f['foreground/ifar_exc'] = sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
@@ -128,7 +128,7 @@ if len(zdata) > 0:
         
         fan[i] = fanmap(fstat)
         ifar[i] = background_time / fan[i]
-        fap[i] = numpy.clip(coinc_time / ifar[i], 0, 1)
+        fap[i] = 1 - numpy.exp(- coinc_time / ifar[i])
 
     f['foreground/fan'] = fan
     f['foreground/ifar'] = sec_to_year(ifar)

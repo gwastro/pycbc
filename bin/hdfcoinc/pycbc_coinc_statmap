@@ -123,8 +123,8 @@ fore_fan_exc = fanmap_exc(fore_stat)
 ifar_exc = background_time_exc / fore_fan_exc
 
 logging.info("calculating fap values")
-fap = numpy.clip(coinc_time/ifar, 0, 1)
-fap_exc = numpy.clip(coinc_time_exc/ifar_exc, 0, 1)
+fap = 1 - numpy.exp(- coinc_time / ifar)
+fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
 if fore_locs.sum() > 0:
     f['foreground/fan'] = fore_fan
     f['foreground/ifar'] = sec_to_year(ifar)
