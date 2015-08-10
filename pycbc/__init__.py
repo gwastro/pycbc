@@ -33,8 +33,10 @@ try:
     # This will fail when pycbc is imported during the build process,
     # before version.py has been generated.
     from version import git_hash
+    from version import version as pycbc_version
 except:
     git_hash = 'none'
+    pycbc_version = 'none'
 
 def init_logging(verbose=False):
     """
@@ -110,6 +112,7 @@ _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name)
 # that a recompile is needed.
 # FIXME: It would be better to find a way to trigger a recompile off
 # of all the arguments to weave.
+_cache_dir_path = os.path.join(_cache_dir_path, pycbc_version)
 _cache_dir_path = os.path.join(_cache_dir_path, git_hash)
 try: os.makedirs(_cache_dir_path)
 except OSError: pass
