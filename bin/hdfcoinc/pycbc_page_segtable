@@ -22,6 +22,7 @@ import logging
 import numpy
 import pycbc.results
 import sys
+from glue import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import table
@@ -56,42 +57,63 @@ caption = "This table shows the cumulative amount of time for each segment. Show
 ifos = ['H1', 'L1']
 
 # loop over segment files from command line
+seg_dict = {}
+comment_dict = {}
 for segment_file in opts.segment_files:
 
-   # read segment definer table
-   seg_dict = fromsegmentxml(open(segment_file, 'rb'), return_dict=True) 
-   comment_dict = get_segment_definer_comments(open(segment_file, 'rb'))
+    # read segment definer table
+    seg_dict.update(fromsegmentxml(open(segment_file, 'rb'), return_dict=True))
+    comment_dict.update(get_segment_definer_comments(open(segment_file, 'rb')))
 
-   # loop over segment names
-   for segment_name in opts.segment_names:
+# loop over segment names
+for segment_name in opts.segment_names:
 
-       # get segments
-       segs = {}
-       for ifo in ifos:
-           for key in seg_dict.keys():
-               if key.startswith(ifo+':'+segment_name):
-                   segs[ifo] = seg_dict[key]
-       if not len(segs.keys()):
-           logging.info('Did not find a segment definition for %s',
-               segment_name)
-           continue
+    # allow user to find the and of two segments if they use a '&' on the command line
+    names = segment_name.split('&')
+    if len(names) > 2:
+        logging.info('You can only compare two segments but was provided %s', segment_name)
+        continue
 
-       # put comment in caption
-       caption += segment_name
-       if comment_dict[key] != None:
-           caption += " ("+comment_dict[key]+")"
-       caption += " "
+    # get segments for each IFO
+    segs = segments.segmentlistdict()
+    for ifo in ifos:
+        for key in seg_dict.keys():
+            if key.startswith(ifo+':'+names[0]):
+                segs[ifo] = seg_dict[key]
+    if not len(segs.keys()):
+        logging.info('Did not find a segment definition for %s', segment_name)
+        continue
 
-       # get length of time of segments in seconds
-       h1_len = abs(segs['H1'])
-       l1_len = abs(segs['L1'])
-       h1l1_len = abs( segs['H1'] & segs['L1'] )
+    # get second segments for each IFO if comparing two segments
+    if len(names) == 2:
+        segs_tmp = segments.segmentlistdict()
+        for ifo in ifos:
+            for key in seg_dict.keys():
+                if key.startswith(ifo+':'+names[1]):
+                    segs_tmp[ifo] = seg_dict[key]
+        if not len(segs.keys()):
+            logging.info('Did not find a segment definition for %s', segment_name)
+            continue
 
-       # put values into columns
-       columns[0][1].append(segment_name)
-       columns[1][1].append(h1_len)
-       columns[2][1].append(l1_len)
-       columns[3][1].append(h1l1_len)
+        # find overlap
+        segs = segs.coalesce() & segs_tmp.coalesce()
+
+    # put comment in caption
+    caption += segment_name
+    if comment_dict[key] != None:
+        caption += " ("+comment_dict[key]+")"
+    caption += " "
+
+    # get length of time of segments in seconds
+    h1_len = abs(segs['H1'])
+    l1_len = abs(segs['L1'])
+    h1l1_len = abs( segs['H1'] & segs['L1'] )
+
+    # put values into columns
+    columns[0][1].append(segment_name)
+    columns[1][1].append(h1_len)
+    columns[2][1].append(l1_len)
+    columns[3][1].append(h1l1_len)
 
 # cast columns into arrays
 keys = [numpy.array(key, dtype=type(key[0])) for key,_ in columns]
