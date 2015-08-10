@@ -31,22 +31,22 @@ from scipy.interpolate import interp1d
 def load_coincs(coinc_files):
     import pycbc.io
     class StatmapData(pycbc.io.DictArray):
-        def __init__(self, data=None, segments=None, attrs=None,
+        def __init__(self, data=None, seg=None, attrs=None,
                            files=None, groups=None):
-            super().__init__(self, data=data, files=files, groups=groups)
+            super(StatmapData, self).__init__(data=data, files=files, groups=groups)
             
             if data:
-                self.segments=segments
+                self.seg=seg
                 self.attrs=attrs
             elif files:
                 f = h5py.File(files[0], "r")
-                self.segments = f['segments']
+                self.seg = f['segments']
                 self.attrs = f.attrs
     
-        def _return(self, data)
+        def _return(self, data):
             return self.__class__(data=data, 
                                   attrs=self.attrs, 
-                                  segments=self.segments)
+                                  seg=self.seg)
     
         def cluster(self, window):
             """ Cluster the dict array, assuming it has the relevant Coinc colums,

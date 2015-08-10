@@ -60,7 +60,7 @@ class DictArray(object):
         for k in self.data:
             setattr(self, k, self.data[k])
 
-    def _return(self, data)
+    def _return(self, data):
         return self.__class__(data=data)
 
     def __len__(self):
