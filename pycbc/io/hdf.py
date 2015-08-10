@@ -60,6 +60,9 @@ class DictArray(object):
         for k in self.data:
             setattr(self, k, self.data[k])
 
+    def _return(self, data)
+        return self.__class__(data=data)
+
     def __len__(self):
         return len(self.data[self.data.keys()[0]])
 
@@ -67,7 +70,7 @@ class DictArray(object):
         data = {}
         for k in self.data:
             data[k] = np.concatenate([self.data[k], other.data[k]])
-        return self.__class__(data=data)
+        return self._return(data=data)
 
     def select(self, idx):
         """ Return a new DictArray containing only the indexed values
@@ -75,7 +78,7 @@ class DictArray(object):
         data = {}
         for k in self.data:
             data[k] = self.data[k][idx]
-        return self.__class__(data=data)
+        return self._return(data=data)
    
     def remove(self, idx):
         """ Return a new DictArray that does not contain the indexed values
@@ -83,7 +86,7 @@ class DictArray(object):
         data = {}
         for k in self.data:
             data[k] = np.delete(self.data[k], idx)
-        return self.__class__(data=data)
+        return self._return(data=data)
 
 class FileData(object):
 

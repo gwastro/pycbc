@@ -27,11 +27,11 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 logging.info("Loading coinc triggers")    
-d, attrs, seg = coinc.load_coincs(args.coinc_files)   
+d = coinc.load_coincs(args.coinc_files)   
 logging.info("We have %s triggers" % len(d.stat))
 
 logging.info("Clustering coinc triggers (inclusive of zerolag)")
-d = d.cluster(attrs['timeslide_interval'], args.cluster_window)
+d = d.cluster(args.cluster_window)
 
 fore_locs = d.timeslide_id == 0
 logging.info("%s clustered foreground triggers" % fore_locs.sum())
@@ -48,18 +48,18 @@ v2 = veto.indices_within_times(e.time2, veto_start, veto_end)
 e = e.remove(v2)
 
 logging.info("Clustering coinc triggers (exclusive of zerolag)")
-e = e.cluster(attrs['timeslide_interval'], args.cluster_window)
+e = e.cluster(args.cluster_window)
 
 logging.info("Dumping foreground triggers")
 f = h5py.File(args.output_file, "w")
-f.attrs['detector_1'] = attrs['detector_1']
-f.attrs['detector_2'] = attrs['detector_2']
-f.attrs['timeslide_interval'] = attrs['timeslide_interval']
+f.attrs['detector_1'] = d.attrs['detector_1']
+f.attrs['detector_2'] = d.attrs['detector_2']
+f.attrs['timeslide_interval'] = d.attrs['timeslide_interval']
 
 # Copy over the segment for coincs and singles
-for key in seg.keys():
-    f['segments/%s/start' % key] = seg[key]['start'][:]
-    f['segments/%s/end' % key] = seg[key]['end'][:]
+for key in d.seg.keys():
+    f['segments/%s/start' % key] = d.seg[key]['start'][:]
+    f['segments/%s/end' % key] = d.seg[key]['end'][:]
 
 f['segments/foreground_veto/start'] = veto_start
 f['segments/foreground_veto/end'] = veto_end
@@ -83,16 +83,16 @@ logging.info("Dumping background triggers (exclusive of zerolag)")
 for k in e.data:
     f['background_exc/' + k] = e.data[k]
 
-maxtime = max(attrs['foreground_time1'], attrs['foreground_time2'])
-mintime = min(attrs['foreground_time1'], attrs['foreground_time2'])
+maxtime = max(d.attrs['foreground_time1'], d.attrs['foreground_time2'])
+mintime = min(d.attrs['foreground_time1'], d.attrs['foreground_time2'])
 
 maxtime_exc = maxtime - veto_time
 mintime_exc = mintime - veto_time
 
-background_time = int(maxtime / attrs['timeslide_interval']) * mintime
-coinc_time = float(attrs['coinc_time'])
+background_time = int(maxtime / d.attrs['timeslide_interval']) * mintime
+coinc_time = float(d.attrs['coinc_time'])
 
-background_time_exc = int(maxtime_exc / attrs['timeslide_interval']) * mintime_exc
+background_time_exc = int(maxtime_exc / d.attrs['timeslide_interval']) * mintime_exc
 coinc_time_exc = coinc_time - veto_time
 
 logging.info("Making mapping from FAN to the combined statistic")

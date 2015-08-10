@@ -42,27 +42,26 @@ if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 logging.info("Loading coinc zerolag triggers")    
-zdata, attrs, seg = coinc.load_coincs(args.zero_lag_coincs)   
-interval = attrs['timeslide_interval']
 window = args.cluster_window
-zdata = zdata.cluster(interval, window)
+zdata = coinc.load_coincs(args.zero_lag_coincs)   
+zdata = zdata.cluster(window)
                      
 logging.info("Loading coinc full inj triggers")    
-fidata = coinc.load_coincs(args.mixed_coincs_full_inj)[0].cluster(interval, window)
+fidata = coinc.load_coincs(args.mixed_coincs_full_inj).cluster(window)
                      
 logging.info("Loading coinc inj full triggers")    
-ifdata = coinc.load_coincs(args.mixed_coincs_inj_full)[0].cluster(interval, window)
+ifdata = coinc.load_coincs(args.mixed_coincs_inj_full).cluster(window)
 
 f = h5py.File(args.output_file, "w")
 
-f.attrs['detector_1'] = attrs['detector_1']
-f.attrs['detector_2'] = attrs['detector_2']
-f.attrs['timeslide_interval'] = interval
+f.attrs['detector_1'] = zdata.attrs['detector_1']
+f.attrs['detector_2'] = zdata.attrs['detector_2']
+f.attrs['timeslide_interval'] = zdata.attrs['timeslide_interval']
 
 # Copy over the segment for coincs and singles
-for key in seg.keys():
-    f['segments/%s/start' % key] = seg[key]['start'][:]
-    f['segments/%s/end' % key] = seg[key]['end'][:]
+for key in zdata.seg.keys():
+    f['segments/%s/start' % key] = zdata.seg[key]['start'][:]
+    f['segments/%s/end' % key] = zdata.seg[key]['end'][:]
     
 logging.info('writing zero lag triggers')
 if len(zdata) > 0:
