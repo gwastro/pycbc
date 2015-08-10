@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2015 Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Take a coinc xml file containing multiple events and upload to gracedb.
+"""
+
+import os, json
+import argparse
+import logging
+from ligo.gracedb.rest import GraceDb
+
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import ilwd
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import process as ligolw_process
+
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+                    level=logging.INFO)
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--input-file', dest='input_file',
+                    required=True, type=str,
+                    help='Input LIGOLW XML file of coincidences.')
+parser.add_argument('--testing', action="store_true", default=False,
+                    help="Upload event to the TEST group of gracedb.")
+args = parser.parse_args()
+
+gracedb = GraceDb()
+
+lsctables.use_in(LIGOLWContentHandler)
+
+xmldoc = ligolw_utils.load_filename(args.input_file,
+                             contenthandler=LIGOLWContentHandler)
+
+coinc_table = table.get_table(xmldoc, lsctables.CoincTable.tableName)
+coinc_inspiral_table = table.get_table(xmldoc,
+                                       lsctables.CoincInspiralTable.tableName)
+coinc_event_map_table = table.get_table(xmldoc,
+                                        lsctables.CoincMapTable.tableName)
+
+sngl_inspiral_table = table.get_table(xmldoc,
+                                      lsctables.SnglInspiralTable.tableName)
+
+xmldoc.childNodes[-1].removeChild(sngl_inspiral_table)
+xmldoc.childNodes[-1].removeChild(coinc_event_map_table)
+xmldoc.childNodes[-1].removeChild(coinc_inspiral_table)
+xmldoc.childNodes[-1].removeChild(coinc_table)
+
+for event in coinc_table:
+    coinc_event_table_curr = lsctables.New(lsctables.CoincTable)
+    coinc_event_table_curr.append(event)
+    coinc_inspiral_table_curr = lsctables.New(lsctables.CoincInspiralTable)
+    coinc_event_map_table_curr = lsctables.New(lsctables.CoincMapTable)
+    sngl_inspiral_table_curr = lsctables.New(lsctables.SnglInspiralTable)
+
+    coinc_event_id = event.coinc_event_id
+    for coinc_insp in coinc_inspiral_table:
+        if coinc_insp.coinc_event_id == event.coinc_event_id:
+            coinc_inspiral_table_curr.append(coinc_insp)
+
+    sngl_ids = []
+    for coinc_map in coinc_event_map_table:
+        if coinc_map.coinc_event_id == event.coinc_event_id:
+            coinc_event_map_table_curr.append(coinc_map)
+            sngl_ids.append(coinc_map.event_id)
+
+    for sngl in sngl_inspiral_table:
+        if sngl.event_id in sngl_ids:
+            sngl_inspiral_table_curr.append(sngl)
+
+    xmldoc.childNodes[-1].appendChild(coinc_event_table_curr)
+    xmldoc.childNodes[-1].appendChild(coinc_inspiral_table_curr)
+    xmldoc.childNodes[-1].appendChild(coinc_event_map_table_curr)
+    xmldoc.childNodes[-1].appendChild(sngl_inspiral_table_curr)
+    ligolw_utils.write_filename(xmldoc, "tmp_coinc_xml_file.xml")
+    if args.testing:
+        r = gracedb.createEvent("Test", "pycbc", "tmp_coinc_xml_file.xml",
+                                "AllSky").json()
+    else:
+        r = gracedb.createEvent("CBC", "pycbc", "tmp_coinc_xml_file.xml",
+                                "AllSky").json()
+    logging.info("Uploaded event %s." %(r["graceid"]))
+    xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
+    xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)
+    xmldoc.childNodes[-1].removeChild(coinc_event_map_table_curr)
+    xmldoc.childNodes[-1].removeChild(sngl_inspiral_table_curr)

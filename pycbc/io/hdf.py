@@ -378,7 +378,8 @@ class ForegroundTriggers(object):
 
         sngl_col_names = ['snr', 'chisq', 'chisq_dof', 'bank_chisq',
                           'bank_chisq_dof', 'cont_chisq', 'cont_chisq_dof',
-                          'end_time']
+                          'end_time', 'template_duration', 'coa_phase',
+                          'sigmasq']
         sngl_col_vals = {}
         for name in sngl_col_names:
             sngl_col_vals[name] = self.get_snglfile_array_dict(name)
@@ -396,6 +397,8 @@ class ForegroundTriggers(object):
                 sngl_id = self.trig_id[ifo][idx]
                 event_id = lsctables.SnglInspiralID(sngl_id)
                 sngl = return_empty_sngl()
+                sngl.event_id = event_id
+                sngl.ifo = ifo
                 curr_sngl_file = self.sngl_files[ifo].h5file[ifo]
                 for name in sngl_col_names:
                     val = sngl_col_vals[name][ifo][idx]
@@ -407,6 +410,7 @@ class ForegroundTriggers(object):
                         sngl.mass1, sngl.mass2)
                 sngl.mchirp, junk = pnutils.mass1_mass2_to_mchirp_eta(
                         sngl.mass1, sngl.mass2)
+                sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
                 sngl_combined_mchirp += sngl.mchirp
                 sngl_combined_mtot += sngl.mtotal
 
