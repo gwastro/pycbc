@@ -6,7 +6,7 @@ with producing the combined foreground and background triggers
 """
 import argparse, h5py, logging, itertools, numpy
 from pycbc.events import veto, coinc
-import pycbc.version, pycbc.pnutils
+import pycbc.version, pycbc.pnutils, pycbc.io
 
 def sec_to_year(sec):
     return sec / (3.15569e7)
@@ -27,15 +27,9 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 logging.info("Loading coinc triggers")    
-d = coinc.load_coincs(args.coinc_files)   
+d = pycbc.io.StatmapData(files=args.coinc_files)   
 logging.info("We have %s triggers" % len(d.stat))
-
-logging.info("Clustering coinc triggers (inclusive of zerolag)")
-d = d.cluster(args.cluster_window)
-
 fore_locs = d.timeslide_id == 0
-logging.info("%s clustered foreground triggers" % fore_locs.sum())
-
 ft1, ft2 = d.time1[fore_locs], d.time2[fore_locs]
 vt = (ft1 + ft2) / 2.0
 veto_start, veto_end = vt - args.veto_window, vt + args.veto_window
@@ -46,6 +40,11 @@ e = d.remove(v1)
 
 v2 = veto.indices_within_times(e.time2, veto_start, veto_end) 
 e = e.remove(v2)
+
+logging.info("Clustering coinc triggers (inclusive of zerolag)")
+d = d.cluster(args.cluster_window)
+fore_locs = d.timeslide_id == 0
+logging.info("%s clustered foreground triggers" % fore_locs.sum())
 
 logging.info("Clustering coinc triggers (exclusive of zerolag)")
 e = e.cluster(args.cluster_window)

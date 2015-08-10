@@ -27,39 +27,6 @@ coincident triggers.
 import numpy, logging, h5py
 from itertools import izip
 from scipy.interpolate import interp1d  
-
-def load_coincs(coinc_files):
-    import pycbc.io
-    class StatmapData(pycbc.io.DictArray):
-        def __init__(self, data=None, seg=None, attrs=None,
-                           files=None, groups=None):
-            super(StatmapData, self).__init__(data=data, files=files, groups=groups)
-            
-            if data:
-                self.seg=seg
-                self.attrs=attrs
-            elif files:
-                f = h5py.File(files[0], "r")
-                self.seg = f['segments']
-                self.attrs = f.attrs
-    
-        def _return(self, data):
-            return self.__class__(data=data, 
-                                  attrs=self.attrs, 
-                                  seg=self.seg)
-    
-        def cluster(self, window):
-            """ Cluster the dict array, assuming it has the relevant Coinc colums,
-            time1, time2, stat, and timeslide_id
-            """
-            interval = self.attrs['timeslide_interval']
-            cid = cluster_coincs(self.stat, self.time1, self.time2,
-                                     self.timeslide_id, interval, window)
-            return self.select(cid) 
-
-    columns = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2', 
-               'template_id', 'decimation_factor', 'timeslide_id']
-    return StatmapData(files=coinc_files, groups=columns)
    
 def calculate_fan_map(combined_stat, dec):
     """ Return a function to map between false alarm number (FAN) and the

@@ -88,6 +88,35 @@ class DictArray(object):
             data[k] = np.delete(self.data[k], idx)
         return self._return(data=data)
 
+class StatmapData(DictArray):
+    def __init__(self, data=None, seg=None, attrs=None,
+                       files=None):
+        groups = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2', 
+               'template_id', 'decimation_factor', 'timeslide_id']
+        super(StatmapData, self).__init__(data=data, files=files, groups=groups)
+        
+        if data:
+            self.seg=seg
+            self.attrs=attrs
+        elif files:
+            f = h5py.File(files[0], "r")
+            self.seg = f['segments']
+            self.attrs = f.attrs
+
+    def _return(self, data):
+        return self.__class__(data=data, attrs=self.attrs, seg=self.seg)
+
+    def cluster(self, window):
+        """ Cluster the dict array, assuming it has the relevant Coinc colums,
+        time1, time2, stat, and timeslide_id
+        """
+        from pycbc.events import cluster_coincs
+        interval = self.attrs['timeslide_interval']
+        cid = cluster_coincs(self.stat, self.time1, self.time2,
+                                 self.timeslide_id, interval, window)
+        return self.select(cid) 
+
+
 class FileData(object):
 
     def __init__(self, fname, group=None, columnlist=None, filter_func=None):
