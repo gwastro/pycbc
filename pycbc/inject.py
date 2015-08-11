@@ -191,13 +191,22 @@ class InjectionSet(object):
                 if float(hp.start_time) > t1:
                    continue
 
-            # compute the detector response, taper it if requested
-            # and add it to the strain
+            # compute the detector response and generate the waveform
             signal = detector.project_wave(
                     hp, hc, inj.longitude, inj.latitude, inj.polarization)
+
+            # zero out the beginning of the TimeSeries
+            # for the length of the lalsimulation sub-sample
+            # interpolation kernel that was used in LALSimulation.c
+            # this is a 19 sample duration kernel
+            kernel_length = 19
+            signal[:kernel_length] = 0 * signal[:kernel_length]
+
             # the taper_timeseries function converts to a LAL TimeSeries
             signal = signal.astype(strain.dtype)
             signal_lal = wfutils.taper_timeseries(signal, inj.taper, return_lal=True)
+
+            # add injection to strain
             add_injection(lalstrain, signal_lal, None)
 
         strain.data[:] = lalstrain.data.data[:]
