@@ -26,6 +26,7 @@ xsi:schemaLocation="http://pegasus.isi.edu/schema/sitecatalog http://pegasus.isi
         </directory>
         <profile namespace="env" key="PEGASUS_HOME">$PEGASUS_HOME</profile>
         <profile namespace="pegasus" key="job.aggregator" >mpiexec</profile>
+        <profile namespace="pegasus" key="cluster.arguments" >--tries 3</profile>
         <profile namespace="globus" key="queue">development</profile>
         <profile namespace="globus" key="maxwalltime">1</profile>
         <profile namespace="globus" key="host_count">1</profile>
@@ -43,6 +44,7 @@ xsi:schemaLocation="http://pegasus.isi.edu/schema/sitecatalog http://pegasus.isi
         </directory>
         <profile namespace="env" key="PEGASUS_HOME">$PEGASUS_HOME</profile>
         <profile namespace="pegasus" key="job.aggregator" >mpiexec</profile>
+        <profile namespace="pegasus" key="cluster.arguments" >--tries 3</profile>
         <profile namespace="globus" key="queue">normal</profile>
         <profile namespace="globus" key="maxwalltime">30</profile>
         <profile namespace="globus" key="host_count">$HOSTS</profile>
