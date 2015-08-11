@@ -52,8 +52,16 @@ def calculate_n_louder(bstat, fstat, dec):
     unsort = sort.argsort()
     bstat = bstat[sort]
     dec = dec[sort]
+    
+    # calculate cumulative number of triggers louder than the trigger in 
+    # a given index. We need to subtract the decimation factor, as the cumsum
+    # includes itself in the first sum (it is inclusive of the first value)
     n_louder = dec[sort][::-1].cumsum()[::-1] - dec
-       
+    
+    # Determine how many values are louder than the foreground ones
+    # We need to subtract one from the index, to be consistent with the definition
+    # of n_louder, as here we do want to include the background value at the
+    # found index
     fore_n_louder = n_louder[numpy.searchsorted(bstat, fstat, side='left') - 1]
     back_cum_num = n_louder[unsort]
     return back_cum_num, fore_n_louder
