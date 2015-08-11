@@ -75,7 +75,6 @@ background_time = float(fb.attrs['background_time_exc'])
 coinc_time = float(fb.attrs['foreground_time_exc'])
 back_stat = fb['background_exc/stat'][:]
 dec_fac = fb['background_exc/decimation_factor'][:]
-fanmap_exc = coinc.calculate_fan_map(back_stat, dec_fac)
 
 f.attrs['background_time_exc'] = background_time
 f.attrs['foreground_time_exc'] = coinc_time
@@ -83,10 +82,9 @@ f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 
 if len(zdata) > 0:
-    fore_fan = fanmap_exc(zdata.stat)
-    ifar_exc = background_time / fore_fan
+    back_cnum_exc, fnlouder_exc = coinc.calculate_n_louder(back_stat, zdata.stat, dec_fac)
+    ifar_exc = background_time / (fnlouder_exc + 1)
     fap_exc = 1 - numpy.exp(- coinc_time / ifar_exc)
-    f['foreground/fan_exc'] = fore_fan
     f['foreground/ifar_exc'] = sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
     
@@ -94,7 +92,7 @@ if len(zdata) > 0:
     ftimes = (zdata.time1 + zdata.time2) / 2.0
     start, end = ftimes - args.veto_window, ftimes + args.veto_window
 
-    fan = numpy.zeros(len(ftimes), dtype=numpy.float32)
+    fnlouder = numpy.zeros(len(ftimes), dtype=numpy.float32)
     ifar = numpy.zeros(len(ftimes), dtype=numpy.float32)
     fap = numpy.zeros(len(ftimes), dtype=numpy.float32)
     
@@ -113,7 +111,7 @@ if len(zdata) > 0:
         # If the trigger is quiet enough, then don't calculate a separate 
         # background type, as it would not be significantly different
         if args.ranking_statistic_threshold and fstat < args.ranking_statistic_threshold:
-            fan[i] = fore_fan[i]
+            fnlouder[i] = fnlouder_exc[i]
             ifar[i] = ifar_exc[i]
             fap[i] = fap_exc[i]
             continue
@@ -123,13 +121,11 @@ if len(zdata) > 0:
         
         inj_stat = numpy.concatenate([ifdata.stat[v2], fidata.stat[v1], back_stat])
         inj_dec = numpy.concatenate([numpy.repeat(1, len(v1) + len(v2)), dec_fac])
-        fanmap = coinc.calculate_fan_map(inj_stat, inj_dec)
         
-        fan[i] = fanmap(fstat)
-        ifar[i] = background_time / fan[i]
+        back_cnum, fnlouder[i] = coinc.calculate_n_louder(inj_stat, fstat, inj_dec)
+        ifar[i] = background_time / (fnlouder[i] + 1)
         fap[i] = 1 - numpy.exp(- coinc_time / ifar[i])
 
-    f['foreground/fan'] = fan
     f['foreground/ifar'] = sec_to_year(ifar)
     f['foreground/fap'] = fap                                                
 logging.info("Done") 
