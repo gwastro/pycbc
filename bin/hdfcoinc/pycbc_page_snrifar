@@ -61,7 +61,7 @@ fig = pylab.figure(1)
 pylab.scatter(cstat_back_exc, far_back_exc, color='grey', marker='x', label='Closed Box Background')
 
 if not args.closed_box:
-    for sig in [6, 5, 4, 3, 2, 1]:
+    for sig in [5, 4, 3, 2, 1]:
         p = p_from_sigma(sig)
         pylab.fill_between(cstat_back, far_back, far_back / (1 - p),
                            linewidth=0, color=pylab.cm.YlOrRd(1.0/sig), alpha=0.3) 
