@@ -96,40 +96,35 @@ coinc_time_exc = coinc_time - veto_time
 
 logging.info("Making mapping from FAN to the combined statistic")
 back_stat = d.stat[back_locs]
-fanmap = coinc.calculate_fan_map(back_stat, d.decimation_factor[back_locs])       
-back_fan = fanmap(back_stat)
+fore_stat = d.stat[fore_locs]
+back_cnum, fnlouder = coinc.calculate_n_louder(back_stat, fore_stat, 
+                                               d.decimation_factor[back_locs])       
 
-fanmap_exc = coinc.calculate_fan_map(e.stat, e.decimation_factor)     
-back_fan_exc = fanmap_exc(e.stat)         
+back_cnum_exc, fnlouder_exc = coinc.calculate_fan_map(e.stat, fore_stat, 
+                                               e.decimation_factor)         
 
-f['background/fan'] = back_fan
-f['background/ifar'] = sec_to_year(background_time / back_fan)  
-f['background_exc/fan'] = back_fan_exc
-f['background_exc/ifar'] = sec_to_year(background_time_exc / back_fan_exc)
+f['background/fan'] = back_cnum
+f['background/ifar'] = sec_to_year(background_time / back_cnum)  
+f['background_exc/fan'] = back_cnum_exc
+f['background_exc/ifar'] = sec_to_year(background_time_exc / back_cnum_exc)
 
 f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 f.attrs['background_time_exc'] = background_time_exc
 f.attrs['foreground_time_exc'] = coinc_time_exc
 
-logging.info("calculating ifar values")
-fore_stat = d.stat[fore_locs]
+logging.info("calculating ifar/fap values")
 
-fore_fan = fanmap(fore_stat)
-ifar = background_time / fore_fan
-
-fore_fan_exc = fanmap_exc(fore_stat)
-ifar_exc = background_time_exc / fore_fan_exc
-
-logging.info("calculating fap values")
-fap = 1 - numpy.exp(- coinc_time / ifar)
-fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
 if fore_locs.sum() > 0:
-    f['foreground/fan'] = fore_fan
+    ifar = background_time / (fnlouder + 1)
+    fap = 1 - numpy.exp(- coinc_time / ifar)
+    f['foreground/fan'] = fnlouder
     f['foreground/ifar'] = sec_to_year(ifar)
     f['foreground/fap'] = fap
-   
-    f['foreground/fan_exc'] = fore_fan_exc
+
+    ifar_exc = background_time_exc / (fnloduer_exc + 1)
+    fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
+    f['foreground/fan_exc'] = fnlouder_exc
     f['foreground/ifar_exc'] = sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
 
