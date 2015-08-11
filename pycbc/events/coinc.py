@@ -27,15 +27,36 @@ coincident triggers.
 import numpy, logging, h5py
 from itertools import izip
 from scipy.interpolate import interp1d  
-   
-def calculate_fan_map(combined_stat, dec):
-    """ Return a function to map between false alarm number (FAN) and the
-    combined ranking statistic.
+
+def calculate_n_louder(bstat, fstat, dec):
+    """ Calculate for each foreground event the number of background events
+    that are louder than it.
+    
+    Parameters
+    ----------
+    bstat: numpy.ndarray
+        Array of the background statistic values
+    fstat: numpy.ndarray
+        Array of the foreground statitsic values
+    dec: numpy.ndarray
+        Array of the decimation factors for the background statistics
+    
+    Returns
+    ------- 
+    cum_back_num: numpy.ndarray
+        The cumulative array of background triggers 
+    fore_n_louder: numpy.ndarray
+        The number of background triggers above each foreground trigger
     """
-    stat_sorting = combined_stat.argsort()    
-    combined_stat = combined_stat[stat_sorting]
-    fan = dec[stat_sorting][::-1].cumsum()[::-1]    
-    return interp1d(combined_stat, fan, fill_value=1, bounds_error=False) 
+    sort = bstat.argsort()
+    unsort = sort.argsort()
+    bstat = bstat[sort]
+    dec = dec[sort]
+    n_louder = dec[sort][::-1].cumsum()[::-1] - dec
+       
+    fore_n_louder = n_louder[numpy.searchsorted(bstat, fstat, side='left') - 1]
+    back_cum_num = n_louder[unsort]
+    return back_cum_num, fore_n_louder
 
 def timeslide_durations(start1, start2, end1, end2, timeslide_offsets):
     """ Find the coincident time for each timeslide.
