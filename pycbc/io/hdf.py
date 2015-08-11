@@ -21,6 +21,101 @@ from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, pnutils
 
+class DictArray(object):
+    """ Utility for organizing sets of arrays of equal length. 
+    
+    Manages a dictionary of arrays of equal length. This can also
+    be instantiated with a set of hdf5 files and the key values. The full
+    data is always in memory and all operations create new instances of the
+    DictArray.
+    """
+    def __init__(self, data=None, files=None, groups=None):
+        """ Create a DictArray
+        
+        Parameters
+        ----------
+        data: dict, optional
+            Dictionary of equal length numpy arrays
+        files: list of filenames, optional
+            List of hdf5 file filenames. Incompatibile with the `data` option.
+        groups: list of strings
+            List of keys into each file. Required by the files options.
+        """
+        self.data = data
+        
+        if files:
+            self.data = {}
+            for g in groups:
+                self.data[g] = []
+            
+            for f in files:
+                d = h5py.File(f)
+                for g in groups:
+                    if g in d:
+                        self.data[g].append(d[g][:])
+                    
+            for k in self.data:
+                self.data[k] = np.concatenate(self.data[k])
+
+        for k in self.data:
+            setattr(self, k, self.data[k])
+
+    def _return(self, data):
+        return self.__class__(data=data)
+
+    def __len__(self):
+        return len(self.data[self.data.keys()[0]])
+
+    def __add__(self, other):
+        data = {}
+        for k in self.data:
+            data[k] = np.concatenate([self.data[k], other.data[k]])
+        return self._return(data=data)
+
+    def select(self, idx):
+        """ Return a new DictArray containing only the indexed values
+        """
+        data = {}
+        for k in self.data:
+            data[k] = self.data[k][idx]
+        return self._return(data=data)
+   
+    def remove(self, idx):
+        """ Return a new DictArray that does not contain the indexed values
+        """
+        data = {}
+        for k in self.data:
+            data[k] = np.delete(self.data[k], idx)
+        return self._return(data=data)
+
+class StatmapData(DictArray):
+    def __init__(self, data=None, seg=None, attrs=None,
+                       files=None):
+        groups = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2', 
+               'template_id', 'decimation_factor', 'timeslide_id']
+        super(StatmapData, self).__init__(data=data, files=files, groups=groups)
+        
+        if data:
+            self.seg=seg
+            self.attrs=attrs
+        elif files:
+            f = h5py.File(files[0], "r")
+            self.seg = f['segments']
+            self.attrs = f.attrs
+
+    def _return(self, data):
+        return self.__class__(data=data, attrs=self.attrs, seg=self.seg)
+
+    def cluster(self, window):
+        """ Cluster the dict array, assuming it has the relevant Coinc colums,
+        time1, time2, stat, and timeslide_id
+        """
+        from pycbc.events import cluster_coincs
+        interval = self.attrs['timeslide_interval']
+        cid = cluster_coincs(self.stat, self.time1, self.time2,
+                                 self.timeslide_id, interval, window)
+        return self.select(cid) 
+
 
 class FileData(object):
 
