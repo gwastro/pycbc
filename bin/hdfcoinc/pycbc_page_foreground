@@ -50,7 +50,7 @@ if args.output_file.endswith('.html'):
 
     columns = [ifar_exc, ifar, fap_exc, fap, stat,  time1,
                (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z]
-    names = ['IFAR with Rem. (YR)', 'IFAR (YR)', 'FAP with Rem.', 'FAP',
+    names = ['Exc. IFAR (YR)', 'Inc. IFAR (YR)', 'Exc. FAP.', 'Inc. FAP',
              'Combined NewSNR', 'End Time', 'Time Diff. (ms)', 'mchirp', 'm1',
              'm2', 's1z', 's2z']
     format_strings = ['#.###E0', '#.###E0', '#.##E0', '#.##E0', '##.###',
@@ -60,12 +60,13 @@ if args.output_file.endswith('.html'):
     if args.single_detector_triggers:
         single_snr = fortrigs.get_snglfile_array_dict('snr')
         single_chisq = fortrigs.get_snglfile_array_dict('chisq')
+        single_chisq_dof = fortrigs.get_snglfile_array_dict('chisq_dof')
 
         columns.extend([single_snr[ifo] for ifo in single_snr.keys()])
-        names.extend(["SNR in %s" %(ifo) for ifo in single_snr.keys()])
+        names.extend(["%s SNR" %(ifo) for ifo in single_snr.keys()])
         format_strings.extend(["##.##" for ifo in single_snr.keys()])
-        columns.extend([single_chisq[ifo] for ifo in single_chisq.keys()])
-        names.extend(["Chisq in %s" %(ifo) for ifo in single_chisq.keys()])
+        columns.extend([single_chisq[ifo] / (single_chisq_dof[ifo] * 2 - 2) for ifo in single_chisq.keys()])
+        names.extend(["%s Red. Chisq" %(ifo) for ifo in single_chisq.keys()])
         format_strings.extend(["##.##" for ifo in single_chisq.keys()])
 
     logging.info('Making table of foreground triggers')

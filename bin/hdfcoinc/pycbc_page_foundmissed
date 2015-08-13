@@ -17,6 +17,8 @@ parser.add_argument('--dynamic', action='store_true', default=False)
 parser.add_argument('--gradient-far', action='store_true',
                     help='Show far of found injections as a gradient')
 parser.add_argument('--output-file')
+parser.add_argument('--missed-on-top', action='store_true',
+                    help="Make the missed injections be plotted on top of the found ones")
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 args = parser.parse_args()
 
@@ -62,6 +64,8 @@ labels={'mchirp': 'Chirp Mass',
 # missed = missed[dvals[args.distance_type][missed] < dvals[args.distance_type][found].max() * 1.1]
 
 fig = plot.figure()
+zmissed = args.missed_on_top
+zfound = not args.missed_on_top
 
 if not args.gradient_far:
     color = numpy.zeros(len(found))
@@ -71,19 +75,19 @@ if not args.gradient_far:
     color[hundred] = 0.5
     color[thousand] = 1.0
     mpoints = plot.scatter(vals[args.axis_type][missed], dvals[args.distance_type][missed], 
-                           marker='x', color='black', label='missed')
+                           marker='x', color='black', label='missed', zorder=zmissed)
     points = plot.scatter(vals[args.axis_type][found], dvals[args.distance_type][found], 
                            c=color, linewidth=0, vmin=0, vmax=1,
-                           marker='o', label='found')
+                           marker='o', label='found', zorder=zfound)
     caption = ("Found and missed injections: Black x's are missed injections. "
               "Blue circles are found with IFAR < 100 years, green are < 1000 years, and "
               "red are found with IFAR >=1000 years. ")
 else:
     mpoints = plot.scatter(vals[args.axis_type][missed], dvals[args.distance_type][missed], 
-                           marker='x', color='red', label='missed')
+                           marker='x', color='red', label='missed', zorder=zmissed)
     points = plot.scatter(vals[args.axis_type][found], dvals[args.distance_type][found], 
                            c=1.0 / ifar_found, linewidth=0, norm=matplotlib.colors.LogNorm(),
-                           marker='o', label='found')
+                           marker='o', label='found', zorder=zfound)
     caption = ("Found and missed injections: Red x's are missed injections. "
                "Circles are found injections. The color indicates the value of "
                "the false alarm rate" )
