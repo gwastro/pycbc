@@ -29,6 +29,14 @@ import subprocess, os, sys, tempfile
 import logging
 import signal
 
+try:
+    # This will fail when pycbc is imported during the build process,
+    # before version.py has been generated.
+    from version import git_hash
+    from version import version as pycbc_version
+except:
+    git_hash = 'none'
+    pycbc_version = 'none'
 
 def init_logging(verbose=False):
     """
@@ -99,6 +107,13 @@ _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
 _tmp_dir = tempfile.gettempdir()
 _cache_dir_name = repr(os.getuid()) + '_' + _python_name
 _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name)
+# Append the git hash to the cache path.  This will ensure that cached 
+# files are correct even in cases where weave currently doesn't realize
+# that a recompile is needed.
+# FIXME: It would be better to find a way to trigger a recompile off
+# of all the arguments to weave.
+_cache_dir_path = os.path.join(_cache_dir_path, pycbc_version)
+_cache_dir_path = os.path.join(_cache_dir_path, git_hash)
 try: os.makedirs(_cache_dir_path)
 except OSError: pass
 os.environ['PYTHONCOMPILED'] = _cache_dir_path
