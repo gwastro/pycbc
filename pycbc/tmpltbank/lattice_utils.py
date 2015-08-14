@@ -136,7 +136,12 @@ def generate_anstar_3d_lattice(maxv1, minv1, maxv2, minv2, maxv3, minv3, \
     a.data[2,2] = 1
     lalpulsar.SetTilingLatticeAndMetric(tiling, lalpulsar.TILING_LATTICE_ANSTAR,
                                         a, mindist)
-    iterator = lalpulsar.CreateLatticeTilingIterator(tiling, 3, lalpulsar.TILING_ORDER_POSITIVE)
+    try:
+        iterator = lalpulsar.CreateLatticeTilingIterator(tiling, 3)
+    except TypeError:
+        # old versions of lalpulsar required the flags argument
+        # (set to 0 for defaults)
+        iterator = lalpulsar.CreateLatticeTilingIterator(tiling, 3, 0)
 
     vs1 = []
     vs2 = []
