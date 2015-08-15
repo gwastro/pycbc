@@ -22,7 +22,7 @@ from numpy import sqrt, log, float128
 
 from pycuda.elementwise import ElementwiseKernel
 
-from pycbc.setuputils import pkg_config_header_strings
+from pycbc.libutils import pkg_config_header_strings
 from pycbc.types import FrequencySeries, zeros, Array, complex64
 
 preamble = """

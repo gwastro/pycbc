@@ -32,7 +32,6 @@ except:
 from distutils.errors import DistutilsError
 from distutils.core import setup, Command, Extension
 from distutils.command.clean import clean as _clean
-from pycbc.setuputils import pkg_config
 from distutils.file_util import write_file
 from distutils.version import LooseVersion
 

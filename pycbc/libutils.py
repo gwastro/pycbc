@@ -19,9 +19,57 @@ This module provides a simple interface for loading a shared library via ctypes,
 allowing it to be specified in an OS-independent way and searched for preferentially
 according to the paths that pkg-config specifies.
 """
-import os, fnmatch, ctypes, commands
+import os, fnmatch, ctypes, commands, sys
 from ctypes.util import find_library
 from collections import deque
+
+def pkg_config(pkg_libraries):
+    """Use pkg-config to query for the location of libraries, library directories,
+       and header directories
+
+       Arguments:
+           pkg_libries(list): A list of packages as strings
+
+       Returns:
+           libraries(list), library_dirs(list), include_dirs(list)
+    """
+    libraries=[]
+    library_dirs=[] 
+    include_dirs=[]
+
+    # Check that we have the packages
+    for pkg in pkg_libraries:
+        if os.system('pkg-config --exists %s 2>/dev/null' % pkg) == 0:
+            pass
+        else:
+            print "Could not find library {0}".format(pkg)
+            sys.exit(1)
+
+    # Get the pck-config flags
+    if len(pkg_libraries)>0 :
+        # PKG_CONFIG_ALLOW_SYSTEM_CFLAGS explicitly lists system paths.
+        # On system-wide LAL installs, this is needed for swig to find lalswig.i
+        for token in commands.getoutput("PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags %s" % ' '.join(pkg_libraries)).split():
+            if token.startswith("-l"):
+                libraries.append(token[2:])
+            elif token.startswith("-L"):
+                library_dirs.append(token[2:])
+            elif token.startswith("-I"):
+                include_dirs.append(token[2:])
+
+    return libraries, library_dirs, include_dirs
+
+def pkg_config_header_strings(pkg_libraries):
+    """ Returns a list of header strings that could be passed to a compiler
+    """
+    libs, lib_dirs, header_dirs = pkg_config(pkg_libraries)
+  
+    header_strings = []
+
+    for header_dir in header_dirs:
+        header_strings.append("-I" + header_dir)
+
+    return header_strings        
 
 def pkg_config_check_exists(package):
     return (os.system('pkg-config --exists {0} 2>/dev/null'.format(package)) == 0)
@@ -44,7 +92,7 @@ def pkg_config_libdirs(packages):
             libdirs.append(token[2:])
     return libdirs
 
-def get_libpath_from_dirlist(libname,dirs):
+def get_libpath_from_dirlist(libname, dirs):
     """
     This function tries to find the architecture-independent library given by libname in the first
     available directory in the list dirs. 'Architecture-independent' means omitting any prefix such
@@ -73,7 +121,7 @@ def get_libpath_from_dirlist(libname,dirs):
     # If we get here, we didn't find it...
     return None
 
-def get_ctypes_library(libname,packages,mode=None):
+def get_ctypes_library(libname, packages, mode=None):
     """
     This function takes a library name, specified in architecture-independent fashion (i.e.
     omitting any prefix such as 'lib' or suffix such as 'so' or 'dylib' or version number) and

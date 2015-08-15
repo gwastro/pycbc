@@ -23,7 +23,7 @@
 
 from pycuda.elementwise import ElementwiseKernel
 
-from pycbc.setuputils import pkg_config_header_strings
+from pycbc.libutils import pkg_config_header_strings
 
 preamble = """
 #include <lal/LALConstants.h>
