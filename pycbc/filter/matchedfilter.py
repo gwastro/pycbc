@@ -22,8 +22,8 @@
 # =============================================================================
 #
 """
-This modules provides functions for matched filtering along with associated 
-utilities. 
+This modules provides functions for matched filtering along with associated
+utilities.
 """
 
 import logging
@@ -89,7 +89,7 @@ class _BaseCorrelator(object):
 
 class MatchedFilterControl(object):
     def __init__(self, low_frequency_cutoff, high_frequency_cutoff, snr_threshold, tlen,
-                 delta_f, dtype, segment_list, template_output, window,
+                 delta_f, dtype, segment_list, template_output, use_cluster,
                  downsample_factor=1, upsample_threshold=1, upsample_method='pruned_fft',
                  gpu_callback_method='none'):
         """ Create a matched filter engine.
@@ -100,7 +100,7 @@ class MatchedFilterControl(object):
             The frequency to begin the filter calculation. If None, begin at the
             first frequency after DC.
         high_frequency_cutoff : {None, float}, optional
-            The frequency to stop the filter calculation. If None, continue to the 
+            The frequency to stop the filter calculation. If None, continue to the
             the nyquist frequency.
         snr_threshold : float
             The minimum snr to return when filtering
@@ -108,8 +108,9 @@ class MatchedFilterControl(object):
             List of FrequencySeries that are the Fourier-transformed data segments
         template_output : complex64
             Array of memory given as the 'out' parameter to waveform.FilterBank
-        window : int
-            The size of the cluster window in samples.
+        use_cluster : boolean
+            If true, cluster triggers above threshold using a window; otherwise,
+            only apply a threshold.
         downsample_factor : {1, int}, optional
             The factor by which to reduce the sample rate when doing a heirarchical
             matched filter
@@ -123,22 +124,24 @@ class MatchedFilterControl(object):
         self.flen = self.tlen / 2 + 1
         self.delta_f = delta_f
         self.dtype = dtype
-        self.snr_threshold = snr_threshold    
+        self.snr_threshold = snr_threshold
         self.flow = low_frequency_cutoff
-        self.fhigh = high_frequency_cutoff    
+        self.fhigh = high_frequency_cutoff
         self.gpu_callback_method = gpu_callback_method
-                
+
         if downsample_factor == 1:
-            self.matched_filter_and_cluster = self.full_matched_filter_and_cluster
+            if use_cluster:
+                self.matched_filter_and_cluster = self.full_matched_filter_and_cluster
+            else:
+                self.matched_filter_and_cluster = self.full_matched_filter_thresh_only
             self.snr_mem = zeros(self.tlen, dtype=self.dtype)
             self.corr_mem = zeros(self.tlen, dtype=self.dtype)
             self.segments = segment_list
-            # Assuming analysis time is constant across templates and segments, also
-            # delta_f is constant across segments.
+            # Assuming delta_f is constant across segments.
             self.stilde_delta_f = segment_list[0].delta_f
             self.htilde = template_output
             self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh,
-                                                      self.segments[0].delta_f, self.tlen)   
+                                                      self.segments[0].delta_f, self.tlen)
             self.corr_slice = slice(self.kmin, self.kmax)
             self.corr_np = numpy.array(self.corr_mem.data[self.corr_slice], copy = False)
             self.hcorr = numpy.array(self.htilde.data[self.corr_slice], copy = False)
@@ -148,43 +151,43 @@ class MatchedFilterControl(object):
                                                    numpy.array(self.segments[i].data[self.corr_slice], copy = False),
                                                    self.corr_np))
             self.ifft = IFFT(self.corr_mem, self.snr_mem)
-            self.threshold_and_clusterers = []
-            for i in range(0, len(self.segments)):
-                self.threshold_and_clusterers.append(events.ThresholdCluster(
-                        numpy.array(self.snr_mem.data[self.segments[i].analyze], copy=False),
-                        window))
+            if use_cluster:
+                self.threshold_and_clusterers = []
+                for i in range(0, len(self.segments)):
+                    self.threshold_and_clusterers.append(events.ThresholdCluster(
+                            numpy.array(self.snr_mem.data[self.segments[i].analyze], copy=False)))
 
         elif downsample_factor >= 1:
             self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster
             self.downsample_factor = downsample_factor
             self.upsample_method = upsample_method
-            self.upsample_threshold = upsample_threshold  
-            
-            N_full = self.tlen 
-            N_red = N_full / downsample_factor  
+            self.upsample_threshold = upsample_threshold
+
+            N_full = self.tlen
+            N_red = N_full / downsample_factor
             self.kmin_full, self.kmax_full = get_cutoff_indices(self.flow,
-                                              self.fhigh, self.delta_f, N_full)  
-    
+                                              self.fhigh, self.delta_f, N_full)
+
             self.kmin_red, _ = get_cutoff_indices(self.flow,
                                                   self.fhigh, self.delta_f, N_red)
-            
+
             if self.kmax_full < N_red:
                 self.kmax_red = self.kmax_full
             else:
-                self.kmax_red = N_red - 1  
-                
+                self.kmax_red = N_red - 1
+
             self.snr_mem = zeros(N_red, dtype=self.dtype)
             self.corr_mem_full = FrequencySeries(zeros(N_full, dtype=self.dtype), delta_f=self.delta_f)
             self.corr_mem = Array(self.corr_mem_full[0:N_red], copy=False)
-            self.inter_vec = zeros(N_full, dtype=self.dtype)                      
-                                                 
+            self.inter_vec = zeros(N_full, dtype=self.dtype)
+
         else:
             raise ValueError("Invalid downsample factor")
-              
-    def full_matched_filter_and_cluster(self, segnum, template_norm):
-        """ Return the complex snr and normalization. 
-    
-        Calculated the matched filter, threshold, and cluster. 
+
+    def full_matched_filter_and_cluster(self, segnum, template_norm, window):
+        """ Return the complex snr and normalization.
+
+        Calculated the matched filter, threshold, and cluster.
 
         Parameters
         ----------
@@ -193,15 +196,17 @@ class MatchedFilterControl(object):
             against which to filter.
         template_norm : float
             The htilde, template normalization factor.
+        window : int
+            Size of the window over which to cluster triggers, in samples
 
         Returns
         -------
         snr : TimeSeries
             A time series containing the complex snr.
         norm : float
-            The normalization of the complex snr.  
+            The normalization of the complex snr.
         corrrelation: FrequencySeries
-            A frequency series containing the correlation vector. 
+            A frequency series containing the correlation vector.
         idx : Array
             List of indices of the triggers.
         snrv : Array
@@ -210,14 +215,55 @@ class MatchedFilterControl(object):
         norm = (4.0 * self.stilde_delta_f) / sqrt(template_norm)
         self.correlators[segnum].correlate()
         self.ifft.execute()
-        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm)
-         
+        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
+
         if len(idx) == 0:
-            return [], [], [], [], [] 
-                       
-        logging.info("%s points above threshold" % str(len(idx)))                     
-        return self.snr_mem, norm, self.corr_mem, idx, snrv   
-        
+            return [], [], [], [], []
+
+        logging.info("%s points above threshold" % str(len(idx)))
+        return self.snr_mem, norm, self.corr_mem, idx, snrv
+
+    def full_matched_filter_thresh_only(self, segnum, template_norm, window):
+        """ Return the complex snr and normalization.
+
+        Calculated the matched filter, threshold, and cluster.
+
+        Parameters
+        ----------
+        segnum : int
+            Index into the list of segments at MatchedFilterControl construction
+            against which to filter.
+        template_norm : float
+            The htilde, template normalization factor.
+        window : int
+            Size of the window over which to cluster triggers, in samples.
+            This is IGNORED by this function, and provided only for API compatibility.
+
+        Returns
+        -------
+        snr : TimeSeries
+            A time series containing the complex snr.
+        norm : float
+            The normalization of the complex snr.
+        corrrelation: FrequencySeries
+            A frequency series containing the correlation vector.
+        idx : Array
+            List of indices of the triggers.
+        snrv : Array
+            The snr values at the trigger locations.
+        """
+        norm = (4.0 * self.stilde_delta_f) / sqrt(template_norm)
+        self.correlators[segnum].correlate()
+        self.ifft.execute()
+        snrv, idx = events.threshold_only(self.snr_mem[self.segments[segnum].analyze],
+                                          self.snr_threshold / norm)
+
+        if len(idx) == 0:
+            return [], [], [], [], []
+
+        logging.info("%s points above threshold" % str(len(idx)))
+        return self.snr_mem, norm, self.corr_mem, idx, snrv
+
     def heirarchical_matched_filter_and_cluster(self, htilde, template_norm, stilde, window):
         """ Return the complex snr and normalization. 
     
