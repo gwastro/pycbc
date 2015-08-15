@@ -276,10 +276,12 @@ with ctx:
     # from the bank.
     for t_num, template in enumerate(bank):
         event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(segments[0].psd))
+
         if opt.cluster_method == "window":
             cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
         if opt.cluster_method == "template":
             cluster_window = int(template.chirp_length * gwstrain.sample_rate)
+
 
         for s_num, stilde in enumerate(segments):
             logging.info("Filtering template %d/%d segment %d/%d" %
@@ -296,7 +298,7 @@ with ctx:
                                     idx+stilde.analyze.start)
 
             out_vals['chisq'], out_vals['chisq_dof'] = \
-                  power_chisq.values(corr, snr, snrv, norm, stilde.psd,
+                  power_chisq.values(corr, snrv, norm, stilde.psd,
                                      idx+stilde.analyze.start, template)
 
             out_vals['cont_chisq'] = \

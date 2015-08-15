@@ -7,8 +7,9 @@ full_corr = """
                                 void* caller_info, void* shared) {                                
         cufftComplex r;
         
+        cufftComplex* hp =  ((cufftComplex*) callback_params.htilde);
+        cufftComplex h = hp[offset];
         cufftComplex s = ((cufftComplex*) input)[offset];
-        cufftComplex h = ((cufftComplex*) %s)[offset];
         
         r.x = h.x * s.x + h.y * s.y;
         r.y = h.x * s.y - h.y * s.x;
@@ -17,16 +18,17 @@ full_corr = """
     }
 """
 
-half_zero_corr = """
+zero_corr = """
     __device__ cufftComplex in_call(void* input, size_t offset, 
-                                void* caller_info, void* shared) {
-        if (offset > %s)                        
+                                void* caller_info, void* shared) {      
+        if (offset > callback_params.in_kmax)                       
             return (cufftComplex){0, 0};
         else{                                   
             cufftComplex r;
             
             cufftComplex s = ((cufftComplex*) input)[offset];
-            cufftComplex h = ((cufftComplex*) %s)[offset];
+            cufftComplex* hp =  ((cufftComplex*) callback_params.htilde);
+            cufftComplex h = hp[offset];
             
             r.x = h.x * s.x + h.y * s.y;
             r.y = h.x * s.y - h.y * s.x;
@@ -35,6 +37,15 @@ half_zero_corr = """
         }
         
     }
+"""
+
+zero_out = """
+    __device__ void out_call(void *out, size_t offset, cufftComplex element, 
+                             void *caller_info, void *shared){
+           if (offset > callback_params.out_kmin && offset < callback_params.out_kmax)
+                ((cufftComplex*) out)[offset] = element;
+    }
+
 """
 
 copy_callback = """
@@ -50,6 +61,22 @@ copy_out = """
            ((cufftComplex*) out)[offset] = element;
     }
 
+"""
+
+real_out = """
+    __device__ void out_call(void *out, size_t offset, cufftComplex element, 
+                             void *caller_info, void *shared){
+           ((cufftReal*) out)[offset] = element.x * element.x + element.y * element.y;
+    }
+
+"""
+
+copy_out_fp16 = """
+    __device__ void out_call(void *out, size_t offset, cufftComplex element, 
+                             void *caller_info, void *shared){
+           ((short*) out)[offset*2] = __float2half_rn(element.x);
+           ((short*) out)[offset*2+1] = __float2half_rn(element.y);
+    }
 """
 
 
@@ -68,6 +95,14 @@ fftsrc = Template("""
     #include <cuda_runtime.h>
     #include <cufft.h>
     #include <cufftXt.h>
+    
+    typedef struct {
+        %for t, n in parameters:
+            ${t} ${n};
+        %endfor
+    } param_t;
+    
+    __constant__ param_t callback_params;
 
     #define checkCudaErrors(val)  __checkCudaErrors__ ( (val), #val, __FILE__, __LINE__ )
 
@@ -92,7 +127,7 @@ fftsrc = Template("""
         __device__ cufftCallbackStoreC output_callback = out_call; 
     % endif
     
-    extern "C"  cufftHandle* create_plan(unsigned int size, void* other){
+    extern "C"  cufftHandle* create_plan(unsigned int size){
         cufftHandle* plan = new cufftHandle;
         size_t work_size;
         cufftCreate(plan);
@@ -104,8 +139,7 @@ fftsrc = Template("""
             checkCudaErrors(cudaMemcpyFromSymbol(&h_input_callback, input_callback, 
                                              sizeof(h_input_callback)));         
             checkCudaErrors(cufftXtSetCallback(*plan, (void **) &h_input_callback,
-                                          CUFFT_CB_LD_COMPLEX, 
-                                          &other));
+                                          CUFFT_CB_LD_COMPLEX, 0));
         % endif
         
         % if output_callback:
@@ -113,14 +147,15 @@ fftsrc = Template("""
             checkCudaErrors(cudaMemcpyFromSymbol(&h_output_callback, output_callback, 
                                                  sizeof(h_output_callback)));                                            
             checkCudaErrors(cufftXtSetCallback(*plan, (void **) &h_output_callback,
-                                              CUFFT_CB_ST_COMPLEX, 
-                                              &other));
+                                              CUFFT_CB_ST_COMPLEX, 0));
         % endif
 
         return plan;
     }
        
-    extern "C" void execute(cufftHandle* plan, cufftComplex* in, cufftComplex* out){   
+    extern "C" void execute(cufftHandle* plan, cufftComplex* in, cufftComplex* out, param_t* p){
+         if (p != NULL)
+            checkCudaErrors(cudaMemcpyToSymbolAsync(callback_params, p, sizeof(param_t), 0,  cudaMemcpyHostToDevice, 0));
          checkCudaErrors(cufftExecC2C(*plan, in, out, CUFFT_INVERSE));
     }    
 """)
@@ -164,69 +199,57 @@ def compile(source, name):
     fhash.write(str(hash(source)))
     return lib_file
  
-def get_fn_plan(callback=None, out_callback=None, name='pycbc_cufft'):
+def get_fn_plan(callback=None, out_callback=None, name='pycbc_cufft', parameters=[]):
     """ Get the IFFT execute and plan functions
     """
-    source = fftsrc.render(input_callback=callback, output_callback=out_callback)
+    source = fftsrc.render(input_callback=callback, output_callback=out_callback, parameters=parameters)
     path = compile(source, name)
     lib = ctypes.cdll.LoadLibrary(path)
     fn = lib.execute
-    fn.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+    fn.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     plan = lib.create_plan
     plan.restype = ctypes.c_void_p
-    plan.argyptes = [ctypes.c_uint, ctypes.c_void_p]
+    plan.argyptes = [ctypes.c_uint]
     return fn, plan
 
 _plans = {}
-# This relies on the fact that we don't change the memory locations
+
+class param(ctypes.Structure):
+    _fields_ = [("htilde", ctypes.c_void_p)]
+hparam = param()
+    
 def c2c_correlate_ifft(htilde, stilde, outvec):
     key = 'cnf'
     if key not in _plans:
-        fn, pfn = get_fn_plan(callback=full_corr % (int(htilde.data.gpudata)))
+        fn, pfn = get_fn_plan(callback=full_corr, parameters = [("void*", "htilde")])
         plan = pfn(len(outvec), int(htilde.data.gpudata))
         _plans[key] = (fn, plan, int(htilde.data.gpudata))
     fn, plan, h = _plans[key]
-    fn(plan, int(stilde.data.gpudata), int(outvec.data.gpudata))
+    hparam.htilde = htilde.data.gpudata
+    fn(plan, int(stilde.data.gpudata), int(outvec.data.gpudata), ctypes.pointer(hparam))
 
-# This relies on the fact that we don't change the memory locations
+class param2(ctypes.Structure):
+    _fields_ = [("htilde", ctypes.c_void_p),
+                ("in_kmax", ctypes.c_uint),
+                ("out_kmin", ctypes.c_uint),
+                ("out_kmax", ctypes.c_uint)]
+hparam_zeros = param2()
+
 def c2c_half_correlate_ifft(htilde, stilde, outvec):
     key = 'cn'
     if key not in _plans:
-        fn, pfn = get_fn_plan(callback=half_zero_corr % (len(outvec) / 2, int(htilde.data.gpudata)),
-                              out_callback=None)
+        fn, pfn = get_fn_plan(callback=zero_corr,
+                              parameters = [("void*", "htilde"),
+                                            ("unsigned int", "in_kmax"),
+                                            ("unsigned int", "out_kmin"),
+                                            ("unsigned int", "out_kmax")],
+                              out_callback=zero_out)
         plan = pfn(len(outvec), int(htilde.data.gpudata))
         _plans[key] = (fn, plan, int(htilde.data.gpudata))
     fn, plan, h = _plans[key]
-    fn(plan, int(stilde.data.gpudata), int(outvec.data.gpudata))
-
-# This relies on the fact that we don't change the memory locations
-def c2c_half_correlate_ifft2(htilde, stilde, outvec):
-    key = 'cn'
-    if key not in _plans:
-        fn, pfn = get_fn_plan(callback=half_zero_corr % (len(outvec) / 2, int(htilde.data.gpudata)),
-                              out_callback=copy_out)
-        plan = pfn(len(outvec), int(htilde.data.gpudata))
-        _plans[key] = (fn, plan, int(htilde.data.gpudata))
-    fn, plan, h = _plans[key]
-    fn(plan, int(stilde.data.gpudata), int(outvec.data.gpudata))
+    hparam_zeros.htilde = htilde.data.gpudata
+    hparam_zeros.in_kmax = htilde.end_idx
+    hparam_zeros.out_kmin = stilde.analyze.start
+    hparam_zeros.out_kmax = stilde.analyze.stop
+    fn(plan, int(stilde.data.gpudata), int(outvec.data.gpudata), ctypes.pointer(hparam_zeros))
     
-    # This relies on the fact that we don't change the memory locations
-def c2c_half_correlate_ifft3(htilde, stilde, outvec):
-    key = 'cn'
-    if key not in _plans:
-        fn, pfn = get_fn_plan(callback=half_zero_corr % (len(outvec) / 2, int(htilde.data.gpudata)),
-                              out_callback=no_out)
-        plan = pfn(len(outvec), int(htilde.data.gpudata))
-        _plans[key] = (fn, plan, int(htilde.data.gpudata))
-    fn, plan, h = _plans[key]
-    fn(plan, int(stilde.data.gpudata), int(outvec.data.gpudata))
-    
-# This function will only work with a single vector size in the entire program
-def c2c_zeros_ifft(corr, outvec):
-    key = len(corr)
-    if key not in _plans:
-        fn, pfn = get_fn_plan(callback=half_zero % (len(corr) / 2))
-        plan = pfn(len(corr), 0)
-        _plans[key] = (fn, plan)
-    fn, plan = _plans[key]
-    fn(plan, int(corr.data.gpudata), int(outvec.data.gpudata))
