@@ -23,7 +23,7 @@ from math import pow, log, cos, sin, acos, atan2
 
 from pycuda.elementwise import ElementwiseKernel
 
-from pycbc.setuputils import pkg_config_header_strings
+from pycbc.libutils import pkg_config_header_strings
 from pycbc.types import FrequencySeries, zeros
 from pycbc.waveform.utils import ceilpow2
 

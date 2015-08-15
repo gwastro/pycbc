@@ -24,9 +24,8 @@ import numpy
 from numpy import sqrt
 
 from pycuda.elementwise import ElementwiseKernel
-
-from pycbc.setuputils import pkg_config_header_strings
-from pycbc.types import FrequencySeries,zeros
+from pycbc.libutils import pkg_config_header_strings
+from pycbc.types import FrequencySeries, zeros
 import pycbc.pnutils
 
 preamble = """
