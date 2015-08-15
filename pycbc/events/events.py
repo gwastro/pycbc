@@ -38,6 +38,11 @@ from . import coinc
 def threshold(series, value):
     """Return list of values and indices values over threshold in series.
     """
+@schemed("pycbc.events.threshold_")
+def threshold_only(series, value):
+    """Return list of values and indices whose values in series are
+       larger (in absolute value) than value
+    """
 
 @schemed("pycbc.events.threshold_")
 def threshold_and_cluster(series, threshold, window):
@@ -45,7 +50,7 @@ def threshold_and_cluster(series, threshold, window):
     """
 
 @schemed("pycbc.events.threshold_")
-def _threshold_cluster_factory(series, window):
+def _threshold_cluster_factory(series):
     pass
 
 class ThresholdCluster(object):
@@ -56,8 +61,6 @@ class ThresholdCluster(object):
     series : complex64
       Input pycbc.types.Array (or subclass); it will be searched for
       points above threshold that are then clustered
-    window : int
-      Size in samples of the window over which to cluster
     """
     def __new__(cls, *args, **kwargs):
         real_cls = _threshold_cluster_factory(*args, **kwargs)
@@ -72,7 +75,7 @@ class ThresholdCluster(object):
 #
 # will work? Is there a better way?
 class _BaseThresholdCluster(object):
-    def threshold_and_cluster(self, threshold):
+    def threshold_and_cluster(self, threshold, window):
         """
         Threshold and cluster the memory specified at instantiation with the
         threshold specified at creation and the window size specified at creation.
@@ -82,13 +85,15 @@ class _BaseThresholdCluster(object):
         threshold : float32
           The minimum absolute value of the series given at object initialization
           to return when thresholding and clustering.
+        window : uint32
+          The size (in number of samples) of the window over which to cluster
 
         Returns:
         --------
         event_vals : complex64
           Numpy array, complex values of the clustered events
         event_locs : uint32
-          Numpy array, indices into series of location of events          
+          Numpy array, indices into series of location of events
         """
         pass
 
