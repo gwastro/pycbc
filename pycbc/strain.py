@@ -222,7 +222,7 @@ def insert_strain_option_group(parser, gps_times=True):
 
     #Use datafind to get frame files 
     data_reading_group.add_argument("--frame-type",
-                            type=str, nargs="+",
+                            type=str,
                             help="(optional), replaces frame-files. Use datafind "
                                  "to get the needed frame file(s) of this type.")
 
