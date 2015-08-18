@@ -120,17 +120,17 @@ parser.add_argument('--taper',  required=True,
 
 # waveform spin parameter options
 parser.add_argument('--spin1z', type=float, default=0.0,
-                  help='Spin in z direction for mass1.')
+                  help='(optional) Spin in z direction for mass1.')
 parser.add_argument('--spin1y', type=float, default=0.0,
-                  help='Spin in y direction for mass1.')
+                  help='(optional) Spin in y direction for mass1.')
 parser.add_argument('--spin1x', type=float, default=0.0,
-                  help='Spin in x direction for mass1.')
+                  help='(optional) Spin in x direction for mass1.')
 parser.add_argument('--spin2z', type=float, default=0.0,
-                  help='Spin in z direction for mass2.')
+                  help='(optional) Spin in z direction for mass2.')
 parser.add_argument('--spin2y', type=float, default=0.0,
-                  help='Spin in y direction for mass2.')
+                  help='(optional) Spin in y direction for mass2.')
 parser.add_argument('--spin2x', type=float, default=0.0,
-                  help='Spin in x direction for mass2.')
+                  help='(optional) Spin in x direction for mass2.')
 
 # end time options
 parser.add_argument('--geocentric-end-time', type=float, required=True,
@@ -142,9 +142,9 @@ parser.add_argument('--low-frequency-cutoff', type=float, required=True,
 
 # output options
 parser.add_argument('--h1', action='store_true',
-                  help='Output files for H1 waveform.')
+                  help='(optional) Output files for H1 waveform.')
 parser.add_argument('--l1', action='store_true',
-                  help='Output files for L1 waveform.')
+                  help='(optional) Output files for L1 waveform.')
 
 # add option groups
 _psd.insert_psd_option_group(parser)
