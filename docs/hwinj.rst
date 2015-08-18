@@ -37,12 +37,15 @@ The waveform-specific command line options to ``pycbc_generate_hwinj`` are:
 How to generate a single waveform
 ==================================
 
-Here is a usage example for generating a CBC waveform using a design noise curve. ::
+Here is a usage example for generating a CBC waveform using a design noise curve: ::
 
   GPS_START_TIME=1117982000
   GPS_END_TIME=$(($GPS_START_TIME + 2048))
 
   pycbc_generate_hwinj --approximant EOBNRv2 --order pseudoFourPN --mass1 1.4 --mass2 1.4 --inclination 0.0 --polarization 0.0 --ra 1.0 --dec 1.0 --taper TAPER_START --network-snr 28 --geocentric-end-time 1117982241 --low-frequency-cutoff 15.0 --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --h1 --l1 --fake-strain aLIGOZeroDetHighPower --psd-model aLIGOZeroDetHighPower --sample-rate 16384
 
+You can plot the ASCII waveform files with an X11 connection. Its reccommended this way so that the user may zoom in and inspect the waveform. For the example above one would do: ::
+
+  pycbc_plot_hwinj H1-HWINJ_CBC-1117981890-357.txt
 
 You can generate a CBC waveform using interferometer data to estimate the PSD instead of a model. Using the pycbc strain and psd options.
