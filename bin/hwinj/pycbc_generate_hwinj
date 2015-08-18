@@ -215,7 +215,7 @@ sim.taper = opts.taper
 
 # construct waveform string that can be parsed by lalsimulation
 waveform_string = opts.approximant
-if not opts.order == -1:
+if not pn_orders[opts.order] == -1:
     waveform_string += opts.order
 sim.waveform = waveform_string
 
