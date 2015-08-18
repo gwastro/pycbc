@@ -105,10 +105,9 @@ parser.add_argument('--approximant', type=str, required=True,
                   choices=td_approximants(),
                   help='Approximant to use for generating waveform.')
 parser.add_argument("--order", type=str, default='default',
+                  choices = pn_orders.keys(),
                   help='The integer half-PN order at which to generate \
-                  the approximant. Default is -1 which indicates to use \
-                  approximant defined by default.',
-                  choices = pn_orders.keys())
+                  the approximant.')
 parser.add_argument('--mass1', type=float, required=True,
                   help='First mass of the binary in solar masses.')
 parser.add_argument('--mass2', type=float, required=True,
