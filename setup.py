@@ -397,6 +397,8 @@ setup (
                'bin/hdfcoinc/pycbc_plot_range',
                'bin/hdfcoinc/pycbc_foreground_censor',
                'bin/hdfcoinc/pycbc_plot_hist',
+               'bin/hwinj/pycbc_generate_hwinj',
+               'bin/hwinj/pycbc_plot_hwinj',
                'bin/sngl/pycbc_ligolw_cluster',
                'bin/sngl/pycbc_plot_bank',
                'bin/sngl/pycbc_plot_glitchgram',

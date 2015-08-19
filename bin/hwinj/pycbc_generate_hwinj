@@ -1,0 +1,413 @@
+#!/usr/bin/python
+
+# Copyright (C) 2015 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import glue
+from glue.ligolw import ilwd
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+import logging
+import numpy
+from pycbc import DYN_RANGE_FAC
+from pycbc import pnutils
+from pycbc import psd as _psd
+from pycbc import strain as _strain
+from pycbc.detector import Detector
+from pycbc.inject import InjectionSet
+from pycbc.filter import make_frequency_series
+from pycbc.filter import sigmasq
+from pycbc.types import Array, FrequencySeries, TimeSeries, zeros
+from pycbc.waveform import FilterBank, get_td_waveform, td_approximants, taper_timeseries
+import os
+import sys
+
+def _empty_row(obj):
+    """Create an empty sim_inspiral or sngl_inspiral row where the columns have
+    default values of 0.0 for a float, 0 for an int, '' for a string. The ilwd
+    columns have a default where the index is 0.
+    """
+
+    # check if sim_inspiral or sngl_inspiral
+    if obj == lsctables.SimInspiral:
+        row = lsctables.SimInspiral()
+        cols = lsctables.SimInspiralTable.validcolumns
+    else:
+        row = lsctables.SnglInspiral()
+        cols = lsctables.SnglInspiralTable.validcolumns
+
+    # populate columns with default values
+    for entry in cols.keys():
+        if cols[entry] in ['real_4','real_8']:
+            setattr(row,entry,0.)
+        elif cols[entry] == 'int_4s':
+            setattr(row,entry,0)
+        elif cols[entry] == 'lstring':
+            setattr(row,entry,'')
+        elif entry == 'process_id':
+            row.process_id = ilwd.ilwdchar("sim_inspiral:process_id:0")
+        elif entry == 'simulation_id':
+            row.simulation_id = ilwd.ilwdchar("sim_inspiral:simulation_id:0")
+        elif entry == 'event_id':
+            row.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
+        else:
+            raise ValueError("Column %s not recognized." %(entry) )
+
+    return row
+
+# map order integer to a string that can be parsed by lalsimulation
+pn_orders = {
+    'default'          : -1,
+    'zeroPN'           : 0,
+    'onePN'            : 2,
+    'onePointFivePN'   : 3,
+    'twoPN'            : 4,
+    'twoPointFivePN'   : 5,
+    'threePN'          : 6,
+    'threePointFivePN' : 7,
+    'pseudoFourPN'     : 8,
+}
+
+# command line usage
+parser = argparse.ArgumentParser(usage='pycbc_generate_hwinj [--options]',
+                  description="Generates a hardware injection waveform using \
+                  a time-domain waveform.")
+
+# IFO network options
+parser.add_argument('--network-snr', type=float, required=True,
+                  help='The network SNR of the injection.')
+
+# sky location options
+parser.add_argument('--ra', type=float, required=True,
+                  help='The right ascension of the injection in radians.')
+parser.add_argument('--dec', type=float, required=True,
+                  help='The declination of the injection in radians.')
+parser.add_argument('--polarization', type=float, required=True,
+                  help='The polarization of the injection.')
+
+# waveform parameter options
+parser.add_argument('--approximant', type=str, required=True,
+                  choices=td_approximants(),
+                  help='Approximant to use for generating waveform.')
+parser.add_argument("--order", type=str, default='default',
+                  choices = pn_orders.keys(),
+                  help='The integer half-PN order at which to generate \
+                  the approximant.')
+parser.add_argument('--mass1', type=float, required=True,
+                  help='First mass of the binary in solar masses.')
+parser.add_argument('--mass2', type=float, required=True,
+                  help='Second mass of the binary in solar masses.')
+parser.add_argument('--inclination', type=float, required=True,
+                  help='Inclination of the binary.')
+parser.add_argument('--taper',  required=True,
+                    choices=['TAPER_NONE', 'TAPER_START', 'TAPER_END', 'TAPER_STARTEND'],
+                    help='Taper the wavform before FFT.')
+
+# waveform spin parameter options
+parser.add_argument('--spin1z', type=float, default=0.0,
+                  help='(optional) Spin in z direction for mass1.')
+parser.add_argument('--spin1y', type=float, default=0.0,
+                  help='(optional) Spin in y direction for mass1.')
+parser.add_argument('--spin1x', type=float, default=0.0,
+                  help='(optional) Spin in x direction for mass1.')
+parser.add_argument('--spin2z', type=float, default=0.0,
+                  help='(optional) Spin in z direction for mass2.')
+parser.add_argument('--spin2y', type=float, default=0.0,
+                  help='(optional) Spin in y direction for mass2.')
+parser.add_argument('--spin2x', type=float, default=0.0,
+                  help='(optional) Spin in x direction for mass2.')
+
+# end time options
+parser.add_argument('--geocentric-end-time', type=float, required=True,
+                  help='The geocentric GPS end time of the injection.')
+
+# data conditioning options
+parser.add_argument('--low-frequency-cutoff', type=float, required=True,
+                  help='Frequency to begin generating the waveform in Hz.')
+
+# output options
+parser.add_argument('--h1', action='store_true',
+                  help='(optional) Output files for H1 waveform.')
+parser.add_argument('--l1', action='store_true',
+                  help='(optional) Output files for L1 waveform.')
+
+# add option groups
+_psd.insert_psd_option_group(parser)
+_strain.insert_strain_option_group(parser)
+_strain.StrainSegments.insert_segment_option_group(parser)
+
+# parse command line
+opts = parser.parse_args()
+
+# determine which IFOs to create injection for from command line
+ifos = []
+if opts.h1: 
+    ifos.append('H1')
+if opts.l1:
+    ifos.append('L1')
+
+# set an initial distance to generate waveform
+distance = 40.0
+
+# set network SNR to 0.0
+network_snr = 0.0
+
+# set upper frequency to integrate sigma squared to
+f_high = 1000.0
+
+# setup log
+logging_level = logging.DEBUG
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
+# create output XML file
+logging.info('Creating XML file')
+outdoc = ligolw.Document()
+outdoc.appendChild(ligolw.LIGO_LW())
+
+# create process table
+proc_id = utils.process.register_to_xmldoc(outdoc,
+                    sys.argv[0], opts.__dict__,
+                    comment="", ifos=[''.join(ifos)],
+                    version=glue.git_version.id,
+                    cvs_repository=glue.git_version.branch,
+                    cvs_entry_time=glue.git_version.date).process_id
+
+# create sim_inspiral table
+sim_table = lsctables.New(lsctables.SimInspiralTable,
+                            columns=lsctables.SimInspiralTable.validcolumns)
+outdoc.childNodes[0].appendChild(sim_table)
+
+# create sim_inspiral row for injection
+# and populate non-IFO-specific columns in XML output file
+sim = _empty_row(lsctables.SimInspiral)
+sim.f_lower = opts.low_frequency_cutoff
+sim.geocent_end_time = int(opts.geocentric_end_time)
+sim.geocent_end_time_ns = int(opts.geocentric_end_time % 1 * 1e9)
+sim.inclination = opts.inclination
+sim.latitude = opts.ra
+sim.longitude = opts.dec
+sim.mass1 = opts.mass1
+sim.mass2 = opts.mass2
+sim.mchirp, sim.eta = pnutils.mass1_mass2_to_mtotal_eta(sim.mass1, sim.mass2)
+sim.spin1z = opts.spin1z
+sim.spin1y = opts.spin1y
+sim.spin1x = opts.spin1x
+sim.spin2z = opts.spin2z
+sim.spin2y = opts.spin2y
+sim.spin2x = opts.spin2x
+sim.polarization = opts.polarization
+sim.taper = opts.taper
+
+# construct waveform string that can be parsed by lalsimulation
+waveform_string = opts.approximant
+if not pn_orders[opts.order] == -1:
+    waveform_string += opts.order
+sim.waveform = waveform_string
+
+# create sngl_inspiral table
+sngl_table = lsctables.New(lsctables.SnglInspiralTable,
+                            columns=lsctables.SnglInspiralTable.validcolumns)
+outdoc.childNodes[0].appendChild(sngl_table)
+
+# create sngl_inspiral row for injection
+# and populate non-IFO-specific columns in XML output file
+sngl = _empty_row(lsctables.SnglInspiral)
+sngl.mass1 = opts.mass1
+sngl.mass2 = opts.mass2
+sngl.mchirp, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(sngl.mass1, sngl.mass2)
+sngl.mtotal = sngl.mass1 + sngl.mass2
+sngl.spin1z = opts.spin1z
+sngl.spin1y = opts.spin1y
+sngl.spin1x = opts.spin1x
+sngl.spin2z = opts.spin2z
+sngl.spin2y = opts.spin2y
+sngl.spin2x = opts.spin2x
+
+# generate waveform
+logging.info('Generating waveform at %.3fMpc', distance)
+h_plus, h_cross = get_td_waveform(approximant=opts.approximant,
+                    order=pn_orders[opts.order],
+                    mass1=opts.mass1,
+                    mass2=opts.mass2,
+                    spin1z=opts.spin1z, spin1y=opts.spin1y, spin1x=opts.spin1x,
+                    spin2z=opts.spin2z, spin2y=opts.spin2y, spin2x=opts.spin2x,
+                    inclination=opts.inclination,
+                    delta_t=1.0/opts.sample_rate,
+                    distance=distance,
+                    f_lower=opts.low_frequency_cutoff)
+
+# get strain timeseries
+data = _strain.from_cli(opts, DYN_RANGE_FAC)
+
+# generate PSD
+logging.info('Generating PSD')
+N = len(h_plus)
+n = N/2+1
+delta_f = 1.0 / N / h_plus.delta_t
+psd = _psd.from_cli(opts, n, delta_f, opts.low_frequency_cutoff,
+             strain=data, dyn_range_factor=DYN_RANGE_FAC)
+
+# loop over IFOs to calculate sigma
+for ifo in ifos:
+
+    # get Detector instance for IFO
+    det = Detector(ifo)
+
+    # get antenna pattern
+    f_plus, f_cross = det.antenna_pattern(opts.ra, opts.dec,
+                        opts.polarization, opts.geocentric_end_time)
+
+    # calculate strain
+    logging.info('Calculating strain for %s', ifo)
+    strain = f_plus * h_plus + f_cross * h_cross
+
+    # taper waveform
+    logging.info('Tapering strain for %s', ifo)
+    strain = taper_timeseries(strain, tapermethod=opts.taper)
+
+    # FFT strain
+    logging.info('FFT strain for %s', ifo)
+    strain_tilde = make_frequency_series(strain)
+
+    # calculate sigma-squared SNR
+    logging.info('Calculating sigma for %s', ifo)
+    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde, psd=psd, low_frequency_cutoff=opts.low_frequency_cutoff, high_frequency_cutoff=f_high)
+    logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f', opts.low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
+
+    # include sigma in network SNR calculation
+    network_snr += sigma_squared
+
+# distance scaling factor to get target snr
+network_snr = numpy.sqrt(network_snr)
+scale = network_snr / opts.network_snr
+
+# reset network SNR
+network_snr = 0.0
+
+# generate waveform
+logging.info('Generating waveform at %.3fMpc', scale*distance)
+h_plus, h_cross = get_td_waveform(approximant=opts.approximant,
+                    order=pn_orders[opts.order],
+                    mass1=opts.mass1,
+                    mass2=opts.mass2,
+                    spin1z=opts.spin1z, spin1y=opts.spin1y, spin1x=opts.spin1x,
+                    spin2z=opts.spin2z, spin2y=opts.spin2y, spin2x=opts.spin2x,
+                    inclination=opts.inclination,
+                    delta_t=1.0/opts.sample_rate,
+                    distance=scale*distance,
+                    f_lower=opts.low_frequency_cutoff)
+
+# loop over IFOs to calculate sigma
+for ifo in ifos:
+
+    # get Detector instance for IFO
+    det = Detector(ifo)
+
+    # get time delay to detector from center of the Earth
+    time_delay = det.time_delay_from_earth_center(opts.ra, opts.dec,
+                        opts.geocentric_end_time)
+    end_time = opts.geocentric_end_time + time_delay
+
+    # get antenna pattern
+    f_plus, f_cross = det.antenna_pattern(opts.ra, opts.dec,
+                        opts.polarization, opts.geocentric_end_time)
+
+    # calculate strain
+    logging.info('Calculating strain for %s', ifo)
+    strain = f_plus * h_plus + f_cross * h_cross
+
+    # taper waveform
+    logging.info('Tapering strain for %s', ifo)
+    strain = taper_timeseries(strain, tapermethod=opts.taper)
+
+    # FFT strain
+    logging.info('FFT strain for '+ifo+'...')
+    strain_tilde = make_frequency_series(strain)
+
+    # calculate sigma-squared SNR
+    logging.info('Calculating sigma for %s', ifo)
+    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde, psd=psd, low_frequency_cutoff=opts.low_frequency_cutoff, high_frequency_cutoff=f_high)
+    logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f', opts.low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
+
+    # populate IFO end time columns
+    setattr(sim, ifo[0].lower()+'_end_time', int(end_time))
+    setattr(sim, ifo[0].lower()+'_end_time_ns', int(end_time % 1 * 1e9))
+
+    # populate IFO distance columns
+    eff_distance = 2 * distance 
+    eff_distance /= ( 1 + numpy.cos( opts.inclination )**2 )**2 / 4 * f_plus**2 + numpy.cos( opts.inclination )**2 * f_cross**2
+    setattr(sim, 'eff_dist_'+ifo[0].lower(), eff_distance)
+    setattr(sim, 'distance', scale*distance)
+
+    # populate IFO end time columns
+    sngl.end_time = int(end_time)
+    sngl.end_time_ns = int(end_time % 1 * 1e9)
+
+    # include sigma in network SNR calculation
+    network_snr += sigma_squared
+
+# sanity check network SNR
+network_snr = numpy.sqrt(network_snr)
+if not abs(opts.network_snr / network_snr) - 1 < 0.1:
+    logging.warn('Exiting because network SNR is %f but requested %s', network_snr, opts.network_snr)
+else:
+    logging.info('Network SNR of injection is %.3f', network_snr)
+
+# figure out length of time series to inject waveform into
+pad_seconds = 5
+template_duration_seconds = int( len(strain) / opts.sample_rate ) + 1
+start_time = int(opts.geocentric_end_time) - template_duration_seconds - pad_seconds
+end_time = int(opts.geocentric_end_time) + 1 + pad_seconds
+num_samples = (end_time - start_time) * opts.sample_rate
+
+# save XML output file if it does not exist
+logging.info('Writing XML file')
+sim_table.append(sim)
+sngl_table.append(sngl)
+xml_filename = ''.join(ifos) + '-' + 'HWINJ_CBC' + '-' + str(start_time) + '-' + str(end_time-start_time) + '.xml.gz'
+if os.path.exists(xml_filename):
+    logging.warn('Filename %s already exists and will not be overwritten', txt_filename)
+    sys.exit()
+else:
+    utils.write_filename(outdoc, xml_filename, gz=xml_filename.endswith('gz'))
+
+# loop over IFOs for writing waveforms to file
+for ifo in ifos:
+
+    # create a time series of zeroes to inject waveform into
+    initial_array = numpy.zeros(num_samples, dtype=strain.dtype)
+    output = TimeSeries(initial_array, delta_t=1.0/opts.sample_rate, epoch=start_time, dtype=strain.dtype)
+
+    # inject waveform
+    injections = InjectionSet(xml_filename)
+    injections.apply(output, ifo)
+
+    # set output filename
+    txt_filename = ifo + '-' + 'HWINJ_CBC' + '-' + str(start_time) + '-' + str(end_time-start_time) + '.txt'
+
+    # check if filename does not exist
+    if os.path.exists(txt_filename):
+        logging.warn('Filename %s already exists and will not be overwritten', txt_filename)
+        sys.exit()
+
+    # save waveform as single column ASCII for awgstream to use
+    logging.info('Writing strain for %s', ifo)
+    numpy.savetxt(txt_filename, output)
+
+# finish
+logging.info('Done')

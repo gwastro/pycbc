@@ -1,0 +1,16 @@
+#! /usr/bin/python
+
+"""
+Simple script to plot a txt file created by a TimeSeries.
+"""
+
+import matplotlib.pyplot as plt
+import sys
+
+import numpy
+
+timeseries = numpy.loadtxt(sys.argv[1])
+samples = range(len(timeseries))
+
+plt.plot(samples, timeseries)
+plt.show()
