@@ -171,17 +171,14 @@ def get_code_version_numbers(cp):
             if not retcode == 0:
                 raise subprocess.CalledProcessError(retcode, '')
             # End of legacy block
-            version_output = output + error
-            version_output = version_output.split('\n')
-            for line in version_output:
-                line = line.split(" ")
-                # Look for a version
-                if "Id:" in line:
-                    index = line.index("Id:") + 1
-                    version_string = 'Version is %s.' %(line[index],)
-                elif "LALApps:" in line:
-                    index = line.index("LALApps:") + 3
-                    version_string = 'Version (lalapps) is %s.' %(line[index],)
+            version_output = (output + error).replace('\n', ' ').split()
+            # Look for a version
+            if "Id:" in version_output:
+                index = version_output.index("Id:") + 1
+                version_string = 'Version is %s.' %(version_output[index],)
+            elif "LALApps:" in version_output:
+                index = version_output.index("LALApps:") + 3
+                version_string = 'Version (lalapps) is %s.' %(version_output[index],)
             if version_string is None:
                 version_string = "Cannot identify version string in output."
         except subprocess.CalledProcessError:
