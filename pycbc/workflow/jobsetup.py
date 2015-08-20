@@ -1344,7 +1344,7 @@ class LalappsInspinjExecutable(Executable):
     """
     The class used to create jobs for the lalapps_inspinj Executable.
     """
-    current_retention_level = Executable.FINAL_RESULT
+    current_retention_level = Executable.CRITICAL
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
@@ -1386,7 +1386,7 @@ class LigolwCBCJitterSkylocExecutable(Executable):
     """
     The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
     """
-    current_retention_level = Executable.FINAL_RESULT
+    current_retention_level = Executable.CRITICAL
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
@@ -1411,7 +1411,7 @@ class LigolwCBCAlignTotalSpinExecutable(Executable):
     """
     The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
     """
-    current_retention_level = Executable.FINAL_RESULT
+    current_retention_level = Executable.CRITICAL
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
@@ -1425,8 +1425,8 @@ class LigolwCBCAlignTotalSpinExecutable(Executable):
             raise ValueError("Must provide an input file.")
         
         node = Node(self)
-        output_file = File(parent.ifo_list, self.exe_name,
-                           segment, extension='.xml', store_file=True,
+        output_file = File(parent.ifo_list, self.exe_name, segment,
+                           extension='.xml', store_file=self.retain_files,
                            directory=self.out_dir, tags=tags)
         node.add_output_opt('--output-file', output_file)
         node.add_input_arg(parent)

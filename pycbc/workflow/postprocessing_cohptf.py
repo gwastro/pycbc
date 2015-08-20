@@ -156,12 +156,12 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     trig_combiner_out_tags = ["OFFSOURCE", "ONSOURCE", "ALL_TIMES"]
     trig_combiner_jobs = trig_combiner_class(cp, "trig_combiner", ifo=ifos, 
                                              out_dir=output_dir, tags=tags)
-    trig_combiner_node = trig_combiner_jobs.create_node(trig_cache, trig_files,
+    trig_combiner_node = trig_combiner_jobs.create_node(trig_files,
             segment_dir, out_tags=trig_combiner_out_tags, tags=tags)
     trig_combiner_outs = trig_combiner_node.output_files
     pp_nodes.append(trig_combiner_node)
     workflow.add_node(trig_combiner_node)
-    pp_outs.append(trig_combiner_outs)
+    pp_outs.extend(trig_combiner_outs)
 
     # Initialise trig_cluster class
     trig_cluster_outs = FileList([])
@@ -194,7 +194,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
             inj_cache = [file for file in inj_caches \
                          if inj_tag in file.tag_str][0]
             injfinder_node = injfinder_jobs.create_node(triggers, injections,
-                    trig_cache, inj_cache, segment_dir, tags=[inj_tag])
+                    segment_dir, tags=[inj_tag])
             injfinder_nodes.append(injfinder_node)
             pp_nodes.append(injfinder_node)
             workflow.add_node(injfinder_node)

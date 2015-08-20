@@ -327,8 +327,8 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         self.ifos = ifo
         self.num_threads = 1
 
-    def create_node(self, cache_file=None, trig_files=None, segment_dir=None,
-                    out_tags=[], tags=[]):
+    def create_node(self, trig_files=None, segment_dir=None, out_tags=[],
+                    tags=[]):
         node = Node(self)
 
         if not trig_files:
@@ -352,16 +352,13 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         node.add_opt('--user-tag', 'INSPIRAL')
 
         # Set input / output options
-        node.add_opt('--cache', '%s' % cache_file.storage_path)
-        node._add_input(cache_file)
-        for trig_file in trig_files:
-            node._add_input(trig_file)
+        node.add_input_list_opt('--input-files', trig_files)
 
         node.add_opt('--segment-dir', segment_dir)
         node.add_opt('--output-dir', self.out_dir)
 
         for out_tag in out_tags:
-            out_file = File(self.ifos, 'INSPIRAL', cache_file.segment,
+            out_file = File(self.ifos, 'INSPIRAL', trig_files[0].segment,
                             directory=self.out_dir, extension='xml.gz',
                             tags=["GRB%s" % trig_name, out_tag],
                             store_file=self.retain_files)
@@ -369,7 +366,7 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
             node._add_output(out_file)
 
         for trial in range(1, num_trials + 1):
-            out_file = File(self.ifos, 'INSPIRAL', cache_file.segment,
+            out_file = File(self.ifos, 'INSPIRAL', trig_files[0].segment,
                             directory=self.out_dir, extension='xml.gz',
                             tags=["GRB%s" % trig_name, "OFFTRIAL_%d" % trial],
                             store_file=self.retain_files)
@@ -386,7 +383,7 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
     The class responsible for setting up jobs for legacy coh_PTF_trig_cluster
     executable.
     """
-    current_retention_level = Executable.INTERMEDIATE_PRODUCT
+    current_retention_level = Executable.CRITICAL
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  out_dir=None, tags=[]):
         super(LegacyCohPTFTrigCluster, self).__init__(cp, name, universe,
@@ -430,19 +427,14 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
         self.ifos = ifo
         self.num_threads = 1
 
-    def create_node(self, trig_files, inj_files, trig_cache, inj_cache,
-                    seg_dir, tags=[]):
+    def create_node(self, trig_files, inj_files, seg_dir, tags=[]):
         node = Node(self)
 
         # Set input / output options
-        node.add_input_opt('--cache', trig_cache)
-        for trig_file in trig_files:
-            node._add_input(trig_file)
+        node.add_input_list_opt('--input-files', trig_files)
+        node.add_input_list_opt('--inj-files', inj_files)
 
-        node.add_input_opt('--inj-cache', inj_cache)
-        for inj_file in inj_files:
-            node._add_input(inj_file)
-
+        node.add_opt('--ifo-tag', self.ifos)
         node.add_opt('--exclude-segments', '%s/bufferSeg.txt' % seg_dir)
         node.add_opt('--output-dir', self.out_dir)
 
@@ -455,7 +447,6 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
         found_file = File(self.ifos, name_string, seg, extension="xml",
                           directory=self.out_dir, tags=found_tags,
                           store_file=self.retain_files)
-        #found_file.PFN(found_file.cache_entry.path, site="local")
         node._add_output(found_file)
 
         missed_tags = list(tags)
@@ -463,7 +454,6 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
         missed_file = File(self.ifos, name_string, seg, extension="xml",
                            directory=self.out_dir, tags=missed_tags,
                            store_file=self.retain_files)
-        #missed_file.PFN(missed_file.cache_entry.path, site="local")
         node._add_output(missed_file)
         return node
 
