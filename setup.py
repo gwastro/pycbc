@@ -65,7 +65,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'pycbc-pylal>=0.9.3',
                       'pycbc-glue>=0.9.4',
                       ]
-links = ['https://github.com/ahnitz/mpld3/tarball/master#egg=mpld3-0.3git']
+links = ['https://github.com/ligo-cbc/mpld3/tarball/master#egg=mpld3-0.3git']
 
 #FIXME Remove me when we bump to h5py > 2.5
 try:
