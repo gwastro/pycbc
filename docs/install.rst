@@ -95,7 +95,9 @@ Next, you need to choose a directory name where you'd like to make your virtual 
     NAME=${HOME}/pycbc-dev
     virtualenv $NAME
     
-To enter your virt
+To enter your virtual environment run the command
+
+.. code-block:: bash
     
     source $NAME/bin/activate
     
