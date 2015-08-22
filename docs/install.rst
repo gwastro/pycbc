@@ -137,10 +137,35 @@ To install and editable version of PyCBC you need to have `forked PyCBC to your 
 
     pip install -e git+git@github.com:duncan-brown/pycbc.git#egg=pycbc --process-dependency-links
 
-This will create a directory called $NAME/src/pycbc git checkout which is fully edittable, and will also install all the listed dependencies.
+This will fetch the PyCBC source and will also install all the listed dependenciesl. 
 
-You may now enter your environement by sourcing 'activate', and leave by running
-the command 'deactivate'.
+The -e option to pip creates a directory called $NAME/src/pycbc with a git checkout which is fully edittable. To prevent pip from removing this source directory run the command
+
+.. code-block:: bash
+
+    rm -f $NAME/src/pip-delete-this-directory.txt
+
+You can then make changes to your PyCBC source code in the directory $NAME/src/pycbc
+
+To build and install any changes that you make in your virtual environment, run the command
+
+.. code-block:: bash
+
+    python setup.py install
+    
+from the PyCBC source directory in $NAME/src/pycbc 
+
+=============
+Building and Installing Documentation
+=============
+
+To build the documentation from your virtual environment, first make sure that you have `Sphinx <>`_ installed with
+
+.. code-block:: bash
+
+    pip install Sphinx>=1.3.1
+    
+
 
 
 ===============================
