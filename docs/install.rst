@@ -2,7 +2,7 @@
 Installing PyCBC
 ################
 
-The reccomended way of installing PyCBC is to use pip <https://pip.pypa.io/en/stable/> within a Python Virtual Envionment <https://virtualenv.pypa.io/en/latest/>. Virtualenv isolates PyCBC and its dependencies from the system environment and installing with pip ensures that PyCBC picks up the correct dependencies. 
+The reccomended way of installing PyCBC is to use `pip <https://pip.pypa.io/en/stable/>`_ within a `Python Virtual Envionment <https://virtualenv.pypa.io/en/latest/>`_. Virtualenv isolates PyCBC and its dependencies from the system environment and installing with pip ensures that PyCBC picks up the correct dependencies. 
 
 There are three typical use cases for PyCBC
 
