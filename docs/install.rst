@@ -2,9 +2,7 @@
 Installing PyCBC
 ################
 
-The reccomended way of installing PyCBC is to use `pip <https://pip.pypa.io/en/stable/>`_ within a `Python Virtual Envionment <https://virtualenv.pypa.io/en/latest/>`_. Virtualenv isolates PyCBC and its dependencies from the system environment and installing with pip ensures that PyCBC picks up the correct dependencies. 
-
-There are three typical use cases for PyCBC
+There are three typical use cases for PyCBC:
 
 1. Installing a release of PyCBC from GitHub for an end user to run the tools.
 2. Installing an editable version from GitHub for development.
@@ -13,6 +11,19 @@ There are three typical use cases for PyCBC
 This page documents the first two use cases. For production analysis, users must obtain the pre-built binaries from the PyCBC server. 
 
 If you wish to develop PyCBC, then you will need an account on `GitHub <https://www.github.com>`_ Once you have set up your account you should follow the instructions to `fork a repository <https://help.github.com/articles/fork-a-repo/>`_ to fork the `ligo-cbc/pycbc <https://github.com/ligo-cbc/pycbc>`_ repository into your own account.
+
+=============
+Getting started
+=============
+
+The reccomended way of installing PyCBC is to use `pip <https://pip.pypa.io/en/stable/>`_ within a `Python Virtual Envionment <https://virtualenv.pypa.io/en/latest/>`_. Virtualenv isolates PyCBC and its dependencies from the system environment and installing with pip ensures that PyCBC picks up the correct dependencies. 
+
+If you do not have virtualenv installed (as is the case with LIGO Data Grid Scientific Linux systems), you will need to perform a one-time setup to get virtualenv installed in your environment. To do this see the instructions at
+
+.. toctree::
+    :maxdepth: 1
+
+    virtualenv_install
 
 =============
 Setting up pip and virtualenv
@@ -159,14 +170,27 @@ from the PyCBC source directory in $NAME/src/pycbc
 Building and Installing Documentation
 =============
 
-To build the documentation from your virtual environment, first make sure that you have `Sphinx <>`_ installed with
+To build the documentation from your virtual environment, first make sure that you have `Sphinx <http://sphinx-doc.org/>`_ and the required helper tools installed with
 
 .. code-block:: bash
 
     pip install Sphinx>=1.3.1
+    pip install sphinxcontrib-programoutput
+    pip install numpydoc
     
+To generate the documentation, from the top level of the PyCBC source tree run
 
+.. code-block:: bash
 
+    python setup.py build_docs
+    
+This will build the documentation in the directory docs/_build/html which can be copied to a web-accessible directory. For example
+
+.. code-block:: bash
+
+    cp -a docs/_build/html/ ~/public_html/pycbc-docs
+    
+will copy the documentation to a directory called pycbc-docs under your public_html pages.
 
 ===============================
 Optional GPU acceleration
