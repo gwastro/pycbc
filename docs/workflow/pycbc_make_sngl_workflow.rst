@@ -19,18 +19,6 @@ How to run ``pycbc_make_sngl_workflow``
 
 Here we document the stages needed to run ``pycbc_make_sngl_workflow``.
 
----------------------------
-Install lalsuite and pycbc
----------------------------
-
-The first thing that is needed is to install lalsuite and pycbc. This is
-described on the page here:
-
-.. toctree::
-   :maxdepth: 1
-
-   ../install
-
 ----------------------------------------------------------------------------
 The configuration file - Do you already have configuration (.ini) file(s)?
 ----------------------------------------------------------------------------
