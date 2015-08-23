@@ -2,7 +2,7 @@
 Walkthrough of running the PyCBC BNS focused pipeline on SUGAR
 ===============================================================
 
-FIrst install PyCBC by following the instructions for :ref:`Installing PyCBC`
+First install PyCBC by following the instructions for installing PyCBC.
 
 Now if you have a script (which includes your start/end time, the parameters you need for pycbc_make_hdf_coinc_workflow) and a config file you are ready to set up the dax and submit it. See an example of both and explanations below:
 
