@@ -10,10 +10,20 @@ There are three typical use cases for PyCBC:
 
 This page documents the first two use cases. For production analysis, users must obtain the pre-built binaries from the PyCBC server. 
 
-If you wish to develop PyCBC, then you will need an account on `GitHub <https://www.github.com>`_ Once you have set up your account you should follow the instructions to `fork a repository <https://help.github.com/articles/fork-a-repo/>`_ to fork the `ligo-cbc/pycbc <https://github.com/ligo-cbc/pycbc>`_ repository into your own account.
+.. note::
+
+    If you wish to develop PyCBC, then you will need an account on `GitHub <https://www.github.com>`_. Once you have set up your account you should follow the instructions to `fork a repository <https://help.github.com/articles/fork-a-repo/>`_ to fork the `ligo-cbc/pycbc <https://github.com/ligo-cbc/pycbc>`_ repository into your own account.
+
+These instructions walk you through the process of
+
+    * :ref:`Setting up a virtual environment for installing PyCBC`
+    * :ref:`Installing PyCBC in a virtual environment`
+        * :ref:`Installing a released version of PyCBC`
+        * :ref:`Installing source from GitHub for development`
+    
 
 =============
-Getting started
+Setting up a virtual environment for installing PyCBC
 =============
 
 The reccomended way of installing PyCBC is to use `pip <https://pip.pypa.io/en/stable/>`_ within a `Python Virtual Envionment <https://virtualenv.pypa.io/en/latest/>`_. Virtualenv isolates PyCBC and its dependencies from the system environment and installing with pip ensures that PyCBC picks up the correct dependencies. 
@@ -25,11 +35,7 @@ If you do not have virtualenv installed (as is the case with LIGO Data Grid Scie
 
     virtualenv_install
 
-===========================
-Creating a virtualenv
-===========================
-
-Installing PyCBC into a virtual environment provides isolation between different sets of python packages. The following instructions will create a working PyCBC environment on an LDG cluster. 
+Installing PyCBC into a virtual environment provides isolation between different sets of python packages. The following instructions will create a working virtual environment into which you can install PyCBC. 
 
 Make sure that you have at least version 13.1.1 of virtualenv by running 
 
@@ -77,10 +83,14 @@ To leave this virtual environment type
 which will return you to a regular shell.
 
 ===========================
-Installing PyCBC in a virtualenv
+Installing PyCBC in a virtual environment
 ===========================
 
-Enter the virtual enviornment that you wish to use for PyCBC development by sourcing the activate script, as shown in the previous section.
+Enter the virtual enviornment that you wish to use for PyCBC development by sourcing the activate script, for example
+
+.. code-block:: bash
+
+    source $NAME/bin/activate
 
 Install pycbc from source as follows. First install unittest2 and numpy with the command:
 
@@ -88,7 +98,15 @@ Install pycbc from source as follows. First install unittest2 and numpy with the
 
     pip install "numpy>=1.6.4" unittest2
     
-You now need to decide whether you want to install a release of PyCBC for end-use, or an editable git repository for development. 
+You now need to decide whether you want to install a release of PyCBC or an editable version of the source code from a git repository for development. 
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Installing a released version of PyCBC
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+.. note:
+
+    Make sure you have run the command in the section :ref:`Installing PyCBC in a virtual environment` above to install unittest2 before installing PyCBC.
 
 To install a release of the code, determine the tag of the relase that you want to install from the `list of PyCBC tags <https://github.com/ligo-cbc/pycbc/tags>`_. This example installs the v1.1.0 release. If you want to install a different release, change the command below accordingly:
 
@@ -96,15 +114,23 @@ To install a release of the code, determine the tag of the relase that you want 
 
     pip install git+https://github.com/ligo-cbc/pycbc@v1.1.0#egg=pycbc --process-dependency-links
 
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Installing source from GitHub for development
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+.. note:
+
+    Make sure you have run the command in the section :ref:`Installing PyCBC in a virtual environment` above to install unittest2 before installing PyCBC.
+
 To install and editable version of PyCBC you need to have `forked PyCBC to your own account <https://help.github.com/articles/fork-a-repo/>`_ and know the URL of your fork. This can be obtained from the clone URL on your GitHub repository page. This example uses the URL git@github.com:duncan-brown/pycbc.git which you should change as appropriate. You can read the `pip git instructions <https://pip.pypa.io/en/latest/reference/pip_install.html#git>`_ for more details on how to install a branch or a specific tag.
+
+Install the PyCBC source code from the GitHub URL using the command:
 
 .. code-block:: bash
 
     pip install -e git+git@github.com:duncan-brown/pycbc.git#egg=pycbc --process-dependency-links
 
-This will fetch the PyCBC source and will also install all the listed dependenciesl. 
-
-The -e option to pip creates a directory called $NAME/src/pycbc with a git checkout which is fully edittable. To prevent pip from removing this source directory run the command
+This will fetch the PyCBC source and will also install all the listed dependencies. The -e option to pip creates a directory called $NAME/src/pycbc with a git checkout which is fully edittable. To prevent pip from removing this source directory run the command
 
 .. code-block:: bash
 
@@ -112,7 +138,17 @@ The -e option to pip creates a directory called $NAME/src/pycbc with a git check
 
 You can then make changes to your PyCBC source code in the directory $NAME/src/pycbc
 
-To build and install any changes that you make in your virtual environment, run the command
+.. note:
+
+    The version of PyCBC that is checked out will be on the master branch. To track a remote branch from your GitHub repository, run the command
+    
+    ..code-block:: bash
+    
+        git branch --set-upstream branch_name origin/branch_name
+        
+    where branch_name is the name of the branch that you want to track.
+
+To build and install any changes that you make to the source code in your virtual environment, run the command
 
 .. code-block:: bash
 
