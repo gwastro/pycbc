@@ -55,11 +55,16 @@ The install process creates a shell script called ``$NAME/etc/lal-user-env.sh`` 
 
 .. code-block:: bash
 
-    echo 'source $NAME/etc/lal-user-env.sh' >> activate
+    echo 'source $NAME/etc/lal-user-env.sh' >> $NAME/bin/activate
     deactivate
-    activate $NAME
+    source $NAME/bin/activate
 
-lalsuite is now installed in your virtual environment.
+lalsuite is now installed in your virtual environment. You can check this with the command
 
+.. code-block:: bash
+
+    echo $LAL_PREFIX
+
+which should return the path to the installation under your virtual environment.
 
 
