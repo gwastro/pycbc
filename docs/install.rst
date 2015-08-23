@@ -25,6 +25,7 @@ These instructions walk you through the process of
     * Optional additional installation steps
         * `Building and Installing Documentation`_.
         * `Modifying pycbc-glue and pycbc-pylal`_.
+        * `Use of Intel MKL Optimized FFT libraries`_.
         * `Graphics Processing Unit support with CUDA`_
 
 =============
@@ -241,6 +242,18 @@ Once you have the source code cloned, you can run
     python setup.py install
 
 to install each of them into your virtual environment.
+
+===============================
+Use of Intel MKL Optimized FFT libraries
+===============================
+
+PyCBC has the ability to use optimized FFT libraries such as FFTW and MKL. If MKL is the correct library for your platform, you can add the script that sets up the MKL environment to you virtualenv ``activate`` script with the command
+
+.. code-block:: bash
+
+    echo 'source /opt/intel/bin/compilervars.sh intel64' >> $NAME/bin/activate
+
+changing the path to the ``compilervars.sh`` script approriately for your cluster. 
 
 ===============================
 Graphics Processing Unit support with CUDA
