@@ -23,18 +23,6 @@ How to run
 
 Here we document the stages needed to run the triggered coherent GRB search.
 
----------------------------
-Install lalsuite and pycbc
----------------------------
-
-The first thing that is needed is to install lalsuite and pycbc. This is
-described on the page here:
-
-.. toctree::
-   :maxdepth: 1
-
-   ../install
-
 -------------------------------------
 Copy pygrb.py into your run directory
 -------------------------------------
