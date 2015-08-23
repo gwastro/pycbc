@@ -2,24 +2,7 @@
 Walkthrough of running the PyCBC BNS focused pipeline on SUGAR
 ===============================================================
 
-Using the include environment :download:`install script <../resources/install_pycbc_env>`
-
-::
-
-  chmod 755 install
-  ./install_pycbc_env /abs/path/to/working/directory
-
-After this, pycbc and its dependencies should be installed. You just need to source it
-
-::
-
-  source /path/to/dir/source
-
-You may need to make sure you activate mkl (math kernel library) before you get going.
-
-::
-
-  source /opt/intel/bin/compilervars.sh intel64
+FIrst install PyCBC by following the instructions for :ref:`Installing PyCBC`
 
 Now if you have a script (which includes your start/end time, the parameters you need for pycbc_make_hdf_coinc_workflow) and a config file you are ready to set up the dax and submit it. See an example of both and explanations below:
 
