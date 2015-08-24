@@ -84,19 +84,19 @@ if not args.gradient_far:
               "Blue circles are found with IFAR < 100 years, green are < 1000 years, and "
               "red are found with IFAR >=1000 years. ")
 else:
-    vals = vals[args.axis_type][found]
-    dval = dvals[args.distance_type][found]
+    fvals = vals[args.axis_type][found]
+    fdval = dvals[args.distance_type][found]
     color = 1.0 / ifar_found
     
     # sort so quiet found is on top
     csort = color.argsort()
-    vals = vals[csort]
-    dval = dva[csort]
+    fvals = fvals[csort]
+    fdval = fdval[csort]
     color = color[csort]
 
     mpoints = plot.scatter(vals[args.axis_type][missed], dvals[args.distance_type][missed], 
                            marker='x', color='red', label='missed', zorder=zmissed)
-    points = plot.scatter(vals, dval, c=color, linewidth=0, 
+    points = plot.scatter(fvals, fdval, c=color, linewidth=0, 
                           norm=matplotlib.colors.LogNorm(),
                           marker='o', label='found', zorder=zfound)
     caption = ("Found and missed injections: Red x's are missed injections. "
