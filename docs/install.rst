@@ -269,4 +269,4 @@ PyCBC has the ability to accelerate its processing using CUDA. To take advantage
 .. toctree::
     :maxdepth: 1
 
-    cuda_install
+    install_cuda
