@@ -108,6 +108,8 @@ To authenticate with LIGO Data Grid services, you need M2Crypto which you should
 
     SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
 
+Once you have these packages installed, you can now install lalsuite following the instructions at:
+
 .. toctree::
     :maxdepth: 1
 
