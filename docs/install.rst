@@ -32,16 +32,7 @@ These instructions walk you through the process of
 Setting up a virtual environment for installing PyCBC
 =============
 
-The recommended way of installing PyCBC is to use `pip <https://pip.pypa.io/en/stable/>`_ within a `Python Virtual Environment <https://virtualenv.pypa.io/en/latest/>`_. Virtualenv isolates PyCBC and its dependencies from the system environment and installing with pip ensures that PyCBC picks up the correct dependencies. 
-
-If you do not have virtualenv installed (as is the case with LIGO Data Grid Scientific Linux systems), you will need to perform a one-time setup to get virtualenv installed in your environment. To do this see the instructions at
-
-.. toctree::
-    :maxdepth: 1
-
-    virtualenv_install
-
-Installing PyCBC into a virtual environment provides isolation between different sets of python packages. The following instructions will create a working virtual environment into which you can install PyCBC. 
+The recommended way of installing PyCBC is to use `pip <https://pip.pypa.io/en/stable/>`_ within a `Python Virtual Environment <https://virtualenv.pypa.io/en/latest/>`_. Virtualenv isolates PyCBC and its dependencies from the system environment and installing with pip ensures that PyCBC picks up the correct dependencies. The following instructions will create a working virtual environment into which you can install PyCBC. 
 
 Make sure that you have at least version 13.1.1 of virtualenv by running 
 
@@ -49,9 +40,14 @@ Make sure that you have at least version 13.1.1 of virtualenv by running
 
     virtualenv --version
     
-If this returns ``virtualenv: command not found`` or a lower version than 13.1.1, then follow the instructions for setting virtualenv (:ref:`virtualenv_install`).
+If this returns ``virtualenv: command not found`` (as is the case with LIGO Data Grid Scientific Linux 6 systems) or the command returns a lower version than 13.1.1, then follow the instructions for setting virtualenv at:
 
-First empty your current ``PYTHONPATH`` so that you do not inherit any packages that may conflict with your installation. To do this, run the command:
+.. toctree::
+    :maxdepth: 1
+
+    install_virtualenv
+
+Once you have virtualenv installed, unset your current ``PYTHONPATH`` so that you do not inherit any packages that may conflict with your installation. To do this, run the command:
 
 .. code-block:: bash
 
@@ -94,15 +90,6 @@ which will return you to a regular shell.
 Installing lalsuite into a virtual environment
 ===========================
 
-.. toctree::
-    :maxdepth: 1
-
-    install_lalsuite
-
-===========================
-Installing PyCBC in a virtual environment
-===========================
-
 Enter the virtual environment that you wish to use for PyCBC development by sourcing the activate script, for example
 
 .. code-block:: bash
@@ -120,12 +107,28 @@ To authenticate with LIGO Data Grid services, you need M2Crypto which you should
 .. code-block:: bash
 
     SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
-    
+
+.. toctree::
+    :maxdepth: 1
+
+    install_lalsuite
+
+===========================
+Installing PyCBC in a virtual environment
+===========================
+
+Enter the virtual environment that you wish to use for PyCBC development by sourcing the activate script, for example
+
+.. code-block:: bash
+
+    source $NAME/bin/activate
+
 Next install the Pegasus WMS python libraries needed to build the workflows.
 
 .. note::
 
    Pegasus WMS is not yet under the Python Package Index and so it must be installed from a source tarball. This will be fixed once Pegasus 4.5.2 is released. 
+
 To install the Pegasus python libraries run the command:
 
 .. code-block:: bash
@@ -140,7 +143,7 @@ Installing a released version of PyCBC
 
 .. note::
 
-    Make sure you have run the commands in the section :ref:`Installing PyCBC in a virtual environment` above to install unittest2 before installing PyCBC.
+    Make sure you have run the commands in the section :ref:`Installing lalsuite into a virtual environment` above to install unittest2 before installing PyCBC.
 
 To install a release of the code, determine the tag of the release that you want to install from the `list of PyCBC tags <https://github.com/ligo-cbc/pycbc/tags>`_. This example installs the v1.1.0 release. If you want to install a different release, change the command below accordingly:
 
@@ -154,7 +157,7 @@ Installing source from GitHub for development
 
 .. note::
 
-    Make sure you have run the command in the section :ref:`Installing PyCBC in a virtual environment` above to install unittest2 before installing PyCBC.
+    Make sure you have run the command in the section :ref:`Installing lalsuite into a virtual environment` above to install unittest2 before installing PyCBC.
 
 To install and editable version of PyCBC you need to have `forked PyCBC to your own account <https://help.github.com/articles/fork-a-repo/>`_ and know the URL of your fork. This can be obtained from the clone URL on your GitHub repository page. This example uses the URL git@github.com:duncan-brown/pycbc.git which you should change as appropriate. You can read the `pip git instructions <https://pip.pypa.io/en/latest/reference/pip_install.html#git>`_ for more details on how to install a branch or a specific tag.
 

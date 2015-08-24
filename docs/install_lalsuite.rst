@@ -55,7 +55,7 @@ The install process creates a shell script called ``$NAME/etc/lal-user-env.sh`` 
 
 .. code-block:: bash
 
-    echo 'source $NAME/etc/lal-user-env.sh' >> $NAME/bin/activate
+    echo 'source ${VIRTUAL_ENV}/etc/lal-user-env.sh' >> $NAME/bin/activate
     deactivate
     source $NAME/bin/activate
 

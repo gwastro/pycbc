@@ -13,7 +13,8 @@ If you would like to use GPU acceleration of PyCBC through CUDA you will require
 These packages may not be available via the distribution packaging system, at least in the required versions. As described below, most of these packages are available via the python package installer `pip <http://www.pip-installer.org>`_, however custom installation instructions are given where required.
 
 .. note::
-    When using ``pip`` as described below, to install system-wide, simply do not give the ``--prefix`` option (although you might need to add ``sudo`` as a command prefix).
+
+    Before installing make sure you are inside your PyCBC virtual environment by sourcing the appropriate ``activate`` script.
 
 ------
 PyCUDA
