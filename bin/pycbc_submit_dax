@@ -13,8 +13,10 @@ exec 2>&1
 DAX_FILE=""
 CACHE_FILE=""
 LOCAL_PEGASUS_DIR=""
+ACCOUNTING_GROUP=""
+NO_ACCOUNTING_GROUP=0
 
-GETOPT_CMD=`getopt -o d:c:a:h:l --long dax:,cache-file:,accounting-group:,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:a:F:h:l --long dax:,cache-file:,accounting-group:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -34,6 +36,7 @@ while true ; do
         "") shift 2 ;;
         *) ACCOUNTING_GROUP=$2 ; shift 2 ;;
       esac ;;
+    -F|--force-no-accounting-group) NO_ACCOUNTING_GROUP=1 ; shift ;;
     -l|--local-dir)
       case "$2" in
         "") shift 2 ;;
@@ -52,6 +55,9 @@ while true ; do
       echo "  -c, --cache-file FILE   replica cache file for data reuse"
       echo "  -a, --accounting-group GROUP tagged string used for site "
       echo "                               resource accounting."
+      echo "  -F, --force-no-accounting-group submit without an accounting"
+      echo "                               group. Will cause condor submission"
+      echo "                               to fail on LIGO Data Grid clusters"
       echo "  -l, --local-dir         Directory to put condor files under. "
       echo
       echo "If the environment variable TMPDIR is set then this is prepended to the "
@@ -67,6 +73,16 @@ done
 if [ "x$DAX_FILE" == "x" ]; then
   echo "Error: --dax must be specified. Use --help for options."
    exit 1
+fi
+
+if [ "x$ACCOUNTING_GROUP" == "x" ] && [ $NO_ACCOUNTING_GROUP == 0 ]; then
+  echo "Error: You must specify and accounting group with --accounting-group or"
+  echo "override this check with --force-no-accounting-group. If you do not specify"
+  echo "an accounting group, job submission will fail on the LIGO Data Grid."
+  echo
+  echo "For a list of available LIGO Data Grid accounting group tags, see"
+  echo "   https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user"
+  exit 1
 fi
 
 #Make a directory for the submit files
