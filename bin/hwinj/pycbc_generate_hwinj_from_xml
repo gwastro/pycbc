@@ -1,0 +1,117 @@
+#!/usr/bin/python
+
+# Copyright (C) 2015 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import logging
+import numpy
+import os, sys
+from glue.ligolw import ligolw, lsctables, table, utils
+from pycbc.inject import InjectionSet, legacy_approximant_name
+from pycbc.types import TimeSeries
+from pycbc.waveform import get_td_waveform
+
+class DefaultContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(DefaultContentHandler)
+
+# list IFOs to generate waveforms
+ifos = ['H1', 'L1']
+
+# command line usage
+parser = argparse.ArgumentParser(
+             usage='pycbc_generate_hwinj_from_xml --injection-file [INJECTION_FILE] --sample-rate [SAMPLE_RATE]',
+             description='Generates all the time-domain injections from a LIGOLW \
+             sim_inspiral table for H1 and L1. \
+             To run the executable you have to specify a LIGOLW XML file \
+             that contains a sim_inspiral table (--injection-file) and the sample rate \
+             for the generated waveforms (--sample-rate). \
+             The output of the code is single-column ASCII files that contain the \
+             waveform h(t) time series. The output ASCII files will appear in the \
+             current working directory with the standard LIGO naming convetion, \
+             eg. H1-HWINJ_CBC_FROM_SIMULATION_ID_X-Y-Z.txt where X is the simulation_id \
+             from the sim_inspiral row, Y is the GPS start time of the ASCII waveform file, \
+             and Z is the duration of the file in seconds.')
+
+# add command line options
+parser.add_argument('--injection-file', type=str, required=True,
+             help='Path to the LIGOLW XML file that contains a sim_inspiral table.')
+parser.add_argument('--sample-rate', type=int, required=True,
+             help='Sample rate that waveforms will be generated.')
+
+# parse command line
+opts = parser.parse_args()
+
+# setup log
+logging_level = logging.DEBUG
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
+# read in injection LIGOLW XML file
+logging.info('Reading injection file')
+injections = InjectionSet(opts.injection_file)
+
+# loop over rows in sim_inspiral table
+for sim in injections.table:
+
+    # print statement
+    logging.info('Begin generating waveform for %s', sim.simulation_id)
+
+    # parse the sim_inspiral waveform column
+    name, phase_order = legacy_approximant_name(sim.waveform)
+
+    # get simulation ID for output filename
+    sim_id = int(sim.simulation_id)
+
+    # generate the waveform
+    # we generate the waveform so we know how many sample points the ASCII file
+    # will need to have to contain the full waveform
+    logging.info('Getting number of sample points in waveform')
+    h_plus, _ = get_td_waveform(sim, approximant=name, phase_order=phase_order,
+                    delta_t=1.0/opts.sample_rate)
+
+    # figure out length of the time series to inject waveform into
+    pad_seconds = 5
+    template_duration_seconds = int( len(h_plus) / opts.sample_rate ) + 1
+    start_time = int(sim.geocent_end_time) - template_duration_seconds - pad_seconds
+    end_time = int(sim.geocent_end_time) + 1 + pad_seconds
+    num_samples = (end_time - start_time) * opts.sample_rate
+
+    # loop over IFOs for writing waveforms to file
+    for ifo in ifos:
+
+        # create a time series of zeroes to inject waveform into
+        initial_array = numpy.zeros(num_samples, dtype=h_plus.dtype)
+        output = TimeSeries(initial_array, delta_t=1.0/opts.sample_rate, epoch=start_time, dtype=h_plus.dtype)
+
+        # inject waveform into time series of zeroes
+        logging.info('Injecting %s waveform into timeseries of zeroes', ifo)
+        injections.apply(output, ifo)
+
+        # set output filename
+        txt_filename = ifo + '-' + 'HWINJ_CBC_FROM_SIMULATION_ID_' + str(sim_id) + '-' + str(start_time) + '-' + str(end_time-start_time) + '.txt'
+
+        # check if filename does not exist
+        if os.path.exists(txt_filename):
+            logging.warn('Filename %s already exists and will not be overwritten', txt_filename)
+            sys.exit()
+
+        # save waveform as single column ASCII for awgstream to use
+        logging.info('Writing strain for %s', ifo)
+        numpy.savetxt(txt_filename, output)
+
+# finish
+logging.info('Done')

@@ -1,51 +1,186 @@
-################################################################
-Hardware injection waveform generation (``pycbc_generate_hwinj``)
-################################################################
+#################################################
+Hardware injection waveform generation
+#################################################
 
-=====================================
+.. contents::
+
+=================================================
 Introduction
-=====================================
+=================================================
 
-The executable ``pycbc_generate_hwinj`` is for generating waveforms to be used for hardware injections.
+This page describes how to generate waveforms and save them as single-column ASCII waveform files that can be used by ``awgstream`` to inject into the detector.
 
-The procedure for generating a waveform is:
+There are two executables that can be used to generate single-column ASCII files; they are ``pycbc_generate_hwinj`` and ``pycbc_generate_hwinj_from_xml``. Both executables use the PyCBC injection module (``pycbc.inject``) to inject the coherent waveform into a time series of zeroes.
 
- * Generate the waveform using the parameters given on the command line.
- * Generate a PSD that will be used for calculating sigma squared.
- * Calculate the antenna pattern for each detector.
- * Calculate sigma squared for each detector using the waveform and the PSD. We do this to determine the network SNR.
- * Rescale the waveform to the desired network SNR.
- * Write an XML file with the waveform parameters and single-column ASCII files that contain the h(t) timeseries.
+The executable ``pycbc_generate_hwinj`` generates a waveform using parameters from the command line. The user inputs parameters such as ``--mass1``, ``--mass2``, etc. on the command line. This executable is useful for generating a specific coherent waveform for hardware injections.
 
-This executable uses the ``pycbc.waveform`` module to generate the waveforms. The ``pycbc.waveform`` module is calling lalsimulation routines to inject h(t).
+The executable ``pycbc_generate_hwinj_from_xml`` generates all the waveforms in a LIGOLW ``sim_inspiral`` table. The output of ``lalapps_inspinj`` (an executable for generating a population of injections) is a LIGOLW ``sim_inspiral`` table. This executable is useful if you want to generate a population of coherent waveforms for hardware injections.
 
-The waveform-specific command line options to ``pycbc_generate_hwinj`` are:
+=================================================
+Generate waveform from command line (``pycbc_generate_hwinj``)
+=================================================
 
- * ``--approximant`` the waveform approximant to use,
- * ``--order`` the post-Newtonian order of the waveform,
- * ``--inclination`` the inclination of the orbit,
- * ``--polarization`` the polarization,
- * ``--ra`` and ``--dec`` the RA and DEC of the waveform in radians,
- * ``--taper`` tells when to taper the waveform,
- * ``--mass1`` and ``--mass2`` the component masses of the binary,
- * ``--geocentric-end-time`` the geocentric end time of the hardware injection,
- * ``--network-snr`` the desired network SNR of the hardware injection,
- * ``--sample-rate`` the sample rate to generate the ASCII waveforms, and
- * ``--h1`` and ``--l1`` select what IFOs to generate the hardware injection.
+Here is a usage example for generating a CBC waveform using detector data with ``pycbc_generate_hwinj``.
 
-==================================
-How to generate a single waveform
-==================================
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Select a time for the injection
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-Here is a usage example for generating a CBC waveform using a design noise curve: ::
+First on the command line set a variable for the GPS geocentric end time of the coherent injection ::
 
-  GPS_START_TIME=1117982000
-  GPS_END_TIME=$(($GPS_START_TIME + 2048))
+  GEOCENT_END_TIME=1126399769
 
-  pycbc_generate_hwinj --approximant EOBNRv2 --order pseudoFourPN --mass1 1.4 --mass2 1.4 --inclination 0.0 --polarization 0.0 --ra 1.0 --dec 1.0 --taper TAPER_START --network-snr 28 --geocentric-end-time 1117982241 --low-frequency-cutoff 15.0 --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --h1 --l1 --fake-strain aLIGOZeroDetHighPower --psd-model aLIGOZeroDetHighPower --sample-rate 16384
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Select data for PSD estimation
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-You can plot the ASCII waveform files with an X11 connection. Its recommended this way so that the user may zoom in and inspect the waveform. For the example above one would do: ::
+We need to set what data we will use to estimate the PSD. This should be a 2048 second interval. So in this example we will set ::
 
-  pycbc_plot_hwinj H1-HWINJ_CBC-1117981890-357.txt
+  GPS_START_TIME=1124380361
+  GPS_END_TIME=1124382409
 
-You can generate a CBC waveform using interferometer data to estimate the PSD instead of a model. Using the pycbc strain and psd options.
+We will want to use data from when the detector was in science mode time to estimate the PSD. To check if the detector was in science mode you can query the segment database, check the section :ref:`howtoquerysegdb` for an example command.
+
+Since we are using detector data we will need to read the data from frame files. We will need to specify the frame type and channel name. The frame type is a way to identify what list of channels is in the frame file. So on the command line we set ::
+
+  FRAME_TYPE=L1_RDS
+  CHANNEL_NAME=L1:GDS-CALIB_STRAIN
+
+We can check that frames exist for this time by querying the LDR server, check the section :ref:`howtoqueryldr` for an example command.
+
+**Do not assume that the frame type and channel name are the same as in this section. These values are correct for this example.**
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Run ``pycbc_generate_hwinj``
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+Now let's specify the parameters of the waveform. A full list of the command line options is available with ``pycbc_generate_hwinj --help``. Here we provide an example for generating a coherent 1.4-1.4 component mass binary using the ``EOBNRv2`` approximant. The sample rate of the output ASCII file is 16384Hz and the waveform begins at 10.0Hz. We do not want to inject a step-like response into the detector, therefore we taper the waveform at the beginning. The ``EOBNRv2`` has a ringdown at the end so we do not need to taper the end. We specify the network SNR we want the coherent injection to have on the command line with ``--network-snr``, here it is set to 28. The options ``--h1`` and ``--l1`` specify to write the waveform for both detectors; here we write the L1 ASCII file only. Here is the example command ::
+
+  pycbc_generate_hwinj --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --frame-type ${FRAME_TYPE} --channel-name ${CHANNEL_NAME} --approximant EOBNRv2 --order pseudoFourPN --mass1 1.4 --mass2 1.4 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 28 --low-frequency-cutoff 10.0 --l1 --sample-rate 16384
+
+This will generate a single-column ASCII files that contains the h(t) time series for each detector and a LIGOLW XML file with the waveform parameters. The output filenames are not specified on the command line, they are determined internally by ``pycbc_generate_hwinj``. In this example the ASCII file with the waveform will be named ``L1-HWINJ_CBC-${START}-${DURATION}.txt`` where ``${START}`` is the start time stamp of the time series and ``${DURATION}`` is the length in seconds of the ASCII waveform file. The LIGOLW XML file will be named ``H1L1-HWINJ_CBC-${START}-${DURATION}.xml.gz``.
+
+The LIGOLW XML file contains a ``process_params`` table that saves the command line that was used to generate the waveform for future reference. It also includes a ``sim_inspiral`` table and a ``sngl_inspiral`` table. The ``sim_inspiral`` entry allows us to use the parameters of the waveform as a software injection in the PyCBC matched filtering executable ``pycbc_inspiral``. The ``sngl_inspiral`` entry allows us to use the parameters of the waveform as the filter in ``pycbc_inspiral``.
+
+The user should inspect the waveforms. For a waveform plotting executable see section :ref:`runpycbcplothwinj`.
+
+=================================================
+Generate waveform from ``lalapps_inspinj`` output (``pycbc_generate_hwinj_from_xml``)
+=================================================
+
+Here is a usage case for generating a population of waveforms with ``lalapps_inspinj``. This example generates an injection every Tuesday for three months.
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Run ``lalapps_inspinj``
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+Here we show an example on how to use ``lalapps_inspinj`` to generate a population of injections.
+
+In this example we will select distributions for time, distance, inclination, mass, spin, and sky location. Below is a explaination of the command line options in this example. A full list of command line options can be found with ``lalapps_inspinj --help``.
+
+Our time distribution will be a fixed time step to perform an injection every Tuesday. We will allow the injections to be anytime during the day (86400 seconds) and have a minimum one week (604800 seconds) between injections. The command line options will be ::
+
+  --time-interval 86400 --time-step 604800 --gps-start-time 1126368017 --gps-end-time 1130371217
+
+Our distance distribution will be uniformly distributed in volume. We set the minimum and maximum chirp distance in units of kpc. The command line options will be ::
+
+  --d-distr volume --min-distance 10000 --max-distance 40000
+
+Our mass distribution will be uniform in total mass. We can select the minimum and maximum component masses in units of solar masses. The command line options will be ::
+
+  --m-distr totalMass --min-mass1 1.0 --max-mass1 2.0 --min-mass2 1.0 --max-mass2 2.0
+
+We can select the minimum and maximum component spins. The command line options will be ::
+
+ --enable-spin --min-spin1 0.0 --max-spin1 0.04 --min-spin2 0.0 --max-spin2 0.04
+
+Our inclination distribution will be uniform. The command line option will be ::
+
+  --i-distr uniform
+
+Our source distribution will be random. The command line option will be ::
+  
+  --l-distr random
+  
+We select to use the ``SpinTaylorT4`` approximant and begin the waveforms at 10.0Hz. Here we taper the injection at the start and end of the injection. The command line options will be ::
+
+  --waveform SpinTaylorT4threePointFivePN --f-lower 10 --taper-injection start --band-pass-injection
+
+Now we can combine all the options above and run ``lalapps_inspinj`` as ::
+
+  lalapps_inspinj --time-interval 86400 --time-step 604800 --gps-start-time 1126368017 --gps-end-time 1130371217 --d-distr volume --min-distance 10000 --max-distance 40000 --m-distr totalMass --min-mass1 1.0 --max-mass1 2.0 --min-mass2 1.0 --max-mass2 2.0 --enable-spin --min-spin1 0.0 --max-spin1 0.04 --min-spin2 0.0 --max-spin2 0.04 --i-distr uniform --l-distr random --waveform SpinTaylorT4threePointFivePN --f-lower 10 --taper-injection startend --band-pass-injection
+
+In this example ``lalapps_inspinj`` will write a LIGOLW XML file called ``HL-INJECTIONS_1-1126368017-4003200.xml`` that has a ``sim_inspiral`` table with the population of injections.
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Run ``pycbc_generate_hwinj_from_xml``
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+Running ``lalapps_inspinj`` has written a LIGOLW XML file with a ``sim_inspiral`` table. Now we can run ``pycbc_generate_hwinj_from_xml`` to write single-column ASCII waveform files for the population of injections.
+
+There are just two command line options ``--injection-file`` (path to the LIGOLW XML file that ``lalapps_inspinj`` had written) and ``--sample-rate`` (the sample rate of the ASCII waveform files).
+
+In this example we set the sample rate to 16384Hz so on the command line do ::
+
+  pycbc_generate_hwinj_from_xml --injection-file HL-INJECTIONS_1-1126368017-4003200.xml --sample-rate 16384
+
+As this command runs it will generate a H1 and L1 ASCII waveform file for each row in the ``sim_inspiral`` table.
+
+The ASCII waveform files will be named ``${IFO}-HWINJ_CBC_SIMULATION_ID_${SIMID}-${START}-${DURATION}.txt`` where where ``${SIMID}`` is the ``simulation_id`` number for the ``sim_inspiral`` row, ``${START}`` is the GPS start time of the ASCII waveform file, and ``${DURATION}`` is the duration of the file in seconds.
+
+The user should inspect the waveforms. For a waveform plotting executable see section :ref:`runpycbcplothwinj`.
+
+=================================================
+Checks for the hardware injection output
+=================================================
+
+Here are some follow-up checks the user can do.
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Plot ASCII waveform files with ``pycbc_plot_hwinj``
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+.. _runpycbcplothwinj:
+
+You can plot the ASCII waveform files with an X11 connection. It's strongly recommended to use the X11 connection instead of saving a static image of the entire waveform. The X11 connection allows the user to zoom in and inspect the waveform more closely. A basic inspection would include checking the amplitude, the tapering, and the ringdown  of the waveforms are reasonable. For the ``pycbc_generate_hwinj`` example above one would do ::
+
+  pycbc_plot_hwinj L1-HWINJ_CBC-${START}-${DURATION}.txt
+
+If you are using ``ssh`` or ``gsissh`` to log into a cluster, you can provide the ``-Y`` option to open an X11 connection. For example ::
+
+  gsissh -Y ldas-pcdev1.ligo.caltech.edu
+
+=================================================
+How to query the segment database
+=================================================
+
+.. _howtoquerysegdb:
+
+Here is an example on how to check if the detector was in science mode for a GPS time interval. To do this we query the segment database. A command line tool to do check the ``pycbc_generate_hwinj`` example above is ::
+
+  ligolw_segment_query_dqsegdb --query-segments --segment-url https://dqsegdb5.phy.syr.edu --gps-start-time 1124380361 --gps-end-time 1124382409 --include-segments L1:DMT-ANALYSIS_READY:1 --output-file L1-SEGMENTS.xml
+  ligolw_segment_query_dqsegdb --query-segments --segment-url https://dqsegdb5.phy.syr.edu --gps-start-time 1124380361 --gps-end-time 1124382409 --include-segments H1:DMT-ANALYSIS_READY:1 --output-file H1-SEGMENTS.xml
+
+This should write two XML files ``L1-SEGMENTS.xml`` and another ``H1-SEGMENTS.xml``. You can check the ``segment`` table to see if the detector was in science mode for this time. A command line tool that helps is ::
+
+  ligolw_print --table segment --column start_time --column end_time L1-SEGMENTS.xml
+  ligolw_print --table segment --column start_time --column end_time H1-SEGMENTS.xml
+
+The output should be ``1124380361,1124382409`` for both ``ligolw_print`` commands. This tells us that the detector was in science mode for the entire time since there is one segment that is the equal to the interval of ``--gps-start-time`` to ``--gps-end-time``.
+
+**Do not assume that the segment databse URL and science-mode segment names are the same as in this section. These values are correct for this example.**
+
+=================================================
+How to query the LDR server
+=================================================
+
+.. _howtoqueryldr:
+
+Here is an example on how to check if frame files exist for a GPS time interval. To do this we query the LDR server. A command line tool to do check the ``pycbc_generate_hwinj`` example above is ::
+
+  gw_data_find --observatory L --type L1_RDS --gps-start-time 1124380361  --gps-end-time 1124382409 --url-type file --gaps
+  gw_data_find --observatory H --type H1_RDS --gps-start-time 1124380361  --gps-end-time 1124382409 --url-type file --gaps
+
+A list of frame files will be print to your terminal if they are accessible. If ``Missing segments`` is printed, then you will not be able to access all the frame files.
+
+**Do not assume that the frame type and channel name are the same as in this section. These values are correct for this example.**
