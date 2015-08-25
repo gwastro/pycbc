@@ -34,7 +34,7 @@ ifos = ['H1', 'L1']
 
 # command line usage
 parser = argparse.ArgumentParser(
-             usage='pycbc_generate_hwinj_from_inspinj --injection-file [INJECTION_FILE] --sample-rate [SAMPLE_RATE]',
+             usage='pycbc_generate_hwinj_from_xml --injection-file [INJECTION_FILE] --sample-rate [SAMPLE_RATE]',
              description='Generates all the time-domain injections from a LIGOLW \
              sim_inspiral table for H1 and L1. \
              To run the executable you have to specify a LIGOLW XML file \
