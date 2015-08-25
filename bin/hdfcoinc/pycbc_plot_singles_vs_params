@@ -33,7 +33,7 @@ import pycbc.pnutils
 import pycbc.events
 import pycbc.results
 import pycbc.io
-
+import sys
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--single-trig-file', type=str, required=True,
