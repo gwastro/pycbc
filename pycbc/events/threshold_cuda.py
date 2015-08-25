@@ -259,21 +259,22 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         self.outl = tl.gpudata
         self.outv = tv.gpudata
         self.slen = len(series)
-        (fn, fn2), self.nt, self.nb = get_tkernel(self.slen, window)     
-        self.fn = fn.prepared_call
-        self.fn2 = fn2.prepared_call
-        self.cl = loc[0:self.nb]
-        self.cv = val[0:self.nb]
 
     def threshold_and_cluster(self, threshold, window):
         threshold = numpy.float32(threshold * threshold)
         window = numpy.int32(window)
 
-        self.fn((self.nb, 1), (self.nt, 1, 1), self.series, self.outv, self.outl, window, threshold,)
-        self.fn2((1, 1), (self.nb, 1, 1), self.outv, self.outl, threshold, window)   
+        (fn, fn2), nt, nb = get_tkernel(self.slen, window)     
+        fn = fn.prepared_call
+        fn2 = fn2.prepared_call
+        cl = loc[0:nb]
+        cv = val[0:nb]
+
+        fn((nb, 1), (nt, 1, 1), self.series, self.outv, self.outl, window, threshold,)
+        fn2((1, 1), (nb, 1, 1), self.outv, self.outl, threshold, window)   
         pycbc.scheme.mgr.state.context.synchronize()
-        w = (self.cl != -1)
-        return self.cv[w], self.cl[w]
+        w = (cl != -1)
+        return cv[w], cl[w]
     
 def _threshold_cluster_factory(series):
     return CUDAThresholdCluster
