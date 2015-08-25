@@ -11,13 +11,9 @@ The source code is accessible by cloning the GitHub repository:
 
     git clone https://github.com/ligo-cbc/pycbc
 
-To install PyCBC:
+To install PyCBC follow the instructions at
 
-    python setup.py install --prefix=/path/to/install/directory
-
-To run the unittests for PyCBC:
-
-    python setup.py test
+    https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/install.html
 
 [![PyPI version](https://badge.fury.io/py/pycbc.svg)](http://badge.fury.io/py/pycbc)
 [![Build Status](https://travis-ci.org/ligo-cbc/pycbc.svg?branch=master)](https://travis-ci.org/ligo-cbc/pycbc)

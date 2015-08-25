@@ -6,110 +6,71 @@ Installing lalsuite for PyCBC
 
 The following page describes how to build lalsuite from source for use with PyCBC. 
 
----------------------------------
-Choose a lalsuite install method
----------------------------------
+.. note::
 
-A version of lalsuite is installed system-wide on LDG and XSEDE clusters. 
-During science runs this version is recommended for use, but between science 
-uns, and for development, it is better to install lalsuite
-from source. To use this system version and just install pylal follow :ref:`systeminstall`.
-To install lalsuite from source follow :ref:`sourceinstall`.
+    These instructions assume that you already have the required dependencies for lalsuite installed on your system. You must have ``git``, ``FFTW``, ``GSL``, ``FrameL``, and ``MetaIO`` installed before continuing. 
+    
+    These packages are installed by default on a LIGO Data Grid cluster. If you are not on a LIGO Data Grid cluster, then you can download them from the `lscsoft repository <https://www.lsc-group.phys.uwm.edu/daswg/download/repositories.html>`_ or see the `lscsoft install instructions <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lscsoft-install.html>`_ for instructions on building the dependencies from source. You can also contact your system administrator to determine if these packages are available using the ``module load`` command.
 
-.. _systeminstall:
+====================================================
+Obtaining the source code and checking out a version
+====================================================
 
-===============================================
-Using the system installed version of lalsuite
-===============================================
-
-The system installation includes all executables except the pylal programs in ``/usr/bin``. You will need to build pylal from source against the system installed libraries. 
+Clone the lalsuite repository by following the `instructions on the DASWG pages <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/advanced-lalsuite-git.html#clone>`_. 
 
 .. note::
 
-   On the TACC XSEDE cluster, you will need to run module load git to make sure that you are running the correct version of git to clone lalsuite.
+    Since building lalsuite is very disk intensive, you may want to store the lalsuite git repository on a local disk rather than an NSF-mounted directory. 
 
-.. note::
-
-   On the TACC XSEDE cluster it is recommended to install code into the $WORK directory not $HOME because of space limitations.
-
-To do this, clone the lalsuite repository by following the `instructions on the DASWG pages <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/advanced-lalsuite-git.html#clone>`_
-
-If you want to install a specific version of pylal, for example the ER5 release (v0.5.0) you can run
+Once you have the repository cloned, you should change your working directory to the top-level of the repository with 
 
 .. code-block:: bash
 
     cd /path/to/your/lalsuite
-    git checkout ${TAG_NAME} # For example git checkout pylal-v0.5.0-v1
 
-if this step is not done then the latest version of pylal (master) will be used.
-
-You can then build pylal with the commands
+Now determine which version of the code you want to install. To run the latest (possibly unstable) version of the code, use the ``master`` branch by running the command:
 
 .. code-block:: bash
 
-    cd pylal
-    python setup.py install --prefix=${HOME}/local/pylal-v0.5.0-v1
-
-This installs pylal in ``${HOME}/local/pylal-v0.5.0-v1`` but you can change this to another directory, if you prefer.
-
-Set up your environment to use this pylal with
-
-.. code-block:: bash
-
-    source ${HOME}/local/pylal-v0.5.0-v1/etc/pylal-user-env.sh
-
-and you are done! Ignore the next section.
-
-.. _sourceinstall:
-
-===============================================
-Building and installing your own lalsuite
-===============================================
- 
-.. note::
-
-    On the TACC XSEDE cluster, you will need to run module load git to make sure that you are running the correct version of git to clone lalsuite.
-
-.. note::
-
-    On the TACC XSEDE cluster, you will need to run module load condor to have access to condor_compile
-
-.. note::
-
-    On the TACC XSEDE cluster it is recommended to install code into the $WORK directory not $HOME because of space limitations.
-
-Clone the lalsuite repository by following the `instructions on the DASWG pages <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/advanced-lalsuite-git.html#clone>`_. Once you have the repository cloned, you will need to checkout the master branch by running
-
-.. code-block:: bash
-
-    cd /path/to/your/lalsuite
     git checkout master
 
-.. note::
+If you want to build a specific release, replace ``master`` with a release tag, for example ``lalsuite-v6.30``. See the `list of lalsuite tags <https://ligo-vcs.phys.uwm.edu/cgit/lalsuite/refs/tags>`_ for available tags. You can also check out a branch from the `list of lalsuite branches <https://ligo-vcs.phys.uwm.edu/cgit/lalsuite/refs/heads>`_ in the same way; replace ``master`` with the branch name, e.g. ``lalsuite_o1_branch``.  Once you have checked out a tag or a branch, you can build and install lalsuite.
 
-    If you want to build a specific version change master for whatever version you want. For example if installing the ER5 release this would be ``git checkout lalsuite-v6.22``
 
-Once you are on the branch, you can build and install lalsuite in the normal way.
+=====================================================
+Building and installing into your virtual environment
+=====================================================
 
-The attached :download:`example script <resources/build_new_lalsuite.sh>` can be used to build and install the code. This script should be run from the directory containing your lalsuite git directory. Run the script with ./build_new_lalsuite.sh BRANCH SOURCEDIR INSTALLDIR NUMCORES where:
-
-* BRANCH is the name of the branch that you want to install (e.g. master).
-* SOURCEDIR is the path to the source directory. This is the directory that contains your lalsuite folder.
-* INSTALLDIR is the directory where you want the code installed. *This must be under your NFS-mounted home directory so it is accessible to the cluster nodes running your jobs.*
-* NUMCORES is the number of cores for a parallel build (e.g. 8).
-
-For example, the following will build lalsuite and install it in /home/$USER/local/master/
+Set the shell variable ``NAME`` to the path to your the virtual environment that you created for PyCBC and activate your environment, for example
 
 .. code-block:: bash
 
-    sh ./build_new_lalsuite.sh master /home/$USER/ /home/$USER/local/master 8
+    NAME=${HOME}/pycbc-dev
+    source $NAME/bin/activate
 
-This script will create a file INSTALLDIR/etc/lscsoftrc that can be sourced to set up your environment to used the installed code. In the example above, you would do
+From the top-level lalsuite directory, you can use the master configure script to build and install all of the components that you need with the commands 
 
 .. code-block:: bash
 
-    source /home/$USER/local/master/etc/lscsoftrc
+    ./00boot 
+    ./configure --prefix=$NAME --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalburst
+    make
+    make install
 
-to set up your environment to use the installed code.
+The install process creates a shell script called ``lalsuiterc`` that sources all of the ``$NAME/etc/lal*-user-env.sh`` scripts that set up the environment for lalsuite. You can add this to your virtualenv ``activate`` script so that it gets set up when you enter your virtual environment. To do this, run the commands
 
-Congratulations, you now have lalsuite set up and ready to use!
+.. code-block:: bash
+
+    echo 'source ${VIRTUAL_ENV}/etc/lalsuiterc' >> $NAME/bin/activate
+    deactivate
+    source $NAME/bin/activate
+
+lalsuite is now installed in your virtual environment. You can check this with the command
+
+.. code-block:: bash
+
+    echo $LAL_PREFIX
+
+which should return the path to the installation under your virtual environment.
+
+
