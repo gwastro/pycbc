@@ -61,9 +61,8 @@ def timestr(s):
 # set colors
 color_cycle = cycle(['red', 'blue', 'green', 'yellow', 'cyan', 'violet'])
 
-# make a figure
+# set default plugins
 mpld3.plugins.DEFAULT_PLUGINS = []
-fig = pylab.figure(figsize=[10, 3])
 
 # an empty list for holding segment names
 names = []
@@ -161,6 +160,15 @@ for segment_file in opts.segment_files:
 
                 # add list of lines to list
                 line_collections.append(sub_line_collections)
+
+# loop over IFOs
+for ifo in ifos:
+
+    # increment y position of bits
+    y = ifos.index(ifo) + 2 * 0.33
+
+    # set y position of text
+    ax.text(smin, y, ifo+' Segments', size=24)
 
 # add interactive legend
 interactive_legend = mpld3.plugins.InteractiveLegendPlugin(line_collections,
