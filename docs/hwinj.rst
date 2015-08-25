@@ -90,9 +90,9 @@ Our mass distribution will be uniform in total mass. We can select the minimum a
 
   --m-distr totalMass --min-mass1 1.0 --max-mass1 2.0 --min-mass2 1.0 --max-mass2 2.0
 
-Our spin distribution will be a Gaussian distribution. We can select the minimum, maximum, and mean of the component spins. The command line options will be ::
+We can select the minimum and maximum component spins. The command line options will be ::
 
- --enable-spin --min-spin1 0.0 --max-spin1 0.04 --mean-spin1 0.02 --min-spin2 0.0 --max-spin2 0.04 --mean-spin2 0.02
+ --enable-spin --min-spin1 0.0 --max-spin1 0.04 --min-spin2 0.0 --max-spin2 0.04
 
 Our inclination distribution will be uniform. The command line option will be ::
 
@@ -108,7 +108,7 @@ We select to use the ``SpinTaylorT4`` approximant and begin the waveforms at 10.
 
 Now we can combine all the options above and run ``lalapps_inspinj`` as ::
 
-  lalapps_inspinj --time-interval 60480 --time-step 604800 --gps-start-time 1126368017 --gps-end-time 1130371217 --d-distr volume --min-distance 10000 --max-distance 40000 --m-distr totalMass --min-mass1 1.0 --max-mass1 2.0 --min-mass2 1.0 --max-mass2 2.0 --enable-spin --min-spin1 0.0 --max-spin1 0.04 --mean-spin1 0.02 --min-spin2 0.0 --max-spin2 0.04 --mean-spin2 0.02 --i-distr uniform --l-distr random --waveform SpinTaylorT4threePointFivePN --f-lower 10 --taper-injection start --band-pass-injection
+  lalapps_inspinj --time-interval 60480 --time-step 604800 --gps-start-time 1126368017 --gps-end-time 1130371217 --d-distr volume --min-distance 10000 --max-distance 40000 --m-distr totalMass --min-mass1 1.0 --max-mass1 2.0 --min-mass2 1.0 --max-mass2 2.0 --enable-spin --min-spin1 0.0 --max-spin1 0.04 --min-spin2 0.0 --max-spin2 0.04 --i-distr uniform --l-distr random --waveform SpinTaylorT4threePointFivePN --f-lower 10 --taper-injection startend --band-pass-injection
 
 In this example ``lalapps_inspinj`` will write a LIGOLW XML file called ``HL-INJECTIONS_1-1126368017-4003200.xml`` that has a ``sim_inspiral`` table with the population of injections.
 
