@@ -46,6 +46,9 @@ while true ; do
       echo "usage: pycbc_submit_dax [-h]"
       echo "                        --dax DAX"
       echo "                        [--cache-file FILE]"
+      echo "                        [--accounting-group TAG]"
+      echo "                        [--force-no-accounting-group]"
+      echo "                        [--local-dir DIR]"
       echo
       echo "required arguments:"
       echo "  -d, --dax DAX           name of the dax file to plan"
