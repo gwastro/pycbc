@@ -6,6 +6,12 @@ Installing lalsuite for PyCBC
 
 The following page describes how to build lalsuite from source for use with PyCBC. 
 
+.. note::
+
+    These instructions assume that you already have the required dependencies for lalsuite installed on your system. You must have ``git``, ``FFTW``, ``GSL``, ``FrameL``, and ``MetaIO`` installed before continuing. 
+    
+    These packages are installed by default on a LIGO Data Grid cluster. If you are not on a LIGO Data Grid cluster, then you can download them from the `lscsoft repository <https://www.lsc-group.phys.uwm.edu/daswg/download/repositories.html>`_ or see the `lscsoft install instructions <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lscsoft-install.html>`_ for instructions on building the dependencies from source. You can also contact your system administrator to determine if these packages are available using the ``module load`` command.
+
 ====================================================
 Obtaining the source code and checking out a version
 ====================================================
