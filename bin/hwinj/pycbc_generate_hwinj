@@ -381,7 +381,7 @@ sim_table.append(sim)
 sngl_table.append(sngl)
 xml_filename = ''.join(ifos) + '-' + 'HWINJ_CBC' + '-' + str(start_time) + '-' + str(end_time-start_time) + '.xml.gz'
 if os.path.exists(xml_filename):
-    logging.warn('Filename %s already exists and will not be overwritten', txt_filename)
+    logging.warn('Filename %s already exists and will not be overwritten', xml_filename)
     sys.exit()
 else:
     utils.write_filename(outdoc, xml_filename, gz=xml_filename.endswith('gz'))
