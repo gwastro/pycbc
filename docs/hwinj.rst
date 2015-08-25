@@ -10,11 +10,11 @@ Introduction
 
 This page describes how to generate waveforms and save them as single-column ASCII waveform files that can be used by ``awgstream`` to inject into the detector.
 
-There are two executables that can be used to generate single-column ASCII files; they are ``pycbc_generate_hwinj`` and ``pycbc_generate_hwinj_from_inspinj``. Both executables use the PyCBC injection module (``pycbc.inject``) to inject the coherent waveform into a time series of zeroes.
+There are two executables that can be used to generate single-column ASCII files; they are ``pycbc_generate_hwinj`` and ``pycbc_generate_hwinj_from_xml``. Both executables use the PyCBC injection module (``pycbc.inject``) to inject the coherent waveform into a time series of zeroes.
 
 The executable ``pycbc_generate_hwinj`` generates a waveform using parameters from the command line. The user inputs parameters such as ``--mass1``, ``--mass2``, etc. on the command line. This executable is useful for generating a specific coherent waveform for hardware injections.
 
-The executable ``pycbc_generate_hwinj_from_inspinj`` generates all the waveforms in a LIGOLW ``sim_inspiral`` table. The output of ``lalapps_inspinj`` (an executable for generating a population of injections) is a LIGOLW ``sim_inspiral`` table. This executable is useful if you want to generate a population of coherent waveforms for hardware injections.
+The executable ``pycbc_generate_hwinj_from_xml`` generates all the waveforms in a LIGOLW ``sim_inspiral`` table. The output of ``lalapps_inspinj`` (an executable for generating a population of injections) is a LIGOLW ``sim_inspiral`` table. This executable is useful if you want to generate a population of coherent waveforms for hardware injections.
 
 =================================================
 Generate waveform from command line (``pycbc_generate_hwinj``)
@@ -65,7 +65,7 @@ The LIGOLW XML file contains a ``process_params`` table that saves the command l
 The user should inspect the waveforms. For a waveform plotting executable see section :ref:`runpycbcplothwinj`.
 
 =================================================
-Generate waveform from ``lalapps_inspinj`` output (``pycbc_generate_hwinj_from_inspinj``)
+Generate waveform from ``lalapps_inspinj`` output (``pycbc_generate_hwinj_from_xml``)
 =================================================
 
 Here is a usage case for generating a population of waveforms with ``lalapps_inspinj``. This example generates an injection every Tuesday for three months.
@@ -113,20 +113,20 @@ Now we can combine all the options above and run ``lalapps_inspinj`` as ::
 In this example ``lalapps_inspinj`` will write a LIGOLW XML file called ``HL-INJECTIONS_1-1126368017-4003200.xml`` that has a ``sim_inspiral`` table with the population of injections.
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-Run ``pycbc_generate_hwinj_from_inspinj``
+Run ``pycbc_generate_hwinj_from_xml``
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-Running ``lalapps_inspinj`` has written a LIGOLW XML file with a ``sim_inspiral`` table. Now we can run ``pycbc_generate_hwinj_from_inspinj`` to write single-column ASCII waveform files for the population of injections.
+Running ``lalapps_inspinj`` has written a LIGOLW XML file with a ``sim_inspiral`` table. Now we can run ``pycbc_generate_hwinj_from_xml`` to write single-column ASCII waveform files for the population of injections.
 
 There are just two command line options ``--injection-file`` (path to the LIGOLW XML file that ``lalapps_inspinj`` had written) and ``--sample-rate`` (the sample rate of the ASCII waveform files).
 
 In this example we set the sample rate to 16384Hz so on the command line do ::
 
-  pycbc_generate_hwinj_from_inspinj --injection-file HL-INJECTIONS_1-1126368017-4003200.xml --sample-rate 16384
+  pycbc_generate_hwinj_from_xml --injection-file HL-INJECTIONS_1-1126368017-4003200.xml --sample-rate 16384
 
 As this command runs it will generate a H1 and L1 ASCII waveform file for each row in the ``sim_inspiral`` table.
 
-The ASCII waveform files will be named ``${IFO}-HWINJ_CBC_SIMULATION_ID_${SIMID}-${START}-${DURATION}.xml.gz`` where where ``${SIMID}`` is the ``simulation_id`` number for the ``sim_inspiral`` row, ``${START}`` is the GPS start time of the ASCII waveform file, and ``${DURATION}`` is the duration of the file in seconds.
+The ASCII waveform files will be named ``${IFO}-HWINJ_CBC_SIMULATION_ID_${SIMID}-${START}-${DURATION}.txt`` where where ``${SIMID}`` is the ``simulation_id`` number for the ``sim_inspiral`` row, ``${START}`` is the GPS start time of the ASCII waveform file, and ``${DURATION}`` is the duration of the file in seconds.
 
 The user should inspect the waveforms. For a waveform plotting executable see section :ref:`runpycbcplothwinj`.
 
