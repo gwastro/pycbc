@@ -7,7 +7,7 @@ import numpy as np
 import logging
 import inspect
 
-from lal import LIGOTimeGPS
+from lal import LIGOTimeGPS, YRJUL_SI
 
 from glue.ligolw import ligolw
 from glue.ligolw import table
@@ -539,6 +539,9 @@ class ForegroundTriggers(object):
             coinc_inspiral_row.snr = coinc_event_vals['stat'][idx]
             coinc_inspiral_row.false_alarm_rate = coinc_event_vals['fap'][idx]
             coinc_inspiral_row.combined_far = 1./coinc_event_vals['ifar'][idx]
+            # Transform to Hz
+            coinc_inspiral_row.combined_far = \
+                                    coinc_inspiral_row.combined_far / YRJUL_SI
             coinc_event_row.likelihood = 0.
             coinc_inspiral_row.minimum_duration = 0.
             coinc_event_table.append(coinc_event_row)
