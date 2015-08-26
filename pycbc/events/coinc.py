@@ -31,7 +31,7 @@ from scipy.interpolate import interp1d
 def calculate_n_louder(bstat, fstat, dec):
     """ Calculate for each foreground event the number of background events
     that are louder than it.
-    
+
     Parameters
     ----------
     bstat: numpy.ndarray
@@ -40,6 +40,7 @@ def calculate_n_louder(bstat, fstat, dec):
         Array of the foreground statitsic values
     dec: numpy.ndarray
         Array of the decimation factors for the background statistics
+
     
     Returns
     ------- 
@@ -200,7 +201,6 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
     time_sorting = time.argsort()
     stat = stat[time_sorting]
     time = time[time_sorting]
-    tslide = tslide[time_sorting]
     
     logging.info('sorting...')
     left = numpy.searchsorted(time, time - window)
