@@ -6,6 +6,7 @@ leaves the background triggers alone. """
 import h5py, numpy, argparse, logging, pycbc, pycbc.events
 
 def com(f, files, group):
+    """ Combine the same column from multiple files and saave to a third"""
     f[group] = numpy.concatenate([fi[group][:] for fi in files])
 
 parser = argparse.ArgumentParser()
@@ -18,12 +19,12 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-# We apply a dumb factor of the number of bins only, nothing smart for now
-# Note that this is a conservative estimate.
+# We apply a dumb factor of the number of bins only, nothing smart for now, no clustering of the background
 files = [h5py.File(n) for n in args.statmap_files]
 
 fac = len(args.statmap_files)
 
+# copy over the standard data that is constant
 f = h5py.File(args.output_file, "w")
 f.attrs['detector_1'] = files[0].attrs['detector_1']
 f.attrs['detector_2'] = files[0].attrs['detector_2']
@@ -34,16 +35,18 @@ f.attrs['foreground_time'] = files[0].attrs['foreground_time']
 f.attrs['background_time_exc'] = files[0].attrs['background_time_exc']
 f.attrs['foreground_time_exc'] = files[0].attrs['foreground_time_exc']
 
+# combine times that are foreground vetoed as they may differ between bins
 for key in files[0]['segments'].keys():
     if key == 'foreground_veto':
         continue
     f['segments/%s/start' % key] = files[0]['segments/%s/start' % key][:]
     f['segments/%s/end' % key] = files[0]['segments/%s/end' % key][:]
 
-
+# copy over all the columns in the foreground group, we recalculate ifar/fap later
 for key in files[0]['foreground'].keys():
     com(f, files, 'foreground/%s' % key)
     
+# recalculate ifar/fap for the foreground triggers by applying a trials factor = num_files(num_bins)
 ifar = f['foreground/ifar'][:] / fac
 coinc_time = f.attrs['foreground_time']
 f['foreground/ifar'][:] = ifar
@@ -54,16 +57,20 @@ coinc_time = f.attrs['foreground_time_exc']
 f['foreground/ifar_exc'][:] = ifar
 f['foreground/fap_exc'][:] = 1 - numpy.exp( - coinc_time / ifar)
 
+# cluster for the loudest ifar value 
 cidx = pycbc.events.cluster_coincs(f['foreground/ifar'][:], 
                                    f['foreground/time1'][:], 
                                    f['foreground/time2'][:], 
                                    numpy.zeros(len(ifar)),
                                    0, args.cluster_window)
 
+# downsample the foreground columns to only the loudest ifar between the multiple files
 for key in f['foreground'].keys():
     dset = f['foreground/%s' % key]
     dset = dset[:][cidx]
 
+# If there is a background set (full_data as opposed to injection run), then recalculate 
+# the values for its triggers as well
 if 'background' in files[0]:  
     for key in files[0]['background'].keys():
         com(f, files, 'background/%s' % key)
