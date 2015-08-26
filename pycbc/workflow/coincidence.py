@@ -35,7 +35,7 @@ import logging
 from glue import segments
 from glue.ligolw import lsctables,ligolw
 from glue.ligolw import utils as ligolw_utils
-from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node
+from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node, File
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutable, SQLInOutExecutable
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
@@ -526,6 +526,32 @@ class PyCBCHDFInjFindExecutable(Executable):
                                  tags=tags)
         return node
 
+class PyCBCDistributeMassBins(Executable):
+    """ Distribute coinc files amoung mass bins """
+    current_retention_level = Executable.CRITICAL
+    def create_node(self, coinc_files, bank_file,  mass_bins, tags=[]):
+        node = Node(self)
+        node.add_input_list_opt('--coinc-files', coinc_files)
+        node.add_input_opt('--bank-file', bank_file)
+        node.add_opt('--mass-bins', ' '.join(mass_bins))
+        
+        output_files = [File(coinc_files[0].ifo_list, 
+                             self.name, 
+                             coinc_files[0].segment, 
+                             directory=self.out_dir,
+                             tags = tags + ['mbin-%s' % i],
+                             extension='.hdf') for i in range(len(mass_bins))]
+        node.add_output_list_opt('--output-files', output_files)
+        return node
+        
+class PyCBCCombineStatmap(Executable):
+    current_retention_level = Executable.CRITICAL
+    def create_node(self, stat_files, tags=[]):
+        node = Node(self)
+        node.add_input_list_opt('--statmap-files', stat_files)
+        node.new_output_file_opt(stat_files[0].segment, '.hdf', '--output-file', tags=tags)
+        return node
+ 
 class MergeExecutable(Executable):
     current_retention_level = Executable.CRITICAL
 
@@ -615,6 +641,105 @@ def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir, ta
     workflow += node
     return node.output_files[0]
 
+def setup_statmap(workflow, coinc_files, bank_file, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    if workflow.cp.has_option_tags('workflow-coincidence', 'mass-bins', tags):
+        return setup_mass_bins(workflow, coinc_files, bank_file, out_dir, tags=tags)
+    else:
+        return setup_simple_statmap(workflow, coinc_files, out_dir, tags=tags)
+        
+def setup_simple_statmap(workflow, coinc_files, out_dir, tags=None):
+    tags = [] if tags is None else tags
+
+    statmap_exe = PyCBCStatMapExecutable(workflow.cp, 'statmap',
+                                              ifos=workflow.ifos,
+                                              tags=tags, out_dir=out_dir) 
+
+    stat_node = statmap_exe.create_node(coinc_files, tags=tags)
+    workflow.add_node(stat_node)
+    return stat_node.output_files[0]
+
+def setup_mass_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    
+    bins_exe = PyCBCDistributeMassBins(workflow.cp, 'distribute_mass_bins', 
+                                       ifos=workflow.ifos, tags=tags, out_dir=out_dir)
+                                       
+    statmap_exe = PyCBCStatMapExecutable(workflow.cp, 'statmap',
+                                              ifos=workflow.ifos,
+                                              tags=tags, out_dir=out_dir)       
+
+    cstat_exe = PyCBCCombineStatmap(workflow.cp, 'combine_statmap', ifos=workflow.ifos,
+                                    tags=tags, out_dir=out_dir)                       
+           
+    mass_bins = workflow.cp.get_opt_tags('workflow-coincidence', 'mass-bins', tags).split(' ')             
+    bins_node = bins_exe.create_node(coinc_files, bank_file, mass_bins)
+    workflow += bins_node
+    
+    stat_files = FileList([])
+    for i, coinc_file in enumerate(bins_node.output_files):
+        statnode = statmap_exe.create_node(FileList([coinc_file]), tags=tags + ['BIN_%s' % i])
+        workflow += statnode
+        stat_files.append(statnode.output_files[0])
+    
+    cstat_node = cstat_exe.create_node(stat_files, tags=tags)
+    workflow += cstat_node
+    
+    return cstat_node.output_files[0]
+    
+def setup_statmap_inj(workflow, coinc_files, background_file, bank_file, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    if workflow.cp.has_option_tags('workflow-coincidence', 'mass-bins', tags):
+        return setup_mass_bins_inj(workflow, coinc_files, background_file, bank_file, out_dir, tags=tags)
+    else:
+        return setup_simple_statmap_inj(workflow, coinc_files, background_file, out_dir, tags=tags)
+        
+def setup_simple_statmap_inj(workflow, coinc_files, background_file, out_dir, tags=None):
+    tags = [] if tags is None else tags
+
+    statmap_exe = PyCBCStatMapInjExecutable(workflow.cp, 'statmap_inj',
+                                              ifos=workflow.ifos,
+                                              tags=tags, out_dir=out_dir) 
+
+    stat_node = statmap_exe.create_node(FileList(coinc_files['injinj']), background_file, 
+                                     FileList(coinc_files['injfull']), FileList(coinc_files['fullinj']))
+    workflow.add_node(stat_node)
+    return stat_node.output_files[0]
+
+def setup_mass_bins_inj(workflow, coinc_files, background_file, bank_file, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    
+    bins_exe = PyCBCDistributeMassBins(workflow.cp, 'distribute_mass_bins', 
+                                       ifos=workflow.ifos, tags=tags, out_dir=out_dir)
+                                       
+    statmap_exe = PyCBCStatMapInjExecutable(workflow.cp, 'statmap_inj',
+                                              ifos=workflow.ifos,
+                                              tags=tags, out_dir=out_dir)   
+    
+    cstat_exe = PyCBCCombineStatmap(workflow.cp, 'combine_statmap', ifos=workflow.ifos,
+                                    tags=tags, out_dir=out_dir)                       
+           
+    mass_bins = workflow.cp.get_opt_tags('workflow-coincidence', 'mass-bins', tags).split(' ')   
+    
+    
+    for inj_type in ['injinj', 'injfull', 'fullinj']:          
+        bins_node = bins_exe.create_node(FileList(coinc_files[inj_type]), bank_file, mass_bins, tags=tags + [inj_type])
+        workflow += bins_node
+        coinc_files[inj_type] = bins_node.output_files
+    
+    stat_files = FileList([])
+    for i in range(len(mass_bins)):
+        statnode = statmap_exe.create_node(FileList([coinc_files['injinj'][i]]), background_file, 
+                                     FileList([coinc_files['injfull'][i]]), FileList([coinc_files['fullinj'][i]]), 
+                                     tags=tags + ['BIN_%s' % i])
+        workflow += statnode
+        stat_files.append(statnode.output_files[0])
+        
+    cstat_node = cstat_exe.create_node(stat_files, tags=tags)
+    workflow += cstat_node
+    
+    return cstat_node.output_files[0]
+
 def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
                            background_file, veto_file, veto_name, out_dir, tags=[]):
     """
@@ -631,10 +756,6 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
 
     if len(workflow.ifos) > 2:
         raise ValueError('This coincidence method only supports two ifo searches')
-
-    combinecoinc_exe = PyCBCStatMapInjExecutable(workflow.cp, 'statmap_inj',
-                                              ifos=workflow.ifos,
-                                              tags=tags, out_dir=out_dir)
 
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
@@ -666,14 +787,8 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
             bg_files[ctag] += coinc_node.output_files
             workflow.add_node(coinc_node)
 
-    combine_node = combinecoinc_exe.create_node(FileList(bg_files['injinj']), background_file, 
-                                     FileList(bg_files['injfull']), FileList(bg_files['fullinj']))
-    workflow.add_node(combine_node)
-
-    logging.info('...leaving coincidence ')
-    return combine_node.output_files[0]
-
-
+    return setup_statmap_inj(workflow, bg_files, background_file, hdfbank, out_dir, tags=tags)
+    
 def setup_interval_coinc(workflow, hdfbank, trig_files,
                          veto_files, veto_names, out_dir, tags=[]):
     """
@@ -694,10 +809,6 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
     findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
                                               ifos=workflow.ifos,
                                               tags=tags, out_dir=out_dir)
-
-    combinecoinc_exe = PyCBCStatMapExecutable(workflow.cp, 'statmap',
-                                              ifos=workflow.ifos,
-                                              tags=tags, out_dir=out_dir)
                                          
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
@@ -714,9 +825,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
              
-        combine_node = combinecoinc_exe.create_node(bg_files, tags=[veto_name])
-        workflow.add_node(combine_node)
-        stat_files += combine_node.output_files
+        stat_files += [setup_statmap(workflow, bg_files, hdfbank, out_dir, tags=tags + [veto_name])]
         
     return stat_files
     logging.info('...leaving coincidence ')
