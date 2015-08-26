@@ -1,0 +1,82 @@
+#!/bin/env python
+""" Apply a naive mass binning, assuming that each bin is fully independent, which 
+is a conservative estimate. This clusters to find the most significant foreground, but
+leaves the background triggers alone. """
+
+import h5py, numpy, argparse, logging, pycbc, pycbc.events
+
+def com(f, files, group):
+    f[group] = numpy.concatenate([fi[group][:] for fi in files])
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--statmap-files', nargs='+',
+                    help="List of coinc files to be redistributed")
+parser.add_argument('--cluster-window', type=float)
+parser.add_argument('--output-file', help="name of output file")
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+# We apply a dumb factor of the number of bins only, nothing smart for now
+# Note that this is a conservative estimate.
+files = [h5py.File(n) for n in args.statmap_files]
+
+fac = len(args.statmap_files)
+
+f = h5py.File(args.output_file, "w")
+f.attrs['detector_1'] = files[0].attrs['detector_1']
+f.attrs['detector_2'] = files[0].attrs['detector_2']
+f.attrs['timeslide_interval'] = files[0].attrs['timeslide_interval']
+
+f.attrs['background_time'] = files[0].attrs['background_time']
+f.attrs['foreground_time'] = files[0].attrs['foreground_time']
+f.attrs['background_time_exc'] = files[0].attrs['background_time_exc']
+f.attrs['foreground_time_exc'] = files[0].attrs['foreground_time_exc']
+
+for key in files[0]['segments'].keys():
+    if key == 'foreground_veto':
+        continue
+    f['segments/%s/start' % key] = files[0]['segments/%s/start' % key][:]
+    f['segments/%s/end' % key] = files[0]['segments/%s/end' % key][:]
+
+
+for key in files[0]['foreground'].keys():
+    com(f, files, 'foreground/%s' % key)
+    
+ifar = f['foreground/ifar'][:] / fac
+coinc_time = f.attrs['foreground_time']
+f['foreground/ifar'][:] = ifar
+f['foreground/fap'][:] = 1 - numpy.exp( - coinc_time / ifar)
+
+ifar = f['foreground/ifar_exc'][:] / fac
+coinc_time = f.attrs['foreground_time_exc']
+f['foreground/ifar_exc'][:] = ifar
+f['foreground/fap_exc'][:] = 1 - numpy.exp( - coinc_time / ifar)
+
+cidx = pycbc.events.cluster_coincs(f['foreground/ifar'][:], 
+                                   f['foreground/time1'][:], 
+                                   f['foreground/time2'][:], 
+                                   numpy.zeros(len(ifar)),
+                                   0, args.cluster_window)
+
+for key in f['foreground'].keys():
+    dset = f['foreground/%s' % key]
+    dset = dset[:][cidx]
+
+if 'background' in files[0]:  
+    for key in files[0]['background'].keys():
+        com(f, files, 'background/%s' % key)
+     
+    f['background/ifar'][:] =  f['background/ifar'][:] / fac
+    
+    for key in files[0]['background_exc'].keys():
+        com(f, files, 'background_exc/%s' % key)
+     
+    f['background_exc/ifar'][:] = f['background_exc/ifar'][:] / fac
+
+    com(f, files, 'segments/foreground_veto/start')
+    com(f, files, 'segments/foreground_veto/end')
+
+
+f.close()
