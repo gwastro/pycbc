@@ -248,8 +248,11 @@ for inj_file, tag in zip(inj_files, inj_tags):
     ctags = [tag, 'inj']
     output_dir = '%s_coinc' % tag
 
-    small_inj_file = wf.veto_injections(workflow, inj_file, seg_summ_file, 
+    if workflow.cp.has_option_tags('workflow-injections', 'strip-injections', tags=[tag]): 
+        small_inj_file = wf.veto_injections(workflow, inj_file, seg_summ_file, 
                                  'TRIGGERS_PRODUCED', "inj_files", tags=[tag])
+    else:
+        small_inj_file = inj_file
                                  
     # setup the matchedfilter jobs                                                     
     insps = wf.setup_matchedfltr_workflow(workflow, science_segs, 
