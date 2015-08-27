@@ -1,0 +1,49 @@
+#!/bin/env python
+import h5py, argparse, numpy, pycbc.pnutils, logging, pycbc.events, pycbc.io
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--coinc-files', nargs='+',
+                    help="List of coinc files to be redistributed")
+parser.add_argument('--mass-bins', nargs='+',
+                    help="Ordered list of mass bin upper boundaries. "
+                         "An ordered list of type-boundary pairs, applied sequentially."
+                         "Ex. component-2 total-15 chirp-30")
+parser.add_argument('--bank-file',
+                    help="hdf format template bank file")
+parser.add_argument('--output-files', nargs='+',
+                    help="list of output file names, one for each mass bin")
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+f = h5py.File(args.bank_file)
+m1, m2 = f['mass1'][:], f['mass2']
+
+if len(args.output_files) != len(args.mass_bins):
+    raise ValueError('Number of mass bins and output files does not match') 
+
+d = pycbc.io.StatmapData(files=args.coinc_files)
+logging.info('%s coinc triggers' % len(d))
+
+used = numpy.array([], dtype=numpy.uint32)
+for mbin, outname in zip(args.mass_bins, args.output_files):
+    bin_type, boundary = tuple(mbin.split('-'))
+    if bin_type == 'component':
+        locs = numpy.maximum(m1, m2) < float(boundary)
+    elif bin_type == 'total':
+        locs = m1 + m2 < float(boundary)
+    elif bin_type == 'chirp':
+        locs = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)[0] < float(boundary)
+    else:
+        raise ValueError('Invalid bin type %s' % bin_type)    
+    
+    # make sure we don't reuse anythign from an earlier bin
+    locs = numpy.where(locs)[0]
+    locs = numpy.delete(locs, numpy.where(numpy.in1d(locs, used))[0])
+    used = numpy.concatenate([used, locs])    
+
+    # select the coincs from only this bin and save to a single combined file
+    e = d.select(numpy.in1d(d.template_id, locs))
+    logging.info('%s coincs in mass bin: %s' % (len(e), mbin))
+    e.save(outname)
