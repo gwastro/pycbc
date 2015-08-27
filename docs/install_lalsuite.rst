@@ -41,6 +41,10 @@ If you want to build a specific release, replace ``master`` with a release tag, 
 Building and installing into your virtual environment
 =====================================================
 
+.. note::
+
+    The install instructions below install lalsuite into a directory called ``opt/lalsuite`` under your virtual environment. You can remove lalsuite by removing this directory with ``rm -rf $NAME/opt/lalsuite``. If you want to install multiple versions of lalsuite in your virtual environment, you can chose different directories by specifying a different ``--prefix`` to configure below.
+
 Set the shell variable ``NAME`` to the path to your the virtual environment that you created for PyCBC and activate your environment, for example
 
 .. code-block:: bash
@@ -64,6 +68,10 @@ The install process creates a shell script called ``lalsuiterc`` that sources al
     echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc' >> $NAME/bin/activate
     deactivate
     source $NAME/bin/activate
+
+.. note::
+
+    If you want to manage multiple versions of lalsuite, it is not reccommended to source the lalsuiterc script from your activate script.  You should just source it when you enter your virtual environment with the command ``source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc``
 
 lalsuite is now installed in your virtual environment. You can check this with the command
 
