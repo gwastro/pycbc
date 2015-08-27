@@ -20,6 +20,7 @@ repository, make a ``gh-pages`` branch in your repository as follows:
     git add .nojeckyl latest
     git commit -a -m "set up gh-pages branch"
     git push origin gh-pages
+    git branch --set-upstream gh-pages origin/gh-pages
 
 These commands create the branch and then remove all of the files from this branch, so that it will just contain the documentation pages.
 
