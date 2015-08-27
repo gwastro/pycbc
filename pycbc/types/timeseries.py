@@ -409,7 +409,7 @@ class TimeSeries(Array):
         """ Return the Fourier transform of this time series
         
         Parameters
-        ---------
+        ----------
         delta_f : {None, float}, optional
             The frequency resolution of the returned frequency series. By 
         default the resolution is determined by the duration of the timeseries.

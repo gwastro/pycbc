@@ -42,7 +42,7 @@ class FFT(object):
     """ Create a forward FFT  engine
 
     Parameters
-    ---------
+    ----------
     invec : complex64 or float32
       Input pycbc.types.Array (or subclass); its FFT will be computed
     outvec : complex64 
@@ -67,7 +67,7 @@ class IFFT(object):
     """ Create a reverse FFT  engine
 
     Parameters
-    ---------
+    ----------
     invec : complex64
       Input pycbc.types.Array (or subclass); its IFFT will be computed
     outvec : complex64 or float32 
