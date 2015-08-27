@@ -57,7 +57,7 @@ From the top-level lalsuite directory, you can use the master configure script t
 .. code-block:: bash
 
     ./00boot 
-    ./configure --prefix=$NAME/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalburst
+    ./configure --prefix=$NAME/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar
     make
     make install
 
