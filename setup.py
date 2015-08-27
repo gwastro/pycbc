@@ -292,7 +292,19 @@ class build_docs(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_call("cd docs; cp conf_std.py conf.py; sphinx-apidoc "
+        subprocess.check_call("cd docs; cp Makefile.std Makefile; cp conf_std.py conf.py; sphinx-apidoc "
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
+                            stderr=subprocess.STDOUT, shell=True)
+
+class build_gh_pages(Command):
+    user_options = []
+    description = "Build the documentation pages for GitHub"
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        subprocess.check_call("cd docs; cp Makefile.gh_pages Makefile; cp conf_std.py conf.py; sphinx-apidoc "
                               " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
@@ -304,12 +316,13 @@ class build_docs_test(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_call("cd docs; cp conf_test.py conf.py; sphinx-apidoc "
+        subprocess.check_call("cd docs; cp Makefile.std Makefile; cp conf_test.py conf.py; sphinx-apidoc "
                               " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)                            
 
 cmdclass = { 'test'  : test,
              'build_docs' : build_docs,
+             'build_gh_pages' : build_gh_pages,
              'build_docs_test' : build_docs_test,
              'install' : install,
              'test_cpu':test_cpu,
