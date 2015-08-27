@@ -1,10 +1,10 @@
-################
+########################################
 Building Documentation for Git Hub Pages
-################
+########################################
 
-=============
+===============================
 Creating a Git Hub project page
-=============
+===============================
 
 Git Hub pages are built from a branch of the repository called ``gh-pages``.
 If you have not already created a Git Hub project pages for PyCBC in your
@@ -27,9 +27,9 @@ These commands create the branch and then remove all of the files from this bran
 
     The main `ligo-cbc/pycbc <https://github.com/ligo-cbc/pycbc>`_ repository already has a `gh-pages` branch, so do not do this in the main repository.
 
-=============
+======================================
 Building and pushing the documentation
-=============
+======================================
 
 The documentation should built from the source code on a regular branch and installed into the ``gh-pages`` branch. Since git cannot have two branches checked out simultaneously, you need to make a copy of your repository with just the gh-pages branch checked out. Do this will the following commands (assuming your PyCBC git repository is in a directory named ``pycbc``).
 
