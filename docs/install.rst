@@ -215,6 +215,13 @@ This will build the documentation in the directory docs/_build/html which can be
     
 will copy the documentation to a directory called ``pycbc-docs`` under your public html pages.
 
+To maintain the documentation under GitHub project pages, see
+
+.. toctree::
+    :maxdepth: 1
+
+    build_gh_pages
+
 
 ====================================
 Modifying pycbc-glue and pycbc-pylal
