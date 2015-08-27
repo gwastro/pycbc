@@ -117,108 +117,71 @@ splitbank_files = wf.setup_splittable_workflow(workflow, bank_files, "bank")
 # setup the injection files
 inj_files, inj_tags = wf.setup_injection_workflow(workflow, 
                                                      output_dir="inj_files")
-                                                                                                                                                              
-bg_file = None                                                                                     
-tags = ["full_data"] + inj_tags
-output_dirs = ["full_data"]
-inj_coincs = wf.FileList()
-output_dirs += inj_tags
-for inj_file, tag, output_dir in zip([None]+inj_files, tags, output_dirs):
+                                                                                                                                                        
+######################## Setup the FULL DATA run
+tag = output_dir = "full_data"
+ctags = [tag, 'full']
 
-    if tag == 'full_data':
-        ctags = [tag, 'full']
-    else:
-        ctags = [tag, 'inj']
-        output_dir += '_coinc'
+# setup the matchedfilter jobs                                                     
+ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, science_segs, 
+                                   datafind_files, splitbank_files, 
+                                   output_dir, tags = [tag])
 
-    # setup the matchedfilter jobs                                                     
-    insps = wf.setup_matchedfltr_workflow(workflow, science_segs, 
-                                       datafind_files, splitbank_files, 
-                                       output_dir, injection_file=inj_file,
-                                       tags = [tag])
-   
-    ind_insps = insps if tag == 'full_data' else ind_insps
-   
-    insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
-                                               insps, output_dir, tags=[tag])
+insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
+                                           insps, output_dir, tags=[tag])
 
-    # setup coinc for the filtering jobs
-    if tag == 'full_data':
-        full_insps = insps
-        bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, 
-                                       cum_veto_files, veto_names, 
-                                       output_dir, tags=ctags)  
-        final_bg_file =  wf.setup_interval_coinc(workflow, hdfbank, insps, 
-                                       final_veto_file, final_veto_name,
-                                       output_dir, tags=ctags)
-
-        censored_veto = wf.make_foreground_censored_veto(workflow, 
-                               final_bg_file[0], final_veto_file[0], final_veto_name[0],
-                               'closed_box', 'segments')      
-                                         
-        for bg_file in (bg_files + final_bg_file):
-            snrifar = wf.make_snrifar_plot(workflow, bg_file,
-                                rdir['coincident_triggers'], 
-                                 closed_box=True, tags=bg_file.tags + ['closed'])
-            if bg_file == final_bg_file[0]:
-                closed_snrifar = snrifar
-
-            ifar = wf.make_ifar_plot(workflow, bg_file, rdir['result'])
-
-        snrifar = wf.make_snrifar_plot(workflow, final_bg_file[0],
-                            rdir['result'], tags=final_bg_file[0].tags)
-
-        table = wf.make_foreground_table(workflow, final_bg_file[0], 
-                            hdfbank[0], tag, rdir['result'], singles=insps,
-                            extension='.html', tags=["html"])
-        fore_xmlall = wf.make_foreground_table(workflow, final_bg_file[0],
-                            hdfbank[0], tag, rdir['result'], singles=insps,
-                            extension='.xml', tags=["xmlall"])
-        fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file[0],
-                            hdfbank[0], tag, rdir['result'], singles=insps,
-                            extension='.xml', tags=["xmlloudest"])
-        single_layout(rdir['result'], [snrifar, table])
-
-        snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
-                            'closed_box', rdir['single_triggers'], tags=[tag])
-        group_layout(rdir['single_triggers'], snrchi)
-        
-        hist_summ = []
-        for insp in full_insps:
-            wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto, 
-                   'closed_box', rdir['single_triggers/%s-hexbin' % insp.ifo], tags=[tag])
-            wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
-                   rdir['single_triggers/%s-hist' % insp.ifo], 
-                   exclude='summ', tags=[tag])
-            hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
-                   rdir['single_triggers/%s-hist' % insp.ifo], 
-                   require='summ', tags=[tag])
-            hist_summ += list(grouper(hists, 2))
-
-    else:
-        inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
-                                        full_insps, insps, final_bg_file, 
-                                        final_veto_file[0], final_veto_name[0],
-                                        output_dir, tags = ctags)
-        found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
-                                        wf.FileList([inj_file]), censored_veto, 
-                                        'closed_box',
-                                        output_dir, tags=ctags)
-        inj_coincs += [inj_coinc]                      
-        wf.make_sensitivity_plot(workflow, found_inj, 
-                      rdir['search_sensitivity/%s' % tag], 
-                       exclude=['all', 'summ'], tags=ctags)
-        wf.make_foundmissed_plot(workflow, found_inj, 
-                      rdir['injections/%s' % tag],
-                       exclude=['all', 'summ'], tags=[tag])
-        wf.make_inj_table(workflow, found_inj, 
-                      rdir['injections/%s' % tag], tags=[tag])
+# setup coinc for the filtering jobs
+full_insps = insps
+bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, 
+                               cum_veto_files, veto_names, 
+                               output_dir, tags=ctags)  
+final_bg_file =  wf.setup_interval_coinc(workflow, hdfbank, insps, 
+                               final_veto_file, final_veto_name,
+                               output_dir, tags=ctags)
+     
+censored_veto = wf.make_foreground_censored_veto(workflow, 
+                       final_bg_file[0], final_veto_file[0], final_veto_name[0],
+                       'closed_box', 'segments')      
                                  
-        for inj_insp, trig_insp in zip(insps, full_insps):
-            wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
-                                      final_bg_file[0], trig_insp,
-                                      rdir['injections/%s' % tag], tags=[tag])
-   
+for bg_file in (bg_files + final_bg_file):
+    snrifar = wf.make_snrifar_plot(workflow, bg_file,
+                        rdir['coincident_triggers'], 
+                         closed_box=True, tags=bg_file.tags + ['closed'])
+    if bg_file == final_bg_file[0]:
+        closed_snrifar = snrifar
+        
+
+snrifar = wf.make_snrifar_plot(workflow, final_bg_file[0],
+                    rdir['result'], tags=final_bg_file[0].tags)
+
+table = wf.make_foreground_table(workflow, final_bg_file[0], 
+                    hdfbank[0], tag, rdir['result'], singles=insps,
+                    extension='.html', tags=["html"])
+fore_xmlall = wf.make_foreground_table(workflow, final_bg_file[0],
+                    hdfbank[0], tag, rdir['result'], singles=insps,
+                    extension='.xml', tags=["xmlall"])
+fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file[0],
+                    hdfbank[0], tag, rdir['result'], singles=insps,
+                    extension='.xml', tags=["xmlloudest"])
+single_layout(rdir['result'], [snrifar, table])
+
+snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
+                    'closed_box', rdir['single_triggers'], tags=[tag])
+group_layout(rdir['single_triggers'], snrchi)
+
+hist_summ = []
+for insp in full_insps:
+    wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto, 
+           'closed_box', rdir['single_triggers/%s-hexbin' % insp.ifo], tags=[tag])
+    wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
+           rdir['single_triggers/%s-hist' % insp.ifo], 
+           exclude='summ', tags=[tag])
+    hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
+           rdir['single_triggers/%s-hist' % insp.ifo], 
+           require='summ', tags=[tag])
+    hist_summ += list(grouper(hists, 2))
+
+# Calculate the inspiral psds and make plots
 full_segs, psd_files, insp_segs, insp_data_segs = [], [], {}, {}                            
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     name = 'INSPIRAL_SEGMENTS'
@@ -232,11 +195,10 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
 
     psd_files += [wf.make_psd_file(workflow, datafind_files.find_output_with_ifo(ifo), 
                                 data_seg, 'INSPIRAL_DATA', 'psds')]
-                                
+                           
 s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'])
 r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'])
 det_summ = [(s, r)]
-   
 layout(rdir['detector_sensitivity'], det_summ)    
 
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
@@ -279,6 +241,50 @@ veto_summ_table = wf.make_seg_table(workflow,
 seg_summ_plot = wf.make_seg_plot(workflow, [seg_summ_file],
                         rdir['analysis_time/segments'],
                         seg_summ_names, ['SUMMARY'])
+
+############################## Setup the injection runs                                                                           
+inj_coincs = wf.FileList()
+for inj_file, tag in zip(inj_files, inj_tags):
+    ctags = [tag, 'inj']
+    output_dir = '%s_coinc' % tag
+
+    if workflow.cp.has_option_tags('workflow-injections', 'strip-injections', tags=[tag]): 
+        small_inj_file = wf.veto_injections(workflow, inj_file, seg_summ_file, 
+                                 'TRIGGERS_PRODUCED', "inj_files", tags=[tag])
+    else:
+        small_inj_file = inj_file
+                                 
+    # setup the matchedfilter jobs                                                     
+    insps = wf.setup_matchedfltr_workflow(workflow, science_segs, 
+                                       datafind_files, splitbank_files, 
+                                       output_dir, injection_file=small_inj_file,
+                                       tags = [tag])
+   
+    insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
+                                               insps, output_dir, tags=[tag])
+                                               
+    inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
+                                    full_insps, insps, final_bg_file, 
+                                    final_veto_file[0], final_veto_name[0],
+                                    output_dir, tags = ctags)
+    found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
+                                    wf.FileList([inj_file]), final_veto_file[0], 
+                                    final_veto_name[0],
+                                    output_dir, tags=ctags)
+    inj_coincs += [inj_coinc]                      
+    wf.make_sensitivity_plot(workflow, found_inj, 
+                  rdir['search_sensitivity/%s' % tag], 
+                   exclude=['all', 'summ'], tags=ctags)
+    wf.make_foundmissed_plot(workflow, found_inj, 
+                  rdir['injections/%s' % tag],
+                   exclude=['all', 'summ'], tags=[tag])
+    wf.make_inj_table(workflow, found_inj, 
+                  rdir['injections/%s' % tag], tags=[tag])
+                             
+    for inj_insp, trig_insp in zip(insps, full_insps):
+        wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
+                                  final_bg_file[0], trig_insp,
+                                  rdir['injections/%s' % tag], tags=[tag])
 
 # Make combined injection plots
 inj_summ = []
