@@ -125,17 +125,11 @@ Enter the virtual environment that you wish to use for PyCBC development by sour
 
     source $NAME/bin/activate
 
-Next install the Pegasus WMS python libraries needed to build the workflows.
-
-.. note::
-
-   Pegasus WMS is not yet under the Python Package Index and so it must be installed from a source tarball. This will be fixed once Pegasus 4.5.2 is released. 
-
-To install the Pegasus python libraries run the command:
+Next install the Pegasus WMS python libraries needed to build the workflows with the command:
 
 .. code-block:: bash
 
-    pip install http://download.pegasus.isi.edu/pegasus/4.5.2cvs/pegasus-python-source-4.5.2cvs.tar.gz
+    pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
 
 You now need to decide whether you want to install a release of PyCBC or an editable version of the source code from a git repository for development. 
 
