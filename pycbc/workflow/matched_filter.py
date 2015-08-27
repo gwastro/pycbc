@@ -120,9 +120,9 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
     elif mfltrMethod == "WORKFLOW_MULTIPLE_IFOS":
         logging.info("Adding matched-filter jobs to workflow.")
         inspiral_outs = setup_matchedfltr_dax_generated_multi(workflow,
-                                      science_segs,
-                                      datafind_outs, tmplt_banks, output_dir,
-                                      injection_file=injection_file, tags=tags)
+                                      science_segs, datafind_outs, tmplt_banks,
+                                      output_dir, injection_file=injection_file,
+                                      tags=tags)
     else:
         errMsg = "Matched filter method not recognized. Must be one of "
         errMsg += "WORKFLOW_INDEPENDENT_IFOS (currently only one option)."
@@ -300,24 +300,13 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         cp.set('inspiral', 'block-duration',
                str(abs(science_segs[ifos[0]][0]) - \
                        2 * int(cp.get('inspiral', 'pad-data'))))
-        if injection_file is not None:
-            for inj_file in injection_file:
-                job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
-                                         out_dir=output_dir,
-                                         injection_file=inj_file, tags=tags)
-                tag = list(tags)
-                tag.append(inj_file.tag_str)
-                multi_ifo_coherent_job_setup(workflow, inspiral_outs,
-                                             job_instance, science_segs,
-                                             datafind_outs, output_dir,
-                                             parents=tmplt_banks, tags=tag)
-        else:
-            job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
-                                     out_dir=output_dir,
-                                     injection_file=injection_file, tags=tags)
-            multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
-                                         science_segs, datafind_outs,
-                                         output_dir, parents=tmplt_banks)
+
+        job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
+                                 out_dir=output_dir,
+                                 injection_file=injection_file, tags=tags)
+        multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
+                                     science_segs, datafind_outs, output_dir,
+                                     parents=tmplt_banks)
     else:
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
                                  out_dir=output_dir,

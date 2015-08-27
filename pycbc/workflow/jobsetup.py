@@ -334,16 +334,28 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     frame_files = datafind_outs[:-1]
     split_bank_counter = 0
 
-    for split_bank in parents:
-        tag = list(tags)
-        tag.append(split_bank.tag_str)
-        node = curr_exe_job.create_node(data_seg, job_valid_seg,
-                                        parent=split_bank,
-                                        dfParents=frame_files,
-                                        bankVetoBank=bank_veto, tags=tag)
-        workflow.add_node(node)
-        split_bank_counter += 1
-        curr_out_files.extend(node.output_files)
+    if curr_exe_job.injection_file is None:
+        for split_bank in parents:
+            tag = list(tags)
+            tag.append(split_bank.tag_str)
+            node = curr_exe_job.create_node(data_seg, job_valid_seg,
+                    parent=split_bank, dfParents=frame_files,
+                    bankVetoBank=bank_veto, tags=tag)
+            workflow.add_node(node)
+            split_bank_counter += 1
+            curr_out_files.extend(node.output_files)
+    else:
+        for inj_file in curr_exe_job.injection_file:
+            for split_bank in parents:
+                tag = list(tags)
+                tag.append(inj_file.tag_str)
+                tag.append(split_bank.tag_str)
+                node = curr_exe_job.create_node(data_seg, job_valid_seg,
+                        parent=split_bank, inj_file=inj_file, tags=tag,
+                        dfParents=frame_files, bankVetoBank=bank_veto)
+                workflow.add_node(node)
+                split_bank_counter += 1
+                curr_out_files.extend(node.output_files)
 
     # FIXME: Here we remove PSD files if they are coming
     #        through. This should be done in a better way. On

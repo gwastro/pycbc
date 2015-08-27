@@ -293,7 +293,8 @@ if wflow.cp.has_section("workflow-injections"):
 
     # Generate injection matched filter workflow
     inj_insp_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
-            datafind_veto_files, inj_splitbank_files, injDir, injs)
+            datafind_veto_files, inj_splitbank_files, injDir, injs,
+            tags=["injections"])
     for inj_insp_file in inj_insp_files:
         inj_insp_file.description += '_%d' \
                 % int(inj_insp_file.name.split('_')[-3][5:])
@@ -321,7 +322,8 @@ if wflow.cp.has_section("workflow-injections"):
 inspDir = os.path.join(currDir, "inspiral")
 inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
                                                       datafind_veto_files,
-                                                      splitbank_files, inspDir)
+                                                      splitbank_files, inspDir,
+                                                      tags=["no_injections"])
 all_files.extend(inspiral_files)
 inspiral_cache = make_cache(inspiral_files, ifos, "inspiral", sciSegs[ifo][0],
                             inspDir)

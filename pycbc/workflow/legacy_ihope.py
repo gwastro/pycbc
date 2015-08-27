@@ -259,8 +259,8 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
                                          int(cp.get('workflow', 'end-time')))
         self.num_threads = 1
  
-    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None,
-                    bankVetoBank=None, tags=[]):
+    def create_node(self, data_seg, valid_seg, parent=None, inj_file=None,
+                    dfParents=None, bankVetoBank=None, tags=[]):
         node = Node(self)
 
         if not dfParents:
@@ -300,9 +300,9 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
                          self.cp.get('workflow',
                                      '%s-channel-name' %frameCache.ifo.lower()))
 
-        if self.injection_file is not None:
-            node.add_input_opt('--injection-file', self.injection_file)
-            node.add_opt('--analyze-inj-segs-only')
+        if inj_file is not None:
+            node.add_input_opt('--injection-file', inj_file)
+
         return node
 
     def get_valid_times(self):
