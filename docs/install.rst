@@ -28,9 +28,9 @@ These instructions walk you through the process of
         * `Use of Intel MKL Optimized FFT libraries`_.
         * `Graphics Processing Unit support with CUDA`_
 
-=============
+=====================================================
 Setting up a virtual environment for installing PyCBC
-=============
+=====================================================
 
 The recommended way of installing PyCBC is to use `pip <https://pip.pypa.io/en/stable/>`_ within a `Python Virtual Environment <https://virtualenv.pypa.io/en/latest/>`_. Virtualenv isolates PyCBC and its dependencies from the system environment and installing with pip ensures that PyCBC picks up the correct dependencies. The following instructions will create a working virtual environment into which you can install PyCBC. 
 
@@ -86,9 +86,9 @@ To leave this virtual environment type
     
 which will return you to a regular shell.
 
-===========================
+==============================================
 Installing lalsuite into a virtual environment
-===========================
+==============================================
 
 Enter the virtual environment that you wish to use for PyCBC development by sourcing the activate script, for example
 
@@ -115,9 +115,9 @@ Once you have these packages installed, you can now install lalsuite following t
 
     install_lalsuite
 
-===========================
+=========================================
 Installing PyCBC in a virtual environment
-===========================
+=========================================
 
 Enter the virtual environment that you wish to use for PyCBC development by sourcing the activate script, for example
 
@@ -189,9 +189,9 @@ To build and install any changes that you make to the source code in your virtua
     
 from the PyCBC source directory in ``$NAME/src/pycbc``
 
-=============
+=====================================
 Building and Installing Documentation
-=============
+=====================================
 
 To build the documentation from your virtual environment, first make sure that you have `Sphinx <http://sphinx-doc.org/>`_ and the required helper tools installed with
 
@@ -249,9 +249,9 @@ Once you have the source code cloned, you can run
 
 to install each of them into your virtual environment.
 
-===============================
+========================================
 Use of Intel MKL Optimized FFT libraries
-===============================
+========================================
 
 PyCBC has the ability to use optimized FFT libraries such as FFTW and MKL. If MKL is the correct library for your platform, you can add the script that sets up the MKL environment to you virtualenv ``activate`` script with the command
 
@@ -261,9 +261,9 @@ PyCBC has the ability to use optimized FFT libraries such as FFTW and MKL. If MK
 
 changing the path to the ``compilervars.sh`` script approriately for your cluster. 
 
-===============================
+==========================================
 Graphics Processing Unit support with CUDA
-===============================
+==========================================
 
 PyCBC has the ability to accelerate its processing using CUDA. To take advantage of this, follow the instructions linked below to install the CUDA dependencies.
 
