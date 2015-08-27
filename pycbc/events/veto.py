@@ -85,8 +85,8 @@ def start_end_from_segments(segment_file):
     ----------
     segment_file: xml segment file
     
-    Return
-    ------
+    Returns
+    -------
     start: numpy.ndarray
     end: numpy.ndarray
     """

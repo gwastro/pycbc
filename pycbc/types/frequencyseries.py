@@ -130,7 +130,7 @@ class FrequencySeries(Array):
         method of the PyCBC type to get a numpy instance from each
         object, and invoking '==' on those two instances.
 
-        Paramters
+        Parameters
         ----------
         other: another Python object, that should be tested for equality
             with 'self'.
@@ -351,8 +351,8 @@ class FrequencySeries(Array):
     def to_timeseries(self, delta_t=None):
         """ Return the Fourier transform of this time series
         
-        Paramters
-        ---------
+        Parameters
+        ----------
         delta_t : {None, float}, optional
             The time resolution of the returned series. By default the 
         resolution is determined by length and delta_f of this frequency 
