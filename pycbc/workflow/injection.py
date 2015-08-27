@@ -33,7 +33,7 @@ import logging, urllib, urlparse
 from pycbc.workflow.core import File, FileList, make_analysis_dir, Executable
 from pycbc.workflow.jobsetup import LalappsInspinjExecutable
 
-def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None)
+def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
     make_analysis_dir(output_dir)
     
