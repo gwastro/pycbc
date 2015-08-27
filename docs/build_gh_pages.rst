@@ -57,4 +57,4 @@ This will build the documentation in the second repository that you created call
     git commit -a -m "updated documentation"
     git push
 
-The documentation will then be available under your Git Hub pages at ``http://username.github.io/pycbc/latest/`` where you should replace ``username/`` with your Git Hub account name.
+The documentation will then be available under your Git Hub pages at ``http://username.github.io/pycbc/latest/html/`` where you should replace ``username/`` with your Git Hub account name.
