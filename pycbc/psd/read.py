@@ -21,7 +21,7 @@ import numpy
 import scipy.interpolate
 from pycbc.types import FrequencySeries
 
-def from_txt(filename, length, delta_f, low_freq_cutoff,is_asd_file=True):
+def from_txt(filename, length, delta_f, low_freq_cutoff, is_asd_file=True):
     """Read an ASCII file containing one-sided ASD or PSD  data and generate
     a frequency series with the corresponding PSD. The ASD or PSD data is
     interpolated in order to match the desired resolution of the
@@ -68,6 +68,11 @@ def from_txt(filename, length, delta_f, low_freq_cutoff,is_asd_file=True):
         raise ValueError('Lowest frequency in input file ' + filename + \
           ' is higher than requested low-frequency cutoff ' + str(low_freq_cutoff))
     data_start = (0 if freq_data[0]==low_freq_cutoff else numpy.searchsorted(freq_data, low_freq_cutoff) - 1)
+    
+    # If the cutoff is exactly in the file, start there
+    if freq_data[data_start+1] == low_freq_cutoff:
+        data_start += 1
+    
     freq_data = freq_data[data_start:]
     noise_data = noise_data[data_start:]    
 
