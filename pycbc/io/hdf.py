@@ -116,6 +116,18 @@ class StatmapData(DictArray):
                                  self.timeslide_id, interval, window)
         return self.select(cid) 
 
+    def save(self, outname):
+        f = h5py.File(outname, "w")
+        for k in self.attrs:
+            f.attrs[k] = self.attrs[k]
+            
+        for k in self.data:
+            f[k] = self.data[k]
+
+        for key in self.seg.keys():
+            f['segments/%s/start' % key] = self.seg[key]['start'][:]
+            f['segments/%s/end' % key] = self.seg[key]['end'][:]
+        f.close()
 
 class FileData(object):
 
