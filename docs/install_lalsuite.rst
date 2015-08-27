@@ -41,6 +41,10 @@ If you want to build a specific release, replace ``master`` with a release tag, 
 Building and installing into your virtual environment
 =====================================================
 
+.. note::
+
+    The install instructions below install lalsuite into a directory called ``opt/lalsuite`` under your virtual environment. You can remove lalsuite by removing this directory with ``rm -rf $NAME/opt/lalsuite``. If you want to install multiple versions of lalsuite in your virtual environment, you can chose different directories by specifying a different ``--prefix`` to configure below.
+
 Set the shell variable ``NAME`` to the path to your the virtual environment that you created for PyCBC and activate your environment, for example
 
 .. code-block:: bash
@@ -53,17 +57,21 @@ From the top-level lalsuite directory, you can use the master configure script t
 .. code-block:: bash
 
     ./00boot 
-    ./configure --prefix=$NAME --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalburst
+    ./configure --prefix=$NAME/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar
     make
     make install
 
-The install process creates a shell script called ``lalsuiterc`` that sources all of the ``$NAME/etc/lal*-user-env.sh`` scripts that set up the environment for lalsuite. You can add this to your virtualenv ``activate`` script so that it gets set up when you enter your virtual environment. To do this, run the commands
+The install process creates a shell script called ``lalsuiterc`` that sources all of the ``$NAME/opt/lalsuite/etc/lal*-user-env.sh`` scripts that set up the environment for lalsuite. You can add this to your virtualenv ``activate`` script so that it gets set up when you enter your virtual environment. To do this, run the commands
 
 .. code-block:: bash
 
-    echo 'source ${VIRTUAL_ENV}/etc/lalsuiterc' >> $NAME/bin/activate
+    echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc' >> $NAME/bin/activate
     deactivate
     source $NAME/bin/activate
+
+.. note::
+
+    If you want to manage multiple versions of lalsuite, it is not reccommended to source the lalsuiterc script from your activate script.  You should just source it when you enter your virtual environment with the command ``source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc``
 
 lalsuite is now installed in your virtual environment. You can check this with the command
 

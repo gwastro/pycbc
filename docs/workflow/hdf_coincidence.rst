@@ -179,9 +179,9 @@ Add '--enable-hdf-post-processing' to the 'pycbc_make_coinc_workflow' invocation
     ...
     ...    
 
-==============================================================
+===============================================================
 Reusing data from workflow that uses some other post-processing
-==============================================================
+===============================================================
 
 Assuming the list of limitations is satisfied by the previous run, then one
 can simply select the 'main.map' file in the '--cache' option to the

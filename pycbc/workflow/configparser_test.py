@@ -1,6 +1,9 @@
 import re
 import copy
-import configparser as ConfigParser
+try:
+    import configparser as ConfigParser
+except ImportError:
+    import ConfigParser
 
 def parse_workflow_ini_file(cpFile,parsed_filepath=None):
     """Read a .ini file in, parse it as described in the documentation linked

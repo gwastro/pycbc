@@ -57,7 +57,7 @@ class ThresholdCluster(object):
     """Create a threshold and cluster engine
 
     Parameters
-    ---------
+    ----------
     series : complex64
       Input pycbc.types.Array (or subclass); it will be searched for
       points above threshold that are then clustered

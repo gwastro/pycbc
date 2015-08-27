@@ -28,9 +28,9 @@ These instructions walk you through the process of
         * `Use of Intel MKL Optimized FFT libraries`_.
         * `Graphics Processing Unit support with CUDA`_
 
-=============
+=====================================================
 Setting up a virtual environment for installing PyCBC
-=============
+=====================================================
 
 The recommended way of installing PyCBC is to use `pip <https://pip.pypa.io/en/stable/>`_ within a `Python Virtual Environment <https://virtualenv.pypa.io/en/latest/>`_. Virtualenv isolates PyCBC and its dependencies from the system environment and installing with pip ensures that PyCBC picks up the correct dependencies. The following instructions will create a working virtual environment into which you can install PyCBC. 
 
@@ -86,9 +86,9 @@ To leave this virtual environment type
     
 which will return you to a regular shell.
 
-===========================
+==============================================
 Installing lalsuite into a virtual environment
-===========================
+==============================================
 
 Enter the virtual environment that you wish to use for PyCBC development by sourcing the activate script, for example
 
@@ -115,9 +115,9 @@ Once you have these packages installed, you can now install lalsuite following t
 
     install_lalsuite
 
-===========================
+=========================================
 Installing PyCBC in a virtual environment
-===========================
+=========================================
 
 Enter the virtual environment that you wish to use for PyCBC development by sourcing the activate script, for example
 
@@ -125,17 +125,11 @@ Enter the virtual environment that you wish to use for PyCBC development by sour
 
     source $NAME/bin/activate
 
-Next install the Pegasus WMS python libraries needed to build the workflows.
-
-.. note::
-
-   Pegasus WMS is not yet under the Python Package Index and so it must be installed from a source tarball. This will be fixed once Pegasus 4.5.2 is released. 
-
-To install the Pegasus python libraries run the command:
+Next install the Pegasus WMS python libraries needed to build the workflows with the command:
 
 .. code-block:: bash
 
-    pip install http://download.pegasus.isi.edu/pegasus/4.5.2cvs/pegasus-python-source-4.5.2cvs.tar.gz
+    pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
 
 You now need to decide whether you want to install a release of PyCBC or an editable version of the source code from a git repository for development. 
 
@@ -195,9 +189,9 @@ To build and install any changes that you make to the source code in your virtua
     
 from the PyCBC source directory in ``$NAME/src/pycbc``
 
-=============
+=====================================
 Building and Installing Documentation
-=============
+=====================================
 
 To build the documentation from your virtual environment, first make sure that you have `Sphinx <http://sphinx-doc.org/>`_ and the required helper tools installed with
 
@@ -220,6 +214,13 @@ This will build the documentation in the directory docs/_build/html which can be
     cp -a docs/_build/html/ ~/public_html/pycbc-docs
     
 will copy the documentation to a directory called ``pycbc-docs`` under your public html pages.
+
+To maintain the documentation under GitHub project pages, see
+
+.. toctree::
+    :maxdepth: 1
+
+    build_gh_pages
 
 
 ====================================
@@ -248,9 +249,9 @@ Once you have the source code cloned, you can run
 
 to install each of them into your virtual environment.
 
-===============================
+========================================
 Use of Intel MKL Optimized FFT libraries
-===============================
+========================================
 
 PyCBC has the ability to use optimized FFT libraries such as FFTW and MKL. If MKL is the correct library for your platform, you can add the script that sets up the MKL environment to you virtualenv ``activate`` script with the command
 
@@ -260,9 +261,9 @@ PyCBC has the ability to use optimized FFT libraries such as FFTW and MKL. If MK
 
 changing the path to the ``compilervars.sh`` script approriately for your cluster. 
 
-===============================
+==========================================
 Graphics Processing Unit support with CUDA
-===============================
+==========================================
 
 PyCBC has the ability to accelerate its processing using CUDA. To take advantage of this, follow the instructions linked below to install the CUDA dependencies.
 

@@ -85,8 +85,8 @@ def start_end_from_segments(segment_file):
     ----------
     segment_file: xml segment file
     
-    Return
-    ------
+    Returns
+    -------
     start: numpy.ndarray
     end: numpy.ndarray
     """
@@ -209,7 +209,7 @@ def indices_within_segments(times, segment_files, ifo=None, segment_name=None):
     segment_name: : str, optional
         name of segment       
     Returns
-    --------
+    -------
     indices: numpy.ndarray
         The array of index values within the segments
     segmentlist: 

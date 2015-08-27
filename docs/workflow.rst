@@ -39,9 +39,9 @@ in the source tree under::
 
 These examples are described in each section below
 
----------------------
+-----------------------------
 ``pycbc_make_coinc_workflow``
----------------------
+-----------------------------
 
 This is an example of how to run a coincidence workflow, mimicking standard ihope coincidence analysis as closely as possible. It calls into pipedown to do the post-processing and using `lalapps_write_ihope_page` to make an output html page. In total this will:
 
@@ -65,9 +65,9 @@ More details of how to run this is found in the following link:
 
    workflow/pycbc_make_coinc_workflow
 
--------------------
+----------------------------
 ``pycbc_make_sngl_workflow``
--------------------
+----------------------------
 
 This is an example of how to run a single-detector workflow done in the past. This will:
 
@@ -88,9 +88,9 @@ More details of how to run ``pycbc_make_sngl_workflow`` is found in the followin
 
    workflow/pycbc_make_sngl_workflow
 
--------------------
+-----------------------------
 ``pycbc_make_daily_workflow``
--------------------
+-----------------------------
 
 Another single-detector workflow generator that mimics the daily ihope analysis is ``pycbc_make_daily_workflow``. More details of how to run ``pycbc_make_daily_workflow`` is found in the following link:
 
