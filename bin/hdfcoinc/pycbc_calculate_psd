@@ -6,8 +6,6 @@ import pycbc, pycbc.psd, pycbc.strain, pycbc.events
 from pycbc.version import git_verbose_msg as version
 from pycbc.fft.fftw import set_measure_level
 from glue.segments import segmentlist
-
-
 set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -26,8 +24,12 @@ parser.add_argument("--output-file", required=True)
 pycbc.psd.insert_psd_option_group(parser, output=False)
 pycbc.strain.insert_strain_option_group(parser, gps_times=False)
 pycbc.strain.StrainSegments.insert_segment_option_group(parser)
+
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
+
+pycbc.psd.verify_psd_options(args, parser)
+pycbc.strain.StrainSegments.verify_segment_options(args, parser)
 
 def grouper(n, iterable):
     args = [iter(iterable)] * n
