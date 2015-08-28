@@ -2,16 +2,15 @@ Welcome to PyCBC, a Python toolkit for analysis of data from gravitational-wave
 laser interferometer detectors with the goal of detecting and studying signals
 from compact binary coalescences (CBCs).
 
-More information can be found at these websites:
+The PyCBC home page is located on GitHub at
 
- * http://ligo-cbc.github.io/pycbc/latest/html/index.html
  * https://github.com/ligo-cbc/pycbc
 
-The source code is accessible by cloning the GitHub repository:
+Documentation is automatically build nightly and available from:
 
-    git clone https://github.com/ligo-cbc/pycbc
+ * http://ligo-cbc.github.io/pycbc/latest/html/
 
-To install PyCBC follow the instructions at
+To download and install PyCBC follow the instructions at
 
   * http://ligo-cbc.github.io/pycbc/latest/html/install.html
 
