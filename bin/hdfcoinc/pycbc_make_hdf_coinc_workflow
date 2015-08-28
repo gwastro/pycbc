@@ -138,16 +138,16 @@ bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps,
 final_bg_files =  wf.setup_interval_coinc(workflow, hdfbank, insps, 
                                final_veto_file, final_veto_name,
                                output_dir, tags=ctags)
+final_bg_file = final_bg_files[0][0]                   
+bin_files = final_bg_files[0][1]
      
 censored_veto = wf.make_foreground_censored_veto(workflow, 
                        final_bg_file, final_veto_file[0], final_veto_name[0],
                        'closed_box', 'segments')      
               
-final_bg_file = final_bg_files[0][0]                   
-bin_files = final_bg_files[0][1]
 
 closed_snrifar = []
-for bg_file, bg_bins in (bg_files + final_bg_file):
+for bg_file, bg_bins in (bg_files + final_bg_files):
     for bg_bin in bg_bins:
         snrifar = wf.make_snrifar_plot(workflow, bg_bin,
                         rdir['coincident_triggers'], 
@@ -269,7 +269,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                                insps, output_dir, tags=[tag])
                                                
     inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
-                                    full_insps, insps, final_bg_file, 
+                                    full_insps, insps, wf.FileList([final_bg_file]), 
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, tags = ctags)
     found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
@@ -313,7 +313,7 @@ if len(inj_files) > 0:
                             
 # make full summary
 summ = [(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)] + \
-       det_summ + hist_summ + closed_snrifar + inj_summ
+       det_summ + hist_summ + list(grouper(closed_snrifar, 2)) + inj_summ
 for row in summ:
     for f in row:
         if f is None:
