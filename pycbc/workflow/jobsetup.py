@@ -164,12 +164,12 @@ def select_generic_executable(workflow, exe_tag):
         "gstlal_inspiral_plot_background" : GstlalPlotBackground,
         "gstlal_inspiral_plotsummary"     : GstlalPlotSummary,
         "gstlal_inspiral_summary_page"    : GstlalSummaryPage,
-        "coh_PTF_trig_combiner" : LegacyCohPTFTrigCombiner,
-        "coh_PTF_trig_cluster"  : LegacyCohPTFTrigCluster,
-        "coh_PTF_injfinder"     : LegacyCohPTFInjfinder,
-        "coh_PTF_injcombiner"   : LegacyCohPTFInjcombiner,
-        "coh_PTF_sbv_plotter"   : LegacyCohPTFSbvPlotter,
-        "coh_PTF_efficiency"    : LegacyCohPTFEfficiency,
+        "pylal_cbc_cohptf_trig_combiner" : LegacyCohPTFTrigCombiner,
+        "pylal_cbc_cohptf_trig_cluster"  : LegacyCohPTFTrigCluster,
+        "pylal_cbc_cohptf_injfinder"     : LegacyCohPTFInjfinder,
+        "pylal_cbc_cohptf_injcombiner"   : LegacyCohPTFInjcombiner,
+        "pylal_cbc_cohptf_sbv_plotter"   : LegacyCohPTFSbvPlotter,
+        "pylal_cbc_cohptf_efficiency"    : LegacyCohPTFEfficiency,
         "pygrb_make_summary_page"  : PyGRBMakeSummaryPage
     }
     try:
