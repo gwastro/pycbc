@@ -35,14 +35,14 @@ from pycbc.workflow.jobsetup import LalappsInspinjExecutable
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
-    make_analysis_dir(output_dir)
+    make_analysis_dir(out_dir)
     
-    node = Executable(workflow.cp, 'strip_injections', ifos=workflow.ifo_list,
+    node = Executable(workflow.cp, 'strip_injections', ifos=workflow.ifos,
                           out_dir=out_dir, tags=tags).create_node()
     node.add_opt('--segment-name', veto_name)
     node.add_input_opt('--veto-file', veto_file)
     node.add_input_opt('--injection-file', inj_file)
-    node.add_opt('--ifos', ' '.join(workflow.ifo_list))
+    node.add_opt('--ifos', ' '.join(workflow.ifos))
     node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
     workflow += node
     return node.output_files[0]  
