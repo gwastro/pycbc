@@ -6,7 +6,7 @@ The PyCBC home page is located on GitHub at
 
  * https://github.com/ligo-cbc/pycbc
 
-Documentation is automatically build nightly and available from:
+Documentation is automatically built nightly and available from
 
  * http://ligo-cbc.github.io/pycbc/latest/html/
 
