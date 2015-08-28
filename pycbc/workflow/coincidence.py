@@ -657,7 +657,7 @@ def setup_simple_statmap(workflow, coinc_files, out_dir, tags=None):
 
     stat_node = statmap_exe.create_node(coinc_files, tags=tags)
     workflow.add_node(stat_node)
-    return stat_node.output_files[0]
+    return stat_node.output_files[0], stat_node.output_files
 
 def setup_mass_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -685,7 +685,7 @@ def setup_mass_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
     cstat_node = cstat_exe.create_node(stat_files, tags=tags)
     workflow += cstat_node
     
-    return cstat_node.output_files[0]
+    return cstat_node.output_files[0], stat_files
     
 def setup_statmap_inj(workflow, coinc_files, background_file, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -813,7 +813,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
-    stat_files = FileList()
+    stat_files = []
     for veto_file, veto_name in zip(veto_files, veto_names):
         bg_files = FileList()
         for i in range(factor):
@@ -826,6 +826,6 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
             workflow.add_node(coinc_node)
              
         stat_files += [setup_statmap(workflow, bg_files, hdfbank, out_dir, tags=tags + [veto_name])]
-        
+
     return stat_files
     logging.info('...leaving coincidence ')
