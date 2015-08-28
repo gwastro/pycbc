@@ -4,8 +4,8 @@ from compact binary coalescences (CBCs).
 
 More information can be found at these websites:
 
- * [http://ligo-cbc.github.io/pycbc/latest/html/index.html]
- * [https://github.com/ligo-cbc/pycbc]
+ * http://ligo-cbc.github.io/pycbc/latest/html/index.html
+ * https://github.com/ligo-cbc/pycbc
 
 The source code is accessible by cloning the GitHub repository:
 
@@ -13,7 +13,7 @@ The source code is accessible by cloning the GitHub repository:
 
 To install PyCBC follow the instructions at
 
-  * [http://ligo-cbc.github.io/pycbc/latest/html/install.html]
+  * http://ligo-cbc.github.io/pycbc/latest/html/install.html
 
 [![PyPI version](https://badge.fury.io/py/pycbc.svg)](http://badge.fury.io/py/pycbc)
 [![Build Status](https://travis-ci.org/ligo-cbc/pycbc.svg?branch=master)](https://travis-ci.org/ligo-cbc/pycbc)
