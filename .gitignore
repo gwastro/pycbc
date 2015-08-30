@@ -7,3 +7,4 @@ html/
 pycbc_inspiralc
 build/
 *.pyc
+docs/Makefile
