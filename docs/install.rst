@@ -100,7 +100,7 @@ First install unittest2, python-cjson, and numpy with the command:
 
 .. code-block:: bash
 
-    pip install "numpy>=1.6.4" unittest2 python-cjson
+    pip install "numpy>=1.6.4" unittest2 python-cjson Cython
 
 To authenticate with LIGO Data Grid services, you need M2Crypto which you should install with 
 
