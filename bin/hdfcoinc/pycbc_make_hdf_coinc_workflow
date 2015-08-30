@@ -154,6 +154,8 @@ for bg_file, bg_bins in (bg_files + final_bg_files):
                          closed_box=True, tags=bg_bin.tags + ['closed'])
         if bg_file == final_bg_file:
             closed_snrifar.append(snrifar)
+    
+ifar = wf.make_ifar_plot(workflow, final_bg_file, rdir['result'])
         
 for bin_file in bin_files:
     snrifar = wf.make_snrifar_plot(workflow, bin_file,
@@ -269,7 +271,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                                insps, output_dir, tags=[tag])
                                                
     inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
-                                    full_insps, insps, wf.FileList([final_bg_file]), 
+                                    full_insps, insps, bin_files, 
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, tags = ctags)
     found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),

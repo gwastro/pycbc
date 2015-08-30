@@ -729,7 +729,7 @@ def setup_mass_bins_inj(workflow, coinc_files, background_file, bank_file, out_d
     
     stat_files = FileList([])
     for i in range(len(mass_bins)):
-        statnode = statmap_exe.create_node(FileList([coinc_files['injinj'][i]]), background_file, 
+        statnode = statmap_exe.create_node(FileList([coinc_files['injinj'][i]]), FileList([background_file[i]]), 
                                      FileList([coinc_files['injfull'][i]]), FileList([coinc_files['fullinj'][i]]), 
                                      tags=tags + ['BIN_%s' % i])
         workflow += statnode
