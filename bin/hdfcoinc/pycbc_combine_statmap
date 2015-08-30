@@ -7,7 +7,7 @@ import h5py, numpy, argparse, logging, pycbc, pycbc.events
 
 def com(f, files, group):
     """ Combine the same column from multiple files and saave to a third"""
-    f[group] = numpy.concatenate([fi[group][:] for fi in files])
+    f[group] = numpy.concatenate([fi[group][:] if group in fi else numpy.array([], dtype=numpy.uint32) for fi in files])
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--verbose', action='store_true')

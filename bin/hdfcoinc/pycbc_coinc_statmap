@@ -61,10 +61,9 @@ for key in d.seg.keys():
     f['segments/%s/start' % key] = d.seg[key]['start'][:]
     f['segments/%s/end' % key] = d.seg[key]['end'][:]
 
-f['segments/foreground_veto/start'] = veto_start
-f['segments/foreground_veto/end'] = veto_end
-
 if fore_locs.sum() > 0:
+    f['segments/foreground_veto/start'] = veto_start
+    f['segments/foreground_veto/end'] = veto_end
     for k in d.data:
         f['foreground/' + k] = d.data[k][fore_locs]
 
