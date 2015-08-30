@@ -66,8 +66,9 @@ cidx = pycbc.events.cluster_coincs(f['foreground/ifar'][:],
 
 # downsample the foreground columns to only the loudest ifar between the multiple files
 for key in f['foreground'].keys():
-    dset = f['foreground/%s' % key]
-    dset = dset[:][cidx]
+    dset = f['foreground/%s' % key][:][cidx]
+    del f['foreground/%s' % key]
+    f['foreground/%s' % key] = dset
 
 # If there is a background set (full_data as opposed to injection run), then recalculate 
 # the values for its triggers as well

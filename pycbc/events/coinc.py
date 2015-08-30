@@ -157,7 +157,7 @@ def time_coincidence(t1, t2, window, slide_step=0):
     else:
         slide = numpy.zeros(len(idx1))
         
-    return idx1, idx2, slide
+    return idx1.astype(numpy.uint32), idx2.astype(numpy.uint32), slide.astype(numpy.int32)
 
 
 def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
@@ -184,7 +184,6 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
     cindex: numpy.ndarray 
         The set of indices corresponding to the surviving coincidences.
     """
-    
     logging.info('clustering coinc triggers over %ss window' % window)
     
     indices = []
@@ -195,6 +194,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
         
     tslide = timeslide_id.astype(numpy.float128)
     time = time.astype(numpy.float128)
+    
     span = (time.max() - time.min()) + window * 10
     time = time + span * tslide
     
@@ -214,7 +214,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
     while i < len(left):
         l = left[i]
         r = right[i]
-        
+       
         # If there are no other points to compare it is obviosly the max
         if (r - l) == 1:
             indices[j] = i
