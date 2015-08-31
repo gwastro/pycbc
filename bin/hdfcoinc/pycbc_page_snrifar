@@ -76,7 +76,7 @@ pylab.legend(loc="lower left")
 pylab.grid()
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-     title="FAR vs Stat: %s" % args.output_file, 
+     title="FAR vs Stat", 
      caption="Mapping between the ranking statistic and false alarm rate: "
              "Blue triangles represent the zerola analysis. The solid line is "
              "the background inclusive of zerolag events, and the grey line "

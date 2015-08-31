@@ -155,12 +155,15 @@ for bg_file, bg_bins in (bg_files + final_bg_files):
         if bg_file == final_bg_file:
             closed_snrifar.append(snrifar)
     
-ifar = wf.make_ifar_plot(workflow, final_bg_file, rdir['result'])
-
-snrifars = []        
+results_page = []        
 for bin_file in bin_files:
-    snrifars.append(wf.make_snrifar_plot(workflow, bin_file,
-                    rdir['result'], tags=bin_file.tags))
+    snrifar = wf.make_snrifar_plot(workflow, bin_file,
+                    rdir['result'], tags=bin_file.tags)
+    ifar = wf.make_ifar_plot(workflow, bin_file, 
+                    rdir['result'], tags=bin_file.tags)
+    results_page += [(snrifar, ifar)]
+
+wf.make_ifar_plot(workflow, final_bg_file, rdir['result'])
 
 table = wf.make_foreground_table(workflow, final_bg_file, 
                     hdfbank[0], tag, rdir['result'], singles=insps,
@@ -171,8 +174,7 @@ fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
 fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
-
-single_layout(rdir['result'], snrifars + [table])
+layout(rdir['result'], results_page + [(table,)])
 
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
                     'closed_box', rdir['single_triggers'], tags=[tag])
@@ -316,8 +318,8 @@ if len(inj_files) > 0:
     inj_summ = list(grouper(inj + sen, 2))
                             
 # make full summary
-summ = [(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)] + \
-       det_summ + hist_summ + list(grouper(closed_snrifar, 2)) + inj_summ
+summ = ([(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)] + 
+       det_summ + hist_summ + list(grouper(closed_snrifar, 2)) + inj_summ)
 for row in summ:
     for f in row:
         if f is None:
