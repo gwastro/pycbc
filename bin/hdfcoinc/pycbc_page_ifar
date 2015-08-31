@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 # Copyright (C) 2015 Christopher M. Biwer
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -20,6 +19,7 @@ import argparse
 import h5py
 import numpy
 import sys
+import lal
 import matplotlib as mpl; mpl.use('Agg')
 import pylab
 import pycbc.results
@@ -40,9 +40,9 @@ def calculate_time_slide_duration(ifo1_segments, ifo2_segments, offset=0):
 
 # parser command line
 parser = argparse.ArgumentParser(usage='pycbc_page_ifar [--options]',
-                    description='Plots a cumulative histogram of IFAR for' \
-                         + 'coincident foreground triggers and a subset of' \
-                         + 'the coincident time slide triggers.')
+                    description='Plots a cumulative histogram of IFAR for'
+                          'coincident foreground triggers and a subset of' 
+                          'the coincident time slide triggers.')
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-file', type=str, required=True,
@@ -50,10 +50,10 @@ parser.add_argument('--trigger-file', type=str, required=True,
 parser.add_argument('--output-file', type=str, required=True,
                     help='Path to output plot.')
 parser.add_argument('--decimation-factor', type=int, required=True,
-                    help='Decimation factor used in background estimation.' \
-                         + 'Decimation factor means that every nth time' \
-                         + 'slide kept all of its coincident triggers in' \
-                         + 'the HDF file.')
+                    help='Decimation factor used in background estimation.' 
+                          'Decimation factor means that every nth time' 
+                          'slide kept all of its coincident triggers in' 
+                          'the HDF file.')
 opts = parser.parse_args()
 
 # read file
@@ -65,9 +65,8 @@ fore_ifar.sort()
 fore_cumnum = numpy.arange(len(fore_ifar), 0, -1)
 
 # get expected foreground IFAR values and cumulative number for each IFAR value
-seconds_to_years = 3.16888e-8
 expected_ifar = numpy.logspace(-8, 2, num=100, endpoint=True, base=10.0)
-expected_cumnum = fp.attrs['foreground_time'] / expected_ifar * seconds_to_years
+expected_cumnum = fp.attrs['foreground_time'] / expected_ifar / lal.YRJUL_SI 
 
 # get background timeslide IDs and IFAR values
 back_tsid = fp['background/timeslide_id'][:]
@@ -91,7 +90,7 @@ xs, ys = pylab.poly_between(expected_ifar, error_minus, error_plus)
 pylab.fill(xs, ys, facecolor='y', alpha=0.4, label='$N^{1/2}$ Errors')
 
 # plot the counting error
-error_plus = expected_cumnum + 2*numpy.sqrt(expected_cumnum)
+error_plus = expected_cumnum + 2 * numpy.sqrt(expected_cumnum)
 error_minus = expected_cumnum - 2*numpy.sqrt(expected_cumnum)
 error_minus = numpy.where(error_minus<=0, 1e-5, error_minus)
 xs, ys = pylab.poly_between(expected_ifar, error_minus, error_plus)
@@ -127,6 +126,7 @@ pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue', marker='^',
 # format plot
 pylab.ylim(0.8, 1.1 * len(fore_cumnum))
 pylab.xlim(0.9 * min(fore_ifar))
+pylab.grid()
 pylab.legend()
 pylab.ylabel('Cumulative Number')
 pylab.xlabel('Inverse False Alarm Rate (yr)')
