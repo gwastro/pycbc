@@ -35,6 +35,11 @@ f.attrs['foreground_time'] = files[0].attrs['foreground_time']
 f.attrs['background_time_exc'] = files[0].attrs['background_time_exc']
 f.attrs['foreground_time_exc'] = files[0].attrs['foreground_time_exc']
 
+for attr in  ['detector_1', 'detector_2', 'timeslide_interval', 
+              'background_time', 'foreground_time']:
+    for i in range(len(files)-1):
+        assert files[i].attrs[attr] == files[i+1].attrs[attr]
+
 # combine times that are foreground vetoed as they may differ between bins
 for key in files[0]['segments'].keys():
     if key == 'foreground_veto':
