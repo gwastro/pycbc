@@ -156,10 +156,11 @@ for bg_file, bg_bins in (bg_files + final_bg_files):
             closed_snrifar.append(snrifar)
     
 ifar = wf.make_ifar_plot(workflow, final_bg_file, rdir['result'])
-        
+
+snrifars = []        
 for bin_file in bin_files:
-    snrifar = wf.make_snrifar_plot(workflow, bin_file,
-                    rdir['result'], tags=bin_file.tags)
+    snrifars.append(wf.make_snrifar_plot(workflow, bin_file,
+                    rdir['result'], tags=bin_file.tags))
 
 table = wf.make_foreground_table(workflow, final_bg_file, 
                     hdfbank[0], tag, rdir['result'], singles=insps,
@@ -170,7 +171,8 @@ fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
 fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
-single_layout(rdir['result'], [snrifar, table])
+
+single_layout(rdir['result'], snrifars + [table])
 
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
                     'closed_box', rdir['single_triggers'], tags=[tag])
