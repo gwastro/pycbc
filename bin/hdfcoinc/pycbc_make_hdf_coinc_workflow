@@ -32,6 +32,8 @@ parser.add_argument('--version', action='version',
 parser.add_argument('--workflow-name', default='my_unamed_run')
 parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
+parser.add_argument("-a", "--asset-dir", default=None,
+                    help="Path to directory containing html assets.")
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
@@ -48,7 +50,7 @@ os.chdir(args.output_dir)
 # layout initialization / helper functions 
 def layout(path, cols):
     path = os.path.join(os.getcwd(), path, 'well.html')
-    render_workflow_html_template(path, 'two_column.html', cols)
+    render_workflow_html_template(path, 'two_column.html', cols, args.asset_dir)
 
 def single_layout(path, files):
     layout(path, [(f,) for f in files])

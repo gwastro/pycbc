@@ -27,10 +27,13 @@ from pycbc.results import unescape_table
 from pycbc.results.metadata import save_html_with_metadata
 from pycbc.workflow.segment import fromsegmentxml
 
-def render_workflow_html_template(filename, subtemplate, filelists):
+def render_workflow_html_template(filename, subtemplate, filelists, asset_dir=None):
     """ Writes a template given inputs from the workflow generator. Takes
     a list of tuples. Each tuple is a pycbc File object. Also the name of the
-    subtemplate to render and the filename of the output.
+    subtemplate to render and the filename of the output, and an optional 
+    directory containing html templates and other assets.  If this last argument
+    is not provided assets are obtained relative to the directory containing
+    pycbc/results.py
     """
 
     dir = os.path.dirname(filename)
@@ -41,7 +44,11 @@ def render_workflow_html_template(filename, subtemplate, filelists):
         filenames = []
 
     # render subtemplate
-    subtemplate_dir = pycbc.results.__path__[0] + '/templates/wells'
+    if asset_dir is None:
+        subtemplate_dir = pycbc.results.__path__[0] + '/templates/wells'
+    else:
+        subtemplate_dir = asset_dir + '/templates/wells'
+
     env = Environment(loader=FileSystemLoader(subtemplate_dir))
     env.globals.update(get_embedded_config=get_embedded_config)
     env.globals.update(path_exists=os.path.exists)
