@@ -1,5 +1,5 @@
 #!/bin/env python
-import h5py, argparse, numpy, pycbc.pnutils, logging, pycbc.events, pycbc.io
+import h5py, argparse, numpy, pycbc.events, logging, pycbc.events, pycbc.io
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--verbose', action='store_true')
@@ -26,26 +26,15 @@ if len(args.output_files) != len(args.background_bins):
 d = pycbc.io.StatmapData(files=args.coinc_files)
 logging.info('%s coinc triggers' % len(d))
 
-used = numpy.array([], dtype=numpy.uint32)
-for mbin, outname in zip(args.background_bins, args.output_files):
-    name, bin_type, boundary = tuple(mbin.split('-'))
-    if bin_type == 'component':
-        locs = numpy.maximum(m1, m2) < float(boundary)
-    elif bin_type == 'total':
-        locs = m1 + m2 < float(boundary)
-    elif bin_type == 'chirp':
-        locs = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)[0] < float(boundary)
-    else:
-        raise ValueError('Invalid bin type %s' % bin_type)    
-    
-    # make sure we don't reuse anythign from an earlier bin
-    locs = numpy.where(locs)[0]
-    locs = numpy.delete(locs, numpy.where(numpy.in1d(locs, used))[0])
-    used = numpy.concatenate([used, locs])    
+data = {'mass1':f['mass1'][:], 'mass2':f['mass2'][:],
+        'spin1z':f['spin1z'][:], 'spin2z':f['spin2z'][:]}
 
+locs_dict = pycbc.events.background_bin_from_string(args.background_bins, data)
+
+for name, outname in zip(locs_dict, args.output_file):
     # select the coincs from only this bin and save to a single combined file
+    locs = locs_dict[name]
     e = d.select(numpy.in1d(d.template_id, locs))
     logging.info('%s coincs in mass bin: %s' % (len(e), mbin))
+    e.attrs['name'] = name
     e.save(outname)
-    f = h5py.File(outname, 'r+')
-    f.attrs['name'] = name
