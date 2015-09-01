@@ -40,7 +40,7 @@ from pycbc.workflow.core import File, FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_generic_executable
 
 def setup_coh_PTF_post_processing(workflow, trigger_files, trigger_cache, 
-        output_dir, segment_dir, injection_trigger_files=None,
+        output_dir, web_dir, segment_dir, injection_trigger_files=None,
         injection_files=None, injection_trigger_caches=None,
         injection_caches=None, config_file=None, run_dir=None, ifos=None,
         inj_tags=[], tags=[], **kwargs):
@@ -87,7 +87,7 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, trigger_cache,
         post_proc_files = setup_postproc_coh_PTF_workflow(workflow,
                 trigger_files, trigger_cache, injection_trigger_files,
                 injection_files, injection_trigger_caches, injection_caches,
-                config_file, output_dir, segment_dir, ifos=ifos,
+                config_file, output_dir, web_dir, segment_dir, ifos=ifos,
                 inj_tags=inj_tags, tags=tags, **kwargs)
     else:
         errMsg = "Post-processing method not recognized. Must be "
@@ -102,7 +102,8 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, trigger_cache,
 def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                                     inj_trig_files, inj_files, inj_trig_caches,
                                     inj_caches, config_file, output_dir,
-                                    segment_dir, ifos, inj_tags=[], tags=[]):
+                                    html_dir, segment_dir, ifos, inj_tags=[],
+                                    tags=[]):
     """
     This module sets up the post-processing stage in the workflow, using a
     coh_PTF style set up. This consists of running trig_combiner to find
@@ -401,9 +402,11 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
         tuning_tags = [inj_tag for inj_tag in inj_tags \
                        if "DETECTION" in inj_tag]
         html_summary_node = html_summary_jobs.create_node(c_file=config_file,
-                tuning_tags=tuning_tags, exclusion_tags=injcombiner_out_tags)
+                tuning_tags=tuning_tags, exclusion_tags=injcombiner_out_tags,
+                html_dir=html_dir)
     else:
-        html_summary_node = html_summary_jobs.create_node(c_file=config_file)
+        html_summary_node = html_summary_jobs.create_node(c_file=config_file,
+                                                          html_dir=html_dir)
     workflow.add_node(html_summary_node)
     for pp_node in pp_nodes:
         dep = dax.Dependency(parent=pp_node._dax_node,

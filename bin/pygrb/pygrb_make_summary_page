@@ -33,6 +33,7 @@ __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = "git id %s" % git_version.id
 __date__    = git_version.date
 
+
 def make_external_call(\
   command, show_stdout=False, \
   show_command=False, show_error=True):
@@ -92,6 +93,7 @@ def initialize_page( title, style, script, header=None ):
 
   return page
 
+
 def write_banner( title, text='&nbsp;' ):
 
   """
@@ -117,6 +119,7 @@ def write_banner( title, text='&nbsp;' ):
   page.div( id="container" )
 
   return page
+
 
 def write_table( page, headers, data, cl='' ):
 
@@ -161,6 +164,7 @@ def write_table( page, headers, data, cl='' ):
   page.table.close()
 
   return page
+
 
 def write_summary( page, args, ifos, skyError=None, ipn=False, ipnError=False ):
 
@@ -225,6 +229,7 @@ def write_summary( page, args, ifos, skyError=None, ipn=False, ipnError=False ):
     page = write_table( page, th, td )
 
   return page
+
 
 def write_antenna( page, args, grid=False, ipn=False ):
 
@@ -339,6 +344,7 @@ def write_antenna( page, args, grid=False, ipn=False ):
 
   return page
 
+
 def write_offsource( page, ifos, grbtag, onsource=False ):
 
   """
@@ -360,7 +366,7 @@ def write_offsource( page, ifos, grbtag, onsource=False ):
   td = [ plot() ]
 
   plot = markup.page()
-  p = "%s/plots/GRB%s_triggers_vs_time_noinj.png" % ( dir, grbtag )
+  p = "%s/plots_clustered/GRB%s_triggers_vs_time_noinj.png" % ( dir, grbtag )
   plot.a( href=p, title="Coherent SNR versus time" )
   plot.img( src=p )
   plot.a.close()
@@ -370,7 +376,7 @@ def write_offsource( page, ifos, grbtag, onsource=False ):
   for ifo in ifos:
     th.append('%s SNR' % ifo )
     plot = markup.page()
-    p = "%s/plots/GRB%s_%s_triggers_vs_time_noinj.png" % ( dir, grbtag, ifo )
+    p = "%s/plots_clustered/GRB%s_%s_triggers_vs_time_noinj.png" % ( dir, grbtag, ifo )
     plot.a( href=p, title="%s SNR versus time" % ifo )
     plot.img( src=p )
     plot.a.close()
@@ -379,6 +385,7 @@ def write_offsource( page, ifos, grbtag, onsource=False ):
   page = write_table( page, th, td )
 
   return page
+
 
 def write_chisq( page, injList, grbtag ):
 
@@ -412,6 +419,7 @@ def write_chisq( page, injList, grbtag ):
 
   return page
 
+
 def write_inj_snrs( page, ifos, injList, grbtag ):
 
   """
@@ -444,7 +452,8 @@ def write_inj_snrs( page, ifos, injList, grbtag ):
 
   return page
 
-def write_found_missed( page, ifos, injList ):
+
+def write_found_missed( page, injList ):
 
   """
     Write injection found/missed plots to markup.page object page
@@ -466,6 +475,7 @@ def write_found_missed( page, ifos, injList ):
 
   plots = []
   text  = {}
+  ifos = [args.ifo_tag[i:i+2] for i in range(0, len(args.ifo_tag), 2)]
   for ifo in ifos:
     plots.extend(['effdist_%s' % ifo[0].lower(),\
                   'effdist_time_%s' % ifo[0].lower()])
@@ -491,6 +501,7 @@ def write_found_missed( page, ifos, injList ):
   page = write_table( page, th, td )
 
   return page
+
 
 def write_recovery( page, injList ):
 
@@ -522,6 +533,7 @@ def write_recovery( page, injList ):
   page = write_table( page, th, td )
 
   return page
+
 
 def write_loudest_events( page, bins, onsource=False ):
 
@@ -574,6 +586,7 @@ def write_loudest_events( page, bins, onsource=False ):
 
   return page
 
+
 def write_exclusion_distances(page , trial, injList, massbins, reduced=False, onsource=False):
   file = open( '%s/efficiency/loud_numbers.txt' % (trial), 'r' )
   FAPS = []
@@ -606,7 +619,7 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False, on
   d = []
   for inj in injList:
     plot = markup.page()
-    p = "%s/efficiency_%s/BestNR_max_efficiency.png" % ( inj,trial )
+    p = "%s/efficiency_%s/BestNR_max_efficiency.png" % (inj, trial)
     plot.a( href=p, title="Detection efficiency" )
     plot.img( src=p )
     plot.a.close()
@@ -624,7 +637,7 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False, on
   d = []
   for inj in injList:
     plot = markup.page()
-    p = "%s/efficiency_%s/BestNR_on_efficiency.png" % ( inj,trial )
+    p = "%s/efficiency_%s/BestNR_on_efficiency.png" % (inj, trial)
     plot.a( href=p, title="Exclusion efficiency" )
     plot.img( src=p )
     plot.a.close()
@@ -639,7 +652,7 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False, on
   td = []
   d = []
   for inj in injList:
-    file = open( '%s/efficiency_%s/exclusion_distance.txt' % (inj,trial), 'r' )
+    file = open( '%s/efficiency_%s/exclusion_distance.txt' % (inj, trial), 'r' )
     for line in file:
       line = line.replace('\n','')
       excl_dist = float(line)
@@ -653,8 +666,6 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False, on
 
   return page
   
-
-
 
 # =============================================================================
 # Parse command line
@@ -684,6 +695,9 @@ def parse_command_line():
   
   parser.add_argument("-o", "--output-path", type=str, default=os.getcwd(),
                       help="output directory")
+
+  parser.add_argument("-w", "--html-path", type=str, default=None,
+                      help="final web directory")
 
   parser.add_argument("-s", "--seg_plot", type=str, default=None,
                       help="segment plot")
@@ -725,7 +739,7 @@ def parse_command_line():
 # Main function
 # =============================================================================
 
-def main(args, inifile, outdir, ifoTag, detectionInjList=[],\
+def main(args, inifile, outdir, htmldir, ifoTag, detectionInjList=[],\
          tuningInjList=[], open_box=False, grid=False, ipn=False,\
          massBins = [('0','8.0')] ):
 
@@ -894,7 +908,7 @@ def main(args, inifile, outdir, ifoTag, detectionInjList=[],\
               'with the injection but it was not louder than all offsource '+\
               'events. The colour bar gives the FAP of the trigger.')
 
-    webpage = write_found_missed( webpage, ifos, detectionInjList )
+    webpage = write_found_missed( webpage, detectionInjList )
 
     webpage.div.close()
 
@@ -978,13 +992,21 @@ def main(args, inifile, outdir, ifoTag, detectionInjList=[],\
   file = open( '%s/summary.html' % outdir, 'w' )
   file.write( webpage() )
   file.close()
-  
+
+  if htmldir is not None:
+    shutil.copytree(outdir, htmldir)
+    shutil.copy2('%s/coh_PTF_html_summary.css' % os.path.dirname(outdir),
+                 htmldir)
+    shutil.copy2('%s/coh_PTF_html_summary.js' % os.path.dirname(outdir),
+                 htmldir)
+ 
 if __name__=='__main__':
 
   args = parse_command_line()
 
-  inifile    = os.path.abspath( args.config_file )
-  outdir     = os.path.abspath( args.output_path )
+  inifile    = os.path.abspath(args.config_file)
+  outdir     = os.path.abspath(args.output_path)
+  htmldir    = os.path.abspath(args.html_path)
   ifoTag     = args.ifo_tag
   grid       = args.sky_grid
   ipn        = args.ipn
@@ -997,7 +1019,7 @@ if __name__=='__main__':
     tunInjsList = args.tuning_injections.split(",")
   
   
-  main(args, inifile, outdir, ifoTag, detectionInjList=detInjsList,\
+  main(args, inifile, outdir, htmldir, ifoTag, detectionInjList=detInjsList,\
        tuningInjList=tunInjsList, open_box=args.open_box, grid=grid, ipn=ipn,\
        massBins = massBins )
 

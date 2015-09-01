@@ -347,12 +347,13 @@ if post_proc_method == "COH_PTF_WORKFLOW":
 
 
     # Generate post-processing workflow
+    html_dir = wflow.cp.get("workflow", "html-dir")
     pp_files = _workflow.setup_coh_PTF_post_processing(wflow, inspiral_files,
             inspiral_cache, ppDir, segDir,
             injection_trigger_files=inj_insp_files, injection_files=injs,
             injection_trigger_caches=inj_insp_caches,
-            injection_caches=inj_caches, config_file=cp_file, ifos=ifos,
-            inj_tags=inj_tags)
+            injection_caches=inj_caches, config_file=cp_file, web_dir=html_dir,
+            ifos=ifos, inj_tags=inj_tags)
 
     # Retrieve style files for webpage
     summary_files = get_coh_PTF_files(wflow.cp, ifos, ppDir,

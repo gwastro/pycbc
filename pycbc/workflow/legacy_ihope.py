@@ -601,7 +601,8 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
         self.num_threads = 1
 
     def create_node(self, parent=None, c_file=None, open_box=False,
-                    tuning_tags=None, exclusion_tags=None, tags=[]):
+                    tuning_tags=None, exclusion_tags=None, html_dir=None,
+                    tags=[]):
         node = Node(self)
 
         node.add_opt('--grb-name', self.cp.get('workflow', 'trigger-name'))
@@ -618,6 +619,9 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
 
         if open_box:
             node.add_opt('--open-box')
+
+        if html_dir is not None:
+            node.add_opt('--html-path', html_dir)
 
         # Set input / output options
         node.add_opt('--config-file', '%s' % c_file.storage_path) 
