@@ -40,10 +40,10 @@ from pycbc.workflow.core import File, FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_generic_executable
 
 def setup_coh_PTF_post_processing(workflow, trigger_files, trigger_cache, 
-        output_dir, web_dir, segment_dir, injection_trigger_files=None,
+        output_dir, segment_dir, injection_trigger_files=None,
         injection_files=None, injection_trigger_caches=None,
         injection_caches=None, config_file=None, run_dir=None, ifos=None,
-        inj_tags=[], tags=[], **kwargs):
+        web_dir=None, inj_tags=[], tags=[], **kwargs):
     """
     This function aims to be the gateway for running postprocessing in CBC
     offline workflows. Post-processing generally consists of calculating the
@@ -293,6 +293,25 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                 offsource_clustered = clust_file
                 off_node = sbv_plotter_node
 
+                found_inj_files = FileList([file for file in injcombiner_outs \
+                                            if "FOUND" in file.tag_str])
+                for curr_injs in found_inj_files:
+                    curr_tags = [tag for tag in injcombiner_out_tags \
+                                 if tag in curr_injs.name]
+                    curr_tags.append("_clustered")
+                    logging.info(curr_tags)
+                    sbv_plotter_node = sbv_plotter_jobs.create_node(clust_file,
+                            segment_dir, inj_file=curr_injs, tags=curr_tags)
+                    pp_nodes.append(sbv_plotter_node)
+                    workflow.add_node(sbv_plotter_node)
+                    dep = dax.Dependency(parent=trig_cluster_node._dax_node,
+                                         child=sbv_plotter_node._dax_node)
+                    workflow._adag.addDependency(dep)
+                    for parent_node in injcombiner_nodes:
+                        dep = dax.Dependency(parent=parent_node._dax_node,
+                                             child=sbv_plotter_node._dax_node)
+                        workflow._adag.addDependency(dep)
+
             # Also add sbv_plotter job for unclustered triggers
             sbv_plotter_node = sbv_plotter_jobs.create_node(unclust_file,
                     segment_dir, tags=[out_tag, "_unclustered"])
@@ -350,6 +369,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                         if trial_tag in file.tag_str][0]
         trig_cluster_node, clust_outs = trig_cluster_jobs.create_node(\
                 unclust_file)
+        clust_file = clust_outs[0]
         trig_cluster_outs.extend(clust_outs)
         pp_nodes.append(trig_cluster_node)
         workflow.add_node(trig_cluster_node)
@@ -369,6 +389,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                              child=efficiency_node._dax_node)
         workflow._adag.addDependency(dep)
 
+        # Adding inj_efficiency job
         if cp.has_section("workflow-injections"):
             for tag in injcombiner_out_tags:
                 found_file = [file for file in injcombiner_outs \
@@ -399,10 +420,14 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     html_summary_jobs = html_summary_class(cp, "html_summary", ifo=ifos,
                                            out_dir=output_dir, tags=tags)
     if cp.has_section("workflow-injections"):
-        tuning_tags = [inj_tag for inj_tag in inj_tags \
+        tuning_tags = [inj_tag for inj_tag in injcombiner_out_tags \
                        if "DETECTION" in inj_tag]
+        exclusion_tags = [inj_tag for inj_tag in injcombiner_out_tags \
+                          if "DETECTION" not in inj_tag]
+        logging.info(tuning_tags)
+        logging.info(exclusion_tags)
         html_summary_node = html_summary_jobs.create_node(c_file=config_file,
-                tuning_tags=tuning_tags, exclusion_tags=injcombiner_out_tags,
+                tuning_tags=tuning_tags, exclusion_tags=exclusion_tags,
                 html_dir=html_dir)
     else:
         html_summary_node = html_summary_jobs.create_node(c_file=config_file,

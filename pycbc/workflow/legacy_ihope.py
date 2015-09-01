@@ -507,7 +507,7 @@ class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
         self.ifos = ifo
         self.num_threads = 1
 
-    def create_node(self, parent=None, seg_dir=None, tags=[]):
+    def create_node(self, parent=None, seg_dir=None, inj_file=None, tags=[]):
         node = Node(self)
 
         if not parent:
@@ -527,6 +527,9 @@ class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
         node.add_opt('--segment-dir', seg_dir)
         out_dir = "%s/output/%s/plots%s" % (self.out_dir, tags[0], tags[1])
         node.add_opt('--output-path', out_dir)
+
+        if inj_file is not None:
+            node.add_opt('--inj-file', inj_file.storage_path)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
