@@ -66,6 +66,9 @@ test $? -ne 0 && RESULT=1
 python test/test_tmpltbank.py
 test $? -ne 0 && RESULT=1
 
+python test/test_spatmplt.py
+test $? -ne 0 && RESULT=1
+
 # check for trivial failures of important executables
 
 pycbc_inspiral --help > /dev/null

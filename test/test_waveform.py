@@ -54,38 +54,6 @@ class TestWaveform(unittest.TestCase):
                 htilde, g = get_fd_waveform(approximant=waveform,mass1=20,mass2=20,delta_f=1.0/256,f_lower=40)
                 self.assertTrue(len(htilde)> 0)
 
-    def test_spatmplt(self):
-        fl = 25
-        delta_f = 1.0 / 256
-
-        for m1 in [1, 1.4, 20]:
-            for m2 in [1.4, 20]:
-                for s1 in [-1, 0, 1.0]:
-                    for s2 in [-10, -.5, 0, 0.5, 1.0]:
-                        # Generate TaylorF2 from lalsimulation, restricting to the capabilities of spatmplt
-                        hpr,_ = get_fd_waveform( mass1=m1, mass2=m2, spin1z=s1, spin2z=s2, delta_f=delta_f, f_lower=fl,
-                        approximant="TaylorF2", amplitude_order=0, spin_order=5, phase_order=7)
-                        hpr=hpr.astype(complex64)
-
-                        with self.context:
-                            # Generate the spatmplt waveform
-                            out = zeros(len(hpr), dtype=complex64)
-                            hp = get_waveform_filter(out, mass1=m1, mass2=m2, spin1z=s1, spin2z=s2, delta_f=delta_f, f_lower=fl, approximant="SPAtmplt", amplitude_order=0, spin_order=5, phase_order=7)
-                            #import pylab
-                            #pylab.plot(hp.numpy())
-                            #pylab.plot(hpr.numpy())
-                            #pylab.show()
-                            mag = abs(hpr).sum()
-
-                            # Check the diff is sane
-                            diff = abs(hp - hpr).sum() / mag
-                            self.assertTrue(diff < 0.01)
-
-                            # Point to point overlap (no phase or time maximization)
-                            o =  overlap(hp, hpr)
-                            self.assertAlmostEqual(1.0, o, places=4)
-
-                            print "..checked m1: %s m2:: %s s1z: %s s2z: %s" % (m1, m2, s1, s2)
 
     def test_spintaylorf2GPU(self):
     
