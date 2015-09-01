@@ -299,7 +299,7 @@ Copy the configuration file into your run directory::
 and set the name of the configuration file in your path. If you have more than
 one configuration file they must be space separated::
 
-    LOCAL_CONFIG_FILES="pygrb.ini pygrb_postprocessing.ini"
+    LOCAL_CONFIG_FILES="main.ini injections.ini postprocessing.ini"
 
 .. _pygrbgenerate:
 
@@ -333,6 +333,11 @@ You also need to specify the git directory of your lalsuite install::
 
     export LAL_SRC=/path/to/folder/containing/lalsuite.git
 
+If you want the results page to be moved to a location outside of your run,
+provide this too::
+
+    export HTML_DIR=/path/to/html/folder
+
 If you are using locally editted or custom configuration files then you can
 create the workflow from within the run directory using::
 
@@ -345,6 +350,7 @@ create the workflow from within the run directory using::
                                 workflow:trigger-time:${GRB_TIME} \
                                 workflow:start-time:$(( GRB_TIME - 4096 )) \
                                 workflow:end-time:$(( GRB_TIME + 4096 )) \
+                                workflow:html-dir:${HTML_DIR} \
                                 workflow-tmpltbank:tmpltbank-pregenerated-bank:${BANK_FILE}
 
 This may all be conveniently placed within a shell script, an example of which is given
