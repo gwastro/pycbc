@@ -526,21 +526,21 @@ class PyCBCHDFInjFindExecutable(Executable):
                                  tags=tags)
         return node
 
-class PyCBCDistributeMassBins(Executable):
-    """ Distribute coinc files amoung mass bins """
+class PyCBCDistributeBackgroundBins(Executable):
+    """ Distribute coinc files amoung different background bins """
     current_retention_level = Executable.CRITICAL
-    def create_node(self, coinc_files, bank_file,  mass_bins, tags=[]):
+    def create_node(self, coinc_files, bank_file,  background_bins, tags=[]):
         node = Node(self)
         node.add_input_list_opt('--coinc-files', coinc_files)
         node.add_input_opt('--bank-file', bank_file)
-        node.add_opt('--mass-bins', ' '.join(mass_bins))
+        node.add_opt('--background-bins', ' '.join(background_bins))
         
         output_files = [File(coinc_files[0].ifo_list, 
                              self.name, 
                              coinc_files[0].segment, 
                              directory=self.out_dir,
                              tags = tags + ['mbin-%s' % i],
-                             extension='.hdf') for i in range(len(mass_bins))]
+                             extension='.hdf') for i in range(len(background_bins))]
         node.add_output_list_opt('--output-files', output_files)
         return node
         
@@ -643,8 +643,8 @@ def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir, ta
 
 def setup_statmap(workflow, coinc_files, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
-    if workflow.cp.has_option_tags('workflow-coincidence', 'mass-bins', tags):
-        return setup_mass_bins(workflow, coinc_files, bank_file, out_dir, tags=tags)
+    if workflow.cp.has_option_tags('workflow-coincidence', 'background-bins', tags):
+        return setup_background_bins(workflow, coinc_files, bank_file, out_dir, tags=tags)
     else:
         return setup_simple_statmap(workflow, coinc_files, out_dir, tags=tags)
         
@@ -659,10 +659,10 @@ def setup_simple_statmap(workflow, coinc_files, out_dir, tags=None):
     workflow.add_node(stat_node)
     return stat_node.output_files[0], stat_node.output_files
 
-def setup_mass_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
+def setup_background_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
     
-    bins_exe = PyCBCDistributeMassBins(workflow.cp, 'distribute_mass_bins', 
+    bins_exe = PyCBCDistributeBackgroundBins(workflow.cp, 'distribute_background_bins', 
                                        ifos=workflow.ifos, tags=tags, out_dir=out_dir)
                                        
     statmap_exe = PyCBCStatMapExecutable(workflow.cp, 'statmap',
@@ -672,8 +672,8 @@ def setup_mass_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
     cstat_exe = PyCBCCombineStatmap(workflow.cp, 'combine_statmap', ifos=workflow.ifos,
                                     tags=tags, out_dir=out_dir)                       
            
-    mass_bins = workflow.cp.get_opt_tags('workflow-coincidence', 'mass-bins', tags).split(' ')             
-    bins_node = bins_exe.create_node(coinc_files, bank_file, mass_bins)
+    background_bins = workflow.cp.get_opt_tags('workflow-coincidence', 'background-bins', tags).split(' ')             
+    bins_node = bins_exe.create_node(coinc_files, bank_file, background_bins)
     workflow += bins_node
     
     stat_files = FileList([])
@@ -689,8 +689,8 @@ def setup_mass_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
     
 def setup_statmap_inj(workflow, coinc_files, background_file, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
-    if workflow.cp.has_option_tags('workflow-coincidence', 'mass-bins', tags):
-        return setup_mass_bins_inj(workflow, coinc_files, background_file, bank_file, out_dir, tags=tags)
+    if workflow.cp.has_option_tags('workflow-coincidence', 'background-bins', tags):
+        return setup_background_bins_inj(workflow, coinc_files, background_file, bank_file, out_dir, tags=tags)
     else:
         return setup_simple_statmap_inj(workflow, coinc_files, background_file, out_dir, tags=tags)
         
@@ -706,10 +706,10 @@ def setup_simple_statmap_inj(workflow, coinc_files, background_file, out_dir, ta
     workflow.add_node(stat_node)
     return stat_node.output_files[0]
 
-def setup_mass_bins_inj(workflow, coinc_files, background_file, bank_file, out_dir, tags=None):
+def setup_background_bins_inj(workflow, coinc_files, background_file, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
     
-    bins_exe = PyCBCDistributeMassBins(workflow.cp, 'distribute_mass_bins', 
+    bins_exe = PyCBCDistributeBackgroundBins(workflow.cp, 'distribute_background_bins', 
                                        ifos=workflow.ifos, tags=tags, out_dir=out_dir)
                                        
     statmap_exe = PyCBCStatMapInjExecutable(workflow.cp, 'statmap_inj',
@@ -719,16 +719,16 @@ def setup_mass_bins_inj(workflow, coinc_files, background_file, bank_file, out_d
     cstat_exe = PyCBCCombineStatmap(workflow.cp, 'combine_statmap', ifos=workflow.ifos,
                                     tags=tags, out_dir=out_dir)                       
            
-    mass_bins = workflow.cp.get_opt_tags('workflow-coincidence', 'mass-bins', tags).split(' ')   
+    background_bins = workflow.cp.get_opt_tags('workflow-coincidence', 'background-bins', tags).split(' ')   
     
     
     for inj_type in ['injinj', 'injfull', 'fullinj']:          
-        bins_node = bins_exe.create_node(FileList(coinc_files[inj_type]), bank_file, mass_bins, tags=tags + [inj_type])
+        bins_node = bins_exe.create_node(FileList(coinc_files[inj_type]), bank_file, background_bins, tags=tags + [inj_type])
         workflow += bins_node
         coinc_files[inj_type] = bins_node.output_files
     
     stat_files = FileList([])
-    for i in range(len(mass_bins)):
+    for i in range(len(background_bins)):
         statnode = statmap_exe.create_node(FileList([coinc_files['injinj'][i]]), FileList([background_file[i]]), 
                                      FileList([coinc_files['injfull'][i]]), FileList([coinc_files['fullinj'][i]]), 
                                      tags=tags + ['BIN_%s' % i])
