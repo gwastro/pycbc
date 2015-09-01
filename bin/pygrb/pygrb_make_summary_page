@@ -24,10 +24,11 @@ from __future__ import division
 
 import os,sys,datetime,re,glob,shutil,ConfigParser
 from argparse import ArgumentParser
+import random
+import string
 from glue import markup
 from pylal import grbsummary,rate,antenna,git_version
 from lal.gpstime import gps_to_utc,LIGOTimeGPS
-import os.path
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = "git id %s" % git_version.id
@@ -994,6 +995,14 @@ def main(args, inifile, outdir, htmldir, ifoTag, detectionInjList=[],\
   file.close()
 
   if htmldir is not None:
+    if os.path.isdir(htmldir):
+      warn = "WARNING: %s already exists! " % htmldir
+      htmldir += "_"
+      htmldir += ''.join(random.choice(string.ascii_uppercase + string.digits)\
+                         for _ in range(8))
+      warn += "Placing output page in %s." % htmldir
+      sys.stdout.write(warn)
+
     shutil.copytree(outdir, htmldir)
     shutil.copy2('%s/coh_PTF_html_summary.css' % os.path.dirname(outdir),
                  htmldir)
