@@ -17,20 +17,19 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-f = h5py.File(args.bank_file)
-m1, m2 = f['mass1'][:], f['mass2']
+
 
 if len(args.output_files) != len(args.background_bins):
     raise ValueError('Number of mass bins and output files does not match') 
 
-d = pycbc.io.StatmapData(files=args.coinc_files)
-logging.info('%s coinc triggers' % len(d))
-
+f = h5py.File(args.bank_file)
 data = {'mass1':f['mass1'][:], 'mass2':f['mass2'][:],
         'spin1z':f['spin1z'][:], 'spin2z':f['spin2z'][:]}
 
 locs_dict = pycbc.events.background_bin_from_string(args.background_bins, data)
 
+d = pycbc.io.StatmapData(files=args.coinc_files)
+logging.info('%s coinc triggers' % len(d))
 for name, outname in zip(locs_dict, args.output_file):
     # select the coincs from only this bin and save to a single combined file
     locs = locs_dict[name]

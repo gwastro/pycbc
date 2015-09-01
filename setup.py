@@ -433,6 +433,7 @@ setup (
                'bin/hdfcoinc/pycbc_plot_singles_timefreq',
                'bin/mvsc/pycbc_mvsc_get_features',
                'bin/hdfcoinc/pycbc_plot_background_coincs',
+               'bin/hdfcoinc/pycbc_plot_bank_bins',
                ],
     packages = [
                'pycbc',

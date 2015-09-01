@@ -28,7 +28,7 @@ import numpy, logging, h5py, pycbc.pnutils
 from itertools import izip
 from scipy.interpolate import interp1d  
 
-def background_bin_from_string(bins, data):
+def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
     
     Parameters
@@ -48,15 +48,14 @@ def background_bin_from_string(bins, data):
     """
     used = numpy.array([], dtype=numpy.uint32)
     bins = {}
-    for mbin in bins:
+    for mbin in background_bins:
         name, bin_type, boundary = tuple(mbin.split('-'))
-        
         if bin_type == 'component':
-            locs = numpy.maximum(m1, m2) < float(boundary)
+            locs = numpy.maximum(data['mass1'], data['mass2']) < float(boundary)
         elif bin_type == 'total':
-            locs = m1 + m2 < float(boundary)
+            locs = data['mass1'] + data['mass2'] < float(boundary)
         elif bin_type == 'chirp':
-            locs = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)[0] < float(boundary)
+            locs = pycbc.pnutils.mass1_mass2_to_mchirp_eta(data['mass1'], data['mass2'])[0] < float(boundary)
         else:
             raise ValueError('Invalid bin type %s' % bin_type)    
         
