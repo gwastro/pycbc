@@ -125,4 +125,7 @@ if fore_locs.sum() > 0:
     f['foreground/ifar_exc'] = sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
 
+if 'name' in d.attrs:
+    f.attrs['name'] = d.attrs['name']
+
 logging.info("Done") 

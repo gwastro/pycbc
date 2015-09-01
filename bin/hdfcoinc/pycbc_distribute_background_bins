@@ -28,7 +28,7 @@ logging.info('%s coinc triggers' % len(d))
 
 used = numpy.array([], dtype=numpy.uint32)
 for mbin, outname in zip(args.background_bins, args.output_files):
-    bin_type, boundary = tuple(mbin.split('-'))
+    name, bin_type, boundary = tuple(mbin.split('-'))
     if bin_type == 'component':
         locs = numpy.maximum(m1, m2) < float(boundary)
     elif bin_type == 'total':
@@ -47,3 +47,5 @@ for mbin, outname in zip(args.background_bins, args.output_files):
     e = d.select(numpy.in1d(d.template_id, locs))
     logging.info('%s coincs in mass bin: %s' % (len(e), mbin))
     e.save(outname)
+    f = h5py.File(outname, 'r+')
+    f.attrs['name'] = name
