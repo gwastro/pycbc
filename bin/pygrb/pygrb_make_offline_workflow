@@ -296,8 +296,11 @@ if wflow.cp.has_section("workflow-injections"):
             datafind_veto_files, inj_splitbank_files, injDir, injs,
             tags=["injections"])
     for inj_insp_file in inj_insp_files:
-        inj_insp_file.description += '_%d' \
-                % int(inj_insp_file.name.split('_')[-3][5:])
+        split_str = [s for s in inj_insp_file.name.split('_') \
+                     if 'SPLIT' in s]
+        if len(split_str) != 0:
+            num = split_str[0].replace('SPLIT', '')
+            inj_insp_file.description += '_%d' % int(num)
 
     # Make cache files (needed for post-processing)
     for inj_tag in inj_tags:
