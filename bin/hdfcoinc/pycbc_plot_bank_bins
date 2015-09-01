@@ -21,7 +21,7 @@ data = {'mass1':f['mass1'][:], 'mass2':f['mass2'][:],
 if args.background_bins:
     locs_dict = pycbc.events.background_bin_from_string(args.background_bins, data)
 else:
-    locs_dict = {'Template Bank':numpy.arange(0, 1, len(data['mass1'])}
+    locs_dict = {'Template Bank':numpy.arange(0, 1, len(data['mass1']))}
 
 color = cycle(['red', 'green', 'blue', 'purple'])
 

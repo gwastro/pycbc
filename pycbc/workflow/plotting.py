@@ -46,6 +46,21 @@ class PlotExecutable(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
 
+def make_template_plot(workflow, bank_file, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    node = PlotExecutable(workflow.cp, 'plot_bank', ifos=workflow.ifos,
+                          out_dir=out_dir, tags=tags).create_node()
+    node.add_input_list_opt('--bank-file', bank_file)
+    
+    if workflow.cp.has_option_tags('workflow-coincidence', 'background-bins'):
+        bins = workflow.cp.get_option_tags('workflow-coincidence', 'background-bins')
+        node.add_opt('--background-bins', bins)
+    
+    node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+    workflow += node
+    return node.output_files[0]     
+
 def make_range_plot(workflow, psd_files, out_dir, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)

@@ -113,6 +113,7 @@ bank_files = wf.setup_tmpltbank_workflow(workflow, science_segs,
 hdfbank = wf.convert_bank_to_hdf(workflow, bank_files, "bank")
 splitbank_files = wf.setup_splittable_workflow(workflow, bank_files, "bank") 
 
+bank_plot = [(wf.make_template_plot(workflow, hdfbank[0], rdir['coincident_triggers']),)]
 
 # setup the injection files
 inj_files, inj_tags = wf.setup_injection_workflow(workflow, 
@@ -319,7 +320,7 @@ if len(inj_files) > 0:
                             
 # make full summary
 summ = ([(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)] + 
-       det_summ + hist_summ + list(grouper(closed_snrifar, 2)) + inj_summ)
+       det_summ + hist_summ + bank_plot + list(grouper(closed_snrifar, 2)) + inj_summ)
 for row in summ:
     for f in row:
         if f is None:
