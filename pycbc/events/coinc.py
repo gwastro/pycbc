@@ -24,7 +24,7 @@
 """ This modules contains functions for calculating and manipulating
 coincident triggers.
 """
-import numpy, logging, h5py
+import numpy, logging, h5py, pycbc.pnutils
 from itertools import izip
 from scipy.interpolate import interp1d  
 
