@@ -357,13 +357,14 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         node.add_opt('--segment-dir', segment_dir)
         node.add_opt('--output-dir', self.out_dir)
 
+        out_files = FileList([])
         for out_tag in out_tags:
             out_file = File(self.ifos, 'INSPIRAL', trig_files[0].segment,
                             directory=self.out_dir, extension='xml.gz',
                             tags=["GRB%s" % trig_name, out_tag],
                             store_file=self.retain_files)
             #out_file.PFN(out_file.cache_entry.path, site="local")
-            node._add_output(out_file)
+            out_files.append(out_file)
 
         for trial in range(1, num_trials + 1):
             out_file = File(self.ifos, 'INSPIRAL', trig_files[0].segment,
@@ -371,11 +372,11 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
                             tags=["GRB%s" % trig_name, "OFFTRIAL_%d" % trial],
                             store_file=self.retain_files)
             #out_file.PFN(out_file.cache_entry.path, site="local")
-            node._add_output(out_file)
+            out_files.append(out_file)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
-        return node
+        return node, out_files
 
 
 class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
@@ -397,7 +398,6 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
 
         # Set input / output options
         node.add_opt('--trig-file', '%s' % parent.storage_path)
-        node._add_input(parent)
         node.add_opt('--output-dir', self.out_dir)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
@@ -408,9 +408,8 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
                         tags=[parent.tag_str, 'CLUSTERED'],
                         store_file=self.retain_files)
         #out_file.PFN(out_file.cache_entry.path, site="local")
-        node._add_output(out_file)
 
-        return node
+        return node, FileList([out_file])
 
 
 class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
@@ -447,15 +446,14 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
         found_file = File(self.ifos, name_string, seg, extension="xml",
                           directory=self.out_dir, tags=found_tags,
                           store_file=self.retain_files)
-        node._add_output(found_file)
 
         missed_tags = list(tags)
         missed_tags.append("MISSED")
         missed_file = File(self.ifos, name_string, seg, extension="xml",
                            directory=self.out_dir, tags=missed_tags,
                            store_file=self.retain_files)
-        node._add_output(missed_file)
-        return node
+
+        return node, FileList([found_file, missed_file])
 
 
 class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
@@ -479,20 +477,20 @@ class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
         node.add_opt('--inj-string', inj_string)
         node.add_opt('--max-inclination', max_inc)
         node.add_opt('--inj-cache', '%s' % parent.storage_path)
-        node._add_input(parent)
 
+        out_files = FileList([])
         for inj_trig in inj_trigs:
-            node._add_input(inj_trig)
             out_file_tag = [inj_string, "FILTERED", max_inc,
                             inj_trig.tag_str.rsplit('_', 1)[-1]]
             out_file = File(self.ifos, inj_trig.description, inj_trig.segment,
                             extension="xml", directory=self.out_dir,
                             tags=out_file_tag)
             out_file.PFN(out_file.cache_entry.path, site="local")
-            node._add_output(out_file)
+            out_files.append(out_file)
+
         node.add_opt('--output-dir', self.out_dir)
 
-        return node
+        return node, out_files
 
 
 class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
@@ -520,7 +518,6 @@ class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
             node.add_opt('--trig-file', '%s' % parent.storage_path)
             tags[1] = ""
         else:
-            node._add_input(parent)
             node.add_opt('--trig-file', '%s' % parent.storage_path)
 
         node.add_opt('--grb-name', self.cp.get('workflow', 'trigger-name'))
@@ -560,21 +557,18 @@ class LegacyCohPTFEfficiency(LegacyAnalysisExecutable):
 
         # Set input / output options
         node.add_opt('--onsource-file', '%s' % parent.storage_path)
-        node._add_input(parent)
 
         node.add_opt('--offsource-file', '%s' % offsource_file.storage_path)
-        node._add_input(offsource_file)
         node.add_opt('--veto-directory', seg_dir)
         node.add_opt('--segment-dir', seg_dir)
-        out_dir = "%s/output/%s/efficiency" % (self.out_dir, tags[0])
+        
         
 
         if found_file and missed_file:
             node.add_opt('--found-file', '%s' % found_file.storage_path)
-            node._add_input(found_file)
             node.add_opt('--missed-file', '%s' % missed_file.storage_path)
-            node._add_input(missed_file)
-            out_dir += "_%s" % tags[1]
+            out_dir = "%s/output/%s/efficiency_%s" % (self.out_dir, tags[1],
+                                                      tags[0])
         elif found_file or missed_file:
             if found_file:
                 present = found_file
@@ -583,6 +577,8 @@ class LegacyCohPTFEfficiency(LegacyAnalysisExecutable):
             raise ValueError("Must either be supplied with no injection files "
                              "or both missed and found injection files. "
                              "Received only %s" % present.name)
+        else:
+            out_dir = "%s/output/%s/efficiency" % (self.out_dir, tags[0])
 
         node.add_opt('--output-path', out_dir)
         node.add_profile('condor', 'request_cpus', self.num_threads)
@@ -604,8 +600,8 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
         self.output_dir = out_dir
         self.num_threads = 1
 
-    def create_node(self, parent=None, config_file=None, open_box=False,
-                    tags=[]):
+    def create_node(self, parent=None, c_file=None, open_box=False,
+                    tuning_tags=None, exclusion_tags=None, tags=[]):
         node = Node(self)
 
         node.add_opt('--grb-name', self.cp.get('workflow', 'trigger-name'))
@@ -614,11 +610,17 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
         node.add_opt('--dec', self.cp.get('workflow', 'dec'))
         node.add_opt('--ifo-tag', self.ifos)
 
+        if tuning_tags is not None:
+            node.add_opt('--tuning-injections', ','.join(tuning_tags))
+
+        if exclusion_tags is not None:
+            node.add_opt('--exclusion-injections', ','.join(exclusion_tags))
+
         if open_box:
             node.add_opt('--open-box')
 
         # Set input / output options
-        node.add_opt('--config-file', '%s' % config_file.storage_path) 
+        node.add_opt('--config-file', '%s' % c_file.storage_path) 
         node.add_opt('--output-path', "%s/output" % self.output_dir)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)

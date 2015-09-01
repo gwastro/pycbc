@@ -156,9 +156,9 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     trig_combiner_out_tags = ["OFFSOURCE", "ONSOURCE", "ALL_TIMES"]
     trig_combiner_jobs = trig_combiner_class(cp, "trig_combiner", ifo=ifos, 
                                              out_dir=output_dir, tags=tags)
-    trig_combiner_node = trig_combiner_jobs.create_node(trig_files,
-            segment_dir, out_tags=trig_combiner_out_tags, tags=tags)
-    trig_combiner_outs = trig_combiner_node.output_files
+    trig_combiner_node, trig_combiner_outs = trig_combiner_jobs.create_node(\
+            trig_files, segment_dir, out_tags=trig_combiner_out_tags,
+            tags=tags)
     pp_nodes.append(trig_combiner_node)
     workflow.add_node(trig_combiner_node)
     pp_outs.extend(trig_combiner_outs)
@@ -171,6 +171,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     # Set up injfinder jobs
     if cp.has_section("workflow-injections"):
         injfinder_nodes = []
+        injcombiner_parent_nodes = []
 
         injfinder_exe = os.path.basename(cp.get("executables", "injfinder"))
         injfinder_class = select_generic_executable(workflow, "injfinder")
@@ -193,12 +194,15 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                           if inj_tag in file.tag_str][0]
             inj_cache = [file for file in inj_caches \
                          if inj_tag in file.tag_str][0]
-            injfinder_node = injfinder_jobs.create_node(triggers, injections,
-                    segment_dir, tags=[inj_tag])
+            injfinder_node, curr_outs = injfinder_jobs.create_node(\
+                    triggers, injections, segment_dir, tags=[inj_tag])
             injfinder_nodes.append(injfinder_node)
             pp_nodes.append(injfinder_node)
             workflow.add_node(injfinder_node)
-            injfinder_outs.extend(injfinder_node.output_files)
+            injfinder_outs.extend(curr_outs)
+            if "DETECTION" not in curr_outs[0].tag_str:
+                injcombiner_parent_nodes.append(injfinder_node)
+
         pp_outs.extend(injfinder_outs)
 
         # Make injfinder output cache
@@ -225,14 +229,18 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                                if injcombiner_tag in file.tagged_description])
             #                   if any(tag in file.tagged_description \
             #                          for tag in injcombiner_tags)])
-            injcombiner_node = injcombiner_jobs.create_node(fm_cache, inputs,
-                    inj_str, max_inc, workflow.analysis_time)
+            injcombiner_node, curr_outs = injcombiner_jobs.create_node(\
+                    fm_cache, inputs, inj_str, max_inc, workflow.analysis_time)
             injcombiner_nodes.append(injcombiner_node)
             injcombiner_out_tags.append("%s_FILTERED_%s" % (inj_str, max_inc))
-            injcombiner_outs.extend(injcombiner_node.output_files)
-            pp_outs.extend(injcombiner_node.output_files)
+            injcombiner_outs.extend(curr_outs)
+            pp_outs.extend(curr_outs)
             pp_nodes.append(injcombiner_node)
             workflow.add_node(injcombiner_node)
+            for parent_node in injcombiner_parent_nodes:
+                dep = dax.Dependency(parent=parent_node._dax_node,
+                                     child=injcombiner_node._dax_node)
+                workflow._adag.addDependency(dep)
 
         # Initialise injection_efficiency class
         inj_efficiency_jobs = efficiency_class(cp, "inj_efficiency", ifo=ifos,
@@ -256,14 +264,18 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     for out_tag in trig_combiner_out_tags:
         unclust_file = [file for file in trig_combiner_outs \
                         if out_tag in file.tag_str][0]
-        trig_cluster_node = trig_cluster_jobs.create_node(unclust_file)
-        trig_cluster_outs.extend(trig_cluster_node.output_files)
-        clust_file = trig_cluster_node.output_files[0]
+        trig_cluster_node, curr_outs = trig_cluster_jobs.create_node(\
+                unclust_file)
+        trig_cluster_outs.extend(curr_outs)
+        clust_file = curr_outs[0]
         if out_tag != "ONSOURCE":
             # Add memory requirememnt for jobs with potentially large files
             trig_cluster_node.set_memory(1300)
             pp_nodes.append(trig_cluster_node)
             workflow.add_node(trig_cluster_node)
+            dep = dax.Dependency(parent=trig_combiner_node._dax_node,
+                                 child=trig_cluster_node._dax_node)
+            workflow._adag.addDependency(dep)
 
             # Add sbv_plotter job
             sbv_out_tags = [out_tag, "_clustered"]
@@ -272,6 +284,9 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                                                             tags=sbv_out_tags)
             pp_nodes.append(sbv_plotter_node)
             workflow.add_node(sbv_plotter_node)
+            dep = dax.Dependency(parent=trig_cluster_node._dax_node,
+                                 child=sbv_plotter_node._dax_node)
+            workflow._adag.addDependency(dep)
 
             if out_tag == "OFFSOURCE":
                 offsource_clustered = clust_file
@@ -283,18 +298,24 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
             sbv_plotter_node.set_memory(1300)
             pp_nodes.append(sbv_plotter_node)
             workflow.add_node(sbv_plotter_node)
+            dep = dax.Dependency(parent=trig_combiner_node._dax_node,
+                                 child=sbv_plotter_node._dax_node)
+            workflow._adag.addDependency(dep)
         else:
             pp_nodes.append(trig_cluster_node)
             workflow.add_node(trig_cluster_node)
+            dep = dax.Dependency(parent=trig_combiner_node._dax_node,
+                                 child=trig_cluster_node._dax_node)
+            workflow._adag.addDependency(dep)
 
             # Add efficiency job for on/off
             efficiency_node = efficiency_jobs.create_node(clust_file,
                     offsource_clustered, segment_dir, tags=[out_tag])
             pp_nodes.append(efficiency_node)
             workflow.add_node(efficiency_node)
-            #dep = dax.Dependency(parent=off_node._dax_node,
-            #                     child=efficiency_node._dax_node)
-            #workflow._adag.addDependency(dep)
+            dep = dax.Dependency(parent=off_node._dax_node,
+                                 child=efficiency_node._dax_node)
+            workflow._adag.addDependency(dep)
 
             if cp.has_section("workflow-injections"):
                 for tag in injcombiner_out_tags:
@@ -307,15 +328,17 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                             found_file, missed_file, tags=[out_tag, tag])
                     pp_nodes.append(inj_efficiency_node)
                     workflow.add_node(inj_efficiency_node)
-                    #dep = dax.Dependency(parent=off_node._dax_node,
-                    #                     child=inj_efficiency_node._dax_node)
-                    #workflow._adag.addDependency(dep)
-                    #dep = dax.Dependency(parent=injcombiner_node._dax_node,
-                    #                     child=inj_efficiency_node._dax_node)
-                    #workflow._adag.addDependency(dep)
-                    #dep = dax.Dependency(parent=injfinder_det_node._dax_node,
-                    #                     child=inj_efficiency_node._dax_node)
-                    #workflow._adag.addDependency(dep)
+                    dep = dax.Dependency(parent=off_node._dax_node,
+                                         child=inj_efficiency_node._dax_node)
+                    workflow._adag.addDependency(dep)
+                    for injcombiner_node in injcombiner_nodes:
+                        dep = dax.Dependency(parent=injcombiner_node._dax_node,
+                                child=inj_efficiency_node._dax_node)
+                        workflow._adag.addDependency(dep)
+                    for injfinder_node in injfinder_nodes:
+                        dep = dax.Dependency(parent=injfinder_node._dax_node,
+                                child=inj_efficiency_node._dax_node)
+                        workflow._adag.addDependency(dep)
 
     # Add further trig_cluster jobs for trials
     trial = 1
@@ -324,14 +347,14 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
         trial_tag = "OFFTRIAL_%d" % trial
         unclust_file = [file for file in trig_combiner_outs \
                         if trial_tag in file.tag_str][0]
-        trig_cluster_node = trig_cluster_jobs.create_node(unclust_file)
-        trig_cluster_outs.extend(trig_cluster_node.output_files)
-        clust_file = trig_cluster_node.output_files[0]
+        trig_cluster_node, clust_outs = trig_cluster_jobs.create_node(\
+                unclust_file)
+        trig_cluster_outs.extend(clust_outs)
         pp_nodes.append(trig_cluster_node)
         workflow.add_node(trig_cluster_node)
-        #dep = dax.Dependency(parent=trig_combiner_node._dax_node,
-        #                     child=trig_cluster_node._dax_node)
-        #workflow._adag.addDependency(dep)
+        dep = dax.Dependency(parent=trig_combiner_node._dax_node,
+                             child=trig_cluster_node._dax_node)
+        workflow._adag.addDependency(dep)
 
         # Add efficiency job
         efficiency_node = efficiency_jobs.create_node(clust_file,
@@ -339,6 +362,9 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
         pp_nodes.append(efficiency_node)
         workflow.add_node(efficiency_node)
         dep = dax.Dependency(parent=off_node._dax_node,
+                             child=efficiency_node._dax_node)
+        workflow._adag.addDependency(dep)
+        dep = dax.Dependency(parent=trig_cluster_node._dax_node,
                              child=efficiency_node._dax_node)
         workflow._adag.addDependency(dep)
 
@@ -353,6 +379,17 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                         found_file, missed_file, tags=[trial_tag, tag])
                 pp_nodes.append(inj_efficiency_node)
                 workflow.add_node(inj_efficiency_node)
+                dep = dax.Dependency(parent=off_node._dax_node,
+                                     child=inj_efficiency_node._dax_node)
+                workflow._adag.addDependency(dep)
+                for injcombiner_node in injcombiner_nodes:
+                    dep = dax.Dependency(parent=injcombiner_node._dax_node,
+                                         child=inj_efficiency_node._dax_node)
+                    workflow._adag.addDependency(dep)
+                for injfinder_node in injfinder_nodes:
+                    dep = dax.Dependency(parent=injfinder_node._dax_node,
+                                         child=inj_efficiency_node._dax_node)
+                    workflow._adag.addDependency(dep)
 
         trial += 1
 
@@ -360,7 +397,13 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     #FIXME: We may want this job to run even if some jobs fail
     html_summary_jobs = html_summary_class(cp, "html_summary", ifo=ifos,
                                            out_dir=output_dir, tags=tags)
-    html_summary_node = html_summary_jobs.create_node(config_file=config_file)
+    if cp.has_section("workflow-injections"):
+        tuning_tags = [inj_tag for inj_tag in inj_tags \
+                       if "DETECTION" in inj_tag]
+        html_summary_node = html_summary_jobs.create_node(c_file=config_file,
+                tuning_tags=tuning_tags, exclusion_tags=injcombiner_out_tags)
+    else:
+        html_summary_node = html_summary_jobs.create_node(c_file=config_file)
     workflow.add_node(html_summary_node)
     for pp_node in pp_nodes:
         dep = dax.Dependency(parent=pp_node._dax_node,
