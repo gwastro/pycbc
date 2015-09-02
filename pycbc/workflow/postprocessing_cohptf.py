@@ -299,7 +299,6 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                     curr_tags = [tag for tag in injcombiner_out_tags \
                                  if tag in curr_injs.name]
                     curr_tags.append("_clustered")
-                    logging.info(curr_tags)
                     sbv_plotter_node = sbv_plotter_jobs.create_node(clust_file,
                             segment_dir, inj_file=curr_injs, tags=curr_tags)
                     pp_nodes.append(sbv_plotter_node)
@@ -424,8 +423,6 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                        if "DETECTION" in inj_tag]
         exclusion_tags = [inj_tag for inj_tag in injcombiner_out_tags \
                           if "DETECTION" not in inj_tag]
-        logging.info(tuning_tags)
-        logging.info(exclusion_tags)
         html_summary_node = html_summary_jobs.create_node(c_file=config_file,
                 tuning_tags=tuning_tags, exclusion_tags=exclusion_tags,
                 html_dir=html_dir)
