@@ -104,7 +104,7 @@ Our source distribution will be random. The command line option will be ::
   
 We select to use the ``SpinTaylorT4`` approximant and begin the waveforms at 10.0Hz. Here we taper the injection at the start and end of the injection. The command line options will be ::
 
-  --waveform SpinTaylorT4threePointFivePN --f-lower 10 --taper-injection start --band-pass-injection
+  --waveform SpinTaylorT4threePointFivePN --f-lower 10 --taper-injection startend --band-pass-injection
 
 Now we can combine all the options above and run ``lalapps_inspinj`` as ::
 
