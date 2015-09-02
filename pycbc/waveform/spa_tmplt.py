@@ -21,11 +21,9 @@
 """This module contains functions for generating common SPA template precalculated
    vectors.
 """
-from math import sqrt
-import numpy
-import lal
+from math import sqrt, log
+import numpy, lal, lalsimulation, pycbc.pnutils
 from pycbc.scheme import schemed
-import pycbc.pnutils
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
 from pycbc.waveform.utils import ceilpow2
 
@@ -163,46 +161,35 @@ def spa_tmplt(**kwds):
     distance = kwds['distance']
     mass1 = kwds['mass1']
     mass2 = kwds['mass2']
+    s1z = kwds['spin1z']
+    s2z = kwds['spin2z']
     phase_order = int(kwds['phase_order'])
     amplitude_order = int(kwds['amplitude_order'])
+    spin_order = int(kwds['spin_order'])
 
     if 'out' in kwds:
         out = kwds['out']
     else:
         out = None
 
-    tC = -1.0 / delta_f
-
     amp_factor = spa_amplitude_factor(mass1=mass1, mass2=mass2) / distance
 
-    #Calculate the spin corrections
-    beta, sigma, gamma = pycbc.pnutils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(
-                                    mass1, mass2, kwds['spin1z'], kwds['spin2z'])
+    #Calculate the PN terms 
+    phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(mass1, 
+                                        mass2, s1z, s2z, 1, 1, spin_order)
+                                           
+    pfaN = phasing.v[0]
+    pfa2 = phasing.v[2] / pfaN
+    pfa3 = phasing.v[3] / pfaN
+    pfa4 = phasing.v[4] / pfaN
+    pfa5 = phasing.v[5] / pfaN
+    pfa6 = (phasing.v[6] - phasing.vlogv[6] * log(4)) / pfaN
+    pfa7 = phasing.v[7] / pfaN
+    
+    pfl5 = phasing.vlogv[5] / pfaN
+    pfl6 = phasing.vlogv[6] / pfaN
 
-    #Calculate the PN terms #TODO: replace with functions in lalsimulation!###
-    M = float(mass1) + float(mass2)
-    eta = mass1 * mass2 / (M * M)
-    theta = -11831./9240.
-    lambdaa = -1987./3080.0
-    pfaN = 3.0/(128.0 * eta)
-    pfa2 = 5*(743.0/84 + 11.0 * eta)/9.0
-    pfa3 = -16.0*lal.PI + 4.0*beta
-    pfa4 = 5.0*(3058.673/7.056 + 5429.0/7.0 * eta + 617.0 * eta*eta)/72.0 - \
-            10.0*sigma
-    pfa5 = 5.0/9.0 * (7729.0/84.0 - 13.0 * eta) * lal.PI - gamma
-    pfl5 = 5.0/3.0 * (7729.0/84.0 - 13.0 * eta) * lal.PI - gamma * 3
-    pfa6 = (11583.231236531/4.694215680 - 640.0/3.0 * lal.PI * lal.PI- \
-            6848.0/21.0*lal.GAMMA) + \
-            eta * (-15335.597827/3.048192 + 2255./12. * lal.PI * \
-            lal.PI - 1760./3.*theta +12320./9.*lambdaa) + \
-            eta*eta * 76055.0/1728.0 - \
-            eta*eta*eta*  127825.0/1296.0 
-    pfl6 = -6848.0/21.0
-    pfa7 = lal.PI * 5.0/756.0 * ( 15419335.0/336.0 + 75703.0/2.0 * eta - \
-            14809.0 * eta*eta)
-
-    m_sec = M * lal.MTSUN_SI
-    piM = lal.PI * m_sec
+    piM = lal.PI * (mass1 + mass2) * lal.MTSUN_SI
 
     kmin = int(f_lower / float(delta_f))
 
