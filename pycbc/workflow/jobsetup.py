@@ -28,13 +28,14 @@ and add jobs/nodes to a pycbc workflow. For details about pycbc.workflow see:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
+import logging
 import math, os
 import logging
 import lal
 from glue import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
-from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable
+from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable, LegacyCohPTFInspiralExecutable
 
 
 def int_gps_time_to_str(t):
@@ -99,7 +100,8 @@ def select_matchedfilter_class(curr_exe):
     """
     exe_to_class_map = {
         'lalapps_inspiral_ahope'  : LegacyInspiralExecutable,
-        'pycbc_inspiral'          : PyCBCInspiralExecutable
+        'pycbc_inspiral'          : PyCBCInspiralExecutable,
+        'lalapps_coh_PTF_inspiral': LegacyCohPTFInspiralExecutable
     }
     try:
         return exe_to_class_map[curr_exe]
@@ -304,6 +306,125 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                 curr_out_files = [i for i in curr_out_files if 'PSD_FILE'\
                                                                  not in i.tags]
                 out_files += curr_out_files
+
+    return out_files
+
+def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
+                                 science_segs, datafind_outs, output_dir,
+                                 parents=None):
+    """
+    Documentation goes here.
+    """
+    cp = workflow.cp
+    ifos = science_segs.keys()
+    job_tag = curr_exe_job.name.upper()
+    data_seg, job_valid_seg = curr_exe_job.get_valid_times()
+    tag=[]
+    node = curr_exe_job.create_node(data_seg, job_valid_seg, parent=parents,
+                                    dfParents=datafind_outs, tags=tag)
+    workflow.add_node(node)
+    curr_out_files = node.output_files
+    # FIXME: Here we remove PSD files if they are coming
+    #        through. This should be done in a better way. On
+    #        to-do list.
+    curr_out_files = [i for i in curr_out_files if 'PSD_FILE'\
+                      not in i.tags]
+    out_files += curr_out_files
+
+    return out_files
+
+def multi_ifo_job_setup(workflow, out_files, curr_exe_job, science_segs,
+                        datafind_outs, output_dir, parents=None):
+    """
+    Documentation goes here.
+    """
+    cp = workflow.cp
+    ifos = science_segs.keys()
+    job_tag = curr_exe_job.name.upper()
+
+    ########### (1) ############
+    # Get the times that can be analysed and needed data lengths
+    data_length, valid_chunk, valid_length = identify_needed_data(curr_exe_job)
+
+    segmenter = MultiDetJobSegmenter(valid_chunk, data_length, science_segs,
+                                     ifos)
+    analyzable_segments = segmenter.identify_analysis_times()
+
+    for ifo_combo, seg_list in analyzable_segments.items():
+        for curr_seg in seg_list:
+            segmenter.set_current_segment(curr_seg, ifo_combo)
+            for job_num in range(segmenter.num_jobs):
+                ############## (3) #############
+                # Figure out over what times this job will be valid for
+
+                job_valid_seg = segmenter.get_valid_times_for_job(job_num,
+                                                   allow_overlap=False)
+
+                ############## (4) #############
+                # Get the data that this job should read in
+                job_data_seg_dict = segmenter.get_data_times_for_job(job_num,
+                                                                 job_valid_seg)
+
+                ############# (5) ############
+                # Identify parents/inputs to the job
+
+                if parents:
+                    # Find the set of files with the best overlap
+                    # FIXME: How to do this correctly?
+                    curr_parent = parents.find_outputs_in_range(ifo_combo,
+                                             job_valid_seg, useSplitLists=True)
+                    if not curr_parent:
+                        err_string = ("No parent jobs overlapping %d to %d.\n"
+                                      %(job_valid_seg[0], job_valid_seg[1]))
+                        err_string += "This is a bad error! Contact developer."
+                        raise ValueError(err_string)
+                else:
+                    curr_parent = [None]
+
+                if datafind_outs:
+                    curr_dfouts = FileList([])
+                    for ifo in ifo_combo:
+                        curr_outs = datafind_outs.find_all_output_in_range(ifo,
+                                    job_data_seg_dict[ifo], useSplitLists=True)
+                        if not curr_outs:
+                            err_str = ("No datafind jobs between %d to %d.\n"
+                                    %(job_data_seg[0],job_data_seg[1]))
+                            err_str += "Shouldn't happen. Contact developer."
+                            raise ValueError(err_str)
+
+                        curr_dfouts.extend(curr_outs)
+
+
+                ############## (6) #############
+                # Make node and add to workflow
+
+                # Note if I have more than one curr_parent I need to make more
+                # than one job. If there are no curr_parents it is set to
+                # [None] and I make a single job. This catches the case of a
+                # split template bank where I run a number of jobs to cover a
+                # single range of time.
+                for pnum, parent in enumerate(curr_parent):
+                    if len(curr_parent) != 1:
+                        tag = ["JOB%d" %(pnum,)]
+                    else:
+                        tag = []
+                    # To ensure output file uniqueness I add a tag
+                    # We should generate unique names automatically, but it is a
+                    # pain until we can set the output names for all Executables
+                    # FIXME: This needs to take multi-ifo input
+                    node = curr_exe_job.create_node(job_data_seg_dict,
+                                                    job_valid_seg,
+                                                    parent=parent,
+                                                    dfParents=curr_dfouts,
+                                                    tags=tag)
+                    workflow.add_node(node)
+                    curr_out_files = node.output_files
+                    # FIXME: Here we remove PSD files if they are coming
+                    #        through. This should be done in a better way. On
+                    #        to-do list.
+                    curr_out_files = [i for i in curr_out_files if 'PSD_FILE'\
+                                                                 not in i.tags]
+                    out_files += curr_out_files
 
     return out_files
 

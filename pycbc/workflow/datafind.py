@@ -906,6 +906,8 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     # workflow format output file
     cache_file = File(ifo, 'DATAFIND', seg, extension='lcf',
                       directory=outputDir, tags=currTags)
+    cache_file.PFN(cache_file.cache_entry.path, site='local')
+    
     dfCache.ifo = ifo
     # Dump output to file
     fP = open(cache_file.storage_path, "w")

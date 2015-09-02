@@ -850,8 +850,7 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
                                            'on-before')))
     onafter = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                           'on-after')))
-    padding = int(os.path.basename(cp.get('workflow-exttrig_segments',
-                                          'pad-data')))
+    padding = int(os.path.basename(cp.get('inspiral', 'pad-data')))
     quanta = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                          'quanta')))
 
