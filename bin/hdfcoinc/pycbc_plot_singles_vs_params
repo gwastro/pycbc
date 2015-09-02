@@ -33,7 +33,7 @@ import pycbc.pnutils
 import pycbc.events
 import pycbc.results
 import pycbc.io
-
+import sys
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--single-trig-file', type=str, required=True,
@@ -114,6 +114,7 @@ ax.set_title(opts.z_var + ' for ' + opts.detector)
 title = '%s of %s triggers over %s and %s' \
     % (opts.z_var, opts.detector, opts.x_var, opts.y_var)
 pycbc.results.save_fig_with_metadata(fig, opts.output_file, title=title,
-                                     caption='', fig_kwds={'dpi': 200})
+                                     caption='', cmd=' '.join(sys.argv),
+                                     fig_kwds={'dpi': 200})
 
 logging.info('Done')
