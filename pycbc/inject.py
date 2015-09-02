@@ -192,16 +192,12 @@ class InjectionSet(object):
                    continue
 
             # taper the polarizations
-            hp_tapered = wfutils.taper_timeseries(hp, inj.taper, return_lal=True)
-            hc_tapered = wfutils.taper_timeseries(hc, inj.taper, return_lal=True)
-            hp_tapered_pycbc = TimeSeries(hp_tapered.data.data[:],
-                                   delta_t=hp_tapered.deltaT, epoch=hp_tapered.epoch)
-            hc_tapered_pycbc = TimeSeries(hc_tapered.data.data[:],
-                                   delta_t=hc_tapered.deltaT, epoch=hc_tapered.epoch)
+            hp_tapered = wfutils.taper_timeseries(hp, inj.taper)
+            hc_tapered = wfutils.taper_timeseries(hc, inj.taper)
 
             # compute the detector response and add it to the strain
-            signal = detector.project_wave(hp_tapered_pycbc, hc_tapered_pycbc,
-                                   inj.longitude, inj.latitude, inj.polarization)
+            signal = detector.project_wave(hp_tapered, hc_tapered,
+                                 inj.longitude, inj.latitude, inj.polarization)
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
