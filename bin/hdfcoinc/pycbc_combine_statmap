@@ -3,11 +3,11 @@
 is a conservative estimate. This clusters to find the most significant foreground, but
 leaves the background triggers alone. """
 
-import h5py, numpy, argparse, logging, pycbc, pycbc.events
+import h5py, numpy, argparse, logging, pycbc, pycbc.events, lal
 
 def com(f, files, group):
     """ Combine the same column from multiple files and saave to a third"""
-    f[group] = numpy.concatenate([fi[group][:] for fi in files])
+    f[group] = numpy.concatenate([fi[group][:] if group in fi else numpy.array([], dtype=numpy.uint32) for fi in files])
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--verbose', action='store_true')
@@ -19,7 +19,8 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-# We apply a dumb factor of the number of bins only, nothing smart for now, no clustering of the background
+# We apply a dumb factor of the number of bins only, nothing smart for now, 
+# no clustering of the background
 files = [h5py.File(n) for n in args.statmap_files]
 
 fac = len(args.statmap_files)
@@ -51,14 +52,15 @@ for key in files[0]['segments'].keys():
 for key in files[0]['foreground'].keys():
     com(f, files, 'foreground/%s' % key)
     
-# recalculate ifar/fap for the foreground triggers by applying a trials factor = num_files(num_bins)
+# recalculate ifar/fap for the foreground triggers by 
+#  applying a trials factor = num_files(num_bins)
 ifar = f['foreground/ifar'][:] / fac
-coinc_time = f.attrs['foreground_time']
+coinc_time = f.attrs['foreground_time'] / lal.YRJUL_SI
 f['foreground/ifar'][:] = ifar
 f['foreground/fap'][:] = 1 - numpy.exp( - coinc_time / ifar)
 
 ifar = f['foreground/ifar_exc'][:] / fac
-coinc_time = f.attrs['foreground_time_exc']
+coinc_time = f.attrs['foreground_time_exc'] / lal.YRJUL_SI
 f['foreground/ifar_exc'][:] = ifar
 f['foreground/fap_exc'][:] = 1 - numpy.exp( - coinc_time / ifar)
 

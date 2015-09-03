@@ -1,0 +1,39 @@
+#!/bin/env python
+import h5py, argparse, numpy, pycbc.events, logging, pycbc.events, pycbc.io
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--coinc-files', nargs='+',
+                    help="List of coinc files to be redistributed")
+parser.add_argument('--background-bins', nargs='+',
+                    help="Ordered list of mass bin upper boundaries. "
+                         "An ordered list of type-boundary pairs, applied sequentially."
+                         "Ex. component-2 total-15 chirp-30")
+parser.add_argument('--bank-file',
+                    help="hdf format template bank file")
+parser.add_argument('--output-files', nargs='+',
+                    help="list of output file names, one for each mass bin")
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+
+
+if len(args.output_files) != len(args.background_bins):
+    raise ValueError('Number of mass bins and output files does not match') 
+
+f = h5py.File(args.bank_file)
+data = {'mass1':f['mass1'][:], 'mass2':f['mass2'][:],
+        'spin1z':f['spin1z'][:], 'spin2z':f['spin2z'][:]}
+
+locs_dict = pycbc.events.background_bin_from_string(args.background_bins, data)
+
+d = pycbc.io.StatmapData(files=args.coinc_files)
+logging.info('%s coinc triggers' % len(d))
+for name, outname in zip(locs_dict, args.output_file):
+    # select the coincs from only this bin and save to a single combined file
+    locs = locs_dict[name]
+    e = d.select(numpy.in1d(d.template_id, locs))
+    logging.info('%s coincs in mass bin: %s' % (len(e), mbin))
+    e.attrs['name'] = name
+    e.save(outname)

@@ -24,9 +24,48 @@
 """ This modules contains functions for calculating and manipulating
 coincident triggers.
 """
-import numpy, logging, h5py
+import numpy, logging, h5py, pycbc.pnutils
 from itertools import izip
 from scipy.interpolate import interp1d  
+
+def background_bin_from_string(background_bins, data):
+    """ Return template ids for each bin as defined by the format string
+    
+    Parameters
+    ----------
+    bins: list of strings
+        List of strings which define how a background bin is taken from the
+        list of templates.
+    data: dict of numpy.ndarrays
+        Dict with parameter key values and numpy.ndarray values which define
+        the parameters of the template bank to bin up.
+    
+    Returns
+    -------
+    bins: dict
+        Dictionary of location indices indexed by a bin name
+    
+    """
+    used = numpy.array([], dtype=numpy.uint32)
+    bins = {}
+    for mbin in background_bins:
+        name, bin_type, boundary = tuple(mbin.split('-'))
+        if bin_type == 'component':
+            locs = numpy.maximum(data['mass1'], data['mass2']) < float(boundary)
+        elif bin_type == 'total':
+            locs = data['mass1'] + data['mass2'] < float(boundary)
+        elif bin_type == 'chirp':
+            locs = pycbc.pnutils.mass1_mass2_to_mchirp_eta(data['mass1'], data['mass2'])[0] < float(boundary)
+        else:
+            raise ValueError('Invalid bin type %s' % bin_type)    
+        
+        # make sure we don't reuse anythign from an earlier bin
+        locs = numpy.where(locs)[0]
+        locs = numpy.delete(locs, numpy.where(numpy.in1d(locs, used))[0])
+        used = numpy.concatenate([used, locs])   
+        bins[name] = locs
+    return bins
+           
 
 def calculate_n_louder(bstat, fstat, dec):
     """ Calculate for each foreground event the number of background events
