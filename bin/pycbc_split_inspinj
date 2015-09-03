@@ -52,8 +52,6 @@ if args.num_splits:
 else:
     num_splits = len(args.output_files)
 
-print num_splits
-
 new_inj_tables = [lsctables.New(tabletype, columns=allinjs.columnnames) \
                   for idx in xrange(num_splits)]
 
@@ -67,7 +65,6 @@ if not args.output_files:
     filename_pattern = '-'.join(temp)
 
 for idx, simtable in enumerate(new_inj_tables):
-    print "Output", idx, "with", len(simtable), "injections"
     xmlroot.appendChild(simtable)
     if not args.output_files:
         out_path = args.output_dir + '/' + filename_pattern % idx
