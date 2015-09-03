@@ -169,7 +169,7 @@ Install the PyCBC source code from the GitHub URL using the command:
 
 .. code-block:: bash
 
-    pip install -e git+git@github.com:duncan-brown/pycbc.git#egg=pycbc --process-dependency-links
+    pip install -e git+git@github.com:your-username-here/pycbc.git#egg=pycbc --process-dependency-links
 
 This will fetch the PyCBC source and will also install all the listed dependencies. The ``-e`` option to pip creates a directory called ``$NAME/src/pycbc`` with a git checkout which is fully editable. To prevent pip from removing this source directory run the command
 
