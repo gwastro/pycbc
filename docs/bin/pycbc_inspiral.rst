@@ -15,11 +15,18 @@ Help message
 GPU
 ===
 
-Instructions on how to get pycbc_inspiral working on GPUs. Currently, these instructions only work for CUDA 6.5 installation. You will need to install a particular version of pycbc. Currently, this version works:
+Instructions on how to get pycbc_inspiral working on GPUs. Currently, these instructions only work for CUDA 6.5 installation. Follow the instructions on `<http://pycbc.readthedocs.org/en/latest/install.html>`_ to set up your virtual environment and install the necessary software. You will need to install a particular version of pycbc. Currently, this version works:
 
 .. code-block:: bash
 
     pip install git+https://github.com/ligo-cbc/pycbc@f5f1775a5d6587066d0d1ad0b9e27a52e8aef68c  --process-dependency-links
+
+Check that you have the correct pycbc version installed by making sure that you get the following git hash:
+
+.. code-block:: bash
+    
+    pycbc_inspiral --version
+    f5f1775a5d6587066d0d1ad0b9e27a52e8aef68c
 
 Check to make sure that you have pyfft.cuda installed. If you don't, you will also need to install it:
 
