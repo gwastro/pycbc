@@ -1,8 +1,23 @@
 #!/usr/bin/env python
-# coding=utf-8
+
+# Copyright (C) 2015 Andrew R. Williamson
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 """
 Make workflow for the archival, targeted, coherent inspiral pipeline.
-***IN DEVELOPMENT***
 """
 
 import pycbc.version
@@ -10,7 +25,7 @@ import pycbc.version
 __author__ = "Andrew Williamson <andrew.williamson@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pygrb"
+__program__ = "pygrb_make_offline_workflow"
 
 import shutil
 import os
@@ -20,61 +35,6 @@ import pycbc.workflow as _workflow
 from glue.segments import segment
 from glue.ligolw import ligolw,lsctables,utils
 from glue.ligolw.utils import ligolw_add 
-
-def set_start_end(cp, a, b):
-    """
-    Function to update analysis boundaries as workflow is generated
-    """
-    cp.set("workflow", "start-time", str(a))
-    cp.set("workflow", "end-time", str(b))
-    return cp
-
-
-def get_coh_PTF_files(cp, ifos, run_dir, bank_veto=False, summary_files=False):
-    """
-    Retrieve the bank_veto_bank.xml file needed to run coh_PTF_inspiral jobs.
-    """
-    if os.getenv("LAL_SRC") is None:
-        raise ValueError("The environment variable LAL_SRC must be set to a "
-                         "location containing the file lalsuite.git")
-    else:
-        lalDir = os.getenv("LAL_SRC")
-        sci_seg = segment(int(cp.get("workflow", "start-time")),
-                          int(cp.get("workflow", "end-time")))
-        file_list = _workflow.FileList([])
-
-        # Bank veto
-        if bank_veto:
-            shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
-                        "bank_veto_bank.xml" % lalDir, "%s" % run_dir)
-            bank_veto_url = "file://localhost%s/bank_veto_bank.xml" % run_dir
-            bank_veto = _workflow.File(ifos, "bank_veto_bank",
-                                       sci_seg, file_url=bank_veto_url)
-            bank_veto.PFN(bank_veto.cache_entry.path, site="local")
-            file_list.extend(_workflow.FileList([bank_veto]))
-
-        if summary_files:
-            # summary.js file
-            shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
-                        "coh_PTF_html_summary.js" % lalDir, "%s" % run_dir)
-            summary_js_url = "file://localhost%s/coh_PTF_html_summary.js" \
-                             % run_dir
-            summary_js = _workflow.File(ifos, "coh_PTF_html_summary_js",
-                                       sci_seg, file_url=summary_js_url)
-            summary_js.PFN(summary_js.cache_entry.path, site="local")
-            file_list.extend(_workflow.FileList([summary_js]))
-
-            # summary.css file
-            shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
-                        "coh_PTF_html_summary.css" % lalDir, "%s" % run_dir)
-            summary_css_url = "file://localhost%s/coh_PTF_html_summary.css" \
-                              % run_dir
-            summary_css = _workflow.File(ifos, "coh_PTF_html_summary_css",
-                                         sci_seg, file_url=summary_css_url)
-            summary_css.PFN(summary_css.cache_entry.path, site="local")
-            file_list.extend(_workflow.FileList([summary_css]))
-
-        return file_list
 
 
 def make_exttrig_file(cp, ifos, sci_seg, out_dir):
@@ -164,7 +124,7 @@ def make_cache(input_files, ifos, name, seg, cacheDir, tags=[]):
 # Workflow generation starts here #
 ###################################
 
-workflow_name = __program__
+workflow_name = "pygrb_offline"
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=logging.INFO)
 
@@ -191,12 +151,11 @@ if not os.path.exists(runDir):
 os.chdir(runDir)
 
 # SEGMENTS
-# Hack to set start and end times based on maximum allowed duration
 start = int(wflow.cp.get("workflow", "trigger-time")) - int(wflow.cp.get(
         "workflow-exttrig_segments", "max-duration"))
 end = int(wflow.cp.get("workflow", "trigger-time")) + int(wflow.cp.get(
         "workflow-exttrig_segments", "max-duration"))
-wflow.cp = set_start_end(wflow.cp, start, end)
+wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
 
 # Retrieve segments ahope-style
 currDir = os.getcwd()
@@ -206,14 +165,15 @@ sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
 # Make coherent network segments
 onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir,
                                                           sciSegs)
-# FIXME: The following lines are crude hacks.
+
+# Update analysis time after coherent segment calculation
 ifo = sciSegs.keys()[0]
 padding = int(wflow.cp.get("inspiral", "pad-data"))
 deadtime = int(wflow.cp.get("inspiral", "segment-duration")) / 4
 wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + deadtime + padding,
                               int(sciSegs[ifo][0][1]) - deadtime - padding)
-wflow.cp = set_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
-                         int(sciSegs[ifo][0][1]))
+wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
+                                       int(sciSegs[ifo][0][1]))
 ext_file = None
 
 # DATAFIND
@@ -228,7 +188,8 @@ ifos = ''.join(sciSegs.keys())
 if os.path.basename(wflow.cp.get("executables", "inspiral")) \
                     == "lalapps_coh_PTF_inspiral":
     datafind_veto_files = _workflow.FileList([])
-    bank_veto_file = get_coh_PTF_files(wflow.cp, ifos, runDir, bank_veto=True)
+    bank_veto_file = _workflow.get_coh_PTF_files(wflow.cp, ifos, runDir,
+                                                 bank_veto=True)
     datafind_veto_files.extend(datafind_files)
     datafind_veto_files.extend(bank_veto_file)
     
@@ -356,8 +317,8 @@ if post_proc_method == "COH_PTF_WORKFLOW":
             ifos=ifos, inj_tags=inj_tags)
 
     # Retrieve style files for webpage
-    summary_files = get_coh_PTF_files(wflow.cp, ifos, ppDir,
-                                      summary_files=True)
+    summary_files = _workflow.get_coh_PTF_files(wflow.cp, ifos, ppDir,
+                                                summary_files=True)
 
     pp_files.extend(_workflow.FileList([cp_file]))
     pp_files.extend(summary_files)
