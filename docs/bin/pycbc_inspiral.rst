@@ -127,7 +127,7 @@ Optional: If you choose to use screen (so that you can logout and log back in la
   
     screen
     . activate.sh # Script that activates your virtual environment
-    cd path/to/frame-files/ # Go to where your frame-files directory is
+    cd path/to/test/ # Go to where your test directory is
     pycbc_inspiral ... # pycbc_inspiral, with all necessary inputs
     
 Running in a different order may cause an error (example: "The 'PyCBC===4feb06' distribution was not found and is required by the application").
