@@ -99,27 +99,6 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
     return xml_file
 
 
-def make_cache(input_files, ifos, name, seg, cacheDir, tags=[]):
-    """
-    Place input_files into a cache file.
-    """
-    cache_file = _workflow.File(ifos, name, seg, extension="lcf",
-                                directory=cacheDir, tags=tags)
-    cache_file.PFN(cache_file.cache_entry.path, site="local")
-
-    # Dump output to file
-    fP = open(cache_file.storage_path, "w")
-    for entry in input_files:
-        start = str(int(seg[0]))
-        duration = str(int(abs(seg)))
-        print >> fP, "%s %s %s %s file://localhost%s" \
-            %(ifos, entry.description.upper(), start, duration,
-              entry.storage_path)
-    fP.close()
-    
-    return cache_file
-
-
 ###################################
 # Workflow generation starts here #
 ###################################
@@ -230,9 +209,9 @@ if wflow.cp.has_section("workflow-injections"):
         inj_splitbank_files = _workflow.setup_splittable_workflow(wflow,
                 bank_files, injDir, tags=["injections"])
         for inj_split in inj_splitbank_files:
-            inj_split.description += '%s_%d' \
+            inj_split.description += "%s_%d" \
                     % (inj_split.tag_str,
-                       int(inj_split.name.split('_')[-2][4:]))
+                       int(inj_split.name.split("_")[-2][4:]))
         all_files.extend(inj_splitbank_files)
     else:
         inj_splitbank_files = _workflow.FileList(splitbank_files)
@@ -245,9 +224,13 @@ if wflow.cp.has_section("workflow-injections"):
             inj_splits = _workflow.setup_splittable_workflow(wflow, file,
                     injDir, tags=["split_inspinj", inj_tag])
             for inj_split in inj_splits:
-                inj_split.description += '_%s_%d' \
-                        % (inj_tag,
-                           int(inj_split.name.split('_')[-1].split('-')[0][5:]))
+                split_str = [s for s in \
+                             inj_split.tagged_description.split("_") \
+                             if ("SPLIT" in s and s[-1].isdigit())]
+                if len(split_str) != 0:
+                    new = inj_split.tagged_description.replace(split_str[0],
+                            "SPLIT_%s" % split_str[0].replace("SPLIT", ""))
+                    inj_split.tagged_description = new
             inj_split_files.extend(inj_splits)
         all_files.extend(inj_split_files)
         injs = inj_split_files
@@ -257,25 +240,35 @@ if wflow.cp.has_section("workflow-injections"):
             datafind_veto_files, inj_splitbank_files, injDir, injs,
             tags=["injections"])
     for inj_insp_file in inj_insp_files:
-        split_str = [s for s in inj_insp_file.name.split('_') \
-                     if 'SPLIT' in s]
+        split_str = [s for s in inj_insp_file.name.split("_") \
+                     if ("SPLIT" in s and s[-1].isdigit())]
         if len(split_str) != 0:
-            num = split_str[0].replace('SPLIT', '')
-            inj_insp_file.description += '_%d' % int(num)
+            num = split_str[0].replace("SPLIT", "_")
+            inj_insp_file.tagged_description += num
 
     # Make cache files (needed for post-processing)
     for inj_tag in inj_tags:
         files = _workflow.FileList([file for file in injs \
                                     if inj_tag in file.tag_str])
-        inj_cache = make_cache(files, ifos, "injections", sciSegs[ifo][0],
-                               injDir, tags=[inj_tag])
+        for file in files:
+        inj_cache = _workflow.File(ifos, "injections", sciSegs[ifo][0],
+                                   extension="lcf", directory=injDir,
+                                   tags=[inj_tag])
+        inj_cache.PFN(inj_cache.cache_entry.path, site="local")
         inj_caches.extend(_workflow.FileList([inj_cache]))
+        inj_cache_entries = files.convert_to_lal_cache()
+        inj_cache_entries.tofile(open(inj_cache.storage_path, "w"))
 
         files = _workflow.FileList([file for file in inj_insp_files \
                                     if inj_tag in file.tag_str])
-        inj_insp_cache = make_cache(files, ifos, "inspiral_injections",
-                                    sciSegs[ifo][0], injDir, tags=[inj_tag])
+        for file in files:
+        inj_insp_cache = _workflow.File(ifos, "inspiral_injections",
+                                        sciSegs[ifo][0], extension="lcf",
+                                        directory=injDir, tags=[inj_tag])
+        inj_insp_cache.PFN(inj_insp_cache.cache_entry.path, site="local")
         inj_insp_caches.extend(_workflow.FileList([inj_insp_cache]))
+        inj_insp_cache_entries = files.convert_to_lal_cache()
+        inj_insp_cache_entries.tofile(open(inj_insp_cache.storage_path, "w"))
 
     all_files.extend(inj_caches)
     all_files.extend(inj_insp_files)
@@ -289,9 +282,12 @@ inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
                                                       splitbank_files, inspDir,
                                                       tags=["no_injections"])
 all_files.extend(inspiral_files)
-inspiral_cache = make_cache(inspiral_files, ifos, "inspiral", sciSegs[ifo][0],
-                            inspDir)
+inspiral_cache = _workflow.File(ifos, "inspiral", sciSegs[ifo][0],
+                                extension="lcf", directory=inspDir)
+inspiral_cache.PFN(inspiral_cache.cache_entry.path, site="local")
 all_files.extend(_workflow.FileList([inspiral_cache]))
+inspiral_cache_entries = inspiral_files.convert_to_lal_cache()
+inspiral_cache_entries.tofile(open(inspiral_cache.storage_path, "w"))
 
 # POST-PROCESSING
 ppDir = os.path.join(currDir, "post_processing")
