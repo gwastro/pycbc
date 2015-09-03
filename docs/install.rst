@@ -131,6 +131,12 @@ Next install the Pegasus WMS python libraries needed to build the workflows with
 
     pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
 
+To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. At the moment, these are not avaialble from the Python Package Index, so you will need to install them from a branch in Duncan's repository with the command
+
+.. code-block:: bash
+
+    pip install -e git+git@github.com:duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
+
 You now need to decide whether you want to install a release of PyCBC or an editable version of the source code from a git repository for development. 
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
