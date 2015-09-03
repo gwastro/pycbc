@@ -1,7 +1,7 @@
 #!/bin/sh
 export LOGPATH=${LOCALDIR}/log
 mkdir -p ${LOGPATH}
-export RUN_DIR=${PWD}
+export OUT_DIR=${PWD}
 export LAL_SRC=${LOCALDIR}/git/lalsuite
 RA=223.0
 DEC=-28.5
@@ -14,6 +14,7 @@ BANK_FILE=${PWD}/TMPLTBANKS/H1-TMPLTBANK_GRB100928A_DATAFIND-969673046-4992.xml
 pygrb_make_offline_workflow \
 --local-config-files ${LOCAL_CONFIG_FILES} \
 --config-overrides \
+workflow:output-directory:${OUT_DIR} \
 workflow:ra:${RA} \
 workflow:dec:${DEC} \
 workflow:sky-error:${SKY_ERROR} \

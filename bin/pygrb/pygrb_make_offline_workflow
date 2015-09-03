@@ -106,25 +106,26 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
 workflow_name = "pygrb_offline"
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=logging.INFO)
+logging.info("Generating %s workflow" % workflow_name)
 
 # Parse command line options and instantiate pycbc workflow object
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version", version=__version__)
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 wflow = _workflow.Workflow(args, workflow_name)
 all_files = _workflow.FileList([])
 tags = []
+initDir = os.getcwd()
 
 # Setup run directory
-if args.output_dir:
-    baseDir = args.output_dir
+if wflow.cp.has_option("workflow", "output-directory"):
+    baseDir = wflow.cp.get("workflow", "output-directory")
 else:
     baseDir = os.getcwd()
 runDir = os.path.join(baseDir, "GRB%s" % str(wflow.cp.get("workflow",
                                                           "trigger-name")))
+logging.info("Workflow will be generated in %s" % baseDir)
 if not os.path.exists(runDir):
     os.makedirs(runDir)
 os.chdir(runDir)
@@ -250,7 +251,6 @@ if wflow.cp.has_section("workflow-injections"):
     for inj_tag in inj_tags:
         files = _workflow.FileList([file for file in injs \
                                     if inj_tag in file.tag_str])
-        for file in files:
         inj_cache = _workflow.File(ifos, "injections", sciSegs[ifo][0],
                                    extension="lcf", directory=injDir,
                                    tags=[inj_tag])
@@ -261,7 +261,6 @@ if wflow.cp.has_section("workflow-injections"):
 
         files = _workflow.FileList([file for file in inj_insp_files \
                                     if inj_tag in file.tag_str])
-        for file in files:
         inj_insp_cache = _workflow.File(ifos, "inspiral_injections",
                                         sciSegs[ifo][0], extension="lcf",
                                         directory=injDir, tags=[inj_tag])
@@ -301,7 +300,8 @@ if post_proc_method == "COH_PTF_WORKFLOW":
     cp_file = _workflow.File(ifos, cp_file_name, sciSegs[ifo][0],
                              file_url=cp_file_url)
     cp_file.PFN(cp_file.cache_entry.path, site="local")
-
+    if not os.path.exists(cp_file.storage_path):
+        shutil.copy2("%s/%s" % (initDir, cp_file_name), baseDir)
 
     # Generate post-processing workflow
     html_dir = wflow.cp.get("workflow", "html-dir")
