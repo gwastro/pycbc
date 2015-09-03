@@ -180,7 +180,6 @@ if os.path.basename(wflow.cp.get("executables", "inspiral")) \
 all_files.extend(datafind_veto_files)
 
 # TEMPLATE BANK AND SPLIT BANK
-# TODO: Move from pregenerated to generated coherent network bank
 bank_files = _workflow.setup_tmpltbank_workflow(wflow, sciSegs,
                                                 datafind_files, dfDir)
 splitbank_files = _workflow.setup_splittable_workflow(wflow, bank_files, dfDir,
@@ -274,7 +273,6 @@ if wflow.cp.has_section("workflow-injections"):
     all_files.extend(inj_insp_caches)
 
 # MAIN MATCHED FILTERING
-# TODO: Write coherent matched filtering code
 inspDir = os.path.join(currDir, "inspiral")
 inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
                                                       datafind_veto_files,
