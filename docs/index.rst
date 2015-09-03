@@ -75,6 +75,7 @@ For Developers:
     :maxdepth: 1
     
     documentation
+    release
     
 Format Specifications:
 
