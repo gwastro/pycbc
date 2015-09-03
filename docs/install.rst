@@ -34,26 +34,28 @@ Setting up a virtual environment for installing PyCBC
 
 The recommended way of installing PyCBC is to use `pip <https://pip.pypa.io/en/stable/>`_ within a `Python Virtual Environment <https://virtualenv.pypa.io/en/latest/>`_. Virtualenv isolates PyCBC and its dependencies from the system environment and installing with pip ensures that PyCBC picks up the correct dependencies. The following instructions will create a working virtual environment into which you can install PyCBC. 
 
-Make sure that you have at least version 13.1.1 of virtualenv by running 
+Make sure that you have at least version 13.1.1 of virtualenv. To do this, you can run the command below and check the return result. Run this command and note the result:
 
 .. code-block:: bash
 
     virtualenv --version
     
-If this returns ``virtualenv: command not found`` (as is the case with LIGO Data Grid Scientific Linux 6 systems) or the command returns a lower version than 13.1.1, then follow the instructions for setting virtualenv at:
+If this returns ``virtualenv: command not found`` or the command returns a lower version than ``13.1.1`` (as is the case with LIGO Data Grid Scientific Linux 6 systems) then follow the instructions for setting virtualenv at:
 
 .. toctree::
     :maxdepth: 1
 
     install_virtualenv
 
-Once you have virtualenv installed, unset your current ``PYTHONPATH`` so that you do not inherit any packages that may conflict with your installation. To do this, run the command:
+Once you have a version virtualenv installed that is at least as new as ``13.1.1`` you can continue with these instructions.
+
+Unset your current ``PYTHONPATH`` so that you do not inherit any packages that may conflict with your installation. To do this, run the command:
 
 .. code-block:: bash
 
     unset PYTHONPATH
 
-By default, virtualenv will modify your shell prompt so that it prepends the name of the virtual environment. This can be useful to make sure that you are developing in the virtual environment, or if you have several virtual environments. However, if you do not want this, then set
+By default, virtualenv will modify your shell prompt so that it prepends the name of the virtual environment. This can be very useful to make sure that you are developing in the virtual environment, or if you have several virtual environments, so it is not reccomended to disable this. However, if you do not want your prompt changed, then you can set
 
 .. code-block:: bash
 
@@ -62,6 +64,10 @@ By default, virtualenv will modify your shell prompt so that it prepends the nam
 Before running the command to create the new virtual environment.
 
 Next, you need to choose a directory name where you'd like to make your virtual environment, and then make it. In this example, we use ``${HOME}/pycbc-dev`` but this can be changed to any path that you you have write access to, except for ``${HOME}/.local`` as that will cause conflicts with pip.
+
+.. note::
+
+    It is very important that your ``virtualenv`` version is at least 13.1.1 before continuing. If read the preceeding instructions if you are not sure how to check this, or need to upgrade virtualenv.
 
 Set up the new virtual environment with the command
 
