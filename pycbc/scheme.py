@@ -24,7 +24,7 @@
 #
 """
 This modules provides python contexts that set the default behavior for PyCBC
-objects. 
+objects.
 """
 import os
 import pycbc
@@ -36,19 +36,19 @@ class _SchemeManager(object):
 
     def __init__(self):
 
-        if _SchemeManager._single is not None: 
+        if _SchemeManager._single is not None:
             raise RuntimeError("SchemeManager is a private class")
         _SchemeManager._single= self
 
-        self.state= None  
+        self.state= None
         self._lock= False
-        
+
     def lock(self):
-        self._lock= True 
-        
+        self._lock= True
+
     def unlock(self):
         self._lock= False
-    
+
     def shift_to(self, state):
         if self._lock is False:
             self.state = state
@@ -75,7 +75,7 @@ class Scheme(object):
         mgr.lock()
     def __exit__(self, type, value, traceback):
         mgr.unlock()
-        mgr.shift_to(default_context)   
+        mgr.shift_to(default_context)
     def __del__(self):
         if Scheme is not None:
             Scheme._single = None
@@ -87,13 +87,13 @@ def register_clean_cuda(function):
 
 def clean_cuda(context):
     #Before cuda context is destroyed, all item destructions dependent on cuda
-    # must take place. This calls all functions that have been registered 
+    # must take place. This calls all functions that have been registered
     # with _register_clean_cuda() in reverse order
     #So the last one registered, is the first one cleaned
     _cuda_cleanup_list.reverse()
     for func in _cuda_cleanup_list:
         func()
-    
+
     context.pop()
     from pycuda.tools import clear_context_caches
     clear_context_caches()
@@ -103,8 +103,8 @@ class CUDAScheme(Scheme):
     def __init__(self, device_num=0):
         Scheme.__init__(self)
         if not pycbc.HAVE_CUDA:
-            raise RuntimeError("Install PyCUDA to use CUDA processing")    
-        import pycuda.driver   
+            raise RuntimeError("Install PyCUDA to use CUDA processing")
+        import pycuda.driver
         pycuda.driver.init()
         self.device = pycuda.driver.Device(device_num)
         self.context = self.device.make_context(flags=pycuda.driver.ctx_flags.SCHED_YIELD)
@@ -120,7 +120,7 @@ class CPUScheme(Scheme):
         else:
             import multiprocessing
             self.num_threads = multiprocessing.cpu_count()
-        
+
     def __enter__(self):
         Scheme.__enter__(self)
         os.environ["OMP_NUM_THREADS"] = str(self.num_threads)
@@ -155,76 +155,76 @@ def schemed(prefix):
         try:
             return _import_cache[mgr.state][fn](*args, **kwds)
         except KeyError:
-            for sch in mgr.state.__class__.__mro__[0:-2]: 
+            for sch in mgr.state.__class__.__mro__[0:-2]:
                 try:
                     backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
                     schemed_fn = getattr(backend, fn.__name__)
                     schemed_fn.__doc__ = fn.__doc__
                 except (ImportError, AttributeError):
-                    continue    
-                
+                    continue
+
                 if mgr.state not in _import_cache:
                     _import_cache[mgr.state] = {}
-                    
+
                 _import_cache[mgr.state][fn] = schemed_fn
-                
+
                 return schemed_fn(*args, **kwds)
 
-            err = ("Failed to find implementation of (%s) " 
+            err = ("Failed to find implementation of (%s) "
                   "for %s scheme." % (str(fn), current_prefix()))
             raise RuntimeError(err)
-        
+
     return scheming_function
 
 @decorator
 def cpuonly(fn, *args, **kwds):
     if not issubclass(type(mgr.state), CPUScheme):
-        raise TypeError(fn.__name__ + 
+        raise TypeError(fn.__name__ +
                         " can only be called from a CPU processing scheme.")
     else:
         return fn(*args, **kwds)
-        
+
 def insert_processing_option_group(parser):
     """
     Adds the options used to choose a processing scheme. This should be used
     if your program supports the ability to select the processing scheme.
-    
+
     Parameters
     ----------
     parser : object
         OptionParser instance
     """
     processing_group = parser.add_argument_group("Options for selecting the"
-                                   " processing scheme in this program.")   
-    processing_group.add_argument("--processing-scheme", 
+                                   " processing scheme in this program.")
+    processing_group.add_argument("--processing-scheme",
                       help="The choice of processing scheme. "
-                           "Choices are " + str(list(set(scheme_prefix.values()))) + 
+                           "Choices are " + str(list(set(scheme_prefix.values()))) +
                            ". (optional for CPU scheme) The number of "
                            "execution threads "
-                           "can be indicated by cpu:NUM_THREADS, " 
+                           "can be indicated by cpu:NUM_THREADS, "
                            "where NUM_THREADS "
                            "is an integer. The default is a single thread. "
                            "If the scheme is provided as cpu:env, the number "
                            "of threads can be provided by the PYCBC_NUM_THREADS "
                            "environment variable. If the environment variable "
                            "is not set, the number of threads matches the number "
-                           "of logical cores. ",   
+                           "of logical cores. ",
                       default="cpu")
-                                                                                
-    processing_group.add_argument("--processing-device-id", 
+
+    processing_group.add_argument("--processing-device-id",
                       help="(optional) ID of GPU to use for accelerated "
-                           "processing", 
+                           "processing",
                       default=0, type=int)
 
 def from_cli(opt):
     """Parses the command line options and returns a precessing scheme.
-    
+
     Parameters
     ----------
     opt: object
         Result of parsing the CLI with OptionParser, or any object with
         the required attributes.
-        
+
     Returns
     -------
     ctx: Scheme
@@ -232,7 +232,7 @@ def from_cli(opt):
     """
     scheme_str = opt.processing_scheme.split(':')
     name = scheme_str[0]
-    
+
     if name == "cuda":
         logging.info("Running with CUDA support")
         ctx = CUDAScheme(opt.processing_device_id)
@@ -255,12 +255,12 @@ def from_cli(opt):
             ctx = CPUScheme()
         logging.info("Running with CPU support: %s threads" % ctx.num_threads)
     return ctx
-    
+
 def verify_processing_options(opt, parser):
-    """Parses the  processing scheme options and verifies that they are 
-       reasonable. 
-       
-  
+    """Parses the  processing scheme options and verifies that they are
+       reasonable.
+
+
     Parameters
     ----------
     opt : object
@@ -276,7 +276,7 @@ def verify_processing_options(opt, parser):
 class ChooseBySchemeDict(dict):
     """ This class represents a dictionary whose purpose is to chose objects
     based on their processing scheme. The keys are intended to be processing
-    schemes. 
+    schemes.
     """
     def __getitem__(self, scheme):
         for base in scheme.__mro__[0:-1]:
