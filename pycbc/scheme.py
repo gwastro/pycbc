@@ -134,12 +134,12 @@ class CPUScheme(Scheme):
         Scheme.__enter__(self)
         os.environ["OMP_NUM_THREADS"] = str(self.num_threads)
         if _libgomp is not None:
-            libgomp.omp_set_num_threads( int(self.num_threads) )
+            _libgomp.omp_set_num_threads( int(self.num_threads) )
 
     def __exit__(self, type, value, traceback):
         os.environ["OMP_NUM_THREADS"] = "1"
         if _libgomp is not None:
-            libgomp.omp_set_num_threads(1)
+            _libgomp.omp_set_num_threads(1)
         Scheme.__exit__(self, type, value, traceback)
 
 class MKLScheme(CPUScheme):
