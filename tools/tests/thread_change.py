@@ -58,3 +58,7 @@ print_total_threads()
 with ctx:
     print_total_threads()
 
+new_ctx = scheme.CPUScheme(num_threads = 4)
+
+with new_ctx:
+    print_total_threads()
