@@ -41,7 +41,7 @@ Install the dependencies PyCUDA, SciKits.cuda and Mako with by running the comma
 .. code-block:: bash
 
     pip install pycuda
-    pip install scikits.cuda
+    pip install scikit-cuda
     pip install Mako
    
 You should now be able to use the CUDA features in PyCBC.

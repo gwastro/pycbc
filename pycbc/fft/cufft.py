@@ -27,7 +27,7 @@ for the PyCBC package.
 """
 
 import pycbc.scheme
-import scikits.cuda.fft as cu_fft
+import skcuda.fft as cu_fft
 from .core import _BaseFFT, _BaseIFFT
 
 _forward_plans = {}

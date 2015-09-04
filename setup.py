@@ -330,7 +330,7 @@ cmdclass = { 'test'  : test,
              'clean' : clean,
             }
             
-extras_require = {'cuda': ['pycuda>=2015.1', 'scikits.cuda']}
+extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
 
 # do the actual work of building the package
 VERSION = get_version_info()
