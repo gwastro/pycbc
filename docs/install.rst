@@ -55,7 +55,7 @@ Unset your current ``PYTHONPATH`` so that you do not inherit any packages that m
 
     unset PYTHONPATH
 
-By default, virtualenv will modify your shell prompt so that it prepends the name of the virtual environment. This can be very useful to make sure that you are developing in the virtual environment, or if you have several virtual environments, so it is not reccomended to disable this. However, if you do not want your prompt changed, then you can set
+By default, virtualenv will modify your shell prompt so that it prepends the name of the virtual environment. This can be very useful to make sure that you are developing in the virtual environment, or if you have several virtual environments, so it is not recommended to disable this. However, if you do not want your prompt changed, then you can set
 
 .. code-block:: bash
 
@@ -67,7 +67,7 @@ Next, you need to choose a directory name where you'd like to make your virtual 
 
 .. note::
 
-    It is very important that your ``virtualenv`` version is at least 13.1.1 before continuing. If read the preceeding instructions if you are not sure how to check this, or need to upgrade virtualenv.
+    It is very important that your ``virtualenv`` version is at least 13.1.1 before continuing. Read the preceding instructions if you are not sure how to check this, or need to upgrade virtualenv.
 
 Set up the new virtual environment with the command
 
@@ -137,11 +137,11 @@ Next install the Pegasus WMS python libraries needed to build the workflows with
 
     pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
 
-To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. At the moment, these are not avaialble from the Python Package Index, so you will need to install them from a branch in Duncan's repository with the command
+To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. At the moment, these are not available from the Python Package Index, so you will need to install them from a branch in Duncan's repository with the command
 
 .. code-block:: bash
 
-    pip install -e git+git@github.com:duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
+    pip install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
 
 You now need to decide whether you want to install a release of PyCBC or an editable version of the source code from a git repository for development. 
 
@@ -169,7 +169,8 @@ Installing source from GitHub for development
 
 To install and editable version of PyCBC you need to have `forked PyCBC to your own account <https://help.github.com/articles/fork-a-repo/>`_ and know the URL of your fork. This can be obtained from the clone URL on your GitHub repository page. This example uses the URL ``git@github.com:your-username-here/pycbc.git`` which you should change to the URL of your fork of PyCBC on GitHub. 
 
-You can also read the `pip git instructions <https://pip.pypa.io/en/latest/reference/pip_install.html#git>`_ for more details on how to install a branch or a specific tag.
+.. note:: 
+    There are two main authentication schemes for GitHub: SSH and HTTPS. The examples below use URLs containing ``git@github.com``, which assumed that you are usingg SSH authentication. If you have not already enabled ssh keys on your GitHub account, you can follow the `GitHub instructions for setting up ssh keys <https://help.github.com/articles/generating-ssh-keys/>`_ to set this up. Alternatively, you can use the HTTPS connection method, where ``git@github.com:`` is replaced with ``https://github.com/``. See the `GitHub documentation on URLs <https://help.github.com/articles/which-remote-url-should-i-use/>`_ for more information. You can also read the `pip git instructions <https://pip.pypa.io/en/latest/reference/pip_install.html#git>`_ for more details on how to install a branch or a specific tag.
 
 Install the PyCBC source code from the GitHub URL using the command:
 
@@ -185,7 +186,7 @@ This will fetch the PyCBC source and will also install all the listed dependenci
 
 You can then make changes to your PyCBC source code in the directory ``$NAME/src/pycbc``
 
-You can also use the repository created by pip as your working repository, creating branches, commits, and `pull requests <https://help.github.com/articles/creating-a-pull-request/>`_ as you need to. To keep your repository in sync with the ligo-cbc/pycbc repository, you can read the GitHub instructions that explaion how to `sync a fork of a repository to keep it up-to-date with the upstream repository. <https://help.github.com/articles/syncing-a-fork/>`_.
+You can also use the repository created by pip as your working repository, creating branches, commits, and `pull requests <https://help.github.com/articles/creating-a-pull-request/>`_ as you need to. To keep your repository in sync with the ligo-cbc/pycbc repository, you can read the GitHub instructions that explain how to `sync a fork of a repository to keep it up-to-date with the upstream repository. <https://help.github.com/articles/syncing-a-fork/>`_.
 
 .. note::
 
@@ -275,7 +276,7 @@ PyCBC has the ability to use optimized FFT libraries such as FFTW and MKL. If MK
 
     echo 'source /opt/intel/bin/compilervars.sh intel64' >> $NAME/bin/activate
 
-changing the path to the ``compilervars.sh`` script approriately for your cluster. 
+changing the path to the ``compilervars.sh`` script appropriately for your cluster. 
 
 ==========================================
 Graphics Processing Unit support with CUDA
