@@ -69,13 +69,24 @@ Next, you need to choose a directory name where you'd like to make your virtual 
 
     It is very important that your ``virtualenv`` version is at least 13.1.1 before continuing. Read the preceding instructions if you are not sure how to check this, or need to upgrade virtualenv.
 
-Set up the new virtual environment with the command
+You first set up a new virtual environment. A virtual environment is defined by a directory path that will hold the contents of the virtual environment. We will reference this directory path a lot in the instructions below, so we first set a shell variable called ``NAME`` to the value of the path of the new virtual environment. Run with the command:
 
 .. code-block:: bash
 
     NAME=${HOME}/pycbc-dev
-    virtualenv $NAME
     
+Now you can initialize the virtual environment. This creates a new directory named by value of the variable ``$NAME`` containing your new virtual environment. To do this, run the command:
+
+.. code-block:: bash
+    
+    virtualenv $NAME
+
+You can create as many different virtual environments as you like, as long as they all have different paths (i.e. different values of ``$NAME``).
+
+.. note::
+
+    Do not run ``virtualenv`` twice with the same value of ``$NAME`` as it will overwrite the existing virtual environment with a new one, destroying the environment.
+
 To enter your virtual environment run the command
 
 .. code-block:: bash
