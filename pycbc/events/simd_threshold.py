@@ -532,7 +532,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   */
 
   int64_t i, j, nsegs, nwins_ps, last_arrlen, last_nwins_ps, outlen, curr_mloc;
-  int64_t cnt, s_segsize, s_arrlen, s_winsize, curr_mark, cluster_win;
+  int64_t cnt, s_segsize, s_arrlen, s_winsize, curr_mark;
   int64_t *startlocs, *stoplocs, *mlocs, *seglens;
   float *norms, thr_sqr, curr_norm;
   std::complex<float> *cvals, curr_cval;
@@ -544,11 +544,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   // logic and calls to other functions are safe.
   s_segsize = (int64_t) segsize;
   s_arrlen = (int64_t) arrlen;
-
-  // We divide segsize by two since our initial pass must be with a segment
-  // half the length of that we will use for clustering.
-  s_winsize = (int64_t) winsize/2;
-  cluster_win = (int64_t) winsize;
+  s_winsize = (int64_t) winsize;
 
   /*
 
@@ -731,7 +727,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
 
   cnt = 0;
   for (i = outlen-2; i >= 0; i--){
-    if ( (curr_mloc - stoplocs[i]) > cluster_win){
+    if ( (curr_mloc - stoplocs[i]) > s_winsize){
       marks[curr_mark] = 1;
       curr_mark = i;
       curr_norm = norms[i];
@@ -767,7 +763,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   curr_mark = marks[0];
 
   for (i = 1; i < outlen; i++){    
-    if ( (startlocs[i] - curr_mloc) > cluster_win){
+    if ( (startlocs[i] - curr_mloc) > s_winsize){
       // The last one is a maximum for all points following,
       // so if also for points preceding (curr_mark) and
       // if above threshold, then write it out.
