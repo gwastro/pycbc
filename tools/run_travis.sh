@@ -101,7 +101,13 @@ test $? -ne 0 && RESULT=1
 pycbc_plot_singles_vs_params --help > /dev/null
 test $? -ne 0 && RESULT=1
 
+pycbc_calculate_psd --help > /dev/null
+test $? -ne 0 && RESULT=1
+
 pycbc_plot_psd_file --help > /dev/null
+test $? -ne 0 && RESULT=1
+
+pycbc_average_psd --help > /dev/null
 test $? -ne 0 && RESULT=1
 
 exit ${RESULT}

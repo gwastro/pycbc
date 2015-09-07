@@ -32,6 +32,7 @@ from pycbc.workflow.configuration import *
 from pycbc.workflow.core import *
 from pycbc.workflow.legacy_ihope import *
 from pycbc.workflow.jobsetup import *
+from pycbc.workflow.psd import *
 from pycbc.workflow.matched_filter import *
 from pycbc.workflow.datafind import *
 from pycbc.workflow.segment import *

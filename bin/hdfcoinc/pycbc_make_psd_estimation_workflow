@@ -1,0 +1,136 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2015 Tito Dal Canton
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""Program for setting up a workflow which estimates the average PSD of a given
+portion of strain data."""
+
+import pycbc
+import pycbc.version
+import pycbc.workflow
+import os
+import argparse
+import logging
+import glue.segments
+from pycbc.events.veto import multi_segments_to_file
+from pycbc.events import segments_to_file
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--workflow-name', default='my_unamed_run')
+parser.add_argument("-d", "--output-dir", default=None,
+                    help="Path to output directory.")
+pycbc.workflow.add_workflow_command_line_group(parser)
+args = parser.parse_args()
+
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+                    level=logging.INFO)
+
+workflow = pycbc.workflow.Workflow(args, args.workflow_name)
+
+pycbc.workflow.makedir(args.output_dir)
+os.chdir(args.output_dir)
+
+# Get segments and find where the data is
+science_segs, data_segs, science_seg_file = \
+        pycbc.workflow.get_analyzable_segments(workflow, "segments")
+datafind_files, science_segs = pycbc.workflow.setup_datafind_workflow(
+        workflow, science_segs, "datafind", science_seg_file)
+
+cum_veto_files, veto_names, ind_cats = \
+        pycbc.workflow.get_cumulative_veto_group_files(
+                workflow, 'segments-veto-groups', 'segments')
+final_veto_file, final_veto_name, ind_cats = \
+        pycbc.workflow.get_cumulative_veto_group_files(
+                workflow, 'segments-final-veto-group', "segments")
+
+psd_job_length = int(workflow.cp.get('workflow-matchedfilter', 'analysis-length'))
+pad_data = int(workflow.cp.get('calculate_psd', 'pad-data'))
+
+# calculate noise PSDs over SCIENCE_OK segments
+psd_files = []
+for ifo, segments in science_segs.items():
+    # break up SCIENCE_OK into small segments to use in pycbc_calculate_psd
+    # FIXME use the same algorithm already in place for inspiral jobs
+    broken_segments = []
+    for seg in segments:
+        start_time = seg[0] + pad_data
+        while start_time + psd_job_length + pad_data <= seg[1]:
+            end_time = start_time + psd_job_length
+            broken_segments.append(glue.segments.segment(start_time, end_time))
+            start_time = end_time
+    broken_segments = glue.segments.segmentlist(broken_segments)
+    logging.info('%.1f s of SCIENCE_OK data reduced to %.1f s after segmentation',
+                 abs(segments), abs(broken_segments))
+    broken_segments_path = os.path.abspath('segments/%s-SCIENCE_OK_BROKEN.xml' % ifo)
+    broken_segments_file = segments_to_file(
+            broken_segments, broken_segments_path, 'SCIENCE_OK_BROKEN', ifo=ifo)
+    # create pycbc_calculate_psd job
+    ifo_psd_files = pycbc.workflow.make_psd_file(
+            workflow, datafind_files.find_output_with_ifo(ifo),
+            broken_segments_file, 'SCIENCE_OK_BROKEN', 'psds')
+    psd_files.append(ifo_psd_files)
+
+# average noise PSDs
+avg_psd_files = pycbc.workflow.make_average_psd(workflow, psd_files, 'psds')
+
+s = pycbc.workflow.make_spectrum_plot(workflow, psd_files, 'plots')
+
+for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
+    pycbc.workflow.make_segments_plot(workflow, files, 'plots',
+                          tags=['%s_VETO_SEGMENTS' % ifo])
+
+pycbc.workflow.make_segments_plot(workflow, science_seg_file, 'plots',
+                                  tags=['SCIENCE_MINUS_CAT1'])
+
+# get data segments to write to segment summary XML file
+seg_summ_names    = ['DATA', 'ANALYZABLE_DATA']
+seg_summ_seglists = [data_segs, science_segs]
+
+# declare comparasion segments for table on summary page
+veto_summ_names = ['ANALYZABLE_DATA&CUMULATIVE_CAT_1H',
+                   'ANALYZABLE_DATA&CUMULATIVE_CAT_12H',
+                   'ANALYZABLE_DATA&CUMULATIVE_CAT_123H']
+
+# write segment summary XML file
+seg_list = []; names = []; ifos = []
+for segment_list,segment_name in zip(seg_summ_seglists, seg_summ_names):
+    for ifo in workflow.ifos:
+        seg_list.append(segment_list[ifo])
+        names.append(segment_name)
+        ifos.append(ifo)
+filename = 'segments/'+''.join(workflow.ifos)+'-WORKFLOW_SEGMENT_SUMMARY.xml'
+seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
+
+# make segment table for summary page
+seg_summ_table = pycbc.workflow.make_seg_table(workflow, [seg_summ_file],
+                                               seg_summ_names, 'plots',
+                                               ['SUMMARY'])
+veto_summ_table = pycbc.workflow.make_seg_table(
+        workflow, [seg_summ_file] + final_veto_file + cum_veto_files,
+        veto_summ_names, 'plots', ['VETO_SUMMARY'])
+
+# make segment plot for summary page
+seg_summ_plot = pycbc.workflow.make_seg_plot(workflow, [seg_summ_file],
+                                             'plots', seg_summ_names,
+                                             ['SUMMARY'])
+
+workflow.save()
+
+logging.info("Done")

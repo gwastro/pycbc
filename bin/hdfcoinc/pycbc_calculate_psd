@@ -11,11 +11,10 @@ set_measure_level(0)
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=version)
 parser.add_argument('--verbose', action="store_true")
-parser.add_argument("--low-frequency-cutoff", type=float,
-                  help="The low frequency cutoff to use for filtering (Hz)")
-parser.add_argument("--analysis-segment-file", 
-                  help="File containing the the times that were "
-                            "analyzed by the single detector inspiral jobs")
+parser.add_argument("--low-frequency-cutoff", type=float, required=True,
+                    help="The low frequency cutoff to use for filtering (Hz)")
+parser.add_argument("--analysis-segment-file",  required=True,
+                    help="File defining the segments to estimate PSDs over")
 parser.add_argument("--segment-name", help="Name of segment list to use")
 parser.add_argument("--cores", default=1, type=int)
 parser.add_argument("--psd-recalculate-segments", type=int, default=0)
