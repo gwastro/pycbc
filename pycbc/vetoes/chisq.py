@@ -26,6 +26,7 @@ import numpy, logging, math, pycbc.fft
 from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
 from pycbc.filter import sigmasq_series, make_frequency_series, matched_filter_core, get_cutoff_indices
 from pycbc.scheme import schemed
+import pycbc.pnutils
 
 BACKEND_PREFIX="pycbc.vetoes.chisq_"
 
@@ -301,6 +302,7 @@ class SingleDetPowerChisq(object):
         safe_dict = {}
         safe_dict.update(row.__dict__)
         safe_dict.update(math.__dict__)
+        safe_dict.update(pycbc.pnutils.__dict__)
         return eval(arg, {"__builtins__":None}, safe_dict)
 
     def cached_chisq_bins(self, template, psd):
