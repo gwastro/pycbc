@@ -438,22 +438,18 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
         node.add_opt('--output-dir', self.out_dir)
 
         # Create output files as File objects
-        name_string = inj_files[0].description.rsplit('_', 2)[0]
+        name_string = inj_files[0].description
         seg = trig_files[0].segment
 
-        found_tags = list(tags)
-        found_tags.append("FOUND")
-        found_file = File(self.ifos, name_string, seg, extension="xml",
-                          directory=self.out_dir, tags=found_tags,
-                          store_file=self.retain_files)
+        f_file = File(self.ifos, name_string, seg, extension="xml",
+                      directory=self.out_dir, store_file=self.retain_files,
+                      tags=[inj_files[0].tag_str.replace("split0", "FOUND")])
 
-        missed_tags = list(tags)
-        missed_tags.append("MISSED")
-        missed_file = File(self.ifos, name_string, seg, extension="xml",
-                           directory=self.out_dir, tags=missed_tags,
-                           store_file=self.retain_files)
+        m_file = File(self.ifos, name_string, seg, extension="xml",
+                      directory=self.out_dir, store_file=self.retain_files,
+                      tags=[inj_files[0].tag_str.replace("split0", "MISSED")])
 
-        return node, FileList([found_file, missed_file])
+        return node, FileList([f_file, m_file])
 
 
 class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
@@ -482,9 +478,9 @@ class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
         for inj_trig in inj_trigs:
             out_file_tag = [inj_string, "FILTERED", max_inc,
                             inj_trig.tag_str.rsplit('_', 1)[-1]]
-            out_file = File(self.ifos, inj_trig.description, inj_trig.segment,
-                            extension="xml", directory=self.out_dir,
-                            tags=out_file_tag)
+            out_file = File(self.ifos, inj_trig.description,
+                            inj_trig.segment, extension="xml",
+                            directory=self.out_dir, tags=out_file_tag)
             out_file.PFN(out_file.cache_entry.path, site="local")
             out_files.append(out_file)
 
