@@ -435,6 +435,15 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                              child=html_summary_node._dax_node)
         workflow._adag.addDependency(dep)
 
+    # Make the open box shell script
+    open_box_cmd = ' '.join(html_summary_node.get_command_line())
+    open_box_cmd += "--open-box"
+    open_box_path = "%s/open_the_box.sh" % output_dir
+    f = open(open_box_path, "w")
+    f.write("#!/bin/sh\n%s" % open_box_cmd)
+    f.close()
+    os.chmod(open_box_path, 0500)
+
     pp_outs.extend(trig_cluster_outs)
 
     return pp_outs
