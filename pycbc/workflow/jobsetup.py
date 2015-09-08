@@ -334,6 +334,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     frame_files = datafind_outs[:-1]
     split_bank_counter = 0
 
+    #FIXME: This does not work with IFO-specific templatebanks!
     if curr_exe_job.injection_file is None:
         for split_bank in parents:
             tag = list(tags)
@@ -1120,10 +1121,9 @@ class PycbcSplitInspinjExecutable(Executable):
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, num_splits, universe=None, ifo=None,
-                 out_dir=None, tags=[]):
+                 out_dir=None):
         super(PycbcSplitInspinjExecutable, self).__init__(cp, exe_name,
-                universe, ifo, out_dir, tags)
-        self.out_dir = out_dir
+                universe, ifo, out_dir, tags=[])
         self.num_splits = int(num_splits)
     def create_node(self, parent):
         node = Node(self)
@@ -1138,8 +1138,6 @@ class PycbcSplitInspinjExecutable(Executable):
         out_files = FileList([])
         for i in range(self.num_splits):
             curr_tag = 'split%d' % i
-            # FIXME: What should the tags actually be? The job.tags values are
-            #        currently ignored.
             curr_tags = parent.tags + [curr_tag]
             job_tag = parent.description + "_" + self.name.upper()
             out_file = File(parent.ifo_list, job_tag, parent.segment,
@@ -1356,14 +1354,7 @@ class LalappsInspinjExecutable(Executable):
     """
     The class used to create jobs for the lalapps_inspinj Executable.
     """
-    current_retention_level = Executable.CRITICAL
-    def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
-                 tags=[]):
-        Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
-                            tags=tags)
-        self.cp = cp
-        self.tags = tags
-
+    current_retention_level = Executable.FINAL_RESULT
     def create_node(self, segment, exttrig_file=None, tags=[]):
         node = Node(self)
 

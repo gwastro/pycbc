@@ -273,7 +273,6 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         If you require access to any intermediate products produced at this
         stage you can call the various sub-functions directly.
     '''
-    #TODO: Get this to work with coh_PTF
     # Need to get the exe to figure out what sections are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
     # will require a bit of effort here ....
@@ -291,10 +290,6 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
     logging.info("Setting up matched-filtering for %s." %(' '.join(ifos),))
 
     if match_fltr_exe == 'lalapps_coh_PTF_inspiral':
-        #TODO: Have antenna.py automatically copied over into run directory.
-
-        #FIXME: There should be once class for inspiral jobs, perhaps one
-        #       also for the inspiral injection jobs
         cp.set('inspiral', 'right-ascension', cp.get('workflow', 'ra'))
         cp.set('inspiral', 'declination', cp.get('workflow', 'dec'))
         cp.set('inspiral', 'sky-error', cp.get('workflow', 'sky-error'))

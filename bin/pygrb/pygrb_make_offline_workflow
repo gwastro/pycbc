@@ -209,9 +209,11 @@ if wflow.cp.has_section("workflow-injections"):
         inj_splitbank_files = _workflow.setup_splittable_workflow(wflow,
                 bank_files, injDir, tags=["injections"])
         for inj_split in inj_splitbank_files:
-            inj_split.description += "%s_%d" \
-                    % (inj_split.tag_str,
-                       int(inj_split.name.split("_")[-2][4:]))
+            split_str = [s for s in inj_split.tagged_description.split("_") \
+                         if ("BANK" in s and s[-1].isdigit())]
+            if len(split_str) != 0:
+                inj_split.tagged_description += "%s_%d" % (inj_split.tag_str,
+                       int(split_str[0].replace("BANK", "")))
         all_files.extend(inj_splitbank_files)
     else:
         inj_splitbank_files = _workflow.FileList(splitbank_files)
