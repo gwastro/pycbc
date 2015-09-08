@@ -850,7 +850,8 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
                                            'on-before')))
     onafter = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                           'on-after')))
-    padding = int(os.path.basename(cp.get('inspiral', 'pad-data')))
+    padding = int(os.path.basename(cp.get('workflow-exttrig_segments',
+                                          'pad-data')))
     quanta = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                          'quanta')))
     bufferleft = int(cp.get('workflow-exttrig_segments', 'num-buffer-before'))
@@ -947,8 +948,6 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
             start = int(offsrc[0] - offset + excess / 2)
             end = int(offsrc[1] - offset - round(float(excess) / 2))
             offsrc = segments.segment(start, end)
-            #offsrc = segments.segment(offsrc[0] - offset + excess / 2,
-            #                          offsrc[1] - offset - excess / 2)
             assert abs(offsrc) % quanta == 2 * padding
 
     logging.info("Constructed OFF-SOURCE: duration %ds (%ds before to %ds "
