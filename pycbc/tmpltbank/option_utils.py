@@ -18,6 +18,7 @@ import argparse
 import logging
 import textwrap
 import numpy
+import os
 from pycbc.tmpltbank.lambda_mapping import get_ethinca_orders, pycbcValidOrdersHelpDescriptions
 from pycbc import pnutils
 from pycbc.tmpltbank.em_progenitors import load_ns_sequence
@@ -478,7 +479,7 @@ def insert_mass_range_option_group(parser,nonSpin=False):
                        "the remnant disk mass. Only 2H is currently supported. "
                        "OPTIONAL")
     massOpts.add_argument("--remnant-mass-threshold", action="store",
-                          type=positive_float, default=None,
+                          type=nonnegative_float, default=None,
                   help="Setting this filters EM dim NS-BH binaries: if the "
                        "remnant disk mass does not exceed this value, the NS-BH "
                        "binary is dropped from the target parameter space. "
@@ -591,6 +592,13 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
         if opts.use_eos_max_ns_mass:
             logging.info("""You have asked to take into account the maximum NS
                         mass value for the EOS in use.""")
+        # Find out if the EM constraint surface data already exists or not
+        # and inform user whether this will be read from file or generated.
+        # This is the minumum eta as a function of BH spin and NS mass
+        # required to produce an EM counterpart
+        if os.path.isfile('constraint_em_bright.npz'):
+            logging.info("""The constraint surface for EM bright binaries
+                        will be read in from constraint_em_bright.npz.""")
 
     # Assign min/max total mass from mass1, mass2 if not specified
     if (not opts.min_total_mass) or \
