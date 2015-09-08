@@ -241,18 +241,19 @@ def write_antenna(page, args, grid=False, ipn=False):
                                         0.0, 0.0, 'degree',ifo)
         th.append(ifo)
         td.append(round(f_q, 3))
-    '''
-    cmmnd = 'projectedDetectorTensor --gps-sec %d --ra-deg %f --dec-deg %f' \
-             % (args.start_time,args.ra, args.dec)
-    for ifo in ifos:
-        if ifo == 'H1':
-            cmmnd += ' --display-lho'
-        elif ifo == 'L1':
-            cmmnd += ' --display-llo'
-        elif ifo == 'V1':
-            cmmnd += ' --display-virgo'
-    status = make_external_call(cmmnd)
-    '''
+
+    #FIXME: Work out a way to make these external calls safely
+    #cmmnd = 'projectedDetectorTensor --gps-sec %d --ra-deg %f --dec-deg %f' \
+    #         % (args.start_time,args.ra, args.dec)
+    #for ifo in ifos:
+    #    if ifo == 'H1':
+    #        cmmnd += ' --display-lho'
+    #    elif ifo == 'L1':
+    #        cmmnd += ' --display-llo'
+    #    elif ifo == 'V1':
+    #        cmmnd += ' --display-virgo'
+    #status = make_external_call(cmmnd)
+
     page = write_table(page, th, td)
 
     plot = markup.page()
@@ -424,18 +425,19 @@ def write_found_missed(page, args, injList):
 
     th = ['']+injList
     td = []
-    '''
-    d = ['Number of injections']
-    for inj in injList:
-        cmmnd = 'lwtprint ../*' + inj + '*MISSED*xml -t sim_inspiral | wc -l'
-        output,status = make_external_call(cmmnd, shell=True)
-        numInjs = int(output)
-        cmmnd = 'lwtprint ../*' + inj + '*FOUND*xml -t sim_inspiral | wc -l'
-        output,status = make_external_call(cmmnd, shell=True)
-        numInjs += int(output)
-        d.append(str(numInjs))
-    td.append(d)
-    '''
+
+    #FIXME: Work out a way to make externals calls safely
+    #d = ['Number of injections']
+    #for inj in injList:
+    #    cmmnd = 'lwtprint ../*' + inj + '*MISSED*xml -t sim_inspiral | wc -l'
+    #    output,status = make_external_call(cmmnd, shell=True)
+    #    numInjs = int(output)
+    #    cmmnd = 'lwtprint ../*' + inj + '*FOUND*xml -t sim_inspiral | wc -l'
+    #    output,status = make_external_call(cmmnd, shell=True)
+    #    numInjs += int(output)
+    #    d.append(str(numInjs))
+    #td.append(d)
+
     plots = []
     text  = {}
     ifos = [args.ifo_tag[i:i+2] for i in range(0, len(args.ifo_tag), 2)]
