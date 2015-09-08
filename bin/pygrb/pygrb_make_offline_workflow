@@ -33,75 +33,6 @@ import argparse
 import logging
 import pycbc.workflow as _workflow
 from glue.segments import segment
-from glue.ligolw import ligolw,lsctables,utils
-from glue.ligolw.utils import ligolw_add 
-
-
-def make_exttrig_file(cp, ifos, sci_seg, out_dir):
-    '''
-    Make ExtTrig xml file
-    '''
-    xmldoc = ligolw.Document()
-    xmldoc.appendChild(ligolw.LIGO_LW())
-    tbl = lsctables.New(lsctables.ExtTriggersTable)
-    xmldoc.childNodes[-1].appendChild(tbl)
-    row = lsctables.ExtTriggersTable()
-    row.process_id = None 
-    row.det_alts = None 
-    row.det_band = None 
-    row.det_fluence = None 
-    row.det_fluence_int = None 
-    row.det_name = None 
-    row.det_peak = None 
-    row.det_peak_int = None 
-    row.det_snr = '' 
-    row.email_time = 0 
-    row.event_dec = 0.0 
-    row.event_dec_err = 0.0 
-    row.event_epoch = '' 
-    row.event_err_type = '' 
-    row.event_ra_err = 0.0 
-    row.start_time_ns = 0 
-    row.event_type = '' 
-    row.event_z = 0.0 
-    row.event_z_err = 0.0 
-    row.notice_comments = '' 
-    row.notice_id = '' 
-    row.notice_sequence = '' 
-    row.notice_time = 0 
-    row.notice_type = '' 
-    row.notice_url = '' 
-    row.obs_fov_dec = 0.0 
-    row.obs_fov_dec_width = 0.0 
-    row.obs_fov_ra = 0.0 
-    row.obs_fov_ra_width = 0.0 
-    row.obs_loc_ele = 0.0 
-    row.obs_loc_lat = 0.0 
-    row.obs_loc_long = 0.0 
-    row.ligo_fave_lho = 0.0 
-    row.ligo_fave_llo = 0.0 
-    row.ligo_delay = 0.0 
-    row.event_status = 0 
-    row.event_ra = float(cp.get("workflow", "ra"))
-    row.event_dec = float(cp.get("workflow", "dec"))
-    row.start_time = int(cp.get("workflow", "trigger-time"))
-    row.event_number_gcn = 9999
-    row.event_number_grb = str(cp.get("workflow", "trigger-name"))
-    tbl.extend([row])
-    xml_file_name = "triggerGRB%s.xml" % str(cp.get("workflow",
-                                                    "trigger-name"))
-    xml_file_path = os.path.join(out_dir, xml_file_name)
-    utils.write_filename(xmldoc, xml_file_path)
-    xml_file_url = "file://localhost%s/%s" % (out_dir, xml_file_name)
-    xml_file = _workflow.File(ifos, xml_file_name, sci_seg, file_url=xml_file_url)
-    xml_file.PFN(xml_file.cache_entry.path, site="local")
-    
-    return xml_file
-
-
-###################################
-# Workflow generation starts here #
-###################################
 
 workflow_name = "pygrb_offline"
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
@@ -174,7 +105,8 @@ if os.path.basename(wflow.cp.get("executables", "inspiral")) \
     datafind_veto_files.extend(bank_veto_file)
     
     # Make ExtTrig xml file (needed for lalapps_inspinj and summary pages)
-    ext_file = make_exttrig_file(wflow.cp, ifos, sciSegs[ifo][0], baseDir)
+    ext_file = _workflow.make_exttrig_file(wflow.cp, ifos, sciSegs[ifo][0],
+                                           baseDir)
     all_files.extend(_workflow.FileList([ext_file]))
 
 all_files.extend(datafind_veto_files)

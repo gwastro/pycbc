@@ -31,6 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 import os
 import shutil
 from glue import segments
+from glue.ligolw import ligolw, lsctables, utils, ilwd
 from pycbc.workflow.core import File, FileList
 
 
@@ -129,3 +130,71 @@ def get_coh_PTF_files(cp, ifos, run_dir, bank_veto=False, summary_files=False):
 
         return file_list
 
+
+def make_exttrig_file(cp, ifos, sci_seg, out_dir):
+    '''
+    Make an ExtTrig xml file containing information on the external trigger
+
+    Parameters
+    ----------
+    cp : pycbc.workflow.configuration.WorkflowConfigParser object
+    The parsed configuration options of a pycbc.workflow.core.Workflow.
+
+    ifos : str
+    String containing the analysis interferometer IDs.
+
+    sci_seg : glue.segments.segment
+    The science segment for the analysis run.
+    
+    out_dir : str
+    The output directory, destination for xml file.
+
+    Returns
+    -------
+    xml_file : pycbc.workflow.File object
+    The xml file with external trigger information.
+
+    '''
+    # Initialise objects
+    xmldoc = ligolw.Document()
+    xmldoc.appendChild(ligolw.LIGO_LW())
+    tbl = lsctables.New(lsctables.ExtTriggersTable)
+    cols = tbl.validcolumns
+    xmldoc.childNodes[-1].appendChild(tbl)    
+    row = tbl.appendRow()
+    
+    # Add known attributes for this GRB
+    setattr(row, "event_ra", float(cp.get("workflow", "ra")))
+    setattr(row, "event_dec", float(cp.get("workflow", "dec")))
+    setattr(row, "start_time", int(cp.get("workflow", "trigger-time")))
+    setattr(row, "event_number_grb", str(cp.get("workflow", "trigger-name")))
+
+    # Fill in all empty rows
+    for entry in cols.keys():
+        logging.info(entry)
+        if not hasattr(row, entry):
+            logging.info(entry)
+            if cols[entry] in ['real_4','real_8']:
+                setattr(row,entry,0.)
+            elif cols[entry] == 'int_4s':
+                setattr(row,entry,0)
+            elif cols[entry] == 'lstring':
+                setattr(row,entry,'')
+            elif entry == 'process_id':
+                row.process_id = ilwd.ilwdchar("external_trigger:process_id:0")
+            elif entry == 'event_id':
+                row.event_id = ilwd.ilwdchar("external_trigger:event_id:0")
+            else:
+                print >> sys.stderr, "Column %s not recognized" %(entry)
+                raise ValueError
+
+    # Save file
+    xml_file_name = "triggerGRB%s.xml" % str(cp.get("workflow",
+                                                    "trigger-name"))
+    xml_file_path = os.path.join(out_dir, xml_file_name)
+    utils.write_filename(xmldoc, xml_file_path)
+    xml_file_url = "file://localhost%s/%s" % (out_dir, xml_file_name)
+    xml_file = File(ifos, xml_file_name, sci_seg, file_url=xml_file_url)
+    xml_file.PFN(xml_file.cache_entry.path, site="local")
+    
+    return xml_file
