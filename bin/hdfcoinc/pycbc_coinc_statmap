@@ -66,6 +66,12 @@ if fore_locs.sum() > 0:
     f['segments/foreground_veto/end'] = veto_end
     for k in d.data:
         f['foreground/' + k] = d.data[k][fore_locs]
+else:
+    # Put SOMETHING in here to avoid failures later
+    f['segments/foreground_veto/start'] = numpy.array([0])
+    f['segments/foreground_veto/end'] = numpy.array([0])
+    for k in d.data:
+        f['foreground/' + k] = numpy.array([])
 
 back_locs = d.timeslide_id != 0
 
@@ -103,7 +109,6 @@ back_cnum, fnlouder = coinc.calculate_n_louder(back_stat, fore_stat,
 back_cnum_exc, fnlouder_exc = coinc.calculate_n_louder(e.stat, fore_stat, 
                                                e.decimation_factor)         
 
-print back_cnum.max(), back_cnum.min()
 f['background/ifar'] = sec_to_year(background_time / (back_cnum + 1))  
 f['background_exc/ifar'] = sec_to_year(background_time_exc / (back_cnum_exc + 1))
 
@@ -124,6 +129,11 @@ if fore_locs.sum() > 0:
     fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
     f['foreground/ifar_exc'] = sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
+else:
+    f['foreground/ifar'] = numpy.array([])
+    f['foreground/fap'] = numpy.array([])
+    f['foreground/ifar_exc'] = numpy.array([])
+    f['foreground/fap_exc'] = numpy.array([])
 
 if 'name' in d.attrs:
     f.attrs['name'] = d.attrs['name']
