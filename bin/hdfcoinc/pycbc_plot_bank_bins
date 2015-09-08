@@ -2,6 +2,7 @@
 """ plot a an hdf bank file based on background binning
 """
 import argparse, h5py, pycbc.events, pycbc.version, pycbc.results, sys
+import numpy
 import matplotlib; matplotlib.use('Agg')
 import pylab
 from itertools import cycle
@@ -21,7 +22,7 @@ data = {'mass1':f['mass1'][:], 'mass2':f['mass2'][:],
 if args.background_bins:
     locs_dict = pycbc.events.background_bin_from_string(args.background_bins, data)
 else:
-    locs_dict = {'Template Bank':numpy.arange(0, 1, len(data['mass1']))}
+    locs_dict = {'Template Bank':numpy.arange(0, len(data['mass1']), 1)}
 
 color = cycle(['red', 'green', 'blue', 'purple'])
 
