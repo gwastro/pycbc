@@ -34,8 +34,8 @@ for name in locs_dict:
 pylab.legend(loc='upper left', markerscale=5)
 pylab.xlabel('Mass1 $M_\odot$')
 pylab.ylabel('Mass2 $M_\odot$')
-pylab.xlim(data['mass1'].min(), data['mass2'].max())
-pylab.ylim(data['mass1'].min(), data['mass2'].max())
+pylab.xlim(data['mass1'].min(), data['mass1'].max())
+pylab.ylim(data['mass2'].min(), data['mass2'].max())
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
     title="Template Bank Background Bins",
