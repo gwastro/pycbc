@@ -111,6 +111,49 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
                            open_box=False, grid=False, ipn=False,
                            massBins = [('0','8.0')]):
 
+    """
+    Builds the result webpage for a PyGRB workflow and places it in an
+    output directory along with the workflow result plots and other outputs.
+
+    Parameters
+    ----------
+    args : argparse
+    Parsed argparse command line arguments.
+
+    inifile : file
+    The parsed configuration file used to generate the workflow.
+
+    outdir : directory
+    The directory containing the post processing outputs, where the .html file
+    will be written to.
+
+    htmldir : directory
+    The web-accessible directory where all final workflow outputs will be
+    copied to.
+
+    ifoTag : str
+    The string representing all interferometers used in the analysis.
+
+    detectionInjList : list
+    List of tags of the detection injection sets.
+
+    tuningInjList : list
+    List of tags of the tuning injection sets.
+
+    open_box : boolean
+    If true, generates the open box webpage. Otherwise a closed box page is
+    generated.
+
+    grid : boolean
+    If true, uses sky grid information.
+
+    ipn : boolean
+    If true, a page for an IPN GRB is generated.
+
+    massBins : list
+    A list of tuples, each tuple representing the upper and lower bounds of
+    a bin in mass parameter space, used to split the triggers into mass bins.
+    """
     # get entry information  
     ifos = args.ifo_tag
     GRBnum = args.grb_name
@@ -133,10 +176,10 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
     script = {js:'javascript'}
     css = 'coh_PTF_html_summary.css'
     webpage = initialize_page(title, css, script, header=banner())
-#  if open_box:
-#    webpage.add('<img src="https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S5/OpenBox.jpg">')
-#  else:
-#    webpage.add('<img src="https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S5/thomasLegacy.jpg">')
+    #if open_box:
+    #  webpage.add('<img src="https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S5/OpenBox.jpg">')
+    #else:
+    #  webpage.add('<img src="https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S5/thomasLegacy.jpg">')
     
     # set divs
     webpage.div(id="maintab")
