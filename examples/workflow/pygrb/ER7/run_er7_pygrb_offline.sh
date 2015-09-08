@@ -3,14 +3,13 @@ export LOGPATH=${LOCALDIR}/log
 mkdir -p ${LOGPATH}
 export OUT_DIR=${PWD}
 export LAL_SRC=${LOCALDIR}/git/lalsuite
-RA=223.0
-DEC=-28.5
-SKY_ERROR=0
-GRB_NAME=100928A
-GRB_TIME=969675608
+RA=72.440
+DEC=-21.590
+SKY_ERROR=4.450
+GRB_NAME=150604
+GRB_TIME=1117448699
 export HTML_DIR=${HOME}/public_html/pygrb/GRB${GRB_NAME}
-LOCAL_CONFIG_FILES="main.ini postprocessing.ini injections.ini"
-BANK_FILE=${PWD}/TMPLTBANKS/H1-TMPLTBANK_GRB100928A_DATAFIND-969673046-4992.xml
+LOCAL_CONFIG_FILES="er7_offline_main.ini er7_postprocessing.ini er7_injections.ini"
 pygrb_make_offline_workflow \
 --local-config-files ${LOCAL_CONFIG_FILES} \
 --config-overrides \
@@ -22,5 +21,4 @@ workflow:trigger-name:${GRB_NAME} \
 workflow:trigger-time:${GRB_TIME} \
 workflow:start-time:$(( GRB_TIME - 5096 )) \
 workflow:end-time:$(( GRB_TIME + 5096 )) \
-workflow-tmpltbank:tmpltbank-pregenerated-bank:${BANK_FILE} \
 workflow:html-dir:${HTML_DIR}
