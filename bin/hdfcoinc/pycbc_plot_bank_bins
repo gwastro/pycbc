@@ -2,6 +2,7 @@
 """ plot a an hdf bank file based on background binning
 """
 import argparse, h5py, pycbc.events, pycbc.version, pycbc.results, sys
+import numpy
 import matplotlib; matplotlib.use('Agg')
 import pylab
 from itertools import cycle
