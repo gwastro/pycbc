@@ -1362,7 +1362,12 @@ class LalappsInspinjExecutable(Executable):
         # This allows the desired number of injections to be given explicitly
         # in the config file. Used for coh_PTF as segment length is unknown
         # before run time.
-        if 'coh_PTF_inspiral' in self.cp.get('executables', 'inspiral'):
+        if self.get_opt('write-compress') is not None:
+            ext = '.xml.gz'
+        else:
+            ext = '.xml'
+
+        if exttrig_file is not None:
             num_injs = int(self.cp.get_opt_tags('workflow-injections',
                                                 'num-injs', curr_tags))
             inj_tspace = float(segment[1] - segment[0]) / num_injs
@@ -1370,19 +1375,16 @@ class LalappsInspinjExecutable(Executable):
             node.add_opt('--time-step', inj_tspace)
             
             if self.get_opt('l-distr') == 'exttrig':
-                if exttrig_file is None:
-                    raise ValueError("Must supply an external trigger file if"
-                                     " option 'l-distr' is set to 'exttrig'")
                 node.add_opt('--exttrig-file', '%s' % exttrig_file.storage_path)
             
-            node.new_output_file_opt(segment, '.xml', '--output',
+            node.new_output_file_opt(segment, ext, '--output',
                                      store_file=self.retain_files)
         else:
-            node.new_output_file_opt(segment, '.xml', '--output',
+            node.new_output_file_opt(segment, ext, '--output',
                                      store_file=self.retain_files)
         
-        node.add_opt('--gps-start-time', segment[0])
-        node.add_opt('--gps-end-time', segment[1])
+        node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
+        node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
         return node
 
 class LigolwCBCJitterSkylocExecutable(Executable):
@@ -1452,11 +1454,12 @@ class PycbcSplitBankExecutable(Executable):
     
     current_retention_level = Executable.NON_CRITICAL
     def __init__(self, cp, exe_name, num_banks,
-                 ifo=None, out_dir=None, tags=[], universe=None):
-        super(PycbcSplitBankExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
+                 ifo=None, out_dir=None, universe=None):
+        super(PycbcSplitBankExecutable, self).__init__(cp, exe_name, universe,
+                ifo, out_dir, tags=[])
         self.num_banks = int(num_banks)
 
-    def create_node(self, bank):
+    def create_node(self, bank, tags=[]):
         """
         Set up a CondorDagmanNode class to run lalapps_splitbank code
 
@@ -1479,7 +1482,7 @@ class PycbcSplitBankExecutable(Executable):
             curr_tag = 'bank%d' %(i)
             # FIXME: What should the tags actually be? The job.tags values are
             #        currently ignored.
-            curr_tags = bank.tags + [curr_tag] + self.tags
+            curr_tags = bank.tags + [curr_tag] + tags
             job_tag = bank.description + "_" + self.name.upper()
             out_file = File(bank.ifo_list, job_tag, bank.segment,
                                extension=".xml.gz", directory=self.out_dir,
