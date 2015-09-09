@@ -124,8 +124,9 @@ for tsid in tsids:
 pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue', marker='^', label='Foreground')
 
 # format plot
-pylab.ylim(0.8, 1.1 * len(fore_cumnum))
-pylab.xlim(0.9 * min(fore_ifar))
+if len(fore_cumnum) > 0:
+    pylab.ylim(0.8, 1.1 * len(fore_cumnum))
+    pylab.xlim(0.9 * min(fore_ifar))
 pylab.grid()
 pylab.legend()
 pylab.ylabel('Cumulative Number')

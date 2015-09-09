@@ -59,16 +59,24 @@ eff_dist = f['injections'][eff_map[ifo]][:][inj_idx]
 
 f = h5py.File(args.single_injection_file)[ifo]
 tid = inj_tids[ifo][:]
-inj_snr = f['snr'][:][tid]
-
-inj_chisq = get_chisq_from_file_choice(f, args.chisq_choice)[tid]
+if len(tid):
+    inj_snr = f['snr'][:][tid]
+    inj_chisq = get_chisq_from_file_choice(f, args.chisq_choice)[tid]
+else:
+    inj_snr = numpy.array([])
+    inj_chisq = numpy.array([])
 
 pylab.scatter(inj_snr, inj_chisq, c=eff_dist, norm=colors.LogNorm(),
               marker='^', linewidth=0, label="Injections", 
               zorder= not args.background_front)
-    
-r = numpy.logspace(numpy.log(min(bkg_chisq.min(), inj_chisq.min())*0.9),
+
+try:
+    r = numpy.logspace(numpy.log(min(bkg_chisq.min(), inj_chisq.min())*0.9),
                    numpy.log(max(bkg_chisq.max(), inj_chisq.max())*1.1), 200)
+except ValueError:
+    # Allow code to continue in the absence of injection triggers
+    r = numpy.logspace(numpy.log(bkg_chisq.min()*0.9),
+                       numpy.log(bkg_chisq.max()*1.1), 200)
 for cval in args.newsnr_contours:
     snrv = snr_from_chisq(r, cval)
     pylab.plot(snrv, r, '--', color='grey', linewidth=1)
@@ -76,15 +84,24 @@ for cval in args.newsnr_contours:
 ax = pylab.gca()
 ax.set_xscale('log')
 ax.set_yscale('log')
-cb = pylab.colorbar()
-cb.set_label('Effective Distance (Mpc)', size='large')
+try:
+    cb = pylab.colorbar()
+    cb.set_label('Effective Distance (Mpc)', size='large')
+except TypeError:
+    # Catch case of no injection triggers
+    if len(inj_chisq):
+        raise
 pylab.title('%s Coincident Triggers' % ifo, size='large')
 pylab.xlabel('SNR', size='large')
 pylab.ylabel('Reduced $\chi^2$', size='large')
-pylab.xlim(min(inj_snr.min(),bkg_snr.min())*0.9,
-           max(inj_snr.max(),bkg_snr.max())*1.4)
-pylab.ylim(min(bkg_chisq.min(), inj_chisq.min())*0.7,
-           max(bkg_chisq.max(), inj_chisq.max())*1.4)
+try:
+    pylab.xlim(min(inj_snr.min(),bkg_snr.min())*0.9,
+               max(inj_snr.max(),bkg_snr.max())*1.4)
+    pylab.ylim(min(bkg_chisq.min(), inj_chisq.min())*0.7,
+               max(bkg_chisq.max(), inj_chisq.max())*1.4)
+except ValueError:
+    # Raised if no injection triggers
+    pass
 pylab.legend(loc='lower right', prop={'size': 12})
 pylab.grid(which='major', ls='solid', alpha=0.7, linewidth=.5)
 pylab.grid(which='minor', ls='solid', alpha=0.7, linewidth=.1)

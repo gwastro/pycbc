@@ -68,6 +68,9 @@ logging.info('writing zero lag triggers')
 if len(zdata) > 0:
     for key in zdata.data:
         f['foreground/%s' % key] = zdata.data[key]
+else:
+    for key in zdata.data:
+        f['foreground/%s' % key] = numpy.array([])
 
 logging.info('calculating statistics excluding zerolag')
 fb = h5py.File(args.full_data_background, "r")
@@ -128,6 +131,12 @@ if len(zdata) > 0:
         fap[i] = 1 - numpy.exp(- coinc_time / ifar[i])
 
     f['foreground/ifar'] = sec_to_year(ifar)
-    f['foreground/fap'] = fap                                                
+    f['foreground/fap'] = fap
+else:
+    f['foreground/ifar_exc'] = numpy.array([])
+    f['foreground/fap_exc'] = numpy.array([])
+    f['foreground/ifar'] = numpy.array([])
+    f['foreground/fap'] = numpy.array([])
+
 logging.info("Done") 
     
