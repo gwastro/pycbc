@@ -136,6 +136,9 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # Replace exe macros with full paths
         self.perform_exe_expansion()
 
+        # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
+        self.split_multi_sections()
+
         # Check for any substitutions that can be made
         # FIXME: The python 3 version of ConfigParser can do this automatically
         # move over to that if it can be backported to python2.X.
@@ -144,9 +147,6 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # This is described at
         # http://docs.python.org/3.4/library/configparser.html
         self.perform_extended_interpolation()
-
-        # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
-        self.split_multi_sections()
 
         # Check for duplicate options in sub-sections
         self.sanity_check_subsections()
