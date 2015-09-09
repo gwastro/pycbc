@@ -22,13 +22,10 @@
 
 from __future__ import division
 
-import os,sys,datetime,re,glob,shutil,ConfigParser
+import re
 from argparse import ArgumentParser
-import random
-import string
-from pycbc.workflow.core import make_external_call
 from glue import markup
-from pylal import grbsummary,rate,antenna,git_version
+from pylal import antenna,git_version
 from lal.gpstime import gps_to_utc,LIGOTimeGPS
 
 __author__  = "Andrew Williamson <andrew.williamson@ligo.org>"
