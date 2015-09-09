@@ -171,9 +171,7 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
 
     # Fill in all empty rows
     for entry in cols.keys():
-        logging.info(entry)
         if not hasattr(row, entry):
-            logging.info(entry)
             if cols[entry] in ['real_4','real_8']:
                 setattr(row,entry,0.)
             elif cols[entry] == 'int_4s':

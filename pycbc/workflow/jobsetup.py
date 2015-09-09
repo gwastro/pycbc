@@ -333,8 +333,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     bank_veto = datafind_outs[-1]
     frame_files = datafind_outs[:-1]
     split_bank_counter = 0
-
-    #FIXME: This does not work with IFO-specific templatebanks!
+    
     if curr_exe_job.injection_file is None:
         for split_bank in parents:
             tag = list(tags)
