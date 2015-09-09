@@ -715,24 +715,17 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   curr_mloc = mlocs[outlen-1];
   curr_mark = outlen - 1;
 
-  // For this pass we just use 'cnt' as a logical, noting
-  // whether we have found a point larger than something
-  // after it.  Otherwise writing out 'marks' after the loop
-  // could be mistaken.
-  //
   // Note that in this reverse loop, 'curr_mark' records
   // where in the arrays (of lengths 'outlen') we found
   // our last potential local maximum---it is *not* an
   // index into the full array.
 
-  cnt = 0;
   for (i = outlen-2; i >= 0; i--){
     if ( (curr_mloc - stoplocs[i]) > s_winsize){
       marks[curr_mark] = 1;
       curr_mark = i;
       curr_norm = norms[i];
       curr_mloc = mlocs[i];
-      cnt = 1;
     } else if (norms[i] > curr_norm) {
       // Note that we required strictly greater than:
       // if there is a sequence of several equal values
@@ -741,11 +734,15 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
       curr_mark = i;
       curr_norm = norms[i];
       curr_mloc = mlocs[i];
-      cnt = 1;
     }
   }
-  // We may not have marked the last point, so do so:
-  if (cnt) marks[curr_mark] = 1;
+  // The last candidate (in the various 'curr_*' variables)
+  // may not have had a chance to be marked---if it was too
+  // close to the beginning of the array, or found in the
+  // first window, or if there was only one window (because
+  // 'winsize' >= 'arrlen').  All of these cases can be
+  // correctly handled by simply marking that last candidate.
+  marks[curr_mark] = 1;
 
   // Now we have a sliding forward window; if something
   // is marked and survives this, then it is a clustered
@@ -753,6 +750,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   // the threshold condition.
 
   cnt = 0;
+  locs[0] = 0;
   curr_norm = norms[0];
   curr_mloc = mlocs[0];
   curr_cval = cvals[0];
@@ -789,12 +787,21 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
       curr_mark = marks[i];
     }
   }
-
-  // It's possible that the last point would survive as a trigger,
-  // so we need a separate test for that.
-
-  if ((cnt > 0) && (curr_mloc != locs[cnt-1])){
-    if ((curr_norm > thr_sqr) && curr_mark){
+  // We need to be careful about the last candidate trigger. If:
+  //   (1) It was found in the last window, or
+  //   (2) It was found earlier but still less than 'winsize' away
+  //       from the start of the last window, or
+  //   (3) There is only one window ('arrlen' <= 'winsize'), and the
+  //       loop above was never executed since outlen = 1
+  // then this last candidate will not have had a chance to be
+  // tested. Unlike in the first loop, we cannot unilaterally test
+  // the last trigger, since if the last candidate does not satisfy
+  // any of the above, then it has already been considered and testing
+  // it again could duplicate a trigger.  So the test is only made if
+  // the candidate is less than or equal to 'winsize' from the start
+  // of the last window, which will be true for all three cases above.
+  if ( (startlocs[outlen-1] - curr_mloc) <= s_winsize){
+    if ( (curr_norm > thr_sqr) && curr_mark){
       cnt += 1;
       values[cnt-1] = curr_cval;
       locs[cnt-1] = (uint32_t) curr_mloc;
