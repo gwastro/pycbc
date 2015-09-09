@@ -424,6 +424,10 @@ class JobSegmenter(object):
         elif compatibility_mode:
             # What is the incremental shift between jobs
             self.job_time_shift = self.valid_length
+        elif self.curr_seg_length == self.data_length:
+            # If the segment length is identical to the data length then I
+            # will have exactly 1 job!
+            self.job_time_shift = 0
         else:
             # What is the incremental shift between jobs
             self.job_time_shift = (self.curr_seg_length - self.data_length) / \
