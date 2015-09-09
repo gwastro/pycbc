@@ -191,13 +191,15 @@ class InjectionSet(object):
                 if float(hp.start_time) > t1:
                    continue
 
-            # compute the detector response, taper it if requested
-            # and add it to the strain
-            signal = detector.project_wave(
-                    hp, hc, inj.longitude, inj.latitude, inj.polarization)
-            # the taper_timeseries function converts to a LAL TimeSeries
+            # taper the polarizations
+            hp_tapered = wfutils.taper_timeseries(hp, inj.taper)
+            hc_tapered = wfutils.taper_timeseries(hc, inj.taper)
+
+            # compute the detector response and add it to the strain
+            signal = detector.project_wave(hp_tapered, hc_tapered,
+                                 inj.longitude, inj.latitude, inj.polarization)
             signal = signal.astype(strain.dtype)
-            signal_lal = wfutils.taper_timeseries(signal, inj.taper, return_lal=True)
+            signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
 
         strain.data[:] = lalstrain.data.data[:]
