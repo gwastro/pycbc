@@ -56,12 +56,17 @@ hiddenimports = ['pycbc.fft.fft_cpu',
 datas = [] 
 
 if os.environ["NOW_BUILDING"] == 'pycbc_make_html_page':
-    for root, subdirs, files in os.walk('/home/lppekows/pycbc-dev/src/pycbc/pycbc/results'):
+    cwd     = os.getcwd()
+    basedir = cwd.replace('tools/static','')
+    rootdir = basedir + 'pycbc/results'
+
+    for root, subdirs, files in os.walk(rootdir):
         for filename in files:
             if not filename.endswith('.py') and not filename.endswith('.pyc'):
                 file_path  = os.path.join(root, filename)
                 store_path = '/'.join(file_path.split('/')[:-1])
-                store_path = store_path.replace('/home/lppekows/pycbc-dev/src/pycbc/','')
+                store_path = store_path.replace(basedir, '')
+                print (file_path, store_path)
                 datas.append( (file_path, store_path) )
 
 if os.environ["NOW_BUILDING"] == 'pycbc_inspiral':
