@@ -31,7 +31,7 @@ def setup_minifollowups(workflow, out_dir, frame_files,
     output_filelist = FileList([])
 
     # check if minifollowups section exists
-    # if not then do not do add hardware injection job to the workflow
+    # if not then do not do add minifollowup jobs to the workflow
     if not workflow.cp.has_section('workflow-minifollowups'):
       logging.info('There is no [workflow-minifollowups] section in configuration file')
       logging.info('Leaving minifollowups')
