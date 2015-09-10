@@ -568,16 +568,16 @@ class StrainSegments(object):
 
                         # This can only optimize the case of 1 injection in a segment
                         # If there are more, the entire segment is analyzed
-                        if injection_window is not None:
-                            injections_in_segment += 1
-                            inj_pos = inj_id - seg.start
-                            win_points = int(injection_window * strain.sample_rate)
-                            inj_start = int(inj_pos - win_points)
-                            inj_end = int(inj_pos + win_points)
-                            if inj_start < start:
-                                inj_start = start
-                            if inj_end > stop:
-                                inj_end = stop
+                        #if injection_window is not None:
+                        #    injections_in_segment += 1
+                        #    inj_pos = inj_id - seg.start
+                        #    win_points = int(injection_window * strain.sample_rate)
+                        #    inj_start = int(inj_pos - win_points)
+                        #    inj_end = int(inj_pos + win_points)
+                        #    if inj_start < start:
+                        #        inj_start = start
+                        #    if inj_end > stop:
+                        #        inj_end = stop
 
                 if injections_in_segment == 1:
                     start = inj_start
