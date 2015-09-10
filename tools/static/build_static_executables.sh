@@ -6,20 +6,19 @@ then
 	exit 1
 fi
 
-for prog in `find ../../bin -type f`
+for prog in `find ../../bin -type f | grep inspiral`
 do
 	# don't try to pyinstall shell scripts
 	if `head -1 ${prog} | grep -q python`
 	then 
 		exename=`basename ${prog}`
-		target=${exename}_static
 
 		# don't rebuild if the executable is already
 		# present
-		if [ ! -e dist/${target} ]
+		if [ ! -e dist/${exename} ]
 		then
 			# remove any cached information
-			rm -rf ${target}.spec build/${target}
+			rm -rf ${exename}.spec build/${exename}
 
 			# This will be used by hooks/hook-pycbc.py to
 			# determine what needs to be included
@@ -28,7 +27,7 @@ do
 			pyinstaller ${prog} \
 			  --additional-hooks-dir ./hooks/ \
 			  --runtime-hook runtime-scipy.py \
-			  --name ${target} \
+			  --name ${exename} \
 			  --strip \
 			  --onefile
 		fi
