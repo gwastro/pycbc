@@ -407,6 +407,7 @@ setup (
                'bin/hdfcoinc/pycbc_page_segments',
                'bin/hdfcoinc/pycbc_page_segtable',
                'bin/hdfcoinc/pycbc_page_segplot',
+               'bin/hdfcoinc/pycbc_page_vetotable',
                'bin/hdfcoinc/pycbc_plot_psd_file',
                'bin/hdfcoinc/pycbc_plot_range',
                'bin/hdfcoinc/pycbc_foreground_censor',
