@@ -103,8 +103,13 @@ else:
                "Circles are found injections. The color indicates the value of "
                "the false alarm rate" )
     plot.subplots_adjust(right=0.99)
-    c = plot.colorbar()
-    c.set_label('False Alarm Rate $(yr^{-1})$')
+    try:
+        c = plot.colorbar()
+        c.set_label('False Alarm Rate $(yr^{-1})$')
+    except TypeError:
+        # Can't make colorbar if no quiet found injections
+        if len(fvals):
+            raise
 
 ax = plot.gca()
 plot.xlabel(labels[args.axis_type])

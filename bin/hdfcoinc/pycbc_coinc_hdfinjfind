@@ -99,11 +99,8 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
 
     if len(ambiguous) > 0:
         logging.warn('More than one coinc trigger found associated to injection') 
-        print inj_time[ambiguous]
         am = numpy.arange(0, len(inj_time), 1)[left[ambiguous]]
         bm = numpy.arange(0, len(inj_time), 1)[right[ambiguous]]
-        print time[time_sorting][am]
-        print am, bm
 
     logging.info('Removing injections outside of analyzed time')
     ki = keep_ind(inj_time, ana_start, ana_end)

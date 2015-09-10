@@ -44,19 +44,42 @@ hiddenimports = ['pycbc.fft.fft_cpu',
                  'pycbc.fft.npfft',
                  'pycbc.fft.__init__',
                  'pycbc.events.threshold_cpu',
+                 'scipy.linalg.cython_blas',
+                 'scipy.linalg.cython_lapack',
+                 'scipy.special._ufuncs_cxx',
+                 'h5py',
+                 'h5py._conv',
+                 'h5py._stub',
+                 'mpld3'
                  ]
-datas = []
 
-# pull in all the mkl .so files
-#datas += find_lib_path('mkl_rt', [])
-#datas += find_lib_path('mkl_core', [])
-#datas += find_lib_path('mkl_intel_thread', [])
-#datas += find_lib_path('mkl_intel_lp64', [])
-#datas += find_lib_path('mkl_avx2', [])
-#datas += find_lib_path('mkl_def', [])
+datas = [] 
+
+if os.environ["NOW_BUILDING"] == 'pycbc_make_html_page':
+    cwd     = os.getcwd()
+    basedir = cwd.replace('tools/static','')
+    rootdir = basedir + 'pycbc/results'
+
+    for root, subdirs, files in os.walk(rootdir):
+        for filename in files:
+            if not filename.endswith('.py') and not filename.endswith('.pyc'):
+                file_path  = os.path.join(root, filename)
+                store_path = '/'.join(file_path.split('/')[:-1])
+                store_path = store_path.replace(basedir, '')
+                print (file_path, store_path)
+                datas.append( (file_path, store_path) )
+
+if os.environ["NOW_BUILDING"] == 'pycbc_inspiral':
+    # pull in all the mkl .so files
+    datas += find_lib_path('mkl_rt', [])
+    datas += find_lib_path('mkl_core', [])
+    datas += find_lib_path('mkl_intel_thread', [])
+    datas += find_lib_path('mkl_intel_lp64', [])
+    datas += find_lib_path('mkl_avx2', [])
+    datas += find_lib_path('mkl_def', [])
 
 # try to pull in the openmp fftw files
-datas += find_lib_path('fftw3', ['fftw3'])
-datas += find_lib_path('fftw3f', ['fft3f'])
-datas += find_lib_path('fftw3f_omp', ['fftw3f'])
-datas += find_lib_path('fftw3_omp', ['fftw3'])
+#datas += find_lib_path('fftw3', ['fftw3'])
+#datas += find_lib_path('fftw3f', ['fft3f'])
+#datas += find_lib_path('fftw3f_omp', ['fftw3f'])
+#datas += find_lib_path('fftw3_omp', ['fftw3'])

@@ -224,6 +224,10 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
         The set of indices corresponding to the surviving coincidences.
     """
     logging.info('clustering coinc triggers over %ss window' % window)
+
+    if len(time1) == 0 or len(time2) == 0:
+        logging.info('No coinc triggers in one, or both, ifos.')
+        return numpy.array([])
     
     indices = []
     if numpy.isfinite(slide):

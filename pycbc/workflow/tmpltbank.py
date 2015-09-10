@@ -318,7 +318,6 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
     cp = workflow.cp
     global_seg = workflow.analysis_time
     user_tag = "PREGEN_TMPLTBANK"
-    
     try:
         # First check if we have a bank for all ifos
         pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
@@ -333,7 +332,8 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
         for ifo in workflow.ifos:
             try:
                 pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
-                                'tmpltbank-pregenerated-bank-%s' %(ifo,), tags)
+                                'tmpltbank-pregenerated-bank-%s' % ifo.lower(),
+                                tags)
                 file_url = urlparse.urljoin('file:',
                                              urllib.pathname2url(pre_gen_bank))
                 curr_file = File(ifo, user_tag, global_seg, file_url,

@@ -62,7 +62,7 @@ if not args.closed_box:
 
     pylab.scatter(cstat_back, far_back, color='black', marker='x', label='Open Box Background')
 
-    if cstat_fore is not None:
+    if cstat_fore is not None and len(cstat_fore):
         pylab.scatter(cstat_fore, cstat_rate, s=10, color='blue', marker='^', label='Foreground')
         pylab.xlim(cstat_back.min(), max(cstat_fore.max(), cstat_back.max()) + 1)
     else:

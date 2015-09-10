@@ -227,9 +227,7 @@ seg_summ_names    = ['DATA', 'ANALYZABLE_DATA', 'TRIGGERS_PRODUCED']
 seg_summ_seglists = [data_segs, science_segs, insp_segs]
 
 # declare comparasion segments for table on summary page
-veto_summ_names = ['TRIGGERS_PRODUCED&CUMULATIVE_CAT_1H',
-                   'TRIGGERS_PRODUCED&CUMULATIVE_CAT_12H',
-                   'TRIGGERS_PRODUCED&CUMULATIVE_CAT_123H']
+veto_summ_names = ['TRIGGERS_PRODUCED&'+veto_name for veto_name in veto_names+final_veto_name]
 
 # write segment summary XML file
 seg_list = []; names = []; ifos = []
@@ -253,6 +251,9 @@ veto_summ_table = wf.make_seg_table(workflow,
 seg_summ_plot = wf.make_seg_plot(workflow, [seg_summ_file],
                         rdir['analysis_time/segments'],
                         seg_summ_names, ['SUMMARY'])
+
+# make veto definer table
+vetodef_table = wf.make_veto_table(workflow, rdir['analysis_time/veto_definer'])
 
 ############################## Setup the injection runs                                                                           
 inj_coincs = wf.FileList()

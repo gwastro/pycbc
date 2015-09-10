@@ -265,16 +265,13 @@ def get_random_mass(numPoints, massRangeParams):
         # Generate EM constraint surface: minumum eta as a function of BH spin
         # and NS mass required to produce an EM counterpart
         if not os.path.isfile('constraint_em_bright.npz'):
-            logging.info("""Generating the constraint surface for EM bright binaries
+            logging.info("""constraint_em_bright.npz not found.
+                        Generating the constraint surface for EM bright binaries
                         in the physical parameter space.  One day, this will be
-                        made faster, for now be patient and wait a few minutes!
-                        """)
+                        made faster, for now be patient and wait a few minutes!""")
             generate_em_constraint_data(massRangeParams.minMass2, massRangeParams.maxMass2, massRangeParams.delta_ns_mass, \
                                         -1.0, massRangeParams.maxBHSpinMag, massRangeParams.delta_bh_spin, \
                                         massRangeParams.ns_eos, massRangeParams.remnant_mass_threshold, 0.0)
-        else:
-            logging.info("""Reading in the constraint surface for EM bright binaries
-                        contained in constraint_em_bright.npz.""")
         constraint_datafile = numpy.load('constraint_em_bright.npz')
         mNS_pts = constraint_datafile['mNS_pts']
         bh_spin_z_pts = constraint_datafile['sBH_pts']

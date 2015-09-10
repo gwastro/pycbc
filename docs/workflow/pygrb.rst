@@ -6,14 +6,35 @@ PyGRB: A GRB triggered CBC analysis workflow generator
 Introduction
 ===============
 
-PyGRB is a tool used to analyse data from multiple detectors coherently and
-then perform various signal-based veto cuts and data quality cuts to determine
-whether or not a compact binary coalescence signal is present in the given data
-coming from the same point in the sky and at the same time as an observed short
-GRB.
+PyGRB is a tool used to generate a data analysis workflow for a targeted,
+coherent gravitational wave search triggered by short duration gamma-ray
+bursts.
 
-The output is a webpage containing the plots that can be used to understand the
-results of the analysis.
+When submitted, this workflow will run a pipeline to analyse data from multiple
+gravitational wave detectors coherently. It will then perform various
+signal-based veto cuts and data quality cuts to determine whether or not a
+compact binary coalescence signal is present in the given data coming from the
+same point in the sky and at the same time as an observed short duration
+gamma-ray burst.
+
+The output will be a webpage containing plots and other data files that can be
+used to understand the results of the analysis.
+
+.. note::
+    These instructions refer to code that currently resides only in the GitHub
+    repository at the following link:
+ 
+    `PyGRB on GitHub <https://github.com/a-r-williamson/pycbc/tree/pygrb_dev>`_
+
+    **These instructions do not apply to the version of PyGRB currently on PyCBC
+    master branch!**
+
+This may be retreived by cloning the repository, for example using https::
+
+    git clone https://github.com/a-r-williamson/pycbc.git
+    cd pycbc
+    git checkout pygrb_dev
+    python setup.py install --prefix=/path/to/install/directory
 
 .. _howtorunpygrb:
 
@@ -23,30 +44,85 @@ How to run
 
 Here we document the stages needed to run the triggered coherent GRB search.
 
--------------------------------------
-Copy pygrb.py into your run directory
--------------------------------------
+---------------------------
+Install lalsuite and pycbc
+---------------------------
 
-Now copy the workflow generation script into your run directory::
+The first requirement is to have installs of Lalsuite and PyCBC. If you do not
+already have installed versions of these please follow the instructions
+described here:
 
-    RUN_DIRECTORY=path/to/run_directory
-    mkdir -p ${RUN_DIRECTORY}
-    cd ${RUN_DIRECTORY}
-    cp /src/pycbc/examples/workflow/pygrb/pygrb.py .
+.. toctree::
+   :maxdepth: 1
 
-----------------------------------------------------------------------------
-The configuration file - Do you already have configuration (.ini) file(s)?
-----------------------------------------------------------------------------
+   ../install
+
+Once you have correctly installed and sourced installations of the above you
+should be able to run the following help command for the workflow generation
+script::
+
+    pygrb_make_offline_workflow --help
+
+This should produce a help message like the following::
+
+    usage: pygrb_make_offline_workflow [-h] [--version] [-d OUTPUT_DIR]
+                                       [--local-config-files CONFIGFILE [CONFIGFILE ...]]
+                                       [--installed-config-files CONFIGFILE [CONFIGFILE ...]]
+                                       [--config-overrides [SECTION:OPTION:VALUE [SECTION:OPTION:VALUE ...]]]
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --version             show program's version number and exit
+      -d OUTPUT_DIR, --output-dir OUTPUT_DIR
+                            Path to output directory.
+
+    workflow:
+      Options needed for workflow setup.
+
+      --local-config-files CONFIGFILE [CONFIGFILE ...]
+                            List of localconfig files to be used in analysis.
+      --installed-config-files CONFIGFILE [CONFIGFILE ...]
+                            List of preinstalled config files to be used in
+                            analysis
+      --config-overrides [SECTION:OPTION:VALUE [SECTION:OPTION:VALUE ...]]
+                            List of section,option,value combinations to add into
+                            the configuration file. Normally the gps start and end
+                            times might be provided this way, and user specific
+                            locations (ie. output directories). This can also be
+                            provided as SECTION:OPTION or SECTION:OPTION: both of
+                            which indicate that the corresponding value is left
+                            blank.
+
+This outlines the command line arguments that may be passed to the executable.
+The majority of options passed to the workflow will come from configuration
+files, and these are known to the executable via the options
+--local-config-files and/or --installed-config-files.
+
+----------------------
+Set up a run directory
+----------------------
+
+Navigate to the directory you wish to run in::
+
+    RUN_DIR=/path/to/run/directory
+    mkdir -p $RUN_DIR
+    cd $RUN_DIR
+
+Next gather together configuration files for your run.
+
+-----------------------------------------------------------------------
+Configuration files - Do you already have configuration (.ini) file(s)?
+-----------------------------------------------------------------------
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Yes, I already have configuration files
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-Great! Then copy the configuration files into your run directory::
+Copy over configuration files into your run directory::
 
-    cp /path/to/config_file1.ini /path/to/config_file2.ini .
+    cp /path/to/config_file1.ini /path/to/config_file2.ini $RUN_DIR
 
-and set the names of these configuration files in your path. If you have more
-than one configuration file they must be space separated::
+Now add these configuration files to your environment. If you have more than
+one configuration file they must be space separated::
 
     LOCAL_CONFIG_FILES="config_file1.ini config_file2.ini"
 
@@ -56,27 +132,44 @@ Now go down to :ref:`pygrbgenerate`.
 No, I need to edit a configuration file
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-The default configuration files is found in::
+The default configuration files are found in::
 
-    /src/pycbc/examples/workflow/pygrb/pygrb.ini
+    /src/pycbc/examples/workflow/pygrb/
 
-This file contains all the details needed to construct a pyGRB workflow
+namely::
+
+    main.ini injections.ini postprocessing.ini
+
+These files contain almost all options needed to construct an example PyGRB
+workflow
 
 .. note::
 
     If you are unfamiliar with pycbc workflows, look through these files.
     
-* pygrb.ini contains options that are used when running the pycbc.workflow
-  parts of the workflow
+* main.ini contains options that are used when setting up the data retreival,
+  template bank generation and main analysis matched filtering parts of the
+  workflow
 
-The pygrb.ini example is set up to run on S6 data and analysing only H1 and L1.
+* injections.ini contains options for generating injection sets
+
+* postprocessing.ini contains options that are used to run the post processing
+  stages of the workflow codes
+
+Currently, the example is set up to run on S6 data, analysing only H1 and L1.
 
 If you want to run in this default configuration please jump down to
 :ref:`pygrbgenerate`.
 
 If you want to run on non-S6 data, analyze a different set of ifos, or change
 any data-type or segment length options, you will have to edit some additional
-options::
+options.
+
+========
+main.ini
+========
+
+Firstly, the sections specifying some workflow-wide options include::
 
     [workflow]
     h1-channel-name = H1:LDAS-STRAIN
@@ -87,29 +180,30 @@ options::
     h1 =
     l1 =
 
+
     [workflow-datafind]
     datafind-h1-frame-type = H1_LDAS_C02_L2
     datafind-l1-frame-type = L1_LDAS_C02_L2
 
     [workflow-segments]
-    segments-H1-science-name = H1:DMT-SCIENCE:4
-    segments-L1-science-name = L1:DMT-SCIENCE:4
-    segments-V1-science-name = V1:ITF_SCIENCEMODE
+    segments-h1-science-name = H1:DMT-SCIENCE:4
+    segments-l1-science-name = L1:DMT-SCIENCE:4
     segments-database-url = https://segdb.ligo.caltech.edu
-    segments-veto-definer-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S6/H1L1V1-S6_CBC_LOWMASS_B_OFFLINE-937473702-0.xml
+    segments-veto-definer-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S6/H1L1V1-S6_CBC_LOWMASS_D_OFFLINE-961545543-0.xml
+    segments-veto-categories = 3
+    segments-minimum-segment-length = 256
 
     [workflow-exttrig_segments]
     ; options for the coherent search (development)
-    on-before = 1
-    on-after = 5
+    on-before = 5
+    on-after = 1
     min-before = 60
     min-after = 60
     min-duration = 256
-    max-duration = 4096
-    pad-data = 8
+    max-duration = 5264
     quanta = 128
-
-    ALL the [tisi], [tisi-zerolag], [tisi-slides] sections (potentially)
+    num-buffer-before = 8
+    num-buffer-after = 8
 
 To run through this
 
@@ -117,32 +211,95 @@ To run through this
   found and available
 * The [workflow-exttrig_segments] section supplies the GRB search-specific
   options for the data segment to be analyzed
-* The X1-channel-name options are the h(t) channel name in the frames
-* The datafind-X1-frame-type is the type of the frames for use when calling
+* The xx-channel-name options are the h(t) channel name in the frames
+* The datafind-xx-frame-type is the type of the frames for use when calling
   gw_data_find
-* The segments-X1-science-name is the flag used to store science times in the
+* The segments-xx-science-name is the flag used to store science times in the
   segment database
 * segments-database-url points to the segment database
 * segments-veto-definer-url points to the url where the veto-definer file can
   be found.
 
-The remaining options affect how the jobs run, these should not be edited
-unless you know what you are doing ... but can freely be added if you do know
-what you are doing and want to change something. To find out more details about
-the possible options for any stage of the workflow, follow the links at
-:ref:`workflowhomepage`.
+We also set the executables to be used for these parts of the analysis::
+    
+    [executables]
+    ; setup of condor universe and location of executables
+    tmpltbank               = ${which:lalapps_tmpltbank_ahope}
+    inspiral                = ${which:lalapps_coh_PTF_inspiral}
+    splitbank               = ${which:pycbc_splitbank}
+    segment_query           = ${which:ligolw_segment_query}
+    segments_from_cats      = ${which:ligolw_segments_from_cats}
+    llwadd                  = ${which:ligolw_add}
+    ligolw_combine_segments = ${which:ligolw_combine_segments}
 
-Now you have a configuration file and can follow the same instructions as
-above. That is: 
+The options to be given to every job run by an executable are then given
+within a secion with the relevant name, for example our inspiral jobs (in this
+case, lalapps_coh_PTF_inspiral) use the options in the following section::
+
+    [inspiral]
+    ; coh_PTF_inspiral analysis parameters -- added to all inspiral jobs
+    ; Note that some values are dynamically recalculated during workflow generation
+    .
+    .
+    .
+
+These should not be edited unless you know what you are doing. To find out
+more details about the possible options for any stage of the workflow, follow
+the links at :ref:`workflowhomepage`.
+
+==============
+injections.ini
+==============
+
+Multiple configuration files may be used, and in fact the same sections may be
+populated from within multiple files. As an example, we might wish to have a
+seperate file for the injection options. This file may contain the following::
+
+    [executables]
+    injections       = ${which:lalapps_inspinj}
+    jitter_skyloc    = ${which:ligolw_cbc_jitter_skyloc}
+    align_total_spin = ${which:ligolw_cbc_align_total_spin}
+    split_inspinj    = ${which:pycbc_split_inspinj}
+
+This will add to the values given in the [executables] section of the other 
+file. Options for the trig_combiner code may then be given in a section 
+[trig_combiner], and so on. Options in sections such as [injections-<tag>]
+will be passed to the injection executable and create jobs tagged with <tag>.
+This can be used, as in the example, to generate multiple injection sets.
+Options in sections such as [workflow-injections-<tag>] will apply to the same
+tagged injection set, but are not passed to the executable. They can instead be
+used to control the behaviour of the workflow generation as applied to that
+specific tagged injection set. In our example these options are the number of
+injections to be included in each set.
+
+==================
+postprocessing.ini
+==================
+
+As before, the options for each of the post processing codes are given in this
+configuration file. One notable section is::
+
+    [pegasus_profile-trig_combiner]
+    condor|request_memory=2000M
+
+This is how to supply condor options that only apply to the trig_combiner jobs.
+This can be generalised to any executable or tagged jobs.
+
+===============
+Copy over files
+===============
+
+Now you have a configuration file (or files) and 
+can follow the same instructions as above. That is: 
 
 Copy the configuration file into your run directory::
 
-    cp /path/to/pygrb.ini .
+    cp /path/to/<file(s)>.ini .
 
 and set the name of the configuration file in your path. If you have more than
 one configuration file they must be space separated::
 
-    LOCAL_CONFIG_FILES="pygrb.ini"
+    LOCAL_CONFIG_FILES="main.ini injections.ini postprocessing.ini"
 
 .. _pygrbgenerate:
 
@@ -165,56 +322,40 @@ example::
 
     RA=223.0
     DEC=-28.5
+    SKY_ERROR=0
 
 If you are using a pregenerated template bank and do not have a path to the
 bank set in your config file, set it here::
 
     BANK_FILE=path/to/templatebank
 
-You also need to specify the directory for storing log files.
+You also need to specify the git directory of your lalsuite install::
 
- * For CIT,LHO,LLO or SYR set::
+    export LAL_SRC=/path/to/folder/containing/lalsuite.git
 
-    export LOGPATH=/usr1/${USER}/log
-    export PIPEDOWNTMPSPACE=/usr1/${USER}
-    mkdir -p $LOGPATH
+If you want the results page to be moved to a location outside of your run,
+provide this too::
 
- * For Atlas set::
-
-    export LOGPATH=/local/user/${USER}/log/
-    export PIPEDOWNTMPSPACE=/local/user/${USER}
-    mkdir -p $LOGPATH 
-
- * For UWM set::
-
-    export LOGPATH=/people/${USER}/log/
-    export PIPEDOWNTMPSPACE=/localscratch/${USER}
-    mkdir -p $LOGPATH
-
- * On the TACC XSEDE cluster, it is recommended to store your ihope directory under the work filesystem.
-   For the TACC XSEDE cluster set::
-
-    export LIGO_DATAFIND_SERVER=tacc.ligo.org:80
-    export LOGPATH=${SCRATCH}/log
-    export PIPEDOWNTMPSPACE=/tmp
-    mkdir -p $LOGPATH
-
-You also need to choose where the html results page will be generated. For
-example::
-
-    export HTMLDIR=/home/${USER}/public_html/pygrb
+    export HTML_DIR=/path/to/html/folder
 
 If you are using locally editted or custom configuration files then you can
 create the workflow from within the run directory using::
 
-    pygrb.py --local-config-files ${LOCAL_CONFIG_FILES} \
+    pygrb_make_offline_workflow \
+             --local-config-files ${LOCAL_CONFIG_FILES} \
              --config-overrides workflow:ra:${RA} \
                                 workflow:dec:${DEC} \
+                                workflow:sky-error:${SKY_ERROR} \
                                 workflow:trigger-name:${GRB_NAME} \
                                 workflow:trigger-time:${GRB_TIME} \
                                 workflow:start-time:$(( GRB_TIME - 4096 )) \
                                 workflow:end-time:$(( GRB_TIME + 4096 )) \
+                                workflow:html-dir:${HTML_DIR} \
                                 workflow-tmpltbank:tmpltbank-pregenerated-bank:${BANK_FILE}
+
+This may all be conveniently placed within a shell script, an example of which is given
+in::
+    /src/pycbc/examples/workflow/pygrb/run_pygrb.sh
 .. _pygrbplan:
 
 -----------------------------------------
@@ -224,14 +365,14 @@ CD into the directory where the dax was generated::
 
     cd GRB${GRB_NAME}
 
-From the directory where the dax was created, run the planning script::
+From the directory where the dax was created, run the submission script::
 
-    pycbc_basic_pegasus_plan pygrb.dax $LOGPATH
+    pycbc_submit_dax --dax pygrb.dax --accounting-group <your.accounting.group.tag>
 
-Submit the workflow by following the instructions at the end of the script
-output, which looks something like::
+.. note::
 
-    pegasus-run  /path/to/analysis/run
+    If running on the ARCCA cluster, please provide a suitable directory via
+    the option --local-dir, ie. /var/tmp
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 Monitor and Debug the Workflow (`Detailed Pegasus Documentation <https://pegasus.isi.edu/wms/docs/latest/tutorial.php#idm78622034400>`_)
@@ -327,15 +468,13 @@ prior_data.map.::
     You can include files in the prior data listing that wouldn't be generated
     anyway by your new run. These are simply ignored.
 
-Place this file in the GRB${GRB_NAME}/  directory of your new run.
-
 ---------------------------
 Plan the workflow
 ---------------------------
 
 From the directory where the dax was created, run the planning script::
 
-    pycbc_basic_pegasus_plan pygrb.dax $LOGPATH --cache prior_data.map
+    pycbc_submit_dax --dax pygrb.dax --accounting-group <your.accounting.group.tag> --cache-file /path/to/prior_data.map
 
 Follow the remaining :ref:`pygrbplan` instructions to submit your reduced
 workflow.

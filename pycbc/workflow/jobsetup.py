@@ -28,13 +28,17 @@ and add jobs/nodes to a pycbc workflow. For details about pycbc.workflow see:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
-import math, os
 import logging
+import math, os
 import lal
 from glue import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
-from pycbc.workflow.legacy_ihope import LegacyTmpltbankExecutable, LegacyInspiralExecutable
+from pycbc.workflow.legacy_ihope import (LegacyTmpltbankExecutable,
+        LegacyInspiralExecutable, LegacyCohPTFInspiralExecutable,
+        LegacyCohPTFTrigCombiner, LegacyCohPTFTrigCluster,
+        LegacyCohPTFInjfinder, LegacyCohPTFInjcombiner, 
+        LegacyCohPTFSbvPlotter, LegacyCohPTFEfficiency, PyGRBMakeSummaryPage)
 
 
 def int_gps_time_to_str(t):
@@ -99,7 +103,8 @@ def select_matchedfilter_class(curr_exe):
     """
     exe_to_class_map = {
         'lalapps_inspiral_ahope'  : LegacyInspiralExecutable,
-        'pycbc_inspiral'          : PyCBCInspiralExecutable
+        'pycbc_inspiral'          : PyCBCInspiralExecutable,
+        'lalapps_coh_PTF_inspiral': LegacyCohPTFInspiralExecutable
     }
     try:
         return exe_to_class_map[curr_exe]
@@ -158,7 +163,14 @@ def select_generic_executable(workflow, exe_tag):
         "gstlal_inspiral_plot_sensitivity"            : GstlalPlotSensitivity,
         "gstlal_inspiral_plot_background" : GstlalPlotBackground,
         "gstlal_inspiral_plotsummary"     : GstlalPlotSummary,
-        "gstlal_inspiral_summary_page"    : GstlalSummaryPage
+        "gstlal_inspiral_summary_page"    : GstlalSummaryPage,
+        "pylal_cbc_cohptf_trig_combiner" : LegacyCohPTFTrigCombiner,
+        "pylal_cbc_cohptf_trig_cluster"  : LegacyCohPTFTrigCluster,
+        "pylal_cbc_cohptf_injfinder"     : LegacyCohPTFInjfinder,
+        "pylal_cbc_cohptf_injcombiner"   : LegacyCohPTFInjcombiner,
+        "pylal_cbc_cohptf_sbv_plotter"   : LegacyCohPTFSbvPlotter,
+        "pylal_cbc_cohptf_efficiency"    : LegacyCohPTFEfficiency,
+        "pygrb_make_summary_page"  : PyGRBMakeSummaryPage
     }
     try:
         return exe_to_class_map[exe_name]
@@ -304,6 +316,148 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                 curr_out_files = [i for i in curr_out_files if 'PSD_FILE'\
                                                                  not in i.tags]
                 out_files += curr_out_files
+
+    return out_files
+
+def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
+                                 science_segs, datafind_outs, output_dir,
+                                 parents=None, tags=[]):
+    """
+    Method for setting up coherent inspiral jobs.
+    """
+    cp = workflow.cp
+    ifos = science_segs.keys()
+    job_tag = curr_exe_job.name.upper()
+    data_seg, job_valid_seg = curr_exe_job.get_valid_times()
+    curr_out_files = FileList([])
+    bank_veto = datafind_outs[-1]
+    frame_files = datafind_outs[:-1]
+    split_bank_counter = 0
+    
+    if curr_exe_job.injection_file is None:
+        for split_bank in parents:
+            tag = list(tags)
+            tag.append(split_bank.tag_str)
+            node = curr_exe_job.create_node(data_seg, job_valid_seg,
+                    parent=split_bank, dfParents=frame_files,
+                    bankVetoBank=bank_veto, tags=tag)
+            workflow.add_node(node)
+            split_bank_counter += 1
+            curr_out_files.extend(node.output_files)
+    else:
+        for inj_file in curr_exe_job.injection_file:
+            for split_bank in parents:
+                tag = list(tags)
+                tag.append(inj_file.tag_str)
+                tag.append(split_bank.tag_str)
+                node = curr_exe_job.create_node(data_seg, job_valid_seg,
+                        parent=split_bank, inj_file=inj_file, tags=tag,
+                        dfParents=frame_files, bankVetoBank=bank_veto)
+                workflow.add_node(node)
+                split_bank_counter += 1
+                curr_out_files.extend(node.output_files)
+
+    # FIXME: Here we remove PSD files if they are coming
+    #        through. This should be done in a better way. On
+    #        to-do list.
+    curr_out_files = [i for i in curr_out_files if 'PSD_FILE'\
+                      not in i.tags]
+    out_files += curr_out_files
+
+    return out_files
+
+def multi_ifo_job_setup(workflow, out_files, curr_exe_job, science_segs,
+                        datafind_outs, output_dir, parents=None):
+    """
+    Documentation goes here.
+    """
+    cp = workflow.cp
+    ifos = science_segs.keys()
+    job_tag = curr_exe_job.name.upper()
+
+    ########### (1) ############
+    # Get the times that can be analysed and needed data lengths
+    data_length, valid_chunk, valid_length = identify_needed_data(curr_exe_job)
+
+    segmenter = MultiDetJobSegmenter(valid_chunk, data_length, science_segs,
+                                     ifos)
+    analyzable_segments = segmenter.identify_analysis_times()
+
+    for ifo_combo, seg_list in analyzable_segments.items():
+        for curr_seg in seg_list:
+            segmenter.set_current_segment(curr_seg, ifo_combo)
+            for job_num in range(segmenter.num_jobs):
+                ############## (3) #############
+                # Figure out over what times this job will be valid for
+
+                job_valid_seg = segmenter.get_valid_times_for_job(job_num,
+                                                   allow_overlap=False)
+
+                ############## (4) #############
+                # Get the data that this job should read in
+                job_data_seg_dict = segmenter.get_data_times_for_job(job_num,
+                                                                 job_valid_seg)
+
+                ############# (5) ############
+                # Identify parents/inputs to the job
+
+                if parents:
+                    # Find the set of files with the best overlap
+                    # FIXME: How to do this correctly?
+                    curr_parent = parents.find_outputs_in_range(ifo_combo,
+                                             job_valid_seg, useSplitLists=True)
+                    if not curr_parent:
+                        err_string = ("No parent jobs overlapping %d to %d.\n"
+                                      %(job_valid_seg[0], job_valid_seg[1]))
+                        err_string += "This is a bad error! Contact developer."
+                        raise ValueError(err_string)
+                else:
+                    curr_parent = [None]
+
+                if datafind_outs:
+                    curr_dfouts = FileList([])
+                    for ifo in ifo_combo:
+                        curr_outs = datafind_outs.find_all_output_in_range(ifo,
+                                    job_data_seg_dict[ifo], useSplitLists=True)
+                        if not curr_outs:
+                            err_str = ("No datafind jobs between %d to %d.\n"
+                                    %(job_data_seg[0],job_data_seg[1]))
+                            err_str += "Shouldn't happen. Contact developer."
+                            raise ValueError(err_str)
+
+                        curr_dfouts.extend(curr_outs)
+
+
+                ############## (6) #############
+                # Make node and add to workflow
+
+                # Note if I have more than one curr_parent I need to make more
+                # than one job. If there are no curr_parents it is set to
+                # [None] and I make a single job. This catches the case of a
+                # split template bank where I run a number of jobs to cover a
+                # single range of time.
+                for pnum, parent in enumerate(curr_parent):
+                    if len(curr_parent) != 1:
+                        tag = ["JOB%d" %(pnum,)]
+                    else:
+                        tag = []
+                    # To ensure output file uniqueness I add a tag
+                    # We should generate unique names automatically, but it is a
+                    # pain until we can set the output names for all Executables
+                    # FIXME: This needs to take multi-ifo input
+                    node = curr_exe_job.create_node(job_data_seg_dict,
+                                                    job_valid_seg,
+                                                    parent=parent,
+                                                    dfParents=curr_dfouts,
+                                                    tags=tag)
+                    workflow.add_node(node)
+                    curr_out_files = node.output_files
+                    # FIXME: Here we remove PSD files if they are coming
+                    #        through. This should be done in a better way. On
+                    #        to-do list.
+                    curr_out_files = [i for i in curr_out_files if 'PSD_FILE'\
+                                                                 not in i.tags]
+                    out_files += curr_out_files
 
     return out_files
 
@@ -960,6 +1114,39 @@ class InspinjfindExecutable(Executable):
                                  tags=self.tags, store_file=self.retain_files)
         return node
 
+class PycbcSplitInspinjExecutable(Executable):
+    """
+    The class responsible for running the pycbc_split_inspinj executable
+    """
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
+    def __init__(self, cp, exe_name, num_splits, universe=None, ifo=None,
+                 out_dir=None):
+        super(PycbcSplitInspinjExecutable, self).__init__(cp, exe_name,
+                universe, ifo, out_dir, tags=[])
+        self.num_splits = int(num_splits)
+    def create_node(self, parent):
+        node = Node(self)
+
+        node.add_input_opt('--input-file', parent)
+        
+        if parent.name.endswith("gz"):
+            ext = ".xml.gz"
+        else:
+            ext = ".xml"
+
+        out_files = FileList([])
+        for i in range(self.num_splits):
+            curr_tag = 'split%d' % i
+            curr_tags = parent.tags + [curr_tag]
+            job_tag = parent.description + "_" + self.name.upper()
+            out_file = File(parent.ifo_list, job_tag, parent.segment,
+                            extension=ext, directory=self.out_dir,
+                            tags=curr_tags, store_file=self.retain_files)
+            out_files.append(out_file)
+        
+        node.add_output_list_opt('--output-files', out_files)
+        return node
+
 class PycbcPickleHorizonDistsExecutable(Executable):
     """
     The class responsible for running the pycbc_pickle_horizon_distances
@@ -1167,18 +1354,86 @@ class LalappsInspinjExecutable(Executable):
     The class used to create jobs for the lalapps_inspinj Executable.
     """
     current_retention_level = Executable.FINAL_RESULT
-    def create_node(self, segment):
+    def create_node(self, segment, exttrig_file=None, tags=[]):
         node = Node(self)
 
+        curr_tags = self.tags + tags
+        # This allows the desired number of injections to be given explicitly
+        # in the config file. Used for coh_PTF as segment length is unknown
+        # before run time.
         if self.get_opt('write-compress') is not None:
             ext = '.xml.gz'
         else:
             ext = '.xml'
 
+        if exttrig_file is not None:
+            num_injs = int(self.cp.get_opt_tags('workflow-injections',
+                                                'num-injs', curr_tags))
+            inj_tspace = float(segment[1] - segment[0]) / num_injs
+            node.add_opt('--time-interval', inj_tspace)
+            node.add_opt('--time-step', inj_tspace)
+            
+            if self.get_opt('l-distr') == 'exttrig':
+                node.add_opt('--exttrig-file', '%s' % exttrig_file.storage_path)
+            
+            node.new_output_file_opt(segment, ext, '--output',
+                                     store_file=self.retain_files)
+        else:
+            node.new_output_file_opt(segment, ext, '--output',
+                                     store_file=self.retain_files)
+        
         node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
         node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
-        node.new_output_file_opt(segment, ext, '--output',
-                                 store_file=self.retain_files)
+        return node
+
+class LigolwCBCJitterSkylocExecutable(Executable):
+    """
+    The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
+    """
+    current_retention_level = Executable.CRITICAL
+    def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
+                 tags=[]):
+        Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
+                            tags=tags)
+        self.cp = cp
+        self.out_dir = out_dir
+        self.exe_name = exe_name
+            
+    def create_node(self, parent, segment, tags=[]):
+        if not parent:
+            raise ValueError("Must provide an input file.")
+
+        node = Node(self) 
+        output_file = File(parent.ifo_list, self.exe_name,
+                           segment, extension='.xml', store_file=True,
+                           directory=self.out_dir, tags=tags)
+        node.add_output_opt('--output-file', output_file)
+        node.add_input_arg(parent)
+        return node
+
+class LigolwCBCAlignTotalSpinExecutable(Executable):
+    """
+    The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
+    """
+    current_retention_level = Executable.CRITICAL
+    def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
+                 tags=[]):
+        Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
+                            tags=tags)
+        self.cp = cp
+        self.out_dir = out_dir
+        self.exe_name = exe_name
+
+    def create_node(self, parent, segment, tags=[]):
+        if not parent:
+            raise ValueError("Must provide an input file.")
+        
+        node = Node(self)
+        output_file = File(parent.ifo_list, self.exe_name, segment,
+                           extension='.xml', store_file=self.retain_files,
+                           directory=self.out_dir, tags=tags)
+        node.add_output_opt('--output-file', output_file)
+        node.add_input_arg(parent)
         return node
 
 class PycbcTimeslidesExecutable(Executable):
@@ -1198,11 +1453,12 @@ class PycbcSplitBankExecutable(Executable):
     
     current_retention_level = Executable.NON_CRITICAL
     def __init__(self, cp, exe_name, num_banks,
-                 ifo=None, out_dir=None, tags=[], universe=None):
-        super(PycbcSplitBankExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
+                 ifo=None, out_dir=None, universe=None):
+        super(PycbcSplitBankExecutable, self).__init__(cp, exe_name, universe,
+                ifo, out_dir, tags=[])
         self.num_banks = int(num_banks)
 
-    def create_node(self, bank):
+    def create_node(self, bank, tags=[]):
         """
         Set up a CondorDagmanNode class to run lalapps_splitbank code
 
@@ -1225,7 +1481,7 @@ class PycbcSplitBankExecutable(Executable):
             curr_tag = 'bank%d' %(i)
             # FIXME: What should the tags actually be? The job.tags values are
             #        currently ignored.
-            curr_tags = bank.tags + [curr_tag]
+            curr_tags = bank.tags + [curr_tag] + tags
             job_tag = bank.description + "_" + self.name.upper()
             out_file = File(bank.ifo_list, job_tag, bank.segment,
                                extension=".xml.gz", directory=self.out_dir,

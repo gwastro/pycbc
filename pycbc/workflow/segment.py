@@ -31,7 +31,7 @@ import os,sys,shutil
 import logging
 import urllib, urlparse
 import lal
-from glue import segments
+from glue import segments, segmentsUtils
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.workflow.core import Executable, FileList, Node, OutSegFile, make_analysis_dir, make_external_call, File
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigoLWCombineSegsExecutable
@@ -854,6 +854,8 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
                                           'pad-data')))
     quanta = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                          'quanta')))
+    bufferleft = int(cp.get('workflow-exttrig_segments', 'num-buffer-before'))
+    bufferright = int(cp.get('workflow-exttrig_segments', 'num-buffer-after'))
 
     # Check available data segments meet criteria specified in arguments
     sciencesegs = segments.segmentlistdict(sciencesegs)
@@ -896,10 +898,22 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
     logging.info("%ds of padding applied at beginning and end of segment."
                  % padding)
 
+
+    # Construct on-source
+    onstart = triggertime - onbefore
+    onend = triggertime + onafter
+    oncentre = onstart + ((onbefore + onafter) / 2)
+    onsrc = segments.segment(onstart, onend)
+    logging.info("Constructed ON-SOURCE: duration %ds (%ds before to %ds after"
+                 " trigger)."
+                 % (abs(onsrc), triggertime - onsrc[0],
+                    onsrc[1] - triggertime))
+    onsrc = segments.segmentlist([onsrc])
+
     # Maximal, centred coherent network segment
-    idealsegment = segments.segment(int(triggertime - padding -
+    idealsegment = segments.segment(int(oncentre - padding -
                                     0.5 * maxduration),
-                                    int(triggertime + padding +
+                                    int(oncentre + padding +
                                     0.5 * maxduration))
 
     # Construct off-source
@@ -915,11 +929,11 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
                                    offsrc[0] + maxduration + 2 * padding)
 
     # Trimming off-source
-    excess = abs(offsrc) % quanta - 2 * padding
+    excess = (abs(offsrc) - 2 * padding) % quanta
     if excess != 0:
         logging.info("Trimming %ds excess time to make OFF-SOURCE duration a "
                      "multiple of %ds" % (excess, quanta))
-        offset = (offsrc[0] + abs(offsrc) / 2.) - triggertime
+        offset = (offsrc[0] + abs(offsrc) / 2.) - oncentre
         if 2 * abs(offset) > excess:
             if offset < 0:
                 offsrc &= segments.segment(offsrc[0] + excess,
@@ -931,8 +945,9 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
         else:
             logging.info("This will make OFF-SOURCE symmetrical about trigger "
                          "time.")
-            offsrc = segments.segment(offsrc[0] - offset + excess / 2,
-                                      offsrc[1] - offset - excess / 2)
+            start = int(offsrc[0] - offset + excess / 2)
+            end = int(offsrc[1] - offset - round(float(excess) / 2))
+            offsrc = segments.segment(start, end)
             assert abs(offsrc) % quanta == 2 * padding
 
     logging.info("Constructed OFF-SOURCE: duration %ds (%ds before to %ds "
@@ -942,17 +957,9 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
                     offsrc[1] - triggertime - padding))
     offsrc = segments.segmentlist([offsrc])
 
-    # Construct on-source
-    onsrc = segments.segment(triggertime - onbefore,
-                             triggertime + onafter)
-    logging.info("Constructed ON-SOURCE: duration %ds (%ds before to %ds after"
-                 " trigger)."
-                 % (abs(onsrc), triggertime - onsrc[0],
-                    onsrc[1] - triggertime))
-    onsrc = segments.segmentlist([onsrc])
-
     # Put segments into segmentlistdicts
-    onsource = offsource = segments.segmentlistdict()
+    onsource = segments.segmentlistdict()
+    offsource = segments.segmentlistdict()
     ifos = ''
     for iifo in sciencesegs.keys():
         ifos += str(iifo)
@@ -968,6 +975,21 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
                           offsource[iifo])
     currFile.toSegmentXml()
     logging.info("Optimal coherent segment calculated.")
+
+    #FIXME: For legacy coh_PTF_post_processing we must write out the segments
+    #       to segwizard files (with hardcoded names!)
+    offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
+    segmentsUtils.tosegwizard(open(offsourceSegfile, "w"), offsrc)
+
+    onsourceSegfile = os.path.join(out_dir, "onSourceSeg.txt")
+    segmentsUtils.tosegwizard(file(onsourceSegfile, "w"), onsrc)
+
+    onlen = abs(onsrc[0])
+    bufferSegment = segments.segment(onstart - bufferleft * onlen,
+                                     onend + bufferright * onlen)
+    bufferSegfile = os.path.join(out_dir, "bufferSeg.txt")
+    segmentsUtils.tosegwizard(file(bufferSegfile, "w"),
+                              segments.segmentlist([bufferSegment]))
 
     return onsource, offsource
 

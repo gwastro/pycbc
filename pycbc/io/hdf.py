@@ -55,7 +55,8 @@ class DictArray(object):
                         self.data[g].append(d[g][:])
                     
             for k in self.data:
-                self.data[k] = np.concatenate(self.data[k])
+                if not len(self.data[k]) == 0:
+                    self.data[k] = np.concatenate(self.data[k])
 
         for k in self.data:
             setattr(self, k, self.data[k])
@@ -110,6 +111,9 @@ class StatmapData(DictArray):
         """ Cluster the dict array, assuming it has the relevant Coinc colums,
         time1, time2, stat, and timeslide_id
         """
+        # If no events, do nothing
+        if len(self.time1) == 0 or len(self.time2) == 0:
+            return self
         from pycbc.events import cluster_coincs
         interval = self.attrs['timeslide_interval']
         cid = cluster_coincs(self.stat, self.time1, self.time2,
@@ -416,12 +420,24 @@ class ForegroundTriggers(object):
         return self.coinc_file.get_column(variable)[self.sort_arr]
 
     def get_bankfile_array(self, variable):
-        return self.bank_file[variable][:][self.template_id]
+        try:
+            return self.bank_file[variable][:][self.template_id]
+        except IndexError:
+            if len(self.template_id) == 0:
+                return np.array([])
+            raise
 
     def get_snglfile_array_dict(self, variable):
         return_dict = {}
         for ifo in self.sngl_files.keys():
-            curr = self.sngl_files[ifo].get_column(variable)[self.trig_id[ifo]]
+            try:
+                curr = self.sngl_files[ifo].get_column(variable)[\
+                                                             self.trig_id[ifo]]
+            except IndexError:
+                if len(self.trig_id[ifo]) == 0:
+                    curr = np.array([])
+                else:
+                    raise
             return_dict[ifo] = curr
         return return_dict
 
