@@ -161,6 +161,22 @@ def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None):
     workflow += node
     return node.output_files[0]
 
+def make_veto_table(workflow, out_dir, vetodef_file=None, tags=None):
+    """ Creates a node in the workflow for writing the veto_definer
+    table. Returns a File instances for the output file.
+    """
+    if vetodef_file is None:
+        vetodef_file = workflow.cp.get_opt_tags("workflow-segments",
+                                           "segments-veto-definer-file", [])
+    if tags is None: tags = []
+    makedir(out_dir)
+    node = PlotExecutable(workflow.cp, 'page_vetotable', ifos=workflow.ifos,
+                    out_dir=out_dir, tags=tags).create_node()
+    node.add_opt('--veto-definer-file', vetodef_file)
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+    workflow += node
+    return node.output_files[0]
+
 def make_seg_plot(workflow, seg_files, out_dir, seg_names=None, tags=None):
     """ Creates a node in the workflow for plotting science, and veto segments.
     """
