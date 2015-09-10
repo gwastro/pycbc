@@ -1,0 +1,457 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2015 Andrew R. Williamson
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# =============================================================================
+# Preamble
+# =============================================================================
+
+from __future__ import division
+
+import os,sys,datetime,re,glob,shutil,ConfigParser
+from argparse import ArgumentParser
+import random
+import string
+from pycbc.workflow.core import make_external_call
+from pycbc.results.legacy_grb import *
+from glue import markup
+from pylal import grbsummary,rate,antenna,git_version
+from lal.gpstime import gps_to_utc,LIGOTimeGPS
+
+__author__  = "Andrew Williamson <andrew.williamson@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__    = git_version.date
+
+
+def parse_command_line():
+
+    parser = ArgumentParser()
+
+    parser.add_argument("-g", "--grb-name", type=str, default=None,
+                        help="GRB name.")
+
+    parser.add_argument("-f", "--config-file", type=str,
+                        default=None, help="location of the run ini file")
+
+    parser.add_argument("-i", "--ifo-tag", type=str, default=None,
+                        help="The ifo tag, H1L1 or H1L1V1 for instance")
+
+    parser.add_argument("-t", "--start-time", type=int, default=None,
+                        help="GPS time of the GRB trigger")
+
+    parser.add_argument("-r", "--ra", type=float, default=None,
+                        help="Right ascension of external trigger")
+
+    parser.add_argument("-d", "--dec", type=float, default=None,
+                        help="Declination of external trigger")
+    
+    parser.add_argument("-o", "--output-path", type=str, default=os.getcwd(),
+                        help="output directory")
+
+    parser.add_argument("-w", "--html-path", type=str, default=None,
+                        help="final web directory")
+
+    parser.add_argument("-s", "--seg_plot", type=str, default=None,
+                        help="segment plot")
+
+    parser.add_argument("-D", "--exclusion-injections", type=str, default=None,
+                        help="A comma seperated list of the detection injection"
+                             " run names.")
+
+    parser.add_argument("-T", "--tuning-injections", type=str, default=None,
+                        help="A comma seperated list of the tuning injection "
+                             "run names.")
+
+    parser.add_argument("-O", "--open-box", default=False,
+                        help ="Use to show onsource results")
+
+    parser.add_argument("-G", "--sky-grid", default=False,
+                        help="Include sky grid information")
+
+    parser.add_argument("-M", "--mass-bins", type=str, default="0.0-8.0",
+                        help="comma separated list of dash-separated pairs "
+                             "of m_low-m_high mass bins")
+
+    parser.add_argument("-n", "--ipn", default=False,
+                        help="Include ipn information")
+
+    parser.add_argument("-e", "--ipn-error", type=float, default=None,
+                        help="size of the IPN error box")
+
+    args = parser.parse_args()
+
+    if not args.config_file:
+        parser.error("must provide --config-file")
+
+    if not args.ifo_tag:
+        parser.error("must provide --ifo-tag")
+
+    return args
+
+# =============================================================================
+# Main function
+# =============================================================================
+
+def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
+                           detectionInjList=[], tuningInjList=[],
+                           open_box=False, grid=False, ipn=False,
+                           massBins = [('0','8.0')]):
+
+    """
+    Builds the result webpage for a PyGRB workflow and places it in an
+    output directory along with the workflow result plots and other outputs.
+
+    Parameters
+    ----------
+    args : argparse
+    Parsed argparse command line arguments.
+
+    inifile : file
+    The parsed configuration file used to generate the workflow.
+
+    outdir : directory
+    The directory containing the post processing outputs, where the .html file
+    will be written to.
+
+    htmldir : directory
+    The web-accessible directory where all final workflow outputs will be
+    copied to.
+
+    ifoTag : str
+    The string representing all interferometers used in the analysis.
+
+    detectionInjList : list
+    List of tags of the detection injection sets.
+
+    tuningInjList : list
+    List of tags of the tuning injection sets.
+
+    open_box : boolean
+    If true, generates the open box webpage. Otherwise a closed box page is
+    generated.
+
+    grid : boolean
+    If true, uses sky grid information.
+
+    ipn : boolean
+    If true, a page for an IPN GRB is generated.
+
+    massBins : list
+    A list of tuples, each tuple representing the upper and lower bounds of
+    a bin in mass parameter space, used to split the triggers into mass bins.
+    """
+    # get entry information  
+    ifos = args.ifo_tag
+    GRBnum = args.grb_name
+    os.chdir(outdir)
+
+    # get sections
+    #injList = glob.glob('injections*')
+    
+    trials  = sorted(glob.glob('OFFTRIAL_*'))
+
+    # initialise page
+    title = 'PyGRB + coh_PTF: A targeted, coherent CBC-GRB search\nGRB: %s'\
+            % GRBnum
+    if open_box:
+            title += '\nOPEN BOX PAGE'
+    else:
+            title += '\nCLOSED BOX PAGE'
+    banner  = write_banner(title)
+    js = 'coh_PTF_html_summary.js'
+    script = {js:'javascript'}
+    css = 'coh_PTF_html_summary.css'
+    webpage = initialize_page(title, css, script, header=banner())
+    #if open_box:
+    #  webpage.add('<img src="https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S5/OpenBox.jpg">')
+    #else:
+    #  webpage.add('<img src="https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S5/thomasLegacy.jpg">')
+    
+    # set divs
+    webpage.div(id="maintab")
+    webpage.div(id="content")
+
+    # write summary section
+    secname = 'Summary information'
+    i = 0
+    webpage.input(id="input_%s" % i, type="button", class_="h2",
+                  onclick="toggleVisible('%s');" % i, value=secname)
+    webpage.div(id="div_%s" % i, style="display: none;")
+
+    # get sky error from config
+    if grid:
+        err = args.sky_error
+    else:
+        err = None
+    if args.ipn:
+        ipnerr = args.ipn_error
+        webpage = write_summary(webpage, args, ifos, None, args.ipn, ipnerr)
+        webpage = write_antenna(webpage, args, None, args.ipn)
+    else:
+        webpage = write_summary(webpage, args, ifos, err, None, None)
+        webpage = write_antenna(webpage, args, grid, None)
+
+    # add links
+    seglink = 'segment_plot_%s.png' % GRBnum
+    inilink = os.path.basename(inifile)
+    linktext = {seglink:   'Segments availability',
+                inilink:   'ini-file used'}
+    for link in [seglink, inilink]:
+        webpage.add(linktext[link])
+        webpage.a(href=link)
+        webpage.add('here')
+        webpage.a.close()
+        webpage.br()
+
+    webpage.div.close()
+
+    # copy over these files
+    ## plot segments is generated by dataquery
+    segplot = '%s' % (args.seg_plot)
+    if os.path.isfile(segplot):
+        shutil.copy(segplot, outdir) 
+    else:
+        print >>sys.stderr, 'WARNING: Cannot find segments availability plot.'
+    ## inifile is simply copied
+    if not os.path.isfile('%s/%s' % (outdir, os.path.basename(inifile))) or \
+            not os.path.samefile(inifile, '%s/%s'
+                                 % (outdir, os.path.basename(inifile))):
+        shutil.copy(inifile, outdir)
+    
+
+    # add off source trig plots
+    secname = 'Offsource triggers versus time'
+    i += 1
+    webpage.input(id="input_%s" % i, type="button", class_="h2",
+                  onclick="toggleVisible('%s');" % i, value=secname)
+    webpage.div(id="div_%s" % i, style="display: none;")
+
+    webpage = write_offsource(webpage, args, GRBnum)
+
+    webpage.div.close()
+
+    # add signal consistency plots
+    secname = 'Signal consistency plots'
+    i += 1
+    webpage.input(id="input_%s" % i, type="button", class_="h2",
+                  onclick="toggleVisible('%s');" % i, value=secname)
+    webpage.div(id="div_%s" % i, style="display: none;")
+
+    webpage.h3()
+    webpage.add('Chi squared tests')
+    webpage.h3.close()
+    webpage.h4()
+    webpage.add('Plot key')
+    webpage.h4.close()
+    webpage.add('Blue crosses: Background triggers')
+    webpage.br()
+    webpage.add('Red crosses: Injections triggers')
+    webpage.br()
+    webpage.add('Black line: Veto line, shaded region indicates vetoed area')
+    webpage.br()
+    webpage.add('Yellow lines: Contours of new SNR')
+    webpage = write_chisq(webpage, tuningInjList, GRBnum)
+    webpage.h3()
+    webpage.add('Individual detector and null SNRs')
+    webpage.h3.close()
+    webpage.h4()
+    webpage.add('Plot key')
+    webpage.h4.close()
+    webpage.add('Blue crosses: Background triggers')
+    webpage.br()
+    webpage.add('Red crosses: Injections triggers')
+    webpage.br()
+    webpage.add('Black line: Veto line, shaded region indicates vetoed area')
+    webpage.h5()
+    webpage.add('For the null stat plot')
+    webpage.h5.close()
+    webpage.add('Green line: Above this triggers have reduced detection '
+                'statistic')
+    webpage.br()
+    webpage.add('Magenta line: On this line the statistic is reduced by a '
+                'factor of two')
+    webpage.h5()
+    webpage.add('For the single detector plots')
+    webpage.h5.close()
+    webpage.add('The cut is only applied to the two most sensitive detectors, '
+                'this can vary with mass and sky location, which is shown on '
+                'the plots')
+    webpage.br()
+    webpage.add('Green line: This indicates the expected SNR for optimally '
+                'oriented injections')
+    webpage.br()
+    webpage.add('Magenta and cyan lines: Show 1 and 2 sigma errors on the '
+                'green line')
+    webpage = write_inj_snrs(webpage, ifos, tuningInjList, GRBnum)
+
+    webpage.div.close()
+
+    # add found/missed plots
+    if detectionInjList:
+        secname = 'Found/missed injections'
+        i += 1
+        webpage.input(id="input_%s" % i, type="button", class_="h2",
+                      onclick="toggleVisible('%d');" % i, value=secname)
+        webpage.div(id="div_%s" % i, style="display: none;")
+
+        webpage.h3()
+        webpage.add('A key for these plots')
+        webpage.h3.close()
+        webpage.add('Black cross indicates no trigger was found coincident '
+                    'with the injection')
+        webpage.br()
+        webpage.add('Red cross indicates a trigger was found coincident with '
+                    'the injection but it was vetoed')
+        webpage.br()
+        webpage.add('Green cross indicates that a trigger was found '
+                    'coincident with the injection and it was louder than all '
+                    'events in the offsource')
+        webpage.br()
+        webpage.add('Coloured circle indicates that a trigger was found '
+                    'coincident with the injection but it was not louder than '
+                    'all offsource events. The colour bar gives the FAP of '
+                    'the trigger.')
+
+        webpage = write_found_missed(webpage, args, detectionInjList)
+
+        webpage.div.close()
+
+    if tuningInjList and grid:
+        # add injection recovery plots
+        secname = 'Injection recovery'
+        i += 1
+        webpage.input(id="input_%s" % i, type="button", class_="h2",
+                      onclick="toggleVisible('%d');" % i, value=secname)
+        webpage.div(id="div_%s" % i, style="display: none;")
+        webpage = write_recovery(webpage, detectionInjList)
+        webpage.div.close()
+
+    if tuningInjList and ipn:
+        # add injection recovery plots
+        secname = 'Injection recovery'
+        i += 1
+        webpage.input(id="input_%s" % i, type="button", class_="h2",
+                      onclick="toggleVisible('%d');" % i, value=secname)
+        webpage.div(id="div_%s" % i, style="display: none;")
+        webpage = write_recovery(webpage, detectionInjList)
+        webpage.div.close()
+
+    # add loudest off source events
+    secname = 'Loudest offsource events'
+    i += 1
+    webpage.input(id="input_%s" % i, type="button", class_="h2",
+                  onclick="toggleVisible('%s');" % i, value=secname)
+    webpage.div(id="div_%s" % i, style="display: none;")
+
+    webpage = write_loudest_events(webpage, massBins)
+
+    webpage.div.close()
+
+    # write trial results
+    for ii,trial in zip(range(len(trials)),trials):
+        reduced = False
+        if ii > 1:
+            reduced = True
+        secname = 'Results for %s' % trial.replace('_',' ').title()
+        i += 1
+        webpage.input(id="input_%s" % i, type="button", class_="h2",
+                      onclick="toggleVisible('%s');" % i, value=secname)
+        webpage.div(id="div_%s" % i, style="display: none;")
+        webpage = write_exclusion_distances(webpage, trial, detectionInjList,
+                                            massBins, reduced=reduced,
+                                            onsource=False)
+        webpage.div.close()
+
+    if open_box:
+
+        trial = 'ONSOURCE'
+
+        webpage.hr(class_="long", style="margin-top: 20px;")
+
+        # add on source trig plots
+        secname = 'Full data triggers versus time'
+        i += 1
+        webpage.input(id="input_%s" % i, type="button", class_="h2",
+                      onclick="toggleVisible('%s');" % i, value=secname)
+        webpage.div(id="div_%s" % i, style="display: none;")
+    
+        webpage = write_offsource(webpage, ifos, GRBnum, onsource=True)
+        webpage.div.close()
+    
+        # write on source events
+        trial = 'ONSOURCE'
+        secname = 'Results for %s' % trial.replace('_',' ').title()
+        i += 1
+        webpage.input(id="input_%s" % i, type="button", class_="h2",
+                      onclick="toggleVisible('%s');" % i, value=secname)
+        webpage.div(id="div_%s" % i, style="display: none;")
+        webpage = write_exclusion_distances(webpage, trial, detectionInjList,
+                                            massBins, reduced=False,
+                                            onsource=False)
+        webpage.div.close()
+
+    webpage.div.close()
+    webpage.div.close()
+    webpage.div.close()
+    webpage.body.close()
+    webpage.html.close()
+
+    file = open('%s/summary.html' % outdir, 'w')
+    file.write(webpage())
+    file.close()
+
+    if htmldir is not None:
+        if os.path.isdir(htmldir):
+            warn = "WARNING: %s already exists! " % htmldir
+            htmldir += "_"
+            htmldir += ''.join(random.choice(\
+                    string.ascii_uppercase + string.digits) for _ in range(8))
+            warn += "Placing output page in %s." % htmldir
+            sys.stdout.write(warn)
+
+        shutil.copytree(outdir, htmldir)
+        shutil.copy2('%s/coh_PTF_html_summary.css' % os.path.dirname(outdir),
+                                  htmldir)
+        shutil.copy2('%s/coh_PTF_html_summary.js' % os.path.dirname(outdir),
+                                  htmldir)
+  
+#####################
+# MAIN BODY OF CODE #
+#####################
+
+args = parse_command_line()
+
+inifile    = os.path.abspath(args.config_file)
+outdir     = os.path.abspath(args.output_path)
+htmldir    = os.path.abspath(args.html_path)
+ifoTag     = args.ifo_tag
+grid       = args.sky_grid
+ipn        = args.ipn
+massBins = map(lambda p: map(float, p.split('-')),
+               args.mass_bins.split(','))
+detInjsList = []
+tunInjsList = []
+if args.exclusion_injections:
+    detInjsList = args.exclusion_injections.split(",")
+if args.tuning_injections:
+    tunInjsList = args.tuning_injections.split(",")
+
+build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
+                       detectionInjList=detInjsList,
+                       tuningInjList=tunInjsList, open_box=args.open_box,
+                       grid=grid, ipn=ipn, massBins = massBins)
+

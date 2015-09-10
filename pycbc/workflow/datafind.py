@@ -133,6 +133,19 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
             setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
                                                             outputDir, tag=tag)
 
+    elif datafindMethod == "FROM_PREGENERATED_LCF_FILES":
+        ifos = scienceSegs.keys()
+        datafindcaches, datafindouts = \
+            setup_datafind_from_pregenerated_lcf_files(cp, ifos,
+                                                       outputDir, tag=tag)
+    else:
+        msg = "Entry datafind-method in [workflow-datafind] does not have "
+        msg += "expected value. Valid values are "
+        msg += "AT_RUNTIME_MULTIPLE_FRAMES, AT_RUNTIME_SINGLE_FRAMES "
+        msg += "AT_RUNTIME_MULTIPLE_CACHES or AT_RUNTIME_SINGLE_CACHES. "
+        msg += "Consult the documentation for more info."
+        raise ValueError(msg)
+
     using_backup_server = False
     if datafindMethod == "AT_RUNTIME_MULTIPLE_FRAMES" or \
                                   datafindMethod == "AT_RUNTIME_SINGLE_FRAMES":
@@ -152,19 +165,6 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
                                              backup_datafindouts, datafindouts)
             datafindcaches.extend(backup_datafindcaches)
             datafindouts.extend(backup_datafindouts)
-
-    elif datafindMethod == "FROM_PREGENERATED_LCF_FILES":
-        ifos = scienceSegs.keys()
-        datafindcaches, datafindouts = \
-            setup_datafind_from_pregenerated_lcf_files(cp, ifos,
-                                                       outputDir, tag=tag)
-    else:
-        msg = "Entry datafind-method in [workflow-datafind] does not have "
-        msg += "expected value. Valid values are "
-        msg += "AT_RUNTIME_MULTIPLE_FRAMES, AT_RUNTIME_SINGLE_FRAMES "
-        msg += "AT_RUNTIME_MULTIPLE_CACHES or AT_RUNTIME_SINGLE_CACHES. "
-        msg += "Consult the documentation for more info."
-        raise ValueError(msg)
 
     logging.info("setup_datafind_runtime_generated completed")
     # If we don't have frame files covering all times we can update the science
@@ -906,6 +906,8 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     # workflow format output file
     cache_file = File(ifo, 'DATAFIND', seg, extension='lcf',
                       directory=outputDir, tags=currTags)
+    cache_file.PFN(cache_file.cache_entry.path, site='local')
+    
     dfCache.ifo = ifo
     # Dump output to file
     fP = open(cache_file.storage_path, "w")
