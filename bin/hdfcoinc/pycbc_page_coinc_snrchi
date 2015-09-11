@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+
+import sys
 import numpy, h5py, argparse, matplotlib
 from matplotlib import colors
 matplotlib.use('Agg')
@@ -15,27 +17,32 @@ def snr_from_chisq(chisq, newsnr, q=6.):
 eff_map = {'H1':'eff_dist_h', 'L1':'eff_dist_l', 'V1':'eff_dist_v'} 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--found-injection-file', help='HDF format found injection file')
-parser.add_argument('--single-injection-file', help='Single detector trigger files from the injection set. One per ifos')
-parser.add_argument('--coinc-statistic-file', help='HDF format statistic file')
-parser.add_argument('--single-trigger-file', help='Single detector triggers files from the zero lag run')
-parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values to draw contours at.", default=[])
+parser.add_argument('--found-injection-file', required=True,
+                    help='HDF format found injection file')
+parser.add_argument('--single-injection-file', required=True,
+                    help='Single detector trigger files from the injection set. One per ifos')
+parser.add_argument('--coinc-statistic-file', required=True,
+                    help='HDF format statistic file')
+parser.add_argument('--single-trigger-file', required=True,
+                    help='Single detector triggers files from the zero lag run')
+parser.add_argument('--newsnr-contours', nargs='*', default=[],
+                    help="List of newsnr values to draw contours at.")
 parser.add_argument('--background-front', action='store_true', default=False)
 parser.add_argument('--chisq-choice', choices=chisq_choices,
                     default='traditional',
                     help='Which chisquared to plot. Default=traditional')
-parser.add_argument('--output-file')
+parser.add_argument('--output-file', required=True)
 args = parser.parse_args()
 
 import mpld3
 
 # Add the background triggers
-f = h5py.File(args.coinc_statistic_file)
+f = h5py.File(args.coinc_statistic_file, 'r')
 b_tids = {}
 b_tids[f.attrs['detector_1']] = f['background/trigger_id1']
 b_tids[f.attrs['detector_2']] = f['background/trigger_id2']
 
-f = h5py.File(args.single_trigger_file)
+f = h5py.File(args.single_trigger_file, 'r')
 ifo = f.keys()[0]
 f = f[ifo]
 tid = b_tids[ifo][:]
@@ -45,11 +52,11 @@ bkg_chisq = get_chisq_from_file_choice(f, args.chisq_choice)[tid]
 
 fig = pylab.figure()
 pylab.scatter(bkg_snr, bkg_chisq, marker='o', color='black',
-              linewidth=0, s=2.0, label='background', 
+              linewidth=0, s=2.0, label='Background', 
               zorder=args.background_front)
 
 # Add the found injection points
-f = h5py.File(args.found_injection_file)
+f = h5py.File(args.found_injection_file, 'r')
 inj_tids = {}
 inj_tids[f.attrs['detector_1']] = f['found_after_vetoes/trigger_id1']
 inj_tids[f.attrs['detector_2']] = f['found_after_vetoes/trigger_id2']
@@ -57,7 +64,7 @@ inj_tids[f.attrs['detector_2']] = f['found_after_vetoes/trigger_id2']
 inj_idx = f['found_after_vetoes/injection_index'][:]
 eff_dist = f['injections'][eff_map[ifo]][:][inj_idx]
 
-f = h5py.File(args.single_injection_file)[ifo]
+f = h5py.File(args.single_injection_file, 'r')[ifo]
 tid = inj_tids[ifo][:]
 if len(tid):
     inj_snr = f['snr'][:][tid]
@@ -105,6 +112,14 @@ except ValueError:
 pylab.legend(loc='lower right', prop={'size': 12})
 pylab.grid(which='major', ls='solid', alpha=0.7, linewidth=.5)
 pylab.grid(which='minor', ls='solid', alpha=0.7, linewidth=.1)
-pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-                                     title='%s %s chisq vs SNR. Background with injections %s' % (ifo.upper(), args.chisq_choice, 'behind' if args.background_front else 'ontop'), 
-                                     caption='')
+
+title = '%s %s chisq vs SNR. Background with injections %s' \
+        % (ifo.upper(), args.chisq_choice,
+           'behind' if args.background_front else 'ontop')
+caption = """Distribution of SNR and %s chi-squared veto for single detector
+triggers. Black points are background triggers. Triangles are injection
+triggers colored by the effective distance of the injection. Dashed lines show
+contours of constant NewSNR.""" % args.chisq_choice
+pycbc.results.save_fig_with_metadata(fig, args.output_file, title=title, 
+                                     caption=caption, cmd=' '.join(sys.argv),
+                                     fig_kwds={'dpi':300})
