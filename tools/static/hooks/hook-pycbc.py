@@ -10,6 +10,12 @@
 import os
 from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
 
+# Executables that need the html assets
+needs_assets = ['pycbc_make_html_page', 'pycbc_make_hdf_coinc_workflow']
+
+# Executables that need MKL
+needs_mkl = ['pycbc_inspiral']
+
 #Some of our libaries are not being picked up automatically (need to invest.)
 #In the meantime we can pull them manually, in the same way we normally
 #find them
@@ -55,7 +61,7 @@ hiddenimports = ['pycbc.fft.fft_cpu',
 
 datas = [] 
 
-if os.environ["NOW_BUILDING"] == 'pycbc_make_html_page':
+if os.environ["NOW_BUILDING"] in needs_assets:
     cwd     = os.getcwd()
     basedir = cwd.replace('tools/static','')
     rootdir = basedir + 'pycbc/results'
@@ -66,10 +72,9 @@ if os.environ["NOW_BUILDING"] == 'pycbc_make_html_page':
                 file_path  = os.path.join(root, filename)
                 store_path = '/'.join(file_path.split('/')[:-1])
                 store_path = store_path.replace(basedir, '')
-                print (file_path, store_path)
                 datas.append( (file_path, store_path) )
 
-if os.environ["NOW_BUILDING"] == 'pycbc_inspiral':
+if os.environ["NOW_BUILDING"] in needs_mkl:
     # pull in all the mkl .so files
     datas += find_lib_path('mkl_rt', [])
     datas += find_lib_path('mkl_core', [])

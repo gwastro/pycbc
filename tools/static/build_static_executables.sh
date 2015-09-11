@@ -6,7 +6,7 @@ then
 	exit 1
 fi
 
-for prog in `find ../../bin -type f | grep inspiral`
+for prog in `find ../../bin -type f`
 do
 	# don't try to pyinstall shell scripts
 	if `head -1 ${prog} | grep -q python`
