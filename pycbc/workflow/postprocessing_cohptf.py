@@ -173,6 +173,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     if cp.has_section("workflow-injections"):
         injfinder_nodes = []
         injcombiner_parent_nodes = []
+        inj_sbv_plotter_parent_nodes = []
 
         injfinder_exe = os.path.basename(cp.get("executables", "injfinder"))
         injfinder_class = select_generic_executable(workflow, "injfinder")
@@ -201,8 +202,10 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
             pp_nodes.append(injfinder_node)
             workflow.add_node(injfinder_node)
             injfinder_outs.extend(curr_outs)
-            if "DETECTION" not in curr_outs[0].tag_str:
+            if "DETECTION" not in curr_outs[0].tagged_description:
                 injcombiner_parent_nodes.append(injfinder_node)
+            else:
+                inj_sbv_plotter_parent_nodes.append(injfinder_node)
 
         pp_outs.extend(injfinder_outs)
 
@@ -289,7 +292,9 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                                  child=sbv_plotter_node._dax_node)
             workflow._adag.addDependency(dep)
 
-            if out_tag == "OFFSOURCE":
+            # Add injection sbv_plotter nodes if appropriate
+            if out_tag == "OFFSOURCE" and \
+                    cp.has_section("workflow-injections"):
                 offsource_clustered = clust_file
                 off_node = sbv_plotter_node
 
@@ -306,10 +311,16 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                     dep = dax.Dependency(parent=trig_cluster_node._dax_node,
                                          child=sbv_plotter_node._dax_node)
                     workflow._adag.addDependency(dep)
-                    for parent_node in injcombiner_nodes:
-                        dep = dax.Dependency(parent=parent_node._dax_node,
-                                             child=sbv_plotter_node._dax_node)
-                        workflow._adag.addDependency(dep)
+                    if "DETECTION" in curr_injs.tagged_description:
+                        for parent_node in inj_sbv_plotter_parent_nodes:
+                            dep = dax.Dependency(parent=parent_node._dax_node,
+                                    child=sbv_plotter_node._dax_node)
+                            workflow._adag.addDependency(dep)
+                    else:
+                        for parent_node in injcombiner_nodes:
+                            dep = dax.Dependency(parent=parent_node._dax_node,
+                                    child=sbv_plotter_node._dax_node)
+                            workflow._adag.addDependency(dep)
 
             # Also add sbv_plotter job for unclustered triggers
             sbv_plotter_node = sbv_plotter_jobs.create_node(unclust_file,
