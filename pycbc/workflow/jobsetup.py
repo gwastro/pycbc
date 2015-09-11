@@ -282,7 +282,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
             if datafind_outs:
                 curr_dfouts = datafind_outs.find_all_output_in_range(ifo, 
-                                              job_data_seg, useSplitLists=True)
+                                              job_data_seg, useSplitLists=False)
                 if not curr_dfouts:
                     err_str = ("No datafind jobs found overlapping %d to %d."
                                 %(job_data_seg[0],job_data_seg[1]))
