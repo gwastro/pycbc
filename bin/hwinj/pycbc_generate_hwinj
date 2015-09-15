@@ -260,7 +260,7 @@ N = len(h_plus)
 n = N/2+1
 delta_f = 1.0 / N / h_plus.delta_t
 psd = _psd.from_cli(opts, n, delta_f, opts.low_frequency_cutoff,
-             strain=data, dyn_range_factor=DYN_RANGE_FAC)
+             strain=data, dyn_range_factor=DYN_RANGE_FAC, precision='double')
 
 # loop over IFOs to calculate sigma
 for ifo in ifos:
