@@ -260,10 +260,6 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     efficiency_jobs = efficiency_class(cp, "efficiency", ifo=ifos,
                                        out_dir=output_dir, tags=tags)
 
-    # Initialise html_summary class
-    html_summary_jobs = html_summary_class(cp, "html_summary", ifo=ifos,
-                                           out_dir=output_dir, tags=tags)
-
     # Add trig_cluster jobs and their corresponding plotting jobs
     for out_tag in trig_combiner_out_tags:
         unclust_file = [file for file in trig_combiner_outs \
@@ -447,8 +443,9 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
         workflow._adag.addDependency(dep)
 
     # Make the open box shell script
-    open_box_cmd = ' '.join(html_summary_node.get_command_line())
-    open_box_cmd += "--open-box"
+    open_box_cmd = ' '.join(html_summary_node._args + \
+                            html_summary_node._options)
+    open_box_cmd += " --open-box"
     open_box_path = "%s/open_the_box.sh" % output_dir
     f = open(open_box_path, "w")
     f.write("#!/bin/sh\n%s" % open_box_cmd)
