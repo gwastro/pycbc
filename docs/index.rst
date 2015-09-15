@@ -61,6 +61,7 @@ Walkthroughs and Tutorials:
    :maxdepth: 1
 
    workflow/*walkthrough*
+   workflow/*psd_estimation*
 
 Code Examples:
 
