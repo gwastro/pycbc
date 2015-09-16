@@ -18,7 +18,7 @@ We propose to select test signals from mass distributions that a flat in compone
 
 We propose to test with 10,000 injection signals in each of the BNS, NSBH and BBH regions, for a total of 30,000. This number is much less than the total number of templates in the bank. 
 
-We propose to use SEOBNRv2 as the test signals, even though the bank uses TaylorF2 and ROM templates for recovery. This is because we believe that SEOBNRv2 is a more accurate waveform than either TaylorF2 or the ROMs.
+We propose to use SEOBNRv2 as the test signals, even though the uberbank uses TaylorF2 and SEOBNRv2_ROM_DoubleSpin templates for recovery. This is because we believe that SEOBNRv2 is a more accurate waveform than either TaylorF2 or the ROMs.
 
 ================================================
 Procedure
@@ -50,5 +50,5 @@ The mchirp-window size may need to be changed if it is too tight. This is partic
 
 If speed is an issue, the banksims can be sped up by reducing the number of injection signals, using ROMs instead of SEOBNRv2 as injection signals, reducing the signal-sample-rate or tightening the mchirp-window. Code is being developed to do this dynamically.
 
-
+The option total-mass-divide is needed to replicate the uberbank switching from using TaylorF2 below total mass of 4 to using ROMs above. This may not exist on current master of pycbc_banksim.
 
