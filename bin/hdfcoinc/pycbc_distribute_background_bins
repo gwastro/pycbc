@@ -8,7 +8,9 @@ parser.add_argument('--coinc-files', nargs='+',
 parser.add_argument('--background-bins', nargs='+',
                     help="Ordered list of mass bin upper boundaries. "
                          "An ordered list of type-boundary pairs, applied sequentially."
-                         "Ex. component-2 total-15 chirp-30")
+                         "Must provide a name (can be anything, this is just for tagging "
+                         "puproses), the parameter to bin on, and the upper-boundary. "
+                         "Ex. name1:component:2 name2:total:15 name3:SEOBNRv2Peak:1000")
 parser.add_argument('--bank-file',
                     help="hdf format template bank file")
 parser.add_argument('--output-files', nargs='+',
