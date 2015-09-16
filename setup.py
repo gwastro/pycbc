@@ -435,6 +435,7 @@ setup (
                'bin/hdfcoinc/pycbc_plot_singles_vs_params',
                'bin/hdfcoinc/pycbc_plot_singles_timefreq',
                'bin/mvsc/pycbc_mvsc_get_features',
+               'bin/pycbc_coinc_time',
                'bin/hdfcoinc/pycbc_plot_background_coincs',
                'bin/hdfcoinc/pycbc_plot_bank_bins',
                'bin/pygrb/pygrb_make_offline_workflow',

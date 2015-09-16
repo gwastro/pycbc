@@ -1,0 +1,167 @@
+#!/bin/env python
+import argparse, logging, pycbc.version, glue.segments, numpy
+from dqsegdb.apicalls import dqsegdbQueryTimes as query
+from pycbc.workflow.segment import cat_to_pipedown_cat as convert_cat
+
+def sane(seg_list):
+    """ Convert list of len two lists containing strs to segment list """
+    segs = glue.segments.segmentlist([])
+    for seg in seg_list:
+        segs.append(glue.segments.segment(int(seg[0]), int(seg[1])))
+    return segs
+    
+def parse_veto_definer(veto_def_filename):
+    """ Parse a veto definer file from the filename and return a dictionary 
+    indexed by ifo and veto definer category level.
+    
+    Parameters
+    ----------
+    veto_def_filename: str
+        The path to the veto definer file
+    
+    Returns:
+        parsed_definition: dict   
+            Returns a dictionary first indexed by ifo, then category level, and
+            finally a list of veto definitions.
+    """
+    from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+    from glue.ligolw.ligolw import LIGOLWContentHandler as h; lsctables.use_in(h)
+    
+    indoc = ligolw_utils.load_filename(veto_def_filename, False, contenthandler=h)
+    veto_table = table.get_table(indoc, 'veto_definer')
+    
+    ifo = veto_table.getColumnByName('ifo')
+    name = veto_table.getColumnByName('name')
+    version = numpy.array(veto_table.getColumnByName('version'))
+    category = numpy.array(veto_table.getColumnByName('category'))
+    start = numpy.array(veto_table.getColumnByName('start_time'))
+    end = numpy.array(veto_table.getColumnByName('end_time'))
+    start_pad = numpy.array(veto_table.getColumnByName('start_pad'))
+    end_pad = numpy.array(veto_table.getColumnByName('end_pad'))
+    
+    data = {}
+    for i in range(len(veto_table)):
+        if ifo[i] not in data:
+            data[ifo[i]] = {}
+        
+        if category[i] not in data[ifo[i]]:
+            data[ifo[i]][category[i]] = []
+            
+        veto_info = {'name': name[i],
+                     'version': version[i],
+                     'start': start[i],
+                     'end': end[i],
+                     'start_pad': start_pad[i],
+                     'end_pad': end_pad[i],
+                     }
+        data[ifo[i]][category[i]].append(veto_info)
+    return data
+
+def get_vetoes(veto_def, ifo, server, veto_name, start_default, end_default):
+    """ Cycle through the veto name string and collect the vetoes for the
+    selected categories. Return the final segment list
+    """
+    veto_segments = glue.segments.segmentlist([])
+    for cat in veto_name:
+        cat = convert_cat(cat)
+        flags = veto_def[ifo][cat]
+        
+        for flag in flags:
+            start = flag['start'] if flag['start'] >= start_default else start_default
+            end = flag['end'] if flag['end'] !=0 else end_default
+
+            raw_segs = sane(query("https", server, ifo,
+                                  flag['name'], flag['version'],
+                                  'active', start, end)[0]['active'])
+                                  
+            for rseg in raw_segs:
+                s, e = rseg[0] + flag['start_pad'], rseg[1] + flag['end_pad']
+                veto_segments.append(glue.segments.segment(s, e))
+    return veto_segments.coalesce()
+    
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+
+parser.add_argument('--gps-start-time', type=int, required=True,
+                    help="integer gps start time")
+parser.add_argument('--gps-end-time', type=int, required=True,
+                    help="integer gps end time")
+parser.add_argument('--veto-definer', type=str, required=True,
+                    help="path to veto definer xml file")
+parser.add_argument('--science-veto-levels', type=str,
+                    help="Veto levels which determine science time [ex. 1, 12]")
+parser.add_argument('--trigger-veto-levels', type=str,
+                    help="Veto levels which determine where triggers are removed [ex. 1, 12]")
+parser.add_argument('--segment-server', type=str,
+                    help="segment server string")
+parser.add_argument('--science-names', nargs=2, 
+                    help="name of the segment flag IFO:NAME:VERSION to use for science")
+parser.add_argument('--analysis-start-pad', type=int, default=0,
+                    help="amount of time lost due to filter padding at the beginning of a "
+                         "science segment")
+parser.add_argument('--analysis-end-pad', type=int, default=0,
+                    help="amount of time lost due to filter padding at the end of a "
+                         "science segment")
+parser.add_argument('--minimum-segment-length', type=int, default=0,
+                    help="the minimum analyzed science segment in seconds")
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+ifo_segs = []
+
+veto_def = parse_veto_definer(args.veto_definer)
+
+# Read in the science segments for the requested time
+for science_name in args.science_names:
+    ifo, name, version = science_name.split(':')
+    
+    logging.info("For IFO: %s, querying science time (%s, %s)" % (ifo, name, version))
+    segments = sane(query("https", args.segment_server, ifo, name, version, 
+                         'active', args.gps_start_time, args.gps_end_time)[0]['active'])
+
+    # apply cat 1 vetoes here
+    logging.info('Found %ss of data' % abs(segments))
+    segments = segments.coalesce()
+    cat1_segs = get_vetoes(veto_def, ifo, 
+                           args.segment_server, 
+                           args.science_veto_levels,
+                           args.gps_start_time,
+                           args.gps_end_time,
+                           ).coalesce()
+
+    segments -= cat1_segs
+    logging.info('Found %ss after applying CAT1 vetoes' % abs(segments))
+    # remove short segments, and account for filter padding
+    logging.info('Removing segments shorter than %ss' % args.minimum_segment_length)
+    lsegments = glue.segments.segmentlist([])
+    segments = segments.coalesce()
+    for seg in segments:
+        if abs(seg) >= args.minimum_segment_length:
+            start = seg[0] + args.analysis_start_pad
+            end = seg[1] - args.analysis_end_pad
+            lsegments.append(glue.segments.segment(start, end))
+    segments = lsegments
+    logging.info('Found %ss after applying removing padding / short segments' % abs(segments))
+    
+    # apply vetoes that remove triggers here  
+    segments = segments.coalesce()
+    vtrig_segs = get_vetoes(veto_def, ifo, 
+                           args.segment_server, 
+                           args.trigger_veto_levels,
+                           args.gps_start_time,
+                           args.gps_end_time,
+                           ).coalesce()
+    segments -= vtrig_segs
+    
+    print abs(segments), abs(segments - vtrig_segs), abs(segments & vtrig_segs)
+    logging.info('Found %ss after applying trigger vetoes' % abs(segments))
+    segments.coalesce()
+    
+    ifo_segs += [segments]
+    
+coinc_time = abs(ifo_segs[0] & ifo_segs[1])
+print "Available Coincident Time from %s-%s" % (args.gps_start_time, args.gps_end_time)
+print "%s seconds, %5.5f days" % (coinc_time, coinc_time / 86400.0)
