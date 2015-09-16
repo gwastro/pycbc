@@ -25,6 +25,7 @@ from glue.ligolw import utils
 import logging
 import numpy
 from pycbc import DYN_RANGE_FAC
+from pycbc import fft
 from pycbc import pnutils
 from pycbc import psd as _psd
 from pycbc import strain as _strain
@@ -169,6 +170,7 @@ parser.add_argument('--l1', action='store_true',
                   help='(optional) Output files for L1 waveform.')
 
 # add option groups
+fft.insert_fft_option_group(parser)
 _psd.insert_psd_option_group(parser)
 _strain.insert_strain_option_group(parser)
 _strain.StrainSegments.insert_segment_option_group(parser)
