@@ -54,9 +54,23 @@ We can check that frames exist for this time by querying the LDR server, check t
 Run ``pycbc_generate_hwinj``
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-Now let's specify the parameters of the waveform. A full list of the command line options is available with ``pycbc_generate_hwinj --help``. Here we provide an example for generating a coherent 1.4-1.4 component mass binary using the ``EOBNRv2`` approximant. The sample rate of the output ASCII file is 16384Hz and the waveform begins at 10.0Hz. We do not want to inject a step-like response into the detector, therefore we taper the waveform at the beginning. The ``EOBNRv2`` has a ringdown at the end so we do not need to taper the end. We specify the network SNR we want the coherent injection to have on the command line with ``--network-snr``, here it is set to 28. The options ``--h1`` and ``--l1`` specify to write the waveform for both detectors; here we write the L1 ASCII file only. Here is the example command ::
+Now let's specify the parameters of the waveform. A full list of the command line options is available with ``pycbc_generate_hwinj --help``.
 
-  pycbc_generate_hwinj --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --frame-type ${FRAME_TYPE} --channel-name ${CHANNEL_NAME} --approximant EOBNRv2 --order pseudoFourPN --mass1 1.4 --mass2 1.4 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 28 --low-frequency-cutoff 10.0 --l1 --sample-rate 16384
+Here we provide an example for generating a coherent 1.4-1.4 component mass binary using the ``EOBNRv2`` approximant.
+
+The sample rate of the output ASCII file is 16384Hz and the waveform begins at 10.0Hz.
+
+We do not want to inject a step-like response into the detector, therefore we taper the waveform at the beginning. The ``EOBNRv2`` has a ringdown at the end so we do not need to taper the end.
+
+We specify the network SNR we want the coherent injection to have on the command line with ``--network-snr``, here it is set to 28. The options ``--h1`` and ``--l1`` specify to write the waveform for both detectors; here we write the L1 ASCII file only.
+
+We are going to use data to estimate the PSD so we must include ``--pad-data`` which is the number of seconds at the start and end of the h(t) time series to discard. The option ``--strain-high-pass`` applies a high-pass on the h(t) time series that will be used to calculate PSD.
+
+The method for PSD estimation is set with ``--psd-estimation``. The option ``--psd-segment-length`` is how many seconds to use for a PSD and the option ``--psd-segment-stride`` is how many seconds the code will increment before calculating the next PSD.
+
+Here is the example command ::
+
+  pycbc_generate_hwinj --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --frame-type ${FRAME_TYPE} --channel-name ${CHANNEL_NAME} --approximant EOBNRv2 --order pseudoFourPN --mass1 1.4 --mass2 1.4 --inclination 60.0 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 28 --low-frequency-cutoff 10.0 --l1 --sample-rate 16384 --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8
 
 This will generate a single-column ASCII files that contains the h(t) time series for each detector and a LIGOLW XML file with the waveform parameters. The output filenames are not specified on the command line, they are determined internally by ``pycbc_generate_hwinj``. In this example the ASCII file with the waveform will be named ``L1-HWINJ_CBC-${START}-${DURATION}.txt`` where ``${START}`` is the start time stamp of the time series and ``${DURATION}`` is the length in seconds of the ASCII waveform file. The LIGOLW XML file will be named ``H1L1-HWINJ_CBC-${START}-${DURATION}.xml.gz``.
 
