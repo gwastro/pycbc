@@ -49,13 +49,16 @@ def background_bin_from_string(background_bins, data):
     used = numpy.array([], dtype=numpy.uint32)
     bins = {}
     for mbin in background_bins:
-        name, bin_type, boundary = tuple(mbin.split('-'))
+        name, bin_type, boundary = tuple(mbin.split(':'))
         if bin_type == 'component':
             locs = numpy.maximum(data['mass1'], data['mass2']) < float(boundary)
         elif bin_type == 'total':
             locs = data['mass1'] + data['mass2'] < float(boundary)
         elif bin_type == 'chirp':
             locs = pycbc.pnutils.mass1_mass2_to_mchirp_eta(data['mass1'], data['mass2'])[0] < float(boundary)
+        elif bin_type == 'SEOBNRv2Peak':
+            locs = pycbc.pnutils.get_freq('fSEOBNRv2Peak', data['mass1'],
+                data['mass2'], data['spin1z'], data['spin2z']) < float(boundary)
         else:
             raise ValueError('Invalid bin type %s' % bin_type)    
         
