@@ -1128,7 +1128,7 @@ class PycbcSplitInspinjExecutable(Executable):
         super(PycbcSplitInspinjExecutable, self).__init__(cp, exe_name,
                 universe, ifo, out_dir, tags=[])
         self.num_splits = int(num_splits)
-    def create_node(self, parent):
+    def create_node(self, parent, tags=[]):
         node = Node(self)
 
         node.add_input_opt('--input-file', parent)
