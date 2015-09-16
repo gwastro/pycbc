@@ -29,7 +29,7 @@ from pycbc import pnutils
 from pycbc import psd as _psd
 from pycbc import strain as _strain
 from pycbc.detector import Detector
-from pycbc.inject import InjectionSet
+from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.filter import make_frequency_series
 from pycbc.filter import sigmasq
 from pycbc.types import Array, FrequencySeries, TimeSeries, zeros
@@ -234,12 +234,14 @@ sim.spin2y = opts.spin2y
 sim.spin2x = opts.spin2x
 sim.polarization = opts.polarization
 sim.taper = opts.taper
+sim.distance = distance
 
 # construct waveform string that can be parsed by lalsimulation
 waveform_string = opts.approximant
 if not pn_orders[opts.order] == -1:
     waveform_string += opts.order
 sim.waveform = waveform_string
+name, phase_order = legacy_approximant_name(sim.waveform)
 
 # create sngl_inspiral table
 sngl_table = lsctables.New(lsctables.SnglInspiralTable,
@@ -262,16 +264,8 @@ sngl.spin2x = opts.spin2x
 
 # generate waveform
 logging.info('Generating waveform at %.3fMpc', distance)
-h_plus, h_cross = get_td_waveform(approximant=opts.approximant,
-                    order=pn_orders[opts.order],
-                    mass1=opts.mass1,
-                    mass2=opts.mass2,
-                    spin1z=opts.spin1z, spin1y=opts.spin1y, spin1x=opts.spin1x,
-                    spin2z=opts.spin2z, spin2y=opts.spin2y, spin2x=opts.spin2x,
-                    inclination=opts.inclination,
-                    delta_t=1.0/opts.sample_rate,
-                    distance=distance,
-                    f_lower=opts.low_frequency_cutoff)
+h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order,
+                      delta_t=1.0/opts.sample_rate)
 
 # zero pad polarizations to get integer second time series
 h_plus = pad_timeseries_to_integer_length(h_plus, opts.sample_rate)
@@ -321,22 +315,15 @@ for ifo in ifos:
 # distance scaling factor to get target snr
 network_snr = numpy.sqrt(network_snr)
 scale = network_snr / opts.network_snr
+sim.distance = scale*sim.distance
 
 # reset network SNR
 network_snr = 0.0
 
 # generate waveform
-logging.info('Generating waveform at %.3fMpc', scale*distance)
-h_plus, h_cross = get_td_waveform(approximant=opts.approximant,
-                    order=pn_orders[opts.order],
-                    mass1=opts.mass1,
-                    mass2=opts.mass2,
-                    spin1z=opts.spin1z, spin1y=opts.spin1y, spin1x=opts.spin1x,
-                    spin2z=opts.spin2z, spin2y=opts.spin2y, spin2x=opts.spin2x,
-                    inclination=opts.inclination,
-                    delta_t=1.0/opts.sample_rate,
-                    distance=scale*distance,
-                    f_lower=opts.low_frequency_cutoff)
+logging.info('Generating waveform at %.3fMpc', sim.distance)
+h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order,
+                      delta_t=1.0/opts.sample_rate)
 
 # zero pad polarizations to get integer second time series
 h_plus = pad_timeseries_to_integer_length(h_plus, opts.sample_rate)
@@ -382,7 +369,6 @@ for ifo in ifos:
     eff_distance = 2 * distance 
     eff_distance /= ( 1 + numpy.cos( opts.inclination )**2 )**2 / 4 * f_plus**2 + numpy.cos( opts.inclination )**2 * f_cross**2
     setattr(sim, 'eff_dist_'+ifo[0].lower(), eff_distance)
-    setattr(sim, 'distance', scale*distance)
 
     # populate IFO end time columns
     sngl.end_time = int(end_time)
