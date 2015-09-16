@@ -70,6 +70,28 @@ def _empty_row(obj):
 
     return row
 
+def pad_timeseries_to_integer_length(timeseries, sample_rate):
+    ''' This function zero pads a time series so that its length is an integer
+    multiple of the sampling rate.
+
+    Padding is adding symmetically to the start and end of the time series.
+    If the number of samples to pad is odd then the end zero padding will have
+    one more sample than the start zero padding.
+    '''
+
+    # calculate how many sample points needed to pad to get integer second time series
+    remainder = sample_rate - len(timeseries) % sample_rate
+    start_pad = int(remainder / 2)
+    end_pad = int(remainder - start_pad)
+
+    # make arrays of zeroes
+    start_array = numpy.zeros(start_pad)
+    end_array = numpy.zeros(end_pad)
+
+    # pad waveform with arrays of zeroes
+    initial_array = numpy.concatenate([start_array,timeseries,end_array])
+    return TimeSeries(initial_array, delta_t=timeseries.delta_t, epoch=timeseries.start_time, dtype=timeseries.dtype)
+
 # map order integer to a string that can be parsed by lalsimulation
 pn_orders = {
     'default'          : -1,
@@ -251,20 +273,9 @@ h_plus, h_cross = get_td_waveform(approximant=opts.approximant,
                     distance=distance,
                     f_lower=opts.low_frequency_cutoff)
 
-# calculate how many sample points needed to pad to get integer second time series
-remainder = opts.sample_rate - len(h_plus) % opts.sample_rate
-start_pad = int(remainder / 2)
-end_pad = int(remainder - start_pad)
-
-# make arrays of zeroes
-start_array = numpy.zeros(start_pad)
-end_array = numpy.zeros(end_pad)
-
-# pad waveform with arrays of zeroes
-initial_array = numpy.concatenate([start_array,h_plus,end_array])
-h_plus = TimeSeries(initial_array, delta_t=h_plus.delta_t, epoch=h_plus.start_time, dtype=h_plus.dtype)
-initial_array = numpy.concatenate([start_array,h_cross,end_array])
-h_cross = TimeSeries(initial_array, delta_t=h_cross.delta_t, epoch=h_cross.start_time, dtype=h_cross.dtype)
+# zero pad polarizations to get integer second time series
+h_plus = pad_timeseries_to_integer_length(h_plus, opts.sample_rate)
+h_cross = pad_timeseries_to_integer_length(h_cross, opts.sample_rate)
 
 # get strain timeseries
 data = _strain.from_cli(opts, DYN_RANGE_FAC)
@@ -327,20 +338,9 @@ h_plus, h_cross = get_td_waveform(approximant=opts.approximant,
                     distance=scale*distance,
                     f_lower=opts.low_frequency_cutoff)
 
-# calculate how many sample points needed to pad to get integer second time series
-remainder = opts.sample_rate - len(h_plus) % opts.sample_rate
-start_pad = int(remainder / 2)
-end_pad = int(remainder - start_pad)
-
-# make arrays of zeroes for padding
-start_array = numpy.zeros(start_pad)
-end_array = numpy.zeros(end_pad)
-
-# pad waveform with arrays of zeroes
-initial_array = numpy.concatenate([start_array,h_plus,end_array])
-h_plus = TimeSeries(initial_array, delta_t=h_plus.delta_t, epoch=h_plus.start_time, dtype=h_plus.dtype)
-initial_array = numpy.concatenate([start_array,h_cross,end_array])
-h_cross = TimeSeries(initial_array, delta_t=h_cross.delta_t, epoch=h_cross.start_time, dtype=h_cross.dtype)
+# zero pad polarizations to get integer second time series
+h_plus = pad_timeseries_to_integer_length(h_plus, opts.sample_rate)
+h_cross = pad_timeseries_to_integer_length(h_cross, opts.sample_rate)
 
 # loop over IFOs to calculate sigma
 for ifo in ifos:
@@ -395,6 +395,7 @@ for ifo in ifos:
 network_snr = numpy.sqrt(network_snr)
 if not abs(opts.network_snr / network_snr) - 1 < 0.1:
     logging.warn('Exiting because network SNR is %f but requested %s', network_snr, opts.network_snr)
+    sys.exit()
 else:
     logging.info('Network SNR of injection is %.3f', network_snr)
 
@@ -430,12 +431,12 @@ for ifo in ifos:
     # set output filename
     txt_filename = ifo + '-' + 'HWINJ_CBC' + '-' + str(start_time) + '-' + str(end_time-start_time) + '.txt'
 
-    # check if filename does not exist
+    # check if filename exists
     if os.path.exists(txt_filename):
         logging.warn('Filename %s already exists and will not be overwritten', txt_filename)
         sys.exit()
 
-    # save waveform as single column ASCII for awgstream to use
+    # save waveform as single-column ASCII for awgstream to use
     logging.info('Writing strain for %s', ifo)
     numpy.savetxt(txt_filename, output)
 
