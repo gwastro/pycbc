@@ -93,7 +93,7 @@ parser.add_argument('--veto-definer', type=str, required=True,
 parser.add_argument('--science-veto-levels', nargs='+', type=str,
                     help="Veto levels which determine science time ex. 1 12")
 parser.add_argument('--trigger-veto-levels', nargs='+', type=str,
-                    help="Veto levels which determine where triggers are removed 1 12")
+                    help="Veto levels which determine where triggers are removed ex. 1 12")
 parser.add_argument('--segment-server', type=str,
                     help="segment server string")
 parser.add_argument('--science-names', nargs=2, 
