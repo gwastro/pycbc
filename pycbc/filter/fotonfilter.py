@@ -14,6 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import logging
 import numpy
 from pycbc import frame
 
@@ -47,10 +48,10 @@ def get_swstat_bits(frame_filenames, swstat_channel_name, start_time, end_time):
 
     # check if filterbank input or output was off
     filterbank_off = False
-    if ( len(bits) < 14 or int(bits[-13]) == 0 or int(bits[-11]) == 0 ) and not ignore_onoff:
+    if len(bits) < 14 or int(bits[-13]) == 0 or int(bits[-11]) == 0:
         filterbank_off = True
 
-    return bits, filterbank_off
+    return bits[-10:], filterbank_off
 
 
 def filter_data(data, filter_name, filter_file, bits, filterbank_off=False):
@@ -61,8 +62,7 @@ def filter_data(data, filter_name, filter_file, bits, filterbank_off=False):
 
     # if filterbank is off then return a time series of zeroes
     if filterbank_off:
-        sample_rate = 1.0/data.delta_t
-        return numpy.zeros(int(end_time-start_time)*sample_rate)
+        return numpy.zeros(len(data))
 
     # loop over the 10 filters in the filterbank
     for i in range(10):
@@ -73,6 +73,7 @@ def filter_data(data, filter_name, filter_file, bits, filterbank_off=False):
         # if bit is on then filter the data
         bit = int(bits[-(i+1)])
         if bit:
+            logging.info('filtering with filter module %d', i)
 
             # if there are second-order sections then filter with them
             if len(filter.sections):
@@ -84,7 +85,6 @@ def filter_data(data, filter_name, filter_file, bits, filterbank_off=False):
                     gain = float(filter.design.design.split(')')[0].strip('gain(')) 
                 except ValueError as e:
                     print 'ValueError', e, 'using gain of 1'
-                    gain = 3994.5
                 data = gain * data
 
     return  data
