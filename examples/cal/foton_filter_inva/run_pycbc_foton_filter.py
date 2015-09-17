@@ -38,5 +38,5 @@ DATA_FILE=`ls ${IFO}-*.txt`
 FRAME_TYPE=H1_R
 
 # filter data and injection
-python ../pycbc_foton_filter --model-name ${MODEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --filterbank-name ${FILTERBANK_NAME} --data-file ${DATA_FILE} --filter-file ${FILTER_FILE} --output-file ${OUTPUT_FILE} --sample-rate ${SAMPLE_RATE} --frame-type ${FRAME_TYPE} --ifo ${IFO}
+python ../pycbc_foton_filter --filterbank-bits 10000000011 --filterbank-ignore-off --model-name ${MODEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --filterbank-name ${FILTERBANK_NAME} --data-file ${DATA_FILE} --filter-file ${FILTER_FILE} --output-file ${OUTPUT_FILE} --sample-rate ${SAMPLE_RATE} --frame-type ${FRAME_TYPE} --ifo ${IFO}
 

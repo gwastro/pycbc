@@ -36,6 +36,10 @@ parser.add_argument("--model-name", type=str, required=True,
              help="Name of the model.")
 parser.add_argument("--filterbank-name", type=str, required=True,
              help="Name of the filterbank to filter time series.")
+parser.add_argument("--filterbank-ignore-off", action="store_true", default=False,
+             help="Ignore filterbank input and output bits.")
+parser.add_argument("--filterbank-bits", type=str, default=0,
+             help="Bit mask for filter modules.")
 
 # frame file options
 parser.add_argument("--frame-type", type=str, required=True,
@@ -53,6 +57,12 @@ parser.add_argument("--sample-rate", type=int, required=True,
 
 # parse command line
 opts = parser.parse_args()
+
+# sanity check
+if ( opts.filterbank_bits > 0 and not opts.filterbank_ignore_off ) or \
+       ( opts.filterbank_bits == 0 and opts.filterbank_ignore_off ):
+    logging.warn('Must specifiy both --filterbank-bits and --ignore-filterbank-off')
+    sys.exit()
 
 # setup log
 logging_level = logging.DEBUG
@@ -74,12 +84,12 @@ logging.info('Filtering with %s filterbank', opts.filterbank_name)
 swstat_channel_name = '%s:%s-%s_SWSTAT'%(opts.ifo, opts.model_name, opts.filterbank_name)
 gain_channel_name = '%s:%s-%s_GAIN'%(opts.ifo, opts.model_name, opts.filterbank_name)
 
-bits = '1000000011'
-#bits = '0000000000'
-filterbank_off = False
-
 # get bits for filter modules on/off and if filterbank was on/off
-#bits, filterbank_off = get_swstat_bits(frame_paths, swstat_channel_name, opts.gps_start_time, opts.gps_start_time+1)
+if not opts.filterbank_ignore_off and opts.filterbank_bits == 0:
+    bits, filterbank_off = get_swstat_bits(frame_paths, swstat_channel_name, opts.gps_start_time, opts.gps_start_time+1)
+else:
+    bits = opts.filterbank_bits
+    filterbank_off = False
 logging.info('Will use bits %s and the input/output was off at this time is %s', bits, filterbank_off)
 
 # filter data
