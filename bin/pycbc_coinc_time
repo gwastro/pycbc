@@ -122,9 +122,14 @@ for science_name in args.science_names:
     segments = sane(query("https", args.segment_server, ifo, name, version, 
                          'active', args.gps_start_time, args.gps_end_time)[0]['active'])
 
+    #trim segments to the request time
+    request = glue.segments.segment(args.gps_start_time, args.gps_end_time)
+    segments = (glue.segments.segmentlist([request]) & segments)
+
     # apply cat 1 vetoes here
     logging.info('Found %ss of data' % abs(segments))
     segments = segments.coalesce()
+
     cat1_segs = get_vetoes(veto_def, ifo, 
                            args.segment_server, 
                            args.science_veto_levels,
@@ -156,7 +161,6 @@ for science_name in args.science_names:
                            ).coalesce()
     segments -= vtrig_segs
     
-    print abs(segments), abs(segments - vtrig_segs), abs(segments & vtrig_segs)
     logging.info('Found %ss after applying trigger vetoes' % abs(segments))
     segments.coalesce()
     
