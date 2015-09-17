@@ -159,6 +159,8 @@ aprs = list(set(td_approximants() + fd_approximants()))
 
 #Template Settings
 parser.add_argument("--template-file", dest="bank_file", help="SimInspiral or SnglInspiral XML file containing the template parameters", metavar="FILE")
+parser.add_argument("--total-mass-divide", type=float, help="Total mass to switch from --template-approximant to --highmass-approximant.")
+parser.add_argument("--highmass-approximant", help="Waveform approximant for highmass templates.")
 parser.add_argument("--template-approximant", help="Waveform approximant for templates", choices=aprs)
 parser.add_argument("--template-phase-order", help="PN order to use for the template phase", default=-1, type=int)
 parser.add_argument("--template-amplitude-order", help="PN order to use for the template amplitude", default=-1, type=int)
@@ -304,7 +306,11 @@ with ctx:
 
             # Generate htilde if we haven't already done so
             if htilde is None:
-                htilde = get_waveform(options.template_approximant,
+                this_approximant = options.template_approximant
+                if options.total_mass_divide:
+                    if (template_params.mass1+template_params.mass2) > options.total_mass_divide:
+                        this_approximant = options.highmass_approximant
+                htilde = get_waveform(this_approximant,
                                       options.template_phase_order,
                                       options.template_amplitude_order,
                                       options.template_spin_order,
