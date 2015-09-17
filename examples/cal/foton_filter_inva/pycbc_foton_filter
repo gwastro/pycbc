@@ -26,11 +26,6 @@ from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.types import TimeSeries
 from pycbc.waveform import get_td_waveform
 
-import ROOT
-ROOT.gSystem.Load('/usr/lib64/libdmtsigp.so')
-ROOT.gSystem.Load('/usr/lib64/libgdsplot.so')
-from foton import FilterFile, Filter
-
 # list of IFOs
 ifo_list = ['H1', 'L1']
 
@@ -73,6 +68,16 @@ parser.add_argument("--sample-rate", type=int, required=True,
 
 # parse command line
 opts = parser.parse_args()
+
+# import dependencies that are not standard to pycbc
+try:
+    import ROOT
+    ROOT.gSystem.Load('/usr/lib64/libdmtsigp.so')
+    ROOT.gSystem.Load('/usr/lib64/libgdsplot.so')
+    from foton import FilterFile, Filter
+except ImportError as e:
+    print e
+    sys.exit()
 
 # sanity check
 if ( opts.filterbank_bits > 0 and not opts.filterbank_ignore_off ) or \
