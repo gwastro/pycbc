@@ -175,9 +175,11 @@ class Executable(pegasus_workflow.Executable):
         if not os.path.isabs(self.out_dir):
             self.out_dir = os.path.join(os.getcwd(), self.out_dir) 
               
-        # Check that the executable actually exists locally
+        # Check that the executable actually exists locally or 
+        # looks like a URL, in which case trust Pegasus to be
+        # able to fetch it.
         exe_path = cp.get('executables', name)
-        if exe_path.startswith('gsiftp') or os.path.isfile(exe_path):
+        if (exe_path.find('://') > 0) or os.path.isfile(exe_path):
             logging.debug("Using %s executable "
                           "at %s" % (name, exe_path))
         else:
