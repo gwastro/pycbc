@@ -90,10 +90,10 @@ parser.add_argument('--gps-end-time', type=int, required=True,
                     help="integer gps end time")
 parser.add_argument('--veto-definer', type=str, required=True,
                     help="path to veto definer xml file")
-parser.add_argument('--science-veto-levels', type=str,
-                    help="Veto levels which determine science time [ex. 1, 12]")
-parser.add_argument('--trigger-veto-levels', type=str,
-                    help="Veto levels which determine where triggers are removed [ex. 1, 12]")
+parser.add_argument('--science-veto-levels', nargs='+', type=str,
+                    help="Veto levels which determine science time ex. 1 12")
+parser.add_argument('--trigger-veto-levels', nargs='+', type=str,
+                    help="Veto levels which determine where triggers are removed ex. 1 12")
 parser.add_argument('--segment-server', type=str,
                     help="segment server string")
 parser.add_argument('--science-names', nargs=2, 
