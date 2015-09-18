@@ -180,7 +180,6 @@ parser.add_argument("--instruments", nargs="+", type=str, required=True,
 # add option groups
 fft.insert_fft_option_group(parser)
 _strain.insert_strain_option_group_multi_ifo(parser)
-_strain.StrainSegments.insert_segment_option_group_multi_ifo(parser)
 _psd.insert_psd_option_group(parser)
 
 # parse command line
@@ -188,7 +187,6 @@ opts = parser.parse_args()
 
 # verify options are sane
 _strain.verify_strain_options_multi_ifo(opts, parser, opts.instruments)
-_strain.StrainSegments.verify_segment_options_multi_ifo(opts, parser, opts.instruments)
 _psd.verify_psd_options(opts, parser)
 
 # check that sample rates are the same
