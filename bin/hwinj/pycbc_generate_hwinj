@@ -162,7 +162,7 @@ parser.add_argument('--geocentric-end-time', type=float, required=True,
 
 # data conditioning options
 parser.add_argument('--psd-low-frequency-cutoff', type=float, required=True,
-                  help='Frequency to begin generating the waveform in Hz.')
+                  help='Frequency to begin generating the PSD in Hz. This is the start frequency of the SNR calculation.')
 
 # output options
 parser.add_argument('--h1', action='store_true',
