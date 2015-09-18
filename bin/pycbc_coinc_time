@@ -99,7 +99,7 @@ parser.add_argument('--segment-server', type=str,
 parser.add_argument('--science-names', nargs=2, 
                     help="name of the segment flag IFO:NAME:VERSION to use for science")
                       
-group = parser.add_argument_group("pycbc_nspiral options that determine padding, minimum time analyzable.")
+group = parser.add_argument_group("pycbc_inspiral options that determine padding and minimum time analyzable.")
 group.add_argument('--segment-length', type=int)
 group.add_argument('--min-analysis-segments', type=int)
 group.add_argument('--pad-data', type=int)
