@@ -91,22 +91,29 @@ parser.add_argument('--gps-end-time', type=int, required=True,
 parser.add_argument('--veto-definer', type=str, required=True,
                     help="path to veto definer xml file")
 parser.add_argument('--science-veto-levels', type=str,
-                    help="Veto levels which determine science time [ex. 1, 12]")
+                    help="Veto levels which determine science time ex. 1")
 parser.add_argument('--trigger-veto-levels', type=str,
-                    help="Veto levels which determine where triggers are removed [ex. 1, 12]")
+                    help="Veto levels which determine where triggers are removed ex. 123H")
 parser.add_argument('--segment-server', type=str,
                     help="segment server string")
 parser.add_argument('--science-names', nargs=2, 
                     help="name of the segment flag IFO:NAME:VERSION to use for science")
-parser.add_argument('--analysis-start-pad', type=int, default=0,
-                    help="amount of time lost due to filter padding at the beginning of a "
-                         "science segment")
-parser.add_argument('--analysis-end-pad', type=int, default=0,
-                    help="amount of time lost due to filter padding at the end of a "
-                         "science segment")
-parser.add_argument('--minimum-segment-length', type=int, default=0,
-                    help="the minimum analyzed science segment in seconds")
+                      
+group = parser.add_argument_group("pycbc_inspiral options that determine padding and minimum time analyzable.")
+group.add_argument('--segment-length', type=int)
+group.add_argument('--min-analysis-segments', type=int)
+group.add_argument('--pad-data', type=int)
+group.add_argument('--segment-start-pad', type=int)
+group.add_argument('--segment-end-pad', type=int)
+
 args = parser.parse_args()
+
+
+analysis_start_pad =  args.segment_start_pad + args.pad_data
+analysis_end_pad = args.segment_end_pad + args.pad_data
+minimum_segment_length = ((args.segment_length - args.segment_start_pad 
+                          - args.segment_end_pad) * args.min_analysis_segments 
+                          + analysis_start_pad + analysis_end_pad)
 
 pycbc.init_logging(args.verbose)
 
@@ -140,13 +147,13 @@ for science_name in args.science_names:
     segments -= cat1_segs
     logging.info('Found %ss after applying CAT1 vetoes' % abs(segments))
     # remove short segments, and account for filter padding
-    logging.info('Removing segments shorter than %ss' % args.minimum_segment_length)
+    logging.info('Removing segments shorter than %ss' % minimum_segment_length)
     lsegments = glue.segments.segmentlist([])
     segments = segments.coalesce()
     for seg in segments:
-        if abs(seg) >= args.minimum_segment_length:
-            start = seg[0] + args.analysis_start_pad
-            end = seg[1] - args.analysis_end_pad
+        if abs(seg) >= minimum_segment_length:
+            start = seg[0] + analysis_start_pad
+            end = seg[1] - analysis_end_pad
             lsegments.append(glue.segments.segment(start, end))
     segments = lsegments
     logging.info('Found %ss after applying removing padding / short segments' % abs(segments))
