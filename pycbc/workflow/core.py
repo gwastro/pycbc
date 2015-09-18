@@ -179,7 +179,17 @@ class Executable(pegasus_workflow.Executable):
         # looks like a URL, in which case trust Pegasus to be
         # able to fetch it.
         exe_path = cp.get('executables', name)
-        if (exe_path.find('://') > 0) or os.path.isfile(exe_path):
+        valid_path = False
+
+        if exe_path.find('://') > 0:
+            if exe_path.startswith('file://'):
+                valid_path = os.path.isfile(exe_path[7:])
+            else:
+                valid_path = True
+        else:
+            valid_path = os.path.isfile(exe_path)
+
+        if valid_path:
             logging.debug("Using %s executable "
                           "at %s" % (name, exe_path))
         else:
