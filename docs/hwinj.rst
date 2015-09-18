@@ -66,9 +66,9 @@ We specify the network SNR we want the coherent injection to have on the command
 
 We are going to use data to estimate the PSD so we must include ``--pad-data`` which is the number of seconds at the start and end of the h(t) time series to discard. The option ``--strain-high-pass`` applies a high-pass on the h(t) time series that will be used to calculate PSD.
 
-The method for PSD estimation is set with ``--psd-estimation``. The option ``--psd-segment-length`` is how many seconds to use for a PSD and the option ``--psd-segment-stride`` is how many seconds the code will increment before calculating the next PSD. The option ``--psd-low-frequency-cutoff`` is the frequency to begin genrating the PSD.
+The method for PSD estimation is set with ``--psd-estimation``. The option ``--psd-segment-length`` is how many seconds to use for a PSD and the option ``--psd-segment-stride`` is how many seconds the code will increment before calculating the next PSD. The option ``--psd-low-frequency-cutoff`` is the frequency to begin generating the PSD.
 
-The option ``--waveform-low-frequency-cutoff`` is the frequency to begin genrating the waveform that will be saved to the file.
+The option ``--waveform-low-frequency-cutoff`` is the frequency to begin generating the waveform that will be saved to the file.
 
 Here is the example command ::
 
