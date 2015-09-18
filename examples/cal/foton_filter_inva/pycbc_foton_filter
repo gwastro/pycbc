@@ -1,0 +1,128 @@
+#! /usr/bin/python
+
+# Copyright (C) 2015  Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import logging
+import numpy
+import sys
+from pycbc.filter.fotonfilter import filter_data, get_swstat_bits, read_gain_from_frames
+from pycbc.frame import frame_paths
+from pycbc.inject import InjectionSet, legacy_approximant_name
+from pycbc.types import TimeSeries
+from pycbc.waveform import get_td_waveform
+
+# list of IFOs
+ifo_list = ['H1', 'L1']
+
+# command line usage
+parser = argparse.ArgumentParser(usage='pycbc_hwinj_to_counts [--options]',
+             description='Injects a waveform into a time series of zeroes \
+                               and filters using a filterbank.')
+
+# injection options
+parser.add_argument("--data-file", type=str, required=True,
+             help="Path to single-column ASCII file with time series.")
+parser.add_argument("--ifo", choices=ifo_list, required=True,
+             help="IFO to generate waveform.")
+
+# foton options
+parser.add_argument("--filter-file", type=str, required=True,
+             help="Path to foton filter file to extract filterbanks.")
+parser.add_argument("--model-name", type=str, required=True,
+             help="Name of the model.")
+parser.add_argument("--filterbank-name", type=str, required=True,
+             help="Name of the filterbank to filter time series.")
+parser.add_argument("--filterbank-ignore-off", action="store_true", default=False,
+             help="Ignore filterbank input and output bits.")
+parser.add_argument("--filterbank-bits", type=str, default=0,
+             help="Bit mask for filter modules.")
+
+# frame file options
+parser.add_argument("--frame-type", type=str, required=True,
+             help="Frame type that has SWSTAT channels.")
+parser.add_argument("--gps-start-time", type=int, required=True,
+             help="Time to start reading data.")
+parser.add_argument("--gps-end-time", type=int, required=True,
+             help="Time to stop reading data.")
+
+# output options
+parser.add_argument("--output-file", type=str, required=True,
+             help="The name of the ASCII output file that contains h(t).")
+parser.add_argument("--sample-rate", type=int, required=True,
+             help="The sample rate of the ASCII output file that contains h(t).")
+
+# parse command line
+opts = parser.parse_args()
+
+# import dependencies that are not standard to pycbc
+try:
+    import ROOT
+    ROOT.gSystem.Load('/usr/lib64/libdmtsigp.so')
+    ROOT.gSystem.Load('/usr/lib64/libgdsplot.so')
+    from foton import FilterFile, Filter
+except ImportError as e:
+    print e
+    sys.exit()
+
+# sanity check
+if ( opts.filterbank_bits > 0 and not opts.filterbank_ignore_off ) or \
+       ( opts.filterbank_bits == 0 and opts.filterbank_ignore_off ):
+    logging.warn('Must specifiy both --filterbank-bits and --ignore-filterbank-off')
+    sys.exit()
+
+# setup log
+logging_level = logging.DEBUG
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
+# read data file with time series
+data = numpy.loadtxt(opts.data_file)
+
+# read foton filter file
+logging.info('Reading foton filter file')
+filter_file = FilterFile(opts.filter_file)
+
+# read frame files
+logging.info('Querying and reading frame files')
+frame_paths = frame_paths(opts.frame_type, opts.gps_start_time, opts.gps_end_time)
+
+# setup filterbank
+logging.info('Filtering with %s filterbank', opts.filterbank_name)
+swstat_channel_name = '%s:%s-%s_SWSTAT'%(opts.ifo, opts.model_name, opts.filterbank_name)
+gain_channel_name = '%s:%s-%s_GAIN'%(opts.ifo, opts.model_name, opts.filterbank_name)
+
+# get bits for filter modules on/off and if filterbank was on/off
+if not opts.filterbank_ignore_off and opts.filterbank_bits == 0:
+    bits, filterbank_off = get_swstat_bits(frame_paths, swstat_channel_name, opts.gps_start_time, opts.gps_start_time+1)
+else:
+    bits = opts.filterbank_bits
+    filterbank_off = False
+logging.info('Will use bits %s and the input/output was off at this time is %s', bits, filterbank_off)
+
+# filter data
+data_filt = filter_data(data, opts.filterbank_name, filter_file, bits, filterbank_off=filterbank_off)
+
+# apply filterbank gain
+gain = read_gain_from_frames(frame_paths, gain_channel_name, opts.gps_start_time, opts.gps_start_time+1)
+data_filt = gain * data_filt
+
+# write output
+logging.info('Writing filtered data')
+numpy.savetxt(opts.output_file, data_filt)
+
+# exit
+logging.info('Done')
