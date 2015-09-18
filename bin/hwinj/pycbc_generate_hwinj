@@ -34,7 +34,7 @@ from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.filter import make_frequency_series
 from pycbc.filter import sigmasq
 from pycbc.types import Array, FrequencySeries, TimeSeries, zeros
-from pycbc.types.optparse import DictWithDefaultReturn, MultiDetOptionAppendAction, convert_to_process_params_dict
+from pycbc.types.optparse import MultiDetOptionAppendAction, convert_to_process_params_dict
 from pycbc.waveform import FilterBank, get_td_waveform, td_approximants, taper_timeseries
 import os
 import sys
