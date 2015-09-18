@@ -16,7 +16,7 @@ LOCAL_PEGASUS_DIR=""
 ACCOUNTING_GROUP=""
 NO_ACCOUNTING_GROUP=0
 
-GETOPT_CMD=`getopt -o d:c:a:F:h:l --long dax:,cache-file:,accounting-group:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:a:Fl:h --long dax:,cache-file:,accounting-group:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
