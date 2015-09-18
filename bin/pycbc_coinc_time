@@ -91,9 +91,9 @@ parser.add_argument('--gps-end-time', type=int, required=True,
 parser.add_argument('--veto-definer', type=str, required=True,
                     help="path to veto definer xml file")
 parser.add_argument('--science-veto-levels', type=str,
-                    help="Veto levels which determine science time ex. 1")
+                    help="Veto levels to apply by removing strain data before analysis ex. '1' for CAT1 veto")
 parser.add_argument('--trigger-veto-levels', type=str,
-                    help="Veto levels which determine where triggers are removed ex. 123H")
+                    help="Veto levels to apply by removing triggers from analyzed times ex. '12H' for CAT 1 and CAT2 vetoes plus hardware injections")
 parser.add_argument('--segment-server', type=str,
                     help="segment server string")
 parser.add_argument('--science-names', nargs=2, 
