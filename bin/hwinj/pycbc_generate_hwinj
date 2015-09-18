@@ -186,6 +186,11 @@ _psd.insert_psd_option_group(parser)
 # parse command line
 opts = parser.parse_args()
 
+# verify options are sane
+_strain.verify_strain_options_multi_ifo(opts, parser, opts.instruments)
+_strain.StrainSegments.verify_segment_options_multi_ifo(opts, parser, opts.instruments)
+_psd.verify_psd_options(opts, parser)
+
 # check that sample rates are the same
 for ifo in opts.instruments:
     if opts.sample_rate[ifo] != opts.sample_rate[opts.instruments[0]]:
