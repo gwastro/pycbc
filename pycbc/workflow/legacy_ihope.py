@@ -253,7 +253,6 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
                  gate_files=None, out_dir=None, tags=[]):
         super(LegacyCohPTFInspiralExecutable, self).__init__(cp, name, universe,
                 ifo, out_dir=out_dir, tags=tags)
-        self.cp = cp
         self.injection_file = injection_file
         self.data_seg = segments.segment(int(cp.get('workflow', 'start-time')),
                                          int(cp.get('workflow', 'end-time')))
@@ -266,6 +265,24 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         if not dfParents:
             raise ValueError("%s must be supplied with frame files"
                               % self.name)
+
+        # Check for single IFO issues and raise errors if required
+        if len(self.ifo_list) < 2 and \
+                ('--do-short-slides' in node._options or \
+                 '--short-slide-offset' in node._options):
+            raise ValueError("Cannot do time slides on data from one IFO! "
+                             "This is a single IFO search for %s." % self.ifo)
+
+         if len(self.ifo_list) < 2 and \
+                 '--do-sngl-chi-tests' not in node._options and \
+                 ('--do-bank-veto' in node._options or \
+                  '--do-chi-square' in node._options or \
+                  '--do-auto-veto' in node._options):
+             raise ValueError("You are doing a single IFO search with "
+                              "chi-square tests enabled but have not "
+                              "specified the option '--do-sngl-chi-tests'. "
+                              "Please alter your configuration file "
+                              "accordingly.")
 
         pad_data = self.get_opt('pad-data')
         if pad_data is None:
@@ -296,9 +313,6 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
             node.add_input_opt('--%s-frame-cache' % frameCache.ifo.lower(),
                                frameCache)
             node.add_arg('--%s-data' % frameCache.ifo.lower())
-            node.add_opt('--%s-channel-name' % frameCache.ifo.lower(),
-                         self.cp.get('workflow',
-                                     '%s-channel-name' %frameCache.ifo.lower()))
 
         if inj_file is not None:
             node.add_input_opt('--injection-file', inj_file)
@@ -312,6 +326,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         valid_start = self.data_seg[0] + pad_data + overlap
         valid_end = self.data_seg[1] - pad_data - overlap
         return self.data_seg, segments.segment(valid_start, valid_end)
+
 
 class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
     """
@@ -462,7 +477,6 @@ class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
                  out_dir=None, tags=[]):
         super(LegacyCohPTFInjcombiner, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
-        self.cp = cp
         self.ifos = ifo
         self.num_threads = 1
 
@@ -499,7 +513,6 @@ class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
                  out_dir=None, tags=[]):
         super(LegacyCohPTFSbvPlotter, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
-        self.cp = cp
         self.ifos = ifo
         self.num_threads = 1
 
@@ -542,7 +555,6 @@ class LegacyCohPTFEfficiency(LegacyAnalysisExecutable):
                  out_dir=None, tags=[]):
         super(LegacyCohPTFEfficiency, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
-        self.cp = cp
         self.ifos = ifo
         self.num_threads = 1
 
@@ -605,9 +617,7 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
                  out_dir=None, tags=[]):
         super(PyGRBMakeSummaryPage, self).__init__(cp, name, universe, ifo=ifo,
               out_dir=out_dir, tags=tags)
-        self.cp = cp
         self.ifos = ifo
-        self.output_dir = out_dir
         self.num_threads = 1
 
     def create_node(self, parent=None, c_file=None, open_box=False,
@@ -635,7 +645,7 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
 
         # Set input / output options
         node.add_opt('--config-file', '%s' % c_file.storage_path) 
-        node.add_opt('--output-path', "%s/output" % self.output_dir)
+        node.add_opt('--output-path', "%s/output" % self.out_dir)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
