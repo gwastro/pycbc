@@ -165,10 +165,12 @@ parser.add_argument('--geocentric-end-time', type=float, required=True,
 # data conditioning options
 parser.add_argument('--psd-low-frequency-cutoff', type=float, required=True,
                   help='Frequency to begin generating the PSD in Hz. This is the start frequency of the SNR calculation.')
+parser.add_argument('--psd-high-frequency-cutoff', type=float,
+                  help='(optional) Upper frequency to terminate the SNR calculation.')
 parser.add_argument("--frame-type", type=str, nargs="+",
                   action=MultiDetOptionAppendAction,
                   metavar='IFO:FRAME_TYPE',
-                  help='(optional), replaces frame-files. Use datafind '
+                  help='(optional) Replaces frame-files. Use datafind '
                        'to get the needed frame file(s) of this type.')
 
 # output options
@@ -191,6 +193,12 @@ for ifo in opts.instruments:
         sys.exit()
 sample_rate = opts.sample_rate[opts.instruments[0]]
 
+# set upper frequency cutoff if not given
+if opts.psd_high_frequency_cutoff:
+    f_high = opts.psd_high_frequency_cutoff
+else:
+    f_high = int(sample_rate / 2)
+
 # check that frame types are not lists
 if opts.frame_type:
     for key,value in opts.frame_type.items():
@@ -202,9 +210,6 @@ distance = 40.0
 
 # set network SNR to 0.0
 network_snr = 0.0
-
-# set upper frequency to integrate sigma squared to
-f_high = 1000.0
 
 # setup log
 logging_level = logging.DEBUG
