@@ -1,19 +1,9 @@
 #! /bin/bash -e
 
-# frame options note these options are for reading SWSTAT and GAIN channels
-GPS_START_TIME=1126256416
-GPS_END_TIME=$((${GPS_START_TIME} + 1))
-IFO=H1
-FRAME_TYPE=H1_R
-SAMPLE_RATE=16384
-
-# foton options
-CALCS_FILTER_FILE=/home/${USER}/src/calsvn/h1_archive/H1CALCS.txt
-SUS_FILTER_FILE=/home/${USER}/src/calsvn/h1_archive/H1SUSETMY.txt
-
 # where to run the executables
 RUN_DIR=./esd_output
 
+# default option values
 DATA_FILE=""
 GPS_START_TIME=""
 GPS_END_TIME=""
@@ -23,9 +13,9 @@ SAMPLE_RATE=16384
 CALCS_FILTER_FILE=""
 SUS_FILTER_FILE=""
 
+# parse command line
 GETOPT_CMD=`getopt -o d:c:a:F:h:l --long data-file:,gps-start-time:,gps-end-time:,ifo:,frame-type:,sample-rate:,calcs-filter-file:,sus-filter-file:,help -n 'pycbc_check_esd_saturation.sh' -- "$@"`
 eval set -- "$GETOPT_CMD"
-
 while true ; do
   case "$1" in
     -d|--data-file)
