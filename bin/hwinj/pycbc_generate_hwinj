@@ -166,7 +166,7 @@ parser.add_argument('--geocentric-end-time', type=float, required=True,
 parser.add_argument('--psd-low-frequency-cutoff', type=float, required=True,
                   help='Frequency to begin generating the PSD in Hz. This is the start frequency of the SNR calculation.')
 parser.add_argument('--psd-high-frequency-cutoff', type=float,
-                  help='(optional) Upper frequency to terminate the SNR calculation.')
+                  help='(optional) Upper frequency to terminate the SNR calculation. Default will be Nyquist frequency, ie. int(sample_rate/2).')
 parser.add_argument("--frame-type", type=str, nargs="+",
                   action=MultiDetOptionAppendAction,
                   metavar='IFO:FRAME_TYPE',
