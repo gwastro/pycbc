@@ -139,6 +139,8 @@ parser.add_argument('--inclination', type=float, required=True,
 parser.add_argument('--taper',  required=True,
                     choices=['TAPER_NONE', 'TAPER_START', 'TAPER_END', 'TAPER_STARTEND'],
                     help='Taper the wavform before FFT.')
+parser.add_argument('--waveform-low-frequency-cutoff', type=float, required=True,
+                  help='Frequency to begin generating the waveform in Hz.')
 
 # waveform spin parameter options
 parser.add_argument('--spin1z', type=float, default=0.0,
@@ -159,7 +161,7 @@ parser.add_argument('--geocentric-end-time', type=float, required=True,
                   help='The geocentric GPS end time of the injection.')
 
 # data conditioning options
-parser.add_argument('--low-frequency-cutoff', type=float, required=True,
+parser.add_argument('--psd-low-frequency-cutoff', type=float, required=True,
                   help='Frequency to begin generating the waveform in Hz.')
 
 # output options
@@ -217,7 +219,7 @@ outdoc.childNodes[0].appendChild(sim_table)
 # create sim_inspiral row for injection
 # and populate non-IFO-specific columns in XML output file
 sim = _empty_row(lsctables.SimInspiral)
-sim.f_lower = opts.low_frequency_cutoff
+sim.f_lower = opts.waveform_low_frequency_cutoff
 sim.geocent_end_time = int(opts.geocentric_end_time)
 sim.geocent_end_time_ns = int(opts.geocentric_end_time % 1 * 1e9)
 sim.inclination = opts.inclination
@@ -263,7 +265,7 @@ sngl.spin2y = opts.spin2y
 sngl.spin2x = opts.spin2x
 
 # generate waveform
-logging.info('Generating waveform at %.3fMpc', distance)
+logging.info('Generating waveform at %.3fMpc beginning at %.3fHz', sim.distance, opts.waveform_low_frequency_cutoff)
 h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order,
                       delta_t=1.0/opts.sample_rate)
 
@@ -279,7 +281,7 @@ logging.info('Generating PSD')
 N = len(h_plus)
 n = N/2+1
 delta_f = 1.0 / ( N * h_plus.delta_t )
-psd = _psd.from_cli(opts, n, delta_f, opts.low_frequency_cutoff,
+psd = _psd.from_cli(opts, n, delta_f, opts.psd_low_frequency_cutoff,
              strain=data, dyn_range_factor=DYN_RANGE_FAC, precision='double')
 
 # loop over IFOs to calculate sigma
@@ -306,8 +308,8 @@ for ifo in ifos:
 
     # calculate sigma-squared SNR
     logging.info('Calculating sigma for %s', ifo)
-    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde, psd=psd, low_frequency_cutoff=opts.low_frequency_cutoff, high_frequency_cutoff=f_high)
-    logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f', opts.low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
+    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde, psd=psd, low_frequency_cutoff=opts.psd_low_frequency_cutoff, high_frequency_cutoff=f_high)
+    logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f', opts.psd_low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
 
     # include sigma in network SNR calculation
     network_snr += sigma_squared
@@ -321,7 +323,7 @@ sim.distance = scale*sim.distance
 network_snr = 0.0
 
 # generate waveform
-logging.info('Generating waveform at %.3fMpc', sim.distance)
+logging.info('Generating waveform at %.3fMpc beginning at %.3fHz', sim.distance, opts.waveform_low_frequency_cutoff)
 h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order,
                       delta_t=1.0/opts.sample_rate)
 
@@ -358,8 +360,8 @@ for ifo in ifos:
 
     # calculate sigma-squared SNR
     logging.info('Calculating sigma for %s', ifo)
-    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde, psd=psd, low_frequency_cutoff=opts.low_frequency_cutoff, high_frequency_cutoff=f_high)
-    logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f', opts.low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
+    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde, psd=psd, low_frequency_cutoff=opts.psd_low_frequency_cutoff, high_frequency_cutoff=f_high)
+    logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f', opts.psd_low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
 
     # populate IFO end time columns
     setattr(sim, ifo[0].lower()+'_end_time', int(end_time))
