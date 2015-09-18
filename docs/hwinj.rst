@@ -66,11 +66,13 @@ We specify the network SNR we want the coherent injection to have on the command
 
 We are going to use data to estimate the PSD so we must include ``--pad-data`` which is the number of seconds at the start and end of the h(t) time series to discard. The option ``--strain-high-pass`` applies a high-pass on the h(t) time series that will be used to calculate PSD.
 
-The method for PSD estimation is set with ``--psd-estimation``. The option ``--psd-segment-length`` is how many seconds to use for a PSD and the option ``--psd-segment-stride`` is how many seconds the code will increment before calculating the next PSD.
+The method for PSD estimation is set with ``--psd-estimation``. The option ``--psd-segment-length`` is how many seconds to use for a PSD and the option ``--psd-segment-stride`` is how many seconds the code will increment before calculating the next PSD. The option ``--psd-low-frequency-cutoff`` is the frequency to begin generating the PSD.
+
+The option ``--waveform-low-frequency-cutoff`` is the frequency to begin generating the waveform that will be saved to the file.
 
 Here is the example command ::
 
-  pycbc_generate_hwinj --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --frame-type ${FRAME_TYPE} --channel-name ${CHANNEL_NAME} --approximant EOBNRv2 --order pseudoFourPN --mass1 1.4 --mass2 1.4 --inclination 60.0 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 28 --low-frequency-cutoff 10.0 --l1 --sample-rate 16384 --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8
+  pycbc_generate_hwinj --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --frame-type ${FRAME_TYPE} --channel-name ${CHANNEL_NAME} --approximant EOBNRv2 --order pseudoFourPN --mass1 1.4 --mass2 1.4 --inclination 60.0 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 28 --waveform-low-frequency-cutoff 10.0 --l1 --sample-rate 16384 --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --psd-low-frequency-cutoff 40.0
 
 This will generate a single-column ASCII files that contains the h(t) time series for each detector and a LIGOLW XML file with the waveform parameters. The output filenames are not specified on the command line, they are determined internally by ``pycbc_generate_hwinj``. In this example the ASCII file with the waveform will be named ``L1-HWINJ_CBC-${START}-${DURATION}.txt`` where ``${START}`` is the start time stamp of the time series and ``${DURATION}`` is the length in seconds of the ASCII waveform file. The LIGOLW XML file will be named ``H1L1-HWINJ_CBC-${START}-${DURATION}.xml.gz``.
 
