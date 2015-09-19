@@ -443,6 +443,7 @@ for ifo in opts.instruments:
     output = TimeSeries(initial_array, delta_t=1.0/sample_rate, epoch=start_time, dtype=strain.dtype)
 
     # inject waveform
+    logging.info('Injecting %s waveform into timeseries of zeroes', ifo)
     injections = InjectionSet(xml_filename)
     injections.apply(output, ifo)
 
