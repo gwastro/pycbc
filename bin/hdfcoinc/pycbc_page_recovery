@@ -14,7 +14,7 @@ parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument("--injection-file", required=True,
                     help="hdf injection file containing found injections. "
-                         "Required. DOCUMENTME?")
+                         "Required.")
 parser.add_argument("--bank-file", required=True,
                     help="hdf bank file containing template parameters. "
                          "Required")
@@ -24,7 +24,7 @@ parser.add_argument("--trigger-file",
 parser.add_argument("--detector", required=True,
                     help="Detector where injections are recovered. Required")
 parser.add_argument("--min-ifar", default=0,
-                    help="Minimum ifar for which to plot injections. Units:years")
+                    help="Minimum IFAR for which to plot injections. Units:years")
 parser.add_argument("--error-param", required=True,
                     help="Property to be compared between injected and recovered "
                          "event, ex. 'mchirp'. Required")
@@ -40,9 +40,8 @@ parser.add_argument("--plot-type", choices=["scatter", "err", "fracerr",
                     "fracerrhist"], default="scatter",
                     help="Type of plot to show accuracy of recovery. "
                          "Default='scatter'")
-#parser.add_argument("--dynamic", action="store_true", default=False)
 parser.add_argument("--gradient-far", action="store_true",
-                    help="Show far of found injections as a gradient")
+                    help="Show FAR of found injections as a gradient")
 parser.add_argument("--output-file", required=True)
 args = parser.parse_args()
 
@@ -98,9 +97,8 @@ def get_inj_param(injfile, param, args):
         The calculated parameter values
     """
     det = pycbc.detector.Detector(args.detector)
-    # need to convert everything to floats so that swig doesn't choke
-    _time_delay = lambda dec, ra, t: \
-          det.time_delay_from_earth_center(float(dec), float(ra), float(t))
+    _time_delay = lambda dec, ra, t:
+          det.time_delay_from_earth_center(dec, ra, t)
     time_delay = numpy.vectorize(_time_delay)
 
     inj = injfile["injections"]
@@ -113,10 +111,10 @@ def get_inj_param(injfile, param, args):
       "eta"    : "pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:], "
                  "inj['mass2'][:])[1]",
       "effective_spin" : "pnutils.phenomb_chi(inj['mass1'][:], inj['mass2'][:], "
-                         "inj['spin1z'][:], inj['spin2z'][:])",
-      "end_time_"+ifo[0].lower() : "inj['end_time'][:] + "
-           "time_delay(inj['longitude'][:], inj['latitude'][:], "
-           "inj['end_time'][:])",
+                 "inj['spin1z'][:], inj['spin2z'][:])",
+      "end_time_"+args.detector[0].lower() : "inj['end_time'][:] + "
+                 "time_delay(inj['longitude'][:], inj['latitude'][:], "
+                 "inj['end_time'][:])",
     }
     return eval(inj_param_dict[param])
 
