@@ -189,6 +189,10 @@ opts = parser.parse_args()
 _strain.verify_strain_options_multi_ifo(opts, parser, opts.instruments)
 _psd.verify_psd_options(opts, parser)
 
+# setup log
+logging_level = logging.DEBUG
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
 # check that sample rates are the same
 for ifo in opts.instruments:
     if opts.sample_rate[ifo] != opts.sample_rate[opts.instruments[0]]:
@@ -213,10 +217,6 @@ distance = 40.0
 
 # set network SNR to 0.0
 network_snr = 0.0
-
-# setup log
-logging_level = logging.DEBUG
-logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
 
 # create output XML file
 logging.info('Creating XML file')
