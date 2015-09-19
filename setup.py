@@ -417,6 +417,7 @@ setup (
                'bin/hwinj/pycbc_generate_hwinj',
                'bin/hwinj/pycbc_generate_hwinj_from_xml',
                'bin/hwinj/pycbc_plot_hwinj',
+               'bin/hwinj/pycbc_insert_frame_hwinj',
                'bin/hdfcoinc/pycbc_strip_injections',
                'bin/sngl/pycbc_ligolw_cluster',
                'bin/sngl/pycbc_plot_bank',
