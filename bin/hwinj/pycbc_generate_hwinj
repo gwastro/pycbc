@@ -189,6 +189,10 @@ opts = parser.parse_args()
 _strain.verify_strain_options_multi_ifo(opts, parser, opts.instruments)
 _psd.verify_psd_options(opts, parser)
 
+# setup log
+logging_level = logging.DEBUG
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
 # check that sample rates are the same
 for ifo in opts.instruments:
     if opts.sample_rate[ifo] != opts.sample_rate[opts.instruments[0]]:
@@ -213,10 +217,6 @@ distance = 40.0
 
 # set network SNR to 0.0
 network_snr = 0.0
-
-# setup log
-logging_level = logging.DEBUG
-logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
 
 # create output XML file
 logging.info('Creating XML file')
@@ -288,8 +288,8 @@ sngl.spin2y = opts.spin2y
 sngl.spin2x = opts.spin2x
 
 # generate waveform
-logging.info('Generating waveform at %.3fMpc beginning at %.3fHz', sim.distance, opts.waveform_low_frequency_cutoff)
-h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order,
+logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order, f_lower=opts.psd_low_frequency_cutoff,
                       delta_t=1.0/sample_rate)
 
 # zero pad polarizations to get integer second time series
@@ -351,8 +351,8 @@ sim.distance = scale*sim.distance
 network_snr = 0.0
 
 # generate waveform
-logging.info('Generating waveform at %.3fMpc beginning at %.3fHz', sim.distance, opts.waveform_low_frequency_cutoff)
-h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order,
+logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order, f_lower=opts.psd_low_frequency_cutoff,
                       delta_t=1.0/sample_rate)
 
 # zero pad polarizations to get integer second time series
@@ -443,6 +443,7 @@ for ifo in opts.instruments:
     output = TimeSeries(initial_array, delta_t=1.0/sample_rate, epoch=start_time, dtype=strain.dtype)
 
     # inject waveform
+    logging.info('Injecting %s waveform into timeseries of zeroes', ifo)
     injections = InjectionSet(xml_filename)
     injections.apply(output, ifo)
 
