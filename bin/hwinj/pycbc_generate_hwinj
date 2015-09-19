@@ -288,8 +288,8 @@ sngl.spin2y = opts.spin2y
 sngl.spin2x = opts.spin2x
 
 # generate waveform
-logging.info('Generating waveform at %.3fMpc beginning at %.3fHz', sim.distance, opts.waveform_low_frequency_cutoff)
-h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order,
+logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order, f_lower=opts.psd_low_frequency_cutoff,
                       delta_t=1.0/sample_rate)
 
 # zero pad polarizations to get integer second time series
@@ -351,8 +351,8 @@ sim.distance = scale*sim.distance
 network_snr = 0.0
 
 # generate waveform
-logging.info('Generating waveform at %.3fMpc beginning at %.3fHz', sim.distance, opts.waveform_low_frequency_cutoff)
-h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order,
+logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order, f_lower=opts.psd_low_frequency_cutoff,
                       delta_t=1.0/sample_rate)
 
 # zero pad polarizations to get integer second time series
