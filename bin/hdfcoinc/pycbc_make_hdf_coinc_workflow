@@ -212,9 +212,11 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
                                 data_seg, 'INSPIRAL_DATA', 'psds')]
                            
 s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'])
-r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'])
-det_summ = [(s, r)]
-layout(rdir['detector_sensitivity'], det_summ)    
+r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], require='summ')
+r2 = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], exclude='summ')
+
+det_summ = [(s, r[0] if len(r) != 0 else None)]
+layout(rdir['detector_sensitivity'], det_summ + list(grouper(r2, 2)))    
 
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
     wf.make_segments_plot(workflow, files, rdir['analysis_time/segments'], 
