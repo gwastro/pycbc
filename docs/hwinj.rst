@@ -201,6 +201,19 @@ You can print out the recovered SNR and other parameters with ``lwtprint``, for 
 
   lwtprint -t sngl_inspiral -c end_time,snr ${INSPIRAL_FILE}
 
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Recover ASCII file injection with ``pycbc_inspiral``
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+There is an executable ``pycbc_insert_frame_hwinj`` that will read the single-column ASCII file and insert it into frame data. An example command is here ::
+
+  HWINJ_FILE=H1-HWINJ_CBC-${START}-${DURATION}.txt
+  pycbc_insert_frame_hwinj --frame-type ${FRAME_TYPE} --channel-name H1:${CHANNEL_NAME} --gps-start-time $((${GPS_START_TIME} - 16)) --gps-end-time $((${GPS_END_TIME} + 16)) --pad-data 8 --strain-high-pass 30.0 --sample-rate 16384 --hwinj-file ${HWINJ_FILE} --hwinj-start-time ${START} --ifo H1 --output-file H1-HWINJ.gwf
+
+Where ``${START}`` is the start of the injection and ``${DURATION}`` is the length of the injection.
+
+Then you can run pycbc on the output frame file ``H1-HWINJ.gwf``.
+
 =================================================
 How to query the segment database
 =================================================
