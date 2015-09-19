@@ -212,9 +212,11 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
                                 data_seg, 'INSPIRAL_DATA', 'psds')]
                            
 s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'])
-r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'])
-det_summ = [(s, r)]
-layout(rdir['detector_sensitivity'], det_summ)    
+r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], require='summ')
+r2 = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], exclude='summ')
+
+det_summ = [(s, r[0] if len(r) != 0 else None)]
+layout(rdir['detector_sensitivity'], det_summ + list(grouper(r2, 2)))    
 
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
     wf.make_segments_plot(workflow, files, rdir['analysis_time/segments'], 
@@ -287,21 +289,35 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                     wf.FileList([inj_file]), final_veto_file[0], 
                                     final_veto_name[0],
                                     output_dir, tags=ctags)
-    inj_coincs += [inj_coinc]                      
+    inj_coincs += [inj_coinc]  
+    
+    #foundmissed/sensitivity plots that go in the subsection wells
+    s = wf.make_sensitivity_plot(workflow, found_inj, 
+                  rdir['search_sensitivity/%s' % tag], 
+                   exclude=['all', 'summ'], require='sub', tags=ctags)
+    f = wf.make_foundmissed_plot(workflow, found_inj, 
+                  rdir['injections/%s' % tag],
+                   exclude=['all', 'summ'], require='sub', tags=[tag])                 
+    
+    # Extra foundmissed/sensitivity plots                    
     wf.make_sensitivity_plot(workflow, found_inj, 
                   rdir['search_sensitivity/%s' % tag], 
-                   exclude=['all', 'summ'], tags=ctags)
+                   exclude=['all', 'summ', 'sub'], tags=ctags)
     wf.make_foundmissed_plot(workflow, found_inj, 
                   rdir['injections/%s' % tag],
-                   exclude=['all', 'summ'], tags=[tag])
+                   exclude=['all', 'summ', 'sub'], tags=[tag])
+                   
     wf.make_inj_table(workflow, found_inj, 
                   rdir['injections/%s' % tag], tags=[tag])
-                             
+                         
     for inj_insp, trig_insp in zip(insps, full_insps):
-        wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
+        f += wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
                                   final_bg_file, trig_insp,
                                   rdir['injections/%s' % tag], tags=[tag])
 
+    if len(s) > 0: group_layout(rdir['search_sensitivity/%s' % tag], s)        
+    if len(f) > 0: group_layout(rdir['injections/%s' % tag], f)  
+    
 # Make combined injection plots
 inj_summ = []
 if len(inj_files) > 0:
