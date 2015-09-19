@@ -28,7 +28,7 @@ Select a time for the injection
 
 First on the command line set a variable for the GPS geocentric end time of the coherent injection ::
 
-  GEOCENT_END_TIME=1126399769
+  GEOCENT_END_TIME=1124381661
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Select data for PSD estimation
@@ -182,6 +182,24 @@ You can plot the ASCII waveform files with an X11 connection. It's strongly reco
 If you are using ``ssh`` or ``gsissh`` to log into a cluster, you can provide the ``-Y`` option to open an X11 connection. For example ::
 
   gsissh -Y ldas-pcdev1.ligo.caltech.edu
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Recover software injection with ``pycbc_inspiral``
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+The executable ``pycbc_generate_hwinj`` will create an XML file with both a ``sim_inspiral`` and ``sngl_inspiral`` table. Therefore we can inject the exact waveform parameters and recover them with the exact template.
+
+The analogous software injection command for the example above would be ::
+
+  TMPLTBANK_FILE=H1-HWINJ_CBC-${START}-${DURATION}.xml.gz
+  INSPIRAL_FILE=H1-INSPIRAL_PYCBC-${GPS_START_TIME}-$((${GPS_END_TIME}-${GPS_START_TIME})).xml.gz
+  pycbc_inspiral --segment-end-pad 64  --segment-length 256 --segment-start-pad 64 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --psd-inverse-length 16 --pad-data 8 --sample-rate 4096 --low-frequency-cutoff 40 --strain-high-pass 30 --filter-inj-only --processing-scheme cpu --cluster-method template --approximant SEOBNRv2 --order 8 --snr-threshold 5.5 --chisq-bins 16 --channel-name ${CHANNEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --trig-start-time $(($GEOCENT_END_TIME - 2)) --trig-end-time $(($GEOCENT_END_TIME + 2)) --frame-type ${FRAME_TYPE} --injection-file ${TMPLTBANK_FILE}  --bank-file ${TMPLTBANK_FILE} --output ${INSPIRAL_FILE} --verbose
+
+We kept the same PSD options (eg. ``--psd-segment-length``, etc.), data, high-pass filter, and low-frequency-cutoff.
+
+You can print out the recovered SNR and other parameters with ``lwtprint``, for example
+
+  lwtprint -t sngl_inspiral -c end_time,snr ${INSPIRAL_FILE}
 
 =================================================
 How to query the segment database
