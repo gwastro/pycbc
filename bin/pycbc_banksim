@@ -139,13 +139,28 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
 
     return make_padded_frequency_series(hvec, filter_N)
 
+aprs = list(set(td_approximants() + fd_approximants()))
+
+# returns true if template_mchirp is more than w*signal_mchirp above or below signal_mchirp
 def outside_mchirp_window(template, signal, w):
     template_mchirp, et = mass1_mass2_to_mchirp_eta(template.mass1,
                                                     template.mass2)
     signal_mchirp, et = mass1_mass2_to_mchirp_eta(signal.mass1, signal.mass2)
     return abs(signal_mchirp - template_mchirp) > (w * signal_mchirp)
 
-aprs = list(set(td_approximants() + fd_approximants()))
+# returns true if template_mchirp is more than w*signal_mchirp above signal_mchirp
+def above_mchirp_window(template, signal, w):
+    template_mchirp, et = mass1_mass2_to_mchirp_eta(template.mass1,
+                                                    template.mass2)
+    signal_mchirp, et = mass1_mass2_to_mchirp_eta(signal.mass1, signal.mass2)
+    return template_mchirp - signal_mchirp > (w * signal_mchirp)
+
+# returns true if template_mchirp is more than w*signal_mchirp below signal_mchirp
+def below_mchirp_window(template, signal, w):
+    template_mchirp, et = mass1_mass2_to_mchirp_eta(template.mass1,
+                                                    template.mass2)
+    signal_mchirp, et = mass1_mass2_to_mchirp_eta(signal.mass1, signal.mass2)
+    return signal_mchirp - template_mchirp > (w * signal_mchirp)
 
 #File output Settings
 parser = ArgumentParser()
@@ -191,8 +206,16 @@ pycbc.scheme.insert_processing_option_group(parser)
 pycbc.fft.insert_fft_option_group(parser)
 
 #Restricted maximization
-parser.add_argument("--mchirp-window", type=float, metavar="FRACTION", help="Ignore templates whose chirp mass deviates from signal's one more than given fraction")
+parser.add_argument("--mchirp-window", type=str, metavar="FRACTION", help="Ignore templates whose chirp mass deviates from signal's one more than given fraction. Provide two comma separated numbers to have different bounds above and below the signal's, with below bound listed first.")
 options = parser.parse_args()
+#Split mchirp_window depending on whether it contains a comma
+mchirp_list = True if ',' in options.mchirp_window else False
+if mchirp_list:
+     mchirp_window_lower = float(options.mchirp_window.split(",")[0])
+     mchirp_window_upper = float(options.mchirp_window.split(",")[1])
+else:
+     mchirp_window_equal = float(options.mchirp_window)
+
 
 template_sample_rate = options.filter_sample_rate
 signal_sample_rate = options.filter_sample_rate
@@ -309,10 +332,22 @@ with ctx:
             if stilde is None:
                 matches.append(0)
                 continue
-            elif options.mchirp_window and outside_mchirp_window(
-                    template_params, signal_params, options.mchirp_window):
+            # Don't look if outside mchirp_window_equal range
+            elif mchirp_list is False and outside_mchirp_window(
+                    template_params, signal_params, mchirp_window_equal):
                 matches.append(0)
                 continue
+            # Don't look if below mchirp_window_lower range
+            elif mchirp_list is True and below_mchirp_window(
+                    template_params, signal_params, mchirp_window_lower):
+                matches.append(0)
+                continue
+            # Don't look if above mchirp_window_upper range
+            elif mchirp_list is True and above_mchirp_window(
+                    template_params, signal_params, mchirp_window_upper):
+                matches.append(0)
+                continue
+
 
             # Generate htilde if we haven't already done so
             if htilde is None:
