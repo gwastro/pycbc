@@ -350,6 +350,8 @@ setup (
     install_requires = install_requires,
     dependency_links = links,
     scripts  = [
+               'bin/minifollowups/pycbc_page_coincinfo',
+               'bin/minifollowups/pycbc_plot_trigger_timeseries',
                'bin/lalapps/lalapps_inspiral_ahope',
                'bin/lalapps/lalapps_tmpltbank_ahope',
                'bin/pycbc_banksim',

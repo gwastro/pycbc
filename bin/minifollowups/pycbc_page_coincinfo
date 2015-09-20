@@ -1,0 +1,43 @@
+#!/bin/env python
+""" Plot the single detector trigger timeseries """
+import h5py, argparse, logging, pycbc.version, pycbc.events, pycbc.results, sys
+import matplotlib; matplotlib.use('Agg'); import pylab
+import numpy
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version',
+    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--single-trigger-files', nargs='+')
+parser.add_argument('--coinc-output-file')
+parser.add_argument('--single-output-file')
+parser.add_argument('--statmap-file',
+    help="The HDF format clustered coincident statmap file containing the result "
+         "triggers. ")
+parser.add_argument('--n-loudest', type=int,
+    help="The trigger Nth loudest trigger to examine, use with statmap file")
+
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+f = h5py.File(args.statmap_file, 'r')
+n = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
+d = f['foreground']
+
+headers = ["Combined Ranking Stat.", "IFAR (inc.)","FAP(inc.)", 
+                      "IFAR (exc.)", "FAP(exc.)", "Time Delay (s)"]
+
+table = numpy.array([
+                     ['%5.2f' % d['stat'][:][n], 
+                      '%5.2f' % d['ifar'][:][n], 
+                      '%5.2e' % d['fap'][:][n],
+                      '%5.2f' % d['ifar_exc'][:][n], 
+                      '%5.2e' % d['fap_exc'][:][n],
+                      '%5.4f' % (d['time1'][:][n] - d['time2'][:][n])]
+                    ], dtype=str)
+
+html = str(pycbc.results.static_table(table, headers))
+
+pycbc.results.save_html_with_metadata(html, args.coinc_output_file, {}, {})
+
+

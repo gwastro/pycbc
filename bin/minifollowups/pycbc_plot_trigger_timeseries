@@ -1,0 +1,75 @@
+#!/bin/env python
+""" Plot the single detector trigger timeseries """
+import h5py, argparse, logging, pycbc.version, pycbc.events, pycbc.results, sys
+import matplotlib; matplotlib.use('Agg'); import pylab
+
+def get_time_from_cli(args):
+    if args.statmap_file:
+        f = h5py.File(args.statmap_file, 'r')
+        stat = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
+        
+        ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
+        return ({ifo1:f['foreground/time1'][:][stat], 
+                ifo2:f['foreground/time2'][:][stat]})
+    
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version',
+    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--single-trigger-files', nargs='+', 
+    help="The HDF format single detector merged trigger files")
+parser.add_argument('--window', type=float)
+parser.add_argument('--plot-type', choices=['snr', 'newsnr'], default='snr')
+parser.add_argument('--output-file')
+
+# These options help choose the GPS time to examine, add more options to pull
+# from different file types (injections, etc)    
+parser.add_argument('--statmap-file',
+    help="The HDF format clustered coincident statmap file containing the result "
+         "triggers. ")
+parser.add_argument('--n-loudest', type=int,
+    help="The trigger Nth loudest trigger to examine, use with statmap file")
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+time = get_time_from_cli(args)
+files = {}
+for fname in args.single_trigger_files:
+    f = h5py.File(fname, 'r')
+    ifos = f.keys()
+    for ifo in ifos:
+        files[ifo] = f[ifo]
+
+fig = pylab.figure()
+for ifo in files.keys():
+    t = time[ifo]
+    times = files[ifo]['end_time'][:]
+    
+    idx = pycbc.events.indices_within_times(times, [t - args.window],
+                                                   [t + args.window])
+                                                   
+    # center times on the trigger/chosen time
+    times = times[idx] - t
+    
+    if args.plot_type == 'snr':
+        data = files[ifo]['snr'][:][idx]   
+    if args.plot_type == 'newsnr':                                         
+        snr = files[ifo]['snr'][:]
+        chisq = files[ifo]['chisq'][:]
+        chisq_dof = files[ifo]['chisq_dof'][:]
+        data = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))
+    
+    pylab.scatter(times, data, color=pycbc.results.ifo_color(ifo), marker='x',
+                  label=ifo)
+    
+pylab.xlabel('time (s)')
+pylab.ylabel(args.plot_type)                                
+pylab.ylim(ymin=data.min())
+pylab.xlim(xmin=-args.window, xmax=args.window)
+pylab.legend()
+pylab.grid()
+pycbc.results.save_fig_with_metadata(fig, args.output_file,
+            cmd = ' '.join(sys.argv),
+            title = 'Single Detector Trigger Timeseries (%s)' % args.plot_type,
+            caption = '',           
+         )
