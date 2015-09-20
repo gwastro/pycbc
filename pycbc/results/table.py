@@ -100,3 +100,46 @@ def table(columns, names, page_size=None, format_strings=None):
                                 data=data,
                                 format_strings=format_strings,
                                )
+
+static_table_template = mako.template.Template("""
+    <table class="table">
+        % if titles is not None:
+            <tr>
+            % for i in range(len(titles)):
+                <th>
+                    ${titles[i]}
+                </th>
+            % endfor
+            </tr>
+        % endif
+    
+        % for i in range(len(data)):
+            <tr>
+            % for j in range(len(data[i])):
+                <td>
+                    ${data[i][j]}
+                </td>
+            % endfor
+            </tr>
+        % endfor
+    </table>
+""")
+                               
+def static_table(data, titles=None):
+    """ Return an html tableo of this data
+    
+    Parameters
+    ----------
+    data : two-dimensional numpy string array
+        Array containing the cell values
+    titles : numpy array 
+        Vector str of titles
+    
+    Returns
+    -------
+    html_table : str
+        A string containing the html table.
+    """
+    return static_table_template.render(data=data, titles=titles)
+    
+    
