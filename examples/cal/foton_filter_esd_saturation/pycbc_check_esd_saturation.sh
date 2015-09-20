@@ -73,6 +73,17 @@ while true ; do
       echo
       echo "Filter a single-column ASCII file to see if it saturates the ETMY DAC."
       echo
+      echo "You need to have ROOT and foton python packages in your environment."
+      echo "To do this on the LLO or LHO clusters do:"
+      echo 
+      echo "NAME=/path/to/virtualenv"
+      echo "cd $NAME/lib64/python2.6/site-packages"
+      echo "ln -s /usr/lib64/python2.6/site-packages/libPyROOT.so"
+      echo "ln -s /usr/lib64/python2.6/site-packages/ROOT.py"
+      echo "ln -s /usr/lib64/python2.6/site-packages/ROOTwriter.py"
+      echo "cd $NAME/lib/python2.6/site-packages"
+      echo "ln -s /usr/lib/python2.6/site-packages/foton.py"
+      echo
       exit 0 ;;
     --) shift ; break ;;
     *) echo "Internal error!" ; exit 1 ;;
