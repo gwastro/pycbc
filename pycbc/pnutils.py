@@ -173,6 +173,15 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
     gamma += (732985. / 2268. + 140. / 9. * eta) * delta * chiA
     return beta, sigma, gamma, chiS
 
+def _get_phenomb_chi(m1, m2, s1z, s2z):
+    """
+    Wrapper of standard Phenom effective spin calculation
+    """
+    return lalsimulation.SimIMRPhenomBComputeChi(float(m1) * lal.MSUN_SI,
+             float(m2) * lal.MSUN_SI, float(s1z), float(s2z))
+
+phenomb_chi = numpy.vectorize(_get_phenomb_chi)
+
 def solar_mass_to_kg(solar_masses):
     return solar_masses * lal.MSUN_SI
 
