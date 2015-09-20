@@ -418,8 +418,11 @@ else:
     logging.info('Network SNR of injection is %.3f', network_snr)
 
 # figure out length of time series to inject waveform into
+logging.info('Calculating number of sample points in output file')
+h_plus, _ = get_td_waveform(sim, approximant=name, phase_order=phase_order,
+                      delta_t=1.0/sample_rate)
 pad_seconds = 5
-template_duration_seconds = int( len(strain) / sample_rate ) + 1
+template_duration_seconds = int( len(h_plus) / sample_rate ) + 1
 start_time = int(opts.geocentric_end_time) - template_duration_seconds - pad_seconds
 end_time = int(opts.geocentric_end_time) + 1 + pad_seconds
 num_samples = (end_time - start_time) * sample_rate
