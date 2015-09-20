@@ -84,7 +84,7 @@ fig = pylab.figure(figsize=[10, 5])
 ax = fig.gca()
 
 names = []
-smin, smax = numpy.inf, -numpy.inf
+smin, smax = -1, 1
 for i, seg_file in enumerate(sorted(args.segment_files)[::-1]):
     y = i + .05
     h = .7
