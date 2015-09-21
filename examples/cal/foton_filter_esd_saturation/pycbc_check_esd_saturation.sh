@@ -77,11 +77,11 @@ while true ; do
       echo "To do this on the LLO or LHO clusters do:"
       echo 
       echo "NAME=/path/to/virtualenv"
-      echo "cd $NAME/lib64/python2.6/site-packages"
+      echo "cd ${NAME}/lib64/python2.6/site-packages"
       echo "ln -s /usr/lib64/python2.6/site-packages/libPyROOT.so"
       echo "ln -s /usr/lib64/python2.6/site-packages/ROOT.py"
       echo "ln -s /usr/lib64/python2.6/site-packages/ROOTwriter.py"
-      echo "cd $NAME/lib/python2.6/site-packages"
+      echo "cd ${NAME}/lib/python2.6/site-packages"
       echo "ln -s /usr/lib/python2.6/site-packages/foton.py"
       echo
       exit 0 ;;
