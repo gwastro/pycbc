@@ -3,6 +3,17 @@ import sys, logging, argparse, numpy, itertools, pycbc, h5py
 from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter, events
 from pycbc.types import zeros, float32, complex64, TimeSeries
 
+def get_time(statmap, n_loudest):
+     f = h5py.File(statmap, 'r')
+     n = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
+     return f['foreground/time1'][:][n], f['foreground/template_id'][:][n]
+
+def select_segment(fname, segment, ifo, time):
+    segs = events.select_segments_by_definer(fname, segment, ifo)
+    s, e = events.segments_to_start_end(segs)
+    idx = numpy.searchsorted(s, time) - 1
+    reutrn (s[idx], e[idx])
+
 parser = argparse.ArgumentParser(usage='',
     description="Single template gravitational-wave followup")
 parser.add_argument('--version', action='version', 
@@ -34,6 +45,7 @@ parser.add_argument("--taper-template", choices=["start","end","startend"],
 # alternate option set to pull from statmap file
 parser.add_argument("--statmap-file")
 parser.add_argument("--n-loudest")
+parser.add_argument("--bank-file")
 parser.add_argument("--inspiral-segments")
 parser.add_argument("--segment-name")
 
@@ -44,6 +56,20 @@ strain.StrainSegments.insert_segment_option_group(parser)
 scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 opt = parser.parse_args()
+
+# If we are reading from the coinc files ######################################
+if args.statmap_file:
+    time, tid = get_time(opt.statmap_file, opt.n_loudest)
+    f = h5py.File(opt.bank_file)
+    opt.mass1 = f['mass1'][:][tid]
+    opt.mass2 = f['mass2'][:][tid]    
+    opt.spin1z = f['spin1z'][:][tid]
+    opt.spin2z = f['spin2z'][:][tid]
+    ifo = opt.channel_name[0:2]
+    seg = select_segment(opt.inspiral_segments, opt.segment_name, ifo, time)
+    opt.gps_start_time, opt.gps_end_time = seg[0], seg[1]
+    
+###############################################################################
 
 # Check that the values returned for the options make sense
 psd.verify_psd_options(opt, parser)
