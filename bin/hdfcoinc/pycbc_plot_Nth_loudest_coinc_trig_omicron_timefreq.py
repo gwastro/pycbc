@@ -1,3 +1,9 @@
+"""
+Generates two plots, one for each IFO, that show the time-frequency trace of 
+Nth loudest coincident foreground trigger overlaid on a background of 
+Omicron triggers.
+"""
+
 import logging
 import h5py
 import numpy as np
@@ -35,7 +41,7 @@ parser.add_argument('--L1-output-file', type=str, required=True,
 parser.add_argument('--H1-output-file', type=str, required=True,
         help='Full path to output file for H1 trigger')
 parser.add_argument('--loudest-event-number', type=int, required=True, default=1,
-        help='Script will plot the Nth loudest coincident trigger')
+        help='Script will plot the Nth loudest coincident foreground trigger')
 parser.add_argument('--L1-omicron-dir', type=str, required=True,
         help='Directory containing L1 Omicron triggers. Ex: /home/detchar/triggers/ER7/L1/')
 parser.add_argument('--H1-omicron-dir', type=str, required=True,
