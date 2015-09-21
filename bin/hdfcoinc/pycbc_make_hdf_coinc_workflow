@@ -163,10 +163,6 @@ for bin_file in bin_files:
                     rdir['result'], tags=bin_file.tags)
     results_page += [(snrifar, ifar)]
 
-    # run minifollowups for each mass bin
-    mf_results = wf.setup_minifollowups(workflow, rdir, datafind_files,
-                    bin_file, hdfbank[0], 'foreground', tags=bin_file.tags)
-
 wf.make_ifar_plot(workflow, final_bg_file, rdir['result'])
 
 table = wf.make_foreground_table(workflow, final_bg_file, 
@@ -183,6 +179,11 @@ layout(rdir['result'], results_page + [(table,)])
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
                     'closed_box', rdir['single_triggers'], tags=[tag])
 group_layout(rdir['single_triggers'], snrchi)
+
+# run minifollowups on the output of the loudest events
+mf_results = wf.setup_minifollowups(workflow, final_bg_file, hdfbank[0],
+                                              full_insps, rdir['result'],
+                                              tags=final_bg_file.tags)
 
 hist_summ = []
 for insp in full_insps:
