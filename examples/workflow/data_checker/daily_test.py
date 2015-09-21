@@ -36,6 +36,7 @@ import pycbc.workflow as _workflow
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
                     level=logging.INFO,datefmt='%I:%M:%S')
+logger = logging.getLogger()
 
 # command line options
 _desc = __doc__[1:]
@@ -79,11 +80,15 @@ scienceSegs, segsList = _workflow.setup_segment_generation(workflow, segDir)
 
 segment_report(scienceSegs)
 
-print
+print "STARTING DF"
 print
 
 # Start with SYR comparison
-scienceSegsS = copy.deepcopy(scienceSegs)
+# FIXME: Used to use deecopy here, but now that seems to fail so repeating
+#        segment query calls with logging off. This may be slow!
+logger.disabled = True
+scienceSegsS, _ = _workflow.setup_segment_generation(workflow, segDir)
+logger.disabled = False
 print "RUNNING DATAFIND FOR SYR"
 datafinds, scienceSegsS = _workflow.setup_datafind_workflow(workflow, scienceSegsS,
                      dfDirSYR, segsList, tag="SYR")
@@ -93,7 +98,9 @@ segment_report(scienceSegsS)
 print 
 print
 print "RUNNING DATAFIND FOR CIT"
-scienceSegsC = copy.deepcopy(scienceSegs)
+logger.disabled = True
+scienceSegsC, _ = _workflow.setup_segment_generation(workflow, segDir)
+logger.disabled = False
 datafinds, scienceSegsC = _workflow.setup_datafind_workflow(workflow, scienceSegsC,
                        dfDirCIT, segsList, tag="CIT")
 
@@ -122,7 +129,9 @@ for ifo in scienceSegsC.keys():
 
 print
 print "RUNNING DATAFIND FOR LHO"
-scienceSegsS = copy.deepcopy(scienceSegs)
+logger.disabled = True
+scienceSegsS, _ = _workflow.setup_segment_generation(workflow, segDir)
+logger.disabled = False
 datafinds, scienceSegsS = _workflow.setup_datafind_workflow(workflow, scienceSegsS,
                        dfDirLHO, segsList, tag="LHO")
 
@@ -151,7 +160,9 @@ for ifo in scienceSegsC.keys():
 
 print
 print "RUNNING DATAFIND FOR LLO"
-scienceSegsS = copy.deepcopy(scienceSegs)
+logger.disabled = True
+scienceSegsS, _ = _workflow.setup_segment_generation(workflow, segDir)
+logger.disabled = False
 datafinds, scienceSegsS = _workflow.setup_datafind_workflow(workflow, scienceSegsS,
                        dfDirLLO, segsList, tag="LLO")
 
@@ -180,7 +191,9 @@ for ifo in scienceSegsC.keys():
 
 print
 print "RUNNING DATAFIND FOR UWM"
-scienceSegsS = copy.deepcopy(scienceSegs)
+logger.disabled = True
+scienceSegsS, _ = _workflow.setup_segment_generation(workflow, segDir)
+logger.disabled = False
 datafinds, scienceSegsS = _workflow.setup_datafind_workflow(workflow, scienceSegsS,
                        dfDirUWM, segsList, tag="UWM")
 
