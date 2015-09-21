@@ -84,10 +84,10 @@ def from_txt(filename, length, delta_f, low_freq_cutoff, is_asd_file=True):
 
     psd_interp = scipy.interpolate.interp1d(flog, slog)
 
-    kmin = int(low_freq_cutoff / delta_f)
+    kmin = int(numpy.ceil(low_freq_cutoff / delta_f))
     psd = numpy.zeros(length, dtype=numpy.float64)
 
-    vals = numpy.log(numpy.arange(kmin, length) * delta_f) 
+    vals = numpy.log(numpy.arange(kmin, length) * delta_f)
     psd[kmin:] =  numpy.exp(psd_interp(vals))
 
     return FrequencySeries(psd, delta_f=delta_f)
