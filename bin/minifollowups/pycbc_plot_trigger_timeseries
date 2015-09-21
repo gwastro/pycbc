@@ -23,6 +23,7 @@ parser.add_argument('--single-trigger-files', nargs='+',
 parser.add_argument('--window', type=float, default=10)
 parser.add_argument('--plot-type', choices=['snr', 'newsnr'], default='snr')
 parser.add_argument('--output-file')
+parser.add_argument('--log-y-axis', action='store_true')
 
 # These options help choose the GPS time to examine, add more options to pull
 # from different file types (injections, etc)    
@@ -67,9 +68,11 @@ for ifo in files.keys():
         
     pylab.scatter(times, data, color=pycbc.results.ifo_color(ifo), marker='x',
                   label=ifo)
-    print top
     pylab.scatter([0], [top], marker='*', s=50, color='yellow')
-    
+ 
+if args.log_y_axis:
+    pylab.yscale('log')
+     
 pylab.xlabel('time (s)')
 pylab.ylabel(args.plot_type)                                
 pylab.ylim(ymin=data.min())

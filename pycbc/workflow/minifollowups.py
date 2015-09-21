@@ -53,7 +53,7 @@ def setup_minifollowups(workflow, coinc_file,
                                   out_dir, tags=tags + [str(num_event)]),)        
         files += make_trigger_timeseries(workflow, single_triggers, coinc_file, num_event, 
                                   out_dir, tags=tags + [str(num_event)])
-        layout += list(grouper(files, 2))]
+        layout += list(grouper(files, 2))
         num_event += 1
     logging.info('Leaving minifollowups module')
 
