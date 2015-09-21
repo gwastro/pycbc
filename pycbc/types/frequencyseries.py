@@ -350,7 +350,7 @@ class FrequencySeries(Array):
             first_idx = _numpy.argmax(data_lal>0)
             if not first_idx == 0:
                 data_lal[:first_idx] = data_lal[first_idx]
-            psddict = {'G1': output}
+            psddict = {'P1': output}
             utils.write_filename(lalseries.make_psd_xmldoc(psddict), path,
                                  gz=path.endswith(".gz"))
         elif ext =='.hdf':
