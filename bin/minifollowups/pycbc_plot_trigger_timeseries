@@ -54,9 +54,9 @@ for ifo in files.keys():
     if args.plot_type == 'snr':
         data = files[ifo]['snr'][:][idx]   
     if args.plot_type == 'newsnr':                                         
-        snr = files[ifo]['snr'][:]
-        chisq = files[ifo]['chisq'][:]
-        chisq_dof = files[ifo]['chisq_dof'][:]
+        snr = files[ifo]['snr'][:][idx]
+        chisq = files[ifo]['chisq'][:][idx]
+        chisq_dof = files[ifo]['chisq_dof'][:][idx]
         data = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))
     
     pylab.scatter(times, data, color=pycbc.results.ifo_color(ifo), marker='x',

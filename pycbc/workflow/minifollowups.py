@@ -15,8 +15,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging
-from pycbc.workflow.core import Executable, FileList, Node
-from pycbc.workflow.plotting import PlotExecutable
+from pycbc.workflow.core import Executable, FileList, Node, makedir
+from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
+from itertools import izip_longest
+
+def grouper(iterable, n, fillvalue=None):
+    args = [iter(iterable)] * n
+    return izip_longest(*args, fillvalue=fillvalue)
 
 def setup_minifollowups(workflow, coinc_file, 
                                   single_triggers,
@@ -38,21 +43,21 @@ def setup_minifollowups(workflow, coinc_file,
     makedir(out_dir)
 
     # create a FileList that will contain all output files
-    files = FileList([])
+    layout = []
 
     # loop over number of loudest events to be followed up
     num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
     for num_event in range(num_events):
-        num_event += 1
- 
-        files += make_coinc_info(workflow, single_triggers, coinc_file, num_event, 
-                                  out_dir, tags=tags + [str(num_event)])        
+        files = FileList([])
+        layout += (make_coinc_info(workflow, single_triggers, coinc_file, num_event, 
+                                  out_dir, tags=tags + [str(num_event)]),)        
         files += make_trigger_timeseries(workflow, single_triggers, coinc_file, num_event, 
                                   out_dir, tags=tags + [str(num_event)])
-
+        layout += list(grouper(files, 2))
+        num_event += 1
     logging.info('Leaving minifollowups module')
 
-    return files
+    return layout
 
 def make_coinc_info(workflow, singles, coinc, num, out_dir, exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
@@ -61,17 +66,17 @@ def make_coinc_info(workflow, singles, coinc, num, out_dir, exclude=None, requir
     secs = requirestr(workflow.cp.get_subsections(name), require)  
     secs = excludestr(secs, exclude)
     files = FileList([])
-    for tag in secs:
-        node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
-                              out_dir=out_dir, tags=[tag] + tags).create_node()
-        node.add_input_list_opt('--single-trigger-files', singles)
-        node.add_input_opt('--statmap-file', coinc)
-        node.add_opt('--n-loudest', str(num))
-        node.new_output_file_opt(workflow.analysis_time, '.html', '--coinc-output-file')
-        workflow += node
-    return node.output_files[0]
+    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                              out_dir=out_dir, tags=tags).create_node()
+    node.add_input_list_opt('--single-trigger-files', singles)
+    node.add_input_opt('--statmap-file', coinc)
+    node.add_opt('--n-loudest', str(num))
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--coinc-output-file')
+    workflow += node
+    files += node.output_files
+    return files
     
-def make_trigger_timeseries(workflow, singles, coinc, out_dir, exclude=None, require=None, tags=None):
+def make_trigger_timeseries(workflow, singles, coinc, num, out_dir, exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'plot_trigger_timeseries'
@@ -86,7 +91,8 @@ def make_trigger_timeseries(workflow, singles, coinc, out_dir, exclude=None, req
         node.add_opt('--n-loudest', str(num))
         node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
         workflow += node
-    return node.output_files[0]    
+        files += node.output_files
+    return files
 
 
 

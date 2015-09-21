@@ -33,7 +33,7 @@ table = numpy.array([
                       '%5.2e' % d['fap'][:][n],
                       '%5.2f' % d['ifar_exc'][:][n], 
                       '%5.2e' % d['fap_exc'][:][n],
-                      '%5.4f' % (d['time1'][:][n] - d['time2'][:][n])]
+                      '%5.4f' % (d['time2'][:][n] - d['time1'][:][n])]
                     ], dtype=str)
 
 html = str(pycbc.results.static_table(table, headers))

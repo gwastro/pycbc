@@ -180,11 +180,11 @@ snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto,
 group_layout(rdir['single_triggers'], snrchi)
 
 # run minifollowups on the output of the loudest events
-mf_results = wf.setup_minifollowups(workflow, final_bg_file,
+wf_layout = wf.setup_minifollowups(workflow, final_bg_file,
                                   full_insps,  hdfbank[0], rdir['result'],
                                   tags=final_bg_file.tags)
 
-layout(rdir['result'], results_page + [(table,)] + list(groupby(mf_results, 2)))
+layout(rdir['result'], results_page + [(table,)] + wf_layout)
 
 hist_summ = []
 for insp in full_insps:
