@@ -22,37 +22,39 @@ class DefaultContentHandler(ligolw.LIGOLWContentHandler):
 lsctables.use_in(DefaultContentHandler)
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--coinc-trig-file', type=str, required=True,
+parser.add_argument('--coinc-file', type=str, required=True,
         help='HDF file containing coincident CBC triggers')
 parser.add_argument('--L1-trigs', type=str, required=True,
 		help='HDF file containing L1 CBC triggers')
 parser.add_argument('--H1-trigs', type=str, required=True,
         help='HDF file containing H1 CBC triggers')
-parser.add_argument('--template-file', type=str, required=True,
+parser.add_argument('--tmpltbank-file', type=str, required=True,
 		help='HDF file containing template information for CBC search')
-parser.add_argument('--output-dir', type=str, required=True,
-        help='Full path to output directory')
-parser.add_argument('--N', type=int, required=True, default=1,
+parser.add_argument('--L1-output-file', type=str, required=True,
+        help='Full path to output file for L1 trigger')
+parser.add_argument('--H1-output-file', type=str, required=True,
+        help='Full path to output file for H1 trigger')
+parser.add_argument('--loudest-event-number', type=int, required=True, default=1,
         help='Script will plot the Nth loudest coincident trigger')
 parser.add_argument('--L1-omicron-dir', type=str, required=True,
         help='Directory containing L1 Omicron triggers. Ex: /home/detchar/triggers/ER7/L1/')
 parser.add_argument('--H1-omicron-dir', type=str, required=True,
         help='Directory containing H1 Omicron triggers. Ex: /home/detchar/triggers/ER7/H1/')
-parser.add_argument('--omicron-snr-thresh', type=int, required=True, default=5,
+parser.add_argument('--omicron-snr-thresh', type=int, required=False, default=5,
         help='SNR threshold for choosing which Omicron triggers to plot.')
 args = parser.parse_args()
 
 logging.info('Reading HDF files')
 
-coinc_trig_file = h5py.File(args.coinc_trig_file,'r')
+coinc_trig_file = h5py.File(args.coinc_file,'r')
 L1_trig_file = h5py.File(args.L1_trigs,'r')
 H1_trig_file = h5py.File(args.H1_trigs,'r')
-template_file = h5py.File(args.template_file,'r')
+template_file = h5py.File(args.tmpltbank_file,'r')
 
 logging.info('Parsing HDF files')
 
 coinc_newsnr = coinc_trig_file['background_exc']['stat'][:]
-Nth_loudest_idx = np.argsort(coinc_newsnr)[-args.N]
+Nth_loudest_idx = np.argsort(coinc_newsnr)[-args.loudest_event_number]
 
 if coinc_trig_file.attrs['detector_1'] == 'H1':
     H1_idx = coinc_trig_file['background_exc']['trigger_id1'][Nth_loudest_idx]
@@ -175,8 +177,7 @@ plt.suptitle('H1 CBC trigger SNR = ' + format(H1_snr,'.2f') + ", newSNR = " + fo
 plt.title(format(mass1,'.2f') + " - " + format(mass2,'.2f') + " solar masses at GPS time " + format(H1_cbc_end_time,'.2f'),fontsize=12)
 plt.hold(True)
 plt.plot(H1_inspiral_t,H1_inspiral_f)
-plt.savefig(args.output_dir + 'H1_trig_'+str(H1_idx)+'_'+str(args.N)+'_loudest' + 
-                    '_coinc_trig_'+str(Nth_loudest_idx)+'.png')
+plt.savefig(args.H1_output_file)
 
 plt.figure(1)
 cm = plt.cm.get_cmap('jet')
@@ -192,7 +193,6 @@ plt.suptitle('L1 CBC trigger SNR = ' + format(L1_snr,'.2f') + ", newSNR = " + fo
 plt.title(format(mass1,'.2f') + " - " + format(mass2,'.2f') + " solar masses at GPS time " + format(L1_cbc_end_time,'.2f'),fontsize=12)
 plt.hold(True)
 plt.plot(L1_inspiral_t,L1_inspiral_f)
-plt.savefig(args.output_dir + 'L1_trig_'+str(L1_idx)+'_'+str(args.N)+'_loudest' + 
-                    '_coinc_trig_'+str(Nth_loudest_idx)+'.png')
+plt.savefig(args.L1_output_file)
 
 logging.info('Done! Exiting script.')
