@@ -31,6 +31,12 @@ parser.add_argument("--taper-template", choices=["start","end","startend"],
                     help="For time-domain approximants, taper the start and/or"
                     " end of the waveform before FFTing.")
 
+# alternate option set to pull from statmap file
+parser.add_argument("--statmap-file")
+parser.add_argument("--n-loudest")
+parser.add_argument("--inspiral-segments")
+parser.add_argument("--segment-name")
+
 # Add options groups
 psd.insert_psd_option_group(parser)
 strain.insert_strain_option_group(parser)
@@ -119,6 +125,12 @@ with ctx:
         chisq = vetoes.power_chisq(template, stilde, chisq_bins, stilde.psd, 
                                     low_frequency_cutoff = flow)
         chisq /= opt.chisq_bins * 2 - 2  
-         
-    
+        
+        f['snr/%s' % s_num] = snr.numpy() 
+        f['snr/%s' % s_num].attrs['start_time'] = numpy.float64(stilde.epoch)
+        f['snr/%s' % s_num].attrs['delta_t'] = snr.delta_t
+        f['chisq/%s' % s_num] = chisq.numpy() 
+        f['chisq/%s' % s_num].attrs['start_time'] = numpy.float64(stilde.epoch)
+        f['chisq/%s' % s_num].attrs['delta_t'] = snr.delta_t 
+        
 logging.info("Finished")
