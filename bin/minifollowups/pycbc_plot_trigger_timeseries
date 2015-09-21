@@ -18,7 +18,7 @@ parser.add_argument('--version', action='version',
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--single-trigger-files', nargs='+', 
     help="The HDF format single detector merged trigger files")
-parser.add_argument('--window', type=float)
+parser.add_argument('--window', type=float, default=10)
 parser.add_argument('--plot-type', choices=['snr', 'newsnr'], default='snr')
 parser.add_argument('--output-file')
 

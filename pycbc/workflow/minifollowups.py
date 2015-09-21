@@ -33,24 +33,60 @@ def setup_minifollowups(workflow, coinc_file,
         logging.info('There is no [workflow-minifollowups] section in configuration file')
         logging.info('Leaving minifollowups')
         return output_filelist
-    
-    
+        
     tags = [] if tags is None else tags
     makedir(out_dir)
 
     # create a FileList that will contain all output files
-    output_filelist = FileList([])
+    files = FileList([])
 
     # loop over number of loudest events to be followed up
     num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
     for num_event in range(num_events):
         num_event += 1
-        
-        
+ 
+        files += make_coinc_info(workflow, single_triggers, coinc_file, num_event, 
+                                  out_dir, tags=tags + [str(num_event)])        
+        files += make_trigger_timeseries(workflow, single_triggers, coinc_file, num_event, 
+                                  out_dir, tags=tags + [str(num_event)])
 
     logging.info('Leaving minifollowups module')
 
-    return output_filelist
+    return files
+
+def make_coinc_info(workflow, singles, coinc, num, out_dir, exclude=None, require=None, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'page_coincinfo'
+    secs = requirestr(workflow.cp.get_subsections(name), require)  
+    secs = excludestr(secs, exclude)
+    files = FileList([])
+    for tag in secs:
+        node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                              out_dir=out_dir, tags=[tag] + tags).create_node()
+        node.add_input_list_opt('--single-trigger-files', singles)
+        node.add_input_opt('--statmap-file', coinc)
+        node.add_opt('--n-loudest', str(num))
+        node.new_output_file_opt(workflow.analysis_time, '.html', '--coinc-output-file')
+        workflow += node
+    return node.output_files[0]
+    
+def make_trigger_timeseries(workflow, singles, coinc, out_dir, exclude=None, require=None, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'plot_trigger_timeseries'
+    secs = requirestr(workflow.cp.get_subsections(name), require)  
+    secs = excludestr(secs, exclude)
+    files = FileList([])
+    for tag in secs:
+        node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                              out_dir=out_dir, tags=[tag] + tags).create_node()
+        node.add_input_list_opt('--single-trigger-files', singles)
+        node.add_input_opt('--statmap-file', coinc)
+        node.add_opt('--n-loudest', str(num))
+        node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+        workflow += node
+    return node.output_files[0]    
 
 
 

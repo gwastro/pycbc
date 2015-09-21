@@ -174,16 +174,17 @@ fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
 fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
-layout(rdir['result'], results_page + [(table,)])
 
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
                     'closed_box', rdir['single_triggers'], tags=[tag])
 group_layout(rdir['single_triggers'], snrchi)
 
 # run minifollowups on the output of the loudest events
-mf_results = wf.setup_minifollowups(workflow, final_bg_file, hdfbank[0],
-                                              full_insps, rdir['result'],
-                                              tags=final_bg_file.tags)
+mf_results = wf.setup_minifollowups(workflow, final_bg_file,
+                                  full_insps,  hdfbank[0], rdir['result'],
+                                  tags=final_bg_file.tags)
+
+layout(rdir['result'], results_page + [(table,)] + list(groupby(mf_results, 2)))
 
 hist_summ = []
 for insp in full_insps:
