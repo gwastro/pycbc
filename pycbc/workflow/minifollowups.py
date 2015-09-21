@@ -49,17 +49,17 @@ def setup_minifollowups(workflow, coinc_file,
     num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
     for num_event in range(num_events):
         files = FileList([])
-        layout += (make_coinc_info(workflow, single_triggers, coinc_file, num_event, 
+        layout += (make_coinc_info(workflow, single_triggers, tmpltbank_file, coinc_file, num_event, 
                                   out_dir, tags=tags + [str(num_event)]),)        
         files += make_trigger_timeseries(workflow, single_triggers, coinc_file, num_event, 
                                   out_dir, tags=tags + [str(num_event)])
-        layout += list(grouper(files, 2))
+        layout += list(grouper(files, 2))]
         num_event += 1
     logging.info('Leaving minifollowups module')
 
     return layout
 
-def make_coinc_info(workflow, singles, coinc, num, out_dir, exclude=None, require=None, tags=None):
+def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_coincinfo'
@@ -70,8 +70,9 @@ def make_coinc_info(workflow, singles, coinc, num, out_dir, exclude=None, requir
                               out_dir=out_dir, tags=tags).create_node()
     node.add_input_list_opt('--single-trigger-files', singles)
     node.add_input_opt('--statmap-file', coinc)
+    node.add_input_opt('--bank-file', bank)
     node.add_opt('--n-loudest', str(num))
-    node.new_output_file_opt(workflow.analysis_time, '.html', '--coinc-output-file')
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     files += node.output_files
     return files

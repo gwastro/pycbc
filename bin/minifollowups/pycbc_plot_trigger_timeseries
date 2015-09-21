@@ -8,9 +8,11 @@ def get_time_from_cli(args):
         f = h5py.File(args.statmap_file, 'r')
         stat = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
         
+        id1, id2 = f['foreground/trigger_id1'][:][stat], f['foreground/trigger_id2'][:][stat]
+        
         ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
-        return ({ifo1:f['foreground/time1'][:][stat], 
-                ifo2:f['foreground/time2'][:][stat]})
+        return ({ifo1:(f['foreground/time1'][:][stat], id1), 
+                ifo2:(f['foreground/time2'][:][stat], id2)})
     
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -42,7 +44,7 @@ for fname in args.single_trigger_files:
 
 fig = pylab.figure()
 for ifo in files.keys():
-    t = time[ifo]
+    t, id_loud = time[ifo]
     times = files[ifo]['end_time'][:]
     
     idx = pycbc.events.indices_within_times(times, [t - args.window],
@@ -53,14 +55,20 @@ for ifo in files.keys():
     
     if args.plot_type == 'snr':
         data = files[ifo]['snr'][:][idx]   
+        top = files[ifo]['snr'][:][id_loud]
     if args.plot_type == 'newsnr':                                         
         snr = files[ifo]['snr'][:][idx]
         chisq = files[ifo]['chisq'][:][idx]
         chisq_dof = files[ifo]['chisq_dof'][:][idx]
         data = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))
-    
+        top = pycbc.events.newsnr(files[ifo]['snr'][:][id_loud],
+                                  (files[ifo]['chisq'][:][id_loud] / (files[ifo]['chisq_dof'][:][id_loud] * 2 - 2))
+                                  )
+        
     pylab.scatter(times, data, color=pycbc.results.ifo_color(ifo), marker='x',
                   label=ifo)
+    print top
+    pylab.scatter([0], [top], marker='*', s=50, color='yellow')
     
 pylab.xlabel('time (s)')
 pylab.ylabel(args.plot_type)                                

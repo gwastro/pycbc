@@ -2,15 +2,15 @@
 """ Plot the single detector trigger timeseries """
 import h5py, argparse, logging, pycbc.version, pycbc.events, pycbc.results, sys
 import matplotlib; matplotlib.use('Agg'); import pylab
-import numpy
+import numpy, pycbc.pnutils
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--single-trigger-files', nargs='+')
-parser.add_argument('--coinc-output-file')
-parser.add_argument('--single-output-file')
+parser.add_argument('--bank-file')
+parser.add_argument('--output-file')
 parser.add_argument('--statmap-file',
     help="The HDF format clustered coincident statmap file containing the result "
          "triggers. ")
@@ -24,8 +24,8 @@ f = h5py.File(args.statmap_file, 'r')
 n = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
 d = f['foreground']
 
-headers = ["Combined Ranking Stat.", "IFAR (inc.)","FAP(inc.)", 
-                      "IFAR (exc.)", "FAP(exc.)", "Time Delay (s)"]
+headers = ["Combined Ranking Stat.", "Inc. IFAR (yrs)","Inc. FAP (yrs)", 
+                      "exc. IFAR (yrs)", "exc. FAP (yrs)", "Time Delay (s)"]
 
 table = numpy.array([
                      ['%5.2f' % d['stat'][:][n], 
@@ -38,6 +38,44 @@ table = numpy.array([
 
 html = str(pycbc.results.static_table(table, headers))
 
-pycbc.results.save_html_with_metadata(html, args.coinc_output_file, {}, {})
+headers = ["IFO", "Time", "SNR", "NewSNR", "Chisq", "Bins",
+           "Phase", "M1", "M2", "Mc", "S1z", "S2z", "Duration"]
 
+ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
+idx = {ifo1:d['trigger_id1'][:][n], ifo2:d['trigger_id2'][:][n]}
 
+table = []
+files = {}
+for fname in args.single_trigger_files:
+    f = h5py.File(fname, 'r')
+    ifos = f.keys()
+    for ifo in ifos:
+        files[ifo] = f[ifo]
+
+bank = h5py.File(args.bank_file, 'r')
+
+for ifo in files.keys():
+    d = files[ifo]
+    i = idx[ifo]
+    tid = d['template_id'][:][i]
+    data = [ifo,
+            d['end_time'][:][i],
+            '%5.2f' % d['snr'][:][i],
+            '%5.2f' %  pycbc.events.newsnr(d['snr'][:][i], d['chisq'][:][i]/ (d['chisq_dof'][:][i] * 2 - 2)),
+            '%5.2f' %  (d['chisq'][:][i] / (d['chisq_dof'][:][i] * 2 - 2)),            
+            '%5.2f' %  d['chisq_dof'][:][i],
+            '%5.2f' % d['coa_phase'][:][i],
+            '%5.2f' % bank['mass1'][:][tid],
+            '%5.2f' % bank['mass2'][:][tid],
+            '%5.2f' % (pycbc.pnutils.mass1_mass2_to_mchirp_eta(bank['mass1'][:][tid], bank['mass2'][:][tid],))[0],
+            '%5.2f' % bank['spin1z'][:][tid],
+            '%5.2f' % bank['spin2z'][:][tid],
+            '%5.2f' % d['template_duration'][:][i],
+           ]
+    table.append(data)    
+
+html += str(pycbc.results.static_table(table, headers))
+
+pycbc.results.save_fig_with_metadata(html, args.output_file, {},
+                        cmd = ' '.join(sys.argv),
+                        title = 'Coincident event %s' % args.n_loudest)
