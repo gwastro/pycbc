@@ -414,6 +414,7 @@ setup (
                'bin/hdfcoinc/pycbc_plot_range',
                'bin/hdfcoinc/pycbc_foreground_censor',
                'bin/hdfcoinc/pycbc_plot_hist',
+               'bin/hdfcoinc/pycbc_page_recovery',
                'bin/hwinj/pycbc_generate_hwinj',
                'bin/hwinj/pycbc_generate_hwinj_from_xml',
                'bin/hwinj/pycbc_plot_hwinj',
