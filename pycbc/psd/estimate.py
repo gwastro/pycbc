@@ -221,10 +221,6 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
     psd_trunc *= psd_trunc.conj()
     psd_out = 1. / abs(psd_trunc)
 
-    if low_frequency_cutoff:
-        kmin = int(low_frequency_cutoff / psd.delta_f)
-        psd_out[0:kmin] = 0
-
     return psd_out
 
 def interpolate(series, delta_f):
@@ -282,9 +278,4 @@ def bandlimited_interpolate(series, delta_f):
     fft(padded_series_in_time, interpolated_series)
 
     return interpolated_series
-
-
-
-
-
 

@@ -76,6 +76,9 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         elif opt.asd_file:
             psd = from_txt(opt.asd_file, length, 
                            delta_f, f_low, is_asd_file=True)
+        # Set values < flow to the value at flow
+        kmin = int(low_frequency_cutoff / psd.delta_f)
+        psd[0:kmin] = psd[kmin]
 
         psd *= dyn_range_factor ** 2
 
