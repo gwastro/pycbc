@@ -26,7 +26,7 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import os, subprocess, logging, math, string, urllib2, urlparse, ConfigParser, copy
+import os, stat, subprocess, logging, math, string, urllib2, urlparse, ConfigParser, copy
 import numpy, cPickle, random
 from itertools import combinations, groupby
 from operator import attrgetter
@@ -411,11 +411,11 @@ class Workflow(pegasus_workflow.Workflow):
         return path
         
 
-    def execute_node(self, node):
+    def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine
         """
         node.executed = True
-        cmd_list = node.get_command_line()
+        cmd_list = node.get_command_line(verbatim_exe=verbatim_exe)
         
         # Must execute in output directory.
         curr_dir = os.getcwd()
@@ -475,7 +475,7 @@ class Node(pegasus_workflow.Node):
             
         self._options += self.executable.common_options
     
-    def get_command_line(self):
+    def get_command_line(self, verbatim_exe=False):
         self._finalize()
         arglist = self._dax_node.arguments
         
@@ -490,8 +490,14 @@ class Node(pegasus_workflow.Node):
         arglist = [a for a in arglist if a != '']
         
         arglist = [a.storage_path if isinstance(a, File) else a for a in arglist]
-                        
-        exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
+       
+        # This allows the pfn to be an http(s) URL, which will be
+        # downloaded by resolve_url
+        if verbatim_exe:
+            exe_path = self.executable.get_pfn()
+        else:
+            exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
+
         return [exe_path] + arglist
         
     def new_output_file_opt(self, valid_seg, extension, option_name, tags=[],
@@ -1232,6 +1238,11 @@ def make_external_call(cmdList, out_dir=None, out_basename='external_call',
     exitCode : int
         The code returned by the process.
     """
+    resolvedExe = resolve_url(cmdList[0])
+    if resolvedExe != cmdList[0]:
+        os.chmod(resolvedExe, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+        cmdList[0] = resolvedExe
+
     if out_dir:
         outBase = os.path.join(out_dir,out_basename)
         errFile = outBase + '.err'
