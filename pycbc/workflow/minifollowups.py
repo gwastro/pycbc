@@ -39,7 +39,7 @@ def setup_minifollowups(workflow, coinc_file,
     if not workflow.cp.has_section('workflow-minifollowups'):
         logging.info('There is no [workflow-minifollowups] section in configuration file')
         logging.info('Leaving minifollowups')
-        return output_filelist
+        return []
         
     tags = [] if tags is None else tags
     makedir(out_dir)
