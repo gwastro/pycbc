@@ -1,6 +1,6 @@
 """
-Generates two plots, one for each IFO, that show the time-frequency trace of 
-Nth loudest coincident foreground trigger overlaid on a background of 
+Generates a plot that shows the time-frequency trace of 
+Nth loudest coincident trigger overlaid on a background of 
 Omicron triggers.
 """
 
@@ -37,7 +37,7 @@ parser.add_argument('--ifo', type=str, required=True,
 parser.add_argument('--tmpltbank-file', type=str, required=True,
 		help='HDF file containing template information for CBC search')
 parser.add_argument('--output-file', type=str, required=True,
-        help='Full path to output file for L1 trigger')
+        help='Full path to output file')
 parser.add_argument('--loudest-event-number', type=int, required=True, default=1,
         help='Script will plot the Nth loudest coincident foreground trigger')
 parser.add_argument('--omicron-dir', type=str, required=True,
