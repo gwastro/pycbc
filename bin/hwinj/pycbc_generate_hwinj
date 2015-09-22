@@ -250,7 +250,7 @@ sim.latitude = opts.ra
 sim.longitude = opts.dec
 sim.mass1 = opts.mass1
 sim.mass2 = opts.mass2
-sim.mchirp, sim.eta = pnutils.mass1_mass2_to_mtotal_eta(sim.mass1, sim.mass2)
+sim.mchirp, sim.eta = pnutils.mass1_mass2_to_mchirp_eta(sim.mass1, sim.mass2)
 sim.spin1z = opts.spin1z
 sim.spin1y = opts.spin1y
 sim.spin1x = opts.spin1x
@@ -278,7 +278,7 @@ outdoc.childNodes[0].appendChild(sngl_table)
 sngl = _empty_row(lsctables.SnglInspiral)
 sngl.mass1 = opts.mass1
 sngl.mass2 = opts.mass2
-sngl.mchirp, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(sngl.mass1, sngl.mass2)
+sngl.mchirp, sngl.eta = pnutils.mass1_mass2_to_mchirp_eta(sngl.mass1, sngl.mass2)
 sngl.mtotal = sngl.mass1 + sngl.mass2
 sngl.spin1z = opts.spin1z
 sngl.spin1y = opts.spin1y
