@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--coinc-file', type=str, required=True,
         help='HDF file containing coincident CBC triggers')
 parser.add_argument('--single-ifo-trigs', type=str, required=True,
-		help='HDF file containing L1 CBC triggers')
+		help='HDF file containing single IFO CBC triggers')
 parser.add_argument('--ifo', type=str, required=True,
         help='IFO, L1 or H1')    
 parser.add_argument('--tmpltbank-file', type=str, required=True,
@@ -39,7 +39,7 @@ parser.add_argument('--tmpltbank-file', type=str, required=True,
 parser.add_argument('--output-file', type=str, required=True,
         help='Full path to output file')
 parser.add_argument('--loudest-event-number', type=int, required=True, default=1,
-        help='Script will plot the Nth loudest coincident foreground trigger')
+        help='Script will plot the Nth loudest coincident trigger')
 parser.add_argument('--omicron-dir', type=str, required=True,
         help='Directory containing Omicron triggers. Ex: /home/detchar/triggers/ER7/')
 parser.add_argument('--omicron-snr-thresh', type=int, required=False, default=5,
