@@ -167,10 +167,10 @@ parser.add_argument('-p', '--plots-dir', type=str,
                   help='Path to the directory that contains plots.')
 parser.add_argument('-t', '--analysis-title', type=str,
                   help='Title to include at the top of each page.',
-                  default=False)
+                  default="")
 parser.add_argument('-s', '--analysis-subtitle', type=str,
                   help='Subtitle to include at the top of each page.',
-                  default=False)
+                  default="")
 parser.add_argument('-v', '--verbose', action='store_true',
                   help='Print extra debugging information.', default=False)
 opts = parser.parse_args()
