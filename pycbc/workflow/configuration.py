@@ -34,7 +34,6 @@ import ConfigParser
 import glue.pipeline
 import pycbc.workflow
 
-
 def add_workflow_command_line_group(parser):
     """
     The standard way of initializing a ConfigParser object in workflow will be
@@ -65,14 +64,10 @@ def add_workflow_command_line_group(parser):
     """
     workflowArgs = parser.add_argument_group('workflow',
                                           'Options needed for workflow setup.')
-    workflowArgs.add_argument("--local-config-files", nargs="+", action='store',
+    workflowArgs.add_argument("--config-files", nargs="+", action='store',
                            metavar="CONFIGFILE",
-                           help="List of localconfig files to be used in "
+                           help="List of config files to be used in "
                                 "analysis.")
-    workflowArgs.add_argument("--installed-config-files", nargs="+",
-                           action='store', metavar="CONFIGFILE", 
-                           help="List of preinstalled config files to be used "
-                                "in analysis")
     workflowArgs.add_argument("--config-overrides", nargs="*", action='store',
                            metavar="SECTION:OPTION:VALUE",
                            help="List of section,option,value combinations to add into the configuration file. Normally the gps start and end times might be provided this way, and user specific locations (ie. output directories). This can also be provided as SECTION:OPTION or SECTION:OPTION: both of which indicate that the corresponding value is left blank.")
@@ -110,10 +105,10 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # Enable case sensitive options
         self.optionxform = str
 
-        for confFile in configFiles:
-            if not os.path.isfile(confFile):
-                errMsg = "File %s does not exist." %(confFile)
-                raise ValueError(errMsg)
+        # The full path needs to be specified to avoid circular imports between
+        # this file and pycbc.workflow.core
+        configFiles = [pycbc.workflow.core.resolve_url(cFile) for cFile in configFiles]
+
         self.read_ini_file(configFiles)
 
         # Do overrides first
@@ -175,18 +170,10 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # Identify the config files
         confFiles = []
 
-        # Local files that contain the full path
-        if args.local_config_files:
-            confFiles += args.local_config_files
+        # files and URLs to resolve
+        if args.config_files:
+            confFiles += args.config_files
         
-        # Installed configuration files specific to the version of PyCBC
-        if args.installed_config_files:
-            installed_config_files = []
-            for config_file in args.installed_config_files:
-                path = os.path.join(pycbc.workflow.INI_FILE_DIRECTORY, config_file)
-                installed_config_files += [path]
-            confFiles += installed_config_files 
-
         # Identify the overrides
         confOverrides = args.config_overrides or []
         # and parse them

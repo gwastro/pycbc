@@ -165,7 +165,7 @@ following way:
     pycbc_make_psd_estimation_workflow \
         --workflow-name RUN_NAME \
         --output-dir /path/to/run/directory \
-        --local-config-files /path/to/ini/file
+        --config-files /path/to/ini/file
 
 ``RUN_NAME`` should be replaced with a meaningful descriptive name for the
 workflow and ``/path/to/run/directory`` should point to the directory where the

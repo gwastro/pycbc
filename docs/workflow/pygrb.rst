@@ -66,8 +66,7 @@ script::
 This should produce a help message like the following::
 
     usage: pygrb_make_offline_workflow [-h] [--version] [-d OUTPUT_DIR]
-                                       [--local-config-files CONFIGFILE [CONFIGFILE ...]]
-                                       [--installed-config-files CONFIGFILE [CONFIGFILE ...]]
+                                       [--config-files CONFIGFILE [CONFIGFILE ...]]
                                        [--config-overrides [SECTION:OPTION:VALUE [SECTION:OPTION:VALUE ...]]]
 
     optional arguments:
@@ -79,11 +78,8 @@ This should produce a help message like the following::
     workflow:
       Options needed for workflow setup.
 
-      --local-config-files CONFIGFILE [CONFIGFILE ...]
+      --config-files CONFIGFILE [CONFIGFILE ...]
                             List of localconfig files to be used in analysis.
-      --installed-config-files CONFIGFILE [CONFIGFILE ...]
-                            List of preinstalled config files to be used in
-                            analysis
       --config-overrides [SECTION:OPTION:VALUE [SECTION:OPTION:VALUE ...]]
                             List of section,option,value combinations to add into
                             the configuration file. Normally the gps start and end
@@ -95,8 +91,8 @@ This should produce a help message like the following::
 
 This outlines the command line arguments that may be passed to the executable.
 The majority of options passed to the workflow will come from configuration
-files, and these are known to the executable via the options
---local-config-files and/or --installed-config-files.
+files, and these are known to the executable via the option
+--config-files.
 
 ----------------------
 Set up a run directory
@@ -342,7 +338,7 @@ If you are using locally editted or custom configuration files then you can
 create the workflow from within the run directory using::
 
     pygrb_make_offline_workflow \
-             --local-config-files ${LOCAL_CONFIG_FILES} \
+             --config-files ${LOCAL_CONFIG_FILES} \
              --config-overrides workflow:ra:${RA} \
                                 workflow:dec:${DEC} \
                                 workflow:sky-error:${SKY_ERROR} \
