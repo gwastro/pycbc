@@ -99,7 +99,7 @@ for sim in injections.table:
 
         # inject waveform into time series of zeroes
         logging.info('Injecting %s waveform into timeseries of zeroes', ifo)
-        injections.apply(output, ifo)
+        injections.apply(output, ifo, simulation_ids=[sim.simulation_id])
 
         # set output filename
         txt_filename = ifo + '-' + 'HWINJ_CBC_FROM_SIMULATION_ID_' + str(sim_id) + '-' + str(start_time) + '-' + str(end_time-start_time) + '.txt'
