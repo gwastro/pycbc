@@ -87,8 +87,11 @@ for ifo, segments in science_segs.items():
             broken_segments_file, 'SCIENCE_OK_BROKEN', 'psds')
     psd_files.append(ifo_psd_files)
 
-# average noise PSDs
-avg_psd_files = pycbc.workflow.make_average_psd(workflow, psd_files, 'psds')
+# average noise PSDs and save to .txt and .xml
+pycbc.workflow.make_average_psd(workflow, psd_files, 'psds',
+                                output_fmt='.txt')
+pycbc.workflow.make_average_psd(workflow, psd_files, 'psds',
+                                output_fmt='.xml.gz')
 
 s = pycbc.workflow.make_spectrum_plot(workflow, psd_files, 'plots')
 
