@@ -31,7 +31,7 @@ Name of output directory - what ever you want
 
 Name of the dax file - what ever you want
 
-``--local-config-files er6_bns.ini \``
+``--config-files er6_bns.ini \``
 
 Name of the config file
 

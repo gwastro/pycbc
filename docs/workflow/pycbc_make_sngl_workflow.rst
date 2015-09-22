@@ -153,18 +153,7 @@ If you are using locally edited or custom configuration files then you can
 create the workflow using::
 
    pycbc_make_sngl_workflow --name ${WORKFLOW_NAME} \
-                            --local-config-files ${INSTALLED_CONFIG_FILES} \
-                            --config-overrides workflow:start-time:${GPS_START_TIME} \
-                                               workflow:end-time:${GPS_END_TIME} \
-                                               workflow:workflow-html-basedir:${HTMLDIR} \
-                                               workflow:workflow-html-link:${HTMLLINK} \
-                                               html:analysis-subtitle:${GPS_START_TIME}-${GPS_END_TIME}
-
-If you are using default installed configuration files then you can create the
-workflow using::
-
-   pycbc_make_sngl_workflow --name ${WORKFLOW_NAME} \
-                            --installed-config-files ${INSTALLED_CONFIG_FILES} \
+                            --config-files ${INSTALLED_CONFIG_FILES} \
                             --config-overrides workflow:start-time:${GPS_START_TIME} \
                                                workflow:end-time:${GPS_END_TIME} \
                                                workflow:workflow-html-basedir:${HTMLDIR} \
