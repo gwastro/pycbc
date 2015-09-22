@@ -27,7 +27,7 @@ import numpy as np
 import h5py
 import pycbc
 from pycbc.version import git_verbose_msg as version
-from pycbc.types import MultiDetOptionAction
+from pycbc.types import MultiDetOptionAction, FrequencySeries
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -39,10 +39,10 @@ parser.add_argument('--input-files', nargs='+', required=True, metavar='PATH',
 parser.add_argument('--time-avg-file', nargs='+', action=MultiDetOptionAction,
                     metavar='DETECTOR:PATH',
                     help='Output file names for single-detector PSDs averaged '
-                         'over time. The PSDs are saved as two-column ASCII.')
+                         'over time.')
 parser.add_argument('--detector-avg-file', metavar='PATH',
                     help='Output file name for the average PSD over time and '
-                         'detectors. The PSD is saved as two-column ASCII.')
+                         'detectors.')
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
@@ -79,10 +79,10 @@ for input_file in args.input_files:
 
     if ifo in args.time_avg_file and args.time_avg_file[ifo]:
         logging.info('Writing %s average over time', ifo)
-        freq = np.arange(len(avg_psd)) * delta_f
-        output = np.vstack(
-                (freq, avg_psd.astype(np.float64) * dynamic_range_factor)).T
-        np.savetxt(args.time_avg_file[ifo], output)
+        fs = FrequencySeries(
+                avg_psd.astype(np.float64) * dynamic_range_factor,
+                delta_f=delta_f)
+        fs.save(args.time_avg_file[ifo], ifo=ifo)
 
 if args.detector_avg_file:
     logging.info('Averaging over detectors')
@@ -95,10 +95,11 @@ if args.detector_avg_file:
     network_psd = len(time_avg_psds) / sum_inv_psds
 
     logging.info('Writing average over detectors')
-    freq = np.arange(len(network_psd)) * delta_f
-    output = np.vstack(
-            (freq, network_psd.astype(np.float64) * dynamic_range_factor)).T
-    np.savetxt(args.detector_avg_file, output)
+    fs = FrequencySeries(
+            network_psd.astype(np.float64) * dynamic_range_factor,
+            delta_f=delta_f)
+    ifo_str = ''.join(sorted(time_avg_psds.keys()))
+    fs.save(args.detector_avg_file, ifo=ifo_str)
 
 logging.info('Done')
 
