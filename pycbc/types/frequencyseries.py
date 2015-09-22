@@ -301,7 +301,7 @@ class FrequencySeries(Array):
 
         return lal_data
 
-    def save(self, path, group=None):
+    def save(self, path, group=None, ifo='P1'):
         """
         Save frequency series to a Numpy .npy, hdf, or text file. The first column
         contains the sample frequencies, the second contains the values.
@@ -350,7 +350,7 @@ class FrequencySeries(Array):
             first_idx = _numpy.argmax(data_lal>0)
             if not first_idx == 0:
                 data_lal[:first_idx] = data_lal[first_idx]
-            psddict = {'P1': output}
+            psddict = {ifo: output}
             utils.write_filename(lalseries.make_psd_xmldoc(psddict), path,
                                  gz=path.endswith(".gz"))
         elif ext =='.hdf':
