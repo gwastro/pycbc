@@ -26,7 +26,7 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import os, subprocess, logging, math, string, urlparse, ConfigParser, copy
+import os, subprocess, logging, math, string, urllib2, urlparse, ConfigParser, copy
 import numpy, cPickle, random
 from itertools import combinations, groupby
 from operator import attrgetter
@@ -1317,3 +1317,39 @@ def get_random_label():
     """
     return ''.join(random.choice(string.ascii_uppercase + string.digits) \
                    for _ in range(15))
+
+
+def resolve_url(url):
+    """
+    Resolves a URL to a local file, and returns the path to
+    that file.
+    """
+    if url.startswith('http://') or url.startswith('https://'):
+        filename = url.split('/')[-1]
+        filename = os.path.join(os.getcwd(), filename)
+        try:
+            response = urllib2.urlopen(url)
+            result   = response.read()
+            out_file = open(filename, 'w')
+            out_file.write(result)
+            out_file.close()
+        except:
+            errMsg  = "Unable to download %s " % (url)
+            raise ValueError(errMsg)
+    elif url.startswith('file://'):
+        filename = url[7:]
+    elif url.find('://') != -1:
+        # TODO: We could support other schemes such as gsiftp by
+        # calling out to globus-url-copy
+        errMsg  = "%s: Only supported URL schemes are\n" % (url)
+        errMsg += "   file: http: https:" 
+        raise ValueError(errMsg)
+    else:
+        filename = url
+
+    if not os.path.isfile(filename):
+        errMsg = "File %s does not exist." %(url)
+        raise ValueError(errMsg)
+
+    return filename
+   
