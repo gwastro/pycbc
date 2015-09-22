@@ -415,7 +415,7 @@ class Workflow(pegasus_workflow.Workflow):
         """ Execute this node immediately on the local machine
         """
         node.executed = True
-        cmd_list = node.get_command_line(verbatim_exe)
+        cmd_list = node.get_command_line(verbatim_exe=verbatim_exe)
         
         # Must execute in output directory.
         curr_dir = os.getcwd()
