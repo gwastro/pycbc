@@ -26,6 +26,8 @@ def grouper(iterable, n, fillvalue=None):
 def setup_minifollowups(workflow, coinc_file, 
                                   single_triggers,
                                   tmpltbank_file, 
+                                  insp_segs,
+                                  insp_seg_name,
                              out_dir, tags=None):
     """ This performs a series of followup jobs on the num_events-th loudest
     events.
@@ -53,11 +55,43 @@ def setup_minifollowups(workflow, coinc_file,
                                   out_dir, tags=tags + [str(num_event)]),)        
         files += make_trigger_timeseries(workflow, single_triggers, coinc_file, num_event, 
                                   out_dir, tags=tags + [str(num_event)])
+        files += make_single_template_plots(workflow, insp_segs, insp_seg_name, coinc_file,
+                                  num_event, out_dir, tags=tags + [str(num_event)])
         layout += list(grouper(files, 2))
         num_event += 1
     logging.info('Leaving minifollowups module')
 
     return layout
+
+def make_single_template_plots(workflow, segs, seg_name, coinc, num, out_dir, 
+                               exclude=None, require=None, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'single_template_plot'
+    secs = requirestr(workflow.cp.get_subsections(name), require)  
+    secs = excludestr(secs, exclude)
+    files = FileList([])
+    for tag in secs:
+        for ifo in workflow.ifos:
+            # Reanalyze the time around the trigger in each detector
+            node = PlotExecutable(workflow.cp, 'single_template', ifos=[ifo],
+                                 out_dir=out_dir, tags=[tag] + tags).create_node()
+            node.add_input_opt('--statmap-file', coinc)
+            node.add_opt('--n-loudest', num)
+            node.add_input_opt('--inspiral-segments', segs[ifo])
+            node.add_opt('--segment-name', seg_name)
+            node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
+            data = node.output_files[0]
+            workflow += node
+            
+            # Make the plot for this trigger and detector
+            node = PlotExecutable(workflow.cp, name, ifos=[ifo],
+                                  out_dir=out_dir, tags=[tag] + tags).create_node()
+            node.add_input_list_opt('--single-template-file', data)
+            node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+            workflow += node
+            files += node.output_files
+    return files      
 
 def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags

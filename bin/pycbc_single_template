@@ -3,10 +3,15 @@ import sys, logging, argparse, numpy, itertools, pycbc, h5py
 from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter, events
 from pycbc.types import zeros, float32, complex64, TimeSeries
 
-def get_time(statmap, n_loudest):
+def get_time(statmap, n_loudest, ifo):
      f = h5py.File(statmap, 'r')
      n = f['foreground/stat'][:].argsort()[::-1][n_loudest]
-     return f['foreground/time1'][:][n], f['foreground/template_id'][:][n]
+     
+     t = {f.attrs['detector_1']: f['foreground/time1'][:][n],
+          f.attrs['detector_2']: f['foreground/time2'][:][n],
+          }
+     
+     return t[ifo], f['foreground/template_id'][:][n]
 
 def select_segment(fname, segment, ifo, time):
     segs = events.select_segments_by_definer(fname, segment, ifo)
@@ -60,19 +65,22 @@ scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 opt = parser.parse_args()
 
+f = h5py.File(opt.output_file, 'w')          
+
+ifo = opt.channel_name[0:2]
+
 # If we are reading from the coinc files ######################################
 if opt.statmap_file:
-    time, tid = get_time(opt.statmap_file, opt.n_loudest)
-    f = h5py.File(opt.bank_file)
-    opt.mass1 = float(f['mass1'][:][tid])
-    opt.mass2 = float(f['mass2'][:][tid])
-    opt.spin1z = float(f['spin1z'][:][tid])
-    opt.spin2z = float(f['spin2z'][:][tid])
-    ifo = opt.channel_name[0:2]
+    time, tid = get_time(opt.statmap_file, opt.n_loudest, ifo)
+    b = h5py.File(opt.bank_file, 'r')
+    opt.mass1 = float(b['mass1'][:][tid])
+    opt.mass2 = float(b['mass2'][:][tid])
+    opt.spin1z = float(b['spin1z'][:][tid])
+    opt.spin2z = float(b['spin2z'][:][tid])
     seg = select_segment(opt.inspiral_segments, opt.segment_name, ifo, time)
     opt.gps_start_time, opt.gps_end_time = seg[0] + opt.pad_data, seg[1] - opt.pad_data
+    f.attrs['event_time'] = time
 
-print opt.gps_start_time, opt.gps_end_time
 ###############################################################################
 
 # Check that the values returned for the options make sense
@@ -144,8 +152,8 @@ with ctx:
                                     taper=opt.taper_template, 
                                     f_lower=flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)
-                                    
-    f = h5py.File(opt.output_file, 'w')                               
+                  
+    snrs, chisqs = [], []                                       
     for s_num, stilde in enumerate(segments):
         logging.info("Filtering segment %s" % s_num)
         snr, corr, norm = filter.matched_filter_core(template, stilde, 
@@ -155,13 +163,19 @@ with ctx:
         logging.info("calculating chisq")
         chisq = vetoes.power_chisq(template, stilde, chisq_bins, stilde.psd, 
                                     low_frequency_cutoff = flow)
-        chisq /= chisq_bins * 2 - 2  
+        chisq /= chisq_bins * 2 - 2
+     
+        snrs.append(snr[stilde.analyze])
+        chisqs.append(chisq[stilde.analyze])
         
-        f['snr/%s' % s_num] = snr.numpy() 
-        f['snr/%s' % s_num].attrs['start_time'] = numpy.float64(stilde.epoch)
-        f['snr/%s' % s_num].attrs['delta_t'] = snr.delta_t
-        f['chisq/%s' % s_num] = chisq.numpy() 
-        f['chisq/%s' % s_num].attrs['start_time'] = numpy.float64(stilde.epoch)
-        f['chisq/%s' % s_num].attrs['delta_t'] = snr.delta_t 
+    f['snr'] = numpy.concatenate([snr.numpy() for snr in snrs])
+    f['snr'].attrs['start_time'] = float(snrs[0].start_time)
+    f['snr'].attrs['delta_t'] = snr.delta_t
+    
+    f['chisq'] = numpy.concatenate([chisq.numpy() for chisq in chisqs])
+    f['chisq'].attrs['start_time'] = float(snrs[0].start_time)
+    f['chisq'].attrs['delta_t'] = snr.delta_t 
     f.attrs['approximant'] = opt.approximant
+    f.attrs['ifo'] = ifo
+    
 logging.info("Finished")
