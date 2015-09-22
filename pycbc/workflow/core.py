@@ -26,7 +26,7 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import os, stat, subprocess, logging, math, string, urllib2, urlparse, ConfigParser, copy
+import os, stat, subprocess, logging, math, string, urllib2, urlparse, ConfigParser, copy, time
 import numpy, cPickle, random
 from itertools import combinations, groupby
 from operator import attrgetter
@@ -376,13 +376,21 @@ class Workflow(pegasus_workflow.Workflow):
         self.cp = WorkflowConfigParser.from_args(args)
         
         # Dump the parsed config file
-        ini_file = os.path.abspath(self.name + '_parsed.ini')
-        if not os.path.isfile(ini_file):
-            fp = open(ini_file, 'w')
-            self.cp.write(fp)
-            fp.close()
-        else:
-            logging.warn("Cowardly refusing to overwrite %s." %(ini_file))
+        symlink = os.path.abspath(self.name + '_parsed.ini')
+
+        if os.path.isfile(symlink):
+            os.remove(symlink)
+
+        ini_file = os.path.abspath(self.name + '_parsed_%d.ini' % time.time())
+        # This shouldn't already exist, but just in case
+        if os.path.isfile(ini_file):
+            os.remove(ini_file)
+
+        fp = open(ini_file, 'w')
+        self.cp.write(fp)
+        fp.close()
+
+        os.symlink(ini_file, symlink)
 
         # Set global values
         start_time = int(self.cp.get("workflow", "start-time"))
