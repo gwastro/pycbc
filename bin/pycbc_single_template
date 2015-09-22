@@ -52,7 +52,7 @@ parser.add_argument("--taper-template", choices=["start","end","startend"],
 
 # alternate option set to pull from statmap file
 parser.add_argument("--statmap-file")
-parser.add_argument("--n-loudest")
+parser.add_argument("--n-loudest", type=int)
 parser.add_argument("--bank-file")
 parser.add_argument("--inspiral-segments")
 parser.add_argument("--segment-name")

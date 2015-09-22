@@ -55,7 +55,7 @@ def setup_minifollowups(workflow, coinc_file,
                                   out_dir, tags=tags + [str(num_event)]),)        
         files += make_trigger_timeseries(workflow, single_triggers, coinc_file, num_event, 
                                   out_dir, tags=tags + [str(num_event)])
-        files += make_single_template_plots(workflow, insp_segs, insp_seg_name, coinc_file,
+        files += make_single_template_plots(workflow, insp_segs, insp_seg_name, coinc_file, tmpltbank_file,
                                   num_event, out_dir, tags=tags + [str(num_event)])
         layout += list(grouper(files, 2))
         num_event += 1
@@ -63,7 +63,7 @@ def setup_minifollowups(workflow, coinc_file,
 
     return layout
 
-def make_single_template_plots(workflow, segs, seg_name, coinc, num, out_dir, 
+def make_single_template_plots(workflow, segs, seg_name, coinc, bank, num, out_dir, 
                                exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
@@ -77,9 +77,10 @@ def make_single_template_plots(workflow, segs, seg_name, coinc, num, out_dir,
             node = PlotExecutable(workflow.cp, 'single_template', ifos=[ifo],
                                  out_dir=out_dir, tags=[tag] + tags).create_node()
             node.add_input_opt('--statmap-file', coinc)
-            node.add_opt('--n-loudest', num)
+            node.add_opt('--n-loudest', str(num))
             node.add_input_opt('--inspiral-segments', segs[ifo])
             node.add_opt('--segment-name', seg_name)
+            node.add_input_opt('--bank-file', bank)
             node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
             data = node.output_files[0]
             workflow += node
@@ -87,7 +88,7 @@ def make_single_template_plots(workflow, segs, seg_name, coinc, num, out_dir,
             # Make the plot for this trigger and detector
             node = PlotExecutable(workflow.cp, name, ifos=[ifo],
                                   out_dir=out_dir, tags=[tag] + tags).create_node()
-            node.add_input_list_opt('--single-template-file', data)
+            node.add_input_opt('--single-template-file', data)
             node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
             workflow += node
             files += node.output_files

@@ -204,7 +204,7 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
                    'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
 
     psd_files += [wf.make_psd_file(workflow, datafind_files.find_output_with_ifo(ifo), 
-                                data_seg[ifo], 'INSPIRAL_DATA', 'psds')]
+                                insp_data_segs[ifo], 'INSPIRAL_DATA', 'psds')]
 
 s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'])
 r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], require='summ')

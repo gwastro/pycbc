@@ -7,7 +7,7 @@ import pylab
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose')
-parser.add_argument('--single-template-input')
+parser.add_argument('--single-template-file')
 parser.add_argument('--window', type=float)
 parser.add_argument('--output-file')
 
@@ -15,11 +15,11 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 
-f = h5py.File(args.single_template_input)
+f = h5py.File(args.single_template_file)
 delta_t = f['snr'].attrs['delta_t']
 start_time = f['snr'].attrs['start_time']
 time = f.attrs['event_time']
-ifo = f.attrs['ifo]
+ifo = f.attrs['ifo']
 center = int((time - start_time) / delta_t)
 
 
