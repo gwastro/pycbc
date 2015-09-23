@@ -4,11 +4,14 @@ import h5py, argparse, logging, pycbc.version, pycbc.events, pycbc.results, sys
 import matplotlib; matplotlib.use('Agg'); import pylab
 
 def get_time_from_cli(args):
+    """ Return the time and single detector trigger ids for the nth loudest
+    coincident trigger """
     if args.statmap_file:
         f = h5py.File(args.statmap_file, 'r')
         stat = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
         
-        id1, id2 = f['foreground/trigger_id1'][:][stat], f['foreground/trigger_id2'][:][stat]
+        id1 = f['foreground/trigger_id1'][:][stat]
+        id2 = f['foreground/trigger_id2'][:][stat]
         
         ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
         return ({ifo1:(f['foreground/time1'][:][stat], id1), 
@@ -20,8 +23,10 @@ parser.add_argument('--version', action='version',
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--single-trigger-files', nargs='+', 
     help="The HDF format single detector merged trigger files")
-parser.add_argument('--window', type=float, default=10)
-parser.add_argument('--plot-type', choices=['snr', 'newsnr'], default='snr')
+parser.add_argument('--window', type=float, default=10,
+    help="Time in seconds around the coincident trigger to plot")
+parser.add_argument('--plot-type', choices=['snr', 'newsnr'], default='snr',
+    help="Which plot to make; an 'snr' or a newsnr' plot.")
 parser.add_argument('--output-file')
 parser.add_argument('--log-y-axis', action='store_true')
 
@@ -35,6 +40,7 @@ parser.add_argument('--n-loudest', type=int,
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
+# organize the single detector triggers files by ifo in a dict
 time = get_time_from_cli(args)
 files = {}
 for fname in args.single_trigger_files:
@@ -62,9 +68,10 @@ for ifo in files.keys():
         chisq = files[ifo]['chisq'][:][idx]
         chisq_dof = files[ifo]['chisq_dof'][:][idx]
         data = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))
-        top = pycbc.events.newsnr(files[ifo]['snr'][:][id_loud],
-                                  (files[ifo]['chisq'][:][id_loud] / (files[ifo]['chisq_dof'][:][id_loud] * 2 - 2))
-                                  )
+        
+        # Get the newnsr of the loudest trigger so we can plot a star there
+        rchisq = files[ifo]['chisq'][:][id_loud] / (files[ifo]['chisq_dof'][:][id_loud] * 2 - 2)
+        top = pycbc.events.newsnr(files[ifo]['snr'][:][id_loud], rchisq)
         
     pylab.scatter(times, data, color=pycbc.results.ifo_color(ifo), marker='x',
                   label=ifo)
