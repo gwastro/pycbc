@@ -11,7 +11,7 @@ parser.add_argument('--verbose')
 parser.add_argument('--single-template-file', 
     help="HDF file containing the SNR and CHISQ timeseries. "
          " The output of pycbc_single_template")
-parser.add_argument('--window', type=float
+parser.add_argument('--window', type=float,
     help="The time in seconds to plot")
 parser.add_argument('--output-file')
 

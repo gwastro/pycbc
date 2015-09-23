@@ -10,7 +10,7 @@ parser.add_argument('--version', action='version',
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--single-trigger-files', nargs='+', 
               help="HDF format single detector trigger files for the full data run")
-parser.add_argument('--bank-file')
+parser.add_argument('--bank-file',
               help="HDF format template bank file")
 parser.add_argument('--output-file')
 parser.add_argument('--statmap-file',
