@@ -1,20 +1,25 @@
 #!/bin/env python
-
+""" Plot the output of pycbc_single_template """
 import argparse, pycbc.results, pycbc.events, pycbc.events, sys, h5py, numpy
 import matplotlib; matplotlib.use('Agg')
 import pylab
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
+parser.add_argument('--version', action='version',
+    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose')
-parser.add_argument('--single-template-file')
-parser.add_argument('--window', type=float)
+parser.add_argument('--single-template-file', 
+    help="HDF file containing the SNR and CHISQ timeseries. "
+         " The output of pycbc_single_template")
+parser.add_argument('--window', type=float
+    help="The time in seconds to plot")
 parser.add_argument('--output-file')
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
-
+# The event is chosen from the input of pycbc_single template, so we
+# just extract the parameters here
 f = h5py.File(args.single_template_file)
 delta_t = f['snr'].attrs['delta_t']
 start_time = f['snr'].attrs['start_time']
@@ -22,17 +27,14 @@ time = f.attrs['event_time']
 ifo = f.attrs['ifo']
 center = int((time - start_time) / delta_t)
 
-
+# Determine where in the timeseries we need to plot
 left = center - int(args.window / delta_t)
 right = center + int(args.window / delta_t)
-
-
 
 snr = abs(f['snr'][left:right][:])
 chisq = f['chisq'][left:right][:]
 
 rang = (numpy.arange(0, len(snr), 1) - (center - left)) * delta_t
-
 newsnr = pycbc.events.newsnr(snr, chisq)
 
 fig, ax1 = pylab.subplots()
@@ -46,7 +48,6 @@ ax2 = ax1.twinx()
 ax2.plot(rang, chisq, color='green', label='chisq')
 ax2.set_ylabel('CHISQ')
 ax2.legend(loc="upper right")
-
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
                              cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
