@@ -119,7 +119,7 @@ bank_plot = [(wf.make_template_plot(workflow, hdfbank[0], rdir['coincident_trigg
 inj_files, inj_tags = wf.setup_injection_workflow(workflow, 
                                                      output_dir="inj_files")
                                                                                                                                                         
-######################## Setup the FULL DATA run
+######################## Setup the FULL DATA run ##############################
 tag = output_dir = "full_data"
 ctags = [tag, 'full']
 
@@ -163,10 +163,6 @@ for bin_file in bin_files:
                     rdir['result'], tags=bin_file.tags)
     results_page += [(snrifar, ifar)]
 
-    # run minifollowups for each mass bin
-    mf_results = wf.setup_minifollowups(workflow, rdir, datafind_files,
-                    bin_file, hdfbank[0], 'foreground', tags=bin_file.tags)
-
 wf.make_ifar_plot(workflow, final_bg_file, rdir['result'])
 
 table = wf.make_foreground_table(workflow, final_bg_file, 
@@ -178,7 +174,6 @@ fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
 fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
-layout(rdir['result'], results_page + [(table,)])
 
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
                     'closed_box', rdir['single_triggers'], tags=[tag])
@@ -197,7 +192,7 @@ for insp in full_insps:
     hist_summ += list(grouper(hists, 2))
 
 # Calculate the inspiral psds and make plots
-full_segs, psd_files, insp_segs, insp_data_segs = [], [], {}, {}                            
+full_segs, psd_files, insp_segs, insp_data_segs = [], [], {}, {}                      
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     name = 'INSPIRAL_SEGMENTS'
     fname = 'segments/%s-' % ifo + name + '.xml'
@@ -205,12 +200,12 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     full_segs.append(pycbc.events.segments_to_file(insp_segs[ifo], fname, name, ifo=ifo))
 
     insp_data_segs[ifo] = glue.segments.segmentlist([f.metadata['data_seg'] for f in files])
-    data_seg = pycbc.events.segments_to_file(insp_data_segs[ifo],
+    insp_data_segs[ifo] = pycbc.events.segments_to_file(insp_data_segs[ifo],
                    'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
 
     psd_files += [wf.make_psd_file(workflow, datafind_files.find_output_with_ifo(ifo), 
-                                data_seg, 'INSPIRAL_DATA', 'psds')]
-                           
+                                insp_data_segs[ifo], 'INSPIRAL_DATA', 'psds')]
+
 s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'])
 r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], require='summ')
 r2 = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], exclude='summ')
@@ -218,6 +213,17 @@ r2 = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], exclu
 det_summ = [(s, r[0] if len(r) != 0 else None)]
 layout(rdir['detector_sensitivity'], det_summ + list(grouper(r2, 2)))    
 
+
+# run minifollowups on the output of the loudest events
+wf_layout = wf.setup_minifollowups(workflow, final_bg_file,
+                                  full_insps,  hdfbank[0],
+                                  insp_data_segs, 'INSPIRAL_DATA',
+                                  rdir['result'], tags=final_bg_file.tags)
+
+layout(rdir['result'], results_page + [(table,)] + wf_layout)
+    
+################## Setup segment / veto related plots #########################    
+# do plotting of segments / veto times
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
     wf.make_segments_plot(workflow, files, rdir['analysis_time/segments'], 
                           tags=['%s_VETO_SEGMENTS' % ifo])
@@ -260,7 +266,7 @@ seg_summ_plot = wf.make_seg_plot(workflow, [seg_summ_file],
 # make veto definer table
 vetodef_table = wf.make_veto_table(workflow, rdir['analysis_time/veto_definer'])
 
-############################## Setup the injection runs                                                                           
+############################## Setup the injection runs #######################                                                                   
 inj_coincs = wf.FileList()
 for inj_file, tag in zip(inj_files, inj_tags):
     ctags = [tag, 'inj']

@@ -42,7 +42,7 @@ def requirestr(tags, substr):
     return [tag for tag in tags if substr in tag]
  
 class PlotExecutable(Executable):
-    """ This converts xml tmpltbank to an hdf format
+    """ plot executable
     """
     current_retention_level = Executable.FINAL_RESULT
 

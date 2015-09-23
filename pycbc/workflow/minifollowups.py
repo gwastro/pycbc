@@ -1,4 +1,4 @@
-# Copyright (C) 2015 Christopher M. Biwer
+# Copyright (C) 2015 Christopher M. Biwer, Alexander Harvey Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -15,76 +15,148 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging
-from pycbc.workflow.core import Executable, FileList, Node
+from pycbc.workflow.core import Executable, FileList, Node, makedir
+from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
+from itertools import izip_longest
 
-def setup_minifollowups(workflow, out_dir, frame_files,
-                             coinc_file, tmpltbank_file, data_type, tags=None):
-    ''' This performs a series of followup jobs on the num_events-th loudest
-    events.
-    '''
+def grouper(iterable, n, fillvalue=None):
+    """ Create a list of n length tuples
+    """
+    args = [iter(iterable)] * n
+    return izip_longest(*args, fillvalue=fillvalue)
 
+def setup_minifollowups(workflow, coinc_file, single_triggers, tmpltbank_file, 
+                       insp_segs, insp_seg_name, out_dir, tags=None):
+    """ Create plots that followup the Nth loudest coincident injection
+    from a statmap produced HDF file.
+    
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    coinc_file: 
+    single_triggers: list of pycbc.workflow.File
+        A list cointaining the file objects associated with the merged
+        single detector trigger files for each ifo.
+    tmpltbank_file: pycbc.workflow.File
+        The file object pointing to the HDF format template bank
+    insp_segs: dict
+        A dictionary, keyed by ifo name, of the data read by each inspiral job.
+    insp_segs_name: str 
+        The name of the segmentlist to read from the inspiral segment file
+    out_dir: path
+        The directory to store minifollowups result plots and files
+    tags: {None, optional}
+        Tags to add to the minifollowups executables
+    
+    Returns
+    -------
+    layout: list
+        A list of tuples which specify the displayed file layout for the 
+        minifollops plots.
+    """
     logging.info('Entering minifollowups module')
-
-    if tags == None: tags = []
-
-    # create a FileList that will contain all output files
-    output_filelist = FileList([])
 
     # check if minifollowups section exists
     # if not then do not do add minifollowup jobs to the workflow
     if not workflow.cp.has_section('workflow-minifollowups'):
-      logging.info('There is no [workflow-minifollowups] section in configuration file')
-      logging.info('Leaving minifollowups')
-      return output_filelist
+        logging.info('There is no [workflow-minifollowups] section in configuration file')
+        logging.info('Leaving minifollowups')
+        return []
+        
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+
+    # create a FileList that will contain all output files
+    layout = []
 
     # loop over number of loudest events to be followed up
     num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
     for num_event in range(num_events):
-
-        # increment by 1 for human readability
+        files = FileList([])
+        layout += (make_coinc_info(workflow, single_triggers, tmpltbank_file,
+                                  coinc_file, num_event, 
+                                  out_dir, tags=tags + [str(num_event)]),)        
+        files += make_trigger_timeseries(workflow, single_triggers,
+                                  coinc_file, num_event, 
+                                  out_dir, tags=tags + [str(num_event)])
+        files += make_single_template_plots(workflow, insp_segs,
+                                  insp_seg_name, coinc_file, tmpltbank_file,
+                                  num_event, out_dir, tags=tags + [str(num_event)])
+        layout += list(grouper(files, 2))
         num_event += 1
-
-        # get output directory for this event
-        tag_str = '_'.join(tags)
-        output_dir = out_dir['result/loudest_event_%d_of_%d_%s'%(num_event, num_events, tag_str)]
-
-        # make a pycbc_mf_table node for this event
-        table_exe = MinifollowupsTableExecutable(workflow.cp, 'mf_table',
-                        workflow.ifo_string, output_dir, tags=tags)
-        table_node = table_exe.create_node(workflow.analysis_time, coinc_file,
-                        tmpltbank_file, data_type, num_event)
-        workflow.add_node(table_node)
-        output_filelist.extend(table_node.output_files)
-
     logging.info('Leaving minifollowups module')
 
-    return output_filelist
+    return layout
 
-class MinifollowupsTableExecutable(Executable):
-    ''' The class responsible for creating jobs for pycbc_mf_table.'''
+def make_single_template_plots(workflow, segs, seg_name, coinc, bank, num, out_dir, 
+                               exclude=None, require=None, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'single_template_plot'
+    secs = requirestr(workflow.cp.get_subsections(name), require)  
+    secs = excludestr(secs, exclude)
+    files = FileList([])
+    for tag in secs:
+        for ifo in workflow.ifos:
+            # Reanalyze the time around the trigger in each detector
+            node = PlotExecutable(workflow.cp, 'single_template', ifos=[ifo],
+                                 out_dir=out_dir, tags=[tag] + tags).create_node()
+            node.add_input_opt('--statmap-file', coinc)
+            node.add_opt('--n-loudest', str(num))
+            node.add_input_opt('--inspiral-segments', segs[ifo])
+            node.add_opt('--segment-name', seg_name)
+            node.add_input_opt('--bank-file', bank)
+            node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
+            data = node.output_files[0]
+            workflow += node
+            
+            # Make the plot for this trigger and detector
+            node = PlotExecutable(workflow.cp, name, ifos=[ifo],
+                                  out_dir=out_dir, tags=[tag] + tags).create_node()
+            node.add_input_opt('--single-template-file', data)
+            node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+            workflow += node
+            files += node.output_files
+    return files      
 
-    current_retention_level = Executable.FINAL_RESULT
-    def __init__(self, cp, exe_name,
-                 ifo=None, out_dir=None, tags=[], universe=None):
-        super(MinifollowupsTableExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
+def make_coinc_info(workflow, singles, bank, coinc, num, out_dir,
+                    exclude=None, require=None, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'page_coincinfo'
+    secs = requirestr(workflow.cp.get_subsections(name), require)  
+    secs = excludestr(secs, exclude)
+    files = FileList([])
+    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                              out_dir=out_dir, tags=tags).create_node()
+    node.add_input_list_opt('--single-trigger-files', singles)
+    node.add_input_opt('--statmap-file', coinc)
+    node.add_input_opt('--bank-file', bank)
+    node.add_opt('--n-loudest', str(num))
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+    workflow += node
+    files += node.output_files
+    return files
+    
+def make_trigger_timeseries(workflow, singles, coinc, num, out_dir,
+                            exclude=None, require=None, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'plot_trigger_timeseries'
+    secs = requirestr(workflow.cp.get_subsections(name), require)  
+    secs = excludestr(secs, exclude)
+    files = FileList([])
+    for tag in secs:
+        node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                              out_dir=out_dir, tags=[tag] + tags).create_node()
+        node.add_input_list_opt('--single-trigger-files', singles)
+        node.add_input_opt('--statmap-file', coinc)
+        node.add_opt('--n-loudest', str(num))
+        node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+        workflow += node
+        files += node.output_files
+    return files
 
-    def create_node(self, segment, coinc_file, tmpltbank_file, data_type, loudest_event_number):
-        ''' Creates a node for the loudest_event_number-th loudest event in the
-        coinc_file. '''
 
-        # make a node
-        node = Node(self)
 
-        # add input files
-        node.add_input_opt('--coinc-file', coinc_file)
-        node.add_input_opt('--tmpltbank-file', tmpltbank_file)
-
-        # add options
-        node.add_opt('--data-type', data_type)
-        node.add_opt('--loudest-event-number', loudest_event_number)
-
-        # add output file
-        node.new_output_file_opt(segment, '.html', '--output-file',
-                                 store_file=self.retain_files)
-
-        return node
