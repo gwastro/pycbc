@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+""" Calculate the SNR and CHIQ timeseries for either a chosen template, or 
+a specific Nth loudest coincident event.
+"""
 import sys, logging, argparse, numpy, itertools, pycbc, h5py
 from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter, events
 from pycbc.types import zeros, float32, complex64, TimeSeries
@@ -37,10 +40,18 @@ parser.add_argument("--psd-recalculate-segments", type=int,
                     help="Number of segments to use before recalculating the PSD", default=0)
 parser.add_argument("--approximant", type=str,
                   help="The name of the approximant to use for filtering. ")
-parser.add_argument("--mass1", type=float)
-parser.add_argument("--mass2", type=float)
-parser.add_argument("--spin1z", type=float, default=0)
-parser.add_argument("--spin2z", type=float, default=0)
+parser.add_argument("--mass1", type=float, 
+                  help="The mass of the first component object. "
+                       "Do not use if giving a statmap file")
+parser.add_argument("--mass2", type=float,
+                  help="The mass of the second component object. "
+                    "Do not use if giving a statmap file.")
+parser.add_argument("--spin1z", type=float, default=0,
+                  help="The aligned spin of the first component object. "
+                    "Do not use if giving a statmap file.")
+parser.add_argument("--spin2z", type=float, default=0,
+                  help="The aligned pin of the second component object. "
+                    "Do not use if giving a statmap file.")
 parser.add_argument("--order", type=int,
                   help="The integer half-PN order at which to generate"
                        " the approximant. Default is -1 which indicates to use"
@@ -51,11 +62,19 @@ parser.add_argument("--taper-template", choices=["start","end","startend"],
                     " end of the waveform before FFTing.")
 
 # alternate option set to pull from statmap file
-parser.add_argument("--statmap-file")
-parser.add_argument("--n-loudest", type=int)
-parser.add_argument("--bank-file")
-parser.add_argument("--inspiral-segments")
-parser.add_argument("--segment-name")
+parser.add_argument("--statmap-file",
+        help="Alternative to giving mass/spin parameters. The HDF file "
+             "containing the clustered coincident triggers")
+parser.add_argument("--n-loudest", type=int,
+        help="An integer to choose which coincident trigger is followed up"
+             ", only used with --statmap-file")
+parser.add_argument("--bank-file",
+        help="HDF format template bank file, only used with --statmap-file")
+parser.add_argument("--inspiral-segments",
+        help="XML file containing the inspiral analysis segments. "
+             "Only used with the --statmap-file option")
+parser.add_argument("--segment-name", 
+        help="name of the segmentlist to read from the inspiral segment file")
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -66,7 +85,6 @@ fft.insert_fft_option_group(parser)
 opt = parser.parse_args()
 
 f = h5py.File(opt.output_file, 'w')          
-
 ifo = opt.channel_name[0:2]
 
 # If we are reading from the coinc files ######################################
