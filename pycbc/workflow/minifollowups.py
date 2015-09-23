@@ -23,14 +23,35 @@ def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return izip_longest(*args, fillvalue=fillvalue)
 
-def setup_minifollowups(workflow, coinc_file, 
-                                  single_triggers,
-                                  tmpltbank_file, 
-                                  insp_segs,
-                                  insp_seg_name,
-                             out_dir, tags=None):
+def setup_minifollowups(workflow, coinc_file, single_triggers, tmpltbank_file, 
+                       insp_segs, insp_seg_name, out_dir, tags=None):
     """ This performs a series of followup jobs on the num_events-th loudest
-    events.
+    foreground events.
+    
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    coinc_file: 
+    single_triggers: list of pycbc.workflow.File
+        A list cointaining the file objects associated with the merged
+        single detector trigger files for each ifo.
+    tmpltbank_file: pycbc.workflow.File
+        The file object pointing to the HDF format template bank
+    insp_segs: dict
+        A dictionary, keyed by ifo name, of the data read by each inspiral job.
+    insp_segs_name: str 
+        The name of the segmentlist to read from the inspiral segment file
+    out_dir: path
+        The directory to store minifollowups result plots and files
+    tags: {None, optional}
+        Tags to add to the minifollowups executables
+    
+    Returns
+    -------
+    layout: list
+        A list of tuples which specify the displayed file layout for the 
+        minifollops plots.
     """
     logging.info('Entering minifollowups module')
 
@@ -51,11 +72,14 @@ def setup_minifollowups(workflow, coinc_file,
     num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
     for num_event in range(num_events):
         files = FileList([])
-        layout += (make_coinc_info(workflow, single_triggers, tmpltbank_file, coinc_file, num_event, 
+        layout += (make_coinc_info(workflow, single_triggers, tmpltbank_file,
+                                  coinc_file, num_event, 
                                   out_dir, tags=tags + [str(num_event)]),)        
-        files += make_trigger_timeseries(workflow, single_triggers, coinc_file, num_event, 
+        files += make_trigger_timeseries(workflow, single_triggers,
+                                  coinc_file, num_event, 
                                   out_dir, tags=tags + [str(num_event)])
-        files += make_single_template_plots(workflow, insp_segs, insp_seg_name, coinc_file, tmpltbank_file,
+        files += make_single_template_plots(workflow, insp_segs,
+                                  insp_seg_name, coinc_file, tmpltbank_file,
                                   num_event, out_dir, tags=tags + [str(num_event)])
         layout += list(grouper(files, 2))
         num_event += 1
@@ -94,7 +118,8 @@ def make_single_template_plots(workflow, segs, seg_name, coinc, bank, num, out_d
             files += node.output_files
     return files      
 
-def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, exclude=None, require=None, tags=None):
+def make_coinc_info(workflow, singles, bank, coinc, num, out_dir,
+                    exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_coincinfo'
@@ -112,7 +137,8 @@ def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, exclude=None, 
     files += node.output_files
     return files
     
-def make_trigger_timeseries(workflow, singles, coinc, num, out_dir, exclude=None, require=None, tags=None):
+def make_trigger_timeseries(workflow, singles, coinc, num, out_dir,
+                            exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'plot_trigger_timeseries'
