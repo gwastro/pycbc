@@ -24,7 +24,12 @@ pycbc.init_logging(args.verbose)
 
 # Get the nth loudest trigger from the output of pycbc_coinc_statmap
 f = h5py.File(args.statmap_file, 'r')
-n = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
+try:
+    n = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
+except:
+    pylab.text(0.5, 0.5, 'no trigger found'); pylab.savefig(args.output_file)
+    exit()
+
 d = f['foreground']
 
 # make a table for the coincident information #################################

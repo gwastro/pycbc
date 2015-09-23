@@ -8,7 +8,11 @@ from pycbc.types import zeros, float32, complex64, TimeSeries
 
 def get_time(statmap, n_loudest, ifo):
      f = h5py.File(statmap, 'r')
-     n = f['foreground/stat'][:].argsort()[::-1][n_loudest]
+     
+     try:
+        n = f['foreground/stat'][:].argsort()[::-1][n_loudest]
+     except:
+        return None, None
      
      t = {f.attrs['detector_1']: f['foreground/time1'][:][n],
           f.attrs['detector_2']: f['foreground/time2'][:][n],
@@ -90,6 +94,10 @@ ifo = opt.channel_name[0:2]
 # If we are reading from the coinc files ######################################
 if opt.statmap_file:
     time, tid = get_time(opt.statmap_file, opt.n_loudest, ifo)
+    
+    if time is None:
+        exit()
+    
     b = h5py.File(opt.bank_file, 'r')
     opt.mass1 = float(b['mass1'][:][tid])
     opt.mass2 = float(b['mass2'][:][tid])
