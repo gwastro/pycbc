@@ -1,4 +1,4 @@
-# Copyright (C) 2015 Christopher M. Biwer
+# Copyright (C) 2015 Christopher M. Biwer, Alexander Harvey Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -20,13 +20,15 @@ from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 from itertools import izip_longest
 
 def grouper(iterable, n, fillvalue=None):
+    """ Create a list of n length tuples
+    """
     args = [iter(iterable)] * n
     return izip_longest(*args, fillvalue=fillvalue)
 
 def setup_minifollowups(workflow, coinc_file, single_triggers, tmpltbank_file, 
                        insp_segs, insp_seg_name, out_dir, tags=None):
-    """ This performs a series of followup jobs on the num_events-th loudest
-    foreground events.
+    """ Create plots that followup the Nth loudest coincident injection
+    from a statmap produced HDF file.
     
     Parameters
     ----------
