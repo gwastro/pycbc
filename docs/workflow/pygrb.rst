@@ -44,21 +44,7 @@ How to run
 
 Here we document the stages needed to run the triggered coherent GRB search.
 
----------------------------
-Install lalsuite and pycbc
----------------------------
-
-The first requirement is to have installs of Lalsuite and PyCBC. If you do not
-already have installed versions of these please follow the instructions
-described here:
-
-.. toctree::
-   :maxdepth: 1
-
-   ../install
-
-Once you have correctly installed and sourced installations of the above you
-should be able to run the following help command for the workflow generation
+Once PyCBC is installed, you should be able to run the following help command for the workflow generation
 script::
 
     pygrb_make_offline_workflow --help
