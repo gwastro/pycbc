@@ -6,9 +6,9 @@ Verifying the construction of banks with pycbc_banksim
 Introduction
 ===================
 
-This page describes how to use the banksim facilities within PyCBC to test a previously built template bank. A banksim calculates the matches, maximized over a set of templates, for a list of injections waveforms. 
+This page describes how to use the banksim facilities within PyCBC to test a previously built template bank. A banksim calculates the matches, maximized over a set of templates, for a list of injected waveforms. 
 
-The purpose of this test is to act as a sanity check of the template bank generation methodology and code. Therefore the tests run over the same parameter ranges used to generate the bank and using the same sensitivity curve. The tests described here may not be optimal or exhaustive, but should be used to gain confidence that a bank is recovering signals it is designed to recover at an acceptable match.
+The purpose of this test is to act as a sanity check of the template bank generation methodology and code. Therefore the tests should run over the same parameter ranges used to generate the bank and using the same sensitivity curve. The tests described here may not be optimal or exhaustive, but should be used to gain confidence that a bank is recovering signals it is designed to recover at an acceptable match.
 
 ===========================================
 Testing the uberbank
@@ -16,7 +16,7 @@ Testing the uberbank
 
 To test the PyCBC uberbank that contains templates for BNS, NSBH and BBH in one template bank, we propose to test separately the BNS, NSBH and BBH regions, with separate banksim runs. Therefore there will be some overlap between the signals tested. For technical reasons, it is also convenient to split the NSBH and BBH tests up into a run with signals below a total mass of 50 and signals with a total mass above 50. 
 
-We propose to select test signals from mass distributions that a flat in component masses in the respective regions; NS masses between 1 and 3 and BH masses between 2 and 99, with a total mass limit of 100. In addition, we select aligned spin magnitudes uniform in the respective regions; -0.05 to 0.05 for NS and -0.99 to 0.99 for BH. 
+We propose to select test signals from mass distributions that are flat in component masses in the respective regions; NS masses between 1 and 3 and BH masses between 2 and 99, with a total mass limit of 100. In addition, we select aligned spin magnitudes uniform in the respective regions; -0.05 to 0.05 for NS and -0.99 to 0.99 for BH. 
 
 We propose to test with 10,000 injection signals in each of the BNS, NSBH and BBH regions, for a total of 30,000. This number is much less than the total number of templates in the bank. 
 
