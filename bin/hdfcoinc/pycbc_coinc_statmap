@@ -71,7 +71,7 @@ else:
     f['segments/foreground_veto/start'] = numpy.array([0])
     f['segments/foreground_veto/end'] = numpy.array([0])
     for k in d.data:
-        f['foreground/' + k] = numpy.array([])
+        f['foreground/' + k] = numpy.array([], dtype=d.data[k].dtype)
 
 back_locs = d.timeslide_id != 0
 
