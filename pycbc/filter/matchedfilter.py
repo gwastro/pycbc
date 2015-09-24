@@ -439,7 +439,10 @@ def sigmasq_series(htilde, psd=None, low_frequency_cutoff=None,
 
 def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
             high_frequency_cutoff=None):
-    """Return the power of the waveform. 
+    """Return the loudness of the waveform. This is defined (see Duncan
+    Brown's thesis) as the unnormalized matched-filter of the input waveform,
+    htilde, with itself. This quantity is usually referred to as (sigma)^2
+    and is then used to normalize matched-filters with the data.
 
     Parameters
     ----------
@@ -475,10 +478,7 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
 
 def sigma(htilde, psd = None, low_frequency_cutoff=None,
         high_frequency_cutoff=None):
-    """Return the loudness of the waveform. This is defined (see Duncan
-    Brown's thesis) as the unnormalized matched-filter of the input waveform,
-    htilde, with itself. This quantity is usually referred to as (sigma)^2
-    and is then used to normalize matched-filters with the data.
+    """ Return the sigma of the waveform. See sigmasq for more details.
 
     Parameters
     ----------
