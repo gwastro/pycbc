@@ -145,17 +145,13 @@ def outside_mchirp_window(template, signal, w):
     signal_mchirp, et = mass1_mass2_to_mchirp_eta(signal.mass1, signal.mass2)
     return abs(signal_mchirp - template_mchirp) > (w * signal_mchirp)
 
+aprs = list(set(td_approximants() + fd_approximants()))
 
 #File output Settings
 parser = ArgumentParser()
 parser.add_argument("--match-file", dest="out_file", help="file to output match results", metavar="FILE")
 parser.add_argument("--verbose", action='store_true', default=False, help="Print verbose statements")
 
-#PSD Settings
-parser.add_argument("--asd-file", dest="asd_file", help="Two-column ASCII file containing ASD data", metavar="FILE")
-parser.add_argument("--psd", dest="psd", help="Analytic PSD model from LALSimulation", choices=pycbc.psd.get_lalsim_psd_list())
-
-aprs = list(set(td_approximants() + fd_approximants()))
 
 #Template Settings
 parser.add_argument("--template-file", dest="bank_file", help="SimInspiral or SnglInspiral XML file containing the template parameters", metavar="FILE")
@@ -184,6 +180,12 @@ parser.add_argument('--filter-high-freq-cutoff-isco-factor', metavar='FLOAT', he
 parser.add_argument("--filter-sample-rate", help="Filter sample rate [Hz]", type=float)
 parser.add_argument("--filter-signal-length", help="Length of signal for filtering, shoud be longer than all waveforms and include some padding", type=int)
 
+# add PSD options
+pycbc.psd.insert_psd_option_group(parser, output=False)
+
+# Insert the data reading options
+pycbc.strain.insert_strain_option_group(parser)
+
 #hardware support
 pycbc.scheme.insert_processing_option_group(parser)
 pycbc.fft.insert_fft_option_group(parser)
@@ -195,6 +197,18 @@ options = parser.parse_args()
 template_sample_rate = options.filter_sample_rate
 signal_sample_rate = options.filter_sample_rate
 
+pycbc.psd.verify_psd_options(opts, parser)
+
+if opts.psd_estimation:
+    pycbc.strain.verify_strain_options(opts, parser)
+
+# If we are going to use h(t) to estimate a PSD we need h(t)
+if opts.psd_estimation:
+    logging.info("Obtaining h(t) for PSD generation")
+    strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
+else:
+    strain = None
+
 if options.total_mass_divide and options.highmass_approximant is None:
     parser.error("You must provide a highmass-approximant if you want total-mass-divide.")
 
@@ -203,9 +217,6 @@ if options.template_sample_rate:
 
 if options.signal_sample_rate:
     signal_sample_rate = options.signal_sample_rate
-
-if options.psd and options.asd_file:
-    parser.error("PSD and asd-file options are mututally exclusive")
 
 ctx = pycbc.scheme.from_cli(options)
 
@@ -239,15 +250,11 @@ filter_delta_f = 1.0 / float(options.filter_signal_length)
 
 if options.verbose:
   print("Reading and Interpolating PSD")
-if options.asd_file:
-    psd = pycbc.psd.from_txt(options.asd_file, filter_n,  
-                           filter_delta_f, options.filter_low_frequency_cutoff)
-elif options.psd:
-    psd = pycbc.psd.from_string(options.psd, filter_n, filter_delta_f, 
-                           options.filter_low_frequency_cutoff) 
+psd = pycbc.psd.from_cli(options, filter_n,  
+                         filter_delta_f, options.filter_low_frequency_cutoff, strain=strain,
+                         dyn_range_factor=pycbc.DYN_RANGE_FAC, precision='single')
 
-psd *= DYN_RANGE_FAC **2
-psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32) 
+
 
 if options.verbose:
   print("PSD interpolated at %fs" %(elapsed_time()))
