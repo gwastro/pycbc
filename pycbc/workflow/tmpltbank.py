@@ -34,7 +34,7 @@ import os
 import ConfigParser
 import urlparse, urllib
 import logging
-from pycbc.workflow.core import File, FileList, make_analysis_dir
+from pycbc.workflow.core import File, RemoteFile, FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import select_tmpltbank_class, select_matchedfilter_class, sngl_ifo_job_setup
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
@@ -288,6 +288,28 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
         
     return tmplt_banks
 
+def _bank_name_to_file(cp, ifos, global_seg, key, tags):
+    user_tag     = "PREGEN_TMPLTBANK"
+    pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank', key, tags)
+    lfn          = urlparse.urlparse(pre_gen_bank).path
+
+    # If it's a file
+    if lfn == pre_gen_bank:
+        pfn = urlparse.urljoin('file:',
+                                urllib.pathname2url(pre_gen_bank))
+        site = 'local'
+    else:
+        pfn = pre_gen_bank
+        site = 'nonlocal'
+
+    if lfn[0] == '/':
+        lfn = lfn[1:]
+
+    curr_file = RemoteFile(ifos, user_tag, global_seg, lfn, tags=tags)
+    curr_file.PFN(pfn, site)
+
+    return curr_file
+
 def setup_tmpltbank_pregenerated(workflow, tags=[]):
     '''
     Setup CBC workflow to use a pregenerated template bank.
@@ -317,28 +339,19 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
 
     cp = workflow.cp
     global_seg = workflow.analysis_time
-    user_tag = "PREGEN_TMPLTBANK"
+    
     try:
         # First check if we have a bank for all ifos
-        pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
-                                           'tmpltbank-pregenerated-bank', tags)
-        file_url = urlparse.urljoin('file:', urllib.pathname2url(pre_gen_bank))
-        curr_file = File(workflow.ifos, user_tag, global_seg, file_url,
-                                                                     tags=tags)
-        curr_file.PFN(file_url, site='local')
+        curr_file = _bank_name_to_file(cp, workflow.ifos, global_seg,
+                                        'tmpltbank-pregenerated-bank', tags)
         tmplt_banks.append(curr_file)
     except ConfigParser.Error:
         # Okay then I must have banks for each ifo
         for ifo in workflow.ifos:
             try:
-                pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
+                curr_file = _bank_name_to_file(cp, ifo, global_seg,
                                 'tmpltbank-pregenerated-bank-%s' % ifo.lower(),
                                 tags)
-                file_url = urlparse.urljoin('file:',
-                                             urllib.pathname2url(pre_gen_bank))
-                curr_file = File(ifo, user_tag, global_seg, file_url,
-                                                                     tags=tags)
-                curr_file.PFN(file_url, site='local')
                 tmplt_banks.append(curr_file)
 
             except ConfigParser.Error:

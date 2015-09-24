@@ -764,6 +764,98 @@ class File(pegasus_workflow.File):
         return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, 
                                    duration, extension)  
     
+class RemoteFile(File):
+    '''
+    This class holds the details of an individual output file 
+    This file(s) may be pre-supplied, generated from within the workflow
+    command line script, or generated within the workflow. The important stuff
+    is:
+
+    * The ifo that the File is valid for
+    * The time span that the OutFile is valid for
+    * A short description of what the file is
+    * The extension that the file should have
+    * The url where the file should be located
+
+    An example of initiating this class:
+    
+    c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
+
+    another where the file url is generated from the inputs:
+
+    c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
+    '''
+    def __init__(self, ifos, exe_name, segs, pegasus_lfn,
+                 directory=None, tags=None, 
+                 store_file=True, use_tmp_subdirs=False):
+        """
+        Create a File instance
+        
+        Parameters
+        ----------
+        ifos : string or list
+            The ifo(s) that the File is valid for. If the file is
+            independently valid for multiple ifos it can be provided as a list.
+            Ie. ['H1',L1','V1'], if the file is only valid for the combination
+            of ifos (for e.g. ligolw_thinca output) then this can be supplied
+            as, for e.g. "H1L1V1".
+        exe_name: string
+            A short description of the executable description, tagging
+            only the program that ran this job.
+        segs : glue.segment or glue.segmentlist
+            The time span that the OutFile is valid for. Note that this is
+            *not* the same as the data that the job that made the file reads in.
+            Lalapps_inspiral jobs do not analyse the first an last 72s of the
+            data that is read, and are therefore not valid at those times. If
+            the time is not continuous a segmentlist can be supplied.
+        pegasus_lfn : string
+            The Logical File Name used to identify this file in the workflow
+        directory : string (optional, default=None)
+            If this *and* store_file=True then the storage path will be set
+            to directory + pegasus_lfn.
+        tags : list of strings (optional, default=None)
+            This is a list of descriptors describing what this file is. For
+            e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
+            These are used in file naming.
+        """
+        self.metadata = {}
+        
+        # Set the science metadata on the file
+        if isinstance(ifos, (str, unicode)):
+            self.ifo_list = [ifos]
+        else:
+            self.ifo_list = ifos
+        self.ifo_string = ''.join(self.ifo_list)
+        self.description = exe_name
+        
+        if isinstance(segs, (segments.segment)):
+            self.segment_list = segments.segmentlist([segs])
+        elif isinstance(segs, (segments.segmentlist)):
+            self.segment_list = segs
+        else:
+            err = "segs input must be either glue.segments.segment or "
+            err += "segments.segmentlist. Got %s." %(str(type(segs)),)
+            raise ValueError(err)
+            
+        self.tags = tags 
+        if tags is not None:
+            self.tag_str = '_'.join(tags)
+            tagged_description = '_'.join([self.description] + tags)
+        else:
+            tagged_description = self.description
+            
+        # Follow the capitals-for-naming convention
+        self.ifo_string = self.ifo_string.upper()
+        self.tagged_description = tagged_description.upper()
+
+        super(File, self).__init__(pegasus_lfn)
+        
+        if store_file and directory is not None:
+            self.storage_path = os.path.join(directory, pegasus_lfn)
+        else:
+            self.storage_path = None
+
+
 class FileList(list):
     '''
     This class holds a list of File objects. It inherits from the
