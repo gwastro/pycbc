@@ -167,7 +167,6 @@ parser = ArgumentParser()
 parser.add_argument("--match-file", dest="out_file", help="file to output match results", metavar="FILE")
 parser.add_argument("--verbose", action='store_true', default=False, help="Print verbose statements")
 
-
 #Template Settings
 parser.add_argument("--template-file", dest="bank_file", help="SimInspiral or SnglInspiral XML file containing the template parameters", metavar="FILE")
 parser.add_argument("--total-mass-divide", type=float, help="Total mass to switch from --template-approximant to --highmass-approximant.")
