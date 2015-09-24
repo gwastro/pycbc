@@ -20,14 +20,10 @@ import sys
 from pycbc import frame
 
 # import dependencies that are not standard to pycbc
-try:
-    import ROOT
-    ROOT.gSystem.Load('/usr/lib64/libdmtsigp.so')
-    ROOT.gSystem.Load('/usr/lib64/libgdsplot.so')
-    from foton import FilterFile, Filter
-except ImportError as e:
-    print e
-    sys.exit()
+import ROOT
+ROOT.gSystem.Load('/usr/lib64/libdmtsigp.so')
+ROOT.gSystem.Load('/usr/lib64/libgdsplot.so')
+from foton import FilterFile, Filter
 
 def get_swstat_bits(frame_filenames, swstat_channel_name, start_time, end_time):
     ''' This function just checks the first time in the SWSTAT channel
