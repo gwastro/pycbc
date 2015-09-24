@@ -251,7 +251,7 @@ filter_delta_f = 1.0 / float(options.filter_signal_length)
 if options.verbose:
   print("Reading and Interpolating PSD")
 psd = pycbc.psd.from_cli(options, filter_n,  
-                         filter_delta_f, options.filter_low_frequency_cutoff,
+                         filter_delta_f, options.filter_low_frequency_cutoff, strain=strain,
                          dyn_range_factor=pycbc.DYN_RANGE_FAC, precision='single')
 
 
