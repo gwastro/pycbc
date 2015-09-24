@@ -113,7 +113,24 @@ Enter the virtual environment that you wish to use for PyCBC development by sour
 
     source $NAME/bin/activate
 
-First install unittest2, python-cjson, and numpy with the command:
+.. note::
+
+   CentOS 6 provides a buggy version of the HDF5 library, so you will need to install a newer version into your virtual environment. If you are using a CentOS 6 cluster, you must install HDF5. If you are using another cluster, then this step is optional.  
+
+If you need to install the HDF5 library (i.e. you are on a CentOS 6 cluster), run the commands: 
+
+.. code-block:: bash
+
+    mkdir -p $VIRTUAL_ENV/src
+    cd $VIRTUAL_ENV/src
+    curl https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
+    tar -zxvf hdf5-1.8.12.tar.gz
+    cd hdf5-1.8.12
+    ./configure --prefix=$VIRTUAL_ENV/opt/hdf5-1.8.12
+    make install
+    HDF5_DIR=$VIRTUAL_ENV/opt/hdf5-1.8.12 pip install h5py
+
+Install unittest2, python-cjson, and numpy with the command:
 
 .. code-block:: bash
 
@@ -153,6 +170,7 @@ To query the new Advanced LIGO and Advanced Virgo Segment Database, you will nee
 .. code-block:: bash
 
     pip install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
+
 
 You now need to decide whether you want to install a release of PyCBC or an editable version of the source code from a git repository for development. 
 

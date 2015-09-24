@@ -15,9 +15,9 @@ repository, make a ``gh-pages`` branch in your repository as follows:
     git checkout --orphan gh-pages
     git rm -rf .
     git clean -dxf
-    touch .nojeckyll
+    touch .nojekyll
     mkdir latest
-    git add .nojeckyll latest
+    git add .nojekyll latest
     git commit -a -m "set up gh-pages branch"
     git push origin gh-pages
     git branch --set-upstream gh-pages origin/gh-pages
