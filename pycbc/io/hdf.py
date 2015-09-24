@@ -21,6 +21,7 @@ from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, pnutils
 
+
 class DictArray(object):
     """ Utility for organizing sets of arrays of equal length. 
     
@@ -89,6 +90,7 @@ class DictArray(object):
             data[k] = np.delete(self.data[k], idx)
         return self._return(data=data)
 
+
 class StatmapData(DictArray):
     def __init__(self, data=None, seg=None, attrs=None,
                        files=None):
@@ -132,6 +134,7 @@ class StatmapData(DictArray):
             f['segments/%s/start' % key] = self.seg[key]['start'][:]
             f['segments/%s/end' % key] = self.seg[key]['end'][:]
         f.close()
+
 
 class FileData(object):
 
@@ -336,8 +339,16 @@ class SingleDetTriggers(object):
     @property
     def effective_spin(self):
         # FIXME assumes aligned spins
-        return (self.spin1z * self.mass1 + self.spin2z * self.mass2) \
-            / self.mtotal
+        return pnutils.phenomb_chi(self.mass1, self.mass2,
+                                   self.spin1z, self.spin2z)
+
+    # IMPROVEME: would like to have a way to access all get_freq and/or
+    # other pnutils.* names rather than hard-coding each one
+    # - eg make this part of a fancy interface to the bank file ?
+    @property
+    def f_seobnrv2_peak(self):
+        return pnutils.get_freq('fSEOBNRv2Peak', self.mass1, self.mass2,
+                                self.spin1z, self.spin2z)
 
     @property
     def end_time(self):
