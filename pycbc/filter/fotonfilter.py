@@ -84,10 +84,11 @@ def filter_data(data, filter_name, filter_file, bits, filterbank_off=False,
 
             # else it is a filter with only gain so apply the gain
             else:
-                try:
-                    gain = float(filter.design.design.split(')')[0].strip('gain(')) 
-                except ValueError as e:
-                    print 'ValueError', e, 'using gain of 1'
+                coeffs = iir2z(filter_file[filter_name][i])
+                if len(coeffs) > 1:
+                    logging.info('Gain-only filter module return more than one number')
+                    sys.exit()
+                gain = coeffs[0]
                 data = gain * data
 
     return  data
