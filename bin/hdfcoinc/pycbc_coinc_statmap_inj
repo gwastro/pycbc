@@ -70,7 +70,7 @@ if len(zdata) > 0:
         f['foreground/%s' % key] = zdata.data[key]
 else:
     for key in zdata.data:
-        f['foreground/%s' % key] = numpy.array([])
+        f['foreground/%s' % key] = numpy.array([], dtype=zdata.data[key].dtype)
 
 logging.info('calculating statistics excluding zerolag')
 fb = h5py.File(args.full_data_background, "r")
