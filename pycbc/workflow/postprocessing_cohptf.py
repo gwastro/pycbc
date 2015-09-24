@@ -50,7 +50,7 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, trigger_cache,
     significance of triggers and making any statements about trigger rates.
     Dedicated plotting jobs do not belong here.
 
-    Properties
+    Parameters
     -----------
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
