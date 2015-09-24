@@ -44,6 +44,9 @@ def detect_loud_glitches(strain, psd_duration=16, psd_stride=8,
     if output_intermediates:
         strain.save_to_wav('strain_conditioned.wav')
 
+    # don't waste time trying to optimize a single FFT
+    pycbc.fft.fftw.set_measure_level(0)
+
     logging.info('Autogating: estimating PSD')
     psd = pycbc.psd.welch(strain, seg_len=psd_duration*strain.sample_rate,
                           seg_stride=psd_stride*strain.sample_rate,
@@ -66,6 +69,8 @@ def detect_loud_glitches(strain, psd_duration=16, psd_stride=8,
 
     logging.info('Autogating: frequency -> time')
     pycbc.fft.ifft(strain_tilde, strain)
+
+    pycbc.fft.fftw.set_measure_level(pycbc.fft.fftw._default_measurelvl)
 
     logging.info('Autogating: stdev of whitened strain is %.4f', numpy.std(strain))
 
