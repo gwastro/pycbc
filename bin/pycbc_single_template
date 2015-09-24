@@ -162,10 +162,11 @@ class t(object):
     pass
  
 row = t()
-row.mass1 = opt.mass1
-row.mass2 = opt.mass2
-row.spin1z = opt.spin1z
-row.spin2z = opt.spin2z
+row.params = t()
+row.params.mass1 = opt.mass1
+row.params.mass2 = opt.mass2
+row.params.spin1z = opt.spin1z
+row.params.spin2z = opt.spin2z
 
 chisq_bins = vetoes.SingleDetPowerChisq.parse_option(row, opt.chisq_bins)
 if 'params' in opt.approximant:
