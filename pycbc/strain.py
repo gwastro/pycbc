@@ -38,7 +38,7 @@ import pycbc.events
 def detect_loud_glitches(strain, psd_duration=16, psd_stride=8,
                          psd_avg_method='median', low_freq_cutoff=30.,
                          threshold=50., cluster_window=5., corrupted_time=4.,
-                         output_intermediates=False):
+                         high_freq_cutoff=None, output_intermediates=False):
     """Automatic identification of loud transients for gating purposes."""
 
     if output_intermediates:
@@ -62,10 +62,17 @@ def detect_loud_glitches(strain, psd_duration=16, psd_stride=8,
     psd = pycbc.psd.interpolate(psd, strain_tilde.delta_f)
 
     logging.info('Autogating: whitening')
-    norm = strain.sample_rate/2. - low_freq_cutoff
+    if high_freq_cutoff:
+        kmax = int(high_freq_cutoff / strain_tilde.delta_f)
+        strain_tilde[kmax:] = 0.
+        norm = high_freq_cutoff - low_freq_cutoff
+    else:
+        norm = strain.sample_rate/2. - low_freq_cutoff
     strain_tilde /= (psd * norm) ** 0.5
     kmin = int(low_freq_cutoff / strain_tilde.delta_f)
     strain_tilde[0:kmin] = 0.
+
+    # FIXME at this point the strain can probably be downsampled
 
     logging.info('Autogating: frequency -> time')
     pycbc.fft.ifft(strain_tilde, strain)
@@ -163,6 +170,25 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             logging.info("Converting to float32")
             strain = (strain * dyn_range_fac).astype(float32)
 
+        if opt.autogating_threshold is not None:
+            # the + 0 is for making a copy
+            glitch_times = detect_loud_glitches(
+                    strain + 0., threshold=opt.autogating_threshold,
+                    cluster_window=opt.autogating_cluster,
+                    low_freq_cutoff=opt.strain_high_pass,
+                    high_freq_cutoff=opt.sample_rate/2,
+                    corrupted_time=opt.pad_data)
+            # FIXME gate params currently hardcoded, these are tuning choices
+            gate_params = [[gt, 0.25, 0.25] for gt in glitch_times]
+            if opt.autogating_output:
+                with file(opt.autogating_output, 'wb') as autogates:
+                    for x, y, z in gate_params:
+                        autogates.write('%.3f %f %f\n' % (x, y, z))
+            logging.info('Autogating at %s',
+                         ', '.join(['%.3f' % gt for gt in glitch_times]))
+            strain = gate_data(strain, gate_params,
+                               data_start_time=strain.start_time)
+
         if opt.gating_file is not None:
             logging.info("Gating glitches")
             gate_params = numpy.loadtxt(opt.gating_file)
@@ -182,25 +208,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         start = opt.pad_data*opt.sample_rate
         end = len(strain)-opt.sample_rate*opt.pad_data
         strain = strain[start:end]
-
-        if opt.autogating_threshold is not None:
-            # FIXME this should ideally be done before resampling and
-            # highpassing i.e. right where the "manual" gating is applied;
-            # however doing it there is slower and could lead to dynamic range
-            # problems in estimating the PSD
-            glitch_times = detect_loud_glitches(
-                    strain, threshold=opt.autogating_threshold,
-                    cluster_window=opt.autogating_cluster)
-            # FIXME gate params currently hardcoded, these are tuning choices
-            gate_params = [[gt, 0.25, 0.25] for gt in glitch_times]
-            if opt.autogating_output:
-                with file(opt.autogating_output, 'wb') as autogates:
-                    for x, y, z in gate_params:
-                        autogates.write('%.3f %f %f\n' % (x, y, z))
-            logging.info('Autogating at %s',
-                         ', '.join(['%.3f' % gt for gt in glitch_times]))
-            strain = gate_data(strain, gate_params,
-                               data_start_time=strain.start_time)
 
     if opt.fake_strain:
         logging.info("Generating Fake Strain")
