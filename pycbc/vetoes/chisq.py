@@ -103,8 +103,7 @@ def shift_sum(v1, shifts, bins):
     pass
 
 def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
-    """Calculate the chisq timeseries from precomputed values for only select
-    points.
+    """Calculate the chisq timeseries from precomputed values for only select points.
 
     This function calculates the chisq at each point by explicitly time shifting
     and summing each bin. No FFT is involved.
@@ -137,7 +136,7 @@ _q_l = None
 _qtilde_l = None
 _chisq_l = None
 def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
-    """Calculate the chisq timeseries from precomputed values
+    """Calculate the chisq timeseries from precomputed values.
 
     This function calculates the chisq at all times by performing an
     inverse FFT of each bin.
@@ -254,7 +253,7 @@ def power_chisq(template, data, num_bins, psd,
     data: FrequencySeries or TimeSeries
         A time or frequency series that contains the data to filter. The length
         must be commensurate with the template.
-              ---  EXPLAINME - does this mean 'the same as' or something else?
+        (EXPLAINME - does this mean 'the same as' or something else?)
     num_bins: int
         The number of bins in the chisq. Note that the dof goes as 2*num_bins-2.
     psd: FrequencySeries
