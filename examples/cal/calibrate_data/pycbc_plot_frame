@@ -1,0 +1,31 @@
+#! /usr/bin/python
+
+import argparse
+import logging
+import matplotlib as mpl; mpl.use('Agg')
+import matplotlib.pyplot as plt
+import sys
+
+from glue import lal
+from pycbc import frame
+from pycbc import types
+
+# initializations
+channel_name = sys.argv[1]
+
+# setup log
+logging_level = logging.DEBUG
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
+# read frame cache
+logging.info('Reading cache file...')
+frame_cache = lal.Cache.fromfilenames([sys.argv[2]])
+frame_filenames = [entry.path for entry in frame_cache]
+
+# get channel data from frame files
+logging.info('Reading frame files...')
+data = frame.read_frame(frame_filenames, channel_name, start_time=sys.argv[3], end_time=sys.argv[4])
+
+# plot
+plt.plot(data.sample_times, data.numpy())
+plt.savefig(sys.argv[5])
