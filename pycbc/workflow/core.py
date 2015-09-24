@@ -26,7 +26,7 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import os, stat, subprocess, logging, math, string, urllib2, urlparse, ConfigParser, copy, time
+import os, stat, subprocess, logging, math, string, urllib, urllib2, urlparse, ConfigParser, copy, time
 import numpy, cPickle, random
 from itertools import combinations, groupby
 from operator import attrgetter
@@ -764,7 +764,7 @@ class File(pegasus_workflow.File):
         return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start, 
                                    duration, extension)  
     
-class RemoteFile(File):
+class NewFile(File):
     '''
     This class holds the details of an individual output file 
     This file(s) may be pre-supplied, generated from within the workflow
@@ -785,8 +785,9 @@ class RemoteFile(File):
 
     c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
     '''
-    def __init__(self, ifos, exe_name, segs, pegasus_lfn,
-                 directory=None, tags=None, 
+
+    def __init__(self, ifos, exe_name, segs, lfn,
+                 extension=None, directory=None, tags=None, 
                  store_file=True, use_tmp_subdirs=False):
         """
         Create a File instance
@@ -808,11 +809,11 @@ class RemoteFile(File):
             Lalapps_inspiral jobs do not analyse the first an last 72s of the
             data that is read, and are therefore not valid at those times. If
             the time is not continuous a segmentlist can be supplied.
-        pegasus_lfn : string
+        lfn : string
             The Logical File Name used to identify this file in the workflow
         directory : string (optional, default=None)
             If this *and* store_file=True then the storage path will be set
-            to directory + pegasus_lfn.
+            to directory + lfn.
         tags : list of strings (optional, default=None)
             This is a list of descriptors describing what this file is. For
             e.g. this might be ["BNSINJECTIONS" ,"LOWMASS","CAT_2_VETO"].
@@ -848,12 +849,52 @@ class RemoteFile(File):
         self.ifo_string = self.ifo_string.upper()
         self.tagged_description = tagged_description.upper()
 
-        super(File, self).__init__(pegasus_lfn)
+        path = None
+        pfn = None
+
+        if lfn is not None:
+            lfn_path = urlparse.urlparse(lfn).path
+
+            # If it's a file
+            if lfn == lfn_path:
+                pfn = urlparse.urljoin('file:',
+                                urllib.pathname2url(lfn))
+                site = 'local'
+            else:
+                pfn = lfn
+                lfn = lfn_path
+                site = 'nonlocal'
+
+            if lfn[0] == '/':
+                lfn = lfn[1:]
+
+            if directory is not None:
+                path = os.path.join(directory, lfn)
+        else:
+            # lfn is None, so construct one
+            if not extension:
+                raise TypeError("a file extension required if an lfn  "
+                                "is not provided")
+            if not directory:
+                raise TypeError("a directory is required if an lfn is "
+                                "not provided")
+            
+            lfn = self._filename(self.ifo_string, self.tagged_description,
+                                      extension, self.segment_list.extent())
+
+            path = os.path.join(directory, lfn)
+            if not os.path.isabs(path):
+                path = os.path.join(os.getcwd(), path) 
+
+        super(File, self).__init__(lfn)
         
-        if store_file and directory is not None:
-            self.storage_path = os.path.join(directory, pegasus_lfn)
+        if store_file and path is not None:
+            self.storage_path = path
         else:
             self.storage_path = None
+
+        if pfn is not None:
+            self.PFN(pfn, site)
 
 
 class FileList(list):
