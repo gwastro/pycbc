@@ -6,7 +6,7 @@ set -e
 #Installing pyCBC
 
 # Ask the user where they want pycbc installed
-read -p "Enter the location where you want the virtual env created" NAME
+read -p "Enter the location where you want the virtual env created " NAME
 
 if [ -z $NAME ] ; then
   echo "ERROR: you must specify a path for your virtual environment"
@@ -19,9 +19,9 @@ if [ -d $NAME ] ; then
    exit 1
 fi
 
-read -p "Enter the number of processors that you want to use for builds:" nproc
+read -p "Enter the number of processors that you want to use for builds: " nproc
 
-if [ -z $nproc ] ;
+if [ -z $nproc ] ; then
   nproc=1
 fi
 
@@ -51,7 +51,7 @@ pip install "numpy>=1.6.4" unittest2 python-cjson Cython
 #Authenticate with LIGO Data Grid services, install M2Crypto
 SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
 
-read -p "Enter you LIGO.ORG username in (e.g. albert.einstein):" directory
+read -p "Enter you LIGO.ORG username in (e.g. albert.einstein): " directory
 
 #Valid ECP cookie to clone
 echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite"
@@ -70,20 +70,19 @@ cd lalsuite
 
 #Determine which version of the code you want to install
 echo "Enter the name of the lalsuite branch that you want to use"
-read "(e.g. master or lalsuite_o1_branch)" lalbranch
+read -rp "(e.g. master or lalsuite_o1_branch) " lalbranch
 git checkout $lalbranch
 
 #Building and Installing into your Virtual Environment
 #Use the master configure script to build and install all the components
 ./00boot
-./configure --prefix=$NAME/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar
+./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar
 make -j $nproc
 make install
 
 #Add to virtualenv activate script
-echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc' >> $NAME/bin/activate
-deactivate
-source $NAME/bin/activate
+echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc' >> ${VIRTUAL_ENV}/bin/activate
+source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc
 
 #Check that lalsuite is installed
 echo $LAL_PREFIX
@@ -100,12 +99,12 @@ pip install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqs
 echo Would you like to install a released version or development version?
 echo "1. Release version"
 echo "2. Development version"
-read "Enter either 1 or 2:" dev_or_rel
+read -rp "Enter either 1 or 2: " dev_or_rel
 
 if [ $dev_or_rel -eq 1 ] ; then
 #Installing a released version of pyCBC
 #Choose release version
-read "Enter the release tag that you want to install (e.g. v1.1.5)" reltag
+read -rp "Enter the release tag that you want to install (e.g. v1.1.5) " reltag
 
 #Install Version
 pip install git+https://github.com/ligo-cbc/pycbc@${reltag}#egg=pycbc --process-dependency-links
@@ -120,13 +119,13 @@ echo You will then need to enable ssh keys on your GitHub account. You can follo
 read -rsp $'Once you have finished that press [Enter] to continue...\n' -n1 key
 
 #Input Username
-read -p "GitHub Username:" github
+read -p "GitHub Username: " github
 
 #Install PyCBC source code from GitHub URL
 pip install -e git+git@github.com:$github/pycbc.git#egg=pycbc --process-dependency-links
 
 #Prevent Pip from removing source directory
-rm -f $NAME/src/pip-delete-this-directory.txt
+rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
 
 else
 
@@ -142,7 +141,7 @@ pip install sphinxcontrib-programoutput
 pip install numpydoc
 
 #Add script that sets up the MKL environment to virtualenv activate script
-echo 'source /opt/intel/bin/compilervars.sh intel64' >> $NAME/bin/activate
+echo 'source /opt/intel/bin/compilervars.sh intel64' >> ${VIRTUAL_ENV}/bin/activate
 
 deactivate
 
