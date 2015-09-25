@@ -149,7 +149,10 @@ logfile = tempfile.mktemp()
 
 mchirp_window = None
 if confs.has_option("banksim", "mchirp-window"):
-    mchirp_window = float(confs.get("banksim", "mchirp-window"))
+    if ',' in confs.get("banksim", "mchirp-window"):
+         mchirp_window = max([float(x) for x in confs.get("banksim", "mchirp-window").split(",")])
+    else:
+         mchirp_window = float(confs.get("banksim", "mchirp-window"))
 
 gpu = False
 try:
