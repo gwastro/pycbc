@@ -32,7 +32,7 @@ The bank generation can be verified using the pycbc_banksim code. To run this fo
 
 To run this you will need to change the banksim option to your local version of pycbc_banksim, the log-path option to a suitable location for your log files on your cluster, the locations of the bank and noise curve and possibly whatever processing_scheme is best on your cluster (mkl works on Atlas with /opt/intel/2015/intel.sh sourced). 
 
-The injections are uniform in component mass and uniform in spin magnitude. Injections are generated from 25Hz but filtering is performed from 30Hz. Source location l-distr is random over the sky and inclination i-distr is uniformly distributed over arccos(i) - although this should not matter for aligned signals.
+The injections are uniform in component mass and uniform in spin magnitude. Injections are generated from 25Hz but filtering is performed from 30Hz. Source location l-distr is random over the sky and inclination i-distr is uniformly distributed over arccos(i) - although this should not matter for aligned signals and latitude and longitude are set internally in the banksim code to 0.
 
 ========================================
 Evaluation
@@ -46,11 +46,11 @@ While such tests do not guarantee that the bank will successfully recover all po
 Known issues
 =================================================
 
-The coverage of the high-mass (>70) and anti-aligned (<-0.5) NSBH region is known to be sparse in some versions when using SEOBNRv2 signals and SEOBNRv2_ROM_DoubleSpin templates.
+The coverage of the high-mass (>70) and anti-aligned (<-0.5) NSBH region is known to be sparse in some early testing versions of the uberbank when using SEOBNRv2 signals and SEOBNRv2_ROM_DoubleSpin templates.
 
-The mchirp-window size may need to be changed if it is too tight. This is particularly a problem at higher masses.
+The mchirp-window size may need to be changed if it is too tight. This is particularly a problem at higher masses and will depend on the sensitivity curve used.
 
-If speed is an issue, the banksims can be sped up by reducing the number of injection signals, using ROMs instead of SEOBNRv2 as injection signals, reducing the signal-sample-rate or tightening the mchirp-window. Code is being developed to do this dynamically.
+If speed is an issue, the banksims can be sped up by reducing the number of injection signals, using ROMs instead of SEOBNRv2 as injection signals, reducing the signal-sample-rate, filter-signal-length or tightening the mchirp-window. Code is being developed to do this dynamically. Adjusting the injections-per-job and templates-per-job is the best way to change the number of jobs generated.
 
 To replicate the behaviour of the uberbank, that switches the template approximant from TaylorF2 to SEOBNRv2_ROM_DoubleSpin at a total mass of 4, the options total-mass-divide and highmass-approximant are needed in the pycbc_banksim code. These options do not exist on older versions (Sep 2015) of pycbc_banksim.
 
