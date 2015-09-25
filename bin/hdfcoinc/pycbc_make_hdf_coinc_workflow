@@ -214,7 +214,7 @@ det_summ = [(s, r[0] if len(r) != 0 else None)]
 layout(rdir['detector_sensitivity'], det_summ + list(grouper(r2, 2)))    
 
 
-# run minifollowups on the output of the loudest events
+# run minifollowups on the output of the loudest events 
 wf_layout = wf.setup_minifollowups(workflow, final_bg_file,
                                   full_insps,  hdfbank[0],
                                   insp_data_segs, 'INSPIRAL_DATA',
@@ -222,6 +222,14 @@ wf_layout = wf.setup_minifollowups(workflow, final_bg_file,
 
 layout(rdir['result'], results_page + [(table,)] + wf_layout)
     
+for bin_file in bin_files:
+    if hasattr(bin_file, 'bin_name'):
+        wf_layout = wf.setup_minifollowups(workflow, bin_file, full_insps, hdfbank[0],
+                                  insp_data_segs, 'INSPIRAL_DATA', 
+                                  rdir['result/%s' % bin_file.bin_name],
+                                  tags=bin_file.tags)
+        layout(rdir['result/%s' % bin_file.bin_name], wf_layout)
+
 ################## Setup segment / veto related plots #########################    
 # do plotting of segments / veto times
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
