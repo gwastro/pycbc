@@ -32,14 +32,11 @@ Uploading to the Python Package Index
 
     Keep in mind that once you register a version number with the package index and upload a package, you can never change it. You can only deactivate the package from the index, and increment the version number.
 
-If this is the first time that you have pushed to PyPI, you will need to create a configuration file. Create a file in your home directory called ``.pypirc`` that contains the lines
-
-.. highlight:: 
-
+If this is the first time that you have pushed to PyPI, you will need to create a configuration file. Create a file in your home directory called ``.pypirc`` that contains the lines::
     [distutils] # this tells distutils what package indexes you can push to
     index-servers =
-      pypi
-      pypitest
+    pypi
+    pypitest
 
     [pypi]
     repository: https://pypi.python.org/pypi

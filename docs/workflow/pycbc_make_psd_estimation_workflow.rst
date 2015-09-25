@@ -8,12 +8,11 @@ program ``pycbc_make_psd_estimation_workflow`` is devoted to this task.
 
 The program sets up a Pegasus workflow which is basically a small subset of a
 coincident search workflow:
+
  * Find the data frames and the segments
  * Segment the analyzable data in each detector
- * Run ``pycbc_calculate_psd`` to estimate the PSD in each segment in each
-   detector
- * Run ``pycbc_average_psd`` to combine the PSD estimates over time for each
-   detector, as well as over time and detectors.
+ * Run ``pycbc_calculate_psd`` to estimate the PSD in each segment in each detector
+ * Run ``pycbc_average_psd`` to combine the PSD estimates over time for each detector, as well as over time and detectors.
 
 Configuration file
 ------------------

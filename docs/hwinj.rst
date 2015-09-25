@@ -1,12 +1,12 @@
-#################################################
+######################################
 Hardware injection waveform generation
-#################################################
+######################################
 
 .. contents::
 
-=================================================
+============
 Introduction
-=================================================
+============
 
 This page describes how to generate waveforms and save them as single-column ASCII waveform files that can be used by ``awgstream`` to inject into the detector.
 
@@ -16,23 +16,23 @@ The executable ``pycbc_generate_hwinj`` generates a waveform using parameters fr
 
 The executable ``pycbc_generate_hwinj_from_xml`` generates all the waveforms in a LIGOLW ``sim_inspiral`` table. The output of ``lalapps_inspinj`` (an executable for generating a population of injections) is a LIGOLW ``sim_inspiral`` table. This executable is useful if you want to generate a population of coherent waveforms for hardware injections.
 
-=================================================
+==============================================================
 Generate waveform from command line (``pycbc_generate_hwinj``)
-=================================================
+==============================================================
 
 Here is a usage example for generating a CBC waveform using detector data with ``pycbc_generate_hwinj``.
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Select a time for the injection
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 First on the command line set a variable for the GPS geocentric end time of the coherent injection ::
 
   GEOCENT_END_TIME=1124381661
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Select data for PSD estimation
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 We need to set what data we will use to estimate the PSD. This should be a 2048 second interval. So in this example we will set ::
 
@@ -50,9 +50,9 @@ We can check that frames exist for this time by querying the LDR server, check t
 
 **Do not assume that the frame type and channel name are the same as in this section. These values are correct for this example.**
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Run ``pycbc_generate_hwinj``
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 The ``--instruments`` option specifies the IFOs to include in the injection. The executable ``pycbc_generate_hwinj`` will write the waveform for all detectors listed with the ``--instruments`` option. There are a number of options, including ``--instruments`` that take a space-seperated list, example usage of this option is ::
 
@@ -97,15 +97,15 @@ The LIGOLW XML file contains a ``process_params`` table that saves the command l
 
 The user should inspect the waveforms. For a waveform plotting executable see section :ref:`runpycbcplothwinj`.
 
-=================================================
+=====================================================================================
 Generate waveform from ``lalapps_inspinj`` output (``pycbc_generate_hwinj_from_xml``)
-=================================================
+=====================================================================================
 
 Here is a usage case for generating a population of waveforms with ``lalapps_inspinj``. This example generates an injection every Tuesday for three months.
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&
 Run ``lalapps_inspinj``
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&
 
 Here we show an example on how to use ``lalapps_inspinj`` to generate a population of injections.
 
@@ -145,9 +145,9 @@ Now we can combine all the options above and run ``lalapps_inspinj`` as ::
 
 In this example ``lalapps_inspinj`` will write a LIGOLW XML file called ``HL-INJECTIONS_1-1126368017-4003200.xml`` that has a ``sim_inspiral`` table with the population of injections.
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Run ``pycbc_generate_hwinj_from_xml``
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 Running ``lalapps_inspinj`` has written a LIGOLW XML file with a ``sim_inspiral`` table. Now we can run ``pycbc_generate_hwinj_from_xml`` to write single-column ASCII waveform files for the population of injections.
 
@@ -163,15 +163,15 @@ The ASCII waveform files will be named ``${IFO}-HWINJ_CBC_SIMULATION_ID_${SIMID}
 
 The user should inspect the waveforms. For a waveform plotting executable see section :ref:`runpycbcplothwinj`.
 
-=================================================
+========================================
 Checks for the hardware injection output
-=================================================
+========================================
 
 Here are some follow-up checks the user can do.
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Plot ASCII waveform files with ``pycbc_plot_hwinj``
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 .. _runpycbcplothwinj:
 
@@ -183,9 +183,9 @@ If you are using ``ssh`` or ``gsissh`` to log into a cluster, you can provide th
 
   gsissh -Y ldas-pcdev1.ligo.caltech.edu
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Recover software injection with ``pycbc_inspiral``
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 The executable ``pycbc_generate_hwinj`` will create an XML file with both a ``sim_inspiral`` and ``sngl_inspiral`` table. Therefore we can inject the exact waveform parameters and recover them with the exact template.
 
@@ -201,9 +201,9 @@ You can print out the recovered SNR and other parameters with ``lwtprint``, for 
 
   lwtprint -t sngl_inspiral -c end_time,snr ${INSPIRAL_FILE}
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Recover ASCII file injection with ``pycbc_inspiral``
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 There is an executable ``pycbc_insert_frame_hwinj`` that will read the single-column ASCII file and insert it into frame data. An example command is here ::
 
@@ -214,9 +214,9 @@ Where ``${START}`` is the start of the injection and ``${DURATION}`` is the leng
 
 Then you can run pycbc on the output frame file ``H1-HWINJ.gwf``.
 
-=================================================
+=================================
 How to query the segment database
-=================================================
+=================================
 
 .. _howtoquerysegdb:
 
@@ -234,9 +234,9 @@ The output should be ``1124380361,1124382409`` for both ``ligolw_print`` command
 
 **Do not assume that the segment databse URL and science-mode segment names are the same as in this section. These values are correct for this example.**
 
-=================================================
+===========================
 How to query the LDR server
-=================================================
+===========================
 
 .. _howtoqueryldr:
 

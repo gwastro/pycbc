@@ -1,21 +1,21 @@
-###################################################################
+################################################
 Dag Generator for Doing Faithfulness Comparisons
-###################################################################
+################################################
 
-===================
+============
 Introduction
-===================
+============
 
 This page describes how to use the faithfulness dag generator within
 PyCBC.
 
-================================================
+==========================
 How to generate a workflow
-================================================
+==========================
 
-------------------------
+------------------------------------
 Creating a configuration (.ini) file
-------------------------
+------------------------------------
 
 All the choices when setting up a faithsim are contained
 in a single configuration file. 
@@ -108,9 +108,9 @@ The pycbc_faithsim_plots script located in the
 scripts folder is an example of 
 how to read the results files. 
 
--------------------------
+--------------------
 Example config files
--------------------------
+--------------------
 *ADD SOME HERE*
 
 Contact Alex Nitz for some more detailed examples of configuration files.

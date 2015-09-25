@@ -335,9 +335,10 @@ create the workflow from within the run directory using::
                                 workflow:html-dir:${HTML_DIR} \
                                 workflow-tmpltbank:tmpltbank-pregenerated-bank:${BANK_FILE}
 
-This may all be conveniently placed within a shell script, an example of which is given
-in::
+This may all be conveniently placed within a shell script, an example of which is given in::
+
     /src/pycbc/examples/workflow/pygrb/run_pygrb.sh
+
 .. _pygrbplan:
 
 -----------------------------------------

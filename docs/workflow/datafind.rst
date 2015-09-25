@@ -48,9 +48,9 @@ Configuration file setup
 Here we describe the options given in the configuration file used in the
 workflow that will be needed in this section
 
-$$$$$$$$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$$$$
 [workflow-datafind] section
-$$$$$$$$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
 The configuration file must have an [workflow-datafind] section, which is used to
 tell the workflow how to generate the datafind calls. The first option to choose

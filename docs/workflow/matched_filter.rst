@@ -156,9 +156,9 @@ All other options must be provided in the configuration file. Here is an example
    pycbc_inspiral --trig-end-time 961592867 --verbose  --cluster-method window --bank-filetmpltbank/L1-TMPLTBANK_01-961591486-1382.xml.gz --gps-end-time 961592884 --channel-name L1:LDAS-STRAIN --processing-scheme cuda --snr-threshold 5.5 --psd-estimation median --trig-start-time 961591534 --gps-start-time 961590836 --chisq-bins 16 --segment-end-pad 16 --segment-length 2048 --low-frequency-cutoff 15 --pad-data 8 --cluster-window 1 --sample-rate 4096 --segment-start-pad 650 --psd-segment-stride 32 --psd-inverse-length 16 --psd-segment-length 64 --frame-cache datafind/L1-DATAFIND-961585543-7349.lcf --approximant SPAtmplt --output inspiral/L1-INSPIRAL_1-961591534-1333.xml.gz --strain-high-pass 30 --order 7 
 
 
-==========================================
+===========================================
 :mod:`pycbc.workflow.matched_filter` Module
-==========================================
+===========================================
 
 This is complete documentation of this module's code
 
