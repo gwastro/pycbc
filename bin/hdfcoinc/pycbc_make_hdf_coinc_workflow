@@ -20,9 +20,9 @@ Program for running multi-detector workflow analysis through coincidence and the
 generate post-processing and plots.
 """
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
-import os, argparse, ConfigParser, logging, glue.segments, numpy
+import os, argparse, ConfigParser, logging, glue.segments, numpy, lal, datetime
 from pycbc.events.veto import multi_segments_to_file
-from pycbc.results import create_versioning_page 
+from pycbc.results import create_versioning_page, static_table
 from pycbc.results.render import render_workflow_html_template
 from itertools import izip_longest
 
@@ -96,6 +96,19 @@ rdir = SectionNumber('results', ['configuration',
                                  'search_sensitivity',
                                  'result',
                                  ])
+
+# put start / end time at top of summary page
+time = workflow.analysis_time
+s, e = int(time[0]), int(time[1])
+s_utc = str(datetime.datetime(*lal.GPSToUTC(s)[0:6]))
+e_utc = str(datetime.datetime(*lal.GPSToUTC(e)[0:6]))
+time_str = '<center><h2><b>%s [%s] - %s [%s]</b></h2></center>' % (s, s_utc, e, e_utc)
+time_file = wf.File(workflow.ifos, 'time', workflow.analysis_time,
+                                           extension='.html',
+                                           directory=rdir.base)
+wf.makedir(rdir.base)
+f = open(time_file.storage_path, 'w')
+f.write(time_str)
 
 # Get segments and find where the data is
 science_segs, data_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments")
@@ -353,7 +366,7 @@ if len(inj_files) > 0:
     inj_summ = list(grouper(inj + sen, 2))
                             
 # make full summary
-summ = ([(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)] + 
+summ = ([(time_file,)] + [(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)] + 
        det_summ + hist_summ + bank_plot + list(grouper(closed_snrifar, 2)) + inj_summ)
 for row in summ:
     for f in row:
