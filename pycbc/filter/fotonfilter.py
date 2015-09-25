@@ -23,7 +23,7 @@ from pycbc import frame
 import ROOT
 ROOT.gSystem.Load('/usr/lib64/libdmtsigp.so')
 ROOT.gSystem.Load('/usr/lib64/libgdsplot.so')
-from foton import FilterFile, Filter
+from foton import FilterFile, Filter, iir2z
 
 def get_swstat_bits(frame_filenames, swstat_channel_name, start_time, end_time):
     ''' This function just checks the first time in the SWSTAT channel
