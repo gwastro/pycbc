@@ -155,7 +155,7 @@ class LegacyInspiralExecutable(LegacyAnalysisExecutable):
     """
     current_retention_level = Executable.CRITICAL
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None, 
-                       out_dir=None, tags=[]):
+                       gate_files=None, out_dir=None, tags=[]):
         super(LegacyInspiralExecutable, self).__init__(cp, name, universe, ifo, 
                                     out_dir=out_dir, tags=tags)
         self.injection_file = injection_file 
@@ -250,7 +250,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
     """
     current_retention_level = Executable.CRITICAL
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
-                 out_dir=None, tags=[]):
+                 gate_files=None, out_dir=None, tags=[]):
         super(LegacyCohPTFInspiralExecutable, self).__init__(cp, name, universe,
                 ifo, out_dir=out_dir, tags=tags)
         self.cp = cp

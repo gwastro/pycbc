@@ -704,11 +704,13 @@ class PyCBCInspiralExecutable(Executable):
     """ The class used to create jobs for pycbc_inspiral Executable. """
     
     current_retention_level = Executable.CRITICAL
-    def __init__(self, cp, exe_name, ifo=None, out_dir=None, injection_file=None, tags=[]):
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None, injection_file=None, 
+                 gate_files=None, tags=[]):
         super(PyCBCInspiralExecutable, self).__init__(cp, exe_name, None, ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.injection_file = injection_file
+        self.gate_files = gate_files
         
         try:
             outtype = cp.get('workflow-matchedfilter', 'output-type')
@@ -750,6 +752,14 @@ class PyCBCInspiralExecutable(Executable):
 
         if self.injection_file is not None:
             node.add_input_opt('--injection-file', self.injection_file)
+
+        if self.gate_files is not None:
+            ifo_gate = None
+            for gate_file in self.gate_files:
+                if gate_file.ifo == self.ifo:
+                    ifo_gate = gate_file
+            if ifo_gate is not None:
+                node.add_input_opt('--gating-file', ifo_gate)
 
         # set the input and output files        
         fil = node.new_output_file_opt(valid_seg, self.ext, '--output', tags=tags,

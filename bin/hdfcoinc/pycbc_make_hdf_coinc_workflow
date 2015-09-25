@@ -132,6 +132,10 @@ bank_plot = [(wf.make_template_plot(workflow, hdfbank[0], rdir['coincident_trigg
 inj_files, inj_tags = wf.setup_injection_workflow(workflow, 
                                                      output_dir="inj_files")
                                                                                                                                                         
+# setup gating files if provided
+gate_files = wf.setup_gating_workflow(workflow, science_segs,
+                                            datafind_files, "gating")
+
 ######################## Setup the FULL DATA run ##############################
 tag = output_dir = "full_data"
 ctags = [tag, 'full']
@@ -139,7 +143,8 @@ ctags = [tag, 'full']
 # setup the matchedfilter jobs                                                     
 ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, science_segs, 
                                    datafind_files, splitbank_files, 
-                                   output_dir, tags = [tag])
+                                   output_dir, gate_files=gate_files,
+                                   tags = [tag])
 
 insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
                                            insps, output_dir, tags=[tag])
@@ -217,7 +222,7 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
                    'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
 
     psd_files += [wf.make_psd_file(workflow, datafind_files.find_output_with_ifo(ifo), 
-                                insp_data_segs[ifo], 'INSPIRAL_DATA', 'psds')]
+                        insp_data_segs[ifo], 'INSPIRAL_DATA', 'psds', gate_files=gate_files)]
 
 s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'])
 r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], require='summ')
@@ -303,6 +308,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     insps = wf.setup_matchedfltr_workflow(workflow, science_segs, 
                                        datafind_files, splitbank_files, 
                                        output_dir, injection_file=small_inj_file,
+                                       gate_files=gate_files,
                                        tags = [tag])
    
     insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
