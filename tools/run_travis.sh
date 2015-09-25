@@ -76,6 +76,11 @@ function test_exec_help {
     test $? -ne 0 && RESULT=1
 }
 
+test_exec_help pycbc_banksim
+test_exec_help pycbc_make_banksim
+test_exec_help pycbc_faithsim
+test_exec_help pycbc_make_faithsim
+
 test_exec_help pycbc_inspiral
 test_exec_help pycbc_geom_nonspinbank
 test_exec_help pycbc_aligned_stoch_bank

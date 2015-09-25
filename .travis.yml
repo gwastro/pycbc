@@ -12,6 +12,6 @@ cache:
   directories:
     - $HOME/inst
 install:
-  - ./tools/install_travis.sh
+  - travis_retry ./tools/install_travis.sh
 script:
   - ./tools/run_travis.sh
