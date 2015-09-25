@@ -109,23 +109,23 @@ read -rp "Enter the release tag that you want to install (e.g. v1.1.5) " reltag
 #Install Version
 pip install git+https://github.com/ligo-cbc/pycbc@${reltag}#egg=pycbc --process-dependency-links
 
-elif [ $del_or_rel -eq 2 ] ; then
+elif [ $dev_or_rel -eq 2 ] ; then
 
-#Fork pyCBC to your Github account
-echo For the development version, you will need a GitHub account.
-echo If you do not have a github account you will need to set one up.
-echo Follow the instruction on https://help.github.com/articles/fork-a-repo/ to fork your GitHub account to PyCBC.
-echo You will then need to enable ssh keys on your GitHub account. You can follow these instructions: https://help.github.com/articles/generating-ssh-keys/
-read -rsp $'Once you have finished that press [Enter] to continue...\n' -n1 key
+  #Fork pyCBC to your Github account
+  echo For the development version, you will need a GitHub account.
+  echo If you do not have a github account you will need to set one up.
+  echo Follow the instruction on https://help.github.com/articles/fork-a-repo/ to fork your GitHub account to PyCBC.
+  echo You will then need to enable ssh keys on your GitHub account. You can follow these instructions: https://help.github.com/articles/generating-ssh-keys/
+  read -rsp $'Once you have finished that press [Enter] to continue...\n' -n1 key
 
-#Input Username
-read -p "GitHub Username: " github
+  #Input Username
+  read -rp "GitHub Username: " github
 
-#Install PyCBC source code from GitHub URL
-pip install -e git+git@github.com:$github/pycbc.git#egg=pycbc --process-dependency-links
+  #Install PyCBC source code from GitHub URL
+  pip install -e git+git@github.com:$github/pycbc.git#egg=pycbc --process-dependency-links
 
-#Prevent Pip from removing source directory
-rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
+  #Prevent Pip from removing source directory
+  rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
 
 else
 
