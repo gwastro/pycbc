@@ -34,7 +34,7 @@ import os
 import ConfigParser
 import urlparse, urllib
 import logging
-from pycbc.workflow.core import File, FileList, make_analysis_dir
+from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
 from pycbc.workflow.jobsetup import select_tmpltbank_class, select_matchedfilter_class, sngl_ifo_job_setup
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
@@ -322,6 +322,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
         # First check if we have a bank for all ifos
         pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
                                            'tmpltbank-pregenerated-bank', tags)
+        pre_gen_bank = resolve_url(pre_gen_bank)
         file_url = urlparse.urljoin('file:', urllib.pathname2url(pre_gen_bank))
         curr_file = File(workflow.ifos, user_tag, global_seg, file_url,
                                                                      tags=tags)
@@ -334,6 +335,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
                 pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
                                 'tmpltbank-pregenerated-bank-%s' % ifo.lower(),
                                 tags)
+                pre_gen_bank = resolve_url(pre_gen_bank)
                 file_url = urlparse.urljoin('file:',
                                              urllib.pathname2url(pre_gen_bank))
                 curr_file = File(ifo, user_tag, global_seg, file_url,
