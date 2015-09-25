@@ -146,6 +146,7 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 statname = opt.sngl_stat.replace("_", " ")
 paramname = opt.fit_param.replace("_", " ")
+paramtag = opt.fit_param.replace("_", "")
 
 if opt.plot_dir is not None:
     outdir = opt.plot_dir if opt.plot_dir.endswith('/') else opt.plot_dir+'/'
@@ -379,7 +380,7 @@ for ifo in opt.ifos:
             plt.xlabel(statname, size="large")
             plt.ylabel("Cumulative number", size="large")
             dest = plotbase + "_" + opt.sngl_stat + "_cdf_by_" + \
-              paramname[0:3] + "_fit_thresh_" + str(th) + ".png"
+              paramtag[0:3] + "_fit_thresh_" + str(th) + ".png"
             logging.info("Saving plot to %s" % dest)
             plt.savefig(dest)
             plt.close()
@@ -396,7 +397,7 @@ if opt.plot_dir:
         plt.legend(loc="best")
         plt.xlabel(paramname, size="large")
         plt.ylabel(r"fit parameter $\alpha$", size='large')
-        plt.savefig(plotbase + '_alpha_vs_' + paramname[0:3] + '.png')
+        plt.savefig(plotbase + '_alpha_vs_' + paramtag[0:3] + '.png')
         plt.close()
 
         for th in opt.stat_threshold:
@@ -409,7 +410,7 @@ if opt.plot_dir:
         plt.setp(leg.get_texts(), fontsize=11)
         plt.xlabel(paramname, size='large')
         plt.ylabel('KS test p-value')
-        plt.savefig(plotbase + '_KS_prob_vs_' + paramname[0:3] + '.png')
+        plt.savefig(plotbase + '_KS_prob_vs_' + paramtag[0:3] + '.png')
         plt.close()
 
 logging.info('Done!')
