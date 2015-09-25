@@ -17,7 +17,20 @@
 """ Make tables describing a coincident foreground event"""
 import h5py, argparse, logging, pycbc.version, pycbc.events, pycbc.results, sys
 import matplotlib; matplotlib.use('Agg'); import pylab
-import numpy, pycbc.pnutils
+import numpy, pycbc.pnutils, lal, datetime
+
+
+def get_summary_page_link(ifo, utc_time):
+    """ Return a string that links to the summary page for this ifo """
+    data = {'H1':"<a href=https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day/%s>%s</a>",
+            'L1':"<a href=https://ldas-jobs.ligo-la.caltech.edu/~detchar/summary/day/%s>%s</a>",
+            }
+    if ifo not in data:
+        return ifo
+    else:
+        
+        ext = '%4d%02d%02d' % (utc_time[0], utc_time[1], utc_time[2]) 
+        return data[ifo] % (ext, ifo)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -63,7 +76,7 @@ table = numpy.array([
 html = str(pycbc.results.static_table(table, headers))
 
 # make a table for the single detector information ############################
-headers = ["IFO", "Time", "SNR", "NewSNR", "Chisq", "Bins",
+headers = ["IFO", "UTC", "Time", "SNR", "NewSNR", "Chisq", "Bins",
            "Phase", "M1", "M2", "Mc", "S1z", "S2z", "Duration"]
 
 ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
@@ -88,8 +101,13 @@ for ifo in files.keys():
     rchisq =  d['chisq'][:][i] / (d['chisq_dof'][:][i] * 2 - 2)
     mchirp = (pycbc.pnutils.mass1_mass2_to_mchirp_eta(bank['mass1'][:][tid], 
                                                       bank['mass2'][:][tid]))[0]  
-    data = [ifo,
-            d['end_time'][:][i],
+                                                      
+    time = d['end_time'][:][i]
+    utc = lal.GPSToUTC(int(time))[0:6]
+                                                                            
+    data = [get_summary_page_link(ifo, utc),
+            str(datetime.datetime(*utc)),
+            time,
             '%5.2f' % d['snr'][:][i],
             '%5.2f' %  pycbc.events.newsnr(d['snr'][:][i], rchisq),
             '%5.2f' %  rchisq,            
@@ -109,4 +127,4 @@ html += str(pycbc.results.static_table(table, headers))
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         cmd = ' '.join(sys.argv),
-                        title = 'Coincident event %s' % args.n_loudest)
+                        title = 'Coincident event %s' % (args.n_loudest + 1))

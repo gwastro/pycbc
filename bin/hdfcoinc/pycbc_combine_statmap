@@ -64,11 +64,18 @@ f['foreground/ifar_exc'][:] = ifar
 f['foreground/fap_exc'][:] = 1 - numpy.exp( - coinc_time / ifar)
 
 # cluster for the loudest ifar value 
-cidx = pycbc.events.cluster_coincs(f['foreground/ifar'][:], 
+
+def argmax(v):
+    return numpy.argsort(v)[-1]
+
+stat = numpy.core.records.fromarrays([f['foreground/ifar'][:], 
+                                      f['foreground/stat'][:]],
+                                      names='ifar,stat')
+cidx = pycbc.events.cluster_coincs(stat,
                                    f['foreground/time1'][:], 
                                    f['foreground/time2'][:], 
                                    numpy.zeros(len(ifar)),
-                                   0, args.cluster_window)
+                                   0, args.cluster_window, argmax=argmax)
 
 # downsample the foreground columns to only the loudest ifar between the multiple files
 for key in f['foreground'].keys():

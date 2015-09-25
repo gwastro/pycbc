@@ -202,7 +202,7 @@ def time_coincidence(t1, t2, window, slide_step=0):
     return idx1.astype(numpy.uint32), idx2.astype(numpy.uint32), slide.astype(numpy.int32)
 
 
-def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
+def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy.argmax):
     """Cluster coincident events for each timeslide separately, across 
     templates, based on the ranking statistic 
 
@@ -269,7 +269,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
             continue            
         
         # Find the location of the maximum within the time interval around i
-        max_loc = stat[l:r].argmax() + l 
+        max_loc = argmax(stat[l:r]) + l 
         
         # If this point is the max, we can skip to the right boundary
         if max_loc == i:

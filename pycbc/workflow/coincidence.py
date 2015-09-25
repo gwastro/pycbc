@@ -535,6 +535,8 @@ class PyCBCDistributeBackgroundBins(Executable):
         node.add_input_opt('--bank-file', bank_file)
         node.add_opt('--background-bins', ' '.join(background_bins))
         
+        names = [b.split(':')[0] for b in background_bins]
+        
         output_files = [File(coinc_files[0].ifo_list, 
                              self.name, 
                              coinc_files[0].segment, 
@@ -542,6 +544,7 @@ class PyCBCDistributeBackgroundBins(Executable):
                              tags = tags + ['mbin-%s' % i],
                              extension='.hdf') for i in range(len(background_bins))]
         node.add_output_list_opt('--output-files', output_files)
+        node.names = names
         return node
         
 class PyCBCCombineStatmap(Executable):
@@ -669,6 +672,7 @@ def setup_background_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
         statnode = statmap_exe.create_node(FileList([coinc_file]), tags=tags + ['BIN_%s' % i])
         workflow += statnode
         stat_files.append(statnode.output_files[0])
+        stat_files[i].bin_name = bins_node.names[i]
     
     cstat_node = cstat_exe.create_node(stat_files, tags=tags)
     workflow += cstat_node
