@@ -122,12 +122,12 @@ Of these options the workflow module will automatically add the following, which
 * Positional arguments supplying the input files
 
 $$$$$$$$$$$$$$$$$$$
-ligolw_sstinca
+ligolw_cbc_sstinca
 $$$$$$$$$$$$$$$$$$$
 
 This code is responsible for identifying coincidences and applying and vetoes that are present and supplied.
 
-.. command-output:: ligolw_sstinca --help
+.. command-output:: ligolw_cbc_sstinca --help
 
 Of these options the workflow will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 

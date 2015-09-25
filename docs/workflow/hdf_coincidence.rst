@@ -1,7 +1,7 @@
 .. _workflowintervalcoincmod:
 
 ##################################
-
+HDF5 Based Coincidence Code
 ##################################
 
 =============
@@ -11,7 +11,8 @@ Introduction
 On this page we go over how to use the interval slides based post processing
 functionality in PyCBC.
 
-.. note:: This functionality is experimental and under active development. 
+.. note:: 
+    This functionality is experimental and under active development. 
     No gaurantee of stability is given at this time. Contact Alex Nitz (alex.nitz@ligo.org) 
     if you have questions, issues, comments, etc. 
     
@@ -21,12 +22,6 @@ injection finding, and some basic plotting infrastructure based on hdf files.
 This document assumes that one is familiar with the standard pycbc workflow modules.
 Only differences from the standard configuration are discussed here.
 
-Familiarize yourself with the standard modules.
-
-.. toctree::
-   :maxdepth: 1
-
-   ../weekly_ahope
 
 ==============
 Limitations
@@ -166,18 +161,10 @@ Configure a two-detector search using a single fixed template bank for all ifos
 and the entire analysis. Follow the standard module configurations up through
 the inspiral stage of the workflow.
 
-For module configuration documentation.
-.. toctree::
-   :maxdepth: 1
+Add '--enable-hdf-post-processing' to the 'pycbc_make_coinc_workflow' invocation and proceed with the standard instructions.::
 
-   ../weekly_ahope
-
-Add '--enable-hdf-post-processing' to the 'pycbc_make_coinc_workflow' invocation and proceed with the standard instructions.
-::
    pycbc_make_coinc_workflow \
-    --enable-hdf-post-processing \
-    ...
-    ...    
+   --enable-hdf-post-processing
 
 ===============================================================
 Reusing data from workflow that uses some other post-processing

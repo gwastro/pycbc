@@ -117,7 +117,7 @@ All other options must be provided in the configuration file. Here is an example
 
 This is complete documentation of this module's code
 
-.. automodule:: pycbc.ahope.injection
+.. automodule:: pycbc.workflow.injection
     :noindex:
     :members:
     :undoc-members:

@@ -45,9 +45,9 @@ Configuration file setup
 Here we describe the options given in the configuration file used in the
 workflow that will be needed in this section
 
-$$$$$$$$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$$$$
 [workflow-segments] section
-$$$$$$$$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
 The configuration file must have a [workflow-segments] section, which is used to
 tell the workflow how to construct the segments. The first option to choose

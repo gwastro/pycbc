@@ -43,7 +43,14 @@ Getting Started:
 
    install
 
-Executable/Package documentation:
+Executable documentation:
+
+.. toctree::
+   :maxdepth: 1
+   
+   executables
+
+Package documentation:
 
 .. toctree::
    :maxdepth: 1
@@ -62,6 +69,10 @@ Walkthroughs and Tutorials:
 
    workflow/*walkthrough*
    workflow/*psd_estimation*
+   workflow/configuration_files
+   workflow/hdf_coincidence
+   uberbank_verify
+   hwinj
 
 Code Examples:
 
@@ -78,13 +89,20 @@ For Developers:
     documentation
     release
     
-Format Specifications:
+Format specifications:
 
 .. toctree::
    :glob:
    :maxdepth: 1
 
    formats/*
+
+Modules:
+
+.. toctree::
+   :maxdepth: 1
+
+   modules
 
 ===================
 Indexes and Tables

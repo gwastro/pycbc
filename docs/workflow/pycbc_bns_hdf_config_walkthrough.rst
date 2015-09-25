@@ -11,8 +11,9 @@ Now if you have a script (which includes your start/end time, the parameters you
   ./run.sh
   pycbc_submit_dax --dax test.dax
 
+------
 run.sh
------
+------
 
 ``GPS_START_TIME=1102291216``
 start time of your analysis - this does not not need to be a time when the detector is locked.
@@ -51,9 +52,9 @@ Add end time of the analysis to workflow module
 
 Add output-path to the results_page module. This is where all the plots will be made
 
-
+-----------
 config file
------
+-----------
 
 This config file is made up of three types of sections: workflow, the pegasus profile and the executable options. The workflow sections control how different parts of the the workflow hang together. The pegasus profile sections are equivalent to lines you would have in a condor_submit file (e.g. requirements, storage size etc). Anything you would do in condor you would do here. The third section type maps the options to an executable.
 
@@ -71,6 +72,7 @@ This is used for keeping an account of the pycbc usage
   h1-channel-name = H1:GDS-FAKE_STRAIN
   l1-channel-name = L1:GDS-CALIB_STRAIN
   file-retention-level = all_triggers
+
 You tend to put things in here which will be referred to later (but you can leave it empty). This is a nice way to keep options the same without the need to repeatedly define them. Here the L1/H1 data channel name are given. We also add an option to keep all the triggers/plots the analysis produces
 
 ::
