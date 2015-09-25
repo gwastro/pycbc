@@ -109,4 +109,4 @@ html += str(pycbc.results.static_table(table, headers))
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         cmd = ' '.join(sys.argv),
-                        title = 'Coincident event %s' % args.n_loudest)
+                        title = 'Coincident event %s' % (args.n_loudest + 1))
