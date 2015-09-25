@@ -44,7 +44,7 @@ from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_
 from pycbc.filter import match, sigmasq, resample_to_delta_t
 from pycbc.fft import fft
 from math import cos, sin, ceil, log
-import pycbc.psd, pycbc.scheme, pycbc.fft
+import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain
 
 
 def update_progress(progress):
@@ -219,15 +219,15 @@ else:
 template_sample_rate = options.filter_sample_rate
 signal_sample_rate = options.filter_sample_rate
 
-pycbc.psd.verify_psd_options(opts, parser)
+pycbc.psd.verify_psd_options(options, parser)
 
-if opts.psd_estimation:
-    pycbc.strain.verify_strain_options(opts, parser)
+if options.psd_estimation:
+    pycbc.strain.verify_strain_options(options, parser)
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
-if opts.psd_estimation:
+if options.psd_estimation:
     logging.info("Obtaining h(t) for PSD generation")
-    strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
+    strain = pycbc.strain.from_cli(options, pycbc.DYN_RANGE_FAC)
 else:
     strain = None
 
