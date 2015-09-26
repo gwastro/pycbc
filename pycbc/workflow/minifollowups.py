@@ -134,7 +134,7 @@ def make_coinc_info(workflow, singles, bank, coinc, num, out_dir,
     node.add_input_opt('--statmap-file', coinc)
     node.add_input_opt('--bank-file', bank)
     node.add_opt('--n-loudest', str(num))
-    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+    node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     files += node.output_files
     return files
