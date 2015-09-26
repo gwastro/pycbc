@@ -22,12 +22,12 @@ if [[ $NAME == ~* ]] ; then
   fi
 fi
 
-if [ -z $NAME ] ; then
+if [[ -z $NAME ]] ; then
   echo "ERROR: you must specify a path for your virtual environment."
   exit 1
 fi
 
-if [ -d $NAME ] ; then
+if [[ -d $NAME ]] ; then
    echo "ERROR: the directory $NAME already exists."
    echo "If you want to use this path, remove the directory and try again."
    exit 1
@@ -35,16 +35,16 @@ fi
 
 read -p "Enter the number of processors that you want to use for builds: " nproc
 
-if [ -z $nproc ] ; then
+if [[ -z $nproc ]] ; then
   nproc=1
 fi
 
-if [ $nproc -lt 1 ] ; then
+if [[ $nproc -lt 1 ]] ; then
    echo "ERROR: invalid number of processors specified: $nproc"
    exit 1
 fi
 
-if [ $nproc -gt 24 ] ; then
+if [[ $nproc -gt 24 ]] ; then
    echo "ERROR: please do not use more than 24 CPUs for the build. You asked for $nproc"
    exit 1
 fi
@@ -159,7 +159,7 @@ while true ; do
   echo
   read -rp "Enter either 1 or 2: " dev_or_rel
 
-  if [ $dev_or_rel -eq 1 ] ; then
+  if [[ $dev_or_rel -eq 1 ]] ; then
     #Installing a released version of pyCBC
     #Choose release version
     echo "Please enter the name of a valid release tag. These can be found at"
@@ -172,7 +172,7 @@ while true ; do
     # continue with install
     break
 
-  elif [ $dev_or_rel -eq 2 ] ; then
+  elif [[ $dev_or_rel -eq 2 ]] ; then
 
     #Fork pyCBC to your Github account
     echo To install a development version, you will need a GitHub account.
@@ -197,11 +197,11 @@ while true ; do
     echo "Do you already have an ssh agent running with the key connected to GitHub?"
     while true ; do
       read -p "Enter yes or no (if you are not sure, enter no): " ssh_key
-      if [ $ssh_key == "yes" ] ; then
+      if [[ $ssh_key == "yes" ]] ; then
         created_socket=""
         echo "Using $SSH_AUTH_SOCK"
         break
-      elif [ $ssh_key == "no" ] ; then
+      elif [[ $ssh_key == "no" ]] ; then
         created_socket="yes"
         echo "Creating ssh agent to connect to GitHub:"
         eval `ssh-agent`
@@ -234,7 +234,7 @@ while true ; do
   fi
 done
 
-if [ $dev_or_rel -eq 2 ] ; then
+if [[ $dev_or_rel -eq 2 ]] ; then
   #Building and Installing Documentation
   #Install Sphinx and the helper tools
   echo
@@ -267,7 +267,7 @@ EOF
   
   set +e
   patch -f -p0 ${VIRTUAL_ENV}/lib/python2.6/site-packages/matplotlib/sphinxext/plot_directive.py < ${VIRTUAL_ENV}/plot_directive.patch
-  if [ $? -eq 0 ] ; then
+  if [[ $? -eq 0 ]] ; then
     echo "patched sphinxext/plot_directive.py successfully"
   else
     echo "patch to sphinxext/plot_directive.py failed"
@@ -292,44 +292,50 @@ echo
 read -p "Enter path and architecture for Intel compilervars.sh or press return: " intel_path
 
 #Add script that sets up the MKL environment to virtualenv activate script
-if [ ! -z ${intel_path} ] ; then 
+if [[ ! -z "${intel_path}" ]] ; then 
   echo "source ${intel_path}" >> ${VIRTUAL_ENV}/bin/activate
 fi
 
 echo
 
-if [ ! -z $create_agent ] ; then
+if [[ ! -z "$create_agent" ]] ; then
   echo "Terminating ssh agent $SSH_AGENT_PID"
   kill -TERM $SSH_AGENT_PID
 fi
 
-deactivate
-
 echo
-echo "-----------------------------------------------------------------"
+echo "=================================================================="
 echo
-echo "PyCBC has been installed in a virtual environment in $NAME"
+echo "PyCBC has been installed in a virtual environment in the directory"
+echo
+echo "  ${VIRTUAL_ENV}"
 echo
 echo "To use this virtual environment run the command"
 echo
-echo "  source $NAME/bin/activate"
+echo "  source ${VIRTUAL_ENV}/bin/activate"
 echo
 
-if [ $dev_or_rel -eq 2 ] ; then
-echo "A clone of your PyCBC repository has been placed in the directory"
-echo
-echo "   ${VIRTUAL_ENV}/src/pycbc"
-echo
-echo "and connected to the ligo-cbc/pycbc repository as 'upstream.'"
-echo
-echo "You can use this repository to edit and make changes to the code."
-echo "To install your updated code in your virtual environment, first"
-echo "make sure you have run the activate script, then from the directory"
-echo "   ${VIRTUAL_ENV}/src/pycbc"
-echo "run the command"
-echo "   python setup.py install"
-echo
-echo "-----------------------------------------------------------------"
-echo 
+if [[ $dev_or_rel -eq 2 ]] ; then
+  echo "A clone of your PyCBC repository has been placed in the directory"
+  echo
+  echo "   ${VIRTUAL_ENV}/src/pycbc"
+  echo
+  echo "and connected to the ligo-cbc/pycbc repository as 'upstream.'"
+  echo
+  echo "You can use this repository to edit and make changes to the code."
+  echo "To install your updated code in your virtual environment, first"
+  echo "make sure you have run the activate script, then from the directory"
+  echo
+  echo "   ${VIRTUAL_ENV}/src/pycbc"
+  echo
+  echo "run the command"
+  echo
+  echo "   python setup.py install"
+  echo
+fi
 
+#Leave the virtual environment and exit
+deactivate
+echo "PyCBC setup complete"
+echo
 exit 0
