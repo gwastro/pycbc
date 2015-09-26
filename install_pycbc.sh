@@ -172,21 +172,22 @@ while true ; do
     #Create an ssh agent to connect to GitHub
     echo "Do you already have an ssh agent running with the key connected to GitHub?"
     while true ; do
-    read -p "Enter yes or no (if you are not sure, enter no): " ssh_key
-    if [ $ssh_key == "yes" ] ; then
-      created_socket=""
-      echo "Using $SSH_AUTH_SOCK"
-      break
-    elif [ $ssh_key == "no" ] ; then
-      created_socket="yes"
-      echo "Creating ssh agent to connect to GitHub:"
-      eval `ssh-agent`
-      echo "Please enter your ssh key passphrase."
-      ssh-add
-      break
-    else
-      echo "ERROR: please enter yes or no."
-    fi
+      read -p "Enter yes or no (if you are not sure, enter no): " ssh_key
+      if [ $ssh_key == "yes" ] ; then
+        created_socket=""
+        echo "Using $SSH_AUTH_SOCK"
+        break
+      elif [ $ssh_key == "no" ] ; then
+        created_socket="yes"
+        echo "Creating ssh agent to connect to GitHub:"
+        eval `ssh-agent`
+        echo "Please enter your ssh key passphrase."
+        ssh-add
+        break
+      else
+        echo "ERROR: please enter yes or no."
+      fi
+    done
   
     #Input Username
     read -rp "GitHub Username: " github
@@ -203,7 +204,7 @@ while true ; do
     git fetch upstream
     
     #Continue with install
-
+    break
   else
     echo "You must enter 1 or 2."
   fi
