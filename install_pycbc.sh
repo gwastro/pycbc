@@ -101,6 +101,10 @@ git clone https://versions.ligo.org/git/lalsuite.git
 cd lalsuite
 
 #Determine which version of the code you want to install
+echo
+echo
+echo "--- select lalsuite branch or tag -------------------------------"
+echo
 echo "Enter the name of the lalsuite branch or tag that you want to use."
 echo 
 echo "A list of branches can be found at:"
@@ -111,12 +115,11 @@ echo
 read -rp "Enter a valid tag or branch name (e.g. master or lalsuite_o1_branch): " lalbranch
 git checkout $lalbranch
 
+#Building and Installing into your Virtual Environment
+#Use the master configure script to build and install all the components
 echo
 echo "--- building lalsuite -------------------------------------------"
 echo
-
-#Building and Installing into your Virtual Environment
-#Use the master configure script to build and install all the components
 ./00boot
 ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar
 make -j $nproc
