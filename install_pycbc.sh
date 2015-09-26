@@ -153,6 +153,29 @@ pip install "Sphinx>=1.3.1"
 pip install sphinxcontrib-programoutput
 pip install numpydoc
 
+#patch the bug in numpydoc for python 2.6
+cat <<EOF > ${VIRTUAL_ENV}/plot_directive.patch
+--- /home/dbrown/src/pycbc/lib/python2.6/site-packages/matplotlib/sphinxext/plot_directive.py	2015-09-24 20:30:54.057566343 -0400
++++ /home/dbrown/projects/aligo/pycbc-docs/lib/python2.6/site-packages/matplotlib/sphinxext/plot_directive.py	2015-09-26 11:01:58.000000000 -0400
+@@ -333,13 +333,8 @@
+     """
+     Remove the coding comment, which six.exec_ doesn't like.
+     """
+-    try:
+-      return re.sub(
++    return re.sub(
+         "^#\s*-\*-\s*coding:\s*.*-\*-$", "", text, flags=re.MULTILINE)
+-    except TypeError:
+-      return re.sub(
+-        "^#\s*-\*-\s*coding:\s*.*-\*-$", "", text, re.MULTILINE)
+-      
+ 
+ #------------------------------------------------------------------------------
+ # Template
+EOF
+patch -p0 ${VIRTUAL_ENV}/lib/python2.6/site-packages/matplotlib/sphinxext/plot_directive.py < ${VIRTUAL_ENV}/plot_directive.patch
+rm ${VIRTUAL_ENV}/plot_directive.patch
+
 #Add script that sets up the MKL environment to virtualenv activate script
 echo 'source /opt/intel/bin/compilervars.sh intel64' >> ${VIRTUAL_ENV}/bin/activate
 
