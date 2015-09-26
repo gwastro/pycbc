@@ -38,7 +38,7 @@ from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
 from pycbc.workflow.jobsetup import select_tmpltbank_class, select_matchedfilter_class, sngl_ifo_job_setup
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
-                             output_dir=None, tags=[]):
+                             output_dir=None, psd_files=None, tags=[]):
     '''
     Setup template bank section of CBC workflow. This function is responsible
     for deciding which of the various template bank workflow generation
@@ -55,6 +55,8 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
         The file list containing the datafind files.
     output_dir : path string
         The directory where data products will be placed. 
+    psd_files : pycbc.workflow.core.FileList
+        The file list containing predefined PSDs, if provided.
     tags : list of strings
         If given these tags are used to uniquely name and identify output files
         that would be produced in multiple calls to this function.
@@ -107,15 +109,18 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
         tmplt_banks = setup_tmpltbank_dax_generated(workflow, science_segs,
                                          datafind_outs, output_dir, tags=tags,
                                          link_to_matchedfltr=linkToMatchedfltr,
-                                         compatibility_mode=compatibility_mode)
+                                         compatibility_mode=compatibility_mode,
+                                         psd_files=psd_files)
     elif tmpltbankMethod == "WORKFLOW_INDEPENDENT_IFOS_NODATA":
         logging.info("Adding template bank jobs to workflow.")
         tmplt_banks = setup_tmpltbank_without_frames(workflow, output_dir,
-                                         tags=tags, independent_ifos=True)
+                                         tags=tags, independent_ifos=True,
+                                         psd_files=psd_files)
     elif tmpltbankMethod == "WORKFLOW_NO_IFO_VARIATION_NODATA":
         logging.info("Adding template bank jobs to workflow.")
         tmplt_banks = setup_tmpltbank_without_frames(workflow, output_dir,
-                                         tags=tags, independent_ifos=False)
+                                         tags=tags, independent_ifos=False,
+                                         psd_files=psd_files)
     else:
         errMsg = "Template bank method not recognized. Must be either "
         errMsg += "PREGENERATED_BANK, WORKFLOW_INDEPENDENT_IFOS "
@@ -128,7 +133,8 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
 def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
                                   output_dir, tags=[],
                                   link_to_matchedfltr=True,
-                                  compatibility_mode=False):
+                                  compatibility_mode=False,
+                                  psd_files=None):
     '''
     Setup template bank jobs that are generated as part of the CBC workflow.
     This function will add numerous jobs to the CBC workflow using
@@ -157,6 +163,8 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
         there will be one inspiral file for every template bank and they will
         cover the same time span. Note that this option must also be given
         during matched-filter generation to be meaningful.
+    psd_file : pycbc.workflow.core.FileList
+        The file list containing predefined PSDs, if provided.
 
     Returns
     --------
@@ -220,7 +228,8 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     return tmplt_banks
 
 def setup_tmpltbank_without_frames(workflow, output_dir,
-                                   tags=[], independent_ifos=False):
+                                   tags=[], independent_ifos=False,
+                                   psd_files=None):
     '''
     Setup CBC workflow to use a template bank (or banks) that are generated in
     the workflow, but do not use the data to estimate a PSD, and therefore do
@@ -240,6 +249,8 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
     independent_ifos : Boolean, optional (default=False)
         If given this will produce one template bank per ifo. If not given
         there will be on template bank to cover all ifos.
+    psd_file : pycbc.workflow.core.FileList
+        The file list containing predefined PSDs, if provided.
 
     Returns
     --------
@@ -281,7 +292,8 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
     for ifo in ifoList:
         job_instance = exe_instance(workflow.cp, 'tmpltbank', ifo=ifo, 
                                                out_dir=output_dir,
-                                               tags=tags)
+                                               tags=tags,
+                                               psd_files=psd_files)
         node = job_instance.create_nodata_node(fullSegment)
         workflow.add_node(node)
         tmplt_banks += node.output_files

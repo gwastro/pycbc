@@ -76,13 +76,17 @@ def make_range_plot(workflow, psd_files, out_dir, exclude=None, require=None, ta
         files += node.output_files
     return files
 
-def make_spectrum_plot(workflow, psd_files, out_dir, tags=None):
+def make_spectrum_plot(workflow, psd_files, out_dir, tags=None, precalc_psd_files=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_spectrum', ifos=workflow.ifos,
                           out_dir=out_dir, tags=tags).create_node()
     node.add_input_list_opt('--psd-files', psd_files)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+
+    if precalc_psd_files is not None:
+        node.add_input_list_opt('--psd-file', precalc_psd_files)
+
     workflow += node
     return node.output_files[0]
  

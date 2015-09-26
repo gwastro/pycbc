@@ -39,6 +39,7 @@ from pycbc.workflow.datafind import *
 from pycbc.workflow.segment import *
 from pycbc.workflow.tmpltbank import *
 from pycbc.workflow.gatefiles import *
+from pycbc.workflow.psdfiles import *
 from pycbc.workflow.splittable import *
 from pycbc.workflow.coincidence import *
 from pycbc.workflow.injection import *
