@@ -4,7 +4,7 @@ Walkthrough of running the PyCBC BNS focused pipeline on SUGAR
 
 First install PyCBC by following the instructions for installing PyCBC.
 
-Now if you have a script (which includes your start/end time, the parameters you need for pycbc_make_hdf_coinc_workflow) and a config file you are ready to set up the dax and submit it. See an example of both and explanations below:
+Now if you have a script (which includes your start/end time, the parameters you need for pycbc_make_coinc_search_workflow) and a config file you are ready to set up the dax and submit it. See an example of both and explanations below:
 
 ::
 
@@ -20,7 +20,7 @@ start time of your analysis - this does not not need to be a time when the detec
 ``GPS_END_TIME=1102489216``
 end time of your analysis
 
-``pycbc_make_hdf_coinc_workflow \``
+``pycbc_make_coinc_search_workflow\``
 
 executable
 
