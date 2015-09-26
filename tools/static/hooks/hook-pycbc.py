@@ -14,7 +14,7 @@ from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
 needs_assets = ['pycbc_make_html_page', 'pycbc_make_hdf_coinc_workflow']
 
 # Executables that need MKL
-needs_mkl = ['pycbc_inspiral']
+needs_mkl = ['pycbc_inspiral','pycbc_single_template']
 
 #Some of our libaries are not being picked up automatically (need to invest.)
 #In the meantime we can pull them manually, in the same way we normally
