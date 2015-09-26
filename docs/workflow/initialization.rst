@@ -82,9 +82,9 @@ Here is an example of running a workflow from the command line::
 
 Here the analysis start and end times are being overriden with values from the user's environment.
 
-=====================================
+=======================================
 Global options - the [workflow] section
-=====================================
+=======================================
 
 The [workflow] section and [workflow-XXX] subsections should appear at the top of a configuration file.
 

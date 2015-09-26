@@ -1,12 +1,12 @@
-#################################################
+######################################
 Hardware injection waveform generation
-#################################################
+######################################
 
 .. contents::
 
-=================================================
+============
 Introduction
-=================================================
+============
 
 This page describes how to generate waveforms and save them as single-column ASCII waveform files that can be used by ``awgstream`` to inject into the detector.
 
@@ -16,23 +16,23 @@ The executable ``pycbc_generate_hwinj`` generates a waveform using parameters fr
 
 The executable ``pycbc_generate_hwinj_from_xml`` generates all the waveforms in a LIGOLW ``sim_inspiral`` table. The output of ``lalapps_inspinj`` (an executable for generating a population of injections) is a LIGOLW ``sim_inspiral`` table. This executable is useful if you want to generate a population of coherent waveforms for hardware injections.
 
-=================================================
+==============================================================
 Generate waveform from command line (``pycbc_generate_hwinj``)
-=================================================
+==============================================================
 
 Here is a usage example for generating a CBC waveform using detector data with ``pycbc_generate_hwinj``.
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Select a time for the injection
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 First on the command line set a variable for the GPS geocentric end time of the coherent injection ::
 
-  GEOCENT_END_TIME=1126399769
+  GEOCENT_END_TIME=1124381661
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Select data for PSD estimation
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 We need to set what data we will use to estimate the PSD. This should be a 2048 second interval. So in this example we will set ::
 
@@ -43,20 +43,53 @@ We will want to use data from when the detector was in science mode time to esti
 
 Since we are using detector data we will need to read the data from frame files. We will need to specify the frame type and channel name. The frame type is a way to identify what list of channels is in the frame file. So on the command line we set ::
 
-  FRAME_TYPE=L1_RDS
-  CHANNEL_NAME=L1:GDS-CALIB_STRAIN
+  FRAME_TYPE=H1_HOFT_C00
+  CHANNEL_NAME=H1:GDS-CALIB_STRAIN
 
 We can check that frames exist for this time by querying the LDR server, check the section :ref:`howtoqueryldr` for an example command.
 
 **Do not assume that the frame type and channel name are the same as in this section. These values are correct for this example.**
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Run ``pycbc_generate_hwinj``
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-Now let's specify the parameters of the waveform. A full list of the command line options is available with ``pycbc_generate_hwinj --help``. Here we provide an example for generating a coherent 1.4-1.4 component mass binary using the ``EOBNRv2`` approximant. The sample rate of the output ASCII file is 16384Hz and the waveform begins at 10.0Hz. We do not want to inject a step-like response into the detector, therefore we taper the waveform at the beginning. The ``EOBNRv2`` has a ringdown at the end so we do not need to taper the end. We specify the network SNR we want the coherent injection to have on the command line with ``--network-snr``, here it is set to 28. The options ``--h1`` and ``--l1`` specify to write the waveform for both detectors; here we write the L1 ASCII file only. Here is the example command ::
+The ``--instruments`` option specifies the IFOs to include in the injection. The executable ``pycbc_generate_hwinj`` will write the waveform for all detectors listed with the ``--instruments`` option. There are a number of options, including ``--instruments`` that take a space-seperated list, example usage of this option is ::
 
-  pycbc_generate_hwinj --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --frame-type ${FRAME_TYPE} --channel-name ${CHANNEL_NAME} --approximant EOBNRv2 --order pseudoFourPN --mass1 1.4 --mass2 1.4 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 28 --low-frequency-cutoff 10.0 --l1 --sample-rate 16384
+    --instruments H1 L1
+
+
+Now let's specify the parameters of the waveform. A full list of the command line options is available with ``pycbc_generate_hwinj --help``. Here we provide an example for generating a coherent 1.4-1.4 component mass binary using the ``EOBNRv2`` approximant. Here is an example of this command line case ::
+
+    --approximant SEOBNRv2 --order pseudoFourPN --mass1 25.0 --mass2 25.0 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0 
+
+The sample rate of the output ASCII file is given by the ``--sample-rate`` option. The sample rate for each IFO must match, example usage of this option is ::
+
+    --sample-rate H1:16384 L1:16384
+
+We have the option to query the LDR server directly with ``pycbc_generate_hwinj``. So we only need to specify a ``--frame-type`` option to get the data. Alternatively you an pass a space-seperated list with ``--frame-files`` or a LAL frame cache with ``--frame-cache``. We also need to say what channel to use for the PSD estimation with the ``--channel-name`` option. Example usage of ``--frame-type`` would be ::
+
+    --frame-type H1:${FRAME_TYPE} L1:${FRAME_TYPE} --channel-name H1:${CHANNEL_NAME} L1:${CHANNEL_NAME}
+
+We do not want to inject a step-like response into the detector, therefore we taper the waveform at the beginning. The ``EOBNRv2`` has a ringdown at the end so we do not need to taper the end. Example usage of this option is ::
+
+    --taper TAPER_START
+
+We specify the network SNR we want the coherent injection to have on the command line. The network SNR calculation includes all IFOs specified in the ``--insturments`` option, example usage of this option is ::
+
+    --network-snr 28
+
+In calculating the network SNR the executable ``pycbc_generate_hwinj`` will generate a PSD and calculate an SNR for the waveform. The options ``--psd-low-frequency-cutoff`` and ``--psd-high-frequency-cutoff`` set the min and max frequency for the SNR calculation. The waveform used in the SNR calculation is also generated at this low-frequency cutoff, note the waveform is not written to disk with this low-frequency cutoff. Example usage of the PSD options is ::
+
+    --psd-low-frequency-cutoff 40.0 --psd-high-frequency-cutoff 1000.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --pad-data 8
+
+The additional PSD options dictate how the PSD will be calculated, ie. how many seconds per FFT and how much overlap. The ``--pad-data`` option is how much data to disgard at the edges of our time series used in PSD estimation to avoid data corruption.
+
+The ``--waveform-low-frequency-cutoff`` option is the frequency that ``pycbc_generate_hwinj`` will begin generating the waveform that is written to file.
+
+Here is a full example command for generating an injection in only H1 ::
+
+  pycbc_generate_hwinj --psd-high-frequency-cutoff 1000.0 --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time H1:${GPS_START_TIME} --gps-end-time H1:${GPS_END_TIME} --frame-type H1:${FRAME_TYPE} --channel-name H1:${CHANNEL_NAME} --approximant SEOBNRv2 --order pseudoFourPN --mass1 25.0 --mass2 25.0 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 28 --waveform-low-frequency-cutoff 10.0 --psd-low-frequency-cutoff 40.0 --sample-rate 16384 --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --instruments H1
 
 This will generate a single-column ASCII files that contains the h(t) time series for each detector and a LIGOLW XML file with the waveform parameters. The output filenames are not specified on the command line, they are determined internally by ``pycbc_generate_hwinj``. In this example the ASCII file with the waveform will be named ``L1-HWINJ_CBC-${START}-${DURATION}.txt`` where ``${START}`` is the start time stamp of the time series and ``${DURATION}`` is the length in seconds of the ASCII waveform file. The LIGOLW XML file will be named ``H1L1-HWINJ_CBC-${START}-${DURATION}.xml.gz``.
 
@@ -64,15 +97,15 @@ The LIGOLW XML file contains a ``process_params`` table that saves the command l
 
 The user should inspect the waveforms. For a waveform plotting executable see section :ref:`runpycbcplothwinj`.
 
-=================================================
+=====================================================================================
 Generate waveform from ``lalapps_inspinj`` output (``pycbc_generate_hwinj_from_xml``)
-=================================================
+=====================================================================================
 
 Here is a usage case for generating a population of waveforms with ``lalapps_inspinj``. This example generates an injection every Tuesday for three months.
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&
 Run ``lalapps_inspinj``
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&
 
 Here we show an example on how to use ``lalapps_inspinj`` to generate a population of injections.
 
@@ -112,9 +145,9 @@ Now we can combine all the options above and run ``lalapps_inspinj`` as ::
 
 In this example ``lalapps_inspinj`` will write a LIGOLW XML file called ``HL-INJECTIONS_1-1126368017-4003200.xml`` that has a ``sim_inspiral`` table with the population of injections.
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Run ``pycbc_generate_hwinj_from_xml``
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 Running ``lalapps_inspinj`` has written a LIGOLW XML file with a ``sim_inspiral`` table. Now we can run ``pycbc_generate_hwinj_from_xml`` to write single-column ASCII waveform files for the population of injections.
 
@@ -130,15 +163,15 @@ The ASCII waveform files will be named ``${IFO}-HWINJ_CBC_SIMULATION_ID_${SIMID}
 
 The user should inspect the waveforms. For a waveform plotting executable see section :ref:`runpycbcplothwinj`.
 
-=================================================
+========================================
 Checks for the hardware injection output
-=================================================
+========================================
 
 Here are some follow-up checks the user can do.
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Plot ASCII waveform files with ``pycbc_plot_hwinj``
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 .. _runpycbcplothwinj:
 
@@ -150,9 +183,40 @@ If you are using ``ssh`` or ``gsissh`` to log into a cluster, you can provide th
 
   gsissh -Y ldas-pcdev1.ligo.caltech.edu
 
-=================================================
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Recover software injection with ``pycbc_inspiral``
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+The executable ``pycbc_generate_hwinj`` will create an XML file with both a ``sim_inspiral`` and ``sngl_inspiral`` table. Therefore we can inject the exact waveform parameters and recover them with the exact template.
+
+The analogous software injection command for the example above would be ::
+
+  TMPLTBANK_FILE=H1-HWINJ_CBC-${START}-${DURATION}.xml.gz
+  INSPIRAL_FILE=H1-INSPIRAL_PYCBC-${GPS_START_TIME}-$((${GPS_END_TIME}-${GPS_START_TIME})).xml.gz
+  pycbc_inspiral --segment-end-pad 64  --segment-length 256 --segment-start-pad 64 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --psd-inverse-length 16 --pad-data 8 --sample-rate 4096 --low-frequency-cutoff 40 --strain-high-pass 30 --filter-inj-only --processing-scheme cpu --cluster-method template --approximant SEOBNRv2 --order 8 --snr-threshold 5.5 --chisq-bins 16 --channel-name ${CHANNEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --trig-start-time $(($GEOCENT_END_TIME - 2)) --trig-end-time $(($GEOCENT_END_TIME + 2)) --frame-type ${FRAME_TYPE} --injection-file ${TMPLTBANK_FILE}  --bank-file ${TMPLTBANK_FILE} --output ${INSPIRAL_FILE} --verbose
+
+Where ``${START}`` is the start of the injection and ``${DURATION}`` is the length of the injection. We kept the same PSD options (eg. ``--psd-segment-length``, etc.), data, high-pass filter, and low-frequency-cutoff.
+
+You can print out the recovered SNR and other parameters with ``lwtprint``, for example ::
+
+  lwtprint -t sngl_inspiral -c end_time,snr ${INSPIRAL_FILE}
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+Recover ASCII file injection with ``pycbc_inspiral``
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+There is an executable ``pycbc_insert_frame_hwinj`` that will read the single-column ASCII file and insert it into frame data. An example command is here ::
+
+  HWINJ_FILE=H1-HWINJ_CBC-${START}-${DURATION}.txt
+  pycbc_insert_frame_hwinj --frame-type ${FRAME_TYPE} --channel-name H1:${CHANNEL_NAME} --gps-start-time $((${GPS_START_TIME} - 16)) --gps-end-time $((${GPS_END_TIME} + 16)) --pad-data 8 --strain-high-pass 30.0 --sample-rate 16384 --hwinj-file ${HWINJ_FILE} --hwinj-start-time ${START} --ifo H1 --output-file H1-HWINJ.gwf
+
+Where ``${START}`` is the start of the injection and ``${DURATION}`` is the length of the injection.
+
+Then you can run pycbc on the output frame file ``H1-HWINJ.gwf``.
+
+=================================
 How to query the segment database
-=================================================
+=================================
 
 .. _howtoquerysegdb:
 
@@ -170,9 +234,9 @@ The output should be ``1124380361,1124382409`` for both ``ligolw_print`` command
 
 **Do not assume that the segment databse URL and science-mode segment names are the same as in this section. These values are correct for this example.**
 
-=================================================
+===========================
 How to query the LDR server
-=================================================
+===========================
 
 .. _howtoqueryldr:
 

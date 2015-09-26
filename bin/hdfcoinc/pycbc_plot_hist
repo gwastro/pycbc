@@ -88,6 +88,14 @@ pylab.ylim(ymin=.1)
 
 if args.x_min:
     pylab.xlim(xmin=args.x_min)
+    
+if args.x_max:
+    if numpy.where(val > args.x_max) > 0:
+        overflow = 1
+    else:
+        overflow = 0
+        
+    pylab.xlim(xmax=args.x_max + overflow)
 
 pylab.grid()
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 

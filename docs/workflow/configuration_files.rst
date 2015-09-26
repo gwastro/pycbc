@@ -37,16 +37,16 @@ The ini file is configured to reproduce the latest reviewed coincident pipeline 
 daily configuration files
 ===========================
 
-----------------------------------
+-----------------------------------
 ``daily/example_daily_lalapps.ini``
-----------------------------------
+-----------------------------------
 This ini file is configured to run on ER5 data.
 
 * ``daily/example_daily_lalapps.ini``
 
-----------------------------------
+-------------------------------------
 ``daily/example_daily_pycbc_zpk.ini``
-----------------------------------
+-------------------------------------
 This ini file is configured to run on LLO lock data from 2014. It uses the zero-pole-gain (ZPK)
 filtering module to dewhiten the channel ``OAF-CAL_DARM_DQ``.
 

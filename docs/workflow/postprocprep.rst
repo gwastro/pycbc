@@ -166,9 +166,9 @@ Sections will be used to specify the constant command line options that are sent
 Supported post-processing preparation codes and instructions for using them
 ----------------------------------------------------------------------------
 
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 For the PIPEDOWN_WORKFLOW and PIPEDOWN_REPOP methods
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
 The following coincidence codes are currently supported in the workflow module:
 
@@ -196,9 +196,9 @@ postprocprep-injfind-exe
 
 * ligolw_dbinjfind
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 postprocprep-repop-exe (only for PIPEDOWN_REPOP)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ligolw_cbc_repop_coinc
 
@@ -333,20 +333,7 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$
 
 This code is used to perform "injection finding" - it associates injection entries in the sim_inspiral table with coincident triggers in the coinc_inspiral table.
 
-.. command-output:: ligolw_dbinjfind --help
-
-Of these options the workflow module will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
-
-* --input
-* --output
-
-$$$$$$$$$$$$$$$$$$$$$$$$$$
-ligolw_cbc_repop_coinc
-$$$$$$$$$$$$$$$$$$$$$$$$$$
-
-This code is used to calculate a function of the single trigger parameters and populate a column in the coinc table with the result (typically for use as a ranking statistic).
-
-.. command-output:: ligolw_cbc_repop_coinc --help
+.. command-output:: ligolw_cbc_dbinjfind --help
 
 Of these options the workflow module will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 

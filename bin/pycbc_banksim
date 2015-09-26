@@ -44,7 +44,7 @@ from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_
 from pycbc.filter import match, sigmasq, resample_to_delta_t
 from pycbc.fft import fft
 from math import cos, sin, ceil, log
-import pycbc.psd, pycbc.scheme, pycbc.fft
+import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain
 
 
 def update_progress(progress):
@@ -139,26 +139,38 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
 
     return make_padded_frequency_series(hvec, filter_N)
 
+aprs = list(set(td_approximants() + fd_approximants()))
+
+# returns true if template_mchirp is more than w*signal_mchirp above or below signal_mchirp
 def outside_mchirp_window(template, signal, w):
     template_mchirp, et = mass1_mass2_to_mchirp_eta(template.mass1,
                                                     template.mass2)
     signal_mchirp, et = mass1_mass2_to_mchirp_eta(signal.mass1, signal.mass2)
     return abs(signal_mchirp - template_mchirp) > (w * signal_mchirp)
 
+# returns true if template_mchirp is more than w*signal_mchirp above signal_mchirp
+def above_mchirp_window(template, signal, w):
+    template_mchirp, et = mass1_mass2_to_mchirp_eta(template.mass1,
+                                                    template.mass2)
+    signal_mchirp, et = mass1_mass2_to_mchirp_eta(signal.mass1, signal.mass2)
+    return template_mchirp - signal_mchirp > (w * signal_mchirp)
+
+# returns true if template_mchirp is more than w*signal_mchirp below signal_mchirp
+def below_mchirp_window(template, signal, w):
+    template_mchirp, et = mass1_mass2_to_mchirp_eta(template.mass1,
+                                                    template.mass2)
+    signal_mchirp, et = mass1_mass2_to_mchirp_eta(signal.mass1, signal.mass2)
+    return signal_mchirp - template_mchirp > (w * signal_mchirp)
 
 #File output Settings
 parser = ArgumentParser()
 parser.add_argument("--match-file", dest="out_file", help="file to output match results", metavar="FILE")
 parser.add_argument("--verbose", action='store_true', default=False, help="Print verbose statements")
 
-#PSD Settings
-parser.add_argument("--asd-file", dest="asd_file", help="Two-column ASCII file containing ASD data", metavar="FILE")
-parser.add_argument("--psd", dest="psd", help="Analytic PSD model from LALSimulation", choices=pycbc.psd.get_lalsim_psd_list())
-
-aprs = list(set(td_approximants() + fd_approximants()))
-
 #Template Settings
 parser.add_argument("--template-file", dest="bank_file", help="SimInspiral or SnglInspiral XML file containing the template parameters", metavar="FILE")
+parser.add_argument("--total-mass-divide", type=float, help="Total mass to switch from --template-approximant to --highmass-approximant.")
+parser.add_argument("--highmass-approximant", help="Waveform approximant for highmass templates.")
 parser.add_argument("--template-approximant", help="Waveform approximant for templates", choices=aprs)
 parser.add_argument("--template-phase-order", help="PN order to use for the template phase", default=-1, type=int)
 parser.add_argument("--template-amplitude-order", help="PN order to use for the template amplitude", default=-1, type=int)
@@ -182,25 +194,51 @@ parser.add_argument('--filter-high-freq-cutoff-isco-factor', metavar='FLOAT', he
 parser.add_argument("--filter-sample-rate", help="Filter sample rate [Hz]", type=float)
 parser.add_argument("--filter-signal-length", help="Length of signal for filtering, shoud be longer than all waveforms and include some padding", type=int)
 
+# add PSD options
+pycbc.psd.insert_psd_option_group(parser, output=False)
+
+# Insert the data reading options
+pycbc.strain.insert_strain_option_group(parser)
+
 #hardware support
 pycbc.scheme.insert_processing_option_group(parser)
 pycbc.fft.insert_fft_option_group(parser)
 
 #Restricted maximization
-parser.add_argument("--mchirp-window", type=float, metavar="FRACTION", help="Ignore templates whose chirp mass deviates from signal's one more than given fraction")
+parser.add_argument("--mchirp-window", type=str, metavar="FRACTION", help="Ignore templates whose chirp mass deviates from signal's one more than given fraction. Provide two comma separated numbers to have different bounds above and below the signal's, with below bound listed first.")
 options = parser.parse_args()
+#Split mchirp_window depending on whether it contains a comma
+mchirp_list = True if ',' in options.mchirp_window else False
+if mchirp_list:
+     mchirp_window_lower = float(options.mchirp_window.split(",")[0])
+     mchirp_window_upper = float(options.mchirp_window.split(",")[1])
+else:
+     mchirp_window_equal = float(options.mchirp_window)
+
 
 template_sample_rate = options.filter_sample_rate
 signal_sample_rate = options.filter_sample_rate
+
+pycbc.psd.verify_psd_options(options, parser)
+
+if options.psd_estimation:
+    pycbc.strain.verify_strain_options(options, parser)
+
+# If we are going to use h(t) to estimate a PSD we need h(t)
+if options.psd_estimation:
+    logging.info("Obtaining h(t) for PSD generation")
+    strain = pycbc.strain.from_cli(options, pycbc.DYN_RANGE_FAC)
+else:
+    strain = None
+
+if options.total_mass_divide and options.highmass_approximant is None:
+    parser.error("You must provide a highmass-approximant if you want total-mass-divide.")
 
 if options.template_sample_rate:
     template_sample_rate = options.template_sample_rate
 
 if options.signal_sample_rate:
     signal_sample_rate = options.signal_sample_rate
-
-if options.psd and options.asd_file:
-    parser.error("PSD and asd-file options are mututally exclusive")
 
 ctx = pycbc.scheme.from_cli(options)
 
@@ -234,15 +272,11 @@ filter_delta_f = 1.0 / float(options.filter_signal_length)
 
 if options.verbose:
   print("Reading and Interpolating PSD")
-if options.asd_file:
-    psd = pycbc.psd.from_txt(options.asd_file, filter_n,  
-                           filter_delta_f, options.filter_low_frequency_cutoff)
-elif options.psd:
-    psd = pycbc.psd.from_string(options.psd, filter_n, filter_delta_f, 
-                           options.filter_low_frequency_cutoff) 
+psd = pycbc.psd.from_cli(options, filter_n,  
+                         filter_delta_f, options.filter_low_frequency_cutoff, strain=strain,
+                         dyn_range_factor=pycbc.DYN_RANGE_FAC, precision='single')
 
-psd *= DYN_RANGE_FAC **2
-psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32) 
+
 
 if options.verbose:
   print("PSD interpolated at %fs" %(elapsed_time()))
@@ -297,14 +331,29 @@ with ctx:
             if stilde is None:
                 matches.append(0)
                 continue
-            elif options.mchirp_window and outside_mchirp_window(
-                    template_params, signal_params, options.mchirp_window):
+            # Don't look if outside mchirp_window_equal range
+            elif mchirp_list is False and outside_mchirp_window(
+                    template_params, signal_params, mchirp_window_equal):
+                matches.append(0)
+                continue
+            # Don't look if below mchirp_window_lower range
+            elif mchirp_list is True and below_mchirp_window(
+                    template_params, signal_params, mchirp_window_lower):
+                matches.append(0)
+                continue
+            # Don't look if above mchirp_window_upper range
+            elif mchirp_list is True and above_mchirp_window(
+                    template_params, signal_params, mchirp_window_upper):
                 matches.append(0)
                 continue
 
+
             # Generate htilde if we haven't already done so
             if htilde is None:
-                htilde = get_waveform(options.template_approximant,
+                this_approximant = options.template_approximant
+                if options.total_mass_divide is not None and (template_params.mass1+template_params.mass2) >= options.total_mass_divide:
+                        this_approximant = options.highmass_approximant
+                htilde = get_waveform(this_approximant,
                                       options.template_phase_order,
                                       options.template_amplitude_order,
                                       options.template_spin_order,
@@ -312,6 +361,7 @@ with ctx:
                                       options.template_start_frequency,
                                       template_sample_rate,
                                       filter_N, options.filter_sample_rate)
+            
             h_norm = sigmasq(htilde, psd=psd,
                     low_frequency_cutoff=options.filter_low_frequency_cutoff,
                     high_frequency_cutoff=signal_high_freq_cutoff)

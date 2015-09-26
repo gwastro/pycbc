@@ -50,7 +50,7 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, trigger_cache,
     significance of triggers and making any statements about trigger rates.
     Dedicated plotting jobs do not belong here.
 
-    Properties
+    Parameters
     -----------
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
@@ -173,6 +173,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     if cp.has_section("workflow-injections"):
         injfinder_nodes = []
         injcombiner_parent_nodes = []
+        inj_sbv_plotter_parent_nodes = []
 
         injfinder_exe = os.path.basename(cp.get("executables", "injfinder"))
         injfinder_class = select_generic_executable(workflow, "injfinder")
@@ -201,8 +202,10 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
             pp_nodes.append(injfinder_node)
             workflow.add_node(injfinder_node)
             injfinder_outs.extend(curr_outs)
-            if "DETECTION" not in curr_outs[0].tag_str:
+            if "DETECTION" not in curr_outs[0].tagged_description:
                 injcombiner_parent_nodes.append(injfinder_node)
+            else:
+                inj_sbv_plotter_parent_nodes.append(injfinder_node)
 
         pp_outs.extend(injfinder_outs)
 
@@ -257,10 +260,6 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     efficiency_jobs = efficiency_class(cp, "efficiency", ifo=ifos,
                                        out_dir=output_dir, tags=tags)
 
-    # Initialise html_summary class
-    html_summary_jobs = html_summary_class(cp, "html_summary", ifo=ifos,
-                                           out_dir=output_dir, tags=tags)
-
     # Add trig_cluster jobs and their corresponding plotting jobs
     for out_tag in trig_combiner_out_tags:
         unclust_file = [file for file in trig_combiner_outs \
@@ -289,7 +288,9 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                                  child=sbv_plotter_node._dax_node)
             workflow._adag.addDependency(dep)
 
-            if out_tag == "OFFSOURCE":
+            # Add injection sbv_plotter nodes if appropriate
+            if out_tag == "OFFSOURCE" and \
+                    cp.has_section("workflow-injections"):
                 offsource_clustered = clust_file
                 off_node = sbv_plotter_node
 
@@ -306,10 +307,16 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                     dep = dax.Dependency(parent=trig_cluster_node._dax_node,
                                          child=sbv_plotter_node._dax_node)
                     workflow._adag.addDependency(dep)
-                    for parent_node in injcombiner_nodes:
-                        dep = dax.Dependency(parent=parent_node._dax_node,
-                                             child=sbv_plotter_node._dax_node)
-                        workflow._adag.addDependency(dep)
+                    if "DETECTION" in curr_injs.tagged_description:
+                        for parent_node in inj_sbv_plotter_parent_nodes:
+                            dep = dax.Dependency(parent=parent_node._dax_node,
+                                    child=sbv_plotter_node._dax_node)
+                            workflow._adag.addDependency(dep)
+                    else:
+                        for parent_node in injcombiner_nodes:
+                            dep = dax.Dependency(parent=parent_node._dax_node,
+                                    child=sbv_plotter_node._dax_node)
+                            workflow._adag.addDependency(dep)
 
             # Also add sbv_plotter job for unclustered triggers
             sbv_plotter_node = sbv_plotter_jobs.create_node(unclust_file,
@@ -436,8 +443,9 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
         workflow._adag.addDependency(dep)
 
     # Make the open box shell script
-    open_box_cmd = ' '.join(html_summary_node.get_command_line())
-    open_box_cmd += "--open-box"
+    open_box_cmd = ' '.join(html_summary_node._args + \
+                            html_summary_node._options)
+    open_box_cmd += " --open-box"
     open_box_path = "%s/open_the_box.sh" % output_dir
     f = open(open_box_path, "w")
     f.write("#!/bin/sh\n%s" % open_box_cmd)

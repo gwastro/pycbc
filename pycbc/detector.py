@@ -43,12 +43,12 @@ class Detector(object):
 
     def light_travel_time_to_detector(self, det):
         """ Return the light travel time from this detector
-        
+
         Parameters
         ----------
         detector: Detector
             The other detector to determine the light travel time to.
-        
+
         Returns
         -------
         time: float
@@ -60,13 +60,14 @@ class Detector(object):
         """Return the detector response.
         """
         gmst = lal.GreenwichMeanSiderealTime(t_gps)
-        return tuple(lal.ComputeDetAMResponse(self.response, 
+        return tuple(lal.ComputeDetAMResponse(self.response,
                      right_ascension, declination, polarization, gmst))
-                     
+
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
         """Return the time delay from the earth center
         """
-        return lal.TimeDelayFromEarthCenter(self.location, right_ascension, declination, t_gps) 
+        return lal.TimeDelayFromEarthCenter(self.location,
+                      float(right_ascension), float(declination), float(t_gps))
 
     def project_wave(self, hp, hc, longitude, latitude, polarization):
         """Return the strain of a wave with given amplitudes and angles as
@@ -83,7 +84,13 @@ class Detector(object):
 def overhead_antenna_pattern(right_ascension, declination, polarization):
     """Return the detector response where (0, 0) indicates an overhead source
     """
-    f_plus = - (1.0/2.0) * (1.0 + cos(declination)*cos(declination)) * cos (2.0 * right_ascension) * cos (2.0 * polarization) - cos(declination) * sin(2.0*right_ascension) * sin (2.0 * polarization)
-    f_cross=  (1.0/2.0) * (1.0 + cos(declination)*cos(declination)) * cos (2.0 * right_ascension) * sin (2.0* polarization) - cos (declination) * sin(2.0*right_ascension) * cos (2.0 * polarization)
+    f_plus  = - (1.0/2.0) * (1.0 + cos(declination)*cos(declination)) * \
+                cos (2.0 * right_ascension) * cos (2.0 * polarization) - \
+                cos(declination) * sin(2.0*right_ascension) * sin (2.0 * polarization)
+
+    f_cross =   (1.0/2.0) * (1.0 + cos(declination)*cos(declination)) * \
+                cos (2.0 * right_ascension) * sin (2.0* polarization) - \
+                cos(declination) * sin(2.0*right_ascension) * cos (2.0 * polarization)
+
     return f_plus, f_cross
 

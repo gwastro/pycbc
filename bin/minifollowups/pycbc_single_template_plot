@@ -1,0 +1,74 @@
+#!/bin/env python
+# Copyright (C) 2015 Alexander Harvey Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Plot the output of pycbc_single_template """
+import argparse, pycbc.results, pycbc.events, pycbc.events, sys, h5py, numpy
+import matplotlib; matplotlib.use('Agg')
+import pylab
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version',
+    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose')
+parser.add_argument('--single-template-file', 
+    help="HDF file containing the SNR and CHISQ timeseries. "
+         " The output of pycbc_single_template")
+parser.add_argument('--window', type=float,
+    help="The time in seconds to plot")
+parser.add_argument('--output-file')
+
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+# The event is chosen from the input of pycbc_single template, so we
+# just extract the parameters here
+f = h5py.File(args.single_template_file)
+
+try:
+    delta_t = f['snr'].attrs['delta_t']
+    start_time = f['snr'].attrs['start_time']
+    time = f.attrs['event_time']
+except:
+    pylab.text(0.5, 0.5, 'no triggers found'); pylab.savefig(args.output_file)
+
+ifo = f.attrs['ifo']
+center = int((time - start_time) / delta_t)
+
+# Determine where in the timeseries we need to plot
+left = center - int(args.window / delta_t)
+right = center + int(args.window / delta_t)
+
+snr = abs(f['snr'][left:right][:])
+chisq = f['chisq'][left:right][:]
+
+rang = (numpy.arange(0, len(snr), 1) - (center - left)) * delta_t
+newsnr = pycbc.events.newsnr(snr, chisq)
+
+fig, ax1 = pylab.subplots()
+ax1.plot(rang, snr, color='blue', label='snr')
+ax1.plot(rang, newsnr, color='purple', label='newsnr')
+ax1.set_ylabel('SNR')
+ax1.legend(loc="upper left")
+ax1.set_xlabel('Time (s)')
+
+ax2 = ax1.twinx()
+ax2.plot(rang, chisq, color='green', label='chisq')
+ax2.set_ylabel('CHISQ')
+ax2.legend(loc="upper right")
+
+pycbc.results.save_fig_with_metadata(fig, args.output_file, 
+                             cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
+                             title='%s: SNR and CHISQ TimeSeries' % ifo)

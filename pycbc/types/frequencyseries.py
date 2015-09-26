@@ -301,7 +301,7 @@ class FrequencySeries(Array):
 
         return lal_data
 
-    def save(self, path, group=None):
+    def save(self, path, group=None, ifo='P1'):
         """
         Save frequency series to a Numpy .npy, hdf, or text file. The first column
         contains the sample frequencies, the second contains the values.
@@ -338,6 +338,21 @@ class FrequencySeries(Array):
                                         self.numpy().real,
                                         self.numpy().imag)).T
             _numpy.savetxt(path, output)
+        elif ext == '.xml' or path.endswith('.xml.gz'):
+            from pylal import series as lalseries
+            from glue.ligolw import utils
+            assert(self.kind == 'real')
+            output = self.lal()
+            # When writing in this format we must *not* have the 0 values at
+            # frequencies less than flow. To resolve this we set the first
+            # non-zero value < flow.
+            data_lal = output.data.data
+            first_idx = _numpy.argmax(data_lal>0)
+            if not first_idx == 0:
+                data_lal[:first_idx] = data_lal[first_idx]
+            psddict = {ifo: output}
+            utils.write_filename(lalseries.make_psd_xmldoc(psddict), path,
+                                 gz=path.endswith(".gz"))
         elif ext =='.hdf':
             key = 'data' if group is None else group
             d = h5py.File(path)

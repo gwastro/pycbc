@@ -1,6 +1,6 @@
-=============================================
+===========================================
 Instructions to add CUDA support (optional)
-=============================================
+===========================================
 
 If you would like to use GPU acceleration of PyCBC through CUDA you will require these additional packages:
 
@@ -32,9 +32,9 @@ Now activate your virtual environment.
 
     source ${NAME}/bin/activate
 
-------
+--------------------------------
 Installing the CUDA dependencies
-------
+--------------------------------
 
 Install the dependencies PyCUDA, SciKits.cuda and Mako with by running the commands
 

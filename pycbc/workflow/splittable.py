@@ -164,7 +164,7 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
                              out_dir=out_dir)
 
     for input in input_tables:
-        node = curr_exe_job.create_node(input)
+        node = curr_exe_job.create_node(input, tags=tags)
         workflow.add_node(node)
         out_file_groups += node.output_files
     return out_file_groups

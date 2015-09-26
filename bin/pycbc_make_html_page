@@ -167,10 +167,10 @@ parser.add_argument('-p', '--plots-dir', type=str,
                   help='Path to the directory that contains plots.')
 parser.add_argument('-t', '--analysis-title', type=str,
                   help='Title to include at the top of each page.',
-                  default=False)
+                  default="")
 parser.add_argument('-s', '--analysis-subtitle', type=str,
                   help='Subtitle to include at the top of each page.',
-                  default=False)
+                  default="")
 parser.add_argument('-v', '--verbose', action='store_true',
                   help='Print extra debugging information.', default=False)
 opts = parser.parse_args()
@@ -178,8 +178,14 @@ opts = parser.parse_args()
 # edit command line options
 analysis_title = opts.analysis_title.strip('"').rstrip('"')
 analysis_subtitle = opts.analysis_subtitle.strip('"').rstrip('"')
-input_template = opts.template_file.split('/')[-1]
-input_path = opts.template_file.rstrip(input_template)
+
+if opts.template_file[0] != '/':
+    full_template_path = pycbc.results.__path__[0] + '/' + opts.template_file
+else:
+    full_template_path = opts.template_file
+
+input_template = full_template_path.split('/')[-1]
+input_path = full_template_path.rstrip(input_template)
 
 # setup template
 env = Environment(loader=FileSystemLoader(input_path))

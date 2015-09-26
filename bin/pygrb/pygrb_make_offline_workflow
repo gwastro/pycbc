@@ -148,7 +148,8 @@ if wflow.cp.has_section("workflow-injections"):
                        int(split_str[0].replace("BANK", "")))
         all_files.extend(inj_splitbank_files)
     else:
-        inj_splitbank_files = _workflow.FileList(splitbank_files)
+        inj_splitbank_files = _workflow.FileList([])
+        inj_splitbank_files.extend(splitbank_files)
 
     # Split the injection files
     if wflow.cp.has_section("workflow-splittable-split_inspinj"):

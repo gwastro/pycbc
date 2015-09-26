@@ -29,7 +29,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 
 import os,sys,shutil
 import logging
-import urllib, urlparse
+import urllib2, urlparse
 import lal
 from glue import segments, segmentsUtils
 from glue.ligolw import utils, table, lsctables, ligolw
@@ -124,7 +124,11 @@ def setup_segment_generation(workflow, out_dir, tag=None):
                                      "segments-veto-definer-url", [tag])
         vetoDefBaseName = os.path.basename(vetoDefUrl)
         vetoDefNewPath = os.path.join(out_dir, vetoDefBaseName)
-        urllib.urlretrieve (vetoDefUrl, vetoDefNewPath)
+        response = urllib2.urlopen(vetoDefUrl)
+        html = response.read()
+        out_file = open(vetoDefNewPath, 'w')
+        out_file.write(html)
+        out_file.close()
         # and update location
         cp.set("workflow-segments", "segments-veto-definer-file",
                 vetoDefNewPath)
@@ -496,7 +500,7 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
     
     if execute_now:
         if file_needs_generating(vetoXmlFile.cache_entry.path):
-            workflow.execute_node(node)
+            workflow.execute_node(node, verbatim_exe = True)
         else:
             node.executed = True
             for fil in node._outputs:
@@ -614,7 +618,7 @@ def get_cumulative_segs(workflow, currSegFile, categories,
         cum_node = cum_job.create_node(valid_segment, inputs, segment_name)
         if execute_now:
             if file_needs_generating(cum_node.output_files[0].cache_entry.path):
-                workflow.execute_node(cum_node)
+                workflow.execute_node(cum_node, verbatim_exe = True)
             else:
                 cum_node.executed = True
                 for fil in cum_node._outputs:
@@ -630,7 +634,7 @@ def get_cumulative_segs(workflow, currSegFile, categories,
                                    output=currSegFile)   
     if execute_now:
         if file_needs_generating(add_node.output_files[0].cache_entry.path):
-            workflow.execute_node(add_node)
+            workflow.execute_node(add_node, verbatim_exe = True)
         else:
             add_node.executed = True
             for fil in add_node._outputs:
@@ -668,7 +672,7 @@ def add_cumulative_files(workflow, output_file, input_files, out_dir,
                                    output=output_file)
     if execute_now:
         if file_needs_generating(add_node.output_files[0].cache_entry.path):
-            workflow.execute_node(add_node)
+            workflow.execute_node(add_node, verbatim_exe = True)
         else:
             add_node.executed = True
             for fil in add_node._outputs:
@@ -1009,7 +1013,12 @@ def save_veto_definer(cp, out_dir, tags=[]):
                                  "segments-veto-definer-url", tags)
     vetoDefBaseName = os.path.basename(vetoDefUrl)
     vetoDefNewPath = os.path.abspath(os.path.join(out_dir, vetoDefBaseName))
-    urllib.urlretrieve(vetoDefUrl, vetoDefNewPath)
+    response = urllib2.urlopen(vetoDefUrl)
+    html = response.read()
+    out_file = open(vetoDefNewPath, 'w')
+    out_file.write(html)
+    out_file.close()
+
     # and update location
     cp.set("workflow-segments", "segments-veto-definer-file", vetoDefNewPath)
     

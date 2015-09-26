@@ -25,14 +25,16 @@ from glue.ligolw import utils
 import logging
 import numpy
 from pycbc import DYN_RANGE_FAC
+from pycbc import fft
 from pycbc import pnutils
 from pycbc import psd as _psd
 from pycbc import strain as _strain
 from pycbc.detector import Detector
-from pycbc.inject import InjectionSet
+from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.filter import make_frequency_series
 from pycbc.filter import sigmasq
 from pycbc.types import Array, FrequencySeries, TimeSeries, zeros
+from pycbc.types.optparse import MultiDetOptionAppendAction, convert_to_process_params_dict
 from pycbc.waveform import FilterBank, get_td_waveform, td_approximants, taper_timeseries
 import os
 import sys
@@ -69,6 +71,28 @@ def _empty_row(obj):
             raise ValueError("Column %s not recognized." %(entry) )
 
     return row
+
+def pad_timeseries_to_integer_length(timeseries, sample_rate):
+    ''' This function zero pads a time series so that its length is an integer
+    multiple of the sampling rate.
+
+    Padding is adding symmetically to the start and end of the time series.
+    If the number of samples to pad is odd then the end zero padding will have
+    one more sample than the start zero padding.
+    '''
+
+    # calculate how many sample points needed to pad to get integer second time series
+    remainder = sample_rate - len(timeseries) % sample_rate
+    start_pad = int(remainder / 2)
+    end_pad = int(remainder - start_pad)
+
+    # make arrays of zeroes
+    start_array = numpy.zeros(start_pad)
+    end_array = numpy.zeros(end_pad)
+
+    # pad waveform with arrays of zeroes
+    initial_array = numpy.concatenate([start_array,timeseries,end_array])
+    return TimeSeries(initial_array, delta_t=timeseries.delta_t, epoch=timeseries.start_time, dtype=timeseries.dtype)
 
 # map order integer to a string that can be parsed by lalsimulation
 pn_orders = {
@@ -117,6 +141,8 @@ parser.add_argument('--inclination', type=float, required=True,
 parser.add_argument('--taper',  required=True,
                     choices=['TAPER_NONE', 'TAPER_START', 'TAPER_END', 'TAPER_STARTEND'],
                     help='Taper the wavform before FFT.')
+parser.add_argument('--waveform-low-frequency-cutoff', type=float, required=True,
+                  help='Frequency to begin generating the waveform in Hz.')
 
 # waveform spin parameter options
 parser.add_argument('--spin1z', type=float, default=0.0,
@@ -137,29 +163,54 @@ parser.add_argument('--geocentric-end-time', type=float, required=True,
                   help='The geocentric GPS end time of the injection.')
 
 # data conditioning options
-parser.add_argument('--low-frequency-cutoff', type=float, required=True,
-                  help='Frequency to begin generating the waveform in Hz.')
+parser.add_argument('--psd-low-frequency-cutoff', type=float, required=True,
+                  help='Frequency to begin generating the PSD in Hz. This is the start frequency of the SNR calculation.')
+parser.add_argument('--psd-high-frequency-cutoff', type=float,
+                  help='(optional) Upper frequency to terminate the SNR calculation. Default will be Nyquist frequency, ie. int(sample_rate/2).')
+parser.add_argument("--frame-type", type=str, nargs="+",
+                  action=MultiDetOptionAppendAction,
+                  metavar='IFO:FRAME_TYPE',
+                  help='(optional) Replaces frame-files. Use datafind '
+                       'to get the needed frame file(s) of this type.')
 
 # output options
-parser.add_argument('--h1', action='store_true',
-                  help='(optional) Output files for H1 waveform.')
-parser.add_argument('--l1', action='store_true',
-                  help='(optional) Output files for L1 waveform.')
+parser.add_argument("--instruments", nargs="+", type=str, required=True,
+                    help="List of instruments to analyze.")
 
 # add option groups
+fft.insert_fft_option_group(parser)
+_strain.insert_strain_option_group_multi_ifo(parser)
 _psd.insert_psd_option_group(parser)
-_strain.insert_strain_option_group(parser)
-_strain.StrainSegments.insert_segment_option_group(parser)
 
 # parse command line
 opts = parser.parse_args()
 
-# determine which IFOs to create injection for from command line
-ifos = []
-if opts.h1: 
-    ifos.append('H1')
-if opts.l1:
-    ifos.append('L1')
+# verify options are sane
+_strain.verify_strain_options_multi_ifo(opts, parser, opts.instruments)
+_psd.verify_psd_options(opts, parser)
+
+# setup log
+logging_level = logging.DEBUG
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
+# check that sample rates are the same
+for ifo in opts.instruments:
+    if opts.sample_rate[ifo] != opts.sample_rate[opts.instruments[0]]:
+        logging.warn('Sample rates must be equal for all IFOs.')
+        sys.exit()
+sample_rate = opts.sample_rate[opts.instruments[0]]
+
+# set upper frequency cutoff if not given
+if opts.psd_high_frequency_cutoff:
+    f_high = opts.psd_high_frequency_cutoff
+else:
+    f_high = int(sample_rate / 2)
+
+# check that frame types are not lists
+if opts.frame_type:
+    for key,value in opts.frame_type.items():
+        if type(opts.frame_type[key]) == list:
+            opts.frame_type[key] = value[0]
 
 # set an initial distance to generate waveform
 distance = 40.0
@@ -167,22 +218,18 @@ distance = 40.0
 # set network SNR to 0.0
 network_snr = 0.0
 
-# set upper frequency to integrate sigma squared to
-f_high = 1000.0
-
-# setup log
-logging_level = logging.DEBUG
-logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
-
 # create output XML file
 logging.info('Creating XML file')
 outdoc = ligolw.Document()
 outdoc.appendChild(ligolw.LIGO_LW())
 
+# put opts into a dict for the process table
+opts_dict = convert_to_process_params_dict(opts)
+
 # create process table
 proc_id = utils.process.register_to_xmldoc(outdoc,
-                    sys.argv[0], opts.__dict__,
-                    comment="", ifos=[''.join(ifos)],
+                    sys.argv[0], opts_dict,
+                    comment="", ifos=[''.join(opts.instruments)],
                     version=glue.git_version.id,
                     cvs_repository=glue.git_version.branch,
                     cvs_entry_time=glue.git_version.date).process_id
@@ -195,7 +242,7 @@ outdoc.childNodes[0].appendChild(sim_table)
 # create sim_inspiral row for injection
 # and populate non-IFO-specific columns in XML output file
 sim = _empty_row(lsctables.SimInspiral)
-sim.f_lower = opts.low_frequency_cutoff
+sim.f_lower = opts.waveform_low_frequency_cutoff
 sim.geocent_end_time = int(opts.geocentric_end_time)
 sim.geocent_end_time_ns = int(opts.geocentric_end_time % 1 * 1e9)
 sim.inclination = opts.inclination
@@ -203,7 +250,7 @@ sim.latitude = opts.ra
 sim.longitude = opts.dec
 sim.mass1 = opts.mass1
 sim.mass2 = opts.mass2
-sim.mchirp, sim.eta = pnutils.mass1_mass2_to_mtotal_eta(sim.mass1, sim.mass2)
+sim.mchirp, sim.eta = pnutils.mass1_mass2_to_mchirp_eta(sim.mass1, sim.mass2)
 sim.spin1z = opts.spin1z
 sim.spin1y = opts.spin1y
 sim.spin1x = opts.spin1x
@@ -212,12 +259,14 @@ sim.spin2y = opts.spin2y
 sim.spin2x = opts.spin2x
 sim.polarization = opts.polarization
 sim.taper = opts.taper
+sim.distance = distance
 
 # construct waveform string that can be parsed by lalsimulation
 waveform_string = opts.approximant
 if not pn_orders[opts.order] == -1:
     waveform_string += opts.order
 sim.waveform = waveform_string
+name, phase_order = legacy_approximant_name(sim.waveform)
 
 # create sngl_inspiral table
 sngl_table = lsctables.New(lsctables.SnglInspiralTable,
@@ -229,7 +278,7 @@ outdoc.childNodes[0].appendChild(sngl_table)
 sngl = _empty_row(lsctables.SnglInspiral)
 sngl.mass1 = opts.mass1
 sngl.mass2 = opts.mass2
-sngl.mchirp, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(sngl.mass1, sngl.mass2)
+sngl.mchirp, sngl.eta = pnutils.mass1_mass2_to_mchirp_eta(sngl.mass1, sngl.mass2)
 sngl.mtotal = sngl.mass1 + sngl.mass2
 sngl.spin1z = opts.spin1z
 sngl.spin1y = opts.spin1y
@@ -239,31 +288,30 @@ sngl.spin2y = opts.spin2y
 sngl.spin2x = opts.spin2x
 
 # generate waveform
-logging.info('Generating waveform at %.3fMpc', distance)
-h_plus, h_cross = get_td_waveform(approximant=opts.approximant,
-                    order=pn_orders[opts.order],
-                    mass1=opts.mass1,
-                    mass2=opts.mass2,
-                    spin1z=opts.spin1z, spin1y=opts.spin1y, spin1x=opts.spin1x,
-                    spin2z=opts.spin2z, spin2y=opts.spin2y, spin2x=opts.spin2x,
-                    inclination=opts.inclination,
-                    delta_t=1.0/opts.sample_rate,
-                    distance=distance,
-                    f_lower=opts.low_frequency_cutoff)
+logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order, f_lower=opts.psd_low_frequency_cutoff,
+                      delta_t=1.0/sample_rate)
 
-# get strain timeseries
-data = _strain.from_cli(opts, DYN_RANGE_FAC)
+# zero pad polarizations to get integer second time series
+h_plus = pad_timeseries_to_integer_length(h_plus, sample_rate)
+h_cross = pad_timeseries_to_integer_length(h_cross, sample_rate)
 
-# generate PSD
-logging.info('Generating PSD')
-N = len(h_plus)
-n = N/2+1
-delta_f = 1.0 / N / h_plus.delta_t
-psd = _psd.from_cli(opts, n, delta_f, opts.low_frequency_cutoff,
-             strain=data, dyn_range_factor=DYN_RANGE_FAC)
+# get strain time series
+strain_dict = _strain.from_cli_multi_ifos(opts, opts.instruments,
+                                         dyn_range_fac=DYN_RANGE_FAC)
+
+# get PSDs
+psd_dict = {}
+for ifo in opts.instruments:
+    logging.info('Generating PSD for %s', ifo)
+    N = len(h_plus)
+    n = N/2+1
+    delta_f = 1.0 / ( N * h_plus.delta_t )
+    psd_dict[ifo] = _psd.from_cli(opts, n, delta_f, opts.psd_low_frequency_cutoff,
+             strain=strain_dict[ifo], dyn_range_factor=DYN_RANGE_FAC, precision='double')
 
 # loop over IFOs to calculate sigma
-for ifo in ifos:
+for ifo in opts.instruments:
 
     # get Detector instance for IFO
     det = Detector(ifo)
@@ -286,8 +334,10 @@ for ifo in ifos:
 
     # calculate sigma-squared SNR
     logging.info('Calculating sigma for %s', ifo)
-    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde, psd=psd, low_frequency_cutoff=opts.low_frequency_cutoff, high_frequency_cutoff=f_high)
-    logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f', opts.low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
+    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde, psd=psd_dict[ifo],
+                        low_frequency_cutoff=opts.psd_low_frequency_cutoff, high_frequency_cutoff=f_high)
+    logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f',
+                        opts.psd_low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
 
     # include sigma in network SNR calculation
     network_snr += sigma_squared
@@ -295,25 +345,22 @@ for ifo in ifos:
 # distance scaling factor to get target snr
 network_snr = numpy.sqrt(network_snr)
 scale = network_snr / opts.network_snr
+sim.distance = scale*sim.distance
 
 # reset network SNR
 network_snr = 0.0
 
 # generate waveform
-logging.info('Generating waveform at %.3fMpc', scale*distance)
-h_plus, h_cross = get_td_waveform(approximant=opts.approximant,
-                    order=pn_orders[opts.order],
-                    mass1=opts.mass1,
-                    mass2=opts.mass2,
-                    spin1z=opts.spin1z, spin1y=opts.spin1y, spin1x=opts.spin1x,
-                    spin2z=opts.spin2z, spin2y=opts.spin2y, spin2x=opts.spin2x,
-                    inclination=opts.inclination,
-                    delta_t=1.0/opts.sample_rate,
-                    distance=scale*distance,
-                    f_lower=opts.low_frequency_cutoff)
+logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order, f_lower=opts.psd_low_frequency_cutoff,
+                      delta_t=1.0/sample_rate)
+
+# zero pad polarizations to get integer second time series
+h_plus = pad_timeseries_to_integer_length(h_plus, sample_rate)
+h_cross = pad_timeseries_to_integer_length(h_cross, sample_rate)
 
 # loop over IFOs to calculate sigma
-for ifo in ifos:
+for ifo in opts.instruments:
 
     # get Detector instance for IFO
     det = Detector(ifo)
@@ -341,8 +388,10 @@ for ifo in ifos:
 
     # calculate sigma-squared SNR
     logging.info('Calculating sigma for %s', ifo)
-    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde, psd=psd, low_frequency_cutoff=opts.low_frequency_cutoff, high_frequency_cutoff=f_high)
-    logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f', opts.low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
+    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde, psd=psd_dict[ifo],
+                        low_frequency_cutoff=opts.psd_low_frequency_cutoff, high_frequency_cutoff=f_high)
+    logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f',
+                        opts.psd_low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
 
     # populate IFO end time columns
     setattr(sim, ifo[0].lower()+'_end_time', int(end_time))
@@ -352,7 +401,6 @@ for ifo in ifos:
     eff_distance = 2 * distance 
     eff_distance /= ( 1 + numpy.cos( opts.inclination )**2 )**2 / 4 * f_plus**2 + numpy.cos( opts.inclination )**2 * f_cross**2
     setattr(sim, 'eff_dist_'+ifo[0].lower(), eff_distance)
-    setattr(sim, 'distance', scale*distance)
 
     # populate IFO end time columns
     sngl.end_time = int(end_time)
@@ -365,21 +413,25 @@ for ifo in ifos:
 network_snr = numpy.sqrt(network_snr)
 if not abs(opts.network_snr / network_snr) - 1 < 0.1:
     logging.warn('Exiting because network SNR is %f but requested %s', network_snr, opts.network_snr)
+    sys.exit()
 else:
     logging.info('Network SNR of injection is %.3f', network_snr)
 
 # figure out length of time series to inject waveform into
+logging.info('Calculating number of sample points in output file')
+h_plus, _ = get_td_waveform(sim, approximant=name, phase_order=phase_order,
+                      delta_t=1.0/sample_rate)
 pad_seconds = 5
-template_duration_seconds = int( len(strain) / opts.sample_rate ) + 1
+template_duration_seconds = int( len(h_plus) / sample_rate ) + 1
 start_time = int(opts.geocentric_end_time) - template_duration_seconds - pad_seconds
 end_time = int(opts.geocentric_end_time) + 1 + pad_seconds
-num_samples = (end_time - start_time) * opts.sample_rate
+num_samples = (end_time - start_time) * sample_rate
 
 # save XML output file if it does not exist
 logging.info('Writing XML file')
 sim_table.append(sim)
 sngl_table.append(sngl)
-xml_filename = ''.join(ifos) + '-' + 'HWINJ_CBC' + '-' + str(start_time) + '-' + str(end_time-start_time) + '.xml.gz'
+xml_filename = ''.join(opts.instruments) + '-' + 'HWINJ_CBC' + '-' + str(start_time) + '-' + str(end_time-start_time) + '.xml.gz'
 if os.path.exists(xml_filename):
     logging.warn('Filename %s already exists and will not be overwritten', xml_filename)
     sys.exit()
@@ -387,25 +439,26 @@ else:
     utils.write_filename(outdoc, xml_filename, gz=xml_filename.endswith('gz'))
 
 # loop over IFOs for writing waveforms to file
-for ifo in ifos:
+for ifo in opts.instruments:
 
     # create a time series of zeroes to inject waveform into
     initial_array = numpy.zeros(num_samples, dtype=strain.dtype)
-    output = TimeSeries(initial_array, delta_t=1.0/opts.sample_rate, epoch=start_time, dtype=strain.dtype)
+    output = TimeSeries(initial_array, delta_t=1.0/sample_rate, epoch=start_time, dtype=strain.dtype)
 
     # inject waveform
+    logging.info('Injecting %s waveform into timeseries of zeroes', ifo)
     injections = InjectionSet(xml_filename)
     injections.apply(output, ifo)
 
     # set output filename
     txt_filename = ifo + '-' + 'HWINJ_CBC' + '-' + str(start_time) + '-' + str(end_time-start_time) + '.txt'
 
-    # check if filename does not exist
+    # check if filename exists
     if os.path.exists(txt_filename):
         logging.warn('Filename %s already exists and will not be overwritten', txt_filename)
         sys.exit()
 
-    # save waveform as single column ASCII for awgstream to use
+    # save waveform as single-column ASCII for awgstream to use
     logging.info('Writing strain for %s', ifo)
     numpy.savetxt(txt_filename, output)
 

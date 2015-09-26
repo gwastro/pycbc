@@ -20,9 +20,9 @@ Program for running multi-detector workflow analysis through coincidence and the
 generate post-processing and plots.
 """
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
-import os, argparse, ConfigParser, logging, glue.segments, numpy
+import os, argparse, ConfigParser, logging, glue.segments, numpy, lal, datetime
 from pycbc.events.veto import multi_segments_to_file
-from pycbc.results import create_versioning_page 
+from pycbc.results import create_versioning_page, static_table
 from pycbc.results.render import render_workflow_html_template
 from itertools import izip_longest
 
@@ -97,6 +97,19 @@ rdir = SectionNumber('results', ['configuration',
                                  'result',
                                  ])
 
+# put start / end time at top of summary page
+time = workflow.analysis_time
+s, e = int(time[0]), int(time[1])
+s_utc = str(datetime.datetime(*lal.GPSToUTC(s)[0:6]))
+e_utc = str(datetime.datetime(*lal.GPSToUTC(e)[0:6]))
+time_str = '<center><h2><b>%s [%s] - %s [%s]</b></h2></center>' % (s, s_utc, e, e_utc)
+time_file = wf.File(workflow.ifos, 'time', workflow.analysis_time,
+                                           extension='.html',
+                                           directory=rdir.base)
+wf.makedir(rdir.base)
+f = open(time_file.storage_path, 'w')
+f.write(time_str)
+
 # Get segments and find where the data is
 science_segs, data_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments")
 datafind_files, science_segs = wf.setup_datafind_workflow(workflow, 
@@ -119,14 +132,19 @@ bank_plot = [(wf.make_template_plot(workflow, hdfbank[0], rdir['coincident_trigg
 inj_files, inj_tags = wf.setup_injection_workflow(workflow, 
                                                      output_dir="inj_files")
                                                                                                                                                         
-######################## Setup the FULL DATA run
+# setup gating files if provided
+gate_files = wf.setup_gating_workflow(workflow, science_segs,
+                                            datafind_files, "gating")
+
+######################## Setup the FULL DATA run ##############################
 tag = output_dir = "full_data"
 ctags = [tag, 'full']
 
 # setup the matchedfilter jobs                                                     
 ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, science_segs, 
                                    datafind_files, splitbank_files, 
-                                   output_dir, tags = [tag])
+                                   output_dir, gate_files=gate_files,
+                                   tags = [tag])
 
 insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
                                            insps, output_dir, tags=[tag])
@@ -146,7 +164,6 @@ censored_veto = wf.make_foreground_censored_veto(workflow,
                        final_bg_file, final_veto_file[0], final_veto_name[0],
                        'closed_box', 'segments')      
               
-
 closed_snrifar = []
 for bg_file, bg_bins in (bg_files + final_bg_files):
     for bg_bin in bg_bins:
@@ -175,7 +192,6 @@ fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
 fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
-layout(rdir['result'], results_page + [(table,)])
 
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
                     'closed_box', rdir['single_triggers'], tags=[tag])
@@ -194,7 +210,7 @@ for insp in full_insps:
     hist_summ += list(grouper(hists, 2))
 
 # Calculate the inspiral psds and make plots
-full_segs, psd_files, insp_segs, insp_data_segs = [], [], {}, {}                            
+full_segs, psd_files, insp_segs, insp_data_segs = [], [], {}, {}                      
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     name = 'INSPIRAL_SEGMENTS'
     fname = 'segments/%s-' % ifo + name + '.xml'
@@ -202,17 +218,38 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     full_segs.append(pycbc.events.segments_to_file(insp_segs[ifo], fname, name, ifo=ifo))
 
     insp_data_segs[ifo] = glue.segments.segmentlist([f.metadata['data_seg'] for f in files])
-    data_seg = pycbc.events.segments_to_file(insp_data_segs[ifo],
+    insp_data_segs[ifo] = pycbc.events.segments_to_file(insp_data_segs[ifo],
                    'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
 
     psd_files += [wf.make_psd_file(workflow, datafind_files.find_output_with_ifo(ifo), 
-                                data_seg, 'INSPIRAL_DATA', 'psds')]
-                           
-s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'])
-r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'])
-det_summ = [(s, r)]
-layout(rdir['detector_sensitivity'], det_summ)    
+                        insp_data_segs[ifo], 'INSPIRAL_DATA', 'psds', gate_files=gate_files)]
 
+s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'])
+r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], require='summ')
+r2 = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], exclude='summ')
+
+det_summ = [(s, r[0] if len(r) != 0 else None)]
+layout(rdir['detector_sensitivity'], det_summ + list(grouper(r2, 2)))    
+
+
+# run minifollowups on the output of the loudest events 
+wf_layout = wf.setup_minifollowups(workflow, final_bg_file,
+                                  full_insps,  hdfbank[0],
+                                  insp_data_segs, 'INSPIRAL_DATA',
+                                  rdir['result'], tags=final_bg_file.tags)
+
+layout(rdir['result'], results_page + [(table,)] + wf_layout)
+    
+for bin_file in bin_files:
+    if hasattr(bin_file, 'bin_name'):
+        wf_layout = wf.setup_minifollowups(workflow, bin_file, full_insps, hdfbank[0],
+                                  insp_data_segs, 'INSPIRAL_DATA', 
+                                  rdir['result/%s' % bin_file.bin_name],
+                                  tags=bin_file.tags)
+        layout(rdir['result/%s' % bin_file.bin_name], wf_layout)
+
+################## Setup segment / veto related plots #########################    
+# do plotting of segments / veto times
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
     wf.make_segments_plot(workflow, files, rdir['analysis_time/segments'], 
                           tags=['%s_VETO_SEGMENTS' % ifo])
@@ -255,7 +292,7 @@ seg_summ_plot = wf.make_seg_plot(workflow, [seg_summ_file],
 # make veto definer table
 vetodef_table = wf.make_veto_table(workflow, rdir['analysis_time/veto_definer'])
 
-############################## Setup the injection runs                                                                           
+############################## Setup the injection runs #######################                                                                   
 inj_coincs = wf.FileList()
 for inj_file, tag in zip(inj_files, inj_tags):
     ctags = [tag, 'inj']
@@ -271,6 +308,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     insps = wf.setup_matchedfltr_workflow(workflow, science_segs, 
                                        datafind_files, splitbank_files, 
                                        output_dir, injection_file=small_inj_file,
+                                       gate_files=gate_files,
                                        tags = [tag])
    
     insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
@@ -284,21 +322,35 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                     wf.FileList([inj_file]), final_veto_file[0], 
                                     final_veto_name[0],
                                     output_dir, tags=ctags)
-    inj_coincs += [inj_coinc]                      
+    inj_coincs += [inj_coinc]  
+    
+    #foundmissed/sensitivity plots that go in the subsection wells
+    s = wf.make_sensitivity_plot(workflow, found_inj, 
+                  rdir['search_sensitivity/%s' % tag], 
+                   exclude=['all', 'summ'], require='sub', tags=ctags)
+    f = wf.make_foundmissed_plot(workflow, found_inj, 
+                  rdir['injections/%s' % tag],
+                   exclude=['all', 'summ'], require='sub', tags=[tag])                 
+    
+    # Extra foundmissed/sensitivity plots                    
     wf.make_sensitivity_plot(workflow, found_inj, 
                   rdir['search_sensitivity/%s' % tag], 
-                   exclude=['all', 'summ'], tags=ctags)
+                   exclude=['all', 'summ', 'sub'], tags=ctags)
     wf.make_foundmissed_plot(workflow, found_inj, 
                   rdir['injections/%s' % tag],
-                   exclude=['all', 'summ'], tags=[tag])
+                   exclude=['all', 'summ', 'sub'], tags=[tag])
+                   
     wf.make_inj_table(workflow, found_inj, 
                   rdir['injections/%s' % tag], tags=[tag])
-                             
+                         
     for inj_insp, trig_insp in zip(insps, full_insps):
-        wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
+        f += wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
                                   final_bg_file, trig_insp,
                                   rdir['injections/%s' % tag], tags=[tag])
 
+    if len(s) > 0: group_layout(rdir['search_sensitivity/%s' % tag], s)        
+    if len(f) > 0: group_layout(rdir['injections/%s' % tag], f)  
+    
 # Make combined injection plots
 inj_summ = []
 if len(inj_files) > 0:
@@ -320,7 +372,7 @@ if len(inj_files) > 0:
     inj_summ = list(grouper(inj + sen, 2))
                             
 # make full summary
-summ = ([(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)] + 
+summ = ([(time_file,)] + [(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)] + 
        det_summ + hist_summ + bank_plot + list(grouper(closed_snrifar, 2)) + inj_summ)
 for row in summ:
     for f in row:

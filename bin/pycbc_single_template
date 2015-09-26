@@ -1,7 +1,48 @@
 #!/usr/bin/env python
-import sys, logging, argparse, numpy, itertools, pycbc
+# Copyright (C) 2015 Alexander Harvey Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Calculate the SNR and CHISQ timeseries for either a chosen template, or 
+a specific Nth loudest coincident event.
+"""
+import sys, logging, argparse, numpy, itertools, pycbc, h5py
 from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter, events
 from pycbc.types import zeros, float32, complex64, TimeSeries
+
+def get_time(statmap, n_loudest, ifo):
+     f = h5py.File(statmap, 'r')
+     
+     try:
+        n = f['foreground/stat'][:].argsort()[::-1][n_loudest]
+     except:
+        return None, None
+     
+     t = {f.attrs['detector_1']: f['foreground/time1'][:][n],
+          f.attrs['detector_2']: f['foreground/time2'][:][n],
+          }
+     
+     return t[ifo], f['foreground/template_id'][:][n]
+
+def select_segment(fname, segment, ifo, time):
+    segs = events.select_segments_by_definer(fname, segment, ifo)
+
+    s = numpy.array([t[0] for t in segs])
+    e = numpy.array([t[1] for t in segs])    
+    
+    idx = numpy.searchsorted(s, time) - 1
+    return (s[idx], e[idx])
 
 parser = argparse.ArgumentParser(usage='',
     description="Single template gravitational-wave followup")
@@ -12,16 +53,24 @@ parser.add_argument("-V", "--verbose", action="store_true",
                   help="print extra debugging information", default=False )
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
-parser.add_argument("--chisq-bins", default=0, type=int, help=
+parser.add_argument("--chisq-bins", default="0", type=str, help=
                     "Number of frequency bins to use for power chisq.")
 parser.add_argument("--psd-recalculate-segments", type=int, 
                     help="Number of segments to use before recalculating the PSD", default=0)
 parser.add_argument("--approximant", type=str,
                   help="The name of the approximant to use for filtering. ")
-parser.add_argument("--mass1", type=float)
-parser.add_argument("--mass2", type=float)
-parser.add_argument("--spin1z", type=float, default=0)
-parser.add_argument("--spin2z", type=float, default=0)
+parser.add_argument("--mass1", type=float, 
+                  help="The mass of the first component object. "
+                       "Do not use if giving a statmap file")
+parser.add_argument("--mass2", type=float,
+                  help="The mass of the second component object. "
+                    "Do not use if giving a statmap file.")
+parser.add_argument("--spin1z", type=float, default=0,
+                  help="The aligned spin of the first component object. "
+                    "Do not use if giving a statmap file.")
+parser.add_argument("--spin2z", type=float, default=0,
+                  help="The aligned pin of the second component object. "
+                    "Do not use if giving a statmap file.")
 parser.add_argument("--order", type=int,
                   help="The integer half-PN order at which to generate"
                        " the approximant. Default is -1 which indicates to use"
@@ -31,6 +80,21 @@ parser.add_argument("--taper-template", choices=["start","end","startend"],
                     help="For time-domain approximants, taper the start and/or"
                     " end of the waveform before FFTing.")
 
+# alternate option set to pull from statmap file
+parser.add_argument("--statmap-file",
+        help="Alternative to giving mass/spin parameters. The HDF file "
+             "containing the clustered coincident triggers")
+parser.add_argument("--n-loudest", type=int,
+        help="An integer to choose which coincident trigger is followed up"
+             ", only used with --statmap-file")
+parser.add_argument("--bank-file",
+        help="HDF format template bank file, only used with --statmap-file")
+parser.add_argument("--inspiral-segments",
+        help="XML file containing the inspiral analysis segments. "
+             "Only used with the --statmap-file option")
+parser.add_argument("--segment-name", 
+        help="name of the segmentlist to read from the inspiral segment file")
+
 # Add options groups
 psd.insert_psd_option_group(parser)
 strain.insert_strain_option_group(parser)
@@ -38,6 +102,27 @@ strain.StrainSegments.insert_segment_option_group(parser)
 scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 opt = parser.parse_args()
+
+f = h5py.File(opt.output_file, 'w')          
+ifo = opt.channel_name[0:2]
+
+# If we are reading from the coinc files ######################################
+if opt.statmap_file:
+    time, tid = get_time(opt.statmap_file, opt.n_loudest, ifo)
+    
+    if time is None:
+        exit()
+    
+    b = h5py.File(opt.bank_file, 'r')
+    opt.mass1 = float(b['mass1'][:][tid])
+    opt.mass2 = float(b['mass2'][:][tid])
+    opt.spin1z = float(b['spin1z'][:][tid])
+    opt.spin2z = float(b['spin2z'][:][tid])
+    seg = select_segment(opt.inspiral_segments, opt.segment_name, ifo, time)
+    opt.gps_start_time, opt.gps_end_time = seg[0] + opt.pad_data, seg[1] - opt.pad_data
+    f.attrs['event_time'] = time
+
+###############################################################################
 
 # Check that the values returned for the options make sense
 psd.verify_psd_options(opt, parser)
@@ -73,6 +158,20 @@ ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, pycbc.DYN_RANGE_FAC)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
+class t(object):
+    pass
+ 
+row = t()
+row.params = t()
+row.params.mass1 = opt.mass1
+row.params.mass2 = opt.mass2
+row.params.spin1z = opt.spin1z
+row.params.spin2z = opt.spin2z
+
+chisq_bins = vetoes.SingleDetPowerChisq.parse_option(row, opt.chisq_bins)
+if 'params' in opt.approximant:
+    opt.approximant = waveform.FilterBank.parse_option(row, opt.approximant)
+
 with ctx:
     fft.from_cli(opt)
     flow = opt.low_frequency_cutoff
@@ -95,7 +194,8 @@ with ctx:
                                     taper=opt.taper_template, 
                                     f_lower=flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)
-                                    
+                  
+    snrs, chisqs = [], []                                       
     for s_num, stilde in enumerate(segments):
         logging.info("Filtering segment %s" % s_num)
         snr, corr, norm = filter.matched_filter_core(template, stilde, 
@@ -103,14 +203,21 @@ with ctx:
                                     low_frequency_cutoff=flow)
         snr *= norm
         logging.info("calculating chisq")
-        chisq = vetoes.power_chisq(template, stilde, opt.chisq_bins, stilde.psd, 
+        chisq = vetoes.power_chisq(template, stilde, chisq_bins, stilde.psd, 
                                     low_frequency_cutoff = flow)
-        chisq /= opt.chisq_bins * 2 - 2   
-        newsnr = TimeSeries(events.newsnr(abs(snr).numpy(), chisq.numpy()), 
-                            delta_t=snr.delta_t, epoch=snr.start_time)
-        #import pylab # example plot segment by segment
-        #pylab.plot(snr.sample_times.numpy(), abs(snr).numpy(), label='SNR')
-        #pylab.plot(chisq.sample_times.numpy(), chisq.numpy(), label='CHISQ')
-        #pylab.plot(newsnr.sample_times.numpy(), newsnr.numpy(), label='NewSNR')
-        #pylab.show()
+        chisq /= chisq_bins * 2 - 2
+     
+        snrs.append(snr[stilde.analyze])
+        chisqs.append(chisq[stilde.analyze])
+        
+    f['snr'] = numpy.concatenate([snr.numpy() for snr in snrs])
+    f['snr'].attrs['start_time'] = float(snrs[0].start_time)
+    f['snr'].attrs['delta_t'] = snr.delta_t
+    
+    f['chisq'] = numpy.concatenate([chisq.numpy() for chisq in chisqs])
+    f['chisq'].attrs['start_time'] = float(snrs[0].start_time)
+    f['chisq'].attrs['delta_t'] = snr.delta_t 
+    f.attrs['approximant'] = opt.approximant
+    f.attrs['ifo'] = ifo
+    
 logging.info("Finished")

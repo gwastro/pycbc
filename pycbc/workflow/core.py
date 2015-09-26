@@ -26,7 +26,7 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import os, subprocess, logging, math, string, urlparse, ConfigParser, copy
+import os, stat, subprocess, logging, math, string, urllib2, urlparse, ConfigParser, copy, time
 import numpy, cPickle, random
 from itertools import combinations, groupby
 from operator import attrgetter
@@ -175,9 +175,21 @@ class Executable(pegasus_workflow.Executable):
         if not os.path.isabs(self.out_dir):
             self.out_dir = os.path.join(os.getcwd(), self.out_dir) 
               
-        # Check that the executable actually exists locally
+        # Check that the executable actually exists locally or 
+        # looks like a URL, in which case trust Pegasus to be
+        # able to fetch it.
         exe_path = cp.get('executables', name)
-        if exe_path.startswith('gsiftp') or os.path.isfile(exe_path):
+        valid_path = False
+
+        if exe_path.find('://') > 0:
+            if exe_path.startswith('file://'):
+                valid_path = os.path.isfile(exe_path[7:])
+            else:
+                valid_path = True
+        else:
+            valid_path = os.path.isfile(exe_path)
+
+        if valid_path:
             logging.debug("Using %s executable "
                           "at %s" % (name, exe_path))
         else:
@@ -364,13 +376,21 @@ class Workflow(pegasus_workflow.Workflow):
         self.cp = WorkflowConfigParser.from_args(args)
         
         # Dump the parsed config file
-        ini_file = os.path.abspath(self.name + '_parsed.ini')
-        if not os.path.isfile(ini_file):
-            fp = open(ini_file, 'w')
-            self.cp.write(fp)
-            fp.close()
-        else:
-            logging.warn("Cowardly refusing to overwrite %s." %(ini_file))
+        symlink = os.path.abspath(self.name + '_parsed.ini')
+
+        if os.path.isfile(symlink):
+            os.remove(symlink)
+
+        ini_file = os.path.abspath(self.name + '_parsed_%d.ini' % time.time())
+        # This shouldn't already exist, but just in case
+        if os.path.isfile(ini_file):
+            os.remove(ini_file)
+
+        fp = open(ini_file, 'w')
+        self.cp.write(fp)
+        fp.close()
+
+        os.symlink(ini_file, symlink)
 
         # Set global values
         start_time = int(self.cp.get("workflow", "start-time"))
@@ -399,11 +419,11 @@ class Workflow(pegasus_workflow.Workflow):
         return path
         
 
-    def execute_node(self, node):
+    def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine
         """
         node.executed = True
-        cmd_list = node.get_command_line()
+        cmd_list = node.get_command_line(verbatim_exe=verbatim_exe)
         
         # Must execute in output directory.
         curr_dir = os.getcwd()
@@ -463,7 +483,7 @@ class Node(pegasus_workflow.Node):
             
         self._options += self.executable.common_options
     
-    def get_command_line(self):
+    def get_command_line(self, verbatim_exe=False):
         self._finalize()
         arglist = self._dax_node.arguments
         
@@ -478,8 +498,14 @@ class Node(pegasus_workflow.Node):
         arglist = [a for a in arglist if a != '']
         
         arglist = [a.storage_path if isinstance(a, File) else a for a in arglist]
-                        
-        exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
+       
+        # This allows the pfn to be an http(s) URL, which will be
+        # downloaded by resolve_url
+        if verbatim_exe:
+            exe_path = self.executable.get_pfn()
+        else:
+            exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
+
         return [exe_path] + arglist
         
     def new_output_file_opt(self, valid_seg, extension, option_name, tags=[],
@@ -1220,6 +1246,11 @@ def make_external_call(cmdList, out_dir=None, out_basename='external_call',
     exitCode : int
         The code returned by the process.
     """
+    resolvedExe = resolve_url(cmdList[0])
+    if resolvedExe != cmdList[0]:
+        os.chmod(resolvedExe, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+        cmdList[0] = resolvedExe
+
     if out_dir:
         outBase = os.path.join(out_dir,out_basename)
         errFile = outBase + '.err'
@@ -1305,3 +1336,39 @@ def get_random_label():
     """
     return ''.join(random.choice(string.ascii_uppercase + string.digits) \
                    for _ in range(15))
+
+
+def resolve_url(url):
+    """
+    Resolves a URL to a local file, and returns the path to
+    that file.
+    """
+    if url.startswith('http://') or url.startswith('https://'):
+        filename = url.split('/')[-1]
+        filename = os.path.join(os.getcwd(), filename)
+        try:
+            response = urllib2.urlopen(url)
+            result   = response.read()
+            out_file = open(filename, 'w')
+            out_file.write(result)
+            out_file.close()
+        except:
+            errMsg  = "Unable to download %s " % (url)
+            raise ValueError(errMsg)
+    elif url.startswith('file://'):
+        filename = url[7:]
+    elif url.find('://') != -1:
+        # TODO: We could support other schemes such as gsiftp by
+        # calling out to globus-url-copy
+        errMsg  = "%s: Only supported URL schemes are\n" % (url)
+        errMsg += "   file: http: https:" 
+        raise ValueError(errMsg)
+    else:
+        filename = url
+
+    if not os.path.isfile(filename):
+        errMsg = "File %s does not exist." %(url)
+        raise ValueError(errMsg)
+
+    return filename
+   

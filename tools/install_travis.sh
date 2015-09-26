@@ -22,8 +22,7 @@ else
     # install the version of swig that for some reason we have to use
 
     cd ${SRC}
-    # FIXME SF mirror hardcoded to heanet to work around occasional failures
-    wget -q http://heanet.dl.sourceforge.net/project/swig/swig/swig-2.0.11/swig-2.0.11.tar.gz
+    wget -q http://download.sourceforge.net/project/swig/swig/swig-2.0.11/swig-2.0.11.tar.gz
     tar -xzf swig-2.0.11.tar.gz
     cd swig-2.0.11
     ./configure -q --prefix=${INST}
@@ -62,6 +61,10 @@ else
         --disable-lalxml --disable-lalburst --disable-lalapps
     make -j
     make install
+
+    # run lalsimulation tests
+    cd lalsimulation
+    make check
 
     touch ${INST}/dep_install.done
 

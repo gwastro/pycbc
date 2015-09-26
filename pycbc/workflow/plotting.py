@@ -42,7 +42,7 @@ def requirestr(tags, substr):
     return [tag for tag in tags if substr in tag]
  
 class PlotExecutable(Executable):
-    """ This converts xml tmpltbank to an hdf format
+    """ plot executable
     """
     current_retention_level = Executable.FINAL_RESULT
 
@@ -61,15 +61,20 @@ def make_template_plot(workflow, bank_file, out_dir, tags=None):
     workflow += node
     return node.output_files[0]     
 
-def make_range_plot(workflow, psd_files, out_dir, tags=None):
+def make_range_plot(workflow, psd_files, out_dir, exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
-    node = PlotExecutable(workflow.cp, 'plot_range', ifos=workflow.ifos,
-                          out_dir=out_dir, tags=tags).create_node()
-    node.add_input_list_opt('--psd-files', psd_files)
-    node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
-    workflow += node
-    return node.output_files[0]
+    secs = requirestr(workflow.cp.get_subsections('plot_range'), require)  
+    secs = excludestr(secs, exclude)
+    files = FileList([])
+    for tag in secs:
+        node = PlotExecutable(workflow.cp, 'plot_range', ifos=workflow.ifos,
+                              out_dir=out_dir, tags=[tag] + tags).create_node()
+        node.add_input_list_opt('--psd-files', psd_files)
+        node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+        workflow += node
+        files += node.output_files
+    return files
 
 def make_spectrum_plot(workflow, psd_files, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -258,8 +263,7 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False, tags=[]):
     return node.output_files[0]
     
 def make_results_web_page(workflow, results_dir):
-    import pycbc.results
-    template_path =  pycbc.results.__path__[0] + '/templates/orange.html'
+    template_path = 'templates/orange.html'
 
     out_dir = workflow.cp.get('results_page', 'output-path')
     makedir(out_dir)

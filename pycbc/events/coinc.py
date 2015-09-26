@@ -49,13 +49,16 @@ def background_bin_from_string(background_bins, data):
     used = numpy.array([], dtype=numpy.uint32)
     bins = {}
     for mbin in background_bins:
-        name, bin_type, boundary = tuple(mbin.split('-'))
+        name, bin_type, boundary = tuple(mbin.split(':'))
         if bin_type == 'component':
             locs = numpy.maximum(data['mass1'], data['mass2']) < float(boundary)
         elif bin_type == 'total':
             locs = data['mass1'] + data['mass2'] < float(boundary)
         elif bin_type == 'chirp':
             locs = pycbc.pnutils.mass1_mass2_to_mchirp_eta(data['mass1'], data['mass2'])[0] < float(boundary)
+        elif bin_type == 'SEOBNRv2Peak':
+            locs = pycbc.pnutils.get_freq('fSEOBNRv2Peak', data['mass1'],
+                data['mass2'], data['spin1z'], data['spin2z']) < float(boundary)
         else:
             raise ValueError('Invalid bin type %s' % bin_type)    
         
@@ -199,7 +202,7 @@ def time_coincidence(t1, t2, window, slide_step=0):
     return idx1.astype(numpy.uint32), idx2.astype(numpy.uint32), slide.astype(numpy.int32)
 
 
-def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
+def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy.argmax):
     """Cluster coincident events for each timeslide separately, across 
     templates, based on the ranking statistic 
 
@@ -266,7 +269,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
             continue            
         
         # Find the location of the maximum within the time interval around i
-        max_loc = stat[l:r].argmax() + l 
+        max_loc = argmax(stat[l:r]) + l 
         
         # If this point is the max, we can skip to the right boundary
         if max_loc == i:

@@ -1,0 +1,37 @@
+from gwpy.timeseries import TimeSeries
+import numpy
+import sys
+
+# parse command line
+filename = sys.argv[1]
+output_timeseries_filename = sys.argv[2]
+output_spectrogram_filename = sys.argv[3]
+xmin = sys.argv[4]
+xmax = sys.argv[5]
+timeseries_ymin = float(sys.argv[6])
+timeseries_ymax = float(sys.argv[7])
+spectrogram_vmin = float(sys.argv[8])
+spectrogram_vmax = float(sys.argv[9])
+
+# data options
+start_time = 0
+sample_rate = 16384
+
+# read data
+data = numpy.loadtxt(filename)
+series = TimeSeries(data, epoch=start_time, sample_rate=sample_rate)
+
+# plot
+plot = series.plot()
+plot.set_xlim(xmin, xmax)
+plot.set_ylim(timeseries_ymin, timeseries_ymax)
+plot.savefig(output_timeseries_filename)
+
+# plot
+specgram = series.spectrogram2(fftlength=0.1, overlap=0.1*0.9) ** (1/2.)
+plot = specgram.plot(norm='log', vmin=spectrogram_vmin, vmax=spectrogram_vmax)
+plot.set_yscale('log')
+plot.set_ylim(40, 4000)
+plot.set_xlim(xmin, xmax)
+plot.add_colorbar(label=r'')
+plot.savefig(output_spectrogram_filename)

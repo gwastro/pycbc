@@ -1,0 +1,74 @@
+#! /usr/bin/python
+
+# Copyright (C) 2015 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import logging
+import numpy
+from pycbc.frame import write_frame
+from pycbc import strain as _strain
+
+ifo_list = ['H1', 'L1']
+
+# command line usage
+parser = argparse.ArgumentParser(usage='pycbc_insert_frame_hwinj [--options]',
+             description="Inserts a single-column ASCII file into frame data.")
+
+# injection options
+parser.add_argument('--hwinj-file', type=str, required=True,
+             help='Path to single-column ASCII file.')
+parser.add_argument('--hwinj-start-time', type=int, required=True,
+             help='Start time of the single-column ASCII file.')
+
+# frame options
+parser.add_argument('--ifo', type=str, required=True,
+             choices=ifo_list,
+             help='IFO.')
+parser.add_argument('--output-file', type=str, required=True,
+             help='Path to output frame file.')
+
+# add option groups
+_strain.insert_strain_option_group(parser)
+
+# parse command line
+opts = parser.parse_args()
+
+# setup log
+logging_level = logging.DEBUG
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
+# get strain
+strain = _strain.from_cli(opts)
+
+# load data
+logging.info('Reading the hardware injection data')
+initial_array = numpy.loadtxt(opts.hwinj_file)
+
+# figure out how much to pad
+start_pad = (opts.hwinj_start_time-opts.gps_start_time) * opts.sample_rate
+
+# add the two time series
+logging.info('Summing the two time series')
+for i in range(len(initial_array)):
+    strain[start_pad+1+i] += initial_array[i]
+
+# write frame
+logging.info('Writing data')
+write_frame(opts.output_file, opts.ifo+':HWINJ_INJECTED', strain)
+
+# exit
+logging.info('Done.')

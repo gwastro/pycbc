@@ -16,9 +16,7 @@ parser.add_argument('--output-file', required=True) # DOCUMENTME
 parser.add_argument('--bin-type', choices=['spin', 'mchirp',
                                            'total_mass', 'eta'],
                     default='mchirp',
-                    help="Parameter used to bin injections. Note that 'spin' "
-                         "uses the line-of-sight coordinate convention! "
-                         "Default 'mchirp'")
+                    help="Parameter used to bin injections. Default 'mchirp'")
 # FIXME: Make bins options properly optional, if no bins are specified then
 # plot everything together
 parser.add_argument('--bins', nargs='+',
@@ -58,6 +56,11 @@ parser.add_argument('--min-param', type=float,
                     help="Minimum value of Dlim, used by 'mc' method with log "
                          "distribution. If not given, min injected value will "
                          "be used")
+parser.add_argument('--spin-frame', choices=['line-of-sight', 'orbit'],
+                    default='orbit', help='Frame convention used by injections '
+                    'for specifying spin vectors. LAL versions after summer '
+                    '2015 should use the orbit convention, which is the '
+                    'default choice here.')
 
 args = parser.parse_args()
 
@@ -99,16 +102,18 @@ values['mchirp'] = mchirp
 values['eta'] = eta
 values['total_mass'] = m1 + m2
 
-#FIXME, this is only correct for SpinTaylor Convention!!!!!
-s1 = s1x * numpy.sin(inc) + s1z * numpy.cos(inc)
-s2 = s2x * numpy.sin(inc) + s2z * numpy.cos(inc)
+if args.spin_frame == 'line-of-sight':
+    s1 = s1x * numpy.sin(inc) + s1z * numpy.cos(inc)
+    s2 = s2x * numpy.sin(inc) + s2z * numpy.cos(inc)
+elif args.spin_frame == 'orbit':
+    s1, s2 = s1z, s2z
 values['spin'] = (m1 * s1 + m2 * s2) / (m1 + m2)
 
 # Legend labels for the binning
 labels = {}
-labels['mchirp'] = "$ M_{chirp} \in [%5.2f, %5.2f] M_\odot $"
-labels['total_mass'] = "$ M_{total} \in [%5.2f, %5.2f] M_\odot $"
-labels['spin'] = "$Eff Spin \in [%5.2f, %5.2f] $"
+labels['mchirp'] = "$ M_{\\rm chirp} \in [%5.2f, %5.2f] M_\odot $"
+labels['total_mass'] = "$ M_{\\rm total} \in [%5.2f, %5.2f] M_\odot $"
+labels['spin'] = "$\\chi^{\\parallel}_{\\rm eff} \in [%5.2f, %5.2f] $"
 
 ylabel = xlabel = ""
 
@@ -217,6 +222,7 @@ for j in range(len(args.bins)-1):
             reach, ehigh, elow = vols, vol_errors, vol_errors
         elif args.dist_type == 'vt':
             ylabel = "Volume-Time (yr-Mpc$^3$)"
+            pylab.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
             t = f.attrs['foreground_time_exc'] * 3.16888e-8
             reach, ehigh, elow = vols * t, vol_errors * t, vol_errors * t
 

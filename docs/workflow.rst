@@ -89,15 +89,15 @@ More details of how to run ``pycbc_make_sngl_workflow`` is found in the followin
    workflow/pycbc_make_sngl_workflow
 
 -----------------------------
-``pycbc_make_daily_workflow``
+``pycbc_make_sngl_workflow``
 -----------------------------
 
-Another single-detector workflow generator that mimics the daily ihope analysis is ``pycbc_make_daily_workflow``. More details of how to run ``pycbc_make_daily_workflow`` is found in the following link:
+Another single-detector workflow generator that mimics the daily ihope analysis is ``pycbc_make_sngl_workflow``. More details of how to run ``pycbc_make_sngl_workflow`` is found in the following link:
 
 .. toctree::
    :maxdepth: 1
 
-   workflow/pycbc_make_daily_workflow
+   workflow/pycbc_make_sngl_workflow
 
 ---------------------
 `data_checker`
