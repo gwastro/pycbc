@@ -8,6 +8,19 @@ set -e
 # Ask the user where they want pycbc installed
 read -p "Enter the location where you want the virtual env created " NAME
 
+if [[ $NAME == ~* ]] ; then
+  if [[ ! "$NAME" =~ "/" ]] ; then
+    NAME=${HOME}
+  else
+    # chomp the ~
+    NAME=${NAME/##~}
+    # chomp anything else before the first slash to catch e.g. ~alenon/
+    NAME=${NAME#*\/}
+    # expand to the user's home directory
+    NAME=${HOME}/${NAME}
+  fi
+fi
+
 if [ -z $NAME ] ; then
   echo "ERROR: you must specify a path for your virtual environment"
   exit 1
