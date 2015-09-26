@@ -58,7 +58,7 @@ except:
     f = open(args.output_file, 'w')
     f.write("<h1>Event %s, no triggers found</h1>" % (args.n_loudest + 1))
     f.close()
-    exit()
+    sys.exit()
 
 d = f['foreground']
 
