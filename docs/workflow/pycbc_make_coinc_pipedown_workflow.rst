@@ -1,12 +1,12 @@
-################################################################
-``pycbc_make_coinc_workflow``: A CBC analysis workflow generator
-################################################################
+#########################################################################
+``pycbc_make_coinc_pipedown_workflow``: A CBC analysis workflow generator
+#########################################################################
 
 ===============
 Introduction
 ===============
 
-The executable ``pycbc_make_coinc_workflow`` is a tool used to analyse data from multiple detectors independently and then perform a coincidence test and various signal-based veto cuts and data quality cuts to determine whether or not a compact binary coalescence is present in the given data.
+The executable ``pycbc_make_coinc_pipedown_workflow`` is a tool used to analyse data from multiple detectors independently and then perform a coincidence test and various signal-based veto cuts and data quality cuts to determine whether or not a compact binary coalescence is present in the given data.
 
 The output is a webpage containing the plots that can be used to understand the results of the analysis
 
@@ -16,7 +16,7 @@ The output is a webpage containing the plots that can be used to understand the 
 How to run
 =======================
 
-Here we document the stages needed to run ``pycbc_make_coinc_workflow`` to generate an offline matched filtered CBC search.
+Here we document the stages needed to run ``pycbc_make_coinc_pipedown_workflow`` to generate an offline matched filtered CBC search.
 
 ----------------------------------------------------------------------------
 The configuration file - Do you already have configuration (.ini) file(s)?
@@ -57,7 +57,7 @@ An example configuration file set is found in three parts::
     /src/dir/pycbc/workflow/ini_files/example_pipedown.ini
     /src/dir/pycbc/workflow/ini_files/example_inj.ini
 
-These files contain all the details needed to run ``pycbc_make_coinc_workflow``
+These files contain all the details needed to run ``pycbc_make_coinc_pipedown_workflow``
 
 .. note::
 
@@ -166,7 +166,7 @@ You also need to choose where the html page will be generated. For example::
 If you are using locally editted or custom configuration files then you can
 create the workflow using::
 
-    pycbc_make_coinc_workflow --config-files ${LOCAL_CONFIG_FILES} \
+    pycbc_make_coinc_pipedown_workflow --config-files ${LOCAL_CONFIG_FILES} \
                               --config-overrides workflow:start-time:${GPS_START_TIME} \
                                                  workflow:end-time:${GPS_END_TIME} \
                                                  workflow:workflow-html-basedir:${HTMLDIR} \

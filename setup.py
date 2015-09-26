@@ -386,7 +386,7 @@ setup (
                'bin/gstlal/pycbc_compute_far_from_snr_chisq_histograms',
                'bin/gstlal/pycbc_gen_ranking_data',
                'bin/gstlal/pycbc_pickle_horizon_distances',
-               'bin/pycbc_make_coinc_workflow',
+               'bin/pycbc_make_coinc_pipedown_workflow',
                'bin/pycbc_make_html_page',
                'bin/pycbc_ligolw_find_playground',
                'bin/hdfcoinc/pycbc_make_hdf_coinc_workflow',

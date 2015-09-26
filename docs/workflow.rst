@@ -39,9 +39,9 @@ in the source tree under::
 
 These examples are described in each section below
 
------------------------------
-``pycbc_make_coinc_workflow``
------------------------------
+--------------------------------------
+``pycbc_make_coinc_pipedown_workflow``
+--------------------------------------
 
 This is an example of how to run a coincidence workflow, mimicking standard ihope coincidence analysis as closely as possible. It calls into pipedown to do the post-processing and using `lalapps_write_ihope_page` to make an output html page. In total this will:
 
@@ -63,7 +63,7 @@ More details of how to run this is found in the following link:
 .. toctree::
    :maxdepth: 1
 
-   workflow/pycbc_make_coinc_workflow
+   workflow/pycbc_make_coinc_pipedown_workflow
 
 ----------------------------
 ``pycbc_make_sngl_workflow``
