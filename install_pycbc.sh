@@ -54,6 +54,7 @@ echo
 
 #Create a Virtual Environment
 echo "--- creating virtual environment --------------------------------"
+unset PYTHONPATH
 virtualenv $NAME
 
 #Enter Virtual Environment
