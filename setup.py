@@ -389,7 +389,7 @@ setup (
                'bin/pycbc_make_coinc_pipedown_workflow',
                'bin/pycbc_make_html_page',
                'bin/pycbc_ligolw_find_playground',
-               'bin/hdfcoinc/pycbc_make_hdf_coinc_workflow',
+               'bin/hdfcoinc/pycbc_make_coinc_search_workflow',
                'bin/hdfcoinc/pycbc_make_psd_estimation_workflow',
                'bin/hdfcoinc/pycbc_calculate_psd',
                'bin/hdfcoinc/pycbc_average_psd',
