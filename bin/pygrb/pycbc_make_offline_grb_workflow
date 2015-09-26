@@ -25,7 +25,7 @@ import pycbc.version
 __author__ = "Andrew Williamson <andrew.williamson@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pygrb_make_offline_workflow"
+__program__ = "pycbc_make_offline_grb_workflow"
 
 import shutil
 import os

@@ -443,8 +443,8 @@ setup (
                'bin/pycbc_coinc_time',
                'bin/hdfcoinc/pycbc_plot_background_coincs',
                'bin/hdfcoinc/pycbc_plot_bank_bins',
-               'bin/pygrb/pygrb_make_offline_workflow',
-               'bin/pygrb/pygrb_make_summary_page',
+               'bin/pygrb/pycbc_make_offline_grb_workflow',
+               'bin/pygrb/pycbc_make_grb_summary_page',
                ],
     packages = [
                'pycbc',
