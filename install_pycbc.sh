@@ -50,8 +50,10 @@ if [ $nproc -gt 24 ] ; then
 fi
 
 echo "Using $nproc processors for parallel build."
+echo
 
 #Create a Virtual Environment
+echo "--- creating virtual environment --------------------------------"
 virtualenv $NAME
 
 #Enter Virtual Environment
@@ -59,6 +61,7 @@ source $NAME/bin/activate
 mkdir -p $VIRTUAL_ENV/src
 
 #Install HDF5
+echo "--- installing HDF5 libraries -----------------------------------"
 cd $VIRTUAL_ENV/src
 curl https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
 tar -zxvf hdf5-1.8.12.tar.gz
@@ -70,12 +73,17 @@ HDF5_DIR=${VIRTUAL_ENV}/opt/hdf5-1.8.12 pip install h5py
 
 #Installing lalsuite into Virtual Environment
 #Install unitest2, python-cjson, and numpy
+echo "--- installing required packages --------------------------------"
 pip install "numpy>=1.6.4" unittest2 python-cjson Cython
 
 #Authenticate with LIGO Data Grid services, install M2Crypto
 SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
 
-read -p "Enter you LIGO.ORG username in (e.g. albert.einstein): " directory
+echo
+echo
+echo "--- cloning lalsuite repository ---------------------------------"
+echo
+read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " directory
 
 #Valid ECP cookie to clone
 echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
@@ -103,6 +111,10 @@ echo
 read -rp "Enter a valid tag or branch name (e.g. master or lalsuite_o1_branch): " lalbranch
 git checkout $lalbranch
 
+echo
+echo "--- building lalsuite -------------------------------------------"
+echo
+
 #Building and Installing into your Virtual Environment
 #Use the master configure script to build and install all the components
 ./00boot
@@ -118,6 +130,9 @@ source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc
 echo "LAL installed into $LAL_PREFIX"
 
 #Installing pyCBC to Virtual Environment
+echo
+echo "--- installing pegasus and dqsegdb ------------------------------"
+echo
 
 #Install Pegasus WMS python libraries
 pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
@@ -126,6 +141,11 @@ pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-
 pip install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
 
 #Released or Development
+echo
+echo "--- downloading PyCBC -------------------------------------------"
+echo
+echo
+
 while true ; do
 
   echo "Would you like to install a released version of PyCBC or a development copy?"
@@ -212,6 +232,9 @@ done
 
 #Building and Installing Documentation
 #Install Sphinx and the helper tools
+echo
+echo "--- downloading documentation tools -----------------------------"
+echo
 pip install "Sphinx>=1.3.1"
 pip install sphinxcontrib-programoutput
 pip install numpydoc
@@ -239,6 +262,8 @@ EOF
 patch -p0 ${VIRTUAL_ENV}/lib/python2.6/site-packages/matplotlib/sphinxext/plot_directive.py < ${VIRTUAL_ENV}/plot_directive.patch
 rm ${VIRTUAL_ENV}/plot_directive.patch
 
+echo
+echo "--- setting up optimized libraries ------------------------------"
 echo
 echo
 echo "To run MKL optimized code, you need to enter the path and architecture"
