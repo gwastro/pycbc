@@ -27,7 +27,7 @@ def get_time_from_cli(args):
             stat = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
         except:
             pylab.text(0.5, 0.5, 'no triggers found'); pylab.savefig(args.output_file)
-            exit()
+            sys.exit()
             
         id1 = f['foreground/trigger_id1'][:][stat]
         id2 = f['foreground/trigger_id2'][:][stat]
