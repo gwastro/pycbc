@@ -111,7 +111,7 @@ if opt.statmap_file:
     time, tid = get_time(opt.statmap_file, opt.n_loudest, ifo)
     
     if time is None:
-        exit()
+        sys.exit()
     
     b = h5py.File(opt.bank_file, 'r')
     opt.mass1 = float(b['mass1'][:][tid])

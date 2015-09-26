@@ -55,8 +55,10 @@ f = h5py.File(args.statmap_file, 'r')
 try:
     n = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
 except:
-    pylab.text(0.5, 0.5, 'no triggers found'); pylab.savefig(args.output_file)
-    exit()
+    f = open(args.output_file, 'w')
+    f.write("<h1>Event %s, no triggers found</h1>" % (args.n_loudest + 1))
+    f.close()
+    sys.exit()
 
 d = f['foreground']
 

@@ -4,6 +4,7 @@ The program combines coincident output files generated
 by pycbc_coinc_findtrigs to generated a mapping between SNR and FAP, along
 with producing the combined foreground and background triggers
 """
+import sys
 import argparse, h5py, logging, itertools, numpy
 import lal
 from pycbc.events import veto, coinc
@@ -78,7 +79,7 @@ back_locs = d.timeslide_id != 0
 if (back_locs.sum()) == 0:
     logging.warn("There were no background events, so we could not assign "
                  "any statistic values")
-    exit()
+    sys.exit()
     
 logging.info("Dumping background triggers (inclusive of zerolag)")
 for k in d.data:
