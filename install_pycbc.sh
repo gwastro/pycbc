@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright 2015 Amber Lenon, Steve Reyes, Duncan Brown.
 
 # Exit if any command fails
 set -e 
@@ -140,6 +141,11 @@ elif [ $dev_or_rel -eq 2 ] ; then
   #Prevent Pip from removing source directory
   rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
 
+  #Connect the user to the main PyCBC repo and bring in the objects
+  cd ${VIRTUAL_ENV}/src/pycbc
+  git remote add upstream git@github.com:ligo-cbc/pycbc.git
+  git fetch upstream
+
 else
 
 echo "You must enter 1 or 2"
@@ -195,11 +201,29 @@ deactivate
 
 echo
 echo "-----------------------------------------------------------------"
+echo
 echo "PyCBC has been installed in a virtual environment in $NAME"
 echo
 echo "To use this virtual environment run the command"
 echo
 echo "  source $NAME/bin/activate"
 echo
+
+if [ $dev_or_rel -eq 2 ] ; then
+echo "A clone of your PyCBC repository has been placed in the directory"
+echo
+echo "   ${VIRTUAL_ENV}/src/pycbc"
+echo
+echo "and connected to the ligo-cbc/pycbc repository as 'upstream.'"
+echo
+echo "You can use this repository to edit and make changes to the code."
+echo "To install your updated code in your virtual environment, first"
+echo "make sure you have run the activate script, then from the directory"
+echo "   ${VIRTUAL_ENV}/src/pycbc"
+echo "run the command"
+echo "   python setup.py install"
+echo
+echo "-----------------------------------------------------------------"
+echo 
 
 exit 0
