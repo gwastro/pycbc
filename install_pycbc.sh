@@ -233,38 +233,49 @@ while true ; do
   fi
 done
 
-#Building and Installing Documentation
-#Install Sphinx and the helper tools
-echo
-echo "--- downloading documentation tools -----------------------------"
-echo
-pip install "Sphinx>=1.3.1"
-pip install sphinxcontrib-programoutput
-pip install numpydoc
-
-#patch the bug in numpydoc for python 2.6
-cat <<EOF > ${VIRTUAL_ENV}/plot_directive.patch
---- /home/dbrown/src/pycbc/lib/python2.6/site-packages/matplotlib/sphinxext/plot_directive.py	2015-09-24 20:30:54.057566343 -0400
-+++ /home/dbrown/projects/aligo/pycbc-docs/lib/python2.6/site-packages/matplotlib/sphinxext/plot_directive.py	2015-09-26 11:01:58.000000000 -0400
-@@ -333,13 +333,8 @@
+if [ $dev_or_rel -eq 2 ] ; then
+  #Building and Installing Documentation
+  #Install Sphinx and the helper tools
+  echo
+  echo "--- downloading documentation tools -----------------------------"
+  echo
+  pip install "Sphinx>=1.3.1"
+  pip install sphinxcontrib-programoutput
+  pip install numpydoc
+  
+  #patch the bug in numpydoc for python 2.6
+  cat <<EOF > ${VIRTUAL_ENV}/plot_directive.patch
+--- lib/python2.6/site-packages/matplotlib/sphinxext/plot_directive.py 2015-09-26 13:48:46.000000000 -0400
++++ lib/python2.6/site-packages/matplotlib/sphinxext/plot_directive.py 2015-09-24 20:59:35.843029957 -0400
+@@ -333,8 +333,13 @@
      """
      Remove the coding comment, which six.exec_ doesn't like.
      """
--    try:
--      return re.sub(
-+    return re.sub(
+-    return re.sub(
++    try:
++      return re.sub(
          "^#\s*-\*-\s*coding:\s*.*-\*-$", "", text, flags=re.MULTILINE)
--    except TypeError:
--      return re.sub(
--        "^#\s*-\*-\s*coding:\s*.*-\*-$", "", text, re.MULTILINE)
--      
++    except TypeError:
++      return re.sub(
++        "^#\s*-\*-\s*coding:\s*.*-\*-$", "", text, re.MULTILINE)
++
  
  #------------------------------------------------------------------------------
  # Template
 EOF
-patch -p0 ${VIRTUAL_ENV}/lib/python2.6/site-packages/matplotlib/sphinxext/plot_directive.py < ${VIRTUAL_ENV}/plot_directive.patch
-rm ${VIRTUAL_ENV}/plot_directive.patch
-
+  
+  set +e
+  patch -f -p0 ${VIRTUAL_ENV}/lib/python2.6/site-packages/matplotlib/sphinxext/plot_directive.py < ${VIRTUAL_ENV}/plot_directive.patch
+  if [ $? -eq 0 ] ; then
+    echo "patched sphinxext/plot_directive.py successfully"
+  else
+    echo "patch to sphinxext/plot_directive.py failed"
+    echo "plots in documentation build may not work"
+  fi
+  rm ${VIRTUAL_ENV}/plot_directive.patch
+  set -e
+fi
+  
 echo
 echo "--- setting up optimized libraries ------------------------------"
 echo
