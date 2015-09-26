@@ -176,13 +176,29 @@ EOF
 patch -p0 ${VIRTUAL_ENV}/lib/python2.6/site-packages/matplotlib/sphinxext/plot_directive.py < ${VIRTUAL_ENV}/plot_directive.patch
 rm ${VIRTUAL_ENV}/plot_directive.patch
 
+echo "To run MKL optimized code, you need to enter the path and architecture"
+echo "for the Intel optimized toolkit on your cluster. For example:"
+echo "on sugar, enter"
+echo "     /opt/intel/bin/compilervars.sh intel64"
+echo "on atlas, enter"
+echo "     /opt/intel/2015/bin/compilervars.sh intel64"
+echo "If you do not have these tools installed, just press return."
+echo 
+read -p "Enter path and architecture for Intel compilervars.sh or press return: " intel_path
+
 #Add script that sets up the MKL environment to virtualenv activate script
-echo 'source /opt/intel/bin/compilervars.sh intel64' >> ${VIRTUAL_ENV}/bin/activate
+if [ ! -z ${intel_path} ] ; then 
+  echo "source ${intel_path}" >> ${VIRTUAL_ENV}/bin/activate
+fi
 
 deactivate
 
+echo
+echo "-----------------------------------------------------------------"
 echo "PyCBC has been installed in a virtual environment in $NAME"
-echo "To run, type"
+echo
+echo "To use this virtual environment run the command"
+echo
 echo "  source $NAME/bin/activate"
 echo
 
