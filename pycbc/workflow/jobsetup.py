@@ -836,11 +836,12 @@ class PyCBCTmpltbankExecutable(Executable):
     
     current_retention_level = Executable.CRITICAL
     def __init__(self, cp, exe_name, ifo=None, out_dir=None,
-                 tags=[], write_psd=False):
+                 tags=[], write_psd=False, psd_files=None):
         super(PyCBCTmpltbankExecutable, self).__init__(cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.write_psd = write_psd
+        self.psd_files = psd_files
 
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
         node = Node(self)
@@ -895,6 +896,20 @@ class PyCBCTmpltbankExecutable(Executable):
 
         node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file',
                                  store_file=self.retain_files)
+
+        if self.psd_files is not None:
+            should_add = False
+
+            # If any of the ifos for this job are in the set
+            # of ifos for which a static psd was provided.
+            for ifo in self.ifo_list:
+                for psd_file in self.psd_files:
+                    if ifo in psd_file.ifo_list:
+                        should_add = True
+
+            if should_add:
+                node.add_input_opt('--psd-file', psd_file)
+
         return node
 
     def get_valid_times(self):
