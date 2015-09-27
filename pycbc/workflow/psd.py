@@ -19,9 +19,41 @@
 
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, File
 
-
 class CalcPSDExecutable(Executable):
     current_retention_level = Executable.CRITICAL
+
+def chunks(l, n):
+    """ Yield n successive chunks from l.
+    """
+    newn = int(len(l) / n)
+    for i in xrange(0, n-1):
+        yield l[i*newn:i*newn+newn]
+    yield l[n*newn-newn:]
+
+def setup_psd_calculate(workflow, frame_files, ifo, segments,
+                        segment_name, out_dir,
+                        gate_files=None, tags=None)
+    
+    if workflow.cp.has_option_tags('workflow-psd', 'parallelization-factor', tags=tags):
+        num_parts = int(workflow.cp.get_option_tags('workflow-psd', 
+                                                 'parallelization-factor',
+                                                 tags=tags))
+    else:
+        num_parts = 1
+        
+    segment_lists = list(cunks(segments, num_parts)) 
+    
+    psd_files = FileList([])
+    for i, segs in enumerate(segment_lists):
+        seg_file = pycbc.events.segments_to_file(segs, 
+                               out_dir + '/%s-INSPIRAL_DATA-%s.xml' % (ifo, i), 
+                               'INSPIRAL_DATA', ifo=ifo)
+
+        psd_files += [make_psd_file(frame_files, seg_file,
+                                    segment_name, out_dir, 
+                                    gate_files=gate_files, 
+                                    tags=tags + ['PART%s' % i])]
+    return psd_files
 
 def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir,
                   gate_files=None, tags=None):
