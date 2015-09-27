@@ -19,6 +19,7 @@
 Program for running multi-detector workflow analysis through coincidence and then
 generate post-processing and plots.
 """
+import sys
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments, numpy, lal, datetime
 from pycbc.events.veto import multi_segments_to_file
@@ -110,7 +111,8 @@ time_file = wf.File(workflow.ifos, 'time', workflow.analysis_time,
                                            directory=rdir.base)
 wf.makedir(rdir.base)
 kwds = {'render-function' : 'render_text',
-        'title' : 'Search Duration (Wall Clock Time)', }
+        'title' : 'Search Duration (Wall Clock Time)', 
+        'cmd' :' '.join(sys.argv), }
 save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 
 # Get segments and find where the data is
