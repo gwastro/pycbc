@@ -184,6 +184,11 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                 parsedOverrides.append(tuple(splitOverride))
             elif len(splitOverride) == 2:
                 parsedOverrides.append(tuple(splitOverride + [""]))
+            elif len(splitOverride) > 3:
+                # Cannot have colons in either section name or variable name
+                # but the value may contain colons
+                rec_value = ':'.join(splitOverride[2:])
+                parsedOverrides.append(tuple(splitOverride[:2] + [rec_value]))
             else:
                 raise ValueError(
                     "Overrides must be of format section:option:value "
