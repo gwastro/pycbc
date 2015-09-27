@@ -1,6 +1,7 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
+import sys
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -15,6 +16,7 @@ parser.add_argument('--num-coincs-to-write', type=int)
 args = parser.parse_args()
 
 import h5py, numpy, logging, pycbc.results, pycbc.results.followup
+from pycbc.results.versioning import save_fig_with_metadata
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 from pycbc.io import hdf
 
@@ -73,8 +75,11 @@ if args.output_file.endswith('.html'):
     html_table = pycbc.results.table(columns, names, 
                                    format_strings=format_strings, page_size=10)
 
-    f = open(args.output_file, 'w')
-    f.write(html_table)
+    kwds = {'render-function' : 'render_text',
+        'title' : 'Loudest Event Table', 
+        'cmd' :' '.join(sys.argv), }
+    save_fig_with_metadata(str(html_table), args.output_file, **kwds)
+
 elif args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
     fortrigs.to_coinc_xml_object(args.output_file)
 
