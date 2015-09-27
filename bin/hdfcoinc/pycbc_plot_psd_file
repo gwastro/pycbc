@@ -56,7 +56,7 @@ ax.set_ylim(y_min * 0.5, y_min * 100)
 
 ax.legend(loc='upper right', fontsize='small')
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-    title="Spectrum",
+    title="Noise Amplitude Spectral Density",
     caption="Median amplitude spectral density plotted with a shaded region " 
               "between the 5th and 95th perentiles. ",
     cmd=' '.join(sys.argv),

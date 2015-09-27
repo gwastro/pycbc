@@ -154,7 +154,7 @@ def make_inj_table(workflow, inj_file, out_dir, tags=[]):
     node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
     workflow += node   
 
-def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None):
+def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None, title_text=None, description=None):
     """ Creates a node in the workflow for writing the segment summary
     table. Returns a File instances for the output file.
     """
@@ -166,6 +166,10 @@ def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None):
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_list_opt('--segment-files', seg_files)
     node.add_opt('--segment-names', ' '.join(seg_names))
+    if description:
+        node.add_opt('--description', ' '.join(description))
+    if title_text:
+        node.add_opt('--title-text', ' '.join(title_text))
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     return node.output_files[0]
