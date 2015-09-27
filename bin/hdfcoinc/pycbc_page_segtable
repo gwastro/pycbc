@@ -35,8 +35,12 @@ from pycbc.workflow import fromsegmentxml
 parser = argparse.ArgumentParser()
 parser.add_argument('--segment-files', type=str, nargs="+",
                         help='XML files with a segment definer table to read.')
-parser.add_argument('--segment-names', type=str, nargs="+", required=False,
+parser.add_argument('--segment-names', type=str, nargs="+", required=False, default="",
                         help='Names of segments in the segment definer table.')
+parser.add_argument('--description', type=str, required=False, default="",
+                        help='Additional descriptive text for caption.')
+parser.add_argument('--title-text', type=str, required=False,
+                        help='Additional text to append to title.')
 parser.add_argument('--output-file', type=str,
                         help='Path of the output HTML file.')
 opts = parser.parse_args()
@@ -51,7 +55,7 @@ columns = (('Name', []),
            ('L1 Time (s)', []),
            ('H1L1 Time (s)', []),
 )
-caption = "This table shows the cumulative amount of time for each segment. Shown are: "
+caption = "This table shows the cumulative amount of time for each segment. Shown are:"
 
 # FIXME: set IFO list
 ifos = ['H1', 'L1']
@@ -99,10 +103,9 @@ for segment_name in opts.segment_names:
         segs = segs.coalesce() & segs_tmp.coalesce()
 
     # put comment in caption
-    caption += segment_name
+    caption += " " + segment_name
     if comment_dict[key] != None:
         caption += " ("+comment_dict[key]+")"
-    caption += " "
 
     # get length of time of segments in seconds
     h1_len = abs(segs['H1'])
@@ -120,10 +123,17 @@ keys = [numpy.array(key, dtype=type(key[0])) for key,_ in columns]
 vals = [numpy.array(val, dtype=type(val[0])) for _,val in columns]
 
 # write HTML table
+title = 'Segment Summary'
+caption += '.'
+if opts.title_text:
+    title = title + ": " + opts.title_text
+if opts.description:
+   caption = caption + " " + opts.description
+
 fig_kwds = {}
 html_table = pycbc.results.table(vals, keys, page_size=10)
 save_fig_with_metadata(str(html_table), opts.output_file,
                      fig_kwds=fig_kwds,
-                     title='Segments Table',
+                     title=title,
                      cmd=' '.join(sys.argv),
                      caption=caption)
