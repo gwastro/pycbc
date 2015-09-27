@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+""" Merge hdf psd files
+"""
+import logging, argparse, numpy, h5py, pycbc.types
+from pycbc.version import git_verbose_msg as version
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action='version', version=version)
+parser.add_argument('--verbose', action="store_true")
+parser.add_argument('--psd-files', nargs='+')
+parser.add_argument("--output-file", required=True)
+
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+outf = h5py.File(args.output_file, 'w')
+inc = {}
+start, end = {}, {}
+for psd_file in args.psd_files:
+    f = h5py.File(psd_file, 'r')
+    ifo = f.keys()[0]
+    if ifo not in inc:
+        inc[ifo] = 0
+        start[ifo], end[ifo] = [], []
+    
+    for rkey in f[ifo].keys():
+        psd = pycbc.types.load_frequencyseries(psd_file, group=rkey)
+    
+        key = ifo + '/psds/' + str(inc[ifo])
+        outf.create_dataset(key, data=psd,
+                         compression='gzip', compression_opts=9, shuffle=True)
+                         
+        s = int(psd.epoch)
+        e = int(s + 1.0 / psd.delta_f)
+                         
+        outf[key].attrs['epoch'] = s
+        outf[key].attrs['delta_f'] = float(psd.delta_f)
+        start[ifo].append(s)
+        end[ifo].append(s)
+        
+        inc[ifo] += 1
+
+for ifo in start:    
+    outf[ifo + '/start_time'] = numpy.array(start[ifo], dtype=numpy.uint32)
+    outf[ifo + '/end_time'] = numpy.array(end[ifo], dtype=numpy.uint32)
+
+outf.attrs['low_frequency_cutoff'] = f.attrs['low_frequency_cutoff']
+
+logging.info('Done!')
+
