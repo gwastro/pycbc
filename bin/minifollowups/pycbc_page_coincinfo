@@ -129,4 +129,5 @@ html += str(pycbc.results.static_table(table, headers))
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         cmd = ' '.join(sys.argv),
-                        title = 'Coincident event %s' % (args.n_loudest + 1))
+                        title = 'Parameters of Coincident Event Ranked %s' % (args.n_loudest + 1),
+                        caption = 'Parameters of the event ranked number %s by the search. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1))
