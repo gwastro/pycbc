@@ -78,9 +78,8 @@ pylab.grid()
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="%s bin, FAR vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank", 
      caption="Mapping between the ranking statistic and false alarm rate: "
-             "Blue triangles represent the zerola analysis. The solid line is "
-             "the background inclusive of zerolag events, and the grey line "
-             "excludes zerolag triggers. The error bars are a simple sqrt(N) of the "
+             "Blue triangles (if present) represent triggers from the zero-lag (foreground) analysis. Solid crosses show "
+             "the background inclusive of zerolag events, and grey crosses show the background constructed without triggers that are coincident in the zero-lag data. The error bars (when shown)  are a simple sqrt(N) of the "
              "background. They do not represent errors for the foreground.",
      cmd=' '.join(sys.argv))
              
