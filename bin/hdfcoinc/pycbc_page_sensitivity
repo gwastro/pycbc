@@ -221,7 +221,7 @@ for j in range(len(args.bins)-1):
             ylabel = "Sensitive Volume (Mpc$^3$)"
             reach, ehigh, elow = vols, vol_errors, vol_errors
         elif args.dist_type == 'vt':
-            ylabel = "Volume-Time (yr-Mpc$^3$)"
+            ylabel = "Volume $\\times$ Time (yr Mpc$^3$)"
             pylab.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
             t = f.attrs['foreground_time_exc'] * 3.16888e-8
             reach, ehigh, elow = vols * t, vol_errors * t, vol_errors * t
@@ -250,11 +250,12 @@ pylab.grid()
 pylab.legend(loc='lower left')
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
-     title="Sensitive Distance vs %s: binned by %s, %s estimation"
-            % (args.sig_type, args.bin_type, args.integration_method),
-     caption="Sensitive distance as a function of significance:"
+     title="Sensitive %s vs %s: binned by %s using %s method"
+            % (args.dist_type.title(), args.sig_type.upper(), args.bin_type, args.integration_method),
+     caption="Sensitive %s as a function of significance:"
              "Darker lines represent the significance without including "
              "injections in their own background, while lighter lines "
-             "include each injection (individual) in its own background. ",
+             "include each injection (individually) in it the background estimation for that signal."
+             "The integration method used is based on %s." % (args.dist_type.title(), args.integration_method),
      cmd=' '.join(sys.argv))
 
