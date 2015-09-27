@@ -22,6 +22,9 @@ from pycbc.workflow.core import FileList, make_analysis_dir, Executable, File
 class CalcPSDExecutable(Executable):
     current_retention_level = Executable.CRITICAL
 
+class MergePSDFiles(Executable):
+    current_retention_level = Executable.CRITICAL
+
 def chunks(l, n):
     """ Yield n successive chunks from l.
     """
@@ -29,6 +32,17 @@ def chunks(l, n):
     for i in xrange(0, n-1):
         yield l[i*newn:i*newn+newn]
     yield l[n*newn-newn:]
+
+def merge_psds(workflow, files, ifo, out_dir, tags=None):
+    make_analysis_dir(out_dir)
+    tags = [] if not tags else tags
+    node = MergePSDFiles(workflow.cp, 'merge_psds',
+                         ifos=ifo, out_dir=out_dir,
+                         tags=tags).create_node()
+    node.add_input_opt('--psd-files', segment_file)
+    node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
+    workflow += node
+    return node.output_files[0]        
 
 def setup_psd_calculate(workflow, frame_files, ifo, segments,
                         segment_name, out_dir,
@@ -53,8 +67,12 @@ def setup_psd_calculate(workflow, frame_files, ifo, segments,
                                     segment_name, out_dir, 
                                     gate_files=gate_files, 
                                     tags=tags + ['PART%s' % i])]
-    return psd_files
-
+    
+    if num_parts > 1:
+        return merge_psds(workflow, psd_files, ifo, out_dir, tags=tags)
+    else:
+        return psd_files[0]
+    
 def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir,
                   gate_files=None, tags=None):
     make_analysis_dir(out_dir)

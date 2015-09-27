@@ -230,8 +230,8 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
 
     insp_data_segs[ifo] = glue.segments.segmentlist([f.metadata['data_seg'] for f in files])
 
-    psd_files += wf.setup_psd_calculate(workflow, datafind_files.find_output_with_ifo(ifo), 
-                  ifo, insp_data_segs[ifo], 'INSPIRAL_DATA', 'psds', gate_files=gate_files)
+    psd_files += [wf.setup_psd_calculate(workflow, datafind_files.find_output_with_ifo(ifo), 
+                  ifo, insp_data_segs[ifo], 'INSPIRAL_DATA', 'psds', gate_files=gate_files)]
 
     insp_data_segs[ifo] = pycbc.events.segments_to_file(insp_data_segs[ifo],
                    'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
