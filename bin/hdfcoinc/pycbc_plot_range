@@ -63,8 +63,8 @@ pylab.legend(loc="lower left")
          
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
     title = "Inspiral Range",
-    caption = "The canonical sky-averaged inspiral range for a single "
-              "detector at SNR 8",
+    caption = "The canonical sky- and orientation-averaged inspiral range for a single "
+              "detector at SNR 8. This range is comparable to the SenseMon range and a factor of 2.26 smaller than the horizon distance.",
     cmd = ' '.join(sys.argv),
     fig_kwds={'dpi':200}
     )
