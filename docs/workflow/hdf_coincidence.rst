@@ -153,19 +153,6 @@ Additional plots can be made by adding a tag. This works similary to the system 
 example you can add  [plot_sensitivity-mchirp], [plot_sensitivity-mtotal], and [plot_sensitivity-spin]
 sections to make three versions of the plot.
 
-=====================================
-Workflow Generation an Planning
-=====================================
-
-Configure a two-detector search using a single fixed template bank for all ifos
-and the entire analysis. Follow the standard module configurations up through
-the inspiral stage of the workflow.
-
-Add '--enable-hdf-post-processing' to the 'pycbc_make_coinc_workflow' invocation and proceed with the standard instructions.::
-
-   pycbc_make_coinc_workflow \
-   --enable-hdf-post-processing
-
 ===============================================================
 Reusing data from workflow that uses some other post-processing
 ===============================================================

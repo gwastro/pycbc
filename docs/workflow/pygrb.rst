@@ -20,22 +20,6 @@ gamma-ray burst.
 The output will be a webpage containing plots and other data files that can be
 used to understand the results of the analysis.
 
-.. note::
-    These instructions refer to code that currently resides only in the GitHub
-    repository at the following link:
- 
-    `PyGRB on GitHub <https://github.com/a-r-williamson/pycbc/tree/pygrb_dev>`_
-
-    **These instructions do not apply to the version of PyGRB currently on PyCBC
-    master branch!**
-
-This may be retreived by cloning the repository, for example using https::
-
-    git clone https://github.com/a-r-williamson/pycbc.git
-    cd pycbc
-    git checkout pygrb_dev
-    python setup.py install --prefix=/path/to/install/directory
-
 .. _howtorunpygrb:
 
 =======================
@@ -47,33 +31,11 @@ Here we document the stages needed to run the triggered coherent GRB search.
 Once PyCBC is installed, you should be able to run the following help command for the workflow generation
 script::
 
-    pygrb_make_offline_workflow --help
+    pycbc_make_offline_grb_workflow --help
 
-This should produce a help message like the following::
+This should produce a help message like the following
 
-    usage: pygrb_make_offline_workflow [-h] [--version] [-d OUTPUT_DIR]
-                                       [--config-files CONFIGFILE [CONFIGFILE ...]]
-                                       [--config-overrides [SECTION:OPTION:VALUE [SECTION:OPTION:VALUE ...]]]
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      --version             show program's version number and exit
-      -d OUTPUT_DIR, --output-dir OUTPUT_DIR
-                            Path to output directory.
-
-    workflow:
-      Options needed for workflow setup.
-
-      --config-files CONFIGFILE [CONFIGFILE ...]
-                            List of localconfig files to be used in analysis.
-      --config-overrides [SECTION:OPTION:VALUE [SECTION:OPTION:VALUE ...]]
-                            List of section,option,value combinations to add into
-                            the configuration file. Normally the gps start and end
-                            times might be provided this way, and user specific
-                            locations (ie. output directories). This can also be
-                            provided as SECTION:OPTION or SECTION:OPTION: both of
-                            which indicate that the corresponding value is left
-                            blank.
+.. command-output:: pycbc_make_offline_grb_workflow --help
 
 This outlines the command line arguments that may be passed to the executable.
 The majority of options passed to the workflow will come from configuration
@@ -323,7 +285,7 @@ provide this too::
 If you are using locally editted or custom configuration files then you can
 create the workflow from within the run directory using::
 
-    pygrb_make_offline_workflow \
+    pycbc_make_offline_grb_workflow \
              --config-files ${LOCAL_CONFIG_FILES} \
              --config-overrides workflow:ra:${RA} \
                                 workflow:dec:${DEC} \

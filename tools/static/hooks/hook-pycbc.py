@@ -11,7 +11,7 @@ import os
 from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
 
 # Executables that need the html assets
-needs_assets = ['pycbc_make_html_page', 'pycbc_make_hdf_coinc_workflow']
+needs_assets = ['pycbc_make_html_page', 'pycbc_make_coinc_search_workflow']
 
 # Executables that need MKL
 needs_mkl = ['pycbc_inspiral','pycbc_single_template']
