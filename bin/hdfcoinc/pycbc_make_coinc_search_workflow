@@ -24,6 +24,8 @@ import os, argparse, ConfigParser, logging, glue.segments, numpy, lal, datetime
 from pycbc.events.veto import multi_segments_to_file
 from pycbc.results import create_versioning_page, static_table
 from pycbc.results.render import render_workflow_html_template
+from pycbc.results.versioning import save_fig_with_metadata
+from pycbc.results.metadata import html_escape
 from itertools import izip_longest
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -102,13 +104,14 @@ time = workflow.analysis_time
 s, e = int(time[0]), int(time[1])
 s_utc = str(datetime.datetime(*lal.GPSToUTC(s)[0:6]))
 e_utc = str(datetime.datetime(*lal.GPSToUTC(e)[0:6]))
-time_str = '<center><h2><b>%s [%s] - %s [%s]</b></h2></center>' % (s, s_utc, e, e_utc)
+time_str = '<b>%s [%s] - %s [%s]</b>' % (s, s_utc, e, e_utc)
 time_file = wf.File(workflow.ifos, 'time', workflow.analysis_time,
                                            extension='.html',
                                            directory=rdir.base)
 wf.makedir(rdir.base)
-f = open(time_file.storage_path, 'w')
-f.write(time_str)
+kwds = {'render-function' : 'render_text',
+        'title' : 'Search Duration (Wall Clock Time)', }
+save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 
 # Get segments and find where the data is
 science_segs, data_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments")
