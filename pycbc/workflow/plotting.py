@@ -84,7 +84,7 @@ def make_spectrum_plot(workflow, psd_files, out_dir, tags=None, precalc_psd_file
     node.add_input_list_opt('--psd-files', psd_files)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
 
-    if precalc_psd_files is not None and len(precalc_psd_files) > 0:
+    if precalc_psd_files is not None and len(precalc_psd_files) == 1:
         node.add_input_list_opt('--psd-file', precalc_psd_files)
 
     workflow += node
