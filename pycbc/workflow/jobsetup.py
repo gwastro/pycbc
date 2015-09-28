@@ -171,7 +171,7 @@ def select_generic_executable(workflow, exe_tag):
         "pylal_cbc_cohptf_injcombiner"   : LegacyCohPTFInjcombiner,
         "pylal_cbc_cohptf_sbv_plotter"   : LegacyCohPTFSbvPlotter,
         "pylal_cbc_cohptf_efficiency"    : LegacyCohPTFEfficiency,
-        "pygrb_make_summary_page"  : PyGRBMakeSummaryPage
+        "pycbc_make_grb_summary_page"  : PyGRBMakeSummaryPage
     }
     try:
         return exe_to_class_map[exe_name]
