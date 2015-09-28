@@ -15,7 +15,7 @@ export LD_LIBRARY_PATH=${INST}/lib:${INST}/lib64
 export PKG_CONFIG_PATH=${INST}/lib/pkgconfig
 export PATH=/usr/lib/ccache:${PATH}:${INST}/bin
 
-rm -f ${INST}/dep_install.done
+touch ${INST}/dep_install.done
 
 if [ -f ${INST}/dep_install.done ]
 then
@@ -27,6 +27,8 @@ else
     pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
 fi
 
-source ${INST}/etc/lal-user-env.sh
+/bin/true
 
-python setup.py install
+#source ${INST}/etc/lal-user-env.sh
+
+#python setup.py install
