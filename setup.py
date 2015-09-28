@@ -37,13 +37,12 @@ from distutils.version import LooseVersion
 
 try:
     import numpy.version
-    if LooseVersion(numpy.version.version) < LooseVersion("1.6.4"):
-        print (" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
+    if numpy.version.version != '1.9.3': 
+        print (" Numpy = 1.9.3 is required for pycbc dependencies. \n"
               " We found version %s already installed. Please update \n"
-              " to a more recent version and then retry PyCBC  \n"
-              " installation. \n"
+              " to this version and then retry PyCBC installation. \n"
               " \n"
-              " Using pip: [pip install 'numpy>=1.6.4' --upgrade --user] \n"
+              " Using pip: [pip install 'numpy==1.9.3 --upgrade --user] \n"
               "" % numpy.version.version)
         exit(1)
 except ImportError:
@@ -51,21 +50,61 @@ except ImportError:
                            
 requires = ['lal.lal', 'lalsimulation.lalsimulation', 'glue', 'pylal']
 setup_requires = []
-install_requires =  setup_requires + ['Mako>=1.0.1',
-                      'argparse>=1.3.0',
-                      'decorator>=3.4.2',
-                      'scipy>=0.13.0',
-                      'unittest2',
-                      'matplotlib>=1.3.1',
-                      'numpy>=1.6.4',
-                      'pillow',
-                      'h5py>=2.5',
-                      'jinja2',
-                      'mpld3>=0.3git',
-                      'pyRXP>=2.1.0',
-                      'pycbc-pylal>=0.9.5',
-                      'pycbc-glue>=0.9.6',
-                      ]
+install_requires =  setup_requires + [
+                      'decorator==4.0.4',
+                      'numpy==1.9.3',
+                      'numpydoc==0.5',
+                      'scipy==0.16.0',
+                      'unittest2==1.1.0',
+                      'h5py==2.5.0',
+                      'alabaster==0.7.6',
+                      'argparse==1.3.0',
+                      'Babel==2.1.1',
+                      'boto==2.5.2',
+                      'Cython==0.23.2',
+                      'docutils==0.12',
+                      'dqsegdb==1.2.2',
+                      'Flask==0.10',
+                      'Flask-Cache==0.13.1',
+                      'Flask-SQLAlchemy==0.16',
+                      'funcsigs==0.4',
+                      'itsdangerous==0.21',
+                      'Jinja2==2.7',
+                      'linecache2==1.0.0',
+                      'M2Crypto==0.22.3',
+                      'Mako==1.0.2',
+                      'MarkupSafe==0.18',
+                      'matplotlib==1.4.3',
+                      'mock==1.3.0',
+                      'mpld3==0.3git',
+                      'MySQL-python==1.2.5',
+                      'nose==1.3.7',
+                      'pam==0.1.4',
+                      'pbr==1.8.0',
+                      'pegasus-wms==4.5.2',
+                      'Pillow==2.9.0',
+                      'pip==7.1.2',
+                      'psycopg2==2.6',
+                      'pyRXP==2.1.0',
+                      'pycbc-glue==0.9.6',
+                      'pycbc-pylal==0.9.5',
+                      'Pygments==2.0.2',
+                      'pyOpenSSL==0.13',
+                      'pyparsing==2.0.3',
+                      'python-cjson==1.1.0',
+                      'python-dateutil==2.4.2',
+                      'pytz==2015.6',
+                      'requests==1.2.3',
+                      'setuptools==18.2',
+                      'six==1.9.0',
+                      'snowballstemmer==1.2.0',
+                      'Sphinx==1.3.1',
+                      'sphinx-rtd-theme==0.1.9',
+                      'sphinxcontrib-programoutput==0.8',
+                      'SQLAlchemy==0.8.0',
+                      'traceback2==1.4.0',
+                      'Werkzeug==0.9.3',
+                      'WTForms==1.0.3']
 links = ['https://github.com/ligo-cbc/mpld3/tarball/master#egg=mpld3-0.3git']
 
 #FIXME Remove me when we bump to h5py > 2.5
