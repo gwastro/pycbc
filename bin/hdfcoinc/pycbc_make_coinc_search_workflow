@@ -105,13 +105,14 @@ time = workflow.analysis_time
 s, e = int(time[0]), int(time[1])
 s_utc = str(datetime.datetime(*lal.GPSToUTC(s)[0:6]))
 e_utc = str(datetime.datetime(*lal.GPSToUTC(e)[0:6]))
-time_str = '<b>%s [%s] - %s [%s]</b>' % (s, s_utc, e, e_utc)
+time_str = '<b>GPS Interval [%s,%s). UTC Interval %s - %s. Interval duration = %.3f days.</b>' % (s, e, s_utc, e_utc, float(e-s)/86400.0)
 time_file = wf.File(workflow.ifos, 'time', workflow.analysis_time,
                                            extension='.html',
                                            directory=rdir.base)
 wf.makedir(rdir.base)
 kwds = {'render-function' : 'render_text',
-        'title' : 'Search Duration (Wall Clock Time)', 
+        'title' : 'Search Workflow Duration (Wall Clock Time)', 
+        'caption' : 'Wall clock start and end times for this invocation of the workflow. The command line button shows the arguments used to invoke the workflow creation script.',
         'cmd' :' '.join(sys.argv), }
 save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 
