@@ -1122,9 +1122,15 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
             sci_segs[ifo] -= cat_segs
             
         sci_segs[ifo].coalesce()
-        seg_ok_path = os.path.abspath(os.path.join(out_dir, '%s-SCIENCE-OK.xml' % ifo))
-        seg_files += [segments_to_file(sci_segs[ifo], seg_ok_path, 
-                                          "SCIENCE_OK", ifo=ifo)]  
+        seg_ok_path = os.path.abspath(os.path.join(out_dir,
+                                                   '%s-SCIENCE-OK.xml' % ifo))
+        curr_url = urlparse.urlunparse(['file', 'localhost', seg_ok_path,
+                          None, None, None])
+        curr_file = OutSegFile(ifo, 'SCIENCE_OK', workflow.analysis_time,
+                               curr_url, segment_list=sci_segs[ifo],
+                               tags=tags)
+        curr_file.toSegmentXml()
+        seg_files += [curr_file]
 
     if segments_method == 'ALL_SINGLE_IFO_TIME':
         pass
