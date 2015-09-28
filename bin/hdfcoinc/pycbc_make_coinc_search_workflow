@@ -73,7 +73,9 @@ time_file = wf.File(workflow.ifos, 'time', workflow.analysis_time,
                                            directory=rdir.base)
 wf.makedir(rdir.base)
 kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)', 
-        'caption' : 'Wall clock start and end times for this invocation of the workflow. The command line button shows the arguments used to invoke the workflow creation script.',
+        'caption' : "Wall clock start and end times for this invocation of the workflow. "
+                    " The command line button shows the arguments used to invoke the workflow "
+                    " creation script.",
         'cmd' :' '.join(sys.argv), }
 save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 
