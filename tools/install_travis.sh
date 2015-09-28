@@ -15,10 +15,15 @@ export LD_LIBRARY_PATH=${INST}/lib:${INST}/lib64
 export PKG_CONFIG_PATH=${INST}/lib/pkgconfig
 export PATH=/usr/lib/ccache:${PATH}:${INST}/bin
 
+rm -f ${INST}/dep_install.done
+
 if [ -f ${INST}/dep_install.done ]
 then
     echo "Found cache of installed dependencies, using it"
 else
+    # Install needed version of numpy
+    pip install 'numpy==1.9.3 --upgrade --user'
+
     # install the version of swig that for some reason we have to use
 
     cd ${SRC}
@@ -53,8 +58,10 @@ else
     # Install lalsuite
 
     cd ${SRC}
-    git clone -q https://github.com/ahnitz/lalsuite.git
+    git clone -q https://github.com/lscsoft/lalsuite.git
     cd lalsuite
+    git checkout lalsuite_o1_branch
+
     ./00boot
     ./configure -q --prefix=${INST} --enable-swig-python \
         --disable-lalstochastic --disable-lalinference --disable-laldetchar \
