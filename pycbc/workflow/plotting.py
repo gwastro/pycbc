@@ -167,9 +167,9 @@ def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None, title_tex
     node.add_input_list_opt('--segment-files', seg_files)
     node.add_opt('--segment-names', ' '.join(seg_names))
     if description:
-        node.add_opt('--description', description)
+        node.add_opt('--description', "'" + description + "'")
     if title_text:
-        node.add_opt('--title-text', title_text)
+        node.add_opt('--title-text', "'" + title_text + "'")
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     return node.output_files[0]
