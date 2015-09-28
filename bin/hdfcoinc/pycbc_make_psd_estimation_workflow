@@ -161,6 +161,10 @@ veto_summ_table = pycbc.workflow.make_seg_table(
 result_plots += [(seg_summ_table, veto_summ_table)]
 
 two_column_layout('plots', result_plots)
+
+for psd_file in psd_files:
+    os.symlink(psd_file.storage_path, os.path.join('plots', psd_file.name))
+
 pycbc.workflow.make_results_web_page(finalize_workflow,
                                      os.path.join(os.getcwd(),
                                      'plots'))
