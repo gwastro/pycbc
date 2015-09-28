@@ -17,7 +17,6 @@
 """
 import os.path
 from itertools import izip_longest
-from pycbc.results.render import render_workflow_html_template
 
 def two_column_layout(path, cols):
     """ Make a well layout in a two column format
@@ -32,6 +31,7 @@ def two_column_layout(path, cols):
         side of a row in the well.html page.
     """
     path = os.path.join(os.getcwd(), path, 'well.html')
+    from pycbc.results.render import render_workflow_html_template
     render_workflow_html_template(path, 'two_column.html', cols)
 
 def single_layout(path, files):
