@@ -15,8 +15,6 @@ export LD_LIBRARY_PATH=${INST}/lib:${INST}/lib64
 export PKG_CONFIG_PATH=${INST}/lib/pkgconfig
 export PATH=/usr/lib/ccache:${PATH}:${INST}/bin
 
-rm -f ${INST}/dep_install.done
-
 if [ -f ${INST}/dep_install.done ]
 then
     echo "Found cache of installed dependencies, using it"
