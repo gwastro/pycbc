@@ -19,11 +19,14 @@
 Program for running multi-detector workflow analysis through coincidence and then
 generate post-processing and plots.
 """
+import sys
 import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments, numpy, lal, datetime
 from pycbc.events.veto import multi_segments_to_file
 from pycbc.results import create_versioning_page, static_table
 from pycbc.results.render import render_workflow_html_template
+from pycbc.results.versioning import save_fig_with_metadata
+from pycbc.results.metadata import html_escape
 from itertools import izip_longest
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -102,13 +105,15 @@ time = workflow.analysis_time
 s, e = int(time[0]), int(time[1])
 s_utc = str(datetime.datetime(*lal.GPSToUTC(s)[0:6]))
 e_utc = str(datetime.datetime(*lal.GPSToUTC(e)[0:6]))
-time_str = '<center><h2><b>%s [%s] - %s [%s]</b></h2></center>' % (s, s_utc, e, e_utc)
+time_str = '<center><p><b>GPS Interval [%s,%s). UTC Interval %s - %s. Interval duration = %.3f days.</b></p></center>' % (s, e, s_utc, e_utc, float(e-s)/86400.0)
 time_file = wf.File(workflow.ifos, 'time', workflow.analysis_time,
                                            extension='.html',
                                            directory=rdir.base)
 wf.makedir(rdir.base)
-f = open(time_file.storage_path, 'w')
-f.write(time_str)
+kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)', 
+        'caption' : 'Wall clock start and end times for this invocation of the workflow. The command line button shows the arguments used to invoke the workflow creation script.',
+        'cmd' :' '.join(sys.argv), }
+save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 
 # Get segments and find where the data is
 science_segs, data_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments")
@@ -285,11 +290,15 @@ seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
 
 # make segment table for summary page
 seg_summ_table = wf.make_seg_table(workflow, [seg_summ_file], seg_summ_names,
-                        rdir['analysis_time/segments'], ['SUMMARY'])
+                        rdir['analysis_time/segments'], ['SUMMARY'],
+                        title_text='Input and output',
+                        description='This shows the total amount of input data, analyzable data, and the time for which triggers are produced.')
 veto_summ_table = wf.make_seg_table(workflow,
                         [seg_summ_file] + final_veto_file + cum_veto_files,
                         veto_summ_names, rdir['analysis_time/segments'],
-                        ['VETO_SUMMARY'])
+                        ['VETO_SUMMARY'], 
+                        title_text='Time removed by vetoes',
+                        description='This shows the time removed from the output time by the vetoes applied to the triggers.')
 
 # make segment plot for summary page
 seg_summ_plot = wf.make_seg_plot(workflow, [seg_summ_file],

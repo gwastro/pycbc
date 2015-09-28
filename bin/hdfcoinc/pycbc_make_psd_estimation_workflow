@@ -123,16 +123,15 @@ seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
 
 # make segment table for summary page
 seg_summ_table = pycbc.workflow.make_seg_table(workflow, [seg_summ_file],
-                                               seg_summ_names, 'plots',
-                                               ['SUMMARY'])
+        seg_summ_names, 'plots',
+        ['SUMMARY'],
+        title_text='Input and output time',
+        description='This shows the total amount of input data, analyzable data, and the time for which triggers are produced.')
 veto_summ_table = pycbc.workflow.make_seg_table(
         workflow, [seg_summ_file] + final_veto_file + cum_veto_files,
-        veto_summ_names, 'plots', ['VETO_SUMMARY'])
-
-# make segment plot for summary page
-seg_summ_plot = pycbc.workflow.make_seg_plot(workflow, [seg_summ_file],
-                                             'plots', seg_summ_names,
-                                             ['SUMMARY'])
+        veto_summ_names, 'plots', ['VETO_SUMMARY'],
+        title_text='Time removed by vetoes',
+        description='This shows the time removed from the output time by the vetoes applied to the triggers.')
 
 workflow.save()
 

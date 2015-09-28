@@ -39,6 +39,6 @@ pylab.xlim(data['mass1'].min(), data['mass1'].max())
 pylab.ylim(data['mass2'].min(), data['mass2'].max())
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
-    title="Template Bank Background Bins",
-    caption="",
+    title="Template Bank and Bins Used to Compute Background",
+    caption="This plot shows the template bank in the m1-m2 plane. Each template is colored by the bin that it is placed in to compute the search background. Note that the bins may be chosen in a space higher than two dimensions for spinning templates, causing apparent overlap in the m1-m2 plane.",
     cmd=' '.join(sys.argv))

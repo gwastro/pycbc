@@ -110,11 +110,12 @@ elif opts.z_var == 'max(newsnr)':
 
 ax.set_xlabel(opts.x_var)
 ax.set_ylabel(opts.y_var)
-ax.set_title(opts.z_var + ' for ' + opts.detector)
+ax.set_title(opts.z_var.title() + ' of triggers for ' + opts.detector + ' detector')
 title = '%s of %s triggers over %s and %s' \
-    % (opts.z_var, opts.detector, opts.x_var, opts.y_var)
+    % (opts.z_var.title(), opts.detector, opts.x_var.title(), opts.y_var.title())
+fig_caption = "This plot shows the %s of single detector triggers for the %s detector. %s is shown on the colorbar axis against %s and %s on the x- and y-axes." % (opts.z_var, opts.detector, opts.z_var.title(), opts.x_var, opts.y_var)
 pycbc.results.save_fig_with_metadata(fig, opts.output_file, title=title,
-                                     caption='', cmd=' '.join(sys.argv),
+                                     caption=fig_caption, cmd=' '.join(sys.argv),
                                      fig_kwds={'dpi': 200})
 
 logging.info('Done')

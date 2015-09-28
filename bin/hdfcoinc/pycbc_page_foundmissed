@@ -60,6 +60,11 @@ labels={'mchirp': 'Chirp Mass',
         'spin': 'Weighted Spin',
        }
 
+if args.missed_on_top:
+  fig_title = 'Missed and Found Injections'
+else:
+  fig_title = 'Found and Missed Injections'
+
 # For speed don't bother plotting really distant missed points
 # missed = missed[dvals[args.distance_type][missed] < dvals[args.distance_type][found].max() * 1.1]
 
@@ -80,7 +85,7 @@ if not args.gradient_far:
     points = plot.scatter(vals[args.axis_type][found], dvals[args.distance_type][found], 
                            c=color, linewidth=0, vmin=0, vmax=1,
                            marker='o', label='found', zorder=zfound)
-    caption = ("Found and missed injections: Black x's are missed injections. "
+    caption = (fig_title + ": Black x's are missed injections. "
               "Blue circles are found with IFAR < 100 years, green are < 1000 years, and "
               "red are found with IFAR >=1000 years. ")
 else:
@@ -99,9 +104,9 @@ else:
     points = plot.scatter(fvals, fdval, c=color, linewidth=0, 
                           norm=matplotlib.colors.LogNorm(),
                           marker='o', label='found', zorder=zfound)
-    caption = ("Found and missed injections: Red x's are missed injections. "
+    caption = (fig_title + ": Red x's are missed injections. "
                "Circles are found injections. The color indicates the value of "
-               "the false alarm rate" )
+               "the false alarm rate. " )
     plot.subplots_adjust(right=0.99)
     try:
         c = plot.colorbar()
@@ -110,6 +115,11 @@ else:
         # Can't make colorbar if no quiet found injections
         if len(fvals):
             raise
+
+if args.missed_on_top:
+  caption += "Missed injection are shown on top of found injections."
+else:
+  caption += "Found injections are shown on top of missed injections."
 
 ax = plot.gca()
 plot.xlabel(labels[args.axis_type])
@@ -136,7 +146,7 @@ if ('.html' in args.output_file):
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
                      fig_kwds=fig_kwds,
-                     title='Found and Missed Injections: %s vs %s' % (args.axis_type, args.distance_type),
+                     title='%s: %s vs %s' % (fig_title, args.axis_type, args.distance_type),
                      cmd=' '.join(sys.argv),
                      caption=caption)
 
