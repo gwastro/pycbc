@@ -1,0 +1,147 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2015 Francesco Pannarale
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Given an xml(.gz) table with CBC injections, this script separates them into:
+(1) (potentially) EM bright sources, i.e. BNS + (potentially) bright NSBH;
+(2) EM dim sources, i.e. BBH + dark NSBH.
+The two sets are stored into two separate output files. 
+"""
+
+__author__ = "Francesco Pannarale"
+__email__ = "francesco.pannarale@ligo.org"
+__version__ = "1.1"
+__date__ = "28.09.2015"
+
+import argparse
+import logging
+import numpy
+import pycbc
+import pycbc.inject
+import pycbc.tmpltbank.em_progenitors
+import glue.ligolw.utils
+from glue.ligolw import lsctables
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('-i', dest='inj_xml', required=True, help='Input LIGOLW injections file.')
+parser.add_argument('--output-bright', dest='output_bright', required=True,
+                  help="Output LIGOLW file containing potentially EM bright injections.")
+parser.add_argument('--output-dim', dest='output_dim', required=True,
+                  help="Output LIGOLW file containing EM dim injections.")
+parser.add_argument('--eos', dest='eos', required=True,
+                  help="Select the EOS to be used for the NS when calculating"
+                       "the remnant disk mass. Only 2H is currently supported.")
+parser.add_argument('--ns-bh-boundary', type=float, required=True,
+                  help="Mass boundary between neutron stars and black holes. "
+                       "Components below this mass are considered neutron "
+                       "stars.  Components at/above are considered black holes."
+                       "UNITS=Solar mass")
+parser.add_argument('--remnant-mass-threshold', type=float, required=True,
+                  help="Setting this filters EM dim NS-BH binaries: if the"
+                       "remnant disk mass does not exceed this value, the NS-BH"
+                       "binary is dropped from the bank.  UNITS=Solar mass")
+parser.add_argument("-z", "--write-compress", action="store_true", help="Write compressed xml.gz files.")
+parser.add_argument("-v", "--verbose", action="store_true", default=False,
+                    help="Extended standard output.")
+
+opts = parser.parse_args()
+
+log_fmt = '%(asctime)s %(message)s'
+log_date_fmt = '%Y-%m-%d %H:%M:%S'
+logging.basicConfig(level=logging.INFO, format=log_fmt, datefmt=log_date_fmt)
+
+if opts.verbose:
+    logging.info("Loading injections")
+injections = pycbc.inject.InjectionSet(opts.inj_xml)
+
+if opts.verbose:
+    logging.info("Loading neutron star equilibrium configurations")
+ns_sequence, max_ns_g_mass = pycbc.tmpltbank.em_progenitors.load_ns_sequence(opts.eos)
+
+# (Potentially) EM bright sources: table and name of the file that will store it
+output_bright = opts.output_bright
+if opts.write_compress:
+    if not output_bright.endswith('gz'):
+        output_bright = output_bright+'.gz'
+out_sim_inspiral_bright = lsctables.New(lsctables.SimInspiralTable,
+                                 columns=injections.table.columnnames)
+# EM dim sources: table and name of the file that will store it
+output_dim = opts.output_dim
+out_sim_inspiral_dim = lsctables.New(lsctables.SimInspiralTable,
+                                 columns=injections.table.columnnames)
+if opts.write_compress:
+    if not output_dim.endswith('gz'):
+        output_dim = output_dim+'.gz'
+
+for i, inj in enumerate(injections.table):
+    if opts.verbose:
+        logging.info('%d/%d', i, len(injections.table))
+    m1 = inj.mass1 
+    m2 = inj.mass2 
+    # BNS are all considered potentially EM bright
+    if numpy.logical_and(m1 < opts.ns_bh_boundary, m2 < opts.ns_bh_boundary):
+        out_sim_inspiral_bright.append(inj)
+    # NSBH systems
+    elif numpy.logical_not(numpy.logical_and(m1 >= opts.ns_bh_boundary, m2 >= opts.ns_bh_boundary)):
+        eta = inj.eta
+        s1x = inj.spin1x
+        s1y = inj.spin1y
+        s1z = inj.spin1z
+        s2x = inj.spin2x
+        s2y = inj.spin2y
+        s2z = inj.spin2z
+        incl = inj.inclination
+        # 1 = NS, 2 = BH
+        if m1 < m2:
+            NSmass = m1
+            bh_spin_magnitude = numpy.sqrt(s2x*s2x + s2y*s2y + s2z*s2z)
+            # Scalar product between spin and orbital angular momentum 
+            bh_spin_para = s2x*numpy.sin(incl)+s2z*numpy.cos(incl)
+            bh_spin_inclination = numpy.arccos(bh_spin_para/bh_spin_magnitude)
+        # 2 = NS, 1 = BH
+        else:
+            NSmass = m2
+            bh_spin_magnitude = numpy.sqrt(s1x*s1x + s1y*s1y + s1z*s1z)
+            # Scalar product between spin and orbital angular momentum 
+            bh_spin_para = s1x*numpy.sin(incl)+s1z*numpy.cos(incl)
+            bh_spin_inclination = numpy.arccos(bh_spin_para/bh_spin_magnitude)
+        # remnant_mass is the remnant disk mass - the threshold set by the user to discriminate dim and bright
+        remnant_mass = pycbc.tmpltbank.em_progenitors.remnant_mass(eta, NSmass, ns_sequence, bh_spin_magnitude, bh_spin_inclination, opts.remnant_mass_threshold)
+        if remnant_mass > 0.:
+            out_sim_inspiral_bright.append(inj)
+        else:
+            out_sim_inspiral_dim.append(inj)
+    # BBH are all considered EM dark 
+    else:
+        out_sim_inspiral_dim.append(inj)
+
+logging.info('Found %d/%d (potentially) EM bright injections.  Storing them to %s.', len(out_sim_inspiral_bright), len(injections.table), output_bright)
+logging.info('Found %d/%d EM dim injections.  Storing them to %s.', len(out_sim_inspiral_dim), len(injections.table), output_dim)
+
+if opts.verbose:
+    logging.info('Writing output')
+llw_doc = injections.indoc
+llw_root = llw_doc.childNodes[0]
+llw_root.removeChild(injections.table)
+llw_root.appendChild(out_sim_inspiral_bright)
+glue.ligolw.utils.write_filename(llw_doc, output_bright, gz=output_bright.endswith('gz'))
+llw_root.removeChild(out_sim_inspiral_bright)
+llw_root.appendChild(out_sim_inspiral_dim)
+glue.ligolw.utils.write_filename(llw_doc, output_dim, gz=output_dim.endswith('gz'))
+
+logging.info('Done')
