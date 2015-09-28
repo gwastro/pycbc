@@ -144,6 +144,9 @@ pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-
 #Install dqsegb from Duncan's repository
 pip install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
 
+#Install pycbc and glue from non-cached versions to get the rpaths correct
+pip install --no-cache pycbc-glue pycbc-pylal
+
 #Released or Development
 echo
 echo "--- downloading PyCBC -------------------------------------------"
