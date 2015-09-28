@@ -1,122 +1,445 @@
-#########################################################################
-``pycbc_make_coinc_pipedown_workflow``: A CBC analysis workflow generator
-#########################################################################
+####################################################################################
+``pycbc_make_coinc_search_workflow``: A workflow to search for gravitational waves
+####################################################################################
 
 ===============
 Introduction
 ===============
 
-The executable ``pycbc_make_coinc_pipedown_workflow`` is a tool used to analyse data from multiple detectors independently and then perform a coincidence test and various signal-based veto cuts and data quality cuts to determine whether or not a compact binary coalescence is present in the given data.
+The executable ``pycbc_make_coinc_search_workflow`` is a tool used to search
+for gravitational waves using data from a network of gravitational-wave
+detectors.  It performs all of the necessary steps in the workflow, including
+data management, template bank construction (if required), matched filtering
+and signal-based vetoes, multi-detector coincidence, data-quality cuts,
+background estimation, and software injections to test the search. Its
+ultimate task is to determine whether or not a compact binary coalescence is
+present in the given data.  The output is a webpage containing the plots that
+can be used to understand the results of the analysis
 
-The output is a webpage containing the plots that can be used to understand the results of the analysis
+.. _configurationfiles:
 
-.. _howtorunworkflow:
+------------------
+Configuration file
+------------------
 
-=======================
-How to run
-=======================
+The behavior of the workflow is controlled by a configuration file (also known as an ``ini`` file) that is made up of three types of sections: workflow, the pegasus profile and the executable options. The workflow sections control how different parts of the the workflow hang together. The pegasus profile sections are equivalent to lines you would have in a condor_submit file (e.g. requirements, storage size etc). Anything you would do in condor you would do here. The third section type maps the options to an executable.
 
-Here we document the stages needed to run ``pycbc_make_coinc_pipedown_workflow`` to generate an offline matched filtered CBC search.
+::
 
-----------------------------------------------------------------------------
-The configuration file - Do you already have configuration (.ini) file(s)?
-----------------------------------------------------------------------------
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-Yes, I already have my own local config files
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+  [pegasus_profile]
+  condor|accounting_group=ligo.dev.o1.cbc.bns_spin.pycbcoffline
 
-Great! Then copy the configuration files into your run directory::
+This is used for keeping an account of the pycbc usage
 
-    cp /path/to/config_file1.ini /path/to/config_file2.ini .
+::
 
-and set the names of these configuration files in your path. If you have more than one configuration file they must be space separated::
+  [workflow]
+  ; https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/initialization.html
+  h1-channel-name = H1:GDS-FAKE_STRAIN
+  l1-channel-name = L1:GDS-CALIB_STRAIN
+  file-retention-level = all_triggers
 
-    LOCAL_CONFIG_FILES="config_file1.ini config_file2.ini"
+You tend to put things in here which will be referred to later (but you can leave it empty). This is a nice way to keep options the same without the need to repeatedly define them. Here the L1/H1 data channel name are given. We also add an option to keep all the triggers/plots the analysis produces
 
-Now go down to :ref:`coincworkflowgenerate`.
+::
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-Yes, I would like to use the unmodified preinstalled configuration files
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+  [workflow-ifos]
+  l1 =
+  h1 =
+  
+Set up which detectors you are going to run over. A blank space after an equals sign denotes True.
 
-Set the configurations files in your path and proceed to workflow generation::
+::
 
-    INSTALLED_CONFIG_FILES="example_pycbc.ini example_inj.ini example_pipedown.ini"
+  [workflow-datafind]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/datafind.html
+  datafind-method = AT_RUNTIME_SINGLE_FRAMES
+  datafind-h1-frame-type = H1_ER_C00_AGG
+  datafind-l1-frame-type = L1_ER_C01_L1
+  datafind-check-segment-gaps = update_times
+  datafind-check-frames-exist = raise_error
+  datafind-check-segment-summary = no_test
+  
+This section defines which frames we are going to use and employs different levels of checks to see whether the data exists, there are gaps etc. 
 
-Now go down to :ref:`coincworkflowgenerate`.
+- ``‘datafind-method’`` states how we are going to find the frames. The ‘AT_RUNTIME_SINGLE_FRAMES’ means the executable returns a list of single frame files. You can however provide a cache file, but then the options need to be changed. 
+- ``‘datafind-h1-frame-type’`` refers to the frame type the H1 channel name will be found in for the time specified. Same for L1. 
+- ``‘datafind-check-segment-gaps’`` option checks to see if there are gaps in the segments from the segment database and the option ‘update_times’ will change the analysis times to skip over these gaps. 
+- ``‘datafind-check-frames-exist’`` checks to see if the frames you are looking at actually exists, and if they don’t the ‘raise_error’ option will stop the workflow. 
+- ``‘datafind-check-segment-summary’`` Checks the segment summary table and makes sure that the frames exist for all times that the segments are known
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-No, I need to make a configuration file - Editing the example files
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+::
 
-An example configuration file set is found in three parts::
+  [workflow-segments]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/segments.html
+  segments-method = AT_RUNTIME
+  segments-h1-science-name = H1:DMT-SCIENCE:1
+  segments-l1-science-name = L1:DMT-ANALYSIS_READY:1
+  segments-database-url = https://dqsegdb5.phy.syr.edu
+  segments-veto-definer-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/ER6/H1L1V1-ER6_GDS_CALIB_STRAIN.xml
+  segments-science-veto = 1
+  segments-veto-groups = 
+  segments-final-veto-group = 1
 
-    /src/dir/pycbc/workflow/ini_files/example_pycbc.ini
-    /src/dir/pycbc/workflow/ini_files/example_pipedown.ini
-    /src/dir/pycbc/workflow/ini_files/example_inj.ini
+This section does a series of checks to the segment database for the segments you need for your analysis. 
 
-These files contain all the details needed to run ``pycbc_make_coinc_pipedown_workflow``
+- ``‘segments-method’`` option should not change. 
+- ``‘segments-h1-science-name’`` option specifies the segment name at LHO we consider to flag science time. The same is given for L1. 
+- ``‘segments-data-url’`` specifies the url for the segment database we want to query. 
+- ``‘segments-veto-definer-url’`` is the url for the veto definer file we want to use for the search. 
+- ``‘segments-science-veto’`` species which category of veto you want to eliminate from your search before it is performed to consider the data science. In this instance, 1 denotes that all the times of Cat 1 vetoes. Time vetoed here is not used in any part of the analysis, and is treated as if it were not collected. 
+- ``‘segments-veto-groups’`` is an option you can populate with different veto categories and diagnostic plots will be made after each veto is employed. 
+- ``‘segments-final-veto-group’`` is an important option as the vetoes defined here will be used to remove triggers from the search before coincidence is performed. An option of 1 will remove all Cat 1 veto times from the analysis before it is performed. If you want to add cat 2 then the option is 12.
 
-.. note::
+::
 
-    If you are unfamiliar with pycbc workflows, look through these files.
-    example_pipedown.ini will look familiar if you are used to ihope workflows.
+  [workflow-tmpltbank]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
+  tmpltbank-method=PREGENERATED_BANK
+  tmpltbank-pregenerated-bank=/home/jveitch/projects/mdc/spin/tmpltbanks/nonspin/BNS_NonSpin_30Hz_earlyaLIGO.xml
 
-* example_pycbc.ini contains options that are used when running the pycbc.workflow parts of the workflow
-* example_pipedown.ini contains options that are used when running pipedown
-* example_inj.ini contains the parameters used when generating simulation files
+This section specifies which template bank to use
 
-Alternatively, if you want to run with lalapps executables replace example_pycbc.ini with::
+- ``’tmpltbank-method’`` option specifies whether you want to use a regenerated bank or to make it on the fly. In O1 we will be us a pregenerated bank. 
+- ``‘tmpltbank-pregnerated-bank’`` specifies the location of the xml with the pregenerated bank. Note that this exact location is only valid for SUGAR, and that in general one must provide their own template bank. 
 
-   example_lalapps.ini
+::
 
-If you want to run in this default configuration please jump down the "Generate the workflow".
+  [workflow-splittable]
+  splittable-method = IN_WORKFLOW
+  splittable-num-banks = 2
 
-If you want to run on non-S6 data, or want to analyse a different set of ifos, you will have to edit some additional options::
+This section sets the options for splitting the bank to help with computational costs.
 
-    [workflow]
-    h1-channel-name = H1:LDAS-STRAIN
-    l1-channel-name = L1:LDAS-STRAIN
+- ``‘splittable-method’`` tells you the method by which to split the bank, in this instance it is IN_WORKFLOW. If you do not want to split the bank, change this option to NOOP
+- ``‘splittable-num-banks’`` specifies how many banks to split the original bank into.
 
-    [workflow-ifos]
-    ; This is the list of ifos to analyse
-    h1 =
-    l1 =
+::
 
-    [workflow-datafind]
-    datafind-h1-frame-type = H1_LDAS_C02_L2
-    datafind-l1-frame-type = L1_LDAS_C02_L2
+  [workflow-matchedfilter]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/matched_filter.html
+  matchedfilter-method=WORKFLOW_INDEPENDENT_IFOS
+  min-analysis-segments = 5
+  max-analysis-segments = 5
+  output-type = hdf
 
-    [workflow-segments]
-    segments-H1-science-name = H1:DMT-SCIENCE:4
-    segments-L1-science-name = L1:DMT-SCIENCE:4
-    segments-V1-science-name = V1:ITF_SCIENCEMODE
-    segments-database-url = https://segdb.ligo.caltech.edu
-    segments-veto-definer-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S6/H1L1V1-S6_CBC_LOWMASS_B_OFFLINE-937473702-0.xml
+This section defines how the matched filter is going to be performed. Whether it is going to be independent for each detector, and also how the analysis is actually going to be separated in to chunks given the data available.
 
-    ALL the [tisi], [tisi-zerolag], [tisi-slides] sections (potentially)
+- ``‘matched-filter-method’`` defines where the data is going to be separated and searched over, in this instance the data for each IFO will be considered independently and in the workflow
+- ``‘min-analysis-segments’`` defines the minimum number of overlapping chunks you separate the data in to to analyze. This is a proxy for segment length. In this instance 5 has been stated. Therefore if the data cannot be split in to 5 overlapping chunks the code skips over the data. To understand how much time this is you need to look in the [inspiral] options and consider the segment-length and padding options specified. ‘max-analysis-segments’ is the same but for the maximum number of overlapping chunks. Be aware if you lower/raise either of these numbers you will affect the psd estimation. 
+- ``‘output-type’`` is the format of the output trigger files from the matched filter search
 
-To run through this
+::
 
-* The ``[workflow-ifos]`` section supplies which ifos will be analysed if data is found and available.
-* The ``X1-channel-name`` options are the h(t) channel name in the frames
-* The ``datafind-X1-frame-type`` is the type of the frames for use when calling gw_data_find
-* The ``segments-X1-science-name`` is the flag used to store science times in the segment database
-* The ``segments-database-url`` points to the segment database
-* The ``segments-veto-definer-url`` points to the url where the veto-definer file can be found.
-* The ``[tisi]`` sections give instructions to the workflow module on how to set up what time slides will be performed. See :ref:`workflowtimeslidesmod` for more details on how to supply this for other situations. Normally you will just need to add or remove detectors.
+  [workflow-coincidence]
+  ; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/coincidence.html
+  parallelization-factor = 10
 
-The remaining options affect how the jobs run, these should not be edited unless you know what you are doing ... but can freely be added if you do know what you are doing and want to change something. To find out more details about the possible options for any stage of the workflow, follow the links at :ref:`workflowhomepage`.
+This part of the workflow looks for coincidence between templates between detectors. All coincidences are kept. If you have a large template bank you probably want make the ``‘parallelization-factor’`` large
 
-Now you have configuration files and can follow the same instructions as above. That is: 
+::
 
-Copy the configuration files into your run directory::
+  [workflow-injections]
+  injections-method=IN_WORKFLOW
 
-    cp /path/to/weekly_ahope.ini /path/to/inj.ini /path/to/pipedown.ini .
+This section deals with software injections. Here you are specifying whether to use either pregenerated injections sets or ones made within the workflow itself. In this case, we will use one that is created within the workflow. 
 
-and set the names of these configuration files in your path. If you have more than one configuration file they must be space separated::
+::
 
-    LOCAL_CONFIG_FILES="weekly_ahope.ini inj.ini pipedown.ini"
+  [executables]
+  ; setup of condor universe and location of executables
+  inspiral          = ${which:pycbc_inspiral}
+  injections = ${which:lalapps_inspinj}
+  splittable = ${which:pycbc_splitbank}
+  segment_query = ${which:ligolw_segment_query_dqsegdb}
+  segments_from_cats = ${which:ligolw_segments_from_cats_dqsegdb}
+  llwadd = ${which:ligolw_add}
+  ligolw_combine_segments = ${which:ligolw_combine_segments}
+  bank2hdf = ${which:pycbc_coinc_bank2hdf}
+  hdfinjfind = ${which:pycbc_coinc_hdfinjfind}
+  coinc = ${which:pycbc_coinc_findtrigs}
+  statmap = ${which:pycbc_coinc_statmap}
+  statmap_inj = ${which:pycbc_coinc_statmap_inj}
+  plot_sensitivity = ${which:pycbc_page_sensitivity}
+  plot_foundmissed = ${which:pycbc_page_foundmissed}
+  plot_snrifar = ${which:pycbc_page_snrifar}
+  page_foreground = ${which:pycbc_page_foreground}
+  page_injections = ${which:pycbc_page_injtable}
+  hdf_trigger_merge = ${which:pycbc_coinc_mergetrigs}
+  plot_snrchi = ${which:pycbc_page_snrchi}
+  plot_coinc_snrchi = ${which:pycbc_page_coinc_snrchi}
+  plot_segments = ${which:pycbc_page_segments}
+  results_page = ${which:pycbc_make_html_page}
+
+This section defines where each of the executables live; it tells the workflow which files to process. It might be worth checking you can find all of these paths before you set the code running. 
+
+The following options are those associated to a given executable. 
+
+::
+
+  [llwadd]
+  [datafind]
+  urltype=file
+
+This is the format for the return of the data find executable - you want a file.
+
+::
+
+  [segments_from_cats]
+
+Some sections are left empty. That is fine, but you have to define each option otherwise the code will complain
+
+::
+
+  [ligolw_combine_segments]
+
+  [splittable]
+  ; options for splittable job
+  random-sort =
+
+This option randomly sorts the bank to be split up before processing
+
+::
+
+  [injections]
+  waveform = SpinTaylorT4threePointFivePN
+  
+Define the waveforms you want to use for injections
+
+::
+
+  [injections-bnslininj]
+  f-lower = 20
+  min-distance = 1000
+  max-distance = 150000
+  d-distr = uniform
+  l-distr = random
+  i-distr = uniform
+  min-mass1 = 1.0
+  max-mass1 = 3.1
+  min-mass2 = 1.0
+  max-mass2 = 3.1
+  m-distr = componentMass
+  min-mtotal = 2.0
+  max-mtotal = 6.2
+  disable-spin =
+  time-step = 89.155
+  time-interval = 10
+  seed = 1234
+  
+These are the injections parameters you want to define. Only defining ones which aren’t so obvious
+
+- ``f-lower`` = low frequency cut off
+- ``min-distance`` =  (kpc)
+- ``max-distance`` = (kpc)
+- ``d-distr`` = the distance distribution of the injections
+- ``l-distr`` = the distribution of injections in the sky
+- ``i-distr`` = inclination of the injection 
+- ``time-step`` = time between injections. This can be whatever time you want, but remember if the injections are too close together you can screw up your psd estimation. ~90s seems ok. 
+- ``time-interval`` = time interval to inject the signal. It will not always be exactly at time-step, but at a time of time-step +/- random_number(0,time-interval)
+- ``seed`` = random seed, choose different numbers to get different realizations of the same background distribution
+
+::
+
+  [inspiral]
+  ; inspiral analysis parameters -- added to all inspiral jobs
+  chisq-bins = 256
+  snr-threshold = 5.0
+  approximant = SPAtmplt
+  order = 7
+  cluster-method = window
+  cluster-window = 1.0
+  segment-length = 512
+  segment-start-pad = 64
+  segment-end-pad = 16
+  psd-estimation = median
+  psd-segment-length = 16
+  psd-segment-stride = 8
+  psd-inverse-length = 16
+  strain-high-pass = 30
+  pad-data = 8
+  processing-scheme = mkl
+  sample-rate = 4096
+  filter-inj-only =
+  low-frequency-cutoff = 40
+  
+These are the parameters you want to define for the inspiral search
+
+- ``chisq-bins`` = number of chisq bins for the standard Bruce Allen chisq
+- ``snr-threshold`` = SNR threshold
+- ``approximant`` = approximation you want to use. SPAtmplt is stationary phase approximation template which is a fast implementation of Taylor F2.
+- ``order`` = PN order, the numbers are double the order. So 7=3.5PN
+- ``cluster-method`` = method over which to identify the loudest trigger - in this case a window
+- ``cluster-window`` = take a 1 second window around the loudest trigger
+- ``segment-length`` = the length of a segment you want to analyze. Remember previously we mention we want 5 overlapping segments
+- ``segment-start-pad`` = the amount of time we want to pad the start of the data by. In this instance we want to not use the first 64 seconds of data, as it will contain errors from filtering. This takes in to account the length of time we lose due to PSD corruption (16s) and the wrap around effect we have due to the template (48s) 
+- ``segment-end-pad`` = the amount of time we want to pad the end of the data by. See above.
+- ``psd-estimation`` = the method by which we want to estimate the psd
+- ``psd-segment-length`` = length of time used in each psd calculation
+- ``psd-segment-stride`` = time spacing between each psd calculation. 16s length with 8s stride implies a 50% overlap
+- ``psd-inverse-length`` = time length used to truncate the inverse FFT (that is, the time domain realization) of the psd 
+- ``strain-high-pass`` = high pass filter applied to strain data before psd estimation
+- ``pad-data`` = 8 second padding added to beginning of data to account for filter corruption for resampling and high-pass before data is broken up into chunks
+- ``processing-scheme`` = indicates which software to use for processing (MKL = math kernel library made by Intel)
+- ``sample-rate`` = sample rate of data (will be down sampled in workflow)
+- ``filter-inj-only`` = Use only segments with injections in them for matched filter
+- ``low-frequency-cutoff`` = low frequency limit for the matched filter search
+
+::
+
+  [inspiral-h1]
+  ; h1 specific inspiral parameters
+  channel-name = ${workflow|h1-channel-name}
+
+Specify the name of the channel you want to run the inspiral analysis over for H1. Here we are referring back to the name in the workflow module
+
+::
+
+  [inspiral-l1]
+  ; l1 specific inspiral parameters
+  channel-name = ${workflow|l1-channel-name}
+
+  [bank2hdf]
+  [trig2hdf]
+
+  [coinc]
+  coinc-threshold = 0.000
+
+Here we are doing exact match coincidence. So we take the light travel time between detectors and look for triggers which are coincident within this time window. The threshold defines if you want to extend the window.
+
+::
+
+  [coinc-full]
+  decimation-factor = 1000
+  loudest-keep = 200
+  timeslide-interval=1.1
+
+This section concerns time slides without injections, and its purpose is to keep a small number of timesmlide triggers for background estimation. Time slides are done at all relative offsets that are multiple of the 'timeslide-interval', which is defined here to be 1.1 seconds. We don’t store all the coincident triggers due from time slides. We keep 200 of the loudest triggers from each template time slide, given by the second option, which gives a good estimation of the background at low FAR. The top option specifies for which timeslides we will keep all triggers, to get an overall estimation of background (not just the loudest). In this instance we would keep the triggers from 1000th, 2000th, 3000th timeslide. 
+
+::
+
+  [coinc-injfull&coinc-fullinj]
+  timeslide-interval={coinc-full:timeslide-interval}
+  loudest-keep-value = 8.5
+  cluster-window = {statmap|cluster-window}
+
+This section concerns time slides with injections in the data. We assume only one injection will be coincident with a timeslide (done every 1.1 seconds - see first option) trigger and we keep its coincidence if its ranking statistic (newSNR) > 8.5 as specified in the second option. This is to limit storage of unimpactful triggers only. 
+
+::
+
+  [coinc-injinj]
+
+  [pegasus_profile-statmap&pegasus_profile-statmap_inj]
+  condor|request_memory = 20GB
+
+This is the amount of memory the jobs might take
+
+::
+
+  [statmap&statmap_inj]
+  veto-window = 0.050
+  cluster-window = 10.0
+
+This controls the final clustering after all coincidence testing. The ``cluster-window`` indicates the time window used for clustering.
+The ``veto-window`` is used to remove all coincident zero-lag triggers so that they aren't included in background estimation
+
+::
+
+  [hdfinjfind]
+  injection-window = 1.0
+
+The rest of the config file concerns plotting formats
+
+::
+
+  [page_foreground]
+  [plot_snrifar]
+
+  [plot_snrchi]
+  [plot_coinc_snrchi]
+  [plot_coinc_snrchi-inj]
+  [plot_coinc_snrchi-bkg]
+  background-front=
+  [plot_coinc_snrchi-inj&plot_coinc_snrchi-bkg&plot_snrchi]
+  newsnr-contours =  6 8 10
+
+  [plot_sensitivity]
+  sig-type = ifar
+  sig-bins = 1 3 10 30 100 300 1000 3000 10000 30000 100000
+
+  [plot_sensitivity-mchirp]
+  bin-type =  mchirp 
+  bins = 0.89 1.31 1.74 2.17 2.60 
+  min-dist = 40 
+  max-dist = 120 
+  dist-bins = 50 
+
+  [plot_sensitivity-mtotal]
+  bin-type =  total_mass
+  bins = 2 2.4 3.2 4 6 
+  min-dist = 40 
+  max-dist = 120 
+  dist-bins = 50 
+
+  [plot_sensitivity-spin]
+  bin-type =  spin
+  bins = -0.4 -0.2 0.2 0.4 
+  min-dist = 40 
+  max-dist = 120 
+  dist-bins = 50 
+
+  [plot_sensitivity-mchirp_binless]
+  bin-type =  mchirp 
+  bins = 0.89 1.31 1.74 2.17 2.60 
+  min-dist = 40 
+  max-dist = 120 
+
+  [plot_sensitivity-mtotal_binless]
+  bin-type =  total_mass
+  bins = 2 2.4 3.2 4 6 
+  min-dist = 40 
+  max-dist = 120 
+
+  [plot_sensitivity-spin_binless]
+  bin-type =  spin
+  bins = -0.4 -0.2 0.2 0.4 
+  min-dist = 40 
+  max-dist = 120  
+
+  [plot_foundmissed]
+  [plot_foundmissed-mchirp]
+  axis-type=mchirp
+  dynamic=
+  [plot_foundmissed-chirpdistmchirp]
+  axis-type=mchirp
+  dynamic=
+  distance-type=chirp_distance
+  [plot_foundmissed-time]
+  axis-type=time
+  dynamic=
+
+  [plot_foundmissed-mchirp_static]
+  axis-type=mchirp
+  log-distance=
+  [plot_foundmissed-chirpdistmchirp_static]
+  axis-type=mchirp
+  distance-type=chirp_distance
+  log-distance=
+  [plot_foundmissed-time_static]
+  axis-type=time
+  log-distance=
+
+  [hdf_trigger_merge]
+  [pegasus_profile-hdf_trigger_merge]
+  condor|request_memory = 10GB
+
+  [page_injections]
+  [plot_segments]
+
+  [results_page]
+  analysis-title="PyCBC Coincident Analysis"
+  analysis-subtitle="..."
+  
 
 .. _coincworkflowgenerate:
 
@@ -124,80 +447,69 @@ and set the names of these configuration files in your path. If you have more th
 Generate the workflow
 -----------------------
 
-When you are ready, you can generate the workflow. First we need to choose a time span. Here is an example::
+The workflow is generated by running the script ``pycbc_make_coinc_search_workflow``. This program takes the command line arguments
 
-    export GPS_START_TIME=967593543
-    export GPS_END_TIME=967679943
+.. command-output:: pycbc_make_coinc_search_workflow --help
 
-You also need to specify the directory for storing log files.
+The configuration files can either be passes as local files, or given as URLs
+to specific configuration files managed for an analysis. For example, to
+generate a workflow to search two weeks of S6D data and place the results in
+your ``public_html`` directory, run the command::
 
- * For CIT,LHO,LLO or SYR set::
+    pycbc_make_hdf_coinc_workflow --workflow-name s6d_chunk3 --output-dir output \
+      --config-files https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/s6_run_pycbc_er8_pre_release.ini \
+      https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/executables.ini \
+      https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/injections.ini \
+      https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/data_S6.ini \
+      https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/gps_times_s6d_big_dog_two_weeks.ini \
+      --config-overrides "results_page:output-path:${HOME}/public_html/s6/s6d-big-dog-weeks"
 
-    export LOGPATH=/usr1/${USER}/log
-    export PIPEDOWNTMPSPACE=/usr1/${USER}
-    mkdir -p $LOGPATH
+The configuration ``results_page:output-path`` can be changed appropriately to
+set the output web page location.
 
- * For Atlas set::
+.. note::
 
-    export LOGPATH=/local/user/${USER}/log/
-    export PIPEDOWNTMPSPACE=/local/user/${USER}
-    mkdir -p $LOGPATH 
+   To use released exectutables for production analysis, you should specify
+   the URL to an ``executables.ini`` file from the 
+   `<https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software> PyCBC Software repository_`.
 
- * For UWM set::
-
-    export LOGPATH=/people/${USER}/log/
-    export PIPEDOWNTMPSPACE=/localscratch/${USER}
-    mkdir -p $LOGPATH
-
- * On the TACC XSEDE cluster, it is recommended to store your ihope directory under the work filesystem.
-   For the TACC XSEDE cluster set::
-
-    export LIGO_DATAFIND_SERVER=tacc.ligo.org:80
-    export LOGPATH=${SCRATCH}/log
-    export PIPEDOWNTMPSPACE=/tmp
-    mkdir -p $LOGPATH
-
-You also need to choose where the html page will be generated. For example::
-
-    export HTMLDIR=/home/${USER}/public_html/ahope
-
-If you are using locally editted or custom configuration files then you can
-create the workflow using::
-
-    pycbc_make_coinc_pipedown_workflow --config-files ${LOCAL_CONFIG_FILES} \
-                              --config-overrides workflow:start-time:${GPS_START_TIME} \
-                                                 workflow:end-time:${GPS_END_TIME} \
-                                                 workflow:workflow-html-basedir:${HTMLDIR} \
-                                                 workflow:pipedown-log-path:${LOGPATH} \
-                                                 workflow:pipedown-tmp-space:${PIPEDOWNTMPSPACE}
-                                              
 .. _coincworkflowplan:
 
 -----------------------------------------
 Planning and Submitting the Workflow
 -----------------------------------------
-CD into the directory where the dax was generated::
 
-    cd ${GPS_START_TIME}-${GPS_END_TIME}
+Pegasus is used to plan and submit the workflow. To involve Pegasus to plan a
+PyCBC workflow, you use the command ``pycbc_submit_dax`` which takes the
+command line arguments
 
-From the directory where the dax was created, run the planning script::
+.. command-output:: pycbc_submit_dax --help
 
-    pycbc_submit_dax --dax weekly_ahope.dax
+Note that  you are running on a resource that mandates accounting, then you
+will also need to add a valid tag with the ``--accounting-tag`` command line
+argument. Please see
+`<https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user> this page`_. to
+determine the correct tags. These can be applied by adding the following line
+to your submit invocation.
 
-This will plan and submit your workflow to the cluster using the default temporary file directory
-for log files. If you need to set a custom logpath this can be done as follows.::
+For example, to plan and submit the workflow in the example above, change to the directory that you specified with the ``--output``
+command line option to ``pycbc_make_hdf_coinc_workflow`` and plan and submit
+the workflow::
 
-    TMPDIR=$LOGPATH pycbc_submit_dax --dax weekly_ahope.dax
-    
-If you are running on a resource that mandates accounting, then you will also need to add the
-correct metadata. Please see `this page`_. to determine the correct tags. These can be applied by adding 
-the following line to your submit invocation.
+    cd output
+    pycbc_submit_dax --accounting-group ligo.dev.o1.cbc.explore.test --dax s6d_chunk3.dax
 
-    pycbc_submit_dax --dax weekly_ahope.dax --accounting-group LIST.OF.ACCCONTING.TAGS
+.. note::
 
-.. _this page: https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user
-        
-If the workflow runs successfully, you will find the output under your html directory some time later.
+    The above example uses the accounting tag ``ligo.dev.o1.cbc.explore.test``
+    which should not be used in practice.
+
+You can monitor the status of the workflow with Pegasus Dashboard, or the
+other Pegasus tools described below. 
+
+If the workflow runs successfully, the output will be place under the
+directory specified by ``results_page:output-path`` when the workflow is
+complete.
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 Monitor and Debug the Workflow (`Detailed Pegasus Documentation <https://pegasus.isi.edu/wms/docs/latest/tutorial.php#idm78622034400>`_)
@@ -211,38 +523,6 @@ To get debugging information in the case of failures.::
 
     pegasus-analyzer /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
 
-=======================
-Post-processing
-=======================
-
------------------------------------------
-Summary page
------------------------------------------
-
-A summary page will be created at the end of your weekly workflow. The directory is specified by the evironment varaible HTMLDIR that was set when you ran weekly_ahope.py to generate the workflow. For example::
-
-    /home/${USER}/public_html/workflow
-
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-Full data summary
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
-A summary of the results are displayed in Section 3.
-
-Section 3.1 displays the search sensitivity of the detectors over time. The inspiral horizion distance is the distance an optimally-oriented equal-mass system would give SNR equal to 8.
-
-Section 3.2 to 3.4 contain cumulative histograms of coincident triggers against IFAR (inverse false-alarm rate). The blue triangles are coincident triggers and a table of the loudest events is provided below the plot. We use time slides to find background triggers and calculate the false-alarm rate as the number of triggers louder than a given trigger divided by the total background time. If a trigger is louder than all background triggers then we set its false-alarm rate to 0. A low false-alarm rate gives a high IFAR so we plot the trigger with an arrow pointing to the right. This indicates that its true IFAR is somewhere to the right.
-
-Section 3.2 includes hardware injections, so note that a number of these signals are recovered with 0 combined false-alarm rate. These would be detection candidates if they were not hardware injections.
-
-Section 3.4 removes hardware injections and times marked by CAT_3 vetoes.
-
-Section 3.5 shows the recovery of the simulated signals that were added in this workflow.
-
-=============================
-Workflow visualization
-=============================
-
 -----------------------------
 Pegasus Dashboard
 -----------------------------
@@ -253,9 +533,9 @@ The software can be obtained from a separate pegasus package here <https://githu
 
 Pegasus Dashboard is currently installed on sugar. To view your Pegasus Dashboard, in a browser go to::
 
-    https://sugar.phy.syr.edu/pegasus/~albert.einstein
+    https://sugar.phy.syr.edu/pegasus/u/albert.einstein
 
-You will be greet with a page that has a table of all your workflows that were submitted from sugar. You can view the details of a workflow by clicking on the link in the Workflow Details column of the table.
+This shows a page that has a table of all your workflows that were submitted from sugar. You can view the details of a workflow by clicking on the link in the Workflow Details column of the table.
 
 Clicking on the Workflow Details link will take you to a webpage that gives a high-level overview of the workflow, telling you how many many jobs succeeded, fail, the submit directory, etc. There is a table with tabs at the bottom of the page. If you click the tabs Failed, Running, and Successful the page will generate a table that lists all the failed, running, and successful jobs in the workflow respectively. You also have the ability to search the table for a particular kind of job using the Search bar.
 
@@ -345,7 +625,8 @@ Select the files you want to reuse from the prior run
 -----------------------------------------------------
 
 Locate the directory of the run that you would like to reuse. There is a file
-called ${GPS_START_TIME}-${GPS_END_TIME}/output.map. This file contains a 
+called ``output.map`` in the directory that you specified with the
+``--output`` argument to ``pycbc_make_coinc_search_workflow``. This file contains a 
 listing of all of the data products of the prior workflow, and can be used to tell
 pegasus to skip regenerating them.
 
@@ -370,7 +651,7 @@ Plan the workflow
 
 From the directory where the dax was created, now plan the workflow with an additional argument as follows.::
 
-    pycbc_basic_pegasus_plan weekly_ahope.dax $LOGPATH --cache /path/to/prior_data.map
+    pycbc_submit_dax --accounting-group ligo.dev.o1.cbc.explore.test --dax s6d_chunk3.dax --cache /path/to/prior_data.map
 
 Follow the remaining :ref:`coincworkflowplan` instructions to submit your reduced
 workflow.

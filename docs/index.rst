@@ -50,10 +50,9 @@ binaries should read the documentation in the links at:
 .. toctree::
    :maxdepth: 1
 
-   pycbc_make_psd_estimation_workflow
-   pycbc_make_sngl_workflow
-   pycbc_make_coinc_search_workflow
-   pycbc_make_coinc_pipedown_workflow
+   workflow/pycbc_make_psd_estimation_workflow
+   workflow/pycbc_make_coinc_search_workflow
+   workflow/pycbc_make_sngl_workflow
 
 Users who are interested in tools that PyCBC provides for various other
 analysis tasks (e.g. template bank generation, hardware injections, and testing
@@ -61,6 +60,7 @@ template banks) should read the documentation at:
 
 .. toctree::
    :maxdepth: 1
+
    tmpltbank
    hwinj
    uberbank_verify
@@ -93,6 +93,7 @@ read the documentation at:
 
 .. toctree::
    :maxdepth: 1
+
    frame
    formats/hdf_format
 
