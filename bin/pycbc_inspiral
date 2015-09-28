@@ -172,11 +172,12 @@ def associate_psd(strain_segments, gwstrain, segments, nsegs, flen, delta_f, flo
     psds = []
     for psegs in groups:
         strain_part = gwstrain[psegs[0].start:psegs[-1].stop]
-        ppsd = psd.from_cli(opt, flen, delta_f, flow, strain_part, DYN_RANGE_FAC)
+        ppsd = psd.from_cli(opt, flen, delta_f, flow, 
+                            strain_part, DYN_RANGE_FAC).astype(float32)
         psds.append(ppsd)
         for seg in segments:
             if seg.seg_slice in psegs:
-                seg.psd = ppsd.astype(float32)
+                seg.psd = ppsd
     return psds
 
 
