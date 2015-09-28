@@ -381,6 +381,7 @@ setup (
                'bin/pycbc_inspinjfind',
                'bin/pycbc_write_results_page',
                'bin/pycbc_upload_xml_to_gracedb',
+               'bin/pycbc_dark_vs_bright_injections',
                'bin/gstlal/pycbc_calculate_likelihood',
                'bin/gstlal/pycbc_combine_likelihood',
                'bin/gstlal/pycbc_compute_far_from_snr_chisq_histograms',
