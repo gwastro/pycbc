@@ -26,8 +26,11 @@ import os.path
 import argparse
 import logging
 import glue.segments
+import datetime
+import lal, sys
 from pycbc.events.veto import multi_segments_to_file
 from pycbc.events import segments_to_file
+from pycbc.results import save_fig_with_metadata, two_column_layout
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
@@ -47,6 +50,27 @@ finalize_workflow = pycbc.workflow.Workflow(args, 'finalization')
 
 pycbc.workflow.makedir(args.output_dir)
 os.chdir(args.output_dir)
+
+# layout list
+result_plots = []
+
+# put start / end time at top of summary page
+time = workflow.analysis_time
+s, e = int(time[0]), int(time[1])
+s_utc = str(datetime.datetime(*lal.GPSToUTC(s)[0:6]))
+e_utc = str(datetime.datetime(*lal.GPSToUTC(e)[0:6]))
+time_str = '<center><p><b>GPS Interval [%s,%s). UTC Interval %s - %s. Interval duration = %.3f days.</b></p></center>' % (s, e, s_utc, e_utc, float(e-s)/86400.0)
+time_file = pycbc.workflow.File(workflow.ifos, 'time', workflow.analysis_time,
+                                           extension='.html',
+                                           directory='plots')
+pycbc.workflow.makedir('plots')
+kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)', 
+        'caption' : "Wall clock start and end times for this invocation of the workflow. "
+                    " The command line button shows the arguments used to invoke the workflow "
+                    " creation script.",
+        'cmd' :' '.join(sys.argv), }
+save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
+result_plots += [(time_file,)]
 
 # Get segments and find where the data is
 science_segs, data_segs, science_seg_file = \
@@ -95,6 +119,7 @@ pycbc.workflow.make_average_psd(workflow, psd_files, 'psds',
                                 output_fmt='.xml.gz')
 
 s = pycbc.workflow.make_spectrum_plot(workflow, psd_files, 'plots')
+result_plots += [(s,)]
 
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
     pycbc.workflow.make_segments_plot(workflow, files, 'plots',
@@ -133,14 +158,20 @@ veto_summ_table = pycbc.workflow.make_seg_table(
         veto_summ_names, 'plots', ['VETO_SUMMARY'],
         title_text='Time removed by vetoes',
         description='This shows the time removed from the output time by the vetoes applied to the triggers.')
+result_plots += [(seg_summ_table, veto_summ_table)]
 
+two_column_layout('plots', result_plots)
 pycbc.workflow.make_results_web_page(finalize_workflow,
                                      os.path.join(os.getcwd(),
-                                     rdir.base))
+                                     'plots'))
 
 container += workflow
 container += finalize_workflow
 
-workflow.save()
+import Pegasus.DAX3 as dax
+dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
+container._adag.addDependency(dep)
+
+container.save()
 
 logging.info("Done")
