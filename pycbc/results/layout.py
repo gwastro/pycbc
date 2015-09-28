@@ -1,4 +1,4 @@
-# Copyright (C) 2015 Christopher M. Biwer
+# Copyright (C) 2015 Alexander Harvey Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -15,6 +15,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ This module contains result page layout and numbering helper functions
 """
+import os.path
+from itertools import izip_longest
+from pycbc.results.render import render_workflow_html_template
 
 def two_column_layout(path, cols):
     """ Make a well layout in a two column format
@@ -39,7 +42,7 @@ def single_layout(path, files):
     files: list of pycbc.workflow.core.Files
         This list of images to show in order within the well layout html file.
     """
-    layout(path, [(f,) for f in files])
+    two_column_layout(path, [(f,) for f in files])
 
 def grouper(iterable, n, fillvalue=None):
     """ Group items into chunks of n length
@@ -57,7 +60,7 @@ def group_layout(path, files):
         Every two are placed on the same row.
     """
     if len(files) > 0:
-        layout(path, list(grouper(files, 2)))      
+        two_column_layout(path, list(grouper(files, 2)))      
  
 class SectionNumber(object):
     """ Class to help with numbering sections in an output page.

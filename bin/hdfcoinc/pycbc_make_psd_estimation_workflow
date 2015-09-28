@@ -22,13 +22,12 @@ portion of strain data."""
 import pycbc
 import pycbc.version
 import pycbc.workflow
-import os
+import os.path
 import argparse
 import logging
 import glue.segments
 from pycbc.events.veto import multi_segments_to_file
 from pycbc.events import segments_to_file
-
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
@@ -42,7 +41,9 @@ args = parser.parse_args()
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
-workflow = pycbc.workflow.Workflow(args, args.workflow_name)
+container = pycbc.workflow.Workflow(args, args.workflow_name)
+workflow = pycbc.workflow.Workflow(args, 'main')
+finalize_workflow = pycbc.workflow.Workflow(args, 'finalization')
 
 pycbc.workflow.makedir(args.output_dir)
 os.chdir(args.output_dir)
@@ -132,6 +133,13 @@ veto_summ_table = pycbc.workflow.make_seg_table(
         veto_summ_names, 'plots', ['VETO_SUMMARY'],
         title_text='Time removed by vetoes',
         description='This shows the time removed from the output time by the vetoes applied to the triggers.')
+
+pycbc.workflow.make_results_web_page(finalize_workflow,
+                                     os.path.join(os.getcwd(),
+                                     rdir.base))
+
+container += workflow
+container += finalize_workflow
 
 workflow.save()
 

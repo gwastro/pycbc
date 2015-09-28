@@ -31,10 +31,8 @@ import pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments, numpy, lal, datetime
 from pycbc.events.veto import multi_segments_to_file
 from pycbc.results import create_versioning_page, static_table, layout
-from pycbc.results.render import render_workflow_html_template
 from pycbc.results.versioning import save_fig_with_metadata
 from pycbc.results.metadata import html_escape
-from itertools import izip_longest
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__) 
@@ -210,7 +208,7 @@ r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], requir
 r2 = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], exclude='summ')
 
 det_summ = [(s, r[0] if len(r) != 0 else None)]
-latyou.layout(rdir['detector_sensitivity'], det_summ + list(layout.grouper(r2, 2)))    
+layout.two_column_layout(rdir['detector_sensitivity'], det_summ + list(layout.grouper(r2, 2)))    
 
 
 # run minifollowups on the output of the loudest events 
