@@ -80,6 +80,7 @@ the analyzable time is broken into 2048 s segments for PSD estimation.
     plot_range = ${which:pycbc_plot_range}
     page_segtable = ${which:pycbc_page_segtable}
     page_segplot = ${which:pycbc_page_segplot}
+    results_page = ${which:pycbc_make_html_page}
 
 The above section specifies the location of the various executables called by
 the workflow. The ``${which:X}`` syntax replaces the line with the full path to
@@ -150,6 +151,12 @@ method is the harmonic mean.
     [page_segtable]
 
     [page_segplot]
+
+    [results_page]
+    output-path=../../html
+    analysis-title="PSD Estimation"
+    analysis-subtitle="..."
+
 
 The above sections control plotting jobs.
 
