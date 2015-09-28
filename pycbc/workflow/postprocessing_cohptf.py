@@ -345,13 +345,21 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
 
             if cp.has_section("workflow-injections"):
                 for tag in injcombiner_out_tags:
+                    if "_FILTERED_" in tag:
+                        inj_set_tag = [t for t in inj_tags if \
+                                       str(tag).replace("_FILTERED_", "") \
+                                       in t][0]
+                    else:
+                        inj_set_tag = str(tag)
+                    
                     found_file = [file for file in injcombiner_outs \
                                   if tag + "_FOUND" in file.tag_str][0]
                     missed_file = [file for file in injcombiner_outs \
                                    if tag + "_MISSED" in file.tag_str][0]
                     inj_efficiency_node = inj_efficiency_jobs.create_node(\
                             clust_file, offsource_clustered, segment_dir,
-                            found_file, missed_file, tags=[out_tag, tag])
+                            found_file, missed_file, tags=[out_tag, tag,
+                                                           inj_set_tag])
                     pp_nodes.append(inj_efficiency_node)
                     workflow.add_node(inj_efficiency_node)
                     dep = dax.Dependency(parent=off_node._dax_node,
@@ -398,13 +406,20 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
         # Adding inj_efficiency job
         if cp.has_section("workflow-injections"):
             for tag in injcombiner_out_tags:
+                if "_FILTERED_" in tag:
+                    inj_set_tag = [t for t in inj_tags if \
+                                   str(tag).replace("_FILTERED_", "") in t][0]
+                else:
+                    inj_set_tag = str(tag)
+
                 found_file = [file for file in injcombiner_outs \
                               if tag + "_FOUND" in file.tag_str][0]
                 missed_file = [file for file in injcombiner_outs \
                                if tag + "_MISSED" in file.tag_str][0]
                 inj_efficiency_node = inj_efficiency_jobs.create_node(\
                         clust_file, offsource_clustered, segment_dir,
-                        found_file, missed_file, tags=[trial_tag, tag])
+                        found_file, missed_file, tags=[trial_tag, tag,
+                                                       inj_set_tag])
                 pp_nodes.append(inj_efficiency_node)
                 workflow.add_node(inj_efficiency_node)
                 dep = dax.Dependency(parent=off_node._dax_node,

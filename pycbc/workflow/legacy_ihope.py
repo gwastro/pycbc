@@ -561,13 +561,24 @@ class LegacyCohPTFEfficiency(LegacyAnalysisExecutable):
         node.add_opt('--veto-directory', seg_dir)
         node.add_opt('--segment-dir', seg_dir)
         
-        
-
         if found_file and missed_file:
             node.add_opt('--found-file', '%s' % found_file.storage_path)
             node.add_opt('--missed-file', '%s' % missed_file.storage_path)
             out_dir = "%s/output/%s/efficiency_%s" % (self.out_dir, tags[1],
                                                       tags[0])
+            if self.cp.has_option_tag('injections', 'min-distance', tags[-1]):
+                lower_dist = float(self.cp.get_opt_tag('injections',
+                        'min-distance', tags[-1]))
+                #Convert distance from kpc to Mpc then add as option
+                lower_dist /= 1e3
+                node.add_opt('--lower-inj-dist', lower_dist)
+            if self.cp.has_option_tag('injections', 'max-distance', tags[-1]):
+                upper_dist = float(self.cp.get_opt_tag('injections',
+                        'max-distance', tags[-1]))
+                #Convert distance from kpc to Mpc then add as option
+                upper_dist /= 1e3
+                node.add_opt('--upper-inj-dist', upper_dist)
+
         elif found_file or missed_file:
             if found_file:
                 present = found_file
