@@ -146,6 +146,7 @@ def select_generic_executable(workflow, exe_tag):
         'repop_coinc_expfit'       : SQLInOutExecutable,
         'ligolw_cbc_dbinjfind'         : SQLInOutExecutable,
         'lalapps_inspinj'          : LalappsInspinjExecutable,
+        'pycbc_dark_vs_bright_injections' : PycbcDarkVsBrightInjectionsExecutable,
         'pycbc_timeslides'         : PycbcTimeslidesExecutable,
         'pycbc_compute_durations'  : ComputeDurationsExecutable,
         'pycbc_calculate_far'      : PycbcCalculateFarExecutable,
@@ -1413,6 +1414,54 @@ class LalappsInspinjExecutable(Executable):
         
         node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
         node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
+        return node
+
+class PycbcDarkVsBrightInjectionsExecutable(Executable):
+    """
+    The clase used to create jobs for the pycbc_dark_vs_bright_injections Executable.
+    """
+    current_retention_level = Executable.FINAL_RESULT
+    def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
+                 tags=[]):
+        Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
+                            tags=tags)
+        self.cp = cp
+        self.out_dir = out_dir
+        self.exe_name = exe_name
+
+    def create_node(self, parent, segment, tags=[]):
+        node = Node(self)
+        if not parent:
+            raise ValueError("Must provide an input file.")
+
+        node = Node(self) 
+        # Standard injection file produced by lalapps_inspinj
+        # becomes the input here
+        node.add_input_opt('-i', parent)
+        if self.has_opt('write-compress'):
+            ext = '.xml.gz'
+        else:
+            ext = '.xml'
+        # The output are two files:
+        # 1) the list of potentially EM bright injections
+        tag=['POTENTIALLY_BRIGHT']
+        node.new_output_file_opt(segment, ext, '--output-bright',
+                                 store_file=self.retain_files, tags=tag)
+        # 2) the list of EM dim injections
+        tag=['DIM_ONLY']
+        node.new_output_file_opt(segment,
+                                 ext, '--output-dim',
+                                 store_file=self.retain_files, tags=tag)
+        # The following options are hard-coded because these values are the
+        # only ones currently available for them and correspond to the most
+        # conservatitve choices (i.e. they all disfavour tagging and
+        # injection as dim).  Having ini-file options which are necessary but
+        # not flexible would just be confusing.  When and if the use of these
+        # three options becomes more flexible, one can remove the hard-coded
+        # values.
+        node.add_opt('--eos', '2H')
+        node.add_opt('--ns-bh-boundary', '2.8346480922')
+        node.add_opt('--remnant-mass-threshold', '0.')
         return node
 
 class LigolwCBCJitterSkylocExecutable(Executable):
