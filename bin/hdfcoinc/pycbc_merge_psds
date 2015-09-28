@@ -23,7 +23,8 @@ for psd_file in args.psd_files:
         inc[ifo] = 0
         start[ifo], end[ifo] = [], []
     
-    for rkey in f[ifo].keys():
+    for rkey in f['%s/psds' % ifo].keys():
+        rkey = '%s/psds/%s' % (ifo, rkey)
         psd = pycbc.types.load_frequencyseries(psd_file, group=rkey)
     
         key = ifo + '/psds/' + str(inc[ifo])
@@ -45,6 +46,5 @@ for ifo in start:
     outf[ifo + '/end_time'] = numpy.array(end[ifo], dtype=numpy.uint32)
 
 outf.attrs['low_frequency_cutoff'] = f.attrs['low_frequency_cutoff']
-
 logging.info('Done!')
 
