@@ -82,5 +82,7 @@ pip install 'numpy==1.9.3' --upgrade
 # Install Pegasus
 pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
 
+# Needed by mock 
+pip install 'setuptools==18.2' --upgrade
 
 python setup.py install
