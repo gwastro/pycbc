@@ -53,6 +53,7 @@ binaries should read the documentation in the links at:
    workflow/pycbc_make_psd_estimation_workflow
    workflow/pycbc_make_coinc_search_workflow
    workflow/pycbc_make_sngl_workflow
+   workflow/pygrb.rst
 
 Users who are interested in tools that PyCBC provides for various other
 analysis tasks (e.g. template bank generation, hardware injections, and testing
@@ -63,7 +64,6 @@ template banks) should read the documentation at:
 
    tmpltbank
    hwinj
-   uberbank_verify
    banksim
    faithsim
 
