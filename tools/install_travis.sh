@@ -23,6 +23,8 @@ then
 else
     # Install needed version of numpy
     pip install 'numpy==1.9.3' --upgrade 
+
+    pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
 fi
 
 source ${INST}/etc/lal-user-env.sh
