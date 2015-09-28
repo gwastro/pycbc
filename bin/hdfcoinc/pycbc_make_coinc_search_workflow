@@ -53,48 +53,6 @@ finalize_workflow = wf.Workflow(args, 'finalization')
 
 wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
-
-# layout initialization / helper functions 
-def layout(path, cols):
-    path = os.path.join(os.getcwd(), path, 'well.html')
-    render_workflow_html_template(path, 'two_column.html', cols)
-
-def single_layout(path, files):
-    layout(path, [(f,) for f in files])
-
-def grouper(iterable, n, fillvalue=None):
-    args = [iter(iterable)] * n
-    return izip_longest(*args, fillvalue=fillvalue)
-    
-def group_layout(path, files):
-    if len(files) > 0:
-        layout(path, list(grouper(files, 2)))      
- 
-class SectionNumber(object):
-    def __init__(self, base, secs):
-        self.base = base
-        self.secs = secs
-        self.name = {}
-        self.count = {}
-        self.num = {}
-        
-        for num, sec in enumerate(secs):
-            self.name[sec] = '%s._%s' % (num, sec)  
-            self.num[sec] = num
-            self.count[sec] = 1
-    
-    def __getitem__ (self, path):
-        if path in self.name:
-            name = self.name[path]
-        else:
-            sec, subsec = path.split('/')
-            subnum = self.count[sec]
-            num = self.num[sec]
-            name = '%s/%s.%s_%s' % (self.name[sec], num, subnum, subsec)
-            self.count[sec] += 1
-            self.name[path] = name
-        path = os.path.join(os.getcwd(), self.base, name)
-        return path
              
 rdir = SectionNumber('results', ['configuration',
                                  'analysis_time',
