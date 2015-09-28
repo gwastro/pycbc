@@ -239,11 +239,12 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     full_segs.append(pycbc.events.segments_to_file(insp_segs[ifo], fname, name, ifo=ifo))
 
     insp_data_segs[ifo] = glue.segments.segmentlist([f.metadata['data_seg'] for f in files])
+
+    psd_files += [wf.setup_psd_calculate(workflow, datafind_files.find_output_with_ifo(ifo), 
+                  ifo, insp_data_segs[ifo], 'INSPIRAL_DATA', 'psds', gate_files=gate_files)]
+
     insp_data_segs[ifo] = pycbc.events.segments_to_file(insp_data_segs[ifo],
                    'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
-
-    psd_files += [wf.make_psd_file(workflow, datafind_files.find_output_with_ifo(ifo), 
-                        insp_data_segs[ifo], 'INSPIRAL_DATA', 'psds', gate_files=gate_files)]
 
 s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'],
                           precalc_psd_files=precalc_psd_files)
