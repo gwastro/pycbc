@@ -40,8 +40,6 @@ Now go down to :ref:`pycbcdailygenerate`.
 Yes, I would like to use the unmodified preinstalled configuration files
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-For a full list of the preinstalled configuration files, see :ref:`configuration_files`.
-
 Set the configurations files in your path and proceed to workflow generation::
 
     INSTALLED_CONFIG_FILES="sngl/example_sngl.ini"
