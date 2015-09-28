@@ -19,8 +19,6 @@ if [ -f ${INST}/dep_install.done ]
 then
     echo "Found cache of installed dependencies, using it"
 else
-    # Install needed version of numpy
-    pip install 'numpy==1.9.3' --upgrade 
 
     # install the version of swig that for some reason we have to use
 
@@ -78,4 +76,6 @@ fi
 
 source ${INST}/etc/lal-user-env.sh
 
+# Install needed version of numpy
+pip install 'numpy==1.9.3' --upgrade 
 python setup.py install
