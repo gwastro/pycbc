@@ -8,7 +8,7 @@ There are three typical use cases for PyCBC:
 2. Installing an editable version from GitHub for development.
 3. Production LIGO astrophysical searches.
 
-This page documents the first two use cases. For production analysis, users must obtain the pre-built binaries from the PyCBC server. 
+This page documents the first two use cases. For production analysis, see :ref:`using_production_binaries`.
 
 .. note::
 
