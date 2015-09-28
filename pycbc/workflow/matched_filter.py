@@ -233,7 +233,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
 
 def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                                           tmplt_banks, output_dir,
-                                          injection_file=None,
+                                          injection_file=None, gate_files=None,
                                           tags=[], link_to_tmpltbank=False,
                                           compatibility_mode=False):
     '''

@@ -30,11 +30,9 @@ import sys
 import pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments, numpy, lal, datetime
 from pycbc.events.veto import multi_segments_to_file
-from pycbc.results import create_versioning_page, static_table
-from pycbc.results.render import render_workflow_html_template
+from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.results.versioning import save_fig_with_metadata
 from pycbc.results.metadata import html_escape
-from itertools import izip_longest
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__) 
@@ -53,50 +51,8 @@ finalize_workflow = wf.Workflow(args, 'finalization')
 
 wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
-
-# layout initialization / helper functions 
-def layout(path, cols):
-    path = os.path.join(os.getcwd(), path, 'well.html')
-    render_workflow_html_template(path, 'two_column.html', cols)
-
-def single_layout(path, files):
-    layout(path, [(f,) for f in files])
-
-def grouper(iterable, n, fillvalue=None):
-    args = [iter(iterable)] * n
-    return izip_longest(*args, fillvalue=fillvalue)
-    
-def group_layout(path, files):
-    if len(files) > 0:
-        layout(path, list(grouper(files, 2)))      
- 
-class SectionNumber(object):
-    def __init__(self, base, secs):
-        self.base = base
-        self.secs = secs
-        self.name = {}
-        self.count = {}
-        self.num = {}
-        
-        for num, sec in enumerate(secs):
-            self.name[sec] = '%s._%s' % (num, sec)  
-            self.num[sec] = num
-            self.count[sec] = 1
-    
-    def __getitem__ (self, path):
-        if path in self.name:
-            name = self.name[path]
-        else:
-            sec, subsec = path.split('/')
-            subnum = self.count[sec]
-            num = self.num[sec]
-            name = '%s/%s.%s_%s' % (self.name[sec], num, subnum, subsec)
-            self.count[sec] += 1
-            self.name[path] = name
-        path = os.path.join(os.getcwd(), self.base, name)
-        return path
              
-rdir = SectionNumber('results', ['configuration',
+rdir = layout.SectionNumber('results', ['configuration',
                                  'analysis_time',
                                  'detector_sensitivity',
                                  'single_triggers',
@@ -117,7 +73,9 @@ time_file = wf.File(workflow.ifos, 'time', workflow.analysis_time,
                                            directory=rdir.base)
 wf.makedir(rdir.base)
 kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)', 
-        'caption' : 'Wall clock start and end times for this invocation of the workflow. The command line button shows the arguments used to invoke the workflow creation script.',
+        'caption' : "Wall clock start and end times for this invocation of the workflow. "
+                    " The command line button shows the arguments used to invoke the workflow "
+                    " creation script.",
         'cmd' :' '.join(sys.argv), }
 save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 
@@ -216,7 +174,7 @@ fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file,
 
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
                     'closed_box', rdir['single_triggers'], tags=[tag])
-group_layout(rdir['single_triggers'], snrchi)
+layout.group_layout(rdir['single_triggers'], snrchi)
 
 hist_summ = []
 for insp in full_insps:
@@ -228,7 +186,7 @@ for insp in full_insps:
     hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
            rdir['single_triggers/%s-hist' % insp.ifo], 
            require='summ', tags=[tag])
-    hist_summ += list(grouper(hists, 2))
+    hist_summ += list(layout.grouper(hists, 2))
 
 # Calculate the inspiral psds and make plots
 full_segs, psd_files, insp_segs, insp_data_segs = [], [], {}, {}                      
@@ -252,7 +210,7 @@ r = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], requir
 r2 = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'], exclude='summ')
 
 det_summ = [(s, r[0] if len(r) != 0 else None)]
-layout(rdir['detector_sensitivity'], det_summ + list(grouper(r2, 2)))    
+layout.two_column_layout(rdir['detector_sensitivity'], det_summ + list(layout.grouper(r2, 2)))    
 
 
 # run minifollowups on the output of the loudest events 
@@ -261,7 +219,7 @@ wf_layout = wf.setup_minifollowups(workflow, final_bg_file,
                                   insp_data_segs, 'INSPIRAL_DATA',
                                   rdir['result'], tags=final_bg_file.tags)
 
-layout(rdir['result'], results_page + [(table,)] + wf_layout)
+layout.two_column_layout(rdir['result'], results_page + [(table,)] + wf_layout)
     
 for bin_file in bin_files:
     if hasattr(bin_file, 'bin_name'):
@@ -269,7 +227,7 @@ for bin_file in bin_files:
                                   insp_data_segs, 'INSPIRAL_DATA', 
                                   rdir['result/%s' % bin_file.bin_name],
                                   tags=bin_file.tags)
-        layout(rdir['result/%s' % bin_file.bin_name], wf_layout)
+        layout.two_column_layout(rdir['result/%s' % bin_file.bin_name], wf_layout)
 
 ################## Setup segment / veto related plots #########################    
 # do plotting of segments / veto times
@@ -375,8 +333,8 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                   final_bg_file, trig_insp,
                                   rdir['injections/%s' % tag], tags=[tag])
 
-    if len(s) > 0: group_layout(rdir['search_sensitivity/%s' % tag], s)        
-    if len(f) > 0: group_layout(rdir['injections/%s' % tag], f)  
+    if len(s) > 0: layout.group_layout(rdir['search_sensitivity/%s' % tag], s)        
+    if len(f) > 0: layout.group_layout(rdir['injections/%s' % tag], f)  
     
 # Make combined injection plots
 inj_summ = []
@@ -386,21 +344,21 @@ if len(inj_files) > 0:
                             'allinj', tags=['ALLINJ'])
     sen = wf.make_sensitivity_plot(workflow, found_inj, rdir['search_sensitivity'],
                             require='all', tags=['ALLINJ'])
-    group_layout(rdir['search_sensitivity'], sen)
+    layout.group_layout(rdir['search_sensitivity'], sen)
     inj = wf.make_foundmissed_plot(workflow, found_inj, rdir['injections'],
                             require='all', tags=['ALLINJ'])
-    group_layout(rdir['injections'], inj)
+    layout.group_layout(rdir['injections'], inj)
 
     # Make summary page foundmissed and sensitivity plot    
     sen = wf.make_sensitivity_plot(workflow, found_inj, 
                 rdir['search_sensitivity'], require='summ', tags=['ALLINJ'])
     inj = wf.make_foundmissed_plot(workflow, found_inj, 
                 rdir['injections'], require='summ', tags=['ALLINJ'])
-    inj_summ = list(grouper(inj + sen, 2))
+    inj_summ = list(layout.grouper(inj + sen, 2))
                             
 # make full summary
 summ = ([(time_file,)] + [(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)] + 
-       det_summ + hist_summ + bank_plot + list(grouper(closed_snrifar, 2)) + inj_summ)
+       det_summ + hist_summ + bank_plot + list(layout.grouper(closed_snrifar, 2)) + inj_summ)
 for row in summ:
     for f in row:
         if f is None:
@@ -409,7 +367,7 @@ for row in summ:
             os.symlink(f.storage_path, os.path.join(rdir.base, f.name))
         except OSError:
             pass           
-layout(rdir.base, summ)
+layout.two_column_layout(rdir.base, summ)
 
 # save global config file to results directory
 base = rdir['configuration']
@@ -418,7 +376,7 @@ ini_file_path = os.path.join(base, 'configuration.ini')
 with open(ini_file_path, 'wb') as ini_fh:
     container.cp.write(ini_fh)
 ini_file = wf.FileList([wf.File(ifos, '', workflow.analysis_time, file_url='file://'+ini_file_path)])
-single_layout(base, ini_file)
+layout.single_layout(base, ini_file)
 
 # Create versioning information
 create_versioning_page(rdir['configuration'], container.cp)

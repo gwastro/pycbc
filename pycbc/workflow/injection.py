@@ -32,7 +32,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 import logging, urllib, urlparse
 from pycbc.workflow.core import File, FileList, make_analysis_dir, Executable
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
-        LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable)
+        LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
+        PycbcDarkVsBrightInjectionsExecutable)
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -142,6 +143,22 @@ def setup_injection_workflow(workflow, output_dir=None,
             else:
                 workflow.add_node(node)
             inj_file = node.output_files[0]
+
+            if workflow.cp.has_option("workflow-injections",
+                                      "em-bright-only"):
+                em_filter_job = PycbcDarkVsBrightInjectionsExecutable(
+                                                 workflow.cp,
+                                                 'em_bright_filter',
+                                                 tags=curr_tags,
+                                                 out_dir=output_dir,
+                                                 ifos=ifos)
+                node = em_filter_job.create_node(inj_file, full_segment,
+                                                 curr_tags)
+                if injection_method == "AT_COH_PTF_RUNTIME":
+                    workflow.execute_node(node)
+                else:
+                    workflow.add_node(node)
+                inj_file = node.output_files[0] 
 
             if workflow.cp.has_option("workflow-injections",
                                       "do-jitter-skyloc"):

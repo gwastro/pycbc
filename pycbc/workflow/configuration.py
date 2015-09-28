@@ -541,7 +541,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         string
             The value of the options being searched for
         """
-        return get_opt_tags(self, section, option, [tag])
+        return self.get_opt_tags(section, option, [tag])
 
 
     def get_opt_tags(self, section, option, tags):
@@ -618,7 +618,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         Boolean
             Is the option in the section or [section-tag]
         """
-        return has_option_tags(section, option, [tag])
+        return self.has_option_tags(section, option, [tag])
 
 
     def has_option_tags(self, section, option, tags):

@@ -1,6 +1,6 @@
-==================================================================================
+##################################################################################
 ``pycbc_make_psd_estimation_workflow``: A workflow generator for noise estimation
-==================================================================================
+##################################################################################
 
 It can be useful to estimate the average noise PSD of a long period of data, for
 instance for building template banks manually or doing bank simulations. The
@@ -14,8 +14,9 @@ coincident search workflow:
  * Run ``pycbc_calculate_psd`` to estimate the PSD in each segment in each detector
  * Run ``pycbc_average_psd`` to combine the PSD estimates over time for each detector, as well as over time and detectors.
 
+==================
 Configuration file
-------------------
+==================
 
 ``pycbc_make_psd_estimation_workflow`` is configured through an .ini file,
 similarly to search workflows. An example for ER8 data, broken by sections, is
@@ -82,6 +83,7 @@ the executable, wherever that happens to be at the time of running
     plot_range = ${which:pycbc_plot_range}
     page_segtable = ${which:pycbc_page_segtable}
     page_segplot = ${which:pycbc_page_segplot}
+    results_page = ${which:pycbc_make_html_page}
 
 
 The sections below control how the PSD is estimated in each segment. The program
@@ -136,9 +138,14 @@ The sections below control plotting jobs.::
 
     [page_segplot]
 
+    [results_page]
+    output-path=../../html
+    analysis-title="PSD Estimation"
+    analysis-subtitle="..."
 
+===================================
 Generating and running the workflow
------------------------------------
+===================================
 
 Once you have an .ini file at ``/path/to/ini/file``, create the workflow in the
 following way:
