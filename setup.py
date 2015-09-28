@@ -63,7 +63,6 @@ install_requires =  setup_requires + [
                       'boto==2.5.2',
                       'Cython==0.23.2',
                       'docutils==0.12',
-                      'dqsegdb==1.2.2',
                       'Flask==0.10',
                       'Flask-Cache==0.13.1',
                       'Flask-SQLAlchemy==0.16',
