@@ -1129,6 +1129,7 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
         curr_file = OutSegFile(ifo, 'SCIENCE_OK', workflow.analysis_time,
                                curr_url, segment_list=sci_segs[ifo],
                                tags=tags)
+        curr_file.PFN(seg_ok_path, 'local')
         curr_file.toSegmentXml()
         seg_files += [curr_file]
 
