@@ -1346,15 +1346,28 @@ def resolve_url(url):
     if url.startswith('http://') or url.startswith('https://'):
         filename = url.split('/')[-1]
         filename = os.path.join(os.getcwd(), filename)
-        try:
-            response = urllib2.urlopen(url)
-            result   = response.read()
-            out_file = open(filename, 'w')
-            out_file.write(result)
-            out_file.close()
-        except:
+        succeeded = False
+        num_tries = 5
+        t_sleep   = 10
+
+        while not succeeded and num_tries > 0: 
+            try:
+                response = urllib2.urlopen(url)
+                result   = response.read()
+                out_file = open(filename, 'w')
+                out_file.write(result)
+                out_file.close()
+                succeeded = True
+            except:
+                logging.warn("Unable to download %s, retrying" % url)
+                time.sleep(t_sleep)
+                num_tries -= 1
+                t_sleep   *= 2
+                
+        if not succeeded:
             errMsg  = "Unable to download %s " % (url)
             raise ValueError(errMsg)
+
     elif url.startswith('file://'):
         filename = url[7:]
     elif url.find('://') != -1:
