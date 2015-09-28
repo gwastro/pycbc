@@ -121,7 +121,7 @@ for segment_file in opts.segment_files:
                     continue
 
                 # put comment in caption
-                caption += segment_name
+                caption += ifo + ':' + segment_name
                 if comment_dict[key] != None:
                     caption += " ("+comment_dict[key]+")"
                 caption += " "

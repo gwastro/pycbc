@@ -75,8 +75,7 @@ if args.output_file.endswith('.html'):
     html_table = pycbc.results.table(columns, names, 
                                    format_strings=format_strings, page_size=10)
 
-    kwds = {'render-function' : 'render_text',
-        'title' : 'Loudest Event Table', 
+    kwds = { 'title' : 'Loudest Event Table', 
         'cmd' :' '.join(sys.argv), }
     save_fig_with_metadata(str(html_table), args.output_file, **kwds)
 

@@ -110,8 +110,7 @@ time_file = wf.File(workflow.ifos, 'time', workflow.analysis_time,
                                            extension='.html',
                                            directory=rdir.base)
 wf.makedir(rdir.base)
-kwds = {'render-function' : 'render_text',
-        'title' : 'Search Workflow Duration (Wall Clock Time)', 
+kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)', 
         'caption' : 'Wall clock start and end times for this invocation of the workflow. The command line button shows the arguments used to invoke the workflow creation script.',
         'cmd' :' '.join(sys.argv), }
 save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
@@ -292,7 +291,7 @@ seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
 # make segment table for summary page
 seg_summ_table = wf.make_seg_table(workflow, [seg_summ_file], seg_summ_names,
                         rdir['analysis_time/segments'], ['SUMMARY'],
-                        title_text='Input and output time',
+                        title_text='Input and output',
                         description='This shows the total amount of input data, analyzable data, and the time for which triggers are produced.')
 veto_summ_table = wf.make_seg_table(workflow,
                         [seg_summ_file] + final_veto_file + cum_veto_files,
