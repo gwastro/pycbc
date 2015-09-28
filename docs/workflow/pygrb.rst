@@ -109,9 +109,9 @@ If you want to run on non-S6 data, analyze a different set of ifos, or change
 any data-type or segment length options, you will have to edit some additional
 options.
 
-========
+--------
 main.ini
-========
+--------
 
 Firstly, the sections specifying some workflow-wide options include::
 
@@ -191,9 +191,9 @@ These should not be edited unless you know what you are doing. To find out
 more details about the possible options for any stage of the workflow, follow
 the links at :ref:`workflowhomepage`.
 
-==============
+--------------
 injections.ini
-==============
+--------------
 
 Multiple configuration files may be used, and in fact the same sections may be
 populated from within multiple files. As an example, we might wish to have a
@@ -216,9 +216,9 @@ used to control the behaviour of the workflow generation as applied to that
 specific tagged injection set. In our example these options are the number of
 injections to be included in each set.
 
-==================
+------------------
 postprocessing.ini
-==================
+------------------
 
 As before, the options for each of the post processing codes are given in this
 configuration file. One notable section is::
@@ -229,12 +229,15 @@ configuration file. One notable section is::
 This is how to supply condor options that only apply to the trig_combiner jobs.
 This can be generalised to any executable or tagged jobs.
 
-===============
-Copy over files
-===============
+.. _pygrbgenerate:
 
-Now you have a configuration file (or files) and 
-can follow the same instructions as above. That is: 
+=====================
+Generate the workflow
+=====================
+
+When you are ready, you can generate the workflow. This may be done by setting
+a number of variables in your environment before launching the generation
+script.
 
 Copy the configuration file into your run directory::
 
@@ -244,16 +247,6 @@ and set the name of the configuration file in your path. If you have more than
 one configuration file they must be space separated::
 
     LOCAL_CONFIG_FILES="main.ini injections.ini postprocessing.ini"
-
-.. _pygrbgenerate:
-
------------------------
-Generate the workflow
------------------------
-
-When you are ready, you can generate the workflow. This may be done by setting
-a number of variables in your environment before launching the generation
-script.
 
 First we need to choose a trigger time, ie. the GPS Earth-crossing time
 of the GRB signal. You should also set the GRB name. For example::
@@ -303,10 +296,11 @@ This may all be conveniently placed within a shell script, an example of which i
 
 .. _pygrbplan:
 
------------------------------------------
+====================================
 Planning and Submitting the Workflow
------------------------------------------
-CD into the directory where the dax was generated::
+====================================
+
+Change directory into the directory where the dax was generated::
 
     cd GRB${GRB_NAME}
 
@@ -330,10 +324,6 @@ To monitor the above workflow, one would run::
 To get debugging information in the case of failures.::
 
     pegasus-analyzer /path/to/analysis/run
-
-=============================
-Workflow visualization
-=============================
 
 -----------------------------
 Pegasus Dashboard
@@ -372,10 +362,9 @@ The Host Over Time Chart section displays a gantt chart where you can see what
 jobs in the workflow ran on a given machine.
 
 .. _pygrbreuse:
-
-================================
-Reuse of workflow file products
-================================
+======================================
+Reuse of data from a previous workflow
+======================================
 
 One of the features of  Pegasus is to reuse the data products of prior runs.
 This can be used to expand an analysis or recover a run with mistaken settings

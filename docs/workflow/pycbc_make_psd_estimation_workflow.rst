@@ -1,5 +1,5 @@
 ==================================================================================
-``pycbc_make_psd_estimation_workflow``: A workflows generator for noise estimation
+``pycbc_make_psd_estimation_workflow``: A workflow generator for noise estimation
 ==================================================================================
 
 It can be useful to estimate the average noise PSD of a long period of data, for
