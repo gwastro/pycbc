@@ -20,4 +20,5 @@ Method documentation
 ====================
 
 .. automodule:: pycbc.frame
+    :noindex:
     :members:
