@@ -102,9 +102,12 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
             segmentdb_utils.add_to_segment_summary(outdoc, proc_id, sci_def_id,
                                                          summ_segs, comment='')
         elif sci_seg_file:
-            err_msg = "Got %d files matching %s and %s. Expected 1 or 0." \
-                      %(len(sci_seg_file), ifo, 'SCIENCE')
-            raise ValueError(err_msg)
+            # FIXME: While the segment module is still fractured (#127) this
+            #        may not work. Please update when #127 is resolved
+            pass
+            #err_msg = "Got %d files matching %s and %s. Expected 1 or 0." \
+            #          %(len(sci_seg_file), ifo, 'SCIENCE')
+            #raise ValueError(err_msg)
 
         # SCIENCE_OK
         sci_ok_seg_file = seg_ifo_files.find_output_with_tag('SCIENCE_OK')
@@ -118,9 +121,12 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
             segmentdb_utils.add_to_segment_summary(outdoc, proc_id,
                                           sci_ok_def_id, summ_segs, comment='')
         elif sci_ok_seg_file:
-            err_msg = "Got %d files matching %s and %s. Expected 1 or 0." \
-                      %(len(sci_ok_seg_file), ifo, 'SCIENCE_OK')
-            raise ValueError(err_msg)
+            # FIXME: While the segment module is still fractured (#127) this
+            #        may not work. Please update when #127 is resolved
+            pass
+            #err_msg = "Got %d files matching %s and %s. Expected 1 or 0." \
+            #          %(len(sci_ok_seg_file), ifo, 'SCIENCE_OK')
+            #raise ValueError(err_msg)
 
 
         # SCIENCE_AVAILABLE
@@ -136,9 +142,12 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
             segmentdb_utils.add_to_segment_summary(outdoc, proc_id,
                                    sci_available_def_id, summ_segs, comment='')
         elif sci_available_seg_file:
-            err_msg = "Got %d files matching %s and %s. Expected 1 or 0." \
-                      %(len(sci_available_seg_file), ifo, 'SCIENCE_AVAILABLE')
-            raise ValueError(err_msg)
+            # FIXME: While the segment module is still fractured (#127) this
+            #        may not work. Please update when #127 is resolved
+            pass
+            #err_msg = "Got %d files matching %s and %s. Expected 1 or 0." \
+            #          %(len(sci_available_seg_file), ifo, 'SCIENCE_AVAILABLE')
+            #raise ValueError(err_msg)
 
         # ANALYSABLE - This one needs to come from inspiral outs
         ifo_insps = insps.find_output_with_ifo(ifo)

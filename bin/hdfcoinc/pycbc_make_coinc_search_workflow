@@ -19,8 +19,15 @@
 Program for running multi-detector workflow analysis through coincidence and then
 generate post-processing and plots.
 """
+import pycbc
+import pycbc.version
+__author__  = "Alex Nitz <alex.nitz@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_make_coinc_search_workflow"
+
 import sys
-import pycbc, pycbc.version, pycbc.events, pycbc.workflow as wf
+import pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments, numpy, lal, datetime
 from pycbc.events.veto import multi_segments_to_file
 from pycbc.results import create_versioning_page, static_table
@@ -30,8 +37,7 @@ from pycbc.results.metadata import html_escape
 from itertools import izip_longest
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument('--version', action='version', 
-                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--version', action='version', version=__version__) 
 parser.add_argument('--workflow-name', default='my_unamed_run')
 parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
@@ -159,6 +165,10 @@ ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, science_segs,
 
 insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
                                            insps, output_dir, tags=[tag])
+
+anal_log_files = wf.setup_analysislogging(workflow,
+                                          science_seg_file, insps, args,
+                                          "logging", program_name=__program__) 
 
 # setup coinc for the filtering jobs
 full_insps = insps
