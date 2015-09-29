@@ -106,7 +106,6 @@ class AvgPSDExecutable(Executable):
     current_retention_level = Executable.FINAL_RESULT
 
 def make_average_psd(workflow, psd_files, out_dir, tags=None,
-                     gate_files=None,
                      output_fmt='.txt'):
     make_analysis_dir(out_dir)
     tags = [] if tags is None else tags
@@ -116,25 +115,8 @@ def make_average_psd(workflow, psd_files, out_dir, tags=None,
     node.new_output_file_opt(workflow.analysis_time, output_fmt,
                              '--detector-avg-file')
 
-    # FIXME should Node have a public method for handling
-    # multidetector output options of type --option H1:foo L1:bar?
-    node.add_opt('--time-avg-file')
-    for ifo in workflow.ifos:
-        time_avg_file = File(ifo, node.executable.name, workflow.analysis_time,
-                             extension=output_fmt, directory=out_dir,
-                             tags=tags)
-        multi_ifo_string = ifo + ':' + time_avg_file.name
-        node.add_opt(multi_ifo_string)
-        node._add_output(time_avg_file)
-    
-        if gate_files is not None:
-            ifo_gate = None
-            for gate_file in gate_files:
-                if gate_file.ifo == ifo:
-                    ifo_gate = gate_file
-            
-            if ifo_gate is not None:
-                node.add_input_opt('--gating-file', ifo_gate)
+    node.new_multiifo_output_list_opt('time-avg-file', workflow.ifos,
+                                 workflow.analysis_time, output_fmt, tags=tags)
 
     workflow += node
     return node.output_files
