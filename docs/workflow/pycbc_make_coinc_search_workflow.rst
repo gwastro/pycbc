@@ -471,7 +471,7 @@ set the output web page location.
 
    To use released exectutables for production analysis, you should specify
    the URL to an ``executables.ini`` file from the 
-   `<https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software> PyCBC Software repository_`.
+   `PyCBC Software repository <https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software>`_.
 
 .. _coincworkflowplan:
 
