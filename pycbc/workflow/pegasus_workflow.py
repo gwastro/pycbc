@@ -108,7 +108,13 @@ class Node(ProfileShortcuts):
                                  version = executable.version, 
                                  namespace=executable.namespace)
         self._args = []
+        # Each value in _options is added separated with whitespace
+        # so ['--option','value'] --> "--option value"
         self._options = []
+        # For _raw_options *NO* whitespace is added.
+        # so ['--option','value'] --> "--optionvalue"
+        # and ['--option',' ','value'] --> "--option value"
+        self._raw_options = []
         
     def add_arg(self, arg):
         """ Add an argument
@@ -117,7 +123,17 @@ class Node(ProfileShortcuts):
             arg = str(arg)
         
         self._args += [arg]
-        
+
+    def add_raw_arg(self, arg):
+        """ Add an argument to the command line of this job, but do *NOT* add
+            white space between arguments. This can be added manually by adding
+            ' ' if needed
+        """
+        if not isinstance(arg, File):
+            arg = str(arg)
+
+        self._raw_options += [arg]
+
     def add_opt(self, opt, value=None):
         """ Add a option
         """
@@ -203,6 +219,9 @@ class Node(ProfileShortcuts):
     def _finalize(self):
         args = self._args + self._options
         self._dax_node.addArguments(*args)
+        if len(self._raw_options):
+            raw_args = [' '] + self._raw_options
+            self._dax_node.addRawArguments(*raw_args)
         
 class Workflow(object):
     """ 

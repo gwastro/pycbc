@@ -549,7 +549,66 @@ class Node(pegasus_workflow.Node):
                    use_tmp_subdirs=use_tmp_subdirs)
         self.add_output_opt(option_name, fil)
         return fil
-        
+
+    def add_multiifo_input_list_opt(self, opt, inputs):
+        """ Add an option that determines a list of inputs from multiple
+            detectors. Files will be supplied as --opt ifo1:input1 ifo2:input2
+            .....
+        """
+        # NOTE: Here we have to use the raw arguments functionality as the
+        #       file and ifo are not space separated.
+        self.add_raw_arg('--' + opt)
+        self.add_raw_arg(' ')
+        for infile in inputs:
+            self.add_raw_arg(infile.ifo)
+            self.add_raw_arg(':')
+            self.add_raw_arg(infile)
+            self.add_raw_arg(' ')
+            self._add_input(infile)
+
+    def add_multiifo_output_list_opt(self, opt, outputs):
+        """ Add an option that determines a list of outputs from multiple
+            detectors. Files will be supplied as --opt ifo1:input1 ifo2:input2
+            .....
+        """
+        # NOTE: Here we have to use the raw arguments functionality as the
+        #       file and ifo are not space separated.
+        self.add_raw_arg('--' + opt)
+        self.add_raw_arg(' ')
+        for outfile in outputs:
+            self.add_raw_arg(outfile.ifo)
+            self.add_raw_arg(':')
+            self.add_raw_arg(outfile)
+            self.add_raw_arg(' ')
+            self._add_output(outfile)
+
+    def new_multiifo_output_list_opt(self, opt, ifos, analysis_time, extension,
+                                     tags=[], store_file=None,
+                                     use_tmp_subdirs=False):
+        """ Add an option that determines a list of outputs from multiple
+            detectors. Files will be supplied as --opt ifo1:input1 ifo2:input2
+            .....
+            File names are created internally from the provided extension and
+            analysis time.
+        """
+        all_tags = copy.deepcopy(self.executable.tags)
+        for tag in tags:
+            if tag not in all_tags:
+                all_tags.append(tag)
+
+        output_files = FileList([])
+        store_file = store_file if store_file is not None \
+                                              else self.executable.retain_files
+
+        for ifo in ifos:
+            curr_file = File(ifo, self.executable.name, analysis_time,
+                             extension=extension, store_file=store_file,
+                             directory=self.executable.out_dir, tags=all_tags,
+                             use_tmp_subdirs=use_tmp_subdirs)
+            output_files.append(curr_file)
+        self.add_multiifo_output_list_opt(opt, output_files)
+
+
     @property    
     def output_files(self):
         return FileList(self._outputs)
