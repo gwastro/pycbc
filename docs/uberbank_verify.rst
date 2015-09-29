@@ -30,7 +30,7 @@ The bank generation can be verified using the pycbc_banksim code. To run this fo
 
 .. literalinclude:: ../examples/banksim/nsbh_below50.ini
 
-To run this you will need to change the banksim option to your local version of pycbc_banksim, the log-path option to a suitable location for your log files on your cluster, the locations of the bank and noise curve and possibly whatever processing_scheme is best on your cluster (mkl works on Atlas with /opt/intel/2015/intel.sh sourced). 
+To run this you will need to change the banksim option to your local version of pycbc_banksim, the log-path option to a suitable location for your log files on your cluster, the locations of the bank and noise curve and possibly whatever processing_scheme is best on your cluster (mkl works on Atlas with /opt/intel/2015/intel.sh sourced). Banksims for testing all aspects of the uberbank are included in the review repository. 
 
 The injections are uniform in component mass and uniform in spin magnitude. Injections are generated from 25Hz but filtering is performed from 30Hz. Source location l-distr is random over the sky and inclination i-distr is uniformly distributed over arccos(i) - although this should not matter for aligned signals and latitude and longitude are set internally in the banksim code to 0.
 
@@ -38,7 +38,7 @@ The injections are uniform in component mass and uniform in spin magnitude. Inje
 Evaluation
 ========================================
 
-A stochastic placement method (like sbank) will not be able to guarantee that all points in parameter space are covered at better than 0.97 fitting factor. A convenient measure of the success of the bank generation is if the bank is able to recover 99% of injected signals using the same parameters and templates as the bank is designed for with a fitting factor of 0.97 or better. Further requirements might be that there should be no fitting factors with matches less than 0.95 or that the fitting factors below 0.97 should not be clustered in a particular part of parameter space. To cover all source groups we can run such tests separately for simulated BNS, NSBH and BBH signals when testing a bank that covers all three parameter ranges.
+A stochastic placement method (like sbank) will not be able to guarantee that all points in parameter space are covered to better than 0.97 fitting factor. A convenient measure of the success of the bank generation is if the bank is able to recover 99% of injected signals with a fitting factor of 0.97 or better. Further indications of a successful bank are no fitting factors less than 0.95 or that the fitting factors below 0.97 should not be clustered in a particular part of parameter space. To cover all source groups we run such tests separately for simulated BNS, NSBH and BBH signals when testing a bank that covers all three parameter ranges.
 
 While such tests do not guarantee that the bank will successfully recover all possible signals in the parameter region (for example due to non-Gaussian noise, different sensitivites in the two detectors, different waveform approximants, precession effects, tidal deformation and disruption etc.) these tests do indicate with a reasonable level of confidence that the template generation has been successful at what it was designed to do.
 
