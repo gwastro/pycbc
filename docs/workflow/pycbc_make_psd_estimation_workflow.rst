@@ -49,7 +49,7 @@ the analyzable time is broken into 2048 s segments for PSD estimation.::
     segments-h1-science-name = H1:DMT-ANALYSIS_READY:1
     segments-l1-science-name = L1:DMT-ANALYSIS_READY:1
     segments-database-url = https://segments.ligo.org
-    segments-veto-definer-url = file:///home/tito/er8/H1L1V1-ER8_CBC_OFFLINE.xml
+    segments-veto-definer-url = https://code.pycbc.phy.syr.edu/detchar/veto-definitions/download/d06231daa8edf28c4760106599f86c8d8659cc3e/cbc/ER8/H1L1-HOFT_C00_ER8B_CBC.xml
     segments-science-veto = 1
     segments-veto-groups =
     segments-final-veto-group = 12H
