@@ -103,6 +103,8 @@ To leave this virtual environment type
     
 which will return you to a regular shell.
 
+.. installinglalsuite::
+
 ==============================================
 Installing lalsuite into a virtual environment
 ==============================================
@@ -180,7 +182,7 @@ Installing a released version of PyCBC
 
 .. note::
 
-    Make sure you have run the commands in the section :ref:`Installing lalsuite into a virtual environment` above to install unittest2 before installing PyCBC.
+    Make sure you have run the commands in the section :ref:`installinglalsuite` above to install unittest2 before installing PyCBC.
 
 To install a release of the code, determine the tag of the release that you want to install from the `list of PyCBC tags <https://github.com/ligo-cbc/pycbc/tags>`_. This example installs the v1.1.0 release. If you want to install a different release, change the command below accordingly:
 
@@ -194,7 +196,7 @@ Installing source from GitHub for development
 
 .. note::
 
-    Make sure you have run the command in the section :ref:`Installing lalsuite into a virtual environment` above to install unittest2 before installing PyCBC.
+    Make sure you have run the command in the section :ref:`installinglalsuite` above to install unittest2 before installing PyCBC.
 
 To install and editable version of PyCBC you need to have `forked PyCBC to your own account <https://help.github.com/articles/fork-a-repo/>`_ and know the URL of your fork. This can be obtained from the clone URL on your GitHub repository page. This example uses the URL ``git@github.com:your-username-here/pycbc.git`` which you should change to the URL of your fork of PyCBC on GitHub. 
 

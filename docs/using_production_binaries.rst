@@ -1,3 +1,5 @@
+.. _using_production_binaries:
+
 #####################################
 Using Production PyCBC Binary Bundles
 #####################################
@@ -5,9 +7,9 @@ Using Production PyCBC Binary Bundles
 Production binaries for various releases of PyCBC are available built and
 stored in a git repository from:
 
- * `<https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/tree/master>_`.
+ * `<https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/tree/master>`_.
 
-These binaries are built with `PyInstaller <http://www.pyinstaller.org/>_` and
+These binaries are built with `PyInstaller <http://www.pyinstaller.org/>`_ and
 so provide completely self-contained execution environments. No local
 installation of PyCBC is necessary to run the software.
 
