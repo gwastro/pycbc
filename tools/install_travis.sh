@@ -19,6 +19,7 @@ if [ -f ${INST}/dep_install.done ]
 then
     echo "Found cache of installed dependencies, using it"
 else
+
     # install the version of swig that for some reason we have to use
 
     cd ${SRC}
@@ -53,8 +54,10 @@ else
     # Install lalsuite
 
     cd ${SRC}
-    git clone -q https://github.com/ahnitz/lalsuite.git
+    git clone -q https://github.com/lscsoft/lalsuite.git
     cd lalsuite
+    git checkout lalsuite_o1_branch
+
     ./00boot
     ./configure -q --prefix=${INST} --enable-swig-python \
         --disable-lalstochastic --disable-lalinference --disable-laldetchar \
@@ -72,5 +75,14 @@ else
 fi
 
 source ${INST}/etc/lal-user-env.sh
+
+# Install needed version of numpy
+pip install 'numpy==1.9.3' --upgrade 
+
+# Install Pegasus
+pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
+
+# Needed by mock 
+pip install 'setuptools==18.2' --upgrade
 
 python setup.py install
