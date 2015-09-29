@@ -9,10 +9,7 @@ import h5py
 import numpy as np
 import argparse
 import glob
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import table
-from glue.ligolw import utils
+from glue.ligolw import ligolw, lsctables, table, utils
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.mlab as mlab
@@ -20,6 +17,9 @@ import matplotlib.pyplot as plt
 from pycbc.workflow.segment import fromsegmentxml
 import pycbc.pnutils
 import pycbc.events
+from pycbc.waveform import get_td_waveform, frequency_from_polarizations, amplitude_from_polarizations
+import lal
+
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
@@ -79,8 +79,10 @@ newsnr = pycbc.events.newsnr(snr,reduced_chisq)
 cbc_end_time = single_trig_file[args.ifo]['end_time'][idx]
 template_id = single_trig_file[args.ifo]['template_id'][idx]
 
-mass1 = template_file['mass1'][template_id]
-mass2 = template_file['mass2'][template_id]
+m1 = template_file['mass1'][template_id]
+m2 = template_file['mass2'][template_id]
+s1z = template_file['spin1z'][template_id]
+s2z = template_file['spin2z'][template_id]
 
 omicron_start_time = cbc_end_time - args.plot_window
 omicron_end_time = cbc_end_time + args.plot_window
@@ -119,14 +121,25 @@ for era in eras:
                 omicron_freq.append(row.peak_frequency)
 
 
-f_low = 30
-f_high = pycbc.pnutils.f_SchwarzISCO(mass1+mass2)
-inspiral_t, inspiral_f = pycbc.pnutils.get_inspiral_tf(cbc_end_time, mass1, mass2, f_low, f_high)
+hp, hc = get_td_waveform(approximant='SEOBNRv2', mass1=m1, mass2=m2,
+                 spin1x=0, spin1y=0, spin1z=s1z,
+                 spin2x=0, spin2y=0, spin2z=s2z,
+                 delta_t=(1./32768.), f_lower=30)
+
+
+f = frequency_from_polarizations(hp, hc)
+amp = amplitude_from_polarizations(hp, hc)
+stop_idx = amp.abs_max_loc()[1]
+
+f = f[:stop_idx]
+
+freq = np.array(f.data)
+times = np.array(f.sample_times) + cbc_end_time
 
 logging.info('Plotting')
 
 plt.figure(0)
-cm = plt.cm.get_cmap('jet')
+cm = plt.cm.get_cmap('Reds')
 plt.scatter(omicron_times,omicron_freq,c=omicron_snr,s=30,cmap=cm,linewidth=0)
 plt.grid(b=True, which='both')
 cbar = plt.colorbar()
@@ -137,10 +150,10 @@ plt.xlabel('Time (s)')
 plt.xlim(omicron_start_time,omicron_end_time)
 plt.suptitle('%s CBC trigger SNR = ' % (args.ifo) + format(snr,'.2f') + 
             ", newSNR = " + format(newsnr,'.2f'),fontsize=12)
-plt.title(format(mass1,'.2f') + " - " + format(mass2,'.2f') + 
+plt.title(format(m1,'.2f') + " - " + format(m2,'.2f') + 
             " solar masses at GPS time " + format(cbc_end_time,'.2f'),fontsize=12)
 plt.hold(True)
-plt.plot(inspiral_t,inspiral_f)
+plt.plot(times,freq)
 plt.savefig(args.output_file)
 
 logging.info('Done! Exiting script.')
