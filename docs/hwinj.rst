@@ -214,9 +214,9 @@ Where ``${START}`` is the start of the injection and ``${DURATION}`` is the leng
 
 Then you can run pycbc on the output frame file ``H1-HWINJ.gwf``.
 
-=================================
+---------------------------------
 How to query the segment database
-=================================
+---------------------------------
 
 .. _howtoquerysegdb:
 
@@ -234,9 +234,9 @@ The output should be ``1124380361,1124382409`` for both ``ligolw_print`` command
 
 **Do not assume that the segment databse URL and science-mode segment names are the same as in this section. These values are correct for this example.**
 
-===========================
+---------------------------
 How to query the LDR server
-===========================
+---------------------------
 
 .. _howtoqueryldr:
 

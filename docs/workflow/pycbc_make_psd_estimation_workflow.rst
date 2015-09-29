@@ -1,6 +1,6 @@
-=========================================================
-Estimating average noise PSDs over long stretches of data
-=========================================================
+##################################################################################
+``pycbc_make_psd_estimation_workflow``: A workflow generator for noise estimation
+##################################################################################
 
 It can be useful to estimate the average noise PSD of a long period of data, for
 instance for building template banks manually or doing bank simulations. The
@@ -14,14 +14,17 @@ coincident search workflow:
  * Run ``pycbc_calculate_psd`` to estimate the PSD in each segment in each detector
  * Run ``pycbc_average_psd`` to combine the PSD estimates over time for each detector, as well as over time and detectors.
 
+==================
 Configuration file
-------------------
+==================
 
 ``pycbc_make_psd_estimation_workflow`` is configured through an .ini file,
 similarly to search workflows. An example for ER8 data, broken by sections, is
 given here.
 
-::
+The sections below control which data are being used and they are basically the
+same as found in a coincidence workflow. In this example, ER8 data are used and
+the analyzable time is broken into 2048 s segments for PSD estimation.::
 
     [workflow]
     start-time = 1123858817
@@ -62,11 +65,11 @@ given here.
     max-analysis-segments = 15
     output-type = hdf
 
-The above sections control which data are being used and they are basically the
-same as found in a coincidence workflow. In this example, ER8 data are used and
-the analyzable time is broken into 2048 s segments for PSD estimation.
 
-::
+The sections below specifies the location of the various executables called by
+the workflow. The ``${which:X}`` syntax replaces the line with the full path to
+the executable, wherever that happens to be at the time of running
+``pycbc_make_psd_estimation_workflow``::
 
     [executables]
     segment_query = ${which:ligolw_segment_query_dqsegdb}
@@ -82,22 +85,12 @@ the analyzable time is broken into 2048 s segments for PSD estimation.
     page_segplot = ${which:pycbc_page_segplot}
     results_page = ${which:pycbc_make_html_page}
 
-The above section specifies the location of the various executables called by
-the workflow. The ``${which:X}`` syntax replaces the line with the full path to
-the executable, wherever that happens to be at the time of running
-``pycbc_make_psd_estimation_workflow``.
 
-::
-
-    [llwadd]
-
-    [segments_from_cats]
-
-    [ligolw_combine_segments]
-
-I'm not actually sure these sections are needed: FIXME ;)
-
-::
+The sections below control how the PSD is estimated in each segment. The program
+devoted to this is ``pycbc_calculate_psd``, see its ``--help`` for details. In
+this example, two instances of ``pycbc_calculate_psd`` are launched (one per
+detector) and each instance uses 4 CPU cores. For details on PSD estimation,
+see for instance the `FindChirp paper <http://arxiv.org/abs/gr-qc/0509116>`_.::
 
     [calculate_psd]
     cores = 4
@@ -121,22 +114,15 @@ I'm not actually sure these sections are needed: FIXME ;)
     [pegasus_profile-calculate_psd]
     condor|request_cpus = 4
 
-The above sections control how the PSD is estimated in each segment. The program
-devoted to this is ``pycbc_calculate_psd``, see its ``--help`` for details. In
-this example, two instances of ``pycbc_calculate_psd`` are launched (one per
-detector) and each instance uses 4 CPU cores. For details on PSD estimation,
-see for instance the `FindChirp paper <http://arxiv.org/abs/gr-qc/0509116>`_.
 
-::
+The section below controls how the averaging of the PSDs over time and detector
+is done, i.e. it contains options for the ``pycbc_average_psd`` program.
+Currently the program does not take options and the only supported averaging
+method is the harmonic mean.::
 
     [average_psd]
 
-The above section controls how the averaging of the PSDs over time and detector
-is done, i.e. it contains options for the ``pycbc_average_psd`` program.
-Currently the program does not take options and the only supported averaging
-method is the harmonic mean.
-
-::
+The sections below control plotting jobs.::
 
     [plot_segments]
 
@@ -157,11 +143,9 @@ method is the harmonic mean.
     analysis-title="PSD Estimation"
     analysis-subtitle="..."
 
-
-The above sections control plotting jobs.
-
+===================================
 Generating and running the workflow
------------------------------------
+===================================
 
 Once you have an .ini file at ``/path/to/ini/file``, create the workflow in the
 following way:

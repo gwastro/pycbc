@@ -9,17 +9,17 @@ PyCBC documentation
 
 PyCBC is a python toolkit for analysis of data from gravitational-wave laser interferometer detectors with the goal of detecting and studying signals from compact binary coalescences (CBCs).
 
-The goals of the PyCBC project are to
+The goals of the PyCBC project are to:
 
-- Create a flexible, extensible sw production code for CBC analysis that can be released for the public
+- Provide tools for building gravitational-wave search workflows for CBCs
+- Create a flexible, extensible production code for CBC analysis that can be released for the public
 - Enable simple, easy and transparent access for various many-core architectures like GPUs
-- Ultimately become the data analysis tool of the 'advanced era'
 
 ===========================
 PyCBC Contributors
 ===========================
 
-Stanislav Babak (1), Christopher M. Biwer (2), Duncan Brown (2), Collin Capano (3), Tito Dal Canton (4), Gergely Debreczeni (5), Thomas Dent (4), Steve Fairhurst (10), Henning Fehrmann (4), Ian Harry (2), Drew Keppel (4), Badri Krishnan (4), Prayush Kumar (2), Andrew Lundgren (4), Duncan Macleod (6), Adam Mercer (7), Andrew Miller (8), Saeed Mirshekari (9), Alex Nitz (2), Karsten Wiesner (4), Josh Willis (8)
+Stanislav Babak (1), Christopher M. Biwer (2), Duncan Brown (2), Collin Capano (3), Tito Dal Canton (4), Gergely Debreczeni (5), Thomas Dent (4), Steve Fairhurst (10), Henning Fehrmann (4), Ian Harry (1,2), Marcel Kehl (11), Drew Keppel (4), Badri Krishnan (4), Prayush Kumar (2,11), Amber Lenon (2), Andrew Lundgren (4), Duncan Macleod (6), Thomas Massinger (2), Adam Mercer (7), Andrew Miller (8), Saeed Mirshekari (9), Alex Nitz (1,2), Laura Nuttall (2), Francesco Pannarale (10), Harald Pfeiffer (11), Samantha Usman (2), Karsten Wiesner (4), Andrew Williamson (10), Josh Willis (8).
 
 #. AEI, Golm, Germany
 #. Syracuse University, NY, USA
@@ -31,73 +31,81 @@ Stanislav Babak (1), Christopher M. Biwer (2), Duncan Brown (2), Collin Capano (
 #. Abilene Christian University, TX, USA
 #. Instituto de Fisico Teorica, Sao Paulo, Brazil
 #. Cardiff University, Cardiff, UK
+#. Canadian Institute for Theoretical Astrophysics, Toronto, Canada
 
 =========================
-Links
+Documentation for Users
 =========================
 
-Getting Started:
+To install PyCBC and get started, follow the links at:
 
 .. toctree::
    :maxdepth: 1
 
    install
 
-Executable documentation:
-
-.. toctree::
-   :maxdepth: 1
-   
-   executables
-
-Package documentation:
+Users who want to create and run scientific workflows to search for compact
+binaries should read the documentation in the links at:
 
 .. toctree::
    :maxdepth: 1
 
-   workflow
+   workflow/pycbc_make_psd_estimation_workflow
+   workflow/pycbc_make_coinc_search_workflow
+   workflow/pycbc_make_sngl_workflow
+   workflow/pygrb.rst
+
+Users who are interested in tools that PyCBC provides for various other
+analysis tasks (e.g. template bank generation, hardware injections, and testing
+template banks) should read the documentation at:
+
+.. toctree::
+   :maxdepth: 1
+
    tmpltbank
-   frame
+   hwinj
    banksim
    faithsim
 
-Walkthroughs and Tutorials:
-
-.. toctree::
-   :glob:
-   :maxdepth: 1
-
-   workflow/*walkthrough*
-   workflow/*psd_estimation*
-   workflow/configuration_files
-   workflow/hdf_coincidence
-   uberbank_verify
-   hwinj
-
-Code Examples:
+Users who are intersted in using PyCBC for investigation of CBC waveforms
+should read the documentation at:
 
 .. toctree::
    :maxdepth: 2
 
    waveform
 
-For Developers:
+=============================
+Documentation for Developers
+=============================
+
+PyCBC developers should read the pages below which explain how to write
+documentation, develop the code, and create releases:
 
 .. toctree::
-    :maxdepth: 1
+   :maxdepth: 1
     
-    documentation
-    release
-    
-Format specifications:
+   documentation
+   release
+
+Developers who are interested in file I/O, data storage, and access should
+read the documentation at:
 
 .. toctree::
-   :glob:
    :maxdepth: 1
 
-   formats/*
+   frame
+   formats/hdf_format
 
-Modules:
+Developers who are interested in creating new scientific workflow generation
+scripts should read the documentation at:
+
+.. toctree::
+   :maxdepth: 1
+
+   workflow
+
+Full Module Documentation is avaialable at:
 
 .. toctree::
    :maxdepth: 1

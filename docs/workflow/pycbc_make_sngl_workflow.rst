@@ -1,6 +1,6 @@
-########################################################
-``pycbc_make_sngl_workflow``: A single-ifo detchar tool
-########################################################
+#####################################################################
+``pycbc_make_sngl_workflow``: A single-ifo detchar workflow generator
+#####################################################################
 
 ===============
 Introduction
@@ -13,11 +13,9 @@ are producing glitches that have a large single-detector detection statistic
 for the CBC searches. If the detectoralists can identify what causes these most
 egregious glitches it can increase the overall search sensitivity.
 
-=========================================
-How to run ``pycbc_make_sngl_workflow``
-=========================================
-
-Here we document the stages needed to run ``pycbc_make_sngl_workflow``.
+==================
+Configuration file
+==================
 
 ----------------------------------------------------------------------------
 The configuration file - Do you already have configuration (.ini) file(s)?
@@ -39,8 +37,6 @@ Now go down to :ref:`pycbcdailygenerate`.
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Yes, I would like to use the unmodified preinstalled configuration files
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
-For a full list of the preinstalled configuration files, see :ref:`configuration_files`.
 
 Set the configurations files in your path and proceed to workflow generation::
 
@@ -111,9 +107,9 @@ and set the names of these configuration files in your path. If you have more th
 
 .. _pycbcdailygenerate:
 
------------------------
+=====================
 Generate the workflow
------------------------
+=====================
 
 When you are ready, you can generate the workflow. First we need to choose a start time. Here is an example::
 
@@ -162,10 +158,11 @@ create the workflow using::
 
 .. _weeklyahopeplan:
 
------------------------------------------
+====================================
 Planning and submitting the workflow
------------------------------------------
-CD into the directory where the dax was generated::
+====================================
+
+Change directory into the directory where the dax was generated::
 
     cd ${MONTHDIR}/${DAYDIR}/
 
