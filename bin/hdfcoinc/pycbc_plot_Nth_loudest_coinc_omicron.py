@@ -121,6 +121,7 @@ for era in eras:
                 omicron_freq.append(row.peak_frequency)
 
 
+# Generate inspiral waveform and calculate f(t) to plot on top of Omicron triggers
 hp, hc = get_td_waveform(approximant='SEOBNRv2', mass1=m1, mass2=m2,
                  spin1x=0, spin1y=0, spin1z=s1z,
                  spin2x=0, spin2y=0, spin2z=s2z,
