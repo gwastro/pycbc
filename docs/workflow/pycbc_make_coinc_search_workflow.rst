@@ -488,7 +488,7 @@ command line arguments
 Note that  you are running on a resource that mandates accounting, then you
 will also need to add a valid tag with the ``--accounting-tag`` command line
 argument. Please see
-`<https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user> this page`_. to
+`the LDG accounting page <https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user>`_. to
 determine the correct tags. These can be applied by adding the following line
 to your submit invocation.
 
