@@ -85,4 +85,15 @@ pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-
 # Needed by mock 
 pip install 'setuptools==18.2' --upgrade
 
+# hd5f
+mkdir -p $VIRTUAL_ENV/src
+cd $VIRTUAL_ENV/src
+curl https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
+tar -zxvf hdf5-1.8.12.tar.gz
+cd hdf5-1.8.12
+./configure --prefix=$VIRTUAL_ENV/opt/hdf5-1.8.12
+make install
+HDF5_DIR=$VIRTUAL_ENV/opt/hdf5-1.8.12 pip install 'h5py==2.5.0'
+
+
 python setup.py install
