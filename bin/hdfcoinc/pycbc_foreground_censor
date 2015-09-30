@@ -2,6 +2,7 @@
 """Make segment file to blind the results from foreground related triggers """
 
 import argparse, logging, pycbc.version, h5py, pycbc.events
+from pycbc.workflow import SegFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
@@ -43,5 +44,9 @@ if args.strict_coinc_time:
     fsegs[0] = (fsegs[0] + fsegs[1]).coalesce()
     fsegs[1] = fsegs[0]
 
-pycbc.events.multi_segments_to_file(fsegs, args.output_file, names, ifos)
+# FIXME: Don't use URL once Larne supports taking file paths directly in the
+#        workflow File class
+file_url = urlparse.urlunparse(['file', 'localhost',
+                          os.path.abspath(args.output_file), None, None, None])
+SegFile.from_multi_segment_list('UNUSED', fsegs, names, ifos, file_url=file_url)
 logging.info('done')
