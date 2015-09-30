@@ -180,12 +180,14 @@ class Executable(pegasus_workflow.Executable):
         # able to fetch it.
         exe_path = cp.get('executables', name)
         valid_path = False
+        self.needs_fetching = False
 
         if exe_path.find('://') > 0:
             if exe_path.startswith('file://'):
                 valid_path = os.path.isfile(exe_path[7:])
             else:
                 valid_path = True
+                self.needs_fetching = True
         else:
             valid_path = os.path.isfile(exe_path)
 
@@ -423,7 +425,14 @@ class Workflow(pegasus_workflow.Workflow):
         """ Execute this node immediately on the local machine
         """
         node.executed = True
-        cmd_list = node.get_command_line(verbatim_exe=verbatim_exe)
+        
+        # Check that the PFN is for a file or path
+        if node.executable.needs_fetching:
+            pfn = node.executable.get_pfn()
+            resolved = resolve_url(pfn)
+            self.PFN(resolved, 'local')
+
+        cmd_list = node.get_command_line()
         
         # Must execute in output directory.
         curr_dir = os.getcwd()
@@ -490,7 +499,7 @@ class Node(pegasus_workflow.Node):
             
         self._options += self.executable.common_options
     
-    def get_command_line(self, verbatim_exe=False):
+    def get_command_line(self):
         self._finalize()
         arglist = self._dax_node.arguments
         
@@ -508,10 +517,7 @@ class Node(pegasus_workflow.Node):
        
         # This allows the pfn to be an http(s) URL, which will be
         # downloaded by resolve_url
-        if verbatim_exe:
-            exe_path = self.executable.get_pfn()
-        else:
-            exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
+        exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
 
         return [exe_path] + arglist
         
@@ -1312,11 +1318,6 @@ def make_external_call(cmdList, out_dir=None, out_basename='external_call',
     exitCode : int
         The code returned by the process.
     """
-    resolvedExe = resolve_url(cmdList[0])
-    if resolvedExe != cmdList[0]:
-        os.chmod(resolvedExe, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-        cmdList[0] = resolvedExe
-
     if out_dir:
         outBase = os.path.join(out_dir,out_basename)
         errFile = outBase + '.err'
