@@ -17,67 +17,6 @@ def segments_to_start_end(segs):
     return (numpy.array([s[0] for s in segs]), 
             numpy.array([s[1] for s in segs]))
 
-def segments_to_file(segs, filename, name, ifo=""):
-    """ Save segments to an xml file
-    
-    Parameters
-    ----------
-    segs : glue.segments.segmentlist
-        List of segments to write to disk
-    filename : str
-        name of the output file
-    name : 
-        name of the segmentlist
-        
-    Returns
-    -------
-    File : Return a pycbc.core.File reference to the file
-    """
-    return multi_segments_to_file([segs], filename, [name], [ifo])
-
-
-def multi_segments_to_file(seg_list, filename, names, ifos):
-    """ Save segments to an xml file
-    
-    Parameters
-    ----------
-    seg_list: glue.segments.segmentlist
-        List of segment lists to write to disk
-    filename : str
-        name of the output file
-    names : 
-        name of each segment list
-    ifos :
-        list of ifos
-        
-    Returns
-    -------
-    File : Return a pycbc.core.File reference to the file
-    """
-    from pycbc.workflow.core import File
-
-    # create XML doc and add process table
-    outdoc = ligolw.Document()
-    outdoc.appendChild(ligolw.LIGO_LW())
-    process = ligolw_utils.process.register_to_xmldoc(outdoc, argv[0], {})
-
-    for segs, ifo, name in zip(seg_list, ifos, names):
-        fsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
-            for seg in segs]
-
-        # add segments, segments summary, and segment definer tables using glue library
-        with ligolw_segments.LigolwSegments(outdoc, process) as xmlsegs:
-            xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name)
-
-    # write file
-    ligolw_utils.write_filename(outdoc, filename)
-
-    # return a File instance
-    url = urlparse.urlunparse(['file', 'localhost', filename, None, None, None])
-    f = File(ifo, name, segs, file_url=url, tags=[name])
-    f.PFN(os.path.abspath(filename), site='local')
-    return f
-
 def start_end_from_segments(segment_file):
     """ Return the start and end time arrays from a segment file.
     
