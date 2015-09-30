@@ -52,7 +52,6 @@ fi
 echo "Using $nproc processors for parallel build."
 echo
 
-#answer=""
 
 while true ; do
 
@@ -220,6 +219,12 @@ exit 1
 fi
 done
 
+
+#Valid ECP cookie to clone
+echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
+ecp-cookie-init LIGO.ORG https://versions.ligo.org/git $directory
+echo
+echo
 #Create a Virtual Environment
 echo "--- creating virtual environment --------------------------------"
 unset PYTHONPATH
@@ -255,8 +260,8 @@ echo
 #read -p "Enter your LIGO.ORG username in (e.g. albert.einstein):" directory
 
 #Valid ECP cookie to clone
-echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
-ecp-cookie-init LIGO.ORG https://versions.ligo.org/git $directory
+#echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
+#ecp-cookie-init LIGO.ORG https://versions.ligo.org/git $directory
 
 #Tell git the location of the cookie
 git config --global http.cookiefile /tmp/ecpcookie.u`id -u`
