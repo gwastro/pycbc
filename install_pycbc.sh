@@ -30,7 +30,7 @@ fi
 if [[ -d $NAME ]] ; then
    echo "ERROR: the directory $NAME already exists."
    echo "If you want to use this path, remove the directory and try again."
-   exit 
+   exit 1
 fi
 
 read -p "Enter the number of processors that you want to use for builds: " nproc
