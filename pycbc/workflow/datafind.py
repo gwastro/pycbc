@@ -34,7 +34,7 @@ import urlparse
 import logging
 from glue import segments, lal
 from glue.ligolw import utils, table, lsctables, ligolw
-from pycbc.workflow.core import OutSegFile, File, FileList, make_analysis_dir
+from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
@@ -321,19 +321,15 @@ def setup_datafind_workflow(workflow, scienceSegs,  outputDir, segFilesList,
 
     # Now need to create the file for SCIENCE_AVAILABLE
     for ifo in scienceSegs.keys():
-        availableSegsFile = os.path.abspath(os.path.join(outputDir, 
-                           "%s-SCIENCE_AVAILABLE_SEGMENTS.xml" %(ifo.upper()) ))
-        currUrl = urlparse.urlunparse(['file', 'localhost', availableSegsFile,
-                          None, None, None])
         if tag:
-            currTags = [tag, 'SCIENCE_AVAILABLE']
+            curr_tags = [tag, 'SCIENCE_AVAILABLE']
         else:
-            currTags = ['SCIENCE_AVAILABLE']
-        currFile = OutSegFile(ifo, 'SEGMENTS', workflow.analysis_time,
-                            currUrl, segment_list=scienceSegs[ifo], tags = currTags)
-        currFile.PFN(availableSegsFile, site='local')
-        segFilesList.append(currFile)
-        currFile.toSegmentXml()
+            curr_tags = ['SCIENCE_AVAILABLE']
+        curr_file = SegFile.from_segment_list('SEGMENTS', scienceSegs[ifo],
+                                'SCIENCE_AVAILABLE', ifo, extension='.xml',
+                                directory=outputDir, tags=curr_tags,
+                                valid_segment=workflow.analysis_time)
+        segFilesList.append(curr_file)
    
 
     logging.info("Leaving datafind module")
