@@ -49,17 +49,25 @@ for psd_file in args.psd_files:
             horizon_distance = sigma / canonical_snr 
             inspiral_range = horizon_distance / 2.26
             
-            if apx in ranges:
-                ranges[apx].append(inspiral_range)
+            wf_key = (m1, m2, apx)
+            if wf_key in ranges:
+                ranges[wf_key].append(inspiral_range)
             else:
-                ranges[apx] = [inspiral_range]
+                ranges[wf_key] = [inspiral_range]
 
     for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):
-        label = '%s: $%sM_{\odot}-%sM_{\odot} (%s)$' % (ifo, m1, m2, apx)
-        pylab.errorbar((start+end)/2, ranges[apx], 
-                      xerr=(end-start)/2, ecolor=pycbc.results.ifo_color(ifo),
-                      label=label, fmt=None)        
-pylab.legend(loc="lower left")
+        if len(args.approximant) > 1:
+            label = '%s: $%sM_{\odot}-%sM_{\odot}$ (%s)' % (ifo, m1, m2, apx)
+        else:
+            label = str(ifo)
+        wf_key = (m1, m2, apx)
+        pylab.errorbar((start+end)/2, ranges[wf_key], xerr=(end-start)/2,
+                       ecolor=pycbc.results.ifo_color(ifo), label=label,
+                       fmt=None)
+pylab.legend(loc="best", fontsize='small')
+
+if len(args.approximant) == 1:
+    fig.suptitle('$%sM_{\odot}-%sM_{\odot}$ %s' % (m1, m2, apx))
          
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
     title = "Inspiral Range",
