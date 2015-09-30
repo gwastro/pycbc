@@ -1309,7 +1309,6 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
         The cumulative segment files from each ifo that determined the
         analyzable time.
     """
-    from pycbc.events import segments_to_file
     logging.info('Entering generation of science segments')
     segments_method = workflow.cp.get_opt_tags("workflow-segments", 
                                       "segments-method", tags)
