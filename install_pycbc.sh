@@ -52,6 +52,179 @@ fi
 echo "Using $nproc processors for parallel build."
 echo
 
+
+while true ; do
+
+#LIGO.ORG username
+read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " directory
+
+#Lalsuite
+echo "--- select lalsuite branch or tag -------------------------------"
+echo
+echo "Enter the name of the lalsuite branch or tag that you want to use."
+echo 
+echo "A list of branches can be found at:"
+echo "   https://versions.ligo.org/cgit/lalsuite/refs/heads"
+echo "A list of tags can be found at:"
+echo "   https://versions.ligo.org/cgit/lalsuite/refs/tags"
+echo
+read -rp "Enter a valid tag or branch name (e.g. master or lalsuite_o1_branch): " lalbranch
+
+#github
+echo "Would you like to install a released version of PyCBC or a development copy?"
+  echo "Please choose either"
+  echo "  1. Release version"
+  echo "  2. Development version"
+  echo
+  read -rp "Enter either 1 or 2: " dev_or_rel
+
+  #released version
+  if [[ $dev_or_rel -eq 1 ]] ; then
+    #Installing a released version of pyCBC
+    #Choose release version
+    echo "Please enter the name of a valid release tag. These can be found at"
+    echo "   https://github.com/ligo-cbc/pycbc/releases"
+    read -rp "Enter the tag name (e.g. v1.1.5): " reltag
+
+  #development
+  elif [[ $dev_or_rel -eq 2 ]] ; then
+
+    #Fork pyCBC to your Github account
+    echo To install a development version, you will need a GitHub account.
+    echo If you do not have a github account you will need to set one up.
+    echo
+    echo Once you have set up your GitHub account, follow the instruction at
+    echo
+    echo     https://help.github.com/articles/fork-a-repo/
+    echo
+    echo to fork the respository
+    echo
+    echo     https://github.com/ligo-cbc/pycbc
+    echo
+    echo into your own GitHub account. You will then need to enable ssh 
+    echo keys on your GitHub account. You can follow these instructions:
+    echo
+    echo     https://help.github.com/articles/generating-ssh-keys/
+    echo 
+    read -rsp $'Once you have completed these steps, hit [Enter] to continue...\n' -n1 key
+
+    #Create an ssh agent to connect to GitHub
+    echo "Do you already have an ssh agent running with the key connected to GitHub?"
+    while true ; do
+      read -p "Enter yes or no (if you are not sure, enter no): " ssh_key
+      if [[ $ssh_key == "yes" ]] ; then
+        created_socket=""
+        echo "Using $SSH_AUTH_SOCK"
+        break
+      elif [[ $ssh_key == "no" ]] ; then
+        created_socket="yes"
+        echo "Creating ssh agent to connect to GitHub:"
+        eval `ssh-agent`
+        echo "Please enter your ssh key passphrase."
+        ssh-add
+        break
+      else
+        echo "ERROR: please enter yes or no."
+      fi
+    done
+
+    #Input Username
+    read -rp "GitHub Username: " github
+
+  else
+    echo "You must enter 1 or 2."
+ fi
+
+#MKL Optimized Code
+echo "To run MKL optimized code, you need to enter the path and architecture"
+echo "for the Intel optimized toolkit on your cluster. For example:"
+echo "on sugar, enter"
+echo "     /opt/intel/bin/compilervars.sh intel64"
+echo "on atlas, enter"
+echo "     /opt/intel/2015/bin/compilervars.sh intel64"
+echo "If you do not have these tools installed, just press return."
+echo 
+read -p "Enter path and architecture for Intel compilervars.sh or press return: " intel_path
+
+echo
+echo "LIGO.ORG username: " $directory
+echo "Lalsuite Branch or Tag: " $lalbranch
+echo "Development or released: " $dev_or_rel
+
+if [[ $dev_or_rel -eq 1 ]] ; then
+echo "Released Tag: " $reltag
+fi
+
+if [[ $dev_or_rel -eq 2 ]] ; then
+echo "Github Username: " $github
+fi
+
+echo "Path and architecture for Intel compilervars.sh:" $intel_path
+echo
+echo "PyCBC version "
+echo "  1. Release version"
+echo "  2. Development version"
+echo
+echo
+read -rp "Are these correct? (Enter yes or no) " questions 
+
+ if [[ $questions == "yes" ]] ; then
+ break
+
+ elif [[ $questions == "no" ]] ; then
+ continue
+
+ else
+  echo "You must enter yes or no."
+  exit 1
+
+ fi
+done
+
+while true; do
+echo "What would you like to do with your pip cache?"
+echo "1. Leave it alone."
+echo "2. Ignore it."
+echo "3. Remove it."
+echo
+read -rp "Enter 1, 2 or 3: " pip_cache
+
+read -rp "You entered [ $pip_cache ]. Are you sure? (Enter yes or no) " check
+
+if [[ $check == "yes" ]] ; then 
+
+ if [[ $pip_cache -eq 1 ]] ; then 
+ cache=""
+ break
+ fi
+
+ if [[ $pip_cache -eq 2 ]] ; then
+ cache="--no-cache-dir"
+ break
+ fi
+
+ if [[ $pip_cache -eq 3 ]] ; then
+ rm -rfv ${HOME}/.cache/pip
+ cache=""
+ break
+ fi
+ 
+elif [[ $check == "no" ]] ; then
+continue
+
+else
+echo "You must enter yes or no."
+exit 1
+
+fi
+done
+
+
+#Valid ECP cookie to clone
+echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
+ecp-cookie-init LIGO.ORG https://versions.ligo.org/git $directory
+echo
+echo
 #Create a Virtual Environment
 echo "--- creating virtual environment --------------------------------"
 unset PYTHONPATH
@@ -70,25 +243,25 @@ rm hdf5-1.8.12.tar.gz
 cd hdf5-1.8.12
 ./configure --prefix=$VIRTUAL_ENV/opt/hdf5-1.8.12
 make -j $nproc install
-HDF5_DIR=${VIRTUAL_ENV}/opt/hdf5-1.8.12 pip install h5py
+HDF5_DIR=${VIRTUAL_ENV}/opt/hdf5-1.8.12 pip $cache install h5py
 
 #Installing lalsuite into Virtual Environment
 #Install unitest2, python-cjson, and numpy
 echo "--- installing required packages --------------------------------"
-pip install "numpy>=1.6.4" unittest2 python-cjson Cython
+pip $cache install "numpy>=1.6.4" unittest2 python-cjson Cython
 
 #Authenticate with LIGO Data Grid services, install M2Crypto
-SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
+SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip $cache install M2Crypto
 
 echo
 echo
 echo "--- cloning lalsuite repository ---------------------------------"
 echo
-read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " directory
+#read -p "Enter your LIGO.ORG username in (e.g. albert.einstein):" directory
 
 #Valid ECP cookie to clone
-echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
-ecp-cookie-init LIGO.ORG https://versions.ligo.org/git $directory
+#echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
+#ecp-cookie-init LIGO.ORG https://versions.ligo.org/git $directory
 
 #Tell git the location of the cookie
 git config --global http.cookiefile /tmp/ecpcookie.u`id -u`
@@ -104,16 +277,16 @@ cd lalsuite
 #Determine which version of the code you want to install
 echo
 echo
-echo "--- select lalsuite branch or tag -------------------------------"
+#echo "--- select lalsuite branch or tag -------------------------------"
 echo
-echo "Enter the name of the lalsuite branch or tag that you want to use."
+#echo "Enter the name of the lalsuite branch or tag that you want to use."
 echo 
-echo "A list of branches can be found at:"
-echo "   https://versions.ligo.org/cgit/lalsuite/refs/heads"
-echo "A list of tags can be found at:"
-echo "   https://versions.ligo.org/cgit/lalsuite/refs/tags"
+#echo "A list of branches can be found at:"
+#echo "   https://versions.ligo.org/cgit/lalsuite/refs/heads"
+#echo "A list of tags can be found at:"
+#echo "   https://versions.ligo.org/cgit/lalsuite/refs/tags"
 echo
-read -rp "Enter a valid tag or branch name (e.g. master or lalsuite_o1_branch): " lalbranch
+#read -rp "Enter a valid tag or branch name (e.g. master or lalsuite_o1_branch): " lalbranch
 git checkout $lalbranch
 
 #Building and Installing into your Virtual Environment
@@ -139,13 +312,13 @@ echo "--- installing pegasus and dqsegdb ------------------------------"
 echo
 
 #Install Pegasus WMS python libraries
-pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
+pip $cache install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
 
 #Install dqsegb from Duncan's repository
-pip install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
+pip $cache install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
 
 #Install pycbc and glue from non-cached versions to get the rpaths correct
-pip install --no-cache pycbc-glue pycbc-pylal
+pip $cache install --no-cache pycbc-glue pycbc-pylal
 
 #Released or Development
 echo
@@ -155,22 +328,22 @@ echo
 
 while true ; do
 
-  echo "Would you like to install a released version of PyCBC or a development copy?"
-  echo "Please choose either"
-  echo "  1. Release version"
-  echo "  2. Development version"
-  echo
-  read -rp "Enter either 1 or 2: " dev_or_rel
+#  echo "Would you like to install a released version of PyCBC or a development copy?"
+#  echo "Please choose either"
+#  echo "  1. Release version"
+#  echo "  2. Development version"
+#  echo
+#  read -rp "Enter either 1 or 2: " dev_or_rel
 
   if [[ $dev_or_rel -eq 1 ]] ; then
     #Installing a released version of pyCBC
     #Choose release version
-    echo "Please enter the name of a valid release tag. These can be found at"
-    echo "   https://github.com/ligo-cbc/pycbc/releases"
-    read -rp "Enter the tag name (e.g. v1.1.5): " reltag
+#    echo "Please enter the name of a valid release tag. These can be found at"
+#    echo "   https://github.com/ligo-cbc/pycbc/releases"
+#    read -rp "Enter the tag name (e.g. v1.1.5): " reltag
 
     #Install Version
-    pip install git+https://github.com/ligo-cbc/pycbc@${reltag}#egg=pycbc --process-dependency-links
+    pip $cache install git+https://github.com/ligo-cbc/pycbc@${reltag}#egg=pycbc --process-dependency-links
 
     # continue with install
     break
@@ -178,49 +351,49 @@ while true ; do
   elif [[ $dev_or_rel -eq 2 ]] ; then
 
     #Fork pyCBC to your Github account
-    echo To install a development version, you will need a GitHub account.
-    echo If you do not have a github account you will need to set one up.
+#    echo To install a development version, you will need a GitHub account.
+#    echo If you do not have a github account you will need to set one up.
     echo
-    echo Once you have set up your GitHub account, follow the instruction at
+#    echo Once you have set up your GitHub account, follow the instruction at
     echo
-    echo     https://help.github.com/articles/fork-a-repo/
+#    echo     https://help.github.com/articles/fork-a-repo/
     echo
-    echo to fork the respository
+#    echo to fork the respository
     echo
-    echo     https://github.com/ligo-cbc/pycbc
+#    echo     https://github.com/ligo-cbc/pycbc
     echo
-    echo into your own GitHub account. You will then need to enable ssh 
-    echo keys on your GitHub account. You can follow these instructions:
+#    echo into your own GitHub account. You will then need to enable ssh 
+#    echo keys on your GitHub account. You can follow these instructions:
     echo
-    echo     https://help.github.com/articles/generating-ssh-keys/
+#    echo     https://help.github.com/articles/generating-ssh-keys/
     echo 
-    read -rsp $'Once you have completed these steps, hit [Enter] to continue...\n' -n1 key
+#    read -rsp $'Once you have completed these steps, hit [Enter] to continue...\n' -n1 key
   
     #Create an ssh agent to connect to GitHub
-    echo "Do you already have an ssh agent running with the key connected to GitHub?"
-    while true ; do
-      read -p "Enter yes or no (if you are not sure, enter no): " ssh_key
-      if [[ $ssh_key == "yes" ]] ; then
-        created_socket=""
-        echo "Using $SSH_AUTH_SOCK"
-        break
-      elif [[ $ssh_key == "no" ]] ; then
-        created_socket="yes"
-        echo "Creating ssh agent to connect to GitHub:"
-        eval `ssh-agent`
-        echo "Please enter your ssh key passphrase."
-        ssh-add
-        break
-      else
-        echo "ERROR: please enter yes or no."
-      fi
-    done
+#    echo "Do you already have an ssh agent running with the key connected to GitHub?"
+#    while true ; do
+#      read -p "Enter yes or no (if you are not sure, enter no): " ssh_key
+#      if [[ $ssh_key == "yes" ]] ; then
+#        created_socket=""
+#        echo "Using $SSH_AUTH_SOCK"
+#        break
+#      elif [[ $ssh_key == "no" ]] ; then
+#        created_socket="yes"
+#        echo "Creating ssh agent to connect to GitHub:"
+#        eval `ssh-agent`
+#        echo "Please enter your ssh key passphrase."
+#        ssh-add
+#        break
+#      else
+#        echo "ERROR: please enter yes or no."
+#      fi
+#    done
   
     #Input Username
-    read -rp "GitHub Username: " github
+#    read -rp "GitHub Username: " github
   
     #Install PyCBC source code from GitHub URL
-    pip install -e git+git@github.com:${github}/pycbc.git#egg=pycbc --process-dependency-links
+    pip $cache install -e git+git@github.com:${github}/pycbc.git#egg=pycbc --process-dependency-links
   
     #Prevent Pip from removing source directory
     rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
@@ -235,6 +408,7 @@ while true ; do
   else
     echo "You must enter 1 or 2."
   fi
+
 done
 
 if [[ $dev_or_rel -eq 2 ]] ; then
@@ -243,9 +417,9 @@ if [[ $dev_or_rel -eq 2 ]] ; then
   echo
   echo "--- downloading documentation tools -----------------------------"
   echo
-  pip install "Sphinx>=1.3.1"
-  pip install sphinxcontrib-programoutput
-  pip install numpydoc
+  pip $cache install "Sphinx>=1.3.1"
+  pip $cache install sphinxcontrib-programoutput
+  pip $cache install numpydoc
   
   #patch the bug in numpydoc for python 2.6
   cat <<EOF > ${VIRTUAL_ENV}/plot_directive.patch
@@ -284,15 +458,15 @@ echo
 echo "--- setting up optimized libraries ------------------------------"
 echo
 echo
-echo "To run MKL optimized code, you need to enter the path and architecture"
-echo "for the Intel optimized toolkit on your cluster. For example:"
-echo "on sugar, enter"
-echo "     /opt/intel/bin/compilervars.sh intel64"
-echo "on atlas, enter"
-echo "     /opt/intel/2015/bin/compilervars.sh intel64"
-echo "If you do not have these tools installed, just press return."
-echo 
-read -p "Enter path and architecture for Intel compilervars.sh or press return: " intel_path
+#echo "To run MKL optimized code, you need to enter the path and architecture"
+#echo "for the Intel optimized toolkit on your cluster. For example:"
+#echo "on sugar, enter"
+#echo "     /opt/intel/bin/compilervars.sh intel64"
+#echo "on atlas, enter"
+#echo "     /opt/intel/2015/bin/compilervars.sh intel64"
+#echo "If you do not have these tools installed, just press return."
+#echo 
+#read -p "Enter path and architecture for Intel compilervars.sh or press return: " intel_path
 
 #Add script that sets up the MKL environment to virtualenv activate script
 if [[ ! -z "${intel_path}" ]] ; then 
