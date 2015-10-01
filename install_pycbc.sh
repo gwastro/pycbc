@@ -318,7 +318,7 @@ pip $cache install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-
 pip $cache install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
 
 #Install pycbc and glue from non-cached versions to get the rpaths correct
-pip $cache install --no-cache pycbc-glue pycbc-pylal
+pip $cache install pycbc-glue pycbc-pylal
 
 #Released or Development
 echo
