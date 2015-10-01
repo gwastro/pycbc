@@ -23,7 +23,7 @@ columns = [inj['end_time'][:][idx], inj['mass1'][:][idx], inj['mass2'][:][idx],
            inj['distance'][:][idx],
            inj['eff_dist_h'][:][idx], inj['eff_dist_l'][:][idx], inj['eff_dist_v'][:][idx],
            tdiff, found['stat'], found['ifar'],     
-          ]
+         
 names = ['Inj Time', 'Mass1', 'Mass2',
          's1x', 's1y', 's1z',
          's2x', 's2y', 's2z', 
@@ -42,5 +42,10 @@ format_strings = ['##.##', '##.##', '##.##',
 html_table = pycbc.results.table(columns, names, 
                                  format_strings=format_strings, 
                                  page_size=20)
-f = open(args.output_file, 'w')
-f.write(html_table)
+                                 
+kwds = { 'title' : 'Found Injections', 
+        'caption' : "A table of found injections and their coincident statistic
+                    "information.",
+        'cmd' :' '.join(sys.argv), }
+pycbc.results.save_fig_with_metadata(html_table, time_file.storage_path, **kwds)
+
