@@ -94,9 +94,10 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
         sci_seg_file = seg_ifo_files.find_output_with_tag('SCIENCE')
         if len(sci_seg_file) == 1:
             sci_seg_file = sci_seg_file[0]
-            sci_segs = sci_seg_file.segmentList
+            print sci_seg_file.segment_dict.keys()
+            sci_segs = sci_seg_file.segment_dict['%s:%s' %(ifo, 'RESULT')]
             sci_def_id = segmentdb_utils.add_to_segment_definer(outdoc, proc_id,
-                                                   ifo, "CBC_WORKFLOW_SCIENCE", 0)
+                                                ifo, "CBC_WORKFLOW_SCIENCE", 0)
             segmentdb_utils.add_to_segment(outdoc, proc_id, sci_def_id,
                                                                       sci_segs)
             segmentdb_utils.add_to_segment_summary(outdoc, proc_id, sci_def_id,
@@ -113,7 +114,8 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
         sci_ok_seg_file = seg_ifo_files.find_output_with_tag('SCIENCE_OK')
         if len(sci_ok_seg_file) == 1:
             sci_ok_seg_file = sci_ok_seg_file[0]
-            sci_ok_segs = sci_ok_seg_file.segmentList
+            sci_ok_segs = \
+                      sci_ok_seg_file.segment_dict['%s:%s' %(ifo,'SCIENCE_OK')]
             sci_ok_def_id = segmentdb_utils.add_to_segment_definer(outdoc,
                                        proc_id, ifo, "CBC_WORKFLOW_SCIENCE_OK", 0)
             segmentdb_utils.add_to_segment(outdoc, proc_id, sci_ok_def_id,
@@ -134,7 +136,9 @@ def setup_analysislogging(workflow, segs_list, insps, args, output_dir,
                                                            'SCIENCE_AVAILABLE')
         if len(sci_available_seg_file) == 1:
             sci_available_seg_file = sci_available_seg_file[0]
-            sci_available_segs = sci_available_seg_file.segmentList
+            sci_available_segs = sci_available_seg_file.segment_dict
+            sci_available_segs = \
+                        sci_available_segs['%s:%s' %(ifo, 'SCIENCE_AVAILABLE')]
             sci_available_def_id = segmentdb_utils.add_to_segment_definer(\
                         outdoc, proc_id, ifo, "CBC_WORKFLOW_SCIENCE_AVAILABLE", 0)
             segmentdb_utils.add_to_segment(outdoc, proc_id,
