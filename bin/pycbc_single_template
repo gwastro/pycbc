@@ -35,12 +35,17 @@ def get_time(statmap, n_loudest, ifo):
      
      return t[ifo], f['foreground/template_id'][:][n]
 
-def select_segment(fname, segment, ifo, time):
+def select_segment(fname, segment, ifo, time, start_pad, end_pad):
     segs = events.select_segments_by_definer(fname, segment, ifo)
 
     s = numpy.array([t[0] for t in segs])
-    e = numpy.array([t[1] for t in segs])    
-    
+    e = numpy.array([t[1] for t in segs])
+
+    #ensure sorted
+    sorting = s.argsort()    
+    s = s[sorting] + start_pad
+    e = e[sorting] - end_pad
+
     idx = numpy.searchsorted(s, time) - 1
     return (s[idx], e[idx])
 
@@ -118,7 +123,9 @@ if opt.statmap_file:
     opt.mass2 = float(b['mass2'][:][tid])
     opt.spin1z = float(b['spin1z'][:][tid])
     opt.spin2z = float(b['spin2z'][:][tid])
-    seg = select_segment(opt.inspiral_segments, opt.segment_name, ifo, time)
+    start_pad = opt.pad_data + opt.segment_start_pad
+    end_pad = opt.pad_data + opt.segment_end_pad
+    seg = select_segment(opt.inspiral_segments, opt.segment_name, ifo, time, start_pad, end_pad)
     opt.gps_start_time, opt.gps_end_time = seg[0] + opt.pad_data, seg[1] - opt.pad_data
     f.attrs['event_time'] = time
 

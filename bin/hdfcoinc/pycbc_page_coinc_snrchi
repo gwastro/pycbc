@@ -39,8 +39,8 @@ import mpld3
 # Add the background triggers
 f = h5py.File(args.coinc_statistic_file, 'r')
 b_tids = {}
-b_tids[f.attrs['detector_1']] = f['background/trigger_id1']
-b_tids[f.attrs['detector_2']] = f['background/trigger_id2']
+b_tids[f.attrs['detector_1']] = f['background_exc/trigger_id1']
+b_tids[f.attrs['detector_2']] = f['background_exc/trigger_id2']
 
 f = h5py.File(args.single_trigger_file, 'r')
 ifo = f.keys()[0]
