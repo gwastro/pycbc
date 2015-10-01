@@ -222,7 +222,8 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                                      if "DETECTION" in file.tag_str])
         injcombiner_tags = [inj_tag for inj_tag in inj_tags \
                             if "DETECTION" not in inj_tag]
-        injcombiner_out_tags = [injcombiner_outs[0].tag_str.rsplit('_', 1)[0]]
+        injcombiner_out_tags = [i.tag_str.rsplit('_', 1)[0] for i in \
+                                injcombiner_outs if "FOUND" in i.tag_str]
         injcombiner_nodes = []
 
         for injcombiner_tag in injcombiner_tags:
