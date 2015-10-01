@@ -182,12 +182,26 @@ read -rp "Are these correct? (Enter yes or no) " questions
 done
 
 while true; do
+
+while true; do
 echo "What would you like to do with your pip cache?"
 echo "1. Leave it alone."
 echo "2. Ignore it."
 echo "3. Remove it."
 echo
 read -rp "Enter 1, 2 or 3: " pip_cache
+
+if [[ $pip_cache != 1 ]] && [[ $pip_cache != 2 ]] && [[ $pip_cache != 3 ]] ; then
+ echo "You must enter 1, 2, or 3." 
+ echo
+ echo
+ continue
+
+else
+ break
+
+fi
+done
 
 read -rp "You entered [ $pip_cache ]. Are you sure? (Enter yes or no) " check
 
