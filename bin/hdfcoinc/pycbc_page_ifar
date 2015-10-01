@@ -97,9 +97,12 @@ xs, ys = pylab.poly_between(expected_ifar, error_minus, error_plus)
 pylab.fill(xs, ys, facecolor='y', alpha=0.2, label='$2N^{1/2}$ Errors')
 
 # get a unique list of timeslide_ids and loop over them
-id_limit = (len(back_tsid)/2) // opts.decimation_factor
-tsids = [x for x in range(-id_limit*opts.decimation_factor, (id_limit+1)*opts.decimation_factor, opts.decimation_factor) if x != 0]
+min_tsid = numpy.ceil(back_tsid.min() / float(opts.decimation_factor))
+max_tsid = int(back_tsid.max() / opts.decimation_factor)
+tsids = numpy.arange(min_tsid, max_tsid, 1).astype(numpy.int64) * opts.decimation_factor
 for tsid in tsids:
+    if tsid == 0:
+        continue
 
     # find all triggers in this time slide
     ts_indx = numpy.where(back_tsid == tsid)
