@@ -170,6 +170,13 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             logging.info("Converting to float32")
             strain = (strain * dyn_range_fac).astype(float32)
 
+        if opt.gating_file is not None:
+            logging.info("Gating glitches")
+            gate_params = numpy.loadtxt(opt.gating_file)
+            if len(gate_params.shape) == 1:
+                gate_params = [gate_params]
+            strain = gate_data(strain, gate_params)
+
         if opt.autogating_threshold is not None:
             # the + 0 is for making a copy
             glitch_times = detect_loud_glitches(
@@ -178,25 +185,15 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
                     low_freq_cutoff=opt.strain_high_pass,
                     high_freq_cutoff=opt.sample_rate/2,
                     corrupted_time=opt.pad_data)
-            # FIXME gate params currently hardcoded, these are tuning choices
-            gate_params = [[gt, 0.25, 0.25] for gt in glitch_times]
+            gate_params = [[gt, opt.autogating_width, opt.autogating_taper] \
+                           for gt in glitch_times]
             if opt.autogating_output:
                 with file(opt.autogating_output, 'wb') as autogates:
                     for x, y, z in gate_params:
                         autogates.write('%.3f %f %f\n' % (x, y, z))
             logging.info('Autogating at %s',
                          ', '.join(['%.3f' % gt for gt in glitch_times]))
-            strain = gate_data(strain, gate_params,
-                               data_start_time=strain.start_time)
-
-        if opt.gating_file is not None:
-            logging.info("Gating glitches")
-            gate_params = numpy.loadtxt(opt.gating_file)
-            if len(gate_params.shape) == 1:
-                gate_params = [gate_params]
-            strain = gate_data(
-                strain, gate_params,
-                data_start_time=(opt.gps_start_time - opt.pad_data))
+            strain = gate_data(strain, gate_params)
 
         logging.info("Resampling data")
         strain = resample_to_delta_t(strain, 1.0/opt.sample_rate, method='ldas')
@@ -348,6 +345,14 @@ def insert_strain_option_group(parser, gps_times=True):
                                     metavar='SECONDS', default=5.,
                                     help='Length of clustering window for '
                                          'detecting glitches for autogating.')
+    data_reading_group.add_argument('--autogating-width', type=float,
+                                    metavar='SECONDS', default=0.25,
+                                    help='Half-width of the gating window.')
+    data_reading_group.add_argument('--autogating-taper', type=float,
+                                    metavar='SECONDS', default=0.25,
+                                    help='Taper the strain before and after '
+                                         'each gating window over a duration '
+                                         'of SECONDS.')
     data_reading_group.add_argument('--autogating-output', type=str,
                                     metavar='FILE',
                                     help='If given, save the '
@@ -535,7 +540,7 @@ def verify_strain_options_multi_ifo(opts, parser, ifos):
         required_opts_multi_ifo(opts, parser, ifo, required_opts_list)
 
 
-def gate_data(data, gate_params, data_start_time):
+def gate_data(data, gate_params):
     def inverted_tukey(M, n_pad):
         midlen = M - 2*n_pad
         if midlen < 1:
@@ -546,8 +551,8 @@ def gate_data(data, gate_params, data_start_time):
     sample_rate = 1./data.delta_t
     temp = data.data
     for glitch_time, glitch_width, pad_width in gate_params:
-        t_start = glitch_time - glitch_width - pad_width - data_start_time
-        t_end = glitch_time + glitch_width + pad_width - data_start_time
+        t_start = glitch_time - glitch_width - pad_width - data.start_time
+        t_end = glitch_time + glitch_width + pad_width - data.start_time
         if t_start > data.duration or t_end < 0.:
             continue # Skip gate segments that don't overlap
         win_samples = int(2*sample_rate*(glitch_width+pad_width))
