@@ -449,7 +449,7 @@ class Workflow(pegasus_workflow.Workflow):
         job.addArguments('--cleanup inplace')
         job.addArguments('--cluster label,horizontal')
             
-    def save(self, name=None, output_map=None):
+    def save(self, filename=None, output_map=None):
         if output_map is None:
             output_map = self.output_map
             
@@ -464,7 +464,7 @@ class Workflow(pegasus_workflow.Workflow):
             fil.insert_into_dax(self._adag)
             
         # save the dax file
-        super(Workflow, self).save()
+        super(Workflow, self).save(filename=filename)
         
         # add workflow storage locations to the output mapper
         f = open(output_map, 'w')
