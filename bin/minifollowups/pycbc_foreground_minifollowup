@@ -19,9 +19,16 @@
 import os, argparse, logging, pycbc.workflow as wf
 from pycbc.results import layout
 import pycbc.workflow.minifollowups as mini
+import pycbc.workflow.pegasus_workflow as wdax
+import pycbc.version
+
+def to_file(path):
+    fil = wdax.File(os.path.basename(path))
+    fil.PFN(path, 'local')
+    return fil
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument('--version', action='version', version=__version__) 
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg) 
 parser.add_argument('--workflow-name', default='my_unamed_run')
 parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
@@ -36,6 +43,7 @@ parser.add_argument('--inspiral-segments', nargs='+',
 parser.add_argument('--inspiral-segment-name',
                     help="Name of inspiral segmentlist to read from segment files")
 parser.add_argument('--output-map')
+parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
@@ -49,19 +57,32 @@ wf.makedir(args.output_dir)
 # create a FileList that will contain all output files
 layout = []
 
+tmpltbank_file = to_file(args.bank_file)
+coinc_file = to_file(args.statmap_file)
+
+single_triggers = []
+for name in args.single_detector_triggers:
+    ifo, fname = name.split(':')
+    single_triggers.append(to_file(fname))
+    
+insp_segs = {}
+for name in args.inspiral_segments:
+    ifo, fname = name.split(':')
+    insp_segs[ifo] = to_file(fname)
+
 # loop over number of loudest events to be followed up
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 for num_event in range(num_events):
     files = FileList([])
     layout += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
                               coinc_file, num_event, 
-                              out_dir, tags=tags + [str(num_event)]),)        
+                              args.output_dir, tags=args.tags + [str(num_event)]),)        
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               coinc_file, num_event, 
-                              out_dir, tags=tags + [str(num_event)])
+                              args.output_dir, tags=args.tags + [str(num_event)])
     files += mini.make_single_template_plots(workflow, insp_segs,
-                              insp_seg_name, coinc_file, tmpltbank_file,
-                              num_event, out_dir, tags=tags + [str(num_event)])
+                              args.inspiral_segment_name, coinc_file, tmpltbank_file,
+                              num_event, args.output_dir, tags=args.tags + [str(num_event)])
     layout += list(grouper(files, 2))
     num_event += 1
 
