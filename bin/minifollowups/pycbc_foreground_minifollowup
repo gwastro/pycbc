@@ -1,0 +1,69 @@
+#!/bin/env python
+# Copyright (C) 2015 Alexander Harvey Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Followup foreground events
+"""
+import os, argparse, logging, pycbc.workflow as wf
+from pycbc.results import layout
+import pycbc.workflow.minifollowups as mini
+
+parser = argparse.ArgumentParser(description=__doc__[1:])
+parser.add_argument('--version', action='version', version=__version__) 
+parser.add_argument('--workflow-name', default='my_unamed_run')
+parser.add_argument("-d", "--output-dir", default=None,
+                    help="Path to output directory.")
+parser.add_argument('--bank-file',
+                    help="HDF format template bank file")
+parser.add_argument('--statmap-file',
+                    help="HDF format clustered coincident trigger result file")
+parser.add_argument('--single-detector-triggers', nargs='+', 
+                    help="HDF format merged single detector trigger files")
+parser.add_argument('--inspiral-segments', nargs='+',
+                    help="xml segment files containing the inspiral analysis times")
+parser.add_argument('--inspiral-segment-name',
+                    help="Name of inspiral segmentlist to read from segment files")
+parser.add_argument('--output-map')
+wf.add_workflow_command_line_group(parser)
+args = parser.parse_args()
+
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
+                    level=logging.INFO)
+
+workflow = wf.Workflow(args, args.workflow_name)
+
+wf.makedir(args.output_dir)
+             
+# create a FileList that will contain all output files
+layout = []
+
+# loop over number of loudest events to be followed up
+num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
+for num_event in range(num_events):
+    files = FileList([])
+    layout += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
+                              coinc_file, num_event, 
+                              out_dir, tags=tags + [str(num_event)]),)        
+    files += mini.make_trigger_timeseries(workflow, single_triggers,
+                              coinc_file, num_event, 
+                              out_dir, tags=tags + [str(num_event)])
+    files += mini.make_single_template_plots(workflow, insp_segs,
+                              insp_seg_name, coinc_file, tmpltbank_file,
+                              num_event, out_dir, tags=tags + [str(num_event)])
+    layout += list(grouper(files, 2))
+    num_event += 1
+
+workflow.save(output_map=output_map)
+layout.two_column_layout(args.output_dir, layout)
