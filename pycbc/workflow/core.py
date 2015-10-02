@@ -449,7 +449,7 @@ class Workflow(pegasus_workflow.Workflow):
         job.addArguments('--cleanup inplace')
         job.addArguments('--cluster label,horizontal')
             
-    def save(self, output_map=None):
+    def save(self, name=None, output_map=None):
         if output_map is None:
             output_map = self.output_map
             
