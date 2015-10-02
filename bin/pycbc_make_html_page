@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-import os
+import os, stat
 import pycbc.results
 import random
 import shutil
@@ -268,3 +268,13 @@ if not os.path.exists(jsOutputDir):
     shutil.copytree(jsDir, jsOutputDir)
 if not os.path.exists(fontsOutputDir):
     shutil.copytree(fontsDir, fontsOutputDir)
+
+
+for dirpath, dirnames, filenames in os.walk(opts.output_path + '/static'):
+    os.chmod(dirpath, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+
+    for filename in filenames:
+        path = os.path.join(dirpath, filename)
+        os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
+
+
