@@ -67,7 +67,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     makedir(dax_output)
     
     # turn the config file into a File class
-    config_path = dax_output + '/' + '_'.join(tags) + 'foreground_minifollowup.ini'
+    config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'foreground_minifollowup.ini')
     workflow.cp.write(open(config_path, 'w'))
     
     config_file = wdax.File(os.path.basename(config_path))
@@ -96,11 +96,12 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     fil = node.output_files[0]
     
     ## FIXME not clear why I have to set the id here, pegasus should do this!
-    job = dax.DAX(fil, id=id(node))
+    job = dax.DAX(fil)
+    job.addArguments('--basename %s' % name)
     Workflow.set_job_properties(job, map_loc)
-    workflow._adag.addJob(job)    
+    workflow._adag.addJob(job)
     dep = dax.Dependency(parent=node._dax_node, child=job)
-    
+    workflow._adag.addDependency(dep)
     logging.info('Leaving minifollowups module')
 
 def make_single_template_plots(workflow, segs, seg_name, coinc, bank, num, out_dir, 

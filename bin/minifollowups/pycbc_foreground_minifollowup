@@ -23,6 +23,7 @@ import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
 
 def to_file(path):
+    print "PATH ", path
     fil = wdax.File(os.path.basename(path))
     fil.PFN(path, 'local')
     return fil
@@ -43,6 +44,7 @@ parser.add_argument('--inspiral-segments', nargs='+',
 parser.add_argument('--inspiral-segment-name',
                     help="Name of inspiral segmentlist to read from segment files")
 parser.add_argument('--output-map')
+parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
@@ -55,7 +57,7 @@ workflow = wf.Workflow(args, args.workflow_name)
 wf.makedir(args.output_dir)
              
 # create a FileList that will contain all output files
-layout = []
+layouts = []
 
 tmpltbank_file = to_file(args.bank_file)
 coinc_file = to_file(args.statmap_file)
@@ -73,8 +75,8 @@ for name in args.inspiral_segments:
 # loop over number of loudest events to be followed up
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 for num_event in range(num_events):
-    files = FileList([])
-    layout += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
+    files = wf.FileList([])
+    layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
                               coinc_file, num_event, 
                               args.output_dir, tags=args.tags + [str(num_event)]),)        
     files += mini.make_trigger_timeseries(workflow, single_triggers,
@@ -83,8 +85,8 @@ for num_event in range(num_events):
     files += mini.make_single_template_plots(workflow, insp_segs,
                               args.inspiral_segment_name, coinc_file, tmpltbank_file,
                               num_event, args.output_dir, tags=args.tags + [str(num_event)])
-    layout += list(grouper(files, 2))
+    layouts += list(layout.grouper(files, 2))
     num_event += 1
 
-workflow.save(output_map=output_map)
-layout.two_column_layout(args.output_dir, layout)
+workflow.save(filename=args.output_file, output_map=args.output_map)
+layout.two_column_layout(args.output_dir, layouts)
