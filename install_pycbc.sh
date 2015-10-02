@@ -4,6 +4,15 @@
 # Exit if any command fails
 set -e 
 
+# this makes sure everything is logged to a file
+LOGPATH=${PWD}/install_pycbc_`date +%Y%m%d%H%M%S`.log
+if [ "$1" != "noscript" ] ; then
+    # just in case the user is calling us via bash or sh
+    chmod +x $0
+    exec script -q -c "$0 noscript" ${LOGPATH}
+    exit 1;
+fi
+
 #Installing pyCBC
 
 # Ask the user where they want pycbc installed
@@ -515,4 +524,8 @@ fi
 deactivate
 echo "PyCBC setup complete"
 echo
+
+# save log into virtualenv
+mv ${LOGPATH} ${NAME}/
+
 exit 0
