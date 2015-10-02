@@ -440,7 +440,7 @@ class Workflow(pegasus_workflow.Workflow):
             fil.node = None
             fil.PFN(fil.storage_path, site='local')
     
-    @classmethod
+    @staticmethod
     def set_job_properties(job, output_map):
         job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % output_map) 
         job.addArguments('-Dpegasus.dir.storage.mapper.replica=File') 
@@ -453,7 +453,7 @@ class Workflow(pegasus_workflow.Workflow):
         if output_map is None:
             output_map = self.output_map
             
-        self.set_job_poperties(self.as_job, output_map)
+        Workflow.set_job_properties(self.as_job, output_map)
 
         # add executable pfns for local site to dax
         for exe in self._executables:

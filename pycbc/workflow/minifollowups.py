@@ -19,6 +19,7 @@ from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workf
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 from itertools import izip_longest
 from Pegasus import DAX3 as dax
+from pycbc.workflow import pegasus_workflow as wdax
 
 def grouper(iterable, n, fillvalue=None):
     """ Create a list of n length tuples
@@ -65,24 +66,27 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     tags = [] if tags is None else tags
     makedir(dax_output)
     
-    config_path = dax_output + '_'.join(tags) + '/foreground_minifollowup.ini'
-    workflow.cp.save(open(config_path))
-    config_file = dax.File(os.path.basename(config_path))
+    # turn the config file into a File class
+    config_path = dax_output + '/' + '_'.join(tags) + 'foreground_minifollowup.ini'
+    workflow.cp.write(open(config_path, 'w'))
+    
+    config_file = wdax.File(os.path.basename(config_path))
     config_file.PFN(config_path, 'local')
     
-    map_loc = node.output_files[0].name + '.map'
     exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
     
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
     node.add_input_opt('--bank-file', tmpltbank_file)
     node.add_input_opt('--statmap-file', coinc_file)
-    node.add_input_list_opt('--single-detector-triggers', single_triggers)
-    node.add_input_list_opt('--inspiral-segments', insp_segs.values())
+    node.add_multiifo_input_list_opt('--single-detector-triggers', single_triggers)
+    node.add_multiifo_input_list_opt('--inspiral-segments', insp_segs.values())
     node.add_opt('--inspiral-segment-name', insp_seg_name)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
     
-    node.add_opt('--workflow-name', node.output_files[0].name)
+    name = node.output_files[0].name
+    map_loc = name + '.map'
+    node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
     node.add_opt('--output-map', map_loc)
     
@@ -90,11 +94,12 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     
     # execute this is a sub-workflow
     fil = node.output_files[0]
-    job = dax.DAX(fil)
     
-    dep = dax.Dependency(parent=node._dax_node, child=job)
+    ## FIXME not clear why I have to set the id here, pegasus should do this!
+    job = dax.DAX(fil, id=id(node))
     Workflow.set_job_properties(job, map_loc)
-    workflow._adag.addJob(job)
+    workflow._adag.addJob(job)    
+    dep = dax.Dependency(parent=node._dax_node, child=job)
     
     logging.info('Leaving minifollowups module')
 
