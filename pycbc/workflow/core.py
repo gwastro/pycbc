@@ -557,7 +557,7 @@ class Node(pegasus_workflow.Node):
         """
         # NOTE: Here we have to use the raw arguments functionality as the
         #       file and ifo are not space separated.
-        self.add_raw_arg('--' + opt)
+        self.add_raw_arg(opt)
         self.add_raw_arg(' ')
         for infile in inputs:
             self.add_raw_arg(infile.ifo)
@@ -573,7 +573,7 @@ class Node(pegasus_workflow.Node):
         """
         # NOTE: Here we have to use the raw arguments functionality as the
         #       file and ifo are not space separated.
-        self.add_raw_arg('--' + opt)
+        self.add_raw_arg('--' +opt)
         self.add_raw_arg(' ')
         for outfile in outputs:
             self.add_raw_arg(outfile.ifo)
