@@ -270,6 +270,10 @@ if not os.path.exists(fontsOutputDir):
     shutil.copytree(fontsDir, fontsOutputDir)
 
 
+# When bundling assets into pyinstaller binaries the static directory is
+# created with restrictions that are too restrictive.  So, go through and make
+# sure that directories are readable+executable and files are readable.
+
 for dirpath, dirnames, filenames in os.walk(opts.output_path + '/static'):
     os.chmod(dirpath, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
