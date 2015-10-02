@@ -439,14 +439,21 @@ class Workflow(pegasus_workflow.Workflow):
         for fil in node._outputs:
             fil.node = None
             fil.PFN(fil.storage_path, site='local')
+    
+    @classmethod
+    def set_job_properties(job, output_map):
+        job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % output_map) 
+        job.addArguments('-Dpegasus.dir.storage.mapper.replica=File') 
+        job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache')) 
+        job.addArguments('--output-site local')     
+        job.addArguments('--cleanup inplace')
+        job.addArguments('--cluster label,horizontal')
             
-    def save(self):
-        self.as_job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % self.output_map) 
-        self.as_job.addArguments('-Dpegasus.dir.storage.mapper.replica=File') 
-        self.as_job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache')) 
-        self.as_job.addArguments('--output-site local')     
-        self.as_job.addArguments('--cleanup inplace')
-        self.as_job.addArguments('--cluster label,horizontal')
+    def save(self, output_map=None):
+        if output_map is None:
+            output_map = self.output_map
+            
+        self.set_job_poperties(self.as_job, output_map)
 
         # add executable pfns for local site to dax
         for exe in self._executables:
@@ -460,7 +467,7 @@ class Workflow(pegasus_workflow.Workflow):
         super(Workflow, self).save()
         
         # add workflow storage locations to the output mapper
-        f = open(self.output_map, 'w')
+        f = open(output_map, 'w')
         for out in self._outputs:
             try:
                 f.write(out.output_map_str() + '\n')

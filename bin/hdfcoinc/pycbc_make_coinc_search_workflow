@@ -216,13 +216,13 @@ layout.two_column_layout(rdir['detector_sensitivity'], det_summ + list(layout.gr
 # run minifollowups on the output of the loudest events 
 wf.setup_foreground_minifollowups(workflow, final_bg_file,
                                   full_insps,  hdfbank[0],
-                                  insp_data_segs, 'INSPIRAL_DATA',
+                                  insp_data_segs, 'INSPIRAL_DATA', 'daxes',
                                   rdir['result/full'], tags=final_bg_file.tags)
     
 for bin_file in bin_files:
     if hasattr(bin_file, 'bin_name'):
         wf.setup_foregroujnd_minifollowups(workflow, bin_file, full_insps, hdfbank[0],
-                                  insp_data_segs, 'INSPIRAL_DATA', 
+                                  insp_data_segs, 'INSPIRAL_DATA', 'daxes',
                                   rdir['result/%s' % bin_file.bin_name],
                                   tags=bin_file.tags)
 
