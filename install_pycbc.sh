@@ -6,6 +6,8 @@ set -e
 
 #Installing pyCBC
 
+while true; do 
+
 # Ask the user where they want pycbc installed
 read -p "Enter the location where you want the virtual env created: " NAME
 
@@ -33,6 +35,26 @@ if [[ -d $NAME ]] ; then
    exit 1
 fi
 
+#Virualenv check
+echo "You chose to install PyCBC in $NAME."
+read -rp "Is this where you want PyCBC installed? (Enter yes or no) " name_check
+
+if [[ $name_check == "yes" ]] ; then
+ echo "Pycbc is being installed in $NAME." 
+ break
+fi
+
+if [[ $name_check == "no" ]] ; then
+ continue
+
+else
+ exit 1
+
+fi
+
+done
+
+#Number of processors for the installtion
 read -p "Enter the number of processors that you want to use for builds: " nproc
 
 if [[ -z $nproc ]] ; then
@@ -54,6 +76,7 @@ echo
 
 
 while true ; do
+#Inputs for code
 
 #LIGO.ORG username
 read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " directory
@@ -71,6 +94,7 @@ echo
 read -rp "Enter a valid tag or branch name (e.g. master or lalsuite_o1_branch): " lalbranch
 
 #github
+echo "------------------- Select PyCBC installion -----------------------------"
 echo "Would you like to install a released version of PyCBC or a development copy?"
   echo "Please choose either"
   echo "  1. Release version"
@@ -147,9 +171,12 @@ echo
 read -p "Enter path and architecture for Intel compilervars.sh or press return: " intel_path
 
 echo
+echo "------------PLease check the inputs carefully-----------------"
+echo
+echo "Virtual Environment Location: " $NAME
 echo "LIGO.ORG username: " $directory
 echo "Lalsuite Branch or Tag: " $lalbranch
-echo "Development or released: " $dev_or_rel
+echo "Development or Released: " $dev_or_rel
 
 if [[ $dev_or_rel -eq 1 ]] ; then
 echo "Released Tag: " $reltag
@@ -184,10 +211,11 @@ done
 while true; do
 
 while true; do
+#Pip cache decision
 echo "What would you like to do with your pip cache?"
-echo "1. Leave it alone."
-echo "2. Ignore it."
-echo "3. Remove it."
+echo "1. Leave the pip cache alone."
+echo "2. Ignore the pip cache."
+echo "3. Remove te pip cache."
 echo
 read -rp "Enter 1, 2 or 3: " pip_cache
 
@@ -203,6 +231,7 @@ else
 fi
 done
 
+#Pip cache check
 read -rp "You entered [ $pip_cache ]. Are you sure? (Enter yes or no) " check
 
 if [[ $check == "yes" ]] ; then 
@@ -367,20 +396,13 @@ while true ; do
     #Fork pyCBC to your Github account
 #    echo To install a development version, you will need a GitHub account.
 #    echo If you do not have a github account you will need to set one up.
-    echo
 #    echo Once you have set up your GitHub account, follow the instruction at
-    echo
 #    echo     https://help.github.com/articles/fork-a-repo/
-    echo
 #    echo to fork the respository
-    echo
 #    echo     https://github.com/ligo-cbc/pycbc
-    echo
 #    echo into your own GitHub account. You will then need to enable ssh 
 #    echo keys on your GitHub account. You can follow these instructions:
-    echo
 #    echo     https://help.github.com/articles/generating-ssh-keys/
-    echo 
 #    read -rsp $'Once you have completed these steps, hit [Enter] to continue...\n' -n1 key
   
     #Create an ssh agent to connect to GitHub
@@ -529,4 +551,5 @@ fi
 deactivate
 echo "PyCBC setup complete"
 echo
+
 exit 0
