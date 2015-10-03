@@ -47,7 +47,7 @@ def select_segment(fname, segment, ifo, time, start_pad, end_pad):
     e = e[sorting] - end_pad
 
     idx = numpy.searchsorted(s, time) - 1
-    return (s[idx], e[idx])
+    return (s[idx] - start_pad, e[idx] + end_pad)
 
 parser = argparse.ArgumentParser(usage='',
     description="Single template gravitational-wave followup")
