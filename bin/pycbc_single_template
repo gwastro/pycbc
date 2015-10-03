@@ -47,7 +47,7 @@ def select_segment(fname, segment, ifo, time, start_pad, end_pad):
     e = e[sorting] - end_pad
 
     idx = numpy.searchsorted(s, time) - 1
-    return (s[idx], e[idx])
+    return (s[idx] - start_pad, e[idx] + end_pad)
 
 parser = argparse.ArgumentParser(usage='',
     description="Single template gravitational-wave followup")
@@ -128,7 +128,7 @@ if opt.statmap_file:
     seg = select_segment(opt.inspiral_segments, opt.segment_name, ifo, time, start_pad, end_pad)
     opt.gps_start_time, opt.gps_end_time = seg[0] + opt.pad_data, seg[1] - opt.pad_data
     f.attrs['event_time'] = time
-
+    print opt.gps_start_time, opt.gps_end_time
 ###############################################################################
 
 # Check that the values returned for the options make sense
