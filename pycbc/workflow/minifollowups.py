@@ -97,7 +97,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     
     ## FIXME not clear why I have to set the id here, pegasus should do this!
     job = dax.DAX(fil)
-    job.addArguments('--basename %s' % name)
+    job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
     Workflow.set_job_properties(job, map_loc)
     workflow._adag.addJob(job)
     dep = dax.Dependency(parent=node._dax_node, child=job)
