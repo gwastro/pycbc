@@ -326,9 +326,9 @@ for inj_file, tag in zip(inj_files, inj_tags):
                    exclude=['all', 'summ', 'sub'], tags=[tag])
                    
     found_table = wf.make_inj_table(workflow, found_inj, 
-                  rdir['injections/%s' % tag], tags=[tag])
+                  rdir['injections/%s' % tag], tags=[tag + 'found'])
     missed_table = wf.make_inj_table(workflow, found_inj, 
-                  rdir['injections/%s' % tag], missed=True, tags=[tag])
+                  rdir['injections/%s' % tag], missed=True, tags=[tag + 'missed'])
                          
     for inj_insp, trig_insp in zip(insps, full_insps):
         f += wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 

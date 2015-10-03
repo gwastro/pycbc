@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """ Make a table of found injection information
 """
-import argparse, h5py, numpy, pycbc.results, pycbc.detector
+import argparse, h5py, numpy, pycbc.results, pycbc.detector, sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--injection-file', help='HDF File containing the matched injections')
@@ -12,7 +12,7 @@ args = parser.parse_args()
 
 f = h5py.File(args.injection_file)
 inj = f['injections']
-found_cols, found_names = [], []
+found_cols, found_names, found_formats = [], [], []
 
 if args.show_missed:
     title = "Missed Injections"
@@ -53,8 +53,7 @@ html_table = pycbc.results.table(columns, names,
                                  page_size=20)
                                  
 kwds = { 'title' : title, 
-        'caption' : "A table of % and their coincident statistic
-                    "information." % (title.lower()),
+        'caption' : "A table of %s and their coincident statistic information." % title.lower(),
         'cmd' :' '.join(sys.argv), }
-pycbc.results.save_fig_with_metadata(html_table, time_file.storage_path, **kwds)
+pycbc.results.save_fig_with_metadata(str(html_table), args.output_file, **kwds)
 
