@@ -109,6 +109,13 @@ for num_event in range(num_events):
     files += mini.make_single_template_plots(workflow, insp_segs,
                               args.inspiral_segment_name, coinc_file, tmpltbank_file,
                               num_event, args.output_dir, tags=args.tags + [str(num_event)])
+    
+    for single in single_triggers:
+        time = times[single.ifo][num_event]
+        files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
+                                time - 10, time + 10, args.output_dir,
+                                tags=args.tags + [str(num_event), single.ifo])                 
+    
     layouts += list(layout.grouper(files, 2))
     num_event += 1
 
