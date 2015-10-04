@@ -23,15 +23,9 @@ def get_time_from_cli(args):
     coincident trigger """
     if args.statmap_file:
         f = h5py.File(args.statmap_file, 'r')
-        try:
-            stat = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
-        except:
-            pylab.text(0.5, 0.5, 'no triggers found'); pylab.savefig(args.output_file)
-            sys.exit()
-            
+        stat = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]           
         id1 = f['foreground/trigger_id1'][:][stat]
-        id2 = f['foreground/trigger_id2'][:][stat]
-        
+        id2 = f['foreground/trigger_id2'][:][stat]        
         ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
         return ({ifo1:(f['foreground/time1'][:][stat], id1), 
                 ifo2:(f['foreground/time2'][:][stat], id2)})

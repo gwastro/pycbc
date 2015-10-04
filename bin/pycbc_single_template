@@ -23,16 +23,10 @@ from pycbc.types import zeros, float32, complex64, TimeSeries
 
 def get_time(statmap, n_loudest, ifo):
      f = h5py.File(statmap, 'r')
-     
-     try:
-        n = f['foreground/stat'][:].argsort()[::-1][n_loudest]
-     except:
-        return None, None
-     
+     n = f['foreground/stat'][:].argsort()[::-1][n_loudest]
      t = {f.attrs['detector_1']: f['foreground/time1'][:][n],
           f.attrs['detector_2']: f['foreground/time2'][:][n],
           }
-     
      return t[ifo], f['foreground/template_id'][:][n]
 
 def select_segment(fname, segment, ifo, time, start_pad, end_pad):

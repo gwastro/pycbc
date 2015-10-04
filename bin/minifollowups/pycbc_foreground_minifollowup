@@ -16,7 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Followup foreground events
 """
-import os, argparse, logging, pycbc.workflow as wf
+import os, argparse, logging, h5py, pycbc.workflow as wf
 from pycbc.results import layout
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
@@ -72,8 +72,16 @@ for name in args.inspiral_segments:
     ifo, fname = name.split(':')
     insp_segs[ifo] = to_file(fname)
 
-# loop over number of loudest events to be followed up
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
+f = h5py.File(args.statmap_file, 'r')
+stat = f['foreground/stat'][:]
+sorting = stat.argsort()[::-1]
+stat = stat[sorting]
+
+if len(stat) < num_events:
+    num_events = len(stat)
+
+# loop over number of loudest events to be followed up
 for num_event in range(num_events):
     files = wf.FileList([])
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
