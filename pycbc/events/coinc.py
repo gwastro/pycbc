@@ -70,7 +70,7 @@ def background_bin_from_string(background_bins, data):
     return bins
            
 
-def calculate_n_louder(bstat, fstat, dec):
+def calculate_n_louder(bstat, fstat, dec, skip_background=False):
     """ Calculate for each foreground event the number of background events
     that are louder than it.
 
@@ -82,17 +82,18 @@ def calculate_n_louder(bstat, fstat, dec):
         Array of the foreground statitsic values
     dec: numpy.ndarray
         Array of the decimation factors for the background statistics
-
+    skip_background: optional, {boolean, False}
+        Skip calculating cumulative numbers for background triggers
     
     Returns
     ------- 
     cum_back_num: numpy.ndarray
-        The cumulative array of background triggers 
+        The cumulative array of background triggers. Does not return this
+        argument if skip_background == True 
     fore_n_louder: numpy.ndarray
         The number of background triggers above each foreground trigger
     """
     sort = bstat.argsort()
-    unsort = sort.argsort()
     bstat = bstat[sort]
     dec = dec[sort]
     
@@ -106,8 +107,13 @@ def calculate_n_louder(bstat, fstat, dec):
     # of n_louder, as here we do want to include the background value at the
     # found index
     fore_n_louder = n_louder[numpy.searchsorted(bstat, fstat, side='left') - 1]
-    back_cum_num = n_louder[unsort]
-    return back_cum_num, fore_n_louder
+
+    if not skip_background:
+        unsort = sort.argsort()
+        back_cum_num = n_louder[unsort]
+        return back_cum_num, fore_n_louder
+    else:
+        return fore_n_louder
 
 def timeslide_durations(start1, start2, end1, end2, timeslide_offsets):
     """ Find the coincident time for each timeslide.

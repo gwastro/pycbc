@@ -86,7 +86,7 @@ f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 
 if len(zdata) > 0:
-    back_cnum_exc, fnlouder_exc = coinc.calculate_n_louder(back_stat, zdata.stat, dec_fac)
+    fnlouder_exc = coinc.calculate_n_louder(back_stat, zdata.stat, dec_fac, skip_background=True)
     ifar_exc = background_time / (fnlouder_exc + 1)
     fap_exc = 1 - numpy.exp(- coinc_time / ifar_exc)
     f['foreground/ifar_exc'] = sec_to_year(ifar_exc)
@@ -106,10 +106,15 @@ if len(zdata) > 0:
     ifsort = ifdata.time1.argsort()
     ifsorted = ifdata.time1[ifsort]
     if_start, if_end = numpy.searchsorted(ifsorted, start), numpy.searchsorted(ifsorted, end)
-    
+
     fisort = fidata.time1.argsort()
     fisorted = fidata.time1[fisort]
     fi_start, fi_end = numpy.searchsorted(fisorted, start), numpy.searchsorted(fisorted, end)
+
+    # most of the triggers are here so presort to speed up later sorting
+    bsort = back_stat.argsort()
+    dec_fac = dec_fac[bsort]
+    back_stat = back_stat[bsort]
 
     for i, fstat in enumerate(zdata.stat):
         # If the trigger is quiet enough, then don't calculate a separate 
@@ -121,14 +126,15 @@ if len(zdata) > 0:
             continue
             
         v1 = fisort[fi_start[i]:fi_end[i]]
-        v2 = ifsort[if_start[i]:if_end[i]]
-        
+        v2 = ifsort[if_start[i]:if_end[i]]        
+
         inj_stat = numpy.concatenate([ifdata.stat[v2], fidata.stat[v1], back_stat])
         inj_dec = numpy.concatenate([numpy.repeat(1, len(v1) + len(v2)), dec_fac])
         
-        back_cnum, fnlouder[i] = coinc.calculate_n_louder(inj_stat, fstat, inj_dec)
+        fnlouder[i] = coinc.calculate_n_louder(inj_stat, fstat, inj_dec, skip_background=True)
         ifar[i] = background_time / (fnlouder[i] + 1)
         fap[i] = 1 - numpy.exp(- coinc_time / ifar[i])
+        logging.info('processed %s, %s' % (i, fstat))
 
     f['foreground/ifar'] = sec_to_year(ifar)
     f['foreground/fap'] = fap
