@@ -333,6 +333,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                   final_bg_file, trig_insp,
                                   rdir['injections/%s' % tag], tags=[tag])
 
+    inj_layout = list(layout.grouper(f, 2)) + [found_table, missed_table]
     if len(s) > 0: layout.group_layout(rdir['search_sensitivity/%s' % tag], s)        
     if len(f) > 0: layout.group_layout(rdir['injections/%s' % tag], f)  
     
