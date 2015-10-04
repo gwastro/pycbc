@@ -86,6 +86,9 @@ stat = stat[sorting][0:num_events]
 times = {f.attrs['detector_1']: f['foreground/time1'][:][sorting][0:num_events],
          f.attrs['detector_2']: f['foreground/time2'][:][sorting][0:num_events],
         }
+tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][:][sorting][0:num_events],
+         f.attrs['detector_2']: f['foreground/trigger_id2'][:][sorting][0:num_events],
+        }
 
 # loop over number of loudest events to be followed up
 for num_event in range(num_events):
@@ -93,12 +96,15 @@ for num_event in range(num_events):
     
     ifo_times = '%s:%s %s:%s' % (times.keys()[0], times[times.keys()[0]][num_event],
                                  times.keys()[1], times[times.keys()[1]][num_event])
+
+    ifo_tids = '%s:%s %s:%s' % (tids.keys()[0], tids[tids.keys()[0]][num_event],
+                                 tids.keys()[1], tids[tids.keys()[1]][num_event])
     
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
                               coinc_file, num_event, 
                               args.output_dir, tags=args.tags + [str(num_event)]),)        
     files += mini.make_trigger_timeseries(workflow, single_triggers,
-                              ifo_times, args.output_dir,
+                              ifo_times, args.output_dir, special_tids=ifo_tids,
                               tags=args.tags + [str(num_event)])
     files += mini.make_single_template_plots(workflow, insp_segs,
                               args.inspiral_segment_name, coinc_file, tmpltbank_file,

@@ -154,7 +154,7 @@ def make_coinc_info(workflow, singles, bank, coinc, num, out_dir,
     files += node.output_files
     return files
     
-def make_trigger_timeseries(workflow, singles, ifo_times, out_dir,
+def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids,
                             exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
@@ -168,6 +168,10 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir,
         node.add_multiifo_input_list_opt('--single-trigger-files', singles)
         node.add_opt('--times', ifo_times)
         node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+        
+        if special_tids is not None:
+            node.add_opt('--special-trigger-ids', special_tids)
+        
         workflow += node
         files += node.output_files
     return files

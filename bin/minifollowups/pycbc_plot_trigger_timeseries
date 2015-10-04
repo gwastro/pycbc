@@ -33,6 +33,9 @@ parser.add_argument('--times', nargs='+', type=float,
     action=MultiDetOptionAction, metavar="IFO:GPS_TIME",
     help="The gps times to plot around in multi-ifo argument format, "
          "H1:132341323 L1:132423422")
+parser.add_argument('--special-trigger-ids', nargs='+', type=int, 
+    action=MultiDetOptionAction, metavar="IFO:GPS_TIME",
+    help="The set of special trigger ids to plot a star at")
 parser.add_argument('--plot-type', choices=['snr', 'newsnr'], default='snr',
     help="Which plot to make; an 'snr' or a newsnr' plot.")
 parser.add_argument('--output-file')
@@ -45,7 +48,9 @@ pycbc.init_logging(args.verbose)
 fig = pylab.figure()
 for ifo in args.single_trigger_files.keys():
     t = args.times[ifo]
-    #id_loud = 0
+    
+    if args.special_trigger_ids:
+        id_loud = args.special_trigger_ids[ifo]
     
     data = h5py.File(args.single_trigger_files[ifo], 'r')[ifo]
     times = data['end_time'][:]
@@ -57,28 +62,34 @@ for ifo in args.single_trigger_files.keys():
     times = times[idx] - t
     
     if args.plot_type == 'snr':
-        data = data['snr'][:][idx]   
-        #top = data['snr'][:][id_loud]
+        val = data['snr'][:][idx] 
+        
+        if args.special_trigger_ids:
+            top = data['snr'][:][id_loud]
+            
     if args.plot_type == 'newsnr':                                         
         snr = data['snr'][:][idx]
         chisq = data['chisq'][:][idx]
         chisq_dof = data['chisq_dof'][:][idx]
-        data = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))
+        val = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))
         
         # Get the newnsr of the loudest trigger so we can plot a star there
-        #rchisq = data['chisq'][:][id_loud] / (data['chisq_dof'][:][id_loud] * 2 - 2)
-        #top = pycbc.events.newsnr(data['snr'][:][id_loud], rchisq)
+        if args.special_trigger_ids:
+            rchisq = data['chisq'][:][id_loud] / (data['chisq_dof'][:][id_loud] * 2 - 2)
+            top = pycbc.events.newsnr(data['snr'][:][id_loud], rchisq)
         
-    pylab.scatter(times, data, color=pycbc.results.ifo_color(ifo), marker='x',
+    pylab.scatter(times, val, color=pycbc.results.ifo_color(ifo), marker='x',
                   label=ifo)
-    #pylab.scatter([0], [top], marker='*', s=50, color='yellow')
+                  
+    if args.special_trigger_ids:
+        pylab.scatter([0], [top], marker='*', s=50, color='yellow')
  
 if args.log_y_axis:
     pylab.yscale('log')
      
 pylab.xlabel('time (s)')
 pylab.ylabel(args.plot_type)                                
-pylab.ylim(ymin=data.min())
+pylab.ylim(ymin=val.min())
 pylab.xlim(xmin=-args.window, xmax=args.window)
 pylab.legend()
 pylab.grid()
