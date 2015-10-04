@@ -350,6 +350,7 @@ setup (
     install_requires = install_requires,
     dependency_links = links,
     scripts  = [
+               'bin/minifollowups/pycbc_injection_minifollowup',
                'bin/minifollowups/pycbc_foreground_minifollowup',
                'bin/minifollowups/pycbc_single_template_plot',
                'bin/minifollowups/pycbc_page_coincinfo',
