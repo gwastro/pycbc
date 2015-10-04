@@ -16,7 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Followup foreground events
 """
-import os, argparse, logging, h5py, pycbc.workflow as wf
+import os, argparse, numpy, logging, h5py, pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.detector import Detector
 import pycbc.workflow.minifollowups as mini
@@ -57,7 +57,7 @@ wf.makedir(args.output_dir)
 layouts = []
 
 tmpltbank_file = to_file(args.bank_file)
-coinc_file = to_file(args.statmap_file)
+injection_file = to_file(args.injection_file)
 
 single_triggers = []
 for name in args.single_detector_triggers:
@@ -102,7 +102,6 @@ for num_event in range(num_events):
                               tags=args.tags + [str(num_event)])
     
     for single in single_triggers:
-        time = times[single.ifo][num_event]
         files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
                                 time - 10, time + 10, args.output_dir,
                                 tags=args.tags + [str(num_event), single.ifo])                 

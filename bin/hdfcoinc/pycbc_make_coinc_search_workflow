@@ -338,7 +338,12 @@ for inj_file, tag in zip(inj_files, inj_tags):
     inj_layout = list(layout.grouper(f, 2)) + [(found_table,), (missed_table,)]
     if len(s) > 0: layout.group_layout(rdir['search_sensitivity/%s' % tag], s)        
     if len(f) > 0: layout.two_column_layout(rdir['injections/%s' % tag], inj_layout)  
-    
+
+    # run minifollowups on nearest missed injections
+    wf.setup_injection_minifollowups(workflow, found_inj, insps,  hdfbank[0],
+                                     'daxes', rdir['injections/%s-followup' % tag],
+                                     tags=final_bg_file.tags)
+        
 # Make combined injection plots
 inj_summ = []
 if len(inj_files) > 0:

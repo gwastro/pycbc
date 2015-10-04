@@ -230,7 +230,7 @@ def make_coinc_info(workflow, singles, bank, coinc, num, out_dir,
     files += node.output_files
     return files
     
-def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids,
+def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=None,
                             exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
