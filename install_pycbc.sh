@@ -243,6 +243,11 @@ virtualenv $NAME
 source $NAME/bin/activate
 mkdir -p $VIRTUAL_ENV/src
 
+#Installing lalsuite into Virtual Environment
+#Install unitest2, python-cjson, and numpy
+echo "--- installing required packages --------------------------------"
+pip $cache install "numpy>=1.6.4" unittest2 python-cjson Cython
+
 #Install HDF5
 echo "--- installing HDF5 libraries -----------------------------------"
 cd $VIRTUAL_ENV/src
@@ -253,11 +258,6 @@ cd hdf5-1.8.12
 ./configure --prefix=$VIRTUAL_ENV/opt/hdf5-1.8.12
 make -j $nproc install
 HDF5_DIR=${VIRTUAL_ENV}/opt/hdf5-1.8.12 pip $cache install h5py
-
-#Installing lalsuite into Virtual Environment
-#Install unitest2, python-cjson, and numpy
-echo "--- installing required packages --------------------------------"
-pip $cache install "numpy>=1.6.4" unittest2 python-cjson Cython
 
 #Authenticate with LIGO Data Grid services, install M2Crypto
 SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip $cache install M2Crypto
@@ -327,7 +327,7 @@ pip $cache install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-
 pip $cache install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
 
 #Install pycbc and glue from non-cached versions to get the rpaths correct
-pip $cache install --no-cache pycbc-glue pycbc-pylal
+pip $cache install pycbc-glue pycbc-pylal
 
 #Released or Development
 echo
