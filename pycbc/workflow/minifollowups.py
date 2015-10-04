@@ -176,5 +176,26 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids,
         files += node.output_files
     return files
 
+    
+def make_singles_timefreq(workflow, single, bank_file, start, end, out_dir,
+                          veto_file=None, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'plot_singles_timefreq'
+
+    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                          out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--trig-file', single)
+    node.add_input_opt('--bank-file', bank_file)
+    node.add_opt('--gps-start-time', int(start))
+    node.add_opt('--gps-end-time', int(end))
+    
+    if veto_file:
+        node.add_input_opt('--veto-file', veto_file)
+        
+    node.add_opt('--detector', single.ifo)
+    node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+    workflow += node
+    return node.output_files
 
 
