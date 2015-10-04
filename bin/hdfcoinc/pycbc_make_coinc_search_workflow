@@ -165,6 +165,9 @@ wf.make_ifar_plot(workflow, final_bg_file, rdir['result'])
 table = wf.make_foreground_table(workflow, final_bg_file, 
                     hdfbank[0], tag, rdir['result'], singles=insps,
                     extension='.html', tags=["html"])
+results_page += [(table,)]                    
+layout.two_column_layout(rdir['result'], results_page)
+ 
 fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['result'], singles=insps,
                     extension='.xml', tags=["xmlall"])

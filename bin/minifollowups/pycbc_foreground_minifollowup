@@ -22,9 +22,9 @@ import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
 
-def to_file(path):
-    print "PATH ", path
+def to_file(path, ifo=None):
     fil = wdax.File(os.path.basename(path))
+    fil.ifo = ifo
     fil.PFN(path, 'local')
     return fil
 
@@ -65,31 +65,41 @@ coinc_file = to_file(args.statmap_file)
 single_triggers = []
 for name in args.single_detector_triggers:
     ifo, fname = name.split(':')
-    single_triggers.append(to_file(fname))
+    single_triggers.append(to_file(fname, ifo=ifo))
     
 insp_segs = {}
 for name in args.inspiral_segments:
     ifo, fname = name.split(':')
-    insp_segs[ifo] = to_file(fname)
+    insp_segs[ifo] = to_file(fname, ifo=ifo)
 
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
 stat = f['foreground/stat'][:]
+
 sorting = stat.argsort()[::-1]
-stat = stat[sorting]
 
 if len(stat) < num_events:
     num_events = len(stat)
 
+stat = stat[sorting][0:num_events]
+
+times = {f.attrs['detector_1']: f['foreground/time1'][:][sorting][0:num_events],
+         f.attrs['detector_2']: f['foreground/time2'][:][sorting][0:num_events],
+        }
+
 # loop over number of loudest events to be followed up
 for num_event in range(num_events):
     files = wf.FileList([])
+    
+    ifo_times = '%s:%s %s:%s' % (times.keys()[0], times[times.keys()[0]][num_event],
+                                 times.keys()[1], times[times.keys()[1]][num_event])
+    
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
                               coinc_file, num_event, 
                               args.output_dir, tags=args.tags + [str(num_event)]),)        
     files += mini.make_trigger_timeseries(workflow, single_triggers,
-                              coinc_file, num_event, 
-                              args.output_dir, tags=args.tags + [str(num_event)])
+                              ifo_times, args.output_dir,
+                              tags=args.tags + [str(num_event)])
     files += mini.make_single_template_plots(workflow, insp_segs,
                               args.inspiral_segment_name, coinc_file, tmpltbank_file,
                               num_event, args.output_dir, tags=args.tags + [str(num_event)])
