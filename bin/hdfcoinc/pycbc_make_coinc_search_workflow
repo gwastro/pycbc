@@ -325,8 +325,10 @@ for inj_file, tag in zip(inj_files, inj_tags):
                   rdir['injections/%s' % tag],
                    exclude=['all', 'summ', 'sub'], tags=[tag])
                    
-    wf.make_inj_table(workflow, found_inj, 
-                  rdir['injections/%s' % tag], tags=[tag])
+    found_table = wf.make_inj_table(workflow, found_inj, 
+                  rdir['injections/%s' % tag], tags=[tag + 'found'])
+    missed_table = wf.make_inj_table(workflow, found_inj, 
+                  rdir['injections/%s' % tag], missed=True, tags=[tag + 'missed'])
                          
     for inj_insp, trig_insp in zip(insps, full_insps):
         f += wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
@@ -335,7 +337,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
     inj_layout = list(layout.grouper(f, 2)) + [found_table, missed_table]
     if len(s) > 0: layout.group_layout(rdir['search_sensitivity/%s' % tag], s)        
-    if len(f) > 0: layout.group_layout(rdir['injections/%s' % tag], f)  
+    if len(f) > 0: layout.two_column_layout(rdir['injections/%s' % tag], inj_layout)  
     
 # Make combined injection plots
 inj_summ = []
