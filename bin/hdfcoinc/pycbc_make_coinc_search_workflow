@@ -341,8 +341,8 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
     # run minifollowups on nearest missed injections
     wf.setup_injection_minifollowups(workflow, found_inj, insps,  hdfbank[0],
-                                     'daxes', rdir['injections/%s-followup' % tag],
-                                     tags=final_bg_file.tags)
+                                     'daxes', rdir['injections/followup-%s' % tag],
+                                     tags=[tag])
         
 # Make combined injection plots
 inj_summ = []
