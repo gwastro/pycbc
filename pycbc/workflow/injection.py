@@ -30,7 +30,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
 import logging, urllib, urlparse
-from pycbc.workflow.core import File, FileList, make_analysis_dir, Executable
+from pycbc.workflow.core import File, FileList, make_analysis_dir, Executable, resolve_url
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
         PycbcDarkVsBrightInjectionsExecutable)
@@ -127,6 +127,7 @@ def setup_injection_workflow(workflow, output_dir=None,
         elif injection_method == "PREGENERATED":
             injectionFilePath = workflow.cp.get_opt_tags("workflow-injections",
                                       "injections-pregenerated-file", curr_tags)
+            injectionFilePath = resolve_url(injectionFilePath)
             file_url = urlparse.urljoin('file:',
                                         urllib.pathname2url(injectionFilePath))
             inj_file = File('HL', 'PREGEN_inj_file', full_segment, file_url,
