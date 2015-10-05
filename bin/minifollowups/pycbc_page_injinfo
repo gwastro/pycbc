@@ -40,10 +40,33 @@ n = args.injection_index
 headers = []
 data = []
 
-for key in f['injections']:
-    headers += [key]
-    data += ["%.3f" % f['injections'][key][args.injection_index]]
+keys = ['end_time', 'dec chirp dist', 'eff_dist_h', 'eff_dist_l', 'mass1', 'mass2',
+        'mchirp', 'eta', 'ra', 'dec', 'inc', 'spin1x', 'spin1y',
+        'spin1z', 'spin2x', 'spin2y', 'spin2z']
 
+m1, m2 = f['injections']['mass1'][args.injection_index], f['injections']['mass2'][args.injection_index]
+mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+
+dec_dist = max(f['injections']['eff_dist_h'][args.injection_index], f['injections']['eff_dist_l'][args.injection_index])
+dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
+
+for key in keys:
+    headers += [key]
+    if key in f['injections']:
+        data += ["%.3f" % f['injections'][key][args.injection_index]]
+    elif key == 'mchirp':
+        data += ["%.3f" % mchirp]
+    elif key == 'eta':
+        data += ["%.3f" % eta]
+    elif key == 'inc':
+        data += ["%.3f" % f['injections']['inclination'][args.injection_index]]
+    elif key == 'ra':
+        data += ["%.3f" % f['injections']['longitude'][args.injection_index]]
+    elif key == 'dec':
+        data += ["%.3f" % f['injections']['latitude'][args.injection_index]]
+    elif key == 'dec chirp dist':
+        data += ["%.3f" % dec_chirp_dist]
+        
 table = numpy.array([data], dtype=str)
 html = str(pycbc.results.static_table(table, headers))
 
