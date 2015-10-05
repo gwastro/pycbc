@@ -354,6 +354,7 @@ setup (
                'bin/minifollowups/pycbc_foreground_minifollowup',
                'bin/minifollowups/pycbc_single_template_plot',
                'bin/minifollowups/pycbc_page_coincinfo',
+               'bin/minifollowups/pycbc_page_injinfo',
                'bin/minifollowups/pycbc_plot_trigger_timeseries',
                'bin/lalapps/lalapps_inspiral_ahope',
                'bin/lalapps/lalapps_tmpltbank_ahope',
