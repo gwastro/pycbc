@@ -59,14 +59,7 @@ pycbc.init_logging(args.verbose)
 
 # Get the nth loudest trigger from the output of pycbc_coinc_statmap
 f = h5py.File(args.statmap_file, 'r')
-try:
-    n = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
-except:
-    f = open(args.output_file, 'w')
-    f.write("<h1>Event %s, no triggers found</h1>" % (args.n_loudest + 1))
-    f.close()
-    sys.exit()
-
+n = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
 d = f['foreground']
 
 # JavaScript for searching the aLOG

@@ -345,13 +345,16 @@ class Workflow(object):
             raise TypeError('Cannot add type %s to this workflow' % type(other))
             
       
-    def save(self):
+    def save(self, filename=None):
         """ Write this workflow to DAX file 
         """        
+        if filename is None:
+            filename = self.filename
+        
         for sub in self.sub_workflows:
             sub.save()
         
-        f = open(self.filename, "w")
+        f = open(filename, "w")
         self._adag.writeXML(f)
 
 class DataStorage(object):

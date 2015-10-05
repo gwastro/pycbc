@@ -165,6 +165,9 @@ wf.make_ifar_plot(workflow, final_bg_file, rdir['result'])
 table = wf.make_foreground_table(workflow, final_bg_file, 
                     hdfbank[0], tag, rdir['result'], singles=insps,
                     extension='.html', tags=["html"])
+results_page += [(table,)]                    
+layout.two_column_layout(rdir['result'], results_page)
+ 
 fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['result'], singles=insps,
                     extension='.xml', tags=["xmlall"])
@@ -214,20 +217,17 @@ layout.two_column_layout(rdir['detector_sensitivity'], det_summ + list(layout.gr
 
 
 # run minifollowups on the output of the loudest events 
-wf_layout = wf.setup_minifollowups(workflow, final_bg_file,
+wf.setup_foreground_minifollowups(workflow, final_bg_file,
                                   full_insps,  hdfbank[0],
-                                  insp_data_segs, 'INSPIRAL_DATA',
-                                  rdir['result'], tags=final_bg_file.tags)
-
-layout.two_column_layout(rdir['result'], results_page + [(table,)] + wf_layout)
+                                  insp_data_segs, 'INSPIRAL_DATA', 'daxes',
+                                  rdir['result/full'], tags=final_bg_file.tags)
     
 for bin_file in bin_files:
     if hasattr(bin_file, 'bin_name'):
-        wf_layout = wf.setup_minifollowups(workflow, bin_file, full_insps, hdfbank[0],
-                                  insp_data_segs, 'INSPIRAL_DATA', 
+        wf.setup_foreground_minifollowups(workflow, bin_file, full_insps, hdfbank[0],
+                                  insp_data_segs, 'INSPIRAL_DATA', 'daxes',
                                   rdir['result/%s' % bin_file.bin_name],
                                   tags=bin_file.tags)
-        layout.two_column_layout(rdir['result/%s' % bin_file.bin_name], wf_layout)
 
 ################## Setup segment / veto related plots #########################    
 # do plotting of segments / veto times
@@ -325,16 +325,19 @@ for inj_file, tag in zip(inj_files, inj_tags):
                   rdir['injections/%s' % tag],
                    exclude=['all', 'summ', 'sub'], tags=[tag])
                    
-    wf.make_inj_table(workflow, found_inj, 
-                  rdir['injections/%s' % tag], tags=[tag])
+    found_table = wf.make_inj_table(workflow, found_inj, 
+                  rdir['injections/%s' % tag], tags=[tag + 'found'])
+    missed_table = wf.make_inj_table(workflow, found_inj, 
+                  rdir['injections/%s' % tag], missed=True, tags=[tag + 'missed'])
                          
     for inj_insp, trig_insp in zip(insps, full_insps):
         f += wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
                                   final_bg_file, trig_insp,
                                   rdir['injections/%s' % tag], tags=[tag])
 
+    inj_layout = list(layout.grouper(f, 2)) + [(found_table,), (missed_table,)]
     if len(s) > 0: layout.group_layout(rdir['search_sensitivity/%s' % tag], s)        
-    if len(f) > 0: layout.group_layout(rdir['injections/%s' % tag], f)  
+    if len(f) > 0: layout.two_column_layout(rdir['injections/%s' % tag], inj_layout)  
     
 # Make combined injection plots
 inj_summ = []

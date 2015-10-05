@@ -16,62 +16,44 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Plot the single detector trigger timeseries """
 import h5py, argparse, logging, pycbc.version, pycbc.events, pycbc.results, sys
+from pycbc.types import MultiDetOptionAction
 import matplotlib; matplotlib.use('Agg'); import pylab
-
-def get_time_from_cli(args):
-    """ Return the time and single detector trigger ids for the nth loudest
-    coincident trigger """
-    if args.statmap_file:
-        f = h5py.File(args.statmap_file, 'r')
-        try:
-            stat = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
-        except:
-            pylab.text(0.5, 0.5, 'no triggers found'); pylab.savefig(args.output_file)
-            sys.exit()
-            
-        id1 = f['foreground/trigger_id1'][:][stat]
-        id2 = f['foreground/trigger_id2'][:][stat]
-        
-        ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
-        return ({ifo1:(f['foreground/time1'][:][stat], id1), 
-                ifo2:(f['foreground/time2'][:][stat], id2)})
     
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--single-trigger-files', nargs='+', 
-    help="The HDF format single detector merged trigger files")
+parser.add_argument('--single-trigger-files', nargs='+',
+    action=MultiDetOptionAction, metavar="IFO:FILE",
+    help="The HDF format single detector merged trigger files, in "
+         "multi-ifo argument format, H1:file1.hdf L1:fil2.hdf, etc")
 parser.add_argument('--window', type=float, default=10,
     help="Time in seconds around the coincident trigger to plot")
+parser.add_argument('--times', nargs='+', type=float,
+    action=MultiDetOptionAction, metavar="IFO:GPS_TIME",
+    help="The gps times to plot around in multi-ifo argument format, "
+         "H1:132341323 L1:132423422")
+parser.add_argument('--special-trigger-ids', nargs='+', type=int, 
+    action=MultiDetOptionAction, metavar="IFO:GPS_TIME",
+    help="The set of special trigger ids to plot a star at")
 parser.add_argument('--plot-type', choices=['snr', 'newsnr'], default='snr',
     help="Which plot to make; an 'snr' or a newsnr' plot.")
 parser.add_argument('--output-file')
 parser.add_argument('--log-y-axis', action='store_true')
 
-# These options help choose the GPS time to examine, add more options to pull
-# from different file types (injections, etc)    
-parser.add_argument('--statmap-file',
-    help="The HDF format clustered coincident statmap file containing the result "
-         "triggers. ")
-parser.add_argument('--n-loudest', type=int,
-    help="The trigger Nth loudest trigger to examine, use with statmap file")
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 # organize the single detector triggers files by ifo in a dict
-time = get_time_from_cli(args)
-files = {}
-for fname in args.single_trigger_files:
-    f = h5py.File(fname, 'r')
-    ifos = f.keys()
-    for ifo in ifos:
-        files[ifo] = f[ifo]
-
 fig = pylab.figure()
-for ifo in files.keys():
-    t, id_loud = time[ifo]
-    times = files[ifo]['end_time'][:]
+for ifo in args.single_trigger_files.keys():
+    t = args.times[ifo]
+    
+    if args.special_trigger_ids:
+        id_loud = args.special_trigger_ids[ifo]
+    
+    data = h5py.File(args.single_trigger_files[ifo], 'r')[ifo]
+    times = data['end_time'][:]
     
     idx = pycbc.events.indices_within_times(times, [t - args.window],
                                                    [t + args.window])
@@ -80,28 +62,34 @@ for ifo in files.keys():
     times = times[idx] - t
     
     if args.plot_type == 'snr':
-        data = files[ifo]['snr'][:][idx]   
-        top = files[ifo]['snr'][:][id_loud]
+        val = data['snr'][:][idx] 
+        
+        if args.special_trigger_ids:
+            top = data['snr'][:][id_loud]
+            
     if args.plot_type == 'newsnr':                                         
-        snr = files[ifo]['snr'][:][idx]
-        chisq = files[ifo]['chisq'][:][idx]
-        chisq_dof = files[ifo]['chisq_dof'][:][idx]
-        data = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))
+        snr = data['snr'][:][idx]
+        chisq = data['chisq'][:][idx]
+        chisq_dof = data['chisq_dof'][:][idx]
+        val = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))
         
         # Get the newnsr of the loudest trigger so we can plot a star there
-        rchisq = files[ifo]['chisq'][:][id_loud] / (files[ifo]['chisq_dof'][:][id_loud] * 2 - 2)
-        top = pycbc.events.newsnr(files[ifo]['snr'][:][id_loud], rchisq)
+        if args.special_trigger_ids:
+            rchisq = data['chisq'][:][id_loud] / (data['chisq_dof'][:][id_loud] * 2 - 2)
+            top = pycbc.events.newsnr(data['snr'][:][id_loud], rchisq)
         
-    pylab.scatter(times, data, color=pycbc.results.ifo_color(ifo), marker='x',
+    pylab.scatter(times, val, color=pycbc.results.ifo_color(ifo), marker='x',
                   label=ifo)
-    pylab.scatter([0], [top], marker='*', s=50, color='yellow')
+                  
+    if args.special_trigger_ids:
+        pylab.scatter([0], [top], marker='*', s=50, color='yellow')
  
 if args.log_y_axis:
     pylab.yscale('log')
      
 pylab.xlabel('time (s)')
 pylab.ylabel(args.plot_type)                                
-pylab.ylim(ymin=data.min())
+pylab.ylim(ymin=val.min())
 pylab.xlim(xmin=-args.window, xmax=args.window)
 pylab.legend()
 pylab.grid()

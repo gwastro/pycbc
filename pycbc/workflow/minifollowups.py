@@ -14,10 +14,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import logging
-from pycbc.workflow.core import Executable, FileList, Node, makedir
+import logging, os.path
+from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 from itertools import izip_longest
+from Pegasus import DAX3 as dax
+from pycbc.workflow import pegasus_workflow as wdax
 
 def grouper(iterable, n, fillvalue=None):
     """ Create a list of n length tuples
@@ -25,8 +27,8 @@ def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return izip_longest(*args, fillvalue=fillvalue)
 
-def setup_minifollowups(workflow, coinc_file, single_triggers, tmpltbank_file, 
-                       insp_segs, insp_seg_name, out_dir, tags=None):
+def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltbank_file, 
+                       insp_segs, insp_seg_name, dax_output, out_dir, tags=None):
     """ Create plots that followup the Nth loudest coincident injection
     from a statmap produced HDF file.
     
@@ -56,38 +58,51 @@ def setup_minifollowups(workflow, coinc_file, single_triggers, tmpltbank_file,
         minifollops plots.
     """
     logging.info('Entering minifollowups module')
-
-    # check if minifollowups section exists
-    # if not then do not do add minifollowup jobs to the workflow
+    
     if not workflow.cp.has_section('workflow-minifollowups'):
         logging.info('There is no [workflow-minifollowups] section in configuration file')
         logging.info('Leaving minifollowups')
-        return []
-        
+    
     tags = [] if tags is None else tags
-    makedir(out_dir)
-
-    # create a FileList that will contain all output files
-    layout = []
-
-    # loop over number of loudest events to be followed up
-    num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
-    for num_event in range(num_events):
-        files = FileList([])
-        layout += (make_coinc_info(workflow, single_triggers, tmpltbank_file,
-                                  coinc_file, num_event, 
-                                  out_dir, tags=tags + [str(num_event)]),)        
-        files += make_trigger_timeseries(workflow, single_triggers,
-                                  coinc_file, num_event, 
-                                  out_dir, tags=tags + [str(num_event)])
-        files += make_single_template_plots(workflow, insp_segs,
-                                  insp_seg_name, coinc_file, tmpltbank_file,
-                                  num_event, out_dir, tags=tags + [str(num_event)])
-        layout += list(grouper(files, 2))
-        num_event += 1
+    makedir(dax_output)
+    
+    # turn the config file into a File class
+    config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'foreground_minifollowup.ini')
+    workflow.cp.write(open(config_path, 'w'))
+    
+    config_file = wdax.File(os.path.basename(config_path))
+    config_file.PFN(config_path, 'local')
+    
+    exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
+    
+    node = exe.create_node()
+    node.add_input_opt('--config-files', config_file)
+    node.add_input_opt('--bank-file', tmpltbank_file)
+    node.add_input_opt('--statmap-file', coinc_file)
+    node.add_multiifo_input_list_opt('--single-detector-triggers', single_triggers)
+    node.add_multiifo_input_list_opt('--inspiral-segments', insp_segs.values())
+    node.add_opt('--inspiral-segment-name', insp_seg_name)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
+    
+    name = node.output_files[0].name
+    map_loc = name + '.map'
+    node.add_opt('--workflow-name', name)
+    node.add_opt('--output-dir', out_dir)
+    node.add_opt('--output-map', map_loc)
+    
+    workflow += node
+    
+    # execute this is a sub-workflow
+    fil = node.output_files[0]
+    
+    ## FIXME not clear why I have to set the id here, pegasus should do this!
+    job = dax.DAX(fil)
+    job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
+    Workflow.set_job_properties(job, map_loc)
+    workflow._adag.addJob(job)
+    dep = dax.Dependency(parent=node._dax_node, child=job)
+    workflow._adag.addDependency(dep)
     logging.info('Leaving minifollowups module')
-
-    return layout
 
 def make_single_template_plots(workflow, segs, seg_name, coinc, bank, num, out_dir, 
                                exclude=None, require=None, tags=None):
@@ -139,7 +154,7 @@ def make_coinc_info(workflow, singles, bank, coinc, num, out_dir,
     files += node.output_files
     return files
     
-def make_trigger_timeseries(workflow, singles, coinc, num, out_dir,
+def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids,
                             exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
@@ -150,10 +165,13 @@ def make_trigger_timeseries(workflow, singles, coinc, num, out_dir,
     for tag in secs:
         node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
                               out_dir=out_dir, tags=[tag] + tags).create_node()
-        node.add_input_list_opt('--single-trigger-files', singles)
-        node.add_input_opt('--statmap-file', coinc)
-        node.add_opt('--n-loudest', str(num))
+        node.add_multiifo_input_list_opt('--single-trigger-files', singles)
+        node.add_opt('--times', ifo_times)
         node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+        
+        if special_tids is not None:
+            node.add_opt('--special-trigger-ids', special_tids)
+        
         workflow += node
         files += node.output_files
     return files

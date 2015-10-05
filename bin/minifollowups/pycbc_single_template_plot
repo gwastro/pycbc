@@ -36,15 +36,9 @@ pycbc.init_logging(args.verbose)
 # The event is chosen from the input of pycbc_single template, so we
 # just extract the parameters here
 f = h5py.File(args.single_template_file)
-
-try:
-    delta_t = f['snr'].attrs['delta_t']
-    start_time = f['snr'].attrs['start_time']
-    time = f.attrs['event_time']
-except:
-    pylab.text(0.5, 0.5, 'no triggers found')
-    pylab.savefig(args.output_file)
-    sys.exit()
+delta_t = f['snr'].attrs['delta_t']
+start_time = f['snr'].attrs['start_time']
+time = f.attrs['event_time']
 
 ifo = f.attrs['ifo']
 center = int((time - start_time) / delta_t)
