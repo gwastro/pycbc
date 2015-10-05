@@ -211,13 +211,25 @@ def make_single_template_plots(workflow, segs, seg_name, coinc, bank, num, out_d
             files += node.output_files
     return files      
 
-def make_coinc_info(workflow, singles, bank, coinc, num, out_dir,
-                    exclude=None, require=None, tags=None):
+def make_inj_info(workflow, injection_file, injection_index, num, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'page_injinfo'
+    files = FileList([])
+    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                              out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--injection-file', injection_file)
+    node.add_opt('--injection-index', str(injection_index))
+    node.add_opt('--n-nearest', str(num))
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+    workflow += node
+    files += node.output_files
+    return files
+
+def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_coincinfo'
-    secs = requirestr(workflow.cp.get_subsections(name), require)  
-    secs = excludestr(secs, exclude)
     files = FileList([])
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
                               out_dir=out_dir, tags=tags).create_node()

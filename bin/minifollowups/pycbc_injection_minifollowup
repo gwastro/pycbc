@@ -86,17 +86,20 @@ if len(missed) < num_events:
 for num_event in range(num_events):
     files = wf.FileList([])
     
-    time = f['injections/end_time'][:][missed][sorting][num_event]
+    injection_index = missed[sorting][num_event]
+    time = f['injections/end_time'][injection_index]
     
     ifo_times = ''
     for single in single_triggers:
         ifo = single.ifo
         det = Detector(ifo)
-        lon = f['injections/longitude'][:][missed][sorting][num_event]
-        lat = f['injections/latitude'][:][missed][sorting][num_event]
+        lon = f['injections/longitude'][injection_index]
+        lat = f['injections/latitude'][injection_index]
         ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
         ifo_times += ' %s:%s ' % (ifo, ifo_time) 
-         
+          
+    layouts += [(make_inj_info(workflow, injection_file, injection_index, num_event,
+                               args.output_dir, tags=args.tags)[0],)]   
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir,
                               tags=args.tags + [str(num_event)])
