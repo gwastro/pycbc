@@ -115,7 +115,7 @@ def make_average_psd(workflow, psd_files, out_dir, tags=None,
     node.new_output_file_opt(workflow.analysis_time, output_fmt,
                              '--detector-avg-file')
 
-    node.new_multiifo_output_list_opt('time-avg-file', workflow.ifos,
+    node.new_multiifo_output_list_opt('--time-avg-file', workflow.ifos,
                                  workflow.analysis_time, output_fmt, tags=tags)
 
     workflow += node
