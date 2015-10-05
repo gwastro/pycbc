@@ -21,7 +21,7 @@ from pycbc.results import layout
 from pycbc.detector import Detector
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
-import pycbc.version
+import pycbc.version, pycbc.pnutils
 
 def to_file(path, ifo=None):
     fil = wdax.File(os.path.basename(path))
@@ -74,8 +74,13 @@ eff_dist = {'H1': f['injections/eff_dist_h'][:][missed],
          'V1': f['injections/eff_dist_v'][:][missed],
         }
 
-dec_dist = numpy.minimum(eff_dist[single_triggers[0].ifo], 
+dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo], 
                          eff_dist[single_triggers[1].ifo])
+
+mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(f['injections/mass1'][:][missed],
+                                                      f['injections/mass2'][:][missed])
+
+dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 
 sorting = dec_dist.argsort()
 

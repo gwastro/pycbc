@@ -53,19 +53,19 @@ dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 for key in keys:
     headers += [key]
     if key in f['injections']:
-        data += ["%.3f" % f['injections'][key][args.injection_index]]
+        data += ["%.2f" % f['injections'][key][args.injection_index]]
     elif key == 'mchirp':
-        data += ["%.3f" % mchirp]
+        data += ["%.2f" % mchirp]
     elif key == 'eta':
-        data += ["%.3f" % eta]
+        data += ["%.2f" % eta]
     elif key == 'inc':
-        data += ["%.3f" % f['injections']['inclination'][args.injection_index]]
+        data += ["%.2f" % f['injections']['inclination'][args.injection_index]]
     elif key == 'ra':
-        data += ["%.3f" % f['injections']['longitude'][args.injection_index]]
+        data += ["%.2f" % f['injections']['longitude'][args.injection_index]]
     elif key == 'dec':
-        data += ["%.3f" % f['injections']['latitude'][args.injection_index]]
+        data += ["%.2f" % f['injections']['latitude'][args.injection_index]]
     elif key == 'dec chirp dist':
-        data += ["%.3f" % dec_chirp_dist]
+        data += ["%.2f" % dec_chirp_dist]
         
 table = numpy.array([data], dtype=str)
 html = str(pycbc.results.static_table(table, headers))
@@ -76,7 +76,7 @@ if args.n_nearest:
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         cmd = ' '.join(sys.argv),
-                        title = 'Parameters of the nearest missed injection' + tag,
+                        title = 'Parameters of missed injection' + tag,
                         caption = "Parameters of this injection")
    
                         
