@@ -536,7 +536,10 @@ class ForegroundTriggers(object):
                 curr_sngl_file = self.sngl_files[ifo].h5file[ifo]
                 for name in sngl_col_names:
                     val = sngl_col_vals[name][ifo][idx]
-                    setattr(sngl, name, val)
+                    if name == 'end_time':
+                        sngl.set_end(LIGOTimeGPS(val))
+                    else:
+                        setattr(sngl, name, val)
                 for name in bank_col_names:
                     val = bank_col_vals[name][idx]
                     setattr(sngl, name, val)
