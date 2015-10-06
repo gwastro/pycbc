@@ -114,5 +114,7 @@ test_exec_help pycbc_plot_psd_file
 test_exec_help pycbc_plot_range
 test_exec_help pycbc_average_psd
 #test_exec_help pycbc_make_html_page
+test_exec_help pycbc_single_template
+test_exec_help pycbc_single_template_plot
 
 exit ${RESULT}
