@@ -62,6 +62,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     if not workflow.cp.has_section('workflow-minifollowups'):
         logging.info('There is no [workflow-minifollowups] section in configuration file')
         logging.info('Leaving minifollowups')
+        return
     
     tags = [] if tags is None else tags
     makedir(dax_output)
