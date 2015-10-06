@@ -82,7 +82,7 @@ mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(f['injections/mass1'][:][m
 
 dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 
-sorting = dec_dist.argsort()
+sorting = dec_chirp_dist.argsort()
 
 if len(missed) < num_events:
     num_events = len(missed)
