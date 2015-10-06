@@ -18,6 +18,7 @@
 import h5py, argparse, logging, pycbc.version, pycbc.events, pycbc.results, sys
 from pycbc.types import MultiDetOptionAction
 import matplotlib; matplotlib.use('Agg'); import pylab
+import numpy
     
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -75,7 +76,7 @@ for ifo in args.single_trigger_files.keys():
         if len(chisq) > 0:
             val = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))        
         else:
-            val = []
+            val = numpy.array([])
 
         # Get the newnsr of the loudest trigger so we can plot a star there
         if args.special_trigger_ids:
