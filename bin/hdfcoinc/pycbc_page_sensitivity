@@ -29,7 +29,8 @@ parser.add_argument('--sig-bins', nargs='*',
                         ", hard-coded defaults will be used"),
 parser.add_argument('--dist-type', choices=['distance', 'volume', 'vt'],
                     default='distance')
-parser.add_argument('--log-dist', action='store_true')
+parser.add_argument('--log-dist', action='store_true', 
+                    help='Plot the sensitive distance axis in log scale')
 parser.add_argument('--min-dist', type=float,
                     help="Lower y-axis limit for sensitive distance")
 parser.add_argument('--max-dist', type=float,
