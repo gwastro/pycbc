@@ -29,6 +29,7 @@ parser.add_argument('--sig-bins', nargs='*',
                         ", hard-coded defaults will be used"),
 parser.add_argument('--dist-type', choices=['distance', 'volume', 'vt'],
                     default='distance')
+parser.add_argument('--log-dist', action='store_true')
 parser.add_argument('--min-dist', type=float,
                     help="Lower y-axis limit for sensitive distance")
 parser.add_argument('--max-dist', type=float,
@@ -234,6 +235,9 @@ for j in range(len(args.bins)-1):
 
 ax = pylab.gca()
 
+if args.log_dist:
+    ax.set_yscale('log')
+
 if args.sig_type != 'stat':
     ax.set_xscale('log')
 
@@ -251,11 +255,14 @@ pylab.legend(loc='lower left')
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="Sensitive %s vs %s: binned by %s using %s method"
-            % (args.dist_type.title(), args.sig_type.upper(), args.bin_type, args.integration_method),
+            % (args.dist_type.title(), args.sig_type.upper(), 
+               args.bin_type, args.integration_method),
      caption="Sensitive %s as a function of significance:"
              "Darker lines represent the significance without including "
              "injections in their own background, while lighter lines "
-             "include each injection (individually) in it the background estimation for that signal."
-             "The integration method used is based on %s." % (args.dist_type.title(), args.integration_method),
+             "include each injection (individually) in it the background "
+             "estimation for that signal."
+             "The integration method used is " 
+             "based on %s." % (args.dist_type.title(), args.integration_method),
      cmd=' '.join(sys.argv))
 
