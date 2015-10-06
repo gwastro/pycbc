@@ -93,8 +93,11 @@ if args.log_y_axis:
     pylab.yscale('log')
      
 pylab.xlabel('time (s)')
-pylab.ylabel(args.plot_type)                                
-pylab.ylim(ymin=val.min())
+pylab.ylabel(args.plot_type)
+
+if len(val) > 0:                                
+    pylab.ylim(ymin=val.min())
+
 pylab.xlim(xmin=-args.window, xmax=args.window)
 pylab.legend()
 pylab.grid()
