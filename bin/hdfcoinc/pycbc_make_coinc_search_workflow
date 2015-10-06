@@ -45,12 +45,13 @@ args = parser.parse_args()
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
                     level=logging.INFO)
 
+wf.makedir(args.output_dir)
+os.chdir(args.output_dir)
+
 container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, 'main')
 finalize_workflow = wf.Workflow(args, 'finalization')
 
-wf.makedir(args.output_dir)
-os.chdir(args.output_dir)
              
 rdir = layout.SectionNumber('results', ['configuration',
                                  'analysis_time',
