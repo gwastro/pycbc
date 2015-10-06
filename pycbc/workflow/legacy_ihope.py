@@ -257,7 +257,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         self.data_seg = segments.segment(int(cp.get('workflow', 'start-time')),
                                          int(cp.get('workflow', 'end-time')))
         self.num_threads = 1
- 
+
     def create_node(self, data_seg, valid_seg, parent=None, inj_file=None,
                     dfParents=None, bankVetoBank=None, tags=[]):
         node = Node(self)
@@ -266,37 +266,54 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
             raise ValueError("%s must be supplied with frame files"
                               % self.name)
 
-        # Check for single IFO issues and raise errors if required
+        # If doing single IFO search, make sure slides are disabled
         if len(self.ifo_list) < 2 and \
                 ('--do-short-slides' in node._options or \
                  '--short-slide-offset' in node._options):
-            raise ValueError("Cannot do time slides on data from one IFO! "
-                             "This is a single IFO search for %s." % self.ifo)
+            idcs = [i for i, x in enumerate(node._options) \
+                    if x == '--short-slide-offset']
+            idcs.sort(reverse=True)
+            for id in idcs:
+                del node._options[id + 1]
+                del node._options[id]
+            idcs = [i for i, x in enumerate(node._options) \
+                    if x == '--do-short-slides']
+            idcs.sort(reverse=True)
+            for id in idcs:
+                del node._options[id]
 
-         if len(self.ifo_list) < 2 and \
-                 '--do-sngl-chi-tests' not in node._options and \
-                 ('--do-bank-veto' in node._options or \
-                  '--do-chi-square' in node._options or \
-                  '--do-auto-veto' in node._options):
-             raise ValueError("You are doing a single IFO search with "
-                              "chi-square tests enabled but have not "
-                              "specified the option '--do-sngl-chi-tests'. "
-                              "Please alter your configuration file "
-                              "accordingly.")
+        # If doing single IFO search, ensure face-on/-off options are disabled
+        if len(self.ifo_list) < 2 and \
+                ('--face-on-analysis' in node._options or \
+                 '--face-away-analysis' in node._options):
+            idcs = [i for i, x in enumerate(node._options) \
+                    if (x == '--face-on-analysis' or \
+                        x == '--face-away-analysis')]
+            idcs.sort(reverse=True)
+            for id in idcs:
+                del node._options[id]
+ 
+        # If doing single IFO search with any chi tests, ensure
+        # '--do-sngl-chi-tests' option is added to jobs
+        if len(self.ifo_list) < 2 and \
+                '--do-sngl-chi-tests' not in node._options and \
+                ('--do-bank-veto' in node._options or \
+                 '--do-chi-square' in node._options or \
+                 '--do-auto-veto' in node._options):
+            node._options.append('--do-sngl-chi-tests')
 
         pad_data = self.get_opt('pad-data')
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
-        
+
         # Feed in bank_veto_bank.xml
-        if self.cp.has_option('inspiral', 'do-bank-veto'):
-            if not bankVetoBank:
-                raise ValueError("%s must be given a bank veto file if the"
-                                 "argument 'do-bank-veto' is given"
-                                 % self.name)
+        if self.cp.has_option('inspiral', 'do-bank-veto') and not bankVetoBank:
+            raise ValueError("%s must be given a bank veto file if the "
+                             "argument 'do-bank-veto' is given" % self.name)
             node.add_input_opt('--bank-veto-templates', bankVetoBank)
-        
+
+        # Set time options
         node.add_opt('--gps-start-time', data_seg[0] + int(pad_data))
         node.add_opt('--gps-end-time', data_seg[1] - int(pad_data))
         node.add_opt('--trig-start-time', valid_seg[0])
@@ -315,6 +332,11 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
             node.add_arg('--%s-data' % frameCache.ifo.lower())
 
         if inj_file is not None:
+            if ('--do-short-slides' in node._options or \
+                    '--short-slide-offset' in node._options):
+                raise ValueError("Cannot run with short slides in an "
+                                 "injection job. Please edit your "
+                                 "configuration file accordingly.")
             node.add_input_opt('--injection-file', inj_file)
 
         return node

@@ -37,7 +37,6 @@ from glue.segments import segment
 workflow_name = "pygrb_offline"
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=logging.INFO)
-logging.info("Generating %s workflow" % workflow_name)
 
 # Parse command line options and instantiate pycbc workflow object
 parser = argparse.ArgumentParser()
@@ -48,6 +47,8 @@ wflow = _workflow.Workflow(args, workflow_name)
 all_files = _workflow.FileList([])
 tags = []
 initDir = os.getcwd()
+
+logging.info("Generating %s workflow" % workflow_name)
 
 # Setup run directory
 if wflow.cp.has_option("workflow", "output-directory"):
@@ -74,10 +75,24 @@ segDir = os.path.join(currDir, "segments")
 sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
 
 # Make coherent network segments
-onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir,
-                                                          sciSegs)
+single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
+if len(sciSegs.keys()) < 2 and not single_ifo:
+    msg = "Science segments exist only for %s. " % sciSegs.keys()[0]
+    msg += "If you wish to enable single IFO running add the option "
+    msg += "'allow-single-ifo-search' to the [workflow] section of your "
+    msg += "configuration file." 
+    raise RuntimeError(msg)
+elif len(sciSegs.keys()) < 2:
+    logging.info("Generating a single IFO search.")
+    onSrc, sciSegs = _workflow.get_triggered_single_ifo_segment(wflow, segDir,
+                                                                sciSegs)
+else:
+    onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir,
+                                                              sciSegs,
+                                                              single_ifo)
 
 # Update analysis time after coherent segment calculation
+wflow.ifos = sciSegs.keys()
 ifo = sciSegs.keys()[0]
 padding = int(wflow.cp.get("inspiral", "pad-data"))
 deadtime = int(wflow.cp.get("inspiral", "segment-duration")) / 4
