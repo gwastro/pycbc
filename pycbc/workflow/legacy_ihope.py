@@ -270,37 +270,9 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         if len(self.ifo_list) < 2 and \
                 ('--do-short-slides' in node._options or \
                  '--short-slide-offset' in node._options):
-            idcs = [i for i, x in enumerate(node._options) \
-                    if x == '--short-slide-offset']
-            idcs.sort(reverse=True)
-            for id in idcs:
-                del node._options[id + 1]
-                del node._options[id]
-            idcs = [i for i, x in enumerate(node._options) \
-                    if x == '--do-short-slides']
-            idcs.sort(reverse=True)
-            for id in idcs:
-                del node._options[id]
-
-        # If doing single IFO search, ensure face-on/-off options are disabled
-        if len(self.ifo_list) < 2 and \
-                ('--face-on-analysis' in node._options or \
-                 '--face-away-analysis' in node._options):
-            idcs = [i for i, x in enumerate(node._options) \
-                    if (x == '--face-on-analysis' or \
-                        x == '--face-away-analysis')]
-            idcs.sort(reverse=True)
-            for id in idcs:
-                del node._options[id]
- 
-        # If doing single IFO search with any chi tests, ensure
-        # '--do-sngl-chi-tests' option is added to jobs
-        if len(self.ifo_list) < 2 and \
-                '--do-sngl-chi-tests' not in node._options and \
-                ('--do-bank-veto' in node._options or \
-                 '--do-chi-square' in node._options or \
-                 '--do-auto-veto' in node._options):
-            node._options.append('--do-sngl-chi-tests')
+            raise ValueError("Cannot run with time slides in a single IFO "
+                             "configuration! Please edit your configuration "
+                             "file accordingly.")
 
         pad_data = self.get_opt('pad-data')
         if pad_data is None:

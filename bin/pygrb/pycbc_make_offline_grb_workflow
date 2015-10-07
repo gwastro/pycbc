@@ -91,8 +91,14 @@ else:
                                                               sciSegs,
                                                               single_ifo)
 
-# Update analysis time after coherent segment calculation
+# How many IFOs do we have in the search?
 wflow.ifos = sciSegs.keys()
+if len(wflow.ifos) == 1:
+    mf_tag = "sngl"
+else:
+    mf_tag = "coherent"
+
+# Update analysis time after coherent segment calculation
 ifo = sciSegs.keys()[0]
 padding = int(wflow.cp.get("inspiral", "pad-data"))
 deadtime = int(wflow.cp.get("inspiral", "segment-duration")) / 4
@@ -188,7 +194,7 @@ if wflow.cp.has_section("workflow-injections"):
     # Generate injection matched filter workflow
     inj_insp_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
             datafind_veto_files, inj_splitbank_files, injDir, injs,
-            tags=["injections"])
+            tags=[mf_tag + "_injections"])
     for inj_insp_file in inj_insp_files:
         split_str = [s for s in inj_insp_file.name.split("_") \
                      if ("SPLIT" in s and s[-1].isdigit())]
@@ -225,9 +231,8 @@ if wflow.cp.has_section("workflow-injections"):
 # MAIN MATCHED FILTERING
 inspDir = os.path.join(currDir, "inspiral")
 inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
-                                                      datafind_veto_files,
-                                                      splitbank_files, inspDir,
-                                                      tags=["no_injections"])
+        datafind_veto_files, splitbank_files, inspDir,
+        tags=[mf_tag + "_no_injections"])
 all_files.extend(inspiral_files)
 inspiral_cache = _workflow.File(ifos, "inspiral", sciSegs[ifo][0],
                                 extension="lcf", directory=inspDir)
