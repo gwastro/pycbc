@@ -1,0 +1,89 @@
+#!/bin/env python
+# Copyright (C) 2015 Alexander Harvey Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Make tables describing a coincident foreground event"""
+import h5py, argparse, pycbc.version, pycbc.results, sys
+import numpy, pycbc.pnutils
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version',
+    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--output-file')
+parser.add_argument('--injection-file',
+    help="The HDF format injection file. ")
+parser.add_argument('--injection-index', type=int,
+    help="The index of the injection to print out")
+parser.add_argument('--n-nearest', type=int, 
+    help="Optional, used in the title")
+
+args = parser.parse_args()
+
+# Get the nth loudest trigger from the output of pycbc_coinc_statmap
+f = h5py.File(args.injection_file, 'r')
+n = args.injection_index
+
+# make a table for the coincident information #################################
+headers = []
+data = []
+
+keys = ['end_time', 'dec chirp dist', 'eff_dist_h', 'eff_dist_l', 'mass1', 'mass2',
+        'mchirp', 'eta', 'ra', 'dec', 'inc', 'spin1x', 'spin1y',
+        'spin1z', 'spin2x', 'spin2y', 'spin2z']
+
+m1, m2 = f['injections']['mass1'][args.injection_index], f['injections']['mass2'][args.injection_index]
+mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+
+dec_dist = max(f['injections']['eff_dist_h'][args.injection_index], f['injections']['eff_dist_l'][args.injection_index])
+dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
+
+for key in keys:
+    headers += [key]
+    if key in f['injections']:
+        data += ["%.2f" % f['injections'][key][args.injection_index]]
+    elif key == 'mchirp':
+        data += ["%.2f" % mchirp]
+    elif key == 'eta':
+        data += ["%.2f" % eta]
+    elif key == 'inc':
+        data += ["%.2f" % f['injections']['inclination'][args.injection_index]]
+    elif key == 'ra':
+        data += ["%.2f" % f['injections']['longitude'][args.injection_index]]
+    elif key == 'dec':
+        data += ["%.2f" % f['injections']['latitude'][args.injection_index]]
+    elif key == 'dec chirp dist':
+        data += ["%.2f" % dec_chirp_dist]
+        
+table = numpy.array([data], dtype=str)
+html = str(pycbc.results.static_table(table, headers))
+
+tag = ''
+if args.n_nearest:
+    tag = ':%s' % args.n_nearest
+
+pycbc.results.save_fig_with_metadata(html, args.output_file, {},
+                        cmd = ' '.join(sys.argv),
+                        title = 'Parameters of missed injection' + tag,
+                        caption = "Parameters of this injection")
+   
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        

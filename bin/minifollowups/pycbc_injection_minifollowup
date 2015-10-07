@@ -1,0 +1,121 @@
+#!/bin/env python
+# Copyright (C) 2015 Alexander Harvey Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Followup foreground events
+"""
+import os, argparse, numpy, logging, h5py, pycbc.workflow as wf
+from pycbc.results import layout
+from pycbc.detector import Detector
+import pycbc.workflow.minifollowups as mini
+import pycbc.workflow.pegasus_workflow as wdax
+import pycbc.version, pycbc.pnutils
+
+def to_file(path, ifo=None):
+    fil = wdax.File(os.path.basename(path))
+    fil.ifo = ifo
+    fil.PFN(path, 'local')
+    return fil
+
+parser = argparse.ArgumentParser(description=__doc__[1:])
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg) 
+parser.add_argument('--workflow-name', default='my_unamed_run')
+parser.add_argument("-d", "--output-dir", default=None,
+                    help="Path to output directory.")
+parser.add_argument('--bank-file',
+                    help="HDF format template bank file")
+parser.add_argument('--injection-file',
+                    help="HDF format injection results file")
+parser.add_argument('--single-detector-triggers', nargs='+', 
+                    help="HDF format merged single detector trigger files")
+parser.add_argument('--output-map')
+parser.add_argument('--output-file')
+parser.add_argument('--tags', nargs='+', default=[])
+wf.add_workflow_command_line_group(parser)
+args = parser.parse_args()
+
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
+                    level=logging.INFO)
+
+workflow = wf.Workflow(args, args.workflow_name)
+
+wf.makedir(args.output_dir)
+             
+# create a FileList that will contain all output files
+layouts = []
+
+tmpltbank_file = to_file(args.bank_file)
+injection_file = to_file(args.injection_file)
+
+single_triggers = []
+for name in args.single_detector_triggers:
+    ifo, fname = name.split(':')
+    single_triggers.append(to_file(fname, ifo=ifo))
+
+f = h5py.File(args.injection_file, 'r')
+missed = f['missed/after_vetoes'][:]
+
+num_events = int(workflow.cp.get_opt_tags('workflow-injection_minifollowups', 'num-events', ''))
+
+eff_dist = {'H1': f['injections/eff_dist_h'][:][missed],
+         'L1': f['injections/eff_dist_l'][:][missed],
+         'V1': f['injections/eff_dist_v'][:][missed],
+        }
+
+dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo], 
+                         eff_dist[single_triggers[1].ifo])
+
+mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(f['injections/mass1'][:][missed],
+                                                      f['injections/mass2'][:][missed])
+
+dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
+
+sorting = dec_chirp_dist.argsort()
+
+if len(missed) < num_events:
+    num_events = len(missed)
+
+# loop over number of loudest events to be followed up
+for num_event in range(num_events):
+    files = wf.FileList([])
+    
+    injection_index = missed[sorting][num_event]
+    time = f['injections/end_time'][injection_index]
+    
+    ifo_times = ''
+    for single in single_triggers:
+        ifo = single.ifo
+        det = Detector(ifo)
+        lon = f['injections/longitude'][injection_index]
+        lat = f['injections/latitude'][injection_index]
+        ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
+        ifo_times += ' %s:%s ' % (ifo, ifo_time) 
+          
+    layouts += [(mini.make_inj_info(workflow, injection_file, injection_index, num_event,
+                               args.output_dir, tags=args.tags + [str(num_event)])[0],)]   
+    files += mini.make_trigger_timeseries(workflow, single_triggers,
+                              ifo_times, args.output_dir,
+                              tags=args.tags + [str(num_event)])
+    
+    for single in single_triggers:
+        files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
+                                time - 10, time + 10, args.output_dir,
+                                tags=args.tags + [str(num_event), single.ifo])                 
+    
+    layouts += list(layout.grouper(files, 2))
+    num_event += 1
+
+workflow.save(filename=args.output_file, output_map=args.output_map)
+layout.two_column_layout(args.output_dir, layouts)
