@@ -4,6 +4,59 @@
 # Exit if any command fails
 set -e 
 
+# this makes sure everything is logged to a file
+LOGPATH="${PWD}/install_pycbc_`date +%Y%m%d%H%M%S`.log"
+if [ "$1" != "noscript" ] ; then
+    # just in case the user is calling us via bash or sh
+    chmod +x $0
+    exec script -q -c "$0 noscript" ${LOGPATH}
+    exit 1;
+fi
+
+while true ; do
+#Check pip and virtualenv versions
+echo
+virtualenv --version
+echo
+read -rp  "Is your version of virtualenv greater than 13.1.1? (Enter yes or no) " version
+ 
+if [[ $version == "yes" ]] ; then
+  break
+
+elif [[ $version == "no" ]] ; then
+  echo "You must have at least version 13.1.1 of virtualenv."
+  echo "To set up virutalenv follow the instructions at:"
+  echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
+  exit 1
+
+else
+ exit 1
+
+fi
+done
+
+while true ; do
+
+echo
+pip --version
+echo
+read -rp "Is your version of pip greater than 7.1.0? (Enter yes or no) " pip_version
+
+if [[ $version == "yes" ]] ; then
+  break
+
+elif [[ $version == "no" ]] ; then
+  echo "You must have at least version 7.1.0 of pip."
+  echo "To set up pip follow the instructions at:"
+  echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
+  exit 1
+
+else
+ exit 1
+
+fi
+done
+
 #Installing pyCBC
 
 while true; do 
@@ -213,9 +266,9 @@ while true; do
 while true; do
 #Pip cache decision
 echo "What would you like to do with your pip cache?"
-echo "1. Leave the pip cache alone."
+echo "1. Use the existing pip cache.(Fastest)"
 echo "2. Ignore the pip cache."
-echo "3. Remove te pip cache."
+echo "3. Remove te pip cache. (Safest and slowest)"
 echo
 read -rp "Enter 1, 2 or 3: " pip_cache
 
@@ -551,5 +604,8 @@ fi
 deactivate
 echo "PyCBC setup complete"
 echo
+
+# save log into virtualenv
+mv ${LOGPATH} ${NAME}/
 
 exit 0
