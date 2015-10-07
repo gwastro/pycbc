@@ -1,4 +1,20 @@
 #!/usr/bin/env python
+# Copyright (C) 2015 Alex Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 """ Merge hdf psd files
 """
 import logging, argparse, numpy, h5py, pycbc.types
@@ -24,6 +40,7 @@ for psd_file in args.psd_files:
         start[ifo], end[ifo] = [], []
     
     for rkey in f['%s/psds' % ifo].keys():
+        int_key = int(rkey)
         rkey = '%s/psds/%s' % (ifo, rkey)
         psd = pycbc.types.load_frequencyseries(psd_file, group=rkey)
     
@@ -31,13 +48,13 @@ for psd_file in args.psd_files:
         outf.create_dataset(key, data=psd,
                          compression='gzip', compression_opts=9, shuffle=True)
                          
-        s = int(psd.epoch)
-        e = int(s + 1.0 / psd.delta_f)
+        s = f['%s/start_time' % ifo][int_key]
+        e = f['%s/end_time' % ifo][int_key]
                          
-        outf[key].attrs['epoch'] = s
+        outf[key].attrs['epoch'] = int(psd.epoch)
         outf[key].attrs['delta_f'] = float(psd.delta_f)
         start[ifo].append(s)
-        end[ifo].append(s)
+        end[ifo].append(e)
         
         inc[ifo] += 1
 
@@ -47,4 +64,3 @@ for ifo in start:
 
 outf.attrs['low_frequency_cutoff'] = f.attrs['low_frequency_cutoff']
 logging.info('Done!')
-

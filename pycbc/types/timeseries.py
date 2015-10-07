@@ -475,9 +475,12 @@ def load_timeseries(path, group=None):
         data = numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
-        f = h5py.File(path)[key]
-        return TimeSeries(f, delta_t=f.attrs['delta_t'],
-                             epoch=f.attrs['start_time']) 
+        f = h5py.File(path)
+        data = f[key][:]
+        series = TimeSeries(data, delta_t=f.attrs['delta_t'],
+                                  epoch=f.attrs['start_time']) 
+        f.close()
+        return series
     else:
         raise ValueError('Path must end with .npy, .hdf, or .txt')
         

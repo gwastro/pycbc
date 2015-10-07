@@ -29,7 +29,6 @@ matplotlib.use('agg')
 import pylab as pl
 import matplotlib.mlab as mlab
 import h5py
-import lalinspiral
 import pycbc.events
 import pycbc.pnutils
 import pycbc.strain

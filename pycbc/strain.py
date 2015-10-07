@@ -21,6 +21,7 @@ import logging, numpy, lal
 import pycbc.noise
 from pycbc import psd
 from pycbc.types import float32
+from pycbc.types import FrequencySeries, complex_same_precision_as
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
 from pycbc.types import required_opts, required_opts_multi_ifo
@@ -30,6 +31,76 @@ from pycbc.frame import read_frame, query_and_read_frame
 from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk
+import pycbc.fft
+import pycbc.events
+
+
+def detect_loud_glitches(strain, psd_duration=16, psd_stride=8,
+                         psd_avg_method='median', low_freq_cutoff=30.,
+                         threshold=50., cluster_window=5., corrupted_time=4.,
+                         high_freq_cutoff=None, output_intermediates=False):
+    """Automatic identification of loud transients for gating purposes."""
+
+    if output_intermediates:
+        strain.save_to_wav('strain_conditioned.wav')
+
+    # don't waste time trying to optimize a single FFT
+    pycbc.fft.fftw.set_measure_level(0)
+
+    logging.info('Autogating: estimating PSD')
+    psd = pycbc.psd.welch(strain, seg_len=psd_duration*strain.sample_rate,
+                          seg_stride=psd_stride*strain.sample_rate,
+                          avg_method=psd_avg_method)
+
+    logging.info('Autogating: time -> frequency')
+    strain_tilde = FrequencySeries(numpy.zeros(len(strain) / 2 + 1),
+                                   delta_f=1./strain.duration,
+                                   dtype=complex_same_precision_as(strain))
+    pycbc.fft.fft(strain, strain_tilde)
+
+    logging.info('Autogating: interpolating PSD')
+    psd = pycbc.psd.interpolate(psd, strain_tilde.delta_f)
+
+    logging.info('Autogating: whitening')
+    if high_freq_cutoff:
+        kmax = int(high_freq_cutoff / strain_tilde.delta_f)
+        strain_tilde[kmax:] = 0.
+        norm = high_freq_cutoff - low_freq_cutoff
+    else:
+        norm = strain.sample_rate/2. - low_freq_cutoff
+    strain_tilde /= (psd * norm) ** 0.5
+    kmin = int(low_freq_cutoff / strain_tilde.delta_f)
+    strain_tilde[0:kmin] = 0.
+
+    # FIXME at this point the strain can probably be downsampled
+
+    logging.info('Autogating: frequency -> time')
+    pycbc.fft.ifft(strain_tilde, strain)
+
+    pycbc.fft.fftw.set_measure_level(pycbc.fft.fftw._default_measurelvl)
+
+    logging.info('Autogating: stdev of whitened strain is %.4f', numpy.std(strain))
+
+    if output_intermediates:
+        strain.save_to_wav('strain_whitened.wav')
+
+    mag = abs(strain)
+    if output_intermediates:
+        mag.save('strain_whitened_mag.npy')
+    mag = numpy.array(mag, dtype=numpy.float32)
+
+    # remove corrupted strain at the ends
+    corrupted_idx = int(corrupted_time * strain.sample_rate)
+    mag[0:corrupted_idx] = 0
+    mag[-1:-corrupted_idx-1:-1] = 0
+
+    logging.info('Autogating: finding loud peaks')
+    indices = numpy.where(mag > threshold)[0]
+    cluster_idx = pycbc.events.findchirp_cluster_over_window(
+            indices, mag[indices], int(cluster_window*strain.sample_rate))
+    times = [idx * strain.delta_t + strain.start_time \
+             for idx in indices[cluster_idx]]
+    return times
 
 def from_cli(opt, dyn_range_fac=1, precision='single'):
     """Parses the CLI options related to strain data reading and conditioning.
@@ -104,9 +175,25 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             gate_params = numpy.loadtxt(opt.gating_file)
             if len(gate_params.shape) == 1:
                 gate_params = [gate_params]
-            strain = gate_data(
-                strain, gate_params,
-                data_start_time=(opt.gps_start_time - opt.pad_data))
+            strain = gate_data(strain, gate_params)
+
+        if opt.autogating_threshold is not None:
+            # the + 0 is for making a copy
+            glitch_times = detect_loud_glitches(
+                    strain + 0., threshold=opt.autogating_threshold,
+                    cluster_window=opt.autogating_cluster,
+                    low_freq_cutoff=opt.strain_high_pass,
+                    high_freq_cutoff=opt.sample_rate/2,
+                    corrupted_time=opt.pad_data)
+            gate_params = [[gt, opt.autogating_width, opt.autogating_taper] \
+                           for gt in glitch_times]
+            if opt.autogating_output:
+                with file(opt.autogating_output, 'wb') as autogates:
+                    for x, y, z in gate_params:
+                        autogates.write('%.3f %f %f\n' % (x, y, z))
+            logging.info('Autogating at %s',
+                         ', '.join(['%.3f' % gt for gt in glitch_times]))
+            strain = gate_data(strain, gate_params)
 
         logging.info("Resampling data")
         strain = resample_to_delta_t(strain, 1.0/opt.sample_rate, method='ldas')
@@ -247,6 +334,30 @@ def insert_strain_option_group(parser, gps_times=True):
                     help="(optional) Text file of gating segments to apply."
                         " Format of each line is (all times in secs):"
                         "  gps_time zeros_half_width pad_half_width")
+
+    data_reading_group.add_argument('--autogating-threshold', type=float,
+                                    metavar='SIGMA',
+                                    help='If given, find and gate glitches '
+                                         'producing a deviation larger than '
+                                         'SIGMA in the whitened strain time '
+                                         'series.')
+    data_reading_group.add_argument('--autogating-cluster', type=float,
+                                    metavar='SECONDS', default=5.,
+                                    help='Length of clustering window for '
+                                         'detecting glitches for autogating.')
+    data_reading_group.add_argument('--autogating-width', type=float,
+                                    metavar='SECONDS', default=0.25,
+                                    help='Half-width of the gating window.')
+    data_reading_group.add_argument('--autogating-taper', type=float,
+                                    metavar='SECONDS', default=0.25,
+                                    help='Taper the strain before and after '
+                                         'each gating window over a duration '
+                                         'of SECONDS.')
+    data_reading_group.add_argument('--autogating-output', type=str,
+                                    metavar='FILE',
+                                    help='If given, save the '
+                                         'automatically-produced gating info '
+                                         'to the given file.')
 
     data_reading_group.add_argument("--normalize-strain", type=float,
                     help="(optional) Divide frame data by constant.")
@@ -429,7 +540,7 @@ def verify_strain_options_multi_ifo(opts, parser, ifos):
         required_opts_multi_ifo(opts, parser, ifo, required_opts_list)
 
 
-def gate_data(data, gate_params, data_start_time):
+def gate_data(data, gate_params):
     def inverted_tukey(M, n_pad):
         midlen = M - 2*n_pad
         if midlen < 1:
@@ -440,8 +551,8 @@ def gate_data(data, gate_params, data_start_time):
     sample_rate = 1./data.delta_t
     temp = data.data
     for glitch_time, glitch_width, pad_width in gate_params:
-        t_start = glitch_time - glitch_width - pad_width - data_start_time
-        t_end = glitch_time + glitch_width + pad_width - data_start_time
+        t_start = glitch_time - glitch_width - pad_width - data.start_time
+        t_end = glitch_time + glitch_width + pad_width - data.start_time
         if t_start > data.duration or t_end < 0.:
             continue # Skip gate segments that don't overlap
         win_samples = int(2*sample_rate*(glitch_width+pad_width))

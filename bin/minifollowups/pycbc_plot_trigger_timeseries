@@ -18,6 +18,7 @@
 import h5py, argparse, logging, pycbc.version, pycbc.events, pycbc.results, sys
 from pycbc.types import MultiDetOptionAction
 import matplotlib; matplotlib.use('Agg'); import pylab
+import numpy
     
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -71,8 +72,12 @@ for ifo in args.single_trigger_files.keys():
         snr = data['snr'][:][idx]
         chisq = data['chisq'][:][idx]
         chisq_dof = data['chisq_dof'][:][idx]
-        val = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))
-        
+
+        if len(chisq) > 0:
+            val = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))        
+        else:
+            val = numpy.array([])
+
         # Get the newnsr of the loudest trigger so we can plot a star there
         if args.special_trigger_ids:
             rchisq = data['chisq'][:][id_loud] / (data['chisq_dof'][:][id_loud] * 2 - 2)
@@ -88,8 +93,11 @@ if args.log_y_axis:
     pylab.yscale('log')
      
 pylab.xlabel('time (s)')
-pylab.ylabel(args.plot_type)                                
-pylab.ylim(ymin=val.min())
+pylab.ylabel(args.plot_type)
+
+if len(val) > 0:                                
+    pylab.ylim(ymin=val.min())
+
 pylab.xlim(xmin=-args.window, xmax=args.window)
 pylab.legend()
 pylab.grid()

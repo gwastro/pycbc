@@ -16,11 +16,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Followup foreground events
 """
-import os, argparse, logging, h5py, pycbc.workflow as wf
+import os, argparse, numpy, logging, h5py, pycbc.workflow as wf
 from pycbc.results import layout
+from pycbc.detector import Detector
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
-import pycbc.version
+import pycbc.version, pycbc.pnutils
 
 def to_file(path, ifo=None):
     fil = wdax.File(os.path.basename(path))
@@ -35,14 +36,10 @@ parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
-parser.add_argument('--statmap-file',
-                    help="HDF format clustered coincident trigger result file")
+parser.add_argument('--injection-file',
+                    help="HDF format injection results file")
 parser.add_argument('--single-detector-triggers', nargs='+', 
                     help="HDF format merged single detector trigger files")
-parser.add_argument('--inspiral-segments', nargs='+',
-                    help="xml segment files containing the inspiral analysis times")
-parser.add_argument('--inspiral-segment-name',
-                    help="Name of inspiral segmentlist to read from segment files")
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
@@ -60,58 +57,59 @@ wf.makedir(args.output_dir)
 layouts = []
 
 tmpltbank_file = to_file(args.bank_file)
-coinc_file = to_file(args.statmap_file)
+injection_file = to_file(args.injection_file)
 
 single_triggers = []
 for name in args.single_detector_triggers:
     ifo, fname = name.split(':')
     single_triggers.append(to_file(fname, ifo=ifo))
-    
-insp_segs = {}
-for name in args.inspiral_segments:
-    ifo, fname = name.split(':')
-    insp_segs[ifo] = to_file(fname, ifo=ifo)
 
-num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
-f = h5py.File(args.statmap_file, 'r')
-stat = f['foreground/stat'][:]
+f = h5py.File(args.injection_file, 'r')
+missed = f['missed/after_vetoes'][:]
 
-sorting = stat.argsort()[::-1]
+num_events = int(workflow.cp.get_opt_tags('workflow-injection_minifollowups', 'num-events', ''))
 
-if len(stat) < num_events:
-    num_events = len(stat)
-
-stat = stat[sorting][0:num_events]
-
-times = {f.attrs['detector_1']: f['foreground/time1'][:][sorting][0:num_events],
-         f.attrs['detector_2']: f['foreground/time2'][:][sorting][0:num_events],
+eff_dist = {'H1': f['injections/eff_dist_h'][:][missed],
+         'L1': f['injections/eff_dist_l'][:][missed],
+         'V1': f['injections/eff_dist_v'][:][missed],
         }
-tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][:][sorting][0:num_events],
-         f.attrs['detector_2']: f['foreground/trigger_id2'][:][sorting][0:num_events],
-        }
+
+dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo], 
+                         eff_dist[single_triggers[1].ifo])
+
+mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(f['injections/mass1'][:][missed],
+                                                      f['injections/mass2'][:][missed])
+
+dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
+
+sorting = dec_chirp_dist.argsort()
+
+if len(missed) < num_events:
+    num_events = len(missed)
 
 # loop over number of loudest events to be followed up
 for num_event in range(num_events):
     files = wf.FileList([])
     
-    ifo_times = '%s:%s %s:%s' % (times.keys()[0], times[times.keys()[0]][num_event],
-                                 times.keys()[1], times[times.keys()[1]][num_event])
-
-    ifo_tids = '%s:%s %s:%s' % (tids.keys()[0], tids[tids.keys()[0]][num_event],
-                                 tids.keys()[1], tids[tids.keys()[1]][num_event])
+    injection_index = missed[sorting][num_event]
+    time = f['injections/end_time'][injection_index]
     
-    layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
-                              coinc_file, num_event, 
-                              args.output_dir, tags=args.tags + [str(num_event)]),)        
+    ifo_times = ''
+    for single in single_triggers:
+        ifo = single.ifo
+        det = Detector(ifo)
+        lon = f['injections/longitude'][injection_index]
+        lat = f['injections/latitude'][injection_index]
+        ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
+        ifo_times += ' %s:%s ' % (ifo, ifo_time) 
+          
+    layouts += [(mini.make_inj_info(workflow, injection_file, injection_index, num_event,
+                               args.output_dir, tags=args.tags + [str(num_event)])[0],)]   
     files += mini.make_trigger_timeseries(workflow, single_triggers,
-                              ifo_times, args.output_dir, special_tids=ifo_tids,
+                              ifo_times, args.output_dir,
                               tags=args.tags + [str(num_event)])
-    files += mini.make_single_template_plots(workflow, insp_segs,
-                              args.inspiral_segment_name, coinc_file, tmpltbank_file,
-                              num_event, args.output_dir, tags=args.tags + [str(num_event)])
     
     for single in single_triggers:
-        time = times[single.ifo][num_event]
         files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
                                 time - 10, time + 10, args.output_dir,
                                 tags=args.tags + [str(num_event), single.ifo])                 
