@@ -229,6 +229,14 @@ for bin_file in bin_files:
                                   rdir['result/%s' % bin_file.bin_name],
                                   tags=bin_file.tags)
 
+# Also run minifollowups on loudest sngl detector events
+for insp_file in full_insps:
+    curr_ifo = insp_file.ifo
+    wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
+                                  insp_data_segs, 'INSPIRAL_DATA', 'daxes',
+                                  rdir['result/sngl_%s' %(curr_ifo,)],
+                                  tags=insp_file.tags)
+
 ################## Setup segment / veto related plots #########################    
 # do plotting of segments / veto times
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
