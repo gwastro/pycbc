@@ -6,6 +6,7 @@ from matplotlib import colors
 matplotlib.use('Agg')
 import pylab, pycbc.results
 from pycbc.io import get_chisq_from_file_choice, chisq_choices
+from pycbc import pnutils
 
 def snr_from_chisq(chisq, newsnr, q=6.):
     snr = numpy.zeros(len(chisq)) + float(newsnr)
@@ -28,6 +29,9 @@ parser.add_argument('--single-trigger-file', required=True,
 parser.add_argument('--newsnr-contours', nargs='*', default=[],
                     help="List of newsnr values to draw contours at.")
 parser.add_argument('--background-front', action='store_true', default=False)
+parser.add_argument('--colorbar-choice', choices = ('spin', 'mchirp', 'eta', 'effective_distance'),
+                    default='effective_distance',
+                    help='Parameter to use for the colorbar. Default=effective_distance')
 parser.add_argument('--chisq-choice', choices=chisq_choices,
                     default='traditional',
                     help='Which chisquared to plot. Default=traditional')
@@ -63,6 +67,18 @@ inj_tids[f.attrs['detector_2']] = f['found_after_vetoes/trigger_id2']
 
 inj_idx = f['found_after_vetoes/injection_index'][:]
 eff_dist = f['injections'][eff_map[ifo]][:][inj_idx]
+m1, m2 = f['injections/mass1'][:][inj_idx], f['injections/mass2'][:][inj_idx]
+s1, s2 = f['injections/spin1z'][:][inj_idx], f['injections/spin2z'][:][inj_idx]
+mchirp, eta = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+weighted_spin = (m1 * s1 + m2 * s2) / (m1 + m2)
+
+#choices to color the found injections
+coloring = {'effective_distance': (eff_dist, "Effective Distance (Mpc)", colors.LogNorm()),
+             'mchirp': (mchirp, "Chirp Mass", colors.LogNorm()),
+             'eta': (eta, "Symmetric Mass Ratio", colors.LogNorm()),
+             'spin': (weighted_spin, "Weighted Aligned Spin", None)
+             }
+             
 
 f = h5py.File(args.single_injection_file, 'r')[ifo]
 tid = inj_tids[ifo][:]
@@ -73,7 +89,8 @@ else:
     inj_snr = numpy.array([])
     inj_chisq = numpy.array([])
 
-pylab.scatter(inj_snr, inj_chisq, c=eff_dist, norm=colors.LogNorm(),
+pylab.scatter(inj_snr, inj_chisq, c=coloring[args.colorbar_choice][0],
+              norm=coloring[args.colorbar_choice][2],
               marker='^', linewidth=0, label="Injections", 
               zorder= not args.background_front)
 
@@ -93,7 +110,7 @@ ax.set_xscale('log')
 ax.set_yscale('log')
 try:
     cb = pylab.colorbar()
-    cb.set_label('Effective Distance (Mpc)', size='large')
+    cb.set_label(coloring[args.colorbar_choice][1], size='large')
 except TypeError:
     # Catch case of no injection triggers
     if len(inj_chisq):
