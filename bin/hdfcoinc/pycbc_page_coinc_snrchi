@@ -29,7 +29,7 @@ parser.add_argument('--single-trigger-file', required=True,
 parser.add_argument('--newsnr-contours', nargs='*', default=[],
                     help="List of newsnr values to draw contours at.")
 parser.add_argument('--background-front', action='store_true', default=False)
-parser.add_argument('--colorbar-choice', choices = ('spin', 'mchirp', 'eta', 'effective_distance'),
+parser.add_argument('--colorbar-choice', choices = ('spin', 'mchirp', 'eta', 'effective_distance', 'total_mass'),
                     default='effective_distance',
                     help='Parameter to use for the colorbar. Default=effective_distance')
 parser.add_argument('--chisq-choice', choices=chisq_choices,
@@ -74,9 +74,10 @@ weighted_spin = (m1 * s1 + m2 * s2) / (m1 + m2)
 
 #choices to color the found injections
 coloring = {'effective_distance': (eff_dist, "Effective Distance (Mpc)", colors.LogNorm()),
-             'mchirp': (mchirp, "Chirp Mass", colors.LogNorm()),
-             'eta': (eta, "Symmetric Mass Ratio", colors.LogNorm()),
-             'spin': (weighted_spin, "Weighted Aligned Spin", None)
+            'mchirp': (mchirp, "Chirp Mass", colors.LogNorm()),
+            'eta': (eta, "Symmetric Mass Ratio", colors.LogNorm()),
+            'spin': (weighted_spin, "Weighted Aligned Spin", None),
+            'total_mass': (m1 + m2, "Total Mass", colors.LogNorm())
              }
              
 
