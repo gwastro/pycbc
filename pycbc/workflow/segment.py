@@ -1069,11 +1069,10 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
     snglsegs = segments.segmentlistdict()
     for key in sciencesegs.keys():
         if triggertime in sciencesegs[key]:
-            ifo = key
-            snglsegs[ifo] = sciencesegs[ifo]
-            logging.info("Trigger is within %s segments." % ifo)
+            snglsegs[key] = sciencesegs[key]
+            logging.info("Trigger is within %s segments." % key)
     
-    if not snglsegs:
+    if len(snglsegs.keys()) == 0:
         logging.error("Trigger is not contained within any available segment. "
                       "Exiting.")
         sys.exit()
@@ -1110,7 +1109,9 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
                       "duration. Exiting.")
         sys.exit()
     elif len(offsrc.keys()) > 1:
-        logging.error("Something has gone wrong!")
+        logging.error("Something is broken! At this point there should only "
+                      "be 1 IFO in play, but there are %d."
+                      % len(offsrc.keys()))
         sys.exit()
     else:
         ifo = offsrc.keys()[0]
