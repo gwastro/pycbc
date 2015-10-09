@@ -56,6 +56,8 @@ parser.add_argument('--remnant-mass-threshold', type=float, required=True,
                        "remnant disk mass does not exceed this value, the NS-BH"
                        "binary is dropped from the bank.  UNITS=Solar mass")
 parser.add_argument("-z", "--write-compress", action="store_true", help="Write compressed xml.gz files.")
+parser.add_argument("--frame-axis-view", action="store_true",
+                  help="The x, y, z spin components are wrt the line of site.")
 parser.add_argument("-v", "--verbose", action="store_true", default=False,
                     help="Extended standard output.")
 
@@ -110,15 +112,25 @@ for i, inj in enumerate(injections.table):
         if m1 < m2:
             NSmass = m1
             bh_spin_magnitude = numpy.sqrt(s2x*s2x + s2y*s2y + s2z*s2z)
-            # Scalar product between spin and orbital angular momentum 
-            bh_spin_para = s2x*numpy.sin(incl)+s2z*numpy.cos(incl)
+            if opts.frame_axis_view:
+                # Scalar product between spin and orbital angular momentum 
+                # (the x, y, z spin components are wrt the line of site)
+                bh_spin_para = s2x*numpy.sin(incl)+s2z*numpy.cos(incl)
+            else:
+                # The x, y, z spin components are wrt the orbital angular momentum
+                bh_spin_para = s2z
             bh_spin_inclination = numpy.arccos(bh_spin_para/bh_spin_magnitude)
         # 2 = NS, 1 = BH
         else:
             NSmass = m2
             bh_spin_magnitude = numpy.sqrt(s1x*s1x + s1y*s1y + s1z*s1z)
-            # Scalar product between spin and orbital angular momentum 
-            bh_spin_para = s1x*numpy.sin(incl)+s1z*numpy.cos(incl)
+            if opts.frame_axis_view:
+                # Scalar product between spin and orbital angular momentum 
+                # (the x, y, z spin components are wrt the line of site)
+                bh_spin_para = s1x*numpy.sin(incl)+s1z*numpy.cos(incl)
+            else:
+                # The x, y, z spin components are wrt the orbital angular momentum
+                bh_spin_para = s1z
             bh_spin_inclination = numpy.arccos(bh_spin_para/bh_spin_magnitude)
         # remnant_mass is the remnant disk mass - the threshold set by the user to discriminate dim and bright
         remnant_mass = pycbc.tmpltbank.em_progenitors.remnant_mass(eta, NSmass, ns_sequence, bh_spin_magnitude, bh_spin_inclination, opts.remnant_mass_threshold)
