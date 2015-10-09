@@ -105,6 +105,90 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     workflow._adag.addDependency(dep)
     logging.info('Leaving minifollowups module')
 
+def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
+                                  insp_segs, insp_seg_name, dax_output,
+                                  out_dir, tags=None):
+    """ Create plots that followup the Nth loudest clustered single detector
+    triggers from a merged single detector trigger HDF file.
+    
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    single_trig_file: pycbc.workflow.File
+        The File class holding the single detector triggers.
+    tmpltbank_file: pycbc.workflow.File
+        The file object pointing to the HDF format template bank
+    insp_segs: dict
+        A dictionary, keyed by ifo name, of the data read by each inspiral job.
+    insp_segs_name: str 
+        The name of the segmentlist to read from the inspiral segment file
+    out_dir: path
+        The directory to store minifollowups result plots and files
+    tags: {None, optional}
+        Tags to add to the minifollowups executables    
+    Returns
+    -------
+    layout: list
+        A list of tuples which specify the displayed file layout for the 
+        minifollops plots.
+    """
+    logging.info('Entering minifollowups module')
+
+    if not workflow.cp.has_section('workflow-minifollowups'):
+        msg = 'There is no [workflow-minifollowups] section in '
+        msg += 'configuration file'
+        logging.info(msg)
+        logging.info('Leaving minifollowups')
+        return
+
+    tags = [] if tags is None else tags
+    makedir(dax_output)
+
+    # turn the config file into a File class
+    curr_ifo = single_trig_file.ifo
+    config_path = os.path.abspath(dax_output + '/' + curr_ifo + \
+                                   '_'.join(tags) + 'singles_minifollowup.ini')
+    workflow.cp.write(open(config_path, 'w'))
+
+    config_file = wdax.File(os.path.basename(config_path))
+    config_file.PFN(config_path, 'local')
+
+    exe = Executable(workflow.cp, 'singles_minifollowup',
+                     ifos=curr_ifo, out_dir=dax_output)
+
+    node = exe.create_node()
+    node.add_input_opt('--config-files', config_file)
+    node.add_input_opt('--bank-file', tmpltbank_file)
+    node.add_input_opt('--single-detector-file', single_trig_file)
+    node.add_input_opt('--inspiral-segments', insp_segs[curr_ifo])
+    node.add_opt('--inspiral-segment-name', insp_seg_name)
+    node.add_opt('--instrument', curr_ifo)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file',
+                             tags=tags)
+
+    name = node.output_files[0].name
+    map_loc = name + '.map'
+    node.add_opt('--workflow-name', name)
+    node.add_opt('--output-dir', out_dir)
+    node.add_opt('--output-map', map_loc)
+
+    workflow += node
+
+    # execute this is a sub-workflow
+    fil = node.output_files[0]
+
+    ## FIXME not clear why I have to set the id here, pegasus should do this!
+    job = dax.DAX(fil)
+    job.addArguments('--basename %s' \
+                     % os.path.splitext(os.path.basename(name))[0])
+    Workflow.set_job_properties(job, map_loc)
+    workflow._adag.addJob(job)
+    dep = dax.Dependency(parent=node._dax_node, child=job)
+    workflow._adag.addDependency(dep)
+    logging.info('Leaving minifollowups module')
+
+
 def setup_injection_minifollowups(workflow, injection_file, single_triggers, tmpltbank_file, 
                                   dax_output, out_dir, tags=None):
     """ Create plots that followup the closest missed injections
@@ -241,7 +325,27 @@ def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, tags=None):
     workflow += node
     files += node.output_files
     return files
-    
+
+def make_sngl_ifo(workflow, sngl_file, bank_file, num, out_dir, ifo,
+                  tags=None, veto_file=None, segment_name=None):
+    """Setup a job to create sngl detector sngl ifo html summary snippet.
+    """
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'page_snglinfo'
+    files = FileList([])
+    node = PlotExecutable(workflow.cp, name, ifos=[ifo],
+                              out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--single-trigger-file', sngl_file)
+    node.add_input_opt('--bank-file', bank_file)
+    node.add_opt('--n-loudest', str(num))
+    node.add_opt('--instrument', ifo)
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+    workflow += node
+    files += node.output_files
+    return files
+
+
 def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=None,
                             exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
