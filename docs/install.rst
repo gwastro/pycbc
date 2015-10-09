@@ -173,6 +173,11 @@ To query the new Advanced LIGO and Advanced Virgo Segment Database, you will nee
 
     pip install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
 
+For uploading triggers to GraceDB at the end of the workflow you will need to have the gracedb client tools installed. The latest release is in pip
+
+.. code-block:: bash
+
+    pip install ligo-gracedb
 
 You now need to decide whether you want to install a release of PyCBC or an editable version of the source code from a git repository for development. 
 

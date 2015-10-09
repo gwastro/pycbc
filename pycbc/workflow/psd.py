@@ -58,6 +58,9 @@ def setup_psd_calculate(workflow, frame_files, ifo, segments,
     else:
         num_parts = 1
         
+    # get rid of duplicate segments which happen when splitting the bank
+    segments = segmentlist(frozenset(segments))       
+        
     segment_lists = list(chunks(segments, num_parts)) 
     
     psd_files = FileList([])

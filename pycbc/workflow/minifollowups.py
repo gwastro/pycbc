@@ -62,6 +62,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     if not workflow.cp.has_section('workflow-minifollowups'):
         logging.info('There is no [workflow-minifollowups] section in configuration file')
         logging.info('Leaving minifollowups')
+        return
     
     tags = [] if tags is None else tags
     makedir(dax_output)
@@ -104,6 +105,81 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     workflow._adag.addDependency(dep)
     logging.info('Leaving minifollowups module')
 
+def setup_injection_minifollowups(workflow, injection_file, single_triggers, tmpltbank_file, 
+                                  dax_output, out_dir, tags=None):
+    """ Create plots that followup the closest missed injections
+    
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    coinc_file: 
+    single_triggers: list of pycbc.workflow.File
+        A list cointaining the file objects associated with the merged
+        single detector trigger files for each ifo.
+    tmpltbank_file: pycbc.workflow.File
+        The file object pointing to the HDF format template bank
+    insp_segs: dict
+        A dictionary, keyed by ifo name, of the data read by each inspiral job.
+    insp_segs_name: str 
+        The name of the segmentlist to read from the inspiral segment file
+    out_dir: path
+        The directory to store minifollowups result plots and files
+    tags: {None, optional}
+        Tags to add to the minifollowups executables
+    
+    Returns
+    -------
+    layout: list
+        A list of tuples which specify the displayed file layout for the 
+        minifollops plots.
+    """
+    logging.info('Entering injection minifollowups module')
+    
+    if not workflow.cp.has_section('workflow-injection_minifollowups'):
+        logging.info('There is no [workflow-injection_minifollowups] section in configuration file')
+        logging.info('Leaving minifollowups')
+        return
+    
+    tags = [] if tags is None else tags
+    makedir(dax_output)
+    
+    # turn the config file into a File class
+    config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'injection_minifollowup.ini')
+    workflow.cp.write(open(config_path, 'w'))
+    
+    config_file = wdax.File(os.path.basename(config_path))
+    config_file.PFN(config_path, 'local')
+    
+    exe = Executable(workflow.cp, 'injection_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
+    
+    node = exe.create_node()
+    node.add_input_opt('--config-files', config_file)
+    node.add_input_opt('--bank-file', tmpltbank_file)
+    node.add_input_opt('--injection-file', injection_file)
+    node.add_multiifo_input_list_opt('--single-detector-triggers', single_triggers)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
+    
+    name = node.output_files[0].name
+    map_loc = name + '.map'
+    node.add_opt('--workflow-name', name)
+    node.add_opt('--output-dir', out_dir)
+    node.add_opt('--output-map', map_loc)
+    
+    workflow += node
+    
+    # execute this is a sub-workflow
+    fil = node.output_files[0]
+    
+    ## FIXME not clear why I have to set the id here, pegasus should do this!
+    job = dax.DAX(fil)
+    job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
+    Workflow.set_job_properties(job, map_loc)
+    workflow._adag.addJob(job)
+    dep = dax.Dependency(parent=node._dax_node, child=job)
+    workflow._adag.addDependency(dep)
+    logging.info('Leaving injection minifollowups module')
+
 def make_single_template_plots(workflow, segs, seg_name, coinc, bank, num, out_dir, 
                                exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
@@ -135,13 +211,25 @@ def make_single_template_plots(workflow, segs, seg_name, coinc, bank, num, out_d
             files += node.output_files
     return files      
 
-def make_coinc_info(workflow, singles, bank, coinc, num, out_dir,
-                    exclude=None, require=None, tags=None):
+def make_inj_info(workflow, injection_file, injection_index, num, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'page_injinfo'
+    files = FileList([])
+    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                              out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--injection-file', injection_file)
+    node.add_opt('--injection-index', str(injection_index))
+    node.add_opt('--n-nearest', str(num))
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+    workflow += node
+    files += node.output_files
+    return files
+
+def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_coincinfo'
-    secs = requirestr(workflow.cp.get_subsections(name), require)  
-    secs = excludestr(secs, exclude)
     files = FileList([])
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
                               out_dir=out_dir, tags=tags).create_node()
@@ -154,7 +242,7 @@ def make_coinc_info(workflow, singles, bank, coinc, num, out_dir,
     files += node.output_files
     return files
     
-def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids,
+def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=None,
                             exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
@@ -176,5 +264,26 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids,
         files += node.output_files
     return files
 
+    
+def make_singles_timefreq(workflow, single, bank_file, start, end, out_dir,
+                          veto_file=None, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'plot_singles_timefreq'
+
+    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                          out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--trig-file', single)
+    node.add_input_opt('--bank-file', bank_file)
+    node.add_opt('--gps-start-time', int(start))
+    node.add_opt('--gps-end-time', int(end))
+    
+    if veto_file:
+        node.add_input_opt('--veto-file', veto_file)
+        
+    node.add_opt('--detector', single.ifo)
+    node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+    workflow += node
+    return node.output_files
 
 
