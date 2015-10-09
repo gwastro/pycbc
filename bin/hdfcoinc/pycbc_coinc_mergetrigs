@@ -99,7 +99,7 @@ del trigger_hashes
 
 idlen = (template_boundaries[1:] - template_boundaries[:-1])
 f.create_dataset('%s/template_id' % ifo, data=numpy.repeat(template_ids, idlen), 
-                 compression='gzip', shuffle=True)
+                 compression='gzip', shuffle=True, compression_opts=9)
 f['%s/template_boundaries' % ifo] = full_boundaries 
 
 logging.info('reading the trigger columns from the input files')
@@ -109,7 +109,7 @@ for col in trigger_columns:
     data = collect(key, args.trigger_files)[trigger_sort]
     logging.info('writing %s to file' % col)
     dset = f.create_dataset(key, data=data, compression='gzip',
-                                 compression_opts='9', shuffle=True)
+                                 compression_opts=9, shuffle=True)
     del data
     region(f, key, full_boundaries) 
 f.close()
