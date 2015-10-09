@@ -70,7 +70,7 @@ eff_dist = f['injections'][eff_map[ifo]][:][inj_idx]
 m1, m2 = f['injections/mass1'][:][inj_idx], f['injections/mass2'][:][inj_idx]
 s1, s2 = f['injections/spin1z'][:][inj_idx], f['injections/spin2z'][:][inj_idx]
 mchirp, eta = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-weighted_spin = (m1 * s1 + m2 * s2) / (m1 + m2)
+weighted_spin = pnutils.phenomb_chi(m1, m2, s1, s2)
 
 #choices to color the found injections
 coloring = {'effective_distance': (eff_dist, "Effective Distance (Mpc)", colors.LogNorm()),
