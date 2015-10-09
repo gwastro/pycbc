@@ -807,24 +807,24 @@ def find_playground_segments(segs):
 
     return outlist
 
-def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
+def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
+                                   sngl_ifo=False):
     """
-    Construct the coherent network on and off source segments.
+    Construct the coherent network on and off source segments. Can switch to
+    construction of segments for a single IFO search when coherent segments
+    are insufficient for a search.
 
     Parameters
     -----------
     workflow : pycbc.workflow.core.Workflow
-        The workflow instance that the coincidence jobs will be added to.
-        This instance also contains the ifos for which to attempt to obtain
-        segments for this analysis and the start and end times to search for
-        segments over.
-    out_dir : path
+        The workflow instance that the calculated segments belong to.
+    out_dir : str
         The directory in which output will be stored.
-    sciencesegs : dictionary
-        Dictionary of science segments produced by
-        ahope.setup_segment_generation()
-    tag : string, optional (default=None)
-        Use this to specify a tag.
+    sciencesegs : dict
+        Dictionary of all science segments within analysis time.
+    sngl_ifo : bool, optional (default=False)
+        If true, will fall back on single IFO segments if coherent segments
+        do not match the required criteria.
 
     Returns
     --------
@@ -838,10 +838,7 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
 
     # Load parsed workflow config options
     cp = workflow.cp
-    ra = float(os.path.basename(cp.get('workflow', 'ra')))
-    dec = float(os.path.basename(cp.get('workflow', 'dec')))
     triggertime = int(os.path.basename(cp.get('workflow', 'trigger-time')))
-    
     minbefore = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                             'min-before')))
     minafter = int(os.path.basename(cp.get('workflow-exttrig_segments',
@@ -863,13 +860,27 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
 
     # Check available data segments meet criteria specified in arguments
     sciencesegs = segments.segmentlistdict(sciencesegs)
-    sciencesegs = sciencesegs.extract_common(sciencesegs.keys())
-    if triggertime not in sciencesegs[sciencesegs.keys()[0]]:
-        logging.error("Trigger is not contained within any available segment."
-                      " Exiting.")
-        sys.exit()
+    commonsegs = sciencesegs.extract_common(sciencesegs.keys())
+    if triggertime not in commonsegs[commonsegs.keys()[0]]:
+        if sngl_ifo:
+            snglsegs = segments.segmentlistdict()
+            for key in sciencesegs.keys():
+                if triggertime in sciencesegs[key]:
+                    snglsegs[key] = sciencesegs[key]
+                    logging.warning("Trigger is only found in %s segments. "
+                                    "Falling back on single IFO data." % key)
+                    return get_triggered_single_ifo_segment(workflow, out_dir,
+                                                            snglsegs)
+            if len(snglsegs.keys()) == 0:
+                logging.error("Trigger is not contained within any available "
+                              "science segment. Exiting.")
+                sys.exit()
+        else:
+            logging.error("Trigger is not contained within any available "
+                          "coherent science segment. Exiting.")
+            sys.exit()
 
-    offsrclist = sciencesegs[sciencesegs.keys()[0]]
+    offsrclist = commonsegs[commonsegs.keys()[0]]
     if len(offsrclist) > 1:
         logging.info("Removing network segments that do not contain trigger "
                      "time")
@@ -881,13 +892,28 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
 
     if (triggertime - minbefore - padding not in offsrc) or (
             triggertime + minafter + padding not in offsrc):
-        logging.error("Not enough data either side of trigger time. Exiting.")
-        sys.exit()
+        if sngl_ifo:
+            logging.warning("Not enough data either side of trigger time in "
+                            "coherent segment. Falling back on single IFO "
+                            "data.")
+            return get_triggered_single_ifo_segment(workflow, out_dir,
+                                                    sciencesegs)
+        else:
+            logging.error("Not enough data either side of trigger time. "
+                          "Exiting.")
+            sys.exit()
 
     if abs(offsrc) < minduration + 2 * padding:
-        logging.error("Available network segment shorter than minimum allowed "
-                      "duration. Exiting.")
-        sys.exit()
+        if sngl_ifo:
+            logging.warning("Available coherent segment shorter than minimum "
+                            "allowed duration. Falling back on single IFO "
+                            "data.")
+            return get_triggered_single_ifo_segment(workflow, out_dir,
+                                                    sciencesegs)
+        else:
+            logging.error("Available network segment shorter than minimum "
+                          "allowed duration. Exiting.")
+            sys.exit()
 
     # Will segment duration be the maximum desired length or not?
     if abs(offsrc) >= maxduration + 2 * padding:
@@ -975,13 +1001,210 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs, tag=None):
                            "%s-COH_OFFSOURCE_SEGMENT.xml" % ifos.upper())
     currUrl = urlparse.urlunparse(['file', 'localhost', XmlFile, None, None,
                                    None])
-    currFile = OutSegFile(ifos, 'COH-OFFSOURCE', offsource[iifo], currUrl,
+    currFile = OutSegFile(ifos, 'COH_OFFSOURCE', offsource[iifo], currUrl,
                           offsource[iifo])
     currFile.toSegmentXml()
     logging.info("Optimal coherent segment calculated.")
 
-    #FIXME: For legacy coh_PTF_post_processing we must write out the segments
-    #       to segwizard files (with hardcoded names!)
+    offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
+    segmentsUtils.tosegwizard(open(offsourceSegfile, "w"), offsrc)
+
+    onsourceSegfile = os.path.join(out_dir, "onSourceSeg.txt")
+    segmentsUtils.tosegwizard(file(onsourceSegfile, "w"), onsrc)
+
+    onlen = abs(onsrc[0])
+    bufferSegment = segments.segment(onstart - bufferleft * onlen,
+                                     onend + bufferright * onlen)
+    bufferSegfile = os.path.join(out_dir, "bufferSeg.txt")
+    segmentsUtils.tosegwizard(file(bufferSegfile, "w"),
+                              segments.segmentlist([bufferSegment]))
+
+    return onsource, offsource
+
+def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
+    """
+    Construct a single IFO segment for a triggered search.
+
+    Parameters
+    -----------
+    workflow : pycbc.workflow.core.Workflow
+        The workflow instance that the calculated segments belong to.
+    out_dir : str
+        The directory in which output will be stored.
+    sciencesegs : dict
+        Dictionary of interesting science segments within analysis time.
+
+    Returns
+    --------
+    onsource : glue.segments.segmentlistdict
+        A dictionary containing the on source segment for a single IFO
+
+    offsource : glue.segments.segmentlistdict
+        A dictionary containing the off source segment for a single IFO
+    """
+
+    # Load parsed workflow config options
+    cp = workflow.cp
+    triggertime = int(os.path.basename(cp.get('workflow', 'trigger-time')))
+    minbefore = int(os.path.basename(cp.get('workflow-exttrig_segments',
+                                            'min-before')))
+    minafter = int(os.path.basename(cp.get('workflow-exttrig_segments',
+                                           'min-after')))
+    minduration = int(os.path.basename(cp.get('workflow-exttrig_segments',
+                                              'min-duration')))
+    maxduration = int(os.path.basename(cp.get('workflow-exttrig_segments',
+                                              'max-duration')))
+    onbefore = int(os.path.basename(cp.get('workflow-exttrig_segments',
+                                           'on-before')))
+    onafter = int(os.path.basename(cp.get('workflow-exttrig_segments',
+                                          'on-after')))
+    padding = int(os.path.basename(cp.get('workflow-exttrig_segments',
+                                          'pad-data')))
+    quanta = int(os.path.basename(cp.get('workflow-exttrig_segments',
+                                         'quanta')))
+    bufferleft = int(cp.get('workflow-exttrig_segments', 'num-buffer-before'))
+    bufferright = int(cp.get('workflow-exttrig_segments', 'num-buffer-after'))
+
+    # Check available data segments meet criteria specified in arguments
+    snglsegs = segments.segmentlistdict()
+    for key in sciencesegs.keys():
+        if triggertime in sciencesegs[key]:
+            snglsegs[key] = sciencesegs[key]
+            logging.info("Trigger is within %s segments." % key)
+    
+    if len(snglsegs.keys()) == 0:
+        logging.error("Trigger is not contained within any available segment. "
+                      "Exiting.")
+        sys.exit()
+
+    offsrc = segments.segmentlistdict()
+    for key in snglsegs.keys():
+        if len(snglsegs[key]) > 1:
+            logging.info("Removing network segments that do not contain "
+                         "trigger time.")
+            for seg in snglsegs[key]:
+                if triggertime in seg:
+                    offsrc[key] = seg
+        else:
+            offsrc[key] = snglsegs[key][0]
+
+    for key in offsrc.keys():
+        if (triggertime - minbefore - padding not in offsrc[key]) or \
+                (triggertime + minafter + padding not in offsrc[key]):
+            logging.info("Not enough data either side of trigger time in %s."
+                         % key)
+            offsrc.pop(key)
+    if len(offsrc.keys()) == 0:
+        logging.error("Not enough data either side of trigger time in any "
+                      "IFO. Exiting.")
+        sys.exit()
+
+    for key in offsrc.keys():
+        if abs(offsrc[key]) < minduration + 2 * padding:
+            logging.info("%s segment shorter than minimum allowed duration."
+                         % key)
+            offsrc.pop(key)
+    if len(offsrc.keys()) == 0:
+        logging.error("All available segments shorter than minimum allowed "
+                      "duration. Exiting.")
+        sys.exit()
+    elif len(offsrc.keys()) > 1:
+        logging.error("Something is broken! At this point there should only "
+                      "be 1 IFO in play, but there are %d."
+                      % len(offsrc.keys()))
+        sys.exit()
+    else:
+        ifo = offsrc.keys()[0]
+
+    # Will segment duration be the maximum desired length or not?
+    if abs(offsrc[ifo]) >= maxduration + 2 * padding:
+        logging.info("Available network science segment duration (%ds) is "
+                     "greater than the maximum allowed segment length (%ds). "
+                     "Truncating..." % (abs(offsrc[ifo]), maxduration))
+    else:
+        logging.info("Available network science segment duration (%ds) is "
+                     "less than the maximum allowed segment length (%ds)."
+                     % (abs(offsrc[ifo]), maxduration))
+
+    logging.info("%ds of padding applied at beginning and end of segment."
+                 % padding)
+
+
+    # Construct on-source
+    onstart = triggertime - onbefore
+    onend = triggertime + onafter
+    oncentre = onstart + ((onbefore + onafter) / 2)
+    onsrc = segments.segment(onstart, onend)
+    logging.info("Constructed ON-SOURCE: duration %ds (%ds before to %ds after"
+                 " trigger)."
+                 % (abs(onsrc), triggertime - onsrc[0],
+                    onsrc[1] - triggertime))
+    onsrc = segments.segmentlist([onsrc])
+
+    # Maximal, centred coherent network segment
+    idealsegment = segments.segment(int(oncentre - padding -
+                                    0.5 * maxduration),
+                                    int(oncentre + padding +
+                                    0.5 * maxduration))
+
+    # Construct off-source
+    offsrc = offsrc[ifo]
+    if (idealsegment in offsrc):
+        offsrc = idealsegment
+
+    elif idealsegment[1] not in offsrc:
+        offsrc &= segments.segment(offsrc[1] - maxduration - 2 * padding,
+                                   offsrc[1])
+
+    elif idealsegment[0] not in offsrc:
+        offsrc &= segments.segment(offsrc[0],
+                                   offsrc[0] + maxduration + 2 * padding)
+
+    # Trimming off-source
+    excess = (abs(offsrc) - 2 * padding) % quanta
+    if excess != 0:
+        logging.info("Trimming %ds excess time to make OFF-SOURCE duration a "
+                     "multiple of %ds" % (excess, quanta))
+        offset = (offsrc[0] + abs(offsrc) / 2.) - oncentre
+        if 2 * abs(offset) > excess:
+            if offset < 0:
+                offsrc &= segments.segment(offsrc[0] + excess,
+                                           offsrc[1])
+            elif offset > 0:
+                offsrc &= segments.segment(offsrc[0],
+                                           offsrc[1] - excess)
+            assert abs(offsrc) % quanta == 2 * padding
+        else:
+            logging.info("This will make OFF-SOURCE symmetrical about "
+                         "ON-SOURCE.")
+            start = int(offsrc[0] - offset + excess / 2)
+            end = int(offsrc[1] - offset - round(float(excess) / 2))
+            offsrc = segments.segment(start, end)
+            assert abs(offsrc) % quanta == 2 * padding
+
+    logging.info("Constructed OFF-SOURCE: duration %ds (%ds before to %ds "
+                 "after trigger)."
+                 % (abs(offsrc) - 2 * padding,
+                    triggertime - offsrc[0] - padding,
+                    offsrc[1] - triggertime - padding))
+    offsrc = segments.segmentlist([offsrc])
+
+    # Put segments into segmentlistdicts
+    onsource = segments.segmentlistdict()
+    offsource = segments.segmentlistdict()
+    onsource[ifo] = onsrc
+    offsource[ifo] = offsrc
+
+    # Write off-source to xml file
+    XmlFile = os.path.join(out_dir,
+                           "%s-SINGLE_IFO_OFFSOURCE_SEGMENT.xml" % ifo.upper())
+    currUrl = urlparse.urlunparse(['file', 'localhost', XmlFile, None, None,
+                                   None])
+    currFile = OutSegFile(ifo, 'SINGLE_IFO_OFFSOURCE', offsource[ifo], currUrl,
+                          offsource[ifo])
+    currFile.toSegmentXml()
+    logging.info("Optimal single IFO segment calculated for %s." % ifo)
+
     offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
     segmentsUtils.tosegwizard(open(offsourceSegfile, "w"), offsrc)
 
