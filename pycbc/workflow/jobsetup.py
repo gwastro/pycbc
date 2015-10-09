@@ -1452,16 +1452,15 @@ class PycbcDarkVsBrightInjectionsExecutable(Executable):
         node.new_output_file_opt(segment,
                                  ext, '--output-dim',
                                  store_file=self.retain_files, tags=tag)
-        # The following options are hard-coded because these values are the
-        # only ones currently available for them and correspond to the most
-        # conservatitve choices (i.e. they all disfavour tagging and
-        # injection as dim).  Having ini-file options which are necessary but
-        # not flexible would just be confusing.  When and if the use of these
-        # three options becomes more flexible, one can remove the hard-coded
-        # values.
-        node.add_opt('--eos', '2H')
-        node.add_opt('--ns-bh-boundary', '2.8346480922')
-        node.add_opt('--remnant-mass-threshold', '0.')
+
+        eos_name = self.get_opt('eos')
+        if not eos_name == '2H':
+            raise ValueError('2H is the only equation of state that can be handled currently')
+        ns_bh_boundary = self.get_opt('ns-bh-boundary') 
+        remnant_mass_threshold = self.get_opt('remnant-mass-threshold') 
+        node.add_opt('--eos', eos_name)
+        node.add_opt('--ns-bh-boundary', ns_bh_boundary)
+        node.add_opt('--remnant-mass-threshold', remnant_mass_threshold)
         return node
 
 class LigolwCBCJitterSkylocExecutable(Executable):
