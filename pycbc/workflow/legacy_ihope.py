@@ -280,9 +280,11 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
                              "%s. Please check the ini file." % self.name)
 
         # Feed in bank_veto_bank.xml
-        if self.cp.has_option('inspiral', 'do-bank-veto') and not bankVetoBank:
-            raise ValueError("%s must be given a bank veto file if the "
-                             "argument 'do-bank-veto' is given" % self.name)
+        if self.cp.has_option('inspiral', 'do-bank-veto'):
+            if not bankVetoBank:
+                raise ValueError("%s must be given a bank veto file if the "
+                                 "argument 'do-bank-veto' is given"
+                                 % self.name)
             node.add_input_opt('--bank-veto-templates', bankVetoBank)
 
         # Set time options
