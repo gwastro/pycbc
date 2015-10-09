@@ -13,6 +13,14 @@ import pycbc.version, pycbc.pnutils, pycbc.io
 def sec_to_year(sec):
     return sec / lal.YRJUL_SI
 
+class fw(object):
+    def __init__(self, name):
+        self.f = h5py.File(name, 'w')
+
+    def __setitem__(self, name, data):
+        self.f.create_dataset(name, data=data, compression='gzip',
+                              compression_opts=9, shuffle=True)
+
 parser = argparse.ArgumentParser()
 # General required options
 parser.add_argument('--version', action='version', 
@@ -52,7 +60,7 @@ logging.info("Clustering coinc triggers (exclusive of zerolag)")
 e = e.cluster(args.cluster_window)
 
 logging.info("Dumping foreground triggers")
-f = h5py.File(args.output_file, "w")
+f = h5py.fw(args.output_file)
 f.attrs['detector_1'] = d.attrs['detector_1']
 f.attrs['detector_2'] = d.attrs['detector_2']
 f.attrs['timeslide_interval'] = d.attrs['timeslide_interval']
@@ -116,7 +124,7 @@ f['background_exc/ifar'] = sec_to_year(background_time_exc / (back_cnum_exc + 1)
 f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 f.attrs['background_time_exc'] = background_time_exc
-f.attrs['foreground_time_exc'] = coinc_time_exc
+f.attrs['foreground_time_exc'] = coinc_time_exc.
 
 logging.info("calculating ifar/fap values")
 
