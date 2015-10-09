@@ -163,6 +163,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     node.add_input_opt('--single-detector-file', single_trig_file)
     node.add_input_opt('--inspiral-segments', insp_segs[curr_ifo])
     node.add_opt('--inspiral-segment-name', insp_seg_name)
+    node.add_opt('--instrument', curr_ifo)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file',
                              tags=tags)
 
