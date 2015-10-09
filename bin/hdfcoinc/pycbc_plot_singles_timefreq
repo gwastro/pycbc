@@ -124,7 +124,8 @@ if mask.any():
     sorted_rchisq = rchisq[sorter]
     sorted_template_ids = template_ids[sorter]
 
-    max_rank = max(sorted_rank)
+    max_rank = max([sorted_rank[i] for i in xrange(len(sorted_rank)) \
+                    if sorted_end_time[i] <= opts.gps_end_time])
 
     logging.info('Loading bank')
     bank = h5py.File(opts.bank_file, 'r')
