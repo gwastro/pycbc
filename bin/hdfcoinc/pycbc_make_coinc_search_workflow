@@ -234,7 +234,9 @@ for insp_file in full_insps:
     curr_ifo = insp_file.ifo
     wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
                                   insp_data_segs, 'INSPIRAL_DATA', 'daxes',
-                                  rdir['result/sngl_%s' %(curr_ifo,)],
+                                  rdir['single_triggers/sngl_%s' %(curr_ifo,)],
+                                  veto_file=censored_veto,
+                                  veto_segment_name='closed_box',
                                   tags=insp_file.tags)
 
 ################## Setup segment / veto related plots #########################    
