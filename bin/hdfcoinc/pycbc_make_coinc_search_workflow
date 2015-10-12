@@ -335,8 +335,8 @@ for inj_file, tag in zip(inj_files, inj_tags):
                   rdir['injections/%s' % tag],
                    exclude=['all', 'summ', 'sub'], tags=[tag])
                    
-    found_table = wf.make_inj_table(workflow, found_inj, 
-                  rdir['injections/%s' % tag], tags=[tag + 'found'])
+    found_table = wf.make_inj_table(workflow, found_inj,  
+                  rdir['injections/%s' % tag], singles=insps, tags=[tag + 'found'])
     missed_table = wf.make_inj_table(workflow, found_inj, 
                   rdir['injections/%s' % tag], missed=True, tags=[tag + 'missed'])
                          
