@@ -95,8 +95,11 @@ if args.log_y_axis:
 pylab.xlabel('time (s)')
 pylab.ylabel(args.plot_type)
 
-if len(val) > 0:                                
-    pylab.ylim(ymin=val.min())
+try:
+    if len(val) > 0:                                
+        pylab.ylim(ymin=val.min())
+except TypeError:
+    pylab.ylim(ymin=val)
 
 pylab.xlim(xmin=-args.window, xmax=args.window)
 pylab.legend()
