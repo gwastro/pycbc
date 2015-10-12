@@ -72,6 +72,7 @@ layouts = []
 
 tmpltbank_file = to_file(args.bank_file)
 sngl_file = to_file(args.single_detector_file, ifo=args.instrument)
+veto_file = to_file(args.veto_file, ifo=args.instrument)
 #insp_segs = to_file(args.inspiral_segments)
 
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
@@ -101,8 +102,8 @@ for num_event in range(num_events):
     layouts += (mini.make_sngl_ifo(workflow, sngl_file, tmpltbank_file,
                               num_event, args.output_dir, args.instrument,
                               tags = args.tags + [str(num_event)],
-                              veto_file=args.veto_file,
-                              segment_name=args.veto_segment_name),)
+                              veto_file=veto_file,
+                              veto_segment_name=args.veto_segment_name),)
     files += mini.make_trigger_timeseries(workflow, [sngl_file],
                               ifo_time, args.output_dir, special_tids=ifo_tid,
                               tags=args.tags + [str(num_event)])
