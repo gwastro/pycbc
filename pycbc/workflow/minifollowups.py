@@ -107,7 +107,8 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
 
 def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
                                   insp_segs, insp_seg_name, dax_output,
-                                  out_dir, tags=None):
+                                  out_dir, veto_file=None,
+                                  veto_segment_name=None, tags=None):
     """ Create plots that followup the Nth loudest clustered single detector
     triggers from a merged single detector trigger HDF file.
     
@@ -164,6 +165,10 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     node.add_input_opt('--inspiral-segments', insp_segs[curr_ifo])
     node.add_opt('--inspiral-segment-name', insp_seg_name)
     node.add_opt('--instrument', curr_ifo)
+    if veto_file is not None:
+        assert(veto_segment_name is not None)
+        node.add_input_opt('--veto-file', veto_file)
+        node.add_opt('--veto-segment-name', veto_segment_name)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file',
                              tags=tags)
 
@@ -327,7 +332,7 @@ def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, tags=None):
     return files
 
 def make_sngl_ifo(workflow, sngl_file, bank_file, num, out_dir, ifo,
-                  tags=None, veto_file=None, segment_name=None):
+                  veto_file=None, veto_segment_name=None, tags=None):
     """Setup a job to create sngl detector sngl ifo html summary snippet.
     """
     tags = [] if tags is None else tags
@@ -338,6 +343,10 @@ def make_sngl_ifo(workflow, sngl_file, bank_file, num, out_dir, ifo,
                               out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--single-trigger-file', sngl_file)
     node.add_input_opt('--bank-file', bank_file)
+    if veto_file is not None:
+        assert(veto_segment_name is not None)
+        node.add_input_opt('--veto-file', veto_file)
+        node.add_opt('--veto-segment-name', veto_segment_name)
     node.add_opt('--n-loudest', str(num))
     node.add_opt('--instrument', ifo)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')

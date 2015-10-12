@@ -41,6 +41,11 @@ parser.add_argument('--bank-file',
 parser.add_argument('--single-detector-file',
                     help="HDF format merged single detector trigger files")
 parser.add_argument('--instrument', help="Name of interferometer e.g. H1") 
+parser.add_argument('--veto-file',
+    help="The veto file to be used if vetoing triggers (optional).")
+parser.add_argument('--veto-segment-name',
+    help="If using veto file must also provide the name of the segment to use "
+         "as a veto.")
 parser.add_argument('--inspiral-segments',
                     help="xml segment file containing the inspiral analysis "
                          "times")
@@ -67,15 +72,15 @@ layouts = []
 
 tmpltbank_file = to_file(args.bank_file)
 sngl_file = to_file(args.single_detector_file, ifo=args.instrument)
+veto_file = to_file(args.veto_file, ifo=args.instrument)
 #insp_segs = to_file(args.inspiral_segments)
 
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
                  'num-sngl-events', ''))
 
-veto_file=None
-segment_name=None
 trigs = hdf.SingleDetTriggers(args.single_detector_file, args.bank_file,
-                              veto_file, segment_name, None, args.instrument)
+                              args.veto_file, args.veto_segment_name,
+                              None, args.instrument)
 
 trigs.mask_to_n_loudest_clustered_events(n_loudest=num_events,
                                       ranking_statistic=args.ranking_statistic)
@@ -97,7 +102,8 @@ for num_event in range(num_events):
     layouts += (mini.make_sngl_ifo(workflow, sngl_file, tmpltbank_file,
                               num_event, args.output_dir, args.instrument,
                               tags = args.tags + [str(num_event)],
-                              veto_file=veto_file, segment_name=segment_name),)
+                              veto_file=veto_file,
+                              veto_segment_name=args.veto_segment_name),)
     files += mini.make_trigger_timeseries(workflow, [sngl_file],
                               ifo_time, args.output_dir, special_tids=ifo_tid,
                               tags=args.tags + [str(num_event)])

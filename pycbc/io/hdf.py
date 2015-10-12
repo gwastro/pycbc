@@ -264,6 +264,8 @@ class SingleDetTriggers(object):
             logging.info('Applying veto segments')
             # veto_mask is an array of indices into the trigger arrays
             # giving the surviving triggers 
+            logging.info('%i triggers before vetoes',
+                          len(self.trigs['end_time'][:]))
             self.veto_mask, segs = events.veto.indices_outside_segments(
                 self.trigs['end_time'][:], [veto_file],
                 ifo=detector, segment_name=segment_name)
@@ -330,12 +332,9 @@ class SingleDetTriggers(object):
                 new_times.append(curr_time)
             if len(new_index) >= n_loudest:
                 break
-        print new_times
-        print new_index
         index = np.array(new_index)
         self.stat = stat[index]
-        self.mask = index  
-
+        self.mask = self.mask[index]
 
     @property
     def template_id(self):

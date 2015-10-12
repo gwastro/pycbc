@@ -74,7 +74,7 @@ parser.add_argument('--statmap-file',
          "result triggers. ")
 parser.add_argument('--veto-file',
     help="The veto file to be used if vetoing triggers (optional).")
-parser.add_argument('--segment-name',
+parser.add_argument('--veto-segment-name',
     help="If using veto file must also provide the name of the segment to use "
          "as a veto.")
 parser.add_argument('--instrument', help="Name of ifo (e.g. H1)")
@@ -88,7 +88,7 @@ pycbc.init_logging(args.verbose)
 
 # Get the nth loudest trigger from the output of pycbc_coinc_statmap
 sngl_file = hdf.SingleDetTriggers(args.single_trigger_file, args.bank_file,
-                args.veto_file, args.segment_name, None, args.instrument)
+                args.veto_file, args.veto_segment_name, None, args.instrument)
 
 sngl_file.mask_to_n_loudest_clustered_events(n_loudest=args.n_loudest+1,
                                       ranking_statistic=args.ranking_statistic)
