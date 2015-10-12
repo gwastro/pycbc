@@ -17,6 +17,9 @@ parser.add_argument('--dynamic', action='store_true', default=False)
 parser.add_argument('--gradient-far', action='store_true',
                     help='Show far of found injections as a gradient')
 parser.add_argument('--output-file')
+parser.add_argument('--far-type', choices=('inclusive', 'exclusive'), default='inclusive',
+                    help="Type of far to plot for the color. Choices are 'inclusive' or "
+                         "'exclusive'. Default = 'inclusive'")
 parser.add_argument('--missed-on-top', action='store_true',
                     help="Make the missed injections be plotted on top of the found ones")
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
@@ -31,8 +34,13 @@ f = h5py.File(args.injection_file, 'r')
 time = f['injections/end_time'][:]
 found = f['found_after_vetoes/injection_index'][:]
 missed = f['missed/after_vetoes'][:]
-ifar = f['found_after_vetoes/ifar'][:]
-ifar_found = f['found_after_vetoes/ifar'][:]
+
+if args.far_type == 'inclusive':
+    ifar_found = f['found_after_vetoes/ifar'][:]
+    far_title = 'Inclusive'
+elif args.far_type == 'exclusive':
+    ifar_found = f['found_after_vetoes/ifar_exc'][:]   
+    far_title = 'Exclusive' 
 
 # This hardcodes HL search !!!!!, replace with function that takes or/sky/det
 hdist = f['injections/eff_dist_h'][:]
@@ -110,7 +118,7 @@ else:
     plot.subplots_adjust(right=0.99)
     try:
         c = plot.colorbar()
-        c.set_label('False Alarm Rate $(yr^{-1})$')
+        c.set_label('False Alarm Rate $(yr^{-1})$, %s' % far_title)
     except TypeError:
         # Can't make colorbar if no quiet found injections
         if len(fvals):
