@@ -181,7 +181,9 @@ if __name__ == "__main__":
                 btables[bname] = table.get_table(indoc, lsctables.SimInspiralTable.tableName) 
             bt = btables[bname]
             try:      
-                md = loadtxt(part, dtype=dtypem)  
+                md = loadtxt(part, dtype=dtypem)
+                if md.size == 0:
+                    continue  
             except IOError:
                 continue
             pdata = zeros(len(bt), dtype=dtypeo)

@@ -21,6 +21,7 @@ Plot single-detector inspiral triggers in the time-frequency plane along with
 a spectrogram of the strain data.
 """
 
+import sys
 import logging
 import argparse
 import numpy as np
@@ -28,10 +29,13 @@ import matplotlib
 matplotlib.use('agg')
 import pylab as pl
 import matplotlib.mlab as mlab
+from matplotlib.colors import LogNorm
+from matplotlib.ticker import LogLocator
 import h5py
 import pycbc.events
 import pycbc.pnutils
 import pycbc.strain
+import pycbc.results
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -47,7 +51,11 @@ parser.add_argument('--rank', choices=['snr', 'newsnr'], default='newsnr',
                     help='Ranking statistic for sorting triggers')
 parser.add_argument('--num-loudest', type=int, default=1000,
                     help='Number of loudest triggers to plot')
+parser.add_argument('--interesting-trig', type=int,
+                    help='Index of interesting trigger to highlight')
 parser.add_argument('--detector', type=str, required=True)
+parser.add_argument('--center-time', type=float,
+                    help='Center plot on the given GPS time')
 pycbc.strain.insert_strain_option_group(parser)
 opts = parser.parse_args()
 
@@ -55,9 +63,24 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 
-#strain.save_to_wav('strain.wav')
+if opts.center_time is None:
+    center_time = (opts.gps_start_time + opts.gps_end_time) / 2.
+else:
+    center_time = opts.center_time
 
-center_time = (opts.gps_start_time + opts.gps_end_time) / 2.
+fig = pl.figure(figsize=(20,10))
+fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95)
+ax = fig.gca()
+
+logging.info('Plotting strain spectrogram')
+Pxx, freq, t = mlab.specgram(strain, NFFT=1024, noverlap=1000,
+                             Fs=opts.sample_rate, mode='psd')
+median_psd = np.median(Pxx, axis=1)
+median_psd_tile = np.tile(np.array([median_psd]).T, (1, len(t)))
+Pxx /= median_psd_tile
+norm = LogNorm()
+pc = ax.pcolormesh(t + opts.gps_start_time - center_time, freq, Pxx,
+                   vmin=1, vmax=1000, norm=norm, cmap='afmhot_r')
 
 logging.info('Loading trigs')
 trig_f = h5py.File(opts.trig_file, 'r')
@@ -67,6 +90,8 @@ snr = np.array(trigs['snr'])
 rchisq = np.array(trigs['chisq']) / (np.array(trigs['chisq_dof']) * 2 - 2)
 end_time = np.array(trigs['end_time'])
 template_ids = np.array(trigs['template_id'])
+indices = np.arange(len(end_time))
+max_template_duration = max(trigs['template_duration'][:])
 
 if opts.veto_file:
     logging.info('Loading veto segments')
@@ -77,55 +102,67 @@ if opts.veto_file:
     snr = snr[locs]
     rchisq = rchisq[locs]
     template_ids = template_ids[locs]
+    indices = indices[locs]
 
 mask = np.logical_and(end_time > opts.gps_start_time,
-                      end_time < opts.gps_end_time)
+                      end_time < opts.gps_end_time + max_template_duration)
 end_time = end_time[mask]
 snr = snr[mask]
 rchisq = rchisq[mask]
 template_ids = template_ids[mask]
+indices = indices[mask]
 
-if opts.rank == 'snr':
-    rank = snr
-elif opts.rank == 'newsnr':
-    rank = pycbc.events.newsnr(snr, rchisq)
+if mask.any():
+    if opts.rank == 'snr':
+        rank = snr
+    elif opts.rank == 'newsnr':
+        rank = pycbc.events.newsnr(snr, rchisq)
 
-sorter = np.argsort(rank)[::-1][:opts.num_loudest]
-end_time = end_time[sorter]
-rank = rank[sorter]
-rchisq = rchisq[sorter]
-template_ids = template_ids[sorter]
+    sorter = np.argsort(rank)[::-1][:opts.num_loudest]
+    sorted_end_time = end_time[sorter]
+    sorted_rank = rank[sorter]
+    sorted_rchisq = rchisq[sorter]
+    sorted_template_ids = template_ids[sorter]
 
-max_rank = max(rank)
+    max_rank = max(sorted_rank)
 
-logging.info('Loading bank')
-bank = h5py.File(opts.bank_file, 'r')
-mass1s, mass2s = np.array(bank['mass1']), np.array(bank['mass2'])
+    logging.info('Loading bank')
+    bank = h5py.File(opts.bank_file, 'r')
+    mass1s, mass2s = np.array(bank['mass1']), np.array(bank['mass2'])
 
-f_highs = pycbc.pnutils.f_SchwarzISCO(
-        mass1s[template_ids] + mass2s[template_ids])
+    f_highs = pycbc.pnutils.f_SchwarzISCO(
+            mass1s[sorted_template_ids] + mass2s[sorted_template_ids])
 
-fig = pl.figure(figsize=(20,10))
-fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95)
-ax = fig.gca()
+    logging.info('Plotting %d trigs', len(sorted_end_time))
+    for tc, rho, tid, f_high in zip(sorted_end_time, sorted_rank,
+                                    sorted_template_ids, f_highs):
+        track_t, track_f = pycbc.pnutils.get_inspiral_tf(
+                tc - center_time, mass1s[tid], mass2s[tid], opts.f_low, f_high)
+        if rho == max_rank:
+            ax.plot(track_t, track_f, '-', color='#ff0000', zorder=3, lw=2)
+        else:
+            ax.plot(track_t, track_f, '-', color='#0000ff', zorder=2, alpha=0.02)
 
-logging.info('Plotting strain spectrogram')
-Pxx, freq, t = mlab.specgram(strain, NFFT=1024, noverlap=1000,
-                             Fs=opts.sample_rate)
-median_psd = np.median(Pxx, axis=1)
-median_psd_tile = np.tile(np.array([median_psd]).T, (1, len(t)))
-Pxx /= median_psd_tile
-pc = ax.pcolor(t + opts.gps_start_time - center_time, freq, np.log10(Pxx),
-               vmin=0, vmax=3, cmap='afmhot_r')
-
-logging.info('Plotting %d trigs', len(end_time))
-for tc, rho, tid, f_high in zip(end_time, rank, template_ids, f_highs):
-    track_t, track_f = pycbc.pnutils.get_inspiral_tf(
+    if opts.interesting_trig is not None and opts.interesting_trig in indices:
+        interesting_id = np.where(indices == opts.interesting_trig)[0]
+        tc = end_time[interesting_id]
+        rho = rank[interesting_id]
+        interesting_trig_rank = rho
+        tid = template_ids[interesting_id]
+        f_high = pycbc.pnutils.f_SchwarzISCO(mass1s[tid] + mass2s[tid])
+        track_t, track_f = pycbc.pnutils.get_inspiral_tf(
             tc - center_time, mass1s[tid], mass2s[tid], opts.f_low, f_high)
-    if rho == max_rank:
-        ax.plot(track_t, track_f, '-', color='#ff0000', zorder=3, lw=2)
+        ax.plot(track_t, track_f, '-', color='#00ff00', zorder=3, lw=2)
     else:
-        ax.plot(track_t, track_f, '-', color='#0000ff', zorder=2, alpha=0.02)
+        interesting_trig_rank = None
+
+    title = '%s - loudest %d triggers by %s - max %s = %.2f (red curve)' \
+        % (opts.channel_name, opts.num_loudest, opts.rank, opts.rank, max_rank)
+    if interesting_trig_rank is not None:
+        title += ' - selected %s = %.2f (green curve)' \
+            % (opts.rank, interesting_trig_rank)
+else:
+    title = '%s - no triggers' % opts.channel_name
 
 ax.set_xlim(opts.gps_start_time - center_time, opts.gps_end_time - center_time)
 ax.set_ylim(opts.f_low, opts.sample_rate / 2)
@@ -133,14 +170,24 @@ ax.set_yscale('log')
 ax.grid(ls='solid', alpha=0.2)
 ax.set_xlabel('Time - %.3f (s)' % center_time)
 ax.set_ylabel('Frequency (Hz)')
-title = '%s - loudest %d triggers by %s - max %s = %.2f' \
-        % (opts.channel_name, opts.num_loudest, opts.rank, opts.rank, max_rank)
 ax.set_title(title)
 note = ("Curves show the PN inspiral only and terminate at the Schwarzschild "
         "ISCO. Spin effects neglected.")
 fig.text(0.05, 0.01, note, fontsize=7, transform=fig.transFigure)
-cb = fig.colorbar(pc, fraction=0.04, pad=0.01)
-cb.set_label('log$_{10}$(ratio to median)')
-fig.savefig(opts.output_file, dpi=200)
+cb = fig.colorbar(pc, fraction=0.04, pad=0.01,
+                  ticks=LogLocator(subs=range(10)))
+cb.set_label('Power density (normalized to its median over time)')
+
+caption = ("This plot shows the power spectrogram of the strain data, "
+           "normalized to its median over time, as a heatmap. The "
+           "time-frequency evolution of each single trigger is shown as a blue "
+           "curve. The red curve is the loudest trigger by %s. Only the "
+           "loudest %d triggers by %s are shown. ") % \
+        (opts.rank, opts.num_loudest, opts.rank)
+caption += note
+pycbc.results.save_fig_with_metadata(
+        fig, opts.output_file, cmd=' '.join(sys.argv),
+        title='Strain spectrogram and inspiral tracks for %s' % opts.detector,
+        caption=caption, fig_kwds={'dpi': 200})
 
 logging.info('Done')

@@ -37,7 +37,6 @@ from glue.segments import segment
 workflow_name = "pygrb_offline"
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=logging.INFO)
-logging.info("Generating %s workflow" % workflow_name)
 
 # Parse command line options and instantiate pycbc workflow object
 parser = argparse.ArgumentParser()
@@ -48,6 +47,8 @@ wflow = _workflow.Workflow(args, workflow_name)
 all_files = _workflow.FileList([])
 tags = []
 initDir = os.getcwd()
+
+logging.info("Generating %s workflow" % workflow_name)
 
 # Setup run directory
 if wflow.cp.has_option("workflow", "output-directory"):
@@ -74,8 +75,28 @@ segDir = os.path.join(currDir, "segments")
 sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
 
 # Make coherent network segments
-onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir,
-                                                          sciSegs)
+single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
+if len(sciSegs.keys()) < 2 and not single_ifo:
+    msg = "Science segments exist only for %s. " % sciSegs.keys()[0]
+    msg += "If you wish to enable single IFO running add the option "
+    msg += "'allow-single-ifo-search' to the [workflow] section of your "
+    msg += "configuration file." 
+    raise RuntimeError(msg)
+elif len(sciSegs.keys()) < 2:
+    logging.info("Generating a single IFO search.")
+    onSrc, sciSegs = _workflow.get_triggered_single_ifo_segment(wflow, segDir,
+                                                                sciSegs)
+else:
+    onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir,
+                                                              sciSegs,
+                                                              single_ifo)
+
+# How many IFOs do we have in the search?
+wflow.ifos = sciSegs.keys()
+if len(wflow.ifos) == 1:
+    mf_tag = "sngl"
+else:
+    mf_tag = "coherent"
 
 # Update analysis time after coherent segment calculation
 ifo = sciSegs.keys()[0]
@@ -173,7 +194,7 @@ if wflow.cp.has_section("workflow-injections"):
     # Generate injection matched filter workflow
     inj_insp_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
             datafind_veto_files, inj_splitbank_files, injDir, injs,
-            tags=["injections"])
+            tags=[mf_tag + "_injections"])
     for inj_insp_file in inj_insp_files:
         split_str = [s for s in inj_insp_file.name.split("_") \
                      if ("SPLIT" in s and s[-1].isdigit())]
@@ -210,9 +231,8 @@ if wflow.cp.has_section("workflow-injections"):
 # MAIN MATCHED FILTERING
 inspDir = os.path.join(currDir, "inspiral")
 inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
-                                                      datafind_veto_files,
-                                                      splitbank_files, inspDir,
-                                                      tags=["no_injections"])
+        datafind_veto_files, splitbank_files, inspDir,
+        tags=[mf_tag + "_no_injections"])
 all_files.extend(inspiral_files)
 inspiral_cache = _workflow.File(ifos, "inspiral", sciSegs[ifo][0],
                                 extension="lcf", directory=inspDir)

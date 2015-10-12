@@ -1,0 +1,124 @@
+#!/bin/env python
+# Copyright (C) 2015 Alexander Harvey Nitz, Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Followup foreground events
+"""
+import os, argparse, logging, h5py
+from pycbc.results import layout
+import pycbc.workflow.minifollowups as mini
+import pycbc.workflow.pegasus_workflow as wdax
+import pycbc.version
+import pycbc.workflow as wf
+from pycbc.io import hdf
+
+def to_file(path, ifo=None):
+    fil = wdax.File(os.path.basename(path))
+    fil.ifo = ifo
+    path = os.path.abspath(path)
+    fil.PFN(path, 'local')
+    return fil
+
+parser = argparse.ArgumentParser(description=__doc__[1:])
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg) 
+parser.add_argument('--workflow-name', default='my_unamed_run')
+parser.add_argument("-d", "--output-dir", default=None,
+                    help="Path to output directory.")
+parser.add_argument('--bank-file',
+                    help="HDF format template bank file")
+parser.add_argument('--single-detector-file',
+                    help="HDF format merged single detector trigger files")
+parser.add_argument('--instrument', help="Name of interferometer e.g. H1") 
+parser.add_argument('--veto-file',
+    help="The veto file to be used if vetoing triggers (optional).")
+parser.add_argument('--veto-segment-name',
+    help="If using veto file must also provide the name of the segment to use "
+         "as a veto.")
+parser.add_argument('--inspiral-segments',
+                    help="xml segment file containing the inspiral analysis "
+                         "times")
+parser.add_argument('--inspiral-segment-name',
+                    help="Name of inspiral segmentlist to read from segment "
+                         "file")
+parser.add_argument('--ranking-statistic',
+                help="How to rank triggers when determining loudest triggers.")
+parser.add_argument('--output-map')
+parser.add_argument('--output-file')
+parser.add_argument('--tags', nargs='+', default=[])
+wf.add_workflow_command_line_group(parser)
+args = parser.parse_args()
+
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
+                    level=logging.INFO)
+
+workflow = wf.Workflow(args, args.workflow_name)
+
+wf.makedir(args.output_dir)
+             
+# create a FileList that will contain all output files
+layouts = []
+
+tmpltbank_file = to_file(args.bank_file)
+sngl_file = to_file(args.single_detector_file, ifo=args.instrument)
+veto_file = to_file(args.veto_file, ifo=args.instrument)
+#insp_segs = to_file(args.inspiral_segments)
+
+num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
+                 'num-sngl-events', ''))
+
+trigs = hdf.SingleDetTriggers(args.single_detector_file, args.bank_file,
+                              args.veto_file, args.veto_segment_name,
+                              None, args.instrument)
+
+trigs.mask_to_n_loudest_clustered_events(n_loudest=num_events,
+                                      ranking_statistic=args.ranking_statistic)
+
+if len(trigs.stat) < num_events:
+    num_events = len(trigs.stat)
+
+times = trigs.end_time
+tids = trigs.template_id
+
+# loop over number of loudest events to be followed up
+for num_event in range(num_events):
+    files = wf.FileList([])
+    time = times[num_event]
+    ifo_time = '%s:%s' %(args.instrument, str(time))
+    tid = trigs.mask[num_event]
+    ifo_tid = '%s:%s' %(args.instrument, str(tid))
+    
+    layouts += (mini.make_sngl_ifo(workflow, sngl_file, tmpltbank_file,
+                              num_event, args.output_dir, args.instrument,
+                              tags = args.tags + [str(num_event)],
+                              veto_file=veto_file,
+                              veto_segment_name=args.veto_segment_name),)
+    files += mini.make_trigger_timeseries(workflow, [sngl_file],
+                              ifo_time, args.output_dir, special_tids=ifo_tid,
+                              tags=args.tags + [str(num_event)])
+    # Would be nice to have this, but is not yet supported
+    #files += mini.make_single_template_plots(workflow, insp_segs,
+    #                          args.inspiral_segment_name, coinc_file,
+    #                          tmpltbank_file, num_event, args.output_dir,
+    #                          tags=args.tags + [str(num_event)])
+    
+    files += mini.make_singles_timefreq(workflow, sngl_file, tmpltbank_file, 
+                            time - 10, time + 10, args.output_dir,
+                            tags=args.tags + [str(num_event), args.instrument])                 
+    
+    layouts += list(layout.grouper(files, 2))
+    num_event += 1
+
+workflow.save(filename=args.output_file, output_map=args.output_map)
+layout.two_column_layout(args.output_dir, layouts)

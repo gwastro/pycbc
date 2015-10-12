@@ -252,6 +252,7 @@ class SingleDetTriggers(object):
     """
     Provides easy access to the parameters of single-detector CBC triggers.
     """
+    # FIXME: Some of these are optional and should be kwargs.
     def __init__(self, trig_file, bank_file, veto_file, segment_name, filter_func, detector):
         logging.info('Loading triggers')
         self.trigs_f = h5py.File(trig_file, 'r')
@@ -263,6 +264,8 @@ class SingleDetTriggers(object):
             logging.info('Applying veto segments')
             # veto_mask is an array of indices into the trigger arrays
             # giving the surviving triggers 
+            logging.info('%i triggers before vetoes',
+                          len(self.trigs['end_time'][:]))
             self.veto_mask, segs = events.veto.indices_outside_segments(
                 self.trigs['end_time'][:], [veto_file],
                 ifo=detector, segment_name=segment_name)
@@ -299,6 +302,39 @@ class SingleDetTriggers(object):
         "Returns a list of plottable CBC parameter variables."
         return [m[0] for m in inspect.getmembers(cls) \
             if type(m[1]) == property]
+
+    def mask_to_n_loudest_clustered_events(self, n_loudest=10,
+                                           ranking_statistic='newsnr',
+                                           cluster_window=10):
+        """Edits the mask property of the class to point to the N loudest
+        single detector events as ranked by ranking statistic. Events are
+        clustered so that no more than 1 event within +/- cluster-window will
+        be considered."""
+        # If this becomes memory intensive we can optimize
+        if ranking_statistic == 'newsnr':
+            stat = self.newsnr
+            self.stat_name = "New SNR"
+        else:
+            err_msg = "Don't recognize statistic %s." %(ranking_statistic,)
+            raise ValueError(err_msg)
+        times = self.end_time
+        index = stat.argsort()[::-1]
+        new_times = []
+        new_index = []
+        for curr_idx in index:
+            curr_time = times[curr_idx] 
+            for time in new_times:
+                if abs(curr_time - time) < cluster_window:
+                    break
+            else:
+                # Only get here if no other triggers within cluster window
+                new_index.append(curr_idx)
+                new_times.append(curr_time)
+            if len(new_index) >= n_loudest:
+                break
+        index = np.array(new_index)
+        self.stat = stat[index]
+        self.mask = self.mask[index]
 
     @property
     def template_id(self):

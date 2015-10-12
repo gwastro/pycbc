@@ -1452,16 +1452,6 @@ class PycbcDarkVsBrightInjectionsExecutable(Executable):
         node.new_output_file_opt(segment,
                                  ext, '--output-dim',
                                  store_file=self.retain_files, tags=tag)
-        # The following options are hard-coded because these values are the
-        # only ones currently available for them and correspond to the most
-        # conservatitve choices (i.e. they all disfavour tagging and
-        # injection as dim).  Having ini-file options which are necessary but
-        # not flexible would just be confusing.  When and if the use of these
-        # three options becomes more flexible, one can remove the hard-coded
-        # values.
-        node.add_opt('--eos', '2H')
-        node.add_opt('--ns-bh-boundary', '2.8346480922')
-        node.add_opt('--remnant-mass-threshold', '0.')
         return node
 
 class LigolwCBCJitterSkylocExecutable(Executable):

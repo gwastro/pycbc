@@ -437,8 +437,8 @@ def load_frequencyseries(path, group=None):
         key = 'data' if group is None else group
         f = h5py.File(path)
         data = f[key][:]
-        series = FrequencySeries(data, delta_f=f.attrs['delta_f'],
-                                       epoch=f.attrs['epoch']) 
+        series = FrequencySeries(data, delta_f=f[key].attrs['delta_f'],
+                                       epoch=f[key].attrs['epoch']) 
         f.close()
         return series
     else:

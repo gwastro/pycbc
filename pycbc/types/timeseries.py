@@ -477,8 +477,8 @@ def load_timeseries(path, group=None):
         key = 'data' if group is None else group
         f = h5py.File(path)
         data = f[key][:]
-        series = TimeSeries(data, delta_t=f.attrs['delta_t'],
-                                  epoch=f.attrs['start_time']) 
+        series = TimeSeries(data, delta_t=f[key].attrs['delta_t'],
+                                  epoch=f[key].attrs['start_time']) 
         f.close()
         return series
     else:

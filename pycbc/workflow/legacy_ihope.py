@@ -253,12 +253,11 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
                  gate_files=None, out_dir=None, tags=[]):
         super(LegacyCohPTFInspiralExecutable, self).__init__(cp, name, universe,
                 ifo, out_dir=out_dir, tags=tags)
-        self.cp = cp
         self.injection_file = injection_file
         self.data_seg = segments.segment(int(cp.get('workflow', 'start-time')),
                                          int(cp.get('workflow', 'end-time')))
         self.num_threads = 1
- 
+
     def create_node(self, data_seg, valid_seg, parent=None, inj_file=None,
                     dfParents=None, bankVetoBank=None, tags=[]):
         node = Node(self)
@@ -267,19 +266,28 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
             raise ValueError("%s must be supplied with frame files"
                               % self.name)
 
+        # If doing single IFO search, make sure slides are disabled
+        if len(self.ifo_list) < 2 and \
+                ('--do-short-slides' in node._options or \
+                 '--short-slide-offset' in node._options):
+            raise ValueError("Cannot run with time slides in a single IFO "
+                             "configuration! Please edit your configuration "
+                             "file accordingly.")
+
         pad_data = self.get_opt('pad-data')
         if pad_data is None:
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
-        
+
         # Feed in bank_veto_bank.xml
         if self.cp.has_option('inspiral', 'do-bank-veto'):
             if not bankVetoBank:
-                raise ValueError("%s must be given a bank veto file if the"
+                raise ValueError("%s must be given a bank veto file if the "
                                  "argument 'do-bank-veto' is given"
                                  % self.name)
             node.add_input_opt('--bank-veto-templates', bankVetoBank)
-        
+
+        # Set time options
         node.add_opt('--gps-start-time', data_seg[0] + int(pad_data))
         node.add_opt('--gps-end-time', data_seg[1] - int(pad_data))
         node.add_opt('--trig-start-time', valid_seg[0])
@@ -296,11 +304,13 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
             node.add_input_opt('--%s-frame-cache' % frameCache.ifo.lower(),
                                frameCache)
             node.add_arg('--%s-data' % frameCache.ifo.lower())
-            node.add_opt('--%s-channel-name' % frameCache.ifo.lower(),
-                         self.cp.get('workflow',
-                                     '%s-channel-name' %frameCache.ifo.lower()))
 
         if inj_file is not None:
+            if ('--do-short-slides' in node._options or \
+                    '--short-slide-offset' in node._options):
+                raise ValueError("Cannot run with short slides in an "
+                                 "injection job. Please edit your "
+                                 "configuration file accordingly.")
             node.add_input_opt('--injection-file', inj_file)
 
         return node
@@ -312,6 +322,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         valid_start = self.data_seg[0] + pad_data + overlap
         valid_end = self.data_seg[1] - pad_data - overlap
         return self.data_seg, segments.segment(valid_start, valid_end)
+
 
 class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
     """
@@ -462,7 +473,6 @@ class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
                  out_dir=None, tags=[]):
         super(LegacyCohPTFInjcombiner, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
-        self.cp = cp
         self.ifos = ifo
         self.num_threads = 1
 
@@ -499,7 +509,6 @@ class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
                  out_dir=None, tags=[]):
         super(LegacyCohPTFSbvPlotter, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
-        self.cp = cp
         self.ifos = ifo
         self.num_threads = 1
 
@@ -542,7 +551,6 @@ class LegacyCohPTFEfficiency(LegacyAnalysisExecutable):
                  out_dir=None, tags=[]):
         super(LegacyCohPTFEfficiency, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
-        self.cp = cp
         self.ifos = ifo
         self.num_threads = 1
 
@@ -605,9 +613,7 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
                  out_dir=None, tags=[]):
         super(PyGRBMakeSummaryPage, self).__init__(cp, name, universe, ifo=ifo,
               out_dir=out_dir, tags=tags)
-        self.cp = cp
         self.ifos = ifo
-        self.output_dir = out_dir
         self.num_threads = 1
 
     def create_node(self, parent=None, c_file=None, open_box=False,
@@ -635,7 +641,7 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
 
         # Set input / output options
         node.add_opt('--config-file', '%s' % c_file.storage_path) 
-        node.add_opt('--output-path', "%s/output" % self.output_dir)
+        node.add_opt('--output-path', "%s/output" % self.out_dir)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
