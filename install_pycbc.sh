@@ -13,7 +13,59 @@ if [ "$1" != "noscript" ] ; then
     exit 1;
 fi
 
+
+while true ; do
+#Check pip and virtualenv versions
+echo
+echo "virtualenv version:"
+virtualenv --version
+echo
+read -rp  "Is your version of virtualenv greater than 13.1.1? (Enter yes or no) " version
+
+if [[ $version == "yes" ]] ; then
+  break
+
+elif [[ $version == "no" ]] ; then
+  echo
+  echo "You must have at least version 13.1.1 of virtualenv."
+  echo "To set up virutalenv follow the instructions at:"
+  echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
+  echo
+  exit 1
+
+else
+ exit 1
+
+fi
+done
+
+while true ; do
+
+echo
+echo "pip version:"
+pip --version
+echo
+read -rp "Is your version of pip greater than 7.1.0? (Enter yes or no) " pip_version
+
+if [[ $pip_version == "yes" ]] ; then
+  break
+
+elif [[ $pip_version == "no" ]] ; then
+  echo
+  echo "You must have at least version 7.1.0 of pip."
+  echo "To set up pip follow the instructions at:"
+  echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
+  echo
+  exit 1
+
+else
+ exit 1
+
+fi
+done
 #Installing pyCBC
+
+while true; do
 
 # Ask the user where they want pycbc installed
 read -p "Enter the location where you want the virtual env created: " NAME
@@ -42,6 +94,26 @@ if [[ -d $NAME ]] ; then
    exit 1
 fi
 
+#Virualenv check
+echo "You chose to install PyCBC in $NAME."
+read -rp "Is this where you want PyCBC installed? (Enter yes or no) " name_check
+
+if [[ $name_check == "yes" ]] ; then
+ echo "Pycbc is being installed in $NAME." 
+ break
+fi
+
+if [[ $name_check == "no" ]] ; then
+ continue
+
+else
+ exit 1
+
+fi
+
+done
+
+#Number of Processors for the installation
 read -p "Enter the number of processors that you want to use for builds: " nproc
 
 if [[ -z $nproc ]] ; then
@@ -63,6 +135,7 @@ echo
 
 
 while true ; do
+#Inputs for code
 
 #LIGO.ORG username
 read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " directory
@@ -156,6 +229,8 @@ echo
 read -p "Enter path and architecture for Intel compilervars.sh or press return: " intel_path
 
 echo
+echo "------------PLease check the inputs carefully-----------------"
+echo
 echo "LIGO.ORG username: " $directory
 echo "Lalsuite Branch or Tag: " $lalbranch
 echo "Development or released: " $dev_or_rel
@@ -190,14 +265,30 @@ read -rp "Are these correct? (Enter yes or no) " questions
  fi
 done
 
-while true; do
+while true ; do
+
+while true ; do
 echo "What would you like to do with your pip cache?"
-echo "1. Leave it alone."
-echo "2. Ignore it."
-echo "3. Remove it."
+echo "1. Use the existing pip cache.(Fastest)"
+echo "2. Ignore the pip cache."
+echo "3. Remove te pip cache. (Safest and slowest)"
 echo
 read -rp "Enter 1, 2 or 3: " pip_cache
 
+
+if [[ $pip_cache != 1 ]] && [[ $pip_cache != 2 ]] && [[ $pip_cache != 3 ]] ; then
+ echo "You must enter 1, 2, or 3." 
+ echo
+ echo
+ continue
+
+else
+ break
+
+fi
+done
+
+#Pip Cache Check
 read -rp "You entered [ $pip_cache ]. Are you sure? (Enter yes or no) " check
 
 if [[ $check == "yes" ]] ; then 
