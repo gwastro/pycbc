@@ -116,5 +116,6 @@ test_exec_help pycbc_average_psd
 #test_exec_help pycbc_make_html_page
 test_exec_help pycbc_single_template
 test_exec_help pycbc_single_template_plot
+test_exec_help pycbc_optimal_snr
 
 exit ${RESULT}
