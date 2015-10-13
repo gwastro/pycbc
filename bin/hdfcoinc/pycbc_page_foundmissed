@@ -58,20 +58,23 @@ vals['mchirp'], eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 vals['spin'] = (m1 * s1z + m2 * s2z) / (m1 + m2)
 vals['time'] = time
 vals['total_mass'] = m1 + m2
+vals['mass_ratio'] = numpy.where(m1 < m2, m2, m1) / numpy.where(m1 < m2, m1, m2)
 
 dvals = {}
 dvals['decisive_distance'] = numpy.maximum(hdist, ldist)
 dvals['chirp_distance'] = pycbc.pnutils.chirp_distance(dvals['decisive_distance'], vals['mchirp'])
 dvals['comb_optimal_snr'] = numpy.sqrt(opt_snr_1 ** 2 + opt_snr_2 ** 2)
-dvals['min_optimal_snr'] = numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
+dvals['decisive_optimal_snr'] = numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
 
 labels={'mchirp': 'Chirp Mass',
+        'total_mass': 'Total Mass',
+        'mass_ratio': 'Mass Ratio',
         'decisive_distance': 'Injected Decisive Distance (Mpc)',
         'chirp_distance': 'Injected Decisive Chirp Distance (Mpc)',
-        'comb_optimal_snr': 'Combined optimal SNR',
-        'min_optimal_snr': 'Minimum optimal SNR',
+        'comb_optimal_snr': 'Combined Optimal SNR',
+        'decisive_optimal_snr': 'Decisive Optimal SNR',
         'time': 'Time (s)',
-        'spin': 'Weighted Spin',
+        'spin': 'Weighted Aligned Spin',
        }
 
 if args.missed_on_top:
