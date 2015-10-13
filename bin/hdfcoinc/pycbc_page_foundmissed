@@ -50,8 +50,6 @@ s1z = f['injections/spin1z'][:]
 s2z = f['injections/spin2z'][:]
 dist = f['injections/distance'][:]
 m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
-opt_snr_1 = f['injections/optimal_snr_1'][:]
-opt_snr_2 = f['injections/optimal_snr_2'][:]
 
 vals = {}
 vals['mchirp'], eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
@@ -63,8 +61,12 @@ vals['mass_ratio'] = numpy.where(m1 < m2, m2, m1) / numpy.where(m1 < m2, m1, m2)
 dvals = {}
 dvals['decisive_distance'] = numpy.maximum(hdist, ldist)
 dvals['chirp_distance'] = pycbc.pnutils.chirp_distance(dvals['decisive_distance'], vals['mchirp'])
-dvals['comb_optimal_snr'] = numpy.sqrt(opt_snr_1 ** 2 + opt_snr_2 ** 2)
-dvals['decisive_optimal_snr'] = numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
+
+if 'optimal_snr_1' in f['injections']:
+    opt_snr_1 = f['injections/optimal_snr_1'][:]
+    opt_snr_2 = f['injections/optimal_snr_2'][:]
+    dvals['comb_optimal_snr'] = numpy.sqrt(opt_snr_1 ** 2 + opt_snr_2 ** 2)
+    dvals['decisive_optimal_snr'] = numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
 
 labels={'mchirp': 'Chirp Mass',
         'total_mass': 'Total Mass',
