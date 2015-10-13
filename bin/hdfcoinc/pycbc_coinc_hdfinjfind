@@ -1,12 +1,16 @@
 #!/usr/bin/python
-""" Make table of the foreground coincident events
+
+"""Associate coincident triggers with injections listed in one or more LIGOLW
+files.
 """
+
 import argparse, h5py, logging, types
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue import segments
 import os.path
 from pycbc.future import numpy
 from pycbc.events import indices_within_segments as veto_indices
+from pycbc.types import MultiDetOptionAction
 import pycbc.version
 
 # dummy class needed for loading LIGOLW files
@@ -46,16 +50,20 @@ def xml_to_hdf(table, hdf_file, hdf_key, columns):
         hdf_append(hdf_file, key, numpy.array(table.get_column(col), 
                                         dtype=numpy.float32))
      
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--trigger-files', nargs='+')
-parser.add_argument('--injection-files', nargs='+')
+parser.add_argument('--trigger-files', nargs='+', required=True)
+parser.add_argument('--injection-files', nargs='+', required=True)
 parser.add_argument('--veto-file')
 parser.add_argument('--segment-name', default=None, type=str,
                     help='Optional, name of segment list to use for vetoes')
-parser.add_argument('--injection-window', type=float)
+parser.add_argument('--injection-window', type=float, required=True)
+parser.add_argument('--optimal-snr-column', nargs='+',
+                    action=MultiDetOptionAction, metavar='DETECTOR:COLUMN',
+                    help='Names of the sim_inspiral columns containing the' \
+                    ' optimal SNRs.')
 parser.add_argument('--verbose', action='count')
-parser.add_argument('--output-file')
+parser.add_argument('--output-file', required=True)
 args = parser.parse_args()
 
 if args.verbose:
@@ -130,6 +138,14 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
                'latitude', 'longitude', 'distance']
     xml_to_hdf(sim_table, fo, 'injections', columns)
     hdf_append(fo, 'injections/end_time', inj_time)
+
+    # pick up optimal SNRs
+    ifo_map = {f.attrs['detector_1']: 1,
+               f.attrs['detector_2']: 2}
+    for ifo, column in args.optimal_snr_column.items():
+        hdf_append(fo, 'injections/optimal_snr_%d' % ifo_map[ifo],
+                   sim_table.get_column(column))
+
     fo.attrs['detector_1'] = f.attrs['detector_1']
     fo.attrs['detector_2'] = f.attrs['detector_2']
     fo.attrs['foreground_time_exc'] = f.attrs['foreground_time_exc']
