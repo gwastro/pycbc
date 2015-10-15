@@ -121,6 +121,9 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
     strain : TimeSeries
         The time series containing the conditioned strain data.
     """
+
+    gating_info = {}
+
     if opt.frame_cache or opt.frame_files or opt.frame_type:
         if opt.frame_cache:
             frame_source = opt.frame_cache
@@ -176,6 +179,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             if len(gate_params.shape) == 1:
                 gate_params = [gate_params]
             strain = gate_data(strain, gate_params)
+            gating_info['file'] = gate_params
 
         if opt.autogating_threshold is not None:
             # the + 0 is for making a copy
@@ -194,6 +198,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             logging.info('Autogating at %s',
                          ', '.join(['%.3f' % gt for gt in glitch_times]))
             strain = gate_data(strain, gate_params)
+            gating_info['auto'] = gate_params
 
         logging.info("Resampling data")
         strain = resample_to_delta_t(strain, 1.0/opt.sample_rate, method='ldas')
@@ -239,6 +244,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
 
     if opt.injection_file:
         strain.injections = injections
+
+    strain.gating_info = gating_info
 
     return strain
 
