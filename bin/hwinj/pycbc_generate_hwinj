@@ -122,7 +122,7 @@ parser.add_argument('--ra', type=float, required=True,
 parser.add_argument('--dec', type=float, required=True,
                   help='The declination of the injection in radians.')
 parser.add_argument('--polarization', type=float, required=True,
-                  help='The polarization of the injection.')
+                  help='The polarization of the injection in radians.')
 
 # waveform parameter options
 parser.add_argument('--approximant', type=str, required=True,
@@ -137,7 +137,7 @@ parser.add_argument('--mass1', type=float, required=True,
 parser.add_argument('--mass2', type=float, required=True,
                   help='Second mass of the binary in solar masses.')
 parser.add_argument('--inclination', type=float, required=True,
-                  help='Inclination of the binary.')
+                  help='Inclination of the binary in radians.')
 parser.add_argument('--taper',  required=True,
                     choices=['TAPER_NONE', 'TAPER_START', 'TAPER_END', 'TAPER_STARTEND'],
                     help='Taper the wavform before FFT.')
