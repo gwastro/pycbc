@@ -297,14 +297,18 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         pdf = 1.0/128
         plen = int(opt.sample_rate / pdf) / 2 + 1
 
-        logging.info("Making PSD for strain")
-        strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
-                                           opt.low_frequency_cutoff)
+        if opt.fake_strain != 'zeroNoise':
+            logging.info("Making PSD for strain")
+            strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
+                                               opt.low_frequency_cutoff)
 
-        logging.info("Making colored noise")
-        strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate,
-                                            strain_psd,
-                                            seed=opt.fake_strain_seed)
+            logging.info("Making colored noise")
+            strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate,
+                                                strain_psd,
+                                                seed=opt.fake_strain_seed)
+        else:
+            logging.info("Making zero-noise time series")
+            strain = TimeSeries(numpy.zeros(tlen), delta_t=1.0/opt.sample_rate)
         strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
 
         if opt.injection_file:
@@ -417,7 +421,7 @@ def insert_strain_option_group(parser, gps_times=True):
     #Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain",
                 help="Name of model PSD for generating fake gaussian noise.",
-                     choices=pycbc.psd.get_lalsim_psd_list())
+                     choices=pycbc.psd.get_lalsim_psd_list() + ['zeroNoise'])
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
@@ -550,7 +554,7 @@ def insert_strain_option_group_multi_ifo(parser):
     data_reading_group.add_argument("--fake-strain", type=str, nargs="+",
                             action=MultiDetOptionAction, metavar='IFO:CHOICE',
                             help="Name of model PSD for generating fake "
-                            "gaussian noise. Choose from %s" \
+                            "gaussian noise. Choose from %s or zeroNoise" \
                             %((', ').join(pycbc.psd.get_lalsim_psd_list()),) )
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                             nargs="+",
