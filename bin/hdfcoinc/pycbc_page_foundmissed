@@ -1,14 +1,15 @@
 #!/usr/bin/python
-""" Make table of the foreground coincident events
+""" Plot found and missed injections.
 """
 import h5py, numpy, logging, os.path, argparse, sys, matplotlib
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plot
 import pycbc.results.followup, pycbc.pnutils, pycbc.results, pycbc.version
+import pycbc.pnutils
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--injection-file',
-                    help='The hdf injection file to plot')
+                    help='The hdf injection file to plot', required=True)
 parser.add_argument('--axis-type', default='mchirp')
 parser.add_argument('--distance-type', default='decisive_distance')
 parser.add_argument('--verbose', action='count')
@@ -16,7 +17,7 @@ parser.add_argument('--log-distance', action='store_true', default=False)
 parser.add_argument('--dynamic', action='store_true', default=False)
 parser.add_argument('--gradient-far', action='store_true',
                     help='Show far of found injections as a gradient')
-parser.add_argument('--output-file')
+parser.add_argument('--output-file', required=True)
 parser.add_argument('--far-type', choices=('inclusive', 'exclusive'), default='inclusive',
                     help="Type of far to plot for the color. Choices are 'inclusive' or "
                          "'exclusive'. Default = 'inclusive'")
@@ -50,22 +51,32 @@ s2z = f['injections/spin2z'][:]
 dist = f['injections/distance'][:]
 m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
 
-import pycbc.pnutils
 vals = {}
 vals['mchirp'], eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 vals['spin'] = (m1 * s1z + m2 * s2z) / (m1 + m2)
 vals['time'] = time
 vals['total_mass'] = m1 + m2
+vals['mass_ratio'] = numpy.where(m1 < m2, m2, m1) / numpy.where(m1 < m2, m1, m2)
 
 dvals = {}
 dvals['decisive_distance'] = numpy.maximum(hdist, ldist)
 dvals['chirp_distance'] = pycbc.pnutils.chirp_distance(dvals['decisive_distance'], vals['mchirp'])
 
+if 'optimal_snr_1' in f['injections']:
+    opt_snr_1 = f['injections/optimal_snr_1'][:]
+    opt_snr_2 = f['injections/optimal_snr_2'][:]
+    dvals['comb_optimal_snr'] = numpy.sqrt(opt_snr_1 ** 2 + opt_snr_2 ** 2)
+    dvals['decisive_optimal_snr'] = numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
+
 labels={'mchirp': 'Chirp Mass',
+        'total_mass': 'Total Mass',
+        'mass_ratio': 'Mass Ratio',
         'decisive_distance': 'Injected Decisive Distance (Mpc)',
         'chirp_distance': 'Injected Decisive Chirp Distance (Mpc)',
+        'comb_optimal_snr': 'Combined Optimal SNR',
+        'decisive_optimal_snr': 'Decisive Optimal SNR',
         'time': 'Time (s)',
-        'spin': 'Weighted Spin',
+        'spin': 'Weighted Aligned Spin',
        }
 
 if args.missed_on_top:

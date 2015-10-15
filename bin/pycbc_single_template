@@ -70,6 +70,8 @@ parser.add_argument("--spin1z", type=float, default=0,
 parser.add_argument("--spin2z", type=float, default=0,
                   help="The aligned pin of the second component object. "
                     "Do not use if giving a statmap file.")
+parser.add_argument("--trigger-time", type=float, default=0,
+                  help="The central time of the trigger to use.")
 parser.add_argument("--order", type=int,
                   help="The integer half-PN order at which to generate"
                        " the approximant. Default is -1 which indicates to use"
@@ -88,6 +90,7 @@ parser.add_argument("--n-loudest", type=int,
              ", only used with --statmap-file")
 parser.add_argument("--bank-file",
         help="HDF format template bank file, only used with --statmap-file")
+# These options can be used to identify start/end times
 parser.add_argument("--inspiral-segments",
         help="XML file containing the inspiral analysis segments. "
              "Only used with the --statmap-file option")
@@ -107,9 +110,9 @@ ifo = opt.channel_name[0:2]
 
 # If we are reading from the coinc files ######################################
 if opt.statmap_file:
-    time, tid = get_time(opt.statmap_file, opt.n_loudest, ifo)
+    opt.trigger_time, tid = get_time(opt.statmap_file, opt.n_loudest, ifo)
     
-    if time is None:
+    if opt.trigger_time is None:
         sys.exit()
     
     b = h5py.File(opt.bank_file, 'r')
@@ -117,11 +120,16 @@ if opt.statmap_file:
     opt.mass2 = float(b['mass2'][:][tid])
     opt.spin1z = float(b['spin1z'][:][tid])
     opt.spin2z = float(b['spin2z'][:][tid])
+
+# If we are choosing start/end times from XML file ############################
+if opt.inspiral_segments:
     start_pad = opt.pad_data + opt.segment_start_pad
     end_pad = opt.pad_data + opt.segment_end_pad
-    seg = select_segment(opt.inspiral_segments, opt.segment_name, ifo, time, start_pad, end_pad)
-    opt.gps_start_time, opt.gps_end_time = seg[0] + opt.pad_data, seg[1] - opt.pad_data
-    f.attrs['event_time'] = time
+    seg = select_segment(opt.inspiral_segments, opt.segment_name, ifo,
+                         opt.trigger_time, start_pad, end_pad)
+    opt.gps_start_time, opt.gps_end_time = \
+                                   seg[0] + opt.pad_data, seg[1] - opt.pad_data
+    f.attrs['event_time'] = opt.trigger_time
 
 ###############################################################################
 
@@ -210,6 +218,7 @@ with ctx:
      
         snrs.append(snr[stilde.analyze])
         chisqs.append(chisq[stilde.analyze])
+        print snr.start_time
         
     f['snr'] = numpy.concatenate([snr.numpy() for snr in snrs])
     f['snr'].attrs['start_time'] = float(snrs[0].start_time)

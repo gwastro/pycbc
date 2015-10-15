@@ -221,7 +221,10 @@ class MatchedFilterControl(object):
         norm = (4.0 * self.delta_f) / sqrt(template_norm)
         self.correlators[segnum].correlate()
         self.ifft.execute()
-        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
+#        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
+        idx, snrv = events.threshold(self.snr_mem[self.segments[segnum].analyze],
+                                     self.snr_threshold / norm)
+        idx, snrv = events.cluster_reduce(idx, snrv, window)
 
         if len(idx) == 0:
             return [], [], [], [], []

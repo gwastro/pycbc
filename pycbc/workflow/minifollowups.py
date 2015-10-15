@@ -194,7 +194,9 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     logging.info('Leaving minifollowups module')
 
 
-def setup_injection_minifollowups(workflow, injection_file, single_triggers, tmpltbank_file, 
+def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
+                                  single_triggers, 
+                                  tmpltbank_file, insp_segs, insp_seg_name,
                                   dax_output, out_dir, tags=None):
     """ Create plots that followup the closest missed injections
     
@@ -246,7 +248,10 @@ def setup_injection_minifollowups(workflow, injection_file, single_triggers, tmp
     node.add_input_opt('--config-files', config_file)
     node.add_input_opt('--bank-file', tmpltbank_file)
     node.add_input_opt('--injection-file', injection_file)
+    node.add_input_opt('--injection-xml-file', inj_xml_file)
     node.add_multiifo_input_list_opt('--single-detector-triggers', single_triggers)
+    node.add_multiifo_input_list_opt('--inspiral-segments', insp_segs.values())
+    node.add_opt('--inspiral-segment-name', insp_seg_name)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
     
     name = node.output_files[0].name
@@ -268,6 +273,58 @@ def setup_injection_minifollowups(workflow, injection_file, single_triggers, tmp
     dep = dax.Dependency(parent=node._dax_node, child=job)
     workflow._adag.addDependency(dep)
     logging.info('Leaving injection minifollowups module')
+
+def make_single_template_plots_new(workflow, segs, seg_name, params,
+                                   out_dir, inj_file=None, exclude=None,
+                                   require=None, tags=None, params_str=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'single_template_plot'
+    secs = requirestr(workflow.cp.get_subsections(name), require)
+    secs = excludestr(secs, exclude)
+    files = FileList([])
+    for tag in secs:
+        for ifo in workflow.ifos:
+            # Reanalyze the time around the trigger in each detector
+            node = PlotExecutable(workflow.cp, 'single_template', ifos=[ifo],
+                              out_dir=out_dir, tags=[tag] + tags).create_node()
+            node.add_opt('--mass1', params['mass1'])
+            node.add_opt('--mass2', params['mass2'])
+            node.add_opt('--spin1z', params['spin1z'])
+            node.add_opt('--spin2z', params['spin2z'])
+            # str(numpy.float64) restricts to 2d.p. BE CAREFUL WITH THIS!!!
+            str_trig_time = '%.6f' %(params[ifo + '_end_time'])
+            node.add_opt('--trigger-time', str_trig_time)
+            node.add_input_opt('--inspiral-segments', segs[ifo])
+            if inj_file is not None:
+                node.add_input_opt('--injection-file', inj_file)
+            node.add_opt('--segment-name', seg_name)
+            node.new_output_file_opt(workflow.analysis_time, '.hdf',
+                                     '--output-file', store_file=False)
+            data = node.output_files[0]
+            workflow += node
+            # Make the plot for this trigger and detector
+            node = PlotExecutable(workflow.cp, name, ifos=[ifo],
+                              out_dir=out_dir, tags=[tag] + tags).create_node()
+            node.add_input_opt('--single-template-file', data)
+            node.new_output_file_opt(workflow.analysis_time, '.png',
+                                     '--output-file')
+            title="'%s SNR and chi^2 timeseries" %(ifo) 
+            if params_str is not None:
+                title+= " using %s" %(params_str)
+            title+="'"
+            node.add_opt('--plot-title', title)
+            caption = "'The SNR and chi^2 timeseries around the injection"
+            if params_str is not None:
+                caption += " using %s" %(params_str)
+            caption += ". The template used has the following parameters: "
+            caption += "mass1=%s, mass2=%s, spin1z=%s, spin2z=%s'"\
+                       %(params['mass1'], params['mass2'], params['spin1z'],
+                         params['spin2z'])
+            node.add_opt('--plot-caption', caption)
+            workflow += node
+            files += node.output_files
+    return files
 
 def make_single_template_plots(workflow, segs, seg_name, coinc, bank, num, out_dir, 
                                exclude=None, require=None, tags=None):
@@ -300,7 +357,8 @@ def make_single_template_plots(workflow, segs, seg_name, coinc, bank, num, out_d
             files += node.output_files
     return files      
 
-def make_inj_info(workflow, injection_file, injection_index, num, out_dir, tags=None):
+def make_inj_info(workflow, injection_file, injection_index, num, out_dir,
+                  tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_injinfo'

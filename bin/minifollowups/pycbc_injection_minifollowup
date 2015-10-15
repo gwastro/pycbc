@@ -16,12 +16,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Followup foreground events
 """
-import os, argparse, numpy, logging, h5py, pycbc.workflow as wf
+import os, argparse, numpy, logging, h5py, copy
+import pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.detector import Detector
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version, pycbc.pnutils
+from pycbc.io.hdf import SingleDetTriggers
 
 def to_file(path, ifo=None):
     fil = wdax.File(os.path.basename(path))
@@ -38,8 +40,16 @@ parser.add_argument('--bank-file',
                     help="HDF format template bank file")
 parser.add_argument('--injection-file',
                     help="HDF format injection results file")
+parser.add_argument('--injection-xml-file',
+                    help="XML format injection file")
 parser.add_argument('--single-detector-triggers', nargs='+', 
                     help="HDF format merged single detector trigger files")
+parser.add_argument('--inspiral-segments', nargs='+',
+                    help="xml segment files containing the inspiral analysis times")
+parser.add_argument('--inspiral-segment-name',
+                    help="Name of inspiral segmentlist to read from segment files")
+parser.add_argument('--inj-window', type=int, default=0.5,
+                    help="Time window in which to look for injection triggers")
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
@@ -58,11 +68,17 @@ layouts = []
 
 tmpltbank_file = to_file(args.bank_file)
 injection_file = to_file(args.injection_file)
+injection_xml_file = to_file(args.injection_xml_file)
 
 single_triggers = []
 for name in args.single_detector_triggers:
     ifo, fname = name.split(':')
     single_triggers.append(to_file(fname, ifo=ifo))
+
+insp_segs = {}
+for name in args.inspiral_segments:
+    ifo, fname = name.split(':')
+    insp_segs[ifo] = to_file(fname, ifo=ifo)
 
 f = h5py.File(args.injection_file, 'r')
 missed = f['missed/after_vetoes'][:]
@@ -95,6 +111,9 @@ for num_event in range(num_events):
     time = f['injections/end_time'][injection_index]
     
     ifo_times = ''
+    inj_params = {}
+    for val in ['mass1', 'mass2', 'spin1z', 'spin2z', 'end_time']:
+        inj_params[val] = f['injections/%s' %(val,)][injection_index]
     for single in single_triggers:
         ifo = single.ifo
         det = Detector(ifo)
@@ -102,6 +121,7 @@ for num_event in range(num_events):
         lat = f['injections/latitude'][injection_index]
         ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
         ifo_times += ' %s:%s ' % (ifo, ifo_time) 
+        inj_params[ifo+'_end_time'] = ifo_time
           
     layouts += [(mini.make_inj_info(workflow, injection_file, injection_index, num_event,
                                args.output_dir, tags=args.tags + [str(num_event)])[0],)]   
@@ -113,7 +133,38 @@ for num_event in range(num_events):
         files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
                                 time - 10, time + 10, args.output_dir,
                                 tags=args.tags + [str(num_event), single.ifo])                 
-    
+
+    files += mini.make_single_template_plots_new(workflow, insp_segs,
+                            args.inspiral_segment_name, inj_params,
+                            args.output_dir, inj_file=injection_xml_file,
+                            tags=args.tags+['INJ_PARAMS',str(num_event)],
+                            params_str='injection parameters.')
+
+    for curr_ifo, single_fname in \
+                         [l.split(':') for l in args.single_detector_triggers]:
+        hd_sngl = SingleDetTriggers(single_fname, args.bank_file, None, None,
+                                    None, curr_ifo)
+        end_times = hd_sngl.end_time
+        # Use SNR here or NewSNR??
+        snr = hd_sngl.snr
+        lgc_mask = abs(end_times - inj_params['end_time']) < args.inj_window
+        if len(snr[lgc_mask]) == 0:
+            continue
+        snr_idx = hd_sngl.mask[lgc_mask][snr[lgc_mask].argmax()]
+        hd_sngl.mask = hd_sngl.mask[snr_idx]
+        curr_params = copy.deepcopy(inj_params)
+        curr_params['mass1'] = hd_sngl.mass1
+        curr_params['mass2'] = hd_sngl.mass2
+        curr_params['spin1z'] = hd_sngl.spin1z
+        curr_params['spin2z'] = hd_sngl.spin2z
+        curr_tags = ['TMPLT_PARAMS_%s' %(curr_ifo,)]
+        curr_tags += [str(num_event)]
+        files += mini.make_single_template_plots_new(workflow, insp_segs,
+                                args.inspiral_segment_name, curr_params,
+                                args.output_dir, inj_file=injection_xml_file,
+                                tags=args.tags+curr_tags,
+                                params_str='loudest template in %s' %curr_ifo )
+
     layouts += list(layout.grouper(files, 2))
     num_event += 1
 
