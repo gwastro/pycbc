@@ -221,8 +221,9 @@ with ctx:
                }
     names = sorted(out_vals.keys())
 
-    event_mgr = events.EventManager(opt, names,
-                                        [out_types[n] for n in names], psd=psds[0])
+    event_mgr = events.EventManager(
+            opt, names, [out_types[n] for n in names], psd=psds[0],
+            gating_info=gwstrain.gating_info)
 
     if len(strain_segments.segment_slices) == 0:
         logging.info("--filter-inj-only specified and no injections in analysis time")
