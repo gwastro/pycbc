@@ -117,6 +117,8 @@ if mask.any():
         rank = snr
     elif opts.rank == 'newsnr':
         rank = pycbc.events.newsnr(snr, rchisq)
+        if type(rank) in [np.float32, np.float64]:
+            rank = np.array([rank])
 
     sorter = np.argsort(rank)[::-1][:opts.num_loudest]
     sorted_end_time = end_time[sorter]

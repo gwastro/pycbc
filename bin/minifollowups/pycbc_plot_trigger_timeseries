@@ -45,6 +45,8 @@ parser.add_argument('--log-y-axis', action='store_true')
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
+any_data = False
+
 # organize the single detector triggers files by ifo in a dict
 fig = pylab.figure()
 for ifo in args.single_trigger_files.keys():
@@ -63,18 +65,18 @@ for ifo in args.single_trigger_files.keys():
     times = times[idx] - t
     
     if args.plot_type == 'snr':
-        val = data['snr'][:][idx] 
-        
+        val = data['snr'][:][idx]
+
         if args.special_trigger_ids:
             top = data['snr'][:][id_loud]
-            
-    if args.plot_type == 'newsnr':                                         
+
+    if args.plot_type == 'newsnr':
         snr = data['snr'][:][idx]
         chisq = data['chisq'][:][idx]
         chisq_dof = data['chisq_dof'][:][idx]
 
         if len(chisq) > 0:
-            val = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))        
+            val = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))
         else:
             val = numpy.array([])
 
@@ -82,21 +84,25 @@ for ifo in args.single_trigger_files.keys():
         if args.special_trigger_ids:
             rchisq = data['chisq'][:][id_loud] / (data['chisq_dof'][:][id_loud] * 2 - 2)
             top = pycbc.events.newsnr(data['snr'][:][id_loud], rchisq)
-        
+
+    if type(val) in [numpy.float32, numpy.float64] or len(val) > 0:
+        any_data = True
+
     pylab.scatter(times, val, color=pycbc.results.ifo_color(ifo), marker='x',
                   label=ifo)
-                  
+
     if args.special_trigger_ids:
+        any_data = True
         pylab.scatter([0], [top], marker='*', s=50, color='yellow')
- 
-if args.log_y_axis:
+
+if args.log_y_axis and any_data:
     pylab.yscale('log')
-     
+
 pylab.xlabel('time (s)')
 pylab.ylabel(args.plot_type)
 
 try:
-    if len(val) > 0:                                
+    if len(val) > 0:
         pylab.ylim(ymin=val.min())
 except TypeError:
     pylab.ylim(ymin=val)
