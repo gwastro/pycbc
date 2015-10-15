@@ -360,8 +360,10 @@ for inj_file, tag in zip(inj_files, inj_tags):
     if len(f) > 0: layout.two_column_layout(rdir['injections/%s' % tag], inj_layout)  
 
     # run minifollowups on nearest missed injections
-    wf.setup_injection_minifollowups(workflow, found_inj, insps,  hdfbank[0],
-                                     'daxes', rdir['injections/followup-%s' % tag],
+    wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
+                                     insps,  hdfbank[0],
+                                     insp_data_segs, 'INSPIRAL_DATA', 'daxes',
+                                     rdir['injections/followup-%s' % tag],
                                      tags=[tag])
         
 # Make combined injection plots
