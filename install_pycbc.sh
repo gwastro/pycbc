@@ -333,6 +333,7 @@ echo
 #Create a Virtual Environment
 echo "--- creating virtual environment --------------------------------"
 unset PYTHONPATH
+unset LD_LIBRARY_PATH
 virtualenv $NAME
 
 #Enter Virtual Environment
@@ -407,6 +408,9 @@ pip $cache install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-
 
 #Install dqsegb from Duncan's repository
 pip $cache install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
+
+#Install gracedb client tools
+pip install ligo-gracedb
 
 #Install pycbc and glue from non-cached versions to get the rpaths correct
 pip $cache install pycbc-glue pycbc-pylal
