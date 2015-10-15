@@ -33,6 +33,10 @@ parser.add_argument('--event-time', type=float,
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--log-y', action='store_true',
                     help='Use log scale for y-axis')
+parser.add_argument('--plot-title',
+                    help="If given, use this as the plot title")
+parser.add_argument('--plot-caption',
+                    help="If given, use this as the plot caption")
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -85,6 +89,12 @@ if args.log_y:
     ax2.set_yscale('log')
 ax2.legend(loc="upper right")
 
+if args.plot_title is None:
+    args.plot_title = '%s: SNR and chi^2 time series' % ifo
+if args.plot_caption is None:
+    args.plot_caption = ''
+
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
                              cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
-                             title='%s: SNR and chi^2 time series' % ifo)
+                             title=args.plot_title,
+                             caption=args.plot_caption)

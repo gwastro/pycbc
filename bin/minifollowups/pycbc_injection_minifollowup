@@ -137,7 +137,8 @@ for num_event in range(num_events):
     files += mini.make_single_template_plots_new(workflow, insp_segs,
                             args.inspiral_segment_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
-                            tags=args.tags+['INJ_PARAMS',str(num_event)])
+                            tags=args.tags+['INJ_PARAMS',str(num_event)],
+                            params_str='injection parameters.')
 
     for curr_ifo, single_fname in \
                          [l.split(':') for l in args.single_detector_triggers]:
@@ -161,7 +162,8 @@ for num_event in range(num_events):
         files += mini.make_single_template_plots_new(workflow, insp_segs,
                                 args.inspiral_segment_name, curr_params,
                                 args.output_dir, inj_file=injection_xml_file,
-                                tags=args.tags+curr_tags)
+                                tags=args.tags+curr_tags,
+                                params_str='loudest template in %s' %curr_ifo )
 
     layouts += list(layout.grouper(files, 2))
     num_event += 1
