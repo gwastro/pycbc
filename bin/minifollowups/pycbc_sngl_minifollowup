@@ -64,6 +64,8 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
 workflow = wf.Workflow(args, args.workflow_name)
+workflow.ifos = [args.instrument]
+workflow.ifo_string = args.instrument
 
 wf.makedir(args.output_dir)
              
@@ -72,8 +74,12 @@ layouts = []
 
 tmpltbank_file = to_file(args.bank_file)
 sngl_file = to_file(args.single_detector_file, ifo=args.instrument)
-veto_file = to_file(args.veto_file, ifo=args.instrument)
-#insp_segs = to_file(args.inspiral_segments)
+if args.veto_file is not None:
+    veto_file = to_file(args.veto_file, ifo=args.instrument)
+else:
+    veto_file = None
+insp_segs = {}
+insp_segs[args.instrument] = to_file(args.inspiral_segments)
 
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
                  'num-sngl-events', ''))
@@ -81,6 +87,7 @@ num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
 trigs = hdf.SingleDetTriggers(args.single_detector_file, args.bank_file,
                               args.veto_file, args.veto_segment_name,
                               None, args.instrument)
+
 
 trigs.mask_to_n_loudest_clustered_events(n_loudest=num_events,
                                       ranking_statistic=args.ranking_statistic)
@@ -107,15 +114,20 @@ for num_event in range(num_events):
     files += mini.make_trigger_timeseries(workflow, [sngl_file],
                               ifo_time, args.output_dir, special_tids=ifo_tid,
                               tags=args.tags + [str(num_event)])
-    # Would be nice to have this, but is not yet supported
-    #files += mini.make_single_template_plots(workflow, insp_segs,
-    #                          args.inspiral_segment_name, coinc_file,
-    #                          tmpltbank_file, num_event, args.output_dir,
-    #                          tags=args.tags + [str(num_event)])
-    
+    curr_params = {}
+    curr_params['mass1'] = trigs.mass1[num_event]
+    curr_params['mass2'] = trigs.mass2[num_event]
+    curr_params['spin1z'] = trigs.spin1z[num_event]
+    curr_params['spin2z'] = trigs.spin2z[num_event]
+    curr_params[args.instrument + '_end_time'] = time
+    files += mini.make_single_template_plots_new(workflow, insp_segs,
+                            args.inspiral_segment_name, curr_params,
+                            args.output_dir, 
+                            tags=args.tags+[str(num_event)])
+
     files += mini.make_singles_timefreq(workflow, sngl_file, tmpltbank_file, 
                             time - 10, time + 10, args.output_dir,
-                            tags=args.tags + [str(num_event), args.instrument])                 
+                            tags=args.tags + [str(num_event)])                 
     
     layouts += list(layout.grouper(files, 2))
     num_event += 1
