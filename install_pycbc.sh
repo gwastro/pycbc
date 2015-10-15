@@ -26,6 +26,32 @@ if [[ $version == "yes" ]] ; then
   break
 
 elif [[ $version == "no" ]] ; then
+
+  while true ; do
+  
+  echo
+  echo "pip version:"
+  pip --version
+  echo
+  read -rp "Is your version of pip greater than 7.1.0? (Enter yes or no) " pip_version
+  
+  if [[ $pip_version == "yes" ]] ; then
+    break
+  
+  elif [[ $pip_version == "no" ]] ; then
+    echo
+    echo "You must have at least version 7.1.0 of pip to install virtualenv."
+    echo "To set up pip follow the instructions at:"
+    echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
+    echo
+    break
+  
+  else
+    echo "Please enter yes or no"
+  
+  fi
+  done
+
   echo
   echo "You must have at least version 13.1.1 of virtualenv."
   echo "To set up virutalenv follow the instructions at:"
@@ -34,35 +60,11 @@ elif [[ $version == "no" ]] ; then
   exit 1
 
 else
- exit 1
+ echo "Please enter yes or no"
 
 fi
 done
 
-while true ; do
-
-echo
-echo "pip version:"
-pip --version
-echo
-read -rp "Is your version of pip greater than 7.1.0? (Enter yes or no) " pip_version
-
-if [[ $pip_version == "yes" ]] ; then
-  break
-
-elif [[ $pip_version == "no" ]] ; then
-  echo
-  echo "You must have at least version 7.1.0 of pip."
-  echo "To set up pip follow the instructions at:"
-  echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
-  echo
-  exit 1
-
-else
- exit 1
-
-fi
-done
 #Installing pyCBC
 
 while true; do
@@ -85,13 +87,13 @@ fi
 
 if [[ -z $NAME ]] ; then
   echo "ERROR: you must specify a path for your virtual environment."
-  exit 1
+  continue
 fi
 
 if [[ -d $NAME ]] ; then
    echo "ERROR: the directory $NAME already exists."
    echo "If you want to use this path, remove the directory and try again."
-   exit 1
+   continue
 fi
 
 #Virualenv check
@@ -107,7 +109,8 @@ if [[ $name_check == "no" ]] ; then
  continue
 
 else
- exit 1
+ echo "Please enter yes or no"
+ continue
 
 fi
 
@@ -122,12 +125,12 @@ fi
 
 if [[ $nproc -lt 1 ]] ; then
    echo "ERROR: invalid number of processors specified: $nproc"
-   exit 1
+   continue
 fi
 
 if [[ $nproc -gt 24 ]] ; then
    echo "ERROR: please do not use more than 24 CPUs for the build. You asked for $nproc"
-   exit 1
+   continue
 fi
 
 echo "Using $nproc processors for parallel build."
@@ -260,7 +263,7 @@ read -rp "Are these correct? (Enter yes or no) " questions
 
  else
   echo "You must enter yes or no."
-  exit 1
+  continue
 
  fi
 done
@@ -314,7 +317,7 @@ continue
 
 else
 echo "You must enter yes or no."
-exit 1
+continue
 
 fi
 done
