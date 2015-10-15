@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """
-Finds the loudest snr or newsnr event within a given time window and generates
-the expected h(t) waveform based on effective distance and coalescence phase.
-
+Finds the loudest snr or newsnr event within a given time window, parses the 
+parameters of the template, and writes them to an hdf and/or stdout.
 """
 
 import lal
