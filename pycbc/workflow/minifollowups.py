@@ -300,7 +300,7 @@ def make_single_template_plots_new(workflow, segs, seg_name, params,
                 node.add_input_opt('--injection-file', inj_file)
             node.add_opt('--segment-name', seg_name)
             node.new_output_file_opt(workflow.analysis_time, '.hdf',
-                                     '--output-file')
+                                     '--output-file', store_file=False)
             data = node.output_files[0]
             workflow += node
             # Make the plot for this trigger and detector
