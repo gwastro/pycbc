@@ -276,7 +276,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
 
 def make_single_template_plots_new(workflow, segs, seg_name, params,
                                    out_dir, inj_file=None, exclude=None,
-                                   require=None, tags=None):
+                                   require=None, tags=None, params_str=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'single_template_plot'
@@ -292,7 +292,9 @@ def make_single_template_plots_new(workflow, segs, seg_name, params,
             node.add_opt('--mass2', params['mass2'])
             node.add_opt('--spin1z', params['spin1z'])
             node.add_opt('--spin2z', params['spin2z'])
-            node.add_opt('--trigger-time', params[ifo + '_end_time'])
+            # str(numpy.float64) restricts to 2d.p. BE CAREFUL WITH THIS!!!
+            str_trig_time = '%.6f' %(params[ifo + '_end_time'])
+            node.add_opt('--trigger-time', str_trig_time)
             node.add_input_opt('--inspiral-segments', segs[ifo])
             if inj_file is not None:
                 node.add_input_opt('--injection-file', inj_file)
@@ -307,6 +309,19 @@ def make_single_template_plots_new(workflow, segs, seg_name, params,
             node.add_input_opt('--single-template-file', data)
             node.new_output_file_opt(workflow.analysis_time, '.png',
                                      '--output-file')
+            title="'%s SNR and chi^2 timeseries" %(ifo) 
+            if params_str is not None:
+                title+= " using %s" %(params_str)
+            title+="'"
+            node.add_opt('--plot-title', title)
+            caption = "'The SNR and chi^2 timeseries around the injection"
+            if params_str is not None:
+                caption += " using %s" %(params_str)
+            caption += ". The template used has the following parameters: "
+            caption += "mass1=%s, mass2=%s, spin1z=%s, spin2z=%s'"\
+                       %(params['mass1'], params['mass2'], params['spin1z'],
+                         params['spin2z'])
+            node.add_opt('--plot-caption', caption)
             workflow += node
             files += node.output_files
     return files
