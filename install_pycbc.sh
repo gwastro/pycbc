@@ -224,6 +224,8 @@ echo "on sugar, enter"
 echo "     /opt/intel/bin/compilervars.sh intel64"
 echo "on atlas, enter"
 echo "     /opt/intel/2015/bin/compilervars.sh intel64"
+echo "on ldas-grid, enter"
+echo "     /opt/intel/composer_xe_2015.1.135/bin/compilervars.sh"
 echo "If you do not have these tools installed, just press return."
 echo 
 read -p "Enter path and architecture for Intel compilervars.sh or press return: " intel_path
@@ -357,11 +359,8 @@ echo
 echo
 echo "--- cloning lalsuite repository ---------------------------------"
 echo
-#read -p "Enter your LIGO.ORG username in (e.g. albert.einstein):" directory
 
 #Valid ECP cookie to clone
-#echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
-#ecp-cookie-init LIGO.ORG https://versions.ligo.org/git $directory
 
 #Tell git the location of the cookie
 git config --global http.cookiefile /tmp/ecpcookie.u`id -u`
@@ -376,17 +375,6 @@ cd lalsuite
 
 #Determine which version of the code you want to install
 echo
-echo
-#echo "--- select lalsuite branch or tag -------------------------------"
-echo
-#echo "Enter the name of the lalsuite branch or tag that you want to use."
-echo 
-#echo "A list of branches can be found at:"
-#echo "   https://versions.ligo.org/cgit/lalsuite/refs/heads"
-#echo "A list of tags can be found at:"
-#echo "   https://versions.ligo.org/cgit/lalsuite/refs/tags"
-echo
-#read -rp "Enter a valid tag or branch name (e.g. master or lalsuite_o1_branch): " lalbranch
 git checkout $lalbranch
 
 #Building and Installing into your Virtual Environment
@@ -428,20 +416,8 @@ echo
 
 while true ; do
 
-#  echo "Would you like to install a released version of PyCBC or a development copy?"
-#  echo "Please choose either"
-#  echo "  1. Release version"
-#  echo "  2. Development version"
-#  echo
-#  read -rp "Enter either 1 or 2: " dev_or_rel
-
   if [[ $dev_or_rel -eq 1 ]] ; then
     #Installing a released version of pyCBC
-    #Choose release version
-#    echo "Please enter the name of a valid release tag. These can be found at"
-#    echo "   https://github.com/ligo-cbc/pycbc/releases"
-#    read -rp "Enter the tag name (e.g. v1.1.5): " reltag
-
     #Install Version
     pip $cache install git+https://github.com/ligo-cbc/pycbc@${reltag}#egg=pycbc --process-dependency-links
 
@@ -451,46 +427,7 @@ while true ; do
   elif [[ $dev_or_rel -eq 2 ]] ; then
 
     #Fork pyCBC to your Github account
-#    echo To install a development version, you will need a GitHub account.
-#    echo If you do not have a github account you will need to set one up.
-    echo
-#    echo Once you have set up your GitHub account, follow the instruction at
-    echo
-#    echo     https://help.github.com/articles/fork-a-repo/
-    echo
-#    echo to fork the respository
-    echo
-#    echo     https://github.com/ligo-cbc/pycbc
-    echo
-#    echo into your own GitHub account. You will then need to enable ssh 
-#    echo keys on your GitHub account. You can follow these instructions:
-    echo
-#    echo     https://help.github.com/articles/generating-ssh-keys/
     echo 
-#    read -rsp $'Once you have completed these steps, hit [Enter] to continue...\n' -n1 key
-  
-    #Create an ssh agent to connect to GitHub
-#    echo "Do you already have an ssh agent running with the key connected to GitHub?"
-#    while true ; do
-#      read -p "Enter yes or no (if you are not sure, enter no): " ssh_key
-#      if [[ $ssh_key == "yes" ]] ; then
-#        created_socket=""
-#        echo "Using $SSH_AUTH_SOCK"
-#        break
-#      elif [[ $ssh_key == "no" ]] ; then
-#        created_socket="yes"
-#        echo "Creating ssh agent to connect to GitHub:"
-#        eval `ssh-agent`
-#        echo "Please enter your ssh key passphrase."
-#        ssh-add
-#        break
-#      else
-#        echo "ERROR: please enter yes or no."
-#      fi
-#    done
-  
-    #Input Username
-#    read -rp "GitHub Username: " github
   
     #Install PyCBC source code from GitHub URL
     pip $cache install -e git+git@github.com:${github}/pycbc.git#egg=pycbc --process-dependency-links
@@ -558,15 +495,6 @@ echo
 echo "--- setting up optimized libraries ------------------------------"
 echo
 echo
-#echo "To run MKL optimized code, you need to enter the path and architecture"
-#echo "for the Intel optimized toolkit on your cluster. For example:"
-#echo "on sugar, enter"
-#echo "     /opt/intel/bin/compilervars.sh intel64"
-#echo "on atlas, enter"
-#echo "     /opt/intel/2015/bin/compilervars.sh intel64"
-#echo "If you do not have these tools installed, just press return."
-#echo 
-#read -p "Enter path and architecture for Intel compilervars.sh or press return: " intel_path
 
 #Add script that sets up the MKL environment to virtualenv activate script
 if [[ ! -z "${intel_path}" ]] ; then 
