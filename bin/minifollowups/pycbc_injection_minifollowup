@@ -85,20 +85,28 @@ missed = f['missed/after_vetoes'][:]
 
 num_events = int(workflow.cp.get_opt_tags('workflow-injection_minifollowups', 'num-events', ''))
 
-eff_dist = {'H1': f['injections/eff_dist_h'][:][missed],
-         'L1': f['injections/eff_dist_l'][:][missed],
-         'V1': f['injections/eff_dist_v'][:][missed],
-        }
+try:
+    optimal_snr =[f['injections/optimal_snr_1'][:][missed],
+                  f['injections/optimal_snr_2'][:][missed]]
+    dec_snr = numpy.minimum(optimal_snr[0], optimal_snr[1])
+    sorting = dec_snr.argsort()
+    sorting = sorting[::-1]
+except:
+    # Fall back to effective distance if optimal SNR not available
+    eff_dist = {'H1': f['injections/eff_dist_h'][:][missed],
+               'L1': f['injections/eff_dist_l'][:][missed],
+               'V1': f['injections/eff_dist_v'][:][missed],
+               }
+    dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo], 
+                             eff_dist[single_triggers[1].ifo])
 
-dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo], 
-                         eff_dist[single_triggers[1].ifo])
+    mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(\
+                                              f['injections/mass1'][:][missed],
+                                              f['injections/mass2'][:][missed])
 
-mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(f['injections/mass1'][:][missed],
-                                                      f['injections/mass2'][:][missed])
+    dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 
-dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
-
-sorting = dec_chirp_dist.argsort()
+    sorting = dec_chirp_dist.argsort()
 
 if len(missed) < num_events:
     num_events = len(missed)
