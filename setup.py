@@ -256,8 +256,8 @@ def get_version_info():
             
     # If this is a release or another kind of source distribution of PyCBC
     except:
-        version = '1.2.2'
-        release = 'True'
+        version = '1.3.dev0'
+        release = 'False'
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
     
         with open('pycbc/version.py', 'w') as f:
