@@ -877,7 +877,10 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
                 sys.exit()
         else:
             logging.error("Trigger is not contained within any available "
-                          "coherent science segment. Exiting.")
+                          "coherent science segment. If you wish to enable "
+                          "single IFO running add the option "
+                          "'allow-single-ifo-search' to the [workflow] "
+                          "section of your configuration file. Exiting.")
             sys.exit()
 
     offsrclist = commonsegs[commonsegs.keys()[0]]
@@ -899,8 +902,10 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
             return get_triggered_single_ifo_segment(workflow, out_dir,
                                                     sciencesegs)
         else:
-            logging.error("Not enough data either side of trigger time. "
-                          "Exiting.")
+            logging.error("Not enough data either side of trigger time. If "
+                          "you wish to enable single IFO running add the "
+                          "option 'allow-single-ifo-search' to the [workflow] "
+                          "section of your configuration file. Exiting.")
             sys.exit()
 
     if abs(offsrc) < minduration + 2 * padding:
@@ -912,7 +917,10 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
                                                     sciencesegs)
         else:
             logging.error("Available network segment shorter than minimum "
-                          "allowed duration. Exiting.")
+                          "allowed duration. If you wish to enable single IFO "
+                          "running add the option 'allow-single-ifo-search' "
+                          "to the [workflow] section of your configuration "
+                          "file. Exiting.")
             sys.exit()
 
     # Will segment duration be the maximum desired length or not?
