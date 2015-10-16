@@ -91,7 +91,7 @@ class MatchedFilterControl(object):
     def __init__(self, low_frequency_cutoff, high_frequency_cutoff, snr_threshold, tlen,
                  delta_f, dtype, segment_list, template_output, use_cluster,
                  downsample_factor=1, upsample_threshold=1, upsample_method='pruned_fft',
-                 gpu_callback_method='none'):
+                 gpu_callback_method='none', cluster_function='symmetric'):
         """ Create a matched filter engine.
 
         Parameters
@@ -118,6 +118,11 @@ class MatchedFilterControl(object):
             The fraction of the snr_threshold to trigger on the subsampled filter.
         upsample_method : {pruned_fft, str}
             The method to upsample or interpolate the reduced rate filter.
+        cluster_function : {symmetric, str}, optional
+            Which method is used to cluster triggers over time. If 'findchirp', a
+            sliding forward window; if 'symmetric', each window's peak is compared
+            to the windows before and after it, and only kept as a trigger if larger
+            than both.
         """
         # Assuming analysis time is constant across templates and segments, also
         # delta_f is constant across segments.
@@ -129,19 +134,24 @@ class MatchedFilterControl(object):
         self.flow = low_frequency_cutoff
         self.fhigh = high_frequency_cutoff
         self.gpu_callback_method = gpu_callback_method
+        if cluster_function not in ['symmetric', 'findchirp']:
+            raise ValueError("MatchedFilter: 'cluster_function' must be either 'symmetric' or 'findchirp'")
+        self.cluster_function = cluster_function
 
         if downsample_factor == 1:
             self.snr_mem = zeros(self.tlen, dtype=self.dtype)
             self.corr_mem = zeros(self.tlen, dtype=self.dtype)
             self.segments = segment_list
 
-            if use_cluster:
-                self.matched_filter_and_cluster = self.full_matched_filter_and_cluster
+            if use_cluster and (cluster_function == 'symmetric'):
+                self.matched_filter_and_cluster = self.full_matched_filter_and_cluster_symm
                 # setup the threasholding/clustering operations for each segment
                 self.threshold_and_clusterers = []
                 for seg in self.segments:
                     thresh = events.ThresholdCluster(self.snr_mem[seg.analyze])
                     self.threshold_and_clusterers.append(thresh)
+            elif use_cluster and (cluster_function == 'findchirp'):
+                self.matched_filter_and_cluster = self.full_matched_filter_and_cluster_fc
             else:
                 self.matched_filter_and_cluster = self.full_matched_filter_thresh_only
                 
@@ -190,7 +200,7 @@ class MatchedFilterControl(object):
         else:
             raise ValueError("Invalid downsample factor")
 
-    def full_matched_filter_and_cluster(self, segnum, template_norm, window):
+    def full_matched_filter_and_cluster_symm(self, segnum, template_norm, window):
         """ Return the complex snr and normalization.
 
         Calculated the matched filter, threshold, and cluster.
@@ -221,7 +231,45 @@ class MatchedFilterControl(object):
         norm = (4.0 * self.delta_f) / sqrt(template_norm)
         self.correlators[segnum].correlate()
         self.ifft.execute()
-#        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
+        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
+
+        if len(idx) == 0:
+            return [], [], [], [], []
+
+        logging.info("%s points above threshold" % str(len(idx)))
+        return self.snr_mem, norm, self.corr_mem, idx, snrv
+
+    def full_matched_filter_and_cluster_fc(self, segnum, template_norm, window):
+        """ Return the complex snr and normalization.
+
+        Calculated the matched filter, threshold, and cluster.
+
+        Parameters
+        ----------
+        segnum : int
+            Index into the list of segments at MatchedFilterControl construction
+            against which to filter.
+        template_norm : float
+            The htilde, template normalization factor.
+        window : int
+            Size of the window over which to cluster triggers, in samples
+
+        Returns
+        -------
+        snr : TimeSeries
+            A time series containing the complex snr.
+        norm : float
+            The normalization of the complex snr.
+        corrrelation: FrequencySeries
+            A frequency series containing the correlation vector.
+        idx : Array
+            List of indices of the triggers.
+        snrv : Array
+            The snr values at the trigger locations.
+        """
+        norm = (4.0 * self.delta_f) / sqrt(template_norm)
+        self.correlators[segnum].correlate()
+        self.ifft.execute()
         idx, snrv = events.threshold(self.snr_mem[self.segments[segnum].analyze],
                                      self.snr_threshold / norm)
         idx, snrv = events.cluster_reduce(idx, snrv, window)
