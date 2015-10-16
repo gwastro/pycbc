@@ -218,7 +218,6 @@ with ctx:
      
         snrs.append(snr[stilde.analyze])
         chisqs.append(chisq[stilde.analyze])
-        print snr.start_time
         
     f['snr'] = numpy.concatenate([snr.numpy() for snr in snrs])
     f['snr'].attrs['start_time'] = float(snrs[0].start_time)

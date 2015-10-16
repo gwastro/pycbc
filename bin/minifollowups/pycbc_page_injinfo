@@ -40,18 +40,30 @@ n = args.injection_index
 headers = []
 data = []
 
-keys = ['end_time', 'dec chirp dist', 'eff_dist_h', 'eff_dist_l', 'mass1', 'mass2',
-        'mchirp', 'eta', 'ra', 'dec', 'inc', 'spin1x', 'spin1y',
-        'spin1z', 'spin2x', 'spin2y', 'spin2z']
+keys = ['end_time']
 
 m1, m2 = f['injections']['mass1'][args.injection_index], f['injections']['mass2'][args.injection_index]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
-dec_dist = max(f['injections']['eff_dist_h'][args.injection_index], f['injections']['eff_dist_l'][args.injection_index])
-dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
+if 'optimal_snr_1' in f['injections'].keys():
+    keys += ['optimal_snr_1', 'optimal_snr_2']
+else:
+    keys += ['dec chirp dist', 'eff_dist_h', 'eff_dist_l']
+    dec_dist = max(f['injections']['eff_dist_h'][args.injection_index], f['injections']['eff_dist_l'][args.injection_index])
+    dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
+
+keys += ['mass1', 'mass2',
+        'mchirp', 'eta', 'ra', 'dec', 'inc', 'spin1x', 'spin1y',
+        'spin1z', 'spin2x', 'spin2y', 'spin2z']
 
 for key in keys:
-    headers += [key]
+    if key == 'optimal_snr_1':
+        headers += ['optimal_snr_' + f.attrs['detector_1']]
+    elif key == 'optimal_snr_2':
+        headers += ['optimal_snr_' + f.attrs['detector_2']]
+    else:
+        headers += [key]
+
     if key in f['injections']:
         data += ["%.2f" % f['injections'][key][args.injection_index]]
     elif key == 'mchirp':
@@ -66,6 +78,7 @@ for key in keys:
         data += ["%.2f" % f['injections']['latitude'][args.injection_index]]
     elif key == 'dec chirp dist':
         data += ["%.2f" % dec_chirp_dist]
+
         
 table = numpy.array([data], dtype=str)
 html = str(pycbc.results.static_table(table, headers))
