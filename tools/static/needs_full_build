@@ -66,3 +66,7 @@ pycbc_insert_frame_hwinj
 pycbc_generate_hwinj_from_xml
 pycbc_plot_trigger_timeseries
 pycbc_single_template
+pycbc_sngl_minifollowup
+pycbc_page_injinfo
+pycbc_page_snglinfo
+pycbc_injection_minifollowup
