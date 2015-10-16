@@ -60,6 +60,11 @@ parser.add_argument("--taper-template", choices=taper_choices,
                     " end of the waveform before FFTing.")
 parser.add_argument("--cluster-method", choices=["template", "window"],
                     help="FIXME: ADD")
+parser.add_argument("--cluster-function", choices=["findchirp", "symmetric"],
+                    help="How to cluster together triggers within a window. "
+                    "'findchirp' uses a forward sliding window; 'symmetric' "
+                    "will compare each window to the one before and after, keeping "
+                    "only a local maximum.", default="findchirp")
 parser.add_argument("--cluster-window", type=float, default = -1,
                     help="Length of clustering window in seconds."
                     " Set to 0 to disable clustering.")
@@ -246,7 +251,8 @@ with ctx:
                                    downsample_factor=opt.downsample_factor,
                                    upsample_threshold=opt.upsample_threshold,
                                    upsample_method=opt.upsample_method,
-                                   gpu_callback_method=opt.gpu_callback_method)
+                                   gpu_callback_method=opt.gpu_callback_method,
+                                   cluster_function=opt.cluster_function)
 
     bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file,
                                           flen, delta_f, flow, complex64,
