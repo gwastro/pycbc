@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """ Calculate psd estimates for analysis segments
 """
-import logging, argparse, numpy, h5py, itertools, multiprocessing, time
+import os, logging, argparse, numpy, h5py, itertools, multiprocessing, time
 import pycbc, pycbc.psd, pycbc.strain, pycbc.events
 from pycbc.version import git_verbose_msg as version
 from pycbc.fft.fftw import set_measure_level
@@ -29,7 +29,7 @@ pycbc.init_logging(args.verbose)
 
 pycbc.psd.verify_psd_options(args, parser)
 pycbc.strain.StrainSegments.verify_segment_options(args, parser)
-
+        
 def grouper(n, iterable):
     args = [iter(iterable)] * n
     return list([e for e in t if e != None] for t in itertools.izip_longest(*args))
@@ -38,6 +38,8 @@ def get_psd((seg, i)):
     """ Get the PSDs for the given data chunck. This follows the same rules
     as pycbc_inspiral for determining where to calculate PSDs
     """
+    pycbc.multiprocess_cache_dir()
+    
     logging.info('%d: getting strain for %.1f-%.1f (%.1f s)', i, seg[0],
                  seg[1], abs(seg))
     args.gps_start_time = int(seg[0]) + args.pad_data
