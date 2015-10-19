@@ -18,6 +18,7 @@
 """
 import os, argparse, numpy, logging, h5py, copy
 import pycbc.workflow as wf
+from pycbc.types import MultiDetOptionAction
 from pycbc.results import layout
 from pycbc.detector import Detector
 import pycbc.workflow.minifollowups as mini
@@ -42,9 +43,9 @@ parser.add_argument('--injection-file',
                     help="HDF format injection results file")
 parser.add_argument('--injection-xml-file',
                     help="XML format injection file")
-parser.add_argument('--single-detector-triggers', nargs='+', 
+parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOptionAction,
                     help="HDF format merged single detector trigger files")
-parser.add_argument('--inspiral-segments', nargs='+',
+parser.add_argument('--inspiral-segments', nargs='+', action=MultiDetOptionAction,
                     help="xml segment files containing the inspiral analysis times")
 parser.add_argument('--inspiral-segment-name',
                     help="Name of inspiral segmentlist to read from segment files")
@@ -71,13 +72,13 @@ injection_file = to_file(args.injection_file)
 injection_xml_file = to_file(args.injection_xml_file)
 
 single_triggers = []
-for name in args.single_detector_triggers:
-    ifo, fname = name.split(':')
+for ifo in args.single_detector_triggers:
+    fname = args.single_detector_triggers[ifo]
     single_triggers.append(to_file(fname, ifo=ifo))
 
 insp_segs = {}
-for name in args.inspiral_segments:
-    ifo, fname = name.split(':')
+for ifo in args.inspiral_segments:
+    fname = args.inspiral_segments[ifo]
     insp_segs[ifo] = to_file(fname, ifo=ifo)
 
 f = h5py.File(args.injection_file, 'r')
