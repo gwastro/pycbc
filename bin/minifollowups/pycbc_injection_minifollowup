@@ -18,6 +18,7 @@
 """
 import os, argparse, numpy, logging, h5py, copy
 import pycbc.workflow as wf
+from pycbc.types import MultiDetOptionAction
 from pycbc.results import layout
 from pycbc.detector import Detector
 import pycbc.workflow.minifollowups as mini
@@ -42,9 +43,9 @@ parser.add_argument('--injection-file',
                     help="HDF format injection results file")
 parser.add_argument('--injection-xml-file',
                     help="XML format injection file")
-parser.add_argument('--single-detector-triggers', nargs='+', 
+parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOptionAction,
                     help="HDF format merged single detector trigger files")
-parser.add_argument('--inspiral-segments', nargs='+',
+parser.add_argument('--inspiral-segments', nargs='+', action=MultiDetOptionAction,
                     help="xml segment files containing the inspiral analysis times")
 parser.add_argument('--inspiral-segment-name',
                     help="Name of inspiral segmentlist to read from segment files")
@@ -71,13 +72,13 @@ injection_file = to_file(args.injection_file)
 injection_xml_file = to_file(args.injection_xml_file)
 
 single_triggers = []
-for name in args.single_detector_triggers:
-    ifo, fname = name.split(':')
+for ifo in args.single_detector_triggers:
+    fname = args.single_detector_triggers[ifo]
     single_triggers.append(to_file(fname, ifo=ifo))
 
 insp_segs = {}
-for name in args.inspiral_segments:
-    ifo, fname = name.split(':')
+for ifo in args.inspiral_segments:
+    fname = args.inspiral_segments[ifo]
     insp_segs[ifo] = to_file(fname, ifo=ifo)
 
 f = h5py.File(args.injection_file, 'r')
@@ -142,22 +143,24 @@ for num_event in range(num_events):
                                 time - 10, time + 10, args.output_dir,
                                 tags=args.tags + [str(num_event), single.ifo])                 
 
-    files += mini.make_single_template_plots_new(workflow, insp_segs,
+    files += mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_segment_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
                             tags=args.tags+['INJ_PARAMS',str(num_event)],
                             params_str='injection parameters.')
 
-    for curr_ifo, single_fname in \
-                         [l.split(':') for l in args.single_detector_triggers]:
+    for curr_ifo in args.single_detector_triggers:
+        single_fname = args.single_detector_triggers[curr_ifo]
         hd_sngl = SingleDetTriggers(single_fname, args.bank_file, None, None,
                                     None, curr_ifo)
         end_times = hd_sngl.end_time
         # Use SNR here or NewSNR??
         snr = hd_sngl.snr
         lgc_mask = abs(end_times - inj_params['end_time']) < args.inj_window
+        
         if len(snr[lgc_mask]) == 0:
             continue
+
         snr_idx = hd_sngl.mask[lgc_mask][snr[lgc_mask].argmax()]
         hd_sngl.mask = hd_sngl.mask[snr_idx]
         curr_params = copy.deepcopy(inj_params)
@@ -170,8 +173,8 @@ for num_event in range(num_events):
         files += mini.make_single_template_plots_new(workflow, insp_segs,
                                 args.inspiral_segment_name, curr_params,
                                 args.output_dir, inj_file=injection_xml_file,
-                                tags=args.tags+curr_tags,
-                                params_str='loudest template in %s' %curr_ifo )
+                                tags=args.tags + curr_tags,
+                                params_str='loudest template in %s' % curr_ifo )
 
     layouts += list(layout.grouper(files, 2))
     num_event += 1

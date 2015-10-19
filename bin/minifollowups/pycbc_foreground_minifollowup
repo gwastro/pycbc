@@ -18,6 +18,7 @@
 """
 import os, argparse, logging, h5py, pycbc.workflow as wf
 from pycbc.results import layout
+from pycbc.types import MultiDetOptionAction
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
@@ -37,9 +38,9 @@ parser.add_argument('--bank-file',
                     help="HDF format template bank file")
 parser.add_argument('--statmap-file',
                     help="HDF format clustered coincident trigger result file")
-parser.add_argument('--single-detector-triggers', nargs='+', 
+parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOptionAction,
                     help="HDF format merged single detector trigger files")
-parser.add_argument('--inspiral-segments', nargs='+',
+parser.add_argument('--inspiral-segments', nargs='+', action=MultiDetOptionAction,
                     help="xml segment files containing the inspiral analysis times")
 parser.add_argument('--inspiral-segment-name',
                     help="Name of inspiral segmentlist to read from segment files")
@@ -63,13 +64,13 @@ tmpltbank_file = to_file(args.bank_file)
 coinc_file = to_file(args.statmap_file)
 
 single_triggers = []
-for name in args.single_detector_triggers:
-    ifo, fname = name.split(':')
+for ifo in args.single_detector_triggers:
+    fname = args.single_detector_triggers[ifo]
     single_triggers.append(to_file(fname, ifo=ifo))
     
 insp_segs = {}
-for name in args.inspiral_segments:
-    ifo, fname = name.split(':')
+for ifo in args.inspiral_segments:
+    fname = args.inspiral_segments[ifo]
     insp_segs[ifo] = to_file(fname, ifo=ifo)
 
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
@@ -90,6 +91,8 @@ tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][:][sorting][0:num_eve
          f.attrs['detector_2']: f['foreground/trigger_id2'][:][sorting][0:num_events],
         }
 
+bank_data = h5py.File(args.bank_file, 'r')
+
 # loop over number of loudest events to be followed up
 for num_event in range(num_events):
     files = wf.FileList([])
@@ -100,15 +103,26 @@ for num_event in range(num_events):
     ifo_tids = '%s:%s %s:%s' % (tids.keys()[0], tids[tids.keys()[0]][num_event],
                                  tids.keys()[1], tids[tids.keys()[1]][num_event])
     
+    bank_id = f['foreground/template_id'][:][sorting][num_event]
+    
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
                               coinc_file, num_event, 
                               args.output_dir, tags=args.tags + [str(num_event)]),)        
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir, special_tids=ifo_tids,
                               tags=args.tags + [str(num_event)])
+    
+    params = {}                          
+    for ifo in times:
+        params['%s_end_time' % ifo] = times[ifo][num_event]
+
+    params['mass1'] = bank_data['mass1'][bank_id]
+    params['mass2'] = bank_data['mass2'][bank_id]
+    params['spin1z'] = bank_data['spin1z'][bank_id]
+    params['spin2z'] = bank_data['spin2z'][bank_id]
     files += mini.make_single_template_plots(workflow, insp_segs,
-                              args.inspiral_segment_name, coinc_file, tmpltbank_file,
-                              num_event, args.output_dir, tags=args.tags + [str(num_event)])
+                                    args.inspiral_segment_name, params,
+                                    args.output_dir, tags=args.tags + [str(num_event)])
     
     for single in single_triggers:
         time = times[single.ifo][num_event]

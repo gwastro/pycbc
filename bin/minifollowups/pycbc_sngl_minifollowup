@@ -120,7 +120,7 @@ for num_event in range(num_events):
     curr_params['spin1z'] = trigs.spin1z[num_event]
     curr_params['spin2z'] = trigs.spin2z[num_event]
     curr_params[args.instrument + '_end_time'] = time
-    files += mini.make_single_template_plots_new(workflow, insp_segs,
+    files += mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_segment_name, curr_params,
                             args.output_dir, 
                             tags=args.tags+[str(num_event)])

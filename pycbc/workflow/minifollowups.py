@@ -96,7 +96,6 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     # execute this is a sub-workflow
     fil = node.output_files[0]
     
-    ## FIXME not clear why I have to set the id here, pegasus should do this!
     job = dax.DAX(fil)
     job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
     Workflow.set_job_properties(job, map_loc)
@@ -183,7 +182,6 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     # execute this is a sub-workflow
     fil = node.output_files[0]
 
-    ## FIXME not clear why I have to set the id here, pegasus should do this!
     job = dax.DAX(fil)
     job.addArguments('--basename %s' \
                      % os.path.splitext(os.path.basename(name))[0])
@@ -265,7 +263,6 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     # execute this is a sub-workflow
     fil = node.output_files[0]
     
-    ## FIXME not clear why I have to set the id here, pegasus should do this!
     job = dax.DAX(fil)
     job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
     Workflow.set_job_properties(job, map_loc)
@@ -274,7 +271,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     workflow._adag.addDependency(dep)
     logging.info('Leaving injection minifollowups module')
 
-def make_single_template_plots_new(workflow, segs, seg_name, params,
+def make_single_template_plots(workflow, segs, seg_name, params,
                                    out_dir, inj_file=None, exclude=None,
                                    require=None, tags=None, params_str=None):
     tags = [] if tags is None else tags
@@ -325,37 +322,6 @@ def make_single_template_plots_new(workflow, segs, seg_name, params,
             workflow += node
             files += node.output_files
     return files
-
-def make_single_template_plots(workflow, segs, seg_name, coinc, bank, num, out_dir, 
-                               exclude=None, require=None, tags=None):
-    tags = [] if tags is None else tags
-    makedir(out_dir)
-    name = 'single_template_plot'
-    secs = requirestr(workflow.cp.get_subsections(name), require)  
-    secs = excludestr(secs, exclude)
-    files = FileList([])
-    for tag in secs:
-        for ifo in workflow.ifos:
-            # Reanalyze the time around the trigger in each detector
-            node = PlotExecutable(workflow.cp, 'single_template', ifos=[ifo],
-                                 out_dir=out_dir, tags=[tag] + tags).create_node()
-            node.add_input_opt('--statmap-file', coinc)
-            node.add_opt('--n-loudest', str(num))
-            node.add_input_opt('--inspiral-segments', segs[ifo])
-            node.add_opt('--segment-name', seg_name)
-            node.add_input_opt('--bank-file', bank)
-            node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
-            data = node.output_files[0]
-            workflow += node
-            
-            # Make the plot for this trigger and detector
-            node = PlotExecutable(workflow.cp, name, ifos=[ifo],
-                                  out_dir=out_dir, tags=[tag] + tags).create_node()
-            node.add_input_opt('--single-template-file', data)
-            node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
-            workflow += node
-            files += node.output_files
-    return files      
 
 def make_inj_info(workflow, injection_file, injection_index, num, out_dir,
                   tags=None):
