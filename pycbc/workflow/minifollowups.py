@@ -271,7 +271,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     workflow._adag.addDependency(dep)
     logging.info('Leaving injection minifollowups module')
 
-def make_single_template_plots_new(workflow, segs, seg_name, params,
+def make_single_template_plots(workflow, segs, seg_name, params,
                                    out_dir, inj_file=None, exclude=None,
                                    require=None, tags=None, params_str=None):
     tags = [] if tags is None else tags

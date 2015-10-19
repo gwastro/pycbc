@@ -143,7 +143,7 @@ for num_event in range(num_events):
                                 time - 10, time + 10, args.output_dir,
                                 tags=args.tags + [str(num_event), single.ifo])                 
 
-    files += mini.make_single_template_plots_new(workflow, insp_segs,
+    files += mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_segment_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
                             tags=args.tags+['INJ_PARAMS',str(num_event)],

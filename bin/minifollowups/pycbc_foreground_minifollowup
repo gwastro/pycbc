@@ -120,7 +120,7 @@ for num_event in range(num_events):
     params['mass2'] = bank_data['mass2'][bank_id]
     params['spin1z'] = bank_data['spin1z'][bank_id]
     params['spin2z'] = bank_data['spin2z'][bank_id]
-    files += mini.make_single_template_plots_new(workflow, insp_segs,
+    files += mini.make_single_template_plots(workflow, insp_segs,
                                     args.inspiral_segment_name, params,
                                     args.output_dir, tags=args.tags + [str(num_event)])
     
