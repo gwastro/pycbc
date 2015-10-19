@@ -48,7 +48,10 @@ class PlotExecutable(Executable):
     
     # plots and final results should get the highest priority
     # on the job queue
-    self.set_priority(1000)
+    def create_node(self):
+        node = Executable.create_node(self)
+        node.set_priority(1000)
+        return node
 
 def make_template_plot(workflow, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
