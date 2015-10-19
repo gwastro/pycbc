@@ -126,8 +126,11 @@ if mask.any():
     sorted_rchisq = rchisq[sorter]
     sorted_template_ids = template_ids[sorter]
 
-    max_rank = max([sorted_rank[i] for i in xrange(len(sorted_rank)) \
-                    if sorted_end_time[i] <= opts.gps_end_time])
+    try:
+        max_rank = max([sorted_rank[i] for i in xrange(len(sorted_rank)) \
+                        if sorted_end_time[i] <= opts.gps_end_time])
+    except ValueError:
+        max_rank = None
 
     logging.info('Loading bank')
     bank = h5py.File(opts.bank_file, 'r')
@@ -141,7 +144,7 @@ if mask.any():
                                     sorted_template_ids, f_highs):
         track_t, track_f = pycbc.pnutils.get_inspiral_tf(
                 tc - center_time, mass1s[tid], mass2s[tid], opts.f_low, f_high)
-        if rho == max_rank:
+        if max_rank and rho == max_rank:
             ax.plot(track_t, track_f, '-', color='#ff0000', zorder=3, lw=2)
         else:
             ax.plot(track_t, track_f, '-', color='#0000ff', zorder=2, alpha=0.02)
@@ -159,8 +162,12 @@ if mask.any():
     else:
         interesting_trig_rank = None
 
-    title = '%s - loudest %d triggers by %s - max %s = %.2f (red curve)' \
-        % (opts.channel_name, opts.num_loudest, opts.rank, opts.rank, max_rank)
+    if max_rank:
+        title = '%s - loudest %d triggers by %s - max %s = %.2f (red curve)' \
+            % (opts.channel_name, opts.num_loudest, opts.rank, opts.rank, max_rank)
+    else:
+        title = '%s - loudest %d triggers by %s' \
+            % (opts.channel_name, opts.num_loudest, opts.rank)
     if interesting_trig_rank is not None:
         title += ' - selected %s = %.2f (green curve)' \
             % (opts.rank, interesting_trig_rank)
