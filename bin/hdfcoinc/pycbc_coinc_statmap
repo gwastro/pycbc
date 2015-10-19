@@ -61,7 +61,7 @@ logging.info("Clustering coinc triggers (exclusive of zerolag)")
 e = e.cluster(args.cluster_window)
 
 logging.info("Dumping foreground triggers")
-f = h5py.fw(args.output_file)
+f = fw(args.output_file)
 f.attrs['detector_1'] = d.attrs['detector_1']
 f.attrs['detector_2'] = d.attrs['detector_2']
 f.attrs['timeslide_interval'] = d.attrs['timeslide_interval']
