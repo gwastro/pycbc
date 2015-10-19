@@ -111,15 +111,18 @@ for num_event in range(num_events):
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir, special_tids=ifo_tids,
                               tags=args.tags + [str(num_event)])
-                              
+    
+    params = {}                          
+    for ifo in times:
+        params['%s_end_time' % ifo] = times[ifo][num_event]
+
     params['mass1'] = bank_data['mass1'][bank_id]
     params['mass2'] = bank_data['mass2'][bank_id]
     params['spin1z'] = bank_data['spin1z'][bank_id]
     params['spin2z'] = bank_data['spin2z'][bank_id]
     files += mini.make_single_template_plots_new(workflow, insp_segs,
-                                    args.inspiral_segment_name, curr_params,
+                                    args.inspiral_segment_name, params,
                                     args.output_dir, tags=args.tags + [str(num_event)])
-                                 ) 
     
     for single in single_triggers:
         time = times[single.ifo][num_event]

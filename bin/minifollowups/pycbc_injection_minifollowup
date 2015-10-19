@@ -149,8 +149,8 @@ for num_event in range(num_events):
                             tags=args.tags+['INJ_PARAMS',str(num_event)],
                             params_str='injection parameters.')
 
-    for curr_ifo, single_fname in \
-                         [l.split(':') for l in args.single_detector_triggers]:
+    for curr_ifo in args.single_detector_triggers:
+        single_fname = args.single_detector_triggers[curr_ifo]
         hd_sngl = SingleDetTriggers(single_fname, args.bank_file, None, None,
                                     None, curr_ifo)
         end_times = hd_sngl.end_time
