@@ -85,8 +85,8 @@ table = numpy.array([data], dtype=str)
 html = str(pycbc.results.static_table(table, headers))
 
 tag = ''
-if args.n_nearest:
-    tag = ':%s' % args.n_nearest
+if args.n_nearest is not None:
+    tag = ':%s' % (args.n_nearest + 1)
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         cmd = ' '.join(sys.argv),
