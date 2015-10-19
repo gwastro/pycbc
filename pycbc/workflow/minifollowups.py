@@ -323,37 +323,6 @@ def make_single_template_plots_new(workflow, segs, seg_name, params,
             files += node.output_files
     return files
 
-def make_single_template_plots(workflow, segs, seg_name, coinc, bank, num, out_dir, 
-                               exclude=None, require=None, tags=None):
-    tags = [] if tags is None else tags
-    makedir(out_dir)
-    name = 'single_template_plot'
-    secs = requirestr(workflow.cp.get_subsections(name), require)  
-    secs = excludestr(secs, exclude)
-    files = FileList([])
-    for tag in secs:
-        for ifo in workflow.ifos:
-            # Reanalyze the time around the trigger in each detector
-            node = PlotExecutable(workflow.cp, 'single_template', ifos=[ifo],
-                                 out_dir=out_dir, tags=[tag] + tags).create_node()
-            node.add_input_opt('--statmap-file', coinc)
-            node.add_opt('--n-loudest', str(num))
-            node.add_input_opt('--inspiral-segments', segs[ifo])
-            node.add_opt('--segment-name', seg_name)
-            node.add_input_opt('--bank-file', bank)
-            node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
-            data = node.output_files[0]
-            workflow += node
-            
-            # Make the plot for this trigger and detector
-            node = PlotExecutable(workflow.cp, name, ifos=[ifo],
-                                  out_dir=out_dir, tags=[tag] + tags).create_node()
-            node.add_input_opt('--single-template-file', data)
-            node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
-            workflow += node
-            files += node.output_files
-    return files      
-
 def make_inj_info(workflow, injection_file, injection_index, num, out_dir,
                   tags=None):
     tags = [] if tags is None else tags

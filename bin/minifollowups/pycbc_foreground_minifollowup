@@ -91,6 +91,8 @@ tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][:][sorting][0:num_eve
          f.attrs['detector_2']: f['foreground/trigger_id2'][:][sorting][0:num_events],
         }
 
+bank_data = h5py.File(args.bank_file, 'r')
+
 # loop over number of loudest events to be followed up
 for num_event in range(num_events):
     files = wf.FileList([])
@@ -101,15 +103,23 @@ for num_event in range(num_events):
     ifo_tids = '%s:%s %s:%s' % (tids.keys()[0], tids[tids.keys()[0]][num_event],
                                  tids.keys()[1], tids[tids.keys()[1]][num_event])
     
+    bank_id = f['foreground/template_id'][:][sorting][num_event]
+    
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
                               coinc_file, num_event, 
                               args.output_dir, tags=args.tags + [str(num_event)]),)        
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir, special_tids=ifo_tids,
                               tags=args.tags + [str(num_event)])
-    files += mini.make_single_template_plots(workflow, insp_segs,
-                              args.inspiral_segment_name, coinc_file, tmpltbank_file,
-                              num_event, args.output_dir, tags=args.tags + [str(num_event)])
+                              
+    params['mass1'] = bank_data['mass1'][bank_id]
+    params['mass2'] = bank_data['mass2'][bank_id]
+    params['spin1z'] = bank_data['spin1z'][bank_id]
+    params['spin2z'] = bank_data['spin2z'][bank_id]
+    files += mini.make_single_template_plots_new(workflow, insp_segs,
+                                    args.inspiral_segment_name, curr_params,
+                                    args.output_dir, tags=args.tags + [str(num_event)])
+                                 ) 
     
     for single in single_triggers:
         time = times[single.ifo][num_event]

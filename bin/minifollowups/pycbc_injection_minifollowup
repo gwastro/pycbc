@@ -133,7 +133,7 @@ for num_event in range(num_events):
         inj_params[ifo+'_end_time'] = ifo_time
           
     layouts += [(mini.make_inj_info(workflow, injection_file, injection_index, num_event,
-                               args.output_dir, tags=args.tags + [str(num_event + 1)])[0],)]   
+                               args.output_dir, tags=args.tags + [str(num_event)])[0],)]   
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir,
                               tags=args.tags + [str(num_event)])
