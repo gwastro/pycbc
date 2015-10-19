@@ -1412,6 +1412,11 @@ def resolve_url(url, directory=None):
     """
     if directory is None:
         directory = os.getcwd()
+        
+    # If the "url" is really a path, allow this to work as well and simply
+    # return
+    if os.path.isfile(url):
+        return os.path.abspath(url)
 
     if url.startswith('http://') or url.startswith('https://') or \
        url.startswith('file://'):

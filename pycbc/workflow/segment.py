@@ -34,6 +34,7 @@ import lal
 from glue import segments, segmentsUtils
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.workflow.core import Executable, FileList, Node, OutSegFile, make_analysis_dir, make_external_call, File
+from pycbc.workflow.core import resolve_url
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigoLWCombineSegsExecutable
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
@@ -415,7 +416,7 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
         tagList = ['SCIENCE']
 
     if file_needs_generating(sciXmlFilePath):
-        segFindCall = [ cp.get("executables","segment_query"),
+        segFindCall = [ resolve_url(cp.get("executables","segment_query")),
             "--query-segments",
             "--segment-url", sciSegUrl,
             "--gps-start-time", str(start_time),
