@@ -29,7 +29,7 @@ parser.add_argument('--single-trigger-file', required=True,
 parser.add_argument('--newsnr-contours', nargs='*', default=[],
                     help="List of newsnr values to draw contours at.")
 parser.add_argument('--background-front', action='store_true', default=False)
-parser.add_argument('--colorbar-choice', choices = ('spin', 'mchirp', 'eta', 'effective_distance', 'total_mass'),
+parser.add_argument('--colorbar-choice', choices = ('spin', 'mchirp', 'eta', 'effective_distance', 'total_mass', 'optimal_snr'),
                     default='effective_distance',
                     help='Parameter to use for the colorbar. Default=effective_distance')
 parser.add_argument('--chisq-choice', choices=chisq_choices,
@@ -79,7 +79,12 @@ coloring = {'effective_distance': (eff_dist, "Effective Distance (Mpc)", colors.
             'spin': (weighted_spin, "Weighted Aligned Spin", None),
             'total_mass': (m1 + m2, "Total Mass", colors.LogNorm())
              }
-             
+
+if 'optimal_snr_1' in f['injections']:
+    opt_snr_map = {f.attrs['detector_1']: 'injections/optimal_snr_1',
+                   f.attrs['detector_2']: 'injections/optimal_snr_2'}
+    opt_snr = f[opt_snr_map[ifo]][:][inj_idx]
+    coloring['optimal_snr'] = (opt_snr, 'Optimal SNR', colors.LogNorm())
 
 f = h5py.File(args.single_injection_file, 'r')[ifo]
 tid = inj_tids[ifo][:]
@@ -136,8 +141,8 @@ title = '%s %s chisq vs SNR. Background with injections %s' \
            'behind' if args.background_front else 'ontop')
 caption = """Distribution of SNR and %s chi-squared veto for single detector
 triggers. Black points are background triggers. Triangles are injection
-triggers colored by the effective distance of the injection. Dashed lines show
-contours of constant NewSNR.""" % args.chisq_choice
+triggers colored by the %s of the injection. Dashed lines show
+contours of constant NewSNR.""" % (args.chisq_choice, coloring[args.colorbar_choice][1])
 pycbc.results.save_fig_with_metadata(fig, args.output_file, title=title, 
                                      caption=caption, cmd=' '.join(sys.argv),
                                      fig_kwds={'dpi':300})

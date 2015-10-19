@@ -23,18 +23,69 @@ store the result in selectable columns of the same table.
 
 import logging
 import argparse
+import numpy as np
+import h5py
 import pycbc
 import pycbc.inject
 import pycbc.psd
 import glue.ligolw.utils
 from pycbc.filter import sigma, make_frequency_series
-from pycbc.types import TimeSeries, zeros, float32, MultiDetOptionAction
+from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, \
+                        MultiDetOptionAction, load_frequencyseries
 from glue.ligolw import lsctables
 
 
+class TimeIndependentPSD(object):
+    def __init__(self, psd_series):
+        self.psd_series = psd_series
+
+    def __call__(self, time=None):
+        return self.psd_series
+
+class TimeVaryingPSD(object):
+    def __init__(self, file_name, length=None, delta_f=None, f_low=None):
+        f = h5py.File(file_name, 'r')
+        detector = f.keys()[0]
+        self.start_times = f[detector + '/start_time'][:]
+        self.end_times = f[detector + '/end_time'][:]
+        file_f_low = f.attrs['low_frequency_cutoff']
+        f.close()
+        self.psds = []
+        for i in xrange(len(self.start_times)):
+            group = detector + '/psds/' + str(i)
+            psd = load_frequencyseries(file_name, group=group)
+            if delta_f is not None and psd.delta_f != delta_f:
+                psd = pycbc.psd.interpolate(psd, delta_f)
+            if length is not None and length != len(psd):
+                psd2 = FrequencySeries(zeros(length, dtype=psd.dtype),
+                                       delta_f=psd.delta_f)
+                if length > len(psd):
+                    psd2[:] = np.inf
+                    psd2[0:len(psd)] = psd
+                else:
+                    psd2[:] = psd[0:length]
+                psd = psd2
+            if f_low is not None and f_low < file_f_low:
+                # avoid using the PSD below the f_low given in the file
+                k = int(file_f_low / psd.delta_f)
+                psd[0:k] = np.inf
+            self.psds.append(psd)
+        self.detector = detector
+
+    def __call__(self, time=None):
+        mask = np.logical_and(self.start_times <= time,
+                              self.end_times > time)
+        if np.count_nonzero(mask) == 1:
+            return self.psds[np.nonzero(mask)[0]]
+        else:
+            return None
+
+
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('-i', dest='inj_xml', required=True, help='Input LIGOLW file defining injections')
-parser.add_argument('-o', dest='out_file', required=True, help='Output LIGOLW file')
+parser.add_argument('--input-file', '-i', dest='inj_xml', required=True,
+                    help='Input LIGOLW file defining injections')
+parser.add_argument('--output-file', '-o', dest='out_file', required=True,
+                    help='Output LIGOLW file')
 parser.add_argument('--f-low', type=float, default=30.,
                     help='Start frequency of matched-filter integration in Hz (default %(default)s)')
 parser.add_argument('--seg-length', type=float, default=256,
@@ -44,12 +95,21 @@ parser.add_argument('--sample-rate', type=float, default=16384,
 parser.add_argument('--snr-columns', nargs='+', action=MultiDetOptionAction,
                     metavar='DETECTOR:COLUMN', required=True,
                     help='Defines in which column of the sim_inspiral table' \
-                    ' the optimal SNR for each detector should be stored.')
-pycbc.psd.insert_psd_option_group_multi_ifo(parser)
+                    ' the optimal SNR for each detector should be stored.' \
+                    ' COLUMN should be an existing sim_inspiral column with ' \
+                    ' no useful data in it, good candidates are usually' \
+                    ' alpha1, alpha2 etc.')
+psd_group = pycbc.psd.insert_psd_option_group_multi_ifo(parser)
+psd_group.add_argument('--time-varying-psds', nargs='*', metavar='FILE',
+                       help='Instead of time-independent PSDs, use time-varying '
+                       'PSDs from the given HDF5 files and pick the appropriate '
+                       'PSD for each injection')
 opts = parser.parse_args()
 
 detectors = opts.snr_columns.keys()
-pycbc.psd.verify_psd_options_multi_ifo(opts, parser, detectors)
+
+if not opts.time_varying_psds:
+    pycbc.psd.verify_psd_options_multi_ifo(opts, parser, detectors)
 
 log_fmt = '%(asctime)s %(message)s'
 log_date_fmt = '%Y-%m-%d %H:%M:%S'
@@ -63,22 +123,32 @@ tlen = int(seg_len * sample_rate)
 flen = tlen / 2 + 1
 f_low = opts.f_low
 
-logging.info("Loading PSD")
-psd = pycbc.psd.from_cli_multi_ifos(
-    opts,
-    length_dict=dict((det, flen) for det in detectors),
-    delta_f_dict=dict((det, delta_f) for det in detectors),
-    low_frequency_cutoff_dict=dict((det, f_low) for det in detectors),
-    ifos=detectors,
-    strain_dict=dict((det, None) for det in detectors),
-    dyn_range_factor=pycbc.DYN_RANGE_FAC)
-for det in detectors:
-    psd[det] = psd[det].astype(float32)
+logging.info("Loading PSDs")
+if opts.time_varying_psds:
+    psds = {}
+    for tvpsd_file in opts.time_varying_psds:
+        tvpsd = TimeVaryingPSD(tvpsd_file, flen, delta_f, f_low)
+        psds[tvpsd.detector] = tvpsd
+    if set(detectors) != set(psds.keys()):
+        parser.error('Inconsistent detector list in time-varying PSD ' \
+                     'specification (%s vs %s)' % (detectors, psds.keys()))
+else:
+    psds = pycbc.psd.from_cli_multi_ifos(
+        opts,
+        length_dict=dict((det, flen) for det in detectors),
+        delta_f_dict=dict((det, delta_f) for det in detectors),
+        low_frequency_cutoff_dict=dict((det, f_low) for det in detectors),
+        ifos=detectors,
+        strain_dict=dict((det, None) for det in detectors),
+        dyn_range_factor=pycbc.DYN_RANGE_FAC)
+    for det in detectors:
+        psds[det] = TimeIndependentPSD(psds[det].astype(float32))
 
 def get_injection(injections, det, injection_time, simulation_id):
     """ Do an injection from the injection XML file, specified by
     IFO and end time"""
-    start_time = int(injection_time - seg_len/2.)
+    # leave 4 s of padding at the end for possible ringdown
+    start_time = int(injection_time + 4. - seg_len)
     strain = TimeSeries(zeros(tlen, dtype=float32), delta_t=delta_t,
                         epoch=start_time)
     injections.apply(strain, det, distance_scale=1./pycbc.DYN_RANGE_FAC,
@@ -93,8 +163,12 @@ out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
 
 for i, inj in enumerate(injections.table):
     logging.info('%d/%d', i, len(injections.table))
-    injection_time = inj.geocent_end_time
     for det, column in opts.snr_columns.items():
+        injection_time = inj.get_end(det[0])
+        psd = psds[det](injection_time)
+        if psd is None:
+            logging.warn('%s: no PSD found, skipping', inj.simulation_id)
+            continue
         try:
             wave = get_injection(injections, det, injection_time,
                                  simulation_id=inj.simulation_id)
@@ -102,7 +176,7 @@ for i, inj in enumerate(injections.table):
             logging.warn('%s: waveform generation failed, skipping (%s)',
                          inj.simulation_id, e)
             continue
-        sval = sigma(wave, psd=psd[det], low_frequency_cutoff=f_low)
+        sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
         setattr(inj, column, sval)
     out_sim_inspiral.append(inj)
 

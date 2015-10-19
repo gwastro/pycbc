@@ -439,6 +439,17 @@ class EventManager(object):
         else:
             f['search/end_time'] = numpy.array([self.opt.gps_end_time - self.opt.segment_end_pad])
 
+        if 'gating_info' in self.global_params:
+            gating_info = self.global_params['gating_info']
+            for gate_type in ['file', 'auto']:
+                if gate_type in gating_info:
+                    f['gating/' + gate_type + '/time'] = \
+                            numpy.array([float(g[0]) for g in gating_info[gate_type]])
+                    f['gating/' + gate_type + '/width'] = \
+                            numpy.array([g[1] for g in gating_info[gate_type]])
+                    f['gating/' + gate_type + '/pad'] = \
+                            numpy.array([g[2] for g in gating_info[gate_type]])
+
     def write_to_xml(self, outname):
         """ Write the found events to a sngl inspiral table
         """

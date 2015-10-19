@@ -2,9 +2,12 @@
 """ Make a table of found injection information
 """
 import argparse, h5py, numpy, pycbc.results, pycbc.detector, sys
+from pycbc.types import MultiDetOptionAction
+import pycbc.pnutils, pycbc.events
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--injection-file', help='HDF File containing the matched injections')
+parser.add_argument('--single-trigger-files', nargs='*', help="HDF format single detector trigger files", action=MultiDetOptionAction)
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--show-missed', action='store_true')
 parser.add_argument('--output-file')
@@ -24,28 +27,48 @@ else:
     tdiff = (found['time1'][:] - found['time2'][:]) * 1000
     tdiff_str = '%s - %s time (ms)' % (f.attrs['detector_1'], f.attrs['detector_2'])
     
-    found_cols = [tdiff, found['stat'], found['ifar']]
-    found_names = [tdiff_str, 'Ranking Stat.', 'IFAR (years)']
-    found_formats =  ['##.##', '##.##', '##']
+    found_cols = [tdiff, found['stat'], found['ifar'], found['ifar_exc']]
+    found_names = [tdiff_str, 'Ranking Stat.', 'Inc. IFAR (yrs)', 'Exc. IFAR']
+    found_formats =  ['##.##', '##.##', '##', '##']
 
-columns = [inj['end_time'][:][idx], inj['mass1'][:][idx], inj['mass2'][:][idx],
+    ids = {f.attrs['detector_1']: found['trigger_id1'],
+           f.attrs['detector_2']: found['trigger_id2'],}
+
+    if args.single_trigger_files:
+        for ifo in args.single_trigger_files:
+            f = h5py.File(args.single_trigger_files[ifo], 'r')[ifo]
+            i = ids[ifo]
+            snr = f['snr'][:][i]
+            chisq = f['chisq'][:][i] / (2 * f['chisq_dof'][:][i] - 2)
+            newsnr = pycbc.events.newsnr(snr, chisq)
+            
+            found_names += ["%s SNR" % ifo, "CHISQ", "NewSNR"]
+            found_cols += [snr, chisq, newsnr]
+            found_formats += ['##.##', '##.##', '##.##']
+          
+dec_dist = numpy.maximum(inj['eff_dist_h'][:][idx], inj['eff_dist_l'][:][idx])
+m1, m2 = inj['mass1'][:][idx], inj['mass2'][:][idx]
+mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
+
+columns = [dec_chirp_dist, inj['end_time'][:][idx], m1, m2, mchirp, eta,
            inj['spin1x'][:][idx], inj['spin1y'][:][idx], inj['spin1z'][:][idx],
            inj['spin2x'][:][idx], inj['spin2y'][:][idx], inj['spin2z'][:][idx],
            inj['distance'][:][idx],
-           inj['eff_dist_h'][:][idx], inj['eff_dist_l'][:][idx], inj['eff_dist_v'][:][idx], 
+           inj['eff_dist_h'][:][idx], inj['eff_dist_l'][:][idx], 
            ] + found_cols
          
-names = ['Inj Time', 'Mass1', 'Mass2',
+names = ['DChirp Dist', 'Inj Time', 'Mass1', 'Mass2', 'Mchirp', 'Eta',
          's1x', 's1y', 's1z',
          's2x', 's2y', 's2z', 
          'Dist',
-         'Eff Dist (H)', '(L)', '(V)',
+         'Eff Dist (H)', '(L)',
         ] + found_names
-format_strings = ['##.##', '##.##', '##.##',
+format_strings = ['##.##', '##.##', '##.##', '##.##', '##.##', '##.##',
                   '##.##', '##.##', '##.##',
                   '##.##', '##.##', '##.##',
                   '##.##',
-                  '##.##', '##.##', '##.##',
+                  '##.##', '##.##'
                  ] + found_formats
 
 html_table = pycbc.results.table(columns, names, 

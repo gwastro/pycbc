@@ -92,8 +92,7 @@ else:
                                                               single_ifo)
 
 # How many IFOs do we have in the search?
-wflow.ifos = sciSegs.keys()
-if len(wflow.ifos) == 1:
+if len(sciSegs.keys()) == 1:
     mf_tag = "sngl"
 else:
     mf_tag = "coherent"

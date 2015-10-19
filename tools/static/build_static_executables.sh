@@ -6,30 +6,48 @@ then
 	exit 1
 fi
 
-for prog in `find ../../bin -type f`
+#for prog in `find ../../bin -type f | egrep -v '(gstlal|mvsc|hwinj)'`
+for prog in `find ../../bin -type f `
 do
 	# don't try to pyinstall shell scripts
 	if `head -1 ${prog} | grep -q python`
-	then 
+	then
 		exename=`basename ${prog}`
 
-		# don't rebuild if the executable is already
-		# present
-		if [ ! -e dist/${exename} ]
+		# Some programs can't be compiled.  At the moment these are
+		# not needed in any workflow, but this list may need to be
+		# revisited
+		if ! grep -q ${exename} cant_be_built
 		then
-			# remove any cached information
-			rm -rf ${exename}.spec build/${exename}
+			# don't rebuild if the executable is already
+			# present
+			if [ ! -e dist/${exename} ]
+			then
+				# remove any cached information
+				rm -rf ${exename}.spec build/${exename}
 
-			# This will be used by hooks/hook-pycbc.py to
-			# determine what needs to be included
-			export NOW_BUILDING=${exename}
+				if grep -q ^${exename}$ needs_full_build 
+				then
+					# This will be used by hooks/hook-pycbc.py to
+					# determine what needs to be included
+					export NOW_BUILDING=${exename}
 
-			pyinstaller ${prog} \
-			  --additional-hooks-dir ./hooks/ \
-			  --runtime-hook runtime-scipy.py \
-			  --name ${exename} \
-			  --strip \
-			  --onefile
+					pyinstaller ${prog} \
+					  --additional-hooks-dir ./hooks/ \
+					  --runtime-hook runtime-scipy.py \
+					  --name ${exename} \
+					  --strip \
+					  --onefile
+				else
+					pyinstaller ${prog} --name ${exename} --strip --onefile
+				fi
+
+				if ! dist/${exename} --help
+				then
+					echo "Build of ${exename} failed"
+					exit 1
+				fi
+			fi
 		fi
 	fi
 done

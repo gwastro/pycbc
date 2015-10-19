@@ -146,13 +146,18 @@ def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file, o
         files += node.output_files
     return files
 
-def make_inj_table(workflow, inj_file, out_dir, missed=False, tags=[]):
+def make_inj_table(workflow, inj_file, out_dir, missed=False, singles=None, tags=[]):
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'page_injections', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
+
     node.add_input_opt('--injection-file', inj_file)
     if missed:
         node.add_opt('--show-missed')
+
+    if singles is not None:
+        node.add_multiifo_input_list_opt('--single-trigger-files', singles)
+
     node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
     workflow += node   
     return node.output_files[0]

@@ -1404,14 +1404,18 @@ def get_random_label():
                    for _ in range(15))
 
 
-def resolve_url(url):
+def resolve_url(url, directory=None):
     """
     Resolves a URL to a local file, and returns the path to
     that file.
     """
-    if url.startswith('http://') or url.startswith('https://'):
+    if directory is None:
+        directory = os.getcwd()
+
+    if url.startswith('http://') or url.startswith('https://') or \
+       url.startswith('file://'):
         filename = url.split('/')[-1]
-        filename = os.path.join(os.getcwd(), filename)
+        filename = os.path.join(directory, filename)
         succeeded = False
         num_tries = 5
         t_sleep   = 10
@@ -1434,8 +1438,6 @@ def resolve_url(url):
             errMsg  = "Unable to download %s " % (url)
             raise ValueError(errMsg)
 
-    elif url.startswith('file://'):
-        filename = url[7:]
     elif url.find('://') != -1:
         # TODO: We could support other schemes such as gsiftp by
         # calling out to globus-url-copy

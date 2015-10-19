@@ -49,6 +49,20 @@ def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None
     workflow += node
     return node.output_files[0]  
 
+def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
+                            tags=None):
+    "Set up a job for computing optimal SNRs of a sim_inspiral file."
+    if tags is None:
+        tags = []
+
+    node = Executable(workflow.cp, 'optimal_snr', ifos=workflow.ifos,
+                      out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--input-file', inj_file)
+    node.add_input_list_opt('--time-varying-psds', precalc_psd_files)
+    node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
+    workflow += node
+    return node.output_files[0]
+
 def setup_injection_workflow(workflow, output_dir=None,
                              inj_section_name='injections', exttrig_file=None,
                              tags =[]):

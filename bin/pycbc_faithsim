@@ -137,6 +137,7 @@ parser.add_option("--waveform2-start-frequency",help="Starting frequency for wav
 
 #Filter Settings
 parser.add_option('--filter-low-frequency-cutoff', metavar='FREQ', help='low frequency cutoff of matched filter', type=float)
+parser.add_option('--filter-high-frequency-cutoff', metavar='FREQ', help='high frequency cutoff of matched filter', type=float)
 parser.add_option("--filter-sample-rate",help="Filter Sample Rate [Hz]",type=float)
 parser.add_option("--filter-waveform-length",help="Length of waveform for filtering, shoud be longer than all waveforms and include some padding",type=int)
 
@@ -217,16 +218,16 @@ with ctx:
                                   filter_N)
 
             m,i = match(htilde1, htilde2, psd=psd, 
-                        low_frequency_cutoff=options.filter_low_frequency_cutoff) 
+                        low_frequency_cutoff=options.filter_low_frequency_cutoff, high_frequency_cutoff=options.filter_high_frequency_cutoff) 
                         
                         
             o = overlap(htilde1, htilde2, psd=psd, 
-                        low_frequency_cutoff=options.filter_low_frequency_cutoff)   
+                        low_frequency_cutoff=options.filter_low_frequency_cutoff, high_frequency_cutoff=options.filter_high_frequency_cutoff)   
             
             s1 = sigma(htilde1, psd=psd, 
-                        low_frequency_cutoff=options.filter_low_frequency_cutoff)   
+                        low_frequency_cutoff=options.filter_low_frequency_cutoff, high_frequency_cutoff=options.filter_high_frequency_cutoff)   
             s2 = sigma(htilde2, psd=psd, 
-                        low_frequency_cutoff=options.filter_low_frequency_cutoff)   
+                        low_frequency_cutoff=options.filter_low_frequency_cutoff, high_frequency_cutoff=options.filter_high_frequency_cutoff)   
             matches.append(m)
             overlaps.append(o)
             s1s.append(s1)

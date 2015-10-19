@@ -53,6 +53,8 @@ for fname in args.trigger_files:
             continue
         trigger_columns.remove('search')
         trigger_columns.remove('template_hash')
+        if 'gating' in trigger_columns:
+            trigger_columns.remove('gating')
         f2.close()
         break
     f2.close()
@@ -63,13 +65,25 @@ for col in trigger_columns:
 logging.info('reading the metadata from the files')
 start = numpy.array([], dtype=numpy.float64)
 end = numpy.array([], dtype=numpy.float64)
+gating = {}
 for filename in args.trigger_files:
     data = h5py.File(filename, 'r')
-    s, e = data['%s/search/start_time' % ifo][:], data['%s/search/end_time' % ifo][:]
+    ifo_data = data[ifo]
+    s, e = ifo_data['search/start_time'][:], ifo_data['search/end_time'][:]
     start, end = numpy.append(start, s), numpy.append(end, e)
+    if 'gating' in ifo_data:
+        gating_keys = []
+        ifo_data['gating'].visit(gating_keys.append)
+        for gk in gating_keys:
+            gk_data = ifo_data['gating/' + gk]
+            if isinstance(gk_data, h5py.Dataset):
+                if not gk in gating:
+                    gating[gk] = numpy.array([], dtype=numpy.float64)
+                gating[gk] = numpy.append(gating[gk], gk_data[:])
     data.close()    
 f['%s/search/start_time' % ifo], f['%s/search/end_time' % ifo] = start, end   
-
+for gk, gv in gating.items():
+    f[ifo + '/gating/' + gk] = gv
 
 logging.info('set up sorting of triggers and template ids')
 hashes = h5py.File(args.bank_file, 'r')['template_hash'][:]
