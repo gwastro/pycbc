@@ -133,7 +133,7 @@ for num_event in range(num_events):
         inj_params[ifo+'_end_time'] = ifo_time
           
     layouts += [(mini.make_inj_info(workflow, injection_file, injection_index, num_event,
-                               args.output_dir, tags=args.tags + [str(num_event)])[0],)]   
+                               args.output_dir, tags=args.tags + [str(num_event + 1)])[0],)]   
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir,
                               tags=args.tags + [str(num_event)])
@@ -157,8 +157,10 @@ for num_event in range(num_events):
         # Use SNR here or NewSNR??
         snr = hd_sngl.snr
         lgc_mask = abs(end_times - inj_params['end_time']) < args.inj_window
+        
         if len(snr[lgc_mask]) == 0:
             continue
+
         snr_idx = hd_sngl.mask[lgc_mask][snr[lgc_mask].argmax()]
         hd_sngl.mask = hd_sngl.mask[snr_idx]
         curr_params = copy.deepcopy(inj_params)
@@ -171,8 +173,8 @@ for num_event in range(num_events):
         files += mini.make_single_template_plots_new(workflow, insp_segs,
                                 args.inspiral_segment_name, curr_params,
                                 args.output_dir, inj_file=injection_xml_file,
-                                tags=args.tags+curr_tags,
-                                params_str='loudest template in %s' %curr_ifo )
+                                tags=args.tags + curr_tags,
+                                params_str='loudest template in %s' % curr_ifo )
 
     layouts += list(layout.grouper(files, 2))
     num_event += 1
