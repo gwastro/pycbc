@@ -58,9 +58,11 @@ keys += ['mass1', 'mass2',
 
 for key in keys:
     if key == 'optimal_snr_1':
-        headers += ['optimal_snr_' + f.attrs['detector_1']]
+        headers += ['opt. snr ' + f.attrs['detector_1']]
     elif key == 'optimal_snr_2':
-        headers += ['optimal_snr_' + f.attrs['detector_2']]
+        headers += ['opt. snr ' + f.attrs['detector_2']]
+    elif 'spin' in key:
+        headers += [key.replace('spin', 's')]
     else:
         headers += [key]
 
@@ -78,7 +80,6 @@ for key in keys:
         data += ["%.2f" % f['injections']['latitude'][args.injection_index]]
     elif key == 'dec chirp dist':
         data += ["%.2f" % dec_chirp_dist]
-
         
 table = numpy.array([data], dtype=str)
 html = str(pycbc.results.static_table(table, headers))

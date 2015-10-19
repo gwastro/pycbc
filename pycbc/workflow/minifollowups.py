@@ -96,7 +96,6 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     # execute this is a sub-workflow
     fil = node.output_files[0]
     
-    ## FIXME not clear why I have to set the id here, pegasus should do this!
     job = dax.DAX(fil)
     job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
     Workflow.set_job_properties(job, map_loc)
@@ -183,7 +182,6 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     # execute this is a sub-workflow
     fil = node.output_files[0]
 
-    ## FIXME not clear why I have to set the id here, pegasus should do this!
     job = dax.DAX(fil)
     job.addArguments('--basename %s' \
                      % os.path.splitext(os.path.basename(name))[0])
@@ -265,7 +263,6 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     # execute this is a sub-workflow
     fil = node.output_files[0]
     
-    ## FIXME not clear why I have to set the id here, pegasus should do this!
     job = dax.DAX(fil)
     job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
     Workflow.set_job_properties(job, map_loc)
