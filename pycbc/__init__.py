@@ -125,3 +125,10 @@ try:
 except ImportError as e:
     print e
     HAVE_MKL=False
+    
+def multiprocess_cache_dir():
+    import multiprocessing
+    cache_dir =  os.path.join(_cache_dir_path,  str(id(multiprocessing.current_process())))
+    os.environ['PYTHONCOMPILED'] = cache_dir
+    try: os.makedirs(cache_dir)
+    except OSError: pass
