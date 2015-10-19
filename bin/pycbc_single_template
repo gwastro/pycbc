@@ -21,14 +21,6 @@ import sys, logging, argparse, numpy, itertools, pycbc, h5py
 from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter, events
 from pycbc.types import zeros, float32, complex64, TimeSeries
 
-def get_time(statmap, n_loudest, ifo):
-     f = h5py.File(statmap, 'r')
-     n = f['foreground/stat'][:].argsort()[::-1][n_loudest]
-     t = {f.attrs['detector_1']: f['foreground/time1'][:][n],
-          f.attrs['detector_2']: f['foreground/time2'][:][n],
-          }
-     return t[ifo], f['foreground/template_id'][:][n]
-
 def select_segment(fname, segment, ifo, time, start_pad, end_pad):
     segs = events.select_segments_by_definer(fname, segment, ifo)
 
@@ -81,15 +73,6 @@ parser.add_argument("--taper-template", choices=["start","end","startend"],
                     help="For time-domain approximants, taper the start and/or"
                     " end of the waveform before FFTing.")
 
-# alternate option set to pull from statmap file
-parser.add_argument("--statmap-file",
-        help="Alternative to giving mass/spin parameters. The HDF file "
-             "containing the clustered coincident triggers")
-parser.add_argument("--n-loudest", type=int,
-        help="An integer to choose which coincident trigger is followed up"
-             ", only used with --statmap-file")
-parser.add_argument("--bank-file",
-        help="HDF format template bank file, only used with --statmap-file")
 # These options can be used to identify start/end times
 parser.add_argument("--inspiral-segments",
         help="XML file containing the inspiral analysis segments. "
@@ -107,19 +90,6 @@ opt = parser.parse_args()
 
 f = h5py.File(opt.output_file, 'w')          
 ifo = opt.channel_name[0:2]
-
-# If we are reading from the coinc files ######################################
-if opt.statmap_file:
-    opt.trigger_time, tid = get_time(opt.statmap_file, opt.n_loudest, ifo)
-    
-    if opt.trigger_time is None:
-        sys.exit()
-    
-    b = h5py.File(opt.bank_file, 'r')
-    opt.mass1 = float(b['mass1'][:][tid])
-    opt.mass2 = float(b['mass2'][:][tid])
-    opt.spin1z = float(b['spin1z'][:][tid])
-    opt.spin2z = float(b['spin2z'][:][tid])
 
 # If we are choosing start/end times from XML file ############################
 if opt.inspiral_segments:
