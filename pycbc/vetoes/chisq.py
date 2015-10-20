@@ -197,7 +197,9 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None, return
         qtilde[k_min:k_max].clear()
 
         if return_bins:
-            bin_snr.append(q  * (snr_norm *  num_bins) ** 2.0)
+            bin_snr.append(TimeSeries(q  * (snr_norm *  num_bins) ** 2.0,
+                                      delta_t=snr.delta_t,
+                                      epoch=snr.start_time))
 
         if indices is not None:
             chisq_accum_bin(chisq, q.take(indices))

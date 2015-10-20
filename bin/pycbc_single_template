@@ -175,7 +175,9 @@ with ctx:
                                     delta_t=gwstrain.delta_t)
     f['template'] = template.numpy()
                   
-    snrs, chisqs = [], []                                       
+    snrs, chisqs = [], []  
+    raw_bins = [[] for b in range(len(chisq_bins) - 1)]
+                        
     for s_num, stilde in enumerate(segments):
         logging.info("Filtering segment %s" % s_num)
         snr, corr, norm = filter.matched_filter_core(template, stilde, 
@@ -183,12 +185,22 @@ with ctx:
                                     low_frequency_cutoff=flow)
         snr *= norm
         logging.info("calculating chisq")
-        chisq = vetoes.power_chisq(template, stilde, chisq_bins, stilde.psd, 
-                                    low_frequency_cutoff = flow)
+        chisq, raw_bin = vetoes.power_chisq(template, stilde, chisq_bins, stilde.psd, 
+                                    low_frequency_cutoff=flow, 
+                                    return_bins=True)
         chisq /= chisq_bins * 2 - 2
      
         snrs.append(snr[stilde.analyze])
         chisqs.append(chisq[stilde.analyze])
+        
+        for i in range(raw_bins):
+            raw_bins[i].append(raw_bin[i][stilde.analyze].numpy())
+    
+    for i in range(len(raw_bins)):
+        key = 'chisq_bins/%s' % i
+        f[key] = numpy.concatenate(raw_bins[i])
+        f[key].attrs['start_time'] = float(snrs[0].start_time)
+        f[key].attrs['delta_t'] = snr.delta_t
         
     f['snr'] = numpy.concatenate([snr.numpy() for snr in snrs])
     f['snr'].attrs['start_time'] = float(snrs[0].start_time)
