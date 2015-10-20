@@ -70,3 +70,17 @@ pycbc_sngl_minifollowup
 pycbc_page_injinfo
 pycbc_page_snglinfo
 pycbc_injection_minifollowup
+pycbc_coinc_trig2hdf
+pycbc_coinc_bank2hdf
+pycbc_page_segments
+pycbc_page_ifar
+pycbc_coinc_mergetrigs
+pycbc_sqlite_simplify
+pycbc_splitbank
+pycbc_timeslides
+pycbc_combine_likelihood
+pycbc_pickle_horizon_distances
+pycbc_pipedown_plots
+pycbc_run_sqlite
+pycbc_page_foreground
+

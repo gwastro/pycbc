@@ -10,9 +10,6 @@
 import os
 from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
 
-# Executables that need the html assets
-needs_assets = ['pycbc_make_html_page', 'pycbc_make_coinc_search_workflow']
-
 # Executables that need MKL
 needs_mkl = ['pycbc_inspiral','pycbc_single_template']
 
@@ -61,18 +58,18 @@ hiddenimports = ['pycbc.fft.fft_cpu',
 
 datas = [] 
 
-if os.environ["NOW_BUILDING"] in needs_assets:
-    cwd     = os.getcwd()
-    basedir = cwd.replace('tools/static','')
-    rootdir = basedir + 'pycbc/results'
+# Add html assets to all executables
+cwd     = os.getcwd()
+basedir = cwd.replace('tools/static','')
+rootdir = basedir + 'pycbc/results'
 
-    for root, subdirs, files in os.walk(rootdir):
-        for filename in files:
-            if not filename.endswith('.py') and not filename.endswith('.pyc'):
-                file_path  = os.path.join(root, filename)
-                store_path = '/'.join(file_path.split('/')[:-1])
-                store_path = store_path.replace(basedir, '')
-                datas.append( (file_path, store_path) )
+for root, subdirs, files in os.walk(rootdir):
+    for filename in files:
+        if not filename.endswith('.py') and not filename.endswith('.pyc'):
+            file_path  = os.path.join(root, filename)
+            store_path = '/'.join(file_path.split('/')[:-1])
+            store_path = store_path.replace(basedir, '')
+            datas.append( (file_path, store_path) )
 
 if os.environ["NOW_BUILDING"] in needs_mkl:
     # pull in all the mkl .so files
