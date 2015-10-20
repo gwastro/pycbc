@@ -44,15 +44,15 @@ parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--single-trigger-files', nargs='+', 
-              help="HDF format single detector trigger files for the full data run")
+    help="HDF format single detector trigger files for the full data run")
 parser.add_argument('--bank-file',
-              help="HDF format template bank file")
+    help="HDF format template bank file")
 parser.add_argument('--output-file')
-parser.add_argument('--statmap-file',
-    help="The HDF format clustered coincident statmap file containing the result "
-         "triggers. ")
+parser.add_argument('--statmap-file', required=True,
+    help="HDF format clustered coincident statmap file containing the result "
+         "triggers. Required")
 parser.add_argument('--n-loudest', type=int,
-    help="The trigger Nth loudest trigger to examine, use with statmap file")
+    help="Examine the n'th loudest trigger, use with statmap file")
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -80,26 +80,26 @@ function redirect(form,way)
 </script>"""
 
 # make a table for the coincident information #################################
-headers = ["Combined Ranking Stat.", "Inc. IFAR (yrs)","Inc. FAP (yrs)", 
-                      "exc. IFAR (yrs)", "exc. FAP (yrs)", "Time Delay (s)"]
+headers = ["Coincident ranking statistic",
+           "Inclusive IFAR (yr)",
+           "Inclusive FAP", 
+           "Exclusive IFAR (yr)",
+           "Exclusive FAP",
+           "Time delay (s)"
+          ]
 
-table = numpy.array([
-                     ['%5.2f' % d['stat'][:][n], 
+table = numpy.array([['%5.2f' % d['stat'][:][n], 
                       '%5.2f' % d['ifar'][:][n], 
                       '%5.2e' % d['fap'][:][n],
                       '%5.2f' % d['ifar_exc'][:][n], 
                       '%5.2e' % d['fap_exc'][:][n],
-                      '%5.4f' % (d['time2'][:][n] - d['time1'][:][n])]
-                    ], dtype=str)
+                      '%5.4f' % (d['time2'][:][n] - d['time1'][:][n])
+                    ]], dtype=str)
 html += str(pycbc.results.static_table(table, headers))
 
 # make a table for the single detector information ############################
-headers = ["Detector&nbsp;Status", "UTC", "Time", "SNR", "NewSNR", "Chisq", "Bins",
-           "Phase", "M1", "M2", "Mc", "S1z", "S2z", "Duration"]
-
 ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
 idx = {ifo1:d['trigger_id1'][:][n], ifo2:d['trigger_id2'][:][n]}
-
 
 # Store the single detector trigger files keyed by ifo in a dictionary
 table = []
@@ -125,25 +125,25 @@ for ifo in files.keys():
                                                                             
     data = [get_summary_page_link(ifo, utc),
             str(datetime.datetime(*utc)),
-            time,
+            '%.3f'  % time,
             '%5.2f' % d['snr'][:][i],
-            '%5.2f' %  pycbc.events.newsnr(d['snr'][:][i], rchisq),
-            '%5.2f' %  rchisq,            
-            '%5.2f' %  d['chisq_dof'][:][i],
+            '%5.2f' % pycbc.events.newsnr(d['snr'][:][i], rchisq),
+            '%5.2f' % rchisq,            
+            '%i'    % d['chisq_dof'][:][i],
             '%5.2f' % d['coa_phase'][:][i],
             '%5.2f' % bank['mass1'][:][tid],
             '%5.2f' % bank['mass2'][:][tid],
             '%5.2f' % mchirp,
             '%5.2f' % bank['spin1z'][:][tid],
             '%5.2f' % bank['spin2z'][:][tid],
-            '%5.2f' % d['template_duration'][:][i],
+            '%5.2f' % d['template_duration'][:][i]
            ]
     table.append(data)    
 
-html += str(pycbc.results.static_table(table, headers))
+html += str(pycbc.results.static_table(table, pycbc.results.sngl_table_headers))
 ###############################################################################
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         cmd = ' '.join(sys.argv),
-                        title = 'Parameters of Coincident Event Ranked %s' % (args.n_loudest + 1),
-                        caption = 'Parameters of the event ranked number %s by the search. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1))
+                        title = 'Parameters of coincident event ranked %s' % (args.n_loudest + 1),
+                        caption = 'Parameters of event ranked %s by the search. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1))
