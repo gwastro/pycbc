@@ -173,6 +173,7 @@ with ctx:
                                     taper=opt.taper_template, 
                                     f_lower=flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)
+    f['template'] = template.numpy()
                   
     snrs, chisqs = [], []                                       
     for s_num, stilde in enumerate(segments):
