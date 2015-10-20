@@ -76,7 +76,7 @@ def parse_command_line():
                         help="A comma seperated list of the tuning injection "
                              "run names.")
 
-    parser.add_argument("-O", "--open-box", default=False,
+    parser.add_argument("-O", "--open-box", action="store_true",
                         help ="Use to show onsource results")
 
     parser.add_argument("-G", "--sky-grid", default=False,
@@ -389,7 +389,7 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
                       onclick="toggleVisible('%s');" % i, value=secname)
         webpage.div(id="div_%s" % i, style="display: none;")
     
-        webpage = write_offsource(webpage, ifos, GRBnum, onsource=True)
+        webpage = write_offsource(webpage, args, GRBnum, onsource=True)
         webpage.div.close()
     
         # write on source events
@@ -415,7 +415,7 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
     file.close()
 
     if htmldir is not None:
-        if os.path.isdir(htmldir):
+        if os.path.isdir(htmldir) and not open_box:
             warn = "WARNING: %s already exists! " % htmldir
             htmldir += "_"
             htmldir += ''.join(random.choice(\
