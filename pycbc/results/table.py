@@ -141,5 +141,21 @@ def static_table(data, titles=None):
         A string containing the html table.
     """
     return static_table_template.render(data=data, titles=titles)
-    
-    
+
+sngl_table_headers = [
+    "Detector&nbsp;status",
+    "UTC",
+    "End&nbsp;time",
+    "SNR",
+    "Reweighted&nbsp;SNR",
+    "Reduced&nbsp;&chi;<sup>2</sup>",
+    "Bins",
+    "&phi;<sub>c</sub>",
+    "m<sub>1</sub>",
+    "m<sub>2</sub>",
+    "M<sub>c</sub>",
+    "s<sub>1z</sub>",
+    "s<sub>2z</sub>",
+    "Duration"
+]
+

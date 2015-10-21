@@ -62,54 +62,53 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--single-trigger-file',
-              help="HDF format single detector trigger files for the full "
-                   "data run")
-parser.add_argument('--bank-file',
-              help="HDF format template bank file")
+parser.add_argument('--single-trigger-file', required=True,
+    help="HDF format single detector trigger files for the full "
+         "data run")
+parser.add_argument('--bank-file', required=True,
+    help="HDF format template bank file")
 parser.add_argument('--output-file')
 # CURRENTLY UNUSED, but may be needed if using foreground censor
-parser.add_argument('--statmap-file',
-    help="The HDF format clustered coincident statmap file containing the "
-         "result triggers. ")
+#parser.add_argument('--statmap-file',
+#    help="The HDF format clustered coincident statmap file containing the "
+#         "result triggers.")
 parser.add_argument('--veto-file',
-    help="The veto file to be used if vetoing triggers (optional).")
+    help="The veto file to be used if vetoing triggers.  Optional")
 parser.add_argument('--veto-segment-name',
-    help="If using veto file must also provide the name of the segment to use "
-         "as a veto.")
-parser.add_argument('--instrument', help="Name of ifo (e.g. H1)")
-parser.add_argument('--n-loudest', type=int,
-    help="The trigger Nth loudest trigger to examine, use with statmap file")
-parser.add_argument('--ranking-statistic',
-                help="How to rank triggers when determining loudest triggers.")
+    help="If using veto file, the name of the segments to use as a veto.")
+parser.add_argument("--instrument", help="Name of ifo (e.g. H1)")
+parser.add_argument("--n-loudest", type=int,
+    help="Examine the n'th loudest trigger (loudest is n=0).  Required")
+parser.add_argument('--ranking-statistic', default='newsnr',
+    help="How to rank triggers when determining loudest triggers. Default "
+         "'newsnr'")
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
-# Get the nth loudest trigger from the output of pycbc_coinc_statmap
+# Get the single-ifo triggers
 sngl_file = hdf.SingleDetTriggers(args.single_trigger_file, args.bank_file,
                 args.veto_file, args.veto_segment_name, None, args.instrument)
 
+# Cluster by a ranking statistic and retain only the loudest n clustered
+# triggers
 sngl_file.mask_to_n_loudest_clustered_events(n_loudest=args.n_loudest+1,
                                       ranking_statistic=args.ranking_statistic)
+
 # Restrict to only the nth loudest, instead of all triggers up to nth loudest
 stat = sngl_file.stat[-1]
 sngl_file.mask = sngl_file.mask[-1]
 
 # make a table for the single detector information ############################
-headers = ["Detector&nbsp;Status", "UTC", "Time", "SNR", sngl_file.stat_name,
-           "Chisq", "Bins", "Phase", "M1", "M2", "Mc", "S1z", "S2z",
-           "Duration"]
-
 time = sngl_file.end_time 
 utc = lal.GPSToUTC(int(time))[0:6]
 data = [[get_summary_page_link(args.instrument, utc),
         str(datetime.datetime(*utc)),
-        time,
+        '%.3f'  % time,
         '%5.2f' % sngl_file.snr,
         '%5.2f' % stat,
         '%5.2f' % sngl_file.rchisq,            
-        '%5.2f' % sngl_file.get_column('chisq_dof'),
+        '%i'    % sngl_file.get_column('chisq_dof'),
         '%5.2f' % sngl_file.get_column('coa_phase'),
         '%5.2f' % sngl_file.mass1,
         '%5.2f' % sngl_file.mass2,
@@ -117,12 +116,12 @@ data = [[get_summary_page_link(args.instrument, utc),
         '%5.2f' % sngl_file.spin1z,
         '%5.2f' % sngl_file.spin2z,
         '%5.2f' % sngl_file.template_duration,
-           ]]
+       ]]
 
-html += str(pycbc.results.static_table(data, headers))
+html += str(pycbc.results.static_table(data, pycbc.results.sngl_table_headers))
 ###############################################################################
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         cmd = ' '.join(sys.argv),
-                        title = 'Parameters of Single detector Event Ranked %s' % (args.n_loudest + 1),
-                        caption = 'Parameters of the single detector event ranked number %s by %s. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1, sngl_file.stat_name))
+                        title = 'Parameters of single-detector event ranked %s' % (args.n_loudest + 1),
+                        caption = 'Parameters of the single-detector event ranked number %s by %s. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1, sngl_file.stat_name))
