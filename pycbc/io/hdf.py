@@ -313,7 +313,7 @@ class SingleDetTriggers(object):
         # If this becomes memory intensive we can optimize
         if ranking_statistic == 'newsnr':
             stat = self.newsnr
-            self.stat_name = "New SNR"
+            self.stat_name = "Re-weighted SNR"
         else:
             err_msg = "Don't recognize statistic %s." %(ranking_statistic,)
             raise ValueError(err_msg)

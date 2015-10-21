@@ -127,14 +127,4 @@ def times_to_links(times, window, tag, base=None):
         end = time + window
         urls.append(base % (tag, start, end))
     return urls
-        
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
