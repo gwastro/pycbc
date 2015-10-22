@@ -64,6 +64,8 @@ parser.add_argument("--spin2z", type=float, default=0,
                     "Do not use if giving a statmap file.")
 parser.add_argument("--trigger-time", type=float, default=0,
                   help="The central time of the trigger to use.")
+parser.add_argument("--window", type=float, 
+                  help="Time to save around the trigger time (if given)")
 parser.add_argument("--order", type=int,
                   help="The integer half-PN order at which to generate"
                        " the approximant. Default is -1 which indicates to use"
@@ -147,7 +149,7 @@ row.params.mass2 = opt.mass2
 row.params.spin1z = opt.spin1z
 row.params.spin2z = opt.spin2z
 
-chisq_bins = vetoes.SingleDetPowerChisq.parse_option(row, opt.chisq_bins)
+chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(row, opt.chisq_bins))
 if 'params' in opt.approximant:
     opt.approximant = waveform.FilterBank.parse_option(row, opt.approximant)
 
@@ -173,28 +175,63 @@ with ctx:
                                     taper=opt.taper_template, 
                                     f_lower=flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)
-                  
-    snrs, chisqs = [], []                                       
-    for s_num, stilde in enumerate(segments):
+    f['template'] = template.numpy()                  
+    snrs, chisqs = [], []  
+    raw_bins = [[] for b in range(chisq_bins)]
+    
+    if opt.window:
+        start_time = opt.trigger_time - opt.window
+        end_time = opt.trigger_time + opt.window
+    else:
+        start_time = opt.gps_start_time + opt.segment_start_pad
+        end_time = opt.gps_end_time - opt.segment_end_pad
+                        
+    for s_num, stilde in enumerate(segments):    
+        start = stilde.epoch + stilde.analyze.start / float(opt.sample_rate)
+        end = stilde.epoch + stilde.analyze.stop / float(opt.sample_rate)
+        
+        if  end < start_time:
+            continue
+            
+        if start > end_time:
+            break
+    
         logging.info("Filtering segment %s" % s_num)
         snr, corr, norm = filter.matched_filter_core(template, stilde, 
                                     psd=stilde.psd,
                                     low_frequency_cutoff=flow)
         snr *= norm
         logging.info("calculating chisq")
-        chisq = vetoes.power_chisq(template, stilde, chisq_bins, stilde.psd, 
-                                    low_frequency_cutoff = flow)
+        chisq, raw_bin = vetoes.power_chisq(template, stilde, chisq_bins, stilde.psd, 
+                                    low_frequency_cutoff=flow, 
+                                    return_bins=True)
         chisq /= chisq_bins * 2 - 2
+        print abs(snr).max()
      
         snrs.append(snr[stilde.analyze])
         chisqs.append(chisq[stilde.analyze])
         
-    f['snr'] = numpy.concatenate([snr.numpy() for snr in snrs])
-    f['snr'].attrs['start_time'] = float(snrs[0].start_time)
+        for i in range(chisq_bins):
+            raw_bins[i].append(raw_bin[i][stilde.analyze].numpy())
+    
+    sidx = int((start_time - snrs[0].start_time) / snr.delta_t)
+    eidx = int((end_time - start_time) / snr.delta_t) + sidx
+
+    for i in range(chisq_bins):
+        key = 'chisq_bins/%s' % i
+        f[key] = numpy.concatenate(raw_bins[i])[sidx:eidx]
+        f[key].attrs['start_time'] = start_time
+        f[key].attrs['delta_t'] = snr.delta_t
+
+    f['chisq_boundaries'] = numpy.array(vetoes.power_chisq_bins(template, chisq_bins, stilde.psd,
+                                    low_frequency_cutoff=flow)) * template.delta_f 
+        
+    f['snr'] = numpy.concatenate([snr.numpy() for snr in snrs])[sidx:eidx]
+    f['snr'].attrs['start_time'] = start_time
     f['snr'].attrs['delta_t'] = snr.delta_t
     
-    f['chisq'] = numpy.concatenate([chisq.numpy() for chisq in chisqs])
-    f['chisq'].attrs['start_time'] = float(snrs[0].start_time)
+    f['chisq'] = numpy.concatenate([chisq.numpy() for chisq in chisqs])[sidx:eidx]
+    f['chisq'].attrs['start_time'] = start_time
     f['chisq'].attrs['delta_t'] = snr.delta_t 
     f.attrs['approximant'] = opt.approximant
     f.attrs['ifo'] = ifo
