@@ -79,17 +79,17 @@ m1, m2 = f['injections']['mass1'][iidx], f['injections']['mass2'][iidx]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
 for p in params:
-    headers += labels[p]
+    headers += [labels[p]]
 
     if p in f['injections']:
-        data += ["%.2f" % f['injections'][key][iidx]]
+        data += ["%.2f" % f['injections'][p][iidx]]
     elif p == 'mchirp':
         data += ["%.2f" % mchirp]
     elif p == 'eta':
         data += ["%.2f" % eta]
     elif p == 'dec chirp dist':
         data += ["%.2f" % dec_chirp_dist]
-        
+
 table = numpy.array([data], dtype=str)
 html = str(pycbc.results.static_table(table, headers))
 
