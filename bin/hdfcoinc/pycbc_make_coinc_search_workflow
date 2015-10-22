@@ -249,6 +249,8 @@ wf.make_segments_plot(workflow, full_segs,
                  rdir['analysis_time/segments'], tags=['INSPIRAL_SEGMENTS'])
 wf.make_segments_plot(workflow, science_seg_file,
                  rdir['analysis_time/segments'], tags=['SCIENCE_MINUS_CAT1'])
+wf.make_gating_plot(workflow, full_insps, rdir['analysis_time/gating'],
+                    tags=['full_data'])
 
 # get data segments to write to segment summary XML file
 seg_summ_names    = ['DATA', 'ANALYZABLE_DATA', 'TRIGGERS_PRODUCED']

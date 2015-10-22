@@ -97,7 +97,15 @@ def make_segments_plot(workflow, seg_files, out_dir, tags=[]):
     node.add_input_list_opt('--segment-files', seg_files)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
-        
+
+def make_gating_plot(workflow, insp_files, out_dir, tags=[]):
+    makedir(out_dir)
+    node = PlotExecutable(workflow.cp, 'plot_gating', ifos=workflow.ifos,
+                          out_dir=out_dir, tags=tags).create_node()
+    node.add_input_list_opt('--input-file', insp_files)
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+    workflow += node
+
 def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir, 
                           singles=None, extension='.html', tags=None):
     if tags is None:
