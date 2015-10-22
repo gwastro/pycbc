@@ -197,7 +197,7 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None, return
         qtilde[k_min:k_max].clear()
 
         if return_bins:
-            bin_snr.append(TimeSeries(q  * (snr_norm *  num_bins) ** 2.0,
+            bin_snrs.append(TimeSeries(q  * snr_norm *  num_bins ** 0.5,
                                       delta_t=snr.delta_t,
                                       epoch=snr.start_time))
 
@@ -212,7 +212,7 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None, return
         chisq = TimeSeries(chisq, delta_t=snr.delta_t, epoch=snr.start_time, copy=False)
 
     if return_bins:
-        return chisq, bin_snr
+        return chisq, bin_snrs
     else:
         return chisq
 
