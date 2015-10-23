@@ -548,6 +548,28 @@ def verify_strain_options_multi_ifo(opts, parser, ifos):
 
 
 def gate_data(data, gate_params):
+    """Apply a set of gating windows to a time series. Each gating window is
+    defined by a central time, a given duration (centered on the given
+    time) to zero out, and a given duration of smooth tapering on each side of
+    the window. The window function used for tapering is a Tukey window.
+
+    Parameters
+    ----------
+    data : TimeSeries
+        The time series to be gated.
+    gate_params : list
+        List of parameters for the gating windows. Each element should be a
+        list or tuple with 3 elements: the central time of the gating window,
+        the half-duration of the portion to zero out, and the duration of the
+        Tukey tapering on each side. All times in seconds. The total duration
+        of the data affected by one gating window is thus twice the second
+        parameter plus twice the third parameter.
+
+    Returns
+    -------
+    data: TimeSeries
+        The gated time series.
+    """
     def inverted_tukey(M, n_pad):
         midlen = M - 2*n_pad
         if midlen < 1:
@@ -557,6 +579,7 @@ def gate_data(data, gate_params):
 
     sample_rate = 1./data.delta_t
     temp = data.data
+
     for glitch_time, glitch_width, pad_width in gate_params:
         t_start = glitch_time - glitch_width - pad_width - data.start_time
         t_end = glitch_time + glitch_width + pad_width - data.start_time
