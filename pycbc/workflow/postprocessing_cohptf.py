@@ -290,11 +290,12 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
             workflow._adag.addDependency(dep)
 
             # Add injection sbv_plotter nodes if appropriate
-            if out_tag == "OFFSOURCE" and \
-                    cp.has_section("workflow-injections"):
+            if out_tag == "OFFSOURCE":
                 offsource_clustered = clust_file
                 off_node = sbv_plotter_node
 
+            if out_tag == "OFFSOURCE" and \
+                    cp.has_section("workflow-injections"):
                 found_inj_files = FileList([file for file in injcombiner_outs \
                                             if "FOUND" in file.tag_str])
                 for curr_injs in found_inj_files:
