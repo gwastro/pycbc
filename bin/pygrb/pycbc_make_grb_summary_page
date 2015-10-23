@@ -100,6 +100,9 @@ def parse_command_line():
     if not args.ifo_tag:
         parser.error("must provide --ifo-tag")
 
+    if not args.html_path:
+        parser.error("must provide --html-path")
+
     return args
 
 # =============================================================================
@@ -414,20 +417,25 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
     file.write(webpage())
     file.close()
 
-    if htmldir is not None:
-        if os.path.isdir(htmldir) and not open_box:
-            warn = "WARNING: %s already exists! " % htmldir
-            htmldir += "_"
-            htmldir += ''.join(random.choice(\
-                    string.ascii_uppercase + string.digits) for _ in range(8))
-            warn += "Placing output page in %s." % htmldir
-            sys.stdout.write(warn)
+    if open_box:
+        suffix = "_OPEN"
+    else:
+        suffix = "_CLOSED"
+    html_path = htmldir + "/" + os.path.basename(htmldir) + suffix
+    
+    if os.path.isdir(html_path):
+        warn = "WARNING: %s already exists! " % htmldir
+        html_path += "_"
+        html_path += ''.join(random.choice(\
+                     string.ascii_uppercase + string.digits) for _ in range(8))
+        warn += "Placing output page in %s." % htmldir
+        sys.stdout.write(warn)
 
-        shutil.copytree(outdir, htmldir)
-        shutil.copy2('%s/coh_PTF_html_summary.css' % os.path.dirname(outdir),
-                                  htmldir)
-        shutil.copy2('%s/coh_PTF_html_summary.js' % os.path.dirname(outdir),
-                                  htmldir)
+    shutil.copytree(outdir, html_path)
+    shutil.copy2('%s/coh_PTF_html_summary.css' % os.path.dirname(outdir),
+                 html_path)
+    shutil.copy2('%s/coh_PTF_html_summary.js' % os.path.dirname(outdir),
+                 html_path)
   
 #####################
 # MAIN BODY OF CODE #

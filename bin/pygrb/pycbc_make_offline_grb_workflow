@@ -140,6 +140,8 @@ all_files.extend(bank_files)
 all_files.extend(splitbank_files)
 
 # INJECTIONS
+injs = None
+inj_tags = []
 inj_files = None
 inj_caches = None
 inj_insp_files = None
