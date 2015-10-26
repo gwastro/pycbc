@@ -18,7 +18,7 @@
 import h5py, argparse, logging, sys
 import matplotlib; matplotlib.use('Agg')
 import numpy, lal, datetime
-import pycbc.version, pycbc.events, pycbc.results, pycbc.pnutils, pycbc.dqutils
+import pycbc.version, pycbc.events, pycbc.results, pycbc.pnutils
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -60,7 +60,7 @@ table = numpy.array([['%5.2f' % d['stat'][:][n],
                       '%5.4f' % (d['time2'][:][n] - d['time1'][:][n])
                     ]], dtype=str)
 
-html = pycbc.dqutils.redirect_javascript + \
+html = pycbc.results.dq.redirect_javascript + \
                                 str(pycbc.results.static_table(table, headers))
 
 # make a table for the single detector information ############################
@@ -89,7 +89,7 @@ for ifo in files.keys():
     time = d['end_time'][:][i]
     utc = lal.GPSToUTC(int(time))[0:6]
                                                                             
-    data = [pycbc.dqutils.get_summary_page_link(ifo, utc),
+    data = [pycbc.results.dq.get_summary_page_link(ifo, utc),
             str(datetime.datetime(*utc)),
             '%.3f'  % time,
             '%5.2f' % d['snr'][:][i],

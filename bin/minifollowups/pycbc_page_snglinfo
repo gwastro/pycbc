@@ -19,7 +19,7 @@
 import sys, h5py, matplotlib, numpy, datetime, argparse
 matplotlib.use('Agg')
 import lal
-import pycbc.version, pycbc.events, pycbc.results, pycbc.pnutils, pycbc.dqutils
+import pycbc.version, pycbc.events, pycbc.results, pycbc.pnutils
 from pycbc.io import hdf
 
 
@@ -67,7 +67,7 @@ sngl_file.mask = sngl_file.mask[-1]
 # make a table for the single detector information ############################
 time = sngl_file.end_time 
 utc = lal.GPSToUTC(int(time))[0:6]
-data = [[pycbc.dqutils.get_summary_page_link(args.instrument, utc),
+data = [[pycbc.results.dq.get_summary_page_link(args.instrument, utc),
         str(datetime.datetime(*utc)),
         '%.3f'  % time,
         '%5.2f' % sngl_file.snr,
@@ -83,7 +83,7 @@ data = [[pycbc.dqutils.get_summary_page_link(args.instrument, utc),
         '%5.2f' % sngl_file.template_duration,
        ]]
 
-html = pycbc.dqutils.redirect_javascript + \
+html = pycbc.results.dq.redirect_javascript + \
         str(pycbc.results.static_table(data, pycbc.results.sngl_table_headers))
 ###############################################################################
 
