@@ -15,29 +15,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Make tables describing a coincident foreground event"""
-import h5py, argparse, logging, pycbc.version, pycbc.events, pycbc.results, sys
-import matplotlib; matplotlib.use('Agg'); import pylab
-import numpy, pycbc.pnutils, lal, datetime
-
-
-def get_summary_page_link(ifo, utc_time):
-    """ Return a string that links to the summary page for this ifo """
-    search_form = """<form name="%s_alog_search" id="%s_alog_search" method="post">
-<input type="hidden" name="srcDateFrom" id="srcDateFrom" value="%s" size="20" />
-<input type="hidden" name="srcDateTo" id="srcDateTo" value="%s" size="20" />
-</form>
-"""
-    data = {'H1':"""H1&nbsp;<a href=https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day/%s>Summary</a>&nbsp;<a onclick="redirect('h1_alog_search','https://alog.ligo-wa.caltech.edu/aLOG/includes/search.php?adminType=search'); return true;">aLOG</a>""",
-            'L1':"""L1&nbsp;<a href=https://ldas-jobs.ligo-la.caltech.edu/~detchar/summary/day/%s>Summary</a>&nbsp;<a onclick="redirect('l1_alog_search','https://alog.ligo-la.caltech.edu/aLOG/includes/search.php?adminType=search'); return true;">aLOG</a>""" }
-    if ifo not in data:
-        return ifo
-    else:
-        euro_utc = '%02d-%02d-%4d' % (utc_time[1], utc_time[2], utc_time[0])
-        ext = '%4d%02d%02d' % (utc_time[0], utc_time[1], utc_time[2]) 
-        return_string = search_form % (ifo.lower(), ifo.lower(), euro_utc, euro_utc)
-        return_string += data[ifo] % ext
-        return return_string
-
+import h5py, argparse, logging, sys
+import matplotlib; matplotlib.use('Agg')
+import numpy, lal, datetime
+import pycbc.version, pycbc.events, pycbc.results, pycbc.pnutils
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -62,23 +43,6 @@ f = h5py.File(args.statmap_file, 'r')
 n = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
 d = f['foreground']
 
-# JavaScript for searching the aLOG
-html = """<script type="text/javascript">
-function redirect(form,way)
-{
-        // Set location to form and submit.
-        if(form != '')
-        {
-                document.forms[form].action=way;
-                document.forms[form].submit();
-        }
-        else
-        {
-                window.top.location = way;
-        }
-}
-</script>"""
-
 # make a table for the coincident information #################################
 headers = ["Coincident ranking statistic",
            "Inclusive IFAR (yr)",
@@ -95,7 +59,9 @@ table = numpy.array([['%5.2f' % d['stat'][:][n],
                       '%5.2e' % d['fap_exc'][:][n],
                       '%5.4f' % (d['time2'][:][n] - d['time1'][:][n])
                     ]], dtype=str)
-html += str(pycbc.results.static_table(table, headers))
+
+html = pycbc.results.dq.redirect_javascript + \
+                                str(pycbc.results.static_table(table, headers))
 
 # make a table for the single detector information ############################
 ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
@@ -123,7 +89,7 @@ for ifo in files.keys():
     time = d['end_time'][:][i]
     utc = lal.GPSToUTC(int(time))[0:6]
                                                                             
-    data = [get_summary_page_link(ifo, utc),
+    data = [pycbc.results.dq.get_summary_page_link(ifo, utc),
             str(datetime.datetime(*utc)),
             '%.3f'  % time,
             '%5.2f' % d['snr'][:][i],
