@@ -1,0 +1,52 @@
+import h5py, pycbc.types, numpy, argparse, pycbc.results, sys
+import matplotlib; matplotlib.use('Agg')
+import pylab
+
+parser=argparse.ArgumentParser()
+parser.add_argument('--single-template-file',
+                    help="HDF output of pycbc_single_template")
+parser.add_argument('--central-time', type=float,
+                    help="Time to center the plot, optional",
+                    default=0)
+parser.add_argument('--window', type=float,
+                    help="Time around central time to plot, optional. "
+                         "Used with the central time option")
+parser.add_argument('--output-file')
+args = parser.parse_args()
+
+f = h5py.File(args.single_template_file, 'r')
+y = f['chisq_boundaries'][:]
+fig = pylab.figure()
+ax = pylab.gca()
+
+for i in range(len(f['chisq_bins'].keys())):
+    ts = pycbc.types.load_timeseries('test.hdf', group='chisq_bins/%s' % i)
+
+    delta_t = ts.delta_t
+    st = ts.sample_times.numpy()   
+    ts = ts.squared_norm().numpy() ** 0.5
+    
+    x = numpy.append(st - delta_t / 2.0, [st[-1] + delta_t / 2.0]) - args.central_time
+    l = y[i:i+2]
+    n = ax.pcolorfast(x, numpy.array([i, i+1]), ts.reshape(1, len(ts)))
+
+pylab.ylabel('Frequency (Hz)')
+
+xlabel = 'Time (s)'
+if args.central_time:
+    xlabel += ' - %.2f' % args.central_time
+    if args.window:
+        pylab.xlim(xmin=-args.window, xmax=args.window)
+
+pylab.xlabel(xlabel)
+pylab.colorbar(ax.get_children()[2], ax=ax)
+
+# Set the frequency label
+fig.canvas.draw()
+labels = [item.get_text() for item in ax.get_yticklabels()]
+ax.set_yticklabels(['%.0f' % y[int(label)] for label in labels])
+
+pycbc.results.save_fig_with_metadata(fig, args.output_file,
+                cmd=' '.join(sys.argv),
+                title="chisq timeseries for each bin",
+                caption="Plot of the time series of each chisq bin")
