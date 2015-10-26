@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Make tables describing a coincident foreground event"""
+""" Make tables describing a missed injection"""
 import h5py, argparse, pycbc.version, pycbc.results, sys
 import numpy, pycbc.pnutils
 
@@ -23,64 +23,73 @@ parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--output-file')
-parser.add_argument('--injection-file',
-    help="The HDF format injection file. ")
-parser.add_argument('--injection-index', type=int,
-    help="The index of the injection to print out")
+parser.add_argument('--injection-file', required=True,
+    help="The HDF format injection file. Required")
+parser.add_argument('--injection-index', type=int, required=True,
+    help="The index of the injection to print out. Required")
 parser.add_argument('--n-nearest', type=int, 
     help="Optional, used in the title")
 
 args = parser.parse_args()
 
-# Get the nth loudest trigger from the output of pycbc_coinc_statmap
 f = h5py.File(args.injection_file, 'r')
-n = args.injection_index
+iidx = args.injection_index
 
 # make a table for the coincident information #################################
+params = []
 headers = []
 data = []
 
-keys = ['end_time']
+labels = {
+    'end_time': 'End&nbsp;time',
+    'optimal_snr_1' : 'Opt.&nbsp;SNR %s' % f.attrs['detector_1'],
+    'optimal_snr_2' : 'Opt.&nbsp;SNR %s' % f.attrs['detector_2'],
+    'dec_chirp_dist': 'Dec.&nbsp;chirp dist',
+    'eff_dist_h'    : 'D<sub>eff</sub>&nbsp;H',
+    'eff_dist_l'    : 'D<sub>eff</sub>&nbsp;L',
+    'mass1'      : 'm<sub>1</sub>',
+    'mass2'      : 'm<sub>1</sub>',
+    'mchirp'     : 'M<sub>c</sub>',
+    'eta'        : '&eta;',
+    'longitude'  : 'RA',
+    'latitude'   : 'Dec',
+    'inclination': '&iota;',
+    'spin1x': 's<sub>1x</sub>',
+    'spin1y': 's<sub>1y</sub>',
+    'spin1z': 's<sub>1z</sub>',
+    'spin2x': 's<sub>2x</sub>',
+    'spin2y': 's<sub>2y</sub>',
+    'spin2z': 's<sub>2z</sub>'
+}
 
-m1, m2 = f['injections']['mass1'][args.injection_index], f['injections']['mass2'][args.injection_index]
-mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+params += ['end_time']
 
 if 'optimal_snr_1' in f['injections'].keys():
-    keys += ['optimal_snr_1', 'optimal_snr_2']
+    params += ['optimal_snr_1', 'optimal_snr_2']
 else:
-    keys += ['dec chirp dist', 'eff_dist_h', 'eff_dist_l']
-    dec_dist = max(f['injections']['eff_dist_h'][args.injection_index], f['injections']['eff_dist_l'][args.injection_index])
+    params += ['dec_chirp_dist', 'eff_dist_h', 'eff_dist_l']
+    dec_dist = max(f['injections']['eff_dist_h'][iidx], f['injections']['eff_dist_l'][iidx])
     dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 
-keys += ['mass1', 'mass2',
-        'mchirp', 'eta', 'ra', 'dec', 'inc', 'spin1x', 'spin1y',
-        'spin1z', 'spin2x', 'spin2y', 'spin2z']
+params += ['mass1', 'mass2', 'mchirp', 'eta', 'longitude', 'latitude',
+            'inclination', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
+            'spin2z']
 
-for key in keys:
-    if key == 'optimal_snr_1':
-        headers += ['opt. snr ' + f.attrs['detector_1']]
-    elif key == 'optimal_snr_2':
-        headers += ['opt. snr ' + f.attrs['detector_2']]
-    elif 'spin' in key:
-        headers += [key.replace('spin', 's')]
-    else:
-        headers += [key]
+m1, m2 = f['injections']['mass1'][iidx], f['injections']['mass2'][iidx]
+mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
-    if key in f['injections']:
-        data += ["%.2f" % f['injections'][key][args.injection_index]]
-    elif key == 'mchirp':
+for p in params:
+    headers += [labels[p]]
+
+    if p in f['injections']:
+        data += ["%.2f" % f['injections'][p][iidx]]
+    elif p == 'mchirp':
         data += ["%.2f" % mchirp]
-    elif key == 'eta':
+    elif p == 'eta':
         data += ["%.2f" % eta]
-    elif key == 'inc':
-        data += ["%.2f" % f['injections']['inclination'][args.injection_index]]
-    elif key == 'ra':
-        data += ["%.2f" % f['injections']['longitude'][args.injection_index]]
-    elif key == 'dec':
-        data += ["%.2f" % f['injections']['latitude'][args.injection_index]]
-    elif key == 'dec chirp dist':
+    elif p == 'dec chirp dist':
         data += ["%.2f" % dec_chirp_dist]
-        
+
 table = numpy.array([data], dtype=str)
 html = str(pycbc.results.static_table(table, headers))
 
@@ -93,11 +102,3 @@ pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         title = 'Parameters of missed injection' + tag,
                         caption = "Parameters of this injection")
    
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
