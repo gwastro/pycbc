@@ -36,27 +36,31 @@ import pycbc.io
 import sys
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--single-trig-file', type=str, required=True,
-                    help='Path to file containing single-detector triggers in HDF5 format')
-parser.add_argument('--bank-file', type=str, required=True,
-                    help='Path to file containing template bank in HDF5 format')
+parser.add_argument('--single-trig-file', required=True,
+                    help='Path to file containing single-detector triggers in '
+                         'HDF5 format. Required')
+parser.add_argument('--bank-file', required=True,
+                    help='Path to file containing template bank in HDF5 format'
+                         '. Required')
 parser.add_argument('--veto-file', type=str,
                     help='Optional path to file containing veto segments')
 parser.add_argument('--segment-name', default=None, type=str,
                     help='Optional, name of segment list to use for vetoes')
+parser.add_argument('--min-snr', default=0., type=float,
+                    help='Only plot triggers above the given SNR')
 parser.add_argument('--output-file', type=str, required=True,
                     help='Destination path for plot')
 parser.add_argument('--x-var', required=True,
                     choices=pycbc.io.SingleDetTriggers.get_param_names(),
-                    help='Parameter to plot on the x-axis')
+                    help='Parameter to plot on the x-axis. Required')
 parser.add_argument('--y-var', required=True,
                     choices=pycbc.io.SingleDetTriggers.get_param_names(),
-                    help='Parameter to plot on the y-axis')
+                    help='Parameter to plot on the y-axis. Required')
 parser.add_argument('--z-var', required=True,
-                    help='Quantity to plot on the color scale',
+                    help='Quantity to plot on the color scale. Required',
                     choices=['density', 'max(snr)', 'max(newsnr)'])
-parser.add_argument('--detector', type=str, required=True,
-                    help='Detector')
+parser.add_argument('--detector', required=True,
+                    help='Detector. Required')
 parser.add_argument('--grid-size', type=int, default=80,
                     help='Bin resolution (larger = smaller bins)')
 parser.add_argument('--log-x', action='store_true',
@@ -69,7 +73,7 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-filter_func = None # placeholder for a general filter function for the triggers
+filter_func = 'self.snr>%f' % (opts.min_snr) if opts.min_snr > 0. else None 
 trigs = pycbc.io.SingleDetTriggers(opts.single_trig_file, opts.bank_file,
                   opts.veto_file, opts.segment_name, filter_func, opts.detector)
 
@@ -110,10 +114,13 @@ elif opts.z_var == 'max(newsnr)':
 
 ax.set_xlabel(opts.x_var)
 ax.set_ylabel(opts.y_var)
-ax.set_title(opts.z_var.title() + ' of triggers for ' + opts.detector + ' detector')
-title = '%s of %s triggers over %s and %s' \
-    % (opts.z_var.title(), opts.detector, opts.x_var.title(), opts.y_var.title())
-fig_caption = "This plot shows the %s of single detector triggers for the %s detector. %s is shown on the colorbar axis against %s and %s on the x- and y-axes." % (opts.z_var, opts.detector, opts.z_var.title(), opts.x_var, opts.y_var)
+ax.set_title(opts.z_var.title() + ' of %s triggers ' % (opts.detector))
+title = '%s of %s triggers over %s and %s' % (opts.z_var.title(),
+                         opts.detector, opts.x_var.title(), opts.y_var.title())
+fig_caption = ("This plot shows the %s of single detector triggers for the %s "
+               "detector. %s is shown on the colorbar axis against %s and %s "
+               "on the x- and y-axes." % (opts.z_var, opts.detector,
+                                   opts.z_var.title(), opts.x_var, opts.y_var))
 pycbc.results.save_fig_with_metadata(fig, opts.output_file, title=title,
                                      caption=fig_caption, cmd=' '.join(sys.argv),
                                      fig_kwds={'dpi': 200})

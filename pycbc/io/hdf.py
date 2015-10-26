@@ -304,18 +304,21 @@ class SingleDetTriggers(object):
             if type(m[1]) == property]
 
     def mask_to_n_loudest_clustered_events(self, n_loudest=10,
-                                           ranking_statistic='newsnr',
+                                           ranking_statistic="newsnr",
                                            cluster_window=10):
         """Edits the mask property of the class to point to the N loudest
         single detector events as ranked by ranking statistic. Events are
         clustered so that no more than 1 event within +/- cluster-window will
         be considered."""
         # If this becomes memory intensive we can optimize
-        if ranking_statistic == 'newsnr':
+        if ranking_statistic == "newsnr":
             stat = self.newsnr
             self.stat_name = "Reweighted SNR"
+        elif ranking_statistic == "snr":
+            stat = self.snr
+            self.stat_name = "SNR"
         else:
-            err_msg = "Don't recognize statistic %s." %(ranking_statistic,)
+            err_msg = "Don't recognize statistic %s." % (ranking_statistic)
             raise ValueError(err_msg)
         times = self.end_time
         index = stat.argsort()[::-1]
