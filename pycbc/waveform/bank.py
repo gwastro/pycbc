@@ -74,7 +74,6 @@ class FilterBank(object):
         self.N = (filter_length - 1 ) * 2
         self.delta_t = 1.0 / (self.N * self.delta_f)
         self.filter_length = filter_length
-        self.kmin = int(f_lower / delta_f)
 
         self.indoc = ligolw_utils.load_filename(
             filename, False, contenthandler=LIGOLWContentHandler)
@@ -103,9 +102,11 @@ class FilterBank(object):
         if self.approximant is not None:
             if 'params' in self.approximant:
                 t = type('t', (object,), {'params' : self.table[index]})
-                approximant = str(self.parse_option(t, self.approximant)) 
+                approximant = str(self.parse_option(t, self.approximant))
+                f_lower = float(self.parse_option(t, self.f_lower))
             else:
                 approximant = self.approximant
+                f_lower = float(self.f_lower)
         else:
             raise ValueError("Reading approximant from template bank not yet supported")
 
@@ -124,7 +125,7 @@ class FilterBank(object):
         distance = 1.0 / DYN_RANGE_FAC
         htilde = pycbc.waveform.get_waveform_filter(
             tempout[0:self.filter_length], self.table[index],
-            approximant=approximant, f_lower=self.f_lower, f_final=f_end,
+            approximant=approximant, f_lower=f_lower, f_final=f_end,
             delta_f=self.delta_f, delta_t=self.delta_t, distance=distance,
             **self.extra_args)
 
@@ -141,7 +142,7 @@ class FilterBank(object):
                 self.table[index].template_duration = htilde.chirp_length
 
         htilde = htilde.astype(self.dtype)
-        htilde.f_lower = self.f_lower
+        htilde.f_lower = f_lower
         htilde.end_frequency = f_end
         htilde.end_idx = int(htilde.end_frequency / htilde.delta_f)
         htilde.params = self.table[index]
