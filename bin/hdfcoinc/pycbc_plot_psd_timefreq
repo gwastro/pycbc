@@ -37,10 +37,13 @@ parser.add_argument('--psd-file', required=True,
                     help='HDF file containing the PSDs.')
 parser.add_argument('--output-file', required=True,
                     help='Name for the output plot.')
+parser.add_argument('--normalize', action='store_true',  
+                    help='Select this option if you want to plot the amplitude '
+                         'relative to median.')
 parser.add_argument('--bins', type=int, default=1000,
                     help='Number of (logarithmic-spaced) frequency bins to plot'
                          ' (default %(default)d).')
-parser.add_argument('--method', choices=['min','max','mean','median'],
+parser.add_argument('--reduction-method', choices=['min','max','mean','median'],
                     default='mean',
                     help='Method of reducing the ASD data into fewer'
                          ' frequency bins to plot (default %(default)s).')
@@ -53,11 +56,12 @@ fig=pylab.figure()
 ax=fig.gca()
 
 logging.info('Reading %s', opts.psd_file)
+
 f = h5py.File(opts.psd_file, 'r')
 ifo = f.keys()[0]
 df = f[ifo + '/psds/0'].attrs['delta_f']
 keys = f[ifo + '/psds'].keys()
-psds = [f[ifo + '/psds/' + key][:] for key in keys]
+psds = [f[ifo + '/psds/' + str(key)][:] for key in xrange(len(f[ifo + '/psds']))]
 
 flow = f.attrs['low_frequency_cutoff']
 kmin = int(flow / df)
@@ -66,15 +70,26 @@ fac = 1.0 / pycbc.DYN_RANGE_FAC
 freqs = numpy.arange( 0 , len(psds[0]) )[kmin:] * df
 start, end = f[ifo + '/start_time'][:], f[ifo + '/end_time'][:]
 
-logging.info('Starting the plot PSD vs. time')
+logging.info('Starting the plot PSD over time')
+
 reduction_function = { 'min' : numpy.min , 'max' : numpy.max , 'mean' : numpy.mean ,
                        'median' : numpy.median  }
-asdmin = min(psds[0][kmin:]) ** 0.5 * fac
-asdmax = max(psds[0][kmin:]) ** 0.5 * fac
+asd_median = asd_median = numpy.median( psds, axis = 0 )[kmin:] ** 0.5 * fac
+# Select limits for the colorbar
+if opts.normalize:
+    asdmin = 0.5
+    asdmax = 2
+else:
+    asdmin = min(psds[0][kmin:]) ** 0.5 * fac
+    asdmax = 1e-20
+
 for psd_segment in xrange(len(psds)):
     logging.info('Plotting PSD segment number %d', psd_segment)
     time = numpy.array( [ start[psd_segment] , end[psd_segment] ] )
-    asd = psds[psd_segment][kmin:] ** 0.5 * fac
+    if opts.normalize:
+        asd = psds[psd_segment][kmin:] ** 0.5 * fac / asd_median
+    else:
+        asd = psds[psd_segment][kmin:] ** 0.5 * fac
 
     # Get the frequency bins equally spaced in a logarithmic scale and the
     # indices needed for the ASDs
@@ -85,7 +100,7 @@ for psd_segment in xrange(len(psds)):
     # Take the ASD of each frequency bin using the method given
     asdless = []
     for index in xrange( 1 , len(indices) ):
-        asdless.append( reduction_function[ opts.method ]
+        asdless.append( reduction_function[ opts.reduction_method ]
                                           ( asd[indices[index-1] : indices[index]] ))
 
     Y , X = numpy.meshgrid( freqsegs[:-1] , time )
@@ -93,8 +108,14 @@ for psd_segment in xrange(len(psds)):
 
 logging.info('Saving results')
 
-cb = fig.colorbar(im)
-cb.set_label('Amplitude Spectral Density (Strain / $\\sqrt{\\rm Hz}$)', fontsize=20 )
+cb = fig.colorbar( im )
+if opts.normalize:
+    cbLabel = 'Amplitude relative to median'
+    cb.set_ticks( [0.5, 1, 2] )
+    cb.ax.set_yticklabels( ['0.5', '1', '2'] )
+else:
+    cbLabel = 'Amplitude Spectral Density (Strain / $\\sqrt{\\rm Hz}$)'
+cb.set_label( cbLabel, fontsize=20 )
 ax.set_yscale('log')
 ax.set_xlim( start.min() - 5000 , end.max() + 5000 )
 ax.set_ylim( numpy.min(freqs) , numpy.max(freqs) )
@@ -115,7 +136,7 @@ title = ('Evolution of the noise spectral density over time in %s' % ifo)
 caption = ('Variation of the amplitude spectral density over time. The original'
            'frequency bins are reduced to %d logarithmic frequency bins by taking'
            'the %s. Each time segment contains %d seconds.') % \
-           (opts.bins , opts.method , end[0] - start[0] )
+           (opts.bins , opts.reduction_method , end[0] - start[0] )
 pycbc.results.save_fig_with_metadata(fig, opts.output_file,
     title = title,
     caption = caption,
