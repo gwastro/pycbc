@@ -19,7 +19,9 @@ PEGASUS_PROPERTIES=""
 SITE_LIST=""
 TRANSFORMATION_CATALOG=""
 
-GETOPT_CMD=`getopt -o d:c:a:p:s:t:Fl:h --long dax:,cache-file:,accounting-group:,pegasus-properties:,execution-sites:,transformation-catalog:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+touch extra-properties.conf
+
+GETOPT_CMD=`getopt -o d:c:a:p:P:s:t:Fl:h --long dax:,cache-file:,accounting-group:,pegasus-properties:append-pegasus-property:,execution-sites:,transformation-catalog:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -43,6 +45,11 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) PEGASUS_PROPERTIES=$2 ; shift 2 ;;
+      esac ;;
+    -P|--append-pegasus-property)
+      case "$2" in
+        "") shift 2 ;;
+        *) echo $2 >> extra-properties.conf ; shift 2 ;;
       esac ;;
     -s|--execution-sites)
       case "$2" in
@@ -188,9 +195,13 @@ fi
 # add a transformation catalog, if specified
 if [[ ! -z ${TRANSFORMATION_CATALOG} ]] ; then
   cp ${TRANSFORMATION_CATALOG} ./transformation-catalog.txt
+  echo >> pegasus-properties.conf
   echo "pegasus.catalog.transformation Text" >> pegasus-properties.conf
   echo "pegasus.catalog.transformation.file ${PWD}/transformation-catalog.txt" >> pegasus-properties.conf
 fi
+
+echo >> pegasus-properties.conf
+cat extra-properties.conf >> pegasus-properties.conf
 
 if [ "x$CACHE_FILE" == "x" ]; then
   pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --cluster label --submit 
