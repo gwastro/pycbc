@@ -88,6 +88,17 @@ if [ "x$ACCOUNTING_GROUP" == "x" ] && [ $NO_ACCOUNTING_GROUP == 0 ]; then
   exit 1
 fi
 
+# Force the user to create a new grid proxy
+LIGO_USER_NAME=""
+while true; do
+  read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " LIGO_USER_NAME
+  if [[ ! -z $NAME ]] ; then
+    break
+  fi
+done
+unset X509_USER_PROXY
+ligo-proxy-init $LIGO_USER_NAME || exit 1
+
 #Make a directory for the submit files
 SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
 
