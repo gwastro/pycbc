@@ -134,12 +134,18 @@ else
   SITE_LIST="local,${SITE_LIST}"
 fi
 
-# create the site catalog template
-echo 'cat <<END_OF_TEXT' > site-catalog.sh
-
 if [[ -z ${PEGASUS_SITE_CATALOG_PATH} ]] ; then
   PEGASUS_SITE_CATALOG_PATH=${PEG_DIR}
 fi
+
+# create the site catalog template
+echo 'cat <<END_OF_TEXT' > site-catalog.sh
+
+cat << EOF >> site-catalog.sh
+<?xml version="1.0" encoding="UTF-8"?>
+<sitecatalog xmlns="http://pegasus.isi.edu/schema/sitecatalog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://pegasus.isi.edu/schema/sitecatalog http://pegasus.isi.edu/schema/sc-4.0.xsd" version="4.0">
+EOF
 
 IFS=',' ; read -ra SITE <<< "$SITE_LIST"
 for s in "${SITE[@]}"; do
@@ -148,22 +154,17 @@ for s in "${SITE[@]}"; do
     echo "Error: Could not find site catalog template for site ${s}"
     exit 1
   else
-    cat $SITE_TEMPLATE >> site.sh
+    cat $SITE_TEMPLATE >> site-catalog.sh
   fi
 done
 
-echo 'END_OF_TEXT'       >> site.sh
-
-# write out the site catalog
-echo > site-catalog.xml <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<sitecatalog xmlns="http://pegasus.isi.edu/schema/sitecatalog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-xsi:schemaLocation="http://pegasus.isi.edu/schema/sitecatalog http://pegasus.isi.edu/schema/sc-4.0.xsd" version="4.0">
-EOF
-bash site-catalog.sh >> site-catalog.xml
-echo >> site-catalog.xml <<EOF
+cat << EOF >> site-catalog.sh
 </sitecatalog>
 EOF
+echo 'END_OF_TEXT' >> site-catalog.sh
+
+# write out the site catalog
+bash site-catalog.sh > site-catalog.xml
 
 # Plan the workflow
 echo "Generating concrete workflow"
