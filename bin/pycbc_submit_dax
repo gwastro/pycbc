@@ -15,8 +15,9 @@ CACHE_FILE=""
 LOCAL_PEGASUS_DIR=""
 ACCOUNTING_GROUP=""
 NO_ACCOUNTING_GROUP=0
+PEGASUS_PROPERTIES=""
 
-GETOPT_CMD=`getopt -o d:c:a:Fl:h --long dax:,cache-file:,accounting-group:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:a:p:Fl:h --long dax:,cache-file:,accounting-group:,pegasus-properties:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -35,6 +36,11 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) ACCOUNTING_GROUP=$2 ; shift 2 ;;
+      esac ;;
+    -p|--pegasus-properties)
+      case "$2" in
+        "") shift 2 ;;
+        *) PEGASUS_PROPERTIES=$2 ; shift 2 ;;
       esac ;;
     -F|--force-no-accounting-group) NO_ACCOUNTING_GROUP=1 ; shift ;;
     -l|--local-dir)
@@ -136,7 +142,11 @@ echo "Generating concrete workflow"
 touch _reuse.cache
 
 # cache the pegasus config
-cp $PEG_DIR/pegasus-properties.conf .
+if [ -z ${PEGASUS_PROPERTIES} ] ; then
+  cp -v $PEG_DIR/pegasus-properties.conf ./pegasus-properties.conf
+else
+  cp -v ${PEGASUS_PROPERTIES} ./pegasus-properties.conf
+fi
 
 if [ "x$CACHE_FILE" == "x" ]; then
   pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites local -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --cluster label --submit 
