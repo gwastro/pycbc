@@ -57,7 +57,7 @@ c = pylab.colorbar(ax.get_children()[2], ax=ax)
 if args.plot_type == 'chisq':
     c.set_label("$\\rho_l^2 - \\rho^2/p$")
 else:
-    c.set_label("$\\rho_l^2")
+    c.set_label("$\\rho_l^2$")
 
 # Set the frequency label
 fig.canvas.draw()
