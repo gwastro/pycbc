@@ -17,8 +17,9 @@ ACCOUNTING_GROUP=""
 NO_ACCOUNTING_GROUP=0
 PEGASUS_PROPERTIES=""
 SITE_LIST=""
+TRANSFORMATION_CATALOG=""
 
-GETOPT_CMD=`getopt -o d:c:a:p:s:Fl:h --long dax:,cache-file:,accounting-group:,pegasus-properties:,execution-sites:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:a:p:s:t:Fl:h --long dax:,cache-file:,accounting-group:,pegasus-properties:,execution-sites:,transformation-catalog:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -47,6 +48,11 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) SITE_LIST=$2 ; shift 2 ;;
+      esac ;;
+    -t|--transformation-catalog)
+      case "$2" in
+        "") shift 2 ;;
+        *) TRANSFORMATION_CATALOG=$2 ; shift 2 ;;
       esac ;;
     -F|--force-no-accounting-group) NO_ACCOUNTING_GROUP=1 ; shift ;;
     -l|--local-dir)
@@ -78,6 +84,8 @@ while true ; do
       echo "  -s, --execution-sites A,B,C specify a comma separated list"
       echo "                               of execution sites that will be"
       echo "                               used in addition to the local site"
+      echo "  -t, --transformation-catalog FILE pass the specified"
+      echo "                                   transformation catalog to Pegasus"
       echo "  -l, --local-dir         Directory to put condor files under"
       echo
       echo "If the environment variable TMPDIR is set then this is prepended to the "
@@ -172,16 +180,23 @@ touch _reuse.cache
 
 # cache the pegasus config
 if [ -z ${PEGASUS_PROPERTIES} ] ; then
-  cp -v $PEG_DIR/pegasus-properties.conf ./pegasus-properties.conf
+  cp $PEG_DIR/pegasus-properties.conf ./pegasus-properties.conf
 else
-  cp -v ${PEGASUS_PROPERTIES} ./pegasus-properties.conf
+  cp ${PEGASUS_PROPERTIES} ./pegasus-properties.conf
+fi
+
+# add a transformation catalog, if specified
+if [[ ! -z ${TRANSFORMATION_CATALOG} ]] ; then
+  cp ${TRANSFORMATION_CATALOG} ./transformation-catalog.txt
+  echo "pegasus.catalog.transformation Text" >> pegasus-properties.conf
+  echo "pegasus.catalog.transformation.file ${PWD}/transformation-catalog.txt" >> pegasus-properties.conf
 fi
 
 if [ "x$CACHE_FILE" == "x" ]; then
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites local -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --cluster label --submit 
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --cluster label --submit 
 else
   cp $CACHE_FILE _reuse.cache
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites local -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-submit-dir work --cluster label --submit
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-submit-dir work --cluster label --submit
 fi
 
 ln -s $SUBMIT_DIR submitdir
