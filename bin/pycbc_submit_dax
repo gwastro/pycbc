@@ -109,7 +109,7 @@ fi
 LIGO_USER_NAME=""
 while true; do
   read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " LIGO_USER_NAME
-  if [[ ! -z $NAME ]] ; then
+  if [[ ! -z $LIGO_USER_NAME ]] ; then
     break
   fi
 done
