@@ -126,7 +126,7 @@ fi
 LIGO_USER_NAME=""
 while true; do
   read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " LIGO_USER_NAME
-  if [[ ! -z $LIGO_USER_NAME ]] ; then
+  if [ ! -z $LIGO_USER_NAME ] ; then
     break
   fi
 done
@@ -145,13 +145,13 @@ PEG_DIR=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGA
 # Create the site catalog
 
 # add the local site
-if [[ -z $SITE_LIST ]] ; then
+if [ -z $SITE_LIST ] ; then
   SITE_LIST="local"
 else
   SITE_LIST="local,${SITE_LIST}"
 fi
 
-if [[ -z ${PEGASUS_SITE_CATALOG_PATH} ]] ; then
+if [ -z ${PEGASUS_SITE_CATALOG_PATH} ] ; then
   PEGASUS_SITE_CATALOG_PATH=${PEG_DIR}
 fi
 
@@ -170,7 +170,7 @@ read -ra SITE <<< "$SITE_LIST"
 IFS=${OLD_IFS}
 for s in "${SITE[@]}"; do
   SITE_TEMPLATE=$PEGASUS_SITE_CATALOG_PATH/${s}-site-template.xml
-  if [[ ! -f ${SITE_TEMPLATE} ]] ; then
+  if [ ! -e ${SITE_TEMPLATE} ] ; then
     echo "Error: Could not find site catalog template for site ${s}"
     exit 1
   else
@@ -198,7 +198,7 @@ else
 fi
 
 # add a transformation catalog, if specified
-if [[ ! -z ${TRANSFORMATION_CATALOG} ]] ; then
+if [ ! -z ${TRANSFORMATION_CATALOG} ] ; then
   cp ${TRANSFORMATION_CATALOG} ./transformation-catalog.txt
   echo >> pegasus-properties.conf
   echo "pegasus.catalog.transformation Text" >> pegasus-properties.conf
