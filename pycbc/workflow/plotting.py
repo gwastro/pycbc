@@ -216,7 +216,10 @@ def make_seg_plot(workflow, seg_files, out_dir, seg_names=None, tags=None):
     node = PlotExecutable(workflow.cp, 'page_segplot', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_list_opt('--segment-files', seg_files)
-    node.add_opt('--segment-names', ' '.join(seg_names))
+    quoted_seg_names = []
+    for s in seg_names:
+      quoted_seg_names.append("'" + s + "'")
+    node.add_opt('--segment-names', ' '.join(quoted_seg_names))
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     return node.output_files[0]
