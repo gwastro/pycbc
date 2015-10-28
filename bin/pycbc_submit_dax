@@ -170,7 +170,7 @@ read -ra SITE <<< "$SITE_LIST"
 IFS=${OLD_IFS}
 for s in "${SITE[@]}"; do
   SITE_TEMPLATE=$PEGASUS_SITE_CATALOG_PATH/${s}-site-template.xml
-  if [ ! -f ${SITE_TEMPLATE} ] ; then
+  if [ ! -e ${SITE_TEMPLATE} ] ; then
     echo "Error: Could not find site catalog template for site ${s}"
     exit 1
   else
