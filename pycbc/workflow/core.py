@@ -429,7 +429,7 @@ class Workflow(pegasus_workflow.Workflow):
         # Check that the PFN is for a file or path
         if node.executable.needs_fetching:
             pfn = node.executable.get_pfn()
-            resolved = resolve_url(pfn)
+            resolved = resolve_url(pfn, permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
             self.PFN(resolved, 'local')
 
         cmd_list = node.get_command_line()
@@ -1317,7 +1317,7 @@ def make_external_call(cmdList, out_dir=None, out_basename='external_call',
     --------
     exitCode : int
         The code returned by the process.
-    """
+    """ 
     if out_dir:
         outBase = os.path.join(out_dir,out_basename)
         errFile = outBase + '.err'
@@ -1363,7 +1363,7 @@ class CalledProcessErrorMod(Exception):
         self.outFile = outFile
         self.cmdFile = cmdFile
     def __str__(self):
-        msg = "Command '%s' returned non-zero exit status %d.\n" \
+        msg = "Command '%s' returned non-zero exit pycbc_submit_dax --dax gw.dax --accounting-group ligo.dev.o1.cbc.bns.pycbcofflinestatus %d.\n" \
               %(self.cmd, self.returncode)
         if self.errFile:
             msg += "Stderr can be found in %s .\n" %(self.errFile)
@@ -1405,7 +1405,7 @@ def get_random_label():
                    for _ in range(15))
 
 
-def resolve_url(url, directory=None):
+def resolve_url(url, directory=None, permissions=None):
     """
     Resolves a URL to a local file, and returns the path to
     that file.
@@ -1456,6 +1456,9 @@ def resolve_url(url, directory=None):
     if not os.path.isfile(filename):
         errMsg = "File %s does not exist." %(url)
         raise ValueError(errMsg)
+
+    if permissions:
+        os.chmod(filename, permissions)
 
     return filename
    
