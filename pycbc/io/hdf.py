@@ -128,7 +128,7 @@ class StatmapData(DictArray):
             f.attrs[k] = self.attrs[k]
             
         for k in self.data:
-            f.create_dataset(key, data=self.data[k], 
+            f.create_dataset(k, data=self.data[k], 
                       compression='gzip',
                       compression_opts=9,
                       shuffle=True)
