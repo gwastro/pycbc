@@ -438,7 +438,6 @@ setup (
                'bin/sngl/pycbc_plot_timeseries',
                'bin/hdfcoinc/pycbc_page_injtable',
                'bin/pycbc_submit_dax',
-               'bin/pycbc_submit_dax_stampede',
                'bin/hdfcoinc/pycbc_page_coinc_snrchi',
                'bin/hdfcoinc/pycbc_distribute_background_bins',
                'bin/hdfcoinc/pycbc_combine_statmap',
