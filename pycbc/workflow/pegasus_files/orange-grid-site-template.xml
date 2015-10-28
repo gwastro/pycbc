@@ -1,4 +1,4 @@
-  <site handle="local" arch="x86_64" os="LINUX">
+  <site handle="orange-grid" arch="x86_64" os="LINUX">
     <directory  path="$PWD" type="shared-scratch" free-size="null" total-size="null">
         <file-server  operation="all" url="file://$PWD">
         </file-server>
