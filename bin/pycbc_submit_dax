@@ -88,6 +88,8 @@ while true ; do
       echo "                               to fail on LIGO Data Grid clusters"
       echo "  -p, --pegasus-properties FILE use the specified file as"
       echo "                               the pegasus properties file"
+      echo "  -P, --append-pegasus-property STRING add the extra property"
+      echo "                                          specified by the argument"
       echo "  -s, --execution-sites A,B,C specify a comma separated list"
       echo "                               of execution sites that will be"
       echo "                               used in addition to the local site"
