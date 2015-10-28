@@ -384,6 +384,7 @@ setup (
                'bin/pycbc_bank_verification',
                'bin/pycbc_run_sqlite',
                'bin/pycbc_inspinjfind',
+               'bin/pycbc_inj_cut',
                'bin/pycbc_write_results_page',
                'bin/pycbc_upload_xml_to_gracedb',
                'bin/pycbc_dark_vs_bright_injections',
