@@ -21,7 +21,7 @@ TRANSFORMATION_CATALOG=""
 
 touch extra-properties.conf
 
-GETOPT_CMD=`getopt -o d:c:a:p:P:s:t:Fl:h --long dax:,cache-file:,accounting-group:,pegasus-properties:append-pegasus-property:,execution-sites:,transformation-catalog:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:a:p:P:s:t:Fl:h --long dax:,cache-file:,accounting-group:,pegasus-properties:,append-pegasus-property:,execution-sites:,transformation-catalog:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
