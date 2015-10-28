@@ -162,7 +162,10 @@ cat << EOF >> site-catalog.sh
 xsi:schemaLocation="http://pegasus.isi.edu/schema/sitecatalog http://pegasus.isi.edu/schema/sc-4.0.xsd" version="4.0">
 EOF
 
-IFS=',' ; read -ra SITE <<< "$SITE_LIST"
+OLD_IFS=${IFS}
+IFS=','
+read -ra SITE <<< "$SITE_LIST"
+IFS=${OLD_IFS}
 for s in "${SITE[@]}"; do
   SITE_TEMPLATE=$PEGASUS_SITE_CATALOG_PATH/${s}-site-template.xml
   if [[ ! -f ${SITE_TEMPLATE} ]] ; then
