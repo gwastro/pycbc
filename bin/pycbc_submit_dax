@@ -114,6 +114,16 @@ while true ; do
       echo "path to the temporary workflow execte directory passed to pegasus-plan."
       echo "If the --local-dir option is not given."
       echo
+      echo "If the environment variable PEGASUS_FILE_DIRECTORY is set then the"
+      echo "script will look there for pegasus site catalog and configuration"
+      echo "otherwise, the script will look for this directory by querying the"
+      echo "pycbc.workflow module."
+      echo
+      echo "If the environment variable PEGASUS_SITE_CATALOG_PATH is set then the"
+      echo "script will look for site catalog templates in this directory."
+      echo "Site catalog templates may contain other environment variables that"
+      echo "must be set in order for them to be rendered correctly."
+      echo
       exit 0 ;;
     --) shift ; break ;;
     *) echo "Internal error!" ; exit 1 ;;
@@ -155,7 +165,9 @@ SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
 chmod 755 $SUBMIT_DIR
 
 # find the site-local template directory
-PEG_DIR=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
+if [ -z $PEGASUS_FILE_DIRECTORY ] ; then
+  PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
+fi
 
 # Create the site catalog
 if [ -z $LOCAL_GSIFTP_SERVER ] ; then
@@ -175,7 +187,7 @@ else
 fi
 
 if [ -z ${PEGASUS_SITE_CATALOG_PATH} ] ; then
-  PEGASUS_SITE_CATALOG_PATH=${PEG_DIR}
+  PEGASUS_SITE_CATALOG_PATH=${PEGASUS_FILE_DIRECTORY}
 fi
 
 # create the site catalog template
@@ -215,7 +227,7 @@ touch _reuse.cache
 
 # cache the pegasus config
 if [ -z ${PEGASUS_PROPERTIES} ] ; then
-  cp $PEG_DIR/pegasus-properties.conf ./pegasus-properties.conf
+  cp $PEGASUS_FILE_DIRECTORY/pegasus-properties.conf ./pegasus-properties.conf
 else
   cp ${PEGASUS_PROPERTIES} ./pegasus-properties.conf
 fi
