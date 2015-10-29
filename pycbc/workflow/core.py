@@ -421,6 +421,17 @@ class Workflow(pegasus_workflow.Workflow):
         path =  os.path.join(os.getcwd(), name)
         return path
         
+    @property
+    def staging_site(self):  
+        if self.in_workflow != False:
+            workflow_section = 'workflow-%s' % self.name 
+        else:
+            workflow_section = 'workflow'
+        try:
+            staging_site = self.cp.get(workflow_section,'staging-site')
+        except:
+            staging_site = None
+        return staging_site
 
     def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine
@@ -457,6 +468,8 @@ class Workflow(pegasus_workflow.Workflow):
     def save(self, filename=None, output_map=None, staging_site=None):
         if output_map is None:
             output_map = self.output_map
+
+        staging_site = self.staging_site
             
         Workflow.set_job_properties(self.as_job, output_map, staging_site)
 
