@@ -491,7 +491,14 @@ _filter_time_lengths = {}
 from spa_tmplt import spa_tmplt_norm, spa_tmplt_end, spa_tmplt_precondition, spa_amplitude_factor, spa_length_in_time
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
+
+def seobnrrom_final_frequency(**kwds):
+    from pycbc.pnutils import get_final_freq
+    get_final_freq("SEOBNRv2", kwds['mass1'], kwds['mass2'], kwds['spin1z'], kwds['spin2z'])
+    
 _filter_ends["SPAtmplt"] = spa_tmplt_end
+_filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrrom_final_frequency
+
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
 
