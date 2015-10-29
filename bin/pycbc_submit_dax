@@ -20,10 +20,11 @@ SITE_LIST=""
 TRANSFORMATION_CATALOG=""
 LOCAL_GSIFTP_SERVER=""
 NO_CREATE_PROXY=0
+SUBMIT_DAX="--submit"
 
 echo "# Properties set on command line" > extra-properties.conf
 
-GETOPT_CMD=`getopt -o d:c:g:a:p:P:s:t:Fkl:h --long dax:,cache-file:,local-gsiftp-server:,accounting-group:,pegasus-properties:,append-pegasus-property:,execution-sites:,transformation-catalog:,force-no-accounting-group,no-create-proxy,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:g:a:p:P:s:t:Fknl:h --long dax:,cache-file:,local-gsiftp-server:,accounting-group:,pegasus-properties:,append-pegasus-property:,execution-sites:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -70,6 +71,7 @@ while true ; do
       esac ;;
     -F|--force-no-accounting-group) NO_ACCOUNTING_GROUP=1 ; shift ;;
     -k|--no-create-proxy) NO_CREATE_PROXY=1 ; shift ;;
+    -n|--no-submit) SUBMIT_DAX="" ; shift ;;
     -l|--local-dir)
       case "$2" in
         "") shift 2 ;;
@@ -108,6 +110,7 @@ while true ; do
       echo "                                   transformation catalog to Pegasus"
       echo "  -k, --no-create-proxy   Do not run ligo-proxy-init and assume"
       echo "                             that the user has a valid grid proxy"
+      echo "  -n, --no-submit         Plan the DAX but do not submit it"
       echo "  -l, --local-dir         Directory to put condor files under"
       echo
       echo "If the environment variable TMPDIR is set then this is prepended to the "
@@ -244,10 +247,10 @@ echo >> pegasus-properties.conf
 cat extra-properties.conf >> pegasus-properties.conf
 
 if [ "x$CACHE_FILE" == "x" ]; then
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --cluster label --submit 
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --cluster label $SUBMIT_DAX 
 else
   cp $CACHE_FILE _reuse.cache
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-submit-dir work --cluster label --submit
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-submit-dir work --cluster label $SUBMIT_DAX
 fi
 
 ln -s $SUBMIT_DIR submitdir
