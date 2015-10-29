@@ -27,7 +27,7 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 """
 
-import os,sys,shutil
+import os, sys, shutil, stat
 import logging
 import urllib2, urlparse
 import lal
