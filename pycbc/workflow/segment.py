@@ -416,8 +416,8 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
         tagList = ['SCIENCE']
 
     if file_needs_generating(sciXmlFilePath):
-        segFindCall = [ resolve_url(cp.get("executables","segment_query",
-                permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)),
+        segFindCall = [ resolve_url(cp.get("executables","segment_query"),
+                permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR),
             "--query-segments",
             "--segment-url", sciSegUrl,
             "--gps-start-time", str(start_time),
