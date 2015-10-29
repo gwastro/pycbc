@@ -1,4 +1,8 @@
   <site handle="orange-grid" arch="x86_64" os="LINUX">
+    <directory  path="$PWD" type="shared-scratch" free-size="null" total-size="null">
+        <file-server  operation="all" url="$LOCAL_SITE_SCRATCH_URL">
+        </file-server>
+    </directory>
     <profile namespace="env" key="GLOBUS_LOCATION">/usr</profile>
     <profile namespace="pegasus" key="style">condor</profile>
     <profile namespace="condor" key="getenv">True</profile>
