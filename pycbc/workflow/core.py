@@ -455,7 +455,7 @@ class Workflow(pegasus_workflow.Workflow):
             fil.PFN(fil.storage_path, site='local')
     
     @staticmethod
-    def set_job_properties(job, output_map, staging_site):
+    def set_job_properties(job, output_map, staging_site=None):
         job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % output_map) 
         job.addArguments('-Dpegasus.dir.storage.mapper.replica=File') 
         job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache')) 
