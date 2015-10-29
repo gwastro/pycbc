@@ -185,10 +185,10 @@ fi
 # Create the site catalog
 if [ -z $LOCAL_GSIFTP_SERVER ] ; then
   LOCAL_SITE_STORAGE_URL="file://${PWD}"
-  LOCAL_SITE_SCRATCH_URL="file://${PWD}"
+  LOCAL_SITE_SCRATCH_URL="file://${PWD}/local-site-scratch"
 else
   LOCAL_SITE_STORAGE_URL="gsiftp://${LOCAL_GSIFTP_SERVER}${PWD}"
-  LOCAL_SITE_SCRATCH_URL="gsiftp://${LOCAL_GSIFTP_SERVER}${PWD}"
+  LOCAL_SITE_SCRATCH_URL="gsiftp://${LOCAL_GSIFTP_SERVER}${PWD}/local-site-scratch"
 fi
 export LOCAL_SITE_STORAGE_URL LOCAL_SITE_SCRATCH_URL
 
