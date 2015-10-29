@@ -84,9 +84,6 @@ if args.missed_on_top:
 else:
   fig_title = 'Found and Missed Injections'
 
-# For speed don't bother plotting really distant missed points
-# missed = missed[dvals[args.distance_type][missed] < dvals[args.distance_type][found].max() * 1.1]
-
 fig = plot.figure()
 zmissed = args.missed_on_top
 zfound = not args.missed_on_top
@@ -147,8 +144,10 @@ plot.grid()
 
 if args.log_distance:
     ax.set_yscale('log')
-    
-plot.ylim(ymin=1, ymax=dvals[args.distance_type][missed].max()*1.2)
+
+ymax = 1.2 * max(dvals[args.distance_type][missed].max(),
+                 dvals[args.distance_type][found].max())
+plot.ylim(ymin=1, ymax=ymax)
 
 fig_kwds = {}
 if '.png' in args.output_file:
