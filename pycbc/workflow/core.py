@@ -196,7 +196,10 @@ class Executable(pegasus_workflow.Executable):
             raise TypeError("Failed to find %s executable " 
                             "at %s" % (name, exe_path))
         
-        self.add_pfn(exe_path)
+        if exe_path.startswith('gsiftp://'):
+            self.add_pfn(exe_path,site='pycbc-code')
+        else:
+            self.add_pfn(exe_path)
 
         # Determine the condor universe if we aren't given one 
         if self.universe is None:
