@@ -22,7 +22,7 @@ NO_CREATE_PROXY=0
 
 echo "# Properties set on command line" > extra-properties.conf
 
-GETOPT_CMD=`getopt -o d:c:a:p:P:s:t:Flk:h --long dax:,cache-file:,accounting-group:,pegasus-properties:,append-pegasus-property:,execution-sites:,transformation-catalog:,force-no-accounting-group,no-create-proxy,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:a:p:P:s:t:Fkl:h --long dax:,cache-file:,accounting-group:,pegasus-properties:,append-pegasus-property:,execution-sites:,transformation-catalog:,force-no-accounting-group,no-create-proxy,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -97,6 +97,8 @@ while true ; do
       echo "                               used in addition to the local site"
       echo "  -t, --transformation-catalog FILE pass the specified"
       echo "                                   transformation catalog to Pegasus"
+      echo "  -k, --no-create-proxy   Do not run ligo-proxy-init and assume"
+      echo "                             that the user has a valid grid proxy"
       echo "  -l, --local-dir         Directory to put condor files under"
       echo
       echo "If the environment variable TMPDIR is set then this is prepended to the "
