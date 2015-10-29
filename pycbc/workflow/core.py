@@ -444,19 +444,21 @@ class Workflow(pegasus_workflow.Workflow):
             fil.PFN(fil.storage_path, site='local')
     
     @staticmethod
-    def set_job_properties(job, output_map):
+    def set_job_properties(job, output_map, staging_site):
         job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % output_map) 
         job.addArguments('-Dpegasus.dir.storage.mapper.replica=File') 
         job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache')) 
         job.addArguments('--output-site local')     
         job.addArguments('--cleanup inplace')
         job.addArguments('--cluster label,horizontal')
+        if staging_site:
+            job.addArguments('--staging-site %s' % staging_site)
             
-    def save(self, filename=None, output_map=None):
+    def save(self, filename=None, output_map=None, staging_site=None):
         if output_map is None:
             output_map = self.output_map
             
-        Workflow.set_job_properties(self.as_job, output_map)
+        Workflow.set_job_properties(self.as_job, output_map, staging_site)
 
         # add executable pfns for local site to dax
         for exe in self._executables:
