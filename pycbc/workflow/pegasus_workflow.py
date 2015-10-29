@@ -78,6 +78,9 @@ class Executable(ProfileShortcuts):
                    arch=arch, installed=installed) 
         self.in_workflow = False
         self.pfns = {}
+
+    def clear_pfns(self):
+        self._dax_executable.clearPFNs()
         
     def add_pfn(self, url, site='local'):
         self._dax_executable.PFN(url, site)

@@ -430,7 +430,8 @@ class Workflow(pegasus_workflow.Workflow):
         if node.executable.needs_fetching:
             pfn = node.executable.get_pfn()
             resolved = resolve_url(pfn, permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-            self.PFN(resolved, 'local')
+            node.executable.clear_pfns()
+            node.executable.add_pfn(resolved, site='local')
 
         cmd_list = node.get_command_line()
         
