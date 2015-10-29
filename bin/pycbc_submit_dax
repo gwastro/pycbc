@@ -18,11 +18,12 @@ NO_ACCOUNTING_GROUP=0
 PEGASUS_PROPERTIES=""
 SITE_LIST=""
 TRANSFORMATION_CATALOG=""
+LOCAL_GSIFTP_SERVER=""
 NO_CREATE_PROXY=0
 
 echo "# Properties set on command line" > extra-properties.conf
 
-GETOPT_CMD=`getopt -o d:c:a:p:P:s:t:Fkl:h --long dax:,cache-file:,accounting-group:,pegasus-properties:,append-pegasus-property:,execution-sites:,transformation-catalog:,force-no-accounting-group,no-create-proxy,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:g:a:p:P:s:t:Fkl:h --long dax:,cache-file:,local-gsiftp-server:,accounting-group:,pegasus-properties:,append-pegasus-property:,execution-sites:,transformation-catalog:,force-no-accounting-group,no-create-proxy,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -36,6 +37,11 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) CACHE_FILE=$2 ; shift 2 ;;
+      esac ;;
+    -g|--local-gsiftp-server)
+      case "$2" in
+        "") shift 2 ;;
+        *) LOCAL_GSIFTP_SERVER=$2 ; shift 2 ;;
       esac ;;
     -a|--accounting-group)
       case "$2" in
@@ -83,6 +89,9 @@ while true ; do
       echo "optional arguments:"
       echo "  -h, --help              show this help message and exit"
       echo "  -c, --cache-file FILE   replica cache file for data reuse"
+      echo "  -g, --local-gsiftp-server HOST provide a gsiftp url on HOST"
+      echo "                                 for the local site storage"
+      echo "                                 and scratch directories" 
       echo "  -a, --accounting-group GROUP tagged string used for site "
       echo "                               resource accounting."
       echo "  -F, --force-no-accounting-group submit without an accounting"
@@ -149,6 +158,14 @@ chmod 755 $SUBMIT_DIR
 PEG_DIR=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
 
 # Create the site catalog
+if [ -z $LOCAL_GSIFTP_SERVER ] ; then
+  LOCAL_SITE_STORAGE_URL="file://${PWD}"
+  LOCAL_SITE_SCRATCH_URL="file://${PWD}"
+else
+  LOCAL_SITE_STORAGE_URL="gsiftp://${LOCAL_GSIFTP_SERVER}${PWD}"
+  LOCAL_SITE_SCRATCH_URL="gsiftp://${LOCAL_GSIFTP_SERVER}${PWD}"
+fi
+export LOCAL_SITE_STORAGE_URL LOCAL_SITE_SCRATCH_URL
 
 # add the local site
 if [ -z $SITE_LIST ] ; then
