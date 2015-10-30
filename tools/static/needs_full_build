@@ -83,4 +83,5 @@ pycbc_pickle_horizon_distances
 pycbc_pipedown_plots
 pycbc_run_sqlite
 pycbc_page_foreground
+pycbc_plot_gating
 
