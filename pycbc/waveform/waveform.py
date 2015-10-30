@@ -25,6 +25,7 @@
 """Convenience functions to genenerate gravitational wave templates and
 waveforms.
 """
+import numpy
 import lal, lalsimulation
 from pycbc.types import TimeSeries, FrequencySeries, zeros
 from pycbc.types import real_same_precision_as, complex_same_precision_as
@@ -32,6 +33,7 @@ import pycbc.scheme as _scheme
 import inspect
 from pycbc.fft import fft
 from pycbc import pnutils
+from pycbc import psd
 from pycbc.waveform import utils as wfutils
 import pycbc
 
@@ -85,8 +87,19 @@ def _lalsim_fd_waveform(**p):
     lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
     lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
 
+    # Interpolate for ROMs
+    if p['approximant'] == 'SEOBNRv2_ROM_DoubleSpin':
+        t_len = seobnrrom_length_in_time(**p)
+        req_t_len = 1. / p['delta_f']
+        if t_len < req_t_len:
+            red_fac = req_t_len / t_len
+            red_fac = 2**int(numpy.log2(red_fac))
+            delta_f = p['delta_f'] * red_fac
+    else:
+        delta_f = p['delta_f']
+
     hp, hc = lalsimulation.SimInspiralChooseFDWaveform(float(p['coa_phase']),
-               float(p['delta_f']),
+               delta_f,
                float(pnutils.solar_mass_to_kg(p['mass1'])),
                float(pnutils.solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
@@ -103,6 +116,11 @@ def _lalsim_fd_waveform(**p):
 
     hc = FrequencySeries(hc.data.data[:]*1, delta_f=hc.deltaF,
                             epoch=hc.epoch)                        
+
+    if p['approximant'] == 'SEOBNRv2_ROM_DoubleSpin':
+        if red_fac > 1:
+            hp = psd.interpolate_complex(hp, p['delta_f'])
+            hc = psd.interpolate_complex(hc, p['delta_f'])
     return hp, hc
 
 def _lalsim_sgburst_waveform(**p):
