@@ -42,7 +42,7 @@ while true ; do
         "") shift 2 ;;
         *) CACHE_FILE=1
            if [ -e $2 ] ; then 
-             cat $2 >> _reuse.cach
+             cat $2 >> _reuse.cache
              else
                echo "Error: cache file $2 not found"
                exit 1
