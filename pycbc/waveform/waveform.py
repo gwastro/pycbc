@@ -471,7 +471,7 @@ def get_interpolated_fd_waveform(dtype=numpy.complex128, **params):
     offset = int(ringdown_padding * (len(hp)-1)*2 * df)
     
     if f_end is not None:
-        n_min = int(rulog2(f_end / df_min))
+        n_min = int(rulog2(f_end / df_min)) + 1
         print f_end, n_min * df_min, len(hp) * hp.delta_f
         if n_min < len(hp):
             hp = hp[:n_min]
