@@ -89,7 +89,7 @@ def _lalsim_fd_waveform(**p):
     lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
 
     hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(float(p['coa_phase']),
-               delta_f,
+               p['delta_f'],
                float(pnutils.solar_mass_to_kg(p['mass1'])),
                float(pnutils.solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
