@@ -14,7 +14,8 @@ parser.add_argument('--axis-type', default='mchirp', choices=['mchirp',
                     'effective_spin', 'time', 'mtotal', 'mass_ratio'])
 parser.add_argument('--distance-type', default='decisive_distance',
                     choices=['decisive_distance', 'dec_chirp_distance',
-                    'chirp_distance'])
+                             'chirp_distance', 'comb_optimal_snr',
+                             'decisive_optimal_snr'])
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--log-distance', action='store_true', default=False)
 parser.add_argument('--dynamic', action='store_true', default=False)
