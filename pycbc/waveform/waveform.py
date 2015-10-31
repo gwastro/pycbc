@@ -65,7 +65,7 @@ def _lalsim_td_waveform(**p):
     if p['numrel_data']:
         lalsimulation.SimInspiralSetNumrelData(flags, str(p['numrel_data']))
 
-    hp, hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['coa_phase']),
+    hp1, hc1 = lalsimulation.SimInspiralChooseTDWaveform(float(p['coa_phase']),
                float(p['delta_t']),
                float(pnutils.solar_mass_to_kg(p['mass1'])),
                float(pnutils.solar_mass_to_kg(p['mass2'])),
@@ -78,8 +78,8 @@ def _lalsim_td_waveform(**p):
                int(p['amplitude_order']), int(p['phase_order']),
                _lalsim_enum[p['approximant']])
 
-    hp = TimeSeries(hp.data.data[:]*1, delta_t=hp.deltaT, epoch=hp.epoch)
-    hc = TimeSeries(hc.data.data[:]*1, delta_t=hc.deltaT, epoch=hc.epoch)
+    hp = TimeSeries(hp1.data.data[:], delta_t=hp.deltaT, epoch=hp.epoch)
+    hc = TimeSeries(hc1.data.data[:], delta_t=hc.deltaT, epoch=hc.epoch)
 
     return hp, hc
 
@@ -88,18 +88,7 @@ def _lalsim_fd_waveform(**p):
     lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
     lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
 
-    # Interpolate for ROMs
-    if p['approximant'] == 'SEOBNRv2_ROM_DoubleSpin':
-        t_len = seobnrrom_length_in_time(**p)
-        req_t_len = 1. / p['delta_f']
-        if t_len < req_t_len:
-            red_fac = req_t_len / t_len
-            red_fac = 2**int(numpy.log2(red_fac))
-            delta_f = p['delta_f'] * red_fac
-    else:
-        delta_f = p['delta_f']
-
-    hp, hc = lalsimulation.SimInspiralChooseFDWaveform(float(p['coa_phase']),
+    hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(float(p['coa_phase']),
                delta_f,
                float(pnutils.solar_mass_to_kg(p['mass1'])),
                float(pnutils.solar_mass_to_kg(p['mass2'])),
@@ -112,16 +101,12 @@ def _lalsim_fd_waveform(**p):
                int(p['amplitude_order']), int(p['phase_order']),
                _lalsim_enum[p['approximant']])
 
-    hp = FrequencySeries(hp.data.data[:]*1, delta_f=hp.deltaF,
+    hp = FrequencySeries(hp1.data.data[:], delta_f=hp.deltaF,
                             epoch=hp.epoch)
 
-    hc = FrequencySeries(hc.data.data[:]*1, delta_f=hc.deltaF,
+    hc = FrequencySeries(hc1.data.data[:], delta_f=hc.deltaF,
                             epoch=hc.epoch)                        
 
-    if p['approximant'] == 'SEOBNRv2_ROM_DoubleSpin':
-        if red_fac > 1:
-            hp = psd.interpolate_complex(hp, p['delta_f'])
-            hc = psd.interpolate_complex(hc, p['delta_f'])
     return hp, hc
 
 def _lalsim_sgburst_waveform(**p):
