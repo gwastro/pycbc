@@ -443,7 +443,7 @@ def get_fd_waveform(template=None, **kwargs):
 
     return wav_gen[input_params['approximant']](**input_params)
 
-def get_interpolated_fd_waveform(**params):
+def get_interpolated_fd_waveform(dtype=numpy.complex128, **params):
     """ Return a fourier domain waveform approximant, using interpolation
     """
 
@@ -467,6 +467,7 @@ def get_interpolated_fd_waveform(**params):
     df_min = 1.0 / rulog2(duration + ringdown_padding)
     params['delta_f'] = df_min
     hp, hc = get_fd_waveform(**params)
+    hp = hp.astype(dtype)
     offset = int(ringdown_padding * (len(hp)-1)*2 * df)
     
     if f_end is not None:
@@ -477,6 +478,7 @@ def get_interpolated_fd_waveform(**params):
 
     hp = interpolate_complex_frequency(hp, df, zeros_offset=offset, side='left')
     hp.length_in_time = hp.chirp_length = duration
+    return hp
 
 def get_sgburst_waveform(template=None, **kwargs):
     """Return the plus and cross polarizations of a time domain
@@ -550,6 +552,7 @@ def seobnrrom_final_frequency(**kwds):
     
 _filter_ends["SPAtmplt"] = spa_tmplt_end
 _filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrrom_final_frequency
+_filter_ends["SEOBNRv2_ROM_DoubleSpin_INTERP"] =  seobnrrom_final_frequency
 
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
@@ -594,7 +597,7 @@ def get_waveform_filter(out, template=None, **kwargs):
         return htilde
 
     if '_INTERP' in input_params['approximant']:
-        hp = get_interpolated_fd_waveform(**input_params)
+        hp = get_interpolated_fd_waveform(dtype=numpy.complex64, **input_params)
         hp.resize(n)
         out[0:len(hp)] = hp[:]
         return FrequencySeries(out, delta_f=hp.delta_f, copy=False)  
