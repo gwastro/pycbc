@@ -35,6 +35,7 @@ from pycbc.fft import fft
 from pycbc import pnutils
 from pycbc import psd
 from pycbc.waveform import utils as wfutils
+from pycbc.filter import interpolate_complex_frequency
 import pycbc
 
 default_args = {'spin1x':0, 'spin1y':0, 'spin1z':0, 'spin2x':0, 'spin2y':0,
@@ -446,6 +447,40 @@ def get_fd_waveform(template=None, **kwargs):
 
     return wav_gen[input_params['approximant']](**input_params)
 
+def get_interpolated_fd_waveform(**params):
+    """ Return a fourier domain waveform approximant, using interpolation
+    """
+
+    def rulog2(val):
+        return 2.0 ** numpy.ceil(numpy.log2(float(val)))
+
+    params['approximant'] = params['approximant'].replace('_INTERP', '')
+    df = params['delta_f']
+    
+    duration = get_waveform_filter_length_in_time(**params)
+    
+    if 'f_final' in params:
+        f_end = params['f_final']
+    else:
+        f_end = get_waveform_end_frequency(**params)
+    
+    #FIXME We should try to get this length directly somehow
+    # I think this number should be conservative
+    ringdown_padding = 0.5
+    
+    df_min = 1.0 / rulog2(duration + ringdown_padding)
+    params['delta_f'] = df_min
+    hp, hc = get_fd_waveform(**params)
+    offset = int(ringdown_padding * (len(hp)-1)*2 * df)
+    
+    if f_end is not None:
+        n_min = int(rulog2(f_end / df_min))
+        print f_end, n_min * df_min, len(hp) * hp.delta_f
+        if n_min < len(hp):
+            hp = hp[:n_min]
+
+    hp = interpolate_complex_frequency(hp, df, zeros_offset=offset, side='left')
+    hp.length_in_time = hp.chirp_length = duration
 
 def get_sgburst_waveform(template=None, **kwargs):
     """Return the plus and cross polarizations of a time domain
@@ -564,12 +599,20 @@ def get_waveform_filter(out, template=None, **kwargs):
         htilde.length_in_time = htilde.chirp_length
         return htilde
 
+    if '_INTERP' in input_params['approximant']:
+        hp = get_interpolated_fd_waveform(**input_params)
+        hp.resize(n)
+        out[0:len(hp)] = hp[:]
+        return FrequencySeries(out, delta_f=hp.delta_f, copy=False)  
+
     if input_params['approximant'] in fd_approximants(_scheme.mgr.state):
         wav_gen = fd_wav[type(_scheme.mgr.state)]
         hp, hc = wav_gen[input_params['approximant']](**input_params)
+    
         hp.resize(n)
         out[0:len(hp)] = hp[:]
         hp = FrequencySeries(out, delta_f=hp.delta_f, copy=False)
+        
         hp.chirp_length = get_waveform_filter_length_in_time(**input_params)
         hp.length_in_time = hp.chirp_length
         return hp
