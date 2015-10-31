@@ -244,37 +244,6 @@ def interpolate(series, delta_f):
     return FrequencySeries(interpolated_series, epoch=series.epoch, 
                            delta_f=delta_f, dtype=series.dtype)
 
-def interpolate_complex(series, delta_f):
-    """Return a new complex frequency series that has been interpolated to the
-    desired delta_f.
-
-    Parameters
-    ----------
-    series : FrequencySeries
-        Frequency series to be interpolated.
-    delta_f : float
-        The desired delta_f of the output
-
-    Returns
-    -------
-    interpolated series : FrequencySeries
-        A new FrequencySeries that has been interpolated.
-    """
-    new_n = int( (len(series)-1) * series.delta_f / delta_f + 1)
-    samples = numpy.arange(0, new_n) * delta_f
-    old_N = int( (len(series)-1) * 2 )
-    new_N = int( (new_n - 1) * 2 )
-    time_series = TimeSeries(zeros(old_N), delta_t =1.0/(series.delta_f*old_N),
-                             dtype=real_same_precision_as(series))
-    ifft(series, time_series)
-    time_series.resize(new_N)
-    out_series = FrequencySeries(zeros(new_n), epoch=series.epoch,
-                           delta_f=delta_f, dtype=series.dtype)
-    fft(time_series, out_series)
-
-    return out_series
-
-
 def bandlimited_interpolate(series, delta_f):
     """Return a new PSD that has been interpolated to the desired delta_f.
 
