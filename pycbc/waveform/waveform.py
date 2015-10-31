@@ -78,8 +78,8 @@ def _lalsim_td_waveform(**p):
                int(p['amplitude_order']), int(p['phase_order']),
                _lalsim_enum[p['approximant']])
 
-    hp = TimeSeries(hp1.data.data[:], delta_t=hp.deltaT, epoch=hp.epoch)
-    hc = TimeSeries(hc1.data.data[:], delta_t=hc.deltaT, epoch=hc.epoch)
+    hp = TimeSeries(hp1.data.data[:], delta_t=hp1.deltaT, epoch=hp1.epoch)
+    hc = TimeSeries(hc1.data.data[:], delta_t=hc1.deltaT, epoch=hc1.epoch)
 
     return hp, hc
 
@@ -101,11 +101,11 @@ def _lalsim_fd_waveform(**p):
                int(p['amplitude_order']), int(p['phase_order']),
                _lalsim_enum[p['approximant']])
 
-    hp = FrequencySeries(hp1.data.data[:], delta_f=hp.deltaF,
-                            epoch=hp.epoch)
+    hp = FrequencySeries(hp1.data.data[:], delta_f=hp1.deltaF,
+                            epoch=hp1.epoch)
 
-    hc = FrequencySeries(hc1.data.data[:], delta_f=hc.deltaF,
-                            epoch=hc.epoch)                        
+    hc = FrequencySeries(hc1.data.data[:], delta_f=hc1.deltaF,
+                            epoch=hc1.epoch)                        
 
     return hp, hc
 
