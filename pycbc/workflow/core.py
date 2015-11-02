@@ -180,12 +180,14 @@ class Executable(pegasus_workflow.Executable):
         # able to fetch it.
         exe_path = cp.get('executables', name)
         valid_path = False
+        self.needs_fetching = False
 
         if exe_path.find('://') > 0:
             if exe_path.startswith('file://'):
                 valid_path = os.path.isfile(exe_path[7:])
             else:
                 valid_path = True
+                self.needs_fetching = True
         else:
             valid_path = os.path.isfile(exe_path)
 
@@ -437,7 +439,15 @@ class Workflow(pegasus_workflow.Workflow):
         """ Execute this node immediately on the local machine
         """
         node.executed = True
-        cmd_list = node.get_command_line(verbatim_exe=verbatim_exe)
+        
+        # Check that the PFN is for a file or path
+        if node.executable.needs_fetching:
+            pfn = node.executable.get_pfn()
+            resolved = resolve_url(pfn, permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+            node.executable.clear_pfns()
+            node.executable.add_pfn(resolved, site='local')
+
+        cmd_list = node.get_command_line()
         
         # Must execute in output directory.
         curr_dir = os.getcwd()
@@ -508,7 +518,7 @@ class Node(pegasus_workflow.Node):
             
         self._options += self.executable.common_options
     
-    def get_command_line(self, verbatim_exe=False):
+    def get_command_line(self):
         self._finalize()
         arglist = self._dax_node.arguments
         
@@ -526,10 +536,7 @@ class Node(pegasus_workflow.Node):
        
         # This allows the pfn to be an http(s) URL, which will be
         # downloaded by resolve_url
-        if verbatim_exe:
-            exe_path = self.executable.get_pfn()
-        else:
-            exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
+        exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
 
         return [exe_path] + arglist
         
@@ -1329,12 +1336,7 @@ def make_external_call(cmdList, out_dir=None, out_basename='external_call',
     --------
     exitCode : int
         The code returned by the process.
-    """
-    resolvedExe = resolve_url(cmdList[0])
-    if resolvedExe != cmdList[0]:
-        os.chmod(resolvedExe, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-        cmdList[0] = resolvedExe
-
+    """ 
     if out_dir:
         outBase = os.path.join(out_dir,out_basename)
         errFile = outBase + '.err'
@@ -1380,7 +1382,7 @@ class CalledProcessErrorMod(Exception):
         self.outFile = outFile
         self.cmdFile = cmdFile
     def __str__(self):
-        msg = "Command '%s' returned non-zero exit status %d.\n" \
+        msg = "Command '%s' returned non-zero exit pycbc_submit_dax --dax gw.dax --accounting-group ligo.dev.o1.cbc.bns.pycbcofflinestatus %d.\n" \
               %(self.cmd, self.returncode)
         if self.errFile:
             msg += "Stderr can be found in %s .\n" %(self.errFile)
@@ -1422,13 +1424,18 @@ def get_random_label():
                    for _ in range(15))
 
 
-def resolve_url(url, directory=None):
+def resolve_url(url, directory=None, permissions=None):
     """
     Resolves a URL to a local file, and returns the path to
     that file.
     """
     if directory is None:
         directory = os.getcwd()
+        
+    # If the "url" is really a path, allow this to work as well and simply
+    # return
+    if os.path.isfile(url):
+        return os.path.abspath(url)
 
     if url.startswith('http://') or url.startswith('https://') or \
        url.startswith('file://'):
@@ -1468,6 +1475,9 @@ def resolve_url(url, directory=None):
     if not os.path.isfile(filename):
         errMsg = "File %s does not exist." %(url)
         raise ValueError(errMsg)
+
+    if permissions:
+        os.chmod(filename, permissions)
 
     return filename
    
