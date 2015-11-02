@@ -269,7 +269,8 @@ else
   pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-submit-dir work --cluster label $SUBMIT_DAX
 fi
 
-ln -s $SUBMIT_DIR submitdir
+rm -f submitdir
+ln -sf $SUBMIT_DIR submitdir
 
 echo pegasus-status $SUBMIT_DIR/work > status
 chmod 755 status
