@@ -25,7 +25,7 @@
 """Convenience functions to genenerate gravitational wave templates and
 waveforms.
 """
-import lal, lalsimulation, numpy
+import lal, lalsimulation, numpy, copy
 from pycbc.types import TimeSeries, FrequencySeries, zeros
 from pycbc.types import real_same_precision_as
 import pycbc.scheme as _scheme
@@ -156,11 +156,6 @@ if pycbc.HAVE_CUDA:
 cuda_td = dict(_lalsim_td_approximants.items() + _cuda_td_approximants.items())
 cuda_fd = dict(_lalsim_fd_approximants.items() + _cuda_fd_approximants.items())
 
-td_wav = _scheme.ChooseBySchemeDict()
-fd_wav = _scheme.ChooseBySchemeDict()
-td_wav.update({_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td})
-fd_wav.update({_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd})
-sgburst_wav = {_scheme.CPUScheme:cpu_sgburst}
 
 # List the various available approximants ####################################
 
@@ -428,7 +423,7 @@ def get_fd_waveform(template=None, **kwargs):
 
     return wav_gen[input_params['approximant']](**input_params)
 
-def get_interpolated_fd_waveform(dtype=numpy.complex128, **params):
+def get_interpolated_fd_waveform(dtype=numpy.complex64, **params):
     """ Return a fourier domain waveform approximant, using interpolation
     """
 
@@ -438,7 +433,10 @@ def get_interpolated_fd_waveform(dtype=numpy.complex128, **params):
     params['approximant'] = params['approximant'].replace('_INTERP', '')
     df = params['delta_f']
     
-    duration = get_waveform_filter_length_in_time(**params)
+    if 'duration' not in params:
+        duration = get_waveform_filter_length_in_time(**params)
+    else:
+        duration = params['duration']
     
     if 'f_final' in params:
         f_end = params['f_final']
@@ -457,13 +455,11 @@ def get_interpolated_fd_waveform(dtype=numpy.complex128, **params):
     
     if f_end is not None:
         n_min = int(rulog2(f_end / df_min)) + 1
-        print f_end, n_min * df_min, len(hp) * hp.delta_f
         if n_min < len(hp):
             hp = hp[:n_min]
 
     hp = interpolate_complex_frequency(hp, df, zeros_offset=offset, side='left')
-    hp.length_in_time = hp.chirp_length = duration
-    return hp
+    return hp, None
 
 def get_sgburst_waveform(template=None, **kwargs):
     """Return the plus and cross polarizations of a time domain
@@ -565,6 +561,18 @@ _filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_SingleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin"] = seobnrrom_length_in_time
 
+# We can do interpolation for waveforms that have a time length
+for apx in copy.copy(_filter_time_lengths):
+    apx_int = apx + '_INTERP'
+    cpu_fd[apx_int] = get_interpolated_fd_waveform
+    _filter_time_lengths[apx_int] = _filter_time_lengths[apx]  
+
+td_wav = _scheme.ChooseBySchemeDict()
+fd_wav = _scheme.ChooseBySchemeDict()
+td_wav.update({_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td})
+fd_wav.update({_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd})
+sgburst_wav = {_scheme.CPUScheme:cpu_sgburst}
+
 
 def get_waveform_filter(out, template=None, **kwargs):
     """Return a frequency domain waveform filter for the specified approximant
@@ -581,22 +589,17 @@ def get_waveform_filter(out, template=None, **kwargs):
         htilde.length_in_time = htilde.chirp_length
         return htilde
 
-    if '_INTERP' in input_params['approximant']:
-        hp = get_interpolated_fd_waveform(dtype=numpy.complex64, **input_params)
-        hp.resize(n)
-        out[0:len(hp)] = hp[:]
-        return FrequencySeries(out, delta_f=hp.delta_f, copy=False)  
-
     if input_params['approximant'] in fd_approximants(_scheme.mgr.state):
         wav_gen = fd_wav[type(_scheme.mgr.state)]
-        hp, hc = wav_gen[input_params['approximant']](**input_params)
-    
+        
+        duration = get_waveform_filter_length_in_time(**input_params)
+        hp, hc = wav_gen[input_params['approximant']](duration=duration, **input_params)
+     
         hp.resize(n)
         out[0:len(hp)] = hp[:]
         hp = FrequencySeries(out, delta_f=hp.delta_f, copy=False)
         
-        hp.chirp_length = get_waveform_filter_length_in_time(**input_params)
-        hp.length_in_time = hp.chirp_length
+        hp.length_in_time = hp.chirp_length = duration
         return hp
 
     elif input_params['approximant'] in td_approximants(_scheme.mgr.state):
