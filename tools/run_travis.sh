@@ -118,5 +118,9 @@ test_exec_help pycbc_single_template
 test_exec_help pycbc_single_template_plot
 test_exec_help pycbc_optimal_snr
 test_exec_help pycbc_plot_gating
+test_exec_help pycbc_page_snglinfo
+test_exec_help pycbc_page_injinfo
+test_exec_help pycbc_plot_trigger_timeseries
+test_exec_help pycbc_generate_hwinj
 
 exit ${RESULT}
