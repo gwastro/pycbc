@@ -408,7 +408,7 @@ def make_singles_timefreq(workflow, single, bank_file, start, end, out_dir,
     makedir(out_dir)
     name = 'plot_singles_timefreq'
 
-    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+    node = PlotExecutable(workflow.cp, name, ifos=[single.ifo],
                           out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--trig-file', single)
     node.add_input_opt('--bank-file', bank_file)
@@ -422,5 +422,3 @@ def make_singles_timefreq(workflow, single, bank_file, start, end, out_dir,
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files
-
-
