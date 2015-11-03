@@ -5,6 +5,5 @@
     <profile namespace="condor" key="accounting_group">$ACCOUNTING_GROUP</profile>
     <profile namespace="condor" key="should_transfer_files">YES</profile>
     <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
-    <profile namespace="condor" key="+DESIRED_Sites">&quot;SU-OG&quot;</profile>
-    <profile namespace="condor" key="+IS_GLIDEIN">&quot;True&quot;</profile>
+    <profile namespace="condor" key="Requirements">GLIDEIN_ResourceName == &quot;SU-OG&quot;</profile>
   </site>
