@@ -213,8 +213,8 @@ class Executable(pegasus_workflow.Executable):
         # Determine the sections from the ini file that will configure
         # this executable
         sections = [name]
-        if self.ifo_string:
-            sec_tags = tags + [self.ifo_string]
+        if self.ifo_list is not None
+            sec_tags = tags + [self.ifo_list] + [self.ifo_string]
         else:
             sec_tags = tags
         for tag in sec_tags:
