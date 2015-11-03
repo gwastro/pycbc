@@ -427,25 +427,25 @@ def get_fd_waveform(template=None, **kwargs):
 
     return wav_gen[input_params['approximant']](**input_params)
 
-def get_interpolated_fd_waveform(dtype=numpy.complex64, **params):
+def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
+                                 **params):
     """ Return a fourier domain waveform approximant, using interpolation
     """
 
     def rulog2(val):
         return 2.0 ** numpy.ceil(numpy.log2(float(val)))
 
+    orig_approx = params['approximant']
     params['approximant'] = params['approximant'].replace('_INTERP', '')
     df = params['delta_f']
     
     if 'duration' not in params:
         duration = get_waveform_filter_length_in_time(**params)
-    else:
+    elif params['duration'] > 0:
         duration = params['duration']
-    
-    if 'f_final' in params:
-        f_end = params['f_final']
     else:
-        f_end = get_waveform_end_frequency(**params)
+        err_msg = "Waveform duration must be greater than 0."
+        raise ValueError(err_msg)
     
     #FIXME We should try to get this length directly somehow
     # I think this number should be conservative
@@ -455,15 +455,34 @@ def get_interpolated_fd_waveform(dtype=numpy.complex64, **params):
     params['delta_f'] = df_min
     hp, hc = get_fd_waveform(**params)
     hp = hp.astype(dtype)
+    if return_hc:
+        hc = hc.astype(dtype)
+    else:
+        hc = None
     offset = int(ringdown_padding * (len(hp)-1)*2 * df)
-    
+
+    f_end = get_waveform_end_frequency(**params)
+    if 'f_final' in params and params['f_final'] > 0:
+        f_end_params = params['f_final']
+        if f_end is not None:
+            f_end = min(f_end_params, f_end)
+        else:
+            f_end = f_end
+    #f_end = None
+
     if f_end is not None:
         n_min = int(rulog2(f_end / df_min)) + 1
         if n_min < len(hp):
             hp = hp[:n_min]
+            if hc is not None:
+                hc = hc[:n_min]
 
     hp = interpolate_complex_frequency(hp, df, zeros_offset=offset, side='left')
-    return hp, None
+    if hc is not None:
+        hc = interpolate_complex_frequency(hc, df, zeros_offset=offset,
+                                           side='left')
+    params['approximant'] = orig_approx
+    return hp, hc
 
 def get_sgburst_waveform(template=None, **kwargs):
     """Return the plus and cross polarizations of a time domain
@@ -528,21 +547,11 @@ _template_amplitude_norms = {}
 _filter_time_lengths = {}
 
 from spa_tmplt import spa_tmplt_norm, spa_tmplt_end, spa_tmplt_precondition, spa_amplitude_factor, spa_length_in_time
-_filter_norms["SPAtmplt"] = spa_tmplt_norm
-_filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
 def seobnrrom_final_frequency(**kwds):
     from pycbc.pnutils import get_final_freq
     return get_final_freq("SEOBNRv2", kwds['mass1'], kwds['mass2'], kwds['spin1z'], kwds['spin2z'])
     
-_filter_ends["SPAtmplt"] = spa_tmplt_end
-_filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrrom_final_frequency
-_filter_ends["SEOBNRv2_ROM_DoubleSpin_INTERP"] =  seobnrrom_final_frequency
-
-_template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
-_filter_time_lengths["SPAtmplt"] = spa_length_in_time
-
-
 def seobnrrom_length_in_time(**kwds):
     """
     This is a stub for holding the calculation for getting length of the ROM
@@ -560,11 +569,27 @@ def seobnrrom_length_in_time(**kwds):
     time_length = time_length * 1.1
     return time_length
 
+_filter_norms["SPAtmplt"] = spa_tmplt_norm
+_filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
+
+_filter_ends["SPAtmplt"] = spa_tmplt_end
+_filter_ends["SEOBNRv1_ROM_SingleSpin"] = seobnrrom_final_frequency
+_filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrrom_final_frequency
+_filter_ends["SEOBNRv2_ROM_SingleSpin"] = seobnrrom_final_frequency
+_filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrrom_final_frequency
+_filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_final_frequency
+_filter_ends["IMRPhenomC"] = seobnrrom_final_frequency
+_filter_ends["IMRPhenomD"] = seobnrrom_final_frequency
+
+_template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
+
+_filter_time_lengths["SPAtmplt"] = spa_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_SingleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_SingleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin"] = seobnrrom_length_in_time
-# FIXME get IMRPhenomD duration from SEOBNRv2 until a proper formula is available
+_filter_time_lengths["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_length_in_time
+_filter_time_lengths["IMRPhenomC"] = seobnrrom_length_in_time
 _filter_time_lengths["IMRPhenomD"] = seobnrrom_length_in_time
 
 # We can do interpolation for waveforms that have a time length
@@ -599,7 +624,8 @@ def get_waveform_filter(out, template=None, **kwargs):
         wav_gen = fd_wav[type(_scheme.mgr.state)]
         
         duration = get_waveform_filter_length_in_time(**input_params)
-        hp, hc = wav_gen[input_params['approximant']](duration=duration, **input_params)
+        hp, hc = wav_gen[input_params['approximant']](duration=duration,
+                                               return_hc=False, **input_params)
      
         hp.resize(n)
         out[0:len(hp)] = hp[:]
