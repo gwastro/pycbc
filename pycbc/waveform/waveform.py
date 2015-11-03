@@ -448,6 +448,12 @@ def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
     ringdown_padding = 0.5
     
     df_min = 1.0 / rulog2(duration + ringdown_padding)
+    # FIXME: I don't understand this, but waveforms with df_min < 0.5 will chop
+    #        off the inspiral when using ringdown_padding - 0.5.
+    #        Also, if ringdown_padding is set to a very small
+    #        value we can see cases where the ringdown is chopped.
+    if df_min > 0.5:
+        df_min = 0.5
     params['delta_f'] = df_min
     hp, hc = get_fd_waveform(**params)
     hp = hp.astype(dtype)
@@ -455,7 +461,7 @@ def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
         hc = hc.astype(dtype)
     else:
         hc = None
-    offset = int(ringdown_padding * (len(hp)-1)*2 * df)
+    offset = int(ringdown_padding * (len(hp)-1)*2 * hp.delta_f)
 
     f_end = get_waveform_end_frequency(**params)
     if 'f_final' in params and params['f_final'] > 0:
@@ -464,7 +470,6 @@ def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
             f_end = min(f_end_params, f_end)
         else:
             f_end = f_end
-    #f_end = None
 
     if f_end is not None:
         n_min = int(rulog2(f_end / df_min)) + 1
