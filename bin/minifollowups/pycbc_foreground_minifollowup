@@ -128,7 +128,7 @@ for num_event in range(num_events):
         time = times[single.ifo][num_event]
         files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
                                 time - 10, time + 10, args.output_dir,
-                                tags=args.tags + [str(num_event), single.ifo])                 
+                                tags=args.tags + [str(num_event)])
     
     layouts += list(layout.grouper(files, 2))
     num_event += 1
