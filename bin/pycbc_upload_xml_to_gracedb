@@ -143,11 +143,11 @@ for event in coinc_table:
     else:
         r = gracedb.createEvent("CBC", "pycbc", "tmp_coinc_xml_file.xml",
                                 "AllSky").json()
-    logging.info("Uploaded event %s." %(r["graceid"]))
+    logging.info("Uploaded event %s.", r["graceid"])
     gracedb.writeLog(
         r["graceid"], "PyCBC PSD estimate from the time of event",
         "psd.xml.gz", open("tmp_psd.xml.gz", "rb").read(), "psd").json()
-    logging.info("Uploaded file psd.xml.gz to event %s." %(r["graceid"]))
+    logging.info("Uploaded file psd.xml.gz to event %s.", r["graceid"])
     xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_event_map_table_curr)
