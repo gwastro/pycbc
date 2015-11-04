@@ -20,7 +20,6 @@
 Take a coinc xml file containing multiple events and upload to gracedb.
 """
 
-import os, json
 import argparse
 import logging
 from ligo.gracedb.rest import GraceDb
@@ -31,7 +30,6 @@ import lal.series
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
-from glue.ligolw import ilwd
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.segments import segment, segmentlist
