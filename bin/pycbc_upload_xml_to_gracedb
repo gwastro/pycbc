@@ -23,8 +23,10 @@ Take a coinc xml file containing multiple events and upload to gracedb.
 import argparse
 import logging
 from ligo.gracedb.rest import GraceDb
+import numpy as np
 import h5py
 
+import pycbc
 import lal
 import lal.series
 from glue.ligolw import ligolw
@@ -122,10 +124,14 @@ for event in coinc_table:
                     "at GPS time {2}".format(
                     " ".join(args.psd_files), sngl.ifo, sngl.get_end()))
 
+            flow = psd.file.attrs['low_frequency_cutoff']
+            df = psd.attrs["delta_f"]
+            kmin = int(flow / df)
+
             fseries = lal.CreateREAL8FrequencySeries(
-                "psd", psd.attrs["epoch"], 0, psd.attrs["delta_f"],
-                lal.StrainUnit**2 / lal.HertzUnit, len(psd.value))
-            fseries.data.data = psd.value
+                "psd", psd.attrs["epoch"], kmin * df, df,
+                lal.StrainUnit**2 / lal.HertzUnit, len(psd.value) - kmin)
+            fseries.data.data = psd.value[kmin:] / np.square(pycbc.DYN_RANGE_FAC)
             psddict[sngl.ifo] = fseries
 
     xmldoc.childNodes[-1].appendChild(coinc_event_table_curr)
