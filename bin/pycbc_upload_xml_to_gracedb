@@ -24,13 +24,17 @@ import os, json
 import argparse
 import logging
 from ligo.gracedb.rest import GraceDb
+import h5py
 
+import lal
+import lal.series
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import ilwd
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
+from glue.segments import segment, segmentlist
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -39,6 +43,8 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--psd-files", nargs='+', required=True,
+                    help='HDF file(s) containing the PSDs to upload')
 parser.add_argument('--input-file', dest='input_file',
                     required=True, type=str,
                     help='Input LIGOLW XML file of coincidences.')
@@ -52,6 +58,19 @@ lsctables.use_in(LIGOLWContentHandler)
 
 xmldoc = ligolw_utils.load_filename(args.input_file,
                              contenthandler=LIGOLWContentHandler)
+
+class psd_segment(segment):
+    def __new__(cls, psd, *args):
+        return segment.__new__(cls, *args)
+    def __init__(self, psd, *args):
+        self.psd = psd
+
+psds = {}
+for psd_file in args.psd_files:
+    (ifo, group), = h5py.File(psd_file, "r").items()
+    psd = [group["psds"][str(i)] for i in range(len(group["psds"].keys()))]
+    psds[ifo] = segmentlist(psd_segment(*segargs) for segargs in zip(
+        psd, group["start_time"], group["end_time"]))
 
 coinc_table = table.get_table(xmldoc, lsctables.CoincTable.tableName)
 coinc_inspiral_table = table.get_table(xmldoc,
@@ -85,15 +104,39 @@ for event in coinc_table:
             coinc_event_map_table_curr.append(coinc_map)
             sngl_ids.append(coinc_map.event_id)
 
+    psddict = {}
     for sngl in sngl_inspiral_table:
         if sngl.event_id in sngl_ids:
             sngl_inspiral_table_curr.append(sngl)
+
+            try:
+                psd = psds[sngl.ifo]
+            except KeyError:
+                parser.error(
+                    "--psd-files {0}: no PSDs found for detector {1}".format(
+                    " ".join(args.psd_files), sngl.ifo))
+
+            try:
+                psd = psd[psd.find(sngl.get_end())].psd
+            except ValueError:
+                parser.error(
+                    "--psd-files {0}: no PSD found for detector {1} "
+                    "at GPS time {2}".format(
+                    " ".join(args.psd_files), sngl.ifo, sngl.get_end()))
+
+            fseries = lal.CreateREAL8FrequencySeries(
+                "psd", psd.attrs["epoch"], 0, psd.attrs["delta_f"],
+                lal.StrainUnit**2 / lal.HertzUnit, len(psd.value))
+            fseries.data.data = psd.value
+            psddict[sngl.ifo] = fseries
 
     xmldoc.childNodes[-1].appendChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].appendChild(coinc_inspiral_table_curr)
     xmldoc.childNodes[-1].appendChild(coinc_event_map_table_curr)
     xmldoc.childNodes[-1].appendChild(sngl_inspiral_table_curr)
     ligolw_utils.write_filename(xmldoc, "tmp_coinc_xml_file.xml")
+    psd_xmldoc = lal.series.make_psd_xmldoc(psddict)
+    ligolw_utils.write_filename(psd_xmldoc, "tmp_psd.xml.gz", gz=True)
     if args.testing:
         r = gracedb.createEvent("Test", "pycbc", "tmp_coinc_xml_file.xml",
                                 "AllSky").json()
@@ -101,6 +144,10 @@ for event in coinc_table:
         r = gracedb.createEvent("CBC", "pycbc", "tmp_coinc_xml_file.xml",
                                 "AllSky").json()
     logging.info("Uploaded event %s." %(r["graceid"]))
+    gracedb.writeLog(
+        r["graceid"], "PyCBC PSD estimate from the time of event",
+        "psd.xml.gz", open("tmp_psd.xml.gz", "rb").read(), "psd").json()
+    logging.info("Uploaded file psd.xml.gz to event %s." %(r["graceid"]))
     xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_event_map_table_curr)
