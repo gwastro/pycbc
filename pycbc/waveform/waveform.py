@@ -465,22 +465,22 @@ def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
         hc = hc.astype(dtype)
     else:
         hc = None
-    offset = int(ringdown_padding * (len(hp)-1)*2 * hp.delta_f)
 
     f_end = get_waveform_end_frequency(**params)
+    if f_end is None:
+        f_end = (len(hp) - 1) * hp.delta_f
     if 'f_final' in params and params['f_final'] > 0:
         f_end_params = params['f_final']
         if f_end is not None:
             f_end = min(f_end_params, f_end)
-        else:
-            f_end = f_end
 
-    if f_end is not None:
-        n_min = int(rulog2(f_end / df_min)) + 1
-        if n_min < len(hp):
-            hp = hp[:n_min]
-            if hc is not None:
-                hc = hc[:n_min]
+    n_min = int(rulog2(f_end / df_min)) + 1
+    if n_min < len(hp):
+        hp = hp[:n_min]
+        if hc is not None:
+            hc = hc[:n_min]
+
+    offset = int(ringdown_padding * (len(hp)-1)*2 * hp.delta_f)
 
     hp = interpolate_complex_frequency(hp, df, zeros_offset=offset, side='left')
     if hc is not None:
@@ -583,8 +583,9 @@ _filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrrom_final_frequency
 _filter_ends["SEOBNRv2_ROM_SingleSpin"] = seobnrrom_final_frequency
 _filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrrom_final_frequency
 _filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_final_frequency
-_filter_ends["IMRPhenomC"] = seobnrrom_final_frequency
-_filter_ends["IMRPhenomD"] = seobnrrom_final_frequency
+# PhenomD returns higher frequencies than this, so commenting this out for now
+#_filter_ends["IMRPhenomC"] = seobnrrom_final_frequency
+#_filter_ends["IMRPhenomD"] = seobnrrom_final_frequency
 
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 
