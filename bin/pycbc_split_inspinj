@@ -1,7 +1,7 @@
 #!/usr/bin/env /usr/bin/python
 
 # Copyright (C) 2014 Andrew Lundgren
-import sys
+import sys, os
 import argparse
 import glue.ligolw.utils
 import glue.ligolw.table
@@ -60,9 +60,17 @@ for inj in sorted(allinjs, key=lambda x: x.get_time_geocent()):
     table_cycle.next().append(inj)
 
 if not args.output_files:
-    temp = args.input_file.split('-')
-    temp[1] += '_%.4u'
-    filename_pattern = '-'.join(temp)
+    padlen = str(len(str(args.num_splits)))
+    intlabel = '_%.'+padlen+'u'
+    temp = os.path.basename(args.input_file)
+    if '-' in temp:
+        # put the number of the file at the end of the user tag
+        temp = temp.split('-')
+        temp[1] += intlabel 
+        filename_pattern = '-'.join(temp)
+    else:
+        # just put it at the start of the file name
+        filename_pattern = '-'.join(intlabel, temp) 
 
 for idx, simtable in enumerate(new_inj_tables):
     xmlroot.appendChild(simtable)
