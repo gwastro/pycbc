@@ -191,7 +191,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             if len(gate_params.shape) == 1:
                 gate_params = [gate_params]
             strain = gate_data(strain, gate_params)
-            gating_info['file'] = gate_params
+            gating_info['file'] = \
+                    [gp for gp in gate_params \
+                     if (gp[0] + gp[1] + gp[2] >= strain.start_time) \
+                     and (gp[0] - gp[1] - gp[2] <= strain.end_time)]
 
         if opt.autogating_threshold is not None:
             # the + 0 is for making a copy
@@ -482,6 +485,35 @@ def insert_strain_option_group_multi_ifo(parser):
                       help="(optional) Text file of gating segments to apply."
                           " Format of each line is (all times in secs):"
                           "  gps_time zeros_half_width pad_half_width")
+
+    data_reading_group.add_argument('--autogating-threshold', type=float,
+                                    nargs="+", action=MultiDetOptionAction,
+                                    metavar='IFO:SIGMA',
+                                    help='If given, find and gate glitches '
+                                         'producing a deviation larger than '
+                                         'SIGMA in the whitened strain time '
+                                         'series.')
+    data_reading_group.add_argument('--autogating-cluster', type=float,
+                                    nargs="+", action=MultiDetOptionAction,
+                                    metavar='IFO:SECONDS', default=5.,
+                                    help='Length of clustering window for '
+                                         'detecting glitches for autogating.')
+    data_reading_group.add_argument('--autogating-width', type=float,
+                                    nargs="+", action=MultiDetOptionAction,
+                                    metavar='IFO:SECONDS', default=0.25,
+                                    help='Half-width of the gating window.')
+    data_reading_group.add_argument('--autogating-taper', type=float,
+                                    nargs="+", action=MultiDetOptionAction,
+                                    metavar='IFO:SECONDS', default=0.25,
+                                    help='Taper the strain before and after '
+                                         'each gating window over a duration '
+                                         'of SECONDS.')
+    data_reading_group.add_argument('--autogating-pad', type=float,
+                                    nargs="+", action=MultiDetOptionAction,
+                                    metavar='IFO:SECONDS', default=16,
+                                    help='Ignore the given length of whitened '
+                                         'strain at the ends of a segment, to '
+                                         'avoid filters ringing.')
 
     data_reading_group.add_argument("--normalize-strain", type=float,
                      nargs="+", action=MultiDetOptionAction,
