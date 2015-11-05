@@ -177,7 +177,8 @@ if __name__ == '__main__':
 
     def compute_optimal_snr(inj, return_found=False):
         for det, column in opts.snr_columns.items():
-            injection_time = inj.get_end(det[0])
+            # geocent time is robust to potentially incomplete sim tables
+            injection_time = inj.geocent_end_time
             psd = psds[det](injection_time)
             if psd is None:
                 continue
