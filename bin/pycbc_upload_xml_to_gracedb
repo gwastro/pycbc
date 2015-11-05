@@ -20,18 +20,18 @@
 Take a coinc xml file containing multiple events and upload to gracedb.
 """
 
-import os, json
 import argparse
 import logging
 from ligo.gracedb.rest import GraceDb
+import numpy as np
 import h5py
 
+import pycbc
 import lal
 import lal.series
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
-from glue.ligolw import ilwd
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.segments import segment, segmentlist
@@ -124,10 +124,14 @@ for event in coinc_table:
                     "at GPS time {2}".format(
                     " ".join(args.psd_files), sngl.ifo, sngl.get_end()))
 
+            flow = psd.file.attrs['low_frequency_cutoff']
+            df = psd.attrs["delta_f"]
+            kmin = int(flow / df)
+
             fseries = lal.CreateREAL8FrequencySeries(
-                "psd", psd.attrs["epoch"], 0, psd.attrs["delta_f"],
-                lal.StrainUnit**2 / lal.HertzUnit, len(psd.value))
-            fseries.data.data = psd.value
+                "psd", psd.attrs["epoch"], kmin * df, df,
+                lal.StrainUnit**2 / lal.HertzUnit, len(psd.value) - kmin)
+            fseries.data.data = psd.value[kmin:] / np.square(pycbc.DYN_RANGE_FAC)
             psddict[sngl.ifo] = fseries
 
     xmldoc.childNodes[-1].appendChild(coinc_event_table_curr)
@@ -143,11 +147,11 @@ for event in coinc_table:
     else:
         r = gracedb.createEvent("CBC", "pycbc", "tmp_coinc_xml_file.xml",
                                 "AllSky").json()
-    logging.info("Uploaded event %s." %(r["graceid"]))
+    logging.info("Uploaded event %s.", r["graceid"])
     gracedb.writeLog(
         r["graceid"], "PyCBC PSD estimate from the time of event",
         "psd.xml.gz", open("tmp_psd.xml.gz", "rb").read(), "psd").json()
-    logging.info("Uploaded file psd.xml.gz to event %s." %(r["graceid"]))
+    logging.info("Uploaded file psd.xml.gz to event %s.", r["graceid"])
     xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_event_map_table_curr)
