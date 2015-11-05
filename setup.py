@@ -19,6 +19,7 @@
 setup.py file for PyCBC package
 """
 import os, fnmatch, sys, subprocess, shutil
+
 from trace import fullmodname
 
 try:
