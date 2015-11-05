@@ -55,13 +55,16 @@ parser.add_argument('--version', action='version', version=pycbc.version.git_ver
 parser.add_argument('--trigger-files', nargs='+', required=True)
 parser.add_argument('--injection-files', nargs='+', required=True)
 parser.add_argument('--veto-file')
-parser.add_argument('--segment-name', default=None, type=str,
-                    help='Optional, name of segment list to use for vetoes')
+parser.add_argument('--segment-name', default=None,
+                    help='Name of segment list to use for vetoes. Optional')
 parser.add_argument('--injection-window', type=float, required=True)
 parser.add_argument('--optimal-snr-column', nargs='+',
                     action=MultiDetOptionAction, metavar='DETECTOR:COLUMN',
                     help='Names of the sim_inspiral columns containing the' \
                     ' optimal SNRs.')
+parser.add_argument('--redshift-column', default=None,
+                    help='Name of sim_inspiral column containing redshift. '
+                    'Optional')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file', required=True)
 args = parser.parse_args()
@@ -145,6 +148,11 @@ for trigger_file, injection_file in zip(args.trigger_files, args.injection_files
     for ifo, column in args.optimal_snr_column.items():
         hdf_append(fo, 'injections/optimal_snr_%d' % ifo_map[ifo],
                    sim_table.get_column(column))
+
+    # pick up redshift
+    if args.redshift_column:
+        hdf_append(fo, 'injections/redshift',
+                   sim_table.get_column(args.redshift_column))
 
     fo.attrs['detector_1'] = f.attrs['detector_1']
     fo.attrs['detector_2'] = f.attrs['detector_2']
