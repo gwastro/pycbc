@@ -15,7 +15,7 @@ parser.add_argument('--axis-type', default='mchirp', choices=['mchirp',
 parser.add_argument('--distance-type', default='decisive_distance',
                     choices=['decisive_distance', 'dec_chirp_distance',
                              'chirp_distance', 'comb_optimal_snr',
-                             'decisive_optimal_snr'])
+                             'decisive_optimal_snr', 'redshift'])
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--log-distance', action='store_true', default=False)
 parser.add_argument('--dynamic', action='store_true', default=False)
@@ -26,7 +26,7 @@ parser.add_argument('--far-type', choices=('inclusive', 'exclusive'), default='i
                     help="Type of far to plot for the color. Choices are 'inclusive' or "
                          "'exclusive'. Default = 'inclusive'")
 parser.add_argument('--missed-on-top', action='store_true',
-                    help="Make the missed injections be plotted on top of the found ones")
+                    help="Plot missed injections on top of found ones")
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 args = parser.parse_args()
 
@@ -68,6 +68,8 @@ dvals = {}
 dvals['decisive_distance'] = numpy.maximum(hdist, ldist)
 dvals['dec_chirp_distance'] = pycbc.pnutils.chirp_distance(dvals['decisive_distance'], vals['mchirp'])
 dvals['chirp_distance'] = pycbc.pnutils.chirp_distance(dist, vals['mchirp'])
+if args.distance_type == 'redshift':
+    dvals['redshift'] = f['injections/redshift'][:]
 
 if 'optimal_snr_1' in f['injections']:
     opt_snr_1 = f['injections/optimal_snr_1'][:]
@@ -83,6 +85,7 @@ labels={'mchirp': 'Chirp Mass',
         'chirp_distance': 'Injected Chirp Distance (Mpc)',
         'comb_optimal_snr': 'Combined Optimal SNR',
         'decisive_optimal_snr': 'Decisive Optimal SNR',
+        'redshift': 'Redshift',
         'time': 'Time (s)',
         'effective_spin': 'Weighted Aligned Spin',
        }
@@ -156,6 +159,8 @@ if args.log_distance:
 ymax = 1.2 * max(dvals[args.distance_type][missed].max(),
                  dvals[args.distance_type][found].max())
 plot.ylim(ymin=1, ymax=ymax)
+if args.distance_type == 'redshift':
+    plot.ylim(ymin=0, ymax=ymax)
 
 fig_kwds = {}
 if '.png' in args.output_file:
