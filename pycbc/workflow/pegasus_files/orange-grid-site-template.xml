@@ -11,4 +11,3 @@
     <profile namespace="env" key="LIBRARY_PATH">/cvmfs/oasis.opensciencegrid.org/osg/modules/python-2.7.7/lib</profile>
     <profile namespace="env" key="CPATH">/cvmfs/oasis.opensciencegrid.org/osg/modules/python-2.7.7/include</profile>
     <profile namespace="env" key="LAL_DATA_PATH">/frames/O1/ROM/lal-data/lalsimulation</profile>
-  </site>
