@@ -199,7 +199,7 @@ class Executable(pegasus_workflow.Executable):
                             "at %s" % (name, exe_path))
         
         if exe_path.startswith('gsiftp://'):
-            self.add_pfn(exe_path,site='pycbc-code')
+            self.add_pfn(exe_path, site='nonlocal')
         else:
             self.add_pfn(exe_path)
 
