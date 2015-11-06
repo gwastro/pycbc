@@ -472,6 +472,7 @@ class Workflow(pegasus_workflow.Workflow):
         job.addArguments('--output-site local')     
         job.addArguments('--cleanup inplace')
         job.addArguments('--cluster label,horizontal')
+        job.addArguments('-vvv')
         if staging_site:
             job.addArguments('--staging-site %s' % staging_site)
             
