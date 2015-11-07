@@ -1,14 +1,16 @@
 #!/usr/bin/python
 """ Make table of the foreground coincident events
 """
-import argparse, h5py, numpy, logging, sys
+import argparse, h5py, numpy, logging, sys, lal
 import matplotlib
 matplotlib.use('Agg')
 import pylab, pycbc.results, pycbc.version
 from scipy.special import erf
 
 def p_from_sigma(sig):
-    return erf(sig / 2**0.5)
+    return 1 - (1 - erf(sig / 2**0.5)) / 2
+    
+pylab.rc('text', usetex=True)
 
 parser = argparse.ArgumentParser()
 # General required options
@@ -16,6 +18,8 @@ parser.add_argument('--version', action='version', version=pycbc.version.git_ver
 parser.add_argument('--trigger-file')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
+parser.add_argument('--trials-factor', type=int, default=1)
+parser.add_argument('--cumulative', action='store_true')
 parser.add_argument('--closed-box', action='store_true',
       help="Make a closed box version that excludes foreground triggers")
 args = parser.parse_args()
@@ -29,8 +33,18 @@ f = h5py.File(args.trigger_file, 'r')
 
 try:
     cstat_fore = f['foreground/stat'][:]
-    cstat_fore.sort()
-    cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * 3.15569e7
+    
+    if args.cumulative:
+        cstat_fore.sort()
+        cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * 3.15569e7
+    else:
+        ssort = cstat_fore.argsort()
+        cstat_rate = 1.0 / f['foreground/ifar'][:]
+        cstat_rate = cstat_rate[ssort]
+        cstat_fore = cstat_fore[ssort]
+    
+    cstat_rate *= args.trials_factor
+        
     logging.info('Found %s foreground triggers' % len(cstat_fore))
 except:
     cstat_fore = None
@@ -39,7 +53,7 @@ back_ifar = f['background/ifar'][:]
 cstat_back = f['background/stat'][:]
 back_sort = cstat_back.argsort()
 cstat_back = cstat_back[back_sort]
-far_back = 1.0 / back_ifar[back_sort]
+far_back = 1.0 / back_ifar[back_sort] * args.trials_factor
 
 logging.info('Found %s background (inclusive zerolag) triggers' % len(cstat_back))
 
@@ -47,39 +61,98 @@ back_ifar_exc = f['background_exc/ifar'][:]
 cstat_back_exc = f['background_exc/stat'][:]
 back_sort_exc = cstat_back_exc.argsort()
 cstat_back_exc = cstat_back_exc[back_sort_exc]
-far_back_exc = 1.0 / back_ifar_exc[back_sort_exc]
+far_back_exc = 1.0 / back_ifar_exc[back_sort_exc] * args.trials_factor
 logging.info('Found %s background (exclusive zerolag) triggers' % len(cstat_back_exc))
 
 fig = pylab.figure(1)
-pylab.scatter(cstat_back_exc, far_back_exc, color='grey', marker='x', label='Closed Box Background')
+pylab.scatter(cstat_back_exc, far_back_exc, color='grey', marker='.', s=3, label='Closed Box Background')
+
+def pretty_num(num):
+    exp = numpy.floor(numpy.log10(num))
+    val = num / 10.0 ** exp
+    return '%2.1fe%.0f' % (val, exp)
 
 if not args.closed_box:
-    for sig in [5, 4, 3, 2, 1]:
-        p = p_from_sigma(sig)
-        pylab.fill_between(cstat_back, far_back, far_back / (1 - p),
-                           linewidth=0, color=pylab.cm.YlOrRd(1.0/sig), alpha=0.3) 
-        pylab.text(cstat_back[-1], (far_back / (1 - p))[-1], "$\sigma = %s$" % sig)
-
-    pylab.scatter(cstat_back, far_back, color='black', marker='x', label='Open Box Background')
+    pylab.scatter(cstat_back, far_back, color='black', marker='.', s=3, label='Open Box Background')
 
     if cstat_fore is not None and len(cstat_fore):
-        pylab.scatter(cstat_fore, cstat_rate, s=10, color='blue', marker='^', label='Foreground')
+        pylab.scatter(cstat_fore, cstat_rate, s=60, color='#ff6600',
+                                  marker='d', label='Foreground', zorder=100,
+                                  linewidth=0.3, edgecolors='white')
         pylab.xlim(cstat_back.min(), max(cstat_fore.max(), cstat_back.max()) + 1)
     else:
         pylab.xlim(cstat_back.min(), cstat_back.max() + 1)
 
-pylab.ylabel('Cumulative Rate $(yr^{-1})$')
-pylab.xlabel('Ranking Statistic Threshold')
+    sigmas = numpy.array([5, 4, 3, 2, 1])
+    if args.cumulative:
+        for i in range(len(sigmas) - 1):
+            p1 = p_from_sigma(sigmas[i])
+            p2 = p_from_sigma(sigmas[i+1])
+            
+            
+            #offset the shading so it is valid for the foreground beyond the first point
+            if cstat_fore is not None and len(cstat_fore):
+                offset = numpy.interp(cstat_back, cstat_fore, cstat_rate - cstat_rate[-1])
+            else:
+                offset = 0
+            
+            pylab.fill_between(cstat_back, far_back / (1 - p2) * args.trials_factor + offset, far_back / (1 - p1) * args.trials_factor + offset,
+                               linewidth=0, color=pylab.cm.Blues(sigmas[i] / 5.0), zorder=-1)
+            #pylab.text(cstat_back[-1], (far_back / (1 - p1))[-1],
+            #           r"\textbf{%s $\sigma$}, p=%s" % (sigmas[i], pretty_num(1-p1)))
+
+    else:
+        p = p_from_sigma(sigmas)
+        far = (1 - p) / f.attrs['foreground_time'] * lal.YRJUL_SI
+        
+        far = numpy.append(far, [1.0 / f.attrs['foreground_time'] * lal.YRJUL_SI])
+        
+        ylocs, ylabels = [], []
+        for i in range(len(far) - 1):
+            pylab.axhspan(far[i], far[i+1],
+                          linewidth=0, color=pylab.cm.Blues(sigmas[i] / 5.0), alpha=0.3, zorder=-1) 
+            #pylab.text(cstat_back[-1], far[i], "$%s \sigma, p=%.1e$" % (sigmas[i], (1 - p[i])))
+         
+        print cstat_fore.argmax(), cstat_fore.max(), len(cstat_fore), cstat_rate[0]
+        pylab.plot(cstat_fore[-1], cstat_rate[-1] / 3, 'ko', marker="$\downarrow$", markersize=20)   
+        ax1 = pylab.gca()
+        ax2 = ax1.twinx()
+        #ax2.set_ylabel('$\sigma$')
+        
+        sigmas = ['%1.0f$\sigma$' % sig for sig in sigmas]
+        
+        pylab.sca(ax1)
+    
+if args.cumulative:
+    pylab.ylabel('Cumulative Rate $(yr^{-1})$')   
+else:
+    if args.trials_factor == 1:
+        pylab.ylabel('False Alarm Rate $(yr^{-1})$')
+    elif args.trials_factor >= 1:
+        pylab.ylabel('Combined False Alarm Rate $(yr^{-1})$')
+
+pylab.xlabel('Weighted Network SNR')
 pylab.yscale('log')
 pylab.ylim(far_back.min() / 10.0, far_back.max())
-pylab.legend(loc="lower left")
+
+if args.cumulative:
+    pylab.legend(loc="lower left")
+else:
+    pylab.legend(loc="upper right")
+    ax2.set_yscale('log')
+    ax2.set_ylim(ax1.get_ylim())
+    ax2.set_yticks(far)
+    ax2.set_yticklabels(sigmas)
+    
 pylab.grid()
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="%s bin, FAR vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank", 
      caption="Mapping between the ranking statistic and false alarm rate: "
-             "Blue triangles (if present) represent triggers from the zero-lag (foreground) analysis. Solid crosses show "
-             "the background inclusive of zerolag events, and grey crosses show the background constructed without triggers that are coincident in the zero-lag data. The error bars (when shown)  are a simple sqrt(N) of the "
-             "background. They do not represent errors for the foreground.",
+             "Orange triangles (if present) represent triggers from the "
+             " zero-lag (foreground) analysis. Solid crosses show "
+             "the background inclusive of zerolag events, and grey crosses show the "
+             " background constructed without triggers that are"
+             " coincident in the zero-lag data.",
      cmd=' '.join(sys.argv))
              
