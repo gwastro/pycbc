@@ -59,7 +59,7 @@ if args.verbose:
 logging.info("Reading data...")
 injs = h5py.File(args.injection_file, "r")
 bank = h5py.File(args.bank_file, "r")
-trig = h5py.File(args.trigger_file, "r")
+trig = h5py.File(args.trigger_file, "r") if args.trigger_file else None
 
 # First check the detector
 ifo = args.detector
@@ -176,7 +176,7 @@ def get_found_param(injfile, bankfile, trigfile, param, args):
         foundtrg = injfile["found_after_vetoes/trigger_id"+ifoid]
     if param in bankfile.keys():
         return bankfile[param][:][foundtmp]
-    elif param in trigfile[args.detector].keys():
+    elif trigfile is not None and param in trigfile[args.detector].keys():
         return trigfile[args.detector][param][:][foundtrg]
     else:
         b = bankfile

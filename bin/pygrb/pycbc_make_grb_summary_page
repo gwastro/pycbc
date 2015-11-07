@@ -60,13 +60,13 @@ def parse_command_line():
                         help="Declination of external trigger")
     
     parser.add_argument("-o", "--output-path", type=str, default=os.getcwd(),
-                        help="output directory")
+                        help="Post processing output directory")
 
     parser.add_argument("-w", "--html-path", type=str, default=None,
-                        help="final web directory")
+                        help="Final web directory")
 
-    parser.add_argument("-s", "--seg_plot", type=str, default=None,
-                        help="segment plot")
+    parser.add_argument("-s", "--seg-plot", type=str, default=None,
+                        help="Path to segments plot")
 
     parser.add_argument("-D", "--exclusion-injections", type=str, default=None,
                         help="A comma seperated list of the detection injection"
@@ -209,16 +209,13 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
         webpage = write_antenna(webpage, args, grid, None)
 
     # add links
-    seglink = 'segment_plot_%s.png' % GRBnum
     inilink = os.path.basename(inifile)
-    linktext = {seglink:   'Segments availability',
-                inilink:   'ini-file used'}
-    for link in [seglink, inilink]:
-        webpage.add(linktext[link])
-        webpage.a(href=link)
-        webpage.add('here')
-        webpage.a.close()
-        webpage.br()
+    inilinktext = 'ini-file used'
+    webpage.add(inilinktext)
+    webpage.a(href=link)
+    webpage.add('here')
+    webpage.a.close()
+    webpage.br()
 
     webpage.div.close()
 

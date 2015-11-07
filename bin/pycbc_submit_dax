@@ -15,8 +15,13 @@ CACHE_FILE=""
 LOCAL_PEGASUS_DIR=""
 ACCOUNTING_GROUP=""
 NO_ACCOUNTING_GROUP=0
+PEGASUS_PROPERTIES=""
+SITE_LIST=""
+TRANSFORMATION_CATALOG=""
 
-GETOPT_CMD=`getopt -o d:c:a:Fl:h --long dax:,cache-file:,accounting-group:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+echo "# Properties set on command line" > extra-properties.conf
+
+GETOPT_CMD=`getopt -o d:c:a:p:P:s:t:Fl:h --long dax:,cache-file:,accounting-group:,pegasus-properties:,append-pegasus-property:,execution-sites:,transformation-catalog:,force-no-accounting-group,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -34,7 +39,27 @@ while true ; do
     -a|--accounting-group)
       case "$2" in
         "") shift 2 ;;
-        *) ACCOUNTING_GROUP=$2 ; shift 2 ;;
+        *) export ACCOUNTING_GROUP=$2 ; shift 2 ;;
+      esac ;;
+    -p|--pegasus-properties)
+      case "$2" in
+        "") shift 2 ;;
+        *) PEGASUS_PROPERTIES=$2 ; shift 2 ;;
+      esac ;;
+    -P|--append-pegasus-property)
+      case "$2" in
+        "") shift 2 ;;
+        *) echo $2 >> extra-properties.conf ; shift 2 ;;
+      esac ;;
+    -s|--execution-sites)
+      case "$2" in
+        "") shift 2 ;;
+        *) SITE_LIST=$2 ; shift 2 ;;
+      esac ;;
+    -t|--transformation-catalog)
+      case "$2" in
+        "") shift 2 ;;
+        *) TRANSFORMATION_CATALOG=$2 ; shift 2 ;;
       esac ;;
     -F|--force-no-accounting-group) NO_ACCOUNTING_GROUP=1 ; shift ;;
     -l|--local-dir)
@@ -61,7 +86,16 @@ while true ; do
       echo "  -F, --force-no-accounting-group submit without an accounting"
       echo "                               group. Will cause condor submission"
       echo "                               to fail on LIGO Data Grid clusters"
-      echo "  -l, --local-dir         Directory to put condor files under. "
+      echo "  -p, --pegasus-properties FILE use the specified file as"
+      echo "                               the pegasus properties file"
+      echo "  -P, --append-pegasus-property STRING add the extra property"
+      echo "                                          specified by the argument"
+      echo "  -s, --execution-sites A,B,C specify a comma separated list"
+      echo "                               of execution sites that will be"
+      echo "                               used in addition to the local site"
+      echo "  -t, --transformation-catalog FILE pass the specified"
+      echo "                                   transformation catalog to Pegasus"
+      echo "  -l, --local-dir         Directory to put condor files under"
       echo
       echo "If the environment variable TMPDIR is set then this is prepended to the "
       echo "path to the temporary workflow execte directory passed to pegasus-plan."
@@ -88,6 +122,17 @@ if [ "x$ACCOUNTING_GROUP" == "x" ] && [ $NO_ACCOUNTING_GROUP == 0 ]; then
   exit 1
 fi
 
+# Force the user to create a new grid proxy
+LIGO_USER_NAME=""
+while true; do
+  read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " LIGO_USER_NAME
+  if [ ! -z $LIGO_USER_NAME ] ; then
+    break
+  fi
+done
+unset X509_USER_PROXY
+ligo-proxy-init $LIGO_USER_NAME || exit 1
+
 #Make a directory for the submit files
 SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
 
@@ -96,25 +141,78 @@ chmod 755 $SUBMIT_DIR
 
 # find the site-local template directory
 PEG_DIR=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
-SITE_TEMPLATE=$PEG_DIR/basic_site_template.xml
 
-export ACCOUNTING_GROUP
+# Create the site catalog
 
-# Set up the site-local with the correct paths
-echo 'cat <<END_OF_TEXT' >  temp.sh
-cat $SITE_TEMPLATE       >> temp.sh
-echo 'END_OF_TEXT'       >> temp.sh
-bash temp.sh > site-local-parsed.xml
+# add the local site
+if [ -z $SITE_LIST ] ; then
+  SITE_LIST="local"
+else
+  SITE_LIST="local,${SITE_LIST}"
+fi
+
+if [ -z ${PEGASUS_SITE_CATALOG_PATH} ] ; then
+  PEGASUS_SITE_CATALOG_PATH=${PEG_DIR}
+fi
+
+# create the site catalog template
+echo 'cat <<END_OF_TEXT' > site-catalog.sh
+
+cat << EOF >> site-catalog.sh
+<?xml version="1.0" encoding="UTF-8"?>
+<sitecatalog xmlns="http://pegasus.isi.edu/schema/sitecatalog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://pegasus.isi.edu/schema/sitecatalog http://pegasus.isi.edu/schema/sc-4.0.xsd" version="4.0">
+EOF
+
+OLD_IFS=${IFS}
+IFS=','
+read -ra SITE <<< "$SITE_LIST"
+IFS=${OLD_IFS}
+for s in "${SITE[@]}"; do
+  SITE_TEMPLATE=$PEGASUS_SITE_CATALOG_PATH/${s}-site-template.xml
+  if [ ! -e ${SITE_TEMPLATE} ] ; then
+    echo "Error: Could not find site catalog template for site ${s}"
+    exit 1
+  else
+    cat $SITE_TEMPLATE >> site-catalog.sh
+  fi
+done
+
+cat << EOF >> site-catalog.sh
+</sitecatalog>
+EOF
+echo 'END_OF_TEXT' >> site-catalog.sh
+
+# write out the site catalog
+bash site-catalog.sh > site-catalog.xml
 
 # Plan the workflow
 echo "Generating concrete workflow"
 touch _reuse.cache
 
+# cache the pegasus config
+if [ -z ${PEGASUS_PROPERTIES} ] ; then
+  cp $PEG_DIR/pegasus-properties.conf ./pegasus-properties.conf
+else
+  cp ${PEGASUS_PROPERTIES} ./pegasus-properties.conf
+fi
+
+# add a transformation catalog, if specified
+if [ ! -z ${TRANSFORMATION_CATALOG} ] ; then
+  cp ${TRANSFORMATION_CATALOG} ./transformation-catalog.txt
+  echo >> pegasus-properties.conf
+  echo "pegasus.catalog.transformation Text" >> pegasus-properties.conf
+  echo "pegasus.catalog.transformation.file ${PWD}/transformation-catalog.txt" >> pegasus-properties.conf
+fi
+
+echo >> pegasus-properties.conf
+cat extra-properties.conf >> pegasus-properties.conf
+
 if [ "x$CACHE_FILE" == "x" ]; then
-  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $DAX_FILE --sites local -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --cluster label --submit 
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --cluster label --submit 
 else
   cp $CACHE_FILE _reuse.cache
-  pegasus-plan --conf $PEG_DIR/basic_pegasus.conf -d $DAX_FILE --sites local -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-submit-dir work --cluster label --submit
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-submit-dir work --cluster label --submit
 fi
 
 ln -s $SUBMIT_DIR submitdir

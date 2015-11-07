@@ -46,41 +46,53 @@ class TimeIndependentPSD(object):
 class TimeVaryingPSD(object):
     def __init__(self, file_name, length=None, delta_f=None, f_low=None):
         f = h5py.File(file_name, 'r')
+        self.file_name = file_name
         detector = f.keys()[0]
         self.start_times = f[detector + '/start_time'][:]
         self.end_times = f[detector + '/end_time'][:]
-        file_f_low = f.attrs['low_frequency_cutoff']
+        self.file_f_low = f.attrs['low_frequency_cutoff']
         f.close()
-        self.psds = []
-        for i in xrange(len(self.start_times)):
-            group = detector + '/psds/' + str(i)
-            psd = load_frequencyseries(file_name, group=group)
-            if delta_f is not None and psd.delta_f != delta_f:
-                psd = pycbc.psd.interpolate(psd, delta_f)
-            if length is not None and length != len(psd):
-                psd2 = FrequencySeries(zeros(length, dtype=psd.dtype),
-                                       delta_f=psd.delta_f)
-                if length > len(psd):
-                    psd2[:] = np.inf
-                    psd2[0:len(psd)] = psd
-                else:
-                    psd2[:] = psd[0:length]
-                psd = psd2
-            if f_low is not None and f_low < file_f_low:
-                # avoid using the PSD below the f_low given in the file
-                k = int(file_f_low / psd.delta_f)
-                psd[0:k] = np.inf
-            self.psds.append(psd)
+        self._curr_psd = {}
+        self._curr_psd_index = {}
         self.detector = detector
+        self.length = length
+        self.delta_f = delta_f
+        self.f_low = f_low
 
     def __call__(self, time=None):
         mask = np.logical_and(self.start_times <= time,
                               self.end_times > time)
+        # Tito, what if this is bigger than 1?
         if np.count_nonzero(mask) == 1:
-            return self.psds[np.nonzero(mask)[0]]
+            return self.get_psd(np.nonzero(mask)[0][0])
         else:
             return None
 
+    def get_psd(self, index):
+        curr_pid = multiprocessing.current_process().pid
+        if curr_pid not in self._curr_psd_index.keys():
+            self._curr_psd_index[curr_pid] = -1
+        if not index == self._curr_psd_index[curr_pid]:
+            group = self.detector + '/psds/' + str(index)
+            psd = load_frequencyseries(self.file_name, group=group)
+            if delta_f is not None and psd.delta_f != delta_f:
+                psd = pycbc.psd.interpolate(psd, delta_f)
+            if self.length is not None and self.length != len(psd):
+                psd2 = FrequencySeries(zeros(self.length, dtype=psd.dtype),
+                                       delta_f=psd.delta_f)
+                if self.length > len(psd):
+                    psd2[:] = np.inf
+                    psd2[0:len(psd)] = psd
+                else:
+                    psd2[:] = psd[0:self.length]
+                psd = psd2
+            if self.f_low is not None and self.f_low < self.file_f_low:
+                # avoid using the PSD below the f_low given in the file
+                k = int(file_f_low / psd.delta_f)
+                psd[0:k] = np.inf
+            self._curr_psd[curr_pid] = psd
+            self._curr_psd_index[curr_pid] = index
+        return self._curr_psd[curr_pid]
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
@@ -179,13 +191,14 @@ if __name__ == '__main__':
 
     logging.info("Loading injections")
     injections = pycbc.inject.InjectionSet(opts.inj_xml)
+    inj_table = sorted(injections.table, key=lambda x: x.geocent_end_time)
 
     out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
                                      columns=injections.table.columnnames)
 
     logging.info('Starting workers')
     pool = multiprocessing.Pool(processes=opts.cores)
-    proc_injs = pool.map(compute_optimal_snr, injections.table)
+    proc_injs = pool.map(compute_optimal_snr, inj_table)
     for inj in proc_injs:
         out_sim_inspiral.append(inj)
 

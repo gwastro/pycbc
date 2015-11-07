@@ -19,9 +19,8 @@ This modules contains functions reading, generating, and segmenting strain data
 import copy
 import logging, numpy, lal
 import pycbc.noise
-from pycbc import psd
 from pycbc.types import float32
-from pycbc.types import FrequencySeries, complex_same_precision_as
+from pycbc.types import Array, FrequencySeries, complex_same_precision_as
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
 from pycbc.types import required_opts, required_opts_multi_ifo
@@ -31,15 +30,22 @@ from pycbc.frame import read_frame, query_and_read_frame
 from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk
+import pycbc.psd
 import pycbc.fft
 import pycbc.events
 
 
-def detect_loud_glitches(strain, psd_duration=16, psd_stride=8,
+def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
                          psd_avg_method='median', low_freq_cutoff=30.,
                          threshold=50., cluster_window=5., corrupted_time=4.,
                          high_freq_cutoff=None, output_intermediates=False):
     """Automatic identification of loud transients for gating purposes."""
+
+    logging.info('Autogating: tapering strain')
+    fade_size = corrupted_time * strain.sample_rate
+    w = numpy.arange(fade_size) / float(fade_size)
+    strain[0:fade_size] *= Array(w, dtype=strain.dtype)
+    strain[(len(strain)-fade_size):] *= Array(w[::-1], dtype=strain.dtype)
 
     if output_intermediates:
         strain.save_to_wav('strain_conditioned.wav')
@@ -48,18 +54,20 @@ def detect_loud_glitches(strain, psd_duration=16, psd_stride=8,
     pycbc.fft.fftw.set_measure_level(0)
 
     logging.info('Autogating: estimating PSD')
-    psd = pycbc.psd.welch(strain, seg_len=psd_duration*strain.sample_rate,
-                          seg_stride=psd_stride*strain.sample_rate,
+    psd = pycbc.psd.welch(strain, seg_len=int(psd_duration*strain.sample_rate),
+                          seg_stride=int(psd_stride*strain.sample_rate),
                           avg_method=psd_avg_method)
+    psd = pycbc.psd.interpolate(psd, 1./strain.duration)
+    psd = pycbc.psd.inverse_spectrum_truncation(
+            psd, int(psd_duration * strain.sample_rate),
+            low_frequency_cutoff=low_freq_cutoff,
+            trunc_method='hann')
 
     logging.info('Autogating: time -> frequency')
     strain_tilde = FrequencySeries(numpy.zeros(len(strain) / 2 + 1),
-                                   delta_f=1./strain.duration,
+                                   delta_f=psd.delta_f,
                                    dtype=complex_same_precision_as(strain))
     pycbc.fft.fft(strain, strain_tilde)
-
-    logging.info('Autogating: interpolating PSD')
-    psd = pycbc.psd.interpolate(psd, strain_tilde.delta_f)
 
     logging.info('Autogating: whitening')
     if high_freq_cutoff:
@@ -72,12 +80,16 @@ def detect_loud_glitches(strain, psd_duration=16, psd_stride=8,
     kmin = int(low_freq_cutoff / strain_tilde.delta_f)
     strain_tilde[0:kmin] = 0.
 
-    # FIXME at this point the strain can probably be downsampled
+    # FIXME downsample here rather than post-FFT
 
     logging.info('Autogating: frequency -> time')
     pycbc.fft.ifft(strain_tilde, strain)
 
     pycbc.fft.fftw.set_measure_level(pycbc.fft.fftw._default_measurelvl)
+
+    if high_freq_cutoff:
+        strain = resample_to_delta_t(strain, 0.5 / high_freq_cutoff,
+                                     method='ldas')
 
     logging.info('Autogating: stdev of whitened strain is %.4f', numpy.std(strain))
 
@@ -89,7 +101,7 @@ def detect_loud_glitches(strain, psd_duration=16, psd_stride=8,
         mag.save('strain_whitened_mag.npy')
     mag = numpy.array(mag, dtype=numpy.float32)
 
-    # remove corrupted strain at the ends
+    # remove strain corrupted by filters at the ends
     corrupted_idx = int(corrupted_time * strain.sample_rate)
     mag[0:corrupted_idx] = 0
     mag[-1:-corrupted_idx-1:-1] = 0
@@ -179,7 +191,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             if len(gate_params.shape) == 1:
                 gate_params = [gate_params]
             strain = gate_data(strain, gate_params)
-            gating_info['file'] = gate_params
+            gating_info['file'] = \
+                    [gp for gp in gate_params \
+                     if (gp[0] + gp[1] + gp[2] >= strain.start_time) \
+                     and (gp[0] - gp[1] - gp[2] <= strain.end_time)]
 
         if opt.autogating_threshold is not None:
             # the + 0 is for making a copy
@@ -188,15 +203,12 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
                     cluster_window=opt.autogating_cluster,
                     low_freq_cutoff=opt.strain_high_pass,
                     high_freq_cutoff=opt.sample_rate/2,
-                    corrupted_time=opt.pad_data)
+                    corrupted_time=opt.pad_data+opt.autogating_pad)
             gate_params = [[gt, opt.autogating_width, opt.autogating_taper] \
                            for gt in glitch_times]
-            if opt.autogating_output:
-                with file(opt.autogating_output, 'wb') as autogates:
-                    for x, y, z in gate_params:
-                        autogates.write('%.3f %f %f\n' % (x, y, z))
-            logging.info('Autogating at %s',
-                         ', '.join(['%.3f' % gt for gt in glitch_times]))
+            if len(glitch_times) > 0:
+                logging.info('Autogating at %s',
+                             ', '.join(['%.3f' % gt for gt in glitch_times]))
             strain = gate_data(strain, gate_params)
             gating_info['auto'] = gate_params
 
@@ -219,8 +231,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         plen = int(opt.sample_rate / pdf) / 2 + 1
 
         logging.info("Making PSD for strain")
-        strain_psd = psd.from_string(opt.fake_strain, plen,
-                                     pdf, opt.low_frequency_cutoff)
+        strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
+                                           opt.low_frequency_cutoff)
 
         logging.info("Making colored noise")
         strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate,
@@ -323,7 +335,7 @@ def insert_strain_option_group(parser, gps_times=True):
     #Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain",
                 help="Name of model PSD for generating fake gaussian noise.",
-                     choices=psd.get_lalsim_psd_list())
+                     choices=pycbc.psd.get_lalsim_psd_list())
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
@@ -360,11 +372,11 @@ def insert_strain_option_group(parser, gps_times=True):
                                     help='Taper the strain before and after '
                                          'each gating window over a duration '
                                          'of SECONDS.')
-    data_reading_group.add_argument('--autogating-output', type=str,
-                                    metavar='FILE',
-                                    help='If given, save the '
-                                         'automatically-produced gating info '
-                                         'to the given file.')
+    data_reading_group.add_argument('--autogating-pad', type=float,
+                                    metavar='SECONDS', default=16,
+                                    help='Ignore the given length of whitened '
+                                         'strain at the ends of a segment, to '
+                                         'avoid filters ringing.')
 
     data_reading_group.add_argument("--normalize-strain", type=float,
                     help="(optional) Divide frame data by constant.")
@@ -448,7 +460,7 @@ def insert_strain_option_group_multi_ifo(parser):
                             action=MultiDetOptionAction, metavar='IFO:CHOICE',
                             help="Name of model PSD for generating fake "
                             "gaussian noise. Choose from %s" \
-                            %((', ').join(psd.get_lalsim_psd_list()),) )
+                            %((', ').join(pycbc.psd.get_lalsim_psd_list()),) )
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                             nargs="+",
                             action=MultiDetOptionAction, metavar='IFO:SEED',
@@ -473,6 +485,35 @@ def insert_strain_option_group_multi_ifo(parser):
                       help="(optional) Text file of gating segments to apply."
                           " Format of each line is (all times in secs):"
                           "  gps_time zeros_half_width pad_half_width")
+
+    data_reading_group.add_argument('--autogating-threshold', type=float,
+                                    nargs="+", action=MultiDetOptionAction,
+                                    metavar='IFO:SIGMA',
+                                    help='If given, find and gate glitches '
+                                         'producing a deviation larger than '
+                                         'SIGMA in the whitened strain time '
+                                         'series.')
+    data_reading_group.add_argument('--autogating-cluster', type=float,
+                                    nargs="+", action=MultiDetOptionAction,
+                                    metavar='IFO:SECONDS', default=5.,
+                                    help='Length of clustering window for '
+                                         'detecting glitches for autogating.')
+    data_reading_group.add_argument('--autogating-width', type=float,
+                                    nargs="+", action=MultiDetOptionAction,
+                                    metavar='IFO:SECONDS', default=0.25,
+                                    help='Half-width of the gating window.')
+    data_reading_group.add_argument('--autogating-taper', type=float,
+                                    nargs="+", action=MultiDetOptionAction,
+                                    metavar='IFO:SECONDS', default=0.25,
+                                    help='Taper the strain before and after '
+                                         'each gating window over a duration '
+                                         'of SECONDS.')
+    data_reading_group.add_argument('--autogating-pad', type=float,
+                                    nargs="+", action=MultiDetOptionAction,
+                                    metavar='IFO:SECONDS', default=16,
+                                    help='Ignore the given length of whitened '
+                                         'strain at the ends of a segment, to '
+                                         'avoid filters ringing.')
 
     data_reading_group.add_argument("--normalize-strain", type=float,
                      nargs="+", action=MultiDetOptionAction,

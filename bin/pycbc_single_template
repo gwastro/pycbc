@@ -206,7 +206,6 @@ with ctx:
                                     low_frequency_cutoff=flow, 
                                     return_bins=True)
         chisq /= chisq_bins * 2 - 2
-        print abs(snr).max()
      
         snrs.append(snr[stilde.analyze])
         chisqs.append(chisq[stilde.analyze])

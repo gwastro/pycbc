@@ -617,8 +617,8 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
         self.num_threads = 1
 
     def create_node(self, parent=None, c_file=None, open_box=False,
-                    tuning_tags=None, exclusion_tags=None, html_dir=None,
-                    tags=[]):
+                    seg_plot=None, tuning_tags=None, exclusion_tags=None,
+                    html_dir=None, tags=[]):
         node = Node(self)
 
         node.add_opt('--grb-name', self.cp.get('workflow', 'trigger-name'))
@@ -632,6 +632,9 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
 
         if exclusion_tags is not None:
             node.add_opt('--exclusion-injections', ','.join(exclusion_tags))
+
+        if seg_plot is not None:
+            node.add_opt('--seg-plot', seg_plot.storage_path)
 
         if open_box:
             node.add_opt('--open-box')
