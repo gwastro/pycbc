@@ -27,7 +27,6 @@ echo "# Properties set on command line" > extra-properties.conf
 rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
-touch local-extra-site-properties.xml
 
 GETOPT_CMD=`getopt -o d:c:g:a:p:P:s:S:k:t:Fknl:h --long dax:,cache-file:,local-gsiftp-server:,accounting-group:,pegasus-properties:,append-pegasus-property:,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
@@ -244,7 +243,9 @@ for s in "${SITE[@]}"; do
     exit 1
   else
     cat $SITE_TEMPLATE >> site-catalog.sh
-    cat ${s}-extra-site-properties.xml >> site-catalog.sh
+    if [ -e ${s}-extra-site-properties.xml ] ; then
+      cat ${s}-extra-site-properties.xml >> site-catalog.sh
+    fi
     echo "  </site>" >> site-catalog.sh
   fi
 done
