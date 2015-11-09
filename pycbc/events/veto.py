@@ -194,8 +194,10 @@ def select_segments_by_definer(segment_file, segment_name=None, ifo=None):
     did = segment_table.getColumnByName('segment_def_id')
     
     keep = numpy.array([d in valid_id for d in did])
-    
-    return start_end_to_segments(start[keep], end[keep])
+    if sum(keep) > 0:
+        return start_end_to_segments(start[keep], end[keep])
+    else:
+        return segmentlist([])
 
 def indices_within_segments(times, segment_files, ifo=None, segment_name=None):
     """ Return the list of indices that should be vetoed by the segments in the
