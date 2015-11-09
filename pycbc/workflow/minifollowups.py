@@ -84,12 +84,13 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     node.add_multiifo_input_list_opt('--inspiral-segments', insp_segs.values())
     node.add_opt('--inspiral-segment-name', insp_seg_name)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
-    
+    node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
+
     name = node.output_files[0].name
-    map_loc = name + '.map'
+    map_loc = node.output_files[1].name
+
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
-    node.add_opt('--output-map', map_loc)
     
     workflow += node
     
@@ -168,14 +169,14 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         assert(veto_segment_name is not None)
         node.add_input_opt('--veto-file', veto_file)
         node.add_opt('--veto-segment-name', veto_segment_name)
-    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file',
-                             tags=tags)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
+    node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
 
     name = node.output_files[0].name
-    map_loc = name + '.map'
+    map_loc = node.output_files[1].name
+
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
-    node.add_opt('--output-map', map_loc)
 
     workflow += node
 
@@ -251,12 +252,13 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     node.add_multiifo_input_list_opt('--inspiral-segments', insp_segs.values())
     node.add_opt('--inspiral-segment-name', insp_seg_name)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
-    
+    node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
+
     name = node.output_files[0].name
-    map_loc = name + '.map'
+    map_loc = node.output_files[1].name
+    
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
-    node.add_opt('--output-map', map_loc)
     
     workflow += node
     

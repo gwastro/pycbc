@@ -188,7 +188,10 @@ def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None, title_tex
     node = PlotExecutable(workflow.cp, 'page_segtable', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_list_opt('--segment-files', seg_files)
-    node.add_opt('--segment-names', ' '.join(seg_names))
+    quoted_seg_names = []
+    for s in seg_names:
+      quoted_seg_names.append("'" + s + "'")
+    node.add_opt('--segment-names', ' '.join(quoted_seg_names))
     if description:
         node.add_opt('--description', "'" + description + "'")
     if title_text:

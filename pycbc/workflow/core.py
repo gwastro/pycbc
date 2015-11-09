@@ -198,7 +198,10 @@ class Executable(pegasus_workflow.Executable):
             raise TypeError("Failed to find %s executable " 
                             "at %s" % (name, exe_path))
         
-        self.add_pfn(exe_path)
+        if exe_path.startswith('gsiftp://'):
+            self.add_pfn(exe_path, site='nonlocal')
+        else:
+            self.add_pfn(exe_path)
 
         # Determine the condor universe if we aren't given one 
         if self.universe is None:
@@ -423,6 +426,17 @@ class Workflow(pegasus_workflow.Workflow):
         path =  os.path.join(os.getcwd(), name)
         return path
         
+    @property
+    def staging_site(self):  
+        if self.in_workflow != False:
+            workflow_section = 'workflow-%s' % self.name 
+        else:
+            workflow_section = 'workflow'
+        try:
+            staging_site = self.cp.get(workflow_section,'staging-site')
+        except:
+            staging_site = None
+        return staging_site
 
     def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine
@@ -454,19 +468,24 @@ class Workflow(pegasus_workflow.Workflow):
             fil.PFN(fil.storage_path, site='local')
     
     @staticmethod
-    def set_job_properties(job, output_map):
+    def set_job_properties(job, output_map, staging_site=None):
         job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % output_map) 
         job.addArguments('-Dpegasus.dir.storage.mapper.replica=File') 
         job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache')) 
         job.addArguments('--output-site local')     
         job.addArguments('--cleanup inplace')
         job.addArguments('--cluster label,horizontal')
+        job.addArguments('-vvv')
+        if staging_site:
+            job.addArguments('--staging-site %s' % staging_site)
             
-    def save(self, filename=None, output_map=None):
+    def save(self, filename=None, output_map=None, staging_site=None):
         if output_map is None:
             output_map = self.output_map
+
+        staging_site = self.staging_site
             
-        Workflow.set_job_properties(self.as_job, output_map)
+        Workflow.set_job_properties(self.as_job, output_map, staging_site)
 
         # add executable pfns for local site to dax
         for exe in self._executables:

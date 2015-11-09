@@ -1,10 +1,10 @@
   <site handle="local" arch="x86_64" os="LINUX">
-    <directory  path="$PWD" type="shared-scratch" free-size="null" total-size="null">
-        <file-server  operation="all" url="file://$PWD">
+    <directory  path="$LOCAL_SITE_PATH/local-site-scratch" type="shared-scratch" free-size="null" total-size="null">
+        <file-server  operation="all" url="$LOCAL_SITE_URL/local-site-scratch">
         </file-server>
     </directory>
-    <directory  path="$PWD" type="shared-storage" free-size="null" total-size="null">
-        <file-server  operation="all" url="file://$PWD">
+    <directory  path="$LOCAL_SITE_PATH" type="shared-storage" free-size="null" total-size="null">
+        <file-server  operation="all" url="$LOCAL_SITE_URL">
         </file-server>
     </directory>
     <profile namespace="env" key="GLOBUS_LOCATION">/usr</profile>
@@ -14,4 +14,4 @@
     <profile namespace="condor" key="should_transfer_files">YES</profile>
     <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
     <profile namespace="condor" key="+DESIRED_Sites">&quot;nogrid&quot;</profile>
-  </site>
+    <profile namespace="condor" key="+IS_GLIDEIN">&quot;False&quot;</profile>
