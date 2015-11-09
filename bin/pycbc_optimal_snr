@@ -172,7 +172,7 @@ if __name__ == '__main__':
                          simulation_ids=[simulation_id])
         return make_frequency_series(strain)
 
-    def compute_optimal_snr(inj):
+    def compute_optimal_snr(inj, return_found=False):
         for det, column in opts.snr_columns.items():
             injection_time = inj.get_end(det[0])
             psd = psds[det](injection_time)
@@ -187,6 +187,15 @@ if __name__ == '__main__':
                 continue
             sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
             setattr(inj, column, sval)
+
+            if return_found:
+                # No need to do any other dets if we just
+                # want to trigger weave
+                return (inj, True)
+
+        if return_found:
+            return (inj, False)
+
         return inj
 
     logging.info("Loading injections")
@@ -196,17 +205,22 @@ if __name__ == '__main__':
     out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
                                      columns=injections.table.columnnames)
 
-    logging.info('Starting workers')
-    pool = multiprocessing.Pool(processes=opts.cores)
-    # KLUDGE! Run the first segment to esure that the weave cache is
-    # populated.  This is a short-term fix until the issues with
+    # KLUDGE! Loop through the injections until we find one that 
+    # will be processed, in order to populate the weave cache.
+    # This is a short-term fix until the issues with
     # https://github.com/ligo-cbc/pycbc/issues/501
-    # can be resolved.  This will wastefully run the first segment
+    # can be resolved.  This will wastefully run the first injection
     # twice which could be avoided, but since this is a short-term
     # kludge anyway I'd prefer to be minimally invasive.
     # TODO: Remove this when 501 is resolved.
     # FIXME: https://www.youtube.com/watch?v=DtRNg5uSKQ0
-    compute_optimal_snr(inj_table[0])
+    for inj in inj_table:
+        ignore, found = compute_optimal_snr(inj, True)
+        if found:
+            break
+
+    logging.info('Starting workers')
+    pool = multiprocessing.Pool(processes=opts.cores)
 
     proc_injs = pool.map(compute_optimal_snr, inj_table)
     for inj in proc_injs:
