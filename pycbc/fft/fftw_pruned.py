@@ -167,7 +167,7 @@ def second_phase(invec, indices, N1, N2):
         }
     """
     scipy.weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
-                      )
+                       extra_compile_args=['-mno-avx2 -march=native -O3 -w'])
     return out
 
 def fast_second_phase(invec, indices, N1, N2):
@@ -222,7 +222,7 @@ def fast_second_phase(invec, indices, N1, N2):
         }
     """
     scipy.weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
-                       extra_compile_args=['-march=native -O3 -w'])
+                       extra_compile_args=['-mno-avx2 -march=native -O3 -w'])
     return out
 
 _thetransposeplan = None
