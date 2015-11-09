@@ -87,25 +87,25 @@ trig_f = h5py.File(opts.trig_file, 'r')
 trigs = trig_f[opts.detector]
 
 snr = np.array(trigs['snr'])
-rchisq = np.array(trigs['chisq']) / (np.array(trigs['chisq_dof']) * 2 - 2)
-end_time = np.array(trigs['end_time'])
-template_ids = np.array(trigs['template_id'])
+rchisq = trigs['chisq'][:] / (trigs['chisq_dof'][:] * 2 - 2)
+end_time = trigs['end_time'][:]
+template_ids = trigs['template_id'][:]
 indices = np.arange(len(end_time))
-max_template_duration = max(trigs['template_duration'][:])
+template_duration = trigs['template_duration'][:]
 
 if opts.veto_file:
     logging.info('Loading veto segments')
-    time = trigs['end_time'][:]
     locs, segs = pycbc.events.veto.indices_outside_segments(
-        time, [opts.veto_file], ifo=opts.detector)
+        end_time, [opts.veto_file], ifo=opts.detector)
     end_time = end_time[locs]
     snr = snr[locs]
     rchisq = rchisq[locs]
     template_ids = template_ids[locs]
+    template_duration = template_duration[locs]
     indices = indices[locs]
 
 mask = np.logical_and(end_time > opts.gps_start_time,
-                      end_time < opts.gps_end_time + max_template_duration)
+                      end_time < opts.gps_end_time + template_duration)
 end_time = end_time[mask]
 snr = snr[mask]
 rchisq = rchisq[mask]
