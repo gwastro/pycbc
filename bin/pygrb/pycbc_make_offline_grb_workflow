@@ -57,7 +57,7 @@ else:
     baseDir = os.getcwd()
 runDir = os.path.join(baseDir, "GRB%s" % str(wflow.cp.get("workflow",
                                                           "trigger-name")))
-logging.info("Workflow will be generated in %s" % baseDir)
+logging.info("Workflow will be generated in %s" % runDir)
 if not os.path.exists(runDir):
     os.makedirs(runDir)
 os.chdir(runDir)
@@ -84,12 +84,12 @@ if len(sciSegs.keys()) < 2 and not single_ifo:
     raise RuntimeError(msg)
 elif len(sciSegs.keys()) < 2:
     logging.info("Generating a single IFO search.")
-    onSrc, sciSegs = _workflow.get_triggered_single_ifo_segment(wflow, segDir,
-                                                                sciSegs)
+    onSrc, sciSegs, segs_plot = _workflow.get_triggered_single_ifo_segment(\
+            wflow, segDir, sciSegs)
 else:
-    onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir,
-                                                              sciSegs,
-                                                              single_ifo)
+    onSrc, sciSegs, segs_plot = _workflow.get_triggered_coherent_segment(wflow,
+            segDir, sciSegs, single_ifo)
+all_files.extend(_workflow.FileList([segs_plot]))
 
 # How many IFOs do we have in the search?
 if len(sciSegs.keys()) == 1:
@@ -264,7 +264,7 @@ if post_proc_method == "COH_PTF_WORKFLOW":
             injection_trigger_files=inj_insp_files, injection_files=injs,
             injection_trigger_caches=inj_insp_caches,
             injection_caches=inj_caches, config_file=cp_file, web_dir=html_dir,
-            ifos=ifos, inj_tags=inj_tags)
+            segments_plot=segs_plot, ifos=ifos, inj_tags=inj_tags)
 
     # Retrieve style files for webpage
     summary_files = _workflow.get_coh_PTF_files(wflow.cp, ifos, ppDir,

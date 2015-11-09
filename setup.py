@@ -402,6 +402,7 @@ setup (
                'bin/hdfcoinc/pycbc_average_psd',
                'bin/pycbc_optimal_snr',
                'bin/pycbc_fit_sngl_trigs',
+               'bin/pycbc_randomize_inj_dist_by_optsnr',
                'bin/hdfcoinc/pycbc_coinc_mergetrigs',
                'bin/hdfcoinc/pycbc_coinc_findtrigs',
                'bin/hdfcoinc/pycbc_coinc_bank2hdf',
