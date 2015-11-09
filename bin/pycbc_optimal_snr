@@ -206,8 +206,7 @@ if __name__ == '__main__':
     # kludge anyway I'd prefer to be minimally invasive.
     # TODO: Remove this when 501 is resolved.
     # FIXME: https://www.youtube.com/watch?v=DtRNg5uSKQ0
-    if len(inj_table) > 0:
-        compute_optimal_snr(inj_table[0])
+    compute_optimal_snr(inj_table[0])
 
     proc_injs = pool.map(compute_optimal_snr, inj_table)
     for inj in proc_injs:
