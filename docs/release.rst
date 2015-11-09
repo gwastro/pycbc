@@ -72,3 +72,224 @@ You should now see the package uploaded in the `PyPI Test Repository <https://te
     python setup.py sdist upload -r pypi
 
 The package should then be available in PyPI for download.
+
+============================================
+Creating static binaries for production runs
+============================================
+
+Static binaries are entirely self-contained programs that
+
+#. Can be run by anyone, whether or not they have set up a development environment
+#. Ensure that each program runs with the right versions of all dependancies
+#. can be distributed from a central location
+
+A new set of such binaries should be generated for every release.
+
+The program used to create a static binary from a Python program is 
+`PyInstaller <http://www.pyinstaller.org/>`_.  To set up PyInstaller:
+
+.. code:: bash
+
+    source /your/virtual/environment/bin/activate
+    cd /your/virtual/environment/src
+    git clone https://github.com/pyinstaller/pyinstaller.git
+    cd pyinstaller
+    git checkout 9d0e0ad4c1c02964bbff86edbf7400cd40958b1a
+
+By default programs built with PyInstaller will ignore the ``LD_LIBRARY_PATH``
+environment variable, which causes problems in some environments.  To fix this
+edit ``bootloader/common/pyi_utils.c`` and replace the function ``set_dynamic_library_path`` with the following
+
+.. code-block:: c
+
+    static int set_dynamic_library_path(const char* path)
+    {
+        int rc = 0;
+    
+    #ifdef AIX
+        /* LIBPATH is used to look up dynamic libraries on AIX. */
+        setenv("LIBPATH", path, 1);
+        VS("%s\n", path);
+    #else
+        /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
+        char * curpath = getenv("LD_LIBRARY_PATH");
+        if ( ! curpath ) { /* Use required path only */
+            rc = setenv("LD_LIBRARY_PATH", path, 1);
+            VS("%s\n", path);
+        } else { /* Append current path onto required path */
+            char apath[ strlen(path) + strlen(curpath) + 2 ];
+            strcpy(apath, path);
+            strcat(apath, ":");
+            strcat(apath, curpath);
+            rc = setenv("LD_LIBRARY_PATH", apath, 1);
+            VS("%s\n", apath);
+        }
+    #endif /* AIX */
+    
+        return rc;
+    }
+
+.. Closing slash-star to keep vim happy /*
+
+Then configure the bootlader and install as usual:
+
+.. code:: bash
+    cd bootloader
+    ./waf configure build install --no-lsb
+    cd ..
+    python setup.py install
+
+--------------
+pyCBC binaries
+--------------
+
+To ensure that pyCBC is setup properly prior to running pyinstaller, first clean out
+the pip cache
+
+.. code:: bash
+
+    rm -rfv ${HOME}/.cache/pip
+
+Then checkout the official release
+
+.. code:: bash
+
+    cd /your/virtual/environment/src
+    git clone git@github.com:ligo-cbc/pycbc.git
+    cd pycbc
+    git checkout v1.2.5
+
+replacing ``v1.2.5`` with the version to be built.  Then install pyCBC, using
+the requirements file to ensure the correct version of all dependancies is
+installed
+
+.. code:: bash
+
+  pip install -r requirements.txt
+
+
+Then ensure that the installation went as expected:
+
+.. code::
+
+    pycbc_inspiral --version
+
+    Branch: None Tag: v1.2.5 Id: 51dcf08cc6016a7574c3baf2efff2bb60ed6ce4f Builder:
+    Larne Pekowsky <larne.pekowsky@ligo.org> Build date: 2015-10-31 14:48:20 +0000
+    Repository status is CLEAN: All modifications committed
+
+
+The tag should match the one that was checked out and the repository status should
+report as ``CLEAN``.
+
+You're now ready to build the static executables.
+
+.. code:: bash
+   cd tools/static
+   bash build_dag.sh
+
+This will construct a condor dag with a pyinstaller job for each binary.
+Submit as usual
+
+.. code:: bash
+   condor_submit_dag build_static.dag
+
+Assuming everything goes well the resulting binaries will be placed in the
+``dist`` directory.
+
+In principle jobs could fail if pyinstaller fails to build the executable,
+although this has never been seen in practice.  A job can also fail if
+pyinstaller succeeds but the resulting program throws an error when invoked
+with ``--help``.  Most of the time this happens it is because a new program has
+been added and pyinstaller needs to be told that it needs scipy.  This is done
+by adding the name of the new program to the ``needs_full_build`` file in the
+``tools/static`` directory.  As a final test, check the version again
+
+.. code::
+
+    dist/pycbc_inspiral --version
+
+    Branch: None Tag: v1.2.5 Id: 51dcf08cc6016a7574c3baf2efff2bb60ed6ce4f Builder:
+    Larne Pekowsky <larne.pekowsky@ligo.org> Build date: 2015-10-31 14:48:20 +0000
+    Repository status is CLEAN: All modifications committed
+
+
+---------------
+lalapps_inspinj
+---------------
+
+This is the one C program from lalsuite that is still needed in the current
+workflow.  To build a static version follow the instructions for 
+installing lalsuite but configure with
+
+.. code:
+    --enable-static-binaries --enable-static --disable-swig --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalpulsar --disable-framec
+
+
+----------------------
+Other lalapps programs
+----------------------
+
+
+To build
+
+#. Do step 1
+#. Do ``step2 = fun`` in the PyCBC's setup.py file.
+#. Do step 3
+
+
+git clone git@code.pycbc.phy.syr.edu:ligo-cbc/pycbc-software.git
+mkdir -p pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090/
+
+
+--
+pycbc_inspiral --version
+
+--
+
+
+## pyCBC
+
+Binaries from the pycbc package were built from the 1.2.5 tag, with latest commit:
+
+    commit 8dbe0cd79b2c5288ceba23173cb4b6366617ebc1
+    Merge: 8152c5d cc2b132
+    Author: Duncan Brown <dabrown@syr.edu>
+    Date:   Sat Oct 31 08:18:24 2015 -0400
+    
+        Merge pull request #543 from titodalcanton/fix_foundmissed_cli
+        
+        pycbc_page_foundmissed: fix missing distance choices
+    
+They were built by installing, running
+
+`build_dag.sh`
+
+from the tools/static directory, and then submitting the resulting dag.
+
+## Dqsegdb
+
+Client tools for the segment database were built from the dqsegdb-release-1-2-2 tag with 
+
+    pyinstaller ligolw_segment_query_dqsegdb --strip --onefile
+    pyinstaller ligolw_segments_from_cats_dqsegdb --strip --onefile
+
+
+## lalapps
+
+The lalapps_*_sbank* binaries were built from the lalsuite_o1_branch branch with
+
+    pyinstaller ${prog}                          \
+      --hidden-import scipy.linalg.cython_blas   \
+      --hidden-import scipy.linalg.cython_lapack \
+      --hidden-import scipy.special._ufuncs_cxx  \
+      --hidden-import scipy.integrate            \
+      --strip                                    \
+      --onefile
+
+
+lalapps_inspinj was built by a standard lalsuite install with options
+
+
+
+
