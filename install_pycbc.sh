@@ -97,7 +97,9 @@ if [[ -d $NAME ]] ; then
 fi
 
 #Virualenv check
+echo
 echo "You chose to install PyCBC in $NAME."
+echo
 read -rp "Is this where you want PyCBC installed? (Enter yes or no) " name_check
 
 if [[ $name_check == "yes" ]] ; then
@@ -175,6 +177,7 @@ echo "Would you like to install a released version of PyCBC or a development cop
   elif [[ $dev_or_rel -eq 2 ]] ; then
 
     #Fork pyCBC to your Github account
+    echo
     echo To install a development version, you will need a GitHub account.
     echo If you do not have a github account you will need to set one up.
     echo
@@ -192,7 +195,7 @@ echo "Would you like to install a released version of PyCBC or a development cop
     echo     https://help.github.com/articles/generating-ssh-keys/
     echo 
     read -rsp $'Once you have completed these steps, hit [Enter] to continue...\n' -n1 key
-
+    echo
     #Create an ssh agent to connect to GitHub
     echo "Do you already have an ssh agent running with the key connected to GitHub?"
     while true ; do
@@ -233,7 +236,73 @@ echo "If you do not have these tools installed, just press return."
 echo 
 read -p "Enter path and architecture for Intel compilervars.sh or press return: " intel_path
 
+#ROM Data Path
+LAL_DATA_PATH=""
+while true; do
 echo
+read -rp "Is the LAL Reduce Order Model (ROM) data installed on your cluster (Enter yes or no, if unsure type no)? " install_rom
+
+if [[ ${install_rom} == "yes" ]] ; then
+ echo
+ read -rp "Please enter the path to the ROM data: " rom_path
+     if [[ ${rom_path} == ~* ]] ; then
+      if [[ ! "${rom_path}" =~ "/" ]] ; then
+        rom_path=${HOME}
+      else
+        # chomp the ~
+        rom_path=${rom_path/##~}
+        # chomp anything else before the first slash to catch e.g. ~alenon/
+        rom_path=${rom_path#*\/}
+        # expand to the user's home directory
+        rom_path=${HOME}/${rom_path}
+      fi
+    fi
+ LAL_DATA_PATH="${rom_path}"
+ break
+#exists, and print message if not (and go back to top of loop).
+
+elif [[ ${install_rom} == "no" ]] ; then
+ echo
+ read -rp "Do you want to download the ROM data now (Enter yes or no): " rom_download
+
+  if [[ ${rom_download} == "no" ]] ; then
+    exit 1
+
+  elif [[ ${rom_download} == "yes" ]] ; then
+    echo
+    read -rp "Enter the path to store the ROM data: " rom_store
+    if [[ ${rom_store} == ~* ]] ; then
+      if [[ ! "${rom_store}" =~ "/" ]] ; then
+        rom_store=${HOME}
+      else
+        # chomp the ~
+        rom_store=${rom_store/##~}
+        # chomp anything else before the first slash to catch e.g. ~alenon/
+        rom_store=${rom_store#*\/}
+        # expand to the user's home directory
+        rom_store=${HOME}/${rom_store}
+      fi
+    fi
+    
+    if [ ! -d ${rom_store} ] ; then
+      echo
+      echo "ERROR: the directory ${rom_store} does not exist."
+      continue
+    fi
+    LAL_DATA_PATH="${rom_store}"
+    echo 
+    break  
+
+  else
+  continue
+  fi
+
+else
+continue
+
+fi
+done
+
 echo "------------PLease check the inputs carefully-----------------"
 echo
 echo "LIGO.ORG username: " $directory
@@ -249,6 +318,13 @@ echo "Github Username: " $github
 fi
 
 echo "Path and architecture for Intel compilervars.sh:" $intel_path
+if [[ ${install_rom} == "yes" ]] ; then
+echo "ROM data is located in ${LAL_DATA_PATH}"
+fi
+
+if [[ ${install_rom} == "no" ]] ; then
+echo "ROM data will be install in ${LAL_DATA_PATH}"
+fi
 echo
 echo "PyCBC version "
 echo "  1. Release version"
@@ -358,12 +434,10 @@ HDF5_DIR=${VIRTUAL_ENV}/opt/hdf5-1.8.12 pip $cache install h5py
 
 #Authenticate with LIGO Data Grid services, install M2Crypto
 SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip $cache install M2Crypto
-
 echo
 echo
-echo "--- cloning lalsuite repository ---------------------------------"
+echo "--- cloning lalsuite repository -----------------------------------"
 echo
-
 #Valid ECP cookie to clone
 
 #Tell git the location of the cookie
@@ -414,6 +488,46 @@ pip install ligo-gracedb
 
 #Install pycbc and glue from non-cached versions to get the rpaths correct
 pip $cache install pycbc-glue pycbc-pylal
+
+#ROM Data Download
+
+if [[ ${install_rom} == "no" ]] ; then
+    pushd ${LAL_DATA_PATH}
+    echo "--- Downloading ROM DATA ---------------------------------"
+    svn co https://svn.ligo.caltech.edu/svn/lalsuite-extra/
+    pushd lalsuite-extra
+    ./00boot
+    ./configure --prefix=${LAL_DATA_PATH}
+    make install
+    popd
+    popd
+    #echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >> ${VIRTUAL_ENV}/bin/activate
+fi
+
+#ROM Data Validation
+rom_hash=('f82ddc5dc0b6fdc75122e767bd5e78c8' '62afa5351d6b775ac33cb4d898f0016b' 'a6829fa05437cc0aad81e3f8dae839cc' '98ea14b01e729d15ff666caa25afaed6' 'b41f0f7fbaf8be1d1848de7ee702bc67' '20ee260c870109766a6f048e20c7e10f' '96c384617edd8375ceaa03f9b7456467' '67d4f206fe19104fbc98b923b37318bb' 'd0bf97b4e17b5c9a7cfd222aaaafd742' 'c2ea5d296fee01abe16c0dd9e5f71f04' '412953726ca4bc72a810b27b810831c7' '4d5378935a7fba5e96f671581bce99fb' '31f48cb651a60837a3e99ee050aa9bc2' '727d31f6dc678aba8539817c8d0ae930' 'd0e1601c7cf4bd727d03e6cf7d2f722b' 'e6c243f76609cada55612cfe53f82e41' '08186a21682d2e73cb00a3ef35aa5c9c' '1ef7953a977a1fb551f59585c5d63d7a' 'b5923860bf021e6a2a23d743e5724bee' '2947032d0ad7ffde9704e24bf9e676f5')
+
+if [[ ${install_rom} == "yes" ]] ; then
+md5sum_hash=$( echo -n 'test' | md5sum ${LAL_DATA_PATH}/SEOBNRv2ROM*.dat | cut -d' ' -f1)
+fi
+
+if [[ ${install_rom} == "no" ]] ; then
+md5sum_hash=$( echo -n 'test' | md5sum ${LAL_DATA_PATH}/share/lalsimulation/SEOBNRv2ROM*.dat | cut -d' ' -f1)
+fi
+
+for j in "${rom_hash[@]}" ; do
+  if [[ ${rom_hash[*]} == ${md5sum_hash[*]} ]] ; then
+    echo "All files are in ${LAL_DATA_PATH}." 
+    echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >>  ${VIRTUAL_ENV}/bin/activate
+    break
+  fi
+
+  if [[ ${rom_hash[*]} != ${md5sum_hash[*]} ]] ; then
+    echo "The files are not the same."
+    echo
+    exit 1
+  fi
+done
 
 #Released or Development
 echo
@@ -550,6 +664,7 @@ fi
 deactivate
 echo "PyCBC setup complete"
 echo
+
 
 # save log into virtualenv
 mv ${LOGPATH} ${NAME}/
