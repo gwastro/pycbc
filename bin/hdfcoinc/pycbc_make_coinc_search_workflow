@@ -42,14 +42,26 @@ parser.add_argument("-d", "--output-dir", default=None,
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
+wf.makedir(args.output_dir)
+wf_log_dir = os.path.join(args.output_dir,"workflow")
+wf.makedir(wf_log_dir)
+wf_log_file = os.path.join(wf_log_dir,"workflow-generation-log.txt")
+
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
-                    level=logging.INFO)
+                    filename=wf_log_file,
+                    level=logging.INFO,
+                    filemode='w')
+
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s:%(levelname)s : %(message)s')
+console.setFormatter(formatter)
+logging.getLogger('').addHandler(console)
 
 container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, 'main')
 finalize_workflow = wf.Workflow(args, 'finalization')
 
-wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
 
 rdir = layout.SectionNumber('results', ['configuration',
