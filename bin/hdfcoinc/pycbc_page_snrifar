@@ -19,10 +19,12 @@ parser.add_argument('--trigger-file')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 parser.add_argument('--trials-factor', type=int, default=1)
-parser.add_argument('--cumulative', action='store_true')
+parser.add_argument('--not-cumulative', action='store_true')
 parser.add_argument('--closed-box', action='store_true',
       help="Make a closed box version that excludes foreground triggers")
 args = parser.parse_args()
+
+args.cumulative = not args.not_cumulative
 
 if args.verbose:
     log_level = logging.INFO
@@ -85,6 +87,7 @@ if not args.closed_box:
 
     sigmas = numpy.array([5, 4, 3, 2, 1])
     if args.cumulative:
+        top = cstat_rate.max()
         for i in range(len(sigmas) - 1):
             p1 = p_from_sigma(sigmas[i])
             p2 = p_from_sigma(sigmas[i+1])
@@ -95,11 +98,16 @@ if not args.closed_box:
                 offset = numpy.interp(cstat_back, cstat_fore, cstat_rate - cstat_rate[-1])
             else:
                 offset = 0
-            
-            pylab.fill_between(cstat_back, far_back / (1 - p2) * args.trials_factor + offset, far_back / (1 - p1) * args.trials_factor + offset,
+                
+            low = far_back / (1 - p2) * args.trials_factor + offset
+            high = far_back / (1 - p1) * args.trials_factor + offset
+            pylab.fill_between(cstat_back, low, high,
                                linewidth=0, color=pylab.cm.Blues(sigmas[i] / 5.0), zorder=-1)
-            #pylab.text(cstat_back[-1], (far_back / (1 - p1))[-1],
-            #           r"\textbf{%s $\sigma$}, p=%s" % (sigmas[i], pretty_num(1-p1)))
+
+            left = cstat_back[high < top].min()
+            print left, top, sigmas[i]
+            pylab.text(left, top, r"\textbf{%s $\sigma$}"  % sigmas[i], fontsize=8)
+            
 
     else:
         p = p_from_sigma(sigmas)
@@ -111,13 +119,12 @@ if not args.closed_box:
         for i in range(len(far) - 1):
             pylab.axhspan(far[i], far[i+1],
                           linewidth=0, color=pylab.cm.Blues(sigmas[i] / 5.0), alpha=0.3, zorder=-1) 
-            #pylab.text(cstat_back[-1], far[i], "$%s \sigma, p=%.1e$" % (sigmas[i], (1 - p[i])))
-         
-        print cstat_fore.argmax(), cstat_fore.max(), len(cstat_fore), cstat_rate[0]
-        pylab.plot(cstat_fore[-1], cstat_rate[-1] / 3, 'ko', marker="$\downarrow$", markersize=20)   
+        
+        if cstat_fore is not None and len(cstat_fore): 
+            pylab.plot(cstat_fore[-1], cstat_rate[-1] / 3, 'ko', marker="$\downarrow$", markersize=20)   
+        
         ax1 = pylab.gca()
         ax2 = ax1.twinx()
-        #ax2.set_ylabel('$\sigma$')
         
         sigmas = ['%1.0f$\sigma$' % sig for sig in sigmas]
         
