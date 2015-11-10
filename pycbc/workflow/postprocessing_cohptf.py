@@ -43,7 +43,7 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, trigger_cache,
         output_dir, segment_dir, injection_trigger_files=None,
         injection_files=None, injection_trigger_caches=None,
         injection_caches=None, config_file=None, run_dir=None, ifos=None,
-        web_dir=None, segments_plot=None, inj_tags=[], tags=[], **kwargs):
+        web_dir=None, inj_tags=[], tags=[], **kwargs):
     """
     This function aims to be the gateway for running postprocessing in CBC
     offline workflows. Post-processing generally consists of calculating the
@@ -87,8 +87,8 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, trigger_cache,
         post_proc_files = setup_postproc_coh_PTF_workflow(workflow,
                 trigger_files, trigger_cache, injection_trigger_files,
                 injection_files, injection_trigger_caches, injection_caches,
-                config_file, output_dir, web_dir, segment_dir, segments_plot,
-                ifos=ifos, inj_tags=inj_tags, tags=tags, **kwargs)
+                config_file, output_dir, web_dir, segment_dir, ifos=ifos,
+                inj_tags=inj_tags, tags=tags, **kwargs)
     else:
         errMsg = "Post-processing method not recognized. Must be "
         errMsg += "COH_PTF_WORKFLOW."
@@ -102,8 +102,8 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, trigger_cache,
 def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                                     inj_trig_files, inj_files, inj_trig_caches,
                                     inj_caches, config_file, output_dir,
-                                    html_dir, segment_dir, segs_plot, ifos,
-                                    inj_tags=[], tags=[]):
+                                    html_dir, segment_dir, ifos, inj_tags=[],
+                                    tags=[]):
     """
     This module sets up the post-processing stage in the workflow, using a
     coh_PTF style set up. This consists of running trig_combiner to find
@@ -449,10 +449,10 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                           if "DETECTION" not in inj_tag]
         html_summary_node = html_summary_jobs.create_node(c_file=config_file,
                 tuning_tags=tuning_tags, exclusion_tags=exclusion_tags,
-                seg_plot=segs_plot, html_dir=html_dir)
+                html_dir=html_dir)
     else:
         html_summary_node = html_summary_jobs.create_node(c_file=config_file,
-                seg_plot=segs_plot, html_dir=html_dir)
+                                                          html_dir=html_dir)
     workflow.add_node(html_summary_node)
     for pp_node in pp_nodes:
         dep = dax.Dependency(parent=pp_node._dax_node,
