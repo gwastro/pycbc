@@ -555,25 +555,10 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
     job.add_opt('--veto-file', vetoDefFile)
     # FIXME: Would like the proxy in the Workflow instance
     # FIXME: Explore using the x509 condor commands
-    # Set up proxy to be accessible in a NFS location
-    # If the user has logged in with gsissh then X509_USER_PROXY will be set
-    # However, certain users log in with an ssh key and then ligo-proxy-init
-    # This route does not set X509_USER_PROXY, so use the default file location
+    # If the user has a proxy set in the environment, add it to the job
     if os.environ.has_key('X509_USER_PROXY'):
-        proxy = os.getenv('X509_USER_PROXY')
-    else:
-        proxy = "/tmp/x509up_u%d" % os.getuid()
-    proxyfile = os.path.join(out_dir, 'x509up.file')
-    try:
-        shutil.copyfile(proxy, proxyfile)
-    except IOError:
-        raise RuntimeError('Cannot find certificate in %s. '
-                           'Make sure that ligo-proxy-init ' 
-                           'has been run.' % proxy)
-                           
-        
-    job.add_profile('condor', 'environment',
-                       'USER=$ENV(USER);X509_USER_PROXY=%s' % proxyfile)
+        job.add_profile('condor', 'environment',
+                        'USER=$ENV(USER);X509_USER_PROXY=%s' % proxyfile)
 
     return job
     

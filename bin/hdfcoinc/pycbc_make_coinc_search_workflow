@@ -96,14 +96,15 @@ kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)',
 save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 
 # Get segments and find where the data is
-science_segs, data_segs, science_seg_file = wf.get_analyzable_segments(workflow, "segments")
+wf.makedir(rdir['analysis_time/segment_data'])
+science_segs, data_segs, science_seg_file = wf.get_analyzable_segments(workflow, rdir['analysis_time/segment_data'])
 datafind_files, science_segs = wf.setup_datafind_workflow(workflow, 
                                          science_segs, "datafind", science_seg_file)
 
 cum_veto_files, veto_names, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
-                                        'segments-veto-groups', "segments")
+                                        'segments-veto-groups', rdir['analysis_time/segment_data'])
 final_veto_file, final_veto_name, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
-                                        'segments-final-veto-group', "segments")
+                                        'segments-final-veto-group', rdir['analysis_time/segment_data'])
 
 # Precalculated PSDs
 precalc_psd_files = wf.setup_psd_workflow(workflow, science_segs,
@@ -211,7 +212,7 @@ for insp in full_insps:
 full_segs, psd_files, insp_segs, insp_data_segs = [], [], {}, {}                      
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     name = 'INSPIRAL_SEGMENTS'
-    fname = 'segments/%s-' % ifo + name + '.xml'
+    fname = os.path.join(rdir['analysis_time/segment_data'], '%s-' % ifo + name + '.xml')
     insp_segs[ifo] = glue.segments.segmentlist([f.segment for f in files])
     full_segs.append(pycbc.events.segments_to_file(insp_segs[ifo], fname, name, ifo=ifo))
 
@@ -221,7 +222,8 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
                   ifo, insp_data_segs[ifo], 'INSPIRAL_DATA', 'psds', gate_files=gate_files)]
 
     insp_data_segs[ifo] = pycbc.events.segments_to_file(insp_data_segs[ifo],
-                   'segments/%s-INSP_DATA.xml' % ifo, 'INSPIRAL_DATA', ifo=ifo)
+                   os.path.join(rdir['analysis_time/segment_data'], '%s-INSP_DATA.xml' % ifo), 
+                   'INSPIRAL_DATA', ifo=ifo)
 
 s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'],
                           precalc_psd_files=precalc_psd_files)
@@ -282,7 +284,7 @@ for segment_list,segment_name in zip(seg_summ_seglists, seg_summ_names):
         seg_list.append(segment_list[ifo])
         names.append(segment_name)
         ifos.append(ifo)
-filename = 'segments/'+''.join(workflow.ifos)+'-WORKFLOW_SEGMENT_SUMMARY.xml'
+filename = os.path.join(rdir['analysis_time/segment_data'],''.join(workflow.ifos)+'-WORKFLOW_SEGMENT_SUMMARY.xml')
 seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
 
 # make segment table for summary page
