@@ -176,6 +176,8 @@ parser.add_argument('-s', '--analysis-subtitle', type=str,
                   default="")
 parser.add_argument('-v', '--verbose', action='store_true',
                   help='Print extra debugging information.', default=False)
+parser.add_argument('-P', '--protect-results', action='store_true',
+                  help='Make the output web pages read only.', default=False)
 opts = parser.parse_args()
 
 # edit command line options
@@ -284,4 +286,20 @@ for dirpath, dirnames, filenames in os.walk(opts.output_path + '/static'):
         path = os.path.join(dirpath, filename)
         os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
 
+# Protect the results if the requested
+if opts.protect_results:
+    for dirpath, dirnames, filenames in os.walk(opts.output_path):
 
+        # Do not open the box
+        dir_permission = stat.S_IREAD | stat.S_IEXEC
+        existing_perm = os.stat(dirpath)
+        if bool(existing_perm.st_mode & stat.S_IRGRP):
+            dir_permission = dir_permission | stat.S_IRGRP | stat.S_IXGRP
+        if bool(existing_perm.st_mode & stat.S_IROTH):
+            dir_permission = dir_permission | stat.S_IROTH | stat.S_IXOTH
+
+        os.chmod(dirpath, dir_permission)
+
+        for filename in filenames:
+            path = os.path.join(dirpath, filename)
+            os.chmod(path, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
