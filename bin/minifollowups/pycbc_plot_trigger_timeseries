@@ -113,5 +113,5 @@ pylab.grid()
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
             cmd = ' '.join(sys.argv),
             title = 'Single Detector Trigger Timeseries (%s)' % args.plot_type,
-            caption = '',           
+            caption = 'Time series showing the single detector triggers centered around the time of the trigger of interest.',           
          )

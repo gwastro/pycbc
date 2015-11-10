@@ -30,6 +30,7 @@ from glue.ligolw import utils
 from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results import save_fig_with_metadata
 from pycbc.workflow import fromsegmentxml
+import pycbc.version
 
 class DefaultContentHandler(lsctables.ligolw.LIGOLWContentHandler):
     pass
@@ -41,6 +42,7 @@ parser = argparse.ArgumentParser(usage='pycbc_page_vetotable [--options]',
 )
 
 # add command line options
+parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument('--veto-definer-file', type=str,
                         help='XML files with a veto_definer table to read.')
 parser.add_argument('--output-file', type=str,

@@ -82,7 +82,7 @@ class SectionNumber(object):
         self.num = {}
         
         for num, sec in enumerate(secs):
-            self.name[sec] = '%s._%s' % (num, sec)  
+            self.name[sec] = '%s._%s' % (num + 1, sec)  
             self.num[sec] = num
             self.count[sec] = 1
     
@@ -97,7 +97,7 @@ class SectionNumber(object):
             sec, subsec = path.split('/')
             subnum = self.count[sec]
             num = self.num[sec]
-            name = '%s/%s.%s_%s' % (self.name[sec], num, subnum, subsec)
+            name = '%s/%s.%02d_%s' % (self.name[sec], num + 1, subnum, subsec)
             self.count[sec] += 1
             self.name[path] = name
         path = os.path.join(os.getcwd(), self.base, name)

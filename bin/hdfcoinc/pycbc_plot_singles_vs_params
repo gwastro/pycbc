@@ -34,8 +34,11 @@ import pycbc.events
 import pycbc.results
 import pycbc.io
 import sys
+import pycbc.version
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--single-trig-file', required=True,
                     help='Path to file containing single-detector triggers in '
                          'HDF5 format. Required')

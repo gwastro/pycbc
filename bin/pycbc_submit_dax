@@ -2,7 +2,12 @@
 # Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
 set -e
 
-exec > >(tee submit.log)
+mkdir -p workflow/planning
+COMMAND_LINE="${0} ${@}"
+echo "${COMMAND_LINE}" > workflow/planning/pycbc-submit-dax-command.txt
+echo "Executing on `hostname` in directory `pwd` at `date`" > workflow/planning/pycbc-submit-dax-log.txt
+
+exec > >(tee -a workflow/pycbc-submit-dax-log.txt)
 
 # Without this, only stdout would be captured - i.e. your
 # log file would not contain any error messages.
@@ -184,6 +189,7 @@ if [ $NO_CREATE_PROXY == 0 ]; then
   LIGO_USER_NAME=""
   while true; do
     read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " LIGO_USER_NAME
+    echo
     if [ ! -z $LIGO_USER_NAME ] ; then
       break
     fi
@@ -285,6 +291,8 @@ else
   pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-submit-dir work --cluster label $SUBMIT_DAX
 fi
 
+echo
+
 rm -f submitdir
 ln -sf $SUBMIT_DIR submitdir
 
@@ -300,4 +308,103 @@ chmod 755 stop
 echo pegasus-run $SUBMIT_DIR/work > start
 chmod 755 start
 
-echo Submitting from: $HOSTNAME
+# Copy planning information into workflow directory so it can be displayed on the results page
+cp pegasus-properties.conf workflow/planning
+cp site-catalog.xml workflow/planning
+cp $SUBMIT_DIR/work/braindump.txt workflow/planning
+
+mkdir -p workflow/input_map
+cp _reuse.cache workflow/input_map/reuse.cache
+
+mkdir -p workflow/dax
+mkdir -p workflow/output_map
+
+# copy the main dax and output.map to the workflow directory
+cp $DAX_FILE workflow/dax
+if [ -e output.map ] ; then
+  cp output.map workflow/output_map
+fi
+
+# ugly shell to extract the sub-dax names from the uberdax xml
+for dax in `egrep '<[:blank:]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do 
+  cp ${dax} workflow/dax
+  map=`basename ${dax} .dax`.map
+  if [ -e ${map} ] ; then
+    cp ${map} workflow/output_map
+  fi
+done
+
+if [ -z ${SUBMIT_DAX} ] ; then 
+  echo
+  echo "WARNING: DAX planned but not submitted. No dashboard entry has been created and"
+  echo "         the workflow section of results page will not show a dashboard URL."
+  echo "         You must run this script without the --no-submit option if this is a"
+  echo "         production run."
+  echo
+  exit 0
+fi
+
+if [ ! -e ${HOME}/.pegasus/workflow.db ] ; then
+  echo "WARNING: Could not find Pegasus dashboard database in ${HOME}/.pegasus"
+  echo "         Workflow has been submitted but the results page will not contain"
+  echo "         a link to the dashboard page. If this is a production workflow,"
+  echo "         please remove the workflow, check for the origin of this error,"
+  echo "         and re-submit the workflow by re-running this script."
+  echo
+  exit 1
+fi
+  
+sleep 1
+WORKFLOW_ID_STRING=`sqlite3 -csv ${HOME}/.pegasus/workflow.db "select submit_hostname,wf_id,wf_uuid from master_workflow where submit_dir = '${SUBMIT_DIR}/work';"`
+
+if [ -z $WORKFLOW_ID_STRING ] ; then
+  echo "WARNING: Could not find the workflow in the Pegasus dashboard database."
+  echo "         Workflow has been submitted but the results page will not contain"
+  echo "         a link to the dashboard page. If this is a production workflow,"
+  echo "         please remove the workflow, check for the origin of this error,"
+  echo "         and re-submit the workflow by re-running this script."
+  echo
+  exit 1
+fi
+
+WORKFLOW_ID_ARRAY=(${WORKFLOW_ID_STRING//,/ })
+DASHBOARD_URL="https://${WORKFLOW_ID_ARRAY[0]}/pegasus/u/${USER}/r/${WORKFLOW_ID_ARRAY[1]}/w?wf_uuid=${WORKFLOW_ID_ARRAY[2]}"
+
+echo ${DASHBOARD_URL} > workflow/pegasus-dashboard-url.txt
+
+shopt -s nullglob
+DASHBOARD_GLOB=(results/*_workflow/*DASHBOARD*.html)
+DASHBOARD_PATH=${DASHBOARD_GLOB[0]}
+if [ -e ${DASHBOARD_PATH} ] ; then
+  DASHBOARD_COPY=workflow/`basename ${DASHBOARD_PATH}`.orig
+  if [ -e ${DASHBOARD_COPY} ] ; then
+    cp ${DASHBOARD_COPY} ${DASHBOARD_PATH}
+  else
+    cp ${DASHBOARD_PATH} ${DASHBOARD_COPY}
+  fi
+
+  perl -pi.bak -e "s+PYCBC_SUBMIT_DAX_ARGV+${COMMAND_LINE}+g" ${DASHBOARD_PATH}
+  perl -pi.bak -e "s+PEGASUS_DASHBOARD_URL+${DASHBOARD_URL}+g" ${DASHBOARD_PATH}
+fi
+shopt -u nullglob
+
+echo "Workflow submission completed successfully."
+echo 
+echo "The Pegasus dashboard URL for this workflow is:"
+echo "  ${DASHBOARD_URL}"
+echo
+echo "Note that it make take a while for the dashboard entry to appear while the workflow"
+echo "is parsed by the dashboard. The delay can be on the order of one hour for very large"
+echo "workflows."
+echo
+
+# If the workflow results directory exists, copy the files there
+for dir in planning dax input_map output_map
+do
+  RESULT_DIR=results/*_workflow/*_${dir}
+  if [ -d ${RESULT_DIR} ] ; then
+    cp workflow/${dir}/* ${RESULT_DIR}
+  fi
+done
+
+exit 0

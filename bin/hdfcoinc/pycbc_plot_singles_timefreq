@@ -36,9 +36,11 @@ import pycbc.events
 import pycbc.pnutils
 import pycbc.strain
 import pycbc.results
-
+import pycbc.version
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trig-file', required=True,
                     help='HDF5 file containing single triggers')
 parser.add_argument('--output-file', required=True, help='Output plot')

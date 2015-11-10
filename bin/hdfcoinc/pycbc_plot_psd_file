@@ -5,9 +5,12 @@ import matplotlib
 matplotlib.use('Agg')
 import h5py, numpy, argparse, pylab, pycbc.results, sys
 import pycbc.psd
+import pycbc.version
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument("--psd-files", nargs='+', required=True,
                     help='HDF file(s) containing the PSDs to plot')
 parser.add_argument("--output-file", required=True, help='Output file name')
