@@ -179,29 +179,25 @@ class Executable(pegasus_workflow.Executable):
         # looks like a URL, in which case trust Pegasus to be
         # able to fetch it.
         exe_path = cp.get('executables', name)
-        valid_path = False
         self.needs_fetching = False
 
-        if exe_path.find('://') > 0:
-            if exe_path.startswith('file://'):
-                valid_path = os.path.isfile(exe_path[7:])
-            else:
-                valid_path = True
-                self.needs_fetching = True
-        else:
-            valid_path = os.path.isfile(exe_path)
+        exe_url = urlparse.urlparse(exe_path)
 
-        if valid_path:
+        if exe_url.scheme in ['', 'file']:
+            if os.path.isfile(exe_url.path):
+                self.add_pfn(exe_path)
+
+                logging.debug("Using %s executable "
+                              "at %s" % (name, exe_url.path))
+            else:
+                raise TypeError("Failed to find %s executable " 
+                            "at %s" % (name, exe_path))
+        else:
+            # Could be http, gsiftp, etc.  Let Pegasus handle it.
             logging.debug("Using %s executable "
                           "at %s" % (name, exe_path))
-        else:
-            raise TypeError("Failed to find %s executable " 
-                            "at %s" % (name, exe_path))
-        
-        if exe_path.startswith('gsiftp://'):
             self.add_pfn(exe_path, site='nonlocal')
-        else:
-            self.add_pfn(exe_path)
+            self.needs_fetching = True
 
         # Determine the condor universe if we aren't given one 
         if self.universe is None:
@@ -445,7 +441,15 @@ class Workflow(pegasus_workflow.Workflow):
         
         # Check that the PFN is for a file or path
         if node.executable.needs_fetching:
-            pfn = node.executable.get_pfn()
+            try:
+                # The pfn may have been marked local...
+                pfn = node.executable.get_pfn()
+            except:
+                # or it may have been marked nonlocal.  That's
+                # fine, we'll resolve the URL and make a local
+                # entry.
+                pfn = node.executable.get_pfn('nonlocal')
+
             resolved = resolve_url(pfn, permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
             node.executable.clear_pfns()
             node.executable.add_pfn(resolved, site='local')
