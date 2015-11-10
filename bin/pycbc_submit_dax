@@ -372,11 +372,21 @@ DASHBOARD_URL="https://${WORKFLOW_ID_ARRAY[0]}/pegasus/u/${USER}/r/${WORKFLOW_ID
 
 echo ${DASHBOARD_URL} > workflow/pegasus-dashboard-url.txt
 
-DASHBOARD_PATH=results/*_workflow/*DASHBOARD*.html
+shopt -s nullglob
+DASHBOARD_GLOB=(results/*_workflow/*DASHBOARD*.html)
+DASHBOARD_PATH=${DASHBOARD_GLOB[0]}
 if [ -e ${DASHBOARD_PATH} ] ; then
-  echo perl -pi.bak -e "s+PYCBC_SUBMIT_DAX_ARGV+${COMMAND_LINE}+g" ${DASHBOARD_PATH}
-  echo perl -pi.bak -e "s+PEGASUS_DASHBOARD_URL+${DASHBOARD_URL}+g" ${DASHBOARD_PATH}
+  DASHBOARD_COPY=workflow/`basename ${DASHBOARD_PATH}`.orig
+  if [ -e ${DASHBOARD_COPY} ] ; then
+    cp ${DASHBOARD_COPY} ${DASHBOARD_PATH}
+  else
+    cp ${DASHBOARD_PATH} ${DASHBOARD_COPY}
+  fi
+
+  perl -pi.bak -e "s+PYCBC_SUBMIT_DAX_ARGV+${COMMAND_LINE}+g" ${DASHBOARD_PATH}
+  perl -pi.bak -e "s+PEGASUS_DASHBOARD_URL+${DASHBOARD_URL}+g" ${DASHBOARD_PATH}
 fi
+shopt -u nullglob
 
 echo "Workflow submission completed successfully."
 echo 
@@ -389,12 +399,11 @@ echo "workflows."
 echo
 
 # If the workflow results directory exists, copy the files there
-for dir in workflow/*
+for dir in planning dax input_map output_map
 do
-  subdir=`basename ${dir}`
-  RESULT_DIR=results/*_workflow/*_${subdir}
+  RESULT_DIR=results/*_workflow/*_${dir}
   if [ -d ${RESULT_DIR} ] ; then
-    cp -v workflow/${subdir}/* ${RESULT_DIR}
+    cp workflow/${dir}/* ${RESULT_DIR}
   fi
 done
 
