@@ -23,8 +23,17 @@ else
 	pyinstaller ${prog} --name ${exename} --strip --onefile
 fi
 
-if ! dist/${exename} --help
+dist/${exename} --help >&  ${exename}.out
+
+if [ $? != 0 ]
 then
 	echo "Build of ${exename} failed"
 	exit 1
 fi
+
+if grep -q 'No module named cython_blas' ${exename}.out
+then
+	echo "Build of ${exename} is missing hidden dependancies"
+	exit 1
+fi
+

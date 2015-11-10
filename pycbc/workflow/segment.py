@@ -36,7 +36,6 @@ from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.workflow.core import Executable, FileList, Node, OutSegFile, make_analysis_dir, make_external_call, File
 from pycbc.workflow.core import resolve_url
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigoLWCombineSegsExecutable
-from pycbc.results.legacy_grb import make_grb_segments_plot
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -876,26 +875,16 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
                     return get_triggered_single_ifo_segment(workflow, out_dir,
                                                             snglsegs)
             if len(snglsegs.keys()) == 0:
-                plot_met = make_grb_segments_plot(workflow.ifos, sciencesegs,
-                        triggertime, triggername, out_dir)
-                seg_plot = File(plot_met[0], plot_met[1], plot_met[2],
-                                file_url=plot_met[3])
-                seg_plot.PFN(seg_plot.cache_entry.path, site="local")
                 logging.error("Trigger is not contained within any available "
                               "science segment. Exiting.")
-                sys.exit()
+                return None, None
         else:
-            plot_met = make_grb_segments_plot(workflow.ifos, sciencesegs,
-                    triggertime, triggername, out_dir)
-            seg_plot = File(plot_met[0], plot_met[1], plot_met[2],
-                            file_url=plot_met[3])
-            seg_plot.PFN(seg_plot.cache_entry.path, site="local")
             logging.error("Trigger is not contained within any available "
                           "coherent science segment. If you wish to enable "
                           "single IFO running add the option "
                           "'allow-single-ifo-search' to the [workflow] "
                           "section of your configuration file. Exiting.")
-            sys.exit()
+            return None, None
 
     offsrclist = commonsegs[commonsegs.keys()[0]]
     if len(offsrclist) > 1:
@@ -918,16 +907,11 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
         else:
             fail = segments.segment([triggertime - minbefore - padding,
                                      triggertime + minbefore + padding])
-            plot_met = make_grb_segments_plot(workflow.ifos, sciencesegs,
-                    triggertime, triggername, out_dir, fail_criterion=fail)
-            seg_plot = File(plot_met[0], plot_met[1], plot_met[2],
-                            file_url=plot_met[3])
-            seg_plot.PFN(seg_plot.cache_entry.path, site="local")
             logging.error("Not enough data either side of trigger time. If "
                           "you wish to enable single IFO running add the "
                           "option 'allow-single-ifo-search' to the [workflow] "
                           "section of your configuration file. Exiting.")
-            sys.exit()
+            return None, fail
 
     if abs(offsrc) < minduration + 2 * padding:
         if sngl_ifo:
@@ -939,17 +923,12 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
         else:
             fail = segments.segment([triggertime - minduration / 2. - padding,
                                      triggertime + minduration / 2. + padding])
-            plot_met = make_grb_segments_plot(workflow.ifos, sciencesegs,
-                    triggertime, triggername, out_dir, fail_criterion=fail)
-            seg_plot = File(plot_met[0], plot_met[1], plot_met[2],
-                            file_url=plot_met[3])
-            seg_plot.PFN(seg_plot.cache_entry.path, site="local")
             logging.error("Available network segment shorter than minimum "
                           "allowed duration. If you wish to enable single IFO "
                           "running add the option 'allow-single-ifo-search' "
                           "to the [workflow] section of your configuration "
                           "file. Exiting.")
-            sys.exit()
+            return None, fail
 
     # Will segment duration be the maximum desired length or not?
     if abs(offsrc) >= maxduration + 2 * padding:
@@ -1016,11 +995,6 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
             offsrc = segments.segment(start, end)
             assert abs(offsrc) % quanta == 2 * padding
 
-    plot_met = make_grb_segments_plot(workflow.ifos, sciencesegs, triggertime,
-            triggername, out_dir, coherent_seg=offsrc)
-    seg_plot = File(plot_met[0], plot_met[1], plot_met[2],
-                    file_url=plot_met[3])
-    seg_plot.PFN(seg_plot.cache_entry.path, site="local")
     logging.info("Constructed OFF-SOURCE: duration %ds (%ds before to %ds "
                  "after trigger)."
                  % (abs(offsrc) - 2 * padding,
@@ -1060,7 +1034,7 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
     segmentsUtils.tosegwizard(file(bufferSegfile, "w"),
                               segments.segmentlist([bufferSegment]))
 
-    return onsource, offsource, seg_plot
+    return onsource, offsource
 
 def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
     """
@@ -1083,7 +1057,6 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
     offsource : glue.segments.segmentlistdict
         A dictionary containing the off source segment for a single IFO
     """
-
     # Load parsed workflow config options
     cp = workflow.cp
     triggertime = int(os.path.basename(cp.get('workflow', 'trigger-time')))
@@ -1116,14 +1089,9 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
             logging.info("Trigger is within %s segments." % key)
     
     if len(snglsegs.keys()) == 0:
-        plot_met = make_grb_segments_plot(workflow.ifos, sciencesegs,
-                triggertime, triggername, out_dir)
-        seg_plot = File(plot_met[0], plot_met[1], plot_met[2],
-                        file_url=plot_met[3])
-        seg_plot.PFN(seg_plot.cache_entry.path, site="local")
         logging.error("Trigger is not contained within any available segment. "
                       "Exiting.")
-        sys.exit()
+        return None, None
 
     offsrc = segments.segmentlistdict()
     for key in snglsegs.keys():
@@ -1145,14 +1113,9 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
     if len(offsrc.keys()) == 0:
         fail = segments.segment([triggertime - minbefore,
                                  triggertime + minafter])
-        plot_met = make_grb_segments_plot(workflow.ifos, sciencesegs,
-                triggertime, triggername, out_dir, fail_criterion=fail)
-        seg_plot = File(plot_met[0], plot_met[1], plot_met[2],
-                        file_url=plot_met[3])
-        seg_plot.PFN(seg_plot.cache_entry.path, site="local")
         logging.error("Not enough data either side of trigger time in any "
                       "IFO. Exiting.")
-        sys.exit()
+        return None, fail
 
     for key in offsrc.keys():
         if abs(offsrc[key]) < minduration + 2 * padding:
@@ -1162,14 +1125,9 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
     if len(offsrc.keys()) == 0:
         fail = segments.segment([triggertime - minduration / 2. - padding,
                                  triggertime + minduration / 2. + padding])
-        plot_met = make_grb_segments_plot(workflow.ifos, sciencesegs,
-                triggertime, triggername, out_dir, fail_criterion=fail)
-        seg_plot = File(plot_met[0], plot_met[1], plot_met[2],
-                        file_url=plot_met[3])
-        seg_plot.PFN(seg_plot.cache_entry.path, site="local")
         logging.error("All available segments shorter than minimum allowed "
                       "duration. Exiting.")
-        sys.exit()
+        return None, fail
     elif len(offsrc.keys()) > 1:
         logging.error("Something is broken! At this point there should only "
                       "be 1 IFO in play, but there are %d."
@@ -1244,11 +1202,6 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
             offsrc = segments.segment(start, end)
             assert abs(offsrc) % quanta == 2 * padding
 
-    plot_met = make_grb_segments_plot(workflow.ifos, sciencesegs, triggertime,
-            triggername, out_dir, coherent_seg=offsrc)
-    seg_plot = File(plot_met[0], plot_met[1], plot_met[2],
-                    file_url=plot_met[3])
-    seg_plot.PFN(seg_plot.cache_entry.path, site="local")
     logging.info("Constructed OFF-SOURCE: duration %ds (%ds before to %ds "
                  "after trigger)."
                  % (abs(offsrc) - 2 * padding,
@@ -1285,7 +1238,7 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
     segmentsUtils.tosegwizard(file(bufferSegfile, "w"),
                               segments.segmentlist([bufferSegment]))
 
-    return onsource, offsource, seg_plot
+    return onsource, offsource
 
 def save_veto_definer(cp, out_dir, tags=[]):
     """ Retrieve the veto definer file and save it locally

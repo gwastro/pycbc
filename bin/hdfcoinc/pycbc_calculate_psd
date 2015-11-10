@@ -84,34 +84,39 @@ segments = segmentlist(frozenset(segments))
 
 # Calculate the PSDs                                                   
 logging.info('%d psds to calculate', len(segments))
-p = multiprocessing.Pool(args.cores)
 
-# KLUDGE! Run the first segment to esure that the weave cache is
-# populated.  This is a short-term fix until the issues with
-# https://github.com/ligo-cbc/pycbc/issues/501
-# can be resolved.  This will wastefully run the first segment
-# twice which could be avoided, but since this is a short-term
-# kludge anyway I'd prefer to be minimally invasive.
-# TODO: Remove this when 501 is resolved.
-# FIXME: https://www.youtube.com/watch?v=DtRNg5uSKQ0
-get_psd( (segments[0], 0) )
+if len(segments) > 0:
+    pool = multiprocessing.Pool(args.cores)
 
-psds = p.map_async(get_psd, zip(segments, range(len(segments))))
-psds = psds.get()
+    # KLUDGE! Run the first segment to esure that the weave cache is
+    # populated.  This is a short-term fix until the issues with
+    # https://github.com/ligo-cbc/pycbc/issues/501
+    # can be resolved.  This will wastefully run the first segment
+    # twice which could be avoided, but since this is a short-term
+    # kludge anyway I'd prefer to be minimally invasive.
+    # TODO: Remove this when 501 is resolved.
+    # FIXME: https://www.youtube.com/watch?v=DtRNg5uSKQ0
+    get_psd( (segments[0], 0) )
+
+    psds = pool.map_async(get_psd, zip(segments, xrange(len(segments))))
+    psds = psds.get()
+else:
+    psds = []
 
 # Store the PSDs in an hdf file, include some basic metadata
 f = h5py.File(args.output_file, 'w')
+psd_group = f.create_group(ifo + '/psds')
 inc, start, end = 0, [], []
 for gpsd in psds:
     for psd_numpy, psd_delta_f, s, e in gpsd:
         logging.info('writing psd %d', inc)
-        key = ifo + '/psds/' + str(inc)
+        key = str(inc)
         start.append(int(s))
         end.append(int(e))
-        f.create_dataset(key, data= (psd_numpy), 
-                         compression='gzip', compression_opts=9, shuffle=True)
-        f[key].attrs['epoch'] = int(s)
-        f[key].attrs['delta_f'] = float(psd_delta_f)
+        psd_group.create_dataset(key, data=psd_numpy, compression='gzip',
+                                 compression_opts=9, shuffle=True)
+        psd_group[key].attrs['epoch'] = int(s)
+        psd_group[key].attrs['delta_f'] = float(psd_delta_f)
         inc += 1
 
 f[ifo + '/start_time'] = numpy.array(start, dtype=numpy.uint32)
