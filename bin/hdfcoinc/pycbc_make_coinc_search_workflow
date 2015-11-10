@@ -43,20 +43,6 @@ wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
 wf.makedir(args.output_dir)
-wf_log_dir = os.path.join(args.output_dir,"workflow")
-wf.makedir(wf_log_dir)
-wf_log_file = os.path.join(wf_log_dir,"workflow-generation-log.txt")
-
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
-                    filename=wf_log_file,
-                    level=logging.INFO,
-                    filemode='w')
-
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s:%(levelname)s : %(message)s')
-console.setFormatter(formatter)
-logging.getLogger('').addHandler(console)
 
 container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, 'main')
@@ -72,7 +58,26 @@ rdir = layout.SectionNumber('results', ['configuration',
                                  'injections',
                                  'search_sensitivity',
                                  'result',
+                                 'workflow',
                                  ])
+
+wf.makedir(rdir.base)
+wf.makedir(rdir['workflow'])
+
+wf_log_file = wf.File(workflow.ifos, 'workflow-log', workflow.analysis_time,
+                      extension='.txt',
+                      directory=rdir['workflow'])
+
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
+                    filename=wf_log_file.storage_path,
+                    level=logging.INFO,
+                    filemode='w')
+
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s:%(levelname)s : %(message)s')
+console.setFormatter(formatter)
+logging.getLogger('').addHandler(console)
 
 # put start / end time at top of summary page
 time = workflow.analysis_time
@@ -83,7 +88,6 @@ time_str = '<center><p><b>GPS Interval [%s,%s). UTC Interval %s - %s. Interval d
 time_file = wf.File(workflow.ifos, 'time', workflow.analysis_time,
                                            extension='.html',
                                            directory=rdir.base)
-wf.makedir(rdir.base)
 kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)', 
         'caption' : "Wall clock start and end times for this invocation of the workflow. "
                     " The command line button shows the arguments used to invoke the workflow "
@@ -423,7 +427,7 @@ ini_file = wf.FileList([wf.File(ifos, '', workflow.analysis_time, file_url='file
 layout.single_layout(base, ini_file)
 
 # Create versioning information
-create_versioning_page(rdir['configuration'], container.cp)
+create_versioning_page(rdir['workflow'], container.cp)
 
 wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), rdir.base))
 
@@ -440,3 +444,5 @@ container.save()
 os.chmod(rdir['result'], 0700)
 
 logging.info("Written dax.")
+
+logging.shutdown()
