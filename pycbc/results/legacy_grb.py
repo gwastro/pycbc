@@ -25,6 +25,7 @@ from __future__ import division
 import re
 import os
 from argparse import ArgumentParser
+import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from glue import markup, segments
 from pylal import antenna, git_version
