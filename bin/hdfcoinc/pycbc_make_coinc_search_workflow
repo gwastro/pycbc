@@ -405,6 +405,9 @@ if len(files_for_combined_injfind) > 0:
     inj = wf.make_foundmissed_plot(workflow, found_inj, 
                 rdir['injections'], require='summ', tags=['ALLINJ'])
     inj_summ = list(layout.grouper(inj + sen, 2))
+
+# make analysis time summary
+layout.single_layout(rdir['analysis_time'], ([time_file,seg_summ_plot]))
                             
 # make full summary
 summ = ([(time_file,)] + [(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)] + 
