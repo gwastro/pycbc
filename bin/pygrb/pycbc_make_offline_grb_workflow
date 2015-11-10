@@ -133,6 +133,7 @@ datafind_files, sciSegs = _workflow.setup_datafind_workflow(wflow, sciSegs,
                                                             segsFileList)
 ifo = sciSegs.keys()[0]
 ifos = ''.join(sciSegs.keys())
+wflow.ifos = ifos
 
 # If using coh_PTF_inspiral we need bank_veto_bank.xml
 if os.path.basename(wflow.cp.get("executables", "inspiral")) \

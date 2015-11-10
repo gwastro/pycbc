@@ -1472,11 +1472,12 @@ class LigolwCBCJitterSkylocExecutable(Executable):
             raise ValueError("Must provide an input file.")
 
         node = Node(self) 
+        node.add_input_opt('--input-file', parent)
         output_file = File(parent.ifo_list, self.exe_name,
                            segment, extension='.xml', store_file=True,
                            directory=self.out_dir, tags=tags)
         node.add_output_opt('--output-file', output_file)
-        node.add_input_arg(parent)
+        
         return node
 
 class LigolwCBCAlignTotalSpinExecutable(Executable):

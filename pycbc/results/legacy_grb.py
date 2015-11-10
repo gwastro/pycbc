@@ -23,6 +23,7 @@
 from __future__ import division
 
 import re
+import os
 from argparse import ArgumentParser
 import matplotlib.pyplot as plt
 from glue import markup, segments
@@ -191,7 +192,7 @@ def write_summary(page, args, ifos, skyError=None, ipn=False, ipnError=False):
     return page
 
 
-def write_antenna(page, args, grid=False, ipn=False):
+def write_antenna(page, args, seg_plot=None, grid=False, ipn=False):
 
     """
     Write antenna factors to merkup.page object page and generate John's
@@ -285,13 +286,14 @@ def write_antenna(page, args, grid=False, ipn=False):
 #    th2.append('Error Box Simulations')
 #    td2.append(plot())
 
-    plot = markup.page()
-    p = args.seg_plot
-    plot.a(href=p, title="Science Segments")
-    plot.img(src=p)
-    plot.a.close()
-    th2.append('Science Segments')
-    td2.append(plot())
+    if seg_plot is not None:
+        plot = markup.page()
+        p = os.path.basename(seg_plot)
+        plot.a(href=p, title="Science Segments")
+        plot.img(src=p)
+        plot.a.close()
+        th2.append('Science Segments')
+        td2.append(plot())
 
     plot = markup.page()
     p = "ALL_TIMES/plots_clustered/GRB%s_sky_grid.png"\
