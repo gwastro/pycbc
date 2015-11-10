@@ -27,7 +27,7 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 """
 
-import os, sys, shutil, stat
+import os, sys, shutil, stat, copy
 import logging
 import urllib2, urlparse
 import lal
@@ -1353,7 +1353,7 @@ def get_analyzable_segments(workflow, out_dir, tags=[]):
         sci_segs[ifo], sci_xml = get_science_segments(ifo, workflow.cp, 
                                                  start_time, end_time, out_dir) 
         seg_files += [sci_xml]    
-        data_segs[ifo] = sci_segs[ifo]  
+        data_segs[ifo] = copy.copy(sci_segs[ifo])  
         for category in cat_set:
             curr_veto_file = get_veto_segs(workflow, ifo, 
                                         cat_to_pipedown_cat(category), 
