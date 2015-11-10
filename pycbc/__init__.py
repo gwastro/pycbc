@@ -126,6 +126,13 @@ except ImportError as e:
     print e
     HAVE_MKL=False
     
+
+# Check for site-local flags to pass to gcc
+WEAVE_FLAGS = ''
+
+if 'WEAVE_FLAGS' in os.environ:
+    WEAVE_FLAGS = os.environ['WEAVE_FLAGS'] + ' '
+
 def multiprocess_cache_dir():
     import multiprocessing
     cache_dir =  os.path.join(_cache_dir_path,  str(id(multiprocessing.current_process())))
