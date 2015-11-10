@@ -2,9 +2,10 @@
 # Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
 set -e
 
-mkdir -p workflow
-echo "${0} ${@}" > workflow/pycbc-submit-dax-command.txt
-echo "Executing on `hostname` in directory `pwd` at `date`" > workflow/pycbc-submit-dax-log.txt
+mkdir -p workflow/planning
+COMMAND_LINE="${0} ${@}"
+echo "${COMMAND_LINE}" > workflow/planning/pycbc-submit-dax-command.txt
+echo "Executing on `hostname` in directory `pwd` at `date`" > workflow/planning/pycbc-submit-dax-log.txt
 
 exec > >(tee -a workflow/pycbc-submit-dax-log.txt)
 
@@ -292,28 +293,6 @@ fi
 
 echo
 
-# Copy planning information into workflow directory so it can be displayed on the results page
-mkdir -p workflow/pegasus
-cp pegasus-properties.conf workflow/pegasus
-cp site-catalog.xml workflow/pegasus
-cp _reuse.cache workflow/pegasus/data-reuse.cache
-cp $SUBMIT_DIR/work/braindump.txt workflow/pegasus
-
-# copy the main dax and output.map to the workflow directory
-cp $DAX_FILE workflow
-if [ -e output.map ] ; then
-  cp output.map workflow
-fi
-
-# ugly shell to extract the sub-dax names from the uberdax xml
-for dax in `egrep '<[:blank:]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do 
-  cp ${dax} workflow
-  map=`basename ${dax} .dax`.map
-  if [ -e ${map} ] ; then
-    cp ${map} workflow
-  fi
-done
-
 rm -f submitdir
 ln -sf $SUBMIT_DIR submitdir
 
@@ -328,6 +307,32 @@ chmod 755 stop
 
 echo pegasus-run $SUBMIT_DIR/work > start
 chmod 755 start
+
+# Copy planning information into workflow directory so it can be displayed on the results page
+cp pegasus-properties.conf workflow/planning
+cp site-catalog.xml workflow/planning
+cp $SUBMIT_DIR/work/braindump.txt workflow/planning
+
+mkdir -p workflow/input_map
+cp _reuse.cache workflow/input_map/reuse.cache
+
+mkdir -p workflow/dax
+mkdir -p workflow/output_map
+
+# copy the main dax and output.map to the workflow directory
+cp $DAX_FILE workflow/dax
+if [ -e output.map ] ; then
+  cp output.map workflow/output_map
+fi
+
+# ugly shell to extract the sub-dax names from the uberdax xml
+for dax in `egrep '<[:blank:]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do 
+  cp ${dax} workflow/dax
+  map=`basename ${dax} .dax`.map
+  if [ -e ${map} ] ; then
+    cp ${map} workflow/output_map
+  fi
+done
 
 if [ -z ${SUBMIT_DAX} ] ; then 
   echo
@@ -363,9 +368,15 @@ if [ -z $WORKFLOW_ID_STRING ] ; then
 fi
 
 WORKFLOW_ID_ARRAY=(${WORKFLOW_ID_STRING//,/ })
-DASHBOARD_URL="https://${WORKFLOW_ID_STRING[0]}/pegasus/u/${USER}/r/${WORKFLOW_ID_ARRAY[1]}/w?wf_uuid=${WORKFLOW_ID_ARRAY[2]}"
+DASHBOARD_URL="https://${WORKFLOW_ID_ARRAY[0]}/pegasus/u/${USER}/r/${WORKFLOW_ID_ARRAY[1]}/w?wf_uuid=${WORKFLOW_ID_ARRAY[2]}"
 
 echo ${DASHBOARD_URL} > workflow/pegasus-dashboard-url.txt
+
+DASHBOARD_PATH=results/*_workflow/*DASHBOARD*.html
+if [ -e ${DASHBOARD_PATH} ] ; then
+  echo perl -pi.bak -e "s+PYCBC_SUBMIT_DAX_ARGV+${COMMAND_LINE}+g" ${DASHBOARD_PATH}
+  echo perl -pi.bak -e "s+PEGASUS_DASHBOARD_URL+${DASHBOARD_URL}+g" ${DASHBOARD_PATH}
+fi
 
 echo "Workflow submission completed successfully."
 echo 
@@ -376,5 +387,15 @@ echo "Note that it make take a while for the dashboard entry to appear while the
 echo "is parsed by the dashboard. The delay can be on the order of one hour for very large"
 echo "workflows."
 echo
+
+# If the workflow results directory exists, copy the files there
+for dir in workflow/*
+do
+  subdir=`basename ${dir}`
+  RESULT_DIR=results/*_workflow/*_${subdir}
+  if [ -d ${RESULT_DIR} ] ; then
+    cp -v workflow/${subdir}/* ${RESULT_DIR}
+  fi
+done
 
 exit 0
