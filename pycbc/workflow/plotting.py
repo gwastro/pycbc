@@ -25,7 +25,8 @@
 This module is responsible for setting up plotting jobs.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
-from pycbc.workflow.core import FileList, makedir, Executable
+import urlparse, urllib
+from pycbc.workflow.core import File, FileList, makedir, Executable
  
 def excludestr(tags, substr):
     if substr is None:
@@ -207,11 +208,20 @@ def make_veto_table(workflow, out_dir, vetodef_file=None, tags=None):
     if vetodef_file is None:
         vetodef_file = workflow.cp.get_opt_tags("workflow-segments",
                                            "segments-veto-definer-file", [])
+        file_url = urlparse.urljoin('file:',
+                                    urllib.pathname2url(vetodef_file))
+        vdf_file = File(workflow.ifos, 'VETO_DEFINER', 
+                        workflow.analysis_time, file_url=file_url)
+        vdf_file.PFN(file_url, site='local')
+    else:
+        vdf_file = vetodef_file
+
     if tags is None: tags = []
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'page_vetotable', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
-    node.add_opt('--veto-definer-file', vetodef_file)
+    vetodef_files = list(vetodef_file)
+    node.add_input_opt('--veto-definer-file', vdf_file)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     return node.output_files[0]
