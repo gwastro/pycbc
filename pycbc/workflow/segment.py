@@ -841,7 +841,6 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
     # Load parsed workflow config options
     cp = workflow.cp
     triggertime = int(os.path.basename(cp.get('workflow', 'trigger-time')))
-    triggername = cp.get('workflow', 'trigger-name')
     minbefore = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                             'min-before')))
     minafter = int(os.path.basename(cp.get('workflow-exttrig_segments',
@@ -877,14 +876,14 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
             if len(snglsegs.keys()) == 0:
                 logging.error("Trigger is not contained within any available "
                               "science segment. Exiting.")
-                return None, None
+                sys.exit()
         else:
             logging.error("Trigger is not contained within any available "
                           "coherent science segment. If you wish to enable "
                           "single IFO running add the option "
                           "'allow-single-ifo-search' to the [workflow] "
                           "section of your configuration file. Exiting.")
-            return None, None
+            sys.exit()
 
     offsrclist = commonsegs[commonsegs.keys()[0]]
     if len(offsrclist) > 1:
@@ -905,13 +904,11 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
             return get_triggered_single_ifo_segment(workflow, out_dir,
                                                     sciencesegs)
         else:
-            fail = segments.segment([triggertime - minbefore - padding,
-                                     triggertime + minbefore + padding])
             logging.error("Not enough data either side of trigger time. If "
                           "you wish to enable single IFO running add the "
                           "option 'allow-single-ifo-search' to the [workflow] "
                           "section of your configuration file. Exiting.")
-            return None, fail
+            sys.exit()
 
     if abs(offsrc) < minduration + 2 * padding:
         if sngl_ifo:
@@ -921,14 +918,12 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
             return get_triggered_single_ifo_segment(workflow, out_dir,
                                                     sciencesegs)
         else:
-            fail = segments.segment([triggertime - minduration / 2. - padding,
-                                     triggertime + minduration / 2. + padding])
             logging.error("Available network segment shorter than minimum "
                           "allowed duration. If you wish to enable single IFO "
                           "running add the option 'allow-single-ifo-search' "
                           "to the [workflow] section of your configuration "
                           "file. Exiting.")
-            return None, fail
+            sys.exit()
 
     # Will segment duration be the maximum desired length or not?
     if abs(offsrc) >= maxduration + 2 * padding:
@@ -1057,10 +1052,10 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
     offsource : glue.segments.segmentlistdict
         A dictionary containing the off source segment for a single IFO
     """
+
     # Load parsed workflow config options
     cp = workflow.cp
     triggertime = int(os.path.basename(cp.get('workflow', 'trigger-time')))
-    triggername = cp.get('workflow', 'trigger-name')
     minbefore = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                             'min-before')))
     minafter = int(os.path.basename(cp.get('workflow-exttrig_segments',
@@ -1081,7 +1076,6 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
     bufferright = int(cp.get('workflow-exttrig_segments', 'num-buffer-after'))
 
     # Check available data segments meet criteria specified in arguments
-    sciencesegs = segments.segmentlistdict(sciencesegs)
     snglsegs = segments.segmentlistdict()
     for key in sciencesegs.keys():
         if triggertime in sciencesegs[key]:
@@ -1091,7 +1085,7 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
     if len(snglsegs.keys()) == 0:
         logging.error("Trigger is not contained within any available segment. "
                       "Exiting.")
-        return None, None
+        sys.exit()
 
     offsrc = segments.segmentlistdict()
     for key in snglsegs.keys():
@@ -1111,11 +1105,9 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
                          % key)
             offsrc.pop(key)
     if len(offsrc.keys()) == 0:
-        fail = segments.segment([triggertime - minbefore,
-                                 triggertime + minafter])
         logging.error("Not enough data either side of trigger time in any "
                       "IFO. Exiting.")
-        return None, fail
+        sys.exit()
 
     for key in offsrc.keys():
         if abs(offsrc[key]) < minduration + 2 * padding:
@@ -1123,11 +1115,9 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
                          % key)
             offsrc.pop(key)
     if len(offsrc.keys()) == 0:
-        fail = segments.segment([triggertime - minduration / 2. - padding,
-                                 triggertime + minduration / 2. + padding])
         logging.error("All available segments shorter than minimum allowed "
                       "duration. Exiting.")
-        return None, fail
+        sys.exit()
     elif len(offsrc.keys()) > 1:
         logging.error("Something is broken! At this point there should only "
                       "be 1 IFO in play, but there are %d."

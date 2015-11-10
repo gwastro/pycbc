@@ -24,14 +24,9 @@ from __future__ import division
 
 import re
 from argparse import ArgumentParser
-import matplotlib.pyplot as plt
-from glue import markup, segments
-from pylal import antenna, git_version
-from lal.gpstime import gps_to_utc, LIGOTimeGPS
-from matplotlib.patches import Rectangle
-from matplotlib.lines import Line2D
-from matplotlib.ticker import ScalarFormatter
-from pycbc.results.color import ifo_color
+from glue import markup
+from pylal import antenna,git_version
+from lal.gpstime import gps_to_utc,LIGOTimeGPS
 
 __author__  = "Andrew Williamson <andrew.williamson@ligo.org>"
 __version__ = "git id %s" % git_version.id
@@ -258,13 +253,13 @@ def write_antenna(page, args, grid=False, ipn=False):
 
     page = write_table(page, th, td)
 
-#    plot = markup.page()
-#    p = "projtens.png"
-#    plot.a(href=p, title="Detector response and polarization")
-#    plot.img(src=p)
-#    plot.a.close()
-#    th2 = ['Response Diagram']
-#    td2 = [plot() ]
+    plot = markup.page()
+    p = "projtens.png"
+    plot.a(href=p, title="Detector response and polarization")
+    plot.img(src=p)
+    plot.a.close()
+    th2 = ['Response Diagram']
+    td2 = [plot() ]
 
         # FIXME: Add these in!!
 #    plot = markup.page()
@@ -286,14 +281,6 @@ def write_antenna(page, args, grid=False, ipn=False):
 #    td2.append(plot())
 
     plot = markup.page()
-    p = args.seg_plot
-    plot.a(href=p, title="Science Segments")
-    plot.img(src=p)
-    plot.a.close()
-    th2.append('Science Segments')
-    td2.append(plot())
-
-    plot = markup.page()
     p = "ALL_TIMES/plots_clustered/GRB%s_sky_grid.png"\
             % args.grb_name
     plot.a(href=p, title="Sky Grid")
@@ -302,14 +289,14 @@ def write_antenna(page, args, grid=False, ipn=False):
     th2.append('Sky Grid')
     td2.append(plot())
 
-#    plot = markup.page()
-#    p = "GRB%s_inspiral_horizon_distance.png"\
-#            % args.grb_name
-#    plot.a(href=p, title="Inspiral Horizon Distance")
-#    plot.img(src=p)
-#    plot.a.close()
-#    th2.append('Inspiral Horizon Distance')
-#    td2.append(plot())
+    plot = markup.page()
+    p = "GRB%s_inspiral_horizon_distance.png"\
+            % args.grb_name
+    plot.a(href=p, title="Inspiral Horizon Distance")
+    plot.img(src=p)
+    plot.a.close()
+    th2.append('Inspiral Horizon Distance')
+    td2.append(plot())
 
     page = write_table(page, th2, td2)
 
@@ -645,76 +632,4 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
     page.h3.close()
 
     return page
-
-
-def make_grb_segments_plot(ifos, science_segs, trigger_time, trigger_name,
-                           out_dir, coherent_seg=None, fail_criterion=None):
-    ifo_colors = {}
-    for ifo in ifos:
-        ifo_colors[ifo] = ifo_color(ifo)
-        if ifo not in science_segs.keys():
-            science_segs[ifo] = segments.segmentlist([])
-
-    extent = science_segs.union(ifos)[0]
-
-    # Make plot
-    fig, subs = plt.subplots(len(ifos), sharey=True)
-    plt.xticks(rotation=20, ha='right')
-    plt.subplots_adjust(bottom=0.15)
-    for sub, ifo in zip(subs, ifos):
-        for seg in science_segs[ifo]:
-            sub.add_patch(Rectangle((seg[0], 0.1), abs(seg), 0.8,
-                                    facecolor=ifo_colors[ifo], edgecolor='none'))
-        
-        if len(science_segs[ifo]) > 0:
-            sub.plot([trigger_time, trigger_time], [0, 1], '-',
-                     c='orange')
-            if coherent_seg:
-                sub.add_patch(Rectangle((coherent_seg[0], 0),
-                                        abs(coherent_seg), 1, alpha=0.5,
-                                        facecolor='orange', edgecolor='none'))
-            if fail_criterion:
-                sub.add_patch(Rectangle((fail_criterion[0], 0),
-                                        abs(fail_criterion), 1, alpha=0.5,
-                                        facecolor='red', edgecolor='none'))
-        else:
-            sub.plot([trigger_time, trigger_time], [0, 1], ':',
-                     c='orange')
-            if coherent_seg:
-                sub.plot([coherent_seg[0], coherent_seg[0]], [0, 1], '--',
-                         c='orange', alpha=0.5)
-                sub.plot([coherent_seg[1], coherent_seg[1]], [0, 1], '--',
-                         c='orange', alpha=0.5)
-            if fail_criterion:
-                sub.plot([fail_criterion[0], fail_criterion[0]], [0, 1], '--',
-                         c='red', alpha=0.5)
-                sub.plot([fail_criterion[1], fail_criterion[1]], [0, 1], '--',
-                         c='red', alpha=0.5)
-        
-        sub.set_frame_on(False)
-        sub.set_yticks([])
-        sub.set_ylabel(ifo, rotation=45)
-        sub.set_xlim([float(extent[0]), float(extent[1])])
-        sub.get_xaxis().get_major_formatter().set_useOffset(False)
-        sub.get_xaxis().get_major_formatter().set_scientific(False)
-        sub.get_xaxis().tick_bottom()
-        if not sub is subs[-1]:
-            sub.get_xaxis().set_ticks([])
-            sub.get_xaxis().set_ticklabels([])
-        else:
-            sub.tick_params(labelsize=10, pad=1)
-
-    xmin, xmax = fig.axes[-1].get_xaxis().get_view_interval()
-    ymin, ymax = fig.axes[-1].get_yaxis().get_view_interval()
-    fig.axes[-1].add_artist(Line2D((xmin, xmax), (ymin, ymin), color='black',
-                                linewidth=2))
-    fig.axes[-1].set_xlabel('GPS Time')
-
-    fig.axes[0].set_title('Science Segments for GRB%s' % trigger_name)
-    fig.subplots_adjust(hspace=0)
     
-    plot_name = 'GRB%s_segments.png' % trigger_name
-    plot_url = 'file://localhost%s/%s' % (out_dir, plot_name)
-    fig.savefig('%s/%s' % (out_dir, plot_name))
-
-    return [ifos, plot_name, extent, plot_url]

@@ -32,8 +32,7 @@ import os
 import argparse
 import logging
 import pycbc.workflow as _workflow
-from glue.segments import segment, segmentlistdict
-from pycbc.results.legacy_grb import make_grb_segments_plot
+from glue.segments import segment
 
 workflow_name = "pygrb_offline"
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
@@ -56,19 +55,18 @@ if wflow.cp.has_option("workflow", "output-directory"):
     baseDir = wflow.cp.get("workflow", "output-directory")
 else:
     baseDir = os.getcwd()
-triggername = str(wflow.cp.get("workflow", "trigger-name"))
-runDir = os.path.join(baseDir, "GRB%s" % triggername)
-logging.info("Workflow will be generated in %s" % runDir)
+runDir = os.path.join(baseDir, "GRB%s" % str(wflow.cp.get("workflow",
+                                                          "trigger-name")))
+logging.info("Workflow will be generated in %s" % baseDir)
 if not os.path.exists(runDir):
     os.makedirs(runDir)
 os.chdir(runDir)
 
 # SEGMENTS
-triggertime = int(wflow.cp.get("workflow", "trigger-time"))
-start = triggertime - int(wflow.cp.get("workflow-exttrig_segments",
-                                       "max-duration"))
-end = triggertime + int(wflow.cp.get("workflow-exttrig_segments",
-                                     "max-duration"))
+start = int(wflow.cp.get("workflow", "trigger-time")) - int(wflow.cp.get(
+        "workflow-exttrig_segments", "max-duration"))
+end = int(wflow.cp.get("workflow", "trigger-time")) + int(wflow.cp.get(
+        "workflow-exttrig_segments", "max-duration"))
 wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
 
 # Retrieve segments ahope-style
@@ -78,11 +76,7 @@ sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
 
 # Make coherent network segments
 single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
-if len(sciSegs.keys()) == 0:
-    raise RuntimeError("No science segments available.")
-elif len(sciSegs.keys()) < 2 and not single_ifo:
-    plot_met = make_grb_segments_plot(wflow.ifos, segmentlistdict(sciSegs),
-            triggertime, triggername, segDir)
+if len(sciSegs.keys()) < 2 and not single_ifo:
     msg = "Science segments exist only for %s. " % sciSegs.keys()[0]
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
@@ -90,25 +84,12 @@ elif len(sciSegs.keys()) < 2 and not single_ifo:
     raise RuntimeError(msg)
 elif len(sciSegs.keys()) < 2:
     logging.info("Generating a single IFO search.")
-    onSrc, offSrc = _workflow.get_triggered_single_ifo_segment(wflow, segDir,
-                                                               sciSegs)
+    onSrc, sciSegs = _workflow.get_triggered_single_ifo_segment(wflow, segDir,
+                                                                sciSegs)
 else:
-    onSrc, offSrc = _workflow.get_triggered_coherent_segment(wflow, segDir,
-            sciSegs, single_ifo)
-
-sciSegs = segmentlistdict(sciSegs)
-if onSrc is None:
-    plot_met = make_grb_segments_plot(wflow.ifos, sciSegs, triggertime,
-            triggername, segDir, fail_criterion=offSrc)
-    sys.exit()
-else:
-    plot_met = make_grb_segments_plot(wflow.ifos, sciSegs, triggertime,
-            triggername, segDir, coherent_seg=offSrc[offSrc.keys()[0]][0])
-    segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2],
-                               file_url=plot_met[3])
-    segs_plot.PFN(segs_plot.cache_entry.path, site="local")
-    sciSegs = offSrc
-    all_files.extend(_workflow.FileList([segs_plot]))
+    onSrc, sciSegs = _workflow.get_triggered_coherent_segment(wflow, segDir,
+                                                              sciSegs,
+                                                              single_ifo)
 
 # How many IFOs do we have in the search?
 if len(sciSegs.keys()) == 1:
@@ -283,7 +264,7 @@ if post_proc_method == "COH_PTF_WORKFLOW":
             injection_trigger_files=inj_insp_files, injection_files=injs,
             injection_trigger_caches=inj_insp_caches,
             injection_caches=inj_caches, config_file=cp_file, web_dir=html_dir,
-            segments_plot=segs_plot, ifos=ifos, inj_tags=inj_tags)
+            ifos=ifos, inj_tags=inj_tags)
 
     # Retrieve style files for webpage
     summary_files = _workflow.get_coh_PTF_files(wflow.cp, ifos, ppDir,
