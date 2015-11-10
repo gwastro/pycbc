@@ -28,7 +28,6 @@ __program__ = "pycbc_make_coinc_search_workflow"
 
 import sys
 import socket
-import shutil
 import pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments, numpy, lal, datetime
 from pycbc.events.veto import multi_segments_to_file
@@ -404,16 +403,6 @@ if len(files_for_combined_injfind) > 0:
     inj = wf.make_foundmissed_plot(workflow, found_inj, 
                 rdir['injections'], require='summ', tags=['ALLINJ'])
     inj_summ = list(layout.grouper(inj + sen, 2))
-
-# make segment summary and copy segment files into results pages
-analysis_time_summ = ([(time_file,)] + [(seg_summ_plot,)] + 
-                      [(seg_summ_table, veto_summ_table)])
-layout.two_column_layout(rdir['analysis_time'], analysis_time_summ)
-wf.makedir(rdir['analysis_time/segment_data'])
-for seg_file in os.listdir("segments/"):
-    if seg_file.endswith(".xml") or seg_file.endswith(".xml.gz"):
-      shutil.copy(os.path.join("segments",seg_file),
-                  os.path.join(rdir['analysis_time/segment_data'],seg_file))
                             
 # make full summary
 summ = ([(time_file,)] + [(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)] + 
