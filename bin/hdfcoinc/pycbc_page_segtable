@@ -30,9 +30,12 @@ from glue.ligolw import utils
 from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results import save_fig_with_metadata
 from pycbc.workflow import fromsegmentxml
+import pycbc.version
 
 # parse command line
 parser = argparse.ArgumentParser()
+parser.add_argument("--version", action="version",
+                        version=pycbc.version.git_verbose_msg)
 parser.add_argument('--segment-files', type=str, nargs="+",
                         help='XML files with a segment definer table to read.')
 parser.add_argument('--segment-names', type=str, nargs="+", required=False, default="",

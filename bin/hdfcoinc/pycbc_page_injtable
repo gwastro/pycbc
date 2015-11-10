@@ -4,8 +4,10 @@
 import argparse, h5py, numpy, pycbc.results, pycbc.detector, sys
 from pycbc.types import MultiDetOptionAction
 import pycbc.pnutils, pycbc.events
+import pycbc.version
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument('--injection-file', help='HDF File containing the matched injections')
 parser.add_argument('--single-trigger-files', nargs='*', help="HDF format single detector trigger files", action=MultiDetOptionAction)
 parser.add_argument('--verbose', action='count')

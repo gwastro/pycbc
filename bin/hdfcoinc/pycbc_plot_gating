@@ -13,9 +13,12 @@ from matplotlib.patches import Rectangle
 import mpld3
 import mpld3.plugins
 from pycbc.results.color import ifo_color
+import pycbc.version
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--input-file', nargs='+', required=True,
                     help='Single-detector inspiral HDF5 files to take gating '
                          'data from.')

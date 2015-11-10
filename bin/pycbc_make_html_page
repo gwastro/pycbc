@@ -26,6 +26,7 @@ from glue import segments
 from jinja2 import Environment, FileSystemLoader
 from pycbc.results.render import get_embedded_config, render_workflow_html_template, setup_template_render
 from pycbc.workflow import segment
+import pycbc.version
 
 def examine_dir(cwd):
     """
@@ -159,6 +160,8 @@ class File():
 parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
 [--options]',
                   description="Create static html pages of a filesystem's content.")
+parser.add_argument("--version", action="version",
+                  version=pycbc.version.git_verbose_msg)
 parser.add_argument('-f', '--template-file', type=str,
                   help='Template file to use for skeleton html page.')
 parser.add_argument('-b', '--output-path', type=str,

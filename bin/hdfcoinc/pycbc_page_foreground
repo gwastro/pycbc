@@ -3,9 +3,11 @@
 """
 import sys
 import argparse
+import pycbc.version
 
 parser = argparse.ArgumentParser()
 # General required options
+parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-file')
 parser.add_argument('--bank-file')
 parser.add_argument('--single-detector-triggers', nargs='+', default=None)

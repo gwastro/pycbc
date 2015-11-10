@@ -7,6 +7,7 @@ matplotlib.use('Agg')
 import pylab, pycbc.results
 from pycbc.io import get_chisq_from_file_choice, chisq_choices
 from pycbc import pnutils
+import pycbc.version
 
 def snr_from_chisq(chisq, newsnr, q=6.):
     snr = numpy.zeros(len(chisq)) + float(newsnr)
@@ -18,6 +19,8 @@ def snr_from_chisq(chisq, newsnr, q=6.):
 eff_map = {'H1':'eff_dist_h', 'L1':'eff_dist_l', 'V1':'eff_dist_v'} 
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--found-injection-file', required=True,
                     help='HDF format found injection file')
 parser.add_argument('--single-injection-file', required=True,
