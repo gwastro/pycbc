@@ -51,8 +51,7 @@ finalize_workflow = wf.Workflow(args, 'finalization')
 
 os.chdir(args.output_dir)
 
-rdir = layout.SectionNumber('results', ['configuration',
-                                 'analysis_time',
+rdir = layout.SectionNumber('results', ['analysis_time',
                                  'detector_sensitivity',
                                  'single_triggers',
                                  'coincident_triggers',
@@ -419,7 +418,7 @@ for row in summ:
 layout.two_column_layout(rdir.base, summ)
 
 # save global config file to results directory
-base = rdir['configuration']
+base = rdir['workflow/configuration']
 wf.makedir(base)
 ini_file_path = os.path.join(base, 'configuration.ini')
 with open(ini_file_path, 'wb') as ini_fh:
