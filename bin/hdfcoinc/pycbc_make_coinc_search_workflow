@@ -27,6 +27,7 @@ __date__    = pycbc.version.date
 __program__ = "pycbc_make_coinc_search_workflow"
 
 import sys
+import socket
 import pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, glue.segments, numpy, lal, datetime
 from pycbc.events.veto import multi_segments_to_file
@@ -427,7 +428,28 @@ ini_file = wf.FileList([wf.File(ifos, '', workflow.analysis_time, file_url='file
 layout.single_layout(base, ini_file)
 
 # Create versioning information
-create_versioning_page(rdir['workflow'], container.cp)
+create_versioning_page(rdir['workflow/version'], container.cp)
+
+# Create the final log file
+log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
+                                           extension='.html',
+                                           directory=rdir['workflow'])
+
+# Create a page to contain a dashboard link
+dashboard_file = wf.File(workflow.ifos, 'DASHBOARD', workflow.analysis_time,
+                                           extension='.html',
+                                           directory=rdir['workflow'])
+dashboard_str = """<center><p style="font-size:20px"><b><a href="PEGASUS_DASHBOARD_URL" target="_blank">Pegasus Dashboard Page</a></b></p></center>"""
+kwds = { 'title' : 'Pegasus Dashboard', 
+        'caption' : "Link to Pegasus Dashboard",
+        'cmd' : "PYCBC_SUBMIT_DAX_ARGV", }
+save_fig_with_metadata(dashboard_str, dashboard_file.storage_path, **kwds)
+
+# Create pages for the submission script to write data
+wf.makedir(rdir['workflow/dax'])
+wf.makedir(rdir['workflow/input_map'])
+wf.makedir(rdir['workflow/output_map'])
+wf.makedir(rdir['workflow/planning'])
 
 wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(), rdir.base))
 
@@ -445,4 +467,17 @@ os.chmod(rdir['result'], 0700)
 
 logging.info("Written dax.")
 
+# Close the log and flush to the html file
 logging.shutdown()
+with open (wf_log_file.storage_path, "r") as logfile:
+    logdata=logfile.read()
+log_str = """
+<p>Workflow generation script run in directory: %s</p>
+<p>Workflow generation script run on host: %s</p>
+<pre>%s</pre>
+""" % (os.getcwd(), socket.gethostname(), logdata)
+kwds = { 'title' : 'Workflow Generation Log', 
+        'caption' : "Log of the workflow script %s" % sys.argv[0],
+        'cmd' :' '.join(sys.argv), }
+save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
+layout.single_layout(rdir['workflow'], ([dashboard_file,log_file_html]))
