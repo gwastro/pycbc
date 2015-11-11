@@ -28,6 +28,17 @@ LOCAL_GSIFTP_SERVER=""
 NO_CREATE_PROXY=0
 SUBMIT_DAX="--submit"
 
+# These will be changed by the bundle builder
+DATA_INLINE=False
+
+function expand_pegasus_files() {
+(
+base64 -d <<DATA_END
+PEGASUS_FILE_DATA
+DATA_END
+) | tar -zx
+}
+
 echo "# Properties set on command line" > extra-properties.conf
 rm -f _reuse.cache
 touch _reuse.cache
@@ -206,7 +217,12 @@ chmod 755 $SUBMIT_DIR
 
 # find the site-local template directory
 if [ -z $PEGASUS_FILE_DIRECTORY ] ; then
-  PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
+  if [ $DATA_INLINE == "True" ] ; then
+    expand_pegasus_files
+    PEGASUS_FILE_DIRECTORY=${PWD}/pegasus_files
+  else
+    PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
+  fi
 fi
 
 # Create the site catalog
