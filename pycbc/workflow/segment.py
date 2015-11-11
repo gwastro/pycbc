@@ -556,10 +556,6 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
     # FIXME: Would like the proxy in the Workflow instance
     # FIXME: Explore using the x509 condor commands
     # If the user has a proxy set in the environment, add it to the job
-    if os.environ.has_key('X509_USER_PROXY'):
-        job.add_profile('condor', 'environment',
-                        'USER=$ENV(USER);X509_USER_PROXY=%s' % proxyfile)
-
     return job
     
 def get_cumulative_segs(workflow, currSegFile, categories,
