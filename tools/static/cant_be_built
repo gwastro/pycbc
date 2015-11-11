@@ -4,3 +4,5 @@ pycbc_plot_hwinj
 pycbc_mvsc_dag
 pycbc_inspinjfind
 pycbc_get_loudest_params
+pycbc_randomize_inj_dist_by_optsnr
+
