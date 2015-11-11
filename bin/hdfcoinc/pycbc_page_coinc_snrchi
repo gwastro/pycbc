@@ -35,9 +35,9 @@ parser.add_argument('--newsnr-contours', nargs='*', default=[],
 parser.add_argument('--background-front', action='store_true', default=False,
                     help='If set, plot background on top of injections rather '
                          'than vice versa')
-parser.add_argument('--colorbar-choice', choices=('spin', 'mchirp', 'eta', 
-                    'effective_distance', 'total_mass', 'optimal_snr', 'redshift'),
-                    default='effective_distance',
+parser.add_argument('--colorbar-choice', choices=('effective_spin', 'mchirp',
+                    'eta', 'effective_distance', 'mtotal', 'optimal_snr',
+                    'redshift'), default='effective_distance',
                     help='Parameter to use for the colorbar. '
                          'Default=effective_distance')
 parser.add_argument('--chisq-choice', choices=chisq_choices,
@@ -87,8 +87,8 @@ coloring = {'effective_distance': (eff_dist, "Effective Distance (Mpc)",
                                                              colors.LogNorm()),
             'mchirp': (mchirp, "Chirp Mass", colors.LogNorm()),
             'eta': (eta, "Symmetric Mass Ratio", colors.LogNorm()),
-            'spin': (weighted_spin, "Weighted Aligned Spin", None),
-            'total_mass': (m1 + m2, "Total Mass", colors.LogNorm()),
+            'effective_spin': (weighted_spin, "Weighted Aligned Spin", None),
+            'mtotal': (m1 + m2, "Total Mass", colors.LogNorm()),
             'redshift': (redshift, "Redshift", None)
            }
 
