@@ -75,8 +75,12 @@ else:
 logging.info('calculating statistics excluding zerolag')
 fb = h5py.File(args.full_data_background, "r")
 
-background_time = float(fb.attrs['background_time_exc'])
-coinc_time = float(fb.attrs['foreground_time_exc'])
+# Allow all time to contribute to injection calculated IFARs, as for zerolag
+# This prevents loud injections from being assigned to a bin where they have
+# bad chisq if that bin has slightly larger exclusive bg livetime due to
+# different censoring
+background_time = float(fb.attrs['background_time'])
+coinc_time = float(fb.attrs['foreground_time'])
 back_stat = fb['background_exc/stat'][:]
 dec_fac = fb['background_exc/decimation_factor'][:]
 
