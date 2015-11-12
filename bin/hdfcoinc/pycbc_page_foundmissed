@@ -84,7 +84,7 @@ labels={'mchirp': 'Chirp Mass',
         'comb_optimal_snr': 'Combined Optimal SNR',
         'decisive_optimal_snr': 'Decisive Optimal SNR',
         'time': 'Time (s)',
-        'spin': 'Weighted Aligned Spin',
+        'effective_spin': 'Weighted Aligned Spin',
        }
 
 if args.missed_on_top:
