@@ -37,6 +37,7 @@ parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 parser.add_argument('--trials-factor', type=int, default=1)
 parser.add_argument('--not-cumulative', action='store_true')
+parser.add_argument('--no-sigma-shading', action='store_true')
 parser.add_argument('--closed-box', action='store_true',
       help="Make a closed box version that excludes foreground triggers")
 parser.add_argument('--xmin', type=float, help='Set the minimum value of the x-axis')
@@ -143,47 +144,47 @@ if not args.closed_box:
 
     if cstat_fore is not None and len(cstat_fore):
         pylab.scatter(cstat_fore, cstat_rate, s=60, color='#ff6600',
-                                  marker='d', label='Foreground', zorder=100,
+                                  marker='^', label='Foreground', zorder=100,
                                   linewidth=0.5, edgecolors='white')
 
-    if args.cumulative:
-        sigmas = numpy.array([5, 4, 3, 2, 1])
-        top = cstat_rate.max()
-        for i in range(len(sigmas) - 1):
-            p1 = p_from_sigma(sigmas[i])
-            p2 = p_from_sigma(sigmas[i+1])
-            
-            
-            #offset the shading so it is valid for the foreground beyond the first point
-            if cstat_fore is not None and len(cstat_fore):
-                offset = numpy.interp(cstat_back, cstat_fore, cstat_rate - cstat_rate[-1])
-            else:
-                offset = 0
+    if not args.no_sigma_shading:
+        if args.cumulative:
+            sigmas = numpy.array([5, 4, 3, 2, 1])
+            top = cstat_rate.max()
+            for i in range(len(sigmas) - 1):
+                p1 = p_from_sigma(sigmas[i])
+                p2 = p_from_sigma(sigmas[i+1])
+                                
+                #offset the shading so it is valid for the foreground beyond the first point
+                if cstat_fore is not None and len(cstat_fore):
+                    offset = numpy.interp(cstat_back, cstat_fore, cstat_rate - cstat_rate[-1])
+                else:
+                    offset = 0
+                    
+                low = far_back / p2 * args.trials_factor + offset
+                high = far_back / p1 * args.trials_factor + offset
+                pylab.fill_between(cstat_back, low, high,
+                                   linewidth=0, color=pylab.cm.Blues(sigmas[i] / 5.0), zorder=-1)
+
+                left = cstat_back[high < top].min()
+                pylab.text(left, top, r"\textbf{%s $\sigma$}"  % sigmas[i], fontsize=8)
                 
-            low = far_back / p2 * args.trials_factor + offset
-            high = far_back / p1 * args.trials_factor + offset
-            pylab.fill_between(cstat_back, low, high,
-                               linewidth=0, color=pylab.cm.Blues(sigmas[i] / 5.0), zorder=-1)
 
-            left = cstat_back[high < top].min()
-            pylab.text(left, top, r"\textbf{%s $\sigma$}"  % sigmas[i], fontsize=8)
+        else:
+            # add arrows to any points > the loudest background
+            louder_pts = numpy.where(cstat_fore > cstat_back.max())[0] 
+            for ii in louder_pts:
+                r = cstat_fore[ii]
+                arr_start = cstat_rate[ii]
+                # make the arrow length 1/15 the height of the plot
+                arr_end = arr_start * (plot_ymin/plot_ymax)**(1./15)
+                pylab.plot([r, r], [arr_start, arr_end], lw=2, color='black',
+                    zorder=99)
+                pylab.plot([r, r], [arr_start, arr_end], lw=2.6, color='white',
+                    zorder=97)
+                pylab.scatter([r], [arr_end], marker='v', c='black',
+                    edgecolors='white', lw=0.5, s=40, zorder=98)
             
-
-    else:
-        # add arrows to any points > the loudest background
-        louder_pts = numpy.where(cstat_fore > cstat_back.max())[0] 
-        for ii in louder_pts:
-            r = cstat_fore[ii]
-            arr_start = cstat_rate[ii]
-            # make the arrow length 1/15 the height of the plot
-            arr_end = arr_start * (plot_ymin/plot_ymax)**(1./15)
-            pylab.plot([r, r], [arr_start, arr_end], lw=2, color='#ff6600',
-                zorder=99)
-            pylab.plot([r, r], [arr_start, arr_end], lw=2.6, color='white',
-                zorder=97)
-            pylab.scatter([r], [arr_end], marker='v', c='#ff6600',
-                edgecolors='white', lw=0.5, s=40, zorder=98)
-        
 if not args.cumulative:
     # add second y-axis for probabilities, sigmas
     sigmas = numpy.arange(6)+1
