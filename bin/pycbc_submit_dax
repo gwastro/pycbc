@@ -368,7 +368,7 @@ if [ ! -e ${HOME}/.pegasus/workflow.db ] ; then
   exit 1
 fi
   
-sleep 1
+sleep 3
 WORKFLOW_ID_STRING=`sqlite3 -csv ${HOME}/.pegasus/workflow.db "select submit_hostname,wf_id,wf_uuid from master_workflow where submit_dir = '${SUBMIT_DIR}/work';"`
 
 if [ -z $WORKFLOW_ID_STRING ] ; then
