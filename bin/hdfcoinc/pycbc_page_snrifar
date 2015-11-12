@@ -5,7 +5,10 @@ import argparse, h5py, numpy, logging, sys, lal
 import matplotlib
 matplotlib.use('Agg')
 import pylab, pycbc.results, pycbc.version
-from scipy.special import erfc
+from scipy.special import erfc, erfinv
+
+def sigma_from_p(p):
+    return - erfinv(1 - (1 - p) * 2) * 2**0.5
 
 def p_from_sigma(sig):
     return erfc((sig)/numpy.sqrt(2))/2.
@@ -61,7 +64,8 @@ try:
     
     if args.cumulative:
         cstat_fore.sort()
-        cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * 3.15569e7 
+        cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * 3.15569e7
+        fap_end = f['foreground/fap'][:].min() * args.trials_factor
     else:
         ssort = cstat_fore.argsort()
         cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
@@ -149,7 +153,8 @@ if not args.closed_box:
 
 
         if args.cumulative and not args.no_sigma_shading:
-            sigmas = numpy.array([5, 4, 3, 2, 1])
+            end = sigma_from_p(fap_end)
+            sigmas = numpy.array([end, 4, 3, 2, 1])
             top = cstat_rate.max()
             for i in range(len(sigmas) - 1):
                 p1 = p_from_sigma(sigmas[i])
@@ -167,8 +172,11 @@ if not args.closed_box:
                                    linewidth=0, color=pylab.cm.Blues(sigmas[i] / 5.0), zorder=-1)
 
                 left = cstat_back[high < top].min()
-                pylab.text(left, top, r"\textbf{%s $\sigma$}"  % sigmas[i], fontsize=8)
                 
+                if sigmas[i] == end:
+                    pylab.text(left, top, r"\textbf{%1.1f $\sigma$}"  % sigmas[i], fontsize=8)
+                else:
+                    pylab.text(left, top, r"\textbf{%1.0f $\sigma$}"  % sigmas[i], fontsize=8) 
 
         if args.not_cumulative:
             # add arrows to any points > the loudest background
