@@ -28,6 +28,17 @@ LOCAL_GSIFTP_SERVER=""
 NO_CREATE_PROXY=0
 SUBMIT_DAX="--submit"
 
+# These will be changed by the bundle builder
+DATA_INLINE=False
+
+function expand_pegasus_files() {
+(
+base64 -d <<DATA_END
+PEGASUS_FILE_DATA
+DATA_END
+) | tar -zx
+}
+
 echo "# Properties set on command line" > extra-properties.conf
 rm -f _reuse.cache
 touch _reuse.cache
@@ -205,7 +216,10 @@ SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
 chmod 755 $SUBMIT_DIR
 
 # find the site-local template directory
-if [ -z $PEGASUS_FILE_DIRECTORY ] ; then
+if [ $DATA_INLINE == "True" ] ; then
+  expand_pegasus_files
+  PEGASUS_FILE_DIRECTORY=${PWD}/pegasus_files
+elif [ -z $PEGASUS_FILE_DIRECTORY ] ; then
   PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
 fi
 
@@ -326,7 +340,7 @@ if [ -e output.map ] ; then
 fi
 
 # ugly shell to extract the sub-dax names from the uberdax xml
-for dax in `egrep '<[:blank:]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do 
+for dax in `egrep '<[[:blank:]]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do 
   cp ${dax} workflow/dax
   map=`basename ${dax} .dax`.map
   if [ -e ${map} ] ; then
