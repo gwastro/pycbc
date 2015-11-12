@@ -306,6 +306,7 @@ seg_summ_plot = wf.make_seg_plot(workflow, [seg_summ_file],
 
 # make veto definer table
 vetodef_table = wf.make_veto_table(workflow, rdir['analysis_time/veto_definer'])
+layout.single_layout(rdir['analysis_time/veto_definer'], ([vetodef_table]))
 
 ############################## Setup the injection runs #######################                                                                   
 inj_coincs = wf.FileList()
