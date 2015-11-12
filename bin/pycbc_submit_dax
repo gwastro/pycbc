@@ -340,7 +340,7 @@ if [ -e output.map ] ; then
 fi
 
 # ugly shell to extract the sub-dax names from the uberdax xml
-for dax in `egrep '<[:blank:]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do 
+for dax in `egrep '<[[:blank:]]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do 
   cp ${dax} workflow/dax
   map=`basename ${dax} .dax`.map
   if [ -e ${map} ] ; then
