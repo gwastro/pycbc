@@ -216,13 +216,11 @@ SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
 chmod 755 $SUBMIT_DIR
 
 # find the site-local template directory
-if [ -z $PEGASUS_FILE_DIRECTORY ] ; then
-  if [ $DATA_INLINE == "True" ] ; then
-    expand_pegasus_files
-    PEGASUS_FILE_DIRECTORY=${PWD}/pegasus_files
-  else
-    PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
-  fi
+if [ $DATA_INLINE == "True" ] ; then
+  expand_pegasus_files
+  PEGASUS_FILE_DIRECTORY=${PWD}/pegasus_files
+elif [ -z $PEGASUS_FILE_DIRECTORY ] ; then
+  PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
 fi
 
 # Create the site catalog
