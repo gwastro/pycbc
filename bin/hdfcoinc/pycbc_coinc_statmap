@@ -16,7 +16,7 @@ def sec_to_year(sec):
 class fw(object):
     def __init__(self, name):
         self.f = h5py.File(name, 'w')
-        self.attrs = f.attrs
+        self.attrs = self.f.attrs
 
     def __setitem__(self, name, data):
         self.f.create_dataset(name, data=data, compression='gzip',
