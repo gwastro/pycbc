@@ -335,7 +335,11 @@ logging.info('saving coincident triggers')
 f = h5py.File(args.output_file, 'w')
 if len(data['stat']) > 0:
     for key in data:
-        f[key] = data[key][cid] if args.cluster_window else data[key]
+        var = data[key][cid] if args.cluster_window else data[key]        
+        f.create_dataset(key, data=var, 
+                              compression='gzip',
+                              compression_opts=9,
+                              shuffle=True)
             
 f['segments/coinc/start'], f['segments/coinc/end'] = veto.segments_to_start_end(coinc_segs)
 
