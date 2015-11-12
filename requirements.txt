@@ -18,12 +18,11 @@ funcsigs==0.4
 itsdangerous==0.21
 Jinja2==2.7
 linecache2==1.0.0
-M2Crypto==0.22.3
 Mako==1.0.2
 MarkupSafe==0.18
 matplotlib==1.4.3
 mock==1.3.0
-mpld3==0.3git
+https://github.com/ligo-cbc/mpld3/tarball/master#egg=mpld3-0.3git
 MySQL-python==1.2.5
 nose==1.3.7
 pam==0.1.4
