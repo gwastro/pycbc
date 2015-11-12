@@ -157,6 +157,9 @@ if not args.closed_box:
             sigmas = numpy.array([end, 4, 3, 2, 1])
             top = cstat_rate.max()
             for i in range(len(sigmas) - 1):
+                if sigmas[i] > end:
+                    continue
+            
                 p1 = p_from_sigma(sigmas[i])
                 p2 = p_from_sigma(sigmas[i+1])
                                 
