@@ -484,10 +484,11 @@ logging.shutdown()
 with open (wf_log_file.storage_path, "r") as logfile:
     logdata=logfile.read()
 log_str = """
-<p>Workflow generation script run in directory: %s</p>
+<p>Workflow generation script created workflow in output directory: %s</p>
+<p>Workflow name is: %s</p>
 <p>Workflow generation script run on host: %s</p>
 <pre>%s</pre>
-""" % (os.getcwd(), socket.gethostname(), logdata)
+""" % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
 kwds = { 'title' : 'Workflow Generation Log', 
         'caption' : "Log of the workflow script %s" % sys.argv[0],
         'cmd' :' '.join(sys.argv), }
