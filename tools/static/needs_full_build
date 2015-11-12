@@ -84,4 +84,11 @@ pycbc_pipedown_plots
 pycbc_run_sqlite
 pycbc_page_foreground
 pycbc_plot_gating
+pycbc_upload_xml_to_gracedb
+pycbc_plot_chigram
+pycbc_inj_cut
+
+pycbc_plot_psd_timefreq
+pycbc_write_results_page
+pycbc_randomize_inj_dist_by_optsnr
 
