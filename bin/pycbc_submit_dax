@@ -368,8 +368,20 @@ if [ ! -e ${HOME}/.pegasus/workflow.db ] ; then
   exit 1
 fi
   
-sleep 3
-WORKFLOW_ID_STRING=`sqlite3 -csv ${HOME}/.pegasus/workflow.db "select submit_hostname,wf_id,wf_uuid from master_workflow where submit_dir = '${SUBMIT_DIR}/work';"`
+WORKFLOW_DB_CMD="sqlite3 -csv ${HOME}/.pegasus/workflow.db \"select submit_hostname,wf_id,wf_uuid from master_workflow where submit_dir = '${SUBMIT_DIR}/work';\""
+DB_TRY=0
+/bin/echo -n "Querying Pegasus database for job."
+until [ $DB_TRY -ge 10 ]
+do 
+  /bin/echo -n "."
+  WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD`
+  if [ $? -eq 0 ] && [ ! -z $WORKFLOW_ID_STRING ] ; then
+    break
+  fi
+  sleep $DB_TRY
+  DB_TRY=$(( $DB_TRY + 1 ))
+done
+echo " done."
 
 if [ -z $WORKFLOW_ID_STRING ] ; then
   echo "WARNING: Could not find the workflow in the Pegasus dashboard database."
