@@ -199,12 +199,12 @@ layout.group_layout(rdir['single_triggers'], snrchi)
 hist_summ = []
 for insp in full_insps:
     wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto, 
-           'closed_box', rdir['single_triggers/%s-hexbin' % insp.ifo], tags=[tag])
+           'closed_box', rdir['single_triggers/%s_binned_triggers' % insp.ifo], tags=[tag])
     wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
-           rdir['single_triggers/%s-hist' % insp.ifo], 
+           rdir['single_triggers/%s_trigger_histograms' % insp.ifo], 
            exclude='summ', tags=[tag])
     hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
-           rdir['single_triggers/%s-hist' % insp.ifo], 
+           rdir['single_triggers/%s_trigger_histograms' % insp.ifo], 
            require='summ', tags=[tag])
     hist_summ += list(layout.grouper(hists, 2))
 
@@ -252,7 +252,7 @@ for insp_file in full_insps:
     curr_ifo = insp_file.ifo
     wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
                                   insp_data_segs, 'INSPIRAL_DATA', 'daxes',
-                                  rdir['single_triggers/sngl_%s' %(curr_ifo,)],
+                                  rdir['single_triggers/%s_loudest_triggers' %(curr_ifo,)],
                                   veto_file=censored_veto,
                                   veto_segment_name='closed_box',
                                   tags=insp_file.tags)
