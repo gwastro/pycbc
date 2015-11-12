@@ -19,6 +19,7 @@
 setup.py file for PyCBC package
 """
 import os, fnmatch, sys, subprocess, shutil
+
 from trace import fullmodname
 
 try:
@@ -414,6 +415,7 @@ setup (
                'bin/hdfcoinc/pycbc_page_foundmissed',
                'bin/hdfcoinc/pycbc_page_ifar',
                'bin/hdfcoinc/pycbc_page_snrifar',
+               'bin/hdfcoinc/pycbc_page_snrratehist',
                'bin/hdfcoinc/pycbc_page_sensitivity',
                'bin/hdfcoinc/pycbc_page_banktriggerrate',
                'bin/hdfcoinc/pycbc_coinc_hdfinjfind',
