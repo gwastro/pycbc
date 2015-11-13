@@ -288,5 +288,3 @@ pycbc.results.save_fig_with_metadata(fig, args.output_file,
              " background constructed without triggers that are"
              " coincident in the zero-lag data.",
      cmd=' '.join(sys.argv))
-             
-pylab.savefig(args.output_file, dpi=300, bbox_limits='tight')
