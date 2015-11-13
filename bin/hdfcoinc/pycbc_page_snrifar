@@ -289,5 +289,5 @@ figure_caption = figure_caption + "Orange diamonds (if present) represent trigge
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="%s bin, FAR vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank", 
-     caption=figure_caption
+     caption=figure_caption,
      cmd=' '.join(sys.argv))
