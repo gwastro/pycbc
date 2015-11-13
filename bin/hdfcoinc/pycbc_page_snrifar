@@ -117,7 +117,7 @@ logging.info('Found %s background (exclusive zerolag) triggers' % len(cstat_back
 # foreground otherwise
 if args.xmin is not None:
     plot_xmin = args.xmin
-elif args.closed_box:
+elif args.closed_box or cstat_fore is None:
     plot_xmin = cstat_back_exc.min()
 else:
     plot_xmin = cstat_fore.min()
@@ -127,7 +127,7 @@ if args.xmax is not None:
 # otherwise, make the furthest point to the right be ~1/10 of the
 # width of the plot from the right axis
 else:
-    if args.closed_box:
+    if args.closed_box or cstat_fore is None:
         plot_xmax = cstat_back_exc.max()
     else:
         plot_xmax = max(cstat_back.max(), cstat_fore.max())
