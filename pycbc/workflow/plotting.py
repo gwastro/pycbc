@@ -310,7 +310,7 @@ def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False, tags=[])
     return node.output_files[0]
     
     
-def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False, tags=[]):
+def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False, cumulative=True, tags=[]):
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_snrifar', ifos=workflow.ifos,
                 out_dir=out_dir, tags=tags).create_node()
@@ -318,6 +318,9 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False, tags=[]):
     
     if closed_box:
         node.add_opt('--closed-box')
+        
+    if not args.cumulative:
+        node.add_opt('--not-cumulative')
     
     node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
     workflow += node
