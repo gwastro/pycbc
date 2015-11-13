@@ -35,14 +35,16 @@ from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.results.versioning import save_fig_with_metadata
 from pycbc.results.metadata import html_escape
 
-def symlink_result(f, rdir_path):
+def symlink_path(f, path):
     if f is None:
-        continue
+        return
     try:
-        os.symlink(f.storage_path, os.path.join(rdir[rdir_path], f.name))
-     except OSError:
+        os.symlink(f.storage_path, os.path.join(path, f.name))
+    except OSError:
         pass
 
+def symlink_result(f, rdir_path):
+    symlink_path(f, rdir[rdir_path])
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__) 
@@ -179,11 +181,12 @@ for bg_file, bg_bins in (bg_files + final_bg_files):
             closed_snrifar.append(snrifar)
     
 results_page = []        
+results_aux_page = []
 for bin_file in bin_files:
     snrifar = wf.make_snrifar_plot(workflow, bin_file,
                     rdir['open_box_result'], tags=bin_file.tags)
     ratehist = wf.make_snrratehist_plot(workflow, bin_file, 
-                    rdir['open_box_results'], tags=bin_file.tags)
+                    rdir['open_box_result'], tags=bin_file.tags)
 
                     
     results_page += [(snrifar, ratehist)]
@@ -194,8 +197,8 @@ for bin_file in bin_files:
     ifar = wf.make_ifar_plot(workflow, bin_file, 
                     rdir['open_box_result/significance'], tags=bin_file.tags)
                     
-    symlink_result(snrifar, ['open_box_result/significance']
-    symlink_result(ratehist, ['open_box_result/significance']
+    symlink_result(snrifar, 'open_box_result/significance')
+    symlink_result(ratehist, 'open_box_result/significance')
     results_aux_page += [(snrifar, ratehist), (snrifar_ifar, ifar)]
 
 wf.make_ifar_plot(workflow, final_bg_file, rdir['open_box_result'])
@@ -206,7 +209,7 @@ table = wf.make_foreground_table(workflow, final_bg_file,
                     
 results_page += [(table,)]
 results_aux_page += [(table,)] 
-symlink_result(table, ['open_box_result/significance']               
+symlink_result(table, 'open_box_result/significance')               
 layout.two_column_layout(rdir['open_box_result'], results_page)
 layout.two_column_layout(rdir['open_box_result/significance'], results_aux_page) 
 
@@ -434,7 +437,7 @@ if len(files_for_combined_injfind) > 0:
 # make analysis time summary
 analysis_time_summ = [time_file, seg_summ_plot]
 for f in analysis_time_summ:
-    symlink_result(f, rdir['analysis_time'])
+    symlink_result(f, 'analysis_time')
 layout.single_layout(rdir['analysis_time'], (analysis_time_summ))
 
 # make full summary
@@ -442,7 +445,7 @@ summ = ([(time_file,)] + [(seg_summ_plot,)] + [(seg_summ_table, veto_summ_table)
        det_summ + hist_summ + bank_plot + list(layout.grouper(closed_snrifar, 2)) + inj_summ)
 for row in summ:
     for f in row:
-        symlink_result(row, rdir.base)     
+        symlink_path(f, rdir.base)     
 layout.two_column_layout(rdir.base, summ)
 
 # save global config file to results directory

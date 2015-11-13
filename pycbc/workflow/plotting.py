@@ -319,7 +319,7 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False, cumulative=T
     if closed_box:
         node.add_opt('--closed-box')
         
-    if not args.cumulative:
+    if not cumulative:
         node.add_opt('--not-cumulative')
     
     node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
