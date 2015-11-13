@@ -295,8 +295,22 @@ def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None, require=Non
         workflow += node   
         files += node.output_files
     return files
+  
+def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False, tags=[]):
+    makedir(out_dir)
+    node = PlotExecutable(workflow.cp, 'plot_snrratehist', ifos=workflow.ifos,
+                out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--trigger-file', bg_file)
     
-def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False, tags=[]):
+    if closed_box:
+        node.add_opt('--closed-box')
+    
+    node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
+    workflow += node
+    return node.output_files[0]
+    
+    
+def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False, cumulative=True, tags=[]):
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_snrifar', ifos=workflow.ifos,
                 out_dir=out_dir, tags=tags).create_node()
@@ -304,6 +318,9 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False, tags=[]):
     
     if closed_box:
         node.add_opt('--closed-box')
+        
+    if not cumulative:
+        node.add_opt('--not-cumulative')
     
     node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
     workflow += node

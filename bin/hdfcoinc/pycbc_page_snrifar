@@ -78,6 +78,9 @@ try:
 except:
     cstat_fore = None
 
+if cstat_fore is not None and len(cstat_fore) == 0:
+    cstat_fore = None
+
 back_ifar = f['background/ifar'][:]
 cstat_back = f['background/stat'][:]
 back_sort = cstat_back.argsort()
