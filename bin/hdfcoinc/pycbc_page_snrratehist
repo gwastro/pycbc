@@ -44,6 +44,9 @@ try:
 except:
     fstat = None
 
+if len(fstat) == 0:
+    fstat = None
+
 dec = f['background/decimation_factor'][:]
 bstat = f['background/stat'][:]
 fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
