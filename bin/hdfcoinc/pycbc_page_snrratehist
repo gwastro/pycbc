@@ -23,8 +23,8 @@ parser.add_argument('--version', action='version', version=pycbc.version.git_ver
 parser.add_argument('--trigger-file')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
-parser.add_argument('--bin-size', type=float)
-parser.add_argument('--x-min', type=float)
+parser.add_argument('--bin-size', type=float, default=0.1)
+parser.add_argument('--x-min', type=float, default=8.0)
 parser.add_argument('--trials-factor', type=int, default=1)
 parser.add_argument('--cumulative', action='store_true')
 parser.add_argument('--closed-box', action='store_true',

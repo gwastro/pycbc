@@ -193,7 +193,7 @@ for bin_file in bin_files:
     
     snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
                     rdir['open_box_result/significance'], 
-                    cumulative=False, tags=bin_file.tags)
+                    cumulative=False, tags=bin_file.tags + ['ifar'])
     ifar = wf.make_ifar_plot(workflow, bin_file, 
                     rdir['open_box_result/significance'], tags=bin_file.tags)
                     
