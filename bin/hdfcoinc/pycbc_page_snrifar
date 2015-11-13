@@ -41,6 +41,7 @@ parser.add_argument('--output-file')
 parser.add_argument('--trials-factor', type=int, default=1)
 parser.add_argument('--not-cumulative', action='store_true')
 parser.add_argument('--no-sigma-shading', action='store_true')
+parser.add_argument('--fg-marker', default='^', help='Marker to use for the foreground triggers')
 parser.add_argument('--closed-box', action='store_true',
       help="Make a closed box version that excludes foreground triggers")
 parser.add_argument('--xmin', type=float, help='Set the minimum value of the x-axis')
@@ -148,7 +149,8 @@ if not args.closed_box:
 
     if cstat_fore is not None and len(cstat_fore):
         pylab.scatter(cstat_fore, cstat_rate, s=60, color='#ff6600',
-                                  marker='^', label='Foreground', zorder=100,
+                                  marker=args.fg_marker,
+                                  label='Foreground', zorder=100,
                                   linewidth=0.5, edgecolors='white')
 
 
@@ -242,7 +244,6 @@ if args.cumulative:
     pylab.legend(loc="lower left")
     pylab.grid()
 else:
-    pylab.grid()
     pylab.legend(loc="upper right")
     ax2.set_yscale('log')
     ymin, ymax = ax1.get_ylim()
