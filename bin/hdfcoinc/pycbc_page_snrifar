@@ -281,11 +281,11 @@ else:
     fminorticks = far_from_p(pminorticks, foreground_livetime, far_back.max())
     ax2.set_yticks(fminorticks, minor=True)
 
-figure_caption = figure_caption + " Orange diamonds (if present) represent triggers from the "
-             " zero-lag (foreground) analysis. Solid crosses show "
-             "the background inclusive of zerolag events, and grey crosses show the "
-             " background constructed without triggers that are"
-             " coincident in the zero-lag data.",
+figure_caption = figure_caption + "Orange diamonds (if present) represent triggers from the " \
+"zero-lag (foreground) analysis. Solid crosses show " \
+"the background inclusive of zerolag events, and grey crosses show the " \
+"background constructed without triggers that are " \
+"coincident in the zero-lag data.",
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="%s bin, FAR vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank", 
