@@ -57,7 +57,7 @@ rdir = layout.SectionNumber('results', ['analysis_time',
                                  'coincident_triggers',
                                  'injections',
                                  'search_sensitivity',
-                                 'result',
+                                 'open_box_result',
                                  'workflow',
                                  ])
 
@@ -172,24 +172,24 @@ for bg_file, bg_bins in (bg_files + final_bg_files):
 results_page = []        
 for bin_file in bin_files:
     snrifar = wf.make_snrifar_plot(workflow, bin_file,
-                    rdir['result'], tags=bin_file.tags)
+                    rdir['open_box_result'], tags=bin_file.tags)
     ifar = wf.make_ifar_plot(workflow, bin_file, 
-                    rdir['result'], tags=bin_file.tags)
+                    rdir['open_box_result'], tags=bin_file.tags)
     results_page += [(snrifar, ifar)]
 
-wf.make_ifar_plot(workflow, final_bg_file, rdir['result'])
+wf.make_ifar_plot(workflow, final_bg_file, rdir['open_box_result'])
 
 table = wf.make_foreground_table(workflow, final_bg_file, 
-                    hdfbank[0], tag, rdir['result'], singles=insps,
+                    hdfbank[0], tag, rdir['open_box_result'], singles=insps,
                     extension='.html', tags=["html"])
 results_page += [(table,)]                    
-layout.two_column_layout(rdir['result'], results_page)
+layout.two_column_layout(rdir['open_box_result'], results_page)
  
 fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
-                    hdfbank[0], tag, rdir['result'], singles=insps,
+                    hdfbank[0], tag, rdir['open_box_result'], singles=insps,
                     extension='.xml', tags=["xmlall"])
 fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file,
-                    hdfbank[0], tag, rdir['result'], singles=insps,
+                    hdfbank[0], tag, rdir['open_box_result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
 
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
@@ -199,12 +199,12 @@ layout.group_layout(rdir['single_triggers'], snrchi)
 hist_summ = []
 for insp in full_insps:
     wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto, 
-           'closed_box', rdir['single_triggers/%s-hexbin' % insp.ifo], tags=[tag])
+           'closed_box', rdir['single_triggers/%s_binned_triggers' % insp.ifo], tags=[tag])
     wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
-           rdir['single_triggers/%s-hist' % insp.ifo], 
+           rdir['single_triggers/%s_trigger_histograms' % insp.ifo], 
            exclude='summ', tags=[tag])
     hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
-           rdir['single_triggers/%s-hist' % insp.ifo], 
+           rdir['single_triggers/%s_trigger_histograms' % insp.ifo], 
            require='summ', tags=[tag])
     hist_summ += list(layout.grouper(hists, 2))
 
@@ -238,13 +238,13 @@ layout.two_column_layout(rdir['detector_sensitivity'], det_summ + list(layout.gr
 wf.setup_foreground_minifollowups(workflow, final_bg_file,
                                   full_insps,  hdfbank[0],
                                   insp_data_segs, 'INSPIRAL_DATA', 'daxes',
-                                  rdir['result/full'], tags=final_bg_file.tags)
+                                  rdir['open_box_result/loudest_event_followup'], tags=final_bg_file.tags)
     
 for bin_file in bin_files:
     if hasattr(bin_file, 'bin_name'):
         wf.setup_foreground_minifollowups(workflow, bin_file, full_insps, hdfbank[0],
                                   insp_data_segs, 'INSPIRAL_DATA', 'daxes',
-                                  rdir['result/%s' % bin_file.bin_name],
+                                  rdir['open_box_result/loudest_in_%s_bin' % bin_file.bin_name],
                                   tags=bin_file.tags)
 
 # Also run minifollowups on loudest sngl detector events
@@ -252,7 +252,7 @@ for insp_file in full_insps:
     curr_ifo = insp_file.ifo
     wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
                                   insp_data_segs, 'INSPIRAL_DATA', 'daxes',
-                                  rdir['single_triggers/sngl_%s' %(curr_ifo,)],
+                                  rdir['single_triggers/%s_loudest_triggers' %(curr_ifo,)],
                                   veto_file=censored_veto,
                                   veto_segment_name='closed_box',
                                   tags=insp_file.tags)
@@ -306,6 +306,7 @@ seg_summ_plot = wf.make_seg_plot(workflow, [seg_summ_file],
 
 # make veto definer table
 vetodef_table = wf.make_veto_table(workflow, rdir['analysis_time/veto_definer'])
+layout.single_layout(rdir['analysis_time/veto_definer'], ([vetodef_table]))
 
 ############################## Setup the injection runs #######################                                                                   
 inj_coincs = wf.FileList()
@@ -383,7 +384,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
                                      insps,  hdfbank[0],
                                      insp_data_segs, 'INSPIRAL_DATA', 'daxes',
-                                     rdir['injections/followup-%s' % tag],
+                                     rdir['injections/followup_of_missed_%s' % tag],
                                      tags=[tag])
         
 # Make combined injection plots
@@ -475,7 +476,7 @@ container._adag.addDependency(dep)
 container.save()
 
 # Protect the open box results folder
-os.chmod(rdir['result'], 0700)
+os.chmod(rdir['open_box_result'], 0700)
 
 logging.info("Written dax.")
 
@@ -484,10 +485,11 @@ logging.shutdown()
 with open (wf_log_file.storage_path, "r") as logfile:
     logdata=logfile.read()
 log_str = """
-<p>Workflow generation script run in directory: %s</p>
+<p>Workflow generation script created workflow in output directory: %s</p>
+<p>Workflow name is: %s</p>
 <p>Workflow generation script run on host: %s</p>
 <pre>%s</pre>
-""" % (os.getcwd(), socket.gethostname(), logdata)
+""" % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
 kwds = { 'title' : 'Workflow Generation Log', 
         'caption' : "Log of the workflow script %s" % sys.argv[0],
         'cmd' :' '.join(sys.argv), }

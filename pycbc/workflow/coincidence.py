@@ -664,7 +664,7 @@ def setup_background_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
                                     tags=tags, out_dir=out_dir)                       
            
     background_bins = workflow.cp.get_opt_tags('workflow-coincidence', 'background-bins', tags).split(' ')             
-    background_bins.remove('')
+    background_bins = [x for x in background_bins if x != '']
     bins_node = bins_exe.create_node(coinc_files, bank_file, background_bins)
     workflow += bins_node
     
@@ -713,7 +713,7 @@ def setup_background_bins_inj(workflow, coinc_files, background_file, bank_file,
                                     tags=tags, out_dir=out_dir)                       
            
     background_bins = workflow.cp.get_opt_tags('workflow-coincidence', 'background-bins', tags).split(' ')   
-    background_bins.remove('')
+    background_bins = [x for x in background_bins if x != '']
     
     for inj_type in ['injinj', 'injfull', 'fullinj']:          
         bins_node = bins_exe.create_node(FileList(coinc_files[inj_type]), bank_file, background_bins, tags=tags + [inj_type])
