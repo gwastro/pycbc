@@ -23,8 +23,8 @@ parser.add_argument('--version', action='version', version=pycbc.version.git_ver
 parser.add_argument('--trigger-file')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
-parser.add_argument('--bin-size', type=float)
-parser.add_argument('--x-min', type=float)
+parser.add_argument('--bin-size', type=float, default=0.1)
+parser.add_argument('--x-min', type=float, default=8.0)
 parser.add_argument('--trials-factor', type=int, default=1)
 parser.add_argument('--cumulative', action='store_true')
 parser.add_argument('--closed-box', action='store_true',
@@ -42,6 +42,9 @@ try:
     fstat = f['foreground/stat'][:]
     fstat.sort()
 except:
+    fstat = None
+
+if len(fstat) == 0:
     fstat = None
 
 dec = f['background/decimation_factor'][:]
@@ -79,13 +82,14 @@ pylab.hist(bstat_exc, bins=bins, histtype='step',
                       weights=dec_exc / f.attrs['background_time_exc'] * lal.YRJUL_SI)
 
 # plot full background
-pylab.hist(bstat, bins=bins, histtype='step',
+if not args.closed_box:
+    pylab.hist(bstat, bins=bins, histtype='step',
                   linewidth=2,
                   color='black', log=True, 
                   label='Full Background',
                   weights=dec / f.attrs['background_time'] * lal.YRJUL_SI)
 
-if fstat is not None:
+if fstat is not None and not args.closed_box:
     le, re = bins[:-1], bins[1:]
     left = numpy.searchsorted(fstat, le)
     right = numpy.searchsorted(fstat, re)
@@ -103,24 +107,28 @@ leg = pylab.legend(loc='upper center', fontsize=9)
 
 end = sigma_from_p(fap.min() * args.trials_factor)
 
-for sig in [end, 4, 3, 2]:
-    p1 = (1 - p_from_sigma(sig)) / args.trials_factor
-    p2 = (1 - p_from_sigma(sig - 1)) /  args.trials_factor
-    
-    x1 = numpy.searchsorted(fap[::-1], p1)
-    x2 = numpy.searchsorted(fap[::-1], p2)
-    
-    if x1 == x2:
-        continue
-    
-    ymin, ymax = pylab.gca().get_ylim()
-    x = [bstat[::-1][x1], bstat[::-1][x2]]
-    pylab.fill_between(x, ymin, ymax, color=pylab.cm.Blues(sig / 8.0), zorder=-1)
-    
-    if sig == end:
-        sig = '%.1f' % sig
+if not args.closed_box:
+    for sig in [end, 4, 3, 2]:
+        p1 = (1 - p_from_sigma(sig)) / args.trials_factor
+        p2 = (1 - p_from_sigma(sig - 1)) /  args.trials_factor
         
-    pylab.text(bstat[::-1][x1] - .1, ymax, r"$%s \sigma$" % sig, fontsize=10)
+        x1 = numpy.searchsorted(fap[::-1], p1)
+        x2 = numpy.searchsorted(fap[::-1], p2)
+        
+        if x1 == x2:
+            continue
+        
+        ymin, ymax = pylab.gca().get_ylim()
+        try:
+            x = [bstat[::-1][x1], bstat[::-1][x2]]
+        except IndexError:
+            break
+        pylab.fill_between(x, ymin, ymax, color=pylab.cm.Blues(sig / 8.0), zorder=-1)
+        
+        if sig == end:
+            sig = '%.1f' % sig
+            
+        pylab.text(bstat[::-1][x1] - .1, ymax, r"$%s \sigma$" % sig, fontsize=10)
 
 ax1 =  pylab.gca()
 ax2 = ax1.twinx()
@@ -133,7 +141,7 @@ ax2.set_yscale('log')
 ax2.set_ylabel('Number per Experiment')
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
-     title="%s bin, Far vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank", 
+     title="%s bin, Count vs Rank" % f.attrs['name'] if 'name' in f.attrs else "Count vs Rank", 
      caption="Histogram of the FAR vs the ranking statistic in the search.",
      cmd=' '.join(sys.argv))
              
