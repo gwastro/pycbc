@@ -162,9 +162,9 @@ if not args.closed_box:
             sigmas = numpy.array([end, 4, 3, 2, 1])
             top = cstat_rate.max()
             for i in range(len(sigmas) - 1):
-                if sigmas[i] > end:
+                if sigmas[i+1] > end:
                     continue
-            
+
                 p1 = p_from_sigma(sigmas[i])
                 p2 = p_from_sigma(sigmas[i+1])
                                 
@@ -182,9 +182,9 @@ if not args.closed_box:
                 left = cstat_back[high < top].min()
                 
                 if sigmas[i] == end:
-                    pylab.text(left, top, r"\textbf{%1.1f $\sigma$}"  % sigmas[i], fontsize=8)
+                    pylab.text(left, top*1.05, r"\textbf{%1.1f $\sigma$}"  % sigmas[i], fontsize=8)
                 else:
-                    pylab.text(left, top, r"\textbf{%1.0f $\sigma$}"  % sigmas[i], fontsize=8) 
+                    pylab.text(left, top*1.05, r"\textbf{%1.0f $\sigma$}"  % sigmas[i], fontsize=8) 
 
         if args.not_cumulative:
             # add arrows to any points > the loudest background
@@ -288,6 +288,6 @@ figure_caption = figure_caption + "Orange diamonds (if present) represent trigge
 "coincident in the zero-lag data.",
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
-     title="%s bin, FAR vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank", 
+     title="%s bin, Cumulative Rate vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank", 
      caption=figure_caption,
      cmd=' '.join(sys.argv))
