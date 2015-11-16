@@ -179,12 +179,16 @@ with ctx:
     snrs, chisqs = [], []  
     raw_bins = [[] for b in range(chisq_bins)]
     
+    start_time = opt.gps_start_time + opt.segment_start_pad
+    end_time = opt.gps_end_time - opt.segment_end_pad
+
     if opt.window:
-        start_time = opt.trigger_time - opt.window
-        end_time = opt.trigger_time + opt.window
-    else:
-        start_time = opt.gps_start_time + opt.segment_start_pad
-        end_time = opt.gps_end_time - opt.segment_end_pad
+        start_time_wind = opt.trigger_time - opt.window
+        if start_time_wind > start_time:
+            start_time = start_time_wind
+        end_time_wind = opt.trigger_time + opt.window
+        if end_time_wind < end_time:
+            end_time = end_time_wind
                         
     for s_num, stilde in enumerate(segments):    
         start = stilde.epoch + stilde.analyze.start / float(opt.sample_rate)
