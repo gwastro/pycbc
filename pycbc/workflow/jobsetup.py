@@ -709,7 +709,7 @@ class PyCBCInspiralExecutable(Executable):
                  gate_files=None, tags=[]):
         super(PyCBCInspiralExecutable, self).__init__(cp, exe_name, None, ifo, out_dir, tags=tags)
         self.cp = cp
-        self.set_memory(2000)
+        self.set_memory(1920)
         self.injection_file = injection_file
         self.gate_files = gate_files
         
