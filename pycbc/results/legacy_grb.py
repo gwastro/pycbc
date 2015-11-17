@@ -658,7 +658,7 @@ def make_grb_segments_plot(ifos, science_segs, trigger_time, trigger_name,
         if ifo not in science_segs.keys():
             science_segs[ifo] = segments.segmentlist([])
 
-    extent = science_segs.union(ifos)[0]
+    extent = science_segs.union(ifos).extent()
 
     # Make plot
     fig, subs = plt.subplots(len(ifos), sharey=True)
@@ -668,31 +668,31 @@ def make_grb_segments_plot(ifos, science_segs, trigger_time, trigger_name,
         for seg in science_segs[ifo]:
             sub.add_patch(Rectangle((seg[0], 0.1), abs(seg), 0.8,
                                     facecolor=ifo_colors[ifo], edgecolor='none'))
-        
-        if len(science_segs[ifo]) > 0:
-            sub.plot([trigger_time, trigger_time], [0, 1], '-',
-                     c='orange')
-            if coherent_seg:
+        if coherent_seg:
+            if len(science_segs[ifo]) > 0 and \
+                    coherent_seg in science_segs[ifo]:
+                sub.plot([trigger_time, trigger_time], [0, 1], '-',
+                         c='orange')
                 sub.add_patch(Rectangle((coherent_seg[0], 0),
                                         abs(coherent_seg), 1, alpha=0.5,
                                         facecolor='orange', edgecolor='none'))
-            if fail_criterion:
-                sub.add_patch(Rectangle((fail_criterion[0], 0),
-                                        abs(fail_criterion), 1, alpha=0.5,
-                                        facecolor='red', edgecolor='none'))
-        else:
-            sub.plot([trigger_time, trigger_time], [0, 1], ':',
-                     c='orange')
-            if coherent_seg:
+            else:
+                sub.plot([trigger_time, trigger_time], [0, 1], ':',
+                         c='orange')
                 sub.plot([coherent_seg[0], coherent_seg[0]], [0, 1], '--',
                          c='orange', alpha=0.5)
                 sub.plot([coherent_seg[1], coherent_seg[1]], [0, 1], '--',
                          c='orange', alpha=0.5)
-            if fail_criterion:
-                sub.plot([fail_criterion[0], fail_criterion[0]], [0, 1], '--',
-                         c='red', alpha=0.5)
-                sub.plot([fail_criterion[1], fail_criterion[1]], [0, 1], '--',
-                         c='red', alpha=0.5)
+        if fail_criterion:
+            if len(science_segs[ifo]) > 0:
+                style_str = '--'
+            else:
+                style_str = '-'
+            sub.plot([trigger_time, trigger_time], [0, 1], ':k')
+            sub.plot([fail_criterion[0], fail_criterion[0]], [0, 1], style_str,
+                     c='black', alpha=0.5)
+            sub.plot([fail_criterion[1], fail_criterion[1]], [0, 1], style_str,
+                     c='black', alpha=0.5)
         
         sub.set_frame_on(False)
         sub.set_yticks([])
