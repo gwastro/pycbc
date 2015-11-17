@@ -143,8 +143,8 @@ Then configure the bootlader and install as usual:
 pyCBC binaries
 --------------
 
-To ensure that pyCBC is setup properly prior to running pyinstaller, first clean out
-the pip cache
+To ensure that pyCBC is set up properly prior to running pyinstaller, first
+clean out the pip cache
 
 .. code:: bash
 
@@ -182,14 +182,14 @@ Then ensure that the installation went as expected:
 The tag should match the one that was checked out and the repository status should
 report as ``CLEAN``.
 
-You're now ready to build the static executables.
+To build static executables:
 
 .. code:: bash
    cd tools/static
    bash build_dag.sh
 
 This will construct a condor dag with a pyinstaller job for each binary.
-Submit as usual
+Submit as usual:
 
 .. code:: bash
    condor_submit_dag build_static.dag
@@ -219,57 +219,50 @@ lalapps_inspinj
 ---------------
 
 This is the one C program from lalsuite that is still needed in the current
-workflow.  To build a static version follow the instructions for 
+workflow.  This almost never changes and so can usually be copied from a
+previous release.  If it does need to be rebuilt follow the instructions for
 installing lalsuite but configure with
 
 .. code:
     --enable-static-binaries --enable-static --disable-swig --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalpulsar --disable-framec
 
+Then ``make`` and ``make install`` as usual.  The static exexecutable will be placed in the 
+target ``bin`` directory.
 
 ----------------------
 Other lalapps programs
 ----------------------
 
+There are a few stochastic bank programs in lalsuite needed by pycbc.  These change infrequently and
+can usually be copied from a previous release.  If they do need to be rebuilt
 
-To build
+.. code::
+    cd /path/to/your/lalsuite
+    cd lalapps/src/inspiral/
 
-#. Do step 1
-#. Do ``step2 = fun`` in the PyCBC's setup.py file.
-#. Do step 3
+    for prog in \*sbank\*.py
+    do
+      pyinstaller ${prog}                          \
+        --hidden-import scipy.linalg.cython_blas   \
+        --hidden-import scipy.linalg.cython_lapack \
+        --hidden-import scipy.special._ufuncs_cxx  \
+        --hidden-import scipy.integrate            \
+        --strip                                    \
+        --onefile
+    done
+
+The resulting bundles will be placed in the ``dist`` directory.
 
 
-git clone git@code.pycbc.phy.syr.edu:ligo-cbc/pycbc-software.git
-mkdir -p pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090/
 
+----------------------
+Segment database tools
+----------------------
 
---
-pycbc_inspiral --version
+Client tools for the segment database change infrequently and can usually be
+copied from the previous release.  If they do need to be rebuilt
 
---
-
-
-## pyCBC
-
-Binaries from the pycbc package were built from the 1.2.5 tag, with latest commit:
-
-    commit 8dbe0cd79b2c5288ceba23173cb4b6366617ebc1
-    Merge: 8152c5d cc2b132
-    Author: Duncan Brown <dabrown@syr.edu>
-    Date:   Sat Oct 31 08:18:24 2015 -0400
-    
-        Merge pull request #543 from titodalcanton/fix_foundmissed_cli
-        
-        pycbc_page_foundmissed: fix missing distance choices
-    
-They were built by installing, running
-
-`build_dag.sh`
-
-from the tools/static directory, and then submitting the resulting dag.
-
-## Dqsegdb
-
-Client tools for the segment database were built from the dqsegdb-release-1-2-2 tag with 
+were built from the dqsegdb-release-1-2-2 tag with 
 
     pyinstaller ligolw_segment_query_dqsegdb --strip --onefile
     pyinstaller ligolw_segments_from_cats_dqsegdb --strip --onefile
