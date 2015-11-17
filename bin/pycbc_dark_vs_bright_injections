@@ -36,6 +36,8 @@ import pycbc.inject
 import pycbc.tmpltbank.em_progenitors
 import glue.ligolw.utils
 from glue.ligolw import lsctables
+from random import sample
+from copy import deepcopy
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('-i', dest='inj_xml', required=True, help='Input LIGOLW injections file.')
@@ -60,7 +62,9 @@ parser.add_argument("--frame-axis-view", action="store_true",
                   help="The x, y, z spin components are wrt the line of site.")
 parser.add_argument("-v", "--verbose", action="store_true", default=False,
                     help="Extended standard output.")
-
+parser.add_argument("-k", "--max-keep", type=int, default=None,
+                    help="Upper limit on the number of injections in the "
+                         "bright output file.")
 opts = parser.parse_args()
 
 log_fmt = '%(asctime)s %(message)s'
@@ -82,10 +86,11 @@ if opts.write_compress:
         output_bright = output_bright+'.gz'
 out_sim_inspiral_bright = lsctables.New(lsctables.SimInspiralTable,
                                  columns=injections.table.columnnames)
+if opts.max_keep is not None:
+    out_sim_inspiral_bright_trimmed = deepcopy(out_sim_inspiral_bright)
 # EM dim sources: table and name of the file that will store it
 output_dim = opts.output_dim
-out_sim_inspiral_dim = lsctables.New(lsctables.SimInspiralTable,
-                                 columns=injections.table.columnnames)
+out_sim_inspiral_dim = deepcopy(out_sim_inspiral_bright)
 if opts.write_compress:
     if not output_dim.endswith('gz'):
         output_dim = output_dim+'.gz'
@@ -142,18 +147,41 @@ for i, inj in enumerate(injections.table):
     else:
         out_sim_inspiral_dim.append(inj)
 
-logging.info('Found %d/%d (potentially) EM bright injections.  Storing them to %s.', len(out_sim_inspiral_bright), len(injections.table), output_bright)
-logging.info('Found %d/%d EM dim injections.  Storing them to %s.', len(out_sim_inspiral_dim), len(injections.table), output_dim)
+if opts.max_keep is not None and \
+        len(out_sim_inspiral_bright) > int(opts.max_keep):
+    out_sim_inspiral_bright_trimmed.extend(sample(out_sim_inspiral_bright,
+                                                  int(opts.max_keep)))
+    logging.info("Found %d/%d (potentially) EM bright injections. Trimming to "
+                 "keep only %d. Storing them to %s."
+                 % (len(out_sim_inspiral_bright), len(injections.table),
+                    len(out_sim_inspiral_bright_trimmed),
+                    output_bright))
+else:
+    logging.info("Found %d/%d (potentially) EM bright injections. Storing them"
+                 " to %s." % (len(out_sim_inspiral_bright),
+                              len(injections.table), output_bright))
+logging.info("Found %d/%d EM dim injections.  Storing them to %s."
+             % (len(out_sim_inspiral_dim), len(injections.table), output_dim))
 
 if opts.verbose:
     logging.info('Writing output')
 llw_doc = injections.indoc
 llw_root = llw_doc.childNodes[0]
 llw_root.removeChild(injections.table)
+if opts.max_keep is not None and \
+        len(out_sim_inspiral_bright) > int(opts.max_keep):
+    llw_root.appendChild(out_sim_inspiral_bright_trimmed)
+    glue.ligolw.utils.write_filename(llw_doc, output_bright,
+                                     gz=output_bright.endswith('gz'))
+    llw_root.removeChild(out_sim_inspiral_bright_trimmed)
+    output_bright = output_bright.replace("POTENTIALLY_BRIGHT",
+                                          "POTENTIALLY_BRIGHT_UNTRIMMED")
+    logging.info(output_bright)
 llw_root.appendChild(out_sim_inspiral_bright)
-glue.ligolw.utils.write_filename(llw_doc, output_bright, gz=output_bright.endswith('gz'))
+glue.ligolw.utils.write_filename(llw_doc, output_bright,
+                                 gz=output_bright.endswith('gz'))
 llw_root.removeChild(out_sim_inspiral_bright)
 llw_root.appendChild(out_sim_inspiral_dim)
-glue.ligolw.utils.write_filename(llw_doc, output_dim, gz=output_dim.endswith('gz'))
-
+glue.ligolw.utils.write_filename(llw_doc, output_dim,
+                                 gz=output_dim.endswith('gz'))
 logging.info('Done')
