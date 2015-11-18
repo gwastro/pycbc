@@ -20,8 +20,8 @@
 IFO=H1
 FRAME_TYPE=H1_R
 
-# get data file
-DATA_FILE=${PWD}/H1-HWINJ_CBC-1131174986-20.txt
+# get single-column ASCII file that contains h(t) time series
+DATA_FILE=`ls ${PWD}/H1-HWINJ_CBC-*-*.txt`
 
 # injection options
 SAMPLE_RATE=16384
