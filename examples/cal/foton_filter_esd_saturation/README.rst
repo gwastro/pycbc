@@ -1,5 +1,5 @@
 #################################################
-ESD Saturation Example
+ESD/PCAL Saturation Example
 #################################################
 
 .. contents::
@@ -12,9 +12,9 @@ Here we walkthrough an example of using the foton filtering module in pycbc. Thi
 
   examples/cal/foton_filter_esd_saturation
 
-We will generate h(t) for a CBC waveform and filter it will several filterbanks to get ETMY DAC counts.
+We will generate h(t) for a CBC waveform and filter it will several filterbanks to get ETMY DAC counts or PCAL counts.
 
-This example should be run at either the LLO or LHO cluster.
+This example should be run at either the CIT, LLO, or LHO cluster.
 
 =================================================
 Add ROOT and foton to pycbc installation
@@ -110,7 +110,7 @@ An example command is ::
 The output files will be written to ``${PWD}/esd_output/``. It will contain a single-column ASCII file after each stage of filtering. The final time series will contain ``*ETMY_L3_ESDOUTF_LL*``.
 
 =================================================
-Plotting the output
+Plotting the ESD saturation output
 =================================================
 
 In the example directory (``examples/cal/foton_filter_esd_saturation``) there is a script to use gwpy to make some plots of the output; the script is called ``gwpy_plot_hwinj``. The script ``gwpy_plot_hwinj`` will plot a timeseries and a spectrogram.
@@ -151,3 +151,9 @@ If you have an X11 session open then you can use the interactive hardware inject
 
   INPUT_FILE=`ls esd_output/${IFO}-FILTER_ETMY_L3_ESDOUTF_LL-*.txt`
   pycbc_plot_hwinj ${INPUT_FILE}
+
+=================================================
+Run the PCAL saturation script
+=================================================
+
+In the example directory (``examples/cal/foton_filter_esd_saturation``) there is a bash script called ``pycbc_check_pcal_saturation.sh``. This script will filter the waveform will the PCAL inverse actuation filter. There is a script called ``run_pcal_saturation_example.sh`` that shows how to use the ``pycbc_check_pcal_saturation.sh`` executable.
