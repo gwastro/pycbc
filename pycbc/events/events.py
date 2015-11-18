@@ -1022,7 +1022,7 @@ class EventManagerMultiDet(EventManager):
         # Create coinc_definer table
         coinc_def_row = glue.ligolw.lsctables.CoincDef()
         coinc_def_row.search = "inspiral"
-        coinc_def_row.description = "sngl_inspiral-sngl_inspiral coincidences"
+        coinc_def_row.description = "sngl_inspiral<-->sngl_inspiral coincidences"
         coinc_def_row.coinc_def_id = coinc_def_id
         coinc_def_row.search_coinc_type = 0
         coinc_def_table.append(coinc_def_row)

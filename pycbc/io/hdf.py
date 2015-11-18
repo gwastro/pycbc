@@ -538,7 +538,7 @@ class ForegroundTriggers(object):
         coinc_def_id = lsctables.CoincDefID(0)
         coinc_def_row = lsctables.CoincDef()
         coinc_def_row.search = "inspiral"
-        coinc_def_row.description = "sngl_inspiral-sngl_inspiral coincidences"
+        coinc_def_row.description = "sngl_inspiral<-->sngl_inspiral coincidences"
         coinc_def_row.coinc_def_id = coinc_def_id
         coinc_def_row.search_coinc_type = 0
         coinc_def_table.append(coinc_def_row)
