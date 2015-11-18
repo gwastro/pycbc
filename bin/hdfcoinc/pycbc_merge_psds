@@ -63,4 +63,5 @@ for ifo in start:
     outf[ifo + '/end_time'] = numpy.array(end[ifo], dtype=numpy.uint32)
 
 outf.attrs['low_frequency_cutoff'] = f.attrs['low_frequency_cutoff']
+outf.attrs['dynamic_range_factor'] = pycbc.DYN_RANGE_FAC
 logging.info('Done!')
