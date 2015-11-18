@@ -122,6 +122,7 @@ for gpsd in psds:
 f[ifo + '/start_time'] = numpy.array(start, dtype=numpy.uint32)
 f[ifo + '/end_time'] = numpy.array(end, dtype=numpy.uint32)
 f.attrs['low_frequency_cutoff'] = args.low_frequency_cutoff
+f.attrs['dynamic_range_factor'] = pycbc.DYN_RANGE_FAC
 
 logging.info('Done!')
 
