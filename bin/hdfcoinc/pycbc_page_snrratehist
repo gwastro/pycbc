@@ -38,14 +38,17 @@ if args.verbose:
 logging.info('Read in the data')
 f = h5py.File(args.trigger_file, 'r')
 
-try:
-    fstat = f['foreground/stat'][:]
-    fstat.sort()
-except:
+if args.closed_box:
     fstat = None
+else:
+    try:
+        fstat = f['foreground/stat'][:]
+        fstat.sort()
+    except:
+        fstat = None
+    if len(fstat) == 0:
+        fstat = None
 
-if len(fstat) == 0:
-    fstat = None
 
 dec = f['background/decimation_factor'][:]
 bstat = f['background/stat'][:]
@@ -68,6 +71,9 @@ fig = pylab.figure()
 if fstat is not None:
     minimum = fstat.min()
     maximum = max(fstat.max(), bstat.max())
+elif args.closed_box:
+    minimum = bstat_exc.min()
+    maximum = bstat_exc.max()
 else:
     minimum = bstat.min()
     maximum = bstat.max()
@@ -96,12 +102,12 @@ if fstat is not None and not args.closed_box:
     count = (right - left) / f.attrs['foreground_time'] * lal.YRJUL_SI
     pylab.errorbar(bins[:-1] + args.bin_size / 2, count,
                    xerr=args.bin_size/2, label='Foreground',
-                   fmt='o', ms=1, capthick=0, elinewidth=4,  color='#ff6600')
+                   mec='none', fmt='o', ms=1, capthick=0, elinewidth=4,  color='#ff6600')
 
 pylab.xlabel('Weighted Network SNR, $\\rho_c$ (Bin Size = %.2f)' % args.bin_size)
-pylab.ylabel('Trigger Rate $(yr^{-1})$')
+pylab.ylabel('Trigger Rate (yr$^{-1})$')
 pylab.xlim(xmin=args.x_min)
-pylab.ylim(ymin=1.0 / f.attrs['background_time_exc'] * lal.YRJUL_SI)
+pylab.ylim(ymin=0.5 / f.attrs['background_time_exc'] * lal.YRJUL_SI)
 pylab.grid()
 leg = pylab.legend(loc='upper center', fontsize=9)
 
