@@ -7,7 +7,7 @@ This ignores the SNR ration and SNR magnitude at the moment and only takes
 into account the integrated phase and time differences.
 """
 
-import argparse, h5py, numpy.random, pycbc.detector
+import argparse, h5py, numpy.random, pycbc.detector, logging, multiprocessing
 from numpy.random import normal, uniform
 
 parser = argparse.ArgumentParser()
@@ -17,12 +17,17 @@ parser.add_argument('--snr-threshold', type=float)
 parser.add_argument('--coinc-threshold', type=float)
 parser.add_argument('--sample-rate', type=int, default=4096)
 parser.add_argument('--output-file')
+parser.add_argument('--cores', default=1, type=int)
+parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
 numpy.random.seed(seed=124)
 d1 = pycbc.detector.Detector(str(args.ifos[0]))
 d2 = pycbc.detector.Detector(str(args.ifos[1]))
 
+pycbc.init_logging(args.verbose)
+
 def generate_samples(size):
+    logging.info('generating %s samples' % size)
     # Choose random sky location and polarizations
     ra = uniform(0, 2 * numpy.pi, size=size)
     dec = numpy.arccos(uniform(-1., 1., size=size)) - numpy.pi/2
@@ -67,34 +72,44 @@ def generate_samples(size):
     phase_diff = (numpy.arctan2(sp1, sc1) - numpy.arctan2(sp2, sc2))
     ratio = numpy.log(s1 / s2)
     mag = (s1**2.0 + s2**2.0)**0.5
+    
+    logging.info('keeping %s samples ' % len(ratio))
     return mag, ratio, td, phase_diff
 
-chunk = 10000
-num = 0
+chunk = 20000
 ms, rs, ts, ps = [], [], [], []
-while num < args.sample_size:
-    m, r, t, p = generate_samples(chunk)
+
+chunks = int(args.sample_size / chunk) + 1
+chunk_data = [chunk] * chunks
+
+pool = multiprocessing.Pool(args.cores)
+
+results = pool.map(generate_samples, chunk_data)
+
+for m, r, t, p in results:
     ms.append(m)
     rs.append(r)
     ts.append(t)
     ps.append(p)
-    num += len(m)
-    print num
- 
+
 mag = numpy.concatenate(ms)
 ratio = numpy.concatenate(rs)
 td = numpy.concatenate(ts)
 phase_diff = numpy.concatenate(ps)   
 
-
 tbins = numpy.arange(min(td), max(td) + 1.0/args.sample_rate, 1.0/args.sample_rate)
 pbins = numpy.arange(-2.0 * numpy.pi, 2.0 * numpy.pi + 0.05, 4.0 * numpy.pi / 200)
-h, d = numpy.histogramdd((td, phase_diff), bins=(tbins, pbins))
+rbins = numpy.arange(-5, 5, .5)
+mbins = numpy.logspace(numpy.log(mag.min()), numpy.log(mag.max()), num=25, base=numpy.e)
+
+h, d = numpy.histogramdd((td, phase_diff, ratio, mag), bins=(tbins, pbins, rbins, mbins))
 f = h5py.File(args.output_file, 'w')
 
 f['map'] = h
 f['tbins'] = tbins
 f['pbins'] = pbins
+f['rbins'] = rbins
+f['mbins'] = mbins
 f.attrs['ifo0'] = args.ifos[0]
 f.attrs['ifo1'] = args.ifos[1]
 f.attrs['stat'] = "phasetd_newsnr"
