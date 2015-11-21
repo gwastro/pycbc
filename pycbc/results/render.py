@@ -123,9 +123,11 @@ def render_default(path, cp):
 
     if path.endswith('.xml') or path.endswith('.xml.gz'):
         # segment or veto file return a segmentslistdict instance
-        if 'SEG' in path or 'VETO' in path:
-            with open(path, 'r') as xmlfile:
+        with open(path, 'r') as xmlfile:
+            try:
                 content = fromsegmentxml(xmlfile, return_dict=True)
+            except ValueError:
+                pass
 
     # render template
     template_dir = pycbc.results.__path__[0] + '/templates/files'
