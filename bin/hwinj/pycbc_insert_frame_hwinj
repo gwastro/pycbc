@@ -41,6 +41,10 @@ parser.add_argument('--ifo', type=str, required=True,
 parser.add_argument('--output-file', type=str, required=True,
              help='Path to output frame file.')
 
+# fake data options
+parser.add_argument('--low-frequency-cutoff', type=int, required=False,
+             help='Low-frequency cutoff for generating fake PSD.')
+
 # add option groups
 _strain.insert_strain_option_group(parser)
 
