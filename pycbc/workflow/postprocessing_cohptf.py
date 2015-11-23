@@ -155,6 +155,11 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
 
     # Set up trig_combiner job
     trig_combiner_out_tags = ["OFFSOURCE", "ONSOURCE", "ALL_TIMES"]
+    if all("COHERENT_NO_INJECTIONS" in t.name for t in trig_files) and \
+            cp.has_option_tag("inspiral", "do-short-slides",
+                              "coherent_no_injections"):
+        trig_combiner_out_tags.extend(["ZEROLAG_OFF", "ZEROLAG_ALL"])
+    
     trig_combiner_jobs = trig_combiner_class(cp, "trig_combiner", ifo=ifos, 
                                              out_dir=output_dir, tags=tags)
     trig_combiner_node, trig_combiner_outs = trig_combiner_jobs.create_node(\
@@ -261,8 +266,8 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
 
     # Add trig_cluster jobs and their corresponding plotting jobs
     for out_tag in trig_combiner_out_tags:
-        unclust_file = [file for file in trig_combiner_outs \
-                        if out_tag in file.tag_str][0]
+        unclust_file = [f for f in trig_combiner_outs \
+                        if out_tag in f.tag_str][0]
         trig_cluster_node, curr_outs = trig_cluster_jobs.create_node(\
                 unclust_file)
         trig_cluster_outs.extend(curr_outs)
@@ -379,8 +384,8 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
 
     while trial <= num_trials:
         trial_tag = "OFFTRIAL_%d" % trial
-        unclust_file = [file for file in trig_combiner_outs \
-                        if trial_tag in file.tag_str][0]
+        unclust_file = [f for f in trig_combiner_outs \
+                        if trial_tag in f.tag_str][0]
         trig_cluster_node, clust_outs = trig_cluster_jobs.create_node(\
                 unclust_file)
         clust_file = clust_outs[0]

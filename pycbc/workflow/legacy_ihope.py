@@ -354,6 +354,11 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
 
         num_trials = int(self.cp.get("trig_combiner", "num-trials"))
         trig_name = self.cp.get('workflow', 'trigger-name')
+        if all("COHERENT_NO_INJECTIONS" in t.name for t in trig_files) and \
+                self.cp.has_option_tag('inspiral', 'do-short-slides',
+                                       'coherent_no_injections'):
+            node.add_opt('--short-slides')
+        
         node.add_opt('--grb-name', trig_name)
         
         node.add_opt('--pad-data', pad_data)
@@ -374,7 +379,6 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
                             directory=self.out_dir, extension='xml.gz',
                             tags=["GRB%s" % trig_name, out_tag],
                             store_file=self.retain_files)
-            #out_file.PFN(out_file.cache_entry.path, site="local")
             out_files.append(out_file)
 
         for trial in range(1, num_trials + 1):
@@ -382,7 +386,6 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
                             directory=self.out_dir, extension='xml.gz',
                             tags=["GRB%s" % trig_name, "OFFTRIAL_%d" % trial],
                             store_file=self.retain_files)
-            #out_file.PFN(out_file.cache_entry.path, site="local")
             out_files.append(out_file)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
