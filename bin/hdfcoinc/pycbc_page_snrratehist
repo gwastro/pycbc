@@ -114,9 +114,17 @@ leg = pylab.legend(loc='upper center', fontsize=9)
 end = sigma_from_p(fap.min() * args.trials_factor)
 
 if not args.closed_box:
-    for sig in [end, 4, 3, 2]:
-        p1 = (1 - p_from_sigma(sig)) / args.trials_factor
-        p2 = (1 - p_from_sigma(sig - 1)) /  args.trials_factor
+    sigmas = [end, 4, 3, 2]
+    for i in range(len(sigmas)):
+        sig = sigmas[i]
+
+        if (i < len(sigmas) - 1):
+            sig_p = sigmas[i + 1]
+        else:
+            sig_p = sig - 1
+
+        p1 = (1 - p_from_sigma(sigmas[i])) / args.trials_factor
+        p2 = (1 - p_from_sigma(sig_p)) /  args.trials_factor
         
         x1 = numpy.searchsorted(fap[::-1], p1)
         x2 = numpy.searchsorted(fap[::-1], p2)
