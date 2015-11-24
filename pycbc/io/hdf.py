@@ -261,8 +261,13 @@ class SingleDetTriggers(object):
         logging.info('Loading triggers')
         self.trigs_f = h5py.File(trig_file, 'r')
         self.trigs = self.trigs_f[detector]
-        logging.info('Loading bank')
-        self.bank = h5py.File(bank_file, 'r')
+        if bank_file:
+            logging.info('Loading bank')
+            self.bank = h5py.File(bank_file, 'r')
+        else:
+            logging.info('No bank file given')
+            # empty dict in place of non-existent hdf file
+            self.bank = {}
 
         if veto_file:
             logging.info('Applying veto segments')
@@ -301,9 +306,14 @@ class SingleDetTriggers(object):
         else:
             self.mask = self.veto_mask
 
+    def checkbank(self, param):
+        if self.bank == {}:
+            return RuntimeError("Can't get %s values without a bank file" 
+                                                                       % param)
+
     @classmethod
     def get_param_names(cls):
-        "Returns a list of plottable CBC parameter variables."
+        """Returns a list of plottable CBC parameter variables"""
         return [m[0] for m in inspect.getmembers(cls) \
             if type(m[1]) == property]
 
@@ -349,18 +359,22 @@ class SingleDetTriggers(object):
 
     @property
     def mass1(self):
+        self.checkbank('mass1')
         return np.array(self.bank['mass1'])[self.template_id]
 
     @property
     def mass2(self):
+        self.checkbank('mass2')
         return np.array(self.bank['mass2'])[self.template_id]
 
     @property
     def spin1z(self):
+        self.checkbank('spin1z')
         return np.array(self.bank['spin1z'])[self.template_id]
 
     @property
     def spin2z(self):
+        self.checkbank('spin2z')
         return np.array(self.bank['spin2z'])[self.template_id]
 
     @property
