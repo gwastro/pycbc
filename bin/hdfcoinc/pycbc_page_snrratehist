@@ -114,18 +114,13 @@ leg = pylab.legend(loc='upper center', fontsize=9)
 end = sigma_from_p(fap.min() * args.trials_factor)
 
 if not args.closed_box:
-    sigmas = [end, 4, 3, 2]
-    for i in range(len(sigmas)):
-        sig = sigmas[i]
+    sigmas = [1, 2, 3, 4, end]
+    for ii, sig in enumerate(sigmas[:-1]):
+        next_sig = sigmas[ii + 1]
 
-        if (i < len(sigmas) - 1):
-            sig_p = sigmas[i + 1]
-        else:
-            sig_p = sig - 1
+        p1 = 1 - p_from_sigma(sig) / args.trials_factor
+        p2 = 1 - p_from_sigma(next_sig) / args.trials_factor        
 
-        p1 = (1 - p_from_sigma(sigmas[i])) / args.trials_factor
-        p2 = (1 - p_from_sigma(sig_p)) /  args.trials_factor
-        
         x1 = numpy.searchsorted(fap[::-1], p1)
         x2 = numpy.searchsorted(fap[::-1], p2)
         
@@ -137,12 +132,12 @@ if not args.closed_box:
             x = [bstat[::-1][x1], bstat[::-1][x2]]
         except IndexError:
             break
-        pylab.fill_between(x, ymin, ymax, color=pylab.cm.Blues(sig / 8.0), zorder=-1)
+        pylab.fill_between(x, ymin, ymax, color=pylab.cm.Blues(next_sig / 8.0), zorder=-1)
         
-        if sig == end:
-            sig = '%.1f' % sig
+        if next_sig == end:
+            next_sig = '%.1f' % next_sig
             
-        pylab.text(bstat[::-1][x1] - .1, ymax, r"$%s \sigma$" % sig, fontsize=10)
+        pylab.text(bstat[::-1][x2] - .1, ymax, r"$%s \sigma$" % next_sig, fontsize=10)
 
 ax1 =  pylab.gca()
 ax2 = ax1.twinx()
