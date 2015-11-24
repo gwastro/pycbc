@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 # where to run the executables
-RUN_DIR=./esd_output
+RUN_DIR=./pcal_output
 
 # default option values
 DATA_FILE=""
@@ -26,8 +26,7 @@ GPS_END_TIME=""
 IFO=""
 FRAME_TYPE=""
 SAMPLE_RATE=16384
-CALCS_FILTER_FILE=""
-SUS_FILTER_FILE=""
+CALEX_FILTER_FILE=""
 
 # parse command line
 GETOPT_CMD=`getopt -o d:c:a:F:h:l --long data-file:,gps-start-time:,gps-end-time:,ifo:,frame-type:,sample-rate:,calcs-filter-file:,sus-filter-file:,help -n 'pycbc_check_esd_saturation.sh' -- "$@"`
@@ -64,15 +63,10 @@ while true ; do
         "") shift 2 ;;
         *) SAMPLE_RATE=$2 ; shift 2 ;;
       esac ;;
-    -s|--sus-filter-file)
-      case "$2" in
-        "") shift 2 ;;
-        *) SUS_FILTER_FILE=$2 ; shift 2 ;;
-      esac ;;
     -c|--calcs-filter-file)
       case "$2" in
         "") shift 2 ;;
-        *) CALCS_FILTER_FILE=$2 ; shift 2 ;;
+        *) CALEX_FILTER_FILE=$2 ; shift 2 ;;
       esac ;;
     -h|--help)
       echo "usage: pycbc_check_esd_saturation.sh [-h] [--options]"
@@ -84,8 +78,7 @@ while true ; do
       echo "  -i, --ifo IFO                                   IFO, eg. H1 or L1"
       echo "  -f, --frame-type FRAME_TYPE                     frame type that has SWSTAT and GAIN channels"
       echo "  -r, --sample-rate SAMPLE_RATE                   sample rate of the input file"
-      echo "  -s, --sus-filter-file SUS_FILTER_FILE           path to SUSETMY.txt"
-      echo "  -c, --calcs-filter-file CALCS_FILTER_FILE       path to CALCS.txt"
+      echo "  -c, --calcs-filter-file CALEX_FILTER_FILE       path to CALEX.txt"
       echo
       echo "Filter a single-column ASCII file to see if it saturates the ETMY DAC."
       echo
@@ -115,37 +108,7 @@ cd ${RUN_DIR}
 
 # filter with CAL-INJ_HARDWARE
 MODEL_NAME=CAL
-FILTERBANK_NAME=INJ_HARDWARE
+FILTERBANK_NAME=PINJX_HARDWARE
 #DATA_FILE=`ls /home/cbiwer/src/pycbc_foton_dev/examples/cal/foton_filter_INJ_BLIND/hwinj/${IFO}-HWINJ_CBC-*-*.txt`
 OUTPUT_FILE=${IFO}-FILTER_${FILTERBANK_NAME}-${GPS_START_TIME}.txt
-python ${EXE_DIR}/pycbc_foton_filter --filterbank-ignore-off --model-name ${MODEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --filterbank-name ${FILTERBANK_NAME} --data-file ${DATA_FILE} --filter-file ${CALCS_FILTER_FILE} --output-file ${OUTPUT_FILE} --sample-rate ${SAMPLE_RATE} --frame-type ${FRAME_TYPE} --ifo ${IFO}
-
-# filter with SUS-ETMY_L3_LOCK_L
-MODEL_NAME=SUS
-FILTERBANK_NAME=ETMY_L3_LOCK_L
-DATA_FILE=${OUTPUT_FILE}
-OUTPUT_FILE=${IFO}-FILTER_${FILTERBANK_NAME}-${GPS_START_TIME}.txt
-python ${EXE_DIR}/pycbc_foton_filter --filterbank-ignore-off --model-name ${MODEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --filterbank-name ${FILTERBANK_NAME} --data-file ${DATA_FILE} --filter-file ${SUS_FILTER_FILE} --output-file ${OUTPUT_FILE} --sample-rate ${SAMPLE_RATE} --frame-type ${FRAME_TYPE} --ifo ${IFO}
-
-# filter with SUS-ETMY_L3_DRIVEALIGN_L2L
-MODEL_NAME=SUS
-FILTERBANK_NAME=ETMY_L3_DRIVEALIGN_L2L
-DATA_FILE=${OUTPUT_FILE}
-OUTPUT_FILE=${IFO}-FILTER_${FILTERBANK_NAME}-${GPS_START_TIME}.txt
-python ${EXE_DIR}/pycbc_foton_filter --filterbank-ignore-off --model-name ${MODEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --filterbank-name ${FILTERBANK_NAME} --data-file ${DATA_FILE} --filter-file ${SUS_FILTER_FILE} --output-file ${OUTPUT_FILE} --sample-rate ${SAMPLE_RATE} --frame-type ${FRAME_TYPE} --ifo ${IFO}
-
-# apply matrix element SUS-ETMY_L3_EUL2ESD_2_1
-MODEL_NAME=SUS
-MTRX_ELEMENT_NAME=ETMY_L3_EUL2ESD_2_1
-GAIN_CHANNEL_NAME=${IFO}:${MODEL_NAME}-${MTRX_ELEMENT_NAME}
-DATA_FILE=${OUTPUT_FILE}
-OUTPUT_FILE=${IFO}-MTRX_${MTRX_ELEMENT_NAME}-${GPS_START_TIME}.txt
-python ${EXE_DIR}/pycbc_foton_filter --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --gain-channel-name ${GAIN_CHANNEL_NAME} --data-file ${DATA_FILE} --output-file ${OUTPUT_FILE} --frame-type ${FRAME_TYPE} --sample-rate ${SAMPLE_RATE} --ifo ${IFO}
-
-# filter with SUS-ETMY_L3_ESDOUTF_LL
-MODEL_NAME=SUS
-FILTERBANK_NAME=ETMY_L3_ESDOUTF_LL
-DATA_FILE=${OUTPUT_FILE}
-OUTPUT_FILE=${IFO}-FILTER_${FILTERBANK_NAME}-${GPS_START_TIME}.txt
-python ${EXE_DIR}/pycbc_foton_filter --filterbank-ignore-off --model-name ${MODEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --filterbank-name ${FILTERBANK_NAME} --data-file ${DATA_FILE} --filter-file ${SUS_FILTER_FILE} --output-file ${OUTPUT_FILE} --sample-rate ${SAMPLE_RATE} --frame-type ${FRAME_TYPE} --ifo ${IFO}
-
+python ${EXE_DIR}/pycbc_foton_filter --filterbank-ignore-off --model-name ${MODEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --filterbank-name ${FILTERBANK_NAME} --data-file ${DATA_FILE} --filter-file ${CALEX_FILTER_FILE} --output-file ${OUTPUT_FILE} --sample-rate ${SAMPLE_RATE} --frame-type ${FRAME_TYPE} --ifo ${IFO}
