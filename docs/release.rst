@@ -234,7 +234,7 @@ Other lalapps programs
 ----------------------
 
 There are a few stochastic bank programs in lalsuite needed by pycbc.  These change infrequently and
-can usually be copied from a previous release.  If they do need to be rebuilt
+can usually be copied from a previous release.  If they do need to be rebuilt the process is:
 
 .. code::
     cd /path/to/your/lalsuite
@@ -260,7 +260,8 @@ Segment database tools
 ----------------------
 
 Client tools for the segment database change infrequently and can usually be
-copied from the previous release.  If they do need to be rebuilt
+copied from the previous release.  If they do need to be rebuilt the process is
+
 
 were built from the dqsegdb-release-1-2-2 tag with 
 
@@ -270,7 +271,8 @@ were built from the dqsegdb-release-1-2-2 tag with
 
 ## lalapps
 
-The lalapps_*_sbank* binaries were built from the lalsuite_o1_branch branch with
+The lalapps_*_sbank* binaries were built from version 6.36 of the
+lalsuite_o1_branch branch with
 
     pyinstaller ${prog}                          \
       --hidden-import scipy.linalg.cython_blas   \
@@ -279,7 +281,6 @@ The lalapps_*_sbank* binaries were built from the lalsuite_o1_branch branch with
       --hidden-import scipy.integrate            \
       --strip                                    \
       --onefile
-
 
 lalapps_inspinj was built by a standard lalsuite install with options
 
