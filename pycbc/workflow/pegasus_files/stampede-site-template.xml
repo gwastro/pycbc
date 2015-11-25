@@ -6,7 +6,7 @@
     <profile namespace="condor" key="should_transfer_files">YES</profile>
     <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
     <profile namespace="condor" key="Requirements">GLIDEIN_Site=?="Stampede"</profile>
-    <profile namespace="env" key="PATH">/scratch/projects/xsede/globus-6.0/sbin:/scratch/projects/xsede/globus-6.0/bin</profile>
+    <profile namespace="env" key="PATH">/scratch/projects/xsede/globus-6.0/sbin:/scratch/projects/xsede/globus-6.0/bin:/opt/apps/xalt/0.6/bin:/opt/apps/intel15/mvapich2/2.1/bin:/opt/apps/intel/15/composer_xe_2015.2.164/bin/intel64:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/opt/apps/xsede/gsi-openssh-5.7/bin:/usr/X11R6/bin:/opt/ofed/bin:/opt/ofed/sbin:/opt/dell/srvadmin/bin</profile>
     <profile namespace="env" key="LD_LIBRARY_PATH">/scratch/projects/xsede/globus-6.0/lib:/scratch/projects/xsede/globus-6.0/lib64</profile>
     <profile namespace="env" key="X509_CERT_DIR">/home1/02597/bbockelm/certificates</profile>
     <profile namespace="env" key="LAL_DATA_PATH">/scratch/01858/larne/lal-data/lalsimulation</profile>
