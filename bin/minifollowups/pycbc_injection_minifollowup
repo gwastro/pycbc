@@ -149,6 +149,20 @@ for num_event in range(num_events):
                             tags=args.tags+['INJ_PARAMS',str(num_event)],
                             params_str='injection parameters.')
 
+    files += mini.make_single_template_plots(workflow, insp_segs,
+                            args.inspiral_segment_name, inj_params,
+                            args.output_dir, inj_file=injection_xml_file,
+                            tags=args.tags+['INJ_PARAMS_INVERTED',
+                                            str(num_event)],
+                            params_str='injection parameters inverted.')
+
+    files += mini.make_single_template_plots(workflow, insp_segs,
+                            args.inspiral_segment_name, inj_params,
+                            args.output_dir,
+                            tags=args.tags+['INJ_PARAMS_NOINJ',
+                                            str(num_event)],
+                            params_str='injection parameters, no injection.')
+
     for curr_ifo in args.single_detector_triggers:
         single_fname = args.single_detector_triggers[curr_ifo]
         hd_sngl = SingleDetTriggers(single_fname, args.bank_file, None, None,
