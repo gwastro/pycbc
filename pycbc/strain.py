@@ -171,12 +171,14 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if opt.injection_file:
             logging.info("Applying injections")
             injections = InjectionSet(opt.injection_file)
-            injections.apply(strain, opt.channel_name[0:2])
+            injections.apply(strain, opt.channel_name[0:2],
+                             distance_scale=opt.injection_scale_factor)
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
             injections = SGBurstInjectionSet(opt.sgburst_injection_file)
-            injections.apply(strain, opt.channel_name[0:2])
+            injections.apply(strain, opt.channel_name[0:2],
+                             distance_scale=opt.injection_scale_factor)
 
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
@@ -243,12 +245,14 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if opt.injection_file:
             logging.info("Applying injections")
             injections = InjectionSet(opt.injection_file)
-            injections.apply(strain, opt.channel_name[0:2])
+            injections.apply(strain, opt.channel_name[0:2],
+                             distance_scale=opt.injection_scale_factor)
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
             injections = SGBurstInjectionSet(opt.sgburst_injection_file)
-            injections.apply(strain, opt.channel_name[0:2])
+            injections.apply(strain, opt.channel_name[0:2],
+                             distance_scale=opt.injection_scale_factor)
 
         if precision == 'single':
             logging.info("Converting to float32")
@@ -348,6 +352,10 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
                       help="(optional) Injection file used to add "
                       "sine-Gaussian burst waveforms into the strain")
+
+    data_reading_group.add_argument("--injection-scale-factor", type=float,
+                    default=1, help="Multiple injections by this factor "
+                    "before injecting into the data.")
 
     data_reading_group.add_argument("--gating-file", type=str,
                     help="(optional) Text file of gating segments to apply."
@@ -478,6 +486,12 @@ def insert_strain_option_group_multi_ifo(parser):
                       metavar='IFO:FILE',
                       help="(optional) Injection file used to add "
                       "sine-Gaussian burst waveforms into the strain")
+
+    data_reading_group.add_argument("--injection-scale-factor", type=float,
+                    nargs="+", action=MultiDetOptionAction, metavar="IFO:VAL",
+                    default=1.,
+                    help="Multiple injections by this factor "
+                         "before injecting into the data.")
 
     data_reading_group.add_argument("--gating-file", type=str,
                       nargs="+", action=MultiDetOptionAction,
