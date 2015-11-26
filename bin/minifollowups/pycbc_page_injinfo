@@ -48,7 +48,7 @@ labels = {
     'eff_dist_h'    : 'D<sub>eff</sub>&nbsp;H',
     'eff_dist_l'    : 'D<sub>eff</sub>&nbsp;L',
     'mass1'      : 'm<sub>1</sub>',
-    'mass2'      : 'm<sub>1</sub>',
+    'mass2'      : 'm<sub>2</sub>',
     'mchirp'     : 'M<sub>c</sub>',
     'eta'        : '&eta;',
     'longitude'  : 'RA',
