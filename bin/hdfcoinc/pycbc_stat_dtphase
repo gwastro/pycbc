@@ -82,9 +82,11 @@ ms, rs, ts, ps = [], [], [], []
 chunks = int(args.sample_size / chunk) + 1
 chunk_data = [chunk] * chunks
 
-pool = multiprocessing.Pool(args.cores)
-
-results = pool.map(generate_samples, chunk_data)
+if args.cores == 1:
+    results = map(generate_samples, chunk_data)
+else:
+    pool = multiprocessing.Pool(args.cores)
+    results = pool.map(generate_samples, chunk_data)
 
 for m, r, t, p in results:
     ms.append(m)
@@ -98,9 +100,14 @@ td = numpy.concatenate(ts)
 phase_diff = numpy.concatenate(ps)   
 
 tbins = numpy.arange(min(td), max(td) + 1.0/args.sample_rate, 1.0/args.sample_rate)
-pbins = numpy.arange(-2.0 * numpy.pi, 2.0 * numpy.pi + 0.05, 4.0 * numpy.pi / 200)
-rbins = numpy.arange(-5, 5, .5)
-mbins = numpy.logspace(numpy.log(mag.min()), numpy.log(mag.max()), num=25, base=numpy.e)
+pbins = numpy.arange(-2.0 * numpy.pi, 2.0 * numpy.pi + 0.05, 4.0 * numpy.pi / 100)
+rbins = numpy.arange(-5, 5, .3)
+mbins = numpy.logspace(numpy.log(mag.min()), numpy.log(mag.max()), num=50, base=numpy.e)
+
+print tbins
+print pbins
+print rbins
+print mbins
 
 h, d = numpy.histogramdd((td, phase_diff, ratio, mag), bins=(tbins, pbins, rbins, mbins))
 f = h5py.File(args.output_file, 'w')
