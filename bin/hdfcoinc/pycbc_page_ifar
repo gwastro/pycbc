@@ -54,15 +54,19 @@ parser.add_argument('--decimation-factor', type=int, required=True,
                           'Decimation factor means that every nth time' 
                           'slide kept all of its coincident triggers in' 
                           'the HDF file.')
+parser.add_argument('--closed-box', action='store_true', default=False,
+                    help='Do not show any foreground triggers. '
+                          'Background only.')
 opts = parser.parse_args()
 
 # read file
 fp = h5py.File(opts.trigger_file, 'r')
 
 # get foreground IFAR values and cumulative number for each IFAR value
-fore_ifar = fp['foreground/ifar'][:]
-fore_ifar.sort()
-fore_cumnum = numpy.arange(len(fore_ifar), 0, -1)
+if not opts.closed_box:
+    fore_ifar = fp['foreground/ifar'][:]
+    fore_ifar.sort()
+    fore_cumnum = numpy.arange(len(fore_ifar), 0, -1)
 
 # get expected foreground IFAR values and cumulative number for each IFAR value
 expected_ifar = numpy.logspace(-8, 2, num=100, endpoint=True, base=10.0)
@@ -78,6 +82,58 @@ l1_segments = segments.segmentlist([segments.segment(s,e) for s,e in zip(fp['seg
 
 # make figure
 fig = pylab.figure(1)
+
+# get a unique list of timeslide_ids and loop over them
+min_tsid = numpy.ceil(back_tsid.min() / float(opts.decimation_factor))
+max_tsid = int(back_tsid.max() / opts.decimation_factor)
+tsids = numpy.arange(min_tsid, max_tsid, 1).astype(numpy.int64) * opts.decimation_factor
+
+allbkg_dur = 0
+allbkg_ifars = []
+empty_slide_count = 0
+plotted_slide_count = 0
+
+for tsid in tsids:
+    if tsid == 0:
+        continue
+
+    # find all triggers in this time slide
+    ts_indx = numpy.where(back_tsid == tsid)
+
+    # calculate the amount of coincident time in this time slide
+    offset = tsid*fp.attrs['timeslide_interval']
+    back_dur = calculate_time_slide_duration(h1_segments, l1_segments, offset=offset)
+    if back_dur == 0:
+        continue
+    plotted_slide_count += 1
+    allbkg_dur = allbkg_dur + back_dur
+    # Don't plot all triggers!!!
+    red_trigs = back_ifar[ts_indx][back_ifar[ts_indx] > 0.01]
+    allbkg_ifars.extend(red_trigs)
+
+    # apply the correction factor for this time slide to its IFAR
+    # you need a correction factor because the analyzed time of the time slide
+    # is not the same as the analyzed time of the foreground
+    ts_ifar = back_ifar[ts_indx] * ( fp.attrs['foreground_time'] / back_dur )
+    ts_ifar.sort()
+
+    # get the cumulative number of triggers in this time slide
+    ts_cumnum = numpy.arange(len(ts_ifar), 0, -1)
+
+    # plot the time slide triggers
+    if len(ts_ifar) > 1:
+        pylab.loglog(ts_ifar, ts_cumnum, color='gray', alpha=0.4)
+    elif len(ts_ifar) == 1:
+        pylab.plot(ts_ifar, ts_cumnum, color='gray', marker='.', alpha=0.4)
+    else:
+        empty_slide_count += 1
+
+allbkg_ifars = numpy.array(allbkg_ifars)
+allbkg_ifars = allbkg_ifars * (fp.attrs['foreground_time'] / allbkg_dur )
+allbkg_ifars.sort()
+allbkg_cumnum = numpy.arange(len(allbkg_ifars), 0, -1)
+pylab.loglog(allbkg_ifars, allbkg_cumnum, color='green', linewidth=1.5,
+             label="All decimated background")
 
 # plot the expected background
 pylab.loglog(expected_ifar, expected_cumnum, linestyle='--', linewidth=2, color='black', label='Expected Background')
@@ -96,51 +152,29 @@ error_minus = numpy.where(error_minus<=0, 1e-5, error_minus)
 xs, ys = pylab.poly_between(expected_ifar, error_minus, error_plus)
 pylab.fill(xs, ys, facecolor='y', alpha=0.2, label='$2N^{1/2}$ Errors')
 
-# get a unique list of timeslide_ids and loop over them
-min_tsid = numpy.ceil(back_tsid.min() / float(opts.decimation_factor))
-max_tsid = int(back_tsid.max() / opts.decimation_factor)
-tsids = numpy.arange(min_tsid, max_tsid, 1).astype(numpy.int64) * opts.decimation_factor
-for tsid in tsids:
-    if tsid == 0:
-        continue
-
-    # find all triggers in this time slide
-    ts_indx = numpy.where(back_tsid == tsid)
-
-    # calculate the amount of coincident time in this time slide
-    offset = tsid*fp.attrs['timeslide_interval']
-    back_dur = calculate_time_slide_duration(h1_segments, l1_segments, offset=offset)
-
-    # apply the correction factor for this time slide to its IFAR
-    # you need a correction factor because the analyzed time of the time slide
-    # is not the same as the analyzed time of the foreground
-    ts_ifar = back_ifar[ts_indx] * ( fp.attrs['foreground_time'] / back_dur )
-    ts_ifar.sort()
-
-    # get the cumulative number of triggers in this time slide
-    ts_cumnum = numpy.arange(len(ts_ifar), 0, -1)
-
-    # plot the time slide triggers
-    pylab.loglog(ts_ifar, ts_cumnum, color='gray', alpha=0.4)
-
 # plot the foreground triggers
-pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue', marker='^', label='Foreground')
+if not opts.closed_box:
+    pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue', marker='^', label='Foreground')
 
 # format plot
-if len(fore_cumnum) > 0:
+if not opts.closed_box and len(fore_cumnum) > 100:
     pylab.ylim(0.8, 1.1 * len(fore_cumnum))
     pylab.xlim(0.9 * min(fore_ifar))
+else:
+    pylab.ylim(0.8, 1.1 * len(allbkg_cumnum))
+    pylab.xlim(0.9 * min(allbkg_ifars))
 pylab.grid()
 pylab.legend()
 pylab.ylabel('Cumulative Number')
 pylab.xlabel('Inverse False Alarm Rate (yr)')
 
 # save
-caption = 'This is a cumulative historgram of triggers. The blue triangles represent' \
-          + 'coincident foreground triggers. The dashed line represents the expected background,' \
-          + 'the expected background is determined by the foreground time. The shaded regions represent' \
-          + 'counting errors. The gray lines are time slides treated as zero lag, here there are %d time'%(len(tsids)) \
-          + 'slides plotted.'
+caption = 'This is a cumulative historgram of triggers. The blue triangles represent ' \
+          + 'coincident foreground triggers. The dashed line represents the expected background, ' \
+          + 'the expected background is determined by the foreground time. The shaded regions represent ' \
+          + 'counting errors. The gray lines are time slides treated as zero lag, here there are %d time ' %(plotted_slide_count) \
+          + 'slides plotted. Gray dots are time slides with only one event. ' \
+          + '%d of the plotted slides have no events at all.' %(empty_slide_count)
 pycbc.results.save_fig_with_metadata(fig, opts.output_file,
      title='Cumulative Number vs. IFAR',
      caption=caption,
