@@ -198,7 +198,8 @@ for bin_file in bin_files:
                     rdir['open_box_result/significance'], 
                     cumulative=False, tags=bin_file.tags + ['ifar'])
     ifar = wf.make_ifar_plot(workflow, bin_file, 
-                    rdir['open_box_result/significance'], tags=bin_file.tags)
+                    rdir['open_box_result/significance'],
+                    tags=bin_file.tags + ['open_box')
     # Closed box
     ifar = wf.make_ifar_plot(workflow, bin_file,
                     rdir['coincident_triggers'],
@@ -212,7 +213,8 @@ for bin_file in bin_files:
 layout.group_layout(rdir['coincident_triggers'],
                     closed_box_ifars + all_snrifar + [bank_plot[0][0]])
 
-wf.make_ifar_plot(workflow, final_bg_file, rdir['open_box_result'])
+wf.make_ifar_plot(workflow, final_bg_file, rdir['open_box_result'],
+                  tags=['open_box'])
 
 table = wf.make_foreground_table(workflow, final_bg_file, 
                     hdfbank[0], tag, rdir['open_box_result'], singles=insps,

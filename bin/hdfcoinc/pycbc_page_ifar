@@ -54,16 +54,15 @@ parser.add_argument('--decimation-factor', type=int, required=True,
                           'Decimation factor means that every nth time' 
                           'slide kept all of its coincident triggers in' 
                           'the HDF file.')
-parser.add_argument('--closed-box', action='store_true', default=False,
-                    help='Do not show any foreground triggers. '
-                          'Background only.')
+parser.add_argument('--open-box', action='store_true', default=False,
+                    help='Show the foreground triggers on the output plot. ')
 opts = parser.parse_args()
 
 # read file
 fp = h5py.File(opts.trigger_file, 'r')
 
 # get foreground IFAR values and cumulative number for each IFAR value
-if not opts.closed_box:
+if opts.open_box:
     fore_ifar = fp['foreground/ifar'][:]
     fore_ifar.sort()
     fore_cumnum = numpy.arange(len(fore_ifar), 0, -1)
@@ -153,11 +152,11 @@ xs, ys = pylab.poly_between(expected_ifar, error_minus, error_plus)
 pylab.fill(xs, ys, facecolor='y', alpha=0.2, label='$2N^{1/2}$ Errors')
 
 # plot the foreground triggers
-if not opts.closed_box:
+if not opts.open_box:
     pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue', marker='^', label='Foreground')
 
 # format plot
-if not opts.closed_box and len(fore_cumnum) > 100:
+if not opts.open_box and len(fore_cumnum) > 100:
     pylab.ylim(0.8, 1.1 * len(fore_cumnum))
     pylab.xlim(0.9 * min(fore_ifar))
 else:
