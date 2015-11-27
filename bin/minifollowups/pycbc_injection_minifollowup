@@ -158,7 +158,7 @@ for num_event in range(num_events):
 
     files += mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_segment_name, inj_params,
-                            args.output_dir,
+                            args.output_dir, inj_file=injection_xml_file,
                             tags=args.tags+['INJ_PARAMS_NOINJ',
                                             str(num_event)],
                             params_str='injection parameters, no injection.')

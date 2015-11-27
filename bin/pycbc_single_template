@@ -18,8 +18,11 @@
 a specific Nth loudest coincident event.
 """
 import sys, logging, argparse, numpy, itertools, pycbc, h5py
-from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter, events
-from pycbc.types import zeros, float32, complex64, TimeSeries
+from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter
+from pycbc import events
+from pycbc.filter import resample_to_delta_t
+from pycbc.types import zeros, float32, complex64, TimeSeries, FrequencySeries
+from pycbc.types import real_same_precision_as
 
 def select_segment(fname, segment, ifo, time, start_pad, end_pad):
     segs = events.select_segments_by_definer(fname, segment, ifo)
@@ -48,22 +51,30 @@ parser.add_argument("--chisq-bins", default="0", type=str, help=
                     "Number of frequency bins to use for power chisq.")
 parser.add_argument("--psd-recalculate-segments", type=int, 
                     help="Number of segments to use before recalculating the PSD", default=0)
-parser.add_argument("--approximant", type=str,
-                  help="The name of the approximant to use for filtering. ")
-parser.add_argument("--mass1", type=float, 
-                  help="The mass of the first component object. "
-                       "Do not use if giving a statmap file")
-parser.add_argument("--mass2", type=float,
-                  help="The mass of the second component object. "
-                    "Do not use if giving a statmap file.")
-parser.add_argument("--spin1z", type=float, default=0,
-                  help="The aligned spin of the first component object. "
-                    "Do not use if giving a statmap file.")
-parser.add_argument("--spin2z", type=float, default=0,
-                  help="The aligned pin of the second component object. "
-                    "Do not use if giving a statmap file.")
 parser.add_argument("--trigger-time", type=float, default=0,
                   help="The central time of the trigger to use.")
+parser.add_argument("--use-params-of-closest-injection", action="store_true",
+                  default=False,
+                  help="If given, use the injection with end_time closest to "
+                       "--trigger-time as the waveform for filtering. If "
+                       "using this do not supply mass and spin options. "
+                       "Using this requires trigger-time and injection-file "
+                       "to be given.")
+parser.add_argument("--approximant", type=str,
+                  help="The name of the approximant to use for filtering. "
+                      "Do not use if using --use-params-of-closest-injection.")
+parser.add_argument("--mass1", type=float, 
+                  help="The mass of the first component object. "
+                      "Do not use if using --use-params-of-closest-injection.")
+parser.add_argument("--mass2", type=float,
+                  help="The mass of the second component object. "
+                      "Do not use if using --use-params-of-closest-injection.")
+parser.add_argument("--spin1z", type=float, default=0,
+                  help="The aligned spin of the first component object. "
+                      "Do not use if using --use-params-of-closest-injection.")
+parser.add_argument("--spin2z", type=float, default=0,
+                  help="The aligned pin of the second component object. "
+                      "Do not use if using --use-params-of-closest-injection.")
 parser.add_argument("--window", type=float, 
                   help="Time to save around the trigger time (if given)")
 parser.add_argument("--order", type=int,
@@ -150,7 +161,8 @@ row.params.spin1z = opt.spin1z
 row.params.spin2z = opt.spin2z
 
 chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(row, opt.chisq_bins))
-if 'params' in opt.approximant:
+# FIXME: This check is hacky!
+if opt.approximant and 'params' in opt.approximant:
     opt.approximant = waveform.FilterBank.parse_option(row, opt.approximant)
 
 with ctx:
@@ -168,7 +180,47 @@ with ctx:
                          flen, delta_f, flow)
 
     logging.info("Making template: %s" % opt.approximant)
-    template = waveform.get_waveform_filter(zeros(flen, dtype=complex64), 
+    if opt.use_params_of_closest_injection:
+        if gwstrain.injections is None or not opt.trigger_time:
+            err_msg = "To use --use-params-of-closest-injection you must "
+            err_msg += "be making injections with an injection file and using "
+            err_msg += "the --trigger-time option."
+            raise ValueError(err_msg)
+        inj_set = gwstrain.injections
+        end_times = numpy.array(inj_set.end_times())
+        inj_idx = abs(end_times - opt.trigger_time).argmin()
+        inj = inj_set.table[inj_idx]
+        # FIXME: Don't like hardcoded 16384 here
+        # NOTE: f_lower is set in strain.py as inj.f_lower, but this is a
+        #       little unclear to see and caused me some problems! Stating
+        #       this clearly here so no-one makes the same mistake as me.
+        td_template = inj_set.make_strain_from_inj_object(inj, 1./16384.,
+                                    opt.channel_name[0:2], f_lower=inj.f_lower,
+                                    distance_scale=opt.injection_scale_factor)
+        td_template = resample_to_delta_t(td_template, gwstrain.delta_t,
+                                          method='ldas')
+        td_template._epoch -= inj.get_end(site=opt.channel_name[0])
+        # total duration of the waveform
+        tmplt_length = len(td_template) * td_template.delta_t
+        # for IMR templates the zero of time is at max amplitude (merger)
+        # thus the start time is minus the duration of the template from
+        # lower frequency cutoff to merger, i.e. minus the 'chirp time'
+        tChirp = - float(td_template.start_time )  # conversion from LIGOTimeGPS
+        td_template.resize((flen-1)*2)
+        k_zero = int(td_template.start_time / td_template.delta_t)
+        td_template.roll(k_zero)
+        td_template = td_template * pycbc.DYN_RANGE_FAC
+        # Create output memory
+        out = zeros(flen, dtype=complex64)
+        template = FrequencySeries(out, delta_f=delta_f, copy=False) 
+        # And FFT
+        fft.fft(td_template.astype(real_same_precision_as(template)), template)
+
+        template.length_in_time = tmplt_length
+        template.chirp_length = tChirp
+        opt.approximant = inj.waveform
+    else:
+        template = waveform.get_waveform_filter(zeros(flen, dtype=complex64), 
                                     approximant=opt.approximant,
                                     mass1=opt.mass1, mass2=opt.mass2,
                                     spin1z=opt.spin1z, spin2z=opt.spin2z,

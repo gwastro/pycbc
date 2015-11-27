@@ -130,7 +130,6 @@ class InjectionSet(object):
                     + str(strain.dtype))
 
         lalstrain = strain.lal()    
-        detector = Detector(detector_name)
         earth_travel_time = lal.REARTH_SI / lal.C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
@@ -148,61 +147,98 @@ class InjectionSet(object):
                 f_l = inj.f_lower
             else:
                 f_l = f_lower
-
-            if inj.numrel_data != None and inj.numrel_data != "":
-                # performing NR waveform injection
-                # reading Hp and Hc from the frame files
-                swigrow = self.getswigrow(inj)
-                import lalinspiral
-                Hp, Hc = lalinspiral.NRInjectionFromSimInspiral(swigrow,
-                                                                strain.delta_t)
-                # converting to pycbc timeseries
-                hp = TimeSeries(Hp.data.data[:], delta_t=Hp.deltaT,
-                                epoch=Hp.epoch)
-                hc = TimeSeries(Hc.data.data[:], delta_t=Hc.deltaT,
-                                epoch=Hc.epoch)
-                hp /= distance_scale
-                hc /= distance_scale
-                end_time = float(hp.get_end_time())
-                start_time = float(hp.get_start_time())
-                if end_time < t0 or start_time > t1:
-                    continue
-            else:
-                # roughly estimate if the injection may overlap with the segment
-                end_time = inj.get_time_geocent()
-                inj_length = sim.SimInspiralTaylorLength(
-                    strain.delta_t, inj.mass1 * lal.MSUN_SI,
-                    inj.mass2 * lal.MSUN_SI, f_l, 0)
-                start_time = end_time - 2 * inj_length
-                if end_time < t0 or start_time > t1:
-                   continue
-                   
-                name, phase_order = legacy_approximant_name(inj.waveform)
-
-                # compute the waveform time series
-                hp, hc = get_td_waveform(
-                    inj, approximant=name, delta_t=strain.delta_t,
-                    phase_order=phase_order,
-                    f_lower=f_l, distance=inj.distance * distance_scale,
-                    **self.extra_args)
-
-                hp._epoch += float(end_time)
-                hc._epoch += float(end_time)
-                if float(hp.start_time) > t1:
-                   continue
-
-            # taper the polarizations
-            hp_tapered = wfutils.taper_timeseries(hp, inj.taper)
-            hc_tapered = wfutils.taper_timeseries(hc, inj.taper)
-
-            # compute the detector response and add it to the strain
-            signal = detector.project_wave(hp_tapered, hc_tapered,
-                                 inj.longitude, inj.latitude, inj.polarization)
+            # roughly estimate if the injection may overlap with the segment
+            # Add 2s to end_time to account for ringdown and light-travel delay
+            end_time = inj.get_time_geocent() + 2
+            inj_length = sim.SimInspiralTaylorLength(
+                strain.delta_t, inj.mass1 * lal.MSUN_SI,
+                inj.mass2 * lal.MSUN_SI, f_l, 0)
+            # Start time is taken as twice approx waveform length with a 1s
+            # safety buffer
+            start_time = inj.get_time_geocent() - 2 * (inj_length+1)
+            if end_time < t0 or start_time > t1:
+                continue
+            signal = self.make_strain_from_inj_object(inj, strain.delta_t,
+                     detector_name, f_lower=f_l, distance_scale=distance_scale)
+            if float(signal.start_time) > t1:
+               continue
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
 
         strain.data[:] = lalstrain.data.data[:]
+
+
+    def make_strain_from_inj_object(self, inj, delta_t, detector_name,
+                                    f_lower=None, distance_scale=1):
+        """Make a h(t) strain time-series from an injection object as read from
+        a sim_inspiral table, for example.
+
+        Parameters
+        -----------
+        inj : injection object
+            The injection object to turn into a strain h(t).
+        delta_t : float
+            Sample rate to make injection at.
+        detector_name : string
+            Name of the detector used for projecting injections.
+        f_lower : {None, float}, optional
+            Low-frequency cutoff for injected signals. If None, use value
+            provided by each injection.
+        distance_scale: {1, float}, optional
+            Factor to scale the distance of an injection with. The default is 
+            no scaling. 
+
+        Returns
+        --------
+        signal : float
+            h(t) corresponding to the injection.
+        """
+        detector = Detector(detector_name)
+        if f_lower is None:
+            f_l = inj.f_lower
+        else:
+            f_l = f_lower
+
+        # FIXME: Old NR interface will soon be removed. Do not use!
+        if inj.numrel_data != None and inj.numrel_data != "":
+            # performing NR waveform injection
+            # reading Hp and Hc from the frame files
+            swigrow = self.getswigrow(inj)
+            import lalinspiral
+            Hp, Hc = lalinspiral.NRInjectionFromSimInspiral(swigrow, delta_t)
+            # converting to pycbc timeseries
+            hp = TimeSeries(Hp.data.data[:], delta_t=Hp.deltaT,
+                            epoch=Hp.epoch)
+            hc = TimeSeries(Hc.data.data[:], delta_t=Hc.deltaT,
+                            epoch=Hc.epoch)
+            hp /= distance_scale
+            hc /= distance_scale
+        else:
+            name, phase_order = legacy_approximant_name(inj.waveform)
+
+            # compute the waveform time series
+            hp, hc = get_td_waveform(
+                inj, approximant=name, delta_t=delta_t,
+                phase_order=phase_order,
+                f_lower=f_l, distance=inj.distance,
+                **self.extra_args)
+            hp /= distance_scale
+            hc /= distance_scale
+
+            hp._epoch += inj.get_time_geocent()
+            hc._epoch += inj.get_time_geocent()
+
+        # taper the polarizations
+        hp_tapered = wfutils.taper_timeseries(hp, inj.taper)
+        hc_tapered = wfutils.taper_timeseries(hc, inj.taper)
+
+        # compute the detector response and add it to the strain
+        signal = detector.project_wave(hp_tapered, hc_tapered,
+                             inj.longitude, inj.latitude, inj.polarization)
+
+        return signal
+        
         
     def end_times(self):
         """ Return the end times of all injections
