@@ -354,7 +354,7 @@ def insert_strain_option_group(parser, gps_times=True):
                       "sine-Gaussian burst waveforms into the strain")
 
     data_reading_group.add_argument("--injection-scale-factor", type=float,
-                    default=1, help="Multiple injections by this factor "
+                    default=1, help="Divide injections by this factor "
                     "before injecting into the data.")
 
     data_reading_group.add_argument("--gating-file", type=str,
