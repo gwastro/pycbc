@@ -115,18 +115,16 @@ class PhaseTDStatistic(NewSNRStatistic):
         rbins = self.files['phasetd_newsnr']['rbins'][:]
         mbins = self.files['phasetd_newsnr']['mbins'][:]
         
-        # The following just enforces that the point fits into the bin boundaries
         tv = numpy.searchsorted(tbins, td) - 1 
         pv = numpy.searchsorted(pbins, pd) - 1
-        
+        rv = numpy.searchsorted(rbins, rd) - 1 
+        mv = numpy.searchsorted(mbins, md) - 1        
+
+        # The following just enforces that the point fits into the bin boundaries        
         tv[tv < 0] = 0
         tv[tv >= len(tbins) - 1] = len(tbins) - 2
         pv[pv < 0] = 0
         pv[pv >= len(pbins) - 1] = len(pbins) - 2
-
-        rv = numpy.searchsorted(rbins, rd) - 1 
-        mv = numpy.searchsorted(mbins, md) - 1        
-
         rv[rv < 0] = 0
         rv[rv >= len(rbins) - 1] = len(rbins) - 2
         mv[mv < 0] = 0
@@ -135,7 +133,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         m = self.files['phasetd_newsnr']['map'][:][tv, pv, rv, mv]
         m[m < 1] = 1
         
-        cstat = (s1[:,0]**2.0 + s2[:,0]**2.0 + 2.0 * numpy.log(m))**0.5  
+        cstat = (s1[:,0]**2.0 + s2[:,0]**2.0 + 2.0 * numpy.log(m / m.max()))**0.5  
          
         return cstat
 
