@@ -98,6 +98,11 @@ class NewSNRCutStatistic(Stat):
         return cstat
 
 class PhaseTDStatistic(NewSNRStatistic):
+    def __init__(self, files):
+        NewSNRStatistic.__init__(self, files)
+        self.hist = self.files['phasetd_newsnr']['map'][:]
+        self.hist = numpy.log(self.hist / float(self.hist.max())) * 2.0
+
     def single(self, trigs):
         newsnr = NewSNRStatistic.single(self, trigs)
         return numpy.array((newsnr, trigs['coa_phase'], trigs['end_time'])).transpose()
@@ -107,22 +112,35 @@ class PhaseTDStatistic(NewSNRStatistic):
         """
         td = s1[:,2] - s2[:,2] - slide * step
         pd = s1[:,1] - s2[:,1]
-        
+        rd = numpy.log(s1[:,0] / s2[:,0])
+        md = (s1[:,0]**2.0 + s2[:,0]**2.0) ** 0.5
+
+        # These are the bin boundaries stored in the hdf file        
         tbins = self.files['phasetd_newsnr']['tbins'][:]
         pbins = self.files['phasetd_newsnr']['pbins'][:]
-        
+        rbins = self.files['phasetd_newsnr']['rbins'][:]
+        mbins = self.files['phasetd_newsnr']['mbins'][:]
+
+        # Find which bin each coinc falls into        
         tv = numpy.searchsorted(tbins, td) - 1 
         pv = numpy.searchsorted(pbins, pd) - 1
-        
+        rv = numpy.searchsorted(rbins, rd) - 1 
+        mv = numpy.searchsorted(mbins, md) - 1        
+
+        # The following just enforces that the point fits into the bin boundaries        
         tv[tv < 0] = 0
         tv[tv >= len(tbins) - 1] = len(tbins) - 2
         pv[pv < 0] = 0
         pv[pv >= len(pbins) - 1] = len(pbins) - 2
+        rv[rv < 0] = 0
+        rv[rv >= len(rbins) - 1] = len(rbins) - 2
+        mv[mv < 0] = 0
+        mv[mv >= len(mbins) - 1] = len(mbins) - 2
         
-        m = self.files['phasetd_newsnr']['map'][:][tv, pv]
+        m = self.hist[tv, pv, rv, mv]
         m[m < 1] = 1
         
-        cstat = (s1[:,0]**2.0 + s2[:,0]**2.0 + 2.0 * numpy.log(m))**0.5  
+        cstat = (s1[:,0]**2.0 + s2[:,0]**2.0 + m)**0.5  
          
         return cstat
 
