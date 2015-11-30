@@ -39,9 +39,9 @@ from glue.ligolw import lsctables
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--input', dest='inj_xml', required=True, help='Input LIGOLW injections file.')
-parser.add_argument('--output-missed', dest='output_missed', required=True,
+parser.add_argument('--output-missed', dest='output_missed', required=False,
                   help="Output LIGOLW file containing injections we expect to miss.")
-parser.add_argument('--output-inject', dest='output_inject', required=True,
+parser.add_argument('--output-file', dest='output_inject', required=True,
                   help="Output LIGOLW file containing injections that we might find.")
 parser.add_argument('--snr-threshold', dest='snr_thresh', required=True, type=float,
                   help="Select the SNR threshold which is required to keep the injections")
@@ -75,8 +75,7 @@ if opts.write_compress:
 out_sim_inspiral_inject = lsctables.New(lsctables.SimInspiralTable,
                                  columns=injections.table.columnnames)
 
-# missed injections: table and name of the file that will store it
-output_missed = opts.output_missed
+# missed injections table 
 out_sim_inspiral_missed = lsctables.New(lsctables.SimInspiralTable,
                                  columns=injections.table.columnnames)
 if opts.write_compress:
@@ -91,7 +90,7 @@ for i, inj in enumerate(injections.table):
         out_sim_inspiral_inject.append(inj)
             
 logging.info('Found %d/%d (potentially) found injections.  Storing them to %s.', len(out_sim_inspiral_inject), len(injections.table), output_inject)
-logging.info('Found %d/%d missed injections.  Storing them to %s.', len(out_sim_inspiral_missed), len(injections.table), output_missed)
+logging.info('Found %d/%d missed injections.', len(out_sim_inspiral_missed), len(injections.table))
 
 if opts.verbose:
     logging.info('Writing output')
@@ -100,8 +99,16 @@ llw_root = llw_doc.childNodes[0]
 llw_root.removeChild(injections.table)
 llw_root.appendChild(out_sim_inspiral_inject)
 glue.ligolw.utils.write_filename(llw_doc, output_inject, gz=output_inject.endswith('gz'))
-llw_root.removeChild(out_sim_inspiral_inject)
-llw_root.appendChild(out_sim_inspiral_missed)
-glue.ligolw.utils.write_filename(llw_doc, output_missed, gz=output_missed.endswith('gz'))
+
+if opts.output_missed:
+    output_missed = opts.output_missed
+    if opts.write_compress:
+        if not output_missed.endswith('gz'):
+            output_missed = output_missed+'.gz'
+    llw_root.removeChild(out_sim_inspiral_inject)
+    llw_root.appendChild(out_sim_inspiral_missed)
+    logging.info('Storing them to %s.', output_missed)
+
+    glue.ligolw.utils.write_filename(llw_doc, output_missed, gz=output_missed.endswith('gz'))
 
 logging.info('Done')
