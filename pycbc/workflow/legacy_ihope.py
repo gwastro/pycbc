@@ -489,7 +489,8 @@ class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
 
         out_files = FileList([])
         for inj_trig in inj_trigs:
-            out_file_tag = [inj_string, "FILTERED", max_inc,
+            out_string = inj_string.split(max_inc)[0]
+            out_file_tag = [out_string, "FILTERED", max_inc,
                             inj_trig.tag_str.rsplit('_', 1)[-1]]
             out_file = File(self.ifos, inj_trig.description,
                             inj_trig.segment, extension="xml",
