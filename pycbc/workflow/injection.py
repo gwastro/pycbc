@@ -63,6 +63,18 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
     workflow += node
     return node.output_files[0]
 
+def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
+    "Set up a job for removing injections that are too distant to be seen"
+    if tags is None:
+        tags = []
+
+    node = Executable(workflow.cp, 'inj_cut', ifos=workflow.ifos,
+                      out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--input', inj_file)
+    node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
+    workflow += node
+    return node.output_files[0]
+
 def setup_injection_workflow(workflow, output_dir=None,
                              inj_section_name='injections', exttrig_file=None,
                              tags =[]):
