@@ -223,8 +223,8 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
         pp_outs.extend(FileList([fm_cache]))
 
         # Set up injcombiner jobs
-        injcombiner_outs = FileList([file for file in injfinder_outs \
-                                     if "DETECTION" in file.tag_str])
+        injcombiner_outs = FileList([f for f in injfinder_outs \
+                                     if "DETECTION" in f.tag_str])
         injcombiner_tags = [inj_tag for inj_tag in inj_tags \
                             if "DETECTION" not in inj_tag]
         injcombiner_out_tags = [i.tag_str.rsplit('_', 1)[0] for i in \
@@ -234,13 +234,14 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
         for injcombiner_tag in injcombiner_tags:
             max_inc = cp.get_opt_tags("injections", "max-inc",
                                       [injcombiner_tag])
-            inj_str = injcombiner_tag.replace("INJ", "").split(max_inc)[0]
+            inj_str = injcombiner_tag.replace("INJ", "")
             inputs = FileList([f for f in injfinder_outs \
                                if injcombiner_tag in f.tagged_description])
             injcombiner_node, curr_outs = injcombiner_jobs.create_node(\
                     fm_cache, inputs, inj_str, max_inc, workflow.analysis_time)
             injcombiner_nodes.append(injcombiner_node)
-            injcombiner_out_tags.append("%s_FILTERED_%s" % (inj_str, max_inc))
+            injcombiner_out_tags.append("%s_FILTERED_%s"
+                                        % (inj_str.split(max_inc)[0], max_inc))
             injcombiner_outs.extend(curr_outs)
             pp_outs.extend(curr_outs)
             pp_nodes.append(injcombiner_node)
