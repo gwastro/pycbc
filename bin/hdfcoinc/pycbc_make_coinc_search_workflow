@@ -342,6 +342,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     ctags = [tag, 'inj']
     output_dir = '%s_coinc' % tag
 
+    
     if workflow.cp.has_option_tags('workflow-injections',
                                    'compute-optimal-snr', tags=[tag]):
         optimal_snr_file = wf.compute_inj_optimal_snr(
@@ -350,11 +351,17 @@ for inj_file, tag in zip(inj_files, inj_tags):
     else:
         file_for_injfind = inj_file
 
-    if workflow.cp.has_option_tags('workflow-injections', 'strip-injections', tags=[tag]):
-        veto_inj_file = wf.veto_injections(workflow, file_for_injfind, seg_summ_file,
-                                 'TRIGGERS_PRODUCED', "inj_files", tags=[tag])
+    if workflow.cp.has_option_tags('workflow-injections', 'inj-cut', tags=[tag]):
+        file_for_vetoes = file_for_injfind
     else:
-        veto_inj_file = file_for_injfind
+        file_for_vetoes = inj_file
+
+    if workflow.cp.has_option_tags('workflow-injections', 'strip-injections', 
+                                   tags=[tag]):
+        veto_inj_file = wf.veto_injections(workflow, file_for_vetoes, seg_summ_file,
+                             'TRIGGERS_PRODUCED', "inj_files", tags=[tag])
+    else:
+        veto_inj_file = file_for_vetoes
 
     if workflow.cp.has_option_tags('workflow-injections', 'inj-cut', tags=[tag]):
         small_inj_file = wf.cut_distant_injections(
