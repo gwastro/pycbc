@@ -104,9 +104,6 @@ max_tsid = (fp['segments'][ifo1]['end'][:].max() - fp['segments'][ifo2]['start']
 max_tsid = numpy.rint(max_tsid) // opts.decimation_factor
 
 tsids = numpy.arange(min_tsid, max_tsid, 1).astype(numpy.int64) * opts.decimation_factor
-old_mintsid = numpy.ceil(back_tsid.min() / float(opts.decimation_factor))
-old_maxtsid = int(back_tsid.max() / opts.decimation_factor)
-old_tsids = numpy.arange(old_mintsid, old_maxtsid, 1).astype(numpy.int64) * opts.decimation_factor
 
 allbkg_dur = 0
 allbkg_ifars = []
