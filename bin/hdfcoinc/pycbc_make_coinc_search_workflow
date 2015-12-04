@@ -199,7 +199,7 @@ for bin_file in bin_files:
                     cumulative=False, tags=bin_file.tags + ['ifar'])
     ifar = wf.make_ifar_plot(workflow, bin_file, 
                     rdir['open_box_result/significance'],
-                    tags=bin_file.tags + ['open_box')
+                    tags=bin_file.tags + ['open_box'])
     # Closed box
     ifar = wf.make_ifar_plot(workflow, bin_file,
                     rdir['coincident_triggers'],
