@@ -66,6 +66,7 @@ template banks) should read the documentation at:
    hwinj
    banksim
    faithsim
+   upload_to_gracedb
 
 Users who are intersted in using PyCBC for investigation of CBC waveforms
 should read the documentation at:
