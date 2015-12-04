@@ -24,7 +24,8 @@
 import lal
 import numpy
 import scipy.signal
-from pycbc.types import TimeSeries
+from pycbc.types import TimeSeries, zeros, FrequencySeries, real_same_precision_as
+from pycbc.fft import ifft, fft
 
 # LDAS low pass FIR filter coefficents for resampling by 2, 4 and 8      
 # thse were generated using the firlp action to get the FIR coeffs       
@@ -279,7 +280,48 @@ def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
     return TimeSeries(lal_data.data.data, delta_t = lal_data.deltaT,
                       dtype=timeseries.dtype, epoch=timeseries._epoch)
 
-    
+def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right'):
+    """Return a new complex frequency series that has been interpolated to the
+    desired delta_f.
+    Parameters
+    ----------
+    series : FrequencySeries
+        Frequency series to be interpolated.
+    delta_f : float
+        The desired delta_f of the output
+    zeros_offset : optional, {0, int}
+        Number of sample to delay the start of the zero padding
+    side : optional, {'right', str}
+        The side of the vector to zero pad
+        
+    Returns
+    -------
+    interpolated series : FrequencySeries
+        A new FrequencySeries that has been interpolated.
+    """
+    new_n = int( (len(series)-1) * series.delta_f / delta_f + 1)
+    samples = numpy.arange(0, new_n) * delta_f
+    old_N = int( (len(series)-1) * 2 )
+    new_N = int( (new_n - 1) * 2 )
+    time_series = TimeSeries(zeros(old_N), delta_t =1.0/(series.delta_f*old_N),
+                             dtype=real_same_precision_as(series))
+                             
+    ifft(series, time_series)
 
-__all__ = ['resample_to_delta_t', 'highpass']
+    time_series.roll(-zeros_offset)
+    time_series.resize(new_N)
+    
+    if side == 'left':
+        time_series.roll(zeros_offset + new_N - old_N)
+    elif side == 'right':
+        time_series.roll(zeros_offset)
+
+    out_series = FrequencySeries(zeros(new_n), epoch=series.epoch,
+                           delta_f=delta_f, dtype=series.dtype)
+    fft(time_series, out_series)
+
+    return out_series
+
+
+__all__ = ['resample_to_delta_t', 'highpass', 'interpolate_complex_frequency']
 

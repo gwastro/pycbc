@@ -113,7 +113,7 @@ def fft(invec, outvec, prec, itype, otype):
     f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     status = f(descr, invec.ptr, outvec.ptr)
     check_status(status)
-    
+
 def ifft(invec, outvec, prec, itype, otype):
     descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype,
                               outvec.dtype, (invec.ptr == outvec.ptr))
