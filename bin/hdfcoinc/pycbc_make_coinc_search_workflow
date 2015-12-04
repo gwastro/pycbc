@@ -172,16 +172,19 @@ censored_veto = wf.make_foreground_censored_veto(workflow,
                        'closed_box', 'segments')      
               
 closed_snrifar = []
+all_snrifar = []
 for bg_file, bg_bins in (bg_files + final_bg_files):
     for bg_bin in bg_bins:
         snrifar = wf.make_snrifar_plot(workflow, bg_bin,
                         rdir['coincident_triggers'], 
                          closed_box=True, tags=bg_bin.tags + ['closed'])
+        all_snrifar.append(snrifar)
         if bg_file == final_bg_file:
             closed_snrifar.append(snrifar)
     
 results_page = []        
 results_aux_page = []
+closed_box_ifars = []
 for bin_file in bin_files:
     snrifar = wf.make_snrifar_plot(workflow, bin_file,
                     rdir['open_box_result'], tags=bin_file.tags)
@@ -195,13 +198,23 @@ for bin_file in bin_files:
                     rdir['open_box_result/significance'], 
                     cumulative=False, tags=bin_file.tags + ['ifar'])
     ifar = wf.make_ifar_plot(workflow, bin_file, 
-                    rdir['open_box_result/significance'], tags=bin_file.tags)
+                    rdir['open_box_result/significance'],
+                    tags=bin_file.tags + ['open_box')
+    # Closed box
+    ifar = wf.make_ifar_plot(workflow, bin_file,
+                    rdir['coincident_triggers'],
+                    tags=bin_file.tags + ['closed_box'])
+    closed_box_ifars.append(ifar)
                     
     symlink_result(snrifar, 'open_box_result/significance')
     symlink_result(ratehist, 'open_box_result/significance')
     results_aux_page += [(snrifar, ratehist), (snrifar_ifar, ifar)]
 
-wf.make_ifar_plot(workflow, final_bg_file, rdir['open_box_result'])
+layout.group_layout(rdir['coincident_triggers'],
+                    closed_box_ifars + all_snrifar + [bank_plot[0][0]])
+
+wf.make_ifar_plot(workflow, final_bg_file, rdir['open_box_result'],
+                  tags=['open_box'])
 
 table = wf.make_foreground_table(workflow, final_bg_file, 
                     hdfbank[0], tag, rdir['open_box_result'], singles=insps,
