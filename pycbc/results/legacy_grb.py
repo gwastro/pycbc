@@ -650,15 +650,21 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
     return page
 
 
-def make_grb_segments_plot(ifos, science_segs, trigger_time, trigger_name,
+def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
                            out_dir, coherent_seg=None, fail_criterion=None):
+    
+    ifos = wkflow.ifos
+    if len(science_segs.keys()) == 0:
+        extent = segments.segment(int(wkflow.cp.get("workflow", "start-time")),
+                                  int(wkflow.cp.get("workflow", "end-time")))
+    else:
+        extent = science_segs.union(ifos).extent()
+    
     ifo_colors = {}
     for ifo in ifos:
         ifo_colors[ifo] = ifo_color(ifo)
         if ifo not in science_segs.keys():
             science_segs[ifo] = segments.segmentlist([])
-
-    extent = science_segs.union(ifos).extent()
 
     # Make plot
     fig, subs = plt.subplots(len(ifos), sharey=True)
@@ -683,17 +689,18 @@ def make_grb_segments_plot(ifos, science_segs, trigger_time, trigger_name,
                          c='orange', alpha=0.5)
                 sub.plot([coherent_seg[1], coherent_seg[1]], [0, 1], '--',
                          c='orange', alpha=0.5)
+        else:
+            sub.plot([trigger_time, trigger_time], [0, 1], ':k')
         if fail_criterion:
             if len(science_segs[ifo]) > 0:
                 style_str = '--'
             else:
                 style_str = '-'
-            sub.plot([trigger_time, trigger_time], [0, 1], ':k')
             sub.plot([fail_criterion[0], fail_criterion[0]], [0, 1], style_str,
                      c='black', alpha=0.5)
             sub.plot([fail_criterion[1], fail_criterion[1]], [0, 1], style_str,
                      c='black', alpha=0.5)
-        
+
         sub.set_frame_on(False)
         sub.set_yticks([])
         sub.set_ylabel(ifo, rotation=45)

@@ -33,7 +33,7 @@ import os
 import argparse
 import logging
 import pycbc.workflow as _workflow
-from glue.segments import segment, segmentlistdict
+from glue.segments import segment, segmentlist, segmentlistdict
 from pycbc.results.legacy_grb import make_grb_segments_plot
 
 workflow_name = "pygrb_offline"
@@ -80,15 +80,19 @@ sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
 # Make coherent network segments
 single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
 if len(sciSegs.keys()) == 0:
-    raise RuntimeError("No science segments available.")
+    plot_met = make_grb_segments_plot(wflow, segmentlistdict(), triggertime,
+            triggername, segDir)
+    logging.error("No science segments available.")
+    sys.exit()
 elif len(sciSegs.keys()) < 2 and not single_ifo:
-    plot_met = make_grb_segments_plot(wflow.ifos, segmentlistdict(sciSegs),
+    plot_met = make_grb_segments_plot(wflow, segmentlistdict(sciSegs),
             triggertime, triggername, segDir)
     msg = "Science segments exist only for %s. " % sciSegs.keys()[0]
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
     msg += "configuration file." 
-    raise RuntimeError(msg)
+    logging.error(msg)
+    sys.exit()
 elif len(sciSegs.keys()) < 2:
     logging.info("Generating a single IFO search.")
     onSrc, offSrc = _workflow.get_triggered_single_ifo_segment(wflow, segDir,
@@ -99,12 +103,12 @@ else:
 
 sciSegs = segmentlistdict(sciSegs)
 if onSrc is None:
-    plot_met = make_grb_segments_plot(wflow.ifos, sciSegs, triggertime,
-            triggername, segDir, fail_criterion=offSrc)
+    plot_met = make_grb_segments_plot(wflow, sciSegs, triggertime, triggername,
+            segDir, fail_criterion=offSrc)
     sys.exit()
 else:
-    plot_met = make_grb_segments_plot(wflow.ifos, sciSegs, triggertime,
-            triggername, segDir, coherent_seg=offSrc[offSrc.keys()[0]][0])
+    plot_met = make_grb_segments_plot(wflow, sciSegs, triggertime, triggername,
+            segDir, coherent_seg=offSrc[offSrc.keys()[0]][0])
     segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2],
                                file_url=plot_met[3])
     segs_plot.PFN(segs_plot.cache_entry.path, site="local")
