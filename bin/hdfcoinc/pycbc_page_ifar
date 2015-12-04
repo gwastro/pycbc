@@ -54,21 +54,18 @@ parser.add_argument('--decimation-factor', type=int, required=True,
                           'Decimation factor means that every nth time' 
                           'slide kept all of its coincident triggers in' 
                           'the HDF file.')
-parser.add_argument('--all-decimated-background-min-far', type=float,
+parser.add_argument('--all-decimated-background-min-ifar', type=float,
                     default=0.01, metavar='VAL',
-                    help='When plotting the green line representing all the '
-                          'decimated background, if it is plotted using all '
-                          'triggers it can be memory intensive and it is '
-                          'not normally informative to show the green line '
-                          'up to very small FARs. This value means that '
-                          'triggers with a FARs less than VAL (normalized '
-                          'to total foreground time, not total decimated '
-                          'background time) are not included. This does not '
-                          'in any way invalidate the result, the green line '
-                          'will simply cutoff at some point. The default '
-                          'value should be fine, so it is recommended not to '
-                          'supply this option, which will use the default '
-                          'value of 0.01 (per year).')
+                    help='Threshold the IFARs of decimated background events '
+                          'before combining them and rescaling to zerolag '
+                          '(green line). Plotting all decimated background '
+                          'can be memory intensive and is not necessary for '
+                          'checking the background estimate at interesting '
+                          'IFAR levels. Slide coincs with IFARs below VAL '
+                          'will be cut, the green line will then be valid for '
+                          'zerolag down to VAL*(zerolag coinc time/total '
+                          'decimated slide time). Recommended value equal '
+                          'to default value 0.01yr.')
 parser.add_argument('--open-box', action='store_true', default=False,
                     help='Show the foreground triggers on the output plot. ')
 opts = parser.parse_args()
@@ -135,7 +132,7 @@ for tsid in tsids:
     allbkg_dur = allbkg_dur + back_dur
     # Limit how far back the decimated background gets plotted
     red_trigs = back_ifar[ts_indx][back_ifar[ts_indx] > \
-                                          opt.all_decimated_background_min_far]
+                                        opts.all_decimated_background_min_ifar]
     allbkg_ifars.extend(red_trigs)
 
     # apply the correction factor for this time slide to its IFAR
@@ -199,7 +196,7 @@ pylab.ylabel('Cumulative Number')
 pylab.xlabel('Inverse False Alarm Rate (yr)')
 
 # save
-caption = 'This is a cumulative historgram of triggers. The blue triangles represent ' \
+caption = 'This is a cumulative histogram of triggers. The blue triangles represent ' \
           + 'coincident foreground triggers. The dashed line represents the expected background ' \
           + 'given the analysis time. The shaded regions represent ' \
           + 'counting errors. The gray lines are time slides treated as zero lag, here there are %d time ' %(plotted_slide_count) \
