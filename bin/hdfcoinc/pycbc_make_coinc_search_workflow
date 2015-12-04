@@ -197,18 +197,18 @@ for bin_file in bin_files:
     snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
                     rdir['open_box_result/significance'], 
                     cumulative=False, tags=bin_file.tags + ['ifar'])
-    ifar = wf.make_ifar_plot(workflow, bin_file, 
+    ifar_ob = wf.make_ifar_plot(workflow, bin_file,
                     rdir['open_box_result/significance'],
                     tags=bin_file.tags + ['open_box'])
     # Closed box
-    ifar = wf.make_ifar_plot(workflow, bin_file,
+    ifar_cb = wf.make_ifar_plot(workflow, bin_file,
                     rdir['coincident_triggers'],
                     tags=bin_file.tags + ['closed_box'])
-    closed_box_ifars.append(ifar)
+    closed_box_ifars.append(ifar_cb)
                     
     symlink_result(snrifar, 'open_box_result/significance')
     symlink_result(ratehist, 'open_box_result/significance')
-    results_aux_page += [(snrifar, ratehist), (snrifar_ifar, ifar)]
+    results_aux_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
 
 layout.group_layout(rdir['coincident_triggers'],
                     closed_box_ifars + all_snrifar + [bank_plot[0][0]])
