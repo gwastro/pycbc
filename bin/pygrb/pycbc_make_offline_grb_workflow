@@ -28,6 +28,7 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_make_offline_grb_workflow"
 
 import shutil
+import sys
 import os
 import argparse
 import logging
