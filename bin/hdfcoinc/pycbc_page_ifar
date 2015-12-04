@@ -98,9 +98,21 @@ l1_segments = segments.segmentlist([segments.segment(s,e) for s,e in zip(fp['seg
 fig = pylab.figure(1)
 
 # get a unique list of timeslide_ids and loop over them
-min_tsid = numpy.ceil(back_tsid.min() / float(opts.decimation_factor))
-max_tsid = int(back_tsid.max() / opts.decimation_factor)
+interval = fp.attrs['timeslide_interval']
+ifo1, ifo2 = fp.attrs['detector_1'], fp.attrs['detector_2']
+min_tsid = (fp['segments'][ifo1]['start'][:].min() - \
+            fp['segments'][ifo2]['end'][:].max()) / interval
+min_tsid = numpy.rint(min_tsid) // opts.decimation_factor
+max_tsid = (fp['segments'][ifo1]['end'][:].max() - fp['segments'][ifo2]['start'][:].min()) / interval
+max_tsid = numpy.rint(max_tsid) // opts.decimation_factor
+
 tsids = numpy.arange(min_tsid, max_tsid, 1).astype(numpy.int64) * opts.decimation_factor
+old_mintsid = numpy.ceil(back_tsid.min() / float(opts.decimation_factor))
+old_maxtsid = int(back_tsid.max() / opts.decimation_factor)
+old_tsids = numpy.arange(old_mintsid, old_maxtsid, 1).astype(numpy.int64) * opts.decimation_factor
+
+print min_tsid, max_tsid
+print old_mintsid, old_maxtsid - 1
 
 allbkg_dur = 0
 allbkg_ifars = []
