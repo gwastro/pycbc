@@ -108,9 +108,6 @@ old_mintsid = numpy.ceil(back_tsid.min() / float(opts.decimation_factor))
 old_maxtsid = int(back_tsid.max() / opts.decimation_factor)
 old_tsids = numpy.arange(old_mintsid, old_maxtsid, 1).astype(numpy.int64) * opts.decimation_factor
 
-print min_tsid, max_tsid
-print old_mintsid, old_maxtsid - 1
-
 allbkg_dur = 0
 allbkg_ifars = []
 empty_slide_count = 0
@@ -177,11 +174,11 @@ xs, ys = pylab.poly_between(expected_ifar, error_minus, error_plus)
 pylab.fill(xs, ys, facecolor='y', alpha=0.2, label='$2N^{1/2}$ Errors')
 
 # plot the foreground triggers
-if not opts.open_box:
+if opts.open_box:
     pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue', marker='^', label='Foreground')
 
 # format plot
-if not opts.open_box and len(fore_cumnum) > 100:
+if opts.open_box and len(fore_cumnum) > 100:
     # If we have > 100 foreground triggers, scale the plot around the foreground
     pylab.ylim(0.8, 1.1 * len(fore_cumnum))
     pylab.xlim(0.9 * min(fore_ifar))
