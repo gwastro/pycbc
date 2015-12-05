@@ -655,3 +655,94 @@ From the directory where the dax was created, now plan the workflow with an addi
 
 Follow the remaining :ref:`coincworkflowplan` instructions to submit your reduced
 workflow.
+
+
+.. _weeklyahopeosg:
+
+================================
+Running on the Open Science Grid
+================================
+
+-------------
+Prerequisites
+-------------
+
+There are a number of requirements on the machine on which the workflow will be started:
+
+- Pegasus version 4.5.3 or later.
+
+- An updated version of Java SSL proxies.  Replace ``share/pegasus/java/ssl-proxies-2.1.0.jar`` with the one from http://gaul.isi.edu/pub/ssl-proxies-2.1.1-SNAPSHOT.jar
+
+- The bundled executables available on the submit machine
+
+- A gridftp server running on the submit machine
+
+- Condor configuration (beyond the scope of this document)
+
+
+For the following instructions set ``SUBMIT_MACHINE`` to be the full name of the submit machine and ``EXECUTABLE_PATH`` to be the full path to the directory containing the
+bundles.  You will need to set::
+
+    export PATH=${EXECUTABLE_PATH}:${PATH}
+
+to ensure the correct versions are found by the workflow generator.
+
+
+-----------------------
+Generating a cache file
+-----------------------
+
+In order to get frame files, jobs running on OSG need a cache file that points to the gridFTP server at Nebraska.::
+
+    find /frames/ER8/*HOFT_C00* /frames/O1/*HOFT_C00* -type f -name \*gwf > cache.tmp
+
+    sed -e 's+.*/\([^/]*\)$+\1+' -e 's+.*\([0-9]\{6\}\)[0-9]\{4\}.*+\1/\0+' cache.tmp > short.tmp
+    sed -e 's+^+gsiftp://red-gridftp.unl.edu/user/ligo+' -e 's+$+ pool="osg"+' cache.tmp > long.tmp
+
+    paste -d' ' short.tmp long.tmp > osg-frames-c00.cache 
+
+    rm cache.tmp short.tmp long.tmp
+
+This will need to be tweaked depending on the submission site.
+
+
+
+------------------------
+Configuring the workflow
+------------------------
+
+In order for ``pycbc_inspiral`` to be sent to worker nodes it must be available via gridFTP.::
+
+    curl https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/executables.ini  -o gsiftp_executables.ini
+    sed -i "s+\${which:pycbc_inspiral}+gsiftp:${SUBMIT_MACHINE}${EXECUTABLE_PATH}/pycbc_inspiral
+
+
+Include ``gsiftp_executables.ini`` in the list of .ini files when running ``pycbc_make_coinc_search_workflow`` in place of any other
+executables.ini.  
+
+Add the following to the list of ``--config-overrides`` when running ``pycbc_make_coinc_search_workflow``::
+
+    'pegasus_profile-inspiral:condor|request_memory:1920M' \
+    'pegasus_profile-inspiral:hints|execution.site:osg' \
+    'workflow-main:staging-site:osg=osg-scratch' \
+
+After generating the workflow there is one bug that must be worked around::
+
+    cd output
+    sed -i 's+site="nonlocal"+site="local"+'
+
+
+--------------------
+Running the workflow
+--------------------
+
+Add the following arguments to ``pycbc_submit_dax``::
+
+    --execution-sites osg \
+    --append-pegasus-property 'pegasus.data.configuration=nonsharedfs' \
+    --append-pegasus-property 'pegasus.transfer.bypass.input.staging=true' \
+    --append-site-profile 'local:dagman|maxidle:5000' \
+    --cache osg-frames-c00.cache \
+
+Then submit as usual.
+
