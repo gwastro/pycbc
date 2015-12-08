@@ -260,8 +260,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
 
     if opt.injection_file or opt.sgburst_injection_file:
         strain.injections = injections
-    else:
-        strain.injections = None
 
     strain.gating_info = gating_info
 

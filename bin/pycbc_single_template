@@ -176,7 +176,7 @@ with ctx:
 
     logging.info("Making template: %s" % opt.approximant)
     if opt.use_params_of_closest_injection:
-        if gwstrain.injections is None or not opt.trigger_time:
+        if not hasattr(gwstrain, 'injections') or not opt.trigger_time:
             err_msg = "To use --use-params-of-closest-injection you must "
             err_msg += "be making injections with an injection file and using "
             err_msg += "the --trigger-time option."
