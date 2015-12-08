@@ -32,6 +32,11 @@ from numpy import log
 import numpy
 from scipy.optimize import bisect
 
+def nearest_larger_binary_number(input_len):
+    """ Return the nearest binary number larger than input_len.
+    """
+    return 2**numpy.ceil(numpy.log2(input_len))
+
 def chirp_distance(dist, mchirp, ref_mass=1.4):
     return dist * (2.**(-1./5) * ref_mass / mchirp)**(5./6)
 
