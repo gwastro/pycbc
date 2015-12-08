@@ -275,7 +275,8 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
 
 def make_single_template_plots(workflow, segs, seg_name, params,
                                    out_dir, inj_file=None, exclude=None,
-                                   require=None, tags=None, params_str=None):
+                                   require=None, tags=None, params_str=None,
+                                   use_exact_inj_params=False):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'single_template_plot'
@@ -287,10 +288,13 @@ def make_single_template_plots(workflow, segs, seg_name, params,
             # Reanalyze the time around the trigger in each detector
             node = PlotExecutable(workflow.cp, 'single_template', ifos=[ifo],
                               out_dir=out_dir, tags=[tag] + tags).create_node()
-            node.add_opt('--mass1', "%.6f" % params['mass1'])
-            node.add_opt('--mass2', "%.6f" % params['mass2'])
-            node.add_opt('--spin1z',"%.6f" % params['spin1z'])
-            node.add_opt('--spin2z',"%.6f" % params['spin2z'])
+            if use_exact_inj_params:
+                node.add_opt('--use-params-of-closest-injection')
+            else:
+                node.add_opt('--mass1', "%.6f" % params['mass1'])
+                node.add_opt('--mass2', "%.6f" % params['mass2'])
+                node.add_opt('--spin1z',"%.6f" % params['spin1z'])
+                node.add_opt('--spin2z',"%.6f" % params['spin2z'])
             # str(numpy.float64) restricts to 2d.p. BE CAREFUL WITH THIS!!!
             str_trig_time = '%.6f' %(params[ifo + '_end_time'])
             node.add_opt('--trigger-time', str_trig_time)
@@ -316,8 +320,11 @@ def make_single_template_plots(workflow, segs, seg_name, params,
             caption = "'The SNR and chi^2 timeseries around the injection"
             if params_str is not None:
                 caption += " using %s" %(params_str)
-            caption += ". The template used has the following parameters: "
-            caption += "mass1=%s, mass2=%s, spin1z=%s, spin2z=%s'"\
+            if use_exact_inj_params:
+                caption += ". The injection itself was used as the template.'"
+            else:
+                caption += ". The template used has the following parameters: "
+                caption += "mass1=%s, mass2=%s, spin1z=%s, spin2z=%s'"\
                        %(params['mass1'], params['mass2'], params['spin1z'],
                          params['spin2z'])
             node.add_opt('--plot-caption', caption)
