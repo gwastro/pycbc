@@ -144,7 +144,7 @@ while true ; do
       echo "  -g, --local-gsiftp-server HOST provide a gsiftp url on HOST"
       echo "                                 for the local site storage"
       echo "                                 and scratch directories" 
-      echo "  -r, --rmote-staging-server HOST provide a gsiftp url on HOST"
+      echo "  -r, --remote-staging-server HOST provide a gsiftp url on HOST"
       echo "                                 for the remote site storage"
       echo "                                 and scratch directories" 
       echo "  -p, --pegasus-properties FILE use the specified file as"
