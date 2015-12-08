@@ -22,7 +22,7 @@ from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter
 from pycbc import events
 from pycbc.filter import resample_to_delta_t
 from pycbc.types import zeros, float32, complex64, TimeSeries, FrequencySeries
-from pycbc.types import real_same_precision_as
+from pycbc.types import complex_same_precision_as
 
 def select_segment(fname, segment, ifo, time, start_pad, end_pad):
     segs = events.select_segments_by_definer(fname, segment, ifo)
@@ -160,11 +160,6 @@ row.params.mass2 = opt.mass2
 row.params.spin1z = opt.spin1z
 row.params.spin2z = opt.spin2z
 
-chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(row, opt.chisq_bins))
-# FIXME: This check is hacky!
-if opt.approximant and 'params' in opt.approximant:
-    opt.approximant = waveform.FilterBank.parse_option(row, opt.approximant)
-
 with ctx:
     fft.from_cli(opt)
     flow = opt.low_frequency_cutoff
@@ -186,10 +181,16 @@ with ctx:
             err_msg += "be making injections with an injection file and using "
             err_msg += "the --trigger-time option."
             raise ValueError(err_msg)
+        logging.info("Making template directly from injection.")
         inj_set = gwstrain.injections
         end_times = numpy.array(inj_set.end_times())
         inj_idx = abs(end_times - opt.trigger_time).argmin()
         inj = inj_set.table[inj_idx]
+        # Use injection values for things like choosing number of chisq bins
+        row.params.mass1 = opt.mass1 = inj.mass1
+        row.params.mass2 = opt.mass2 = inj.mass2
+        row.params.spin1z = opt.spin1z = inj.spin1z
+        row.params.spin2z = opt.spin2z = inj.spin2z
         # FIXME: Don't like hardcoded 16384 here
         # NOTE: f_lower is set in strain.py as inj.f_lower, but this is a
         #       little unclear to see and caused me some problems! Stating
@@ -199,27 +200,17 @@ with ctx:
                                     distance_scale=opt.injection_scale_factor)
         td_template = resample_to_delta_t(td_template, gwstrain.delta_t,
                                           method='ldas')
-        td_template._epoch -= inj.get_end(site=opt.channel_name[0])
-        # total duration of the waveform
-        tmplt_length = len(td_template) * td_template.delta_t
-        # for IMR templates the zero of time is at max amplitude (merger)
-        # thus the start time is minus the duration of the template from
-        # lower frequency cutoff to merger, i.e. minus the 'chirp time'
-        tChirp = - float(td_template.start_time )  # conversion from LIGOTimeGPS
-        td_template.resize((flen-1)*2)
-        k_zero = int(td_template.start_time / td_template.delta_t)
-        td_template.roll(k_zero)
         td_template = td_template * pycbc.DYN_RANGE_FAC
-        # Create output memory
-        out = zeros(flen, dtype=complex64)
-        template = FrequencySeries(out, delta_f=delta_f, copy=False) 
-        # And FFT
-        fft.fft(td_template.astype(real_same_precision_as(template)), template)
-
-        template.length_in_time = tmplt_length
-        template.chirp_length = tChirp
+        td_template._epoch -= inj.get_end(site=opt.channel_name[0])
         opt.approximant = inj.waveform
+        template = waveform.td_waveform_to_fd_waveform(td_template, length=flen)
+        template = template.astype(complex_same_precision_as(segments[0]))
     else:
+        # FIXME: This check is hacky!
+        if opt.approximant and 'params' in opt.approximant:
+            opt.approximant = waveform.FilterBank.parse_option(row,
+                                                               opt.approximant)
+        logging.info("Making template: %s" % opt.approximant)
         template = waveform.get_waveform_filter(zeros(flen, dtype=complex64), 
                                     approximant=opt.approximant,
                                     mass1=opt.mass1, mass2=opt.mass2,
@@ -227,6 +218,9 @@ with ctx:
                                     taper=opt.taper_template, 
                                     f_lower=flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)
+    chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(row,
+                                                               opt.chisq_bins))
+
     f['template'] = template.numpy()                  
     snrs, chisqs = [], []  
     raw_bins = [[] for b in range(chisq_bins)]
