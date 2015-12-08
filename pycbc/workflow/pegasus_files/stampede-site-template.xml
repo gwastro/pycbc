@@ -1,3 +1,12 @@
+  <!-- a separate staging site is added else, the intermediate files are symlinked from the home
+       directory since symlinking is turned on -->
+  <site handle="stampede-scratch" arch="x86_64" os="LINUX">
+   <directory  path="$LOCAL_SITE_PATH/stampede-scratch" type="shared-scratch" free-size="null" total-size="null">
+        <file-server  operation="all" url="${REMOTE_STAGING_URL}/stampede-scratch">
+        </file-server>
+    </directory>
+  </site>
+
   <site handle="stampede" arch="x86_64" os="LINUX">
     <profile namespace="env" key="GLOBUS_LOCATION">/opt/apps/xsede/gram5-5.2.3</profile>
     <profile namespace="pegasus" key="style">condor</profile>

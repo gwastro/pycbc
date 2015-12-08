@@ -2,7 +2,7 @@
        directory since symlinking is turned on -->
   <site handle="osg-scratch" arch="x86_64" os="LINUX">
    <directory  path="$LOCAL_SITE_PATH/osg-scratch" type="shared-scratch" free-size="null" total-size="null">
-        <file-server  operation="all" url="gsiftp://sugar-dev2.phy.syr.edu${LOCAL_SITE_PATH}/osg-scratch">
+        <file-server  operation="all" url="${REMOTE_STAGING_URL}/osg-scratch">
         </file-server>
     </directory>
   </site>
