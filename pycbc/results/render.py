@@ -126,8 +126,8 @@ def render_default(path, cp):
         with open(path, 'r') as xmlfile:
             try:
                 content = fromsegmentxml(xmlfile, return_dict=True)
-            except ValueError:
-                pass
+            except Exception as e:
+                print 'No segment table found in', path, ':', e
 
     # render template
     template_dir = pycbc.results.__path__[0] + '/templates/files'
