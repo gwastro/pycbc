@@ -26,8 +26,8 @@
 waveforms.
 """
 import lal, lalsimulation
-from pycbc.types import TimeSeries, FrequencySeries
-from pycbc.types import real_same_precision_as
+from pycbc.types import TimeSeries, FrequencySeries, zeros
+from pycbc.types import real_same_precision_as, complex_same_precision_as
 import pycbc.scheme as _scheme
 import inspect
 from pycbc.fft import fft
@@ -562,24 +562,60 @@ def get_waveform_filter(out, template=None, **kwargs):
             input_params['taper'] is not None):
             hp = wfutils.taper_timeseries(hp, input_params['taper'],
                                           return_lal=False)
-        # total duration of the waveform
-        tmplt_length = len(hp) * hp.delta_t
-        # for IMR templates the zero of time is at max amplitude (merger)
-        # thus the start time is minus the duration of the template from
-        # lower frequency cutoff to merger, i.e. minus the 'chirp time'
-        tChirp = - float( hp.start_time )  # conversion from LIGOTimeGPS
-        hp.resize(N)
-        k_zero = int(hp.start_time / hp.delta_t)
-        hp.roll(k_zero)
-        htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
-        fft(hp.astype(real_same_precision_as(htilde)), htilde)
-        htilde.length_in_time = tmplt_length
-        htilde.chirp_length = tChirp
-        return htilde
+        return td_waveform_to_fd_waveform(hp, out=out)
 
     else:
         raise ValueError("Approximant %s not available" %
                             (input_params['approximant']))
+
+def td_waveform_to_fd_waveform(waveform, out=None, length=None,
+                               buffer_length=100):
+    """ Convert a time domain into a frequency domain waveform by FFT.
+        As a waveform is assumed to "wrap" in the time domain one must be
+        careful to ensure the waveform goes to 0 at both "boundaries". To
+        ensure this is done correctly the waveform must have the epoch set such
+        the merger time is at t=0 and the length of the waveform should be
+        shorter than the desired length of the FrequencySeries (times 2 - 1)
+        so that zeroes can be suitably pre- and post-pended before FFTing.
+        If given, out is a memory array to be used as the output of the FFT.
+        If not given memory is allocated internally.
+        If present the length of the returned FrequencySeries is determined
+        from the length out. If out is not given the length can be provided
+        expicitly, or it will be chosen as the nearest power of 2. If choosing
+        length explicitly the waveform length + buffer_length is used when
+        choosing the nearest binary number so that some zero padding is always
+        added.
+    """
+    # Figure out lengths and set out if needed
+    if out is None:
+        if length is None:
+            N = pnutils.nearest_larger_binary_number(len(waveform) + \
+                                                     buffer_length)
+            n = int(N//2) + 1
+        else:
+            n = length
+            N = (n-1)*2
+        out = zeros(n, dtype=complex_same_precision_as(waveform))
+    else:
+        n = len(out)
+        N = (n-1)*2
+    delta_f =  1. / (N * waveform.delta_t)
+
+    # total duration of the waveform
+    tmplt_length = len(waveform) * waveform.delta_t
+    # for IMR templates the zero of time is at max amplitude (merger)
+    # thus the start time is minus the duration of the template from
+    # lower frequency cutoff to merger, i.e. minus the 'chirp time'
+    tChirp = - float( waveform.start_time )  # conversion from LIGOTimeGPS
+    waveform.resize(N)
+    k_zero = int(waveform.start_time / waveform.delta_t)
+    waveform.roll(k_zero)
+    htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
+    fft(waveform.astype(real_same_precision_as(htilde)), htilde)
+    htilde.length_in_time = tmplt_length
+    htilde.chirp_length = tChirp
+    return htilde
+
 
 def waveform_norm_exists(approximant):
     if approximant in _filter_norms:
@@ -642,4 +678,5 @@ __all__ = ["get_td_waveform", "get_fd_waveform",
            "get_waveform_filter_norm", "get_waveform_end_frequency",
            "waveform_norm_exists", "get_template_amplitude_norm",
            "get_waveform_filter_length_in_time", "get_sgburst_waveform",
-           "print_sgburst_approximants", "sgburst_approximants"]
+           "print_sgburst_approximants", "sgburst_approximants",
+           "td_waveform_to_fd_waveform"]

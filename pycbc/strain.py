@@ -258,7 +258,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             logging.info("Converting to float32")
             strain = (dyn_range_fac * strain).astype(float32)
 
-    if opt.injection_file:
+    if opt.injection_file or opt.sgburst_injection_file:
         strain.injections = injections
 
     strain.gating_info = gating_info
