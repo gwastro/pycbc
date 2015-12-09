@@ -25,6 +25,7 @@ SITE_LIST=""
 STAGING_SITES=""
 TRANSFORMATION_CATALOG=""
 LOCAL_GSIFTP_SERVER=""
+REMOTE_STAGING_SERVER=""
 NO_CREATE_PROXY=0
 SUBMIT_DAX="--submit"
 
@@ -44,7 +45,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:g:a:p:P:s:S:k:t:Fknl:h --long dax:,cache-file:,local-gsiftp-server:,accounting-group:,pegasus-properties:,append-pegasus-property:,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:g:r:a:p:P:s:S:k:t:Fknl:h --long dax:,cache-file:,local-gsiftp-server:,remote-staging-server:,accounting-group:,pegasus-properties:,append-pegasus-property:,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -70,6 +71,11 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) LOCAL_GSIFTP_SERVER=$2 ; shift 2 ;;
+      esac ;;
+    -r|--remote-staging-server)
+      case "$2" in
+        "") shift 2 ;;
+        *) REMOTE_STAGING_SERVER=$2 ; shift 2 ;;
       esac ;;
     -a|--accounting-group)
       case "$2" in
@@ -137,6 +143,9 @@ while true ; do
       echo "  -c, --cache-file FILE   replica cache file for data reuse"
       echo "  -g, --local-gsiftp-server HOST provide a gsiftp url on HOST"
       echo "                                 for the local site storage"
+      echo "                                 and scratch directories" 
+      echo "  -r, --remote-staging-server HOST provide a gsiftp url on HOST"
+      echo "                                 for the remote site storage"
       echo "                                 and scratch directories" 
       echo "  -p, --pegasus-properties FILE use the specified file as"
       echo "                               the pegasus properties file"
@@ -243,6 +252,15 @@ if [ -z ${PEGASUS_SITE_CATALOG_PATH} ] ; then
   PEGASUS_SITE_CATALOG_PATH=${PEGASUS_FILE_DIRECTORY}
 fi
 
+# Create the site catalog
+if [ -z $REMOTE_STAGING_SERVER ] ; then
+  REMOTE_STAGING_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
+else
+  REMOTE_STAGING_URL="gsiftp://${REMOTE_STAGING_SERVER}${LOCAL_SITE_PATH}"
+fi
+export REMOTE_STAGING_URL
+
+
 # create the site catalog template
 echo 'cat <<END_OF_TEXT' > site-catalog.sh
 
@@ -277,6 +295,13 @@ echo 'END_OF_TEXT' >> site-catalog.sh
 
 # write out the site catalog
 bash site-catalog.sh > site-catalog.xml
+
+# If REMOTE_STAGING_SERVER was not set, but was needed by
+# sites the user asked for, then raise an error and exit
+if grep -q REMOTE_STAGING_SERVER_UNSET site-catalog.xml ; then
+  echo "Attempt to use a remote site but --remote-staging-server not specified"
+  exit 1
+fi
 
 # Plan the workflow
 echo "Generating concrete workflow"
