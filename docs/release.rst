@@ -85,10 +85,127 @@ Static binaries are entirely self-contained programs that
 
 A new set of such binaries should be generated for every release.
 
+-------------
+Preliminaries
+-------------
+
+To set up an environment for the release first follow the standard installation
+instructions here:
+
+.. toctree::
+    :maxdepth: 1
+
+    install
+
+If the default Python is 2.6 it will be useful to name your virtual environment
+something like ``pycbc_dev2.6``, since a subsequent step will require a 2.7
+environment.
+
+In order to distribute the binaries it will first be necessary to have a copy of the git
+repository
+
+.. code::
+
+    git clone git@code.pycbc.phy.syr.edu:ligo-cbc/pycbc-software.git
+
+Note that this will take a very long time.  Once the repository has been cloned
+create a directory for the new release.
+
+.. code:: bash
+
+   mkdir -p v1.2.5/x86_64/composer_xe_2015.0.090
+
+changing version number and architecture as appropriate.
+
+A number of binaries change very rarely between releases and so can be copied
+from a previous one:
+
+.. code:: bash
+
+    cp v1.2.4/x86_64/composer_xe_2015.0.090/* v1.2.5/x86_64/composer_xe_2015.0.090
+
+Edit the ``README.md`` file for the new release.
+
+Update the ``executables.ini`` file
+
+.. code-block:: bash
+
+    curl https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/O1/pipeline/executables.ini  -o executables.ini
+    sed -i "s+\${which:\\(.*\\)}+http://code.pycbc.phy.syr.edu/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090/\1+" executables.ini
+    for exe in `grep http://code.pycbc executables.ini | awk '{print $1}'`
+    do
+      echo -e "[pegasus_profile-${exe}]\npycbc|installed = False\nhints|execution.site = local\n\n"
+    done > profiles
+    cat executables.ini profiles > tmp
+    mv tmp executables.ini
+    rm profiles
+
+Again, change version number and architecture as needed.
+
+
+---------------
+lalapps_inspinj
+---------------
+
+This is the one C program from lalsuite that is still needed in the current
+workflow.  This almost never changes and so copying from the previous release
+will generally be fine.  If it does need to be rebuilt follow the instructions
+for installing lalsuite but configure with
+
+.. code::
+
+    --enable-static-binaries --enable-static --disable-swig --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalpulsar --disable-framec
+
+Then ``make`` and ``make install`` as usual.  The static exexecutable will be placed in the 
+target ``bin`` directory.
+
+----------------------
+Other lalapps programs
+----------------------
+
+There are a few stochastic bank programs in lalsuite needed by pycbc.  These change infrequently and
+can usually be copied from a previous release.  If they do need to be rebuilt the process is:
+
+.. code-block:: bash
+
+    cd /path/to/your/lalsuite
+    cd lalapps/src/inspiral/
+
+    for prog in \*sbank\*.py
+    do
+      pyinstaller ${prog}                          \
+        --hidden-import scipy.linalg.cython_blas   \
+        --hidden-import scipy.linalg.cython_lapack \
+        --hidden-import scipy.special._ufuncs_cxx  \
+        --hidden-import scipy.integrate            \
+        --strip                                    \
+        --onefile
+    done
+
+The resulting bundles will be placed in the ``dist`` directory.
+
+
+----------------------
+Segment database tools
+----------------------
+
+Client tools for the segment database change infrequently and can usually be
+copied from the previous release.  If they do need to be rebuilt the process is:
+
+.. code-block:: bash
+
+    pyinstaller ligolw_segment_query_dqsegdb --strip --onefile
+    pyinstaller ligolw_segments_from_cats_dqsegdb --strip --onefile
+
+
+--------------
+pyCBC binaries
+--------------
+
 The program used to create a static binary from a Python program is 
 `PyInstaller <http://www.pyinstaller.org/>`_.  To set up PyInstaller:
 
-.. code:: bash
+.. code-block:: bash
 
     source /your/virtual/environment/bin/activate
     cd /your/virtual/environment/src
@@ -133,15 +250,13 @@ edit ``bootloader/common/pyi_utils.c`` and replace the function ``set_dynamic_li
 
 Then configure the bootlader and install as usual:
 
-.. code:: bash
+.. code-block:: bash
+
     cd bootloader
     ./waf configure build install --no-lsb
     cd ..
     python setup.py install
 
---------------
-pyCBC binaries
---------------
 
 To ensure that pyCBC is set up properly prior to running pyinstaller, first
 clean out the pip cache
@@ -152,7 +267,7 @@ clean out the pip cache
 
 Then checkout the official release
 
-.. code:: bash
+.. code-block:: bash
 
     cd /your/virtual/environment/src
     git clone git@github.com:ligo-cbc/pycbc.git
@@ -184,7 +299,8 @@ report as ``CLEAN``.
 
 To build static executables:
 
-.. code:: bash
+.. code-block:: bash
+
    cd tools/static
    bash build_dag.sh
 
@@ -192,10 +308,19 @@ This will construct a condor dag with a pyinstaller job for each binary.
 Submit as usual:
 
 .. code:: bash
+
    condor_submit_dag build_static.dag
 
 Assuming everything goes well the resulting binaries will be placed in the
-``dist`` directory.
+``dist`` directory.  As a final test, check the version again
+
+.. code::
+
+    dist/pycbc_inspiral --version
+
+    Branch: None Tag: v1.2.5 Id: 51dcf08cc6016a7574c3baf2efff2bb60ed6ce4f Builder:
+    Larne Pekowsky <larne.pekowsky@ligo.org> Build date: 2015-10-31 14:48:20 +0000
+    Repository status is CLEAN: All modifications committed
 
 In principle jobs could fail if pyinstaller fails to build the executable,
 although this has never been seen in practice.  A job can also fail if
@@ -203,7 +328,41 @@ pyinstaller succeeds but the resulting program throws an error when invoked
 with ``--help``.  Most of the time this happens it is because a new program has
 been added and pyinstaller needs to be told that it needs scipy.  This is done
 by adding the name of the new program to the ``needs_full_build`` file in the
-``tools/static`` directory.  As a final test, check the version again
+``tools/static`` directory.  
+
+
+--------------
+pycbc_inspiral
+--------------
+
+This program needs to be built in a special environment so that it can be run on Open Science Grid sites.
+All the necessary elements are available through CVMFS:
+
+.. code-block:: bash
+
+  source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
+  module load gcc/4.6.2
+  module load python/2.7
+
+Unfortunately it is now necessary to build an entire parallel develoment environment.  Move existing directories out of the way
+
+.. code-block:: bash
+
+    mv ${HOME}/local ${HOME}/local_2.6
+    mv ${HOME}/.local ${HOME}/.local_2.6
+
+and repeat the installation instructions starting from installing pip.  You
+will also need to rebuild lalsuite.  For clarity you may want to call the
+virtual environment something like ``pycbc_devel.2.7``. 
+
+Once this second environment is set up in order to build:
+
+.. code-block:: bash
+
+    cd tools/static
+    ./build_one.sh ../../bin/pycbc_inspiral 
+
+and ensure that the resulting executable has the correct version
 
 .. code::
 
@@ -214,76 +373,20 @@ by adding the name of the new program to the ``needs_full_build`` file in the
     Repository status is CLEAN: All modifications committed
 
 
----------------
-lalapps_inspinj
----------------
+------------
+Finishing up
+------------
 
-This is the one C program from lalsuite that is still needed in the current
-workflow.  This almost never changes and so can usually be copied from a
-previous release.  If it does need to be rebuilt follow the instructions for
-installing lalsuite but configure with
+Once everything has been built and moved to the git repositry, commit and push as usual
 
-.. code:
-    --enable-static-binaries --enable-static --disable-swig --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalpulsar --disable-framec
+.. code:: bash
 
-Then ``make`` and ``make install`` as usual.  The static exexecutable will be placed in the 
-target ``bin`` directory.
+    git commit -a -m "Version 1.2.5"
+    git push
 
-----------------------
-Other lalapps programs
-----------------------
+This will take some time.
 
-There are a few stochastic bank programs in lalsuite needed by pycbc.  These change infrequently and
-can usually be copied from a previous release.  If they do need to be rebuilt the process is:
-
-.. code::
-    cd /path/to/your/lalsuite
-    cd lalapps/src/inspiral/
-
-    for prog in \*sbank\*.py
-    do
-      pyinstaller ${prog}                          \
-        --hidden-import scipy.linalg.cython_blas   \
-        --hidden-import scipy.linalg.cython_lapack \
-        --hidden-import scipy.special._ufuncs_cxx  \
-        --hidden-import scipy.integrate            \
-        --strip                                    \
-        --onefile
-    done
-
-The resulting bundles will be placed in the ``dist`` directory.
-
-
-
-----------------------
-Segment database tools
-----------------------
-
-Client tools for the segment database change infrequently and can usually be
-copied from the previous release.  If they do need to be rebuilt the process is
-
-
-were built from the dqsegdb-release-1-2-2 tag with 
-
-    pyinstaller ligolw_segment_query_dqsegdb --strip --onefile
-    pyinstaller ligolw_segments_from_cats_dqsegdb --strip --onefile
-
-
-## lalapps
-
-The lalapps_*_sbank* binaries were built from version 6.36 of the
-lalsuite_o1_branch branch with
-
-    pyinstaller ${prog}                          \
-      --hidden-import scipy.linalg.cython_blas   \
-      --hidden-import scipy.linalg.cython_lapack \
-      --hidden-import scipy.special._ufuncs_cxx  \
-      --hidden-import scipy.integrate            \
-      --strip                                    \
-      --onefile
-
-lalapps_inspinj was built by a standard lalsuite install with options
-
-
+Finally, the binaries will need to be put into place on the staging server, which must be done by someone with
+root access.
 
 
