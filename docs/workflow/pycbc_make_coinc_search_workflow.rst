@@ -711,25 +711,21 @@ This will need to be tweaked depending on the submission site.
 Configuring the workflow
 ------------------------
 
-In order for ``pycbc_inspiral`` to be sent to worker nodes it must be available via gridFTP.::
+In order for ``pycbc_inspiral`` to be sent to worker nodes it must be available via a remote protocol, either http or gridFTP.::
 
-    curl https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/executables.ini  -o gsiftp_executables.ini
-    sed -i "s+\${which:pycbc_inspiral}+gsiftp:${SUBMIT_MACHINE}${EXECUTABLE_PATH}/pycbc_inspiral
+    curl https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/O1/pipeline/executables.ini  -o executables.ini
+    sed -i "s+\${which:pycbc_inspiral}+http://code.pycbc.phy.syr.edu/pycbc-software/v1.3.1/x86_64/composer_xe_2015.0.090/pycbc_inspiral+" executables.ini 
 
-
-Include ``gsiftp_executables.ini`` in the list of .ini files when running ``pycbc_make_coinc_search_workflow`` in place of any other
-executables.ini.  
+changing the URL as appropriate.  Include this ``executables.ini`` in the list
+of .ini files when running ``pycbc_make_coinc_search_workflow`` in place of any
+other executables.ini.  
 
 Add the following to the list of ``--config-overrides`` when running ``pycbc_make_coinc_search_workflow``::
 
-    'pegasus_profile-inspiral:condor|request_memory:1920M' \
     'pegasus_profile-inspiral:hints|execution.site:osg' \
+    'pegasus_profile-inspiral:condor|request_memory:1920M' \
+    'pegasus_profile-inspiral:pycbc|installed:False' \
     'workflow-main:staging-site:osg=osg-scratch' \
-
-After generating the workflow there is one bug that must be worked around::
-
-    cd output
-    sed -i 's+site="nonlocal"+site="local"+'
 
 
 --------------------
@@ -742,7 +738,8 @@ Add the following arguments to ``pycbc_submit_dax``::
     --append-pegasus-property 'pegasus.data.configuration=nonsharedfs' \
     --append-pegasus-property 'pegasus.transfer.bypass.input.staging=true' \
     --append-site-profile 'local:dagman|maxidle:5000' \
+    --remote-staging-server `hostname -f`
     --cache osg-frames-c00.cache \
 
-Then submit as usual.
+``hostname -f`` will give the correct value if there is a gsiftp server running on the submit machine.  If not, change this as needed.
 
