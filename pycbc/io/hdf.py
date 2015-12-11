@@ -437,8 +437,9 @@ class SingleDetTriggers(object):
 
 class ForegroundTriggers(object):
     # FIXME: A lot of this is hardcoded to expect two ifos
-    def __init__(self, coinc_file, bank_file, sngl_files=None, n_loudest=None):
-        self.coinc_file = FileData(coinc_file, group='foreground')
+    def __init__(self, coinc_file, bank_file, sngl_files=None, n_loudest=None,
+                     group='foreground'):
+        self.coinc_file = FileData(coinc_file, group=group)
         self.sngl_files = {}
         if sngl_files is not None:
             for file in sngl_files:
