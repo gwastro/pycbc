@@ -119,8 +119,12 @@ back_cnum, fnlouder = coinc.calculate_n_louder(back_stat, fore_stat,
 back_cnum_exc, fnlouder_exc = coinc.calculate_n_louder(e.stat, fore_stat, 
                                                e.decimation_factor)         
 
+
 f['background/ifar'] = sec_to_year(background_time / (back_cnum + 1))  
 f['background_exc/ifar'] = sec_to_year(background_time_exc / (back_cnum_exc + 1))
+
+print fnlouder, fore_stat
+
 
 f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
