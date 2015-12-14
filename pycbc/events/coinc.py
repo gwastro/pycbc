@@ -106,7 +106,18 @@ def calculate_n_louder(bstat, fstat, dec, skip_background=False):
     # We need to subtract one from the index, to be consistent with the definition
     # of n_louder, as here we do want to include the background value at the
     # found index
-    fore_n_louder = n_louder[numpy.searchsorted(bstat, fstat, side='left') - 1]
+    idx = numpy.searchsorted(bstat, fstat, side='left') - 1
+
+    # If the foreground are *quieter* than the background or at the same value
+    # then the search sorted alorithm will choose position -1, which does not exist
+    # We force it back to zero. 
+    if isinstance(idx, numpy.ndarray): # Handle the case where our input is an array
+        idx[idx < 0] = 0
+    else: # Handle the case where we are simply given a scalar value
+        if idx < 0:
+            idx = 0
+
+    fore_n_louder = n_louder[idx]
 
     if not skip_background:
         unsort = sort.argsort()
