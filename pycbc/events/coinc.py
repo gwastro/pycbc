@@ -108,6 +108,9 @@ def calculate_n_louder(bstat, fstat, dec, skip_background=False):
     # found index
     idx = numpy.searchsorted(bstat, fstat, side='left') - 1
 
+    # If the foreground are *quieter* than the background or at the same value
+    # then the search sorted alorithm will choose position -1, which does not exist
+    # We force it back to zero. 
     if isinstance(idx, numpy.ndarray):
         idx[idx < 0] = 0
     else:
