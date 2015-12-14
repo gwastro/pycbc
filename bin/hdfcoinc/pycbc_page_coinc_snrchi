@@ -22,19 +22,24 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--found-injection-file', required=True,
-                    help='HDF format found injection file')
+                    help='HDF format found injection file. Required')
 parser.add_argument('--single-injection-file', required=True,
-                    help='Single detector trigger files from the injection set. One per ifos')
+                    help='Single detector trigger files from the injection set. One per ifo')
 parser.add_argument('--coinc-statistic-file', required=True,
-                    help='HDF format statistic file')
+                    help='HDF format statistic file. Required')
 parser.add_argument('--single-trigger-file', required=True,
-                    help='Single detector triggers files from the zero lag run')
+                    help='Single detector trigger files from the zero lag run.'
+                         ' Required')
 parser.add_argument('--newsnr-contours', nargs='*', default=[],
-                    help="List of newsnr values to draw contours at.")
-parser.add_argument('--background-front', action='store_true', default=False)
-parser.add_argument('--colorbar-choice', choices = ('spin', 'mchirp', 'eta', 'effective_distance', 'total_mass', 'optimal_snr'),
-                    default='effective_distance',
-                    help='Parameter to use for the colorbar. Default=effective_distance')
+                    help="List of newsnr values to draw contours. Optional")
+parser.add_argument('--background-front', action='store_true', default=False,
+                    help='If set, plot background on top of injections rather '
+                         'than vice versa')
+parser.add_argument('--colorbar-choice', choices=('effective_spin', 'mchirp',
+                    'eta', 'effective_distance', 'mtotal', 'optimal_snr',
+                    'redshift'), default='effective_distance',
+                    help='Parameter to use for the colorbar. '
+                         'Default=effective_distance')
 parser.add_argument('--chisq-choice', choices=chisq_choices,
                     default='traditional',
                     help='Which chisquared to plot. Default=traditional')
@@ -74,14 +79,18 @@ m1, m2 = f['injections/mass1'][:][inj_idx], f['injections/mass2'][:][inj_idx]
 s1, s2 = f['injections/spin1z'][:][inj_idx], f['injections/spin2z'][:][inj_idx]
 mchirp, eta = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 weighted_spin = pnutils.phenomb_chi(m1, m2, s1, s2)
+redshift = f['injections/redshift'][:][inj_idx] if args.colorbar_choice == \
+                                                           'redshift' else None
 
 #choices to color the found injections
-coloring = {'effective_distance': (eff_dist, "Effective Distance (Mpc)", colors.LogNorm()),
+coloring = {'effective_distance': (eff_dist, "Effective Distance (Mpc)",
+                                                             colors.LogNorm()),
             'mchirp': (mchirp, "Chirp Mass", colors.LogNorm()),
             'eta': (eta, "Symmetric Mass Ratio", colors.LogNorm()),
-            'spin': (weighted_spin, "Weighted Aligned Spin", None),
-            'total_mass': (m1 + m2, "Total Mass", colors.LogNorm())
-             }
+            'effective_spin': (weighted_spin, "Weighted Aligned Spin", None),
+            'mtotal': (m1 + m2, "Total Mass", colors.LogNorm()),
+            'redshift': (redshift, "Redshift", None)
+           }
 
 if 'optimal_snr_1' in f['injections']:
     opt_snr_map = {f.attrs['detector_1']: 'injections/optimal_snr_1',
@@ -101,7 +110,7 @@ else:
 pylab.scatter(inj_snr, inj_chisq, c=coloring[args.colorbar_choice][0],
               norm=coloring[args.colorbar_choice][2],
               marker='^', linewidth=0, label="Injections", 
-              zorder= not args.background_front)
+              zorder=(not args.background_front))
 
 try:
     r = numpy.logspace(numpy.log(min(bkg_chisq.min(), inj_chisq.min())*0.9),
@@ -110,13 +119,16 @@ except ValueError:
     # Allow code to continue in the absence of injection triggers
     r = numpy.logspace(numpy.log(bkg_chisq.min()*0.9),
                        numpy.log(bkg_chisq.max()*1.1), 200)
-for cval in args.newsnr_contours:
-    snrv = snr_from_chisq(r, cval)
-    pylab.plot(snrv, r, '--', color='grey', linewidth=1)
+
+if args.newsnr_contours:
+    for cval in args.newsnr_contours:
+        snrv = snr_from_chisq(r, cval)
+        pylab.plot(snrv, r, '--', color='grey', linewidth=1)
     
 ax = pylab.gca()
 ax.set_xscale('log')
 ax.set_yscale('log')
+
 try:
     cb = pylab.colorbar()
     cb.set_label(coloring[args.colorbar_choice][1], size='large')
@@ -124,6 +136,7 @@ except TypeError:
     # Catch case of no injection triggers
     if len(inj_chisq):
         raise
+
 pylab.title('%s Coincident Triggers' % ifo, size='large')
 pylab.xlabel('SNR', size='large')
 pylab.ylabel('Reduced $\chi^2$', size='large')
@@ -148,4 +161,4 @@ triggers colored by the %s of the injection. Dashed lines show
 contours of constant NewSNR.""" % (args.chisq_choice, coloring[args.colorbar_choice][1])
 pycbc.results.save_fig_with_metadata(fig, args.output_file, title=title, 
                                      caption=caption, cmd=' '.join(sys.argv),
-                                     fig_kwds={'dpi':300})
+                                     fig_kwds={'dpi':200})
