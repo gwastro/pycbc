@@ -744,7 +744,7 @@ Add the following arguments to ``pycbc_submit_dax``::
     --execution-sites osg \
     --append-pegasus-property 'pegasus.data.configuration=nonsharedfs' \
     --append-site-profile 'local:dagman|maxidle:5000' \
-    --remote-staging-server `hostname -f`
+    --remote-staging-server `hostname -f` \
     --cache osg-frames-c00.cache \
 
 ``hostname -f`` will give the correct value if there is a gsiftp server running on the submit machine.  If not, change this as needed.
