@@ -111,9 +111,9 @@ def calculate_n_louder(bstat, fstat, dec, skip_background=False):
     # If the foreground are *quieter* than the background or at the same value
     # then the search sorted alorithm will choose position -1, which does not exist
     # We force it back to zero. 
-    if isinstance(idx, numpy.ndarray):
+    if isinstance(idx, numpy.ndarray): # Handle the case where our input is an array
         idx[idx < 0] = 0
-    else:
+    else: # Handle the case where we are simply given a scalar value
         if idx < 0:
             idx = 0
 
