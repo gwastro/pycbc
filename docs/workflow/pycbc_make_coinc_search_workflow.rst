@@ -711,22 +711,25 @@ This will need to be tweaked depending on the submission site.
 Configuring the workflow
 ------------------------
 
-In order for ``pycbc_inspiral`` to be sent to worker nodes it must be available via a remote protocol, either http or gridFTP.::
+In order for ``pycbc_inspiral`` to be sent to worker nodes it must be available
+via a remote protocol, either http or gridFTP.  The easiest way to ensure this
+is to include the ``executables.ini`` file assocated with the current release
+in the list of ini files, for example::
 
-    curl https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/O1/pipeline/executables.ini  -o executables.ini
-    sed -i "s+\${which:pycbc_inspiral}+http://code.pycbc.phy.syr.edu/pycbc-software/v1.3.1/x86_64/composer_xe_2015.0.090/pycbc_inspiral+" executables.ini 
-
-changing the URL as appropriate.  Include this ``executables.ini`` in the list
-of .ini files when running ``pycbc_make_coinc_search_workflow`` in place of any
-other executables.ini.  
+    http://code.pycbc.phy.syr.edu/pycbc-software/v1.3.1/x86_64/composer_xe_2015.0.090/
 
 Add the following to the list of ``--config-overrides`` when running ``pycbc_make_coinc_search_workflow``::
 
     'pegasus_profile-inspiral:hints|execution.site:osg' \
     'pegasus_profile-inspiral:condor|request_memory:1920M' \
-    'pegasus_profile-inspiral:pycbc|installed:False' \
     'workflow-main:staging-site:osg=osg-scratch' \
 
+If a custom ``executables.ini`` is being used it will also be necessary to mark ``pycbc-inspiral`` as
+uninstalled by also adding::
+
+    'pegasus_profile-inspiral:pycbc|installed:False' \
+
+to the list of ``--config-overrides``
 
 --------------------
 Running the workflow
@@ -736,7 +739,6 @@ Add the following arguments to ``pycbc_submit_dax``::
 
     --execution-sites osg \
     --append-pegasus-property 'pegasus.data.configuration=nonsharedfs' \
-    --append-pegasus-property 'pegasus.transfer.bypass.input.staging=true' \
     --append-site-profile 'local:dagman|maxidle:5000' \
     --remote-staging-server `hostname -f`
     --cache osg-frames-c00.cache \
