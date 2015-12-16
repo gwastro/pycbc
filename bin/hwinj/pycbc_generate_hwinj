@@ -319,8 +319,8 @@ for ifo in opts.instruments:
     det = Detector(ifo)
 
     # get antenna pattern
-    f_plus, f_cross = det.antenna_pattern(opts.ra, opts.dec,
-                        opts.polarization, opts.geocentric_end_time)
+    f_plus, f_cross = det.antenna_pattern(sim.longitude, sim.latitude,
+                        sim.polarization, sim.geocentric_end_time)
 
     # calculate strain
     logging.info('Calculating strain for %s', ifo)
@@ -328,7 +328,7 @@ for ifo in opts.instruments:
 
     # taper waveform
     logging.info('Tapering strain for %s', ifo)
-    strain = taper_timeseries(strain, tapermethod=opts.taper)
+    strain = taper_timeseries(strain, tapermethod=sim.taper)
 
     # FFT strain
     logging.info('FFT strain for %s', ifo)
@@ -368,13 +368,13 @@ for ifo in opts.instruments:
     det = Detector(ifo)
 
     # get time delay to detector from center of the Earth
-    time_delay = det.time_delay_from_earth_center(opts.ra, opts.dec,
-                        opts.geocentric_end_time)
-    end_time = opts.geocentric_end_time + time_delay
+    time_delay = det.time_delay_from_earth_center(sim.longitude, sim.latitude,
+                        sim.geocent_end_time)
+    end_time = sim.geocent_end_time + time_delay
 
     # get antenna pattern
-    f_plus, f_cross = det.antenna_pattern(opts.ra, opts.dec,
-                        opts.polarization, opts.geocentric_end_time)
+    f_plus, f_cross = det.antenna_pattern(sim.longitude, sim.latitude,
+                        sim.polarization, sim.geocent_end_time)
 
     # calculate strain
     logging.info('Calculating strain for %s', ifo)
@@ -382,7 +382,7 @@ for ifo in opts.instruments:
 
     # taper waveform
     logging.info('Tapering strain for %s', ifo)
-    strain = taper_timeseries(strain, tapermethod=opts.taper)
+    strain = taper_timeseries(strain, tapermethod=sim.taper)
 
     # FFT strain
     logging.info('FFT strain for '+ifo+'...')
@@ -400,7 +400,7 @@ for ifo in opts.instruments:
     setattr(sim, ifo[0].lower()+'_end_time_ns', int(end_time % 1 * 1e9))
 
     # populate IFO distance columns
-    eff_distance = sim.distance / np.sqrt( ( 1 + numpy.cos( opts.inclination )**2 )**2 / 4 * f_plus**2 + numpy.cos( opts.inclination )**2 * f_cross**2 )
+    eff_distance = sim.distance / np.sqrt( ( 1 + numpy.cos( sim.inclination )**2 )**2 / 4 * f_plus**2 + numpy.cos( sim.inclination )**2 * f_cross**2 )
     setattr(sim, 'eff_dist_'+ifo[0].lower(), eff_distance)
 
     # populate IFO end time columns
@@ -424,8 +424,8 @@ h_plus, _ = get_td_waveform(sim, approximant=name, phase_order=phase_order,
                       delta_t=1.0/sample_rate)
 pad_seconds = 5
 template_duration_seconds = int( len(h_plus) / sample_rate ) + 1
-start_time = int(opts.geocentric_end_time) - template_duration_seconds - pad_seconds
-end_time = int(opts.geocentric_end_time) + 1 + pad_seconds
+start_time = int(sim.geocent_end_time) - template_duration_seconds - pad_seconds
+end_time = int(sim.geocent_end_time) + 1 + pad_seconds
 num_samples = (end_time - start_time) * sample_rate
 
 # append rows to XML tables
