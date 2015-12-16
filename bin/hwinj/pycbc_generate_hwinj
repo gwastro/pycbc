@@ -174,6 +174,8 @@ parser.add_argument("--frame-type", type=str, nargs="+",
                        'to get the needed frame file(s) of this type.')
 
 # output options
+parser.add_argument("--tag", type=str, default='hwinjcbc',
+                    help="Prefix added to output filenames.")
 parser.add_argument("--instruments", nargs="+", type=str, required=True,
                     help="List of instruments to analyze.")
 
@@ -426,11 +428,16 @@ start_time = int(opts.geocentric_end_time) - template_duration_seconds - pad_sec
 end_time = int(opts.geocentric_end_time) + 1 + pad_seconds
 num_samples = (end_time - start_time) * sample_rate
 
-# save XML output file if it does not exist
-logging.info('Writing XML file')
+# append rows to XML tables
 sim_table.append(sim)
 sngl_table.append(sngl)
-xml_filename = ''.join(opts.instruments) + '-' + 'HWINJ_CBC' + '-' + str(start_time) + '-' + str(end_time-start_time) + '.xml.gz'
+
+# construct filenames prefix
+prefix = opts.tag + '_' + str(start_time)
+
+# save XML output file if it does not exist
+logging.info('Writing XML file')
+xml_filename = prefix + '.xml.gz'
 if os.path.exists(xml_filename):
     logging.warn('Filename %s already exists and will not be overwritten', xml_filename)
     sys.exit()
@@ -450,7 +457,7 @@ for ifo in opts.instruments:
     injections.apply(output, ifo)
 
     # set output filename
-    txt_filename = ifo + '-' + 'HWINJ_CBC' + '-' + str(start_time) + '-' + str(end_time-start_time) + '.txt'
+    txt_filename = prefix + '_' + ifo + '.txt'
 
     # check if filename exists
     if os.path.exists(txt_filename):
