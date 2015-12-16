@@ -320,7 +320,7 @@ for ifo in opts.instruments:
 
     # get antenna pattern
     f_plus, f_cross = det.antenna_pattern(sim.longitude, sim.latitude,
-                        sim.polarization, sim.geocentric_end_time)
+                        sim.polarization, sim.geocent_end_time)
 
     # calculate strain
     logging.info('Calculating strain for %s', ifo)
