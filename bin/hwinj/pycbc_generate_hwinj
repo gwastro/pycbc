@@ -400,7 +400,7 @@ for ifo in opts.instruments:
     setattr(sim, ifo[0].lower()+'_end_time_ns', int(end_time % 1 * 1e9))
 
     # populate IFO distance columns
-    eff_distance = sim.distance / ( 1 + numpy.cos( opts.inclination )**2 )**2 / 4 * f_plus**2 + numpy.cos( opts.inclination )**2 * f_cross**2
+    eff_distance = sim.distance / np.sqrt( ( 1 + numpy.cos( opts.inclination )**2 )**2 / 4 * f_plus**2 + numpy.cos( opts.inclination )**2 * f_cross**2 )
     setattr(sim, 'eff_dist_'+ifo[0].lower(), eff_distance)
 
     # populate IFO end time columns
