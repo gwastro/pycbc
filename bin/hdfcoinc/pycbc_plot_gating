@@ -31,6 +31,7 @@ log_date_fmt = '%Y-%m-%d %H:%M:%S'
 logging.basicConfig(level=logging.INFO, format=log_fmt, datefmt=log_date_fmt)
 
 gate_data = {}
+have_gates = False
 for fn in args.input_file:
     logging.info('Reading gates from %s', fn)
     f = h5py.File(fn, 'r')
@@ -46,12 +47,13 @@ for fn in args.input_file:
         if not key in gate_data:
             gate_data[key] = []
         gate_data[key] += [g for g in zip(gate_time, gate_width, gate_pad)]
+        have_gates = have_gates or (len(gate_data[key]) > 0)
 
 fig = pl.figure(figsize=(10, 5))
 ax = fig.gca()
 ax.set_yticks([])
 
-if len(gate_data) > 0:
+if have_gates:
     t_min = t_max = None
     total_time = {}
     total_time_pad = {}
