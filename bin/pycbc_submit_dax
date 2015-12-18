@@ -21,6 +21,7 @@ LOCAL_PEGASUS_DIR=""
 ACCOUNTING_GROUP=""
 NO_ACCOUNTING_GROUP=0
 PEGASUS_PROPERTIES=""
+SHARED_FILESYSTEM=0
 SITE_LIST=""
 STAGING_SITES=""
 TRANSFORMATION_CATALOG=""
@@ -45,7 +46,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:g:r:a:p:P:s:S:k:t:Fknl:h --long dax:,cache-file:,local-gsiftp-server:,remote-staging-server:,accounting-group:,pegasus-properties:,append-pegasus-property:,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:g:r:a:p:P:es:S:k:t:Fknl:h --long dax:,cache-file:,local-gsiftp-server:,remote-staging-server:,accounting-group:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -92,6 +93,7 @@ while true ; do
         "") shift 2 ;;
         *) echo $2 >> extra-properties.conf ; shift 2 ;;
       esac ;;
+    -e|--enable-shared-filesystem) SHARED_FILESYSTEM=1 ; shift ;;
     -s|--execution-sites)
       case "$2" in
         "") shift 2 ;;
@@ -323,6 +325,20 @@ fi
 
 echo >> pegasus-properties.conf
 cat extra-properties.conf >> pegasus-properties.conf
+
+# If user specified a value for pegasus.data.configuration
+# then don't add another one
+if ! grep -q pegasus.data.configuration= pegasus-properties.conf
+then
+  # No option specified, append nonshared unless user said 
+  # not to
+  if [ $SHARED_FILESYSTEM == 0 ]
+  then
+    echo 'pegasus.data.configuration=nonsharedfs' >> pegasus-properties.conf
+  fi
+fi
+
+
 
 if [ $CACHE_FILE == 0 ]; then
   pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --cluster label $SUBMIT_DAX 
