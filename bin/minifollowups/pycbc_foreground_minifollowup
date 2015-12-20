@@ -26,6 +26,7 @@ import pycbc.version
 def to_file(path, ifo=None):
     fil = wdax.File(os.path.basename(path))
     fil.ifo = ifo
+    path = os.path.abspath(path)
     fil.PFN(path, 'local')
     return fil
 
