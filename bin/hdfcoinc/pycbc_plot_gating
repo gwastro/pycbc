@@ -97,4 +97,4 @@ output_file = open(args.output_file, 'wb')
 try:
     mpld3.save_html(fig, output_file)
 except TypeError:
-    text_file.write("<p>No gates to plot</p>")
+    output_file.write("<p>No gates to plot</p>")
