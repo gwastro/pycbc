@@ -29,7 +29,7 @@ from pycbc import fft
 from pycbc import pnutils
 from pycbc import psd as _psd
 from pycbc import strain as _strain
-from pycbc.detector import Detector
+from pycbc.detector import Detector, effective_distance
 from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.filter import make_frequency_series
 from pycbc.filter import sigmasq
@@ -400,7 +400,8 @@ for ifo in opts.instruments:
     setattr(sim, ifo[0].lower()+'_end_time_ns', int(end_time % 1 * 1e9))
 
     # populate IFO distance columns
-    eff_distance = sim.distance / numpy.sqrt( ( 1 + numpy.cos( sim.inclination )**2 )**2 / 4 * f_plus**2 + numpy.cos( sim.inclination )**2 * f_cross**2 )
+    eff_distance = effective_distance(sim.distance, sim.inclination,
+                                      f_plus, f_cross**2)
     setattr(sim, 'eff_dist_'+ifo[0].lower(), eff_distance)
 
     # populate IFO end time columns
