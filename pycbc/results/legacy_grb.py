@@ -658,7 +658,8 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
         extent = segments.segment(int(wkflow.cp.get("workflow", "start-time")),
                                   int(wkflow.cp.get("workflow", "end-time")))
     else:
-        extent = science_segs.union(ifos).extent()
+        extent = science_segs.union([ifo for ifo in ifos \
+                                     if ifo in science_segs.keys()]).extent()
     
     ifo_colors = {}
     for ifo in ifos:
