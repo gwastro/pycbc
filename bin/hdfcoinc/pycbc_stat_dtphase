@@ -7,12 +7,19 @@ doing a simple monte-carlo
 import argparse, h5py, numpy.random, pycbc.detector, logging, multiprocessing
 from numpy.random import normal, uniform, power
 parser = argparse.ArgumentParser()
-parser.add_argument('--ifos', nargs=2)
-parser.add_argument('--sample-size', type=int)
-parser.add_argument('--snr-threshold', type=float)
-parser.add_argument('--sample-rate', type=int, default=4096)
-parser.add_argument('--max-combined-snr', type=float, default=25)
-parser.add_argument('--coinc-threshold', type=float)
+parser.add_argument('--ifos', nargs=2, help="The two ifos to generate a histogram for")
+parser.add_argument('--sample-size', type=int, 
+                    help="Approximant number of independent samples to draw for the distribution")
+parser.add_argument('--snr-threshold', type=float, 
+                    help="SNR cutoff to apply to the drawn SNR values.")
+parser.add_argument('--sample-rate', type=int, default=4096, 
+                    help="Sample rate used to determine the bin size in the time difference")
+parser.add_argument('--max-combined-snr', type=float, default=100,
+                    help="Maximum combine newsnr to draw signals out to")
+parser.add_argument('--amplitude-ratio-bins', type=int, default=50,
+                    help="Number of bins to use for storing amplitude ratios")
+parser.add_argument('--amplitude-magnitude-bins', type=int, default=50,
+                    help="Number of bins to use for storing the combined SNR magnitudes")
 parser.add_argument('--output-file')
 parser.add_argument('--cores', default=1, type=int)
 parser.add_argument('--verbose', action='store_true')
@@ -23,12 +30,14 @@ d1 = pycbc.detector.Detector(str(args.ifos[0]))
 d2 = pycbc.detector.Detector(str(args.ifos[1]))
 maxdt = d1.light_travel_time_to_detector(d2)
 
+# Calculate the edges of the bins
 max_csnr = args.max_combined_snr
 max_ratio = numpy.log((max_csnr**2.0- args.snr_threshold**2.0) ** 0.5 / args.snr_threshold)
 tbins = numpy.linspace(- maxdt, maxdt, num=int(args.sample_rate * 2 * maxdt))
 pbins = numpy.linspace(0, 2.0 * numpy.pi, num=100)
-rbins = numpy.linspace(-max_ratio, max_ratio, num=40)
-mbins = numpy.logspace(numpy.log(args.snr_threshold * 2 ** 0.5), numpy.log(max_csnr), num=30, base=numpy.e)
+rbins = numpy.linspace(-max_ratio, max_ratio, num=args.amplitude_ratio_bins)
+mbins = numpy.logspace(numpy.log(args.snr_threshold * 2 ** 0.5), numpy.log(max_csnr),
+                       num=args.amplitude_magnitude_bins, base=numpy.e)
 hist_bins = (tbins, pbins, rbins, mbins)
 
 pycbc.init_logging(args.verbose)
