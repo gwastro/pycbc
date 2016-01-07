@@ -110,7 +110,6 @@ class PhaseTDStatistic(NewSNRStatistic):
         self.m = (self.hist == 0)
 
         self.hist = numpy.log(self.hist) 
-        #print self.hist.min(), self.hist.max()
 
         self.hist[self.m] = 1.0 / top
 
