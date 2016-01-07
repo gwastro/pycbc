@@ -123,7 +123,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         """
         td = s1[:,2] - s2[:,2] - slide * step
         pd = (s1[:,1] - s2[:,1]) % (numpy.pi * 2)
-        rd = numpy.log(s1[:,4] / s2[:,4])
+        rd = numpy.log(s1[:,4] / s2[:,4]) + numpy.log(s2[:,3] / s1[:,3])
         md = (s1[:,4]**2.0 + s2[:,4]**2.0) ** 0.5
 
         # These are the bin boundaries stored in the hdf file        
