@@ -149,7 +149,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         
         m = self.hist[tv, pv, rv, mv]
         
-        cstat = (s1[:,0]**2.0 + s2[:,0]**2.0 + m) ** 0.5
+        cstat = (s1[:,0]**2.0 + s2[:,0]**2.0 + 2.0 * m) ** 0.5
         return cstat
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
