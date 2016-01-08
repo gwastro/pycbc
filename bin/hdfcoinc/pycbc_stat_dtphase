@@ -22,6 +22,8 @@ parser.add_argument('--amplitude-ratio-bins', type=int, default=50,
                     help="Number of bins to use for storing amplitude ratios")
 parser.add_argument('--amplitude-magnitude-bins', type=int, default=50,
                     help="Number of bins to use for storing the combined SNR magnitudes")
+parser.add_argument('--fixed-timing-error', default=1.0/4096, type=float,
+                    help="Fixed value for a timing error")
 parser.add_argument('--output-file')
 parser.add_argument('--cores', default=1, type=int)
 parser.add_argument('--verbose', action='store_true')
@@ -66,7 +68,6 @@ def generate_samples(size):
     ra = uniform(0, 2 * numpy.pi, size=size)
     dec = numpy.arccos(uniform(-1., 1., size=size)) - numpy.pi/2
     pol = uniform(0, 2 * numpy.pi, size=size)
-    dist = power(3, size) / args.snr_threshold
     inc = uniform(0, 2 * numpy.pi, size=size)
     ip = numpy.cos(inc)
     ic = 0.5 * (1.0 + ip * ip)
@@ -95,7 +96,7 @@ def generate_samples(size):
     sp2 = numpy.resize(fp2 * ip, len(dist)) / dist + numpy.resize(normal(0, scale=1.0, size=size), fsize)
     sc1 = numpy.resize(fc1 * ic, len(dist)) / dist + numpy.resize(normal(0, scale=1.0, size=size), fsize)
     sc2 = numpy.resize(fc2 * ic, len(dist)) / dist + numpy.resize(normal(0, scale=1.0, size=size), fsize)
-    td = numpy.resize(td, fsize) + normal(0, scale=1.0 / args.sample_rate, size=fsize)
+    td = numpy.resize(td, fsize) + normal(0, scale=args.fixed_timing_error, size=fsize)
 
     # Remove points below the SNR threshold
     t = sp1**2.0 + sc1**2.0 > args.snr_threshold ** 2.0
@@ -110,7 +111,7 @@ def generate_samples(size):
     s2 = (sp2**2.0 + sc2**2.0)**0.5
 
     td = td[t]
-    phase_diff = (numpy.arctan2(sp1, sc1) - numpy.arctan2(sp2, sc2)) % (numpy.pi * 2)
+    phase_diff = (numpy.arctan2(sc1, sp1) - numpy.arctan2(sc2, sp2)) % (numpy.pi * 2)
     ratio = numpy.log(s1 / s2)
     mag = (s1**2.0 + s2**2.0)**0.5
     
