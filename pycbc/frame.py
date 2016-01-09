@@ -54,7 +54,7 @@ _fr_type_map = {
         lalframe.FrameAddCOMPLEX16TimeSeriesProcData
     ],
     lal.U4_TYPE_CODE: [
-        lalframe.FrStreamReadUINT4TimeSeries, numpy.float64,
+        lalframe.FrStreamReadUINT4TimeSeries, numpy.uint64,
         lal.CreateUINT4TimeSeries,
         lalframe.FrStreamGetUINT4TimeSeriesMetadata,
         lal.CreateUINT4Sequence,
