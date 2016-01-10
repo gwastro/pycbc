@@ -108,10 +108,9 @@ class PhaseTDStatistic(NewSNRStatistic):
 
         #set 0 to smallest value
         self.m = (self.hist == 0)
+        self.hist[self.m] = 1.0 / top
 
         self.hist = numpy.log(self.hist) 
-
-        self.hist[self.m] = 1.0 / top
 
     def single(self, trigs):
         newsnr = NewSNRStatistic.single(self, trigs)
