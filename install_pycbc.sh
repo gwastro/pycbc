@@ -20,7 +20,7 @@ echo
 echo "virtualenv version:"
 virtualenv --version
 echo
-read -rp  "Is your version of virtualenv greater than 13.1.1? (Enter yes or no) " version
+read -rp  "Is your version of virtualenv greater than or equal to 13.1.1? (Enter yes or no) " version
 
 if [[ $version == "yes" ]] ; then
   break
@@ -266,6 +266,7 @@ elif [[ ${install_rom} == "no" ]] ; then
  read -rp "Do you want to download the ROM data now (Enter yes or no): " rom_download
 
   if [[ ${rom_download} == "no" ]] ; then
+    echo "Please determine the location of the ROM data, or chose yes to download it. Exiting install."
     exit 1
 
   elif [[ ${rom_download} == "yes" ]] ; then
@@ -285,8 +286,7 @@ elif [[ ${install_rom} == "no" ]] ; then
     fi
     
     if [ ! -d ${rom_store} ] ; then
-      echo
-      echo "ERROR: the directory ${rom_store} does not exist."
+      mkdir -p ${rom_store}
       continue
     fi
     LAL_DATA_PATH="${rom_store}"
@@ -308,6 +308,7 @@ echo
 echo "LIGO.ORG username: " $directory
 echo "Lalsuite Branch or Tag: " $lalbranch
 echo "Development or released: " $dev_or_rel
+echo "   (1 is release, 2 is development)"
 
 if [[ $dev_or_rel -eq 1 ]] ; then
 echo "Released Tag: " $reltag
@@ -326,10 +327,6 @@ if [[ ${install_rom} == "no" ]] ; then
 echo "ROM data will be install in ${LAL_DATA_PATH}"
 fi
 echo
-echo "PyCBC version "
-echo "  1. Release version"
-echo "  2. Development version"
-echo
 echo
 read -rp "Are these correct? (Enter yes or no) " questions 
 
@@ -340,7 +337,7 @@ read -rp "Are these correct? (Enter yes or no) " questions
  continue
 
  else
-  echo "You must enter yes or no."
+  echo "You must enter yes or no or ctrl-c to exit."
   continue
 
  fi
