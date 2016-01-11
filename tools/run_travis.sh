@@ -122,5 +122,6 @@ test_exec_help pycbc_page_snglinfo
 test_exec_help pycbc_page_injinfo
 test_exec_help pycbc_plot_trigger_timeseries
 test_exec_help pycbc_generate_hwinj
+test_exec_help pycbc_stat_dtphase
 
 exit ${RESULT}

@@ -98,32 +98,57 @@ class NewSNRCutStatistic(Stat):
         return cstat
 
 class PhaseTDStatistic(NewSNRStatistic):
+    def __init__(self, files):
+        NewSNRStatistic.__init__(self, files)
+        self.hist = self.files['phasetd_newsnr']['map'][:]
+        top = float(self.hist.max())     
+
+        #normalize so that peak has no effect on newsnr
+        self.hist = self.hist / top
+
+        #set 0 to smallest value
+        self.m = (self.hist == 0)
+        self.hist[self.m] = 1.0 / top
+
+        self.hist = numpy.log(self.hist) 
+
     def single(self, trigs):
         newsnr = NewSNRStatistic.single(self, trigs)
-        return numpy.array((newsnr, trigs['coa_phase'], trigs['end_time'])).transpose()
+        return numpy.array((newsnr, trigs['coa_phase'], trigs['end_time'], trigs['sigmasq']**0.5, trigs['snr'])).transpose()
 
     def coinc(self, s1, s2, slide, step):
         """ Calculate the coincident statistic.
         """
         td = s1[:,2] - s2[:,2] - slide * step
-        pd = s1[:,1] - s2[:,1]
-        
+        pd = (s1[:,1] - s2[:,1]) % (numpy.pi * 2)
+        rd = numpy.log(s1[:,4] / s2[:,4]) + numpy.log(s2[:,3] / s1[:,3])
+        md = (s1[:,4]**2.0 + s2[:,4]**2.0) ** 0.5
+
+        # These are the bin boundaries stored in the hdf file        
         tbins = self.files['phasetd_newsnr']['tbins'][:]
         pbins = self.files['phasetd_newsnr']['pbins'][:]
-        
+        rbins = self.files['phasetd_newsnr']['rbins'][:]
+        mbins = self.files['phasetd_newsnr']['mbins'][:]
+
+        # Find which bin each coinc falls into        
         tv = numpy.searchsorted(tbins, td) - 1 
         pv = numpy.searchsorted(pbins, pd) - 1
-        
+        rv = numpy.searchsorted(rbins, rd) - 1
+        mv = numpy.searchsorted(mbins, md) - 1     
+
+        # The following just enforces that the point fits into the bin boundaries        
         tv[tv < 0] = 0
         tv[tv >= len(tbins) - 1] = len(tbins) - 2
         pv[pv < 0] = 0
         pv[pv >= len(pbins) - 1] = len(pbins) - 2
+        rv[rv < 0] = 0
+        rv[rv >= len(rbins) - 1] = len(rbins) - 2
+        mv[mv < 0] = 0
+        mv[mv >= len(mbins) - 1] = len(mbins) - 2
         
-        m = self.files['phasetd_newsnr']['map'][:][tv, pv]
-        m[m < 1] = 1
+        m = self.hist[tv, pv, rv, mv]
         
-        cstat = (s1[:,0]**2.0 + s2[:,0]**2.0 + 2.0 * numpy.log(m))**0.5  
-         
+        cstat = (s1[:,0]**2.0 + s2[:,0]**2.0 + 2.0 * m) ** 0.5
         return cstat
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
