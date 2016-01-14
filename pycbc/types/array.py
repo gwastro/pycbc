@@ -44,7 +44,7 @@ from pycbc.types.aligned import ArrayWithAligned
 
 
 _ALLOWED_DTYPES = [_numpy.float32, _numpy.float64, _numpy.complex64,
-                   _numpy.complex128, _numpy.uint64]
+                   _numpy.complex128, _numpy.uint32]
 _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
 
 def _convert_to_scheme(ary):
