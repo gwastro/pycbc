@@ -42,9 +42,11 @@ import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
 from pycbc.types.aligned import ArrayWithAligned
 
-
+#! FIXME: the uint32 datatype has not been fully tested,
+# we should restrict any functions that do not allow an
+# array of uint32 integers
 _ALLOWED_DTYPES = [_numpy.float32, _numpy.float64, _numpy.complex64,
-                   _numpy.complex128]
+                   _numpy.complex128, _numpy.uint32]
 _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
 
 def _convert_to_scheme(ary):

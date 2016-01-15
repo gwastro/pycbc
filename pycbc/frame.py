@@ -53,6 +53,13 @@ _fr_type_map = {
         lal.CreateCOMPLEX16Sequence,
         lalframe.FrameAddCOMPLEX16TimeSeriesProcData
     ],
+    lal.U4_TYPE_CODE: [
+        lalframe.FrStreamReadUINT4TimeSeries, numpy.uint32,
+        lal.CreateUINT4TimeSeries,
+        lalframe.FrStreamGetUINT4TimeSeriesMetadata,
+        lal.CreateUINT4Sequence,
+        lalframe.FrameAddUINT4TimeSeriesProcData
+    ],
 }
 
 def _read_channel(channel, stream, start, duration):
