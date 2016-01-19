@@ -116,7 +116,7 @@ def get_libpath_from_dirlist(libname, dirs):
         # Our directory might be no good, so try/except
         try:
             for libfile in os.listdir(nextdir):
-                if fnmatch.fnmatch(libfile,'lib'+libname+'.so*') or fnmatch.fnmatch(libfile,'lib'+libname+'.dylib*'):
+                if fnmatch.fnmatch(libfile,'lib'+libname+'.so*') or fnmatch.fnmatch(libfile,'lib'+libname+'.dylib*') or fnmatch.fnmatch(libfile,libname+'.dll') or fnmatch.fnmatch(libfile,'cyg'+libname+'-*.dll'):
                     possible.append(libfile)
         except OSError:
             pass
