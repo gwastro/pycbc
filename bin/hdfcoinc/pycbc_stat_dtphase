@@ -68,7 +68,7 @@ def generate_samples(size):
     # Choose random sky location and polarizations
     ra = uniform(0, 2 * numpy.pi, size=size)
     dec = numpy.arccos(uniform(-1., 1., size=size)) - numpy.pi/2
-    inc = numpy.arccos(uniform(-1., 1., size=size)) - numpy.pi/2
+    inc = numpy.arccos(uniform(-1., 1., size=size))
     pol = uniform(0, 2 * numpy.pi, size=size)
     ip = numpy.cos(inc)
     ic = 0.5 * (1.0 + ip * ip)
