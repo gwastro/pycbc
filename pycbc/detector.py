@@ -98,7 +98,7 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
     f_cros: float   
     """
     # convert from declination coordinate to polar (angle dropped from north axis)
-    theta = numpy.pi / 2.0 - declination
+    theta = np.pi / 2.0 - declination
 
     f_plus  = - (1.0/2.0) * (1.0 + cos(theta)*cos(theta)) * \
                 cos (2.0 * right_ascension) * cos (2.0 * polarization) - \
