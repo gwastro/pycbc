@@ -28,7 +28,7 @@
 import lalsimulation
 import numpy as np
 import lal
-from math import cos, sin
+from numpy import cos, sin
 from pycbc.types import TimeSeries
 
 
@@ -82,15 +82,31 @@ class Detector(object):
 
 
 def overhead_antenna_pattern(right_ascension, declination, polarization):
-    """Return the detector response where (0, 0) indicates an overhead source
-    """
-    f_plus  = - (1.0/2.0) * (1.0 + cos(declination)*cos(declination)) * \
-                cos (2.0 * right_ascension) * cos (2.0 * polarization) - \
-                cos(declination) * sin(2.0*right_ascension) * sin (2.0 * polarization)
+    """Return the detector response where (0, 0) indicates an overhead source. 
+    This functions uses coordinates such that the detector can be thought to
+    be on the north pole.
 
-    f_cross =   (1.0/2.0) * (1.0 + cos(declination)*cos(declination)) * \
+    Parameters
+    ----------
+    right_ascention: float
+    declination: float
+    polarization: float
+
+    Returns
+    -------
+    f_plus: float
+    f_cros: float   
+    """
+    # convert from declination coordinate to polar (angle dropped from north axis)
+    theta = np.pi / 2.0 - declination
+
+    f_plus  = - (1.0/2.0) * (1.0 + cos(theta)*cos(theta)) * \
+                cos (2.0 * right_ascension) * cos (2.0 * polarization) - \
+                cos(theta) * sin(2.0*right_ascension) * sin (2.0 * polarization)
+
+    f_cross =   (1.0/2.0) * (1.0 + cos(theta)*cos(theta)) * \
                 cos (2.0 * right_ascension) * sin (2.0* polarization) - \
-                cos(declination) * sin(2.0*right_ascension) * cos (2.0 * polarization)
+                cos(theta) * sin(2.0*right_ascension) * cos (2.0 * polarization)
 
     return f_plus, f_cross
 
