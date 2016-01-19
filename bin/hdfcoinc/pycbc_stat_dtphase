@@ -24,6 +24,8 @@ parser.add_argument('--amplitude-magnitude-bins', type=int, default=50,
                     help="Number of bins to use for storing the combined SNR magnitudes")
 parser.add_argument('--fixed-timing-error', default=1.0/4096, type=float,
                     help="Fixed value for a timing error")
+parser.add_argument('--coinc-threshold', default=0, type=float,
+                    help="seconds to add to the TOF coinc window")
 parser.add_argument('--seed', type=int, default=124)
 parser.add_argument('--output-file')
 parser.add_argument('--cores', default=1, type=int)
@@ -33,7 +35,7 @@ numpy.random.seed(args.seed)
 
 d1 = pycbc.detector.Detector(str(args.ifos[0]))
 d2 = pycbc.detector.Detector(str(args.ifos[1]))
-maxdt = d1.light_travel_time_to_detector(d2)
+maxdt = d1.light_travel_time_to_detector(d2) + args.coinc_threshold
 
 # Calculate the edges of the bins
 max_csnr = args.max_combined_snr
