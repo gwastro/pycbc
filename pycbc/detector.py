@@ -28,7 +28,7 @@
 import lalsimulation
 import numpy as np
 import lal
-from math import cos, sin
+from numpy import cos, sin
 from pycbc.types import TimeSeries
 
 
