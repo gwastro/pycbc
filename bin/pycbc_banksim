@@ -45,7 +45,7 @@ from pycbc.filter import match, sigmasq, resample_to_delta_t
 from pycbc.fft import fft
 from math import cos, sin, ceil, log
 import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain
-from pycbc.detector import def overhead_antenna_pattern as generate_fplus_fcross
+from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
 
 def update_progress(progress):
     print '\r\r[{0}] {1:.2%}'.format('#'*(int(progress*100)/2)+' '*(50-int(progress*100)/2), progress),
