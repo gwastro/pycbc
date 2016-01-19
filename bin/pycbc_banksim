@@ -45,7 +45,7 @@ from pycbc.filter import match, sigmasq, resample_to_delta_t
 from pycbc.fft import fft
 from math import cos, sin, ceil, log
 import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain
-
+from pycbc.detector import def overhead_antenna_pattern as generate_fplus_fcross
 
 def update_progress(progress):
     print '\r\r[{0}] {1:.2%}'.format('#'*(int(progress*100)/2)+' '*(50-int(progress*100)/2), progress),
@@ -54,11 +54,6 @@ def update_progress(progress):
     sys.stdout.flush()
 
 ## Remove the need for these functions ########################################
-
-def generate_fplus_fcross(latitude,longitude,polarization):
-    f_plus = - (1.0/2.0) * (1.0 + cos(latitude)*cos(latitude)) * cos (2.0 * longitude) * cos (2.0 * polarization) - cos(latitude) * sin(2.0*longitude) * sin (2.0 * polarization)
-    f_cross=  (1.0/2.0) * (1.0 + cos(latitude)*cos(latitude)) * cos (2.0 * longitude) * sin (2.0* polarization) - cos (latitude) * sin(2.0*longitude) * cos (2.0 * polarization)
-    return f_plus, f_cross
     
 def generate_detector_strain(template_params, h_plus, h_cross):
     latitude = 0 
@@ -72,7 +67,7 @@ def generate_detector_strain(template_params, h_plus, h_cross):
     if hasattr(template_params, 'polarization'):
         polarization = template_params.polarization
 
-    f_plus, f_cross = generate_fplus_fcross(latitude, longitude, polarization)
+    f_plus, f_cross = generate_fplus_fcross(longitude, latitude, polarization)
 
     return f_plus * h_plus + f_cross * h_cross
 
