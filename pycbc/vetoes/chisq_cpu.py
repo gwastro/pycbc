@@ -48,7 +48,7 @@ def chisq_accum_bin_inline(chisq, q):
         }
     """
     inline(code, ['chisq', 'q', 'N'], 
-                    extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags,
+                    extra_compile_args=[WEAVE_FLAGS + ' -O3 -w'] + omp_flags,
                     libraries=omp_libs
           )
           
@@ -167,7 +167,7 @@ def shift_sum(v1, shifts, bins):
     chisq =  numpy.zeros(n, dtype=real_type)
     
     inline(code, ['v1', 'n', 'chisq', 'slen', 'shifts', 'bins', 'blen'],
-                    extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags,
+                    extra_compile_args=[WEAVE_FLAGS + ' -O3 -w'] + omp_flags,
                     libraries=omp_libs
           )
           
