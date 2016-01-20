@@ -69,7 +69,7 @@ def generate_detector_strain(template_params, h_plus, h_cross):
 
     f_plus, f_cross = generate_fplus_fcross(longitude, latitude, polarization)
 
-    return f_plus * h_plus + f_cross * h_cross
+    return h_plus * f_plus + h_cross * f_cross
 
 def make_padded_frequency_series(vec, filter_N=None):
     """Pad a TimeSeries with a length of zeros greater than its length, such
