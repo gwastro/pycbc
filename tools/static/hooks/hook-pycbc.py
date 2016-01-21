@@ -85,3 +85,5 @@ if os.environ["NOW_BUILDING"] in needs_mkl:
 #datas += find_lib_path('fftw3f', ['fft3f'])
 #datas += find_lib_path('fftw3f_omp', ['fftw3f'])
 #datas += find_lib_path('fftw3_omp', ['fftw3'])
+
+datas += find_lib_path('gomp', [])
