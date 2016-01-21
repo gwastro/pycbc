@@ -1,0 +1,28 @@
+From f34a518bc268473dc7edb5d3b95072ced2e6b459 Mon Sep 17 00:00:00 2001
+From: Bernd Machenschalk <bernd.machenschalk@ligo.org>
+Date: Thu, 5 Nov 2015 11:08:26 +0100
+Subject: [PATCH] for some reason setenv() and unseteinv() aren't (found) in
+ stdlib.h
+
+---
+ lalsimulation/src/detector_strain.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/lalsimulation/src/detector_strain.c b/lalsimulation/src/detector_strain.c
+index 53b6207..d42d17a 100644
+--- a/lalsimulation/src/detector_strain.c
++++ b/lalsimulation/src/detector_strain.c
+@@ -123,6 +123,10 @@
+ #include <string.h>
+ #include <time.h>
+ 
++/* should be in stdlib.h, but apparently isn't found */
++extern int setenv(const char *name, const char *value, int overwrite);
++extern int unsetenv(const char *name);
++
+ #include <lal/LALConstants.h>
+ #include <lal/LALgetopt.h>
+ #include <lal/LALDatatypes.h>
+-- 
+1.9.2
+
