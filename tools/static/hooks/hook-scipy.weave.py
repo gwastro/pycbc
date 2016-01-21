@@ -8,7 +8,10 @@
 #-----------------------------------------------------------------------------
 
 import os.path
-from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
+try:
+    from PyInstaller.utils.hooks import (collect_data_files, collect_submodules)
+except ImportError:
+    from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
 from distutils.sysconfig import get_python_inc
 
 
