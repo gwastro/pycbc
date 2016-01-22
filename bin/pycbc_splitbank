@@ -29,8 +29,7 @@
 Splits a table in an xml file into multiple pieces
 """
 
-import pycbc
-import pycbc.version
+import pycbc, pycbc.version, pycbc.pnutils
 __author__  = "Alex Nitz <alex.nitz@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
@@ -58,8 +57,10 @@ parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
 
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument('--templates-per-bank', metavar='SAMPLES', help='number of templates in the output banks', type=int)
-group.add_argument('-n', '--number-of-banks', metavar='N', help='Split template bank into N files', type=int)
+group.add_argument('--templates-per-bank', metavar='SAMPLES',
+                    help='number of templates in the output banks', type=int)
+group.add_argument('-n', '--number-of-banks', metavar='N',
+                    help='Split template bank into N files', type=int)
 group.add_argument("-O", "--output-filenames", nargs='*', default=None,
                     action="store",
                     metavar="OUTPUT_FILENAME", help="""Directly specify the
@@ -67,13 +68,17 @@ group.add_argument("-O", "--output-filenames", nargs='*', default=None,
                     here will dictate how to split the bank. It will be split
                     equally between all specified files.""")
 
-parser.add_argument("-o", "--output-prefix", default=None, help="Prefix to add to the template bank name (name becomes output#.xml[.gz])" )
-parser.add_argument("-z", "--write-compress", action="store_true", help="Write compressed xml.gz files.")
+parser.add_argument("-o", "--output-prefix", default=None, 
+                    help="Prefix to add to the template bank name (name becomes output#.xml[.gz])" )
+parser.add_argument("-z", "--write-compress", action="store_true",
+                    help="Write compressed xml.gz files.")
 
-parser.add_argument("-V", "--verbose", action="store_true", help="Print extra debugging information", default=False )
+parser.add_argument("-V", "--verbose", action="store_true",
+                    help="Print extra debugging information", default=False )
 parser.add_argument("-t", "--bank-file", metavar='INPUT_FILE',
                     help='Template bank to split', required=True)
-
+parser.add_argument("--sort-frequency-cutoff", 
+                    help="Frequency cutoff to use for sorting the sub banks")
 parser.add_argument("--sort-mchirp", action="store_true", default=False,
                     help='Sort templates by chirp mass before splitting')
 parser.add_argument("--random-sort", action="store_true", default=False,
@@ -106,16 +111,27 @@ except:
 
 length = len(template_bank_table)
 
-def mchirp_sort(x,y):
-    import pycbc.pnutils
-    mc1,e1 = pycbc.pnutils.mass1_mass2_to_mchirp_eta(x.mass1,x.mass2)
-    mc2,e2 = pycbc.pnutils.mass1_mass2_to_mchirp_eta(y.mass1,y.mass2)
-    return cmp(mc1,mc2)
+def mchirp_sort(x, y):
+    mc1, e1 = pycbc.pnutils.mass1_mass2_to_mchirp_eta(x.mass1, x.mass2)
+    mc2, e2 = pycbc.pnutils.mass1_mass2_to_mchirp_eta(y.mass1, y.mass2)
+    return cmp(mc1, mc2)
+
+def frequency_cutoff_sort(x, y):
+    p1 = pycbc.pnutils.frequency_cutoff_from_name(args.sort_frequency_cutoff,
+                                                  x.mass1, x.mass2,
+                                                  x.spin1z, x.spin2z)
+    p2 = pycbc.pnutils.frequency_cutoff_from_name(args.sort_frequency_cutoff,
+                                                  y.mass1, y.mass2,
+                                                  y.spin1z, y.spin2z)
+    return cmp(p1, p2)
 
 tt = template_bank_table
 
+if args.sort_freqeuncy_cutoff:
+    tt = sorted(template_bank_table, cmp=frequency_cutoff_sort)
+
 if args.sort_mchirp:
-    tt = sorted(template_bank_table,cmp=mchirp_sort)
+    tt = sorted(template_bank_table, cmp=mchirp_sort)
 
 if args.random_sort:
     if args.random_seed is not None:
@@ -128,6 +144,7 @@ if args.number_of_banks:
     # But try to make each file very nearly the same size
     num_files = args.number_of_banks
     num_per_file = length / float(num_files)
+
 elif args.templates_per_bank:
     num_per_file = args.templates_per_bank
     num_files = int(ceil(float(length) / num_per_file))
