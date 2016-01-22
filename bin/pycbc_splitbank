@@ -127,7 +127,7 @@ def frequency_cutoff_sort(x, y):
 
 tt = template_bank_table
 
-if args.sort_freqeuncy_cutoff:
+if args.sort_frequency_cutoff:
     tt = sorted(template_bank_table, cmp=frequency_cutoff_sort)
 
 if args.sort_mchirp:
