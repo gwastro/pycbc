@@ -89,12 +89,13 @@ def verify_weave_options(opt, parser):
     if opt.fixed_weave_cache:
         cache_dir = os.path.join(os.getcwd(),"pythoncompiled")
         os.environ['PYTHONCOMPILED'] = cache_dir
+        logging.debug("verify_weave_options(fixed_weave_cache): Setting weave cache to %s" % cache_dir)
 
     # Check whether to use a private directory for scipy.weave
     if opt.per_process_weave_cache:
         cache_dir = os.path.join(cache_dir, str(os.getpid()))
         os.environ['PYTHONCOMPILED'] = cache_dir
-        logging.info("Setting weave cache to %s" % cache_dir)
+        logging.debug("verify_weave_options(per_process_weave_cache): Setting weave cache to %s" % cache_dir)
 
     if not os.path.exists(cache_dir):
         try:
