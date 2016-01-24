@@ -63,9 +63,10 @@ class TimeVaryingPSD(object):
     def __call__(self, time=None):
         mask = np.logical_and(self.start_times <= time,
                               self.end_times > time)
-        # Tito, what if this is bigger than 1?
-        if np.count_nonzero(mask) == 1:
-            return self.get_psd(np.nonzero(mask)[0][0])
+        if np.count_nonzero(mask) >= 1:
+            center_times = (self.start_times[mask] + self.end_times[mask]) / 2.
+            closest_idx = np.argsort(abs(center_times - time))[0]
+            return self.get_psd(np.flatnonzero(mask)[closest_idx])
         else:
             return None
 
@@ -119,6 +120,9 @@ if __name__ == '__main__':
     parser.add_argument('--cores', default=1, type=int,
                         help='Parallelize the computation over the given '
                              'number of cores')
+    parser.add_argument('--ignore-waveform-errors', action='store_true',
+                        help='Ignore errors in waveform generation and keep '
+                             'the corresponding column unchanged')
     psd_group = pycbc.psd.insert_psd_option_group_multi_ifo(parser)
     psd_group.add_argument('--time-varying-psds', nargs='*', metavar='FILE',
                            help='Instead of time-independent PSDs, use time-varying '
@@ -186,9 +190,12 @@ if __name__ == '__main__':
                 wave = get_injection(injections, det, injection_time,
                                      simulation_id=inj.simulation_id)
             except Exception, e:
-                logging.warn('%s: waveform generation failed, skipping (%s)',
-                             inj.simulation_id, e)
-                continue
+                if opts.ignore_waveform_errors:
+                    logging.warn('%s: waveform generation failed, skipping (%s)',
+                                 inj.simulation_id, e)
+                    continue
+                else:
+                    raise
             sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
             setattr(inj, column, sval)
 
