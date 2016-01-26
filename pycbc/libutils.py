@@ -84,6 +84,7 @@ def pkg_config_libdirs(packages):
 
     # don't try calling pkg-config if NO_PKGCONFIG is set in environment
     if os.environ.get("NO_PKGCONFIG", None) != None:
+        print >>sys.stderr, "skipping pkg-config for NO_PKGCONFIG"
         return []
 
     # First, check that we can call pkg-config on each package in the list
