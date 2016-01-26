@@ -54,6 +54,11 @@ def insert_weave_option_group(parser):
                     help="If given, delete the contents of the weave cache "
                          "when the process exits")
 
+    optimization_group.add_argument("--fixed-weave-cache",
+                    action="store_true",
+                    default=False,
+                    help="If given, use fixed directory PWD/pythoncompiled for "
+                         " the weave cache")
 
 def _clear_weave_cache():
     """Deletes the weave cache specified in os.environ['PYTHONCOMPILED']"""
@@ -79,6 +84,11 @@ def verify_weave_options(opt, parser):
 
     # PYTHONCOMPILED is initially set in pycbc.__init__
     cache_dir = os.environ['PYTHONCOMPILED']
+
+    # Check whether to use a fixed directory for scipy.weave
+    if opt.fixed_weave_cache:
+        cache_dir = os.path.join(os.getcwd(),"pythoncompiled")
+        os.environ['PYTHONCOMPILED'] = cache_dir
 
     # Check whether to use a private directory for scipy.weave
     if opt.per_process_weave_cache:
