@@ -103,7 +103,9 @@ simd_intel_intrin_support = """
 
 """
 
-if HAVE_GETCONF:
+if os.environ.get("LEVEL2_CACHE_SIZE", None) != None:
+    LEVEL2_CACHE_SIZE = int(os.environ["LEVEL2_CACHE_SIZE"])
+elif HAVE_GETCONF:
     if _USE_SUBPROCESS:
         def getconf(confvar):
             return int(subprocess.check_output(['getconf', confvar]))
