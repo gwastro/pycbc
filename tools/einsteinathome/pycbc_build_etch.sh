@@ -504,6 +504,11 @@ else
   cd lalsuite-build
   ../lalsuite/configure --disable-gcc-flags $shared --enable-static --enable-swig-python --prefix="$PREFIX" --disable-silent-rules \
                         --disable-lalxml --disable-lalpulsar --disable-laldetchar --disable-lalstochastic --disable-lalinference
+  if $build_dlls; then
+      echo '#include "/usr/include/stdlib.h"
+extern int setenv(const char *name, const char *value, int overwrite);
+extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
+  fi
   make
   make install
   for i in $PREFIX/etc/*-user-env.sh; do
