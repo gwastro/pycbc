@@ -728,17 +728,14 @@ echo -e "\\n\\n>> [`date`] building pycbc"
 if test -d pycbc/.git; then
   cd pycbc
 else
-rm -rf pycbc
-  git clone git://github.com/ligo-cbc/pycbc
+  rm -rf pycbc
+  # git clone git://github.com/ligo-cbc/pycbc
+  git clone git://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/pycbc.git
   cd pycbc
-  git checkout v1.3.4
-  # make get_libpath_from_dirlist() aware of dlls
   if $build_dlls; then
-    sed -i~ "s/fnmatch.fnmatch(libfile,'lib'+libname+'.dylib\\*')/& or fnmatch.fnmatch(libfile,libname+'.dll') or fnmatch.fnmatch(libfile,'cyg'+libname+'-*.dll')/;
-s/^def pkg_config_libdirs(packages):/&\\
-    return []\\
-def dummy():" pycbc/libutils.py
-    git commit -m "temporary commit for Cygwin" pycbc/libutils.py
+    git checkout -b einsteinathome_cygwin origin/einsteinathome_cygwin
+  else
+    git checkout -b einsteinathome_etch origin/einsteinathome_etch
   fi
 fi
 pip install --upgrade .
