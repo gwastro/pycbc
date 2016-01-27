@@ -738,7 +738,7 @@ else
     git checkout -b einsteinathome_etch origin/einsteinathome_etch
   fi
 fi
-pip install --upgrade .
+pip install .
 hooks="$PWD/tools/static"
 cd ..
 test -r "$PREFIX/etc/pycbc-user-env.sh" && source "$PREFIX/etc/pycbc-user-env.sh"
