@@ -78,20 +78,16 @@ for segment_name in opts.segment_names:
     # allow user to find the and of segments if they use a "&" on the command line
     names = segment_name.split('&')
 
-    # create a dict that will hold segments from segment_name for each IFO
-    segs = segments.segmentlistdict({})
-
-    # create a dict that will keep track of the first segment name in each row
-    base_keys = {}
-
+    # create a dict that will hold first segment_name in list for each IFO
     base_segs = segments.segmentlistdict({})
+
+    # create a dict that will hold all other segment_name in list for each IFO
     comp_segs = segments.segmentlistdict({})
 
     # loop over IFOs
     for ifo in ifos:
 
         # make an empty list for each IFO
-        segs[ifo] = segments.segmentlist([])
         base_segs[ifo] = segments.segmentlist([])
         comp_segs[ifo] = segments.segmentlist([])
 
@@ -129,8 +125,13 @@ for segment_name in opts.segment_names:
     h1_len = abs( ( base_segs['H1'].coalesce() & comp_segs["H1"].coalesce() ).coalesce() )
     l1_len = abs( ( base_segs['L1'].coalesce() & comp_segs["L1"].coalesce() ).coalesce() )
 
-    h1l1_base_segs = base_segs["H1"].coalesce() + base_segs["L1"].coalesce()
+    # find the AND of H1 and L1 time
+    h1l1_base_segs = base_segs["H1"].coalesce() & base_segs["L1"].coalesce()
+
+    # find all the time that should overlap
     h1l1_comp_segs = comp_segs["H1"].coalesce() + comp_segs["L1"].coalesce()
+
+    # get length of time in coincident H1L1 segments in seconds
     h1l1_len = abs( (h1l1_base_segs & h1l1_comp_segs).coalesce() )
 
     # put values into columns
