@@ -72,26 +72,38 @@ for segment_file in opts.segment_files:
     seg_dict.update(fromsegmentxml(open(segment_file, 'rb'), return_dict=True))
     comment_dict.update(get_segment_definer_comments(open(segment_file, 'rb')))
 
-print seg_dict.keys()
-print abs(seg_dict["L1:CUMULATIVE_CAT_12:1"])
-
 # loop over segment names
 for segment_name in opts.segment_names:
 
     # allow user to find the and of segments if they use a "&" on the command line
     names = segment_name.split('&')
 
+    # create a dict that will hold segments from segment_name for each IFO
     segs = segments.segmentlistdict({})
 
+    # loop over IFOs
     for ifo in ifos:
 
+        # make an empty list for each IFO
         segs[ifo] = segments.segmentlist([])
 
+        # loop over names from string split on "&"
         for name in names:
 
+            # construct the first part of the segment flag
+            # note that if you don't include a version on the command line then
+            # it will select what ever version it finds first for that
+            # segment flag
             segment_flag = ifo + ":" + name
 
+            # loop over segments names from segment_definer table
+            # from the segment XML files
             for key in seg_dict.keys():
+
+                # if you find the segment flag for this IFO then add those
+                # segments to the list and exit this for loop
+                # this is a for loop because the version of the flag may not
+                # be defined by the command line
                 if key.startswith(segment_flag):
                     if not len(segs[ifo]):
                         segs[ifo] = seg_dict[key].coalesce()
