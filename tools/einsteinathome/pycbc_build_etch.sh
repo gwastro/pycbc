@@ -82,7 +82,7 @@ else
   build_pegasus_source=false
   build_preinst_before_lalsuite=true
   pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
-  use_pycbc_pyinstaller_hooks=false
+  use_pycbc_pyinstaller_hooks=true
   add_python_runtime_options=false
 fi
 
@@ -772,7 +772,7 @@ rm -rf dist
 # patch spec file to add "-v" to python interpreter options
 export NOW_BUILDING=NULL
 if $use_pycbc_pyinstaller_hooks; then
-  pyi-makespec --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-scipy.py --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
+  pyi-makespec --additional-hooks-dir $hooks/hooks --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
 else
   # find hidden imports (pycbc CPU modules)
   hidden_imports=`find $PREFIX/lib/python2.7/site-packages/pycbc/ -name '*_cpu.py' | sed 's%.*/site-packages/%%;s%\.py$%%;s%/%.%g;s%^% --hidden-import=%' | tr -d '\012'`
