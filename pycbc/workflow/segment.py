@@ -1103,13 +1103,9 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
     offsource[ifo] = offsrc
 
     # Write off-source to xml file
-    XmlFile = os.path.join(out_dir,
-                           "%s-SINGLE_IFO_OFFSOURCE_SEGMENT.xml" % ifo.upper())
-    currUrl = urlparse.urlunparse(['file', 'localhost', XmlFile, None, None,
-                                   None])
-    currFile = OutSegFile(ifo, 'SINGLE_IFO_OFFSOURCE', offsource[ifo], currUrl,
-                          offsource[ifo])
-    currFile.toSegmentXml()
+    currFile = SegFile.from_segment_list('SINGLE_IFO_OFFSOURCE_SEGMENT',
+                                offsource[ifo], 'SINGLE_IFO_OFFSOURCE_SEGMENT',
+                                ifo, extension='xml', directory=out_dir)
     logging.info("Optimal single IFO segment calculated for %s." % ifo)
 
     offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
