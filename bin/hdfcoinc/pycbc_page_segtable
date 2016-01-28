@@ -72,38 +72,33 @@ for segment_file in opts.segment_files:
     seg_dict.update(fromsegmentxml(open(segment_file, 'rb'), return_dict=True))
     comment_dict.update(get_segment_definer_comments(open(segment_file, 'rb')))
 
+print seg_dict.keys()
+print abs(seg_dict["L1:CUMULATIVE_CAT_12:1"])
+
 # loop over segment names
 for segment_name in opts.segment_names:
 
-    # allow user to find the and of two segments if they use a '&' on the command line
+    # allow user to find the and of segments if they use a "&" on the command line
     names = segment_name.split('&')
-    if len(names) > 2:
-        logging.info('You can only compare two segments but was provided %s', segment_name)
-        continue
 
-    # get segments for each IFO
-    segs = segments.segmentlistdict()
+    segs = segments.segmentlistdict({})
+
     for ifo in ifos:
-        for key in seg_dict.keys():
-            if key.startswith(ifo+':'+names[0]):
-                segs[ifo] = seg_dict[key]
-    if not len(segs.keys()):
-        logging.info('Did not find a segment definition for %s', segment_name)
-        continue
 
-    # get second segments for each IFO if comparing two segments
-    if len(names) == 2:
-        segs_tmp = segments.segmentlistdict()
-        for ifo in ifos:
+        segs[ifo] = segments.segmentlist([])
+
+        for name in names:
+
+            segment_flag = ifo + ":" + name
+
             for key in seg_dict.keys():
-                if key.startswith(ifo+':'+names[1]):
-                    segs_tmp[ifo] = seg_dict[key]
-        if not len(segs.keys()):
-            logging.info('Did not find a segment definition for %s', segment_name)
-            continue
-
-        # find overlap
-        segs = segs.coalesce() & segs_tmp.coalesce()
+                if key.startswith(segment_flag):
+                    if not len(segs[ifo]):
+                        segs[ifo] = seg_dict[key].coalesce()
+                    else:
+                        segs[ifo] = segs[ifo].coalesce() & seg_dict[key].coalesce()
+                        segs[ifo].coalesce()
+                    break
 
     # put comment in caption
     caption += " " + segment_name
@@ -111,9 +106,9 @@ for segment_name in opts.segment_names:
         caption += " ("+comment_dict[key]+")"
 
     # get length of time of segments in seconds
-    h1_len = abs(segs['H1'])
-    l1_len = abs(segs['L1'])
-    h1l1_len = abs( segs['H1'] & segs['L1'] )
+    h1_len = abs(segs['H1'].coalesce())
+    l1_len = abs(segs['L1'].coalesce())
+    h1l1_len = abs( ( segs['H1'].coalesce() + segs['L1'].coalesce() ).coalesce() )
 
     # put values into columns
     columns[0][1].append(segment_name)
