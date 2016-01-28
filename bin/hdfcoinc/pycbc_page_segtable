@@ -127,9 +127,11 @@ for segment_name in opts.segment_names:
 
     # find the AND of H1 and L1 time
     h1l1_base_segs = base_segs["H1"].coalesce() & base_segs["L1"].coalesce()
+    h1l1_base_segs.coalesce()
 
     # find all the time that should overlap
     h1l1_comp_segs = comp_segs["H1"].coalesce() + comp_segs["L1"].coalesce()
+    h1l1_comp_segs.coalesce()
 
     # get length of time in coincident H1L1 segments in seconds
     h1l1_len = abs( (h1l1_base_segs & h1l1_comp_segs).coalesce() )
