@@ -35,12 +35,12 @@ ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
 ifos, fsegs, names = [], [], []
 for ifo in [ifo1, ifo2]:
     segs = pycbc.events.select_segments_by_definer(args.veto_file, args.segment_name, ifo)
-    fsegs += [(segs + vsegs).coalesce()]
+    fsegs += [(segs.coalesce() + vsegs.coalesce()).coalesce()]
     names += [args.output_segment_name]
     ifos += [ifo]
 
 if args.strict_coinc_time:
-    fsegs[0] = (fsegs[0] + fsegs[1]).coalesce()
+    fsegs[0] = (fsegs[0].coalesce() + fsegs[1].coalesce()).coalesce()
     fsegs[1] = fsegs[0]
 
 pycbc.events.multi_segments_to_file(fsegs, args.output_file, names, ifos)
