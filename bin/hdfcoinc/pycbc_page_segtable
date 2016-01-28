@@ -81,11 +81,19 @@ for segment_name in opts.segment_names:
     # create a dict that will hold segments from segment_name for each IFO
     segs = segments.segmentlistdict({})
 
+    # create a dict that will keep track of the first segment name in each row
+    base_keys = {}
+
+    base_segs = segments.segmentlistdict({})
+    comp_segs = segments.segmentlistdict({})
+
     # loop over IFOs
     for ifo in ifos:
 
         # make an empty list for each IFO
         segs[ifo] = segments.segmentlist([])
+        base_segs[ifo] = segments.segmentlist([])
+        comp_segs[ifo] = segments.segmentlist([])
 
         # loop over names from string split on "&"
         for name in names:
@@ -105,11 +113,11 @@ for segment_name in opts.segment_names:
                 # this is a for loop because the version of the flag may not
                 # be defined by the command line
                 if key.startswith(segment_flag):
-                    if not len(segs[ifo]):
-                        segs[ifo] = seg_dict[key].coalesce()
+                    if not len(base_segs[ifo]) and name == names[0]:
+                        base_segs[ifo] = seg_dict[key].coalesce()
                     else:
-                        segs[ifo] = segs[ifo].coalesce() & seg_dict[key].coalesce()
-                        segs[ifo].coalesce()
+                        comp_segs[ifo] = comp_segs[ifo].coalesce() + seg_dict[key].coalesce()
+                        comp_segs[ifo].coalesce()
                     break
 
     # put comment in caption
@@ -117,10 +125,13 @@ for segment_name in opts.segment_names:
     if comment_dict[key] != None:
         caption += " ("+comment_dict[key]+")"
 
-    # get length of time of segments in seconds
-    h1_len = abs(segs['H1'].coalesce())
-    l1_len = abs(segs['L1'].coalesce())
-    h1l1_len = abs( ( segs['H1'].coalesce() + segs['L1'].coalesce() ).coalesce() )
+    # get length of time of single-IFO segments in seconds
+    h1_len = abs( ( base_segs['H1'].coalesce() & comp_segs["H1"].coalesce() ).coalesce() )
+    l1_len = abs( ( base_segs['L1'].coalesce() & comp_segs["L1"].coalesce() ).coalesce() )
+
+    h1l1_base_segs = base_segs["H1"].coalesce() + base_segs["L1"].coalesce()
+    h1l1_comp_segs = comp_segs["H1"].coalesce() + comp_segs["L1"].coalesce()
+    h1l1_len = abs( (h1l1_base_segs & h1l1_comp_segs).coalesce() )
 
     # put values into columns
     columns[0][1].append(segment_name)
