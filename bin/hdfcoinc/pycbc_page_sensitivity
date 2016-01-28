@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """ Make plot of search sensitive distance
 """
-import argparse, h5py, numpy, logging, os.path, matplotlib, sys
+import argparse, h5py, numpy, logging, matplotlib, sys
 matplotlib.use('Agg')
 from matplotlib.pyplot import cm
 import pylab, pycbc.pnutils, pycbc.results, pycbc, pycbc.version
@@ -245,8 +245,10 @@ if args.sig_type != 'stat':
 if args.sig_type == 'fap':
     ax.invert_xaxis()
 
-if args.min_dist:
-    pylab.ylim(args.min_dist, args.max_dist)
+if args.min_dist is not None:
+    pylab.ylim(ymin=args.min_dist)
+if args.max_dist is not None:
+    pylab.ylim(ymax=args.max_dist)
 
 pylab.ylabel(ylabel)
 pylab.xlabel(xlabel)
