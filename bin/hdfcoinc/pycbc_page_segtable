@@ -75,45 +75,66 @@ for segment_file in opts.segment_files:
 # loop over segment names
 for segment_name in opts.segment_names:
 
-    # allow user to find the and of two segments if they use a '&' on the command line
+    # allow user to find the and of segments if they use a "&" on the command line
     names = segment_name.split('&')
-    if len(names) > 2:
-        logging.info('You can only compare two segments but was provided %s', segment_name)
-        continue
 
-    # get segments for each IFO
-    segs = segments.segmentlistdict()
+    # create a dict that will hold first segment_name in list for each IFO
+    base_segs = segments.segmentlistdict({})
+
+    # create a dict that will hold all other segment_name in list for each IFO
+    comp_segs = segments.segmentlistdict({})
+
+    # loop over IFOs
     for ifo in ifos:
-        for key in seg_dict.keys():
-            if key.startswith(ifo+':'+names[0]):
-                segs[ifo] = seg_dict[key]
-    if not len(segs.keys()):
-        logging.info('Did not find a segment definition for %s', segment_name)
-        continue
 
-    # get second segments for each IFO if comparing two segments
-    if len(names) == 2:
-        segs_tmp = segments.segmentlistdict()
-        for ifo in ifos:
+        # make an empty list for each IFO
+        base_segs[ifo] = segments.segmentlist([])
+        comp_segs[ifo] = segments.segmentlist([])
+
+        # loop over names from string split on "&"
+        for name in names:
+
+            # construct the first part of the segment flag
+            # note that if you don't include a version on the command line then
+            # it will select what ever version it finds first for that
+            # segment flag
+            segment_flag = ifo + ":" + name
+
+            # loop over segments names from segment_definer table
+            # from the segment XML files
             for key in seg_dict.keys():
-                if key.startswith(ifo+':'+names[1]):
-                    segs_tmp[ifo] = seg_dict[key]
-        if not len(segs.keys()):
-            logging.info('Did not find a segment definition for %s', segment_name)
-            continue
 
-        # find overlap
-        segs = segs.coalesce() & segs_tmp.coalesce()
+                # if you find the segment flag for this IFO then add those
+                # segments to the list and exit this for loop
+                # this is a for loop because the version of the flag may not
+                # be defined by the command line
+                if key.startswith(segment_flag):
+                    if not len(base_segs[ifo]) and name == names[0]:
+                        base_segs[ifo] = seg_dict[key].coalesce()
+                    else:
+                        comp_segs[ifo] = comp_segs[ifo].coalesce() + seg_dict[key].coalesce()
+                        comp_segs[ifo].coalesce()
+                    break
 
     # put comment in caption
     caption += " " + segment_name
     if comment_dict[key] != None:
         caption += " ("+comment_dict[key]+")"
 
-    # get length of time of segments in seconds
-    h1_len = abs(segs['H1'])
-    l1_len = abs(segs['L1'])
-    h1l1_len = abs( segs['H1'] & segs['L1'] )
+    # get length of time of single-IFO segments in seconds
+    h1_len = abs( ( base_segs['H1'].coalesce() & comp_segs["H1"].coalesce() ).coalesce() )
+    l1_len = abs( ( base_segs['L1'].coalesce() & comp_segs["L1"].coalesce() ).coalesce() )
+
+    # find the AND of H1 and L1 time
+    h1l1_base_segs = base_segs["H1"].coalesce() & base_segs["L1"].coalesce()
+    h1l1_base_segs.coalesce()
+
+    # find all the time that should overlap
+    h1l1_comp_segs = comp_segs["H1"].coalesce() + comp_segs["L1"].coalesce()
+    h1l1_comp_segs.coalesce()
+
+    # get length of time in coincident H1L1 segments in seconds
+    h1l1_len = abs( (h1l1_base_segs & h1l1_comp_segs).coalesce() )
 
     # put values into columns
     columns[0][1].append(segment_name)
