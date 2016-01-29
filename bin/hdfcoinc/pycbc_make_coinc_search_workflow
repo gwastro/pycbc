@@ -266,7 +266,7 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     insp_data_segs = glue.segments.segmentlist([f.metadata['data_seg']\
                                                                for f in files])
     insp_data_seg_files[ifo] = wf.SegFile.from_segment_list('INSP_DATA',
-                                 insp_data_segs, name, ifo,
+                                 insp_data_segs, 'INSP_DATA', ifo,
                                  valid_segment=workflow.analysis_time,
                                  extension='xml', 
                                  directory=rdir['analysis_time/segment_data'])

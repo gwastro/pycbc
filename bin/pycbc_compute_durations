@@ -11,7 +11,7 @@
 import argparse
 import pycbc
 import pycbc.version
-from pycbc import workflow
+from pycbc.workflow import SegFile
 import sqlite3
 import sys
 import os
@@ -195,10 +195,8 @@ datatypes = {}
 usertags = ["FULL_DATA"]
 
 for tag in (set(usertags) & set(["FULL_DATA","PLAYGROUND"])):
-    fP = open(args.segment_file, 'r')
-    WorkflowAnalysisSegDict = workflow.segment.fromsegmentxml(
-            fP, return_dict=True)
-    fP.close()
+    f_name = args.segment_file
+    WorkflowAnalysisSegDict = SegFile.from_segment_xml(f_name).segment_dict
     ifo_segments[tag] = segments.segmentlistdict([])
     for key in WorkflowAnalysisSegDict.keys():
         # Key should be something like H1:DMT-SCIENCE:3

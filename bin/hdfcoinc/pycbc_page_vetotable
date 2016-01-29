@@ -29,7 +29,6 @@ from glue.ligolw import table
 from glue.ligolw import utils
 from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results import save_fig_with_metadata
-from pycbc.workflow import fromsegmentxml
 import pycbc.version
 
 class DefaultContentHandler(lsctables.ligolw.LIGOLWContentHandler):
