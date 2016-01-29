@@ -343,7 +343,7 @@ seg_summ_file = wf.SegFile.from_multi_segment_list('WORKFLOW_SEGMENT_SUMMARY',
                           seg_list, names, ifos,
                           valid_segment=workflow.analysis_time,
                           extension='xml',
-                          directory=rdir['analysis_time/segment_data')
+                          directory=rdir['analysis_time/segment_data'])
 
 # make segment table for summary page
 seg_summ_table = wf.make_seg_table(workflow, [seg_summ_file], seg_summ_names,
@@ -453,7 +453,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     # run minifollowups on nearest missed injections
     wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
                                      insps,  hdfbank[0],
-                                     insp_data_segs, 'INSPIRAL_DATA', 'daxes',
+                                     insp_data_seg_files, 'INSPIRAL_DATA', 'daxes',
                                      rdir['injections/followup_of_missed_%s' % tag],
                                      tags=[tag])
         
