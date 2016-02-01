@@ -518,7 +518,7 @@ for j in "${rom_hash[@]}" ; do
     if [[ ${install_rom} == "yes" ]] ; then
         echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >>  ${VIRTUAL_ENV}/bin/activate
     elif [[ ${install_rom} == "no" ]] ; then
-        echo "export LAL_DATA_PATH=${LAL_DATA_PATH}"/share/lalsimulation >>  ${VIRTUAL_ENV}/bin/activate
+        echo "export LAL_DATA_PATH=${LAL_DATA_PATH}/share/lalsimulation" >>  ${VIRTUAL_ENV}/bin/activate
     fi
     break
   fi
