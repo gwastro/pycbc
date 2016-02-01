@@ -18,7 +18,7 @@ needs_mkl = ['pycbc_inspiral','pycbc_single_template']
 #find them
 from pycbc.libutils import get_libpath_from_dirlist, pkg_config_libdirs
 
-def find_lib_path(libname, packages):
+def find_lib_path(libname, packages, name=''):
     libdirs = []
     if "LD_LIBRARY_PATH" in os.environ:
       libdirs += os.environ["LD_LIBRARY_PATH"].split(":")
@@ -30,7 +30,7 @@ def find_lib_path(libname, packages):
     path = get_libpath_from_dirlist(libname, libdirs)
     
     if path is not None:
-        return [(path, '')]
+        return [(path, name)]
     else:
         return []
 
@@ -86,4 +86,4 @@ if os.environ["NOW_BUILDING"] in needs_mkl:
 #datas += find_lib_path('fftw3f_omp', ['fftw3f'])
 #datas += find_lib_path('fftw3_omp', ['fftw3'])
 
-datas += find_lib_path('gomp', [])
+datas += find_lib_path('gomp', [], 'libgomp.so.1')
