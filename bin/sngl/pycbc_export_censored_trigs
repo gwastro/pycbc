@@ -1,0 +1,169 @@
+#!/usr/bin/python
+
+# Copyright (C) 2016 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import logging
+import numpy
+from glue.ligolw import ilwd
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import table
+from glue.ligolw import utils
+from pycbc.io.hdf import ForegroundTriggers
+from pycbc import pnutils
+
+class DefaultContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(DefaultContentHandler)
+
+def _empty_row(obj):
+    """Create an empty sim_inspiral or sngl_inspiral row where the columns have
+    default values of 0.0 for a float, 0 for an int, "" for a string. The ilwd
+    columns have a default where the index is 0.
+    """
+
+    # check if sim_inspiral or sngl_inspiral
+    if obj == lsctables.SimInspiral:
+        row = lsctables.SimInspiral()
+        cols = lsctables.SimInspiralTable.validcolumns
+    else:
+        row = lsctables.SnglInspiral()
+        cols = lsctables.SnglInspiralTable.validcolumns
+
+    # populate columns with default values
+    for entry in cols.keys():
+        if cols[entry] in ["real_4","real_8"]:
+            setattr(row,entry,0.)
+        elif cols[entry] == "int_4s":
+            setattr(row,entry,0)
+        elif cols[entry] == "lstring":
+            setattr(row,entry,"")
+        elif entry == "process_id":
+            row.process_id = ilwd.ilwdchar("sim_inspiral:process_id:0")
+        elif entry == "simulation_id":
+            row.simulation_id = ilwd.ilwdchar("sim_inspiral:simulation_id:0")
+        elif entry == "event_id":
+            row.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
+        else:
+            raise ValueError("Column %s not recognized." %(entry) )
+
+    return row
+
+# command line usage
+parser = argparse.ArgumentParser(usage="pycbc_export_censored_trigs [--options]",
+                  description="Export censored triggers to XML.")
+
+# command line options
+parser.add_argument("--ifo", type=str,
+                  help="IFO to get triggers.")
+parser.add_argument("--output-file", type=str,
+                  help="Path to output XML file.")
+parser.add_argument("--coinc-file", type=str,
+                  help="Coincidence trigger file from the run.")
+parser.add_argument("--bank-file", type=str,
+                  help="Template bank file from the run.")
+parser.add_argument("--sngl-files", type=str, nargs="+",
+                  help="List of single-detector trigger files from the run.")
+parser.add_argument("--min-stat", type=float, default=0.0,
+                  help="Only add triggers above this stat to output XML file.")
+parser.add_argument("--n-loudest", type=int, default=0,
+                  help="Read the nth loudest triggers from the input files.")
+
+# parse command line
+opts = parser.parse_args()
+
+# setup log
+logging_level = logging.DEBUG
+logging.basicConfig(format="%(asctime)s : %(message)s", level=logging_level)
+
+# get censored background triggers
+group = "background_exc"
+logging.info("Reading %s triggers from coincidence file", group)
+if opts.n_loudest:
+    trigs_censored = ForegroundTriggers(opts.coinc_file, opts.bank_file,
+                          sngl_files=opts.sngl_files, group=group,
+                          n_loudest=opts.n_loudest)
+else:
+    trigs_censored = ForegroundTriggers(opts.coinc_file, opts.bank_file,
+                          sngl_files=opts.sngl_files, group=group)
+
+# find triggers above limit
+mask = numpy.where( trigs_censored.get_coincfile_array("stat") > opts.min_stat )[0]
+
+# dict to hold parameters
+param_dict = {}
+
+# get template bank parameters
+logging.info("Putting template bank parameters into arrays")
+bank_params = ["mass1", "mass2", "spin1z", "spin2z"]
+for param in bank_params:
+    param_dict[param] = trigs_censored.get_bankfile_array(param)[mask]
+
+# get single-detector trigger parameters
+logging.info("Putting single-detector trigger parameters into arrays")
+sngl_params = ["end_time", "snr", "chisq", "chisq_dof",
+               "template_duration", "sigmasq"]
+for param in sngl_params:
+    param_dict[param] = trigs_censored.get_snglfile_array_dict(param)[opts.ifo][mask]
+
+# get number of triggers
+num_trigs = len(param_dict[sngl_params[0]])
+
+# create an output XML document
+outdoc = ligolw.Document()
+outdoc.appendChild(ligolw.LIGO_LW())
+
+# create a sngl_inspiral table
+sngl_table = lsctables.New(lsctables.SnglInspiralTable,
+                            columns=lsctables.SnglInspiralTable.validcolumns)
+outdoc.childNodes[0].appendChild(sngl_table)
+
+# loop over triggers
+logging.info("Adding %d rows to output XML file", num_trigs)
+for i in range(num_trigs):
+
+    # create a SnglInspiral row
+    sngl = _empty_row(lsctables.SnglInspiral)
+
+    # get column values
+    sngl.ifo = opts.ifo
+    sngl.mass1 = param_dict["mass1"][i]
+    sngl.mass2 = param_dict["mass2"][i]
+    sngl.mtotal = sngl.mass1 + sngl.mass2
+    sngl.mchirp, sngl.eta = pnutils.mass1_mass2_to_mchirp_eta(sngl.mass1, sngl.mass2)
+    sngl.spin1z = param_dict["spin1z"][i]
+    sngl.spin2z = param_dict["spin2z"][i]
+    sngl.end_time = int(param_dict["end_time"][i])
+    sngl.end_time_ns = int(param_dict["end_time"][i] % 1 * 1e9)
+    sngl.snr = param_dict["snr"][i]
+    sngl.chisq = param_dict["chisq"][i]
+    sngl.chisq_dof = param_dict["chisq_dof"][i]
+    sngl.template_duration = param_dict["template_duration"][i]
+    sngl.sigmasq = param_dict["sigmasq"][i]
+    sngl.eff_distance = sngl.sigmasq**(1.0/2.0) / sngl.snr
+
+    # add row to table
+    sngl_table.append(sngl)
+
+# write output file
+logging.info("Writing output XML file")
+utils.write_filename(outdoc, opts.output_file,
+                     gz=opts.output_file.endswith("gz"))
+
+# done
+logging.info("Done")
