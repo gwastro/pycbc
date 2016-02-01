@@ -515,7 +515,7 @@ fi
 for j in "${rom_hash[@]}" ; do
   if [[ ${rom_hash[*]} == ${md5sum_hash[*]} ]] ; then
     echo "All files are in ${LAL_DATA_PATH}." 
-    echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >>  ${VIRTUAL_ENV}/bin/activate
+    echo "export LAL_DATA_PATH=${LAL_DATA_PATH}/share/lalsimulation" >>  ${VIRTUAL_ENV}/bin/activate
     break
   fi
 
