@@ -785,9 +785,12 @@ fi
 echo -e "\\n\\n>> [`date`] running pyinstaller"
 pyinstaller pycbc_inspiral.spec
 
+# fix libgomp
+cd dist/pycbc_inspiral
+test -r libgomp.so.1.0.0 && mv libgomp.so.1.0.0 libgomp.so.1
+
 # TEST BUNDLE
 echo -e "\\n\\n>> [`date`] testing"
-cd dist/pycbc_inspiral
 ./pycbc_inspiral --help
 
 # end here for Cygwin/Windows
