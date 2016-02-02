@@ -792,15 +792,19 @@ test -r libgomp.so.1.0.0 && mv libgomp.so.1.0.0 libgomp.so.1
 # TEST BUNDLE
 echo -e "\\n\\n>> [`date`] testing"
 ./pycbc_inspiral --help
+cd ..
+
+# build zip file from dir
+zip -r pycbc_inspiral.zip pycbc_inspiral
 
 # end here for Cygwin/Windows
 if $build_dlls; then
-  cd ..
-  zip -r pycbc_inspiral.zip pycbc_inspiral
   exit
 fi
 
-cd ..
+# build tgz file from dir
+tar -czf pycbc_inspiral.tgz pycbc_inspiral
+
 mv pycbc_inspiral pycbc_inspiral_d
 cd ..
 
