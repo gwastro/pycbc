@@ -810,7 +810,7 @@ cd ..
 
 # BUNDLE FILE
 echo -e "\\n\\n>> [`date`] running pyinstaller"
-pyinstaller --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-scipy.py --hidden-import=pkg_resources --onefile ./bin/pycbc_inspiral
+pyinstaller --additional-hooks-dir $hooks/hooks --hidden-import=pkg_resources --onefile ./bin/pycbc_inspiral
 
 # TEST BUNDLE
 echo -e "\\n\\n>> [`date`] testing"
