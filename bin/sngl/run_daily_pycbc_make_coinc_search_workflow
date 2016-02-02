@@ -74,7 +74,13 @@ ${RUN_DIR}/pycbc_make_coinc_search_workflow --workflow-name ${WORKFLOW_NAME} --o
 cd ${OUTPUT_DIR}
 ${RUN_DIR}/pycbc_submit_dax --accounting-group ligo.dev.o1.detchar.singleifo.dailyahope --dax ${WORKFLOW_NAME}.dax
 
-# update the nagios monitor
+# name of the nagios monitor file
 NAGIOS_GPS_TIME=`lalapps_tconvert`
-NAGIOS_FILE=/home/${USER}/public_html/daily_cbc_offline/nagios/nagios-workflow-generator.json
+NAGIOS_DIR=/home/${USER}/public_html/daily_cbc_offline/nagios
+NAGIOS_FILE=${NAGIOS_DIR}/nagios-workflow-generator.json
+
+# make sure directory exists
+mkdir -p ${NAGIOS_DIR}
+
+# update nagios monitor
 pycbc_nagios_daily_monitor --update-transfer-files --output-file ${NAGIOS_FILE}  --gps-time ${NAGIOS_GPS_TIME}

@@ -116,9 +116,15 @@ for BIN in 0 1 2; do
     done
 done
 
-# update the nagios monitor
+# name of the nagios monitor file
 NAGIOS_GPS_TIME=`lalapps_tconvert`
-NAGIOS_FILE=/home/${USER}/public_html/daily_cbc_offline/nagios/nagios-tranfer-files.json
+NAGIOS_DIR=/home/${USER}/public_html/daily_cbc_offline/nagios
+NAGIOS_FILE=${NAGIOS_DIR}/nagios-tranfer-files.json
+
+# make sure directory exists
+mkdir -p ${NAGIOS_DIR}
+
+# update nagios monitor
 pycbc_nagios_daily_monitor --update-transfer-files --output-file ${NAGIOS_FILE}  --gps-time ${NAGIOS_GPS_TIME}
 
 
