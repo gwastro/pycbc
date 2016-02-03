@@ -5,7 +5,7 @@ import numpy, argparse, h5py, logging, sys
 import pycbc.version, pycbc.results, pycbc.io
 from matplotlib import use; use('Agg')
 from matplotlib import pyplot
-from pycbc.events import veto
+from pycbc.events import background_bin_from_string, veto
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
@@ -18,6 +18,10 @@ parser.add_argument('--segment-name',
 parser.add_argument('--x-var',
                     help="name of value to histogram")
 parser.add_argument('--output-file')
+parser.add_argument('--bank-file', default="",
+                    help='template bank hdf file')
+parser.add_argument('--background-bins', nargs='+',
+                    help='list of background bin format strings')
 parser.add_argument('--bins', default=100, type=int,
                     help="number of bins in histogram")
 parser.add_argument('--x-max', type=float)
@@ -29,18 +33,30 @@ parser.add_argument('--special-time', type=float,
 parser.add_argument('--verbose')
 args = parser.parse_args()
 
+# sanity check command line options
+if args.sepcial_time and args.background_bins:
+    raise ValueError("Cannot use both --special-time and --background-bins")
+
+# setup logging
 pycbc.init_logging(args.verbose)
 
+# read trigger file to determine IFO
 f = h5py.File(args.trigger_file, 'r')
 ifo = f.keys()[0]
 
-trigs = pycbc.io.SingleDetTriggers(args.trigger_file, None, args.veto_file,
-                                   args.segment_name, None, ifo)
+# read single-detector triggers
+trigs = pycbc.io.SingleDetTriggers(args.trigger_file, args.bank_file,
+                                   args.veto_file, args.segment_name,
+                                   None, ifo)
+
+# get x values and find the maximum x value
 val = getattr(trigs, args.x_var)
 x_max = args.x_max if args.x_max else val.max() * 1.1
 
+# create a figure to add a histogram
 fig = pyplot.figure(0)
 
+# command line says to plot triggers around a certain time
 if args.special_time:
     time = getattr(trigs, 'end_time')
     val_special = val[abs(time-args.special_time) < 1]
@@ -50,19 +66,46 @@ if args.special_time:
                stacked=True, color=[pycbc.results.ifo_color(ifo), 'k'],
           label=['Other times', 'Triggers near %i' % (int(args.special_time))])
     pyplot.legend(loc='upper right')
+
+# command line says to plot triggers in each background bin
+elif args.background_bins:
+
+    # get a dict where key is each bin's name and value is a list of indexes
+    # for the triggers in that bin
+    bank_data = {'mass1' : trigs.mass1,
+                 'mass2' : trigs.mass2,
+                 'spin1z' : trigs.spin1z,
+                 'spin2z' : trigs.spin2z,
+    }
+    locs_dict = background_bin_from_string(args.background_bins, bank_data)
+
+    # get a list of bin names and a corresponding list for x values
+    loc_bin_keys = [key for key in locs_dict.keys()]
+    loc_bin_vals = [val[locs_dict[key]] for key in loc_bin_keys]
+
+    # plot
+    binvals = numpy.linspace(args.x_min, x_max, args.bins, endpoint=True)
+    pyplot.hist(loc_bin_vals, bins=binvals, histtype='step',
+                stacked=False, label=loc_bin_keys)
+    pyplot.legend(loc='upper right')
+
+# plot all triggers in a single label
 else:
     pycbc.results.hist_overflow(val, x_max, bins=args.bins,
                                   color=pycbc.results.ifo_color(ifo))
 
+# format plot
 ax = pyplot.gca()
 ax.set_yscale('log')
 pyplot.ylabel('Number of triggers')
 pyplot.xlabel(args.x_var)
 pyplot.ylim(ymin=.1)
 
+# set x lower limit on plot
 if args.x_min:
     pyplot.xlim(xmin=args.x_min)
 
+# set x upper limit on plot
 if args.x_max:
     if len(numpy.where(val > args.x_max)[0]):
         overflow = 1
@@ -71,7 +114,10 @@ if args.x_max:
 
     pyplot.xlim(xmax=args.x_max + overflow)
 
+# add a grid to the plot
 pyplot.grid()
+
+# add meta data and save figure
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
                 title = '%s: %s histogram of single detector triggers' % (ifo, args.x_var),
                 caption = 'Histogram of single detector triggers',
