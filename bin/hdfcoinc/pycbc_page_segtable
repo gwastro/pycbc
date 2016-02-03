@@ -122,8 +122,12 @@ for segment_name in opts.segment_names:
         caption += " ("+comment_dict[key]+")"
 
     # get length of time of single-IFO segments in seconds
-    h1_len = abs( ( base_segs['H1'].coalesce() & comp_segs["H1"].coalesce() ).coalesce() )
-    l1_len = abs( ( base_segs['L1'].coalesce() & comp_segs["L1"].coalesce() ).coalesce() )
+    if len(names) > 1:
+        h1_len = abs( ( base_segs['H1'].coalesce() & comp_segs["H1"].coalesce() ).coalesce() )
+        l1_len = abs( ( base_segs['L1'].coalesce() & comp_segs["L1"].coalesce() ).coalesce() )
+    else:
+        h1_len = abs( base_segs['H1'].coalesce() )
+        l1_len = abs( base_segs['L1'].coalesce() )
 
     # find the AND of H1 and L1 time
     h1l1_base_segs = base_segs["H1"].coalesce() & base_segs["L1"].coalesce()
@@ -134,7 +138,10 @@ for segment_name in opts.segment_names:
     h1l1_comp_segs.coalesce()
 
     # get length of time in coincident H1L1 segments in seconds
-    h1l1_len = abs( (h1l1_base_segs & h1l1_comp_segs).coalesce() )
+    if len(names) > 1:
+        h1l1_len = abs( (h1l1_base_segs & h1l1_comp_segs).coalesce() )
+    else:
+        h1l1_len = abs( h1l1_base_segs.coalesce() )
 
     # put values into columns
     columns[0][1].append(segment_name)
