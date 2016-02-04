@@ -2,7 +2,20 @@
 
 set -e
 
-apt-get install wget bzip2
+# update apt
+echo 'deb http://archive.debian.org/debian/ etch main non-free contrib
+deb-src http://archive.debian.org/debian/ etch main non-free contrib' >>/etc/apt/sources.list
+apt-get update
+apt-get install debian-keyring debian-archive-keyring
+apt-get update
+# tools for pycbc
+apt-get install git-core ant gcc g++ gfortran automake autoconf make libtool pkg-config bzip2
+# libraries for pycbc
+apt-get install libpcre3-dev libfreetype6-dev libjpeg-dev libpng-dev libmysqlclient-dev libpq-dev libssl-dev
+# make sure these libraries aren't on the system
+apt-get remove lapack3-dev atlas3-base atlas3-headers refblas3
+# further necessary / useful tools
+apt-get install openssh-server ntpdate zip gettext curl libcurl3-openssl-dev wget bzip2 screen emacs
 
 test ".$PREFIX" = "." &&
   PREFIX=/usr/local
