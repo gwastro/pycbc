@@ -290,13 +290,13 @@ layout.two_column_layout(rdir['detector_sensitivity'],
 # run minifollowups on the output of the loudest events 
 wf.setup_foreground_minifollowups(workflow, final_bg_file,
                                   full_insps,  hdfbank[0],
-                                  insp_data_seg_files, 'INSPIRAL_DATA', 'daxes',
+                                  insp_data_seg_files, 'INSP_DATA', 'daxes',
                                   rdir['open_box_result/loudest_event_followup'], tags=final_bg_file.tags)
     
 for bin_file in bin_files:
     if hasattr(bin_file, 'bin_name'):
         wf.setup_foreground_minifollowups(workflow, bin_file, full_insps, hdfbank[0],
-                                  insp_data_seg_files, 'INSPIRAL_DATA', 'daxes',
+                                  insp_data_seg_files, 'INSP_DATA', 'daxes',
                                   rdir['open_box_result/loudest_in_%s_bin' % bin_file.bin_name],
                                   tags=bin_file.tags)
 
@@ -304,7 +304,7 @@ for bin_file in bin_files:
 for insp_file in full_insps:
     curr_ifo = insp_file.ifo
     wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
-                                  insp_data_seg_files, 'INSPIRAL_DATA', 'daxes',
+                                  insp_data_seg_files, 'INSP_DATA', 'daxes',
                                   rdir['single_triggers/%s_loudest_triggers' %(curr_ifo,)],
                                   veto_file=censored_veto,
                                   veto_segment_name='closed_box',
@@ -453,7 +453,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     # run minifollowups on nearest missed injections
     wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
                                      insps,  hdfbank[0],
-                                     insp_data_seg_files, 'INSPIRAL_DATA', 'daxes',
+                                     insp_data_seg_files, 'INSP_DATA', 'daxes',
                                      rdir['injections/followup_of_missed_%s' % tag],
                                      tags=[tag])
         
