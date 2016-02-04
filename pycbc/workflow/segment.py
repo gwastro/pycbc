@@ -79,8 +79,9 @@ def get_science_segments(workflow, out_dir, tags=None):
         sci_seg_dict[ifo + ':' + sci_seg_name] = curr_sci_segs
         sci_segs[ifo] = curr_sci_segs
     sci_seg_file = SegFile.from_segment_list_dict(sci_seg_name,
-                                              sci_seg_dict, extension='xml',
-                                              directory=out_dir, tags=tags)
+                                          sci_seg_dict, extension='xml',
+                                          valid_segment=workflow.analysis_time,
+                                          directory=out_dir, tags=tags)
     return sci_seg_file, sci_segs, sci_seg_name
 
 
@@ -105,13 +106,14 @@ def get_analyzable_segments(workflow, sci_segs, out_dir, tags=None):
 
     Returns
     --------
-    segs : glue.segments.segmentlist instance
-        The segment list specifying the times to analyze
-    data_segs : glue.segments.segmentlist
-        The segment list specifying the time where data exists
-    seg_files : workflow.core.FileList instance
-        The cumulative segment files from each ifo that determined the
-        analyzable time.
+    sci_ok_seg_file : workflow.core.SegFile instance
+        The segment file combined from all ifos containing the analyzable
+        science segments.
+    sci_ok_segs : Ifo keyed dict of glue.segments.segmentlist instances
+        The analyzable science segs for each ifo, keyed by ifo
+    sci_ok_seg_name : str
+        The name with which analyzable science segs are stored in the output
+        XML file.
     """
     if tags is None:
         tags = tags
@@ -121,52 +123,67 @@ def get_analyzable_segments(workflow, sci_segs, out_dir, tags=None):
     start_time = workflow.analysis_time[0]
     end_time = workflow.analysis_time[1]
     save_veto_definer(workflow.cp, out_dir, tags)
+    # NOTE: Should this be overrideable in the config file?
+    sci_ok_seg_name = "SCIENCE_OK"
+    sci_ok_seg_dict = segments.segmentlistdict()
+    sci_ok_segs = {}
 
     cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-segments',
                                                 'segments-science-veto', tags))
 
     veto_gen_job = create_segs_from_cats_job(workflow.cp, out_dir,
                                              workflow.ifo_string, tags=tags)
-    sci_ok_segs = {}
-    sci_ok_seg_files = FileList()
     for ifo in workflow.ifos:
-        sci_ok_segs[ifo] = copy.copy(sci_segs[ifo])
+        curr_segs[ifo] = copy.copy(sci_segs[ifo])
         for category in cat_sets:
             curr_veto_file = get_veto_segs(workflow, ifo,
                                         cat_to_veto_def_cat(category),
                                         start_time, end_time, out_dir,
                                         veto_gen_job, execute_now=True)
             cat_segs = curr_veto_file.return_union_seglist()
-            sci_ok_segs[ifo] -= cat_segs
-            sci_ok_segs[ifo].coalesce()
+            curr_segs[ifo] -= cat_segs
+            curr_segs[ifo].coalesce()
+        sci_ok_seg_dict[ifo + ':' + sci_ok_seg_name] = curr_segs
 
-        curr_file = SegFile.from_segment_list('SCIENCE_OK', sci_segs[ifo],
-                               'SCIENCE_OK', ifo, extension='xml',
-                               valid_segment=workflow.analysis_time, tags=tags,
-                               directory=out_dir)
-        sci_ok_seg_files += [curr_file]
+    sci_ok_seg_file = SegFile.from_segment_list_dict(sci_ok_seg_name,
+                                          sci_ok_seg_dict, extension='xml',
+                                          valid_segment=workflow.analysis_time,
+                                          directory=out_dir, tags=tags)
 
-    segments_method = workflow.cp.get_opt_tags("workflow-segments",
-                                      "segments-method", tags)
 
-    if segments_method == 'ALL_SINGLE_IFO_TIME':
-        pass
-    elif segments_method == 'COINC_TIME':
-        cum_segs = None
-        for ifo in sci_segs:
-            if cum_segs is not None:
-                cum_segs = (cum_segs & sci_segs[ifo]).coalesce()
-            else:
-                cum_segs = sci_segs[ifo]
+    if cp.has_option_tags("workflow-segments",
+                          "segments-minimum-segment-length", tags):
+        min_seg_length = int( cp.get_opt_tags("workflow-segments",
+                              "segments-minimum-segment-length", tags) )
+        sci_ok_seg_file.remove_short_sci_segs(min_seg_length)
 
-        for ifo in sci_segs:
-            sci_segs[ifo] = cum_segs
-    else:
-        raise ValueError("Invalid segments-method, %s. Options are "
-                         "ALL_SINGLE_IFO_TIME and COINC_TIME" % segments_method)
+    # FIXME: Another test we can do is limit to coinc time +/- some window
+    #        this should *not* be set through segments-method, but currently
+    #        is not implemented
+    #segments_method = workflow.cp.get_opt_tags("workflow-segments",
+    #                                  "segments-method", tags)
+    #if segments_method == 'ALL_SINGLE_IFO_TIME':
+    #    pass
+    #elif segments_method == 'COINC_TIME':
+    #    cum_segs = None
+    #    for ifo in sci_segs:
+    #        if cum_segs is not None:
+    #            cum_segs = (cum_segs & sci_segs[ifo]).coalesce()
+    #        else:
+    #            cum_segs = sci_segs[ifo]
+    #
+    #    for ifo in sci_segs:
+    #        sci_segs[ifo] = cum_segs
+    #else:
+    #    raise ValueError("Invalid segments-method, %s. Options are "
+    #                     "ALL_SINGLE_IFO_TIME and COINC_TIME" % segments_method)
 
-    logging.info('Leaving generation of science segments')
-    return sci_segs, data_segs, seg_files
+    for ifo in workflow.ifos:
+        sci_ok_segs[ifo] = \
+                      sci_ok_seg_file.segment_dict[ifo + ':' + sci_ok_seg_name]
+
+    logging.info('Leaving generation of analyzable science segments')
+    return sci_ok_seg_file, sci_ok_segs, sci_ok_seg_name
 
 
 def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
