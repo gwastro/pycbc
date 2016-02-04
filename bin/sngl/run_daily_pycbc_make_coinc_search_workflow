@@ -72,7 +72,7 @@ ${RUN_DIR}/pycbc_make_coinc_search_workflow --workflow-name ${WORKFLOW_NAME} --o
 
 # plan and submit the workflow
 cd ${OUTPUT_DIR}
-${RUN_DIR}/pycbc_submit_dax --accounting-group ligo.dev.o1.detchar.singleifo.dailyahope --dax ${WORKFLOW_NAME}.dax
+${RUN_DIR}/pycbc_submit_dax --accounting-group ligo.dev.o1.detchar.singleifo.dailyahope --dax ${WORKFLOW_NAME}.dax --no-create-proxy
 
 # name of the nagios monitor file
 NAGIOS_GPS_TIME=`lalapps_tconvert`
