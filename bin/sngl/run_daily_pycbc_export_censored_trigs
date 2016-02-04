@@ -110,7 +110,7 @@ for BIN in 0 1 2; do
         echo
 
         # create a cache file and copy to storage dir
-        ls ${OUTPUT_FILE} | lalapps_path2cache --output ${OUTPUT_CACHE}
+        gsissh ${REMOTE_USER}@${SERVER} ls ${OUTPUT_FILE} | lalapps_path2cache --output ${OUTPUT_CACHE}
         rsync -zve gsissh ${OUTPUT_CACHE} ${SERVER}:${STORAGE_DIR}
 
     done
