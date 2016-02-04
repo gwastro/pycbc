@@ -24,7 +24,7 @@
 import numpy, pycbc
 from pycbc.types import real_same_precision_as
 from scipy.weave import inline
-from pycbc import WEAVE_FLAGS
+from pycbc import WEAVE_FLAGS, DEFAULT_WEAVE_FLAGS
 
 if pycbc.HAVE_OMP:
     omp_libs = ['gomp']
@@ -48,7 +48,7 @@ def chisq_accum_bin_inline(chisq, q):
         }
     """
     inline(code, ['chisq', 'q', 'N'], 
-                    extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags,
+                    extra_compile_args=[WEAVE_FLAGS + DEFAULT_WEAVE_FLAGS] + omp_flags,
                     libraries=omp_libs
           )
           
@@ -167,7 +167,7 @@ def shift_sum(v1, shifts, bins):
     chisq =  numpy.zeros(n, dtype=real_type)
     
     inline(code, ['v1', 'n', 'chisq', 'slen', 'shifts', 'bins', 'blen'],
-                    extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags,
+                    extra_compile_args=[WEAVE_FLAGS + DEFAULT_WEAVE_FLAGS] + omp_flags,
                     libraries=omp_libs
           )
           
