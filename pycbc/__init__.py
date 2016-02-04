@@ -135,6 +135,9 @@ DEFAULT_WEAVE_FLAGS = '-march=native -O3 -w'
 if 'WEAVE_FLAGS' in os.environ:
     WEAVE_FLAGS = os.environ['WEAVE_FLAGS'] + ' '
 
+if '-march=' in WEAVE_FLAGS:
+    DEFAULT_WEAVE_FLAGS = ''
+
 def multiprocess_cache_dir():
     import multiprocessing
     cache_dir =  os.path.join(_cache_dir_path,  str(id(multiprocessing.current_process())))
