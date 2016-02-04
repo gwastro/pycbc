@@ -198,7 +198,7 @@ def indices_outside_segments(times, segment_files, ifo=None, segment_name=None):
     indices = numpy.arange(0, len(times))
     return numpy.delete(indices, exclude), segs
 
-def get_segment_definer_comments(xml_file):
+def get_segment_definer_comments(xml_file, include_version=True):
     """ Returns a dict with the comment column as the value for each segment.
     """
 
@@ -215,9 +215,14 @@ def get_segment_definer_comments(xml_file):
     # put comment column into a dict
     comment_dict = {}
     for seg_def in seg_def_table:
-        full_channel_name = ':'.join([str(seg_def.ifos),
-                                      str(seg_def.name),
-                                      str(seg_def.version)])
+        if include_version:
+            full_channel_name = ':'.join([str(seg_def.ifos),
+                                          str(seg_def.name),
+                                          str(seg_def.version)])
+        else:
+            full_channel_name = ':'.join([str(seg_def.ifos),
+                                          str(seg_def.name)])
+
         comment_dict[full_channel_name] = seg_def.comment
 
     return comment_dict

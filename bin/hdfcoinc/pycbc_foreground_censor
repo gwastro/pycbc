@@ -1,7 +1,8 @@
 #!/bin/env python
 """Make segment file to blind the results from foreground related triggers """
 
-import argparse, logging, pycbc.version, h5py, pycbc.events
+import argparse, logging, pycbc.version, h5py, urlparse
+import pycbc.events
 from pycbc.workflow import SegFile
 
 parser = argparse.ArgumentParser(description=__doc__)

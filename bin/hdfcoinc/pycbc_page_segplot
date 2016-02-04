@@ -99,7 +99,8 @@ for segment_file in opts.segment_files:
     seg_dict = SegFile.from_segment_xml(segment_file).segment_dict
 
     # read comments from segment definer table
-    comment_dict = get_segment_definer_comments(open(segment_file, 'rb'))
+    comment_dict = get_segment_definer_comments(open(segment_file, 'rb'),
+                                                include_version=False)
 
     # loop over segment names
     for segment_name in opts.segment_names:

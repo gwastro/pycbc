@@ -70,7 +70,8 @@ for segment_file in opts.segment_files:
 
     # read segment definer table
     seg_dict.update(SegFile.from_segment_xml(segment_file).segment_dict)
-    comment_dict.update(get_segment_definer_comments(open(segment_file, 'rb')))
+    comment_dict.update(get_segment_definer_comments(open(segment_file, 'rb'),
+                                                     include_version=False))
 
 # loop over segment names
 for segment_name in opts.segment_names:
