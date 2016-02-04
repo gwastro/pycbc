@@ -100,7 +100,7 @@ elif opts.update_transfer_files:
 
     # add a status
     status_dict = {
-        "start_sec" : 86400,
+        "start_sec" : 172800,
         "txt_status" : "The daily CBC workflow generator has not transferred files to the sites within the past 48 hours.",
         "num_status" : 2,
     }
