@@ -93,6 +93,9 @@ elif args.background_bins:
     loc_bin_overflows = [len(vals[vals>=x_max]) for vals in loc_bin_vals]
     num_bins = len(loc_bin_overflows)
 
+    # remove overflow triggers from plotting
+    loc_bin_vals = [vals[vals<x_max] for vals in loc_bin_vals]
+
     # plot histograms
     pyplot.hist(loc_bin_vals, bins=args.bins, histtype='step',
                 stacked=False, label=loc_bin_keys, color=loc_bin_colors)
