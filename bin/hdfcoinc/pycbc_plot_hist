@@ -94,8 +94,7 @@ elif args.background_bins:
     num_bins = len(loc_bin_overflows)
 
     # plot histograms
-    binvals = numpy.linspace(args.x_min, x_max, args.bins, endpoint=True)
-    pyplot.hist(loc_bin_vals, bins=binvals, histtype='step',
+    pyplot.hist(loc_bin_vals, bins=args.bins, histtype='step',
                 stacked=False, label=loc_bin_keys, color=loc_bin_colors)
     pyplot.legend(loc='upper right')
 
