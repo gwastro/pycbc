@@ -34,7 +34,7 @@ parser.add_argument('--verbose')
 args = parser.parse_args()
 
 # sanity check command line options
-if args.sepcial_time and args.background_bins:
+if args.special_time and args.background_bins:
     raise ValueError("Cannot use both --special-time and --background-bins")
 
 # setup logging
