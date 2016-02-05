@@ -733,8 +733,8 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tags=None):
     # If the user has a proxy set in the environment, add it to the job
     return job
     
-def get_cumulative_segs(workflow, currSegFile, categories,
-                                   segFilesList, out_dir, tags=[],
+def get_cumulative_segs(workflow, curr_seg_file, categories,
+                                   seg_files_list, out_dir, tags=[],
                                    execute_now=False, segment_name=None):
     """
     Function to generate one of the cumulative, multi-detector segment files
@@ -744,11 +744,11 @@ def get_cumulative_segs(workflow, currSegFile, categories,
     -----------
     workflow: pycbc.workflow.core.Workflow
         An instance of the Workflow class that manages the workflow.
-    currSegFile : pycbc.workflow.core.SegFile
+    curr_seg_file : pycbc.workflow.core.SegFile
         The SegFile corresponding to this file that will be created.
     categories : int
         The veto categories to include in this cumulative veto.
-    segFilesList : Listionary of SegFiles
+    seg_files_list : Listionary of SegFiles
         The list of segment files to be used as input for combining.
     out_dir : path
         The directory to write output to.
@@ -757,6 +757,8 @@ def get_cumulative_segs(workflow, currSegFile, categories,
     execute_now : boolean, optional
         If true, jobs are executed immediately. If false, they are added to the
         workflow to be run later.
+    segment_name : str
+        FIXME: write this!!
     """
     add_inputs = FileList([])
     valid_segment = currSegFile.segment
@@ -770,8 +772,8 @@ def get_cumulative_segs(workflow, currSegFile, categories,
         inputs = []
         files = segFilesList.find_output_with_ifo(ifo)
         for category in categories:
-            fileList = files.find_output_with_tag('VETO_CAT%d' %(category))
-            inputs+=fileList                                                      
+            file_list = files.find_output_with_tag('VETO_CAT%d' %(category))
+            inputs+=file_list                                                      
         
         cum_node = cum_job.create_node(valid_segment, inputs, segment_name)
         if execute_now:
