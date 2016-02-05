@@ -1,8 +1,10 @@
 #!/bin/env python
 """ Make histograms of single detector triggers
 """
+
 import numpy, argparse, h5py, logging, sys
 import pycbc.version, pycbc.results, pycbc.io
+from itertools import cycle
 from matplotlib import use; use('Agg')
 from matplotlib import pyplot
 from pycbc.events import background_bin_from_string, veto
@@ -78,16 +80,34 @@ elif args.background_bins:
                  'spin2z' : trigs.spin2z,
     }
     locs_dict = background_bin_from_string(args.background_bins, bank_data)
-
+ 
     # get a list of bin names and a corresponding list for x values
     loc_bin_keys = [key for key in locs_dict.keys()]
     loc_bin_vals = [val[locs_dict[key]] for key in loc_bin_keys]
 
-    # plot
+    # assign a color for each bin
+    color_cycle = cycle(['red', 'green', 'blue', 'black', 'magenta', 'cyan'])
+    loc_bin_colors = [color_cycle.next() for key in loc_bin_keys]
+
+    # get number of overflows for each background bin
+    loc_bin_overflows = [len(vals[vals>=x_max]) for vals in loc_bin_vals]
+    num_bins = len(loc_bin_overflows)
+
+    # plot histograms
     binvals = numpy.linspace(args.x_min, x_max, args.bins, endpoint=True)
     pyplot.hist(loc_bin_vals, bins=binvals, histtype='step',
-                stacked=False, label=loc_bin_keys)
+                stacked=False, label=loc_bin_keys, color=loc_bin_colors)
     pyplot.legend(loc='upper right')
+
+    # plot overflow bin
+    rects = pyplot.bar(num_bins*[x_max+0.05],
+                      loc_bin_overflows, .5,
+                      facecolor='None', edgecolor=loc_bin_colors)
+
+    # write text for overflow bin
+    text_left = rects[0].get_x()
+    text_height = 1.10 * max([rect.get_height() for rect in rects])
+    pyplot.text(text_left, text_height, '%s+'%x_max)
 
 # plot all triggers in a single label
 else:
