@@ -31,7 +31,8 @@ def calculate_time_slide_duration(ifo1_segments, ifo2_segments, offset=0):
    '''
 
    # dertermine how much coincident time
-   duration = abs(ifo1_segments & ifo2_segments.shift(offset))
+   overlap = ifo1_segments.coalesce() & ifo2_segments.coalesce().shift(offset)
+   duration = abs(overlap.coalesce())
 
    # unshift the shifted segmentlist
    ifo2_segments.shift(-offset)
