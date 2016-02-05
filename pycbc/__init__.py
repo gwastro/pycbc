@@ -115,9 +115,12 @@ _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name)
 # of all the arguments to weave.
 _cache_dir_path = os.path.join(_cache_dir_path, pycbc_version)
 _cache_dir_path = os.path.join(_cache_dir_path, git_hash)
-try: os.makedirs(_cache_dir_path)
-except OSError: pass
-logging.debug("__init__: Setting weave cache to %s" % _cache_dir_path)
+if os.environ.get("NO_TMPDIR", None):
+    logging.debug("__init__: Skip creating %s due to NO_TEMPDIR" % _cache_dir_path)
+else:
+    try: os.makedirs(_cache_dir_path)
+    except OSError: pass
+    logging.debug("__init__: Setting weave cache to %s" % _cache_dir_path)
 os.environ['PYTHONCOMPILED'] = _cache_dir_path
 
 # Check for MKL capability
