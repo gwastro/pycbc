@@ -1,4 +1,4 @@
-""" Plotting utililities and premade plot configurations
+""" Plotting utilities and premade plot configurations
 """
 
 def hist_overflow(val, val_max, **kwds):
