@@ -17,13 +17,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 # sanity check command line
-if [$# -gt 1]; then
+if [ $# -gt 1 ]; then
     echo "illegal number of command line options"
+    exit
 fi
 
 # parse command line
 # get midnight from yesterday in form of MM/DD/YYYY
-if [$# -eq 1]; then
+if [ $# -eq 1 ]; then
     YESTERDAY=$1
 else
     YESTERDAY=`date -u --date="yesterday" +"%x"`
