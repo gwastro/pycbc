@@ -243,7 +243,7 @@ for insp in full_insps:
            'closed_box', rdir['single_triggers/%s_binned_triggers' % insp.ifo], tags=[tag])
     wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
            rdir['single_triggers/%s_trigger_histograms' % insp.ifo], 
-           exclude='summ', tags=[tag])
+           bank_file=hdfbank[0], exclude='summ', tags=[tag])
     hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
            rdir['single_triggers/%s_trigger_histograms' % insp.ifo], 
            require='summ', tags=[tag])
