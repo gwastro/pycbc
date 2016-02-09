@@ -19,6 +19,7 @@ DAX_FILE=""
 CACHE_FILE=0
 LOCAL_PEGASUS_DIR=""
 ACCOUNTING_GROUP=""
+ACCOUNTING_GROUP_USER=""
 NO_ACCOUNTING_GROUP=0
 PEGASUS_PROPERTIES=""
 SHARED_FILESYSTEM=0
@@ -46,7 +47,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:g:r:a:p:P:es:S:k:t:Fknl:h --long dax:,cache-file:,local-gsiftp-server:,remote-staging-server:,accounting-group:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:g:r:a:u:p:P:es:S:k:t:Fknl:h --long dax:,cache-file:,local-gsiftp-server:,remote-staging-server:,accounting-group:,accounting-group-user:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -82,6 +83,11 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) export ACCOUNTING_GROUP=$2 ; shift 2 ;;
+      esac ;;
+    -u|--accounting-group-user)
+      case "$2" in
+        "") shift 2 ;;
+        *) export ACCOUNTING_GROUP_USER=$2 ; shift 2 ;;
       esac ;;
     -p|--pegasus-properties)
       case "$2" in
@@ -197,7 +203,7 @@ if [ "x$DAX_FILE" == "x" ]; then
 fi
 
 if [ "x$ACCOUNTING_GROUP" == "x" ] && [ $NO_ACCOUNTING_GROUP == 0 ]; then
-  echo "Error: You must specify and accounting group with --accounting-group or"
+  echo "Error: You must specify an accounting group with --accounting-group or"
   echo "override this check with --force-no-accounting-group. If you do not specify"
   echo "an accounting group, job submission will fail on the LIGO Data Grid."
   echo

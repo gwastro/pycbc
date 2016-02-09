@@ -16,8 +16,19 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+# sanity check command line
+if [ $# -gt 1 ]; then
+    echo "illegal number of command line options"
+    exit
+fi
+
+# parse command line
 # get midnight from yesterday in form of MM/DD/YYYY
-YESTERDAY=`date -u --date="yesterday" +"%x"`
+if [ $# -eq 1 ]; then
+    YESTERDAY=$1
+else
+    YESTERDAY=`date -u --date="yesterday" +"%x"`
+fi
 
 # convert midnight to GPS time and analyze a day of data
 GPS_START_TIME=`lalapps_tconvert ${YESTERDAY}`
@@ -70,9 +81,16 @@ ${RUN_DIR}/pycbc_make_coinc_search_workflow --workflow-name ${WORKFLOW_NAME} --o
       "inspiral:chisq-bins:\"0.4*get_freq('fSEOBNRv2Peak',params.mass1,params.mass2,params.spin1z,params.spin2z)**(2./3.)\"" \
       "results_page:analysis-subtitle:'Daily CBC Offline ${DAY}'"
 
+#!FIXME: previous releases do not support ACCOUNTING_GROUP_USER so use the installed version
 # plan and submit the workflow
+LOCAL_DIR=${RUN_DIR}/condor
+mkdir -p ${LOCAL_DIR}
 cd ${OUTPUT_DIR}
-${RUN_DIR}/pycbc_submit_dax --accounting-group ligo.dev.o1.detchar.singleifo.dailyahope --dax ${WORKFLOW_NAME}.dax --no-create-proxy
+pycbc_submit_dax --accounting-group ligo.dev.o1.detchar.singleifo.dailyahope \
+    --accounting-group-user christopher.biwer \
+    --dax ${WORKFLOW_NAME}.dax \
+    --local-dir ${LOCAL_DIR} \
+    --no-create-proxy
 
 # name of the nagios monitor file
 NAGIOS_GPS_TIME=`lalapps_tconvert`

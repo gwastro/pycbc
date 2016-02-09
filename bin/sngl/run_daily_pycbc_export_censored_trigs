@@ -16,8 +16,19 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+# sanity check command line
+if [ $# -gt 1 ]; then
+    echo "illegal number of command line options"
+    exit
+fi
+
+# parse command line
 # get midnight from yesterday in form of MM/DD/YYYY
-YESTERDAY=`date -u --date="yesterday" +"%x"`
+if [ $# -eq 1 ]; then
+    YESTERDAY=$1
+else
+    YESTERDAY=`date -u --date="yesterday" +"%x"`
+fi
 
 # convert midnight to GPS time and analyze a day of data
 GPS_START_TIME=`lalapps_tconvert ${YESTERDAY}`
