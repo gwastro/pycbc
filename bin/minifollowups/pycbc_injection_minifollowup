@@ -46,7 +46,7 @@ parser.add_argument('--injection-xml-file',
                     help="XML format injection file")
 parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOptionAction,
                     help="HDF format merged single detector trigger files")
-parser.add_argument('--inspiral-segments', nargs='+', action=MultiDetOptionAction,
+parser.add_argument('--inspiral-segments',
                     help="xml segment files containing the inspiral analysis times")
 parser.add_argument('--inspiral-segment-name',
                     help="Name of inspiral segmentlist to read from segment files")
@@ -71,16 +71,12 @@ layouts = []
 tmpltbank_file = to_file(args.bank_file)
 injection_file = to_file(args.injection_file)
 injection_xml_file = to_file(args.injection_xml_file)
+insp_segs = to_file(args.inspiral_segments)
 
 single_triggers = []
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
     single_triggers.append(to_file(fname, ifo=ifo))
-
-insp_segs = {}
-for ifo in args.inspiral_segments:
-    fname = args.inspiral_segments[ifo]
-    insp_segs[ifo] = to_file(fname, ifo=ifo)
 
 f = h5py.File(args.injection_file, 'r')
 missed = f['missed/after_vetoes'][:]

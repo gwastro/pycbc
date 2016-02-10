@@ -41,7 +41,7 @@ parser.add_argument('--statmap-file',
                     help="HDF format clustered coincident trigger result file")
 parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOptionAction,
                     help="HDF format merged single detector trigger files")
-parser.add_argument('--inspiral-segments', nargs='+', action=MultiDetOptionAction,
+parser.add_argument('--inspiral-segments', 
                     help="xml segment files containing the inspiral analysis times")
 parser.add_argument('--inspiral-segment-name',
                     help="Name of inspiral segmentlist to read from segment files")
@@ -63,17 +63,13 @@ layouts = []
 
 tmpltbank_file = to_file(args.bank_file)
 coinc_file = to_file(args.statmap_file)
+insp_segs = to_file(args.inspiral_segments)
 
 single_triggers = []
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
     single_triggers.append(to_file(fname, ifo=ifo))
     
-insp_segs = {}
-for ifo in args.inspiral_segments:
-    fname = args.inspiral_segments[ifo]
-    insp_segs[ifo] = to_file(fname, ifo=ifo)
-
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
 stat = f['foreground/stat'][:]

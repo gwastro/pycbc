@@ -65,8 +65,8 @@ def setup_psd_calculate(workflow, frame_files, ifo, segments,
     
     psd_files = FileList([])
     for i, segs in enumerate(segment_lists):
-        seg_file = SegFile.from_segment_list('INSPIRAL_DATA_%s' %(i,),
-                         segmentlist(segs), 'INSPIRAL_DATA', ifo,
+        seg_file = SegFile.from_segment_list('%s_%s' %(segment_name, i),
+                         segmentlist(segs), segment_name, ifo,
                          valid_segment=workflow.analysis_time,
                          extension='xml', directory=out_dir)
 

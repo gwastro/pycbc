@@ -110,21 +110,29 @@ save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 
 # Get segments and find where the data is
 wf.makedir(rdir['analysis_time/segment_data'])
-valid_science_segs, data_segs, science_seg_file = wf.get_analyzable_segments(workflow, rdir['analysis_time/segment_data'])
-datafind_files, science_segs = wf.setup_datafind_workflow(workflow, 
-                                         valid_science_segs, "datafind", science_seg_file)
+science_seg_file, sci_segs, sci_seg_name = wf.get_science_segments(workflow,
+                                            rdir['analysis_time/segment_data'])
+sci_ok_seg_file, sci_ok_segs, sci_ok_seg_name = wf.get_analyzable_segments(\
+                        workflow, sci_segs, rdir['analysis_time/segment_data'])
+datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
+                                           wf.setup_datafind_workflow(workflow, 
+                                                     sci_ok_segs, "datafind",
+                                                     seg_file=science_seg_file)
 
-cum_veto_files, veto_names, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
-                                        'segments-veto-groups', rdir['analysis_time/segment_data'])
-final_veto_file, final_veto_name, ind_cats = wf.get_cumulative_veto_group_files(workflow, 
-                                        'segments-final-veto-group', rdir['analysis_time/segment_data'])
+cum_veto_files, veto_names, ind_cats = wf.get_cumulative_veto_group_files(\
+                                            workflow, 'segments-veto-groups',
+                                            rdir['analysis_time/segment_data'])
+final_veto_file, final_veto_name, ind_cats =\
+                                   wf.get_cumulative_veto_group_files(workflow, 
+                                            'segments-final-veto-group',
+                                            rdir['analysis_time/segment_data'])
 
 # Precalculated PSDs
-precalc_psd_files = wf.setup_psd_workflow(workflow, science_segs,
+precalc_psd_files = wf.setup_psd_workflow(workflow, analyzable_segs,
                                             datafind_files, "psdfiles")
 
 # Template bank stuff
-bank_files = wf.setup_tmpltbank_workflow(workflow, science_segs, 
+bank_files = wf.setup_tmpltbank_workflow(workflow, analyzable_segs, 
                                             datafind_files, 
                                             "bank",
                                             psd_files=precalc_psd_files)
@@ -139,7 +147,7 @@ inj_files, inj_tags = wf.setup_injection_workflow(workflow,
                                                      output_dir="inj_files")
 
 # setup gating files if provided
-gate_files = wf.setup_gating_workflow(workflow, science_segs,
+gate_files = wf.setup_gating_workflow(workflow, analyzable_segs,
                                             datafind_files, "gating")
 
 ######################## Setup the FULL DATA run ##############################
@@ -147,7 +155,7 @@ tag = output_dir = "full_data"
 ctags = [tag, 'full']
 
 # setup the matchedfilter jobs                                                     
-ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, science_segs, 
+ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs, 
                                    datafind_files, splitbank_files, 
                                    output_dir, gate_files=gate_files,
                                    tags = [tag])
@@ -155,9 +163,10 @@ ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, science_segs,
 insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
                                            insps, output_dir, tags=[tag])
 
-anal_log_files = wf.setup_analysislogging(workflow,
-                                          science_seg_file, insps, args,
-                                          "logging", program_name=__program__) 
+# FIXME: What do we want to do with this?
+#anal_log_files = wf.setup_analysislogging(workflow,
+#                                          science_seg_file, insps, args,
+#                                          "logging", program_name=__program__) 
 
 # setup coinc for the filtering jobs
 full_insps = insps
@@ -253,28 +262,40 @@ for insp in full_insps:
     hist_summ += list(layout.grouper(hists, 2))
 
 # Calculate the inspiral psds and make plots
-full_segs, psd_files, insp_segs, insp_data_seg_files = [], [], {}, {}
-for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
-    name = 'INSPIRAL_SEGMENTS'
-    insp_segs[ifo] = glue.segments.segmentlist([f.segment for f in files])
-    insp_seg_file = wf.SegFile.from_segment_list(name, insp_segs[ifo],
-                          name, ifo, valid_segment=workflow.analysis_time,
-                          extension='xml',
-                          directory=rdir['analysis_time/segment_data'])
-    full_segs.append(insp_seg_file)
+psd_files = []
+trig_generated_name = 'TRIGGERS_GENERATED'
+trig_generated_segs = {}
+data_analysed_name = 'DATA_ANALYSED'
+data_analysed_segs = {}
+insp_files_seg_dict = glue.segments.segmentlistdict()
 
-    insp_data_segs = glue.segments.segmentlist([f.metadata['data_seg']\
-                                                               for f in files])
-    insp_data_seg_files[ifo] = wf.SegFile.from_segment_list('INSP_DATA',
-                                 insp_data_segs, 'INSP_DATA', ifo,
-                                 valid_segment=workflow.analysis_time,
-                                 extension='xml', 
-                                 directory=rdir['analysis_time/segment_data'])
+for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
+    trig_generated_segs[ifo] = glue.segments.segmentlist([\
+                                                     f.segment for f in files])
+    data_analysed_segs[ifo] = glue.segments.segmentlist([\
+                                        f.metadata['data_seg'] for f in files])
+
+    # Remove duplicates from splitbank
+    trig_generated_segs[ifo] = glue.segments.segmentlist(
+                                                 set(trig_generated_segs[ifo]))
+    data_analysed_segs[ifo] = glue.segments.segmentlist(
+                                                  set(data_analysed_segs[ifo]))
+
+    insp_files_seg_dict[ifo + ":" + trig_generated_name] = \
+                                                       trig_generated_segs[ifo]
+    insp_files_seg_dict[ifo + ":" + data_analysed_name] = \
+                                                        data_analysed_segs[ifo]
+
+    # NOTE: Should we also store the coalesced segments?
 
     psd_files += [wf.setup_psd_calculate(workflow,
                   datafind_files.find_output_with_ifo(ifo), ifo,
-                  insp_data_segs, 'INSPIRAL_DATA', 'psds',
+                  data_analysed_segs[ifo], data_analysed_name, 'psds',
                   gate_files=gate_files)]
+
+insp_files_seg_file = wf.SegFile.from_segment_list_dict('INSP_SEGMENTS',
+                 insp_files_seg_dict, valid_segment=workflow.analysis_time,
+                 extension='xml', directory=rdir['analysis_time/segment_data'])
 
 s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'],
                           precalc_psd_files=precalc_psd_files)
@@ -289,24 +310,26 @@ layout.two_column_layout(rdir['detector_sensitivity'],
 
 # run minifollowups on the output of the loudest events 
 wf.setup_foreground_minifollowups(workflow, final_bg_file,
-                                  full_insps,  hdfbank[0],
-                                  insp_data_seg_files, 'INSP_DATA', 'daxes',
-                                  rdir['open_box_result/loudest_event_followup'], tags=final_bg_file.tags)
+                                full_insps,  hdfbank[0], insp_files_seg_file,
+                                data_analysed_name, 'daxes',
+                                rdir['open_box_result/loudest_event_followup'],
+                                tags=final_bg_file.tags)
     
 for bin_file in bin_files:
     if hasattr(bin_file, 'bin_name'):
-        wf.setup_foreground_minifollowups(workflow, bin_file, full_insps, hdfbank[0],
-                                  insp_data_seg_files, 'INSP_DATA', 'daxes',
-                                  rdir['open_box_result/loudest_in_%s_bin' % bin_file.bin_name],
+        currdir = rdir['open_box_result/loudest_in_%s_bin' % bin_file.bin_name]
+        wf.setup_foreground_minifollowups(workflow, bin_file, full_insps,
+                                  hdfbank[0], insp_files_seg_file,
+                                  data_analysed_name, 'daxes', currdir,
                                   tags=bin_file.tags)
 
 # Also run minifollowups on loudest sngl detector events
 for insp_file in full_insps:
     curr_ifo = insp_file.ifo
+    currdir = rdir['single_triggers/%s_loudest_triggers' %(curr_ifo,)]
     wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
-                                  insp_data_seg_files, 'INSP_DATA', 'daxes',
-                                  rdir['single_triggers/%s_loudest_triggers' %(curr_ifo,)],
-                                  veto_file=censored_veto,
+                                  insp_files_seg_file, data_analysed_name,
+                                  'daxes', currdir, veto_file=censored_veto,
                                   veto_segment_name='closed_box',
                                   tags=insp_file.tags)
 
@@ -316,55 +339,38 @@ for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
     wf.make_segments_plot(workflow, files, rdir['analysis_time/segments'], 
                           tags=['%s_VETO_SEGMENTS' % ifo])
 
-wf.make_segments_plot(workflow, full_segs,
-                 rdir['analysis_time/segments'], tags=['INSPIRAL_SEGMENTS'])
-wf.make_segments_plot(workflow, science_seg_file,
+wf.make_segments_plot(workflow, [insp_files_seg_file],
+                 rdir['analysis_time/segments'], tags=[trig_generated_name])
+wf.make_segments_plot(workflow, [sci_ok_seg_file],
                  rdir['analysis_time/segments'], tags=['SCIENCE_MINUS_CAT1'])
 wf.make_gating_plot(workflow, full_insps, rdir['analysis_time/gating'],
                     tags=['full_data'])
 
-# get data segments to write to segment summary XML file
-seg_summ_names    = ['DATA', 'ANALYZABLE_DATA', 'FOUND_DATA', 'TRIGGERS_PRODUCED']
-seg_summ_seglists = [data_segs, valid_science_segs, science_segs, insp_segs]
 
-# declare comparasion segments for table on summary page
-veto_summ_names = ['TRIGGERS_PRODUCED&'+veto_name\
-                   for veto_name in veto_names+final_veto_name]
-
-# write segment summary XML file
-seg_list = []; names = []; ifos = []
-for segment_list,segment_name in zip(seg_summ_seglists, seg_summ_names):
-    for ifo in workflow.ifos:
-        seg_list.append(segment_list[ifo])
-        names.append(segment_name)
-        ifos.append(ifo)
-
-seg_summ_file = wf.SegFile.from_multi_segment_list('WORKFLOW_SEGMENT_SUMMARY',
-                          seg_list, names, ifos,
-                          valid_segment=workflow.analysis_time,
-                          extension='xml',
-                          directory=rdir['analysis_time/segment_data'])
-
-# make segment table for summary page
-seg_summ_table = wf.make_seg_table(workflow, [seg_summ_file], seg_summ_names,
+# make segment table and plot for summary page
+curr_files = [science_seg_file, sci_ok_seg_file, analyzable_file,
+              insp_files_seg_file]
+curr_names = [sci_seg_name, sci_ok_seg_name, analyzable_name,
+              trig_generated_name]
+seg_summ_table = wf.make_seg_table(workflow, curr_files, curr_names,
                         rdir['analysis_time/segments'], ['SUMMARY'],
                         title_text='Input and output',
                         description='This shows the total amount of input '
                                     'data, analyzable data, and the time for '
                                     'which triggers are produced.')
-veto_summ_table = wf.make_seg_table(workflow,
-                        [seg_summ_file] + final_veto_file + cum_veto_files,
-                        veto_summ_names, rdir['analysis_time/segments'],
-                        ['VETO_SUMMARY'], 
-                        title_text='Time removed by vetoes',
-                        description='This shows the time removed from the '
-                                    'output time by the vetoes applied to the '
-                                    'triggers.')
-
-# make segment plot for summary page
-seg_summ_plot = wf.make_seg_plot(workflow, [seg_summ_file],
+seg_summ_plot = wf.make_seg_plot(workflow, curr_files,
                         rdir['analysis_time/segments'],
-                        seg_summ_names, ['SUMMARY'])
+                        curr_names, ['SUMMARY'])
+
+curr_files = [insp_files_seg_file] + final_veto_file + cum_veto_files
+curr_names = [trig_generated_name + '&' + veto_name\
+                   for veto_name in veto_names+final_veto_name]
+veto_summ_table = wf.make_seg_table(workflow, curr_files, curr_names,
+                      rdir['analysis_time/segments'], ['VETO_SUMMARY'], 
+                      title_text='Time removed by vetoes',
+                      description='This shows the time removed from the '
+                                  'output time by the vetoes applied to the '
+                                    'triggers.')
 
 # make veto definer table
 vetodef_table = wf.make_veto_table(workflow, rdir['analysis_time/veto_definer'])
@@ -393,15 +399,16 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
     if workflow.cp.has_option_tags('workflow-injections', 'strip-injections',
                                    tags=[tag]):
-        small_inj_file = wf.veto_injections(workflow, file_for_vetoes, seg_summ_file,
-                             'TRIGGERS_PRODUCED', "inj_files", tags=[tag])
+        small_inj_file = wf.veto_injections(workflow, file_for_vetoes,
+                             insp_files_seg_file, trig_generated_name,
+                             "inj_files", tags=[tag])
     else:
         small_inj_file = file_for_vetoes
 
     files_for_combined_injfind.append(file_for_injfind)
 
     # setup the matchedfilter jobs                                                     
-    insps = wf.setup_matchedfltr_workflow(workflow, science_segs, 
+    insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs, 
                                      datafind_files, splitbank_files, 
                                      output_dir, injection_file=small_inj_file,
                                      gate_files=gate_files,
@@ -451,10 +458,10 @@ for inj_file, tag in zip(inj_files, inj_tags):
     if len(f) > 0: layout.two_column_layout(rdir['injections/%s' % tag], inj_layout)  
 
     # run minifollowups on nearest missed injections
+    currdir = rdir['injections/followup_of_missed_%s' % tag]
     wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
-                                     insps,  hdfbank[0],
-                                     insp_data_seg_files, 'INSP_DATA', 'daxes',
-                                     rdir['injections/followup_of_missed_%s' % tag],
+                                     insps,  hdfbank[0], insp_files_seg_file,
+                                     data_analysed_name, 'daxes', currdir,
                                      tags=[tag])
         
 # Make combined injection plots
@@ -498,7 +505,7 @@ wf.makedir(base)
 ini_file_path = os.path.join(base, 'configuration.ini')
 with open(ini_file_path, 'wb') as ini_fh:
     container.cp.write(ini_fh)
-ini_file = wf.FileList([wf.File(ifos, '', workflow.analysis_time,
+ini_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
                         file_url='file://'+ini_file_path)])
 layout.single_layout(base, ini_file)
 

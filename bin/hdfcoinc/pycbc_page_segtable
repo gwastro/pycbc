@@ -119,8 +119,11 @@ for segment_name in opts.segment_names:
 
     # put comment in caption
     caption += " " + segment_name
-    if comment_dict[key] != None:
-        caption += " ("+comment_dict[key]+")"
+    # FIXME: This only worked by fluke before. Not sure what it's supposed to
+    #        do in the case where there are two segments anyway.
+    #        Commenting for now
+    #if comment_dict[key] != None:
+    #    caption += " ("+comment_dict[key]+")"
 
     # get length of time of single-IFO segments in seconds
     if len(names) > 1:
