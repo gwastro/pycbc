@@ -3,10 +3,8 @@ segment.
 """
 import numpy, urlparse, os.path
 import lal
-from sys import argv
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from glue.segments import segment, segmentlist
-from glue.ligolw.utils import segments as ligolw_segments
 
 
 def start_end_to_segments(start, end):
@@ -16,67 +14,6 @@ def segments_to_start_end(segs):
     segs.coalesce()
     return (numpy.array([s[0] for s in segs]), 
             numpy.array([s[1] for s in segs]))
-
-def segments_to_file(segs, filename, name, ifo=""):
-    """ Save segments to an xml file
-    
-    Parameters
-    ----------
-    segs : glue.segments.segmentlist
-        List of segments to write to disk
-    filename : str
-        name of the output file
-    name : 
-        name of the segmentlist
-        
-    Returns
-    -------
-    File : Return a pycbc.core.File reference to the file
-    """
-    return multi_segments_to_file([segs], filename, [name], [ifo])
-
-
-def multi_segments_to_file(seg_list, filename, names, ifos):
-    """ Save segments to an xml file
-    
-    Parameters
-    ----------
-    seg_list: glue.segments.segmentlist
-        List of segment lists to write to disk
-    filename : str
-        name of the output file
-    names : 
-        name of each segment list
-    ifos :
-        list of ifos
-        
-    Returns
-    -------
-    File : Return a pycbc.core.File reference to the file
-    """
-    from pycbc.workflow.core import File
-
-    # create XML doc and add process table
-    outdoc = ligolw.Document()
-    outdoc.appendChild(ligolw.LIGO_LW())
-    process = ligolw_utils.process.register_to_xmldoc(outdoc, argv[0], {})
-
-    for segs, ifo, name in zip(seg_list, ifos, names):
-        fsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
-            for seg in segs]
-
-        # add segments, segments summary, and segment definer tables using glue library
-        with ligolw_segments.LigolwSegments(outdoc, process) as xmlsegs:
-            xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name)
-
-    # write file
-    ligolw_utils.write_filename(outdoc, filename)
-
-    # return a File instance
-    url = urlparse.urlunparse(['file', 'localhost', filename, None, None, None])
-    f = File(ifo, name, segs, file_url=url, tags=[name])
-    f.PFN(os.path.abspath(filename), site='local')
-    return f
 
 def start_end_from_segments(segment_file):
     """ Return the start and end time arrays from a segment file.
@@ -261,7 +198,7 @@ def indices_outside_segments(times, segment_files, ifo=None, segment_name=None):
     indices = numpy.arange(0, len(times))
     return numpy.delete(indices, exclude), segs
 
-def get_segment_definer_comments(xml_file):
+def get_segment_definer_comments(xml_file, include_version=True):
     """ Returns a dict with the comment column as the value for each segment.
     """
 
@@ -278,9 +215,14 @@ def get_segment_definer_comments(xml_file):
     # put comment column into a dict
     comment_dict = {}
     for seg_def in seg_def_table:
-        full_channel_name = ':'.join([str(seg_def.ifos),
-                                      str(seg_def.name),
-                                      str(seg_def.version)])
+        if include_version:
+            full_channel_name = ':'.join([str(seg_def.ifos),
+                                          str(seg_def.name),
+                                          str(seg_def.version)])
+        else:
+            full_channel_name = ':'.join([str(seg_def.ifos),
+                                          str(seg_def.name)])
+
         comment_dict[full_channel_name] = seg_def.comment
 
     return comment_dict

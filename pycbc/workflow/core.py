@@ -26,14 +26,23 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import os, stat, subprocess, logging, math, string, urllib2, urlparse, ConfigParser, copy, time
+import sys, os, stat, subprocess, logging, math, string, urllib2, urlparse
+import ConfigParser, copy, time
 import numpy, cPickle, random
 from itertools import combinations, groupby
 from operator import attrgetter
 import lal as lalswig
 from glue import lal, segments
+from glue.ligolw import table, lsctables, ligolw
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import segments as ligolw_segments
 from pycbc.workflow.configuration import WorkflowConfigParser
 from pycbc.workflow import pegasus_workflow
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+
+lsctables.use_in(ContentHandler)
 
 # workflow should never be using the glue LIGOTimeGPS class, override this with
 # the nice SWIG-wrapped class in lal
@@ -1243,46 +1252,170 @@ class FileList(list):
         self.dump(file_ref.storage_path)
         return file_ref
 
-class OutSegFile(File):
+class SegFile(File):
     '''
     This class inherits from the File class, and is designed to store
-    workflow output files containing a segment list. This is identical in
+    workflow output files containing a segment dict. This is identical in
     usage to File except for an additional kwarg for holding the
-    segment list, if it is known at workflow run time.
+    segment dictionary, if it is known at workflow run time.
     '''
-    def __init__(self, ifo, description, segment, fileUrl,
-                 segment_list=None, **kwargs):
+    def __init__(self, ifo_list, description, valid_segment,
+                 segment_dict=None, **kwargs):
         """
         See File.__init__ for a full set of documentation for how to
         call this class. The only thing unique and added to this class is
-        the required option timeSeg, as described below:
+        the optional segment_dict. NOTE that while segment_dict is a
+        glue.segments.segmentlistdict rather than the usual dict[ifo]
+        we key by dict[ifo:name].
 
         Parameters:
         ------------
-        ifo : string or list (required)
+        ifo_list : string or list (required)
             See File.__init__
         description : string (required)
             See File.__init__
         segment : glue.segments.segment or glue.segments.segmentlist
             See File.__init__
-        fileUrl : string (required)
-            See File.__init__
-            FIXME: This is a kwarg in File and should be here as well,
-            if this is removed from the explicit arguments it would allow for
-            either fileUrls or constructed file names to be used in File.
-        segment_list : glue.segments.segmentlist (optional, default=None)
-            A glue.segments.segmentlist covering the times covered by the
-            segmentlist associated with this file. If this is the science time
-            or CAT_1 file this will be used to determine analysis time. Can
-            be added by setting self.segment_list after initializing an instance of
-            the class.
+        segment_dict : glue.segments.segmentlistdict (optional, default=None)
+            A glue.segments.segmentlistdict covering the times covered by the
+            segmentlistdict associated with this file.
+            Can be added by setting self.segment_dict after initializing an
+            instance of the class.
 
         """
-        super(OutSegFile, self).__init__(ifo, description, segment, fileUrl,
-                              **kwargs)
-        self.segmentList = segment_list
+        super(SegFile, self).__init__(ifo_list, description, valid_segment,
+                                      **kwargs)
+        self.segment_dict = segment_dict
 
-    def removeShortSciSegs(self, minSegLength):
+    @classmethod
+    def from_segment_list(cls, description, segmentlist, name, ifo, **kwargs):
+        """ Initialize a SegFile object from a segmentlist. 
+
+        Parameters:
+        ------------
+        description : string (required)
+            See File.__init__
+        segmentlist : glue.segments.segmentslist
+            The segment list that will be stored in this file.
+        name : str
+            The name of the segment lists to be stored in the file.
+        ifo : str
+            The ifo of the segment lists to be stored in this file.
+        """
+        seglistdict = segments.segmentlistdict()
+        seglistdict[ifo + ':' + name] = segmentlist
+        return cls.from_segment_list_dict(description, seglistdict, **kwargs)
+
+    @classmethod
+    def from_multi_segment_list(cls, description, segmentlists, names, ifos,
+                                **kwargs):
+        """ Initialize a SegFile object from a segmentlist. 
+
+        Parameters:
+        ------------
+        description : string (required)
+            See File.__init__
+        segmentlists : List of glue.segments.segmentslist
+            List of segment lists that will be stored in this file.
+        names : List of str
+            List of names of the segment lists to be stored in the file.
+        ifos : str
+            List of ifos of the segment lists to be stored in this file.
+        """
+        seglistdict = segments.segmentlistdict()
+        for name, ifo, segmentlist in zip(names, ifos, segmentlists):
+            seglistdict[ifo + ':' + name] = segmentlist
+        return cls.from_segment_list_dict(description, seglistdict, **kwargs)
+
+    @classmethod
+    def from_segment_list_dict(cls, description, segmentlistdict,
+                               ifo_list=None, valid_segment=None,
+                               file_exists=False, **kwargs):
+        """ Initialize a SegFile object from a segmentlistdict. 
+
+        Parameters:
+        ------------
+        description : string (required)
+            See File.__init__
+        segmentlistdict : glue.segments.segmentslistdict
+            See SegFile.__init__
+        ifo_list : string or list (optional)
+            See File.__init__, if not given a list of all ifos in the
+            segmentlistdict object will be used
+        valid_segment : glue.segments.segment or glue.segments.segmentlist
+            See File.__init__, if not given the extent of all segments in the
+            segmentlistdict is used.
+        file_exists : boolean (default = False)
+            If provided and set to True it is assumed that this file already
+            exists on disk and so there is no need to write again.
+        """
+        if ifo_list is None:
+            ifo_set = set([i.split(':')[0] for i in segmentlistdict.keys()])
+            ifo_list = list(ifo_set)
+            ifo_list.sort()
+        if valid_segment is None:
+            try:
+                valid_segment = segmentlistdict.extent_all()
+            except:
+                # Numpty probably didn't supply a glue.segmentlistdict
+                segmentlistdict=segments.segmentlistdict(segmentlistdict)
+                valid_segment = segmentlistdict.extent_all()
+        instnc = cls(ifo_list, description, valid_segment,
+                     segment_dict=segmentlistdict, **kwargs)
+        if not file_exists:
+            instnc.to_segment_xml()
+        else:
+            instnc.PFN(instnc.storage_path, site='local')
+        return instnc
+
+    @classmethod
+    def from_segment_xml(cls, xml_file, **kwargs):
+        """
+        Read a glue.segments.segmentlist from the file object file containing an
+        xml segment table.
+
+        Parameters
+        -----------
+        xml_file : file object
+            file object for segment xml file
+        """
+        # load xmldocument and SegmentDefTable and SegmentTables
+        fp = open(xml_file, 'r')
+        xmldoc, digest = ligolw_utils.load_fileobj(fp,
+                                            gz=xml_file.endswith(".gz"),
+                                            contenthandler=ContentHandler)
+
+        seg_def_table = table.get_table(xmldoc,
+                                        lsctables.SegmentDefTable.tableName)
+        seg_table = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
+
+        segs = segments.segmentlistdict()
+
+        seg_id = {}
+        for seg_def in seg_def_table:
+            # Here we want to encode ifo and segment name
+            full_channel_name = ':'.join([str(seg_def.ifos),
+                                          str(seg_def.name)])
+            seg_id[int(seg_def.segment_def_id)] = full_channel_name
+            segs[full_channel_name] = segments.segmentlist()
+
+        for seg in seg_table:
+            seg_obj = segments.segment(
+                    lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
+                    lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns))
+            segs[seg_id[int(seg.segment_def_id)]].append(seg_obj)
+
+        for seg_name in seg_id.values():
+            segs[seg_name] = segs[seg_name].coalesce()
+
+        xmldoc.unlink()
+        fp.close()
+        curr_url = urlparse.urlunparse(['file', 'localhost', xml_file, None,
+                                        None, None])
+        return cls.from_segment_list_dict('SEGMENTS', segs, file_url=curr_url,
+                                          file_exists=True, **kwargs)
+
+    def remove_short_sci_segs(self, minSegLength):
         """
         Function to remove all science segments
         shorter than a specific length. Also updates the file on disk to remove
@@ -1295,20 +1428,52 @@ class OutSegFile(File):
             be removed.
         """
         newsegment_list = segments.segmentlist()
-        for seg in self.segmentList:
-            if abs(seg) > minSegLength:
-                newsegment_list.append(seg)
-        newsegment_list.coalesce()
-        self.segmentList = newsegment_list
-        self.toSegmentXml()
+        for key, seglist in self.segment_dict.items():
+            newsegment_list = segments.segmentlist()
+            for seg in seglist:
+                if abs(seg) > minSegLength:
+                    newsegment_list.append(seg)
+            newsegment_list.coalesce()
+            self.segment_dict[key] = newsegment_list
+        self.to_segment_xml()
 
-    def toSegmentXml(self):
+    def return_union_seglist(self):
+        return self.segment_dict.union(self.segment_dict.keys())
+
+    def parse_segdict_key(self, key):
         """
-        Write the segment list in self.segmentList to the url in self.url.
+        Return ifo and name from the segdict key.
         """
-        from pycbc.events import segments_to_file
-        segments_to_file(self.segmentList, self.storage_path, 
-                             self.tagged_description,  ifo=self.ifo_string)
+        splt = key.split(':')
+        if len(splt) == 2:
+            return splt[0], splt[1]
+        else:
+            err_msg = "Key should be of the format 'ifo:name', got %s." %(key,)
+            raise ValueError(err_msg)
+
+    def to_segment_xml(self):
+        """
+        Write the segment list in self.segmentList to self.storage_path.
+        """
+        # create XML doc and add process table
+        outdoc = ligolw.Document()
+        outdoc.appendChild(ligolw.LIGO_LW())
+        process = ligolw_utils.process.register_to_xmldoc(outdoc, sys.argv[0],
+                                                          {})
+
+        for key, seglist in self.segment_dict.items():
+            ifo, name = self.parse_segdict_key(key)
+            # Ensure we have LIGOTimeGPS
+            fsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
+                     for seg in seglist]
+
+            # Add using glue library to set all segment tables
+            with ligolw_segments.LigolwSegments(outdoc, process) as xmlsegs:
+                xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name)
+        # write file
+        ligolw_utils.write_filename(outdoc, self.storage_path)
+        self.PFN(self.storage_path, site='local')
+
 
 def make_external_call(cmdList, out_dir=None, out_basename='external_call',
                        shell=False, fail_on_error=True):
