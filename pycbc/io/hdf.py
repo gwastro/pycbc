@@ -45,7 +45,7 @@ class HFile(HFile):
         hdf5 file that are given.
 
         >>> f = HFile(filename)
-        >>> snr, chisq = f.select(lambda snr: snr > 6, 'H1/snr')
+        >>> snr = f.select(lambda snr: snr > 6, 'H1/snr')
         """
 
         # get references to each array
