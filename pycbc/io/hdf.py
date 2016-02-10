@@ -139,7 +139,6 @@ class StatmapData(DictArray):
             f['segments/%s/end' % key] = self.seg[key]['end'][:]
         f.close()
 
-
 class FileData(object):
 
     def __init__(self, fname, group=None, columnlist=None, filter_func=None):
@@ -251,6 +250,60 @@ class DataFromFiles(object):
         logging.info('- got %i values' % sum(len(v) for v in vals))
         return np.concatenate(vals)
 
+class HFile(h5py.File):   
+    """ Low level extensions to the capabilities of reading an hdf5 File
+    """
+
+    def select(self, fcn, *args):
+        """ Return arrays from an hdf5 file that satisfy the given function
+
+        Parameters
+        ----------
+        fcn : a function
+            A function that accepts the same number of argument as keys given
+        and returns a boolean array of the same length.
+
+        args: strings
+            A variable number of strings that are keys into the hdf5. These must
+        refer to arrays of equal length.
+
+        Returns
+        -------
+        values : numpy.ndarrays
+            A variable number of arrays depending on the number of keys into the
+        hdf5 file that are given.
+        """
+
+        # get references to each array
+        refs = {}        
+        data = {}
+        for arg in args:
+            refs[arg] = self[arg]
+            data[arg] = []
+        
+        # To conserve memory read the array in chunks
+        chunksize = int(1e6)
+        size = len(refs[arg])
+
+        i = 0
+        while i < size:
+            r = i + chunksize if i + chunksize < size else size
+         
+            #Read each chunks worth of data and find where it passes the function
+            partial = [refs[arg][i:r] for arg in args]
+            keep = fcn(*partial)
+
+            #store only the results that pass the function
+            for arg, part in zip(args, partial):
+                data[arg].append(part[keep])
+
+            i += chunksize
+
+        # Combine the partial results into full arrays
+        if len(args) == 1:
+            return numpy.concatenate(data[args[0]])
+        else:
+            return tuple(numpy.concatenate(data[arg]) for arg in args)
 
 class SingleDetTriggers(object):
     """
