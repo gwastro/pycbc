@@ -101,7 +101,7 @@ for ifo, segments in science_segs.items():
     broken_segments = glue.segments.segmentlist(broken_segments)
     logging.info('%.1f s of SCIENCE_OK data reduced to %.1f s after segmentation',
                  abs(segments), abs(broken_segments))
-    broken_segments_file = pycbc.workflow.SegFile.from_segment_list(\
+    broken_segments_file = pycbc.workflow.SegFile.from_segment_list(
                      'SCIENCE_OK_BROKEN', broken_segments, 'SCIENCE_OK_BROKEN',
                      ifo, valid_segment=workflow.analysis_time,
                      extension='xml', directory='segments')
