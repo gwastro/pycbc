@@ -21,6 +21,61 @@ from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, pnutils
 
+class HFile(HFile):   
+    """ Low level extensions to the capabilities of reading an hdf5 File
+    """
+
+    def select(self, fcn, *args):
+        """ Return arrays from an hdf5 file that satisfy the given function
+
+        Parameters
+        ----------
+        fcn : a function
+            A function that accepts the same number of argument as keys given
+        and returns a boolean array of the same length.
+
+        args: strings
+            A variable number of strings that are keys into the hdf5. These must
+        refer to arrays of equal length.
+
+        Returns
+        -------
+        values : numpy.ndarrays
+            A variable number of arrays depending on the number of keys into the
+        hdf5 file that are given.
+        """
+
+        # get references to each array
+        refs = {}        
+        data = {}
+        for arg in args:
+            refs[arg] = self[arg]
+            data[arg] = []
+        
+        # To conserve memory read the array in chunks
+        chunksize = int(1e6)
+        size = len(refs[arg])
+
+        i = 0
+        while i < size:
+            r = i + chunksize if i + chunksize < size else size
+         
+            #Read each chunks worth of data and find where it passes the function
+            partial = [refs[arg][i:r] for arg in args]
+            keep = fcn(*partial)
+
+            #store only the results that pass the function
+            for arg, part in zip(args, partial):
+                data[arg].append(part[keep])
+
+            i += chunksize
+
+        # Combine the partial results into full arrays
+        if len(args) == 1:
+            return numpy.concatenate(data[args[0]])
+        else:
+            return tuple(numpy.concatenate(data[arg]) for arg in args)
+
 
 class DictArray(object):
     """ Utility for organizing sets of arrays of equal length. 
@@ -50,7 +105,7 @@ class DictArray(object):
                 self.data[g] = []
             
             for f in files:
-                d = h5py.File(f)
+                d = HFile(f)
                 for g in groups:
                     if g in d:
                         self.data[g].append(d[g][:])
@@ -102,7 +157,7 @@ class StatmapData(DictArray):
             self.seg=seg
             self.attrs=attrs
         elif files:
-            f = h5py.File(files[0], "r")
+            f = HFile(files[0], "r")
             self.seg = f['segments']
             self.attrs = f.attrs
 
@@ -123,7 +178,7 @@ class StatmapData(DictArray):
         return self.select(cid) 
 
     def save(self, outname):
-        f = h5py.File(outname, "w")
+        f = HFile(outname, "w")
         for k in self.attrs:
             f.attrs[k] = self.attrs[k]
             
@@ -155,7 +210,7 @@ class FileData(object):
         '''
         if not fname: raise RuntimeError("Didn't get a file!")
         self.fname = fname
-        self.h5file = h5py.File(fname, "r")
+        self.h5file = HFile(fname, "r")
         if group is None:
             if len(self.h5file.keys()) == 1:
                 group = self.h5file.keys()[0]
@@ -250,61 +305,6 @@ class DataFromFiles(object):
         logging.info('- got %i values' % sum(len(v) for v in vals))
         return np.concatenate(vals)
 
-class HFile(h5py.File):   
-    """ Low level extensions to the capabilities of reading an hdf5 File
-    """
-
-    def select(self, fcn, *args):
-        """ Return arrays from an hdf5 file that satisfy the given function
-
-        Parameters
-        ----------
-        fcn : a function
-            A function that accepts the same number of argument as keys given
-        and returns a boolean array of the same length.
-
-        args: strings
-            A variable number of strings that are keys into the hdf5. These must
-        refer to arrays of equal length.
-
-        Returns
-        -------
-        values : numpy.ndarrays
-            A variable number of arrays depending on the number of keys into the
-        hdf5 file that are given.
-        """
-
-        # get references to each array
-        refs = {}        
-        data = {}
-        for arg in args:
-            refs[arg] = self[arg]
-            data[arg] = []
-        
-        # To conserve memory read the array in chunks
-        chunksize = int(1e6)
-        size = len(refs[arg])
-
-        i = 0
-        while i < size:
-            r = i + chunksize if i + chunksize < size else size
-         
-            #Read each chunks worth of data and find where it passes the function
-            partial = [refs[arg][i:r] for arg in args]
-            keep = fcn(*partial)
-
-            #store only the results that pass the function
-            for arg, part in zip(args, partial):
-                data[arg].append(part[keep])
-
-            i += chunksize
-
-        # Combine the partial results into full arrays
-        if len(args) == 1:
-            return numpy.concatenate(data[args[0]])
-        else:
-            return tuple(numpy.concatenate(data[arg]) for arg in args)
-
 class SingleDetTriggers(object):
     """
     Provides easy access to the parameters of single-detector CBC triggers.
@@ -312,11 +312,11 @@ class SingleDetTriggers(object):
     # FIXME: Some of these are optional and should be kwargs.
     def __init__(self, trig_file, bank_file, veto_file, segment_name, filter_func, detector):
         logging.info('Loading triggers')
-        self.trigs_f = h5py.File(trig_file, 'r')
+        self.trigs_f = HFile(trig_file, 'r')
         self.trigs = self.trigs_f[detector]
         if bank_file:
             logging.info('Loading bank')
-            self.bank = h5py.File(bank_file, 'r')
+            self.bank = HFile(bank_file, 'r')
         else:
             logging.info('No bank file given')
             # empty dict in place of non-existent hdf file
@@ -499,7 +499,7 @@ class ForegroundTriggers(object):
                 curr_dat = FileData(file)
                 curr_ifo = curr_dat.group_key
                 self.sngl_files[curr_ifo] = curr_dat
-        self.bank_file = h5py.File(bank_file, "r")
+        self.bank_file = HFile(bank_file, "r")
         self.n_loudest = n_loudest
 
         self._sort_arr = None
