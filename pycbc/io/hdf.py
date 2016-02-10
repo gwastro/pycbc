@@ -197,7 +197,7 @@ class StatmapData(DictArray):
 class FileData(object):
 
     def __init__(self, fname, group=None, columnlist=None, filter_func=None):
-        '''
+        """
         Parameters
         ----------
         group : string
@@ -207,7 +207,7 @@ class FileData(object):
         filter_func : string 
             String should evaluate to a Boolean expression using attributes
             of the class instance derived from columns: ex. 'self.snr < 6.5'
-        '''
+        """
         if not fname: raise RuntimeError("Didn't get a file!")
         self.fname = fname
         self.h5file = HFile(fname, "r")
@@ -228,14 +228,14 @@ class FileData(object):
 
     @property
     def mask(self):
-        '''
+        """
         Create a mask implementing the requested filter on the datasets
 
         Returns
         -------
         array of Boolean
             True for dataset indices to be returned by the get_column method
-        '''
+        """
         if self.filter_func is None:
             raise RuntimeError("Can't get a mask without a filter function!")
         else:
@@ -249,7 +249,7 @@ class FileData(object):
             return self._mask
 
     def get_column(self, col):
-        '''
+        """
         Parameters
         ----------
         col : string
@@ -259,7 +259,7 @@ class FileData(object):
         -------
         numpy array
             Values from the dataset, filtered if requested
-        '''
+        """
         # catch corner case with an empty file (group with no datasets)
         if not len(self.group.keys()):
             return np.array([])
@@ -279,7 +279,7 @@ class DataFromFiles(object):
         self.filter_func = filter_func
 
     def get_column(self, col):
-        '''
+        """
         Loop over files getting the requested dataset values from each
 
         Parameters
@@ -292,7 +292,7 @@ class DataFromFiles(object):
         numpy array
             Values from the dataset, filtered if requested and
             concatenated in order of file list
-        '''
+        """
         logging.info('getting %s' % col)
         vals = []
         for f in self.files:
