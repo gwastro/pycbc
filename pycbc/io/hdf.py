@@ -43,6 +43,9 @@ class HFile(HFile):
         values : numpy.ndarrays
             A variable number of arrays depending on the number of keys into the
         hdf5 file that are given.
+
+        >>> f = HFile(filename)
+        >>> snr, chisq = f.select(lambda snr: snr > 6, 'H1/snr')
         """
 
         # get references to each array
