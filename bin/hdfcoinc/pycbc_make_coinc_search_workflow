@@ -110,10 +110,23 @@ save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 
 # Get segments and find where the data is
 wf.makedir(rdir['analysis_time/segment_data'])
+science_veto_name = 'segments-science-veto'
+primary_veto_name = 'segments-final-veto-group'
+secondary_vetoes_name = 'segments-veto-groups'
+nonscience_veto_names = [primary_veto_name, secondary_vetoes_name]
+
 science_seg_file, sci_segs, sci_seg_name = wf.get_science_segments(workflow,
                                             rdir['analysis_time/segment_data'])
+
+veto_cat_files = wf.get_files_for_vetoes(workflow,
+                                        rdir['analysis_time/segment_data'],
+                                        science_veto_name=science_veto_name,
+                                        other_veto_names=nonscience_veto_names)
+                      
 sci_ok_seg_file, sci_ok_segs, sci_ok_seg_name = wf.get_analyzable_segments(\
-                        workflow, sci_segs, rdir['analysis_time/segment_data'])
+                                            workflow, sci_segs, veto_cat_files,
+                                            rdir['analysis_time/segment_data'])
+
 datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
                                            wf.setup_datafind_workflow(workflow, 
                                                      sci_ok_segs, "datafind",
@@ -121,10 +134,13 @@ datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
 
 cum_veto_files, veto_names, ind_cats = wf.get_cumulative_veto_group_files(\
                                             workflow, 'segments-veto-groups',
+                                            veto_cat_files,
                                             rdir['analysis_time/segment_data'])
+
 final_veto_file, final_veto_name, ind_cats =\
                                    wf.get_cumulative_veto_group_files(workflow, 
                                             'segments-final-veto-group',
+                                            veto_cat_files,
                                             rdir['analysis_time/segment_data'])
 
 # Precalculated PSDs
