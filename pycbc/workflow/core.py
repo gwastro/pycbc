@@ -1384,12 +1384,25 @@ class SegFile(File):
             ifo_list = list(ifo_set)
             ifo_list.sort()
         if valid_segment is None:
-            try:
-                valid_segment = segmentlistdict.extent_all()
-            except:
-                # Numpty probably didn't supply a glue.segmentlistdict
-                segmentlistdict=segments.segmentlistdict(segmentlistdict)
-                valid_segment = segmentlistdict.extent_all()
+            if seg_summ_dict:
+                # Only come here if seg_summ_dict is supplied and it is
+                # not empty.
+                valid_segment = seg_summ_dict.extent_all()
+            else:
+                try:
+                    valid_segment = segmentlistdict.extent_all()
+                except:
+                    # Numpty probably didn't supply a glue.segmentlistdict
+                    segmentlistdict=segments.segmentlistdict(segmentlistdict)
+                    try:
+                        valid_segment = segmentlistdict.extent_all()
+                    except ValueError:
+                        # No segment_summary and segment list is empty
+                        # Setting valid segment now is hard!
+                        warn_msg = "No information with which to set valid "
+                        warn_msg += "segment."
+                        logging.warn(warn_msg)
+                        valid_segment = segments.segment([0,1])
         instnc = cls(ifo_list, description, valid_segment,
                      segment_dict=segmentlistdict, seg_summ_dict=seg_summ_dict,
                      **kwargs)
