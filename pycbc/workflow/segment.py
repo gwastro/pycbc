@@ -136,7 +136,6 @@ def get_files_for_vetoes(workflow, out_dir,
 
     now_cats = set()
     for cset in now_cat_sets:
-        print cset
         now_cats = now_cats.union(cset)
 
     later_cat_sets = []
