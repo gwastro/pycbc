@@ -1094,6 +1094,8 @@ class FileList(list):
 
             outFiles = []
             for idx in range(startIdx, endIdx + 1):
+                if idx < 0 or idx >= self._splitListsNum:
+                    continue
                 outFilesTemp = [i for i in self._splitLists[idx] \
                                                             if ifo in i.ifo_list]
                 outFiles.extend([i for i in outFilesTemp \
@@ -1198,6 +1200,7 @@ class FileList(list):
 
         # Set information needed to detect changes and to be used elsewhere
         self._splitListsLength = len(self)
+        self._splitListsNum = numSubLists
         self._splitListsStart = startTime
         self._splitListsEnd = endTime
         self._splitListsStep = step
