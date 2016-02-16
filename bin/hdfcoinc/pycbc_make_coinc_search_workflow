@@ -181,11 +181,6 @@ ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
 insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
                                            insps, output_dir, tags=[tag])
 
-# FIXME: What do we want to do with this?
-#anal_log_files = wf.setup_analysislogging(workflow,
-#                                          science_seg_file, insps, args,
-#                                          "logging", program_name=__program__) 
-
 # setup coinc for the filtering jobs
 full_insps = insps
 bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, 
