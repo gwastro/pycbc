@@ -90,8 +90,7 @@ def get_science_segments(workflow, out_dir, tags=None):
     return sci_seg_file, sci_segs, sci_seg_name
 
 def get_files_for_vetoes(workflow, out_dir,
-                         science_veto_name='segments-science-veto',
-                         other_veto_names=None, tags=None):
+                         runtime_names=None, in_workflow_names=None, tags=None):
     """
     Get the various sets of veto segments that will be used in this analysis.
 
@@ -101,6 +100,13 @@ def get_files_for_vetoes(workflow, out_dir,
         Instance of the workflow object
     out_dir : path
         Location to store output files
+    runtime_names : list
+        Veto category groups with these names in the [workflow-segment] section
+        of the ini file will be generated now.
+    in_workflow_names : list
+        Veto category groups with these names in the [workflow-segment] section
+        of the ini file will be generated in the workflow. If a veto category
+        appears here and in runtime_names, it will be generated now.
     tags : list of strings
         Used to retrieve subsections of the ini file for
         configuration options.
@@ -112,54 +118,57 @@ def get_files_for_vetoes(workflow, out_dir,
     """
     if tags is None:
         tags = []
-    if other_veto_names is None:
-        other_veto_names = [] 
+    if runtime_names is None:
+        runtime_names = []
+    if in_workflow_names is None:
+        in_workflow_names = []
     logging.info('Starting generating veto files for analysis')
     make_analysis_dir(out_dir)
     start_time = workflow.analysis_time[0]
     end_time = workflow.analysis_time[1]
     save_veto_definer(workflow.cp, out_dir, tags)
 
-    # FIXME: This should be settable via ini file
-    #        The sci_cats are always needed at runtime, but the other_cats can
-    #        go into the workflow. I will change default to False.
-    run_other_cats_at_runtime=True
-
-    sci_cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags(
-                           'workflow-segments', 'segments-science-veto', tags))
-    sci_cats = set()
-    for cset in sci_cat_sets:
-        sci_cats = sci_cats.union(cset)
-
-    other_cat_sets = []
-    for name in other_veto_names:
+    now_cat_sets = []
+    for name in runtime_names:
         cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags(
-                                            'workflow-segments', name, tags))
-        other_cat_sets.append(cat_sets)
-    other_cats = set()
-    for cset in cat_sets:
-        other_cats = other_cats.union(cset)
+                                              'workflow-segments', name, tags))
+        now_cat_sets.extend(cat_sets)
+
+    now_cats = set()
+    for cset in now_cat_sets:
+        print cset
+        now_cats = now_cats.union(cset)
+
+    later_cat_sets = []
+    for name in in_workflow_names:
+        cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags(
+                                              'workflow-segments', name, tags))
+        later_cat_sets.extend(cat_sets)
+
+    later_cats = set()
+    for cset in later_cat_sets:
+        later_cats = later_cats.union(cset)
         # Avoid duplication
-        other_cats = other_cats - sci_cats
+        later_cats = later_cats - now_cats
 
     veto_gen_job = create_segs_from_cats_job(workflow.cp, out_dir,
                                              workflow.ifo_string, tags=tags)
 
     cat_files = FileList()
     for ifo in workflow.ifos:
-        for category in sci_cats:
+        for category in now_cats:
             cat_files.append(get_veto_segs(workflow, ifo,
                                         cat_to_veto_def_cat(category),
                                         start_time, end_time, out_dir,
                                         veto_gen_job, execute_now=True,
                                         tags=tags))
 
-        for category in other_cats:
+        for category in later_cats:
             cat_files.append(get_veto_segs(workflow, ifo,
                                         cat_to_veto_def_cat(category),
                                         start_time, end_time, out_dir,
                                         veto_gen_job, tags=tags,
-                                        execute_now=run_other_cats_at_runtime))
+                                        execute_now=False))
 
     logging.info('Done generating veto segments')
     return cat_files
@@ -275,7 +284,7 @@ def get_analyzable_segments(workflow, sci_segs, cat_files, out_dir, tags=None):
 
 
 def get_cumulative_veto_group_files(workflow, option, cat_files,
-                                    out_dir, tags=None):
+                                    out_dir, execute_now=True, tags=None):
     """
     Get the cumulative veto files that define the different backgrounds 
     we want to analyze, defined by groups of vetos.
@@ -290,6 +299,9 @@ def get_cumulative_veto_group_files(workflow, option, cat_files,
         The category veto files generated by get_veto_segs
     out_dir : path
         Location to store output files
+    execute_now : Boolean
+        If true outputs are generated at runtime. Else jobs go into the workflow
+        and are generated then.
     tags : list of strings
         Used to retrieve subsections of the ini file for
         configuration options.
@@ -731,6 +743,9 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
     if tags is None:
         tags = []
     seg_valid_seg = segments.segment([start_time,end_time])
+    # FIXME: This job needs an internet connection and X509_USER_PROXY
+    #        For internet connection, it may need a headnode (ie universe local)
+    #        For X509_USER_PROXY, I don't know what pegasus is doing
     node = Node(veto_gen_job)
     node.add_opt('--veto-categories', str(category))
     node.add_opt('--ifo-list', ifo)
@@ -752,22 +767,24 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
     else:
         curr_tags = ['VETO_CAT%d' %(category)]
 
-    if execute_now:
-        if file_needs_generating(veto_xml_file_path, workflow.cp, tags=tags):
+    if file_needs_generating(veto_xml_file_path, workflow.cp, tags=tags):
+        if execute_now:
             workflow.execute_node(node, verbatim_exe = True)
+            veto_xml_file = SegFile.from_segment_xml(veto_xml_file_path,
+                                                 tags=curr_tags,
+                                                 valid_segment=seg_valid_seg)
         else:
-            node.executed = True
-            for fil in node._outputs:
-                fil.node = None
-
+            veto_xml_file = SegFile(ifo, 'SEGMENTS', seg_valid_seg,
+                                    file_url=curr_url, tags=curr_tags)
+            node._add_output(veto_xml_file)
+            workflow.add_node(node)
+    else:
+        node.executed = True
+        for fil in node._outputs:
+            fil.node = None
         veto_xml_file = SegFile.from_segment_xml(veto_xml_file_path,
                                                  tags=curr_tags,
                                                  valid_segment=seg_valid_seg)
-    else:
-        veto_xml_file = SegFile(ifo, 'SEGMENTS', seg_valid_seg,
-                                file_url=curr_url, tags=curr_tags)
-        node._add_output(veto_xml_file)
-        workflow.add_node(node)
     return veto_xml_file
 
 def create_segs_from_cats_job(cp, out_dir, ifo_string, tags=None):
@@ -856,18 +873,18 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
             file_list = files.find_output_with_tag('VETO_CAT%d' %(category))
             inputs+=file_list                                                      
         
-        cum_node = cum_job.create_node(valid_segment, inputs, segment_name)
-        if execute_now:
-            if file_needs_generating(cum_node.output_files[0].cache_entry.path,
-                                     workflow.cp, tags=tags):
+        cum_node  = cum_job.create_node(valid_segment, inputs, segment_name)
+        if file_needs_generating(cum_node.output_files[0].cache_entry.path,
+                                 workflow.cp, tags=tags):
+            if execute_now:
                 workflow.execute_node(cum_node)
             else:
-                cum_node.executed = True
-                for fil in cum_node._outputs:
-                    fil.node = None
-                    fil.PFN(fil.storage_path, site='local')
+                workflow.add_node(cum_node)
         else:
-            workflow.add_node(cum_node)
+            cum_node.executed = True
+            for fil in cum_node._outputs:
+                fil.node = None
+                fil.PFN(fil.storage_path, site='local')
         add_inputs += cum_node.output_files
             
     # add cumulative files for each ifo together
@@ -878,17 +895,17 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
     add_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifo, out_dir=out_dir,
                                   tags=tags)
     add_node = add_job.create_node(valid_segment, add_inputs, output=outfile)
-    if execute_now:
-        if file_needs_generating(add_node.output_files[0].cache_entry.path,
-                                 workflow.cp, tags=tags):
+    if file_needs_generating(add_node.output_files[0].cache_entry.path,
+                             workflow.cp, tags=tags):
+        if execute_now:
             workflow.execute_node(add_node)
         else:
-            add_node.executed = True
-            for fil in add_node._outputs:
-                fil.node = None
-                fil.PFN(fil.storage_path, site='local')
+            workflow.add_node(add_node)
     else:
-        workflow.add_node(add_node)
+        add_node.executed = True
+        for fil in add_node._outputs:
+            fil.node = None
+            fil.PFN(fil.storage_path, site='local')
     return outfile
 
 def add_cumulative_files(workflow, output_file, input_files, out_dir,
@@ -917,17 +934,17 @@ def add_cumulative_files(workflow, output_file, input_files, out_dir,
                        ifo=output_file.ifo_list, out_dir=out_dir, tags=tags)
     add_node = llwadd_job.create_node(output_file.segment, input_files,
                                    output=output_file)
-    if execute_now:
-        if file_needs_generating(add_node.output_files[0].cache_entry.path,
-                                 workflow.cp, tags=tags):
+    if file_needs_generating(add_node.output_files[0].cache_entry.path,
+                             workflow.cp, tags=tags):
+        if execute_now:
             workflow.execute_node(add_node)
         else:
-            add_node.executed = True
-            for fil in add_node._outputs:
-                fil.node = None
-                fil.PFN(fil.storage_path, site='local')
+            workflow.add_node(add_node)
     else:
-        workflow.add_node(add_node)
+        add_node.executed = True
+        for fil in add_node._outputs:
+            fil.node = None
+            fil.PFN(fil.storage_path, site='local')
     return add_node.output_files[0]
 
 def find_playground_segments(segs):

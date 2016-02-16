@@ -118,10 +118,12 @@ nonscience_veto_names = [primary_veto_name, secondary_vetoes_name]
 science_seg_file, sci_segs, sci_seg_name = wf.get_science_segments(workflow,
                                             rdir['analysis_time/segment_data'])
 
+runtime_names=[science_veto_name] + nonscience_veto_names
+in_workflow_names = []
 veto_cat_files = wf.get_files_for_vetoes(workflow,
-                                        rdir['analysis_time/segment_data'],
-                                        science_veto_name=science_veto_name,
-                                        other_veto_names=nonscience_veto_names)
+                                         rdir['analysis_time/segment_data'],
+                                         runtime_names=runtime_names,
+                                         in_workflow_names=in_workflow_names)
                       
 sci_ok_seg_file, sci_ok_segs, sci_ok_seg_name = wf.get_analyzable_segments(\
                                             workflow, sci_segs, veto_cat_files,
