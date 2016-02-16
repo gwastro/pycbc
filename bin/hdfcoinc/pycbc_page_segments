@@ -105,7 +105,7 @@ for i, seg_file in enumerate(sorted(args.segment_files)[::-1]):
              <tr><th>Duration</th><td>%s</td></tr>
       </table>
     """
-    smin = start.min() if len(start) and start.min() < smin else smin
+    smin = start.min() if len(start) and ( start.min() < smin or smin == -1) else smin
     smax = end.max() if len(end) and end.max() > smax else smax
 
     names += [(name, total, y + h + .1)]
