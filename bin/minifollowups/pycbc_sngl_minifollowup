@@ -78,8 +78,7 @@ if args.veto_file is not None:
     veto_file = to_file(args.veto_file, ifo=args.instrument)
 else:
     veto_file = None
-insp_segs = {}
-insp_segs[args.instrument] = to_file(args.inspiral_segments)
+insp_segs = to_file(args.inspiral_segments)
 
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
                  'num-sngl-events', ''))

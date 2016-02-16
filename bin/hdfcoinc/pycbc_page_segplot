@@ -112,9 +112,8 @@ for segment_file in opts.segment_files:
             color = color_cycle[ifo].next()
 
             for key in seg_dict.keys():
-
-                # FIXME: if IFO:SEGMENT_NAME exists then plot it
-                if key.startswith(ifo+':'+segment_name):
+                seg_key = ifo+':'+segment_name
+                if key == seg_key or key.startswith(ifo+':'+segment_name+':'):
                     segs = seg_dict[key]
 
                     # increment y position of bits

@@ -1260,7 +1260,7 @@ class SegFile(File):
     segment dictionary, if it is known at workflow run time.
     '''
     def __init__(self, ifo_list, description, valid_segment,
-                 segment_dict=None, **kwargs):
+                 segment_dict=None, seg_summ_dict=None, **kwargs):
         """
         See File.__init__ for a full set of documentation for how to
         call this class. The only thing unique and added to this class is
@@ -1285,10 +1285,15 @@ class SegFile(File):
         """
         super(SegFile, self).__init__(ifo_list, description, valid_segment,
                                       **kwargs)
+        # To avoid confusion with the segment_list property of the parent class
+        # we refer to this as valid_segments here
+        self.valid_segments = self.segment_list
         self.segment_dict = segment_dict
+        self.seg_summ_dict = seg_summ_dict
 
     @classmethod
-    def from_segment_list(cls, description, segmentlist, name, ifo, **kwargs):
+    def from_segment_list(cls, description, segmentlist, name, ifo,
+                          seg_summ_list=None, **kwargs):
         """ Initialize a SegFile object from a segmentlist. 
 
         Parameters:
@@ -1301,15 +1306,25 @@ class SegFile(File):
             The name of the segment lists to be stored in the file.
         ifo : str
             The ifo of the segment lists to be stored in this file.
+        seg_summ_list : glue.segments.segmentslist (OPTIONAL)
+            Specify the segment_summary segmentlist that goes along with the
+            segmentlist. Default=None, in this case segment_summary is taken
+            from the valid_segment of the SegFile class.
         """
         seglistdict = segments.segmentlistdict()
         seglistdict[ifo + ':' + name] = segmentlist
-        return cls.from_segment_list_dict(description, seglistdict, **kwargs)
+        if seg_summ_list is not None:
+            seg_summ_dict = segments.segmentlistdict()
+            seg_summ_dict[ifo + ':' + name] = seg_summ_list
+        else:
+            seg_summ_dict = None
+        return cls.from_segment_list_dict(description, seglistdict, 
+                                          seg_summ_dict=None, **kwargs)
 
     @classmethod
     def from_multi_segment_list(cls, description, segmentlists, names, ifos,
-                                **kwargs):
-        """ Initialize a SegFile object from a segmentlist. 
+                                seg_summ_lists=None, **kwargs):
+        """ Initialize a SegFile object from a list of segmentlists. 
 
         Parameters:
         ------------
@@ -1321,16 +1336,29 @@ class SegFile(File):
             List of names of the segment lists to be stored in the file.
         ifos : str
             List of ifos of the segment lists to be stored in this file.
+        seg_summ_lists : glue.segments.segmentslist (OPTIONAL)
+            Specify the segment_summary segmentlists that go along with the
+            segmentlists. Default=None, in this case segment_summary is taken
+            from the valid_segment of the SegFile class.
         """
         seglistdict = segments.segmentlistdict()
         for name, ifo, segmentlist in zip(names, ifos, segmentlists):
             seglistdict[ifo + ':' + name] = segmentlist
-        return cls.from_segment_list_dict(description, seglistdict, **kwargs)
+        if seg_summ_lists is not None:
+            seg_summ_dict = segments.segmentlistdict()
+            for name, ifo, seg_summ_list in zip(names, ifos, seg_summ_lists):
+                seg_summ_dict[ifo + ':' + name] = seg_summ_list
+        else:
+            seg_summ_dict = None
+
+        return cls.from_segment_list_dict(description, seglistdict,
+                                         seg_summ_dict=seg_summ_dict, **kwargs)
 
     @classmethod
     def from_segment_list_dict(cls, description, segmentlistdict,
                                ifo_list=None, valid_segment=None,
-                               file_exists=False, **kwargs):
+                               file_exists=False, seg_summ_dict=None, 
+                               **kwargs):
         """ Initialize a SegFile object from a segmentlistdict. 
 
         Parameters:
@@ -1348,20 +1376,36 @@ class SegFile(File):
         file_exists : boolean (default = False)
             If provided and set to True it is assumed that this file already
             exists on disk and so there is no need to write again.
+        seg_summ_dict : glue.segments.segmentslistdict
+            Optional. See SegFile.__init__.
         """
         if ifo_list is None:
             ifo_set = set([i.split(':')[0] for i in segmentlistdict.keys()])
             ifo_list = list(ifo_set)
             ifo_list.sort()
         if valid_segment is None:
-            try:
-                valid_segment = segmentlistdict.extent_all()
-            except:
-                # Numpty probably didn't supply a glue.segmentlistdict
-                segmentlistdict=segments.segmentlistdict(segmentlistdict)
-                valid_segment = segmentlistdict.extent_all()
+            if seg_summ_dict:
+                # Only come here if seg_summ_dict is supplied and it is
+                # not empty.
+                valid_segment = seg_summ_dict.extent_all()
+            else:
+                try:
+                    valid_segment = segmentlistdict.extent_all()
+                except:
+                    # Numpty probably didn't supply a glue.segmentlistdict
+                    segmentlistdict=segments.segmentlistdict(segmentlistdict)
+                    try:
+                        valid_segment = segmentlistdict.extent_all()
+                    except ValueError:
+                        # No segment_summary and segment list is empty
+                        # Setting valid segment now is hard!
+                        warn_msg = "No information with which to set valid "
+                        warn_msg += "segment."
+                        logging.warn(warn_msg)
+                        valid_segment = segments.segment([0,1])
         instnc = cls(ifo_list, description, valid_segment,
-                     segment_dict=segmentlistdict, **kwargs)
+                     segment_dict=segmentlistdict, seg_summ_dict=seg_summ_dict,
+                     **kwargs)
         if not file_exists:
             instnc.to_segment_xml()
         else:
@@ -1388,8 +1432,11 @@ class SegFile(File):
         seg_def_table = table.get_table(xmldoc,
                                         lsctables.SegmentDefTable.tableName)
         seg_table = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
+        seg_sum_table = table.get_table(xmldoc,
+                                        lsctables.SegmentSumTable.tableName)
 
         segs = segments.segmentlistdict()
+        seg_summ = segments.segmentlistdict()
 
         seg_id = {}
         for seg_def in seg_def_table:
@@ -1398,12 +1445,19 @@ class SegFile(File):
                                           str(seg_def.name)])
             seg_id[int(seg_def.segment_def_id)] = full_channel_name
             segs[full_channel_name] = segments.segmentlist()
+            seg_summ[full_channel_name] = segments.segmentlist()
 
         for seg in seg_table:
             seg_obj = segments.segment(
                     lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
                     lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns))
             segs[seg_id[int(seg.segment_def_id)]].append(seg_obj)
+
+        for seg in seg_sum_table:
+            seg_obj = segments.segment(
+                    lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
+                    lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns))
+            seg_summ[seg_id[int(seg.segment_def_id)]].append(seg_obj)
 
         for seg_name in seg_id.values():
             segs[seg_name] = segs[seg_name].coalesce()
@@ -1412,8 +1466,10 @@ class SegFile(File):
         fp.close()
         curr_url = urlparse.urlunparse(['file', 'localhost', xml_file, None,
                                         None, None])
+
         return cls.from_segment_list_dict('SEGMENTS', segs, file_url=curr_url,
-                                          file_exists=True, **kwargs)
+                                          file_exists=True,
+                                          seg_summ_dict=seg_summ, **kwargs)
 
     def remove_short_sci_segs(self, minSegLength):
         """
@@ -1467,9 +1523,17 @@ class SegFile(File):
             fsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
                      for seg in seglist]
 
+            if self.seg_summ_dict is None:
+                vsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
+                         for seg in self.valid_segments]
+            else:
+                vsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
+                         for seg in self.seg_summ_dict[key]]
+
             # Add using glue library to set all segment tables
             with ligolw_segments.LigolwSegments(outdoc, process) as xmlsegs:
-                xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name)
+                xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name,
+                                                    valid = {ifo : vsegs})
         # write file
         ligolw_utils.write_filename(outdoc, self.storage_path)
         self.PFN(self.storage_path, site='local')
