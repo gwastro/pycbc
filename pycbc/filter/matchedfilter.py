@@ -137,11 +137,12 @@ class MatchedFilterControl(object):
         if cluster_function not in ['symmetric', 'findchirp']:
             raise ValueError("MatchedFilter: 'cluster_function' must be either 'symmetric' or 'findchirp'")
         self.cluster_function = cluster_function
+        self.segments = segment_list
+        self.htilde = template_output
 
         if downsample_factor == 1:
             self.snr_mem = zeros(self.tlen, dtype=self.dtype)
             self.corr_mem = zeros(self.tlen, dtype=self.dtype)
-            self.segments = segment_list
 
             if use_cluster and (cluster_function == 'symmetric'):
                 self.matched_filter_and_cluster = self.full_matched_filter_and_cluster_symm
@@ -157,7 +158,6 @@ class MatchedFilterControl(object):
                 
             # Assuming analysis time is constant across templates and segments, also
             # delta_f is constant across segments.
-            self.htilde = template_output
             self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh, 
                                                       self.delta_f, self.tlen)   
                                                       
@@ -321,21 +321,19 @@ class MatchedFilterControl(object):
         logging.info("%s points above threshold" % str(len(idx)))
         return self.snr_mem, norm, self.corr_mem, idx, snrv
 
-    def heirarchical_matched_filter_and_cluster(self, htilde, template_norm, stilde, window):
+    def heirarchical_matched_filter_and_cluster(self, segnum, template_norm, window):
         """ Return the complex snr and normalization. 
     
         Calculated the matched filter, threshold, and cluster. 
 
         Parameters
         ----------
-        htilde : FrequencySeries 
-            The template waveform. Must come from the FilterBank class.
+        segnum : int
+            Index into the list of segments at MatchedFilterControl construction
         template_norm : float
             The htilde, template normalization factor.
-        stilde : FrequencySeries 
-            The strain data to be filtered.
         window : int
-            The size of the cluster window in samples.
+            Size of the window over which to cluster triggers, in samples
 
         Returns
         -------
@@ -350,8 +348,10 @@ class MatchedFilterControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
-        from pycbc.fft.fftw_pruned import pruned_c2cifft, fft_transpose                           
-                                         
+        from pycbc.fft.fftw_pruned import pruned_c2cifft, fft_transpose
+        htilde = self.htilde
+        stilde = self.segments[segnum]
+
         norm = (4.0 * stilde.delta_f) / sqrt(template_norm)
         
         correlate(htilde[self.kmin_red:self.kmax_red], 
