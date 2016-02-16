@@ -401,7 +401,7 @@ for ifo in opts.instruments:
 
     # populate IFO distance columns
     eff_distance = effective_distance(sim.distance, sim.inclination,
-                                      f_plus, f_cross**2)
+                                      f_plus, f_cross)
     setattr(sim, 'eff_dist_'+ifo[0].lower(), eff_distance)
 
     # populate IFO end time columns
