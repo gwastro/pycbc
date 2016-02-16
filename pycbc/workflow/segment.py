@@ -330,8 +330,8 @@ def get_cumulative_veto_group_files(workflow, option, cat_files,
         categories = [cat_to_veto_def_cat(c) for c in cat_set]
 
         cum_seg_files += [get_cumulative_segs(workflow, categories, cat_files,
-                          out_dir, execute_now=True, segment_name=segment_name,
-                          tags=tags)]
+                          out_dir, execute_now=execute_now,
+                          segment_name=segment_name, tags=tags)]
         names.append(segment_name)
 
     logging.info("Done generating vetoes for groups in %s" %(option))
