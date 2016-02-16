@@ -109,6 +109,19 @@ class TimeSeries(Array):
         else:
             return Array.__getitem__(self, index)
 
+    def prepend_zeros(self, num):
+        """Prepend num zeros onto the beginning of this TimeSeries. Update also
+        epoch to include this prepending.
+        """
+        self.resize(len(self) + num)
+        self.roll(num)
+        self._epoch = self._epoch - num * self._delta_t
+
+    def append_zeros(self, num):
+        """Append num zeros onto the end of this TimeSeries.
+        """
+        self.resize(len(self) + num)
+
     def get_delta_t(self):
         """Return time between consecutive samples in seconds.
         """
