@@ -118,8 +118,8 @@ nonscience_veto_names = [primary_veto_name, secondary_vetoes_name]
 science_seg_file, sci_segs, sci_seg_name = wf.get_science_segments(workflow,
                                             rdir['analysis_time/segment_data'])
 
-runtime_names=[science_veto_name] + nonscience_veto_names
-in_workflow_names = []
+runtime_names=[science_veto_name] 
+in_workflow_names = nonscience_veto_names
 veto_cat_files = wf.get_files_for_vetoes(workflow,
                                          rdir['analysis_time/segment_data'],
                                          runtime_names=runtime_names,
@@ -137,13 +137,15 @@ datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
 cum_veto_files, veto_names, ind_cats = wf.get_cumulative_veto_group_files(\
                                             workflow, 'segments-veto-groups',
                                             veto_cat_files,
-                                            rdir['analysis_time/segment_data'])
+                                            rdir['analysis_time/segment_data'],
+                                            execute_now=False)
 
 final_veto_file, final_veto_name, ind_cats =\
                                    wf.get_cumulative_veto_group_files(workflow, 
                                             'segments-final-veto-group',
                                             veto_cat_files,
-                                            rdir['analysis_time/segment_data'])
+                                            rdir['analysis_time/segment_data'],
+                                            execute_now=False)
 
 # Precalculated PSDs
 precalc_psd_files = wf.setup_psd_workflow(workflow, analyzable_segs,
