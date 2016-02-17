@@ -49,8 +49,6 @@ parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
 parser.add_argument("--chisq-bins", default="0", type=str, help=
                     "Number of frequency bins to use for power chisq.")
-parser.add_argument("--psd-recalculate-segments", type=int, 
-                    help="Number of segments to use before recalculating the PSD", default=0)
 parser.add_argument("--trigger-time", type=float, default=0,
                   help="The central time of the trigger to use.")
 parser.add_argument("--use-params-of-closest-injection", action="store_true",
