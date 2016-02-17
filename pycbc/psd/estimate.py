@@ -238,8 +238,8 @@ def interpolate(series, delta_f):
     interpolated series : FrequencySeries
         A new FrequencySeries that has been interpolated.
     """
-    new_n = (len(series)-1) * series.delta_f / delta_f + 1.000001
-    samples = numpy.arange(0, int(new_n)) * delta_f
+    new_n = (len(series)-1) * series.delta_f / delta_f
+    samples = numpy.arange(0, numpy.rint(new_n)) * delta_f
     interpolated_series = numpy.interp(samples, series.sample_frequencies.numpy(), series.numpy())
     return FrequencySeries(interpolated_series, epoch=series.epoch, 
                            delta_f=delta_f, dtype=series.dtype)
