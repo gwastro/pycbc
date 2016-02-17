@@ -104,14 +104,13 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         fs_dtype = numpy.complex128
         
     num_samples = len(timeseries)
-    if num_segments is not None:
+    if num_segments is None:
         num_segments = num_samples / seg_stride
         if (num_segments - 1) * seg_stride + seg_len > num_samples:
             num_segments -= 1
 
     if not require_exact_data_fit:
         data_len = (num_segments - 1) * seg_stride + seg_len
-        data_len = data_len * gwstrain.sample_rate
 
         # Get the correct amount of data
         if data_len < num_samples:
@@ -127,9 +126,10 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         if data_len > num_samples:
             err_msg = "I was asked to estimate a PSD on %d " %(data_len)
             err_msg += "data samples. However the data provided only contains "
-            err_msg += "%d data samples." %(length)
+            err_msg += "%d data samples." %(num_samples)
 
     if num_samples != (num_segments - 1) * seg_stride + seg_len:
+        print num_samples, num_segments, seg_stride, seg_len, data_len
         raise ValueError('Incorrect choice of segmentation parameters')
         
     w = Array(window_map[window](seg_len).astype(timeseries.dtype))

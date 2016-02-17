@@ -88,7 +88,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         psd = welch(strain, avg_method=opt.psd_estimation,
                     seg_len=int(opt.psd_segment_length * sample_rate),
                     seg_stride=int(opt.psd_segment_stride * sample_rate),
-                    num_segments=opt.num_segments,
+                    num_segments=opt.psd_num_segments,
                     require_exact_data_fit=False)
 
         if delta_f != psd.delta_f:
@@ -316,7 +316,7 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
     # Figure out the data length used for PSD generation
     seg_stride = opt.psd_segment_stride
     seg_len = opt.psd_segment_length
-    num_segments = opt.num_segments
+    num_segments = opt.psd_num_segments
     if num_segments is None:
         err_msg = "You must supply --num-segments."
         raise ValueError(err_msg)
@@ -332,7 +332,7 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
         err_msg += "estimated with %d seconds. " %(psd_data_len)
         err_msg += "Input data length is %d seconds. " %(input_data_len)
         raise ValueError(err_msg)
-    else if input_data_len == psd_data_len:
+    elif input_data_len == psd_data_len:
         num_psd_measurements = 1
         psd_stride = 0
     else:
