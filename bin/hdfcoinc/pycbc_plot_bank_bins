@@ -11,6 +11,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--bank-file', help='hdf format template bank file')
 parser.add_argument('--background-bins', nargs='+', help='list of background bin format strings')
+parser.add_argument('--f-lower',
+                    help="Lower frequency cutoff for evaluating template duration. Should"
+                         " be equal to the lower cutoff used in inspiral jobs")
 parser.add_argument('--output-file', help='output file')
 args = parser.parse_args()
 
@@ -18,6 +21,8 @@ fig = pylab.figure()
 f = h5py.File(args.bank_file)
 data = {'mass1':f['mass1'][:], 'mass2':f['mass2'][:],
         'spin1z':f['spin1z'][:], 'spin2z':f['spin2z'][:]}
+if args.f_lower:
+    data['f_lower'] = float(args.f_lower)
 
 if args.background_bins:
     locs_dict = pycbc.events.background_bin_from_string(args.background_bins, data)
