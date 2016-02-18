@@ -25,7 +25,7 @@
 """
 This module provides classes that describe banks of waveforms
 """
-import types
+import types, logging
 import pycbc.waveform
 from pycbc.types import zeros
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
@@ -94,6 +94,8 @@ class FilterBank(object):
         return len(self.table)
 
     def __getitem__(self, index):
+        logging.info('generating waveform at position: %s' % index)
+    
         # Make new memory for templates if we aren't given output memory
         if self.out is None:
             tempout = zeros(self.filter_length, dtype=self.dtype)

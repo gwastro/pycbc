@@ -6,6 +6,7 @@ import h5py
 import numpy as np
 import logging
 import inspect
+import numpy
 
 from lal import LIGOTimeGPS, YRJUL_SI
 
@@ -21,11 +22,11 @@ from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, pnutils
 
-class HFile(HFile):   
+class HFile(h5py.File):   
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
 
-    def select(self, fcn, *args):
+    def select(self, fcn, *args, **kwds):
         """ Return arrays from an hdf5 file that satisfy the given function
 
         Parameters
@@ -37,6 +38,9 @@ class HFile(HFile):
         args: strings
             A variable number of strings that are keys into the hdf5. These must
         refer to arrays of equal length.
+
+        chunksize: {1e6, int}, optional
+            Number of elements to read and process at a time.
 
         Returns
         -------
@@ -56,7 +60,7 @@ class HFile(HFile):
             data[arg] = []
         
         # To conserve memory read the array in chunks
-        chunksize = int(1e6)
+        chunksize = kwds.get('chunksize', int(1e6))
         size = len(refs[arg])
 
         i = 0
