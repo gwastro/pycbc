@@ -81,6 +81,8 @@ class LiveFilterBank(object):
             self.indoc, lsctables.SnglInspiralTable.tableName)
         self.extra_args = kwds  
 
+        self.table = sorted(self.table, key=lambda t: t.mchirp)        
+
     @staticmethod
     def parse_option(row, arg):
         import math
@@ -107,7 +109,7 @@ class LiveFilterBank(object):
 
         # Determine the length of time of the filter, rounded up to
         # nearest power of two
-        min_buffer = 2.0 + self.minimum_buffer
+        min_buffer = 1.0 + self.minimum_buffer
     
         from pycbc.waveform.waveform import props
         buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, f_lower=self.f_lower, 
