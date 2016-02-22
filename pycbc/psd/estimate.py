@@ -105,7 +105,8 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         
     num_samples = len(timeseries)
     if num_segments is None:
-        num_segments = num_samples / seg_stride
+        num_segments = int(num_samples // seg_stride)
+        # NOTE: Is this not always true?
         if (num_segments - 1) * seg_stride + seg_len > num_samples:
             num_segments -= 1
 
@@ -129,7 +130,6 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
             err_msg += "%d data samples." %(num_samples)
 
     if num_samples != (num_segments - 1) * seg_stride + seg_len:
-        print num_samples, num_segments, seg_stride, seg_len, data_len
         raise ValueError('Incorrect choice of segmentation parameters')
         
     w = Array(window_map[window](seg_len).astype(timeseries.dtype))

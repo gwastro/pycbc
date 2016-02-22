@@ -15,6 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import copy
+from glue import segments
 from pycbc.psd.read import *
 from pycbc.psd.analytical import *
 from pycbc.psd.estimate import *
@@ -314,17 +315,20 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
     #        should just go straight to the PSD class *once*.
 
     # Figure out the data length used for PSD generation
-    seg_stride = opt.psd_segment_stride
-    seg_len = opt.psd_segment_length
+    seg_stride = opt.psd_segment_stride * gwstrain.sample_rate
+    seg_len = opt.psd_segment_length * gwstrain.sample_rate
     num_segments = opt.psd_num_segments
+    input_data_len = len(gwstrain)
+
     if num_segments is None:
-        err_msg = "You must supply --num-segments."
-        raise ValueError(err_msg)
+        # FIXME: Should we make --psd-num-segments mandatory?
+        #        err_msg = "You must supply --num-segments."
+        #        raise ValueError(err_msg)
+        num_segments = int(input_data_len // seg_stride) - 1
+
     psd_data_len = (num_segments - 1) * seg_stride + seg_len
 
     # How many unique PSD measurements is this?
-    input_data_len = len(gwstrain)
-
     psds_and_times = []
     if input_data_len < psd_data_len:
         err_msg = "Input data length must be longer than data length needed "
@@ -352,7 +356,7 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
         psds_and_times.append( (start_idx, end_idx, psd) )
     return psds_and_times
 
-def associate_psds_to_segments(opt, segments, gwstrain, flen, delta_f, flow,
+def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
                                dyn_range_factor=1., precision=None):
     """Generate a set of overlapping PSDs covering the data in GWstrain.
     Then associate these PSDs with the appropriate segment in strain_segments.
@@ -370,10 +374,11 @@ def associate_psds_to_segments(opt, segments, gwstrain, flen, delta_f, flow,
                                        flow, dyn_range_factor=dyn_range_factor,
                                        precision=precision)
 
-    for segmnt in segments:
+    for fd_segment in fd_segments:
         best_psd = None
         psd_overlap = 0
-        inp_seg = segments.segment(seg.start, seg.stop)
+        inp_seg = segments.segment(fd_segment.seg_slice.start,
+                                   fd_segment.seg_slice.stop)
         for start_idx, end_idx, psd in psds_and_times:
             psd_seg = segments.segment(start_idx, end_idx)
             if psd_seg.intersects(inp_seg):
@@ -384,4 +389,4 @@ def associate_psds_to_segments(opt, segments, gwstrain, flen, delta_f, flow,
         if best_psd is None:
             err_msg = "No PSDs found intersecting segment!"
             raise ValueError(err_msg)
-        seg.psd = best_psd
+        fd_segment.psd = best_psd

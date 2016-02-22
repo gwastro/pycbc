@@ -60,14 +60,14 @@ def get_psd((seg, i)):
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
 
-    logging.nfo('%d: calculating psd', i)
-    psds_and_times = generate_overlapping_psds(args, flen, delta_f, flow,
-                      dyn_range_factor=pycbc.DYN_RANGE_FAC)
+    logging.info('%d: calculating psd', i)
+    psds_and_times = pycbc.psd.generate_overlapping_psds(args, gwstrain,
+                      flen, delta_f, flow, dyn_range_factor=pycbc.DYN_RANGE_FAC)
 
     lpsd = []
     for start_idx, end_idx, psd in psds_and_times:
-        start_time = gwstrain.start_time + start_idx*gwstrain.sample_rate
-        end_time = gwstrain.start_time + end_idx*gwstrain.sample_rate
+        start_time = gwstrain.start_time + start_idx/gwstrain.sample_rate
+        end_time = gwstrain.start_time + end_idx/gwstrain.sample_rate
         lpsd.append((psd.numpy(), psd.delta_f, int(start_time), int(end_time)))
 
     return lpsd
