@@ -305,14 +305,42 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
 
     Parameters
     -----------
-    FIXME
+    opt : object
+        Result of parsing the CLI with OptionParser, or any object with the
+        required attributes (psd_model, psd_file, asd_file, psd_estimation,
+        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).
+    gwstrain : Strain object
+        The timeseries of raw data on which to estimate PSDs.
+    flen : int
+        The length in samples of the output PSDs.
+    delta_f : float
+        The frequency step of the output PSDs.
+    flow: float
+        The low frequncy cutoff to use when calculating the PSD.
+    dyn_range_factor : {1, float}
+        For PSDs taken from models or text files, if `dyn_range_factor` is
+        not None, then the PSD is multiplied by `dyn_range_factor` ** 2.
+    precision : str, choices (None,'single','double')
+        If not specified, or specified as None, the precision of the returned
+        PSD will match the precision of the data, if measuring a PSD, or will
+        match the default precision of the model if using an analytical PSD.
+        If 'single' the PSD will be converted to float32, if not already in
+        that precision. If 'double' the PSD will be converted to float64, if
+        not already in that precision.
 
     Returns
     --------
-    FIXME
+    psd_and_times : list of (start, end, psd) tuples
+        This is a list of tuples containing one entry for each PSD. The first
+        and second entries (start, end) in each tuple represent the index 
+        range of the gwstrain data that was used to estimate that PSD. The
+        third entry (psd) contains the PSD estimate between that interval.
     """
-    # FIXME: If not estimating the PSD from data this is not needed and we
-    #        should just go straight to the PSD class *once*.
+    if not opt.psd_estimation:
+        psd = from_cli(opt, flen, delta_f, flow, strain=gwstrain,
+                       dyn_range_factor=dyn_range_factor, precision=precision)
+        psds_and_times = [ (0, len(gwstrain), psd) ]
+        return psds_and_times
 
     # Figure out the data length used for PSD generation
     seg_stride = opt.psd_segment_stride * gwstrain.sample_rate
@@ -363,13 +391,32 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
 
     Parameters
     -----------
-    FIXME
-
-    Returns
-    --------
-    FIXME
+    opt : object
+        Result of parsing the CLI with OptionParser, or any object with the
+        required attributes (psd_model, psd_file, asd_file, psd_estimation,
+        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).
+    fd_segments : StrainSegments.fourier_segments() object
+        The fourier transforms of the various analysis segments. The psd
+        attribute of each segment is updated to point to the appropriate PSD.
+    gwstrain : Strain object
+        The timeseries of raw data on which to estimate PSDs.
+    flen : int
+        The length in samples of the output PSDs.
+    delta_f : float
+        The frequency step of the output PSDs.
+    flow: float
+        The low frequncy cutoff to use when calculating the PSD.
+    dyn_range_factor : {1, float}
+        For PSDs taken from models or text files, if `dyn_range_factor` is
+        not None, then the PSD is multiplied by `dyn_range_factor` ** 2.
+    precision : str, choices (None,'single','double')
+        If not specified, or specified as None, the precision of the returned
+        PSD will match the precision of the data, if measuring a PSD, or will
+        match the default precision of the model if using an analytical PSD.
+        If 'single' the PSD will be converted to float32, if not already in
+        that precision. If 'double' the PSD will be converted to float64, if
+        not already in that precision.
     """
-    # FIXME: If not estimating PSD, only generate *one* PSD
     psds_and_times = generate_overlapping_psds(opt, gwstrain, flen, delta_f,
                                        flow, dyn_range_factor=dyn_range_factor,
                                        precision=precision)
