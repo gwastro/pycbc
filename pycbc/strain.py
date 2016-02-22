@@ -54,18 +54,8 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     pycbc.fft.fftw.set_measure_level(0)
 
     logging.info('Autogating: estimating PSD')
-    seg_len = int(psd_duration*strain.sample_rate)
-    seg_stride = int(psd_stride*strain.sample_rate)
-    remainder = (len(strain) - seg_len) % seg_stride
-    if remainder:
-        if remainder % 2:
-            psd_strain = strain[remainder//2:len(strain) - remainder//2 - 1]
-        else:
-            psd_strain = strain[remainder//2:len(strain) - remainder//2]
-    else:
-        psd_strain = strain
-
-    psd = pycbc.psd.welch(psd_strain, seg_len=seg_len, seg_stride=seg_stride,
+    psd = pycbc.psd.welch(strain, seg_len=int(psd_duration*strain.sample_rate),
+                          seg_stride=int(psd_stride*strain.sample_rate),
                           avg_method=psd_avg_method)
     psd = pycbc.psd.interpolate(psd, 1./strain.duration)
     psd = pycbc.psd.inverse_spectrum_truncation(
