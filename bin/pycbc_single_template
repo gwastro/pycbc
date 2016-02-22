@@ -49,8 +49,6 @@ parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
 parser.add_argument("--chisq-bins", default="0", type=str, help=
                     "Number of frequency bins to use for power chisq.")
-parser.add_argument("--psd-recalculate-segments", type=int, 
-                    help="Number of segments to use before recalculating the PSD", default=0)
 parser.add_argument("--trigger-time", type=float, default=0,
                   help="The central time of the trigger to use.")
 parser.add_argument("--use-params-of-closest-injection", action="store_true",
@@ -124,28 +122,6 @@ scheme.verify_processing_options(opt, parser)
 fft.verify_fft_options(opt,parser)
 pycbc.init_logging(opt.verbose)
 
-def associate_psd(strain_segments, gwstrain, segments, nsegs, flen, delta_f, flow):
-    logging.info("Computing noise PSD")
-    def grouper(n, iterable):
-        args = [iter(iterable)] * n
-        return list([e for e in t if e != None] for t in itertools.izip_longest(*args))
-
-    nsegs = nsegs if nsegs != 0 else len(strain_segments.full_segment_slices)
-    groups = grouper(nsegs, strain_segments.full_segment_slices)
-    if len(groups[-1]) != len(groups[0]):
-        logging.warn('PSD recalculation does not divide equally among analysis'
-                     'segments. Make sure that this is what you want')
-
-    psds = []
-    for psegs in groups:
-        strain_part = gwstrain[psegs[0].start:psegs[-1].stop]
-        ppsd = psd.from_cli(opt, flen, delta_f, flow, strain_part, pycbc.DYN_RANGE_FAC)
-        psds.append(ppsd)
-        for seg in segments:
-            if seg.seg_slice in psegs:
-                seg.psd = ppsd.astype(float32)
-    return psds
-
 ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, pycbc.DYN_RANGE_FAC)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
@@ -170,9 +146,9 @@ with ctx:
     segments = strain_segments.fourier_segments()
     
     logging.info("Calculating the PSDs")
-    psds = associate_psd(strain_segments, gwstrain, segments, 
-                         opt.psd_recalculate_segments, 
-                         flen, delta_f, flow)
+    psd.associate_psds_to_segments(opt, segments, gwstrain, flen, delta_f,
+                             flow, dyn_range_factor=pycbc.DYN_RANGE_FAC,
+                             precision='single')
 
     logging.info("Making template: %s" % opt.approximant)
     if opt.use_params_of_closest_injection:
