@@ -87,7 +87,7 @@ def verify_weave_options(opt, parser):
 
     # Check whether to use a fixed directory for scipy.weave
     if opt.fixed_weave_cache:
-        cache_dir = os.path.join(os.getcwd(),"pythoncompiled")
+        cache_dir = os.path.join(os.getcwd(),"pycbc_inspiral")
         os.environ['PYTHONCOMPILED'] = cache_dir
         logging.debug("verify_weave_options(fixed_weave_cache): Setting weave cache to %s" % cache_dir)
         sys.path = [cache_dir] + sys.path
