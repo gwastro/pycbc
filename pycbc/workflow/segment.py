@@ -249,7 +249,7 @@ def get_analyzable_segments(workflow, sci_segs, cat_files, out_dir, tags=None):
 
     if workflow.cp.has_option_tags("workflow-segments",
                           "segments-minimum-segment-length", tags):
-        min_seg_length = int( cp.get_opt_tags("workflow-segments",
+        min_seg_length = int( workflow.cp.get_opt_tags("workflow-segments",
                               "segments-minimum-segment-length", tags) )
         sci_ok_seg_file.remove_short_sci_segs(min_seg_length)
 

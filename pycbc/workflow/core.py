@@ -1494,7 +1494,7 @@ class SegFile(File):
                     newsegment_list.append(seg)
             newsegment_list.coalesce()
             self.segment_dict[key] = newsegment_list
-        self.to_segment_xml()
+        self.to_segment_xml(override_file_if_exists=True)
 
     def return_union_seglist(self):
         return self.segment_dict.union(self.segment_dict.keys())
@@ -1510,7 +1510,7 @@ class SegFile(File):
             err_msg = "Key should be of the format 'ifo:name', got %s." %(key,)
             raise ValueError(err_msg)
 
-    def to_segment_xml(self):
+    def to_segment_xml(self, override_file_if_exists=False):
         """
         Write the segment list in self.segmentList to self.storage_path.
         """
@@ -1538,8 +1538,12 @@ class SegFile(File):
                 xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name,
                                                     valid = {ifo : vsegs})
         # write file
+        if override_file_if_exists and \
+                                 self.has_pfn(self.storage_path, site='local'):
+            pass
+        else:
+            self.PFN(self.storage_path, site='local')
         ligolw_utils.write_filename(outdoc, self.storage_path)
-        self.PFN(self.storage_path, site='local')
 
 
 def make_external_call(cmdList, out_dir=None, out_basename='external_call',
