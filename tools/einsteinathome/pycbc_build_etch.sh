@@ -61,7 +61,7 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
   build_preinst_before_lalsuite=false
   pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
   use_pycbc_pyinstaller_hooks=true
-  add_python_runtime_options=false
+  verbose_pyinstalled_python=false
 else
   echo -e "\\n\\n>> [`date`] Using Cygwin settings"
   shared="--enable-shared"
@@ -83,7 +83,7 @@ else
   build_preinst_before_lalsuite=true
   pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
   use_pycbc_pyinstaller_hooks=true
-  add_python_runtime_options=false
+  verbose_pyinstalled_python=false
 fi
 
 PYCBC="$PWD/pycbc"
@@ -704,8 +704,9 @@ else
       sed -i~ 's%# Python library NOT found. Return just None.%return "/usr/bin/libpython2.7.dll"%' `find PyInstaller -name bindepend.py`
     fi
   fi
-  if $build_dlls; then
-    # build bootloader for Windows
+
+# build bootloader for Windows
+if $build_dlls; then
     cd bootloader
     if $pyinstaller_version | grep '3\.' > /dev/null; then
       python ./waf distclean all
@@ -761,7 +762,7 @@ cd $PREFIX
 # BUNDLE DIR
 echo -e "\\n\\n>> [`date`] building pyinstaller spec"
 rm -rf dist
-# patch spec file to add "-v" to python interpreter options
+# create spec file
 export NOW_BUILDING=NULL
 if $use_pycbc_pyinstaller_hooks; then
   pyi-makespec --additional-hooks-dir $hooks/hooks --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
@@ -770,7 +771,8 @@ else
   hidden_imports=`find $PREFIX/lib/python2.7/site-packages/pycbc/ -name '*_cpu.py' | sed 's%.*/site-packages/%%;s%\.py$%%;s%/%.%g;s%^% --hidden-import=%' | tr -d '\012'`
   pyi-makespec $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
 fi
-if $add_python_runtime_options; then
+# patch spec file to add "-v" to python interpreter options
+if $verbose_pyinstalled_python; then
   sed -i~ 's%exe = EXE(pyz,%options = [ ("v", None, "OPTION"), ("W error", None, "OPTION") ]\
 exe = EXE(pyz, options,%' pycbc_inspiral.spec
 fi
