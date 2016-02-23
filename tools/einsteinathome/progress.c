@@ -9,7 +9,7 @@ main() {
   long new=0, old=0;
   // wait for the file to appear
   while(!fp) {
-    if (debug) fprintf(stderr, "waiting for stderr.txt to appear\n");
+    if (debug) fprintf(stderr, "waiting for stderr.txt to appera\n");
     sleep(1);
     fp=fopen("stderr.txt","r");
   }
@@ -37,9 +37,7 @@ main() {
 	if (4 == sscanf(buf, "%*s %*s Filtering template %f/%f segment %f/%f", &a, &b, &c, &d)) {
 	  if (debug) fprintf(stderr, "parsed values from line: %f %f %f %f\n", a, b, c, d);
 	  found = 1;
-	} else if (debug) {
-	  fprintf(stderr, "non matching line: '%s'\n", buf);
-	}
+	} else if (debug) fprintf(stderr, "non matching line: '%s'\n", buf);
 	old = ftell(fp);
       } else {
 	break;
