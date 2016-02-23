@@ -1,0 +1,27 @@
+From f12432e0d2c5e18be88bb6e4e37927b8ba6d1228 Mon Sep 17 00:00:00 2001
+From: Bernd Machenschalk <bernd.machenschalk@ligo.org>
+Date: Fri, 5 Feb 2016 23:35:02 +0100
+Subject: [PATCH 2/7] E@H hack: skip abspath() in catalog_path() if getcwd()
+ returns None
+
+---
+ scipy/weave/catalog.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/scipy/weave/catalog.py b/scipy/weave/catalog.py
+index 6627584..85b6c8a 100644
+--- a/scipy/weave/catalog.py
++++ b/scipy/weave/catalog.py
+@@ -448,7 +448,8 @@ def catalog_path(module_path):
+     print(">weave> catalog_path() aexpanduser(module_path):", module_path, file=sys.stderr)
+     module_path = os.path.expandvars(module_path)
+     print(">weave> catalog_path() expandvars(module_path):", module_path, file=sys.stderr)
+-    module_path = os.path.abspath(module_path)
++    if not os.getcwd():
++        module_path = os.path.abspath(module_path)
+     print(">weave> catalog_path() abspath(module_path):", module_path, file=sys.stderr)
+     if not os.path.exists(module_path):
+         print(">weave> module_path does not exist):", file=sys.stderr)
+-- 
+2.6.2
+

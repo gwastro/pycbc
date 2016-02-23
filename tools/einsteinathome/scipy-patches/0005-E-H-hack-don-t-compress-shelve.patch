@@ -1,0 +1,42 @@
+From 70231a9f30ffebc4b69bf6fb0f21eaff6224f768 Mon Sep 17 00:00:00 2001
+From: Bernd Machenschalk <bernd.machenschalk@ligo.org>
+Date: Mon, 22 Feb 2016 11:53:01 +0100
+Subject: [PATCH 5/7] E@H hack: don't compress shelve
+
+---
+ scipy/weave/_dumb_shelve.py | 16 ++--------------
+ 1 file changed, 2 insertions(+), 14 deletions(-)
+
+diff --git a/scipy/weave/_dumb_shelve.py b/scipy/weave/_dumb_shelve.py
+index 3f1ba16..d97ebf4 100644
+--- a/scipy/weave/_dumb_shelve.py
++++ b/scipy/weave/_dumb_shelve.py
+@@ -22,23 +22,11 @@ class DbfilenameShelf(Shelf):
+         Shelf.__init__(self, _dumbdbm_patched.open(filename, flag))
+ 
+     def __getitem__(self, key):
+-        compressed = self.dict[key]
+-        try:
+-            r = zlib.decompress(compressed)
+-        except zlib.error:
+-            r = compressed
+-        except NameError:
+-            r = compressed
+-
++        r = self.dict[key]
+         return pickle.loads(r)
+ 
+     def __setitem__(self, key, value):
+-        s = pickle.dumps(value,1)
+-        try:
+-            self.dict[key] = zlib.compress(s)
+-        except NameError:
+-            #zlib doesn't exist, leave it uncompressed.
+-            self.dict[key] = s
++        self.dict[key] = pickle.dumps(value,1)
+ 
+ 
+ def open(filename, flag='c'):
+-- 
+2.6.2
+

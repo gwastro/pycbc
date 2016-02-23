@@ -1,0 +1,26 @@
+From ab9aa0fc71182c8edba4879b41b30b7bbba83e4b Mon Sep 17 00:00:00 2001
+From: Bernd Machenschalk <bernd.machenschalk@ligo.org>
+Date: Tue, 9 Feb 2016 15:34:04 +0100
+Subject: [PATCH 4/7] E@H debug
+
+---
+ scipy/weave/catalog.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/scipy/weave/catalog.py b/scipy/weave/catalog.py
+index fd58c7c..97c93ad 100644
+--- a/scipy/weave/catalog.py
++++ b/scipy/weave/catalog.py
+@@ -479,7 +479,9 @@ def get_catalog(module_path,mode='r'):
+     if (catalog_file is not None) \
+            and ((dumb and os.path.exists(catalog_file+'.dat'))
+                 or os.path.exists(catalog_file)):
++        print(">weave> get_catalog() opening catalog at", catalog_file, file=sys.stderr)
+         sh = shelve.open(catalog_file,mode)
++        print(">weave> get_catalog() shelve.open returned", sh, file=sys.stderr)
+     else:
+         print(">weave> get_catalog() catalog_file is None", file=sys.stderr)
+         if mode == 'r':
+-- 
+2.6.2
+

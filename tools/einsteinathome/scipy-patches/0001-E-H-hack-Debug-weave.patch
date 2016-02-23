@@ -1,0 +1,193 @@
+From 00a911ad83819579dd806e1de4abd783636fa380 Mon Sep 17 00:00:00 2001
+From: boinc <boinc@etch64.(none)>
+Date: Mon, 1 Feb 2016 23:27:11 +0100
+Subject: [PATCH 1/7] E@H hack: Debug weave
+
+---
+ scipy/weave/catalog.py      | 34 ++++++++++++++++++++++++++++++++++
+ scipy/weave/inline_tools.py | 19 ++++++++++++++++---
+ 2 files changed, 50 insertions(+), 3 deletions(-)
+
+diff --git a/scipy/weave/catalog.py b/scipy/weave/catalog.py
+index 9774fea..6627584 100644
+--- a/scipy/weave/catalog.py
++++ b/scipy/weave/catalog.py
+@@ -39,6 +39,7 @@ import pickle
+ import socket
+ import tempfile
+ import warnings
++import traceback
+ 
+ try:
+     # importing dbhash is necessary because this regularly fails on Python 2.x
+@@ -444,9 +445,13 @@ def catalog_path(module_path):
+         (NFS mounts). See os_dependent_catalog_name() for more info.
+     """
+     module_path = os.path.expanduser(module_path)
++    print(">weave> catalog_path() aexpanduser(module_path):", module_path, file=sys.stderr)
+     module_path = os.path.expandvars(module_path)
++    print(">weave> catalog_path() expandvars(module_path):", module_path, file=sys.stderr)
+     module_path = os.path.abspath(module_path)
++    print(">weave> catalog_path() abspath(module_path):", module_path, file=sys.stderr)
+     if not os.path.exists(module_path):
++        print(">weave> module_path does not exist):", file=sys.stderr)
+         catalog_file = None
+     elif not os.path.isdir(module_path):
+         module_path,dummy = os.path.split(module_path)
+@@ -473,16 +478,23 @@ def get_catalog(module_path,mode='r'):
+     """
+     if mode not in ['c','r','w','n']:
+         msg = " mode must be 'c', 'n', 'r', or 'w'.  See anydbm for more info"
++        print(">weave> get_catalog() ValueError:", msg, file=sys.stderr)
+         raise ValueError(msg)
+     catalog_file = catalog_path(module_path)
++    print(">weave> get_catalog() catalog_file:", catalog_file, file=sys.stderr)
++    if dumb:
++        print(">weave> get_catalog() using dumb shelve", file=sys.stderr)
+     if (catalog_file is not None) \
+            and ((dumb and os.path.exists(catalog_file+'.dat'))
+                 or os.path.exists(catalog_file)):
+         sh = shelve.open(catalog_file,mode)
+     else:
++        print(">weave> get_catalog() catalog_file is None", file=sys.stderr)
+         if mode == 'r':
++            print(">weave> get_catalog() mode is 'r', returning None", file=sys.stderr)
+             sh = None
+         else:
++            print(">weave> get_catalog() opening catalog", file=sys.stderr)
+             sh = shelve.open(catalog_file,mode)
+     return sh
+ 
+@@ -676,11 +688,19 @@ class catalog(object):
+             imports associated with code are finished so that sys.path
+             is restored to normal.
+         """
++        if os.environ.get("NO_CONFIGURE_PATH", None) != None:
++            print(">weave> catalog.configure_path() no paths to add from catalog for NO_CONFIGURE_PATH", file=sys.stderr)
++            self.paths_added = 0
++            return
+         try:
+             paths = cat[self.path_key(code)]
++            print(">weave> catalog.configure_path() paths to add from catalog:", len(paths), file=sys.stderr)
++            if len(paths) > 0:
++                print(">weave> catalog.configure_path() first path to add from catalog:", paths[0], file=sys.stderr)
+             self.paths_added = len(paths)
+             sys.path = paths + sys.path
+         except:
++            print(">weave> catalog.configure_path() error setting path from catalog:", sys.exc_info()[0], file=sys.stderr)
+             self.paths_added = 0
+ 
+     def unconfigure_path(self):
+@@ -707,22 +727,31 @@ class catalog(object):
+         cat = None
+         function_list = []
+         for path in self.build_search_order():
++            print(">weave> catalog.get_cataloged_functions() trying catalog at path:", path, file=sys.stderr)
+             cat = get_catalog(path,mode)
+             if cat is not None and code in cat:
++                print(">weave> catalog.get_cataloged_functions() catalog is there and contains code", file=sys.stderr)
+                 # set up the python path so that modules for this
+                 # function can be loaded.
+                 self.configure_path(cat,code)
++                print(">weave> catalog.get_cataloged_functions() sys.path:", sys.path, file=sys.stderr)
+                 try:
+                     function_list += cat[code]
+                 except:  # SystemError and ImportError so far seen
+                     # problems loading a function from the catalog.  Try to
+                     # repair the cause.
++                    print(">weave> catalog.get_cataloged_functions() error loading catalog, triggering repair:", sys.exc_info()[0], file=sys.stderr)
++                    traceback.print_exc(file=sys.stderr)
+                     cat.close()
+                     self.repair_catalog(path,code)
+                 self.unconfigure_path()
+             if cat is not None:
+                 # ensure that the catalog is properly closed
+                 cat.close()
++        if function_list:
++            print(">weave> catalog.get_cataloged_functions() returning functions", file=sys.stderr)
++        else:
++            print(">weave> catalog.get_cataloged_functions() returning NO functions", file=sys.stderr)
+         return function_list
+ 
+     def repair_catalog(self,catalog_path,code):
+@@ -737,6 +766,11 @@ class catalog(object):
+             catalog_path must be writable for repair.  If it isn't, the
+             function exists with a warning.
+         """
++
++        if os.environ.get("NO_REPAIR", None) != None:
++            print(">weave> catalog.repair_catalog() catalog repair skipped for NO_REPAIR", file=sys.stderr)
++            return # immediately
++
+         writable_cat = None
+         if (catalog_path is not None) and (not os.path.exists(catalog_path)):
+             return
+diff --git a/scipy/weave/inline_tools.py b/scipy/weave/inline_tools.py
+index f1eb462..2caee6d 100644
+--- a/scipy/weave/inline_tools.py
++++ b/scipy/weave/inline_tools.py
+@@ -375,7 +375,8 @@ def attempt_function_call(code,local_dict,global_dict):
+     # catalog cache, and then persistent catalog.
+     #
+     global function_catalog
+-    # 1. try local cache
++    print(">weave> inline_tools.attempt_function_call() attempt_function_call() called for code:", code, file=sys.stderr)
++    print(">weave> inline_tools.attempt_function_call() 1. try local cache", file=sys.stderr)
+     try:
+         results = apply(function_cache[code],(local_dict,global_dict))
+         return results
+@@ -393,8 +394,10 @@ def attempt_function_call(code,local_dict,global_dict):
+             raise NameError(msg)
+     except KeyError:
+         pass
+-    # 2. try catalog cache.
++    print(">weave> inline_tools.attempt_function_call() 2. try catalog cache", file=sys.stderr)
+     function_list = function_catalog.get_functions_fast(code)
++    if not function_list:
++        print(">weave> inline_tools.attempt_function_call() function_list is empty", file=sys.stderr)
+     for func in function_list:
+         try:
+             results = apply(func,(local_dict,global_dict))
+@@ -416,9 +419,12 @@ def attempt_function_call(code,local_dict,global_dict):
+                 pass
+             else:
+                 raise NameError(msg)
+-    # 3. try persistent catalog
++    print(">weave> inline_tools.attempt_function_call() 3. try persistent catalog", file=sys.stderr)
+     module_dir = global_dict.get('__file__',None)
++    print(">weave> inline_tools.attempt_function_call() module_dir:", module_dir, file=sys.stderr)
+     function_list = function_catalog.get_functions(code,module_dir)
++    if not function_list:
++        print(">weave> inline_tools.attempt_function_call() function_list is empty", file=sys.stderr)
+     for func in function_list:
+         try:
+             results = apply(func,(local_dict,global_dict))
+@@ -426,6 +432,7 @@ def attempt_function_call(code,local_dict,global_dict):
+             function_cache[code] = func
+             return results
+         except:  # should specify argument types here.
++            print(">weave> inline_tools.attempt_function_call() error loading function:", sys.exc_info()[0], file=sys.stderr)
+             pass
+     # if we get here, the function wasn't found
+     raise ValueError('function with correct signature not found')
+@@ -458,11 +465,17 @@ def compile_function(code,arg_names,local_dict,global_dict,
+                      type_converters=None,
+                      auto_downcast=1,
+                      **kw):
++
++    if os.environ.get("NO_COMPILE", None) != None:
++        print(">weave> inline_tools.compile_function() compilation skipped for NO_COMPILE", file=sys.stderr)
++        return # immediately
++
+     # figure out where to store and what to name the extension module
+     # that will contain the function.
+     # storage_dir = catalog.intermediate_dir()
+     code = ndarray_api_version + '\n' + code
+     module_path = function_catalog.unique_module_name(code, module_dir)
++    print(">weave> inline_tools.compile_function() module_path='%s'" % module_path, file=sys.stderr)
+     storage_dir, module_name = os.path.split(module_path)
+     mod = inline_ext_module(module_name,compiler)
+ 
+-- 
+2.6.2
+
