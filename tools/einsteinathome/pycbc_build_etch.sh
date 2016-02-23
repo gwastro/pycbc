@@ -107,14 +107,6 @@ export GIT_SSL_NO_VERIFY=true
 wget_opts="-c --passive-ftp --no-check-certificate"
 pip_install="install --trusted-host pypi.python.org --trusted-host github.com"
 
-# try to find lalsuite root
-LALSUITE="`echo '$PWD/$0'|sed 's%.*//%/%;s%/[^/]*$%%'`/../../../.."
-if ls "$LALSUITE/lal/00boot" >/dev/null 2>&1 ; then
-  echo found lalsuite at $LALSUITE
-else
-  LALSUITE=""
-fi
-
 echo "export PATH='$PATH'"
 echo "export LD_LIBRARY_PATH='$LD_LIBRARY_PATH'"
 echo "export PKG_CONFIG_PATH='$PKG_CONFIG_PATH'"
@@ -796,28 +788,5 @@ cd ..
 
 # build zip file from dir
 zip -r pycbc_inspiral.zip pycbc_inspiral
-
-# end here for Cygwin/Windows
-if $build_dlls; then
-  exit
-fi
-
-# build tgz file from dir
-tar -czf pycbc_inspiral.tgz pycbc_inspiral
-
-mv pycbc_inspiral pycbc_inspiral_d
-cd ..
-
-# BUNDLE FILE
-echo -e "\\n\\n>> [`date`] running pyinstaller"
-pyinstaller --additional-hooks-dir $hooks/hooks --hidden-import=pkg_resources --onefile ./bin/pycbc_inspiral
-
-# TEST BUNDLE
-echo -e "\\n\\n>> [`date`] testing"
-
-# leave virtual environment
-deactivate
-
-./dist/pycbc_inspiral --help
 
 echo -e "\\n\\n>> [`date`] Success $0"
