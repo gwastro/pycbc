@@ -261,6 +261,16 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
     if opt.injection_file or opt.sgburst_injection_file:
         strain.injections = injections
 
+    if opt.taper_data:
+        logging.info("Tapering data")
+        # Use auto-gating stuff for this, a one-sided gate is a taper
+        pd_taper_window = opt.taper_data
+        gate_params = [(strain.start_time, 0., pd_taper_window)]
+        gate_params.append( (strain.end_time, 0.,
+                             pd_taper_window) )
+        gate_data(strain, gate_params)
+
+
     strain.gating_info = gating_info
 
     return strain
@@ -316,6 +326,9 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--pad-data",
               help="Extra padding to remove highpass corruption "
                    "(integer seconds)", type=int)
+    data_reading_group.add_argument("--taper-data",
+              help="Taper ends of data to zero using the supplied length as a "
+                   "window (integer seconds)", type=int, default=0)
     data_reading_group.add_argument("--sample-rate", type=int,
                             help="The sample rate to use for h(t) generation (integer Hz).")
     data_reading_group.add_argument("--channel-name", type=str,
@@ -441,6 +454,11 @@ def insert_strain_option_group_multi_ifo(parser):
                             type=int, metavar='IFO:LENGTH',
                             help="Extra padding to remove highpass corruption "
                                 "(integer seconds)")
+    data_reading_group.add_argument("--taper-data", nargs='+',
+                            action=MultiDetOptionAction,
+                            type=int, default=0, metavar='IFO:LENGTH',
+                            help="Taper ends of data to zero using the "
+                                "supplied length as a window (integer seconds)")
     data_reading_group.add_argument("--sample-rate", type=int, nargs='+',
                             action=MultiDetOptionAction, metavar='IFO:RATE',
                             help="The sample rate to use for h(t) generation "
@@ -627,7 +645,7 @@ def gate_data(data, gate_params):
     """
     def inverted_tukey(M, n_pad):
         midlen = M - 2*n_pad
-        if midlen < 1:
+        if midlen < 0:
             raise ValueError("No zeros left after applying padding.")
         padarr = 0.5*(1.+numpy.cos(numpy.pi*numpy.arange(n_pad)/n_pad))
         return numpy.concatenate((padarr,numpy.zeros(midlen),padarr[::-1]))
@@ -657,7 +675,8 @@ class StrainSegments(object):
     """
     def __init__(self, strain, segment_length=None, segment_start_pad=0,
                  segment_end_pad=0, trigger_start=None, trigger_end=None,
-                 filter_inj_only=False, injection_window=None):
+                 filter_inj_only=False, injection_window=None,
+                 allow_zero_padding=False):
         """ Determine how to chop up the strain data into smaller segments
             for analysis.
         """
@@ -680,17 +699,44 @@ class StrainSegments(object):
         seg_start_pad = segment_start_pad
 
         if not trigger_start:
-            trigger_start = int(strain.start_time)
+            trigger_start = int(strain.start_time) + segment_start_pad
+        else:
+            if not allow_zero_padding:
+                min_start_time = int(strain.start_time) + segment_start_pad
+            else:
+                min_start_time = int(strain.start_time)
+            if trigger_start < min_start_time:
+                err_msg = "Trigger start time must be within analysable "
+                err_msg += "window. Asked to start from %d " %(trigger_start)
+                err_msg += "but can only analyse from %d." %(min_start_time)
+                raise ValueError(err_msg)
 
         if not trigger_end:
-            trigger_end = int(strain.end_time)
+            trigger_end = int(strain.end_time) - segment_end_pad
+        else:
+            if not allow_zero_padding:
+                max_end_time = int(strain.end_time) - segment_end_pad
+            else:
+                max_end_time = int(strain.end_time)
+            if trigger_end > max_end_time:
+                err_msg = "Trigger end time must be within analysable "
+                err_msg += "window. Asked to end at %d " %(trigger_end)
+                err_msg += "but can only analyse to %d." %(max_end_time)
+                raise ValueError(err_msg)
+
 
         throwaway_size = seg_start_pad + seg_end_pad
         seg_width = seg_len - throwaway_size
 
         # The amount of time we can actually analyze given the
         # amount of padding that is needed
-        analyzable = strain.duration - throwaway_size
+        analyzable = trigger_end - trigger_start
+        data_start = (trigger_start - segment_start_pad) - \
+                       int(strain.start_time)
+        data_end = trigger_end + segment_end_pad - int(strain.start_time)
+        data_dur = data_end - data_start
+        data_start = data_start * strain.sample_rate
+        data_end = data_end * strain.sample_rate
 
         #number of segments we need to analyze this data
         num_segs = int(numpy.ceil(float(analyzable) / float(seg_width)))
@@ -703,7 +749,7 @@ class StrainSegments(object):
         # Determine how to chop up the strain into smaller segments
         for nseg in range(num_segs-1):
             # boundaries for time slices into the strain
-            seg_start = int((nseg*seg_offset) * strain.sample_rate)
+            seg_start = int(data_start + (nseg*seg_offset) * strain.sample_rate)
             seg_end = int(seg_start + seg_len * strain.sample_rate)
             seg_slice = slice(seg_start, seg_end)
             self.segment_slices.append(seg_slice)
@@ -715,12 +761,12 @@ class StrainSegments(object):
             self.analyze_slices.append(ana_slice)
 
         # The last segment takes up any integer boundary slop
-        seg_end = len(strain)
+        seg_end = data_end
         seg_start = int(seg_end - seg_len * strain.sample_rate)
         seg_slice = slice(seg_start, seg_end)
         self.segment_slices.append(seg_slice)
 
-        remaining = (strain.duration - ((num_segs - 1) * seg_offset + seg_start_pad))
+        remaining = (data_dur - ((num_segs - 1) * seg_offset + seg_start_pad))
         ana_start = int((seg_len - remaining) * strain.sample_rate)
         ana_end = int((seg_len - seg_end_pad) * strain.sample_rate)
         ana_slice = slice(ana_start, ana_end)
@@ -801,7 +847,18 @@ class StrainSegments(object):
         if not self._fourier_segments:
             self._fourier_segments = []
             for seg_slice, ana in zip(self.segment_slices, self.analyze_slices):
-                freq_seg = make_frequency_series(self.strain[seg_slice])
+                if seg_slice.start >= 0 and seg_slice.stop <= len(self.strain):
+                    freq_seg = make_frequency_series(self.strain[seg_slice])
+                # Assume that we cannot have a case where we both zero-pad on
+                # both sides
+                elif seg_slice.start < 0:
+                    strain_chunk = self.strain[:seg_slice.stop]
+                    strain_chunk.prepend_zeros(-seg_slice.start)
+                    freq_seg = make_frequency_series(strain_chunk)
+                elif seg_slice.stop > len(self.strain):
+                    strain_chunk = self.strain[seg_slice.start:]
+                    strain_chunk.append_zeros(seg_slice.stop - len(self.strain))
+                    freq_seg = make_frequency_series(strain_chunk)
                 freq_seg.analyze = ana
                 freq_seg.cumulative_index = seg_slice.start + ana.start
                 freq_seg.seg_slice = seg_slice
@@ -820,7 +877,8 @@ class StrainSegments(object):
                    trigger_start=opt.trig_start_time,
                    trigger_end=opt.trig_end_time,
                    filter_inj_only=opt.filter_inj_only,
-                   injection_window=opt.injection_window)
+                   injection_window=opt.injection_window,
+                   allow_zero_padding=opt.allow_zero_padding)
 
     @classmethod
     def insert_segment_option_group(cls, parser):
@@ -853,6 +911,10 @@ class StrainSegments(object):
                           filter at full rate where needed. NOTE: Reverts to
                           full analysis if two injections are in the same
                           segment.""")
+        segment_group.add_argument("--allow-zero-padding", action='store_true',
+                          help="Allow for zero padding of data to analyze "
+                          "requested times, if needed.")
+
 
     @classmethod
     def from_cli_single_ifo(cls, opt, strain, ifo):
@@ -864,7 +926,8 @@ class StrainSegments(object):
                    segment_end_pad=opt.segment_end_pad[ifo],
                    trigger_start=opt.trig_start_time[ifo],
                    trigger_end=opt.trig_end_time[ifo],
-                   filter_inj_only=opt.filter_inj_only)
+                   filter_inj_only=opt.filter_inj_only,
+                   allow_zero_padding=opt.allow_zero_padding)
 
     @classmethod
     def from_cli_multi_ifos(cls, opt, strain_dict, ifos):
@@ -905,6 +968,9 @@ class StrainSegments(object):
                          "end of each segment in seconds.")
         segment_group.add_argument("--filter-inj-only", action='store_true',
                     help="Analyze only segments that contain an injection.")
+        segment_group.add_argument("--allow-zero-padding", action='store_true',
+                          help="Allow for zero padding of data to analyze "
+                          "requested times, if needed.")
 
     required_opts_list = ['--segment-length',
                    '--segment-start-pad',

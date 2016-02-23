@@ -254,7 +254,8 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
         # Initialize the class that identifies how many jobs are needed and the
         # shift between them.
         segmenter = JobSegmenter(data_length, valid_chunk, valid_length, 
-                    curr_seg, compatibility_mode=compatibility_mode)
+                                 curr_seg, curr_exe_job,
+                                 compatibility_mode=compatibility_mode)
 
         for job_num in range(segmenter.num_jobs):
             ############## (3) #############
@@ -543,9 +544,9 @@ class JobSegmenter(object):
     """
     
     def __init__(self, data_lengths, valid_chunks, valid_lengths, curr_seg,
-                 compatibility_mode = False):
+                 curr_exe_class, compatibility_mode = False):
         """ Initialize class. """
-        
+        self.exe_class = curr_exe_class
         self.curr_seg = curr_seg
         self.curr_seg_length = float(abs(curr_seg))
         
@@ -675,6 +676,10 @@ class JobSegmenter(object):
                 err += "science segment. It should be using all data."
                 raise ValueError(err)
 
+        if hasattr(self.exe_class, 'zero_pad_data_extend'):
+            job_data_seg = self.exe_class.zero_pad_data_extend(job_data_seg,
+                                                                 self.curr_seg)
+
         return job_data_seg
 
     def get_data_times_for_job_workflow(self, num_job):
@@ -799,10 +804,31 @@ class PyCBCInspiralExecutable(Executable):
                                     'max-analysis-segments'))
         
         segment_length = int(self.get_opt('segment-length'))
-        pad_data = int(self.get_opt( 'pad-data'))
+        pad_data = 0
+        if self.has_opt('pad-data'):
+            pad_data += int(self.get_opt( 'pad-data'))
+
+        # NOTE: Currently the tapered data is ignored as it is short and
+        #       will lie within the segment start/end pad. This means that
+        #       the tapered data *will* be used for PSD estimation (but this
+        #       effect should be small). It will also be in the data segments
+        #       used for SNR generation (when in the middle of a data segment
+        #       where zero-padding is not being used) but the templates should
+        #       not be long enough to use this data assuming segment start/end
+        #       pad take normal values. When using zero-padding this data will
+        #       be used for SNR generation.
+
+        #if self.has_opt('taper-data'):
+        #    pad_data += int(self.get_opt( 'taper-data' ))
+        if self.has_opt('allow-zero-padding'):
+            self.zero_padding=True
+        else:
+            self.zero_padding=False
+
         start_pad = int(self.get_opt( 'segment-start-pad'))
         end_pad = int(self.get_opt('segment-end-pad'))
-        
+
+        # FIXME: This needs updating. Recalculate segments has gone!
         constant_psd_segs = self.get_opt('psd-recalculate-segments')
         if constant_psd_segs is None:
             constant_psd_segs = min_analysis_segs
@@ -822,13 +848,39 @@ class PyCBCInspiralExecutable(Executable):
         valid_regions = []
         for nsegs in seg_ranges:
             analysis_length = (segment_length - start_pad - end_pad) * nsegs
-            data_length = analysis_length + pad_data * 2 + start_pad + end_pad
-            start = pad_data + start_pad
-            end = data_length - pad_data - end_pad
+            data_length = analysis_length + pad_data * 2
+            if not self.zero_padding:
+                data_length = analysis_length + pad_data * 2 \
+                              + start_pad + end_pad
+                start = pad_data + start_pad
+                end = data_length - pad_data - end_pad
+            else:
+                data_length = analysis_length + pad_data * 2
+                start = pad_data
+                end = data_length - pad_data
             data_lengths += [data_length]
             valid_regions += [segments.segment(start, end)]
             
         return data_lengths, valid_regions
+
+    def zero_pad_data_extend(self, job_data_seg, curr_seg):
+        """When using zero padding, *all* data is analysable, but the setup
+        functions must include the padding data where it is available so that
+        we are not zero-padding in the middle of science segments. This
+        function takes a job_data_seg, that is chosen for a particular node
+        and extends it with segment-start-pad and segment-end-pad if that
+        data is available.
+        """
+        if self.zero_padding is False:
+            return job_data_seg
+        else:
+            start_pad = int(self.get_opt( 'segment-start-pad'))
+            end_pad = int(self.get_opt('segment-end-pad'))
+            new_data_start = max(curr_seg[0], job_data_seg[0] - start_pad)
+            new_data_end = min(curr_seg[1], job_data_seg[1] + end_pad)
+            new_data_seg = segments.segment([new_data_start, new_data_end])
+            return new_data_seg
+
 
 class PyCBCTmpltbankExecutable(Executable):
     """ The class used to create jobs for pycbc_geom_nonspin_bank Executable and
