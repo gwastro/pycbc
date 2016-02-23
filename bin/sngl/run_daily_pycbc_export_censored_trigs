@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# Copyright (C) 2016 Christopher M. Biwer
+# Copyright (C) 2016 Soumi De
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -41,8 +41,8 @@ MONTH=`lalapps_tconvert -f "%Y%m" ${GPS_START_TIME}`
 # day subdir name in form of YYYYMMDD
 DAY=`lalapps_tconvert -f "%Y%m%d" ${GPS_START_TIME}`
 
-# number of loudest triggers to put in output files
-N_LOUDEST=1000000
+# specify the window for applying clustering to censored triggers
+CLUSTER_WINDOW=16.0 
 
 # location of run output dir
 RUN_DIR=/home/${USER}/projects/daily_cbc_offline/main/${MONTH}/${DAY}
@@ -95,7 +95,7 @@ for BIN in 0 1 2; do
             --coinc-file ${COINC_FILE} \
             --bank-file ${BANK_FILE} \
             --sngl-files ${SNGL_FILES} \
-            --n-loudest ${N_LOUDEST}
+            --cluster-window ${CLUSTER_WINDOW}
 
         # print statement
         echo
