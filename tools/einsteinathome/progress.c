@@ -2,36 +2,22 @@
 #include <string.h>
 #include <unistd.h>
 
-main(int argc, char*argv[]) {
-  int debug = 0;
-  int arg = 1;
-  char*fname = "stderr.txt";
+#define debug 0
+
+main() {
   FILE*fp=NULL;
   long new=0, old=0;
-  double progress = 0.0;
-
-  // parse command-line options
-  if ((argc >= arg) && !strcmp("-d",argv[arg])) {
-    arg++;
-    debug = 1;
-  }
-  if (argc >= arg) {
-    fname = argv[arg];
-  }
-
   // wait for the file to appear
   while(!fp) {
-    if (debug) fprintf(stderr, "waiting for '%s' to appear\n", fname);
+    if (debug) fprintf(stderr, "waiting for stderr.txt to appera\n");
     sleep(1);
-    fp=fopen(fname,"r");
+    fp=fopen("stderr.txt","r");
   }
-
-  while(progress < 1.0) {
+  while(1) {
     float a, b, c, d;
     int found=0;
     FILE*fw;
     char buf[1024];
-
     // wait for the file to be extended
     while(new <= old) {
       if (debug) fprintf(stderr, "waiting for stderr.txt to be extended\n");
@@ -40,7 +26,6 @@ main(int argc, char*argv[]) {
       new = ftell(fp);
     }
     fseek(fp, old, SEEK_SET);
-
     // scan the last line that matches the format
     // "2016-02-04 22:29:03,745 Filtering template 2045/12454 segment 2/15"
     // - scan matching lines
@@ -58,13 +43,11 @@ main(int argc, char*argv[]) {
 	break;
       }
     }
-
     // write progress file
     if (found) {
       if (debug) fprintf(stderr, "writing progress file\n");
-      progress = (a-1) / b + (c-1) / (b * d);
       if(fw = fopen("progress.txt", "w")) {
-	fprintf(fw,"%f\n", progress);
+	fprintf(fw,"%f\n", (a-1) / b + (c-1) / (b * d));
 	fclose(fw);
       }
     }
