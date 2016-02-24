@@ -766,9 +766,13 @@ cd $PREFIX
 echo -e "\\n\\n>> [`date`] building pyinstaller spec"
 rm -rf dist
 # create spec file
-export NOW_BUILDING=NULL
+# if the build machine has dbhash & shelve, scipy weave will use bsddb, so add these to the bundle
+if python -c "import dbhash, shelve" 2>/dev/null; then
+  hidden_imports="$hidden_imports --hidden-import=dbhash --hidden-import=shelve"
+fi
 if $use_pycbc_pyinstaller_hooks; then
-  pyi-makespec --additional-hooks-dir $hooks/hooks --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
+  export NOW_BUILDING=NULL
+  pyi-makespec --additional-hooks-dir $hooks/hooks $hidden_imports --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
 else
   # find hidden imports (pycbc CPU modules)
   hidden_imports=`find $PREFIX/lib/python2.7/site-packages/pycbc/ -name '*_cpu.py' | sed 's%.*/site-packages/%%;s%\.py$%%;s%/%.%g;s%^% --hidden-import=%' | tr -d '\012'`
