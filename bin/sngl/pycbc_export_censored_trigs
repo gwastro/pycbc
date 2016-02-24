@@ -83,6 +83,9 @@ parser.add_argument("--min-stat", type=float, default=0.0,
                   help="Only add triggers above this stat to output XML file.")
 parser.add_argument("--n-loudest", type=int, default=0,
                   help="Read the nth loudest triggers from the input files.")
+parser.add_argument("--cluster-window", type=float, default=0.0,
+                  help="Window for applying clustering to coinc triggers.")
+
 
 # parse command line
 opts = parser.parse_args()
@@ -102,8 +105,68 @@ else:
     trigs_censored = ForegroundTriggers(opts.coinc_file, opts.bank_file,
                           sngl_files=opts.sngl_files, group=group)
 
-# find triggers above limit
-mask = numpy.where( trigs_censored.get_coincfile_array("stat") > opts.min_stat )[0]
+
+# Apply clustering to censored_triggers if a cluster-window has been 
+# parsed in the command line.
+
+# Clustering picks the loudest trigger in each cluster-window
+
+if opts.cluster_window:
+    
+    # get newsnr for all censored triggers
+    coinc_newsnr = trigs_censored.get_coincfile_array("stat")
+    
+    # get H1 trigger times from the coinc censored trigger file
+    time1 = trigs_censored.get_coincfile_array("time1")
+    
+    # get the minimum and maximum times for the triggers
+    t_start = numpy.amin(time1)
+    t_end = numpy.amax(time1)
+    
+    # Divide the time range in which the triggers are distributed into 
+    # bins using the cluster-window
+    nbins = (t_end - t_start)/opts.cluster_window
+
+    # set the lower-bound of the 1st time bin to the minimum time for 
+    # the set of triggers
+    t_low = t_start
+
+    cluster_idx = []
+    
+    # Run a loop over the time bins
+    for i in range(int(numpy.ceil(nbins))):
+        
+        # find upper bound for the ith time bin
+        t_hi = t_low + opts.cluster_window
+ 
+        # find the indices of all triggers in the ith time bin
+        trigs_bin_idx = numpy.where((t_low < time1) & (t_hi > time1))[0]
+
+        # find values of newsnr for the censored triggers in the ith bin
+        coinc_newsnr_bin = coinc_newsnr[trigs_bin_idx]
+
+        # if there are triggers in the ith bin find the index of the 
+        # loudest trigger and append it to the array cluster_idx. If
+        # there are no triggers in the bin skip this step
+        if len(coinc_newsnr_bin) > 0:
+           max_idx = numpy.argmax(coinc_newsnr_bin)
+           cluster_idx.append(max_idx)
+
+        # Move one bin up in time
+        t_low = t_hi
+
+    # get newsnr of all clustered triggers
+    coinc_newsnr_trigs_clustered = trigs_censored.get_coincfile_array("stat")[cluster_idx]
+
+    # find triggers louder than min-stat if a value for it is parsed in
+    # the command line
+    mask = numpy.where( coinc_newsnr_trigs_clustered > opts.min_stat )[0]
+
+
+# If no cluster-window provided clustering is skipped and triggers louder 
+# than min-stat is found if a value for it is parsed
+else:
+    mask = numpy.where( trigs_censored.get_coincfile_array("stat") > opts.min_stat )[0]
 
 # dict to hold parameters
 param_dict = {}
