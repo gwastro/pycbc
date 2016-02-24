@@ -265,6 +265,9 @@ else # if pycbc-preinst.tgz
       cd scipy
       git checkout v0.16.0
       git cherry-pick 832baa20f0b5d521bcdf4784dda13695b44bb89f
+      wget $wget_opts https://www.atlas.aei.uni-hannover.de/~bema/PyCBC_Inspiral/0001-E-H-hack-always-use-dumb-shelve.patch
+      wget $wget_opts https://www.atlas.aei.uni-hannover.de/~bema/PyCBC_Inspiral/0006-E-H-hack-_dumbdb-open-files-in-binary-mode.patch
+      git am 000*.patch
     fi
     python setup.py build --fcompiler=$FC
     python setup.py install --prefix=$PREFIX
@@ -449,7 +452,7 @@ Libs: -L${libdir} -lhdf5' |
   if $build_swig; then
     p=swig-3.0.7
     echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz || wget $wget_opts http://atlas3.atlas.aei.uni-hannover.de/~bema/tarballs/$p.tar.gz
+    test -r $p.tar.gz || wget $wget_opts https://www.atlas.aei.uni-hannover.de/~bema/tarballs/$p.tar.gz
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
