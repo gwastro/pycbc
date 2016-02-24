@@ -43,8 +43,12 @@ parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOpti
                     help="HDF format merged single detector trigger files")
 parser.add_argument('--inspiral-segments', 
                     help="xml segment files containing the inspiral analysis times")
-parser.add_argument('--inspiral-segment-name',
-                    help="Name of inspiral segmentlist to read from segment files")
+parser.add_argument('--inspiral-data-read-name',
+                    help="Name of inspiral segmentlist containing data read in "
+                         "by each analysis job.")
+parser.add_argument('--inspiral-data-analyzed-name',
+                    help="Name of inspiral segmentlist containing data "
+                         "analyzed by each analysis job.")
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
@@ -118,7 +122,8 @@ for num_event in range(num_events):
     params['spin1z'] = bank_data['spin1z'][bank_id]
     params['spin2z'] = bank_data['spin2z'][bank_id]
     files += mini.make_single_template_plots(workflow, insp_segs,
-                                    args.inspiral_segment_name, params,
+                                    args.inspiral_data_read_name,
+                                    args.inspiral_data_analyzed_name,  params,
                                     args.output_dir, tags=args.tags + [str(num_event)])
     
     for single in single_triggers:

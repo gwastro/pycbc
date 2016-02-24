@@ -48,8 +48,12 @@ parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOpti
                     help="HDF format merged single detector trigger files")
 parser.add_argument('--inspiral-segments',
                     help="xml segment files containing the inspiral analysis times")
-parser.add_argument('--inspiral-segment-name',
-                    help="Name of inspiral segmentlist to read from segment files")
+parser.add_argument('--inspiral-data-read-name',
+                    help="Name of inspiral segmentlist containing data read in "
+                         "by each analysis job.")
+parser.add_argument('--inspiral-data-analyzed-name',
+                    help="Name of inspiral segmentlist containing data "
+                         "analyzed by each analysis job.")
 parser.add_argument('--inj-window', type=int, default=0.5,
                     help="Time window in which to look for injection triggers")
 parser.add_argument('--output-map')
@@ -141,7 +145,8 @@ for num_event in range(num_events):
                                 tags=args.tags + [str(num_event)])
 
     files += mini.make_single_template_plots(workflow, insp_segs,
-                            args.inspiral_segment_name, inj_params,
+                            args.inspiral_data_read_name,
+                            args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
                             tags=args.tags+['INJ_PARAMS',str(num_event)],
                             params_str='injection parameters as template, ' +\
@@ -149,7 +154,8 @@ for num_event in range(num_events):
                             use_exact_inj_params=True)
 
     files += mini.make_single_template_plots(workflow, insp_segs,
-                            args.inspiral_segment_name, inj_params,
+                            args.inspiral_data_read_name,
+                            args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
                             tags=args.tags+['INJ_PARAMS_INVERTED',
                                             str(num_event)],
@@ -158,7 +164,8 @@ for num_event in range(num_events):
                             use_exact_inj_params=True)
 
     files += mini.make_single_template_plots(workflow, insp_segs,
-                            args.inspiral_segment_name, inj_params,
+                            args.inspiral_data_read_name,
+                            args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
                             tags=args.tags+['INJ_PARAMS_NOINJ',
                                             str(num_event)],
@@ -188,7 +195,8 @@ for num_event in range(num_events):
         curr_tags = ['TMPLT_PARAMS_%s' %(curr_ifo,)]
         curr_tags += [str(num_event)]
         files += mini.make_single_template_plots(workflow, insp_segs,
-                                args.inspiral_segment_name, curr_params,
+                                args.inspiral_data_read_name,
+                                args.inspiral_data_analyzed_name, curr_params,
                                 args.output_dir, inj_file=injection_xml_file,
                                 tags=args.tags + curr_tags,
                                 params_str='loudest template in %s' % curr_ifo )
