@@ -828,22 +828,11 @@ class PyCBCInspiralExecutable(Executable):
         start_pad = int(self.get_opt( 'segment-start-pad'))
         end_pad = int(self.get_opt('segment-end-pad'))
 
-        # FIXME: This needs updating. Recalculate segments has gone!
-        constant_psd_segs = self.get_opt('psd-recalculate-segments')
-        if constant_psd_segs is None:
-            constant_psd_segs = min_analysis_segs
-            max_analysis_segs = min_analysis_segs
-        else:
-            constant_psd_segs = int(constant_psd_segs)
-        
-        if min_analysis_segs % constant_psd_segs != 0:
-            raise ValueError('Constant PSD segments does not evenly divide the '
-                             'number of analysis segments') 
-        
-        if max_analysis_segs is None:
-            max_analysis_segs = min_analysis_segs
-        
-        seg_ranges = range(min_analysis_segs, max_analysis_segs + 1, constant_psd_segs)
+        # NOTE: Assuming here that the data-length for max-analysis-segs is
+        #       a multiple of min-analysis-segs, and then only allow data
+        #       lengths that *are* multiples of min-analysis-segs
+        seg_ranges = range(min_analysis_segs, max_analysis_segs + 1,
+                           min_analysis_segs+1)
         data_lengths = []
         valid_regions = []
         for nsegs in seg_ranges:
