@@ -134,7 +134,7 @@ if opts.cluster_window:
     cluster_idx = []
     
     # Run a loop over the time bins
-    for i in range(int(nbins)):
+    for i in range(int(numpy.ceil(nbins))):
         
         # find upper bound for the ith time bin
         t_hi = t_low + opts.cluster_window
