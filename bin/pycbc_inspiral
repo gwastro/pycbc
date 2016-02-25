@@ -200,16 +200,20 @@ with ctx:
                }
     names = sorted(out_vals.keys())
 
-    event_mgr = events.EventManager(
-            opt, names, [out_types[n] for n in names], psd=segments[0].psd,
-            gating_info=gwstrain.gating_info)
-
     if len(strain_segments.segment_slices) == 0:
         logging.info("--filter-inj-only specified and no injections in analysis time")
+        event_mgr = events.EventManager(
+              opt, names, [out_types[n] for n in names], psd=None,
+              gating_info=gwstrain.gating_info)
         event_mgr.finalize_template_events()
         event_mgr.write_events(opt.output)
         logging.info("Finished")
         sys.exit(0)
+
+    # FIXME: Maybe we should use the PSD corresponding to each trigger
+    event_mgr = events.EventManager(
+            opt, names, [out_types[n] for n in names], psd=segments[0].psd,
+            gating_info=gwstrain.gating_info)
 
     template_mem = zeros(tlen, dtype = complex64)
     cluster_window = int(opt.cluster_window * gwstrain.sample_rate)

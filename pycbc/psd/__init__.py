@@ -368,7 +368,7 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
         num_psd_measurements = 1
         psd_stride = 0
     else:
-        num_psd_measurements = 2 * int((input_data_len-1) / psd_data_len) - 1
+        num_psd_measurements = int(2 * (input_data_len-1) / psd_data_len)
         psd_stride = int((input_data_len - psd_data_len) / num_psd_measurements)
 
     for idx in range(num_psd_measurements):
