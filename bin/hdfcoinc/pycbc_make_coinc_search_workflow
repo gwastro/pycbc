@@ -325,18 +325,18 @@ layout.two_column_layout(rdir['detector_sensitivity'],
 
 # run minifollowups on the output of the loudest events 
 wf.setup_foreground_minifollowups(workflow, final_bg_file,
-                                full_insps,  hdfbank[0], insp_files_seg_file,
-                                data_analysed_name, 'daxes',
-                                rdir['open_box_result/loudest_event_followup'],
-                                tags=final_bg_file.tags)
+                              full_insps,  hdfbank[0], insp_files_seg_file,
+                              data_analysed_name, trig_generated_name, 'daxes',
+                              rdir['open_box_result/loudest_event_followup'],
+                              tags=final_bg_file.tags)
     
 for bin_file in bin_files:
     if hasattr(bin_file, 'bin_name'):
         currdir = rdir['open_box_result/loudest_in_%s_bin' % bin_file.bin_name]
         wf.setup_foreground_minifollowups(workflow, bin_file, full_insps,
                                   hdfbank[0], insp_files_seg_file,
-                                  data_analysed_name, 'daxes', currdir,
-                                  tags=bin_file.tags)
+                                  data_analysed_name, trig_generated_name,
+                                  'daxes', currdir, tags=bin_file.tags)
 
 # Also run minifollowups on loudest sngl detector events
 for insp_file in full_insps:
@@ -344,7 +344,8 @@ for insp_file in full_insps:
     currdir = rdir['single_triggers/%s_loudest_triggers' %(curr_ifo,)]
     wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
                                   insp_files_seg_file, data_analysed_name,
-                                  'daxes', currdir, veto_file=censored_veto,
+                                  trig_generated_name, 'daxes', currdir,
+                                  veto_file=censored_veto,
                                   veto_segment_name='closed_box',
                                   tags=insp_file.tags)
 
@@ -476,8 +477,8 @@ for inj_file, tag in zip(inj_files, inj_tags):
     currdir = rdir['injections/followup_of_missed_%s' % tag]
     wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
                                      insps,  hdfbank[0], insp_files_seg_file,
-                                     data_analysed_name, 'daxes', currdir,
-                                     tags=[tag])
+                                     data_analysed_name, trig_generated_name,
+                                     'daxes', currdir, tags=[tag])
         
 # Make combined injection plots
 inj_summ = []
