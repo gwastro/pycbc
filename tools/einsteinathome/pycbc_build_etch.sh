@@ -647,7 +647,7 @@ elif $build_pegasus_source; then
   tar -czf $p-lib-pegasus-python.tgz $p/lib/pegasus/python $p/release-tools $p/build.properties
   $cleanup && rm -rf $p
 else
-  wget $wget_opts http://atlas3.atlas.aei.uni-hannover.de/~bema/tarballs/$p-lib-pegasus-python.tgz
+  wget $wget_opts http://www.atlas.aei.uni-hannover.de/~bema/tarballs/$p-lib-pegasus-python.tgz
 fi
 echo -e "\\n\\n>> [`date`] building $p"
 tar -xzf $p-lib-pegasus-python.tgz
@@ -737,11 +737,7 @@ else
   # git clone git://github.com/ligo-cbc/pycbc
   git clone git://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/pycbc.git
   cd pycbc
-  if $build_dlls; then
-    git checkout -b einsteinathome_cygwin origin/einsteinathome_cygwin
-  else
-    git checkout -b einsteinathome_etch origin/einsteinathome_etch
-  fi
+  git checkout -b einsteinathome origin/einsteinathome
 fi
 pip install .
 hooks="$PWD/tools/static"
@@ -757,8 +753,8 @@ echo -e "... ENVIRONMENT"
 # from https://cygwin.com/ml/cygwin/2009-12/msg00168.html:
 # /bin/rebase -d -b 0x61000000 -o 0x20000 -v -T <file with list of dll and so files> > rebase.out
 if $build_dlls; then
-  find /home/bema/pycbc/environment -name \*.dll > $PREFIX/dlls.txt
-  rebase -d -b 0x61000000 -o 0x20000 -v -T $PREFIX/dlls.txt
+  find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
+  rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
 fi
 
 # TEST
