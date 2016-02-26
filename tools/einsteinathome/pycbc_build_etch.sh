@@ -49,6 +49,7 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
   build_python=false
   build_lapack=true
   compile_numpy=false
+  patch_scipy=false
   compile_scipy=true
   build_hdf5=true
   build_freetype=true
@@ -71,6 +72,7 @@ else
   build_python=false
   build_lapack=true
   compile_numpy=true
+  patch_scipy=false
   compile_scipy=true
   build_hdf5=false
   build_freetype=false
@@ -265,9 +267,11 @@ else # if pycbc-preinst.tgz
       cd scipy
       git checkout v0.16.0
       git cherry-pick 832baa20f0b5d521bcdf4784dda13695b44bb89f
-      wget $wget_opts https://www.atlas.aei.uni-hannover.de/~bema/PyCBC_Inspiral/0001-E-H-hack-always-use-dumb-shelve.patch
-      wget $wget_opts https://www.atlas.aei.uni-hannover.de/~bema/PyCBC_Inspiral/0006-E-H-hack-_dumbdb-open-files-in-binary-mode.patch
-      git am 000*.patch
+      if $patch_scipy; then
+        wget $wget_opts https://www.atlas.aei.uni-hannover.de/~bema/PyCBC_Inspiral/0001-E-H-hack-always-use-dumb-shelve.patch
+        wget $wget_opts https://www.atlas.aei.uni-hannover.de/~bema/PyCBC_Inspiral/0006-E-H-hack-_dumbdb-open-files-in-binary-mode.patch
+        git am 000*.patch
+      fi
     fi
     python setup.py build --fcompiler=$FC
     python setup.py install --prefix=$PREFIX
