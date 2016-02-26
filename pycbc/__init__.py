@@ -61,6 +61,7 @@ def init_logging(verbose=False):
         initial_level = logging.DEBUG
     else:
         initial_level = logging.WARN
+    logging.getLogger().setLevel(initial_level)
     logging.basicConfig(format='%(asctime)s %(message)s', level=initial_level)
 
 
@@ -101,6 +102,8 @@ PYCBC_ALIGNMENT = 32
 
 DYN_RANGE_FAC =  5.9029581035870565e+20
 
+if os.environ.get("INITIAL_LOG_LEVEL", None):
+    logging.basicConfig(format='%(asctime)s %(message)s', level=int(os.environ["INITIAL_LOG_LEVEL"]))
 
 # Make sure we use a user specific, machine specific compiled cache location
 _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
@@ -114,8 +117,12 @@ _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name)
 # of all the arguments to weave.
 _cache_dir_path = os.path.join(_cache_dir_path, pycbc_version)
 _cache_dir_path = os.path.join(_cache_dir_path, git_hash)
-try: os.makedirs(_cache_dir_path)
-except OSError: pass
+if os.environ.get("NO_TMPDIR", None):
+    print >>sys.stderr, "__init__: Skipped creating %s as NO_TEMPDIR is set" % _cache_dir_path
+else:
+    try: os.makedirs(_cache_dir_path)
+    except OSError: pass
+    print >>sys.stderr, "__init__: Setting weave cache to %s" % _cache_dir_path
 os.environ['PYTHONCOMPILED'] = _cache_dir_path
 
 # Check for MKL capability

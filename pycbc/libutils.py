@@ -81,6 +81,12 @@ def pkg_config_libdirs(packages):
     that the package may be found in the standard system locations, irrespective of
     pkg-config.
     """
+
+    # don't try calling pkg-config if NO_PKGCONFIG is set in environment
+    if os.environ.get("NO_PKGCONFIG", None):
+        print >>sys.stderr, "libutils: skip calling pkg-config as NO_PKGCONFIG is set"
+        return []
+
     # First, check that we can call pkg-config on each package in the list
     for pkg in packages:
         if not pkg_config_check_exists(pkg):
