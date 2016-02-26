@@ -61,8 +61,7 @@ def init_logging(verbose=False):
         initial_level = logging.DEBUG
     else:
         initial_level = logging.WARN
-    logging.getLogger().setLevel(initial_level)
-    # logging.basicConfig(format='%(asctime)s %(message)s', level=initial_level)
+    logging.basicConfig(format='%(asctime)s %(message)s', level=initial_level)
 
 
 # Check for optional components of the PyCBC Package
@@ -102,7 +101,7 @@ PYCBC_ALIGNMENT = 32
 
 DYN_RANGE_FAC =  5.9029581035870565e+20
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
+
 # Make sure we use a user specific, machine specific compiled cache location
 _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
 _tmp_dir = tempfile.gettempdir()
@@ -116,11 +115,11 @@ _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name)
 _cache_dir_path = os.path.join(_cache_dir_path, pycbc_version)
 _cache_dir_path = os.path.join(_cache_dir_path, git_hash)
 if os.environ.get("NO_TMPDIR", None):
-    logging.debug("__init__: Skip creating %s due to NO_TEMPDIR" % _cache_dir_path)
+    print >>sys.stderr, "__init__: Skipped creating %s as NO_TEMPDIR is set" % _cache_dir_path
 else:
     try: os.makedirs(_cache_dir_path)
     except OSError: pass
-    logging.debug("__init__: Setting weave cache to %s" % _cache_dir_path)
+    print >>sys.stderr, "__init__: Setting weave cache to %s" % _cache_dir_path
 os.environ['PYTHONCOMPILED'] = _cache_dir_path
 
 # Check for MKL capability
@@ -131,6 +130,7 @@ except ImportError as e:
     print e
     HAVE_MKL=False
     
+
 # Check for site-local flags to pass to gcc
 WEAVE_FLAGS = ''
 DEFAULT_WEAVE_FLAGS = '-march=native -O3 -w'
@@ -144,7 +144,6 @@ if '-march=' in WEAVE_FLAGS:
 def multiprocess_cache_dir():
     import multiprocessing
     cache_dir =  os.path.join(_cache_dir_path,  str(id(multiprocessing.current_process())))
-    logging.debug("multiprocess_cache_dir(): Setting weave cache to %s" % cache_dir)
     os.environ['PYTHONCOMPILED'] = cache_dir
     try: os.makedirs(cache_dir)
     except OSError: pass

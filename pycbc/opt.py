@@ -28,7 +28,7 @@ _USE_SUBPROCESS = False
 HAVE_GETCONF = False
 if os.environ.get("NO_GETCONF", None) != None:
     # don't try getconf if NO_GETCONF is set in environment
-    logging.info("skipping getconf for NO_GETCONF")
+    print >>sys.stderr, "opt: skip calling getconf as NO_GETCONF is set"
     HAVE_GETCONF = False
 elif sys.platform == 'darwin':
     # Mac has getconf, but we can do nothing useful with it
@@ -106,7 +106,7 @@ simd_intel_intrin_support = """
 
 if os.environ.get("LEVEL2_CACHE_SIZE", None) != None:
     LEVEL2_CACHE_SIZE = int(os.environ["LEVEL2_CACHE_SIZE"])
-    logging.info("using LEVEL2_CACHE_SIZE from environment %d" % LEVEL2_CACHE_SIZE)
+    logging.info("opt: using LEVEL2_CACHE_SIZE %d from environment" % LEVEL2_CACHE_SIZE)
 elif HAVE_GETCONF:
     if _USE_SUBPROCESS:
         def getconf(confvar):

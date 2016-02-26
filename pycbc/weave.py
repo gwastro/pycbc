@@ -57,7 +57,7 @@ def insert_weave_option_group(parser):
     optimization_group.add_argument("--fixed-weave-cache",
                     action="store_true",
                     default=False,
-                    help="If given, use fixed directory PWD/pythoncompiled for "
+                    help="If given, use fixed directory PWD/pycbc_inspiral for "
                          " the weave cache")
 
 def _clear_weave_cache():
@@ -89,7 +89,7 @@ def verify_weave_options(opt, parser):
     if opt.fixed_weave_cache:
         cache_dir = os.path.join(os.getcwd(),"pycbc_inspiral")
         os.environ['PYTHONCOMPILED'] = cache_dir
-        logging.debug("verify_weave_options(fixed_weave_cache): Setting weave cache to %s" % cache_dir)
+        logging.debug("fixed_weave_cache: Setting weave cache to %s" % cache_dir)
         sys.path = [cache_dir] + sys.path
         try: os.makedirs(cache_dir)
         except OSError: pass
@@ -98,7 +98,7 @@ def verify_weave_options(opt, parser):
     if opt.per_process_weave_cache:
         cache_dir = os.path.join(cache_dir, str(os.getpid()))
         os.environ['PYTHONCOMPILED'] = cache_dir
-        logging.debug("verify_weave_options(per_process_weave_cache): Setting weave cache to %s" % cache_dir)
+        logging.info("Setting weave cache to %s" % cache_dir)
 
     if not os.path.exists(cache_dir):
         try:
