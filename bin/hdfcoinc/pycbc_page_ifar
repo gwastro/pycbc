@@ -180,7 +180,7 @@ if opts.open_box and len(fore_cumnum) > 100:
     # If we have > 100 foreground triggers, scale the plot around the foreground
     pylab.ylim(0.8, 1.1 * len(fore_cumnum))
     pylab.xlim(0.9 * min(fore_ifar))
-else:
+elif len(allbkg_cumnum) > 0:
     # If we have < 100 foreground triggers (or this is closed box), scale the
     # plot around the cumulative background (the green line).
     pylab.ylim(0.8, 1.1 * len(allbkg_cumnum))
