@@ -19,7 +19,7 @@ The goals of the PyCBC project are to:
 PyCBC Contributors
 ===========================
 
-Stanislav Babak (1), Christopher M. Biwer (2), Duncan Brown (2), Collin Capano (3), Tito Dal Canton (4), Gergely Debreczeni (5), Thomas Dent (4), Steve Fairhurst (10), Henning Fehrmann (4), Ian Harry (1,2), Marcel Kehl (11), Drew Keppel (4), Badri Krishnan (4), Prayush Kumar (2,11), Amber Lenon (2), Andrew Lundgren (4), Duncan Macleod (6), Thomas Massinger (2), Adam Mercer (7), Andrew Miller (8), Saeed Mirshekari (9), Alex Nitz (1,2), Laura Nuttall (2), Francesco Pannarale (10), Harald Pfeiffer (11), Samantha Usman (2), Karsten Wiesner (4), Andrew Williamson (10), Josh Willis (8).
+Stanislav Babak (1), Christopher M. Biwer (2), Duncan Brown (2), Collin Capano (3), Tito Dal Canton (4), Gergely Debreczeni (5), Thomas Dent (4), Steve Fairhurst (10), Henning Fehrmann (4), Ian Harry (1,2), Marcel Kehl (11), Drew Keppel (4), Badri Krishnan (4), Prayush Kumar (2,11), Amber Lenon (2), Andrew Lundgren (4), Duncan Macleod (6), Thomas Massinger (2), Adam Mercer (7), Andrew Miller (8), Saeed Mirshekari (9), Alex Nitz (1,2), Laura Nuttall (2), Francesco Pannarale (10), Larne Pekowsky (2), Harald Pfeiffer (11), Samantha Usman (2), Karsten Wiesner (4), Andrew Williamson (10), Josh Willis (8).
 
 #. AEI, Golm, Germany
 #. Syracuse University, NY, USA

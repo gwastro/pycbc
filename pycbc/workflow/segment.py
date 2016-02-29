@@ -33,34 +33,310 @@ import urllib2, urlparse
 import lal
 from glue import segments, segmentsUtils
 from glue.ligolw import utils, table, lsctables, ligolw
-from pycbc.workflow.core import Executable, FileList, Node, OutSegFile, make_analysis_dir, make_external_call, File
+from pycbc.workflow.core import Executable, FileList, Node, SegFile, make_analysis_dir, make_external_call, File
 from pycbc.workflow.core import resolve_url
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigoLWCombineSegsExecutable
 
-class ContentHandler(ligolw.LIGOLWContentHandler):
-    pass
+def get_science_segments(workflow, out_dir, tags=None):
+    """
+    Get the analyzable segments after applying ini specified vetoes.
 
-lsctables.use_in(ContentHandler)
+    Parameters
+    -----------
+    workflow : Workflow object
+        Instance of the workflow object
+    out_dir : path
+        Location to store output files
+    tags : list of strings
+        Used to retrieve subsections of the ini file for
+        configuration options.
 
-# This variable is global to this module and is used to tell the code when to
-# regenerate files. NOTE: This only applies to files generated during run-time
-# within this module. For files generated within the workflow use the standard
-# pegasus reuse facility if you need it. NOTE: It is recommended for most
-# applications to use the default option and regenerate all segment files at
-# runtime. Only use this facility if you need it
-# Options are:
-# generate_segment_files='always' : DEFAULT: All files will be generated
-#                                     even if they already exist.
-# generate_segment_files='if_not_present': Files will be generated if they do
-#                                   not already exist. Pre-existing files will
-#                                   be read in and used.
-# generate_segment_files='error_on_duplicate': Files will be generated if they
-#                                   do not already exist. Pre-existing files
-#                                   will raise a failure.
-# generate_segment_files='never': Pre-existing files will be read in and used.
-#                                 If no file exists the code will fail.
-global generate_segment_files
-generate_segment_files='always'
+    Returns
+    --------
+    sci_seg_file : workflow.core.SegFile instance
+        The segment file combined from all ifos containing the science segments.
+    sci_segs : Ifo keyed dict of glue.segments.segmentlist instances
+        The science segs for each ifo, keyed by ifo
+    sci_seg_name : str
+        The name with which science segs are stored in the output XML file.
+    """
+    if tags is None:
+        tags = []
+    logging.info('Starting generation of science segments')
+
+    make_analysis_dir(out_dir)
+    start_time = workflow.analysis_time[0]
+    end_time = workflow.analysis_time[1]
+
+    # NOTE: Should this be overrideable in the config file?
+    sci_seg_name = "SCIENCE"
+    sci_segs = {}
+    sci_seg_dict = segments.segmentlistdict()
+    sci_seg_summ_dict = segments.segmentlistdict()
+
+    for ifo in workflow.ifos:
+        curr_sci_segs, curr_sci_xml, curr_seg_name = get_sci_segs_for_ifo(ifo,
+                              workflow.cp, start_time, end_time, out_dir, tags)
+        sci_seg_dict[ifo + ':' + sci_seg_name] = curr_sci_segs
+        sci_segs[ifo] = curr_sci_segs
+        sci_seg_summ_dict[ifo + ':' + sci_seg_name] = \
+                          curr_sci_xml.seg_summ_dict[ifo + ':' + curr_seg_name]
+    sci_seg_file = SegFile.from_segment_list_dict(sci_seg_name,
+                                          sci_seg_dict, extension='xml',
+                                          valid_segment=workflow.analysis_time,
+                                          seg_summ_dict=sci_seg_summ_dict,
+                                          directory=out_dir, tags=tags)
+    logging.info('Done generating science segments')
+    return sci_seg_file, sci_segs, sci_seg_name
+
+def get_files_for_vetoes(workflow, out_dir,
+                         runtime_names=None, in_workflow_names=None, tags=None):
+    """
+    Get the various sets of veto segments that will be used in this analysis.
+
+    Parameters
+    -----------
+    workflow : Workflow object
+        Instance of the workflow object
+    out_dir : path
+        Location to store output files
+    runtime_names : list
+        Veto category groups with these names in the [workflow-segment] section
+        of the ini file will be generated now.
+    in_workflow_names : list
+        Veto category groups with these names in the [workflow-segment] section
+        of the ini file will be generated in the workflow. If a veto category
+        appears here and in runtime_names, it will be generated now.
+    tags : list of strings
+        Used to retrieve subsections of the ini file for
+        configuration options.
+
+    Returns
+    --------
+    veto_seg_files : FileList
+        List of veto segment files generated
+    """
+    if tags is None:
+        tags = []
+    if runtime_names is None:
+        runtime_names = []
+    if in_workflow_names is None:
+        in_workflow_names = []
+    logging.info('Starting generating veto files for analysis')
+    make_analysis_dir(out_dir)
+    start_time = workflow.analysis_time[0]
+    end_time = workflow.analysis_time[1]
+    save_veto_definer(workflow.cp, out_dir, tags)
+
+    now_cat_sets = []
+    for name in runtime_names:
+        cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags(
+                                              'workflow-segments', name, tags))
+        now_cat_sets.extend(cat_sets)
+
+    now_cats = set()
+    for cset in now_cat_sets:
+        now_cats = now_cats.union(cset)
+
+    later_cat_sets = []
+    for name in in_workflow_names:
+        cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags(
+                                              'workflow-segments', name, tags))
+        later_cat_sets.extend(cat_sets)
+
+    later_cats = set()
+    for cset in later_cat_sets:
+        later_cats = later_cats.union(cset)
+        # Avoid duplication
+        later_cats = later_cats - now_cats
+
+    veto_gen_job = create_segs_from_cats_job(workflow.cp, out_dir,
+                                             workflow.ifo_string, tags=tags)
+
+    cat_files = FileList()
+    for ifo in workflow.ifos:
+        for category in now_cats:
+            cat_files.append(get_veto_segs(workflow, ifo,
+                                        cat_to_veto_def_cat(category),
+                                        start_time, end_time, out_dir,
+                                        veto_gen_job, execute_now=True,
+                                        tags=tags))
+
+        for category in later_cats:
+            cat_files.append(get_veto_segs(workflow, ifo,
+                                        cat_to_veto_def_cat(category),
+                                        start_time, end_time, out_dir,
+                                        veto_gen_job, tags=tags,
+                                        execute_now=False))
+
+    logging.info('Done generating veto segments')
+    return cat_files
+
+def get_analyzable_segments(workflow, sci_segs, cat_files, out_dir, tags=None):
+    """
+    Get the analyzable segments after applying ini specified vetoes and any
+    other restrictions on the science segs, e.g. a minimum segment length, or
+    demanding that only coincident segments are analysed.
+
+    Parameters
+    -----------
+    workflow : Workflow object
+        Instance of the workflow object
+    sci_segs : Ifo-keyed dictionary of glue.segmentlists
+        The science segments for each ifo to which the vetoes, or any other
+        restriction, will be applied.
+    cat_files : FileList of SegFiles
+        The category veto files generated by get_veto_segs
+    out_dir : path
+        Location to store output files
+    tags : list of strings
+        Used to retrieve subsections of the ini file for
+        configuration options.
+
+    Returns
+    --------
+    sci_ok_seg_file : workflow.core.SegFile instance
+        The segment file combined from all ifos containing the analyzable
+        science segments.
+    sci_ok_segs : Ifo keyed dict of glue.segments.segmentlist instances
+        The analyzable science segs for each ifo, keyed by ifo
+    sci_ok_seg_name : str
+        The name with which analyzable science segs are stored in the output
+        XML file.
+    """
+    if tags is None:
+        tags = []
+    logging.info('Starting reducing to analysable science segments')
+
+    make_analysis_dir(out_dir)
+    # NOTE: Should this be overrideable in the config file?
+    sci_ok_seg_name = "SCIENCE_OK"
+    sci_ok_seg_dict = segments.segmentlistdict()
+    sci_ok_segs = {}
+
+    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-segments',
+                                                'segments-science-veto', tags))
+    if len(cat_sets) > 1:
+        raise ValueError('Provide only 1 category group to determine'
+                         ' analyzable segments')
+    cat_set = cat_sets[0]
+
+    for ifo in workflow.ifos:
+        curr_segs = copy.copy(sci_segs[ifo])
+        files = cat_files.find_output_with_ifo(ifo)
+        for category in cat_set:
+            veto_def_cat = cat_to_veto_def_cat(category)
+            file_list = files.find_output_with_tag('VETO_CAT%d' %(veto_def_cat))
+            if len(file_list) > 1:
+                err_msg = "Found more than one veto file for %s " %(ifo,)
+                err_msg += "and category %s." %(category,)
+                raise ValueError(err_msg)
+            if len(file_list) == 0:
+                err_msg = "Found no veto files for %s " %(ifo,)
+                err_msg += "and category %s." %(category,)
+                raise ValueError(err_msg)
+            curr_veto_file = file_list[0]
+            cat_segs = curr_veto_file.return_union_seglist()
+            curr_segs -= cat_segs
+            curr_segs.coalesce()
+        sci_ok_seg_dict[ifo + ':' + sci_ok_seg_name] = curr_segs
+
+    sci_ok_seg_file = SegFile.from_segment_list_dict(sci_ok_seg_name,
+                                          sci_ok_seg_dict, extension='xml',
+                                          valid_segment=workflow.analysis_time,
+                                          directory=out_dir, tags=tags)
+
+
+    if workflow.cp.has_option_tags("workflow-segments",
+                          "segments-minimum-segment-length", tags):
+        min_seg_length = int( workflow.cp.get_opt_tags("workflow-segments",
+                              "segments-minimum-segment-length", tags) )
+        sci_ok_seg_file.remove_short_sci_segs(min_seg_length)
+
+    # FIXME: Another test we can do is limit to coinc time +/- some window
+    #        this should *not* be set through segments-method, but currently
+    #        is not implemented
+    #segments_method = workflow.cp.get_opt_tags("workflow-segments",
+    #                                  "segments-method", tags)
+    #if segments_method == 'ALL_SINGLE_IFO_TIME':
+    #    pass
+    #elif segments_method == 'COINC_TIME':
+    #    cum_segs = None
+    #    for ifo in sci_segs:
+    #        if cum_segs is not None:
+    #            cum_segs = (cum_segs & sci_segs[ifo]).coalesce()
+    #        else:
+    #            cum_segs = sci_segs[ifo]
+    #
+    #    for ifo in sci_segs:
+    #        sci_segs[ifo] = cum_segs
+    #else:
+    #    raise ValueError("Invalid segments-method, %s. Options are "
+    #                     "ALL_SINGLE_IFO_TIME and COINC_TIME" % segments_method)
+
+    for ifo in workflow.ifos:
+        sci_ok_segs[ifo] = \
+                      sci_ok_seg_file.segment_dict[ifo + ':' + sci_ok_seg_name]
+
+    logging.info('Done generating analyzable science segments')
+    return sci_ok_seg_file, sci_ok_segs, sci_ok_seg_name
+
+
+def get_cumulative_veto_group_files(workflow, option, cat_files,
+                                    out_dir, execute_now=True, tags=None):
+    """
+    Get the cumulative veto files that define the different backgrounds 
+    we want to analyze, defined by groups of vetos.
+
+    Parameters
+    -----------
+    workflow : Workflow object
+        Instance of the workflow object
+    option : str
+        ini file option to use to get the veto groups
+    cat_files : FileList of SegFiles
+        The category veto files generated by get_veto_segs
+    out_dir : path
+        Location to store output files
+    execute_now : Boolean
+        If true outputs are generated at runtime. Else jobs go into the workflow
+        and are generated then.
+    tags : list of strings
+        Used to retrieve subsections of the ini file for
+        configuration options.
+
+    Returns
+    --------
+    seg_files : workflow.core.FileList instance
+        The cumulative segment files for each veto group.   
+    names : list of strings
+        The segment names for the corresponding seg_file
+    cat_files : workflow.core.FileList instance
+        The list of individual category veto files
+    """
+    if tags is None:
+        tags = []
+    logging.info("Starting generating vetoes for groups in %s" %(option))
+    make_analysis_dir(out_dir)
+
+    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-segments',
+                                            option, tags))
+
+    cum_seg_files = FileList()
+    names = []
+    for cat_set in cat_sets:
+        segment_name = "CUMULATIVE_CAT_%s" % (''.join(sorted(cat_set)))
+        logging.info('getting information for %s' % segment_name)
+        categories = [cat_to_veto_def_cat(c) for c in cat_set]
+
+        cum_seg_files += [get_cumulative_segs(workflow, categories, cat_files,
+                          out_dir, execute_now=execute_now,
+                          segment_name=segment_name, tags=tags)]
+        names.append(segment_name)
+
+    logging.info("Done generating vetoes for groups in %s" %(option))
+
+    return cum_seg_files, names, cat_files
 
 def setup_segment_generation(workflow, out_dir, tag=None):
     """
@@ -155,13 +431,6 @@ def setup_segment_generation(workflow, out_dir, tag=None):
         msg += "expected value. Valid values are AT_RUNTIME, CAT4_PLUS_DAG, "
         msg += "CAT2_PLUS_DAG or CAT3_PLUS_DAG."
         raise ValueError(msg)
-
-    global generate_segment_files
-    if cp.has_option_tags("workflow-segments",
-                          "segments-generate-segment-files", [tag]):
-        value = cp.get_opt_tags("workflow-segments", 
-                                   "segments-generate-segment-files", [tag])
-        generate_segment_files = value
 
     logging.info("Generating segments with setup_segment_gen_mixed")
     segFilesList = setup_segment_gen_mixed(workflow, veto_categories, 
@@ -259,8 +528,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
     
     for ifo in workflow.ifos:
         logging.info("Generating science segments for ifo %s" %(ifo))
-        currSciSegs, currSciXmlFile = get_science_segments(ifo, cp, start_time,
-                                                    end_time, out_dir, tag=tag)
+        currSciSegs, currSciXmlFile, _ = get_sci_segs_for_ifo(ifo, cp,
+                                        start_time, end_time, out_dir, tag=tag)
         segFilesList.append(currSciXmlFile)
 
         for category in veto_categories:
@@ -283,12 +552,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
             segFilesList.append(currVetoXmlFile) 
             # Store the CAT_1 veto segs for use below
             if category == 1:
-                # Yes its yucky to generate a file and then read it back in. 
-                #This will be
-                # fixed when the new API for segment generation is ready.
-                vetoXmlFP = open(currVetoXmlFile.storage_path, 'r')
-                cat1Segs = fromsegmentxml(vetoXmlFP)
-                vetoXmlFP.close()
+                cat1Segs = currVetoXmlFile.return_union_seglist()
                 
         analysedSegs = currSciSegs - cat1Segs
         analysedSegs.coalesce()
@@ -300,9 +564,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
             currTags = [tag, 'SCIENCE_OK']
         else:
             currTags = ['SCIENCE_OK']
-        currFile = OutSegFile(ifo, 'SEGMENTS',
-                              segValidSeg, currUrl, segment_list=analysedSegs,
-                              tags = currTags)
+        currFile = SegFile(ifo, 'SEGMENTS', segValidSeg, file_url=currUrl,
+                              segment_list=analysedSegs, tags=currTags)
         segFilesList.append(currFile)
         currFile.toSegmentXml()
 
@@ -317,17 +580,10 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
             categories.append(category)
             # Set file name in workflow standard
             if tag:
-                currTags = [tag, 'CUMULATIVE_CAT_%d' %(category)]
+                currTags = [tag]
             else:
-                currTags = ['CUMULATIVE_CAT_%d' %(category)]
+                currTags = []
 
-            cumulativeVetoFile = os.path.join(out_dir,
-                                   '%s-CUMULATIVE_CAT_%d_VETO_SEGMENTS.xml' \
-                                   %(ifo_string, category) )
-            currUrl = urlparse.urlunparse(['file', 'localhost',
-                                         cumulativeVetoFile, None, None, None])
-            currSegFile = OutSegFile(ifo_string, 'SEGMENTS',
-                                   segValidSeg, currUrl, tags=currTags)
             # And actually make the file (or queue it in the workflow)
             logging.info("Generating combined, cumulative CAT_%d segments."\
                              %(category))
@@ -335,9 +591,9 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
                 execute_status = True
             else:
                 execute_status = False
-            get_cumulative_segs(workflow, currSegFile,  categories,
+            currSegFile = get_cumulative_segs(workflow, categories,
                                 segFilesList, out_dir, 
-                                execute_now=execute_status)
+                                execute_now=execute_status, tags=currTags)
 
             segFilesList.append(currSegFile)
             cum_cat_files.append(currSegFile)
@@ -353,8 +609,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
                                %(ifo_string) )
         curr_url = urlparse.urlunparse(['file', 'localhost',
                                        combined_veto_file, None, None, None])
-        curr_file = OutSegFile(ifo_string, 'SEGMENTS',
-                               segValidSeg, curr_url, tags=currTags)
+        curr_file = SegFile(ifo_string, 'SEGMENTS', segValidSeg,
+                            file_url=curr_url, tags=currTags)
 
         for category in veto_categories:
             if category <= maxVetoAtRunTime:
@@ -368,11 +624,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
 
     return segFilesList
 
-#FIXME: Everything below here uses the S6 segment architecture. This is going
-# to be replaced in aLIGO with a new architecture. When this is done all of
-# the code that follows will need to be replaced with the new version.
-
-def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
+def get_sci_segs_for_ifo(ifo, cp, start_time, end_time, out_dir, tags=None):
     """
     Obtain science segments for the selected ifo
 
@@ -389,61 +641,68 @@ def get_science_segments(ifo, cp, start_time, end_time, out_dir, tag=None):
     tag : string, optional (default=None)
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
-        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the Files returned by the class to uniqueify
+        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+        This is also used to tag the Files returned by the class to uniqueify
         the Files and uniqueify the actual filename.
 
     Returns
     --------
-    sciSegs : glue.segments.segmentlist
+    sci_segs : glue.segments.segmentlist
         The segmentlist generated by this call
-    sciXmlFile : pycbc.workflow.core.OutSegFile
+    sci_xml_file : pycbc.workflow.core.SegFile
         The workflow File object corresponding to this science segments file.
+    out_sci_seg_name : string
+        The name of the output segment list in the output XML file.
 
     """
-    segValidSeg = segments.segment([start_time,end_time])
-    sciSegName = cp.get_opt_tags(
-        "workflow-segments", "segments-%s-science-name" %(ifo.lower()), [tag])
-    sciSegUrl = cp.get_opt_tags(
-        "workflow-segments", "segments-database-url", [tag])
-    if tag:
-        sciXmlFilePath = os.path.join(
-            out_dir, "%s-SCIENCE_SEGMENTS_%s.xml" %(ifo.upper(), tag) )
-        tagList=[tag, 'SCIENCE']
+    if tags is None:
+        tags = []
+    seg_valid_seg = segments.segment([start_time,end_time])
+    sci_seg_name = cp.get_opt_tags(
+        "workflow-segments", "segments-%s-science-name" %(ifo.lower()), tags)
+    sci_seg_url = cp.get_opt_tags(
+        "workflow-segments", "segments-database-url", tags)
+    # NOTE: ligolw_segment_query returns slightly strange output. The output
+    #       segment list is put in with name "RESULT". So this is hardcoded here
+    out_sci_seg_name = "RESULT"
+    if tags:
+        sci_xml_file_path = os.path.join(
+            out_dir, "%s-SCIENCE_SEGMENTS_%s.xml" \
+                     %(ifo.upper(), '_'.join(tags)))
+        tag_list=tags + ['SCIENCE']
     else:
-        sciXmlFilePath = os.path.join(
+        sci_xml_file_path = os.path.join(
             out_dir, "%s-SCIENCE_SEGMENTS.xml" %(ifo.upper()) )
-        tagList = ['SCIENCE']
+        tag_list = ['SCIENCE']
 
-    if file_needs_generating(sciXmlFilePath):
-        segFindCall = [ resolve_url(cp.get("executables","segment_query"),
+    if file_needs_generating(sci_xml_file_path, cp, tags=tags):
+        seg_find_call = [ resolve_url(cp.get("executables","segment_query"),
                 permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR),
             "--query-segments",
-            "--segment-url", sciSegUrl,
+            "--segment-url", sci_seg_url,
             "--gps-start-time", str(start_time),
             "--gps-end-time", str(end_time),
-            "--include-segments", sciSegName,
-            "--output-file", sciXmlFilePath ]
+            "--include-segments", sci_seg_name,
+            "--output-file", sci_xml_file_path ]
    
-        make_external_call(segFindCall, out_dir=os.path.join(out_dir,'logs'),
+        make_external_call(seg_find_call, out_dir=os.path.join(out_dir,'logs'),
                                 out_basename='%s-science-call' %(ifo.lower()) )
 
-    # Yes its yucky to generate a file and then read it back in. This will be
-    # fixed when the new API for segment generation is ready.
-    sciXmlFP = open(sciXmlFilePath,'r')
-    sciXmlFilePath = os.path.abspath(sciXmlFilePath)
-    sciSegs = fromsegmentxml(sciXmlFP)
-    sciXmlFP.close()
-    currUrl = urlparse.urlunparse(['file', 'localhost', sciXmlFilePath,
-                                   None, None, None])
-    sciXmlFile = OutSegFile(ifo, 'SEGMENTS',
-                                  segValidSeg, currUrl, segment_list=sciSegs,
-                                  tags=tagList)
-    sciXmlFile.PFN(sciXmlFilePath, site='local')
-    return sciSegs, sciXmlFile
+    # Yes its yucky to generate a file and then read it back in.
+    sci_xml_file_path = os.path.abspath(sci_xml_file_path)
+    sci_xml_file = SegFile.from_segment_xml(sci_xml_file_path, tags=tag_list,
+                                        valid_segment=seg_valid_seg)
+    # NOTE: ligolw_segment_query returns slightly strange output. The output
+    #       segment_summary output does not use RESULT. Therefore move the
+    #       segment_summary across.
+    sci_xml_file.seg_summ_dict[ifo.upper() + ":" + out_sci_seg_name] = \
+             sci_xml_file.seg_summ_dict[':'.join(sci_seg_name.split(':')[0:2])]
+
+    sci_segs = sci_xml_file.return_union_seglist()
+    return sci_segs, sci_xml_file, out_sci_seg_name
 
 def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir, 
-                  vetoGenJob, tag=None, execute_now=False):
+                  veto_gen_job, tags=None, execute_now=False):
     """
     Obtain veto segments for the selected ifo and veto category and add the job
     to generate this to the workflow.
@@ -467,8 +726,8 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
     tag : string, optional (default=None)
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
-        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the Files returned by the class to uniqueify
+        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+        This is also used to tag the Files returned by the class to uniqueify
         the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
     execute_now : boolean, optional
@@ -477,42 +736,57 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
 
     Returns
     --------
-    veto_def_file : pycbc.workflow.core.OutSegFile
+    veto_def_file : pycbc.workflow.core.SegFile
         The workflow File object corresponding to this DQ veto file.
     """
-    segValidSeg = segments.segment([start_time,end_time])
-    node = Node(vetoGenJob)
+    if tags is None:
+        tags = []
+    seg_valid_seg = segments.segment([start_time,end_time])
+    # FIXME: This job needs an internet connection and X509_USER_PROXY
+    #        For internet connection, it may need a headnode (ie universe local)
+    #        For X509_USER_PROXY, I don't know what pegasus is doing
+    node = Node(veto_gen_job)
     node.add_opt('--veto-categories', str(category))
     node.add_opt('--ifo-list', ifo)
     node.add_opt('--gps-start-time', str(start_time))
     node.add_opt('--gps-end-time', str(end_time))
-    vetoXmlFileName = "%s-VETOTIME_CAT%d-%d-%d.xml" \
+    if tags:
+        veto_xml_file_name = "%s-VETOTIME_CAT%d_%s-%d-%d.xml" \
+                               %(ifo, category, '_'.join(tags), start_time,
+                                 end_time-start_time)
+    else:
+        veto_xml_file_name = "%s-VETOTIME_CAT%d-%d-%d.xml" \
                          %(ifo, category, start_time, end_time-start_time)
-    vetoXmlFilePath = os.path.abspath(os.path.join(out_dir, vetoXmlFileName))
-    currUrl = urlparse.urlunparse(['file', 'localhost',
-                                   vetoXmlFilePath, None, None, None])
-    if tag:
-        currTags = [tag, 'VETO_CAT%d' %(category)]
+    veto_xml_file_path = os.path.abspath(os.path.join(out_dir,
+                                         veto_xml_file_name))
+    curr_url = urlparse.urlunparse(['file', 'localhost',
+                                   veto_xml_file_path, None, None, None])
+    if tags:
+        curr_tags = tags + ['VETO_CAT%d' %(category)]
     else:
-        currTags = ['VETO_CAT%d' %(category)]
+        curr_tags = ['VETO_CAT%d' %(category)]
 
-    vetoXmlFile = OutSegFile(ifo, 'SEGMENTS', segValidSeg, currUrl,
-                                  tags=currTags)
-    node._add_output(vetoXmlFile)
-    
-    if execute_now:
-        if file_needs_generating(vetoXmlFile.cache_entry.path):
-            workflow.execute_node(node)
+    if file_needs_generating(veto_xml_file_path, workflow.cp, tags=tags):
+        if execute_now:
+            workflow.execute_node(node, verbatim_exe = True)
+            veto_xml_file = SegFile.from_segment_xml(veto_xml_file_path,
+                                                 tags=curr_tags,
+                                                 valid_segment=seg_valid_seg)
         else:
-            node.executed = True
-            for fil in node._outputs:
-                fil.node = None
-                fil.PFN(fil.storage_path, site='local')
+            veto_xml_file = SegFile(ifo, 'SEGMENTS', seg_valid_seg,
+                                    file_url=curr_url, tags=curr_tags)
+            node._add_output(veto_xml_file)
+            workflow.add_node(node)
     else:
-        workflow.add_node(node)
-    return vetoXmlFile
+        node.executed = True
+        for fil in node._outputs:
+            fil.node = None
+        veto_xml_file = SegFile.from_segment_xml(veto_xml_file_path,
+                                                 tags=curr_tags,
+                                                 valid_segment=seg_valid_seg)
+    return veto_xml_file
 
-def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
+def create_segs_from_cats_job(cp, out_dir, ifo_string, tags=None):
     """
     This function creates the CondorDAGJob that will be used to run 
     ligolw_segments_from_cats as part of the workflow
@@ -525,11 +799,11 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
         Directory in which to put output files
     ifo_string : string
         String containing all active ifos, ie. "H1L1V1"
-    tag : string, optional (default=None)
-        Use this to specify a tag. This can be used if this module is being
+    tag : list of strings, optional (default=None)
+        Use this to specify a tag(s). This can be used if this module is being
         called more than once to give call specific configuration (by setting
-        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]). This
-        is also used to tag the Files returned by the class to uniqueify
+        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+        This is also used to tag the Files returned by the class to uniqueify
         the Files and uniqueify the actual filename.
         FIXME: Filenames may not be unique with current codes!
 
@@ -538,29 +812,27 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tag=None):
     job : Job instance
         The Job instance that will run segments_from_cats jobs
     """
-    segServerUrl = cp.get_opt_tags("workflow-segments", 
-                                   "segments-database-url", [tag])
-    vetoDefFile = cp.get_opt_tags("workflow-segments", 
-                                  "segments-veto-definer-file", [tag])
+    if tags is None:
+        tags = []
 
-    if tag:
-        currTags = [tag]
-    else:
-        currTags = []
+    seg_server_url = cp.get_opt_tags("workflow-segments", 
+                                   "segments-database-url", tags)
+    veto_def_file = cp.get_opt_tags("workflow-segments", 
+                                  "segments-veto-definer-file", tags)
+
     job = Executable(cp, 'segments_from_cats', universe='local',
-                               ifos=ifo_string, out_dir=out_dir, tags=currTags)
+                               ifos=ifo_string, out_dir=out_dir, tags=tags)
     job.add_opt('--separate-categories')
-    job.add_opt('--segment-url', segServerUrl)
+    job.add_opt('--segment-url', seg_server_url)
     
-    job.add_opt('--veto-file', vetoDefFile)
+    job.add_opt('--veto-file', veto_def_file)
     # FIXME: Would like the proxy in the Workflow instance
     # FIXME: Explore using the x509 condor commands
     # If the user has a proxy set in the environment, add it to the job
     return job
     
-def get_cumulative_segs(workflow, currSegFile, categories,
-                                   segFilesList, out_dir, tags=[],
-                                   execute_now=False, segment_name=None):
+def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
+                        tags=None, execute_now=False, segment_name=None):
     """
     Function to generate one of the cumulative, multi-detector segment files
     as part of the workflow.
@@ -569,11 +841,9 @@ def get_cumulative_segs(workflow, currSegFile, categories,
     -----------
     workflow: pycbc.workflow.core.Workflow
         An instance of the Workflow class that manages the workflow.
-    currSegFile : pycbc.workflow.core.SegFile
-        The SegFile corresponding to this file that will be created.
     categories : int
         The veto categories to include in this cumulative veto.
-    segFilesList : Listionary of SegFiles
+    seg_files_list : Listionary of SegFiles
         The list of segment files to be used as input for combining.
     out_dir : path
         The directory to write output to.
@@ -582,50 +852,60 @@ def get_cumulative_segs(workflow, currSegFile, categories,
     execute_now : boolean, optional
         If true, jobs are executed immediately. If false, they are added to the
         workflow to be run later.
+    segment_name : str
+        The name of the combined, cumulative segments in the output file.
     """
+    if tags is None:
+        tags = []
     add_inputs = FileList([])
-    valid_segment = currSegFile.segment
+    valid_segment = workflow.analysis_time
     if segment_name is None:
         segment_name = 'VETO_CAT%d_CUMULATIVE' % (categories[-1])
     cp = workflow.cp
     # calculate the cumulative veto files for a given ifo
     for ifo in workflow.ifos:
         cum_job = LigoLWCombineSegsExecutable(cp, 'ligolw_combine_segments', 
-                       out_dir=out_dir, tags=tags + [segment_name], ifos=ifo)
+                       out_dir=out_dir, tags=[segment_name]+tags, ifos=ifo)
         inputs = []
-        files = segFilesList.find_output_with_ifo(ifo)
+        files = seg_files_list.find_output_with_ifo(ifo)
         for category in categories:
-            fileList = files.find_output_with_tag('VETO_CAT%d' %(category))
-            inputs+=fileList                                                      
+            file_list = files.find_output_with_tag('VETO_CAT%d' %(category))
+            inputs+=file_list                                                      
         
-        cum_node = cum_job.create_node(valid_segment, inputs, segment_name)
-        if execute_now:
-            if file_needs_generating(cum_node.output_files[0].cache_entry.path):
+        cum_node  = cum_job.create_node(valid_segment, inputs, segment_name)
+        if file_needs_generating(cum_node.output_files[0].cache_entry.path,
+                                 workflow.cp, tags=tags):
+            if execute_now:
                 workflow.execute_node(cum_node)
             else:
-                cum_node.executed = True
-                for fil in cum_node._outputs:
-                    fil.node = None
-                    fil.PFN(fil.storage_path, site='local')
+                workflow.add_node(cum_node)
         else:
-            workflow.add_node(cum_node)
+            cum_node.executed = True
+            for fil in cum_node._outputs:
+                fil.node = None
+                fil.PFN(fil.storage_path, site='local')
         add_inputs += cum_node.output_files
             
     # add cumulative files for each ifo together
-    add_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifo, out_dir=out_dir, tags=tags)
-    add_node = add_job.create_node(valid_segment, add_inputs,
-                                   output=currSegFile)   
-    if execute_now:
-        if file_needs_generating(add_node.output_files[0].cache_entry.path):
+    name = '%s_VETO_SEGMENTS' %(segment_name)
+    outfile = File(workflow.ifos, name, workflow.analysis_time,
+                                            directory=out_dir, extension='xml',
+                                            tags=[segment_name] + tags)
+    add_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifo, out_dir=out_dir,
+                                  tags=tags)
+    add_node = add_job.create_node(valid_segment, add_inputs, output=outfile)
+    if file_needs_generating(add_node.output_files[0].cache_entry.path,
+                             workflow.cp, tags=tags):
+        if execute_now:
             workflow.execute_node(add_node)
         else:
-            add_node.executed = True
-            for fil in add_node._outputs:
-                fil.node = None
-                fil.PFN(fil.storage_path, site='local')
+            workflow.add_node(add_node)
     else:
-        workflow.add_node(add_node)
-    return add_node.output_files[0]
+        add_node.executed = True
+        for fil in add_node._outputs:
+            fil.node = None
+            fil.PFN(fil.storage_path, site='local')
+    return outfile
 
 def add_cumulative_files(workflow, output_file, input_files, out_dir,
                          execute_now=False, tags=[]):
@@ -653,85 +933,18 @@ def add_cumulative_files(workflow, output_file, input_files, out_dir,
                        ifo=output_file.ifo_list, out_dir=out_dir, tags=tags)
     add_node = llwadd_job.create_node(output_file.segment, input_files,
                                    output=output_file)
-    if execute_now:
-        if file_needs_generating(add_node.output_files[0].cache_entry.path):
+    if file_needs_generating(add_node.output_files[0].cache_entry.path,
+                             workflow.cp, tags=tags):
+        if execute_now:
             workflow.execute_node(add_node)
         else:
-            add_node.executed = True
-            for fil in add_node._outputs:
-                fil.node = None
-                fil.PFN(fil.storage_path, site='local')
+            workflow.add_node(add_node)
     else:
-        workflow.add_node(add_node)
+        add_node.executed = True
+        for fil in add_node._outputs:
+            fil.node = None
+            fil.PFN(fil.storage_path, site='local')
     return add_node.output_files[0]
-
-def fromsegmentxml(xml_file, return_dict=False, select_seg_def_id=None):
-    """
-    Read a glue.segments.segmentlist from the file object file containing an
-    xml segment table.
-
-    Parameters
-    -----------
-    xml_file : file object
-        file object for segment xml file
-    return_dict : boolean, optional (default = False)
-        returns a glue.segments.segmentlistdict containing coalesced
-        glue.segments.segmentlists keyed by seg_def.name for each entry in the
-        contained segment_def_table.
-    select_seg_def_id : int, optional (default = None)
-        returns a glue.segments.segmentlist object containing only those
-        segments matching the given segment_def_id integer
-
-    Returns
-    --------
-    segs : glue.segments.segmentlist instance
-        The segment list contained in the file.
-    """
-
-    # load xmldocument and SegmentDefTable and SegmentTables
-    xmldoc, digest = utils.load_fileobj(xml_file,
-                                        gz=xml_file.name.endswith(".gz"),
-                                        contenthandler=ContentHandler)
-    seg_def_table = table.get_table(xmldoc,
-                                    lsctables.SegmentDefTable.tableName)
-    seg_table = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
-
-    if return_dict:
-        segs = segments.segmentlistdict()
-    else:
-        segs = segments.segmentlist()
-
-    seg_id = {}
-    for seg_def in seg_def_table:
-        # Here we want to encode ifo, channel name and version
-        full_channel_name = ':'.join([str(seg_def.ifos),
-                                      str(seg_def.name),
-                                      str(seg_def.version)])
-        seg_id[int(seg_def.segment_def_id)] = full_channel_name
-        if return_dict:
-            segs[full_channel_name] = segments.segmentlist()
-
-    for seg in seg_table:
-        seg_obj = segments.segment(
-                lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
-                lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns))
-        if return_dict:
-            segs[seg_id[int(seg.segment_def_id)]].append(seg_obj)
-        elif select_seg_def_id is not None:
-            if int(seg.segment_def_id) == select_seg_def_id:
-                segs.append(seg_obj)
-        else:
-            segs.append(seg_obj)
-
-    if return_dict:
-        for seg_name in seg_id.values():
-            segs[seg_name] = segs[seg_name].coalesce()
-    else:
-        segs = segs.coalesce()
-
-    xmldoc.unlink()
-
-    return segs
 
 def find_playground_segments(segs):
     '''Finds playground time in a list of segments.
@@ -993,13 +1206,8 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
         offsource[iifo] = offsrc
 
     # Write off-source to xml file
-    XmlFile = os.path.join(out_dir,
-                           "%s-COH_OFFSOURCE_SEGMENT.xml" % ifos.upper())
-    currUrl = urlparse.urlunparse(['file', 'localhost', XmlFile, None, None,
-                                   None])
-    currFile = OutSegFile(ifos, 'COH_OFFSOURCE', offsource[iifo], currUrl,
-                          offsource[iifo])
-    currFile.toSegmentXml()
+    currFile = SegFile.from_segment_list_dict('COH_OFFSOURCE_SEGMENT',
+                      offsource, extension='xml', directory=out_dir)
     logging.info("Optimal coherent segment calculated.")
 
     offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
@@ -1197,13 +1405,9 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
     offsource[ifo] = offsrc
 
     # Write off-source to xml file
-    XmlFile = os.path.join(out_dir,
-                           "%s-SINGLE_IFO_OFFSOURCE_SEGMENT.xml" % ifo.upper())
-    currUrl = urlparse.urlunparse(['file', 'localhost', XmlFile, None, None,
-                                   None])
-    currFile = OutSegFile(ifo, 'SINGLE_IFO_OFFSOURCE', offsource[ifo], currUrl,
-                          offsource[ifo])
-    currFile.toSegmentXml()
+    currFile = SegFile.from_segment_list('SINGLE_IFO_OFFSOURCE_SEGMENT',
+                                offsource[ifo], 'SINGLE_IFO_OFFSOURCE_SEGMENT',
+                                ifo, extension='xml', directory=out_dir)
     logging.info("Optimal single IFO segment calculated for %s." % ifo)
 
     offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
@@ -1221,7 +1425,7 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
 
     return onsource, offsource
 
-def save_veto_definer(cp, out_dir, tags=[]):
+def save_veto_definer(cp, out_dir, tags=None):
     """ Retrieve the veto definer file and save it locally
     
     Parameters
@@ -1232,19 +1436,25 @@ def save_veto_definer(cp, out_dir, tags=[]):
         Used to retrieve subsections of the ini file for
         configuration options.
     """
+    if tags is None:
+        tags = []
     make_analysis_dir(out_dir)
-    vetoDefUrl = cp.get_opt_tags("workflow-segments",
+    veto_def_url = cp.get_opt_tags("workflow-segments",
                                  "segments-veto-definer-url", tags)
-    vetoDefBaseName = os.path.basename(vetoDefUrl)
-    vetoDefNewPath = os.path.abspath(os.path.join(out_dir, vetoDefBaseName))
-    response = urllib2.urlopen(vetoDefUrl)
+    veto_def_base_name = os.path.basename(veto_def_url)
+    veto_def_new_path = os.path.abspath(os.path.join(out_dir,
+                                        veto_def_base_name))
+    # Don't need to do this if already done
+    if veto_def_url == veto_def_new_path:
+        return
+    response = urllib2.urlopen(veto_def_url)
     html = response.read()
-    out_file = open(vetoDefNewPath, 'w')
+    out_file = open(veto_def_new_path, 'w')
     out_file.write(html)
     out_file.close()
 
     # and update location
-    cp.set("workflow-segments", "segments-veto-definer-file", vetoDefNewPath)
+    cp.set("workflow-segments", "segments-veto-definer-file", veto_def_new_path)
     
 def parse_cat_ini_opt(cat_str):
     """ Parse a cat str from the ini file into a list of sets """
@@ -1258,8 +1468,9 @@ def parse_cat_ini_opt(cat_str):
         cat_sets += [set(c for c in group)]
     return cat_sets  
     
-def cat_to_pipedown_cat(val):
-    """ Convert a category character to the pipedown equivelant
+def cat_to_veto_def_cat(val):
+    """ Convert a category character to the corresponding value in the veto
+    definer file.
     
     Parameters
     ----------
@@ -1285,161 +1496,7 @@ def cat_to_pipedown_cat(val):
 
     return cat_sets
 
-def get_analyzable_segments(workflow, out_dir, tags=[]):
-    """
-    Get the analyzable segments after applying ini specified vetoes.
-
-    Parameters
-    -----------
-    workflow : Workflow object
-        Instance of the workflow object
-    out_dir : path
-        Location to store output files
-    tags : list of strings
-        Used to retrieve subsections of the ini file for
-        configuration options.
-
-    Returns
-    --------
-    segs : glue.segments.segmentlist instance
-        The segment list specifying the times to analyze
-    data_segs : glue.segments.segmentlist
-        The segment list specifying the time where data exists
-    seg_files : workflow.core.FileList instance
-        The cumulative segment files from each ifo that determined the
-        analyzable time.
-    """
-    from pycbc.events import segments_to_file
-    logging.info('Entering generation of science segments')
-    segments_method = workflow.cp.get_opt_tags("workflow-segments", 
-                                      "segments-method", tags)
-    
-    make_analysis_dir(out_dir)
-    start_time = workflow.analysis_time[0]
-    end_time = workflow.analysis_time[1]
-    save_veto_definer(workflow.cp, out_dir, tags)
-    
-    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-segments',
-                                                'segments-science-veto', tags))
-    if len(cat_sets) > 1: 
-        raise ValueError('Provide only 1 category group to determine'
-                         ' analyzable segments')
-    cat_set = cat_sets[0]
-    
-    veto_gen_job = create_segs_from_cats_job(workflow.cp, out_dir, 
-                                             workflow.ifo_string) 
-    sci_segs, data_segs = {}, {}
-    seg_files = FileList()
-    for ifo in workflow.ifos:
-        sci_segs[ifo], sci_xml = get_science_segments(ifo, workflow.cp, 
-                                                 start_time, end_time, out_dir) 
-        seg_files += [sci_xml]    
-        data_segs[ifo] = copy.copy(sci_segs[ifo])  
-        for category in cat_set:
-            curr_veto_file = get_veto_segs(workflow, ifo, 
-                                        cat_to_pipedown_cat(category), 
-                                        start_time, end_time, out_dir,
-                                        veto_gen_job, execute_now=True)  
-            f = open(curr_veto_file.storage_path, 'r')
-            cat_segs = fromsegmentxml(f)
-            f.close()    
-            sci_segs[ifo] -= cat_segs
-            
-        sci_segs[ifo].coalesce()
-        seg_ok_path = os.path.abspath(os.path.join(out_dir,
-                                                   '%s-SCIENCE-OK.xml' % ifo))
-        curr_url = urlparse.urlunparse(['file', 'localhost', seg_ok_path,
-                          None, None, None])
-        curr_file = OutSegFile(ifo, 'SCIENCE_OK', workflow.analysis_time,
-                               curr_url, segment_list=sci_segs[ifo],
-                               tags=tags)
-        curr_file.PFN(seg_ok_path, 'local')
-        curr_file.toSegmentXml()
-        seg_files += [curr_file]
-
-    if segments_method == 'ALL_SINGLE_IFO_TIME':
-        pass
-    elif segments_method == 'COINC_TIME':
-        cum_segs = None
-        for ifo in sci_segs:
-            if cum_segs is not None:
-                cum_segs = (cum_segs & sci_segs[ifo]).coalesce() 
-            else:
-                cum_segs = sci_segs[ifo]
-                
-        for ifo in sci_segs:
-            sci_segs[ifo] = cum_segs 
-    else:
-        raise ValueError("Invalid segments-method, %s. Options are "
-                         "ALL_SINGLE_IFO_TIME and COINC_TIME" % segments_method)
-
-    logging.info('Leaving generation of science segments')
-    return sci_segs, data_segs, seg_files
-    
-def get_cumulative_veto_group_files(workflow, option, out_dir, tags=[]):
-    """
-    Get the cumulative veto files that define the different backgrounds 
-    we want to analyze, defined by groups of vetos.
-
-    Parameters
-    -----------
-    workflow : Workflow object
-        Instance of the workflow object
-    option : str
-        ini file option to use to get the veto groups
-    out_dir : path
-        Location to store output files
-    tags : list of strings
-        Used to retrieve subsections of the ini file for
-        configuration options.
-
-    Returns
-    --------
-    seg_files : workflow.core.FileList instance
-        The cumulative segment files for each veto group.   
-    cat_files : workflow.core.FileList instance
-        The list of individual category veto files
-    """
-    make_analysis_dir(out_dir)
-    start_time = workflow.analysis_time[0]
-    end_time = workflow.analysis_time[1]
-
-    cat_sets = parse_cat_ini_opt(workflow.cp.get_opt_tags('workflow-segments',
-                                            option, tags))
-    veto_gen_job = create_segs_from_cats_job(workflow.cp, out_dir,
-                                             workflow.ifo_string) 
-    cats = set()
-    for cset in cat_sets:
-        cats = cats.union(cset)
-    
-    cat_files = FileList()
-    for ifo in workflow.ifos:
-        for category in cats:
-            cat_files.append(get_veto_segs(workflow, ifo,
-                                        cat_to_pipedown_cat(category), 
-                                        start_time, end_time, out_dir,
-                                        veto_gen_job, execute_now=True))
-
-    cum_seg_files = FileList()     
-    names = []   
-    for cat_set in cat_sets:
-        segment_name = "CUMULATIVE_CAT_%s" % (''.join(sorted(cat_set)))
-        logging.info('getting information for %s' % segment_name)
-        categories = [cat_to_pipedown_cat(c) for c in cat_set]
-        path = os.path.join(out_dir, '%s-%s_VETO_SEGMENTS.xml' \
-                            % (workflow.ifo_string, segment_name))
-        path = os.path.abspath(path)
-        url = urlparse.urlunparse(['file', 'localhost', path, None, None, None])
-        seg_file = File(workflow.ifos, 'CUM_VETOSEGS', workflow.analysis_time,
-                        file_url=url, tags=[segment_name])
-                        
-        cum_seg_files += [get_cumulative_segs(workflow, seg_file,  categories,
-              cat_files, out_dir, execute_now=True, segment_name=segment_name)]
-        names.append(segment_name)
-              
-    return cum_seg_files, names, cat_files
-
-def file_needs_generating(file_path):
+def file_needs_generating(file_path, cp, tags=None):
     """
     This job tests the file location and determines if the file should be
     generated now or if an error should be raised. This uses the 
@@ -1450,6 +1507,17 @@ def file_needs_generating(file_path):
     -----------
     file_path : path
         Location of file to check
+    cp : ConfigParser
+        The associated ConfigParser from which the
+        segments-generate-segment-files variable is returned.
+        It is recommended for most applications to use the default option by
+        leaving segments-generate-segment-files blank, which will regenerate
+        all segment files at runtime. Only use this facility if you need it.
+        Choices are
+        * 'always' : DEFAULT: All files will be generated even if they already exist.
+        * 'if_not_present': Files will be generated if they do not already exist. Pre-existing files will be read in and used.
+        * 'error_on_duplicate': Files will be generated if they do not already exist. Pre-existing files will raise a failure.
+        * 'never': Pre-existing files will be read in and used. If no file exists the code will fail.
 
     Returns
     --------
@@ -1457,7 +1525,16 @@ def file_needs_generating(file_path):
         1 = Generate the file. 0 = File already exists, use it. Other cases
         will raise an error.
     """
-    global generate_segment_files
+    if tags is None:
+        tags = []
+    if cp.has_option_tags("workflow-segments",
+                          "segments-generate-segment-files", tags):
+        value = cp.get_opt_tags("workflow-segments",
+                                   "segments-generate-segment-files", tags)
+        generate_segment_files = value
+    else:
+        generate_segment_files = 'always'
+
     # Does the file exist
     if os.path.isfile(file_path):
         if generate_segment_files in ['if_not_present', 'never']:

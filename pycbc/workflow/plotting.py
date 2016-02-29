@@ -338,7 +338,8 @@ def make_results_web_page(workflow, results_dir):
     workflow += node
 
 def make_single_hist(workflow, trig_file, veto_file, veto_name, 
-                     out_dir, exclude=None, require=None, tags=[]):
+                     out_dir, bank_file=None, exclude=None,
+                     require=None, tags=[]):
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_hist'), require)  
     secs = excludestr(secs, exclude)
@@ -352,6 +353,8 @@ def make_single_hist(workflow, trig_file, veto_file, veto_name,
         node.add_opt('--segment-name', veto_name)
         node.add_input_opt('--veto-file', veto_file)
         node.add_input_opt('--trigger-file', trig_file)
+        if bank_file:
+            node.add_input_opt('--bank-file', bank_file)
         node.new_output_file_opt(trig_file.segment, '.png', '--output-file')
         workflow += node
         files += node.output_files

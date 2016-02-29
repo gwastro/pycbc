@@ -27,8 +27,9 @@ def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return izip_longest(*args, fillvalue=fillvalue)
 
-def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltbank_file, 
-                       insp_segs, insp_seg_name, dax_output, out_dir, tags=None):
+def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
+                       tmpltbank_file, insp_segs, insp_data_name,
+                       insp_anal_name, dax_output, out_dir, tags=None):
     """ Create plots that followup the Nth loudest coincident injection
     from a statmap produced HDF file.
     
@@ -42,10 +43,13 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
         single detector trigger files for each ifo.
     tmpltbank_file: pycbc.workflow.File
         The file object pointing to the HDF format template bank
-    insp_segs: dict
-        A dictionary, keyed by ifo name, of the data read by each inspiral job.
-    insp_segs_name: str 
-        The name of the segmentlist to read from the inspiral segment file
+    insp_segs: SegFile
+       The segment file containing the data read and analyzed by each inspiral
+       job.
+    insp_data_name: str
+        The name of the segmentlist storing data read.
+    insp_anal_name: str
+        The name of the segmentlist storing data analyzed.
     out_dir: path
         The directory to store minifollowups result plots and files
     tags: {None, optional}
@@ -81,8 +85,9 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     node.add_input_opt('--bank-file', tmpltbank_file)
     node.add_input_opt('--statmap-file', coinc_file)
     node.add_multiifo_input_list_opt('--single-detector-triggers', single_triggers)
-    node.add_multiifo_input_list_opt('--inspiral-segments', insp_segs.values())
-    node.add_opt('--inspiral-segment-name', insp_seg_name)
+    node.add_input_opt('--inspiral-segments', insp_segs)
+    node.add_opt('--inspiral-data-read-name', insp_data_name)
+    node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
 
@@ -106,8 +111,8 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers, tmpltb
     logging.info('Leaving minifollowups module')
 
 def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
-                                  insp_segs, insp_seg_name, dax_output,
-                                  out_dir, veto_file=None,
+                                  insp_segs, insp_data_name, insp_anal_name,
+                                  dax_output, out_dir, veto_file=None,
                                   veto_segment_name=None, tags=None):
     """ Create plots that followup the Nth loudest clustered single detector
     triggers from a merged single detector trigger HDF file.
@@ -120,10 +125,12 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         The File class holding the single detector triggers.
     tmpltbank_file: pycbc.workflow.File
         The file object pointing to the HDF format template bank
-    insp_segs: dict
-        A dictionary, keyed by ifo name, of the data read by each inspiral job.
-    insp_segs_name: str 
-        The name of the segmentlist to read from the inspiral segment file
+    insp_segs: SegFile
+       The segment file containing the data read by each inspiral job.
+    insp_data_name: str
+        The name of the segmentlist storing data read.
+    insp_anal_name: str
+        The name of the segmentlist storing data analyzed.
     out_dir: path
         The directory to store minifollowups result plots and files
     tags: {None, optional}
@@ -162,8 +169,9 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     node.add_input_opt('--config-files', config_file)
     node.add_input_opt('--bank-file', tmpltbank_file)
     node.add_input_opt('--single-detector-file', single_trig_file)
-    node.add_input_opt('--inspiral-segments', insp_segs[curr_ifo])
-    node.add_opt('--inspiral-segment-name', insp_seg_name)
+    node.add_input_opt('--inspiral-segments', insp_segs)
+    node.add_opt('--inspiral-data-read-name', insp_data_name)
+    node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
     node.add_opt('--instrument', curr_ifo)
     if veto_file is not None:
         assert(veto_segment_name is not None)
@@ -194,8 +202,8 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
 
 
 def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
-                                  single_triggers, 
-                                  tmpltbank_file, insp_segs, insp_seg_name,
+                                  single_triggers, tmpltbank_file,
+                                  insp_segs, insp_data_name, insp_anal_name,
                                   dax_output, out_dir, tags=None):
     """ Create plots that followup the closest missed injections
     
@@ -209,10 +217,12 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
         single detector trigger files for each ifo.
     tmpltbank_file: pycbc.workflow.File
         The file object pointing to the HDF format template bank
-    insp_segs: dict
-        A dictionary, keyed by ifo name, of the data read by each inspiral job.
-    insp_segs_name: str 
-        The name of the segmentlist to read from the inspiral segment file
+    insp_segs: SegFile
+       The segment file containing the data read by each inspiral job.
+    insp_data_name: str
+        The name of the segmentlist storing data read.
+    insp_anal_name: str
+        The name of the segmentlist storing data analyzed.
     out_dir: path
         The directory to store minifollowups result plots and files
     tags: {None, optional}
@@ -249,8 +259,9 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     node.add_input_opt('--injection-file', injection_file)
     node.add_input_opt('--injection-xml-file', inj_xml_file)
     node.add_multiifo_input_list_opt('--single-detector-triggers', single_triggers)
-    node.add_multiifo_input_list_opt('--inspiral-segments', insp_segs.values())
-    node.add_opt('--inspiral-segment-name', insp_seg_name)
+    node.add_input_opt('--inspiral-segments', insp_segs)
+    node.add_opt('--inspiral-data-read-name', insp_data_name)
+    node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
 
@@ -273,10 +284,10 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     workflow._adag.addDependency(dep)
     logging.info('Leaving injection minifollowups module')
 
-def make_single_template_plots(workflow, segs, seg_name, params,
-                                   out_dir, inj_file=None, exclude=None,
-                                   require=None, tags=None, params_str=None,
-                                   use_exact_inj_params=False):
+def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
+                                  params, out_dir, inj_file=None, exclude=None,
+                                  require=None, tags=None, params_str=None,
+                                  use_exact_inj_params=False):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'single_template_plot'
@@ -298,10 +309,11 @@ def make_single_template_plots(workflow, segs, seg_name, params,
             # str(numpy.float64) restricts to 2d.p. BE CAREFUL WITH THIS!!!
             str_trig_time = '%.6f' %(params[ifo + '_end_time'])
             node.add_opt('--trigger-time', str_trig_time)
-            node.add_input_opt('--inspiral-segments', segs[ifo])
+            node.add_input_opt('--inspiral-segments', segs)
             if inj_file is not None:
                 node.add_input_opt('--injection-file', inj_file)
-            node.add_opt('--segment-name', seg_name)
+            node.add_opt('--data-read-name', data_read_name)
+            node.add_opt('--data-analyzed-name', analyzed_name)
             node.new_output_file_opt(workflow.analysis_time, '.hdf',
                                      '--output-file', store_file=False)
             data = node.output_files[0]

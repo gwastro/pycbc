@@ -414,6 +414,13 @@ class File(DataStorage, dax.File):
             return '%s %s pool="%s"' % (self.name, self.storage_path, 'local')
         else:
             raise ValueError('This file does not have a storage path')
+
+    def has_pfn(self, url, site=None):
+        """ Wrapper of the pegasus hasPFN function, that allows it to be called
+        outside of specific pegasus functions.
+        """
+        curr_pfn = dax.PFN(url, site)
+        return self.hasPFN(curr_pfn)
         
     def insert_into_dax(self, dax):
         dax.addFile(self)

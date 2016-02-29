@@ -134,8 +134,6 @@ parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
                     This is used to identify FULL_DATA jobs for
                     compatibility with pipedown post-processing.
                     Option will be removed when no longer needed.""")
-parser.add_argument("--psd-recalculate-segments", type=int,
-                    help="Number of segments to use before recalculating the PSD", default=0)
 parser.add_argument("--keep-loudest-interval", type=float,
                     help="Window in seconds to maximize triggers over bank")
 parser.add_argument("--keep-loudest-num", type=int,
@@ -162,30 +160,6 @@ fft.verify_fft_options(opt,parser)
 pycbc.opt.verify_optimization_options(opt, parser)
 pycbc.weave.verify_weave_options(opt, parser)
 
-def associate_psd(strain_segments, gwstrain, segments, nsegs, flen, delta_f, flow):
-    logging.info("Computing noise PSD")
-    def grouper(n, iterable):
-        args = [iter(iterable)] * n
-        return list([e for e in t if e != None] for t in itertools.izip_longest(*args))
-
-    nsegs = nsegs if nsegs != 0 else len(strain_segments.full_segment_slices)
-    groups = grouper(nsegs, strain_segments.full_segment_slices)
-    if len(groups[-1]) != len(groups[0]):
-        logging.warn('PSD recalculation does not divide equally among analysis'
-                     'segments. Make sure that this is what you want')
-
-    psds = []
-    for psegs in groups:
-        strain_part = gwstrain[psegs[0].start:psegs[-1].stop]
-        ppsd = psd.from_cli(opt, flen, delta_f, flow, 
-                            strain_part, DYN_RANGE_FAC).astype(float32)
-        psds.append(ppsd)
-        for seg in segments:
-            if seg.seg_slice in psegs:
-                seg.psd = ppsd
-    return psds
-
-
 pycbc.init_logging(opt.verbose)
 
 ctx = scheme.from_cli(opt)
@@ -202,8 +176,8 @@ with ctx:
 
     logging.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
-    psds = associate_psd(strain_segments, gwstrain, segments,
-                  opt.psd_recalculate_segments, flen, delta_f, flow)
+    psd.associate_psds_to_segments(opt, segments, gwstrain, flen, delta_f,
+                  flow, dyn_range_factor=DYN_RANGE_FAC, precision='single')
 
     # storage for values and types to be passed to event manager
     out_types = {
@@ -226,16 +200,20 @@ with ctx:
                }
     names = sorted(out_vals.keys())
 
-    event_mgr = events.EventManager(
-            opt, names, [out_types[n] for n in names], psd=psds[0],
-            gating_info=gwstrain.gating_info)
-
     if len(strain_segments.segment_slices) == 0:
         logging.info("--filter-inj-only specified and no injections in analysis time")
+        event_mgr = events.EventManager(
+              opt, names, [out_types[n] for n in names], psd=None,
+              gating_info=gwstrain.gating_info)
         event_mgr.finalize_template_events()
         event_mgr.write_events(opt.output)
         logging.info("Finished")
         sys.exit(0)
+
+    # FIXME: Maybe we should use the PSD corresponding to each trigger
+    event_mgr = events.EventManager(
+            opt, names, [out_types[n] for n in names], psd=segments[0].psd,
+            gating_info=gwstrain.gating_info)
 
     template_mem = zeros(tlen, dtype = complex64)
     cluster_window = int(opt.cluster_window * gwstrain.sample_rate)

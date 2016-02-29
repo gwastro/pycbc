@@ -49,9 +49,12 @@ parser.add_argument('--veto-segment-name',
 parser.add_argument('--inspiral-segments',
                     help="xml segment file containing the inspiral analysis "
                          "times")
-parser.add_argument('--inspiral-segment-name',
-                    help="Name of inspiral segmentlist to read from segment "
-                         "file")
+parser.add_argument('--inspiral-data-read-name',
+                    help="Name of inspiral segmentlist containing data read in "
+                         "by each analysis job.")
+parser.add_argument('--inspiral-data-analyzed-name',
+                    help="Name of inspiral segmentlist containing data "
+                         "analyzed by each analysis job.")
 parser.add_argument('--ranking-statistic',
                 help="How to rank triggers when determining loudest triggers.")
 parser.add_argument('--output-map')
@@ -78,8 +81,7 @@ if args.veto_file is not None:
     veto_file = to_file(args.veto_file, ifo=args.instrument)
 else:
     veto_file = None
-insp_segs = {}
-insp_segs[args.instrument] = to_file(args.inspiral_segments)
+insp_segs = to_file(args.inspiral_segments)
 
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
                  'num-sngl-events', ''))
@@ -121,7 +123,8 @@ for num_event in range(num_events):
     curr_params['spin2z'] = trigs.spin2z[num_event]
     curr_params[args.instrument + '_end_time'] = time
     files += mini.make_single_template_plots(workflow, insp_segs,
-                            args.inspiral_segment_name, curr_params,
+                            args.inspiral_data_read_name,
+                            args.inspiral_data_analyzed_name, curr_params,
                             args.output_dir, 
                             tags=args.tags+[str(num_event)])
 

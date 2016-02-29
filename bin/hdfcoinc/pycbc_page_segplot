@@ -27,7 +27,7 @@ from matplotlib.patches import Rectangle
 from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results.color import ifo_color
 from pycbc.results.mpld3_utils import MPLSlide, LineTooltip
-from pycbc.workflow import fromsegmentxml
+from pycbc.workflow import SegFile
 import pycbc.version
 
 # parse command line
@@ -96,10 +96,11 @@ s = []
 for segment_file in opts.segment_files:
 
     # read segment definer table
-    seg_dict = fromsegmentxml(open(segment_file, 'rb'), return_dict=True)
+    seg_dict = SegFile.from_segment_xml(segment_file).segment_dict
 
     # read comments from segment definer table
-    comment_dict = get_segment_definer_comments(open(segment_file, 'rb'))
+    comment_dict = get_segment_definer_comments(open(segment_file, 'rb'),
+                                                include_version=False)
 
     # loop over segment names
     for segment_name in opts.segment_names:
@@ -111,9 +112,8 @@ for segment_file in opts.segment_files:
             color = color_cycle[ifo].next()
 
             for key in seg_dict.keys():
-
-                # FIXME: if IFO:SEGMENT_NAME exists then plot it
-                if key.startswith(ifo+':'+segment_name):
+                seg_key = ifo+':'+segment_name
+                if key == seg_key or key.startswith(ifo+':'+segment_name+':'):
                     segs = seg_dict[key]
 
                     # increment y position of bits

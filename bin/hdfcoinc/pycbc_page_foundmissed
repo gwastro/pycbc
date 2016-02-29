@@ -9,18 +9,21 @@ import pycbc.pnutils
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--injection-file',
-                    help='The hdf injection file to plot', required=True)
+                    help="The hdf injection file to plot", required=True)
 parser.add_argument('--axis-type', default='mchirp', choices=['mchirp',
                     'effective_spin', 'time', 'mtotal', 'mass_ratio'])
 parser.add_argument('--distance-type', default='decisive_distance',
                     choices=['decisive_distance', 'dec_chirp_distance',
                              'chirp_distance', 'comb_optimal_snr',
                              'decisive_optimal_snr', 'redshift'])
+parser.add_argument('--plot-all-distance', action='store_true', default=False,
+                    help="Plot all values of distance or SNR. If not given, "
+                         "the plot will be truncated below 1")
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--log-distance', action='store_true', default=False)
 parser.add_argument('--dynamic', action='store_true', default=False)
 parser.add_argument('--gradient-far', action='store_true',
-                    help='Show far of found injections as a gradient')
+                    help="Show far of found injections as a gradient")
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--far-type', choices=('inclusive', 'exclusive'), default='inclusive',
                     help="Type of far to plot for the color. Choices are 'inclusive' or "
@@ -33,7 +36,7 @@ args = parser.parse_args()
 if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
-    
+
 logging.info('Read in the data')
 f = h5py.File(args.injection_file, 'r')
 time = f['injections/end_time'][:]
@@ -44,8 +47,8 @@ if args.far_type == 'inclusive':
     ifar_found = f['found_after_vetoes/ifar'][:]
     far_title = 'Inclusive'
 elif args.far_type == 'exclusive':
-    ifar_found = f['found_after_vetoes/ifar_exc'][:]   
-    far_title = 'Exclusive' 
+    ifar_found = f['found_after_vetoes/ifar_exc'][:]
+    far_title = 'Exclusive'
 
 # This hardcodes HL search !!!!!, replace with function that takes or/sky/det
 hdist = f['injections/eff_dist_h'][:]
@@ -62,7 +65,7 @@ vals['effective_spin'] = (m1 * s1z + m2 * s2z) / (m1 + m2)
 vals['time'] = time
 vals['mtotal'] = m1 + m2
 # use convention that q>1
-vals['mass_ratio'] = numpy.maximum(m1/m2, m2/m1) 
+vals['mass_ratio'] = numpy.maximum(m1/m2, m2/m1)
 
 dvals = {}
 dvals['decisive_distance'] = numpy.maximum(hdist, ldist)
@@ -76,6 +79,9 @@ if 'optimal_snr_1' in f['injections']:
     opt_snr_2 = f['injections/optimal_snr_2'][:]
     dvals['comb_optimal_snr'] = numpy.sqrt(opt_snr_1 ** 2 + opt_snr_2 ** 2)
     dvals['decisive_optimal_snr'] = numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
+
+fdvals = dvals[args.distance_type][found]
+mdvals = dvals[args.distance_type][missed]
 
 labels={'mchirp': 'Chirp Mass',
         'mtotal': 'Total Mass',
@@ -106,10 +112,10 @@ if not args.gradient_far:
     thousand = numpy.where(ifar_found > 1000)[0]
     color[hundred] = 0.5
     color[thousand] = 1.0
-    
-    mpoints = plot.scatter(vals[args.axis_type][missed], dvals[args.distance_type][missed], 
+
+    mpoints = plot.scatter(vals[args.axis_type][missed], mdvals,
                            marker='x', color='black', label='missed', zorder=zmissed)
-    points = plot.scatter(vals[args.axis_type][found], dvals[args.distance_type][found], 
+    points = plot.scatter(vals[args.axis_type][found], fdvals,
                            c=color, linewidth=0, vmin=0, vmax=1,
                            marker='o', label='found', zorder=zfound)
     caption = (fig_title + ": Black x's are missed injections. "
@@ -117,18 +123,17 @@ if not args.gradient_far:
               "red are found with IFAR >=1000 years. ")
 else:
     fvals = vals[args.axis_type][found]
-    fdval = dvals[args.distance_type][found]
     color = 1.0 / ifar_found
-    
+
     # sort so quiet found is on top
     csort = color.argsort()
     fvals = fvals[csort]
-    fdval = fdval[csort]
+    fdval = fdvals[csort]
     color = color[csort]
 
-    mpoints = plot.scatter(vals[args.axis_type][missed], dvals[args.distance_type][missed], 
+    mpoints = plot.scatter(vals[args.axis_type][missed], mdvals,
                            marker='x', color='red', label='missed', zorder=zmissed)
-    points = plot.scatter(fvals, fdval, c=color, linewidth=0, 
+    points = plot.scatter(fvals, fdval, c=color, linewidth=0,
                           norm=matplotlib.colors.LogNorm(),
                           marker='o', label='found', zorder=zfound)
     caption = (fig_title + ": Red x's are missed injections. "
@@ -156,16 +161,23 @@ plot.grid()
 if args.log_distance:
     ax.set_yscale('log')
 
-ymax = 1.2 * max(dvals[args.distance_type][missed].max(),
-                 dvals[args.distance_type][found].max())
-plot.ylim(ymin=1, ymax=ymax)
-if args.distance_type == 'redshift':
+ymax = 1.2 * max(fdvals.max(), mdvals.max())
+ymin = 0.9 * min(fdvals.min(), mdvals.min())
+if args.plot_all_distance:
+    # note: ymin=0 will clash with args.log_distance
+    # in that case it *should* throw an error!
+    plot.ylim(ymin, ymax)
+elif args.distance_type == 'redshift':
+    # default y limit: min redshift 0
     plot.ylim(ymin=0, ymax=ymax)
+else:
+    # arbitrary limit of 1 distance-unit or snr-unit
+    plot.ylim(ymin=1, ymax=ymax)
 
 fig_kwds = {}
 if '.png' in args.output_file:
     fig_kwds['dpi'] = 200
-    
+
 if ('.html' in args.output_file):
     plot.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
     import mpld3, mpld3.plugins, mpld3.utils
@@ -175,7 +187,7 @@ if ('.html' in args.output_file):
                                                     alpha_unsel=0.1)
     mpld3.plugins.connect(fig, legend)
 
-pycbc.results.save_fig_with_metadata(fig, args.output_file, 
+pycbc.results.save_fig_with_metadata(fig, args.output_file,
                      fig_kwds=fig_kwds,
                      title='%s: %s vs %s' % (fig_title, args.axis_type, args.distance_type),
                      cmd=' '.join(sys.argv),

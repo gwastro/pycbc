@@ -53,7 +53,7 @@ def median_bias(n):
     return ans
 
 def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
-        avg_method='median'):
+        avg_method='median', num_segments=None, require_exact_data_fit=False):
     """PSD estimator based on Welch's method.
 
     Parameters
@@ -104,10 +104,31 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         fs_dtype = numpy.complex128
         
     num_samples = len(timeseries)
-    num_segments = num_samples / seg_stride
-    
-    if (num_segments - 1) * seg_stride + seg_len > num_samples:
-        num_segments -= 1
+    if num_segments is None:
+        num_segments = int(num_samples // seg_stride)
+        # NOTE: Is this not always true?
+        if (num_segments - 1) * seg_stride + seg_len > num_samples:
+            num_segments -= 1
+
+    if not require_exact_data_fit:
+        data_len = (num_segments - 1) * seg_stride + seg_len
+
+        # Get the correct amount of data
+        if data_len < num_samples:
+            diff = num_samples - data_len
+            start = diff // 2
+            end = num_samples - diff // 2
+            # Want this to be integers so if diff is odd, catch it here.
+            if diff % 2:
+                start = start + 1
+
+            timeseries = timeseries[start:end]
+            num_samples = len(timeseries)
+        if data_len > num_samples:
+            err_msg = "I was asked to estimate a PSD on %d " %(data_len)
+            err_msg += "data samples. However the data provided only contains "
+            err_msg += "%d data samples." %(num_samples)
+
     if num_samples != (num_segments - 1) * seg_stride + seg_len:
         raise ValueError('Incorrect choice of segmentation parameters')
         
@@ -239,7 +260,7 @@ def interpolate(series, delta_f):
         A new FrequencySeries that has been interpolated.
     """
     new_n = (len(series)-1) * series.delta_f / delta_f + 1
-    samples = numpy.arange(0, new_n) * delta_f
+    samples = numpy.arange(0, numpy.rint(new_n)) * delta_f
     interpolated_series = numpy.interp(samples, series.sample_frequencies.numpy(), series.numpy())
     return FrequencySeries(interpolated_series, epoch=series.epoch, 
                            delta_f=delta_f, dtype=series.dtype)

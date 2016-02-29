@@ -24,19 +24,47 @@ from pycbc.filter import resample_to_delta_t
 from pycbc.types import zeros, float32, complex64, TimeSeries, FrequencySeries
 from pycbc.types import complex_same_precision_as
 
-def select_segment(fname, segment, ifo, time, start_pad, end_pad):
-    segs = events.select_segments_by_definer(fname, segment, ifo)
+def select_segments(fname, anal_name, data_name, ifo, time):
+    anal_segs = events.select_segments_by_definer(fname, anal_name, ifo)
+    data_segs = events.select_segments_by_definer(fname, data_name, ifo)
 
-    s = numpy.array([t[0] for t in segs])
-    e = numpy.array([t[1] for t in segs])
-
+    # Anal segs should be disjoint, so first find the seg containing time
+    s = numpy.array([t[0] for t in anal_segs])
+    e = numpy.array([t[1] for t in anal_segs])
     #ensure sorted
     sorting = s.argsort()    
-    s = s[sorting] + start_pad
-    e = e[sorting] - end_pad
-
+    s = s[sorting]
+    e = e[sorting]
     idx = numpy.searchsorted(s, time) - 1
-    return (s[idx] - start_pad, e[idx] + end_pad)
+    anal_time = (s[idx], e[idx])
+
+    # Now need to find the corresponding data_seg. This could be complicated
+    # as in edge cases the anal_time tuple could be completely contained within
+    # *two* data blocks (think analysis chunk slightly longer than minimum).
+    # We need to choose the *right* block to reproduce what the search did.
+
+    s2 = numpy.array([t[0] for t in data_segs])
+    e2 = numpy.array([t[1] for t in data_segs])
+    lgc = (s2 < time) & (e2 > time)
+    s2 = s2[lgc]
+    e2 = e2[lgc]
+    if len(s2) == 0:
+        err_msg = "Cannot find a data segment within %s" %(str(time))
+        raise ValueError(err_msg)
+    if len(s2) == 1:
+        data_time = (s2[0], e2[0])
+    if len(s2) > 1:
+        # The tricksy case. The corresponding data segment should have the
+        # largest overlap with anal_time
+        overlap = None
+        for start, end in zip(s2, e2):
+            curr_nonoverlap = anal_time[0] - start
+            curr_nonoverlap = end - anal_time[1]
+            if (overlap is None) or (curr_nonoverlap < overlap):
+                overlap = curr_nonoverlap
+                data_time = (start, end)
+
+    return anal_time, data_time
 
 parser = argparse.ArgumentParser(usage='',
     description="Single template gravitational-wave followup")
@@ -49,8 +77,6 @@ parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
 parser.add_argument("--chisq-bins", default="0", type=str, help=
                     "Number of frequency bins to use for power chisq.")
-parser.add_argument("--psd-recalculate-segments", type=int, 
-                    help="Number of segments to use before recalculating the PSD", default=0)
 parser.add_argument("--trigger-time", type=float, default=0,
                   help="The central time of the trigger to use.")
 parser.add_argument("--use-params-of-closest-injection", action="store_true",
@@ -90,8 +116,12 @@ parser.add_argument("--taper-template", choices=["start","end","startend"],
 parser.add_argument("--inspiral-segments",
         help="XML file containing the inspiral analysis segments. "
              "Only used with the --statmap-file option")
-parser.add_argument("--segment-name", 
-        help="name of the segmentlist to read from the inspiral segment file")
+parser.add_argument("--data-read-name",
+        help="name of the segmentlist containing the data read in by each job "
+             "from the inspiral segment file")
+parser.add_argument("--data-analyzed-name",
+        help="name of the segmentlist containing the data analysed by each job "
+             "from the inspiral segment file")
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -106,12 +136,16 @@ ifo = opt.channel_name[0:2]
 
 # If we are choosing start/end times from XML file ############################
 if opt.inspiral_segments:
-    start_pad = opt.pad_data + opt.segment_start_pad
-    end_pad = opt.pad_data + opt.segment_end_pad
-    seg = select_segment(opt.inspiral_segments, opt.segment_name, ifo,
-                         opt.trigger_time, start_pad, end_pad)
-    opt.gps_start_time, opt.gps_end_time = \
-                                   seg[0] + opt.pad_data, seg[1] - opt.pad_data
+    # Important for trig-start/end and data-start/end to match inspiral jobs.
+    # Zero-padding also will not zero-pad unless explicitly told to in the
+    # trig start/end times
+    anal_seg, data_seg = select_segments(opt.inspiral_segments,
+                                    opt.data_analyzed_name, opt.data_read_name,
+                                    ifo, opt.trigger_time)
+    opt.trig_start_time = anal_seg[0]
+    opt.trig_end_time = anal_seg[1]
+    opt.gps_start_time = data_seg[0] + opt.pad_data
+    opt.gps_end_time = data_seg[1] - opt.pad_data
     f.attrs['event_time'] = opt.trigger_time
 
 ###############################################################################
@@ -123,28 +157,6 @@ strain.StrainSegments.verify_segment_options(opt, parser)
 scheme.verify_processing_options(opt, parser)
 fft.verify_fft_options(opt,parser)
 pycbc.init_logging(opt.verbose)
-
-def associate_psd(strain_segments, gwstrain, segments, nsegs, flen, delta_f, flow):
-    logging.info("Computing noise PSD")
-    def grouper(n, iterable):
-        args = [iter(iterable)] * n
-        return list([e for e in t if e != None] for t in itertools.izip_longest(*args))
-
-    nsegs = nsegs if nsegs != 0 else len(strain_segments.full_segment_slices)
-    groups = grouper(nsegs, strain_segments.full_segment_slices)
-    if len(groups[-1]) != len(groups[0]):
-        logging.warn('PSD recalculation does not divide equally among analysis'
-                     'segments. Make sure that this is what you want')
-
-    psds = []
-    for psegs in groups:
-        strain_part = gwstrain[psegs[0].start:psegs[-1].stop]
-        ppsd = psd.from_cli(opt, flen, delta_f, flow, strain_part, pycbc.DYN_RANGE_FAC)
-        psds.append(ppsd)
-        for seg in segments:
-            if seg.seg_slice in psegs:
-                seg.psd = ppsd.astype(float32)
-    return psds
 
 ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, pycbc.DYN_RANGE_FAC)
@@ -170,9 +182,9 @@ with ctx:
     segments = strain_segments.fourier_segments()
     
     logging.info("Calculating the PSDs")
-    psds = associate_psd(strain_segments, gwstrain, segments, 
-                         opt.psd_recalculate_segments, 
-                         flen, delta_f, flow)
+    psd.associate_psds_to_segments(opt, segments, gwstrain, flen, delta_f,
+                             flow, dyn_range_factor=pycbc.DYN_RANGE_FAC,
+                             precision='single')
 
     logging.info("Making template: %s" % opt.approximant)
     if opt.use_params_of_closest_injection:
@@ -240,7 +252,7 @@ with ctx:
         start = stilde.epoch + stilde.analyze.start / float(opt.sample_rate)
         end = stilde.epoch + stilde.analyze.stop / float(opt.sample_rate)
         
-        if  end < start_time:
+        if end < start_time:
             continue
             
         if start > end_time:

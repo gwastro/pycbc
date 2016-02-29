@@ -14,7 +14,6 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
-from pycbc.workflow.segment import fromsegmentxml
 import pycbc.pnutils
 import pycbc.events
 from pycbc.waveform import get_td_waveform, frequency_from_polarizations, amplitude_from_polarizations

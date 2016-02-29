@@ -15,6 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import copy
+from glue import segments
 from pycbc.psd.read import *
 from pycbc.psd.analytical import *
 from pycbc.psd.estimate import *
@@ -87,7 +88,9 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         # estimate PSD from data
         psd = welch(strain, avg_method=opt.psd_estimation,
                     seg_len=int(opt.psd_segment_length * sample_rate),
-                    seg_stride=int(opt.psd_segment_stride * sample_rate))
+                    seg_stride=int(opt.psd_segment_stride * sample_rate),
+                    num_segments=opt.psd_num_segments,
+                    require_exact_data_fit=False)
 
         if delta_f != psd.delta_f:
             psd = interpolate(psd, delta_f)
@@ -172,6 +175,14 @@ def insert_psd_option_group(parser, output=True):
     psd_options.add_argument("--psd-segment-stride", type=float, 
                           help="(Required for --psd-estimation) The separation"
                                " between consecutive segments (s)")
+    psd_options.add_argument("--psd-num-segments", type=int, default=None,
+                          help="(Optional, used only with --psd-estimation). "
+                               "If given PSDs will be estimated using only "
+                               "this number of segments. If more data is "
+                               "given than needed to make this number of "
+                               "segments than excess data will not be used in "
+                               "the PSD estimate. If not enough data is given "
+                               "the code will fail.")
     psd_options.add_argument("--psd-inverse-length", type=float, 
                           help="(Optional) The maximum length of the impulse"
                           " response of the overwhitening filter (s)")
@@ -219,6 +230,16 @@ def insert_psd_option_group_multi_ifo(parser):
                           action=MultiDetOptionAction, metavar='IFO:STRIDE',
                           help="(Required for --psd-estimation) The separation"
                                " between consecutive segments (s)")
+    psd_options.add_argument("--psd-num-segments", type=int, nargs="+",
+                          default=None,
+                          action=MultiDetOptionAction, metavar='IFO:NUM',
+                          help="(Optional, used only with --psd-estimation). "
+                               "If given PSDs will be estimated using only "
+                               "this number of segments. If more data is "
+                               "given than needed to make this number of "
+                               "segments than excess data will not be used in "
+                               "the PSD estimate. If not enough data is given "
+                               "the code will fail.")
     psd_options.add_argument("--psd-inverse-length", type=float, nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:LENGTH',
                           help="(Optional) The maximum length of the impulse"
@@ -275,3 +296,144 @@ def verify_psd_options_multi_ifo(opt, parser, ifos):
             required_opts_multi_ifo(opt, parser, ifo,
                       ['--psd-segment-stride', '--psd-segment-length'],
                           required_by = "--psd-estimation")
+
+def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
+                              dyn_range_factor=1., precision=None):
+    """Generate a set of overlapping PSDs to cover a stretch of data. This
+    allows one to analyse a long stretch of data with PSD measurements that
+    change with time.
+
+    Parameters
+    -----------
+    opt : object
+        Result of parsing the CLI with OptionParser, or any object with the
+        required attributes (psd_model, psd_file, asd_file, psd_estimation,
+        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).
+    gwstrain : Strain object
+        The timeseries of raw data on which to estimate PSDs.
+    flen : int
+        The length in samples of the output PSDs.
+    delta_f : float
+        The frequency step of the output PSDs.
+    flow: float
+        The low frequncy cutoff to use when calculating the PSD.
+    dyn_range_factor : {1, float}
+        For PSDs taken from models or text files, if `dyn_range_factor` is
+        not None, then the PSD is multiplied by `dyn_range_factor` ** 2.
+    precision : str, choices (None,'single','double')
+        If not specified, or specified as None, the precision of the returned
+        PSD will match the precision of the data, if measuring a PSD, or will
+        match the default precision of the model if using an analytical PSD.
+        If 'single' the PSD will be converted to float32, if not already in
+        that precision. If 'double' the PSD will be converted to float64, if
+        not already in that precision.
+
+    Returns
+    --------
+    psd_and_times : list of (start, end, psd) tuples
+        This is a list of tuples containing one entry for each PSD. The first
+        and second entries (start, end) in each tuple represent the index 
+        range of the gwstrain data that was used to estimate that PSD. The
+        third entry (psd) contains the PSD estimate between that interval.
+    """
+    if not opt.psd_estimation:
+        psd = from_cli(opt, flen, delta_f, flow, strain=gwstrain,
+                       dyn_range_factor=dyn_range_factor, precision=precision)
+        psds_and_times = [ (0, len(gwstrain), psd) ]
+        return psds_and_times
+
+    # Figure out the data length used for PSD generation
+    seg_stride = opt.psd_segment_stride * gwstrain.sample_rate
+    seg_len = opt.psd_segment_length * gwstrain.sample_rate
+    num_segments = opt.psd_num_segments
+    input_data_len = len(gwstrain)
+
+    if num_segments is None:
+        # FIXME: Should we make --psd-num-segments mandatory?
+        #        err_msg = "You must supply --num-segments."
+        #        raise ValueError(err_msg)
+        num_segments = int(input_data_len // seg_stride) - 1
+
+    psd_data_len = (num_segments - 1) * seg_stride + seg_len
+
+    # How many unique PSD measurements is this?
+    psds_and_times = []
+    if input_data_len < psd_data_len:
+        err_msg = "Input data length must be longer than data length needed "
+        err_msg += "to estimate a PSD. You specified that a PSD should be "
+        err_msg += "estimated with %d seconds. " %(psd_data_len)
+        err_msg += "Input data length is %d seconds. " %(input_data_len)
+        raise ValueError(err_msg)
+    elif input_data_len == psd_data_len:
+        num_psd_measurements = 1
+        psd_stride = 0
+    else:
+        num_psd_measurements = int(2 * (input_data_len-1) / psd_data_len)
+        psd_stride = int((input_data_len - psd_data_len) / num_psd_measurements)
+
+    for idx in range(num_psd_measurements):
+        if idx == (num_psd_measurements - 1):
+            start_idx = input_data_len - psd_data_len
+            end_idx = input_data_len
+        else:
+            start_idx = psd_stride * idx
+            end_idx = psd_data_len + psd_stride * idx
+        strain_part = gwstrain[start_idx:end_idx]
+        psd = from_cli(opt, flen, delta_f, flow, strain=strain_part,
+                       dyn_range_factor=dyn_range_factor, precision=precision)
+        psds_and_times.append( (start_idx, end_idx, psd) )
+    return psds_and_times
+
+def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
+                               dyn_range_factor=1., precision=None):
+    """Generate a set of overlapping PSDs covering the data in GWstrain.
+    Then associate these PSDs with the appropriate segment in strain_segments.
+
+    Parameters
+    -----------
+    opt : object
+        Result of parsing the CLI with OptionParser, or any object with the
+        required attributes (psd_model, psd_file, asd_file, psd_estimation,
+        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).
+    fd_segments : StrainSegments.fourier_segments() object
+        The fourier transforms of the various analysis segments. The psd
+        attribute of each segment is updated to point to the appropriate PSD.
+    gwstrain : Strain object
+        The timeseries of raw data on which to estimate PSDs.
+    flen : int
+        The length in samples of the output PSDs.
+    delta_f : float
+        The frequency step of the output PSDs.
+    flow: float
+        The low frequncy cutoff to use when calculating the PSD.
+    dyn_range_factor : {1, float}
+        For PSDs taken from models or text files, if `dyn_range_factor` is
+        not None, then the PSD is multiplied by `dyn_range_factor` ** 2.
+    precision : str, choices (None,'single','double')
+        If not specified, or specified as None, the precision of the returned
+        PSD will match the precision of the data, if measuring a PSD, or will
+        match the default precision of the model if using an analytical PSD.
+        If 'single' the PSD will be converted to float32, if not already in
+        that precision. If 'double' the PSD will be converted to float64, if
+        not already in that precision.
+    """
+    psds_and_times = generate_overlapping_psds(opt, gwstrain, flen, delta_f,
+                                       flow, dyn_range_factor=dyn_range_factor,
+                                       precision=precision)
+
+    for fd_segment in fd_segments:
+        best_psd = None
+        psd_overlap = 0
+        inp_seg = segments.segment(fd_segment.seg_slice.start,
+                                   fd_segment.seg_slice.stop)
+        for start_idx, end_idx, psd in psds_and_times:
+            psd_seg = segments.segment(start_idx, end_idx)
+            if psd_seg.intersects(inp_seg):
+                curr_overlap = abs(inp_seg & psd_seg)
+                if curr_overlap > psd_overlap:
+                    psd_overlap = curr_overlap
+                    best_psd = psd
+        if best_psd is None:
+            err_msg = "No PSDs found intersecting segment!"
+            raise ValueError(err_msg)
+        fd_segment.psd = best_psd

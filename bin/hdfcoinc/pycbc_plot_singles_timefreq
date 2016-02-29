@@ -176,6 +176,18 @@ if mask.any():
 else:
     title = '%s - no triggers' % opts.channel_name
 
+logging.info('Loading and plotting gates')
+for gate_type, hatch_style in [('file', '\\'), ('auto', '/')]:
+    try:
+        gate_time = trigs['gating/' + gate_type + '/time'][:]
+        gate_width = trigs['gating/' + gate_type + '/width'][:]
+        gate_pad = trigs['gating/' + gate_type + '/pad'][:]
+    except KeyError:
+        continue
+    for gt, gw, gp in zip(gate_time, gate_width, gate_pad):
+        ax.axvspan(gt - gw - center_time, gt + gw - center_time,
+                   hatch=hatch_style, facecolor='none', edgecolor='#00ff00')
+
 ax.set_xlim(opts.gps_start_time - center_time, opts.gps_end_time - center_time)
 ax.set_ylim(opts.f_low, opts.sample_rate / 2)
 ax.set_yscale('log')

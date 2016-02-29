@@ -1,0 +1,141 @@
+#! /bin/bash
+
+# Copyright (C) 2016 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# sanity check command line
+if [ $# -gt 1 ]; then
+    echo "illegal number of command line options"
+    exit
+fi
+
+# parse command line
+# get midnight from yesterday in form of MM/DD/YYYY
+if [ $# -eq 1 ]; then
+    YESTERDAY=$1
+else
+    YESTERDAY=`date -u --date="yesterday" +"%x"`
+fi
+
+# convert midnight to GPS time and analyze a day of data
+GPS_START_TIME=`lalapps_tconvert ${YESTERDAY}`
+DURATION=86400
+GPS_END_TIME=$((${GPS_START_TIME} + ${DURATION}))
+
+# month subdir name in form of YYYYMM
+MONTH=`lalapps_tconvert -f "%Y%m" ${GPS_START_TIME}`
+
+# day subdir name in form of YYYYMMDD
+DAY=`lalapps_tconvert -f "%Y%m%d" ${GPS_START_TIME}`
+
+# specify the window for applying clustering to censored triggers
+CLUSTER_WINDOW=16.0 
+
+# location of run output dir
+RUN_DIR=/home/${USER}/projects/daily_cbc_offline/main/${MONTH}/${DAY}
+OUTPUT_DIR=${RUN_DIR}/output
+
+# path to template bank file
+BANK_FILE=${OUTPUT_DIR}/bank/H1L1-BANK2HDF-*-*.hdf
+
+# change dir where to keep XML and cache files
+EXPORT_DIR=${RUN_DIR}/export
+mkdir -p ${EXPORT_DIR}
+cd ${EXPORT_DIR}
+
+# loop over the bins
+for BIN in 0 1 2; do
+
+    # path to the coincidence file
+    COINC_FILE=${OUTPUT_DIR}/full_data/H1L1-STATMAP_FULL_DATA_FULL_CUMULATIVE_CAT_12H_FULL_DATA_FULL_BIN_${BIN}-*-*.hdf
+
+    # check if coincidence file exist
+    if [ ! -f ${COINC_FILE} ]; then
+        echo "File not found "${COINC_FILE}
+        exit
+    fi
+
+    # loop over each IFO
+    for IFO in H1 L1; do
+
+        # name of the XML file that contains the triggers
+        OUTPUT_FILE=${IFO}-SNGL_TRIGGERS_BIN_${BIN}-${GPS_START_TIME}-${DURATION}.xml.gz
+
+        # name of the cache file
+        OUTPUT_CACHE=${IFO}-SNGL_TRIGGERS_BIN_${BIN}-${GPS_START_TIME}-${DURATION}.cache
+
+        # paths to the single-detector trigger files
+        SNGL_FILES=${OUTPUT_DIR}/full_data/${IFO}-HDF_TRIGGER_MERGE_FULL_DATA-*-*.hdf
+
+        # check if output files already exists
+        if [ -f ${OUTPUT_CACHE} ]; then
+            echo "Cache already exists "${OUTPUT_CACHE}
+            exit
+        fi
+
+        # print statement
+        echo "Writing XML file for "${IFO}" bin "${BIN}
+
+        # put triggers into XML file
+        python pycbc_export_censored_trigs --ifo ${IFO} \
+            --output-file ${OUTPUT_FILE} \
+            --coinc-file ${COINC_FILE} \
+            --bank-file ${BANK_FILE} \
+            --sngl-files ${SNGL_FILES} \
+            --cluster-window ${CLUSTER_WINDOW}
+
+        # print statement
+        echo
+        echo "Copying XML file "${OUTPUT_FILE}" to final destination"
+        echo
+
+        # set storage location on site clusters
+        if [ ${IFO} = "H1" ]; then
+            REMOTE_USER=cbiwer
+            SERVER=ldas-grid.ligo-wa.caltech.edu
+            STORAGE_DIR=/home/${USER}/public_html/daily_cbc_offline/${MONTH}/${DAY}
+        elif [ ${IFO} = "L1" ]; then
+            REMOTE_USER=cbiwer
+            SERVER=ldas-grid.ligo-la.caltech.edu
+            STORAGE_DIR=/home/${USER}/public_html/daily_cbc_offline/${MONTH}/${DAY}
+        fi
+
+        # make storage dir and copy XML file
+        gsissh ${REMOTE_USER}@${SERVER} mkdir -p ${STORAGE_DIR}
+        rsync -zve gsissh ${OUTPUT_FILE} ${SERVER}:${STORAGE_DIR}
+
+        # print statment
+        echo
+
+        # create a cache file and copy to storage dir
+        gsissh ${REMOTE_USER}@${SERVER} ls ${OUTPUT_FILE} | lalapps_path2cache --output ${OUTPUT_CACHE}
+        rsync -zve gsissh ${OUTPUT_CACHE} ${SERVER}:${STORAGE_DIR}
+
+    done
+done
+
+# name of the nagios monitor file
+NAGIOS_GPS_TIME=`lalapps_tconvert`
+NAGIOS_DIR=/home/${USER}/public_html/daily_cbc_offline/nagios
+NAGIOS_FILE=${NAGIOS_DIR}/nagios-tranfer-files.json
+
+# make sure directory exists
+mkdir -p ${NAGIOS_DIR}
+
+# update nagios monitor
+pycbc_nagios_daily_monitor --update-transfer-files --output-file ${NAGIOS_FILE}  --gps-time ${NAGIOS_GPS_TIME}
+
+

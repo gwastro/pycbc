@@ -378,7 +378,6 @@ def get_freq(freqfunc, m1, m2, s1z, s2z):
     lalsim_ffunc = getattr(lalsimulation, freqfunc)
     return _vec_get_freq(lalsim_ffunc, m1, m2, s1z, s2z)
 
-
 def _get_final_freq(approx, m1, m2, s1z, s2z):
     """
     Wrapper of the LALSimulation function returning the final (highest)
@@ -501,6 +500,20 @@ def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
     """
     params = {"m1":m1, "m2":m2, "s1z":s1z, "s2z":s2z}
     return named_frequency_cutoffs[name](params)
+
+def _get_seobnrrom_duration(m1, m2, s1z, s2z, f_low):
+    """Wrapper of lalsimulation template duration approximate formula"""
+    m1, m2, s1z, s2z, f_low = float(m1), float(m2), float(s1z), float(s2z),\
+                              float(f_low)
+    chi = lalsimulation.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
+    time_length = lalsimulation.SimIMRSEOBNRv2ChirpTimeSingleSpin(
+                                m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, f_low)
+    # FIXME The function seobnrrom_length_in_time() in waveform.py adds an
+    # extra factor of 1.1 for 'safety'.  For consistency with that code we do
+    # that here.  THIS IS FRAGILE AND HACKY
+    return time_length * 1.1
+
+get_seobnrrom_duration = numpy.vectorize(_get_seobnrrom_duration)
 
 def get_inspiral_tf(tc, mass1, mass2, f_low, f_high, n_points=50, pn_2order=7):
     """Compute the time-frequency evolution of an inspiral signal.

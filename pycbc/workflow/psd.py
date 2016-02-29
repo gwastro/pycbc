@@ -18,7 +18,7 @@
 """
 
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, File
-from pycbc.events import segments_to_file
+from pycbc.workflow.core import SegFile
 from glue.segments import segmentlist
 
 class CalcPSDExecutable(Executable):
@@ -65,9 +65,10 @@ def setup_psd_calculate(workflow, frame_files, ifo, segments,
     
     psd_files = FileList([])
     for i, segs in enumerate(segment_lists):
-        seg_file = segments_to_file(segmentlist(segs), 
-                               out_dir + '/%s-INSPIRAL_DATA-%s.xml' % (ifo, i), 
-                               'INSPIRAL_DATA', ifo=ifo)
+        seg_file = SegFile.from_segment_list('%s_%s' %(segment_name, i),
+                         segmentlist(segs), segment_name, ifo,
+                         valid_segment=workflow.analysis_time,
+                         extension='xml', directory=out_dir)
 
         psd_files += [make_psd_file(workflow, frame_files, seg_file,
                                     segment_name, out_dir, 

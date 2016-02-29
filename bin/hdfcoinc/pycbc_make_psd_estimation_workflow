@@ -28,8 +28,6 @@ import logging
 import glue.segments
 import datetime
 import lal, sys
-from pycbc.events.veto import multi_segments_to_file
-from pycbc.events import segments_to_file
 from pycbc.results import save_fig_with_metadata, two_column_layout
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -103,9 +101,11 @@ for ifo, segments in science_segs.items():
     broken_segments = glue.segments.segmentlist(broken_segments)
     logging.info('%.1f s of SCIENCE_OK data reduced to %.1f s after segmentation',
                  abs(segments), abs(broken_segments))
-    broken_segments_path = os.path.abspath('segments/%s-SCIENCE_OK_BROKEN.xml' % ifo)
-    broken_segments_file = segments_to_file(
-            broken_segments, broken_segments_path, 'SCIENCE_OK_BROKEN', ifo=ifo)
+    broken_segments_file = pycbc.workflow.SegFile.from_segment_list(
+                     'SCIENCE_OK_BROKEN', broken_segments, 'SCIENCE_OK_BROKEN',
+                     ifo, valid_segment=workflow.analysis_time,
+                     extension='xml', directory='segments')
+
     # create pycbc_calculate_psd job
     ifo_psd_files = pycbc.workflow.make_psd_file(
             workflow, datafind_files.find_output_with_ifo(ifo),
@@ -144,8 +144,10 @@ for segment_list,segment_name in zip(seg_summ_seglists, seg_summ_names):
         seg_list.append(segment_list[ifo])
         names.append(segment_name)
         ifos.append(ifo)
-filename = 'segments/'+''.join(workflow.ifos)+'-WORKFLOW_SEGMENT_SUMMARY.xml'
-seg_summ_file = multi_segments_to_file(seg_list, filename, names, ifos)
+seg_summ_file = pycbc.workflow.SegFile.from_multi_segment_list(
+                   'WORKFLOW_SEGMENT_SUMMARY', seg_list, names, ifos,
+                   valid_segment=workflow.analysis_time, extension='xml',
+                   directory='segments')
 
 # make segment table for summary page
 seg_summ_table = pycbc.workflow.make_seg_table(workflow, [seg_summ_file],

@@ -25,7 +25,7 @@ from xml.sax.saxutils import unescape
 import pycbc.results
 from pycbc.results import unescape_table
 from pycbc.results.metadata import save_html_with_metadata
-from pycbc.workflow.segment import fromsegmentxml
+from pycbc.workflow.core import SegFile
 
 def render_workflow_html_template(filename, subtemplate, filelists):
     """ Writes a template given inputs from the workflow generator. Takes
@@ -125,7 +125,10 @@ def render_default(path, cp):
         # segment or veto file return a segmentslistdict instance
         with open(path, 'r') as xmlfile:
             try:
-                content = fromsegmentxml(xmlfile, return_dict=True)
+                wf_file = SegFile.from_segment_xml(path)
+                # FIXME: This is a dictionary, but the code wants a segmentlist
+                #        for now I just coalesce.
+                seg_dict = wf_file.return_union_seglist()
             except Exception as e:
                 print 'No segment table found in', path, ':', e
 

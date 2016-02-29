@@ -39,11 +39,11 @@ lsctables.use_in(mycontenthandler)
 
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta, f_SchwarzISCO
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
+from pycbc.waveform.utils import taper_timeseries
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
 from pycbc.filter import match, sigmasq, resample_to_delta_t
-from pycbc.fft import fft
-from math import cos, sin, ceil, log
+from math import ceil, log
 import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain
 from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
 
@@ -100,41 +100,42 @@ def make_padded_frequency_series(vec, filter_N=None):
         delta_f = 1.0 / (vec.delta_t * N)
         vectilde = FrequencySeries(zeros(n), delta_f=1.0,
                                dtype=complex_same_precision_as(vec))
-        fft(vec_pad, vectilde)
+        pycbc.fft.fft(vec_pad, vectilde)
 
     return FrequencySeries(vectilde * DYN_RANGE_FAC, delta_f=delta_f,
                            dtype=complex64)
 
 def get_waveform(approximant, phase_order, amplitude_order, spin_order,
-                 template_params, start_frequency, sample_rate, length,
+                 wf_params, start_frequency, sample_rate, length,
                  filter_rate):
 
-    if approximant in td_approximants():
-        hplus, hcross = get_td_waveform(template_params,
-                                        approximant=approximant,
-                                        phase_order=phase_order,
-                                        spin_order=spin_order,
-                                        delta_t=1./sample_rate,
-                                        f_lower=start_frequency,
-                                        amplitude_order=amplitude_order)
-        hvec = generate_detector_strain(template_params, hplus, hcross)
+    if approximant in fd_approximants():
+        delta_f = filter_rate / length
+        hp, hc = get_fd_waveform(wf_params, approximant=approximant,
+                                 phase_order=phase_order, delta_f=delta_f,
+                                 spin_order=spin_order,
+                                 f_lower=start_frequency,
+                                 amplitude_order=amplitude_order) 
+        hvec = generate_detector_strain(wf_params, hp, hc)
+
+    elif approximant in td_approximants():
+        hp, hc = get_td_waveform(wf_params,
+                                 approximant=approximant,
+                                 phase_order=phase_order,
+                                 spin_order=spin_order,
+                                 delta_t=1./sample_rate,
+                                 f_lower=start_frequency,
+                                 amplitude_order=amplitude_order)
+        if hasattr(wf_params, 'taper'):
+            hp = taper_timeseries(hp, wf_params.taper)
+            hc = taper_timeseries(hc, wf_params.taper)
+        hvec = generate_detector_strain(wf_params, hp, hc)
 
         if filter_rate != sample_rate:
             delta_t = 1.0 / filter_rate
             hvec = resample_to_delta_t(hvec, delta_t)
 
-    elif approximant in fd_approximants():
-        delta_f = filter_rate / length
-        hp, hc = get_fd_waveform(template_params, approximant=approximant,
-                                 phase_order=phase_order, delta_f=delta_f,
-                                 spin_order=spin_order,
-                                 f_lower=start_frequency,
-                                 amplitude_order=amplitude_order) 
-        hvec = generate_detector_strain(template_params, hp, hc)
-
     return make_padded_frequency_series(hvec, filter_N)
-
-aprs = list(set(td_approximants() + fd_approximants()))
 
 # returns true if template_mchirp is more than w*signal_mchirp above or below signal_mchirp
 def outside_mchirp_window(template, signal, w):
@@ -157,6 +158,8 @@ def below_mchirp_window(template, signal, w):
     signal_mchirp, et = mass1_mass2_to_mchirp_eta(signal.mass1, signal.mass2)
     return signal_mchirp - template_mchirp > (w * signal_mchirp)
 
+aprs = sorted(list(set(td_approximants() + fd_approximants())))
+
 #File output Settings
 parser = ArgumentParser()
 parser.add_argument("--match-file", dest="out_file", help="file to output match results", metavar="FILE")
@@ -165,7 +168,7 @@ parser.add_argument("--verbose", action='store_true', default=False, help="Print
 #Template Settings
 parser.add_argument("--template-file", dest="bank_file", help="SimInspiral or SnglInspiral XML file containing the template parameters", metavar="FILE")
 parser.add_argument("--total-mass-divide", type=float, help="Total mass to switch from --template-approximant to --highmass-approximant.")
-parser.add_argument("--highmass-approximant", help="Waveform approximant for highmass templates.")
+parser.add_argument("--highmass-approximant", help="Waveform approximant for highmass templates.", choices=aprs)
 parser.add_argument("--template-approximant", help="Waveform approximant for templates", choices=aprs)
 parser.add_argument("--template-phase-order", help="PN order to use for the template phase", default=-1, type=int)
 parser.add_argument("--template-amplitude-order", help="PN order to use for the template amplitude", default=-1, type=int)
@@ -271,8 +274,6 @@ psd = pycbc.psd.from_cli(options, filter_n,
                          filter_delta_f, options.filter_low_frequency_cutoff, strain=strain,
                          dyn_range_factor=pycbc.DYN_RANGE_FAC, precision='single')
 
-
-
 if options.verbose:
   print("PSD interpolated at %fs" %(elapsed_time()))
   print("Pregenerating Signals")
@@ -341,7 +342,6 @@ with ctx:
                     template_params, signal_params, mchirp_window_upper):
                 matches.append(0)
                 continue
-
 
             # Generate htilde if we haven't already done so
             if htilde is None:
