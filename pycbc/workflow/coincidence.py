@@ -529,7 +529,7 @@ class PyCBCHDFInjFindExecutable(Executable):
 class PyCBCDistributeBackgroundBins(Executable):
     """ Distribute coinc files amoung different background bins """
     current_retention_level = Executable.CRITICAL
-    def create_node(self, coinc_files, bank_file,  background_bins, tags=[]):
+    def create_node(self, coinc_files, bank_file, background_bins, tags=[]):
         node = Node(self)
         node.add_input_list_opt('--coinc-files', coinc_files)
         node.add_input_opt('--bank-file', bank_file)
@@ -814,7 +814,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
             coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, 
                                                    veto_file, veto_name,
                                                    group_str,
-                                                   tags= [veto_name, str(i)])
+                                                   tags=[veto_name, str(i)])
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
              

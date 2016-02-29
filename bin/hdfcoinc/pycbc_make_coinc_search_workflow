@@ -218,7 +218,6 @@ for bin_file in bin_files:
     ratehist = wf.make_snrratehist_plot(workflow, bin_file, 
                     rdir['open_box_result'], tags=bin_file.tags)
 
-                    
     results_page += [(snrifar, ratehist)]
     
     snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
