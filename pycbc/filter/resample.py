@@ -296,6 +296,44 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
 _highpass_func = {numpy.dtype('float32'): lal.HighPassREAL4TimeSeries,
                  numpy.dtype('float64'): lal.HighPassREAL8TimeSeries}
 
+def lowpass_fir(timeseries, frequency, order):
+    """ Lowpass filter the time series using an FIR filtered generated from 
+    the ideal response passed through a kaiser window (beta = 5.0)
+
+    Parameters
+    ----------
+    Time Series: TimeSeries
+        The time series to be low-passed.
+    frequency: float
+        The frequency below which is suppressed. 
+    order: int
+        Number of corrupted samples on each side of the time series
+    """
+    data = timeseries.numpy()
+    k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
+    coeff = scipy.signal.firwin(order * 2 + 1, k, window=('kaiser', 5.0))
+    data = fir_zero_filter(coeff, timeseries)
+    return TimeSeries(data, epoch=timeseries.start_time, delta_t=timeseries.delta_t)
+
+def highpass_fir(timeseries, frequency, order):
+    """ Highpass filter the time series using an FIR filtered generated from 
+    the ideal response passed through a kaiser window (beta = 5.0)
+
+    Parameters
+    ----------
+    Time Series: TimeSeries
+        The time series to be high-passed.
+    frequency: float
+        The frequency below which is suppressed. 
+    order: int
+        Number of corrupted samples on each side of the time series
+    """
+    data = timeseries.numpy()
+    k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
+    coeff = scipy.signal.firwin(order * 2 + 1, k, window=('kaiser', 5.0), pass_zero=True)
+    data = fir_zero_filter(coeff, timeseries)
+    return TimeSeries(data, epoch=timeseries.start_time, delta_t=timeseries.delta_t)
+
 def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
     """Return a new timeseries that is highpassed.
 
@@ -341,5 +379,5 @@ def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
 
     
 
-__all__ = ['resample_to_delta_t', 'highpass']
+__all__ = ['resample_to_delta_t', 'highpass', 'highpass_fir', 'lowpass_fir']
 
