@@ -148,8 +148,13 @@ def lfilter(coefficients, timeseries):
     ----------
     coefficients: numpy.ndarray
         Filter coefficients to apply
-    timeseries: pycbc.types.TimeSeries
+    timeseries: numpy.ndarray
         Time series to be filtered.
+
+    Returns
+    -------
+    tseries: numpy.ndarray
+        filtered array
     """
     from pycbc.fft import fft, ifft
     from pycbc.filter import correlate
@@ -180,6 +185,34 @@ def lfilter(coefficients, timeseries):
         ifft(cout, out)
 
         return out.numpy()  / len(out)
+
+def fir_zero_filter(coeff, timeseries):
+    """Filter the timeseries with a set of FIR coefficients
+    
+    Parameters
+    ----------
+    coeff: numpy.ndarray
+        FIR coefficients. Should be and odd length and symettric.
+    timeseries: pycbc.types.TimeSeries
+        Time series to be filtered.
+
+    Returns
+    -------
+    filtered_series: pycbc.types.TimeSeries
+        Return the filtered timeseries, which has been properly shifted to account
+    for the FIR filter delay and the corrupted regions zeroed out.
+    """
+    # apply the filter
+    series = lfilter(coeff, timeseries.numpy())
+    
+    # reverse the time shift caused by the filter
+    data = numpy.zeros(len(timeseries))
+    data[:len(data)-len(coeff)/2] = series[len(coeff)/2:]
+    
+    # zero out corrupted region
+    data[0:len(coeff)/2] = 0
+    data[len(data)-len(coeff)/2:] = 0
+    return data
 
 def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     """Resmple the time_series to delta_t
@@ -249,20 +282,8 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
         except:
             raise ValueError('Unsupported resample factor, %s, given' %factor)
             
-        # apply the filter
-        series = lfilter(filter_coefficients, timeseries.numpy())
-        
-        # reverse the time shift caused by the filter
-        corruption_length = len(filter_coefficients)
-        data = numpy.zeros(len(timeseries))
-        data[:len(data)-corruption_length/2] = series[corruption_length/2:]
-        
-        # zero out corrupted region
-        data[0:corruption_length/2] = 0
-        data[len(data)-corruption_length/2:] = 0       
-
-        # Decimate the time series
-        data = data[::factor] * 1
+        # apply the filter and decimate
+        data = fir_zero_filter(filter_coefficients, timeseries)[::factor]
         
     else:
         raise ValueError('Invalid resampling method: %s' % method)
