@@ -24,7 +24,7 @@
 import lal
 import numpy
 import scipy.signal
-from pycbc.types import TimeSeries
+from pycbc.types import TimeSeries, Array, zeros, complex_same_precision_as
 
 # LDAS low pass FIR filter coefficents for resampling by 2, 4 and 8      
 # thse were generated using the firlp action to get the FIR coeffs       
@@ -141,6 +141,45 @@ LDAS_FIR_LP[8] = numpy.array( \
 _resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
                  numpy.dtype('float64'): lal.ResampleREAL8TimeSeries}
 
+def lfilter(coefficients, timeseries):
+    """ Apply filter coefficients to a time series
+    
+    Parameters
+    ----------
+    coefficients: numpy.ndarray
+        Filter coefficients to apply
+    timeseries: pycbc.types.TimeSeries
+        Time series to be filtered.
+    """
+    from pycbc.fft import fft, ifft
+    from pycbc.filter import correlate
+
+    # If there aren't many points just use the default scipy method
+    if len(timeseries) < 1024:
+        series = scipy.signal.lfilter(coefficients, 1.0, timeseries.numpy())
+    else:
+        cseries = (Array(coefficients[::-1] * 1)).astype(timeseries.dtype)
+        cseries.resize(len(timeseries))
+        cseries.roll(len(timeseries) - len(coefficients) + 1)
+        timeseries = Array(timeseries)
+
+        flen = len(cseries) / 2 + 1
+        ftype = complex_same_precision_as(timeseries)
+
+        cfreq = zeros(flen, dtype=ftype)
+        tfreq = zeros(flen, dtype=ftype)
+
+        fft(Array(cseries), cfreq)
+        fft(Array(timeseries), tfreq)
+
+        cout = zeros(flen, ftype)
+        out = zeros(len(timeseries), dtype=timeseries)
+
+        correlate(cfreq, tfreq, cout)   
+        ifft(cout, out)
+
+    return out  / len(out)
+
 def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     """Resmple the time_series to delta_t
 
@@ -210,7 +249,7 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
             raise ValueError('Unsupported resample factor, %s, given' %factor)
             
         # apply the filter
-        series = scipy.signal.lfilter(filter_coefficients, 1.0, 
+        series = lfilter(filter_coefficients, 1.0, 
                                       timeseries.numpy())
         
         # reverse the time shift caused by the filter
