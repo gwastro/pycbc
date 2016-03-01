@@ -155,8 +155,9 @@ def lfilter(coefficients, timeseries):
     from pycbc.filter import correlate
 
     # If there aren't many points just use the default scipy method
-    if len(timeseries) < 1024:
-        series = scipy.signal.lfilter(coefficients, 1.0, timeseries.numpy())
+    if len(timeseries) < 2**10:
+        series = scipy.signal.lfilter(coefficients, 1.0, timeseries)
+        return series
     else:
         cseries = (Array(coefficients[::-1] * 1)).astype(timeseries.dtype)
         cseries.resize(len(timeseries))
@@ -178,7 +179,7 @@ def lfilter(coefficients, timeseries):
         correlate(cfreq, tfreq, cout)   
         ifft(cout, out)
 
-    return out  / len(out)
+        return out.numpy()  / len(out)
 
 def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     """Resmple the time_series to delta_t
@@ -249,8 +250,7 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
             raise ValueError('Unsupported resample factor, %s, given' %factor)
             
         # apply the filter
-        series = lfilter(filter_coefficients, 1.0, 
-                                      timeseries.numpy())
+        series = lfilter(filter_coefficients, timeseries.numpy())
         
         # reverse the time shift caused by the filter
         corruption_length = len(filter_coefficients)
