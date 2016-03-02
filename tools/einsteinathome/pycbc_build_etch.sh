@@ -703,6 +703,11 @@ else
     cd pyinstaller
     if test "$pyinstaller_version" = "v3.0"; then
       git checkout 3.0
+    elif test "$pyinstaller_version" = "9d0e0ad4"; then
+      git checkout $pyinstaller_version
+      d=0001-PyInstaller-bootloader-pass-SIGSTOP-and-SIGCONT-to-t.patch
+      wget $wget_opts "https://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/pycbc/blobs/raw/einsteinathome_hacks/tools/einsteinathome/$d"
+      git am "$d"
     else
       git checkout $pyinstaller_version
     fi
