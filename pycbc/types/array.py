@@ -735,6 +735,7 @@ class Array(object):
     def roll(self, shift):
         """shift vector
         """
+        self._saved = {}
         new_arr = zeros(len(self), dtype=self.dtype)
 
         if shift == 0:
