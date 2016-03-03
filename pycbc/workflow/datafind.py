@@ -683,8 +683,11 @@ def convert_cachelist_to_filelist(datafindcache_list):
             # Don't add a new workflow file entry for this frame if
             # if is a duplicate. These are assumed to be returned in time
             # order
-            if prev_file and prev_file.cache_entry.url == frame.url:
-                continue
+            if prev_file:
+                prev_name = prev_file.cache_entry.url.split('/')[-1]
+                this_name = frame.url.split('/')[-1]
+                if prev_name == this_name:
+                    continue
 
             # Pegasus doesn't like "localhost" in URLs.
             frame.url = frame.url.replace('file://localhost','file://')
