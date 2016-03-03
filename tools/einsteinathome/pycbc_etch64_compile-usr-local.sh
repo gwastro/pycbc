@@ -90,6 +90,7 @@ for url in `echo "
   http://pkgconfig.freedesktop.org/releases/pkg-config-0.23.tar.gz
   http://www.python.org/ftp/python/2.7.10/Python-2.7.10.tgz
   https://www.kernel.org/pub/software/scm/git/git-1.9.5.tar.gz
+  https://curl.haxx.se/download/curl-7.47.1.tar.gz
 "` ; do
   test -r `echo $url | sed 's%.*/%%'` ||
   wget --no-check-certificate --passive-ftp "$url" || exit
@@ -100,6 +101,7 @@ compile_tar_gz autoconf-2.63
 compile_tar_gz automake-1.11
 compile_tar_gz libtool-1.5.8
 compile_tar_gz pkg-config-0.23
+compile_tar_gz curl-7.47.1 "--with-ssl"
 
 tar -xzvf git-1.9.5.tar.gz
 cd git-1.9.5
