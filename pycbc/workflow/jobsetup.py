@@ -709,7 +709,7 @@ class JobSegmenter(object):
 class PyCBCInspiralExecutable(Executable):
     """ The class used to create jobs for pycbc_inspiral Executable. """
     
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.NON_CRITICAL
     def __init__(self, cp, exe_name, ifo=None, out_dir=None, injection_file=None, 
                  gate_files=None, tags=[]):
         super(PyCBCInspiralExecutable, self).__init__(cp, exe_name, None, ifo, out_dir, tags=tags)

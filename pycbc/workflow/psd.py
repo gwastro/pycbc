@@ -22,7 +22,7 @@ from pycbc.workflow.core import SegFile
 from glue.segments import segmentlist
 
 class CalcPSDExecutable(Executable):
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.NON_CRITICAL
 
 class MergePSDFiles(Executable):
     current_retention_level = Executable.CRITICAL
