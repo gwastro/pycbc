@@ -448,11 +448,11 @@ def setup_segment_generation(workflow, out_dir, tag=None):
         analSegs = analSegs.find_output_with_tag('SCIENCE_OK')
         assert len(analSegs) == 1
         analSegs = analSegs[0]
-        if analSegs.segmentList:
+        if analSegs.segment_list:
             if minSegLength:
-                analSegs.removeShortSciSegs(minSegLength)
-                analSegs.toSegmentXml()
-            segsToAnalyse[ifo] = analSegs.segmentList
+                analSegs.remove_short_sci_segs(minSegLength)
+                analSegs.to_segment_xml(override_file_if_exists=True)
+            segsToAnalyse[ifo] = analSegs.segment_list
         else:
             msg = "No science segments found for ifo %s. " %(ifo)
             msg += "If this is unexpected check the files that were dumped "
@@ -529,7 +529,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
     for ifo in workflow.ifos:
         logging.info("Generating science segments for ifo %s" %(ifo))
         currSciSegs, currSciXmlFile, _ = get_sci_segs_for_ifo(ifo, cp,
-                                        start_time, end_time, out_dir, tag=tag)
+                                        start_time, end_time, out_dir, tags=tag)
         segFilesList.append(currSciXmlFile)
 
         for category in veto_categories:
@@ -556,6 +556,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
                 
         analysedSegs = currSciSegs - cat1Segs
         analysedSegs.coalesce()
+        analysedSegDict = segments.segmentlistdict()
+        analysedSegDict[ifo + ':SCIENCE_OK'] = analysedSegs
         analysedXmlFile = os.path.join(out_dir,
                              "%s-SCIENCE_OK_SEGMENTS.xml" %(ifo.upper()) )
         currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,
@@ -564,10 +566,11 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
             currTags = [tag, 'SCIENCE_OK']
         else:
             currTags = ['SCIENCE_OK']
-        currFile = SegFile(ifo, 'SEGMENTS', segValidSeg, file_url=currUrl,
-                              segment_list=analysedSegs, tags=currTags)
+        currFile = SegFile(ifo, 'SEGMENTS', analysedSegs,
+                           segment_dict=analysedSegDict, file_url=currUrl,
+                           tags=currTags)
         segFilesList.append(currFile)
-        currFile.toSegmentXml()
+        currFile.to_segment_xml()
 
 
     if generate_coincident_segs:
@@ -1206,8 +1209,11 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
         offsource[iifo] = offsrc
 
     # Write off-source to xml file
+    coherent_seg = segments.segmentlistdict()
+    coherent_seg[ifos + ':COH_OFFSOURCE'] = offsrc
     currFile = SegFile.from_segment_list_dict('COH_OFFSOURCE_SEGMENT',
-                      offsource, extension='xml', directory=out_dir)
+                      coherent_seg, ifo_list=ifos, extension="xml",
+                      directory=out_dir)
     logging.info("Optimal coherent segment calculated.")
 
     offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
@@ -1405,9 +1411,10 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
     offsource[ifo] = offsrc
 
     # Write off-source to xml file
-    currFile = SegFile.from_segment_list('SINGLE_IFO_OFFSOURCE_SEGMENT',
-                                offsource[ifo], 'SINGLE_IFO_OFFSOURCE_SEGMENT',
-                                ifo, extension='xml', directory=out_dir)
+    single_seg = segments.segmentlistdict()
+    single_seg[ifo + ':SINGLE_IFO_OFFSOURCE'] = offsrc
+    currFile = SegFile.from_segment_list_dict('SINGLE_IFO_OFFSOURCE_SEGMENT',
+            single_seg, ifo_list=ifo, extension="xml", directory=out_dir)
     logging.info("Optimal single IFO segment calculated for %s." % ifo)
 
     offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
