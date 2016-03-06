@@ -10,10 +10,6 @@
 #   this is pretty dirty & hardcoded. At least check whether the library is actually there.
 #   Even better, fix the query (currently PyInstaller looks for a libpython.2.7.dll)
 #
-# - use PyCBC PyInstaller hooks for Windows build if possible
-#   When I do this with current code the resulting bundle fails with an "array out of bounds" error
-#   in scipy
-#
 # - PyCBC: "HAVE_GETCONF = False" patch:
 #   the only thing getconf is actually used for is to determine LEVEL2_CACHE_SIZE,
 #   and that doesn't even work as it should on a couple of systems - probably get rid of it completely
