@@ -511,7 +511,7 @@ else
   mkdir lalsuite-build
   cd lalsuite-build
   ../lalsuite/configure --disable-gcc-flags $shared --enable-static --enable-swig-python --prefix="$PREFIX" --disable-silent-rules \
-                        --disable-lalxml --disable-lalpulsar --disable-laldetchar --disable-lalstochastic --disable-lalinference
+      --disable-lalxml --disable-lalpulsar --disable-laldetchar --disable-lalstochastic --disable-lalinference --disable-lalapps
   if $build_dlls; then
       echo '#include "/usr/include/stdlib.h"
 extern int setenv(const char *name, const char *value, int overwrite);
