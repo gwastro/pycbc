@@ -61,6 +61,7 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
   verbose_pyinstalled_python=false
 else
   echo -e "\\n\\n>> [`date`] Using Cygwin settings"
+  export CPPFLAGS="$CPPFLAGS -D_WIN32"
   shared="--enable-shared"
   build_dlls=true
   build_ssl=false
