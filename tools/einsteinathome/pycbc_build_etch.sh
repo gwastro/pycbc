@@ -88,6 +88,7 @@ else
   verbose_pyinstalled_python=false
 fi
 
+# compilation environment
 PYCBC="$PWD/pycbc"
 SOURCE="$PYCBC/source"
 PYTHON_PREFIX="$PYCBC"
@@ -100,19 +101,27 @@ export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran:
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LIBS="$LIBS -lgfortran"
 
+# log compilation environment
+echo "export PATH='$PATH'"
+echo "export LD_LIBRARY_PATH='$LD_LIBRARY_PATH'"
+echo "export PKG_CONFIG_PATH='$PKG_CONFIG_PATH'"
+
 #export CPPFLAGS="-I$PREFIX/include"
 #export LDFLAGS="-L$PREFIX/lib -L$libgfortran"
 #export LDFLAGS="-L$libgfortran $LDFLAGS"
 # -static-libgfortran
 
+# URL abbrevations
+pypi="http://pypi.python.org/packages/source"
+gitmaster="gitmaster.atlas.aei.uni-hannover.de/einsteinathome"
+atlas="https://www.atlas.aei.uni-hannover.de/~bema"
+
+# circumvent old certificate chains
 export GIT_SSL_NO_VERIFY=true
 wget_opts="-c --passive-ftp --no-check-certificate"
 pip_install="install --trusted-host pypi.python.org --trusted-host github.com"
 
-echo "export PATH='$PATH'"
-echo "export LD_LIBRARY_PATH='$LD_LIBRARY_PATH'"
-echo "export PKG_CONFIG_PATH='$PKG_CONFIG_PATH'"
-
+# use precompiles scipy, lalsuite etc. if available
 if test -r pycbc-preinst.tgz -o -r pycbc-preinst-lalsuite.tgz; then
 
   rm -rf pycbc
@@ -143,7 +152,7 @@ else # if pycbc-preinst.tgz
   if test -d lalsuite/.git; then
     :
   else
-    git clone git://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/lalsuite.git
+    git clone git://$gitmaster/lalsuite.git
     cd lalsuite
     git checkout -b eah_cbc origin/eah_cbc
     cd ..
@@ -199,7 +208,7 @@ else # if pycbc-preinst.tgz
   if $build_pyssl; then
     p=pyOpenSSL-0.13
     echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz || wget $wget_opts "http://pypi.python.org/packages/source/p/pyOpenSSL/$p.tar.gz"
+    test -r $p.tar.gz || wget $wget_opts "$pypi/p/pyOpenSSL/$p.tar.gz"
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
@@ -268,8 +277,8 @@ else # if pycbc-preinst.tgz
       git checkout v0.16.0
       git cherry-pick 832baa20f0b5d521bcdf4784dda13695b44bb89f
       if $patch_scipy; then
-        wget $wget_opts https://www.atlas.aei.uni-hannover.de/~bema/PyCBC_Inspiral/0001-E-H-hack-always-use-dumb-shelve.patch
-        wget $wget_opts https://www.atlas.aei.uni-hannover.de/~bema/PyCBC_Inspiral/0006-E-H-hack-_dumbdb-open-files-in-binary-mode.patch
+        wget $wget_opts $atlas/PyCBC_Inspiral/0001-E-H-hack-always-use-dumb-shelve.patch
+        wget $wget_opts $atlas/PyCBC_Inspiral/0006-E-H-hack-_dumbdb-open-files-in-binary-mode.patch
         git am 000*.patch
       fi
     fi
@@ -456,11 +465,14 @@ Libs: -L${libdir} -lhdf5' |
   if $build_swig; then
     p=swig-3.0.7
     echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz || wget $wget_opts https://www.atlas.aei.uni-hannover.de/~bema/tarballs/$p.tar.gz
+    test -r $p.tar.gz || wget $wget_opts "$atlas/tarballs/$p.tar.gz"
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
-    ./configure --prefix=$PREFIX --without-tcl --with-python --without-python3 --without-perl5 --without-octave --without-scilab --without-java --without-javascript --without-gcj --without-android --without-guile --without-mzscheme --without-ruby --without-php --without-ocaml --without-pike --without-chicken --without-csharp --without-lua --without-allegrocl --without-clisp --without-r --without-go --without-d 
+    ./configure --prefix=$PREFIX --without-tcl --with-python --without-python3 --without-perl5 --without-octave \
+        --without-scilab --without-java --without-javascript --without-gcj --without-android --without-guile \
+        --without-mzscheme --without-ruby --without-php --without-ocaml --without-pike --without-chicken \
+        --without-csharp --without-lua --without-allegrocl --without-clisp --without-r --without-go --without-d 
     make
     make install
     cd ..
@@ -581,7 +593,7 @@ pip $pip_install -r requirements.txt
 if $compile_pycbc_glue; then
   p=pycbc-glue-0.9.6
   echo -e "\\n\\n>> [`date`] building $p"
-  test -r $p.tar.gz || wget $wget_opts "http://pypi.python.org/packages/source/p/pycbc-glue/$p.tar.gz"
+  test -r $p.tar.gz || wget $wget_opts "$pypi/p/pycbc-glue/$p.tar.gz"
   rm -rf $p
   tar -xzf $p.tar.gz
   cd $p
@@ -608,7 +620,7 @@ pip $pip_install h5py==2.5.0
 if $fake_psycopg26; then
   p=psycopg2-2.5.5
   echo -e "\\n\\n>> [`date`] building $p"
-  test -r $p.tar.gz || wget $wget_opts "http://pypi.python.org/packages/source/p/psycopg2/$p.tar.gz"
+  test -r $p.tar.gz || wget $wget_opts "$pypi/p/psycopg2/$p.tar.gz"
   rm -rf $p
   tar -xzf $p.tar.gz
   cd $p
@@ -705,9 +717,9 @@ else
       git checkout 3.0
     elif test "$pyinstaller_version" = "9d0e0ad4"; then
       git checkout $pyinstaller_version
-      d=0001-PyInstaller-bootloader-pass-SIGSTOP-and-SIGCONT-to-t.patch
-      wget $wget_opts "https://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/pycbc/blobs/raw/einsteinathome_hacks/tools/einsteinathome/$d"
-      git am "$d"
+      patch=0001-PyInstaller-bootloader-pass-SIGSTOP-and-SIGCONT-to-t.patch
+      wget $wget_opts "https://$gitmaster/pycbc/blobs/raw/einsteinathome_hacks/tools/einsteinathome/$patch"
+      git am "$patch"
     else
       git checkout $pyinstaller_version
     fi
@@ -740,7 +752,7 @@ if test -d pycbc/.git; then
 else
   rm -rf pycbc
   # git clone git://github.com/ligo-cbc/pycbc
-  git clone git://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/pycbc.git
+  git clone git://$gitmaster/pycbc.git
   cd pycbc
   git checkout -b einsteinathome origin/einsteinathome
 fi
