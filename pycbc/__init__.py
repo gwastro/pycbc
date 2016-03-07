@@ -112,6 +112,8 @@ if os.environ.get("BOINC_SLOT_DIR", None):
         a, b, c = os.environ.get("BOINC_SLOT_DIR").partition(':')
         os.environ['BOINC_SLOT_DIR'] = "/cygdrive/" + a.lower() + c.replace('\\','/')
         print >>sys.stderr, "__init__: BOINC_SLOT_DIR transformed to: '%s'" % os.environ.get("BOINC_SLOT_DIR", "unset")
+    else:
+        os.environ['BOINC_SLOT_DIR'] = "."
 
 # Make sure we use a user specific, machine specific compiled cache location
 _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
