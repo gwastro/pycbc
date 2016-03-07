@@ -110,7 +110,7 @@ if os.environ.get("BOINC_SLOT_DIR", None):
     print >>sys.stderr, "__init__: BOINC_SLOT_DIR: '%s'" % os.environ.get("BOINC_SLOT_DIR", "unset")
     if ':\\' in os.environ.get("BOINC_SLOT_DIR"):
         a, b, c = os.environ.get("BOINC_SLOT_DIR").partition(':')
-        os.environ['BOINC_SLOT_DIR'] = "/cygdrive/" + a.lower() + c.replace('\\','/')
+        os.environ['BOINC_SLOT_DIR'] = "/cygdrive/" + a.lower() + c.replace('\\','/').replace(' ','\\040')
         print >>sys.stderr, "__init__: BOINC_SLOT_DIR transformed to: '%s'" % os.environ.get("BOINC_SLOT_DIR", "unset")
     else:
         os.environ['BOINC_SLOT_DIR'] = "."
