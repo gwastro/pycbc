@@ -105,6 +105,12 @@ DYN_RANGE_FAC =  5.9029581035870565e+20
 if os.environ.get("INITIAL_LOG_LEVEL", None):
     logging.basicConfig(format='%(asctime)s %(message)s', level=int(os.environ["INITIAL_LOG_LEVEL"]))
 
+# If PROJECT_DIR is set (i.e. running a BOINC app) and '/project' exists as well,
+# assume that '/project' is in a fstab prepared for Cygwin and override PROJECT_DIR with that.
+# This should take care of possible blanks in PROJECT_DIR patah, as '/project' has no blanks
+if os.environ.get("PROJECT_DIR", None) and os.path.exists('/project'):
+    os.environ['PROJECT_DIR'] = '/project'
+
 # Make sure we use a user specific, machine specific compiled cache location
 _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
 _tmp_dir = tempfile.gettempdir()
