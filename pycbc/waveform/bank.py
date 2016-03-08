@@ -26,6 +26,7 @@
 This module provides classes that describe banks of waveforms
 """
 import types
+import os
 import pycbc.waveform
 from pycbc.types import zeros
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
@@ -76,6 +77,8 @@ class FilterBank(object):
         self.filter_length = filter_length
         self.kmin = int(f_lower / delta_f)
 
+        if os.environ.get("PROJECT_DIR", None):
+            filename = os.environ.get("PROJECT_DIR", ".") + "/" + filename.replace('\\','/')
         self.indoc = ligolw_utils.load_filename(
             filename, False, contenthandler=LIGOLWContentHandler)
         self.table = table.get_table(
