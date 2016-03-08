@@ -105,14 +105,6 @@ DYN_RANGE_FAC =  5.9029581035870565e+20
 if os.environ.get("INITIAL_LOG_LEVEL", None):
     logging.basicConfig(format='%(asctime)s %(message)s', level=int(os.environ["INITIAL_LOG_LEVEL"]))
 
-# if PROJECT_DIR is set and is a Windows path, transform it into a Cygwin path
-if os.environ.get("PROJECT_DIR", None):
-    print >>sys.stderr, "__init__: PROJECT_DIR: '%s'" % os.environ.get("PROJECT_DIR", "unset")
-    if ':\\' in os.environ.get("PROJECT_DIR"):
-        a, b, c = os.environ.get("PROJECT_DIR").partition(':')
-        os.environ['PROJECT_DIR'] = "/cygdrive/" + a.lower() + c.replace('\\','/')
-        print >>sys.stderr, "__init__: PROJECT_DIR transformed to: '%s'" % os.environ.get("PROJECT_DIR", "unset")
-
 # Make sure we use a user specific, machine specific compiled cache location
 _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
 _tmp_dir = tempfile.gettempdir()
