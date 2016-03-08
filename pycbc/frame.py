@@ -22,7 +22,6 @@ import numpy
 import os.path
 from pycbc.types import TimeSeries
 
-import sys
 
 # map LAL series types to corresponding functions and Numpy types
 _fr_type_map = {
@@ -114,14 +113,9 @@ def read_frame(location, channels, start_time=None,
 
     cum_cache = lal.Cache()
     for source in locations:
-        if os.environ.get("BOINC_SLOT_DIR", None):
-            source = os.environ.get("BOINC_SLOT_DIR", ".") + "/" + source.replace('\\','/')
         dir_name, file_name = os.path.split(source)
         base_name, file_extension = os.path.splitext(file_name)
-
-        print >>sys.stderr, "dir_name = '%s'" % dir_name
-        print >>sys.stderr, "file_name = '%s'" % file_name
-
+    
         if file_extension == ".lcf" or file_extension == ".cache":
             cache = lal.CacheImport(source)
         elif file_extension == ".gwf": 

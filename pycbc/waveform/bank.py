@@ -31,7 +31,6 @@ from pycbc.types import zeros
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from pycbc.filter import sigmasq
 from pycbc import DYN_RANGE_FAC
-import os
 
 def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
@@ -77,8 +76,6 @@ class FilterBank(object):
         self.filter_length = filter_length
         self.kmin = int(f_lower / delta_f)
 
-        if os.environ.get("BOINC_SLOT_DIR", None):
-            filename = os.environ.get("BOINC_SLOT_DIR", ".") + "/" + filename.replace('\\','/')
         self.indoc = ligolw_utils.load_filename(
             filename, False, contenthandler=LIGOLWContentHandler)
         self.table = table.get_table(
