@@ -237,8 +237,12 @@ with ctx:
     snrs, chisqs = [], []  
     raw_bins = [[] for b in range(chisq_bins)]
     
-    start_time = opt.gps_start_time + opt.segment_start_pad
-    end_time = opt.gps_end_time - opt.segment_end_pad
+    if opt.trig_start_time:
+        start_time = opt.trig_start_time
+        end_time = opt.trig_end_time
+    else:
+        start_time = opt.gps_start_time + opt.segment_start_pad
+        end_time = opt.gps_end_time - opt.segment_end_pad
 
     if opt.window:
         start_time_wind = opt.trigger_time - opt.window
@@ -277,6 +281,12 @@ with ctx:
     
     sidx = int((start_time - snrs[0].start_time) / snr.delta_t)
     eidx = int((end_time - start_time) / snr.delta_t) + sidx
+
+    if sidx < 0:
+        err_msg = "Ian has probably broken single_template again. Please email "
+        err_msg += "with the command line that is raising this error and "
+        err_msg += "shout at him. Beer may speed up the fixing process."
+        raise ValueError(err_msg)
 
     for i in range(chisq_bins):
         key = 'chisq_bins/%s' % i
