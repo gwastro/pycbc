@@ -19,7 +19,7 @@ This modules contains functions for reading in data from frame files or caches
 import lalframe, logging
 import lal
 import numpy
-import os.path, os.environ
+import os.path
 from pycbc.types import TimeSeries
 
 import sys
@@ -114,7 +114,7 @@ def read_frame(location, channels, start_time=None,
 
     cum_cache = lal.Cache()
     for source in locations:
-        if os.environ.get("BOINC_SLOT_DIR", ".") != ".":
+        if os.environ.get("BOINC_SLOT_DIR", None):
             source = os.environ.get("BOINC_SLOT_DIR", ".") + "/" + source.replace('\\','/')
         dir_name, file_name = os.path.split(source)
         base_name, file_extension = os.path.splitext(file_name)
