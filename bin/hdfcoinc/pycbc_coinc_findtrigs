@@ -331,8 +331,6 @@ for tnum in range(tmin, tmax):
     else:
         bl = []
 
-    print len(bl), len(bh), len(fi)
-
     ti = numpy.concatenate([bl, bh, fi]).astype(numpy.uint32)
     logging.info('%s after decimation' % len(ti))
    
