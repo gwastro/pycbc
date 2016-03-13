@@ -26,7 +26,7 @@ import pycbc
 # info on hardware cache sizes
 _USE_SUBPROCESS = False
 HAVE_GETCONF = False
-if os.environ.get("NO_GETCONF", None) != None:
+if os.environ.get("NO_GETCONF", None):
     # don't try getconf if NO_GETCONF is set in environment
     print >>sys.stderr, "opt: skip calling getconf as NO_GETCONF is set"
     HAVE_GETCONF = False
@@ -104,7 +104,7 @@ simd_intel_intrin_support = """
 
 """
 
-if os.environ.get("LEVEL2_CACHE_SIZE", None) != None:
+if os.environ.get("LEVEL2_CACHE_SIZE", None):
     LEVEL2_CACHE_SIZE = int(os.environ["LEVEL2_CACHE_SIZE"])
     logging.info("opt: using LEVEL2_CACHE_SIZE %d from environment" % LEVEL2_CACHE_SIZE)
 elif HAVE_GETCONF:

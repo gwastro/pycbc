@@ -83,7 +83,7 @@ def pkg_config_libdirs(packages):
     """
 
     # don't try calling pkg-config if NO_PKGCONFIG is set in environment
-    if os.environ.get("NO_PKGCONFIG", None) != None:
+    if os.environ.get("NO_PKGCONFIG", None):
         print >>sys.stderr, "libutils: skip calling pkg-config as NO_PKGCONFIG is set"
         return []
 
