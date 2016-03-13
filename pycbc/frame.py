@@ -95,6 +95,8 @@ def read_frame(location, channels, start_time=None,
     duration : {None, float}, optional
         The amount of data to read in seconds. Note, this argument is 
         incompatible with `end`.
+    check_integrity : {True, bool}, optional
+        Test the frame files for internal integrity.
 
     Returns
     -------
