@@ -26,9 +26,7 @@ import pycbc
 # info on hardware cache sizes
 _USE_SUBPROCESS = False
 HAVE_GETCONF = False
-if os.environ.get("NO_GETCONF", None):
-    # don't try getconf if NO_GETCONF is set in environment
-    print >>sys.stderr, "opt: skip calling getconf as NO_GETCONF is set"
+if os.environ.get("LEVEL2_CACHE_SIZE", None) or os.environ.get("NO_GETCONF", None):
     HAVE_GETCONF = False
 elif sys.platform == 'darwin':
     # Mac has getconf, but we can do nothing useful with it
