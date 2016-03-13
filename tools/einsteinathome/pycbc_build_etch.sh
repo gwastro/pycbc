@@ -10,17 +10,7 @@
 #   this is pretty dirty & hardcoded. At least check whether the library is actually there.
 #   Even better, fix the query (currently PyInstaller looks for a libpython.2.7.dll)
 #
-# - PyCBC: "HAVE_GETCONF = False" patch:
-#   the only thing getconf is actually used for is to determine LEVEL2_CACHE_SIZE,
-#   and that doesn't even work as it should on a couple of systems - probably get rid of it completely
-#
-# - PyCBC: libutils: "Don't try pkg_config" patch:
-#   pkg_config_libdirs() should check _at_runtime_ whether pkg_config is availabe
-#   at all, and return an empty list if it's not, instead of throwing an error
-#
-# - PyCBC PyInstaller hooks:
-#   ideally the hooks should check for the PyInstaller version or available modules and
-#   import PyInstaller.hooks.hookutils or PyInstaller.utils.hooks accordingly
+# - PyInstaller (Linux): pass SIGSTOP & SIGCONT to child process (or don't create any)
 #
 # - pycbc-glue: ".tp_base = NULL"
 #   in Python on Windows, &PyTuple_Type is not known at compile time, thus I get
