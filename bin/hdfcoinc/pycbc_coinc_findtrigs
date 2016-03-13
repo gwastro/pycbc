@@ -316,18 +316,22 @@ for tnum in range(tmin, tmax):
         sep = 0 if sep < 0 else sep
 
         bsort = numpy.argpartition(c[bi], sep) 
-        bl = bi[bsort[0:sep]]
+        bl_int = bi[bsort[0:sep]]
         bh = bi[bsort[sep:]]
         del bsort 
         del bi
-        if args.decimation_factor:
-            bl = bl[slide[bl] % args.decimation_factor == 0]
-        else:
-            bl = []
     elif args.loudest_keep_value:
-        bl, bh = [], bi[c[bi] > args.loudest_keep_value]
+        bh = bi[c[bi] > args.loudest_keep_value]
+        bl_int = bi[c[bi] <= args.loudest_keep_value]
     else:
-        bl, bh = [], bi
+        bh = bi
+
+    if args.decimation_factor:
+        bl = bl_int[slide[bl_int] % args.decimation_factor == 0]
+    else:
+        bl = []
+
+    print len(bl), len(bh), len(fi)
 
     ti = numpy.concatenate([bl, bh, fi]).astype(numpy.uint32)
     logging.info('%s after decimation' % len(ti))
