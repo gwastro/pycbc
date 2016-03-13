@@ -105,13 +105,6 @@ DYN_RANGE_FAC =  5.9029581035870565e+20
 if os.environ.get("INITIAL_LOG_LEVEL", None):
     logging.basicConfig(format='%(asctime)s %(message)s', level=int(os.environ["INITIAL_LOG_LEVEL"]))
 
-# The only situation in which the first path exists should be in a Cygwin binary.
-# If so and '/project' exists as well, assume that '/project' is in a prepared fstab
-# and override a possible PROJECT_DIR environment with that.
-if ( os.path.exists('/pycbc_inspiral/pycbc_inspiral.exe') and
-     os.path.exists('/project') ):
-    os.environ['PROJECT_DIR'] = '/project'
-
 # Make sure we use a user specific, machine specific compiled cache location
 _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
 _tmp_dir = tempfile.gettempdir()
