@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 
 import os
-from PyInstaller.utils.hooks import (collect_data_files, collect_submodules)
+from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
 
 # Executables that need MKL
 needs_mkl = ['pycbc_inspiral','pycbc_single_template']
