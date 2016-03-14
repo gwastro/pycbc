@@ -669,8 +669,7 @@ cd ..
 $cleanup && rm -rf ligo-cbc-mpld3-25aee65
 
 # PYINSTALLER
-pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.1 or v3.0 -> git, 2.1 or 3.0 -> pypi 
-if $pyinstaller_version | egrep '^[0-9]\.[0-9]$' > /dev/null; then
+if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9]$' > /dev/null; then
   p=PyInstaller-$pyinstaller_version
   echo -e "\\n\\n>> [`date`] building $p"
   test -r $p.tar.gz || wget $wget_opts "https://pypi.python.org/packages/source/P/PyInstaller/$p.tar.gz"
@@ -678,8 +677,8 @@ if $pyinstaller_version | egrep '^[0-9]\.[0-9]$' > /dev/null; then
   tar -xzf $p.tar.gz
   cd $p
   if $build_dlls; then
-    # patch PyInstaller to return /usr/bin/libpython2.7.dll when no other Python lib was found
-    sed -i~ 's%# Python library NOT found. Return just None.%return "/usr/bin/libpython2.7.dll"%' `find PyInstaller -name bindepend.py`
+    # patch PyInstaller to find the Python library on Cygwin
+    sed -i~ "s|'libpython%d%d.dll'|'libpython%d.%d.dll'|" `find PyInstaller -name bindepend.py`
     cd bootloader
     # build bootloader for Windows
     if $pyinstaller_version | grep '3\.' > /dev/null; then
@@ -705,14 +704,14 @@ else
     elif test "$pyinstaller_version" = "9d0e0ad4"; then
       git checkout $pyinstaller_version
       patch=0001-PyInstaller-bootloader-pass-SIGSTOP-and-SIGCONT-to-t.patch
-      wget $wget_opts "https://$gitmaster/pycbc/blobs/raw/einsteinathome_hacks/tools/einsteinathome/$patch"
-      git am "$patch"
+      # wget $wget_opts "https://$gitmaster/pycbc/blobs/raw/einsteinathome_hacks/tools/einsteinathome/$patch"
+      # git am "$patch"
     else
       git checkout $pyinstaller_version
     fi
     if $build_dlls; then
-      # patch PyInstaller to return /usr/bin/libpython2.7.dll when no other Python lib was found
-      sed -i~ 's%# Python library NOT found. Return just None.%return "/usr/bin/libpython2.7.dll"%' `find PyInstaller -name bindepend.py`
+      # patch PyInstaller to find the Python library on Cygwin
+      sed -i~ "s|'libpython%d%d.dll'|'libpython%d.%d.dll'|" `find PyInstaller -name bindepend.py`
     fi
   fi
 
