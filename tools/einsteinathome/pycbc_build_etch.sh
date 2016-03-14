@@ -646,7 +646,7 @@ elif $build_pegasus_source; then
   tar -czf $p-lib-pegasus-python.tgz $p/lib/pegasus/python $p/release-tools $p/build.properties
   $cleanup && rm -rf $p
 else
-  wget $wget_opts http://www.atlas.aei.uni-hannover.de/~bema/tarballs/$p-lib-pegasus-python.tgz
+  wget $wget_opts "$atlas/tarballs/$p-lib-pegasus-python.tgz"
 fi
 echo -e "\\n\\n>> [`date`] building $p"
 tar -xzf $p-lib-pegasus-python.tgz
