@@ -51,7 +51,7 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
   verbose_pyinstalled_python=false
 else
   echo -e "\\n\\n>> [`date`] Using Cygwin settings"
-  export CPPFLAGS="$CPPFLAGS -D_WIN32"
+  lal_cppflags="-D_WIN32"
   shared="--enable-shared"
   build_dlls=true
   build_ssl=false
@@ -500,8 +500,8 @@ else
   rm -rf lalsuite-build
   mkdir lalsuite-build
   cd lalsuite-build
-  ../lalsuite/configure --disable-gcc-flags $shared --enable-static --enable-swig-python --prefix="$PREFIX" --disable-silent-rules \
-      --disable-lalxml --disable-lalpulsar --disable-laldetchar --disable-lalstochastic --disable-lalinference --disable-lalapps
+  ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared --enable-static --prefix="$PREFIX" --disable-silent-rules \
+      --enable-swig-python --disable-lalxml --disable-lalpulsar --disable-laldetchar --disable-lalstochastic --disable-lalinference --disable-lalapps
   if $build_dlls; then
       echo '#include "/usr/include/stdlib.h"
 extern int setenv(const char *name, const char *value, int overwrite);
