@@ -6,10 +6,6 @@
 #
 # A couple of quick & dirty hacks for the Cygwin build need to be made properly:
 #
-# - PyInstaller: "return /usr/bin/libpython2.7.dll when no other Python lib was found"
-#   this is pretty dirty & hardcoded. At least check whether the library is actually there.
-#   Even better, fix the query (currently PyInstaller looks for a libpython.2.7.dll)
-#
 # - PyInstaller (Linux): pass SIGSTOP & SIGCONT to child process (or don't create any)
 #
 # - pycbc-glue: ".tp_base = NULL"
