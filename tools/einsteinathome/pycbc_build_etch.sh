@@ -6,8 +6,6 @@
 #
 # A couple of quick & dirty hacks for the Cygwin build need to be made properly:
 #
-# - PyInstaller (Linux): pass SIGSTOP & SIGCONT to child process (or don't create any)
-#
 # - pycbc-glue: ".tp_base = NULL"
 #   in Python on Windows, &PyTuple_Type is not known at compile time, thus I get
 #   "initializer is not constant. Solution would be to initalize at run time.
@@ -699,9 +697,8 @@ else
       git checkout 3.0
     elif test "$pyinstaller_version" = "9d0e0ad4"; then
       git checkout $pyinstaller_version
-      patch=0001-PyInstaller-bootloader-pass-SIGSTOP-and-SIGCONT-to-t.patch
-      # wget $wget_opts "https://$gitmaster/pycbc/blobs/raw/einsteinathome_hacks/tools/einsteinathome/$patch"
-      # git am "$patch"
+      # patch PyInstaller bootloader to not fork a second process
+      sed -i~ 's/ pid *= *fork()/ pid = 0/' bootloader/common/pyi_utils.c
     else
       git checkout $pyinstaller_version
     fi
@@ -711,16 +708,18 @@ else
     fi
   fi
 
-# build bootloader for Windows
-if $build_dlls; then
-    cd bootloader
-    if $pyinstaller_version | grep '3\.' > /dev/null; then
+  # build bootloader (in any case: for Cygwin it wasn't precompiled, for Linux it was patched)
+  cd bootloader
+  if echo "$pyinstaller_version" | grep '3\.' > /dev/null; then
       python ./waf distclean all
-    else
+  else
+    if $build_dlls; then
       python ./waf configure build install
+    else
+      python ./waf configure --no-lsb build install
     fi
-    cd ..
   fi
+  cd ..
   python setup.py install --prefix="$PREFIX"
   cd ..
 fi
