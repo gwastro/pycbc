@@ -58,6 +58,11 @@ parser.add_argument('--interesting-trig', type=int,
 parser.add_argument('--detector', type=str, required=True)
 parser.add_argument('--center-time', type=float,
                     help='Center plot on the given GPS time')
+parser.add_argument('--approximant', type=str, default='TaylorF2',
+                    help='Waveform model used for computing inspiral tracks.'
+                         ' Python expressions can be used to specify a '
+                         'parameter-dependent approximant as done in '
+                         'pycbc_inspiral.')
 pycbc.strain.insert_strain_option_group(parser)
 opts = parser.parse_args()
 
@@ -137,15 +142,13 @@ if mask.any():
     logging.info('Loading bank')
     bank = h5py.File(opts.bank_file, 'r')
     mass1s, mass2s = np.array(bank['mass1']), np.array(bank['mass2'])
-
-    f_highs = pycbc.pnutils.f_SchwarzISCO(
-            mass1s[sorted_template_ids] + mass2s[sorted_template_ids])
+    spin1s, spin2s = np.array(bank['spin1z']), np.array(bank['spin2z'])
 
     logging.info('Plotting %d trigs', len(sorted_end_time))
-    for tc, rho, tid, f_high in zip(sorted_end_time, sorted_rank,
-                                    sorted_template_ids, f_highs):
+    for tc, rho, tid in zip(sorted_end_time, sorted_rank, sorted_template_ids):
         track_t, track_f = pycbc.pnutils.get_inspiral_tf(
-                tc - center_time, mass1s[tid], mass2s[tid], opts.f_low, f_high)
+                tc - center_time, mass1s[tid], mass2s[tid], spin1s[tid],
+                spin2s[tid], opts.f_low, approximant=opts.approximant)
         if max_rank and rho == max_rank:
             ax.plot(track_t, track_f, '-', color='#ff0000', zorder=3, lw=2)
         else:
@@ -157,9 +160,9 @@ if mask.any():
         rho = rank[interesting_id]
         interesting_trig_rank = rho
         tid = template_ids[interesting_id]
-        f_high = pycbc.pnutils.f_SchwarzISCO(mass1s[tid] + mass2s[tid])
         track_t, track_f = pycbc.pnutils.get_inspiral_tf(
-            tc - center_time, mass1s[tid], mass2s[tid], opts.f_low, f_high)
+            tc - center_time, mass1s[tid], mass2s[tid], spin1s[tid],
+            spin2s[tid], opts.f_low, approximant=opts.approximant)
         ax.plot(track_t, track_f, '-', color='#00ff00', zorder=3, lw=2)
     else:
         interesting_trig_rank = None
@@ -195,9 +198,6 @@ ax.grid(ls='solid', alpha=0.2)
 ax.set_xlabel('Time - %.3f (s)' % center_time)
 ax.set_ylabel('Frequency (Hz)')
 ax.set_title(title)
-note = ("Curves show the PN inspiral only and terminate at the Schwarzschild "
-        "ISCO. Spin effects neglected.")
-fig.text(0.05, 0.01, note, fontsize=7, transform=fig.transFigure)
 cb = fig.colorbar(pc, fraction=0.04, pad=0.01,
                   ticks=LogLocator(subs=range(10)))
 cb.set_label('Power density (normalized to its median over time)')
@@ -208,7 +208,6 @@ caption = ("This plot shows the power spectrogram of the strain data, "
            "curve. The red curve is the loudest trigger by %s. Only the "
            "loudest %d triggers by %s are shown. ") % \
         (opts.rank, opts.num_loudest, opts.rank)
-caption += note
 pycbc.results.save_fig_with_metadata(
         fig, opts.output_file, cmd=' '.join(sys.argv),
         title='Strain spectrogram and inspiral tracks for %s' % opts.detector,
