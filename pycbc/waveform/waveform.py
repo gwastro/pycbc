@@ -524,6 +524,8 @@ _filter_time_lengths["SEOBNRv1_ROM_SingleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_SingleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin"] = seobnrrom_length_in_time
+# FIXME get IMRPhenomD duration from SEOBNRv2 until a proper formula is available
+_filter_time_lengths["IMRPhenomD"] = seobnrrom_length_in_time
 
 
 def get_waveform_filter(out, template=None, **kwargs):
