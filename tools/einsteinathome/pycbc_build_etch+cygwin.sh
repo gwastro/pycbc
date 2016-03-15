@@ -14,12 +14,18 @@ set -e
 
 echo -e "\\n\\n>> [`date`] Start $0"
 
+# usually, build directories are removed after a successful build
+# don't do this if DEBUG is set
 if [ ".$DEBUG" = "." ]; then
   cleanup=true
 else
   cleanup=false
 fi
 
+# automatically detect a Debian 4.0 (Etch) installation.
+# if not found, use Cygwin settings.
+# "build" or "compile" here means "from source", opposed to
+# expect it to be installed on the system or "pip install" it.
 if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
   echo -e "\\n\\n>> [`date`] Using Debian 4.0 (etch) settings"
   shared="--enable-shared"
@@ -87,6 +93,7 @@ echo "export PATH='$PATH'"
 echo "export LD_LIBRARY_PATH='$LD_LIBRARY_PATH'"
 echo "export PKG_CONFIG_PATH='$PKG_CONFIG_PATH'"
 
+# obsolete, kept for reference
 #export CPPFLAGS="-I$PREFIX/include"
 #export LDFLAGS="-L$PREFIX/lib -L$libgfortran"
 #export LDFLAGS="-L$libgfortran $LDFLAGS"
@@ -97,12 +104,12 @@ pypi="http://pypi.python.org/packages/source"
 gitmaster="gitmaster.atlas.aei.uni-hannover.de/einsteinathome"
 atlas="https://www.atlas.aei.uni-hannover.de/~bema"
 
-# circumvent old certificate chains
+# circumvent old certificate chains on old systems
 export GIT_SSL_NO_VERIFY=true
 wget_opts="-c --passive-ftp --no-check-certificate"
 pip_install="install --trusted-host pypi.python.org --trusted-host github.com"
 
-# use precompiles scipy, lalsuite etc. if available
+# use previously compiled scipy, lalsuite etc. if available
 if test -r pycbc-preinst.tgz -o -r pycbc-preinst-lalsuite.tgz; then
 
   rm -rf pycbc
@@ -129,15 +136,6 @@ else # if pycbc-preinst.tgz
 
   mkdir -p "$SOURCE"
   cd "$SOURCE"
-
-  if test -d lalsuite/.git; then
-    :
-  else
-    git clone git://$gitmaster/lalsuite.git
-    cd lalsuite
-    git checkout -b eah_cbc origin/eah_cbc
-    cd ..
-  fi
 
   # OpenSSL
   if $build_ssl; then
@@ -277,6 +275,7 @@ else # if pycbc-preinst.tgz
 # python -c 'import scipy; scipy.test(verbose=2);'
 
   # LIBPQ
+  # tried different versions, ended up with 9.2.0
   if $build_libpq; then
     v=9.2.0 # 8.4.22 # 9.3.10
     p=postgresql-$v
@@ -473,6 +472,14 @@ if test -r $PYCBC/../pycbc-preinst-lalsuite.tgz; then
 else
 
   # LALSUITE
+  if test -d lalsuite/.git; then
+    :
+  else
+    git clone git://$gitmaster/lalsuite.git
+    cd lalsuite
+    git checkout -b eah_cbc origin/eah_cbc
+    cd ..
+  fi
   echo -e "\\n\\n>> [`date`] building lalsuite"
   cd lalsuite
   git reset --hard HEAD
@@ -511,6 +518,7 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
   echo -e "\\n\\n>> [`date`] building PyLAL"
   cd lalsuite/pylal
   python setup.py install --prefix="$PREFIX"
+# Note: building GLUE here is possible, but not really useful, as it will almost never be the version PyCBC is pinned to
 #  echo -e "\\n\\n>> [`date`] building GLUE"
 #  cd ../glue
 #  python setup.py install --prefix="$PREFIX"
@@ -524,6 +532,7 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
 
 fi # if pycbc-preinst.tgz
 
+# requirements for pegasus and PyCBC that can be installed via pip
 echo 'Flask==0.10
 Flask-Cache==0.13.1
 Flask-SQLAlchemy==0.16
@@ -571,6 +580,7 @@ sphinxcontrib-programoutput==0.8' > requirements.txt
 pip $pip_install -r requirements.txt
 # don't downgrade to setuptools==18.2 here yet
 
+# PyCBC-GLUE
 if $compile_pycbc_glue; then
   p=pycbc-glue-0.9.6
   echo -e "\\n\\n>> [`date`] building $p"
@@ -590,14 +600,15 @@ else
   pip $pip_install pycbc-glue==0.9.6
 fi
 
+# h5py
 echo -e "\\n\\n>> [`date`] pip install h5py==2.5.0"
 pip $pip_install h5py==2.5.0
 
 # This is a pretty dirty hack faking psycopg2-2.5.5 to be v2.6
-# pegasus-wms is pinned to it but I couldn't get 2.6 to compile
+# pegasus-wms is pinned to 2.6 but I couldn't get 2.6 to compile
 # see https://github.com/psycopg/psycopg2/issues/305
 # psycopgmodule.c _IS_ compiled with -fPIC, but still doesn't link
-# tried with newer gcc-4.4.4 and newer binutils
+# tried with newer gcc-4.4.4 and newer binutils to no avail
 if $fake_psycopg26; then
   p=psycopg2-2.5.5
   echo -e "\\n\\n>> [`date`] building $p"
@@ -620,7 +631,7 @@ else
   pip $pip_install psycopg2==2.6
 fi
 
-# PEGASUS
+# Pegasus
 v=4.5.2
 p=pegasus-source-$v
 if test -r $p-lib-pegasus-python.tgz; then
@@ -662,8 +673,9 @@ python setup.py install --prefix="$PREFIX"
 cd ..
 $cleanup && rm -rf ligo-cbc-mpld3-25aee65
 
-# PYINSTALLER
+# PyInstaller
 if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9]$' > /dev/null; then
+  # regular release version
   p=PyInstaller-$pyinstaller_version
   echo -e "\\n\\n>> [`date`] building $p"
   test -r $p.tar.gz || wget $wget_opts "https://pypi.python.org/packages/source/P/PyInstaller/$p.tar.gz"
@@ -687,12 +699,12 @@ if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9]$' > /dev/null; then
   $cleanup && rm -rf $p
 else
   p=pyinstaller
-  echo -e "\\n\\n>> [`date`] building pyinstaller"
+  echo -e "\\n\\n>> [`date`] building $p"
   if test -d pyinstaller/.git; then
-    cd pyinstaller
+    cd $p
   else
-    git clone git://github.com/pyinstaller/pyinstaller.git
-    cd pyinstaller
+    git clone git://github.com/$p/$p.git
+    cd $p
     if test "$pyinstaller_version" = "v3.0"; then
       git checkout 3.0
     elif test "$pyinstaller_version" = "9d0e0ad4"; then
@@ -724,7 +736,7 @@ else
   cd ..
 fi
 
-# PYCBC
+# PyCBC
 echo -e "\\n\\n>> [`date`] downgrade to setuptools==18.2"
 pip $pip_install --upgrade setuptools==18.2
 echo -e "\\n\\n>> [`date`] building pycbc"
@@ -764,7 +776,7 @@ cd $PREFIX
 echo -e "\\n\\n>> [`date`] building pyinstaller spec"
 rm -rf dist
 # create spec file
-# if the build machine has dbhash & shelve, scipy weave will use bsddb, so add these to the bundle
+# if the build machine has dbhash & shelve, scipy weave will use bsddb, so make sure these get added
 if python -c "import dbhash, shelve" 2>/dev/null; then
   hidden_imports="$hidden_imports --hidden-import=dbhash --hidden-import=shelve"
 fi
