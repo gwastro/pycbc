@@ -515,7 +515,7 @@ def _get_seobnrrom_duration(m1, m2, s1z, s2z, f_low):
 
 get_seobnrrom_duration = numpy.vectorize(_get_seobnrrom_duration)
 
-def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=50,
+def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
         pn_2order=7, approximant='TaylorF2'):
     """Compute the time-frequency evolution of an inspiral signal.
 
