@@ -26,6 +26,9 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
                       distribution_param, distribution, limits_param,
                       max_param=None, min_param=None):
     """
+    TODO : Replace this function by Collin's formula given in Usman et al .. ? 
+    OR get that coded as a new function? 
+
     Compute the sensitive volume and standard error using a direct Monte Carlo
     integral.  For the result to be useful injections should be made over a
     range of distances D such that sensitive volume due to signals closer than
@@ -118,8 +121,6 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     all_weights = numpy.concatenate((found_weights, missed_weights))
 
     # measured weighted efficiency is w_i for a found inj and 0 for missed
-    mc_weight_samples = numpy.concatenate((found_weights, 0*missed_weights))
-
     # MC integral is volume of sphere * (sum of found weights)/(sum of all weights)
     # over injections covering the sphere
     mc_weight_samples = numpy.concatenate((found_weights, 0 * missed_weights))

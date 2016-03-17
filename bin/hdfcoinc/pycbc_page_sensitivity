@@ -225,7 +225,8 @@ for j in range(len(args.bins)-1):
         elif args.dist_type == 'vt':
             ylabel = "Volume $\\times$ Time (yr Mpc$^3$)"
             pylab.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-            t = f.attrs['foreground_time_exc'] * 3.16888e-8
+            # Hard-coded Julian Year
+            t = f.attrs['foreground_time_exc'] / (365.25 * 24 * 3600)
             reach, ehigh, elow = vols * t, vol_errors * t, vol_errors * t
 
         label = labels[args.bin_type] % (left, right) if do_label else None
@@ -254,7 +255,7 @@ pylab.ylabel(ylabel)
 pylab.xlabel(xlabel)
 
 pylab.grid()
-pylab.legend(loc='lower left')
+pylab.legend(loc='best')
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="Sensitive %s vs %s: binned by %s using %s method"
