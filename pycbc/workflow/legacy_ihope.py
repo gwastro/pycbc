@@ -103,7 +103,7 @@ class LegacyAnalysisExecutable(Executable):
     The class responsible for setting up jobs for legacy lalapps C-code
     Executables.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, name, universe=None, ifo=None, tags=[], out_dir=None):
         super(LegacyAnalysisExecutable, self).__init__(cp, name, universe, ifo, out_dir, tags=tags)
 
@@ -146,14 +146,14 @@ class LegacyAnalysisExecutable(Executable):
     get_valid_times = legacy_get_valid_times
     
 class LegacyTmpltbankExecutable(LegacyAnalysisExecutable):
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
         
 class LegacyInspiralExecutable(LegacyAnalysisExecutable):
     """
     The class responsible for setting up jobs for legacy lalapps_inspiral
     Executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None, 
                        gate_files=None, out_dir=None, tags=[]):
         super(LegacyInspiralExecutable, self).__init__(cp, name, universe, ifo, 
@@ -175,7 +175,7 @@ class LegacySplitBankExecutable(Executable):
     """
     The class responsible for creating jobs for lalapps_splitbank.
     """
-    current_retention_level = Executable.NON_CRITICAL
+    current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp,name, universe, numBanks,
                  ifo=None, out_dir=None, tags=[]):
         Job.__init__(self, cp, name, universe, ifo, out_dir, tags=tags)
@@ -248,7 +248,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
     The class responsible for setting up jobs for legacy
     lalapps_coh_PTF_inspiral executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  gate_files=None, out_dir=None, tags=[]):
         super(LegacyCohPTFInspiralExecutable, self).__init__(cp, name, universe,
@@ -398,7 +398,7 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
     The class responsible for setting up jobs for legacy coh_PTF_trig_cluster
     executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  out_dir=None, tags=[]):
         super(LegacyCohPTFTrigCluster, self).__init__(cp, name, universe,
@@ -431,7 +431,7 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
     The class responsible for setting up jobs for legacy coh_PTF_injfinder
     executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  out_dir=None, tags=[]):
         super(LegacyCohPTFInjfinder, self).__init__(cp, name, universe,
@@ -471,7 +471,7 @@ class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
     The class responsible for setting up jobs for legacy coh_PTF_injcombiner
     executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  out_dir=None, tags=[]):
         super(LegacyCohPTFInjcombiner, self).__init__(cp, name, universe,
@@ -508,7 +508,7 @@ class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
     The class responsible for setting up jobs for legacy coh_PTF_sbv_plotter
     executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  out_dir=None, tags=[]):
         super(LegacyCohPTFSbvPlotter, self).__init__(cp, name, universe,
@@ -550,7 +550,7 @@ class LegacyCohPTFEfficiency(LegacyAnalysisExecutable):
     The class responsible for setting up jobs for legacy coh_PTF_efficiency
     executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  out_dir=None, tags=[]):
         super(LegacyCohPTFEfficiency, self).__init__(cp, name, universe,
@@ -612,7 +612,7 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
     The class responsible for setting up the summary page generation job for
     the PyGRB workflow.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  out_dir=None, tags=[]):
         super(PyGRBMakeSummaryPage, self).__init__(cp, name, universe, ifo=ifo,

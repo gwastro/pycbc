@@ -22,10 +22,10 @@ from pycbc.workflow.core import SegFile
 from glue.segments import segmentlist
 
 class CalcPSDExecutable(Executable):
-    current_retention_level = Executable.NON_CRITICAL
+    current_retention_level = Executable.ALL_TRIGGERS
 
 class MergePSDFiles(Executable):
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
 
 def chunks(l, n):
     """ Yield n successive chunks from l.
