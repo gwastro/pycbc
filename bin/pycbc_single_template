@@ -58,8 +58,13 @@ def select_segments(fname, anal_name, data_name, ifo, time):
         # largest overlap with anal_time
         overlap = None
         for start, end in zip(s2, e2):
+            if start > anal_time[0] or end < anal_time[1]:
+                # The analysis time must lie within the data time, otherwise
+                # this clearly is not the right data segment!
+                continue
+
             curr_nonoverlap = anal_time[0] - start
-            curr_nonoverlap = end - anal_time[1]
+            curr_nonoverlap += end - anal_time[1]
             if (overlap is None) or (curr_nonoverlap < overlap):
                 overlap = curr_nonoverlap
                 data_time = (start, end)
