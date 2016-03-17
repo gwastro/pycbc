@@ -628,22 +628,22 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
 
     page = write_table(page, th, td)
 
-    page.h3()
-    page.add('90% confidence exclusion distances (Mpc)')
-    th = injList
-    td = []
-    d = []
-    for inj in injList:
-        file = open('%s/efficiency_%s/exclusion_distance.txt' % (inj, trial),
-                    'r')
-        for line in file:
-            line = line.replace('\n','')
-            excl_dist = float(line)
-        d.append(excl_dist)
-        file.close()
-    td.append(d)
-
-    page = write_table(page, th, td)
+    for percentile in [90, 50]:
+        page.h3()
+        page.add('%d%% confidence exclusion distances (Mpc)' % percentile)
+        th = injList
+        td = []
+        d = []
+        for inj in injList:
+            file = open('%s/efficiency_%s/exclusion_distance_%d.txt'
+                        % (inj, trial, percentile), 'r')
+            for line in file:
+                line = line.replace('\n','')
+                excl_dist = float(line)
+            d.append(excl_dist)
+            file.close()
+        td.append(d)
+        page = write_table(page, th, td)
 
     page.h3.close()
 
