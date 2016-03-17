@@ -515,18 +515,46 @@ def _get_seobnrrom_duration(m1, m2, s1z, s2z, f_low):
 
 get_seobnrrom_duration = numpy.vectorize(_get_seobnrrom_duration)
 
-def get_inspiral_tf(tc, mass1, mass2, f_low, f_high, n_points=50, pn_2order=7):
+def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
+        pn_2order=7, approximant='TaylorF2'):
     """Compute the time-frequency evolution of an inspiral signal.
 
     Return a tuple of time and frequency vectors tracking the evolution of an
     inspiral signal in the time-frequency plane.
     """
-    from pycbc.waveform.spa_tmplt import findchirp_chirptime
-    
-    # FIXME spins are not taken into account
-    track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high), n_points)
-    track_t = numpy.array([findchirp_chirptime(float(mass1), float(mass2), 
+    # handle param-dependent approximant specification
+    class Params:
+        pass
+    params = Params()
+    params.mass1 = mass1
+    params.mass2 = mass2
+    params.spin1z = spin1
+    params.spin2z = spin2
+    try:
+        approximant = eval(approximant, {'__builtins__': None},
+                           dict(params=params))
+    except NameError:
+        pass
+
+    if approximant in ['TaylorF2', 'SPAtmplt']:
+        from pycbc.waveform.spa_tmplt import findchirp_chirptime
+
+        # FIXME spins are not taken into account
+        f_high = f_SchwarzISCO(mass1 + mass2)
+        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
+                                 n_points)
+        track_t = numpy.array([findchirp_chirptime(float(mass1), float(mass2), 
                                         float(f), pn_2order) for f in track_f])
+    elif approximant == 'SEOBNRv2_ROM_DoubleSpin':
+        f_high = get_final_freq('SEOBNRv2', mass1, mass2, spin1, spin2)
+        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
+                                 n_points)
+        track_t = numpy.array([
+                lalsimulation.SimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency(f,
+                    solar_mass_to_kg(mass1), solar_mass_to_kg(mass2),
+                    float(spin1), float(spin2)) for f in track_f])
+    else:
+        raise ValueError('Approximant ' + approximant + ' not supported')
     return (tc - track_t, track_f)
 
 
