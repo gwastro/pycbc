@@ -128,11 +128,12 @@ def read_frame(location, channels, start_time=None,
         cum_cache = lal.CacheMerge(cum_cache, cache)
         
     stream = lalframe.FrStreamCacheOpen(cum_cache)
+    stream.mode = lalframe.FR_STREAM_VERBOSE_MODE
    
     if check_integrity:     
-        stream.mode = lalframe.FR_STREAM_VERBOSE_MODE
-        lalframe.FrSetMode(stream.mode | lalframe.FR_STREAM_CHECKSUM_MODE,
-                       stream)
+        stream.mode = (stream.mode | lalframe.FR_STREAM_CHECKSUM_MODE)
+
+    lalframe.FrSetMode(stream.mode, stream)
 
     # determine duration of data
     if type(channels) is list:
