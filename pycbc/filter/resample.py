@@ -308,6 +308,8 @@ def lowpass_fir(timeseries, frequency, order, beta=5.0):
         The frequency below which is suppressed. 
     order: int
         Number of corrupted samples on each side of the time series
+    beta: float
+        Beta parameter of the kaiser window that sets the side lobe attenuation.
     """
     data = timeseries.numpy()
     k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
@@ -327,6 +329,8 @@ def highpass_fir(timeseries, frequency, order, beta=5.0):
         The frequency below which is suppressed. 
     order: int
         Number of corrupted samples on each side of the time series
+    beta: float
+        Beta parameter of the kaiser window that sets the side lobe attenuation.
     """
     data = timeseries.numpy()
     k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
