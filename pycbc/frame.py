@@ -71,7 +71,7 @@ def _read_channel(channel, stream, start, duration):
                       dtype=d_type)
 
 def read_frame(location, channels, start_time=None, 
-               end_time=None, duration=None):
+               end_time=None, duration=None, check_integrity=True):
     """Read time series from frame data.
 
     Using a the `location`, which can either be a frame file ".gwf" or a 
@@ -95,6 +95,8 @@ def read_frame(location, channels, start_time=None,
     duration : {None, float}, optional
         The amount of data to read in seconds. Note, this argument is 
         incompatible with `end`.
+    check_integrity : {True, bool}, optional
+        Test the frame files for internal integrity.
 
     Returns
     -------
@@ -126,10 +128,12 @@ def read_frame(location, channels, start_time=None,
         cum_cache = lal.CacheMerge(cum_cache, cache)
         
     stream = lalframe.FrStreamCacheOpen(cum_cache)
-        
     stream.mode = lalframe.FR_STREAM_VERBOSE_MODE
-    lalframe.FrSetMode(stream.mode | lalframe.FR_STREAM_CHECKSUM_MODE,
-                       stream)
+   
+    if check_integrity:     
+        stream.mode = (stream.mode | lalframe.FR_STREAM_CHECKSUM_MODE)
+
+    lalframe.FrSetMode(stream.mode, stream)
 
     # determine duration of data
     if type(channels) is list:
