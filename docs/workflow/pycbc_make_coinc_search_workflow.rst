@@ -669,7 +669,7 @@ Prerequisites
 
 There are a number of requirements on the machine on which the workflow will be started:
 
-- Pegasus version 4.5.3 or later.
+- Pegasus version 4.6.1 or later.
 
 - An updated version of Java SSL proxies.  Replace ``share/pegasus/java/ssl-proxies-2.1.0.jar`` with the one from http://gaul.isi.edu/pub/ssl-proxies-2.1.1-SNAPSHOT.jar
 
@@ -699,7 +699,7 @@ In order to get frame files, jobs running on OSG need a cache file that points t
     sed -e 's+.*/\([^/]*\)$+\1+' -e 's+.*\([0-9]\{6\}\)[0-9]\{4\}.*+\1/\0+' cache.tmp > short.tmp
     sed -e 's+^+gsiftp://red-gridftp.unl.edu/user/ligo+' -e 's+$+ pool="osg"+' cache.tmp > long.tmp
 
-    paste -d' ' short.tmp long.tmp > osg-frames-c00.cache 
+    paste -d' ' short.tmp long.tmp > xroot-frames-c00.cache 
 
     rm cache.tmp short.tmp long.tmp
 
@@ -717,10 +717,10 @@ Configuring the workflow
 
 In order for ``pycbc_inspiral`` to be sent to worker nodes it must be available
 via a remote protocol, either http or gridFTP.  The easiest way to ensure this
-is to include the ``executables.ini`` file assocated with the current release
+is to include the ``osg_executables.ini`` file assocated with the current release
 in the list of ini files, for example::
 
-    http://code.pycbc.phy.syr.edu/pycbc-software/v1.3.1/x86_64/composer_xe_2015.0.090/
+    http://code.pycbc.phy.syr.edu/pycbc-software/v1.3.6/x86_64/composer_xe_2015.0.090/
 
 Add the following to the list of ``--config-overrides`` when running ``pycbc_make_coinc_search_workflow``::
 
@@ -744,8 +744,31 @@ Add the following arguments to ``pycbc_submit_dax``::
     --execution-sites osg \
     --append-pegasus-property 'pegasus.data.configuration=nonsharedfs' \
     --append-site-profile 'local:dagman|maxidle:5000' \
+    --append-pegasus-property 'pegasus.transfer.bypass.input.staging=true’ \
     --remote-staging-server `hostname -f` \
-    --cache osg-frames-c00.cache \
+    --cache xroot-frames-c00.cache \
+
+.. note::
+   Cache files for c01 and c02 are/will be available.
 
 ``hostname -f`` will give the correct value if there is a gsiftp server running on the submit machine.  If not, change this as needed.
+
+Before running the workflow, a proxy compatible with Xrootd needs to be generated. To generate this proxy run the commands
+::
+
+    ligo-proxy-init albert.einstein
+    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
+    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+
+Like ligo-proxy-init this needs to be reinitialized every 72 hours (3 days).
+
+
+To prevent unnessary copying of files run these commands after ``submitdir/work/main_ID0000001`` exists::
+
+     cd [submit directory]
+     cd main_ID0000001
+     perl -pi.bak -e 's+file:///home+symlink:///home+g' stage_inter_local_hdf_trigger_merge-*in
+     perl -pi.bak2 -e 's+gsiftp://sugar-dev2.phy.syr.edu/home+file:///home+g' stage_inter_local_hdf_trigger_merge-*in
+     perl -pi.bak -e 's+gsiftp://sugar-dev2.phy.syr.edu/home+file:///home+g' stage_out_local_osg-scratch_*in
+
 
