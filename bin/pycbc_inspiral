@@ -40,7 +40,12 @@ parser.add_argument("--snr-threshold",
 parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                     help="Cut triggers with NewSNR less than THRESHOLD")
 parser.add_argument("--low-frequency-cutoff", type=float,
-                  help="The low frequency cutoff to use for filtering (Hz)")
+                  help="The low freqeuncy cutoff to use for waveform generation (Hz)")
+parser.add_argument("--waveform-low-frequency-cutoff", type=str,
+                  help="The low frequency cutoff to use for waveform generation (Hz)"
+                       "One may choose a variable lower freqeuncy cutoff"
+                       " by using math functions and the params keys as "
+                       "follows : 30 if (params.mass1 + params.mass2) < 4 else 20)")
 parser.add_argument("--approximant", type=str,
                   help="The name of the approximant to use for filtering. "
                        "One may choose a single approximant by simple assignment. "
@@ -169,10 +174,14 @@ strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 with ctx:
     fft.from_cli(opt)
 
+
     flow = opt.low_frequency_cutoff
     flen = strain_segments.freq_len
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
+
+    waveform_flow = str(opt.waveform_low_frequency_cutoff \
+                    if opt.waveform_low_frequency_cutoff is not None else flow)
 
     logging.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
@@ -223,7 +232,7 @@ with ctx:
     else:
         use_cluster = True
 
-    matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
+    matched_filter = MatchedFilterControl(None, None,
                                    opt.snr_threshold, tlen, delta_f, complex64,
                                    segments, template_mem, use_cluster,
                                    downsample_factor=opt.downsample_factor,
@@ -252,7 +261,7 @@ with ctx:
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
-                    flow, dtype = complex64, phase_order = opt.order,
+                    waveform_flow, dtype = complex64, phase_order = opt.order,
                     taper = opt.taper_template, approximant = opt.approximant,
                     out = template_mem)
 
@@ -274,7 +283,9 @@ with ctx:
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
             snr, norm, corr, idx, snrv = \
-               matched_filter.matched_filter_and_cluster(s_num, template.sigmasq(stilde.psd), cluster_window)
+               matched_filter.matched_filter_and_cluster(s_num, 
+                                                  template.sigmasq(stilde.psd),
+                                                  cluster_window)
 
             if not len(idx):
                 continue
