@@ -67,6 +67,9 @@ center = int((time - start_time) / delta_t)
 left = center - int(args.window / delta_t)
 right = center + int(args.window / delta_t)
 
+left = max(left,0)
+right = min(right,len(f['snr']))
+
 snr = abs(f['snr'][left:right][:])
 chisq = f['chisq'][left:right][:]
 
