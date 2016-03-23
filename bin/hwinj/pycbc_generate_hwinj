@@ -29,7 +29,7 @@ from pycbc import fft
 from pycbc import pnutils
 from pycbc import psd as _psd
 from pycbc import strain as _strain
-from pycbc.detector import Detector
+from pycbc.detector import Detector, effective_distance
 from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.filter import make_frequency_series
 from pycbc.filter import sigmasq
@@ -174,6 +174,8 @@ parser.add_argument("--frame-type", type=str, nargs="+",
                        'to get the needed frame file(s) of this type.')
 
 # output options
+parser.add_argument("--tag", type=str, default='hwinjcbc',
+                    help="Prefix added to output filenames.")
 parser.add_argument("--instruments", nargs="+", type=str, required=True,
                     help="List of instruments to analyze.")
 
@@ -317,8 +319,8 @@ for ifo in opts.instruments:
     det = Detector(ifo)
 
     # get antenna pattern
-    f_plus, f_cross = det.antenna_pattern(opts.ra, opts.dec,
-                        opts.polarization, opts.geocentric_end_time)
+    f_plus, f_cross = det.antenna_pattern(sim.longitude, sim.latitude,
+                        sim.polarization, sim.geocent_end_time)
 
     # calculate strain
     logging.info('Calculating strain for %s', ifo)
@@ -326,7 +328,7 @@ for ifo in opts.instruments:
 
     # taper waveform
     logging.info('Tapering strain for %s', ifo)
-    strain = taper_timeseries(strain, tapermethod=opts.taper)
+    strain = taper_timeseries(strain, tapermethod=sim.taper)
 
     # FFT strain
     logging.info('FFT strain for %s', ifo)
@@ -366,13 +368,13 @@ for ifo in opts.instruments:
     det = Detector(ifo)
 
     # get time delay to detector from center of the Earth
-    time_delay = det.time_delay_from_earth_center(opts.ra, opts.dec,
-                        opts.geocentric_end_time)
-    end_time = opts.geocentric_end_time + time_delay
+    time_delay = det.time_delay_from_earth_center(sim.longitude, sim.latitude,
+                        sim.geocent_end_time)
+    end_time = sim.geocent_end_time + time_delay
 
     # get antenna pattern
-    f_plus, f_cross = det.antenna_pattern(opts.ra, opts.dec,
-                        opts.polarization, opts.geocentric_end_time)
+    f_plus, f_cross = det.antenna_pattern(sim.longitude, sim.latitude,
+                        sim.polarization, sim.geocent_end_time)
 
     # calculate strain
     logging.info('Calculating strain for %s', ifo)
@@ -380,7 +382,7 @@ for ifo in opts.instruments:
 
     # taper waveform
     logging.info('Tapering strain for %s', ifo)
-    strain = taper_timeseries(strain, tapermethod=opts.taper)
+    strain = taper_timeseries(strain, tapermethod=sim.taper)
 
     # FFT strain
     logging.info('FFT strain for '+ifo+'...')
@@ -398,8 +400,8 @@ for ifo in opts.instruments:
     setattr(sim, ifo[0].lower()+'_end_time_ns', int(end_time % 1 * 1e9))
 
     # populate IFO distance columns
-    eff_distance = 2 * distance 
-    eff_distance /= ( 1 + numpy.cos( opts.inclination )**2 )**2 / 4 * f_plus**2 + numpy.cos( opts.inclination )**2 * f_cross**2
+    eff_distance = effective_distance(sim.distance, sim.inclination,
+                                      f_plus, f_cross)
     setattr(sim, 'eff_dist_'+ifo[0].lower(), eff_distance)
 
     # populate IFO end time columns
@@ -423,15 +425,20 @@ h_plus, _ = get_td_waveform(sim, approximant=name, phase_order=phase_order,
                       delta_t=1.0/sample_rate)
 pad_seconds = 5
 template_duration_seconds = int( len(h_plus) / sample_rate ) + 1
-start_time = int(opts.geocentric_end_time) - template_duration_seconds - pad_seconds
-end_time = int(opts.geocentric_end_time) + 1 + pad_seconds
+start_time = int(sim.geocent_end_time) - template_duration_seconds - pad_seconds
+end_time = int(sim.geocent_end_time) + 1 + pad_seconds
 num_samples = (end_time - start_time) * sample_rate
+
+# append rows to XML tables
+sim_table.append(sim)
+sngl_table.append(sngl)
+
+# construct filenames prefix
+prefix = opts.tag + '_' + str(start_time)
 
 # save XML output file if it does not exist
 logging.info('Writing XML file')
-sim_table.append(sim)
-sngl_table.append(sngl)
-xml_filename = ''.join(opts.instruments) + '-' + 'HWINJ_CBC' + '-' + str(start_time) + '-' + str(end_time-start_time) + '.xml.gz'
+xml_filename = prefix + '.xml.gz'
 if os.path.exists(xml_filename):
     logging.warn('Filename %s already exists and will not be overwritten', xml_filename)
     sys.exit()
@@ -451,7 +458,7 @@ for ifo in opts.instruments:
     injections.apply(output, ifo)
 
     # set output filename
-    txt_filename = ifo + '-' + 'HWINJ_CBC' + '-' + str(start_time) + '-' + str(end_time-start_time) + '.txt'
+    txt_filename = prefix + '_' + ifo + '.txt'
 
     # check if filename exists
     if os.path.exists(txt_filename):
