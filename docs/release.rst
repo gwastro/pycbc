@@ -213,6 +213,9 @@ The program used to create a static binary from a Python program is
     cd pyinstaller
     git checkout 9d0e0ad4c1c02964bbff86edbf7400cd40958b1a
 
+.. note::
+   The fix to ``bootloader/common/pyi_utils.c`` only needs to be done when installing the python 2.7 virtual environment. 
+
 By default programs built with PyInstaller will ignore the ``LD_LIBRARY_PATH``
 environment variable, which causes problems in some environments.  To fix this
 edit ``bootloader/common/pyi_utils.c`` and replace the function ``set_dynamic_library_path`` with the following
@@ -248,7 +251,7 @@ edit ``bootloader/common/pyi_utils.c`` and replace the function ``set_dynamic_li
 
 .. Closing slash-star to keep vim happy /*
 
-Then configure the bootlader and install as usual:
+Then configure the bootloader and install as usual:
 
 .. code-block:: bash
 
@@ -341,7 +344,6 @@ All the necessary elements are available through CVMFS:
 .. code-block:: bash
 
   source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
-  module load gcc/4.6.2
   module load python/2.7
 
 Unfortunately it is now necessary to build an entire parallel develoment environment.  Move existing directories out of the way
