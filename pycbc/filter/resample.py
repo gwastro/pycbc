@@ -161,13 +161,15 @@ def lfilter(coefficients, timeseries):
 
     # If there aren't many points just use the default scipy method
     if len(timeseries) < 2**7:
+        if hasattr(timeseries, 'numpy'):
+            timeseries = timeseries.numpy()
         series = scipy.signal.lfilter(coefficients, 1.0, timeseries)
         return series
     else:
         cseries = (Array(coefficients[::-1] * 1)).astype(timeseries.dtype)
         cseries.resize(len(timeseries))
         cseries.roll(len(timeseries) - len(coefficients) + 1)
-        timeseries = Array(timeseries)
+        timeseries = Array(timeseries, copy=False)
 
         flen = len(cseries) / 2 + 1
         ftype = complex_same_precision_as(timeseries)
@@ -205,13 +207,12 @@ def fir_zero_filter(coeff, timeseries):
     # apply the filter
     series = lfilter(coeff, timeseries.numpy())
     
-    # reverse the time shift caused by the filter
+    # reverse the time shift caused by the filter,
+    # corruption regions contain zeros
+    # If the number of filter coefficients is odd, the central point *should*
+    # be included in the output so we only zero out a region of len(coeff) - 1
     data = numpy.zeros(len(timeseries))
-    data[:len(data)-len(coeff)/2] = series[len(coeff)/2:]
-    
-    # zero out corrupted region
-    data[0:len(coeff)/2] = 0
-    data[len(data)-len(coeff)/2:] = 0
+    data[len(coef)/2:len(data)-len(coeff)/2] = series[(len(coeff) / 2) * 2:]
     return data
 
 def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
