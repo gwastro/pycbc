@@ -64,6 +64,9 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 lsctables.use_in(LIGOLWContentHandler)
 
 class BaseFilterBank(object):
+    """ Class to provide some basic helper functions and information
+    about elements of an xml template bank.
+    """
     def __init__(self, filename, approximant=None, **kwds):
         self.indoc = ligolw_utils.load_filename(
             filename, False, contenthandler=LIGOLWContentHandler)
