@@ -305,29 +305,41 @@ for tnum in range(tmin, tmax):
     
     logging.info('Calculating Multi-Detector Combined Statistic')
     c = rank_method.coinc(s0[i0], s1[i1], slide, args.timeslide_interval)
-    
+
+    #index values of the zerolag triggers  
     fi = numpy.where(slide == 0)[0]
+    
+    #index values of the background triggers
     bi = numpy.where(slide != 0)[0]
     logging.info('%s foreground triggers' % len(fi))
     logging.info('%s background triggers' % len(bi))
 
+    # We split the background triggers into two types which we keep track of 
+    # in "bh" (triggers which are *not* decimated, stored in full) and 
+    # "bl" (triggers which may not be stored in full, but we keep track of
+    # how many are removed)
+    # "bl_int" keeps track of which triggers are *not* in the bh set. Depending
+    # on the decimation factor option we may not store any of these or we may
+    # keep a fraction of them corresponding to a subset of the timeslides
     if args.loudest_keep:    
         sep = len(bi) - args.loudest_keep
         sep = 0 if sep < 0 else sep
 
         bsort = numpy.argpartition(c[bi], sep) 
-        bl = bi[bsort[0:sep]]
+        bl_int = bi[bsort[0:sep]]
         bh = bi[bsort[sep:]]
         del bsort 
         del bi
-        if args.decimation_factor:
-            bl = bl[slide[bl] % args.decimation_factor == 0]
-        else:
-            bl = []
     elif args.loudest_keep_value:
-        bl, bh = [], bi[c[bi] > args.loudest_keep_value]
+        bh = bi[c[bi] > args.loudest_keep_value]
+        bl_int = bi[c[bi] <= args.loudest_keep_value]
     else:
-        bl, bh = [], bi
+        bh = bi
+
+    if args.decimation_factor:
+        bl = bl_int[slide[bl_int] % args.decimation_factor == 0]
+    else:
+        bl = []
 
     ti = numpy.concatenate([bl, bh, fi]).astype(numpy.uint32)
     logging.info('%s after decimation' % len(ti))
