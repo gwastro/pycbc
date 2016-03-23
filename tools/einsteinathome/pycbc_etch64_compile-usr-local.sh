@@ -3,9 +3,9 @@
 set -e
 
 # update apt
-echo 'deb http://archive.debian.org/debian/ etch main non-free contrib
-deb-src http://archive.debian.org/debian/ etch main non-free contrib' >>/etc/apt/sources.list
-apt-get update
+grep '^deb http://archive.debian.org/debian/' /etc/apt/sources.list ||
+  echo 'deb http://archive.debian.org/debian/ etch main' >>/etc/apt/sources.list
+apt-get update || true
 apt-get install debian-keyring debian-archive-keyring
 apt-get update
 # tools for pycbc
