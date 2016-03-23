@@ -63,25 +63,15 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
 lsctables.use_in(LIGOLWContentHandler)
 
-class LiveFilterBank(object):
-    def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
-                       approximant=None,
-                       **kwds):
-
-        self.f_lower = f_lower
-        self.approximant = approximant
-        self.filename = filename
-        self.sample_rate = sample_rate
-        self.minimum_buffer = minimum_buffer
-
-
+class BaseFilterBank(object):
+    def __init__(self, filename, approximant=None, **kwds):
         self.indoc = ligolw_utils.load_filename(
             filename, False, contenthandler=LIGOLWContentHandler)
         self.table = table.get_table(
             self.indoc, lsctables.SnglInspiralTable.tableName)
         self.extra_args = kwds  
 
-        self.table = sorted(self.table, key=lambda t: t.mchirp)        
+        self.approximant_str = approximant
 
     @staticmethod
     def parse_option(row, arg):
@@ -91,21 +81,42 @@ class LiveFilterBank(object):
         safe_dict.update(math.__dict__)
         return eval(arg, {"__builtins__":None}, safe_dict)
 
+    def end_frequency(self, index):
+        return pycbc.waveform.get_waveform_end_frequency(self.table[index],
+                              approximant=self.approximant(index), **self.extra_args)      
+
+    def approximant(self, index):
+        if self.approximant_str is not None:
+            if 'params' in self.approximant_str:
+                t = type('t', (object,), {'params' : self.table[index]})
+                approximant = str(self.parse_option(t, self.approximant_str)) 
+            else:
+                approximant = self.approximant_str
+        else:
+            raise ValueError("Reading approximant from template bank not yet supported")
+
+        return approximant
+
     def __len__(self):
         return len(self.table)
 
+class LiveFilterBank(BaseFilterBank):
+    def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
+                       approximant=None,
+                       **kwds):
+
+        self.f_lower = f_lower
+        self.filename = filename
+        self.sample_rate = sample_rate
+        self.minimum_buffer = minimum_buffer
+
+        super(LiveFilterBank, self).__init__(filename, approximant=approximant, **kwds)
+
+        self.table = sorted(self.table, key=lambda t: t.mchirp)        
+
     def __getitem__(self, index):
-        # Determine which approximant we want to generate
-        if 'params' in self.approximant:
-            t = type('t', (object,), {'params' : self.table[index]})
-            approximant = str(self.parse_option(t, self.approximant)) 
-        else:
-            approximant = self.approximant
-
-        # Get the end of the waveform, if applicable
-        f_end = pycbc.waveform.get_waveform_end_frequency(self.table[index],
-                              approximant=approximant, **self.extra_args)
-
+        approximant = self.approximant(index)
+        f_end = self.end_frequency(index)
 
         # Determine the length of time of the filter, rounded up to
         # nearest power of two
@@ -159,13 +170,12 @@ class LiveFilterBank(object):
 
         return htilde
 
-class FilterBank(object):
+class FilterBank(BaseFilterBank):
     def __init__(self, filename, filter_length, delta_f, f_lower,
                  dtype, out=None, approximant=None, **kwds):
         self.out = out
         self.dtype = dtype
         self.f_lower = f_lower
-        self.approximant = approximant
         self.filename = filename
         self.delta_f = delta_f
         self.N = (filter_length - 1 ) * 2
@@ -173,22 +183,7 @@ class FilterBank(object):
         self.filter_length = filter_length
         self.kmin = int(f_lower / delta_f)
 
-        self.indoc = ligolw_utils.load_filename(
-            filename, False, contenthandler=LIGOLWContentHandler)
-        self.table = table.get_table(
-            self.indoc, lsctables.SnglInspiralTable.tableName)
-        self.extra_args = kwds  
-
-    @staticmethod
-    def parse_option(row, arg):
-        import math
-        safe_dict = {}
-        safe_dict.update(row.__dict__)
-        safe_dict.update(math.__dict__)
-        return eval(arg, {"__builtins__":None}, safe_dict)
-
-    def __len__(self):
-        return len(self.table)
+        super(FilterBank, self).__init__(filename, approximant=approximant, **kwds)
 
     def __getitem__(self, index):
         logging.info('generating waveform at position: %s' % index)
@@ -199,24 +194,13 @@ class FilterBank(object):
         else:
             tempout = self.out
 
-        if self.approximant is not None:
-            if 'params' in self.approximant:
-                t = type('t', (object,), {'params' : self.table[index]})
-                approximant = str(self.parse_option(t, self.approximant)) 
-            else:
-                approximant = self.approximant
-        else:
-            raise ValueError("Reading approximant from template bank not yet supported")
-
-        # Get the end of the waveform if applicable (only for SPAtmplt atm)
-        f_end = pycbc.waveform.get_waveform_end_frequency(self.table[index],
-                              approximant=approximant, **self.extra_args)
-
+        approximant = self.approximant(index)
+        f_end = self.end_frequency(index)
         if f_end is None or f_end >= (self.filter_length * self.delta_f):
             f_end = (self.filter_length-1) * self.delta_f
 
-        poke  = tempout.data
         # Clear the storage memory
+        poke  = tempout.data
         tempout.clear()
 
         # Get the waveform filter
