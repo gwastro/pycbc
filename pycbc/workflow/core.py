@@ -109,8 +109,8 @@ def is_condor_exec(exe_path):
 class Executable(pegasus_workflow.Executable):
     # These are the file retention levels
     INTERMEDIATE_PRODUCT = 1
-    NON_CRITICAL = 2
-    CRITICAL = 3
+    ALL_TRIGGERS = 2
+    MERGED_TRIGGERS = 3
     FINAL_RESULT = 4
     
     # This is the default value. It will give a warning if a class is
@@ -271,20 +271,21 @@ class Executable(pegasus_workflow.Executable):
             cp.set("workflow", "file-retention-level", "all_files")
         else:
             # FIXME: Are these names suitably descriptive?
-            if global_retention_level == 'all_files':
-                self.global_retention_threshold = 1
-            elif global_retention_level == 'no_intermediates':
-                self.global_retention_threshold = 2
-            elif global_retention_level == 'all_triggers':
-                self.global_retention_threshold = 3
-            elif global_retention_level == 'results_only':
-                self.global_retention_threshold = 4
-            else:
+            retention_choices = {
+                                 'all_files' : 1,
+                                 'all_triggers' : 2,
+                                 'merged_triggers' : 3,
+                                 'results' : 4
+                                }
+            try:
+                self.global_retention_threshold = \
+                      retention_choices[global_retention_level]
+            except KeyError:
                 err_msg = "Cannot recognize the file-retention-level in the "
                 err_msg += "[workflow] section of the ini file. "
                 err_msg += "Got : %s." %(global_retention_level,)
-                err_msg += "Valid options are: 'all_files', 'no_intermediates',"
-                err_msg += "'all_triggers' or 'results_only' "
+                err_msg += "Valid options are: 'all_files', 'all_triggers',"
+                err_msg += "'merged_triggers' or 'results' "
                 raise ValueError(err_msg)
             if self.current_retention_level == 5:
                 self.retain_files = True

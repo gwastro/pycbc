@@ -443,7 +443,7 @@ def setup_coincidence_workflow_ligolw_thinca(
 class PyCBCBank2HDFExecutable(Executable):
     """ This converts xml tmpltbank to an hdf format
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, bank_file):
         node = Node(self)
         node.add_input_opt('--bank-file', bank_file)
@@ -453,7 +453,7 @@ class PyCBCBank2HDFExecutable(Executable):
 class PyCBCTrig2HDFExecutable(Executable):
     """ This converts xml triggers to an hdf format, grouped by template hash
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, trig_files, bank_file):
         node = Node(self)
         node.add_input_opt('--bank-file', bank_file)
@@ -465,7 +465,7 @@ class PyCBCTrig2HDFExecutable(Executable):
 class PyCBCFindCoincExecutable(Executable):
     """ Find coinc triggers using a folded interval method
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.ALL_TRIGGERS
     def create_node(self, trig_files, bank_file, veto_file, veto_name, template_str, tags=[]):
         segs = trig_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
@@ -483,7 +483,7 @@ class PyCBCFindCoincExecutable(Executable):
 class PyCBCStatMapExecutable(Executable):
     """ Calculate FAP, IFAR, etc
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, coinc_files, tags=[]):
         segs = coinc_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
@@ -497,7 +497,7 @@ class PyCBCStatMapExecutable(Executable):
 class PyCBCStatMapInjExecutable(Executable):
     """ Calculate FAP, IFAR, etc
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, zerolag, full_data, injfull, fullinj, tags=[]):
         segs = zerolag.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
@@ -514,7 +514,7 @@ class PyCBCStatMapInjExecutable(Executable):
 class PyCBCHDFInjFindExecutable(Executable):
     """ Find injections in the hdf files output
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, inj_coinc_file, inj_xml_file, veto_file, veto_name, tags=[]):
         node = Node(self)        
         node.add_input_list_opt('--trigger-file', inj_coinc_file)
@@ -528,7 +528,7 @@ class PyCBCHDFInjFindExecutable(Executable):
 
 class PyCBCDistributeBackgroundBins(Executable):
     """ Distribute coinc files amoung different background bins """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.ALL_TRIGGERS
     def create_node(self, coinc_files, bank_file, background_bins, tags=[]):
         node = Node(self)
         node.add_input_list_opt('--coinc-files', coinc_files)
@@ -548,7 +548,7 @@ class PyCBCDistributeBackgroundBins(Executable):
         return node
         
 class PyCBCCombineStatmap(Executable):
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, stat_files, tags=[]):
         node = Node(self)
         node.add_input_list_opt('--statmap-files', stat_files)
@@ -556,10 +556,10 @@ class PyCBCCombineStatmap(Executable):
         return node
  
 class MergeExecutable(Executable):
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
 
 class CensorForeground(Executable):
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
 
 def make_foreground_censored_veto(workflow, bg_file, veto_file, veto_name, 
                                   censored_name, out_dir, tags=None):

@@ -708,8 +708,8 @@ class JobSegmenter(object):
 
 class PyCBCInspiralExecutable(Executable):
     """ The class used to create jobs for pycbc_inspiral Executable. """
-    
-    current_retention_level = Executable.CRITICAL
+
+    current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, ifo=None, out_dir=None, injection_file=None, 
                  gate_files=None, tags=[]):
         super(PyCBCInspiralExecutable, self).__init__(cp, exe_name, None, ifo, out_dir, tags=tags)
@@ -876,7 +876,7 @@ class PyCBCTmpltbankExecutable(Executable):
     any other Executables using the same command line option groups.
     """
     
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, ifo=None, out_dir=None,
                  tags=[], write_psd=False, psd_files=None):
         super(PyCBCTmpltbankExecutable, self).__init__(cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
@@ -1013,8 +1013,8 @@ class LigolwAddExecutable(Executable):
 
 class LigolwSSthincaExecutable(Executable):
     """ The class responsible for making jobs for ligolw_sstinca. """
-    
-    current_retention_level = Executable.CRITICAL
+
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
                  dqVetoName=None, tags=[]):
         super(LigolwSSthincaExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
@@ -1051,7 +1051,7 @@ class LigolwSSthincaExecutable(Executable):
 class PycbcSqliteSimplifyExecutable(Executable):
     """ The class responsible for making jobs for pycbc_sqlite_simplify. """
     
-    current_retention_level = Executable.NON_CRITICAL
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
         super(PycbcSqliteSimplifyExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
@@ -1074,6 +1074,7 @@ class PycbcSqliteSimplifyExecutable(Executable):
             count = 0
             testing = 0
             curr_node = Node(self)
+            # hack the retention level ..
             if self.global_retention_threshold > \
                                  Executable.INTERMEDIATE_PRODUCT:
                 curr_store_file = False
@@ -1114,7 +1115,7 @@ class SQLInOutExecutable(Executable):
     The class responsible for making jobs for SQL codes taking one input and
     one output.
     """
-    current_retention_level=Executable.NON_CRITICAL
+    current_retention_level=Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
         super(SQLInOutExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
 
@@ -1154,7 +1155,6 @@ class ExtractToXMLExecutable(Executable):
         node.new_output_file_opt(job_segment, '.xml', '--extract',
                                  tags=self.tags, store_file=self.retain_files)
         return node
-
 
 class ComputeDurationsExecutable(SQLInOutExecutable):
     """
@@ -1348,7 +1348,6 @@ class GstlalFarfromsnrchisqhistExecutable(Executable):
                                   store_file=self.retain_files)
         return node
 
-
 class GstlalPlotSensitivity(Executable):
     """
     The class responsible for running gstlal_plot_sensitivity
@@ -1499,7 +1498,7 @@ class LigolwCBCJitterSkylocExecutable(Executable):
     """
     The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
@@ -1525,7 +1524,7 @@ class LigolwCBCAlignTotalSpinExecutable(Executable):
     """
     The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
                  tags=[]):
         Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
@@ -1537,7 +1536,7 @@ class LigolwCBCAlignTotalSpinExecutable(Executable):
     def create_node(self, parent, segment, tags=[]):
         if not parent:
             raise ValueError("Must provide an input file.")
-        
+
         node = Node(self)
         output_file = File(parent.ifo_list, self.exe_name, segment,
                            extension='.xml', store_file=self.retain_files,
@@ -1561,7 +1560,7 @@ class PycbcTimeslidesExecutable(Executable):
 class PycbcSplitBankExecutable(Executable):
     """ The class responsible for creating jobs for pycbc_splitbank. """
     
-    current_retention_level = Executable.NON_CRITICAL
+    current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, num_banks,
                  ifo=None, out_dir=None, universe=None):
         super(PycbcSplitBankExecutable, self).__init__(cp, exe_name, universe,
