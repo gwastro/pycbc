@@ -28,6 +28,7 @@ fi
 # expect it to be installed on the system or "pip install" it.
 if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
   echo -e "\\n\\n>> [`date`] Using Debian 4.0 (etch) settings"
+  test ".$LC_ALL" = "." && export LC_ALL="$LANG"
   shared="--enable-shared"
   build_dlls=false
   build_ssl=true
@@ -637,7 +638,6 @@ p=pegasus-source-$v
 if test -r $p-lib-pegasus-python.tgz; then
   :
 elif $build_pegasus_source; then
-  test ".$LC_CTYPE" = ".UTF-8" && export LC_ALL=en_US.UTF-8
   echo -e "\\n\\n>> [`date`] building $p-lib-pegasus-python.tgz"
   test -r $p.tar.gz || wget $wget_opts "http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz"
   rm -rf $p
