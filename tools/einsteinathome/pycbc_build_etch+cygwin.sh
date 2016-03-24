@@ -104,6 +104,7 @@ echo "export PKG_CONFIG_PATH='$PKG_CONFIG_PATH'"
 pypi="http://pypi.python.org/packages/source"
 gitmaster="gitmaster.atlas.aei.uni-hannover.de/einsteinathome"
 atlas="https://www.atlas.aei.uni-hannover.de/~bema"
+albert=http://albert.phys.uwm.edu/download
 
 # circumvent old certificate chains on old systems
 export GIT_SSL_NO_VERIFY=true
@@ -818,5 +819,51 @@ if $build_dlls; then
     cd tmp
     zip ../pycbc_inspiral.zip pycbc_inspiral/pycbc_inspiral
 fi
+
+# run 10min self-test, build wave cache
+cd "$SOURCE"
+mkdir -p test
+cd test
+f="H-H1_LOSC_4_V1-1126257414-4096.gwf"
+test -r $f || wget $wget_opts "$albert/$f"
+p="H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz"
+test -r $p || wget $wget_opts "$albert/$p"
+
+NO_TMPDIR=1 \
+  INITIAL_LOG_LEVEL=10 \
+  LEVEL2_CACHE_SIZE=8192 \
+  WEAVE_FLAGS='-O3 -march=core2 -w' \
+  "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" \
+  --fixed-weave-cache \
+  --segment-end-pad 16 \
+  --cluster-method window \
+  --low-frequency-cutoff 30 \
+  --pad-data 8 \
+  --cluster-window 1 \
+  --sample-rate 4096 \
+  --injection-window 4.5 \
+  --segment-start-pad 112 \
+  --psd-segment-stride 8 \
+  --approximant SPAtmplt \
+  --psd-inverse-length 16 \
+  --filter-inj-only \
+  --psd-segment-length 16 \
+  --snr-threshold 5.5 \
+  --segment-length 256 \
+  --newsnr-threshold 5 \
+  --psd-estimation median \
+  --strain-high-pass 20 \
+  --order -1 \
+  --chisq-bins "1.75*(get_freq('fSEOBNRv2Peak',params.mass1,params.mass2,params.spin1z,params.spin2z)-60.)**0.5" \
+  --channel-name H1:LOSC-STRAIN \
+  --gps-start-time 1126259078 \
+  --gps-end-time 1126259846 \
+  --output H1-INSPIRAL-OUT.hdf \
+  --frame-files "$f" \
+  --bank-file "$p" \
+  --verbose 2>&1 | tee test_`date +%s`.log
+
+# zip weave cache
+zip -r "$ENVIRONMENT/dist/pythoncompiled.zip" pycbc_inspiral
 
 echo -e "\\n\\n>> [`date`] Success $0"
