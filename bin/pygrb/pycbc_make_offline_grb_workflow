@@ -133,9 +133,8 @@ ext_file = None
 
 # DATAFIND
 dfDir = os.path.join(currDir, "datafind")
-datafind_files, sciSegs = _workflow.setup_datafind_workflow(wflow, sciSegs,
-                                                            dfDir,
-                                                            segsFileList)
+datafind_files, _, sciSegs, _ = _workflow.setup_datafind_workflow(wflow, sciSegs,
+        dfDir, segsFileList)
 ifo = sciSegs.keys()[0]
 ifos = ''.join(sciSegs.keys())
 wflow.ifos = ifos

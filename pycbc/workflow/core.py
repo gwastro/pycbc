@@ -36,6 +36,7 @@ from glue import lal, segments
 from glue.ligolw import table, lsctables, ligolw
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import segments as ligolw_segments
+from glue.ligolw.utils import process as ligolw_process
 from pycbc.workflow.configuration import WorkflowConfigParser
 from pycbc.workflow import pegasus_workflow
 
@@ -1518,8 +1519,7 @@ class SegFile(File):
         # create XML doc and add process table
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
-        process = ligolw_utils.process.register_to_xmldoc(outdoc, sys.argv[0],
-                                                          {})
+        process = ligolw_process.register_to_xmldoc(outdoc, sys.argv[0], {})
 
         for key, seglist in self.segment_dict.items():
             ifo, name = self.parse_segdict_key(key)
