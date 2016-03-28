@@ -3,9 +3,9 @@
 """
 import numpy, argparse, h5py, logging
 import pycbc.version
+from numpy import unique
 
 def changes(arr):
-    from pycbc.future import unique
     l = numpy.where(arr[:-1] != arr[1:])[0]
     l = numpy.concatenate(([0], l+1, [len(arr)]))
     return unique(l)
