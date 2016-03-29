@@ -212,7 +212,7 @@ def fir_zero_filter(coeff, timeseries):
     # If the number of filter coefficients is odd, the central point *should*
     # be included in the output so we only zero out a region of len(coeff) - 1
     data = numpy.zeros(len(timeseries))
-    data[len(coef)/2:len(data)-len(coeff)/2] = series[(len(coeff) / 2) * 2:]
+    data[len(coeff)/2:len(data)-len(coeff)/2] = series[(len(coeff) / 2) * 2:]
     return data
 
 def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
