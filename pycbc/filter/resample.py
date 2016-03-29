@@ -24,7 +24,7 @@
 import lal
 import numpy
 import scipy.signal
-from pycbc.types import TimeSeries
+from pycbc.types import TimeSeries, Array, zeros, complex_same_precision_as
 
 # LDAS low pass FIR filter coefficents for resampling by 2, 4 and 8      
 # thse were generated using the firlp action to get the FIR coeffs       
@@ -141,6 +141,80 @@ LDAS_FIR_LP[8] = numpy.array( \
 _resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
                  numpy.dtype('float64'): lal.ResampleREAL8TimeSeries}
 
+def lfilter(coefficients, timeseries):
+    """ Apply filter coefficients to a time series
+    
+    Parameters
+    ----------
+    coefficients: numpy.ndarray
+        Filter coefficients to apply
+    timeseries: numpy.ndarray
+        Time series to be filtered.
+
+    Returns
+    -------
+    tseries: numpy.ndarray
+        filtered array
+    """
+    from pycbc.fft import fft, ifft
+    from pycbc.filter import correlate
+
+    # If there aren't many points just use the default scipy method
+    if len(timeseries) < 2**7:
+        if hasattr(timeseries, 'numpy'):
+            timeseries = timeseries.numpy()
+        series = scipy.signal.lfilter(coefficients, 1.0, timeseries)
+        return series
+    else:
+        cseries = (Array(coefficients[::-1] * 1)).astype(timeseries.dtype)
+        cseries.resize(len(timeseries))
+        cseries.roll(len(timeseries) - len(coefficients) + 1)
+        timeseries = Array(timeseries, copy=False)
+
+        flen = len(cseries) / 2 + 1
+        ftype = complex_same_precision_as(timeseries)
+
+        cfreq = zeros(flen, dtype=ftype)
+        tfreq = zeros(flen, dtype=ftype)
+
+        fft(Array(cseries), cfreq)
+        fft(Array(timeseries), tfreq)
+
+        cout = zeros(flen, ftype)
+        out = zeros(len(timeseries), dtype=timeseries)
+
+        correlate(cfreq, tfreq, cout)   
+        ifft(cout, out)
+
+        return out.numpy()  / len(out)
+
+def fir_zero_filter(coeff, timeseries):
+    """Filter the timeseries with a set of FIR coefficients
+    
+    Parameters
+    ----------
+    coeff: numpy.ndarray
+        FIR coefficients. Should be and odd length and symettric.
+    timeseries: pycbc.types.TimeSeries
+        Time series to be filtered.
+
+    Returns
+    -------
+    filtered_series: pycbc.types.TimeSeries
+        Return the filtered timeseries, which has been properly shifted to account
+    for the FIR filter delay and the corrupted regions zeroed out.
+    """
+    # apply the filter
+    series = lfilter(coeff, timeseries.numpy())
+    
+    # reverse the time shift caused by the filter,
+    # corruption regions contain zeros
+    # If the number of filter coefficients is odd, the central point *should*
+    # be included in the output so we only zero out a region of len(coeff) - 1
+    data = numpy.zeros(len(timeseries))
+    data[len(coef)/2:len(data)-len(coeff)/2] = series[(len(coeff) / 2) * 2:]
+    return data
+
 def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     """Resmple the time_series to delta_t
 
@@ -209,21 +283,8 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
         except:
             raise ValueError('Unsupported resample factor, %s, given' %factor)
             
-        # apply the filter
-        series = scipy.signal.lfilter(filter_coefficients, 1.0, 
-                                      timeseries.numpy())
-        
-        # reverse the time shift caused by the filter
-        corruption_length = len(filter_coefficients)
-        data = numpy.zeros(len(timeseries))
-        data[:len(data)-corruption_length/2] = series[corruption_length/2:]
-        
-        # zero out corrupted region
-        data[0:corruption_length/2] = 0
-        data[len(data)-corruption_length/2:] = 0       
-
-        # Decimate the time series
-        data = data[::factor] * 1
+        # apply the filter and decimate
+        data = fir_zero_filter(filter_coefficients, timeseries)[::factor]
         
     else:
         raise ValueError('Invalid resampling method: %s' % method)
@@ -235,6 +296,48 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
 
 _highpass_func = {numpy.dtype('float32'): lal.HighPassREAL4TimeSeries,
                  numpy.dtype('float64'): lal.HighPassREAL8TimeSeries}
+
+def lowpass_fir(timeseries, frequency, order, beta=5.0):
+    """ Lowpass filter the time series using an FIR filtered generated from 
+    the ideal response passed through a kaiser window (beta = 5.0)
+
+    Parameters
+    ----------
+    Time Series: TimeSeries
+        The time series to be low-passed.
+    frequency: float
+        The frequency below which is suppressed. 
+    order: int
+        Number of corrupted samples on each side of the time series
+    beta: float
+        Beta parameter of the kaiser window that sets the side lobe attenuation.
+    """
+    data = timeseries.numpy()
+    k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
+    coeff = scipy.signal.firwin(order * 2 + 1, k, window=('kaiser', beta))
+    data = fir_zero_filter(coeff, timeseries)
+    return TimeSeries(data, epoch=timeseries.start_time, delta_t=timeseries.delta_t)
+
+def highpass_fir(timeseries, frequency, order, beta=5.0):
+    """ Highpass filter the time series using an FIR filtered generated from 
+    the ideal response passed through a kaiser window (beta = 5.0)
+
+    Parameters
+    ----------
+    Time Series: TimeSeries
+        The time series to be high-passed.
+    frequency: float
+        The frequency below which is suppressed. 
+    order: int
+        Number of corrupted samples on each side of the time series
+    beta: float
+        Beta parameter of the kaiser window that sets the side lobe attenuation.
+    """
+    data = timeseries.numpy()
+    k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
+    coeff = scipy.signal.firwin(order * 2 + 1, k, window=('kaiser', beta), pass_zero=False)
+    data = fir_zero_filter(coeff, timeseries)
+    return TimeSeries(data, epoch=timeseries.start_time, delta_t=timeseries.delta_t)
 
 def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
     """Return a new timeseries that is highpassed.
@@ -281,5 +384,5 @@ def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
 
     
 
-__all__ = ['resample_to_delta_t', 'highpass']
+__all__ = ['resample_to_delta_t', 'highpass', 'highpass_fir', 'lowpass_fir']
 
