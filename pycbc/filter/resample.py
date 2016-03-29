@@ -153,6 +153,9 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     elif method == 'ldas':  
         factor = int(delta_t / timeseries.delta_t)
         numtaps = factor * 20 + 1
+
+        # The kaiser window has been testing using the LDAS implementation
+        # and is in the same configuration as used in the original lalinspiral
         filter_coefficients = scipy.signal.firwin(numtaps, 1.0 / factor,
                                                   window=('kaiser', 5))             
         # apply the filter and decimate
