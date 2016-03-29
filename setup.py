@@ -396,7 +396,6 @@ setup (
                'bin/gstlal/pycbc_gen_ranking_data',
                'bin/gstlal/pycbc_pickle_horizon_distances',
                'bin/pycbc_make_html_page',
-               'bin/pycbc_ligolw_find_playground',
                'bin/hdfcoinc/pycbc_make_coinc_search_workflow',
                'bin/hdfcoinc/pycbc_make_psd_estimation_workflow',
                'bin/hdfcoinc/pycbc_calculate_psd',
