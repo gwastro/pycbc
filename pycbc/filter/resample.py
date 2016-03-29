@@ -26,20 +26,6 @@ import numpy
 import scipy.signal
 from pycbc.types import TimeSeries, Array, zeros, complex_same_precision_as
 
-# LDAS low pass FIR filter coefficents for resampling by 2, 4 and 8      
-# thse were generated using the firlp action to get the FIR coeffs       
-# used by the resample action. FIR coeffs are provided for the default   
-# resample action that used a Kaiser window with beta = 5 and a filter   
-# order parameter n = 10. The order of the filter is 2 * n * resampRatio 
-# The filter coefficents used were produced by LDAS-CIT running version 0.7.0
-# of LDAS. See the LDAS dataconditioning API documentation for information.
-
-LDAS_FIR_LP = {}
-
-LDAS_FIR_LP[2] = scipy.signal.firwin(41, .5, window=('kaiser', 5))
-LDAS_FIR_LP[4] = scipy.signal.firwin(81, .25, window=('kaiser', 5))
-LDAS_FIR_LP[8] = scipy.signal.firwin(161, .125, window=('kaiser', 5))
-
 _resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
                  numpy.dtype('float64'): lal.ResampleREAL8TimeSeries}
 
@@ -166,25 +152,9 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
         
     elif method == 'ldas':  
         factor = int(delta_t / timeseries.delta_t)
-        
-        if factor == 8:
-            timeseries = resample_to_delta_t(timeseries, timeseries.delta_t * 4.0, method='ldas')
-            factor = 2
-        elif factor == 16:
-            timeseries = resample_to_delta_t(timeseries, timeseries.delta_t * 4.0, method='ldas')
-            factor = 4 
-        elif factor == 32:
-            timeseries = resample_to_delta_t(timeseries, timeseries.delta_t * 8.0, method='ldas')
-            factor = 4 
-        elif factor == 64:
-            timeseries = resample_to_delta_t(timeseries, timeseries.delta_t * 16.0, method='ldas')
-            factor = 4 
-
-        try:
-            filter_coefficients = LDAS_FIR_LP[factor]
-        except:
-            raise ValueError('Unsupported resample factor, %s, given' %factor)
-            
+        numtaps = factor * 20 + 1
+        filter_coefficients = scipy.signal.firwin(numtaps, 1.0 / factor,
+                                                  window=('kaiser', 5))             
         # apply the filter and decimate
         data = fir_zero_filter(filter_coefficients, timeseries)[::factor]
         
