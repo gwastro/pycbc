@@ -200,34 +200,19 @@ class InjectionSet(object):
         else:
             f_l = f_lower
 
-        # FIXME: Old NR interface will soon be removed. Do not use!
-        if inj.numrel_data != None and inj.numrel_data != "":
-            # performing NR waveform injection
-            # reading Hp and Hc from the frame files
-            swigrow = self.getswigrow(inj)
-            import lalinspiral
-            Hp, Hc = lalinspiral.NRInjectionFromSimInspiral(swigrow, delta_t)
-            # converting to pycbc timeseries
-            hp = TimeSeries(Hp.data.data[:], delta_t=Hp.deltaT,
-                            epoch=Hp.epoch)
-            hc = TimeSeries(Hc.data.data[:], delta_t=Hc.deltaT,
-                            epoch=Hc.epoch)
-            hp /= distance_scale
-            hc /= distance_scale
-        else:
-            name, phase_order = legacy_approximant_name(inj.waveform)
+        name, phase_order = legacy_approximant_name(inj.waveform)
 
-            # compute the waveform time series
-            hp, hc = get_td_waveform(
-                inj, approximant=name, delta_t=delta_t,
-                phase_order=phase_order,
-                f_lower=f_l, distance=inj.distance,
-                **self.extra_args)
-            hp /= distance_scale
-            hc /= distance_scale
+        # compute the waveform time series
+        hp, hc = get_td_waveform(
+            inj, approximant=name, delta_t=delta_t,
+            phase_order=phase_order,
+            f_lower=f_l, distance=inj.distance,
+            **self.extra_args)
+        hp /= distance_scale
+        hc /= distance_scale
 
-            hp._epoch += inj.get_time_geocent()
-            hc._epoch += inj.get_time_geocent()
+        hp._epoch += inj.get_time_geocent()
+        hc._epoch += inj.get_time_geocent()
 
         # taper the polarizations
         hp_tapered = wfutils.taper_timeseries(hp, inj.taper)
