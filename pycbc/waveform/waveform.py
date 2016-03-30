@@ -39,7 +39,7 @@ default_args = {'spin1x':0, 'spin1y':0, 'spin1z':0, 'spin2x':0, 'spin2y':0,
                 'spin2z':0, 'lambda1':0, 'lambda2':0,
                 'inclination':0, 'distance':1, 'f_final':0, 'f_ref':0,
                 'coa_phase':0, 'amplitude_order':-1, 'phase_order':-1,
-                'spin_order':-1, 'tidal_order':-1}
+                'spin_order':-1, 'tidal_order':-1, 'numrel_data':""}
 
 default_sgburst_args = {'eccentricity':0, 'polarization':0}
 
@@ -58,6 +58,9 @@ def _lalsim_td_waveform(**p):
     flags = lalsimulation.SimInspiralCreateWaveformFlags()
     lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
     lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
+
+    if p['numrel_data']:
+        lalsimulation.SimInspiralSetNumrelData(flags, str(p['numrel_data']))
 
     hp, hc = lalsimulation.SimInspiralChooseTDWaveform(float(p['coa_phase']),
                float(p['delta_t']),
