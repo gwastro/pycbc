@@ -1,4 +1,4 @@
-#!/bin/env  python
+#!/usr/bin/env python
 """
 The program combines coincident output files generated
 by pycbc_coinc_findtrigs to generated a mapping between SNR and FAP, along
