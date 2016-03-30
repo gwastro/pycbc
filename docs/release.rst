@@ -100,6 +100,8 @@ instructions here:
 If the default Python is 2.6 it will be useful to name your virtual environment
 something like ``pycbc_dev2.6``, since a subsequent step will require a 2.7
 environment.
+.. note::
+   The bundles can still pull files from the virtual environment that you create. To prevent this it is necessary to ensure that the build environment does not persist after you create the bundles.
 
 In order to distribute the binaries it will first be necessary to have a copy of the git
 repository
@@ -391,4 +393,20 @@ This will take some time.
 Finally, the binaries will need to be put into place on the staging server, which must be done by someone with
 root access.
 
+--------------------------
+Saving Virtual Environment
+--------------------------
+
+To save your virtual environment as a .tar file
+
+.. code:: bash
+   tar -zcf pycbc-dev2.6.tgz pycbc-dev2.6
+   rm -rf pycbc-dev2.6
+
+Before creating a the next release
+
+.. code:: bash
+   tar -zxf pycbc-dev2.6.tgz
+
+The same steps are followed for 2.7, replacing 2.6 with 2.7.
 
