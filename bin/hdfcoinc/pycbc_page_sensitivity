@@ -262,11 +262,11 @@ pycbc.results.save_fig_with_metadata(fig, args.output_file,
             % (args.dist_type.title(), args.sig_type.upper(), 
                args.bin_type, args.integration_method),
      caption="Sensitive %s as a function of Significance:"
-             "Darker lines represent the significance including "
-             "injections in the background estimation, while lighter lines "
-             "exclude each injection individually in the background "
-             "estimation for that signal."
-             "The integration method used is " 
-             "based on %s." % (args.dist_type.title(), args.integration_method),
+             "Lighter lines represent the significance without"
+             " including injections in their own background,"
+             " while darker lines include each injection"
+             " individually in the background. The integration"
+             " method used is based on %s." 
+             % (args.dist_type.title(), args.integration_method),
      cmd=' '.join(sys.argv))
 
