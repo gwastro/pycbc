@@ -162,7 +162,7 @@ def import_sys_wisdom():
 # By default 1, which does some but not much planning,
 # but we provide functions to read and set it
 
-_default_measurelvl = 1
+_default_measurelvl = 0
 def get_measure_level():
     """
     Get the current 'measure level' used in deciding how much effort to put into
