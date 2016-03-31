@@ -35,7 +35,6 @@ import os
 import logging
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import PycbcSplitBankExecutable, PycbcSplitInspinjExecutable
-from pycbc.workflow.legacy_ihope import LegacySplitBankExecutable
 
 def select_splitfilejob_instance(curr_exe):
     """
@@ -58,11 +57,7 @@ def select_splitfilejob_instance(curr_exe):
         and the job returned by this **must** contain
         * job.create_node()
     """
-    # This is basically a list of if statements
-    if curr_exe == 'lalapps_splitbank':
-        exe_class = LegacySplitBankExecutable
-    # Some elif statements
-    elif curr_exe == 'pycbc_splitbank':
+    if curr_exe == 'pycbc_splitbank':
         exe_class = PycbcSplitBankExecutable
     elif curr_exe == 'pycbc_split_inspinj':
         exe_class = PycbcSplitInspinjExecutable

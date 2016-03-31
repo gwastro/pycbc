@@ -34,8 +34,7 @@ import lal
 from glue import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
-from pycbc.workflow.legacy_ihope import (LegacyTmpltbankExecutable,
-        LegacyInspiralExecutable, LegacyCohPTFInspiralExecutable,
+from pycbc.workflow.legacy_ihope import (LegacyCohPTFInspiralExecutable,
         LegacyCohPTFTrigCombiner, LegacyCohPTFTrigCluster,
         LegacyCohPTFInjfinder, LegacyCohPTFInjcombiner, 
         LegacyCohPTFSbvPlotter, LegacyCohPTFEfficiency, PyGRBMakeSummaryPage)
@@ -73,7 +72,6 @@ def select_tmpltbank_class(curr_exe):
         * job.get_valid_times(ifo, )
     """
     exe_to_class_map = {
-        'lalapps_tmpltbank_ahope' : LegacyTmpltbankExecutable,
         'pycbc_geom_nonspinbank'  : PyCBCTmpltbankExecutable,
         'pycbc_aligned_stoch_bank': PyCBCTmpltbankExecutable
     }
@@ -102,7 +100,6 @@ def select_matchedfilter_class(curr_exe):
         * job.get_valid_times(ifo, )
     """
     exe_to_class_map = {
-        'lalapps_inspiral_ahope'  : LegacyInspiralExecutable,
         'pycbc_inspiral'          : PyCBCInspiralExecutable,
         'lalapps_coh_PTF_inspiral': LegacyCohPTFInspiralExecutable
     }
