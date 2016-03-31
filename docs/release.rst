@@ -100,6 +100,8 @@ instructions here:
 If the default Python is 2.6 it will be useful to name your virtual environment
 something like ``pycbc_dev2.6``, since a subsequent step will require a 2.7
 environment.
+.. note::
+   The bundles can still pull files from the virtual environment that you create. To prevent this it is necessary to ensure that the build environment does not persist after you create the bundles.
 
 In order to distribute the binaries it will first be necessary to have a copy of the git
 repository
@@ -213,6 +215,9 @@ The program used to create a static binary from a Python program is
     cd pyinstaller
     git checkout 9d0e0ad4c1c02964bbff86edbf7400cd40958b1a
 
+.. note::
+   The fix to ``bootloader/common/pyi_utils.c`` only needs to be done when installing the python 2.7 virtual environment. 
+
 By default programs built with PyInstaller will ignore the ``LD_LIBRARY_PATH``
 environment variable, which causes problems in some environments.  To fix this
 edit ``bootloader/common/pyi_utils.c`` and replace the function ``set_dynamic_library_path`` with the following
@@ -248,7 +253,7 @@ edit ``bootloader/common/pyi_utils.c`` and replace the function ``set_dynamic_li
 
 .. Closing slash-star to keep vim happy /*
 
-Then configure the bootlader and install as usual:
+Then configure the bootloader and install as usual:
 
 .. code-block:: bash
 
@@ -341,7 +346,6 @@ All the necessary elements are available through CVMFS:
 .. code-block:: bash
 
   source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
-  module load gcc/4.6.2
   module load python/2.7
 
 Unfortunately it is now necessary to build an entire parallel develoment environment.  Move existing directories out of the way
@@ -389,4 +393,20 @@ This will take some time.
 Finally, the binaries will need to be put into place on the staging server, which must be done by someone with
 root access.
 
+--------------------------
+Saving Virtual Environment
+--------------------------
+
+To save your virtual environment as a .tar file
+
+.. code:: bash
+   tar -zcf pycbc-dev2.6.tgz pycbc-dev2.6
+   rm -rf pycbc-dev2.6
+
+Before creating a the next release
+
+.. code:: bash
+   tar -zxf pycbc-dev2.6.tgz
+
+The same steps are followed for 2.7, replacing 2.6 with 2.7.
 
