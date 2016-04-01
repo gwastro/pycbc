@@ -17,10 +17,9 @@
 This modules contains functions reading, generating, and segmenting strain data
 """
 import copy
-import logging, numpy, lal
+import logging, math, numpy, lal
 import pycbc.noise
-from pycbc.types import float32
-from pycbc.types import Array, FrequencySeries, complex_same_precision_as
+import pycbc.types
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
 from pycbc.types import required_opts, required_opts_multi_ifo
@@ -35,6 +34,8 @@ import pycbc.fft
 import pycbc.events
 
 
+next_power_of_2 = lambda n: 2 ** (math.ceil(math.log(n, 2)) + 1)
+
 def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
                          psd_avg_method='median', low_freq_cutoff=30.,
                          threshold=50., cluster_window=5., corrupted_time=4.,
@@ -44,62 +45,73 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     logging.info('Autogating: tapering strain')
     fade_size = corrupted_time * strain.sample_rate
     w = numpy.arange(fade_size) / float(fade_size)
-    strain[0:fade_size] *= Array(w, dtype=strain.dtype)
-    strain[(len(strain)-fade_size):] *= Array(w[::-1], dtype=strain.dtype)
-
-    if output_intermediates:
-        strain.save_to_wav('strain_conditioned.wav')
+    strain[0:fade_size] *= pycbc.types.Array(w, dtype=strain.dtype)
+    strain[(len(strain)-fade_size):] *= pycbc.types.Array(w[::-1],
+                                                          dtype=strain.dtype)
 
     # don't waste time trying to optimize a single FFT
     pycbc.fft.fftw.set_measure_level(0)
+
+    if high_freq_cutoff:
+        logging.info('Autogating: downsampling strain')
+        strain = resample_to_delta_t(strain, 0.5 / high_freq_cutoff,
+                                     method='ldas')
+    if output_intermediates:
+        strain.save_to_wav('strain_conditioned.wav')
+
+    # zero-pad strain to a power-of-2 length
+    strain_pad_length = next_power_of_2(len(strain))
+    pad_start = strain_pad_length/2 - len(strain)/2
+    pad_end = pad_start + len(strain)
+    strain_pad = pycbc.types.TimeSeries(
+            pycbc.types.zeros(strain_pad_length, dtype=strain.dtype),
+            delta_t=strain.delta_t, copy=False,
+            epoch=strain.start_time-pad_start/strain.sample_rate)
+    strain_pad[pad_start:pad_end] = strain[:]
 
     logging.info('Autogating: estimating PSD')
     psd = pycbc.psd.welch(strain, seg_len=int(psd_duration*strain.sample_rate),
                           seg_stride=int(psd_stride*strain.sample_rate),
                           avg_method=psd_avg_method)
-    psd = pycbc.psd.interpolate(psd, 1./strain.duration)
+    psd = pycbc.psd.interpolate(psd, 1./strain_pad.duration)
     psd = pycbc.psd.inverse_spectrum_truncation(
             psd, int(psd_duration * strain.sample_rate),
             low_frequency_cutoff=low_freq_cutoff,
             trunc_method='hann')
+    kmin = int(low_freq_cutoff / psd.delta_f)
+    psd[0:kmin] = numpy.inf
+    if high_freq_cutoff:
+        kmax = int(high_freq_cutoff / psd.delta_f)
+        psd[kmax:] = numpy.inf
 
     logging.info('Autogating: time -> frequency')
-    strain_tilde = FrequencySeries(numpy.zeros(len(strain) / 2 + 1),
-                                   delta_f=psd.delta_f,
-                                   dtype=complex_same_precision_as(strain))
-    pycbc.fft.fft(strain, strain_tilde)
+    strain_tilde = pycbc.types.FrequencySeries(
+            pycbc.types.zeros(len(strain_pad) / 2 + 1,
+                              dtype=pycbc.types.complex_same_precision_as(strain)),
+            delta_f=psd.delta_f, copy=False)
+    pycbc.fft.fft(strain_pad, strain_tilde)
 
     logging.info('Autogating: whitening')
     if high_freq_cutoff:
-        kmax = int(high_freq_cutoff / strain_tilde.delta_f)
-        strain_tilde[kmax:] = 0.
         norm = high_freq_cutoff - low_freq_cutoff
     else:
         norm = strain.sample_rate/2. - low_freq_cutoff
-    strain_tilde /= (psd * norm) ** 0.5
-    kmin = int(low_freq_cutoff / strain_tilde.delta_f)
-    strain_tilde[0:kmin] = 0.
-
-    # FIXME downsample here rather than post-FFT
+    strain_tilde *= (psd * norm) ** (-0.5)
 
     logging.info('Autogating: frequency -> time')
-    pycbc.fft.ifft(strain_tilde, strain)
+    pycbc.fft.ifft(strain_tilde, strain_pad)
 
     pycbc.fft.fftw.set_measure_level(pycbc.fft.fftw._default_measurelvl)
 
-    if high_freq_cutoff:
-        strain = resample_to_delta_t(strain, 0.5 / high_freq_cutoff,
-                                     method='ldas')
-
-    logging.info('Autogating: stdev of whitened strain is %.4f', numpy.std(strain))
-
     if output_intermediates:
-        strain.save_to_wav('strain_whitened.wav')
+        strain_pad[pad_start:pad_end].save_to_wav('strain_whitened.wav')
 
-    mag = abs(strain)
+    logging.info('Autogating: computing magnitude')
+    mag = abs(strain_pad[pad_start:pad_end])
     if output_intermediates:
         mag.save('strain_whitened_mag.npy')
-    mag = numpy.array(mag, dtype=numpy.float32)
+
+    mag = mag.numpy()
 
     # remove strain corrupted by filters at the ends
     corrupted_idx = int(corrupted_time * strain.sample_rate)
@@ -109,7 +121,8 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     logging.info('Autogating: finding loud peaks')
     indices = numpy.where(mag > threshold)[0]
     cluster_idx = pycbc.events.findchirp_cluster_over_window(
-            indices, mag[indices], int(cluster_window*strain.sample_rate))
+            indices, numpy.array(mag[indices]),
+            int(cluster_window*strain.sample_rate))
     times = [idx * strain.delta_t + strain.start_time \
              for idx in indices[cluster_idx]]
     return times
@@ -185,7 +198,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
 
         if precision == 'single':
             logging.info("Converting to float32")
-            strain = (strain * dyn_range_fac).astype(float32)
+            strain = (strain * dyn_range_fac).astype(pycbc.types.float32)
 
         if opt.gating_file is not None:
             logging.info("Gating glitches")
@@ -256,7 +269,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
 
         if precision == 'single':
             logging.info("Converting to float32")
-            strain = (dyn_range_fac * strain).astype(float32)
+            strain = (dyn_range_fac * strain).astype(pycbc.types.float32)
 
     if opt.injection_file or opt.sgburst_injection_file:
         strain.injections = injections
