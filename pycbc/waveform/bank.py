@@ -240,3 +240,17 @@ class FilterBank(BaseFilterBank):
         htilde._sigmasq = {}
 
         return htilde
+
+def find_variable_start_frequency(approximant, parameters, f_start, max_length, 
+                                  delta_f = 1):
+    """ Find a frequency value above the starting frequency that results in a 
+    waveform shorter than max_length.
+    """
+    l = max_length + 1
+    f = f_start - delta_f
+    while l > max_length:
+        f += delta_f
+        l = pycbc.waveform.get_waveform_filter_length_in_time(approximant, parameters, f_lower=f)
+    return f
+
+
