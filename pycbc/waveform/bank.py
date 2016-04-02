@@ -175,7 +175,7 @@ class LiveFilterBank(BaseFilterBank):
 
 class FilterBank(BaseFilterBank):
     def __init__(self, filename, filter_length, delta_f, f_lower, dtype,
-                 out=None, max_filter_duration=None,
+                 out=None, max_template_length=None,
                  approximant=None,
                  **kwds):
         self.out = out
@@ -187,13 +187,11 @@ class FilterBank(BaseFilterBank):
         self.delta_t = 1.0 / (self.N * self.delta_f)
         self.filter_length = filter_length
         self.kmin = int(f_lower / delta_f)
-        self.max_filter_duration = max_filter_duration
+        self.max_template_length = max_template_length
 
         super(FilterBank, self).__init__(filename, approximant=approximant, **kwds)
 
     def __getitem__(self, index):
-        logging.info('generating waveform at position: %s' % index)
-    
         # Make new memory for templates if we aren't given output memory
         if self.out is None:
             tempout = zeros(self.filter_length, dtype=self.dtype)
@@ -206,13 +204,15 @@ class FilterBank(BaseFilterBank):
             f_end = (self.filter_length-1) * self.delta_f
 
         # Find the start frequency, if variable
-        if self.max_filter_duration:
+        if self.max_template_length:
             f_low = find_variable_start_frequency(approximant,
                                                   self.table[index],
                                                   self.f_lower,
-                                                  self.max_filter_duration)
+                                                  self.max_template_length)
         else:
             f_low = self.f_lower
+
+        logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
 
         # Clear the storage memory
         poke  = tempout.data
@@ -239,7 +239,7 @@ class FilterBank(BaseFilterBank):
                 self.table[index].template_duration = htilde.chirp_length
 
         htilde = htilde.astype(self.dtype)
-        htilde.f_lower = self.f_lower
+        htilde.f_lower = f_low
         htilde.end_frequency = f_end
         htilde.end_idx = int(htilde.end_frequency / htilde.delta_f)
         htilde.params = self.table[index]
