@@ -174,8 +174,10 @@ class LiveFilterBank(BaseFilterBank):
         return htilde
 
 class FilterBank(BaseFilterBank):
-    def __init__(self, filename, filter_length, delta_f, f_lower,
-                 dtype, out=None, approximant=None, **kwds):
+    def __init__(self, filename, filter_length, delta_f, f_lower, dtype,
+                 out=None, max_filter_duration=None,
+                 approximant=None,
+                 **kwds):
         self.out = out
         self.dtype = dtype
         self.f_lower = f_lower
@@ -185,6 +187,7 @@ class FilterBank(BaseFilterBank):
         self.delta_t = 1.0 / (self.N * self.delta_f)
         self.filter_length = filter_length
         self.kmin = int(f_lower / delta_f)
+        self.max_filter_duration = max_filter_duration
 
         super(FilterBank, self).__init__(filename, approximant=approximant, **kwds)
 
@@ -202,6 +205,15 @@ class FilterBank(BaseFilterBank):
         if f_end is None or f_end >= (self.filter_length * self.delta_f):
             f_end = (self.filter_length-1) * self.delta_f
 
+        # Find the start frequency, if variable
+        if self.max_filter_duration:
+            f_low = find_variable_start_frequency(approximant,
+                                                  self.table[index],
+                                                  self.f_lower,
+                                                  self.max_filter_duration)
+        else:
+            f_low = self.f_lower
+
         # Clear the storage memory
         poke  = tempout.data
         tempout.clear()
@@ -210,7 +222,7 @@ class FilterBank(BaseFilterBank):
         distance = 1.0 / DYN_RANGE_FAC
         htilde = pycbc.waveform.get_waveform_filter(
             tempout[0:self.filter_length], self.table[index],
-            approximant=approximant, f_lower=self.f_lower, f_final=f_end,
+            approximant=approximant, f_lower=f_low, f_final=f_end,
             delta_f=self.delta_f, delta_t=self.delta_t, distance=distance,
             **self.extra_args)
 
