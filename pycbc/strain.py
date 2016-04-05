@@ -38,16 +38,61 @@ next_power_of_2 = lambda n: 2 ** (math.ceil(math.log(n, 2)) + 1)
 
 def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
                          psd_avg_method='median', low_freq_cutoff=30.,
-                         threshold=50., cluster_window=5., corrupted_time=4.,
+                         threshold=50., cluster_window=5., corrupt_time=4.,
                          high_freq_cutoff=None, output_intermediates=False):
-    """Automatic identification of loud transients for gating purposes."""
+    """Automatic identification of loud transients for gating purposes.
+    This function first estimates the PSD of the input time series using the
+    FindChirp Welch method. Then it whitens the time series using that
+    estimate. Finally, it computes the magnitude of the whitened series,
+    thresholds it and applies the FindChirp clustering over time to the
+    surviving samples.
+
+    Parameters
+    ----------
+    strain : TimeSeries
+        Input strain time series to detect glitches over.
+
+    psd_duration : {float, 4}
+        Duration of the segments for PSD estimation in seconds.
+
+    psd_stride : {float, 2}
+        Separation between PSD estimation segments in seconds.
+
+    psd_avg_method : {string, 'median'}
+        Method for averaging PSD estimation segments.
+
+    low_freq_cutoff : {float, 30}
+        Minimum frequency to include in the whitened strain.
+
+    threshold : {float, 50}
+        Minimum magnitude of whitened strain for considering a transient to
+        be present.
+
+    cluster_window : {float, 5}
+        Length of time window to cluster surviving samples over, in seconds.
+
+    corrupt_time : {float, 4}
+        Amount of time to be discarded at the beginning and end of the input
+        time series.
+
+    high_frequency_cutoff : {float, None}
+        Maximum frequency to include in the whitened strain. If given, the
+        input series is downsampled accordingly. If omitted, the Nyquist
+        frequency is used.
+
+    output_intermediates : {bool, False}
+        Save intermediate time series for debugging.
+
+    Returns
+    -------
+    """
 
     logging.info('Autogating: tapering strain')
-    fade_size = corrupted_time * strain.sample_rate
-    w = numpy.arange(fade_size) / float(fade_size)
-    strain[0:fade_size] *= pycbc.types.Array(w, dtype=strain.dtype)
-    strain[(len(strain)-fade_size):] *= pycbc.types.Array(w[::-1],
-                                                          dtype=strain.dtype)
+    taper_length = corrupt_time * strain.sample_rate
+    w = numpy.arange(taper_length) / float(taper_length)
+    strain[0:taper_length] *= pycbc.types.Array(w, dtype=strain.dtype)
+    strain[(len(strain)-taper_length):] *= pycbc.types.Array(w[::-1],
+                                                             dtype=strain.dtype)
 
     # don't waste time trying to optimize a single FFT
     pycbc.fft.fftw.set_measure_level(0)
@@ -58,6 +103,8 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
                                      method='ldas')
     if output_intermediates:
         strain.save_to_wav('strain_conditioned.wav')
+
+    corrupt_length = int(corrupt_time * strain.sample_rate)
 
     # zero-pad strain to a power-of-2 length
     strain_pad_length = next_power_of_2(len(strain))
@@ -70,9 +117,11 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     strain_pad[pad_start:pad_end] = strain[:]
 
     logging.info('Autogating: estimating PSD')
-    psd = pycbc.psd.welch(strain, seg_len=int(psd_duration*strain.sample_rate),
-                          seg_stride=int(psd_stride*strain.sample_rate),
-                          avg_method=psd_avg_method)
+    psd = pycbc.psd.welch(strain[corrupt_length:(len(strain)-corrupt_length)],
+                          seg_len=int(psd_duration * strain.sample_rate),
+                          seg_stride=int(psd_stride * strain.sample_rate),
+                          avg_method=psd_avg_method,
+                          require_exact_data_fit=False)
     psd = pycbc.psd.interpolate(psd, 1./strain_pad.duration)
     psd = pycbc.psd.inverse_spectrum_truncation(
             psd, int(psd_duration * strain.sample_rate),
@@ -114,9 +163,8 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     mag = mag.numpy()
 
     # remove strain corrupted by filters at the ends
-    corrupted_idx = int(corrupted_time * strain.sample_rate)
-    mag[0:corrupted_idx] = 0
-    mag[-1:-corrupted_idx-1:-1] = 0
+    mag[0:corrupt_length] = 0
+    mag[-1:-corrupt_length-1:-1] = 0
 
     logging.info('Autogating: finding loud peaks')
     indices = numpy.where(mag > threshold)[0]
@@ -218,7 +266,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
                     cluster_window=opt.autogating_cluster,
                     low_freq_cutoff=opt.strain_high_pass,
                     high_freq_cutoff=opt.sample_rate/2,
-                    corrupted_time=opt.pad_data+opt.autogating_pad)
+                    corrupt_time=opt.pad_data+opt.autogating_pad)
             gate_params = [[gt, opt.autogating_width, opt.autogating_taper] \
                            for gt in glitch_times]
             if len(glitch_times) > 0:
