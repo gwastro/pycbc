@@ -204,7 +204,7 @@ class FilterBank(BaseFilterBank):
             f_end = (self.filter_length-1) * self.delta_f
 
         # Find the start frequency, if variable
-        if self.max_template_length:
+        if self.max_template_length is not None:
             f_low = find_variable_start_frequency(approximant,
                                                   self.table[index],
                                                   self.f_lower,
