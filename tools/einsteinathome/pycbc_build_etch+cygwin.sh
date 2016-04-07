@@ -739,14 +739,29 @@ fi
 echo -e "\\n\\n>> [`date`] downgrade to setuptools==18.2"
 pip $pip_install --upgrade setuptools==18.2
 echo -e "\\n\\n>> [`date`] building pycbc"
+# get rid of outdated repo reference
 if test -d pycbc/.git; then
     cd pycbc
+    if git remote -v | fgrep gitmaster.atlas.aei.uni-hannover.de >/dev/null; then
+        mv .git .delete
+    fi
+    cd ..
+fi
+branch=einsteinathome_testing
+if test -d pycbc/.git; then
+    # checkout branch from scratch, master must and should exist
+    cd pycbc
+    git checkout master
+    git branch -D $branch
+    git remote update
+    git checkout -b $branch origin/$branch
 else
+    # clone
     rm -rf pycbc
     # git clone git://github.com/ligo-cbc/pycbc
-    git clone git://$gitmaster/pycbc.git
+    git clone https://github.com/bema-ligo/pycbc.git
     cd pycbc
-    git checkout -b einsteinathome origin/einsteinathome
+    git checkout -b $branch origin/$branch
 fi
 pip install .
 hooks="$PWD/tools/static"
