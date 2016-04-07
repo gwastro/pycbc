@@ -668,9 +668,11 @@ def get_waveform_end_frequency(template=None, **kwargs):
    else:
         return None
 
-def get_waveform_filter_length_in_time(approximant,**kwargs):
+def get_waveform_filter_length_in_time(approximant, template=None, **kwargs):
     """For filter templates, return the length in time of the template.
     """
+    kwargs = props(template, **kwargs)
+
     if approximant in _filter_time_lengths:
         return _filter_time_lengths[approximant](**kwargs)
     else:

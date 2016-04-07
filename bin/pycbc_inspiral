@@ -41,6 +41,10 @@ parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                     help="Cut triggers with NewSNR less than THRESHOLD")
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
+parser.add_argument("--max-template-length", type=float,
+                  help="The maximum length of a template is seconds. The "
+                       "starting frequency of the template is modified to "
+                       "ensure the proper length")
 parser.add_argument("--approximant", type=str,
                   help="The name of the approximant to use for filtering. "
                        "One may choose a single approximant by simple assignment. "
@@ -252,9 +256,9 @@ with ctx:
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
-                    flow, dtype = complex64, phase_order = opt.order,
-                    taper = opt.taper_template, approximant = opt.approximant,
-                    out = template_mem)
+                    flow, dtype=complex64, phase_order=opt.order,
+                    taper=opt.taper_template, approximant=opt.approximant,
+                    out=template_mem, max_template_length=opt.max_template_length)
 
     # Note: in the class-based approach used now, 'template' is not explicitly used
     # within the loop.  Rather, the iteration simply fills the memory specifed in

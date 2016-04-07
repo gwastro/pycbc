@@ -174,8 +174,10 @@ class LiveFilterBank(BaseFilterBank):
         return htilde
 
 class FilterBank(BaseFilterBank):
-    def __init__(self, filename, filter_length, delta_f, f_lower,
-                 dtype, out=None, approximant=None, **kwds):
+    def __init__(self, filename, filter_length, delta_f, f_lower, dtype,
+                 out=None, max_template_length=None,
+                 approximant=None,
+                 **kwds):
         self.out = out
         self.dtype = dtype
         self.f_lower = f_lower
@@ -185,12 +187,11 @@ class FilterBank(BaseFilterBank):
         self.delta_t = 1.0 / (self.N * self.delta_f)
         self.filter_length = filter_length
         self.kmin = int(f_lower / delta_f)
+        self.max_template_length = max_template_length
 
         super(FilterBank, self).__init__(filename, approximant=approximant, **kwds)
 
     def __getitem__(self, index):
-        logging.info('generating waveform at position: %s' % index)
-    
         # Make new memory for templates if we aren't given output memory
         if self.out is None:
             tempout = zeros(self.filter_length, dtype=self.dtype)
@@ -202,6 +203,17 @@ class FilterBank(BaseFilterBank):
         if f_end is None or f_end >= (self.filter_length * self.delta_f):
             f_end = (self.filter_length-1) * self.delta_f
 
+        # Find the start frequency, if variable
+        if self.max_template_length is not None:
+            f_low = find_variable_start_frequency(approximant,
+                                                  self.table[index],
+                                                  self.f_lower,
+                                                  self.max_template_length)
+        else:
+            f_low = self.f_lower
+
+        logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
+
         # Clear the storage memory
         poke  = tempout.data
         tempout.clear()
@@ -210,7 +222,7 @@ class FilterBank(BaseFilterBank):
         distance = 1.0 / DYN_RANGE_FAC
         htilde = pycbc.waveform.get_waveform_filter(
             tempout[0:self.filter_length], self.table[index],
-            approximant=approximant, f_lower=self.f_lower, f_final=f_end,
+            approximant=approximant, f_lower=f_low, f_final=f_end,
             delta_f=self.delta_f, delta_t=self.delta_t, distance=distance,
             **self.extra_args)
 
@@ -227,7 +239,7 @@ class FilterBank(BaseFilterBank):
                 self.table[index].template_duration = htilde.chirp_length
 
         htilde = htilde.astype(self.dtype)
-        htilde.f_lower = self.f_lower
+        htilde.f_lower = f_low
         htilde.end_frequency = f_end
         htilde.end_idx = int(htilde.end_frequency / htilde.delta_f)
         htilde.params = self.table[index]
@@ -240,3 +252,17 @@ class FilterBank(BaseFilterBank):
         htilde._sigmasq = {}
 
         return htilde
+
+def find_variable_start_frequency(approximant, parameters, f_start, max_length, 
+                                  delta_f = 1):
+    """ Find a frequency value above the starting frequency that results in a 
+    waveform shorter than max_length.
+    """
+    l = max_length + 1
+    f = f_start - delta_f
+    while l > max_length:
+        f += delta_f
+        l = pycbc.waveform.get_waveform_filter_length_in_time(approximant, parameters, f_lower=f)
+    return f
+
+
