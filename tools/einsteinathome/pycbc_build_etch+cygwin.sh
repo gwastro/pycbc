@@ -582,7 +582,7 @@ pip $pip_install -r requirements.txt
 
 # PyCBC-GLUE
 if $compile_pycbc_glue; then
-    p=pycbc-glue-0.9.6
+    p=pycbc-glue-0.9.8
     echo -e "\\n\\n>> [`date`] building $p"
     test -r $p.tar.gz || wget $wget_opts "$pypi/p/pycbc-glue/$p.tar.gz"
     rm -rf $p
