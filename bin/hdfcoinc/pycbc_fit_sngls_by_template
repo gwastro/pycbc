@@ -1,0 +1,212 @@
+#!/usr/bin/python
+
+# Copyright 2016 Thomas Dent
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+
+from __future__ import division
+
+import sys
+import argparse, logging
+
+import numpy as np
+#from scipy.stats import kstest
+
+#from pylal import SnglInspiralUtils as sniuls, trigger_fits as trstats, rate
+
+from pycbc import io, events
+from pycbc.events import trigger_fits as trstats
+import pycbc.version
+
+#### DEFINITIONS AND FUNCTIONS ####
+
+stat_dict = {
+    "new_snr"       : events.newsnr,
+    "effective_snr" : events.effsnr,
+    "snr"           : lambda snr, rchisq : snr,
+    "snronchi"      : lambda snr, rchisq : snr / (rchisq ** 0.5)
+}
+
+def get_stat(statchoice, snr, rchisq, fac):
+    if fac is not None:
+        if statchoice not in ["new_snr", "effective_snr"]:
+            raise RuntimeError("Can't use --stat-factor with this statistic!")
+        return stat_dict[statchoice](snr, rchisq, fac)
+    else:
+        return stat_dict[statchoice](snr, rchisq)
+
+#### MAIN ####
+
+parser = argparse.ArgumentParser(usage="",
+    description="Perform maximum-likelihood fits of single inspiral trigger"
+                "distributions to various functions")
+
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument("-V", "--verbose", action="store_true",
+                    help="Print extra debugging information", default=False)
+parser.add_argument("--trigger-file", 
+                    help="Input hdf5 file containing single triggers. "
+                    "Required")
+parser.add_argument("--template-file", default=None,
+                    help="hdf file containing template parameters. Required")
+parser.add_argument("--template-fraction-range", help="Optional, format string to"
+                    "analyze part of template bank. Format is PART/NUM_PARTS",
+                    default="0/1")
+parser.add_argument("--veto-file", default=None,
+                    help="File in .xml format with veto segments to apply to "
+                    "triggers before fitting")
+parser.add_argument("--veto-segment-name", default=None,
+                    help="Name of veto segments to apply. Optional: if not "
+                    "given, all segments for a given ifo will be used")
+parser.add_argument("--output", required=True,
+                    help="Location for output file containing fit coefficients"
+                    ".  Required")
+parser.add_argument("--ifos",
+                    help="Ifo producing triggers to be fitted.  Required")
+parser.add_argument("--fit-function",
+                    choices=["exponential", "rayleigh", "power"],
+                    help="Functional form for the maximum likelihood fit")
+parser.add_argument("--sngl-stat", default="new_snr",
+                    choices=["snr", "snronchi", "effective_snr", "new_snr"],
+                    help="Function of SNR and chisq to perform fits with")
+# FIXME: how to parse various possible mixtures of chisq
+#parser.add_argument("--chisq-choice", default="power",
+#                    choices=["power","bank","auto","maxpowerbank"],
+#                    help="Which chisq value or values to form the "
+#                    "single-trigger statistic with")
+parser.add_argument("--stat-factor", type=float,
+                    help="Adjustable magic number used in some sngl "
+                    "statistics.  Values commonly used: 6 for new_snr, 250 "
+                    "or 50 for effective_snr")
+default_thresh = 5.5
+cuts = parser.add_mutually_exclusive_group()
+cuts.add_argument("--snr-threshold", type=float,
+                  help="Only fit triggers with SNR above this threshold. "
+                  "Default %.1f" % default_thresh)
+cuts.add_argument("--trig-filter", default=None,
+                  help="Filter function applied to trigger properties: only "
+                  "implemented for hdf format.  May include names from math, "
+                  "numpy as 'np', pycbc.events and pycbc.pnutils.  Ex. "
+                  "'events.newsnr(self.snr, self.bank_chisq/self.bank_chisq_"
+                  "dof) > 6.)'")
+parser.add_argument("--stat-threshold", type=float,
+                    help="Only fit triggers with statistic value above this "
+                    "threshold.  Required.  Typically ~6.5")
+
+args = parser.parse_args()
+
+if args.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+
+def parse_template_range(num_templates, rangestr):
+    part = int(rangestr.split('/')[0])
+    pieces = int(rangestr.split('/')[1])
+    tmin =  int(num_templates / float(pieces) * part)
+    tmax =  int(num_templates / float(pieces) * (part+1))
+    return tmin, tmax
+
+statname = args.sngl_stat.replace("_", " ")
+
+# columns for reading triggers without template file info
+cols = ["snr", "chisq", "template_duration", "template_id", "end_time"]
+
+# hack default values of SNR threshold and filter function
+if not args.snr_threshold and not args.trig_filter:
+    args.snr_threshold = default_thresh
+    filter_func = 'self.snr > %f' % args.snr_threshold
+elif args.snr_threshold:
+    filter_func = 'self.snr > %f' % args.snr_threshold
+else:
+    filter_func = args.trig_filter
+
+# initialize result storage
+counts = {}
+templates = {}
+fits = {}
+stdev = {}
+
+#done_vetoing = False
+#if args.template_file:
+#    sngls = io.hdf.SingleDetTriggers(args.trigger_file, 
+#          args.template_file, args.veto_file, args.veto_segment_name,
+#          filter_func, ifo)
+#    done_vetoing = True
+#else:
+#    sngls = io.hdf.DataFromFiles(args.trigger_file, group=ifo,
+#          columnlist=cols, filter_func=filter_func)
+
+#snr = sngls.get_column("snr")
+#if not len(snr):
+ #   raise RuntimeError("Can't proceed with no triggers!")
+chisq = sngls.get_column("chisq")
+chisq_dof = sngls.get_column("chisq_dof")
+tid = sngls.get_column("template_id")
+rchisq = chisq / (2 * chisq_dof - 2)
+
+if args.veto_file and not done_vetoing:
+    logging.info("Applying vetoes from %s for ifo %s" % 
+                 (args.veto_file, ifo))
+    keep_idx, segs = events.veto.indices_outside_segments(
+                sngls.get_column("end_time").astype(int), 
+                [args.veto_file], ifo=ifo, segment_name=args.veto_segment_name)
+    snr = snr[keep_idx]
+    rchisq = rchisq[keep_idx]
+    if tid is not None: tid = tid[keep_idx]
+    logging.info("%i trigs remain" % len(snr))
+
+logging.info("Calculating ranking statistic values")
+statv = get_stat(args.sngl_stat, snr, rchisq, args.stat_factor)
+
+tids = []
+counts = []
+counts_above = []
+fits = []
+
+logging.info("Fitting above threshold %f" % th)
+
+logging.info('Opening trigger file: %s' % args.trigger_file)
+trigs = io.ReadSnglsByTemplate(args.trigger_file, args.bank_file,
+                               args.veto_segment_name, args.veto_files)
+
+num_templates = len(h5py.File(args.template_file, 'r')['template_hash'])
+tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
+logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
+
+for tnum in range(tmin, tmax):
+    tid = trigs.set_template(tnum)
+    snr = trigs['snr']
+    chisq = trigs['chisq']
+    chisq_dof = trigs['chisq_dof']
+    rchisq = chisq / (2 * chisq_dof - 2)
+    statv = get_stat(args.sngl_stat, snr, rchisq, args.stat_factor)
+
+    count = len(snr)
+    count_above = sum(stat >= th)
+    if count_above == 0:
+        alpha = -1
+    else:
+        alpha, sig_alpha = trstats.fit_above_thresh(
+                                   args.fit_function, vals_inbin, th)
+            #alpha, sig_alpha = trstats.fit_above_thresh(
+            #                             opt.fit_function, vals_inbin, thresh)
+    tid.append(tid)
+    counts.append(count)
+    counts_above.append(count_above)
+    fits.append(alpha)
+    logging.info("Fitted template %s" % tid)
+    outfile.write("%s %.2f %.3g %.3g %d %d %.3f %.3f %.3g\n" % 
+      (ifo, th, numtmpl, counts[i], alpha, sig_alpha))
+
+logging.info('Done!')
