@@ -38,15 +38,23 @@ from pycbc.waveform import utils as wfutils
 from pycbc.filter import interpolate_complex_frequency
 import pycbc
 
-default_args = {'spin1x':0, 'spin1y':0, 'spin1z':0, 'spin2x':0, 'spin2y':0,
+allowed_args = {# intrinsic parameters
+                'mass1':None, 'mass2':None,
+                'spin1x':0, 'spin1y':0, 'spin1z':0, 'spin2x':0, 'spin2y':0,
                 'spin2z':0, 'lambda1':0, 'lambda2':0,
-                'inclination':0, 'distance':1, 'f_final':0, 'f_ref':0,
-                'coa_phase':0, 'amplitude_order':-1, 'phase_order':-1,
+                # extrinsic parameters
+                'inclination':0, 'distance':1, 'coa_phase':0,
+                # generation parameters
+                'f_lower':None, 'delta_t':None, 'delta_f':None,
+                'f_final':0, 'f_ref':0,
+                'approximant':None,
+                'amplitude_order':-1, 'phase_order':-1,
                 'spin_order':-1, 'tidal_order':-1, 'numrel_data':""}
+
 
 default_sgburst_args = {'eccentricity':0, 'polarization':0}
 
-base_required_args = ['mass1','mass2','f_lower']
+base_required_args = ['mass1', 'mass2', 'f_lower', 'approximant']
 td_required_args = base_required_args + ['delta_t']
 fd_required_args = base_required_args + ['delta_f']
 sgburst_required_args = ['q','frequency','hrss']
@@ -211,30 +219,32 @@ def filter_approximants(scheme=_scheme.mgr.state):
 # Input parameter handling ###################################################
 
 def props(obj, **kwargs):
-    """ DOCUMENT ME !!
-    """
-    pr = {}
-    if obj is not None:
-        if hasattr(obj, '__dict__'):
-            pr = obj.__dict__
-        elif hasattr(obj, '__slots__'):
-            for slot in obj.__slots__:
-                if hasattr(obj, slot):
-                    pr[slot] = getattr(obj, slot)
-        else:
-            for name in dir(obj):
-                try:
-                    value = getattr(obj, name)
-                    if not name.startswith('__') and not inspect.ismethod(value):
-                        pr[name] = value
-                except:
-                    continue
+    """Retrieves the needed arguments to generate a waveform from the given
+    object and/or kwargs. If obj is specified, any attributes of obj that have
+    that are in the allowed_args dict are retrieved; all other
+    attributes of obj are ignored. If kwargs are specified, the keyword argument
+    must be in the allowed_args dict, else a ValueError is raised. If a keyword
+    argument is provided that is the same as an attribute in obj, the keyword
+    argument is used.
 
-    # Get the parameters to generate the waveform
-    # Note that keyword arguments override values in the template object
-    input_params = default_args.copy()
-    input_params.update(pr)
-    input_params.update(kwargs)
+    Returns
+    -------
+    dict
+        A dictionary of parameters needed to generate a waveform.
+    """
+    input_params = allowed_args.copy()
+    # get needed arguments from the dict
+    if obj is not None:
+        for arg in input_params:
+            try:
+                input_params[arg] = getattr(obj, arg)
+            except AttributeError:
+                continue
+    for arg,val in kwargs.items():
+        if arg not in input_params:
+            raise ValueError("unrecognized argument %s; " %(arg) +
+                "see waveform.allowed_args for possible arguments")
+        input_params[arg] = val
 
     return input_params
 
@@ -328,19 +338,17 @@ def get_td_waveform(template=None, **kwargs):
     input_params = props(template,**kwargs)
     wav_gen = td_wav[type(_scheme.mgr.state)]
 
-    if 'approximant' not in input_params or input_params['approximant'] is None:
-        raise ValueError("Please provide an approximant name")
-    elif input_params['approximant'] not in wav_gen:
+    missing_args = [arg for arg in td_required_args \
+                        if input_params[arg] is None]
+    if any(missing_args):
+        raise ValueError("Please provide %s" %(', '.join(missing_args)))
+
+    if input_params['approximant'] not in wav_gen:
         raise ValueError("Approximant %s not available" %
                             (input_params['approximant']))
 
-    for arg in td_required_args:
-        if arg in input_params:
-            pass
-        else:
-            raise ValueError("Please provide " + str(arg) )
-
     return wav_gen[input_params['approximant']](**input_params)
+
 
 def get_fd_waveform(template=None, **kwargs):
     """Return a frequency domain gravitational waveform.
@@ -409,21 +417,17 @@ def get_fd_waveform(template=None, **kwargs):
     hcrosstilde: FrequencySeries
         The cross phase of the waveform in frequency domain.
     """
-
     input_params = props(template,**kwargs)
     wav_gen = fd_wav[type(_scheme.mgr.state)]
 
-    if 'approximant' not in input_params:
-        raise ValueError("Please provide an approximant name")
-    elif input_params['approximant'] not in wav_gen:
+    missing_args = [arg for arg in fd_required_args \
+                        if input_params[arg] is None]
+    if any(missing_args):
+        raise ValueError("Please provide %s" %(', '.join(missing_args)))
+
+    if input_params['approximant'] not in wav_gen:
         raise ValueError("Approximant %s not available" %
                             (input_params['approximant']))
-
-    for arg in fd_required_args:
-        if arg in input_params:
-            pass
-        else:
-            raise ValueError("Please provide " + str(arg) )
 
     return wav_gen[input_params['approximant']](**input_params)
 
@@ -770,4 +774,4 @@ __all__ = ["get_td_waveform", "get_fd_waveform",
            "waveform_norm_exists", "get_template_amplitude_norm",
            "get_waveform_filter_length_in_time", "get_sgburst_waveform",
            "print_sgburst_approximants", "sgburst_approximants",
-           "td_waveform_to_fd_waveform"]
+           "td_waveform_to_fd_waveform", "allowed_args"]
