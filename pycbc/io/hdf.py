@@ -326,9 +326,11 @@ class ReadSnglsByTemplate(object):
         from glue.segments import segmentlist, segment
         key = '%s/search/' % self.ifo
         s, e = self.file[key + 'start_time'][:], self.file[key + 'end_time'][:]
-        self.segs = veto.start_end_to_segments(s, e).coalesce()
+        self.segs = events.veto.start_end_to_segments(s, e).coalesce()
         for vfile in veto_files:
-            veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo,
+            logging.info('applying vetoes from file ' + vfile)
+            veto_segs = events.veto.select_segments_by_definer(vfile,
+                                                     ifo=self.ifo,
                                                      segment_name=segment_name)
             self.segs = (self.segs - veto_segs).coalesce()
             self.valid = events.veto.segments_to_start_end(self.segs)
@@ -370,8 +372,8 @@ class ReadSnglsByTemplate(object):
         # Determine which of these template's triggers are kept after
         # applying vetoes
         if self.valid:
-            self.keep = veto.indices_within_times(times, self.valid[0], self.valid[1])
-            logging.info('applying vetoes')
+            self.keep = events.veto.indices_within_times(times,
+                                                  self.valid[0], self.valid[1])
         else:
             self.keep = numpy.arange(0, len(times))
 
