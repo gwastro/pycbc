@@ -836,6 +836,7 @@ if $build_dlls; then
 fi
 
 # run 10min self-test, build wave cache
+echo -e "\\n\\n>> [`date`] running analysis"
 cd "$SOURCE"
 mkdir -p test
 cd test
@@ -879,6 +880,7 @@ NO_TMPDIR=1 \
   --verbose 2>&1 | tee test_`date +%s`.log
 
 # zip weave cache
+echo -e "\\n\\n>> [`date`] zipping weave cache"
 zip -r "$ENVIRONMENT/dist/pythoncompiled.zip" pycbc_inspiral
 
 echo -e "\\n\\n>> [`date`] Success $0"
