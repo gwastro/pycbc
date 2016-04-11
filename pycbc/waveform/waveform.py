@@ -27,7 +27,7 @@ waveforms.
 """
 
 import lal, lalsimulation, numpy, copy
-from pycbc.types import TimeSeries, FrequencySeries, zeros
+from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import real_same_precision_as, complex_same_precision_as
 import pycbc.scheme as _scheme
 import inspect
@@ -260,6 +260,91 @@ def props_sgburst(obj, **kwargs):
     return input_params
 
 # Waveform generation ########################################################
+def get_fd_waveform_sequence(template=None, **kwds):
+    """  Return values of the waveform evaluated at the sequence of frequency 
+    points.
+
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to substitute
+        for keyword arguments. A common example would be a row in an xml table. 
+    approximant : string
+        A string that indicates the chosen approximant. See `fd_approximants` 
+        for available options. 
+    mass1 : float
+        The mass of the first component object in the binary in solar masses.
+    mass2 : float
+        The mass of the second component object in the binary in solar masses.
+    f_ref : {float}, optional
+        The reference frequency.
+    distance : {1, float}, optional
+        The distance from the observer to the source in megaparsecs.
+    inclination : {0, float}, optional
+        The inclination angle of the source. 
+    coa_phase : {0, float}, optional
+        The final phase or phase at the peak of the waveform. See documentation
+        on specific approximants for exact usage. 
+    spin1x : {0, float}, optional
+        The x component of the first binary component's spin vector.
+    spin1y : {0, float}, optional
+        y component of the first binary component's spin.
+    spin1z : {0, float}, optional
+        z component of the first binary component's spin.
+    spin2x : {0, float}, optional
+        The x component of the second binary component's spin vector.
+    spin2y : {0, float}, optional
+        y component of the second binary component's spin.
+    spin2z : {0, float}, optional
+        z component of the second binary component's spin.
+    lambda1: {0, float}, optional
+        The tidal deformability parameter of object 1.
+    lambda2: {0, float}, optional
+        The tidal deformability parameter of object 2.
+    phase_order: {-1, int}, optional
+        The pN order of the orbital phase. The default of -1 indicates that 
+        all implemented orders are used.
+    spin_order: {-1, int}, optional
+        The pN order of the spin corrections. The default of -1 indicates that 
+        all implemented orders are used.
+    tidal_order: {-1, int}, optional
+        The pN order of the tidal corrections. The default of -1 indicates that 
+        all implemented orders are used.
+    amplitude_order: {-1, int}, optional
+        The pN order of the amplitude. The default of -1 indicates that 
+        all implemented orders are used.
+
+    Returns
+    -------
+    hplustilde: Array
+        The plus phase of the waveform in frequency domain evaluated at the
+    frequency points.
+    hcrosstilde: Array
+        The cross phase of the waveform in frequency domain evaluated at the
+    frequency points.
+    """
+    kwds['delta_f'] = -1
+    kwds['f_lower'] = -1
+    p = props(template, **kwds)
+
+    flags = lalsimulation.SimInspiralCreateWaveformFlags()
+    lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
+    lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
+
+    hp, hc = lalsimulation.SimInspiralChooseFDWaveformSequence(float(p['coa_phase']),
+               float(pnutils.solar_mass_to_kg(p['mass1'])),
+               float(pnutils.solar_mass_to_kg(p['mass2'])),
+               float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
+               float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
+               float(p['f_ref']),
+               pnutils.megaparsecs_to_meters(float(p['distance'])),
+               float(p['inclination']),
+               float(p['lambda1']), float(p['lambda2']), flags, None,
+               int(p['amplitude_order']), int(p['phase_order']),
+               _lalsim_enum[p['approximant']], 
+               p['sample_points'].lal())
+              
+    return Array(hp.data.data), Array(hc.data.data)
 
 def get_td_waveform(template=None, **kwargs):
     """Return the plus and cross polarizations of a time domain waveform. 
@@ -555,8 +640,16 @@ from spa_tmplt import spa_tmplt_norm, spa_tmplt_end, spa_tmplt_precondition, spa
 
 def seobnrrom_final_frequency(**kwds):
     from pycbc.pnutils import get_final_freq
-    return get_final_freq("SEOBNRv2", kwds['mass1'], kwds['mass2'], kwds['spin1z'], kwds['spin2z'])
-    
+    return get_final_freq("SEOBNRv2", kwds['mass1'], kwds['mass2'],
+                   kwds['spin1z'], kwds['spin2z'])
+
+_filter_ends["SPAtmplt"] = _filter_ends["TaylorF2"] = spa_tmplt_end
+_filter_ends["SEOBNRv2_ROM_DoubleSpin"] = _filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] =  seobnrrom_final_frequency
+
+_template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
+_filter_time_lengths["SPAtmplt"] = spa_length_in_time
+
+
 def seobnrrom_length_in_time(**kwds):
     """
     This is a stub for holding the calculation for getting length of the ROM
@@ -609,7 +702,6 @@ fd_wav = _scheme.ChooseBySchemeDict()
 td_wav.update({_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td})
 fd_wav.update({_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd})
 sgburst_wav = {_scheme.CPUScheme:cpu_sgburst}
-
 
 def get_waveform_filter(out, template=None, **kwargs):
     """Return a frequency domain waveform filter for the specified approximant
