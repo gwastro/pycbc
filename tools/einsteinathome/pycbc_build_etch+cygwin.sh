@@ -596,8 +596,8 @@ if $compile_pycbc_glue; then
     cd ..
     $cleanup && rm -rf $p
 else
-    echo -e "\\n\\n>> [`date`] pip install pycbc-glue==0.9.6"
-    pip $pip_install pycbc-glue==0.9.6
+    echo -e "\\n\\n>> [`date`] pip install pycbc-glue==0.9.8"
+    pip $pip_install pycbc-glue==0.9.8
 fi
 
 # h5py
