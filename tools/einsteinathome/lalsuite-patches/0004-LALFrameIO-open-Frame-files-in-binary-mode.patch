@@ -1,0 +1,25 @@
+From 1e1e5cc2df9609cd247895c636d962512e4a1cf3 Mon Sep 17 00:00:00 2001
+From: Bernd Machenschalk <bernd.machenschalk@ligo.org>
+Date: Mon, 7 Mar 2016 11:57:31 +0100
+Subject: [PATCH 4/5] LALFrameIO: open Frame files in binary mode
+
+---
+ lalframe/src/LALFrameIO.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lalframe/src/LALFrameIO.c b/lalframe/src/LALFrameIO.c
+index eac89b9..b0d56cf 100644
+--- a/lalframe/src/LALFrameIO.c
++++ b/lalframe/src/LALFrameIO.c
+@@ -111,7 +111,7 @@ LALFrFile *XLALFrFileOpenURL(const char *url)
+     frfile = LALMalloc(sizeof(*frfile));
+     if (!frfile)
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+-    frfile->file = XLALFrameUFrFileOpen(path, "r");
++    frfile->file = XLALFrameUFrFileOpen(path, "rb");
+     if (!frfile->file) {
+         LALFree(frfile);
+         XLAL_ERROR_NULL(XLAL_EIO, "Could not open frame file %s", path);
+-- 
+2.6.2
+

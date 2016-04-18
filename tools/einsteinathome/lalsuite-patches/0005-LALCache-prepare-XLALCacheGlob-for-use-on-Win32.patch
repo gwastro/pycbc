@@ -1,0 +1,28 @@
+From 9f1c4dd94c90029bc6c4d58b81ef615a5659070e Mon Sep 17 00:00:00 2001
+From: Bernd Machenschalk <bernd.machenschalk@ligo.org>
+Date: Thu, 3 Mar 2016 02:48:30 +0100
+Subject: [PATCH 5/5] LALCache: prepare XLALCacheGlob for use on Win32
+
+---
+ lal/src/support/LALCache.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/lal/src/support/LALCache.c b/lal/src/support/LALCache.c
+index 9501296..dade0a6 100644
+--- a/lal/src/support/LALCache.c
++++ b/lal/src/support/LALCache.c
+@@ -337,7 +337,11 @@ LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn)
+         do {
+             if ((nextdir = strchr(dirname, ':')))
+                 *nextdir++ = 0;
++#ifdef _WIN32
++            snprintf(path, sizeof(path), "%s\\%s", *dirname ? dirname : ".",
++#else
+             snprintf(path, sizeof(path), "%s/%s", *dirname ? dirname : ".",
++#endif
+                      fnptrn);
+             glob(path, globflags, NULL, &g);
+             fnptrn = path;
+-- 
+2.6.2
+

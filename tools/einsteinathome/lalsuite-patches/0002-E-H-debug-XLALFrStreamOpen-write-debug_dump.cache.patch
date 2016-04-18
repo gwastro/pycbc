@@ -1,0 +1,25 @@
+From f21e159024a744bf4401f72e62c05ff341b1c58f Mon Sep 17 00:00:00 2001
+From: Bernd Machenschalk <bernd.machenschalk@ligo.org>
+Date: Sun, 6 Mar 2016 10:36:56 +0100
+Subject: [PATCH 2/5] E@H: debug XLALFrStreamOpen(): write debug_dump.cache
+
+---
+ lalframe/src/LALFrStream.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/lalframe/src/LALFrStream.c b/lalframe/src/LALFrStream.c
+index 7b07fb4..0e0d503 100644
+--- a/lalframe/src/LALFrStream.c
++++ b/lalframe/src/LALFrStream.c
+@@ -259,6 +259,8 @@ LALFrStream *XLALFrStreamOpen(const char *dirname, const char *pattern)
+     if (!cache)
+         XLAL_ERROR_NULL(XLAL_EFUNC);
+ 
++    XLALCacheExport(cache, "debug_dump.cache");
++
+     stream = XLALFrStreamCacheOpen(cache);
+     if (!stream)
+         XLAL_ERROR_NULL(XLAL_EFUNC);
+-- 
+2.6.2
+
