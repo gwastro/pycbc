@@ -876,6 +876,10 @@ NO_TMPDIR=1 \
   --psd-segment-length 16 \
   --snr-threshold 5.5 \
   --segment-length 256 \
+  --autogating-width 0.25 \
+  --autogating-threshold 100 \
+  --autogating-cluster 0.5 \
+  --autogating-taper 0.25 \
   --newsnr-threshold 5 \
   --psd-estimation median \
   --strain-high-pass 20 \
