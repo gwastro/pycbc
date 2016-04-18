@@ -840,10 +840,20 @@ echo -e "\\n\\n>> [`date`] running analysis"
 cd "$SOURCE"
 mkdir -p test
 cd test
-f="H-H1_LOSC_4_V1-1126257414-4096.gwf"
-test -r $f || wget $wget_opts "$albert/$f"
-p="H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz"
+
+p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
+md5="a7d5cbd6ef395e8a79ef29228076d38d"
+test -r $p && echo "$md5  $p" | md5sum -c || rm -f "$p"
 test -r $p || wget $wget_opts "$albert/$p"
+echo "$md5  $p" | md5sum -c
+f=$p
+
+#fb5ec108c69f9e424813de104731370c  H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz
+p="H1L1-SBANK_FOR_GW150914.xml.gz"
+md5="401324352d30888a5df2e5cc65035b17"
+test -r $p && echo "$md5  $p" | md5sum -c || rm -f "$p"
+test -r $p || wget $wget_opts "$albert/$p"
+echo "$md5  $p" | md5sum -c
 
 NO_TMPDIR=1 \
   INITIAL_LOG_LEVEL=10 \
@@ -877,7 +887,11 @@ NO_TMPDIR=1 \
   --output H1-INSPIRAL-OUT.hdf \
   --frame-files "$f" \
   --bank-file "$p" \
-  --verbose 2>&1 | tee test_`date +%s`.log
+  --verbose 2>&1
+
+# test for GW150914
+echo -e "\\n\\n>> [`date`] test for GW150914"
+python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRAL-OUT.hdf
 
 # zip weave cache
 echo -e "\\n\\n>> [`date`] zipping weave cache"
