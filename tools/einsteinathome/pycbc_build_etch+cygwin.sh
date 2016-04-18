@@ -895,6 +895,8 @@ python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRA
 
 # zip weave cache
 echo -e "\\n\\n>> [`date`] zipping weave cache"
-zip -r "$ENVIRONMENT/dist/pythoncompiled.zip" pycbc_inspiral
+cache="$ENVIRONMENT/dist/pythoncompiled.zip"
+rm -f "$cache"
+zip -r "$cache" pycbc_inspiral
 
 echo -e "\\n\\n>> [`date`] Success $0"
