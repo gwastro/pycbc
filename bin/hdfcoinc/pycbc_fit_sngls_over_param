@@ -1,0 +1,159 @@
+#!/usr/bin/python
+
+# Copyright 2016 Thomas Dent
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+
+from __future__ import division
+
+import sys, h5py
+import argparse, logging
+
+import numpy as np
+#from scipy.interpolate import splrep, splev
+from sklearn import neighbors
+
+#from matplotlib import use; use('Agg')
+#from matplotlib import pyplot as pl
+
+from pycbc import pnutils
+import pycbc.version
+
+parser = argparse.ArgumentParser(usage="",
+    description="Smooth (regress) the dependence of coefficients describing "
+                "single-ifo background trigger distributions on a template "
+                "parameter, to suppress random noise in the resulting "
+                "background model.")
+
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument("-V", "--verbose", action="store_true",
+                    help="Print extra debugging information", default=False)
+parser.add_argument("--template-fit-file",
+                    help="Input hdf5 file containing fit coefficients for each"
+                         " individual template. Required")
+parser.add_argument("--template-file", default=None,
+                    help="hdf file containing template parameters. Required")
+parser.add_argument("--output", required=True,
+                    help="Location for output file containing smoothed fit "
+                         "coefficients.  Required")
+parser.add_argument("--ifo", required=True,
+                    help="Ifo producing triggers to be fitted.  Required")
+parser.add_argument("--fit-param", required=True,
+                    help="Parameter over which to regress the background "
+                         "distribution coefficients. Required. Must be the "
+                         "name of a template bank dataset or template_duration"
+                         " or a named frequency / final frequency in pnutils.")
+parser.add_argument("--f-lower", default=-1.,
+                    help="Starting frequency for calculating template "
+                         "duration, required if this is the fit parameter")
+parser.add_argument("--log-param", default=False,
+                    help="Take the log of the fit param before smoothing.")
+parser.add_argument("--regression-method", choices=["nn"],
+                    help="Method of smoothing over the chosen fit param. "
+                         "Currently nn (nearest-neighbor) is the only choice.")
+parser.add_argument("--number-of-neighbors", default=-1.,
+                    help="Number of neighbors used in nn method. Try 2500, or "
+                         "1/20th the total number of templates if that is "
+                         "smaller.")
+parser.add_argument("--smoothing-width", required=True,
+                    help="Distance in the space of fit param values (or the "
+                         "logs of them) to smooth over. Required. For log "
+                         "template duration, try 0.25")
+
+args = parser.parse_args()
+
+ifo = args.ifo
+fits = h5py.File(args.template_fit_file, 'r')
+bank = h5py.File(args.template_file, 'r')
+
+tid = fits[ifo]['template_id'][:]
+m1 = bank['mass1'][:][tid]
+m2 = bank['mass2'][:][tid]
+s1z = bank['spin1z'][:][tid]
+s2z = bank['spin2z'][:][tid]
+
+tdur = pnutils.get_seobnrrom_duration(m1, m2, s1z, s2z, f_low=args.f_lower)
+ntrigs = fits[ifo]['trigger_count'][:]
+# normalize to average number of triggers per templates
+ntrigs = ntrigs/np.mean(ntrigs)
+nabove = fits[ifo]['count_above_thresh'][:]
+invalpha = 1./(fits[ifo]['fit_coeffs'][:])
+
+# sort in ascending duration order
+dursort = np.argsort(tdur)
+tdur = tdur[dursort]
+ntrigs = ntrigs[dursort]
+nabove = nabove[dursort]
+invalpha = invalpha[dursort]
+
+pl.semilogx(tdur, 1./invalpha, 'b+', ms=3)
+pl.xlim(0.03, 150)
+pl.savefig('/home/tdent/WWW/LSC/tests/trig_fitting/%s-fit_by_template_chunk3_thr6_alpha_vs_dur.png' % ifo)
+pl.close()
+
+pl.semilogx(tdur, nabove, 'b+', ms=3)
+pl.xlim(0.03, 150)
+pl.savefig('/home/tdent/WWW/LSC/tests/trig_fitting/%s-fit_by_template_chunk3_thr6_num_vs_dur.png' % ifo)
+pl.close()
+
+# do nearest-neighbours regression over *log* of duration
+n_neighbors = 2500
+# use Gaussian weight over log tdur with variance to be tuned ..
+weights = lambda d:np.exp(-0.5 * (d/0.25) ** 2)
+#weights = 'uniform'
+knn = neighbors.KNeighborsRegressor(n_neighbors, weights=weights)
+
+# evaluate the NN model at pre-specified points
+plotlogdur = np.linspace(np.log(min(tdur)), np.log(max(tdur)), 1000)
+print 'smoothing invalpha data'
+invalphaknn = knn.fit(np.log(tdur)[:, np.newaxis], invalpha).predict(plotlogdur[:, np.newaxis])
+
+print 'plotting ..'
+pl.scatter(tdur, invalpha, c=nabove, s=4, edgecolors='none', alpha=0.6)
+pl.semilogx(np.exp(plotlogdur), invalphaknn, 'g-')
+pl.xlim(0.03, 150)
+pl.colorbar()
+pl.xlabel('template duration (s)')
+pl.ylabel('fit coefficient 1/alpha')
+pl.title('colour=num trigs fitted')
+pl.savefig('/home/tdent/WWW/LSC/tests/trig_fitting/%s-invalpha_knn.png' % ifo)
+pl.close()
+
+pl.plot(tdur, 1./invalpha, 'b+', ms=3, alpha=0.6)
+pl.semilogx(np.exp(plotlogdur), 1./invalphaknn, 'g-')
+pl.xlim(0.03, 150)
+pl.xlabel('template duration (s)')
+pl.ylabel('fit coefficient alpha')
+pl.savefig('/home/tdent/WWW/LSC/tests/trig_fitting/%s-alpha_knn.png' % ifo)
+pl.close()
+
+print 'smoothing ntrigs data'
+ntrigsknn = knn.fit(np.log(tdur)[:, np.newaxis], ntrigs).predict(plotlogdur[:, np.newaxis])
+
+#fit a spline over *log* of duration
+#invalphaspline = splrep(np.log(tdur), invalpha, w=np.sqrt(nabove), k=5)
+#ntrigspline = splrep(np.log(tdur), ntrigs, w=np.ones_like(ntrigs), k=5)
+
+#invalphasmooth = splev(plotlogdur, invalphaspline)
+#ntrigsmooth = splev(plotlogdur, ntrigspline)
+
+print 'plotting ..'
+pl.semilogx(tdur, ntrigs, 'b+', ms=3, alpha=0.6)
+pl.semilogx(np.exp(plotlogdur), ntrigsknn, 'g-')
+pl.xlim(0.03, 150)
+pl.xlabel('template duration (s)')
+pl.ylabel('relative number of triggers')
+pl.savefig('/home/tdent/WWW/LSC/tests/trig_fitting/%s-ntrig_knn.png' % ifo)
+pl.close()
+
+
+#print('Done!')
