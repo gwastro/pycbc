@@ -111,7 +111,13 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
 
         self.read_ini_file(configFiles)
 
-        # Do overrides first
+        # Replace exe macros with full paths
+        self.perform_exe_expansion()
+
+        # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
+        self.split_multi_sections() 
+
+        # Do overrides from command line
         for override in overrideTuples:
             if len(override) not in [2,3]:
                 print override
@@ -128,11 +134,6 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                 self.add_section(section)
             self.set(section, option, value)
 
-        # Replace exe macros with full paths
-        self.perform_exe_expansion()
-
-        # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
-        self.split_multi_sections()
 
         # Check for any substitutions that can be made
         # FIXME: The python 3 version of ConfigParser can do this automatically
