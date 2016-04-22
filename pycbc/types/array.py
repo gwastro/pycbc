@@ -615,6 +615,16 @@ class Array(object):
     def squared_norm(self):
         """ Return the elementwise squared norm of the array """
 
+    @_returntype
+    @_checkother
+    @_convert
+    @schemed(BACKEND_PREFIX)
+    def multiply_and_add(self, other, mult_fac):
+        """ Return other multiplied by mult_fac and with self added.
+        Self is modified in place and returned as output.
+        Precisions of inputs must match.
+        """
+
     @_vrcheckother
     @_convert
     @schemed(BACKEND_PREFIX)

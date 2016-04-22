@@ -130,6 +130,14 @@ def squared_norm(self):
     krnl = get_norm_kernel(a.dtype, dtype_out)
     krnl(a, out)
     return out     
+
+# FIXME: Write me!
+#def multiply_and_add(self, other, mult_fac):
+#    """
+#    Return other multiplied by mult_fac and with self added.
+#    Self will be modified in place. This requires all inputs to be of the same
+#    precision.
+#    """
  
 @context_dependent_memoize
 def get_weighted_inner_kernel(dtype_x, dtype_y, dtype_w, dtype_out):
