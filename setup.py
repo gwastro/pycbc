@@ -444,6 +444,7 @@ setup (
                'bin/hdfcoinc/pycbc_merge_psds',
                'bin/hdfcoinc/pycbc_plot_gating',
                'bin/hdfcoinc/pycbc_fit_sngls_by_template',
+               'bin/hdfcoinc/pycbc_fit_sngls_over_param',
                'bin/hwinj/pycbc_generate_hwinj',
                'bin/hwinj/pycbc_generate_hwinj_from_xml',
                'bin/hwinj/pycbc_plot_hwinj',

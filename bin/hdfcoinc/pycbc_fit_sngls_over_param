@@ -47,113 +47,128 @@ parser.add_argument("--output", required=True,
                          "coefficients.  Required")
 parser.add_argument("--ifo", required=True,
                     help="Ifo producing triggers to be fitted.  Required")
-parser.add_argument("--fit-param", required=True,
+parser.add_argument("--fit-param", required=True,  # don't hardcode choices yet?
+                    #choices=[
+                    #    'mchirp',
+                    #    'mtotal',
+                    #    'template_duration'] \ 
+                    #+ pnutils.named_frequency_cutoffs.keys()
                     help="Parameter over which to regress the background "
-                         "distribution coefficients. Required. Must be the "
-                         "name of a template bank dataset or template_duration"
-                         " or a named frequency / final frequency in pnutils.")
+                         "distribution coefficients. Required. Choose from "
+                         "mchirp, mtotal, template_duration or a named "
+                         "frequency cutoff in pnutils or a frequency function "
+                         "in LALSimulation.")
 parser.add_argument("--f-lower", default=-1.,
                     help="Starting frequency for calculating template "
                          "duration, required if this is the fit parameter")
-parser.add_argument("--log-param", default=False,
+parser.add_argument("--min-duration", default=0.,
+                    help="Fudge factor for templates with tiny or negative "
+                         "values of template_duration: add to duration values"
+                         " before fitting. Units seconds.")
+parser.add_argument("--log-param", action='store_true',
                     help="Take the log of the fit param before smoothing.")
-parser.add_argument("--regression-method", choices=["nn"],
+parser.add_argument("--regression-method", required=True, choices=["nn"],
                     help="Method of smoothing over the chosen fit param. "
-                         "Currently nn (nearest-neighbor) is the only choice.")
-parser.add_argument("--number-of-neighbors", default=-1.,
+                         "Required. Currently nn (nearest-neighbor) is the "
+                         "only choice.")
+parser.add_argument("--num-neighbors", type=int, default=-1,
                     help="Number of neighbors used in nn method. Try 2500, or "
                          "1/20th the total number of templates if that is "
                          "smaller.")
-parser.add_argument("--smoothing-width", required=True,
+parser.add_argument("--smoothing-width", type=float, required=True,
                     help="Distance in the space of fit param values (or the "
                          "logs of them) to smooth over. Required. For log "
                          "template duration, try 0.25")
 
 args = parser.parse_args()
 
-ifo = args.ifo
+if args.regression_method == 'nn' and args.num_neighbors < 1:
+    raise RuntimeError("Need to give a positive number of nearest neighbors!")
+
+if args.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+
 fits = h5py.File(args.template_fit_file, 'r')
 bank = h5py.File(args.template_file, 'r')
 
-tid = fits[ifo]['template_id'][:]
+tid = fits[args.ifo]['template_id'][:]
 m1 = bank['mass1'][:][tid]
 m2 = bank['mass2'][:][tid]
 s1z = bank['spin1z'][:][tid]
 s2z = bank['spin2z'][:][tid]
 
-tdur = pnutils.get_seobnrrom_duration(m1, m2, s1z, s2z, f_low=args.f_lower)
-ntrigs = fits[ifo]['trigger_count'][:]
+# get the parameter values
+logging.info('Getting template parameter values')
+if args.fit_param == 'mchirp':
+    parvals, _ = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+elif args.fit_param == 'mtotal':
+    parvals = m1 + m2
+elif args.fit_param in pnutils.named_frequency_cutoffs.keys():
+    parvals = pnutils.frequency_cutoff_from_name(args.fit_param, m1, m2, s1z, s2z)
+elif args.fit_param == 'template_duration':
+    parvals = pnutils.get_seobnrrom_duration(m1, m2, s1z, s2z, f_low=args.f_lower)
+    parvals += args.min_duration
+else:
+    # try asking for a LALSimulation frequency function
+    parvals = pnutils.get_freq(args.fit_param, m1, m2, s1z, s2z)
+
+ntrigs = fits[args.ifo]['trigger_count'][:]
 # normalize to average number of triggers per templates
 ntrigs = ntrigs/np.mean(ntrigs)
-nabove = fits[ifo]['count_above_thresh'][:]
-invalpha = 1./(fits[ifo]['fit_coeffs'][:])
+nabove = fits[args.ifo]['count_above_thresh'][:]
+# for an exponential fit 1/alpha is linear in the trigger statistic values
+# so taking weighted sums/averages of 1/alpha is appropriate
+invalpha = 1./(fits[args.ifo]['fit_coeffs'][:])
 
 # sort in ascending duration order
-dursort = np.argsort(tdur)
-tdur = tdur[dursort]
-ntrigs = ntrigs[dursort]
-nabove = nabove[dursort]
-invalpha = invalpha[dursort]
+parsort = np.argsort(parvals)
+tid = tid[parsort]
+parvals = parvals[parsort]
+ntrigs = ntrigs[parsort]
+nabove = nabove[parsort]
+invalpha = invalpha[parsort]
 
-pl.semilogx(tdur, 1./invalpha, 'b+', ms=3)
-pl.xlim(0.03, 150)
-pl.savefig('/home/tdent/WWW/LSC/tests/trig_fitting/%s-fit_by_template_chunk3_thr6_alpha_vs_dur.png' % ifo)
-pl.close()
+if args.log_param:
+    logging.info('Using log %s to perform smoothing' % args.fit_param)
+    parvals = np.log(parvals)
+else:
+    logging.info('Using %s to perform smoothing' % args.fit_param)
 
-pl.semilogx(tdur, nabove, 'b+', ms=3)
-pl.xlim(0.03, 150)
-pl.savefig('/home/tdent/WWW/LSC/tests/trig_fitting/%s-fit_by_template_chunk3_thr6_num_vs_dur.png' % ifo)
-pl.close()
+# do nearest-neighbours regression
+# use Gaussian weight over fitting parameter
+if args.regression_method == 'nn':
+    weights = lambda d:np.exp(-0.5 * (d/args.smoothing_width) ** 2)
+    knn = neighbors.KNeighborsRegressor(args.num_neighbors, weights=weights)
+    logging.info('Smoothing invalpha data')
+    invalpha_knn = knn.fit(parvals[:, np.newaxis], invalpha)
+    logging.info('Evaluating smoothed invalpha')
+    # loop over parameter values to try and avoid memory error in knn predict
+    invalpha_smoothed = [invalpha_knn.predict([[p]]) for p in parvals]
+    del invalpha_knn
+    logging.info('Smoothing ntrigs data')
+    ntrigs_knn = knn.fit(parvals[:, np.newaxis], ntrigs)
+    logging.info('Evaluating smoothed ntrigs')
+    ntrigs_smoothed = [ntrigs_knn.predict([[p]]) for p in parvals]
+    del ntrigs_knn
 
-# do nearest-neighbours regression over *log* of duration
-n_neighbors = 2500
-# use Gaussian weight over log tdur with variance to be tuned ..
-weights = lambda d:np.exp(-0.5 * (d/0.25) ** 2)
-#weights = 'uniform'
-knn = neighbors.KNeighborsRegressor(n_neighbors, weights=weights)
+# write as ifo group
+outfile = h5py.File(args.output, 'w')
+ifofits = outfile.create_group(args.ifo)
+# store template-dependent fit output
+ifofits.create_dataset('template_id', data=tid)
+ifofits.create_dataset('trigger_count', data=np.array(ntrigs_smoothed))
+ifofits.create_dataset('count_above_thresh', data=nabove) # counts_above is not smoothed!
+ifofits.create_dataset('fit_coeff', data=1. / np.array(invalpha_smoothed))
+# add some metadata to the fits
+ifofits.attrs.create('fit_param', data=args.fit_param)
+ifofits.attrs.create('regression_method', data=args.regression_method)
+if args.num_neighbors > 0:
+    ifofits.attrs.create('n_neighbors', data=args.num_neighbors)
+ifofits.attrs.create('smoothing_width', data=args.smoothing_width)
 
-# evaluate the NN model at pre-specified points
-plotlogdur = np.linspace(np.log(min(tdur)), np.log(max(tdur)), 1000)
-print 'smoothing invalpha data'
-invalphaknn = knn.fit(np.log(tdur)[:, np.newaxis], invalpha).predict(plotlogdur[:, np.newaxis])
+outfile.close()
+logging.info('Done!')
 
-print 'plotting ..'
-pl.scatter(tdur, invalpha, c=nabove, s=4, edgecolors='none', alpha=0.6)
-pl.semilogx(np.exp(plotlogdur), invalphaknn, 'g-')
-pl.xlim(0.03, 150)
-pl.colorbar()
-pl.xlabel('template duration (s)')
-pl.ylabel('fit coefficient 1/alpha')
-pl.title('colour=num trigs fitted')
-pl.savefig('/home/tdent/WWW/LSC/tests/trig_fitting/%s-invalpha_knn.png' % ifo)
-pl.close()
-
-pl.plot(tdur, 1./invalpha, 'b+', ms=3, alpha=0.6)
-pl.semilogx(np.exp(plotlogdur), 1./invalphaknn, 'g-')
-pl.xlim(0.03, 150)
-pl.xlabel('template duration (s)')
-pl.ylabel('fit coefficient alpha')
-pl.savefig('/home/tdent/WWW/LSC/tests/trig_fitting/%s-alpha_knn.png' % ifo)
-pl.close()
-
-print 'smoothing ntrigs data'
-ntrigsknn = knn.fit(np.log(tdur)[:, np.newaxis], ntrigs).predict(plotlogdur[:, np.newaxis])
-
-#fit a spline over *log* of duration
-#invalphaspline = splrep(np.log(tdur), invalpha, w=np.sqrt(nabove), k=5)
-#ntrigspline = splrep(np.log(tdur), ntrigs, w=np.ones_like(ntrigs), k=5)
-
-#invalphasmooth = splev(plotlogdur, invalphaspline)
-#ntrigsmooth = splev(plotlogdur, ntrigspline)
-
-print 'plotting ..'
-pl.semilogx(tdur, ntrigs, 'b+', ms=3, alpha=0.6)
-pl.semilogx(np.exp(plotlogdur), ntrigsknn, 'g-')
-pl.xlim(0.03, 150)
-pl.xlabel('template duration (s)')
-pl.ylabel('relative number of triggers')
-pl.savefig('/home/tdent/WWW/LSC/tests/trig_fitting/%s-ntrig_knn.png' % ifo)
-pl.close()
-
-
-#print('Done!')
