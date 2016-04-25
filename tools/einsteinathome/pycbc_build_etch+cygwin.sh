@@ -861,19 +861,29 @@ cd test
 
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
-test -r $p && echo "$md5  $p" | md5sum -c || rm -f "$p"
-test -r $p || wget $wget_opts "$albert/$p"
-echo "$md5  $p" | md5sum -c
+if ! echo "$md5  $p" | md5sum -c; then
+    wget $wget_opts "$albert/$p"
+    echo "$md5  $p" | md5sum -c
+fi
 f=$p
+
+p=SEOBNRv2ChirpTimeSS.dat
+md5=7b7dbadacc3f565fb2c8e6971df2ab74
+if ! echo "$md5  $p" | md5sum -c; then
+    wget $wget_opts "$albert/$p"
+    echo "$md5  $p" | md5sum -c
+fi
 
 #fb5ec108c69f9e424813de104731370c  H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz
 p="H1L1-SBANK_FOR_GW150914.xml.gz"
 md5="401324352d30888a5df2e5cc65035b17"
-test -r $p && echo "$md5  $p" | md5sum -c || rm -f "$p"
-test -r $p || wget $wget_opts "$albert/$p"
-echo "$md5  $p" | md5sum -c
+if ! echo "$md5  $p" | md5sum -c; then
+    wget $wget_opts "$albert/$p"
+    echo "$md5  $p" | md5sum -c
+fi
 
-NO_TMPDIR=1 \
+LAL_DATA_PATH="." \
+  NO_TMPDIR=1 \
   INITIAL_LOG_LEVEL=10 \
   LEVEL2_CACHE_SIZE=8192 \
   WEAVE_FLAGS='-O3 -march=core2 -w' \
@@ -888,7 +898,7 @@ NO_TMPDIR=1 \
   --injection-window 4.5 \
   --segment-start-pad 112 \
   --psd-segment-stride 8 \
-  --approximant "'SPAtmplt' if (params.mass1 + params.mass2) < 4 else 'SEOBNRv2_ROM_DoubleSpin'" \
+  --approximant IMRPhenomD \
   --psd-inverse-length 16 \
   --filter-inj-only \
   --psd-segment-length 16 \
