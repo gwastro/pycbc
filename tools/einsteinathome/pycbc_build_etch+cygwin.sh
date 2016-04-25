@@ -410,6 +410,8 @@ Libs: -L${libdir} -lhdf5' |
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
+    # make sure frame files are read in binary mode
+    sed -i~ 's/\([Oo]pen.*"r\)"/\1b"/' src/FrameL.c # `egrep -r '[Oo]pen.*"r"' .`
     if $build_dlls; then
 	for i in src/Makefile*; do
 	    echo 'libFrame_la_LDFLAGS += -no-undefined' >> $i
