@@ -158,6 +158,10 @@ parser.add_argument('--spin2y', type=float, default=0.0,
 parser.add_argument('--spin2x', type=float, default=0.0,
                   help='(optional) Spin in x direction for mass2.')
 
+# Use this for NR injections
+parser.add_argument('--numrel-data', type=str, default='',
+                  help="Location of NR data file if using NR injections.")
+
 # end time options
 parser.add_argument('--geocentric-end-time', type=float, required=True,
                   help='The geocentric GPS end time of the injection.')
@@ -262,6 +266,7 @@ sim.spin2x = opts.spin2x
 sim.polarization = opts.polarization
 sim.taper = opts.taper
 sim.distance = distance
+sim.numrel_data = opts.numrel_data
 
 # construct waveform string that can be parsed by lalsimulation
 waveform_string = opts.approximant
