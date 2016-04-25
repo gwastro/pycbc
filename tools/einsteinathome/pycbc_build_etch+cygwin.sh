@@ -870,7 +870,7 @@ NO_TMPDIR=1 \
   --injection-window 4.5 \
   --segment-start-pad 112 \
   --psd-segment-stride 8 \
-  --approximant SPAtmplt \
+  --approximant "'SPAtmplt' if (params.mass1 + params.mass2) < 4 else 'SEOBNRv2_ROM_DoubleSpin'" \
   --psd-inverse-length 16 \
   --filter-inj-only \
   --psd-segment-length 16 \
