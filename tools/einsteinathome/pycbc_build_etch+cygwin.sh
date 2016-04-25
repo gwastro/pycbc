@@ -12,15 +12,7 @@
 
 set -e
 
-echo -e "\\n\\n>> [`date`] Start $0"
-
-# usually, build directories are removed after a successful build
-# don't do this if DEBUG is set
-if [ ".$DEBUG" = "." ]; then
-    cleanup=true
-else
-    cleanup=false
-fi
+echo -e ">> [`date`] Start $0 $*"
 
 # automatically detect a Debian 4.0 (Etch) installation.
 # if not found, use Cygwin settings.
@@ -49,7 +41,6 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
     build_preinst_before_lalsuite=false
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
     use_pycbc_pyinstaller_hooks=true
-    verbose_pyinstalled_python=false
 else
     echo -e "\\n\\n>> [`date`] Using Cygwin settings"
     lal_cppflags="-D_WIN32"
@@ -73,8 +64,26 @@ else
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
     use_pycbc_pyinstaller_hooks=true
-    verbose_pyinstalled_python=false
 fi
+
+# defaults
+cleanup=true # usually, build directories are removed after a successful build
+verbose_pyinstalled_python=false
+pycbc_branch=einsteinathome_testing
+
+# handle command-line arguments, possibly overriding above settings
+for i in $*; do
+    case $i in
+	--no-pycbc-update) pycbc_branch="HEAD";;
+        --no-cleanup) cleanup=false;;
+        --verbose-python) verbose_pyinstalled_python=true;;
+	*) echo "unknown option '$i', valid are:
+
+        --no-cleanup      : keep build directories after successful build for later inspection
+        --no-pycbc-update : don't update local pycbc repo from remote branch $pycbc_branch
+        --verbose-python  : run PyInstalled Python in verbose mode, showing imports">&2; exit 1;;
+    esac
+done
 
 # compilation environment
 PYCBC="$PWD/pycbc"
@@ -749,21 +758,28 @@ if test -d pycbc/.git; then
     fi
     cd ..
 fi
-branch=einsteinathome_testing
 if test -d pycbc/.git; then
-    # checkout branch from scratch, master must and should exist
     cd pycbc
-    git checkout master
-    git branch -D $branch
-    git remote update
-    git checkout -b $branch origin/$branch
+    if test ".$pycbc_branch" = ".HEAD"; then
+	:
+    else
+	# checkout branch from scratch, master must and should exist
+	git checkout master
+	git branch -D $pycbc_branch
+	git remote update
+	git checkout -b $pycbc_branch origin/$pycbc_branch
+    fi
 else
     # clone
     rm -rf pycbc
     # git clone git://github.com/ligo-cbc/pycbc
     git clone https://github.com/bema-ligo/pycbc.git
     cd pycbc
-    git checkout -b $branch origin/$branch
+    if test ".$pycbc_branch" = ".HEAD"; then
+	:
+    else
+	git checkout -b $pycbc_branch origin/$pycbc_branch
+    fi
 fi
 pip install .
 hooks="$PWD/tools/static"
