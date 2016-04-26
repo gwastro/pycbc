@@ -4,11 +4,6 @@
 
 # FIXME/todo:
 #
-# A couple of quick & dirty hacks for the Cygwin build need to be made properly:
-#
-# - pycbc-glue: ".tp_base = NULL"
-#   in Python on Windows, &PyTuple_Type is not known at compile time, thus I get
-#   "initializer is not constant. Solution would be to initalize at run time.
 
 set -e
 
