@@ -247,8 +247,8 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         self.ifos = ifo
         self.num_threads = 1
 
-    def create_node(self, trig_files=None, segment_dir=None, out_tags=[],
-                    tags=[]):
+    def create_node(self, trig_files=None, segment_dir=None, analysis_seg=None,
+                    out_tags=[], tags=[]):
         node = Node(self)
 
         if not trig_files:
@@ -256,11 +256,6 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
                               % self.name)
 
         # Data options
-        pad_data = self.cp.get('inspiral', 'pad-data')
-        if pad_data is None:
-            raise ValueError("The option pad-data is a required option of "
-                             "%s. Please check the ini file." % self.name)
-
         num_trials = int(self.cp.get("trig_combiner", "num-trials"))
         trig_name = self.cp.get('workflow', 'trigger-name')
         if all("COHERENT_NO_INJECTIONS" in t.name for t in trig_files) and \
@@ -270,9 +265,7 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         
         node.add_opt('--grb-name', trig_name)
         
-        node.add_opt('--pad-data', pad_data)
-        node.add_opt('--segment-length', self.cp.get('inspiral',
-                                                     'segment-duration'))
+        node.add_opt('--trig-start-time', analysis_seg[0])
         node.add_opt('--ifo-tag', self.ifos)
         node.add_opt('--user-tag', 'INSPIRAL')
 
