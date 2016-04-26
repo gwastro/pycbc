@@ -483,16 +483,14 @@ if test -r $PYCBC/../pycbc-preinst-lalsuite.tgz; then
 else
 
     # LALSUITE
-    if test -d lalsuite/.git; then
-	:
-    else
-	git clone git://$gitmaster/lalsuite.git
-	cd lalsuite
-	git checkout -b eah_cbc origin/eah_cbc
-	cd ..
-    fi
     echo -e "\\n\\n>> [`date`] building lalsuite"
-    cd lalsuite
+    if test -d lalsuite/.git; then
+        cd lalsuite
+    else
+        git clone git://$gitmaster/lalsuite.git
+        cd lalsuite
+        git checkout -b eah_cbc origin/eah_cbc
+    fi
     git reset --hard HEAD
     echo -e "\\n\\n>> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
     sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
@@ -533,6 +531,7 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
 #  echo -e "\\n\\n>> [`date`] building GLUE"
 #  cd ../glue
 #  python setup.py install --prefix="$PREFIX"
+    git format-patch -1 --stdout 42dbfa2c > "../pycbc-glue-initialize-tp_base.patch"
     cd ../..
     test -r "$PREFIX/etc/pylal-user-env.sh" && source "$PREFIX/etc/pylal-user-env.sh"
     test -r "$PREFIX/etc/glue-user-env.sh" && source "$PREFIX/etc/glue-user-env.sh"
@@ -601,8 +600,9 @@ if $compile_pycbc_glue; then
     cd $p
     # This is pretty ugly just to get things compiled. It won't work when used.
     # This avoids error: initializer element is not constant
-    sed -i~ 's/\.tp_base = &PyTuple_Type/.tp_base = NULL/' src/segments/segment.c
-    sed -i~ 's/\.tp_base = &PyList_Type/.tp_base = NULL/' src/segments/segmentlist.c
+    ln -s . b
+    sed 's% [^ ]*glue/% %g' "../pycbc-glue-initialize-tp_base.patch" | patch -p0
+    rm -f b
     python setup.py install --prefix="$PREFIX"
     cd ..
     $cleanup && rm -rf $p
