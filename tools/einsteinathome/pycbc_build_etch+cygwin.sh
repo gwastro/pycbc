@@ -36,6 +36,7 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
     build_preinst_before_lalsuite=false
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
     use_pycbc_pyinstaller_hooks=true
+    appendix="_Linux64"
 else
     echo -e "\\n\\n>> [`date`] Using Cygwin settings"
     lal_cppflags="-D_WIN32"
@@ -59,6 +60,7 @@ else
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
     use_pycbc_pyinstaller_hooks=true
+    appendix="_Windows64"
 fi
 
 # defaults
@@ -838,7 +840,7 @@ echo -e "\\n\\n>> [`date`] testing"
 cd ..
 
 # build zip file from dir
-zip -r pycbc_inspiral.zip pycbc_inspiral
+zip -r pycbc_inspiral$appendix.zip pycbc_inspiral
 
 # if the executable is "pycbc_inspiral.exe", add a "XML soft link" "pycbc_inspiral" to the bundle for the wrapper
 if $build_dlls; then
@@ -925,7 +927,7 @@ python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRA
 
 # zip weave cache
 echo -e "\\n\\n>> [`date`] zipping weave cache"
-cache="$ENVIRONMENT/dist/pythoncompiled.zip"
+cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
 rm -f "$cache"
 zip -r "$cache" pycbc_inspiral SEOBNRv2ChirpTimeSS.dat
 
