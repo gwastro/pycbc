@@ -163,8 +163,8 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     trig_combiner_jobs = trig_combiner_class(cp, "trig_combiner", ifo=ifos, 
                                              out_dir=output_dir, tags=tags)
     trig_combiner_node, trig_combiner_outs = trig_combiner_jobs.create_node(\
-            trig_files, segment_dir, out_tags=trig_combiner_out_tags,
-            tags=tags)
+            trig_files, segment_dir, workflow.analysis_time,
+            out_tags=trig_combiner_out_tags, tags=tags)
     pp_nodes.append(trig_combiner_node)
     workflow.add_node(trig_combiner_node)
     pp_outs.extend(trig_combiner_outs)
