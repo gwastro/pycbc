@@ -87,17 +87,17 @@ The package should then be available in PyPI for download.
 Preliminaries
 =============
 
-.. note::
-   Every time you log into ``sugar-dev2`` you will need to run the commands ``source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash`` and ``module load python/2.7``
- 
-         
 If ``bundle_env2.6.tgz`` and ``bundle_env2.7.tgz`` exist then you do not need to follow these steps as they help set up the virtual environments.
 
 .. code:: bash
-         
+            
   cd ~
   tar -xf bundle_env2.6.tgz
   tar -xf bundle_env2.7.tgz
+
+.. note::
+
+   Every time you log into ``sugar-dev2`` you will need to run the commands ``source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash`` and ``module load python/2.7``.
 
 You will need to have a copy of lalsuite to distribute the binaries.
 
@@ -137,6 +137,10 @@ A ``bundle_env2.6``  environment needs to be created on ``sugar-dev3``. Once you
     cd ~/
     ./build_bundle_env.sh 
 
+.. note::
+
+      The build_bundle_env.sh can be found at https://github.com/ligo-cbc/pycbc.
+
 Before creating your 2.7 virtual environment:
 
 .. code:: bash
@@ -171,16 +175,13 @@ The program used to create a static binary from a Python program is
     git checkout 9d0e0ad4c1c02964bbff86edbf7400cd40958b1a
     vim bootloader/common/pyi_utils.c
 
-.. note::
-   The build_bundle_env.sh is located on github at [insert link]
-
 By default programs built with PyInstaller will ignore the ``LD_LIBRARY_PATH``
 environment variable, which causes problems in some environments.  To fix this
 edit ``bootloader/common/pyi_utils.c`` and replace the function ``set_dynamic_library_path`` with the following
 
 .. note::
 
-      The fix to ``bootloader/common/pyi_utils.c`` only needs to be done when installing the python 2.7 virtual environment. 
+    The fix to ``bootloader/common/pyi_utils.c`` only needs to be done when installing the python 2.7 virtual environment on ``sugar-dev2``. 
 
 .. code-block:: c
 
@@ -221,7 +222,7 @@ Then configure the bootloader and install as usual:
     ./waf configure build install --no-lsb
     cd ..
 
-On ``sugar-dev3`` since you do not need to make the change to bootloader, you just need to follow this step. However this will also need to be done after you make the change to bootloader on ``sugar-dev2``
+On ``sugar-dev3`` since you do not need to make the change to bootloader, you just need to follow this step. However this will also need to be done after you make the change to bootloader on ``sugar-dev2``.
     
 .. code-block:: bash   
 
@@ -341,6 +342,10 @@ In vim after pressing ``shift+;``, run the command
    %s#http://code.pycbc.phy.syr.edu#/opt#gc
 
 After this change you will have to manually change inpsiral back to: ``inspiral = http://code.pycbc.phy.syr.edu/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090/pycbc_inspiral`` with the correct version number.
+
+.. note::
+
+   lalapps_inspinj, Other lalapps programs, Segment database tools, and pyCBC binaries only needs to be built on ``sugar-dev3``.
 
 ---------------
 lalapps_inspinj
@@ -476,7 +481,7 @@ pycbc_inspiral
 
 .. note::
 
-   ``pycbc_inspiral`` will need to be built on ``sugar-dev2``
+   ``pycbc_inspiral`` can only be built on ``sugar-dev2``.
 
 This program needs to be built in a special environment so that it can be run on Open Science Grid sites.
 All the necessary elements are available through CVMFS:
