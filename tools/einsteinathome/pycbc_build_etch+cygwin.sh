@@ -857,6 +857,7 @@ cd test
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
 if ! echo "$md5  $p" | md5sum -c; then
+    rm -f "$p"
     wget $wget_opts "$albert/$p"
     echo "$md5  $p" | md5sum -c
 fi
@@ -865,6 +866,7 @@ f=$p
 p=SEOBNRv2ChirpTimeSS.dat
 md5=7b7dbadacc3f565fb2c8e6971df2ab74
 if ! echo "$md5  $p" | md5sum -c; then
+    rm -f "$p"
     wget $wget_opts "$albert/$p"
     echo "$md5  $p" | md5sum -c
 fi
@@ -873,6 +875,7 @@ fi
 p="H1L1-SBANK_FOR_GW150914.xml.gz"
 md5="401324352d30888a5df2e5cc65035b17"
 if ! echo "$md5  $p" | md5sum -c; then
+    rm -f "$p"
     wget $wget_opts "$albert/$p"
     echo "$md5  $p" | md5sum -c
 fi
