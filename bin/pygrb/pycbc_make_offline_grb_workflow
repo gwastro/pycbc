@@ -157,14 +157,14 @@ datafind_files, _, sciSegs, _ = _workflow.setup_datafind_workflow(wflow, sciSegs
 ifo = sciSegs.keys()[0]
 ifos = ''.join(sciSegs.keys())
 wflow.ifos = ifos
+datafind_veto_files = _workflow.FileList([])
+datafind_veto_files.extend(datafind_files)
 
 # If using coh_PTF_inspiral we need bank_veto_bank.xml
 if os.path.basename(wflow.cp.get("executables", "inspiral")) \
                     == "lalapps_coh_PTF_inspiral":
-    datafind_veto_files = _workflow.FileList([])
     bank_veto_file = _workflow.get_coh_PTF_files(wflow.cp, ifos, runDir,
                                                  bank_veto=True)
-    datafind_veto_files.extend(datafind_files)
     datafind_veto_files.extend(bank_veto_file)
     
     # Make ExtTrig xml file (needed for lalapps_inspinj and summary pages)
