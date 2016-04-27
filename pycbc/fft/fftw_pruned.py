@@ -12,7 +12,7 @@ I use a similar naming convention here, with minor simplifications to the
 twiddle factors.
 """
 import numpy, scipy.weave, ctypes, pycbc.types
-from pycbc import WEAVE_FLAGS, DEFAULT_WEAVE_FLAGS
+from pycbc import WEAVE_FLAGS
 from pycbc.libutils import get_ctypes_library
 
 # FFTW constants
@@ -223,7 +223,7 @@ def fast_second_phase(invec, indices, N1, N2):
         }
     """
     scipy.weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
-                       extra_compile_args=[WEAVE_FLAGS + DEFAULT_WEAVE_FLAGS])
+                       extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'])
     return out
 
 _thetransposeplan = None
