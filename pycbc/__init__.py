@@ -141,10 +141,12 @@ except ImportError as e:
     
 
 # Check for site-local flags to pass to gcc
-WEAVE_FLAGS = ''
-
+WEAVE_FLAGS = '-march=native -O3 -w '
 if 'WEAVE_FLAGS' in os.environ:
-    WEAVE_FLAGS = os.environ['WEAVE_FLAGS'] + ' '
+    if '-march=' in os.environ['WEAVE_FLAGS']:
+        WEAVE_FLAGS = os.environ['WEAVE_FLAGS']
+    else:
+        WEAVE_FLAGS += os.environ['WEAVE_FLAGS']
 
 if '-march=' in WEAVE_FLAGS:
     DEFAULT_WEAVE_FLAGS = ''
