@@ -46,7 +46,7 @@ allowed_args = {# intrinsic parameters
                 'inclination':0, 'distance':1, 'coa_phase':0,
                 # generation parameters
                 'f_lower':None, 'delta_t':None, 'delta_f':None,
-                'f_final':0, 'f_ref':0, 'taper': None,
+                'f_final':0, 'f_ref':0, 'taper':None, 'duration':None,
                 'approximant':None,
                 'amplitude_order':-1, 'phase_order':-1,
                 'spin_order':-1, 'tidal_order':-1, 'numrel_data':""}
