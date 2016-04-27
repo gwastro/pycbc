@@ -1,45 +1,9 @@
 #!/usr/bin/env python
 import h5py, argparse, logging, numpy, numpy.random
-from pycbc import events, detector
-from pycbc.events import veto, coinc, stat
+from pycbc import events, detector, io
+from pycbc.events import veto, coinc
 import pycbc.version
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--verbose", action="count")
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
-parser.add_argument("--veto-files", nargs='*',
-                    help="Optional veto file. Triggers within these times are ignored")
-parser.add_argument("--strict-coinc-time", action='store_true',
-                    help="Optional, only allow coincidences between triggers that are "
-                         "in coincident time after applying vetoes ")
-parser.add_argument('--segment-name', default=None, type=str,
-                    help='Optional, name of segment list to use for vetoes')
-parser.add_argument("--trigger-files", nargs=2,
-                    help="File containing the single-detector triggers")
-parser.add_argument("--template-bank",
-                    help="Template bank file in HDF format")
-parser.add_argument("--ranking-statistic", help="The ranking statistic to use", default='newsnr')
-parser.add_argument("--coinc-threshold", type=float, default=0.0,
-                    help="Seconds to add to time-of-flight coincidence window")
-parser.add_argument("--timeslide-interval", type=float, default=0,
-                    help="Inverval between timeslides in seconds.")
-parser.add_argument("--decimation-factor", type=int,
-                    help="The factor to reduce the background trigger rate.")
-parser.add_argument("--loudest-keep", type=int,
-                    help="Number of the loudest triggers to keep from each template.")
-parser.add_argument("--loudest-keep-value", type=float,
-                    help="Keep all coincident triggers above this value.")
-parser.add_argument("--template-fraction-range", help="Optional, format string to"
-                    "analyze part of template bank. Format is PART/NUM_PARTS",
-                    default="0/1")
-parser.add_argument("--cluster-window", help="Optional, window size in seconds to "
-                    "cluster coincidences over the bank", type=float)
-parser.add_argument("--output-file", help="File to store the coincident triggers")
-parser.add_argument("--statistic-files", help="Statistic mapping files", nargs='*', default=[])
-args = parser.parse_args()
-
-if args.verbose:
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
 
 def parse_template_range(num_templates, rangestr):
     part = int(rangestr.split('/')[0])
@@ -50,11 +14,17 @@ def parse_template_range(num_templates, rangestr):
 
 class Stat(object):
     def __init__(self, files):
-        self.files = {}
-        for filename in files:
-            f = h5py.File(filename, 'r')
-            stat = f.attrs['stat']
-            self.files[stat] = f
+        """ Files are accessible as the values of a dictionary self.statfiles
+        keyed on the 'stat' attribute of each file.
+        """
+        self.statfiles = {}
+        for fname in files:
+            f = h5py.File(fname, 'r')
+            s = f.attrs['stat']
+            if s in self.statfiles.keys():
+                raise RuntimeError("Can't read two files with the same 'stat'"
+                                   " attribute value!")
+            self.statfiles[s] = f
 
 class NewSNRStatistic(Stat):
     def single(self, trigs):
@@ -66,10 +36,10 @@ class NewSNRStatistic(Stat):
         newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / dof)
         return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
 
-    def coinc(self, s1, s2, slide, step):
+    def coinc(self, s0, s1, slide, step):
         """ Calculate the coincident statistic.
         """
-        return (s1**2.0 + s2**2.0) ** 0.5
+        return (s0 ** 2.0 + s1 ** 2.0) ** 0.5
 
 class NewSNRCutStatistic(Stat):
     def single(self, trigs):
@@ -79,16 +49,16 @@ class NewSNRCutStatistic(Stat):
         newsnr[numpy.logical_and(newsnr < 10, rchisq > 2)] = -1
         return newsnr
 
-    def coinc(self, s1, s2, slide, step):
-        cstat = (s1**2.0 + s2**2.0) ** 0.5
-        cstat[s1==-1] = 0
-        cstat[s2==-1] = 0
+    def coinc(self, s0, s1, slide, step):
+        cstat = (s0 ** 2.0 + s1 ** 2.0) ** 0.5
+        cstat[s0 == -1] = 0
+        cstat[s1 == -1] = 0
         return cstat
 
 class PhaseTDStatistic(NewSNRStatistic):
     def __init__(self, files):
         NewSNRStatistic.__init__(self, files)
-        self.hist = self.files['phasetd_newsnr']['map'][:]
+        self.hist = self.statfiles['phasetd_newsnr']['map'][:]
         top = float(self.hist.max())
 
         #normalize so that peak has no effect on newsnr
@@ -99,7 +69,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         newsnr = NewSNRStatistic.single(self, trigs)
         return numpy.array((newsnr, trigs['coa_phase'], trigs['end_time'], trigs['sigmasq']**0.5, trigs['snr'])).transpose()
 
-    def coinc(self, s1, s2, slide, step):
+    def coinc(self, s0, s1, slide, step):
         """ Calculate the coincident statistic.
         """
         td = s1[:,2] - s2[:,2] - slide * step
@@ -149,100 +119,95 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
         return numpy.array(numpy.minimum(chisq_newsnr, autochisq_newsnr,
                              dtype=numpy.float32), ndmin=1, copy=False)
 
-class ReadByTemplate(object):
-    def __init__(self, filename, bank=None, segment_name=None, veto_files=[]):
-        self.filename = filename
-        self.file = h5py.File(filename, 'r')
-        self.ifo = self.file.keys()[0]
-        self.valid = None
-        self.bank = h5py.File(bank) if bank else None
+class ExpFitStatistic(NewSNRStatistic):
+    def __init__(self, files):
+        NewSNRStatistic.__init__(self, files)
+        if not len(files):
+            raise RuntimeError("Can't find any statistic files !")
+        # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs' where
+        # %{ifo}
+        self.ifos = [f.split('-')[0] for f in self.statfiles.keys() if \
+                     f.split('-')[1] == 'fit_coeffs']
+        if (not len(files)) or (not len(self.ifos)):
+            raise RuntimeError("None of the statistic files has the required "
+                               "attribute called {ifo}-fit_coeffs !")
 
-        # Determine the segments which define the boundaries of valid times
-        # to use triggers
-        from glue.segments import segmentlist, segment
-        key = '%s/search/' % self.ifo
-        s, e = self.file[key + 'start_time'][:], self.file[key + 'end_time'][:]
-        self.segs = veto.start_end_to_segments(s, e).coalesce()
-        for vfile in veto_files:
-            veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo,
-                                                     segment_name=segment_name)
-            self.segs = (self.segs - veto_segs).coalesce()
-            self.valid = veto.segments_to_start_end(self.segs)
+    def find_fits(self, trigs):
+        # get the coeffs for a specific ifo and template id
+        ifo = trigs.ifo
+        coeff_group = self.statfiles[ifo+'-fit_coeffs'][ifo]
+        tnum = trigs.template_num
+        alphai = coeff_group['fit_coeff'][tnum]
+        lambdai = coeff_group['ntrigs'][tnum]
+        return alphai, lambdai
 
-    def get_data(self, col, num):
-        """ Get a column of data for template with id 'num'
-
-        Parameters
-        ----------
-        col: str
-            Name of column to read
-        num: int
-            The template id to read triggers for
-
-        Returns
-        -------
-        data: numpy.ndarray
-            The requested column of data
+    def single(self, trigs):
+        """ Read in the single detector information and make the newsnr
+        statistic and rescale it by the fitted coefficients
         """
-        ref = self.file['%s/%s_template' % (self.ifo, col)][num]
-        return self.file['%s/%s' % (self.ifo, col)][ref]
+        alphai, lambdai = self.find_fits(trigs)
+        dof = 2 * trigs['chisq_dof'] - 2
+        newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / dof)
+        # alphai is constant of proportionality between single-ifo newsnr and
+        # negative log noise likelihood in given template
+        # lambdai is rate of trigs in given template compared to average
+        rescaled_stat = alphai * newsnr - numpy.log(lambdai)
+        return numpy.array(rescaled_stat, ndmin=1, dtype=numpy.float32)
 
-    def set_template(self, num):
-        """ Set the active template to read from
+    def coinc(self, s0, s1, slide, step):
+        return s0 + s1
 
-        Parameters
-        ----------
-        num: int
-            The template id to read triggers for
+def invoke_statistic(option, files):
+    return statistic_dict[option](files)
 
-        Returns
-        -------
-        trigger_id: numpy.ndarray
-            The indices of this templates triggers
-        """
-        self.template_num = num
-        times = self.get_data('end_time', num)
+statistic_dict = {'newsnr': NewSNRStatistic,
+                  'newsnr_cut': NewSNRCutStatistic,
+                  'phasetd_newsnr': PhaseTDStatistic,
+                  'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
+                  'exp_fit_stat': ExpFitStatistic
+                 }
 
-        # Determine which of these template's triggers are kept after
-        # applying vetoes
-        if self.valid:
-            self.keep = veto.indices_within_times(times, self.valid[0], self.valid[1])
-            logging.info('applying vetoes')
-        else:
-            self.keep = numpy.arange(0, len(times))
 
-        if self.bank is not None:
-            self.param = {}
-            for col in self.bank:
-                self.param[col] = self.bank[col][self.template_num]
+parser = argparse.ArgumentParser()
+parser.add_argument("--verbose", action="count")
+parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
+parser.add_argument("--veto-files", nargs='*',
+                    help="Optional veto file. Triggers within these times are ignored")
+parser.add_argument("--strict-coinc-time", action='store_true',
+                    help="Optional, only allow coincidences between triggers that are "
+                         "in coincident time after applying vetoes ")
+parser.add_argument("--segment-name", default=None, type=str,
+                    help="Optional, name of segment list to use for vetoes")
+parser.add_argument("--trigger-files", nargs=2,
+                    help="Files containing the single-detector triggers. "
+                         "Two files must be provided")
+parser.add_argument("--template-bank", required=True,
+                    help="Template bank file in HDF format. Required")
+parser.add_argument("--ranking-statistic", choices=statistic_dict.keys(),
+                    help="The ranking statistic to use", default='newsnr')
+parser.add_argument("--coinc-threshold", type=float, default=0.0,
+                    help="Seconds to add to time-of-flight coincidence window")
+parser.add_argument("--timeslide-interval", type=float, default=0,
+                    help="Interval between timeslides in seconds.")
+parser.add_argument("--decimation-factor", type=int,
+                    help="The factor to reduce the background trigger rate.")
+parser.add_argument("--loudest-keep", type=int,
+                    help="Number of the loudest triggers to keep from each template.")
+parser.add_argument("--loudest-keep-value", type=float,
+                    help="Keep all coincident triggers above this value.")
+parser.add_argument("--template-fraction-range", help="Optional, format string to"
+                    "analyze part of template bank. Format is PART/NUM_PARTS",
+                    default="0/1")
+parser.add_argument("--cluster-window", help="Optional, window size in seconds to "
+                    "cluster coincidences over the bank", type=float)
+parser.add_argument("--output-file", help="File to store the coincident triggers")
+parser.add_argument("--statistic-files", help="Statistic mapping files", nargs='*', default=[])
+args = parser.parse_args()
 
-        # Calculate the trigger id by adding the relative offset in self.keep
-        # to the absolute beginning index of this templates triggers stored
-        # in 'template_boundaries'
-        trigger_id = self.keep + self.file['%s/template_boundaries' % self.ifo][num]
-        return trigger_id
+if args.verbose:
+    logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
 
-    def __getitem__(self, col):
-        """ Return the column of data for current active template after
-        applying vetoes
-
-        Parameters
-        ----------
-        col: str
-            Name of column to read
-
-        Returns
-        -------
-        data: numpy.ndarray
-            The requested column of data
-        """
-        if self.template_num == None:
-            raise ValueError('You must call set_template to first pick the '
-                             'template to read data from')
-        data = self.get_data(col, self.template_num)
-        data = data[self.keep] if self.valid else data
-        return data
-
+######## MAIN ########
 logging.info('Starting...')
 
 num_templates = len(h5py.File(args.template_bank, "r")['template_hash'])
@@ -250,10 +215,10 @@ tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
 logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
 
 logging.info('Opening first trigger file: %s' % args.trigger_files[0])
-trigs0= ReadByTemplate(args.trigger_files[0],
+trigs0 = io.ReadSnglsByTemplate(args.trigger_files[0],
                        args.template_bank, args.segment_name, args.veto_files)
 logging.info('Opening second trigger file: %s' % args.trigger_files[1])
-trigs1 = ReadByTemplate(args.trigger_files[1],
+trigs1 = io.ReadSnglsByTemplate(args.trigger_files[1],
                         args.template_bank, args.segment_name, args.veto_files)
 coinc_segs = (trigs0.segs & trigs1.segs).coalesce()
 
@@ -263,7 +228,7 @@ if args.strict_coinc_time:
     trigs0.valid = veto.segments_to_start_end(trigs0.segs)
     trigs1.valid = veto.segments_to_start_end(trigs1.segs)
 
-rank_method = stat.get_statistic(args.ranking_statistic, args.statistic_files)
+rank_method = invoke_statistic(args.ranking_statistic, args.statistic_files)
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
 time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
 logging.info('The coincidence window is %3.1f ms' % (time_window * 1000))

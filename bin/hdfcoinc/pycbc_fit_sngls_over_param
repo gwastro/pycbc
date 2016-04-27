@@ -159,7 +159,7 @@ outfile = h5py.File(args.output, 'w')
 ifofits = outfile.create_group(args.ifo)
 # store template-dependent fit output
 ifofits.create_dataset('template_id', data=tid)
-ifofits.create_dataset('trigger_count', data=np.array(ntrigs_smoothed))
+ifofits.create_dataset('ntrigs', data=np.array(ntrigs_smoothed))
 ifofits.create_dataset('count_above_thresh', data=nabove) # counts_above is not smoothed!
 ifofits.create_dataset('fit_coeff', data=1. / np.array(invalpha_smoothed))
 # add some metadata to the fits
@@ -168,6 +168,9 @@ ifofits.attrs.create('regression_method', data=args.regression_method)
 if args.num_neighbors > 0:
     ifofits.attrs.create('n_neighbors', data=args.num_neighbors)
 ifofits.attrs.create('smoothing_width', data=args.smoothing_width)
+
+# add a magic file attribute so that coinc_findtrigs can parse it
+outfile.attrs.create('stat', data=args.ifo+'-fit_coeffs')
 
 outfile.close()
 logging.info('Done!')
