@@ -26,6 +26,7 @@
 import numpy as _np
 from array import common_kind, complex128, float64
 import aligned as _algn
+from scipy.linalg import blas
 
 def zeros(length, dtype=_np.float64):
     return _algn.zeros(length, dtype=dtype)
@@ -93,7 +94,32 @@ def vdot(self, other):
 def squared_norm(self):
     """ Return the elementwise squared norm of the array """
     return (self.data.real**2 + self.data.imag**2)
-    
+
+_blas_mandadd_funcs = {}
+_blas_mandadd_funcs[_np.float32] = blas.saxpy
+_blas_mandadd_funcs[_np.float64] = blas.daxpy
+_blas_mandadd_funcs[_np.complex64] = blas.caxpy
+_blas_mandadd_funcs[_np.complex128] = blas.zaxpy
+
+def multiply_and_add(self, other, mult_fac):
+    """
+    Return other multiplied by mult_fac and with self added.
+    Self will be modified in place. This requires all inputs to be of the same
+    precision.
+    """
+    # Sanity checking should have already be done. But we don't know if
+    # mult_fac and add_fac are arrays or scalars.
+    inpt = _np.array(self.data, copy=False)
+    N = len(inpt)
+    # For some reason, _checkother decorator returns other.data so we don't
+    # take .data here
+    other = _np.array(other, copy=False)
+
+    assert(inpt.dtype == other.dtype)
+
+    blas_fnc = _blas_mandadd_funcs[inpt.dtype.type]
+    return blas_fnc(other, inpt, a=mult_fac)
+
 def numpy(self):
     return self._data
     

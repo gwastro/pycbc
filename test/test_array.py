@@ -28,6 +28,7 @@ These are the unittests for the pycbc array type
 
 import pycbc
 import unittest
+import itertools
 from pycbc.types import *
 from pycbc.scheme import *
 import numpy
@@ -481,6 +482,28 @@ class ArrayTestBase(array_base,unittest.TestCase):
                 self.assertEqual(b.shape, a_numpy.shape)
             self.assertEqual(numpy.abs(b - a_numpy).max(), 0)
             os.remove(temp_path_txt)
+
+    def test_multiply_and_add(self):
+        with self.context:
+            if not self.kind == self.okind:
+                # Currently this is not supported
+                return
+
+            if self.kind == 'complex':
+                inp = Array([5+2j,3+1j,1+2j], dtype=self.dtype)
+                out = Array([5+2j,3+1j,1+2j], dtype=self.odtype)
+                mult_fac = 12+17j
+            else:
+                inp = Array([5,3,1], dtype=self.dtype)
+                out = Array([5,3,1], dtype=self.odtype)
+                mult_fac=12
+
+            out_check = mult_fac * inp + out
+            out.multiply_and_add(inp, mult_fac)
+            self.assertEqual(out[0], out_check[0])
+            self.assertEqual(out[1], out_check[1])
+            self.assertEqual(out[2], out_check[2])
+
 
 def array_test_maker(dtype,odtype):
     class tests(ArrayTestBase):
