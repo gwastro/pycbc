@@ -151,11 +151,16 @@ class ExpFitStatistic(NewSNRStatistic):
         # alphai is constant of proportionality between single-ifo newsnr and
         # negative log noise likelihood in given template
         # lambdai is rate of trigs in given template compared to average
-        rescaled_stat = alphai * newsnr - numpy.log(lambdai)
-        return numpy.array(rescaled_stat, ndmin=1, dtype=numpy.float32)
+        lognoisel = - alphai * newsnr + numpy.log(lambdai)
+        return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
     def coinc(self, s0, s1, slide, step):
-        return s0 + s1
+        # approximate log likelihood ratio by sum of single-ifo negative
+        # log noise likelihoods
+        loglr = - s1 - s0
+        # convert back to a familiar statistic-like value
+        # notionally, log likelihood ratio \propto rho_c^2 / 2
+        return (2 * loglr) ** 0.5
 
 def invoke_statistic(option, files):
     return statistic_dict[option](files)
