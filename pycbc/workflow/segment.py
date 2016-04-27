@@ -1093,8 +1093,8 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
     else:
         offsrc = offsrclist[0]
 
-    if (triggertime - minbefore - padding not in offsrc) or (
-            triggertime + minafter + padding not in offsrc):
+    if (triggertime - onbefore - minbefore - padding not in offsrc) or (
+            triggertime + onafter + minafter + padding not in offsrc):
         if sngl_ifo:
             logging.warning("Not enough data either side of trigger time in "
                             "coherent segment. Falling back on single IFO "
@@ -1102,8 +1102,10 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
             return get_triggered_single_ifo_segment(workflow, out_dir,
                                                     sciencesegs)
         else:
-            fail = segments.segment([triggertime - minbefore - padding,
-                                     triggertime + minbefore + padding])
+            fail = segments.segment([triggertime - onbefore - minbefore - \
+                                     padding,
+                                     triggertime + onafter + minafter + \
+                                     padding])
             logging.error("Not enough data either side of trigger time. If "
                           "you wish to enable single IFO running add the "
                           "option 'allow-single-ifo-search' to the [workflow] "
@@ -1300,14 +1302,15 @@ def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
             offsrc[key] = snglsegs[key][0]
 
     for key in offsrc.keys():
-        if (triggertime - minbefore - padding not in offsrc[key]) or \
-                (triggertime + minafter + padding not in offsrc[key]):
+        if (triggertime - onbefore - minbefore - padding not in offsrc[key]) \
+                or (triggertime + onafter + minafter + padding not in \
+                    offsrc[key]):
             logging.info("Not enough data either side of trigger time in %s."
                          % key)
             offsrc.pop(key)
     if len(offsrc.keys()) == 0:
-        fail = segments.segment([triggertime - minbefore,
-                                 triggertime + minafter])
+        fail = segments.segment([triggertime - onbefore - minbefore,
+                                 triggertime + +onafter + minafter])
         logging.error("Not enough data either side of trigger time in any "
                       "IFO. Exiting.")
         return None, fail

@@ -78,6 +78,19 @@ segDir = os.path.join(currDir, "segments")
 sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
 
 # Make coherent network segments
+if wflow.cp.has_option("inspiral", "analyse-segment-end"):
+    safety = 1
+    deadtime = int(wflow.cp.get("inspiral", "segment-duration")) / 2
+    spec_len = int(wflow.cp.get("inspiral", "inverse-spec-length")) / 2
+    wflow.cp.set("workflow-exttrig_segments", "min-before",
+                 str(deadtime - spec_len - safety))
+    wflow.cp.set("workflow-exttrig_segments", "min-after",
+                 str(spec_len + safety))
+else:
+    deadtime = int(wflow.cp.get("inspiral", "segment-duration")) / 4
+    wflow.cp.set("workflow-exttrig_segments", "min-before", str(deadtime))
+    wflow.cp.set("workflow-exttrig_segments", "min-after", str(deadtime))
+
 single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
 if len(sciSegs.keys()) == 0:
     plot_met = make_grb_segments_plot(wflow, segmentlistdict(), triggertime,
@@ -125,17 +138,14 @@ else:
 ifo = sciSegs.keys()[0]
 padding = int(wflow.cp.get("inspiral", "pad-data"))
 if wflow.cp.has_option("inspiral", "analyse-segment-end"):
-    safety = 1
-    deadtime = int(wflow.cp.get("inspiral", "segment-duration")) / 2
-    spec_len = int(wflow.cp.get("inspiral", "inverse-spec-length")) / 2
     wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + deadtime - \
                                       spec_len + padding - safety,
                                   int(sciSegs[ifo][0][1]) - spec_len - \
                                       padding - safety)
 else:
-    deadtime = int(wflow.cp.get("inspiral", "segment-duration")) / 4
     wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + deadtime + padding,
                                   int(sciSegs[ifo][0][1]) - deadtime - padding)
+
 wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
                                        int(sciSegs[ifo][0][1]))
 ext_file = None
