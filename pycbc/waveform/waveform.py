@@ -46,7 +46,7 @@ allowed_args = {# intrinsic parameters
                 'inclination':0, 'distance':1, 'coa_phase':0,
                 # generation parameters
                 'f_lower':None, 'delta_t':None, 'delta_f':None,
-                'f_final':0, 'f_ref':0,
+                'f_final':0, 'f_ref':0, 'taper': None,
                 'approximant':None,
                 'amplitude_order':-1, 'phase_order':-1,
                 'spin_order':-1, 'tidal_order':-1, 'numrel_data':""}
@@ -338,7 +338,7 @@ def get_td_waveform(template=None, **kwargs):
     input_params = props(template,**kwargs)
     wav_gen = td_wav[type(_scheme.mgr.state)]
 
-    missing_args = [arg for arg in td_required_args \
+    missing_args = [arg for arg in td_required_args
                         if input_params[arg] is None]
     if any(missing_args):
         raise ValueError("Please provide %s" %(', '.join(missing_args)))
@@ -420,7 +420,7 @@ def get_fd_waveform(template=None, **kwargs):
     input_params = props(template,**kwargs)
     wav_gen = fd_wav[type(_scheme.mgr.state)]
 
-    missing_args = [arg for arg in fd_required_args \
+    missing_args = [arg for arg in fd_required_args
                         if input_params[arg] is None]
     if any(missing_args):
         raise ValueError("Please provide %s" %(', '.join(missing_args)))
