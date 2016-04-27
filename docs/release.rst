@@ -24,6 +24,16 @@ To create a new PyCBC release:
 #. Set ``release = False`` in PyCBC's setup.py file.
 #. Commit these changes and push them to the repository.
 
+To decide what will be in each new  release.
+
+.. code:: bash
+
+  git checkout v1.3
+  git cherry-pick [hash of first change]
+  git cherry-pick [hash of second change]
+  [continue using git cherry-pick for all new changes]
+  git commit
+
 =====================================
 Uploading to the Python Package Index
 =====================================
@@ -73,154 +83,105 @@ You should now see the package uploaded in the `PyPI Test Repository <https://te
 
 The package should then be available in PyPI for download.
 
-============================================
-Creating static binaries for production runs
-============================================
-
-Static binaries are entirely self-contained programs that
-
-#. Can be run by anyone, whether or not they have set up a development environment
-#. Ensure that each program runs with the right versions of all dependancies
-#. can be distributed from a central location
-
-A new set of such binaries should be generated for every release.
-
--------------
+=============
 Preliminaries
--------------
+=============
+
+If ``bundle_env2.6.tgz`` and ``bundle_env2.7.tgz`` exist then you do not need to follow these steps as they help set up the virtual environments.
+
+.. code:: bash
+            
+  cd ~
+  tar -xf bundle_env2.6.tgz
+  tar -xf bundle_env2.7.tgz
+
+.. note::
+
+   Every time you log into ``sugar-dev2`` you will need to run the commands ``source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash`` and ``module load python/2.7``.
+
+You will need to have a copy of lalsuite to distribute the binaries.
+
+.. code:: bash
+
+   mkdir -p /path/to/home/src
+   cd /path/to/home/src
+   git clone git://versions.ligo.org/lalsuite.git
+
+In order to distribute the binaries it will first be necessary to have a copy of the git repository
+
+.. code::
+    
+    cd ${HOME}
+    git clone git@code.pycbc.phy.syr.edu:ligo-cbc/pycbc-software.git
 
 To set up an environment for the release first follow the standard installation
-instructions here:
+instructions here or use the install script to create ``bundle_env2.6``: 
 
 .. toctree::
-    :maxdepth: 1
+       :maxdepth: 1
 
     install
 
 If the default Python is 2.6 it will be useful to name your virtual environment
-something like ``pycbc_dev2.6``, since a subsequent step will require a 2.7
+something like ``bundle_env2.6``, since a subsequent step will require a 2.7
 environment.
+
 .. note::
-   The bundles can still pull files from the virtual environment that you create. To prevent this it is necessary to ensure that the build environment does not persist after you create the bundles.
+    
+  The bundles can still pull files from the virtual environment that you create. To prevent this it is necessary to ensure that the build environment does not persist after you create the bundles.
 
-In order to distribute the binaries it will first be necessary to have a copy of the git
-repository
-
-.. code::
-
-    git clone git@code.pycbc.phy.syr.edu:ligo-cbc/pycbc-software.git
-
-Note that this will take a very long time.  Once the repository has been cloned
-create a directory for the new release.
+A ``bundle_env2.6``  environment needs to be created on ``sugar-dev3``. Once you have created an environment on ``sugar-dev3`` another environment ``bundle_env2.7`` needs to be created on ``sugar-dev2``. The ``pycbc_inspiral`` bundle will need to be generated in the 2.7 environment.
 
 .. code:: bash
 
-   mkdir -p v1.2.5/x86_64/composer_xe_2015.0.090
+    cd ~/
+    ./build_bundle_env.sh 
 
-changing version number and architecture as appropriate.
+.. note::
 
-A number of binaries change very rarely between releases and so can be copied
-from a previous one:
+      The build_bundle_env.sh can be found at https://github.com/ligo-cbc/pycbc.
+
+Before creating your 2.7 virtual environment:
 
 .. code:: bash
 
-    cp v1.2.4/x86_64/composer_xe_2015.0.090/* v1.2.5/x86_64/composer_xe_2015.0.090
+    mv ${HOME}/local ${HOME}/local_2.6
+    mv ${HOME}/.local ${HOME}/.local_2.6
 
-Edit the ``README.md`` file for the new release.
+Once your 2.7 virtual environment is built, run the same move commands and change 2.6 to 2.7. These steps will configure your virtual environments to be able to build bundles.
 
-Update the ``executables.ini`` file
+Install pyCBC using the requirements file to ensure the correct version of all dependancies is installed.
 
-.. code-block:: bash
+.. code:: bash
 
-    curl https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/O1/pipeline/executables.ini  -o executables.ini
-    sed -i "s+\${which:\\(.*\\)}+http://code.pycbc.phy.syr.edu/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090/\1+" executables.ini
-    for exe in `grep http://code.pycbc executables.ini | awk '{print $1}'`
-    do
-      echo -e "[pegasus_profile-${exe}]\npycbc|installed = False\nhints|execution.site = local\n\n"
-    done > profiles
-    cat executables.ini profiles > tmp
-    mv tmp executables.ini
-    rm profiles
+    source ${HOME}/bundle_env2.6/bin/activate
+    cd ${HOME}/bundle_env2.6/src
+    rm -rf pycbc
+    git clone git@github.com:[github username]/pycbc.git
+    cd pycbc
+    git remote add upstream git@github.com:ligo-cbc/pycbc.git
+    git remote -vvv
 
-Again, change version number and architecture as needed.
+Running ``git remote -vvv`` will allow you to check that you origin points to your version of pycbc.
 
-
----------------
-lalapps_inspinj
----------------
-
-This is the one C program from lalsuite that is still needed in the current
-workflow.  This almost never changes and so copying from the previous release
-will generally be fine.  If it does need to be rebuilt follow the instructions
-for installing lalsuite but configure with
-
-.. code::
-
-    --enable-static-binaries --enable-static --disable-swig --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalpulsar --disable-framec
-
-Then ``make`` and ``make install`` as usual.  The static exexecutable will be placed in the 
-target ``bin`` directory.
-
-----------------------
-Other lalapps programs
-----------------------
-
-There are a few stochastic bank programs in lalsuite needed by pycbc.  These change infrequently and
-can usually be copied from a previous release.  If they do need to be rebuilt the process is:
-
-.. code-block:: bash
-
-    cd /path/to/your/lalsuite
-    cd lalapps/src/inspiral/
-
-    for prog in \*sbank\*.py
-    do
-      pyinstaller ${prog}                          \
-        --hidden-import scipy.linalg.cython_blas   \
-        --hidden-import scipy.linalg.cython_lapack \
-        --hidden-import scipy.special._ufuncs_cxx  \
-        --hidden-import scipy.integrate            \
-        --strip                                    \
-        --onefile
-    done
-
-The resulting bundles will be placed in the ``dist`` directory.
-
-
-----------------------
-Segment database tools
-----------------------
-
-Client tools for the segment database change infrequently and can usually be
-copied from the previous release.  If they do need to be rebuilt the process is:
-
-.. code-block:: bash
-
-    pyinstaller ligolw_segment_query_dqsegdb --strip --onefile
-    pyinstaller ligolw_segments_from_cats_dqsegdb --strip --onefile
-
-
---------------
-pyCBC binaries
---------------
-
-The program used to create a static binary from a Python program is 
+The program used to create a static binary from a Python program is
 `PyInstaller <http://www.pyinstaller.org/>`_.  To set up PyInstaller:
 
-.. code-block:: bash
+.. code:: bash
 
-    source /your/virtual/environment/bin/activate
-    cd /your/virtual/environment/src
+    cd $VIRTUAL_ENV/src
     git clone https://github.com/pyinstaller/pyinstaller.git
     cd pyinstaller
     git checkout 9d0e0ad4c1c02964bbff86edbf7400cd40958b1a
-
-.. note::
-   The fix to ``bootloader/common/pyi_utils.c`` only needs to be done when installing the python 2.7 virtual environment. 
+    vim bootloader/common/pyi_utils.c
 
 By default programs built with PyInstaller will ignore the ``LD_LIBRARY_PATH``
 environment variable, which causes problems in some environments.  To fix this
 edit ``bootloader/common/pyi_utils.c`` and replace the function ``set_dynamic_library_path`` with the following
+
+.. note::
+
+    The fix to ``bootloader/common/pyi_utils.c`` only needs to be done when installing the python 2.7 virtual environment on ``sugar-dev2``. 
 
 .. code-block:: c
 
@@ -260,33 +221,193 @@ Then configure the bootloader and install as usual:
     cd bootloader
     ./waf configure build install --no-lsb
     cd ..
+
+On ``sugar-dev3`` since you do not need to make the change to bootloader, you just need to follow this step. However this will also need to be done after you make the change to bootloader on ``sugar-dev2``.
+    
+.. code-block:: bash   
+
     python setup.py install
+    which pyinstaller
+
+Running ``which pyinstaller`` prints something like: ``~/bundle_env2.6/bin/pyinstaller``. If you see this then it means that pyinstaller is successfully installed.
 
 
-To ensure that pyCBC is set up properly prior to running pyinstaller, first
-clean out the pip cache
+====================
+Updates to Lalsuite
+====================
+
+This will need to be done every time there is a change to lalsuite.
 
 .. code:: bash
 
-    rm -rfv ${HOME}/.cache/pip
+   rm -rf ${HOME}/lalsuite
+   mkdir -p ${HOME}/src
+   cd ${HOME}/src
+   git clone git://versions.ligo.org/lalsuite.git
+   cd lalsuite
+   git checkout [lalsuite_tag]
+   git cherry-pick [commit]
 
-Then checkout the official release
+.. note::
+      Always verify the correct lalsuite tag or branch before updating lalsuite.
+
+============================================
+Creating static binaries for production runs
+============================================
+
+Static binaries are entirely self-contained programs that
+
+#. Can be run by anyone, whether or not they have set up a development environment
+#. Ensure that each program runs with the right versions of all dependancies
+#. can be distributed from a central location
+
+A new set of such binaries should be generated for every release.
+
+--------------------
+Bundle Preliminaries
+--------------------
+
+To update your virtual environments with the one on github.
+
+.. code::
+
+   cd $VIRTUAL_ENV/src/pycbc
+   git fetch upstream
+   git rebase upstream/master
+   git push
+   git checkout [new version]
+   python setup.py install
+
+Create a directory for the new release.
+
+.. code:: bash
+
+   mkdir -p ${HOME}/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090
+
+changing version number and architecture as appropriate.
+
+A number of binaries change very rarely between releases and so can be copied
+from a previous one:
+
+.. code:: bash
+
+    cp ${HOME}/pycbc-software/v1.2.4/x86_64/composer_xe_2015.0.090/* ${HOME}/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090
+
+Edit the ``README.md`` file for the new release.
+
+To find the commit to add to the ``README.md``:
+ 
+.. code:: bash
+
+   git log
+
+The commit you should add will look like:
+
+.. code::
+
+  commit 3a98bf98cb95e363b218a23734e7d0f32a58807f
+  Author: Larne Pekowsky larne.pekowsky@ligo.org
+  Date:   Fri Mar 25 20:29:05 2016 -0400
+
+       v1.3.7
+
+Update the ``executables.ini`` file
 
 .. code-block:: bash
 
-    cd /your/virtual/environment/src
-    git clone git@github.com:ligo-cbc/pycbc.git
-    cd pycbc
-    git checkout v1.2.5
+    curl https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/O1/pipeline/executables.ini  -o executables.ini
+    sed -i "s+\${which:\\(.*\\)}+http://code.pycbc.phy.syr.edu/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090/\1+" executables.ini
+    for exe in `grep http://code.pycbc executables.ini | awk '{print $1}'`
+    do
+      echo -e "[pegasus_profile-${exe}]\npycbc|installed = False\nhints|execution.site = local\n\n"
+    done > profiles
+    cat executables.ini profiles > tmp
+    mv tmp executables.ini
+    rm profiles
 
-replacing ``v1.2.5`` with the version to be built.  Then install pyCBC, using
-the requirements file to ensure the correct version of all dependancies is
-installed
+Again, change version number and architecture as needed.
 
-.. code:: bash
+An executables.ini will also need to be created for running on OSG.
 
-  pip install -r requirements.txt
+.. code-block:: bash
 
+   cp executables.ini osg_executables.ini
+   vim osg_executables.ini
+
+Once you are in the ``osg_executables.ini`` file. You need to make some changes to the locations of the executables.
+In vim after pressing ``shift+;``, run the command 
+
+.. code::
+
+   %s#http://code.pycbc.phy.syr.edu#/opt#gc
+
+After this change you will have to manually change inpsiral back to: ``inspiral = http://code.pycbc.phy.syr.edu/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090/pycbc_inspiral`` with the correct version number.
+
+.. note::
+
+   lalapps_inspinj, Other lalapps programs, Segment database tools, and pyCBC binaries only needs to be built on ``sugar-dev3``.
+
+---------------
+lalapps_inspinj
+---------------
+
+This is the one C program from lalsuite that is still needed in the current
+workflow.  This almost never changes and so copying from the previous release
+will generally be fine.  If it does need to be rebuilt follow the instructions
+for installing lalsuite but configure with
+
+.. code::
+
+    --enable-static-binaries --enable-static --disable-swig --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalpulsar --disable-framec
+
+Then ``make`` and ``make install`` as usual.  The static exexecutable will be placed in the 
+target ``bin`` directory.
+
+----------------------
+Other lalapps programs
+----------------------
+
+There are a few stochastic bank programs in lalsuite needed by pycbc.  
+
+.. note::
+
+    These change infrequently and can usually be copied from a previous release.  If they do need to be rebuilt the process is:
+
+.. code-block:: bash
+
+    cd /path/to/your/lalsuite
+    cd lalapps/src/inspiral/
+
+    for prog in \*sbank\*.py
+    do
+      pyinstaller ${prog}                          \
+        --hidden-import scipy.linalg.cython_blas   \
+        --hidden-import scipy.linalg.cython_lapack \
+        --hidden-import scipy.special._ufuncs_cxx  \
+        --hidden-import scipy.integrate            \
+        --strip                                    \
+        --onefile
+    done
+
+The resulting bundles will be placed in the ``dist`` directory.
+
+
+----------------------
+Segment database tools
+----------------------
+
+Client tools for the segment database change infrequently and can usually be
+copied from the previous release.  If they do need to be rebuilt the process is:
+
+.. code-block:: bash
+
+    pyinstaller ligolw_segment_query_dqsegdb --strip --onefile
+    pyinstaller ligolw_segments_from_cats_dqsegdb --strip --onefile
+
+
+--------------
+pyCBC binaries
+--------------
 
 Then ensure that the installation went as expected:
 
@@ -299,8 +420,7 @@ Then ensure that the installation went as expected:
     Repository status is CLEAN: All modifications committed
 
 
-The tag should match the one that was checked out and the repository status should
-report as ``CLEAN``.
+The tag should match the one that was checked out and the repository status should report as ``CLEAN``.
 
 To build static executables:
 
@@ -315,6 +435,12 @@ Submit as usual:
 .. code:: bash
 
    condor_submit_dag build_static.dag
+
+If you want to keep track of the build process run:
+
+.. code::
+
+   tail -f build_static.dag.dagman.out
 
 Assuming everything goes well the resulting binaries will be placed in the
 ``dist`` directory.  As a final test, check the version again
@@ -333,12 +459,29 @@ pyinstaller succeeds but the resulting program throws an error when invoked
 with ``--help``.  Most of the time this happens it is because a new program has
 been added and pyinstaller needs to be told that it needs scipy.  This is done
 by adding the name of the new program to the ``needs_full_build`` file in the
-``tools/static`` directory.  
+``tools/static`` directory. If there are failures during the bundling it my be because the program needs a complete build or can't be built at all. If it needs scipy add it to ``needs_full_build``. If it can't be built at all, add it to ``can't_be_built``.
 
+When the build finishes you will have to move the bundles to the directory under ``pycbc_software``.
+
+.. code:: bash
+
+   mv dist/* ${HOME}/pycbc_software/v1.2.5/x86_64/composer_xe_2015.0.090
+
+Making the change to the correct version.
+
+To clean up the build directory on ``sugar-dev3`` after you move the bundles you will need to be in ``tools/static`` directory:
+
+.. code:: bash
+
+   rm -rf *err *out *spec dist/* build/* build_static.dag*
 
 --------------
 pycbc_inspiral
 --------------
+
+.. note::
+
+   ``pycbc_inspiral`` can only be built on ``sugar-dev2``.
 
 This program needs to be built in a special environment so that it can be run on Open Science Grid sites.
 All the necessary elements are available through CVMFS:
@@ -348,16 +491,22 @@ All the necessary elements are available through CVMFS:
   source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
   module load python/2.7
 
-Unfortunately it is now necessary to build an entire parallel develoment environment.  Move existing directories out of the way
+Activate your virtual environment
 
-.. code-block:: bash
+.. code:: bash
 
-    mv ${HOME}/local ${HOME}/local_2.6
-    mv ${HOME}/.local ${HOME}/.local_2.6
+   source ${HOME}/bundle_env2.7/bin/activate
+   cd ${HOME}/bundle_env2.6/src/pycbc
 
-and repeat the installation instructions starting from installing pip.  You
-will also need to rebuild lalsuite.  For clarity you may want to call the
-virtual environment something like ``pycbc_devel.2.7``. 
+To update your virual environment with the one on github.
+
+.. code:: bash
+
+   git fetch upstream
+   git rebase upstream/master
+   git push
+   git checkout [new version]
+   python setup.py install
 
 Once this second environment is set up in order to build:
 
@@ -376,6 +525,17 @@ and ensure that the resulting executable has the correct version
     Larne Pekowsky <larne.pekowsky@ligo.org> Build date: 2015-10-31 14:48:20 +0000
     Repository status is CLEAN: All modifications committed
 
+When the build finishes you will have to move ``pycbc_inspiral`` to the directory under ``pycbc_software``.
+
+.. code:: bash
+
+      mv dist/pycbc_inspiral ${HOME}/pycbc_software/v1.2.5/x86_64/composer_xe_2015.0.090
+
+To clean up the build directory on ``sugar-dev2`` after you move the bundles you will need to be in ``tools/static`` directory:
+
+.. code:: bash 
+
+   rm -rf *spec dist/* build/*
 
 ------------
 Finishing up
@@ -390,8 +550,7 @@ Once everything has been built and moved to the git repositry, commit and push a
 
 This will take some time.
 
-Finally, the binaries will need to be put into place on the staging server, which must be done by someone with
-root access.
+Finally, the binaries will need to be put into place on the staging server, which must be done by someone with root access.
 
 --------------------------
 Saving Virtual Environment
@@ -400,13 +559,19 @@ Saving Virtual Environment
 To save your virtual environment as a .tar file
 
 .. code:: bash
-   tar -zcf pycbc-dev2.6.tgz pycbc-dev2.6
-   rm -rf pycbc-dev2.6
+  
+  cd ~
+  tar -zcf bundle_env2.6.tgz bundle_env2.6
+  tar -zcf bundle_env2.7.tgz bundle_env2.7
+  rm -r bundle_env2.6 bundle_env2.7
 
-Before creating a the next release
+
+Before creating the next release
 
 .. code:: bash
-   tar -zxf pycbc-dev2.6.tgz
+   
+  cd ~
+  tar -xf bundle_env2.6.tgz
+  tar -xf bundle_env2.7.tgz
 
-The same steps are followed for 2.7, replacing 2.6 with 2.7.
 
