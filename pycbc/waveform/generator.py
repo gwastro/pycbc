@@ -200,8 +200,10 @@ class FDomainDetFrameGenerator(object):
     frozen_location_args : dict
         Any location parameters that were included in the frozen_params.
     sample_points : {None, array}
-        If the rFrame generator produces a waveform at non-uniform sample points,
-        the points used by the rFrame generator.
+        The frequency points at which the returned waveforms are evaluated. If
+        provided on initialization and if the rFrame generator produces a
+        waveform at non-uniform sample points, the points used by the rFrame
+        generator.
     variable_args : list
         The list of names of arguments that are passed to the generate
         function.
@@ -281,6 +283,20 @@ class FDomainDetFrameGenerator(object):
         if self.epoch is not None:
             hp._epoch = self.epoch
             hc._epoch = self.epoch
+        # we'll need the sample points for applying the time shift
+        if self.sample_points is None:
+            fseries = hp.sample_frequencies.numpy()
+        else:
+            fseries = self.sample_points
+            # in case the waveform terminated prior to the largest frequecy
+            # in the sample points
+            if len(fseries) > len(hp):
+                fseries = fseries[:len(hp)]
+            # in case the waveform terminated at a frequency larger than the
+            # largest desired in the sample points
+            if len(fseries) < len(hp):
+                hp = hp[:len(fseries)]
+                hc = hc[:len(fseries)]
         h = {}
         if self.detectors != [None]:
             for det in self.detectors:
@@ -289,22 +305,22 @@ class FDomainDetFrameGenerator(object):
                                                      self.current_params['dec'],
                                                      self.current_params['tc'])
                 # apply the time shift
-                hp = apply_fd_time_shift(hp, tc,
-                        fseries=self.sample_points, makecopy=False)
-                hc = apply_fd_time_shift(hc, tc,
-                        fseries=self.sample_points, makecopy=False)
+                thishp = apply_fd_time_shift(hp, tc,
+                        fseries=fseries, copy=True)
+                thishc = apply_fd_time_shift(hc, tc,
+                        fseries=fseries, copy=True)
                 # apply detector response function
                 fp, fc = det.antenna_pattern(self.current_params['ra'],
                             self.current_params['dec'],
                             self.current_params['polarization'],
                             self.current_params['tc'])
-                h[det.name] = fp*hp + fc*hc
+                h[det.name] = fp*thishp + fc*thishc
         else:
             # apply the time shift if specified
             try:
                 hp = apply_fd_time_shift(hp,
                         self.current_params['tc'],
-                        fseries=self.sample_points)
+                        fseries=fseries, copy=False)
             except KeyError:
                 pass
             h[None] = hp
