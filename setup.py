@@ -459,7 +459,8 @@ setup (
                'bin/pygrb/pycbc_make_offline_grb_workflow',
                'bin/pygrb/pycbc_make_grb_summary_page',
                'bin/hdfcoinc/pycbc_merge_psds',
-               'bin/hdfcoinc/pycbc_plot_gating'
+               'bin/hdfcoinc/pycbc_plot_gating',
+               'bin/pycbc_condition_strain'
                ],
     packages = [
                'pycbc',
