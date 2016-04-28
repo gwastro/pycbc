@@ -24,7 +24,7 @@
 #
 """This module contains convenience utilities for manipulating waveforms
 """
-from pycbc.types import TimeSeries, float32, float64
+from pycbc.types import TimeSeries, Array, float32, float64
 import lal
 import lalsimulation as sim
 from math import frexp
@@ -242,3 +242,37 @@ def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
         return TimeSeries(ts_lal.data.data[:], delta_t=ts_lal.deltaT,
                           epoch=ts_lal.epoch)
 
+def apply_fd_time_shift(htilde, shifttime, fseries=None, copy=True):
+    """Shifts a frequency domain waveform in time. The shift applied is
+    shiftime - htilde.epoch.
+
+    Parameters
+    ----------
+    htilde : FrequencySeries
+        The waveform frequency series.
+    shifttime : float
+        The time to shift the frequency series to.
+    fseries : {None, numpy array}
+        The frequencies of each element in the the FrequencySeries. If None,
+        will use htilde.sample_frequencies. Note: providing a frequency series
+        can reduce the exectution time of this function by as much as a 1/2.
+    copy : {True, bool}
+        Make a copy of htilde before applying the time shift. If False, the time
+        shift will be applied to htilde's data.
+
+    Returns
+    -------
+    FrequencySeries
+        A frequency series with the waveform shifted to the new time. If makecopy
+        is True, will be a new frequency series; if makecopy is False, will be
+        the same as htilde.
+    """
+    dt = float(shifttime - htilde.epoch)
+    if fseries is None:
+        fseries = htilde.sample_frequencies.numpy()
+    shift = Array(numpy.exp(-2j*numpy.pi*dt*fseries))
+    if copy:
+        htilde = shift * htilde
+    else:
+        htilde *= shift
+    return htilde
