@@ -50,8 +50,11 @@ class _BaseLikelihoodEvaluator:
         match the waveform generator's detectors keys.
     f_lower : float
         The starting frequency to use for computing inner products.
-    psd : {None, FrequencySeries}
-        If provided, the inner products will be weighted by 1/psd.
+    psds : {None, dict}
+        A dictionary of FrequencySeries keyed by the detector names. The
+        dictionary must have a psd for each detector specified in the data
+        dictionary. If provided, the inner products in each detector will be
+        weighted by 1/psd of that detector.
     f_upper : {None, float}
         The ending frequency to use for computing inner products. If not
         provided, the minimum of the largest frequency stored in the data
@@ -62,8 +65,8 @@ class _BaseLikelihoodEvaluator:
         used.
     """
 
-    def __init__(self, waveform_generator, data, f_lower, psd=None, f_upper=None,
-            norm=None):
+    def __init__(self, waveform_generator, data, f_lower, psds=None,
+            f_upper=None, norm=None):
         self._waveform_generator = waveform_generator
         self._data = data
         # check that the data and waveform generator have the same detectors
@@ -88,16 +91,17 @@ class _BaseLikelihoodEvaluator:
         if norm is None:
             norm = 4*d.delta_f
         # we'll store the weight to apply to the inner product
-        if psd is None:
-            self._weight = norm*Array(numpy.ones(N))
+        if psds is None:
+            w = norm*Array(numpy.ones(N))
+            self._weight = {det: w for det in data} 
         else:
             # temporarily suppress numpy divide by 0 warning
             numpy.seterr(divide='ignore')
-            self._weight = norm/psd
+            self._weight = {det: norm/psds[det] for det in data}
             numpy.seterr(divide='warn')
         # compute <d, d>
         self._dd = {det:
-            d[kmin:kmax].inner(d[kmin:kmax]*self._weight[kmin:kmax]).real/2.
+            d[kmin:kmax].inner(d[kmin:kmax]*self._weight[det][kmin:kmax]).real/2.
             for det,d in self._data.items()}
 
 
@@ -144,7 +148,8 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     >>> generator = waveform.FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, variable_args=['tc'], detectors=['H1', 'L1'], delta_f=1./seglen, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin', mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra, dec=dec, polarization=pol)
     >>> signal = generator.generate(tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(seglen*2048/2+1, 1./seglen, 20.)
-    >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, 20., psd=psd)
+    >>> psds = {'H1': psd, 'L1': psd}
+    >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, 20., psds=psds)
     >>> likelihood_eval.loglikelihood(tsig)
     ArrayWithAligned(0.0)
 
@@ -177,12 +182,13 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         hs = self._waveform_generator.generate(*params)
         # the kmax of the waveforms may be different than internal kmax
         kmax = min(len(hs.values()[0]), self._kmax)
-        w = self._weight[self._kmin:kmax]
         return sum([
             # <h, d>
-            self.data[det][self._kmin:kmax].inner(h[self._kmin:kmax]*w).real
+            self.data[det][self._kmin:kmax].inner(
+                h[self._kmin:kmax]*self._weight[det][self._kmin:kmax]).real
             # - <h, h>/2.
-            - h[self._kmin:kmax].inner(h[self._kmin:kmax]*w).real/2.
+            - h[self._kmin:kmax].inner(
+                h[self._kmin:kmax]*self._weight[det][self._kmin:kmax]).real/2.
             # - <d, d>/2.
             - self._dd[det]
             for det,h in hs.items()])
