@@ -238,7 +238,9 @@ class FDomainDetFrameGenerator(object):
         # if detectors are provided, convert to detector type; also ensure that
         # location variables are specified
         if detectors is not None:
-            self.detectors = {det: Detector(det) for det in detectors}
+            # FIXME: use the following when we switch to 2.7
+            #self.detectors = {det: Detector(det) for det in detectors}
+            self.detectors = dict([(det, Detector(det)) for det in detectors])
             missing_args = [arg for arg in self.location_args if not
                 (arg in self.current_params or arg in self.variable_args)]
             if any(missing_args):
@@ -254,8 +256,11 @@ class FDomainDetFrameGenerator(object):
         """Generates a waveform, applies a time shift and the detector response
         function."""
         self.current_params.update(dict(zip(self.variable_args, args)))
-        rfparams = {param: self.current_params[param]
-            for param in self.rframe_generator.variable_args}
+        # FIXME: use the following when we switch to 2.7
+        #rfparams = {param: self.current_params[param]
+        #    for param in self.rframe_generator.variable_args}
+        rfparams = dict([(param, self.current_params[param])
+            for param in self.rframe_generator.variable_args])
         hp, hc = self.rframe_generator.generate_from_kwargs(**rfparams)
         h = {}
         if self.detector_names != ['RF']:
