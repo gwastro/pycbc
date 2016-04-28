@@ -162,8 +162,6 @@ class FDomainDetFrameGenerator(object):
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
         returned by the rFrameGeneratorClass shifted by any desired time shift.
-    epoch : {None, lal.LIGOTimeGPS}
-        The epoch start time to set the waveform to.
     variable_args : {(), list or tuple}
         A list or tuple of strings giving the names and order of parameters
         that will be passed to the generate function.
@@ -210,10 +208,10 @@ class FDomainDetFrameGenerator(object):
     Examples
     --------
     Initialize a generator:
-    >>> generator = waveform.FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec', 'polarization'], detectors=['H1', 'L1'], epoch=1126259446, delta_f=1./64, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin')
+    >>> generator = waveform.FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec', 'polarization'], detectors=['H1', 'L1'], delta_f=1./64, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin')
 
     Generate a waveform:
-    >>> generator.generate(38.6, 29.3, 0.33, -0.94, 1126259462.43, 1.37, -1.26, 2.76)
+    >>> generator.generate(38.6, 29.3, 0.33, -0.94, 2.43, 1.37, -1.26, 2.76)
     {'H1': <pycbc.types.frequencyseries.FrequencySeries at 0x116637350>,
      'L1': <pycbc.types.frequencyseries.FrequencySeries at 0x116637a50>}
     """
@@ -221,7 +219,7 @@ class FDomainDetFrameGenerator(object):
     location_args = set(['tc', 'ra', 'dec', 'polarization'])
 
     def __init__(self, rFrameGeneratorClass, detectors=None,
-            epoch=None, variable_args=(), **frozen_params):
+            variable_args=(), **frozen_params):
         # initialize frozen & current parameters:
         self.current_params = frozen_params.copy()
         # we'll separate out frozen location parameters from the frozen
@@ -230,11 +228,6 @@ class FDomainDetFrameGenerator(object):
         loc_params = set(frozen_params.keys()) & self.location_args
         for param in loc_params:
             self.frozen_location_args[param] = frozen_params.pop(param)
-        # set the epoch
-        if epoch is not None:
-            self.epoch = _lal.LIGOTimeGPS(epoch)
-        else:
-            self.epoch = None
         # set the order of the variable parameters
         self.variable_args = tuple(variable_args)
         # variables that are sent to the rFrame generator
@@ -280,8 +273,6 @@ class FDomainDetFrameGenerator(object):
                     det.time_delay_from_earth_center(self.current_params['ra'],
                                                      self.current_params['dec'],
                                                      self.current_params['tc'])
-                if self.epoch is not None:
-                    thish._epoch = self.epoch 
                 h[detname] = apply_fd_time_shift(thish, tc, fseries=fseries,
                     copy=False)
         elif 'tc' in self.current_params:
