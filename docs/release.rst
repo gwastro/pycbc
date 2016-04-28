@@ -13,14 +13,14 @@ Creating the release on GitHub
 
 To create a new PyCBC release:
 
-#. Make sure that the setup.py file contains the correct version number, which should be in the format ``x.y.x`` (where x, y, and z are the major, minor, and patch levels of the release) in PyCBC's setup.py file.
+#. Make sure that the setup.py file contains the correct version number, which should be in the format ``x.y.z`` (where x, y, and z are the major, minor, and patch levels of the release) in PyCBC's setup.py file.
 #. Set ``release = True`` in the PyCBC's setup.py file.
 #. Commit the changed setup.py file and push to commit to the repository.
 #. Go to the `PyCBC release page <https://github.com/ligo-cbc/pycbc/releases>`_ and click on ``Draft a new release``. 
 #. Enter a tag version in the format ``vx.y.z``. Note the ``v`` in front of the major, minor, and patch numbers. 
 #. Enter a descriptive release title and write a desciption of the release in the text box provided.
 #. Click on ``Publish release`` to create the release.
-#. Update the setup.py file with an incremented major or minor version number and make sure that the string ``dev`` appears in that version. For example, if you just released ``1.2.1`` then change the string to ``1.3.dev0`` or ``2.0.dev0`` as appropriate. This is need to ensure that if someone is building from source, it always takes precedence over an older release version.
+#. Update the setup.py file with an incremented major or minor version number and make sure that the string ``dev`` appears in that version. For example, if you just released ``1.2.1`` then change the string to ``1.3.dev0`` or ``2.0.dev0`` as appropriate. This is needed to ensure that if someone is building from source, it always takes precedence over an older release version.
 #. Set ``release = False`` in PyCBC's setup.py file.
 #. Commit these changes and push them to the repository.
 
@@ -74,7 +74,7 @@ If you get no errors, you can then upload the package with
 
     python setup.py sdist upload -r pypitest
 
-You should now see the package uploaded in the `PyPI Test Repository <https://testpypi.python.org/pypi>`_. If this is successful, you can puhlish it to the main repository with the commands
+You should now see the package uploaded in the `PyPI Test Repository <https://testpypi.python.org/pypi>`_. If this is successful, you can publish it to the main repository with the commands
 
 .. code:: bash
 
@@ -150,7 +150,7 @@ Before creating your 2.7 virtual environment:
 
 Once your 2.7 virtual environment is built, run the same move commands and change 2.6 to 2.7. These steps will configure your virtual environments to be able to build bundles.
 
-Install pyCBC using the requirements file to ensure the correct version of all dependancies is installed.
+Install pyCBC using the requirements file to ensure the correct version of all dependancies is installed. The steps in the following box has to be done on both ``sugar-dev3`` and ``sugar-dev2`` with the correct bundle environment name in both cases. 
 
 .. code:: bash
 
@@ -165,7 +165,7 @@ Install pyCBC using the requirements file to ensure the correct version of all d
 Running ``git remote -vvv`` will allow you to check that you origin points to your version of pycbc.
 
 The program used to create a static binary from a Python program is
-`PyInstaller <http://www.pyinstaller.org/>`_.  To set up PyInstaller:
+`PyInstaller <http://www.pyinstaller.org/>`_.  To set up PyInstaller do the following in both ``sugar-dev3`` and ``sugar-dev2`` :
 
 .. code:: bash
 
@@ -267,7 +267,9 @@ A new set of such binaries should be generated for every release.
 Bundle Preliminaries
 --------------------
 
-To update your virtual environments with the one on github.
+To update your virtual environments with the one on github:
+
+Log in to ``sugar-dev3`` and continue with the following steps :
 
 .. code::
 
@@ -293,7 +295,10 @@ from a previous one:
 
     cp ${HOME}/pycbc-software/v1.2.4/x86_64/composer_xe_2015.0.090/* ${HOME}/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090
 
-Edit the ``README.md`` file for the new release.
+Edit the ``README.md`` file and update the ``executables.ini`` file for the new release.
+
+.. note::
+      The ``README.md`` file and the ``executables.ini`` file live in ``${HOME}/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090/ `` with the version being the one you are building.
 
 To find the commit to add to the ``README.md``:
  
@@ -311,7 +316,7 @@ The commit you should add will look like:
 
        v1.3.7
 
-Update the ``executables.ini`` file
+To update the ``executables.ini`` file do the following :
 
 .. code-block:: bash
 
@@ -360,7 +365,7 @@ for installing lalsuite but configure with
 
     --enable-static-binaries --enable-static --disable-swig --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalpulsar --disable-framec
 
-Then ``make`` and ``make install`` as usual.  The static exexecutable will be placed in the 
+Then ``make`` and ``make install`` as usual.  The static executable will be placed in the 
 target ``bin`` directory.
 
 ----------------------
@@ -496,9 +501,9 @@ Activate your virtual environment
 .. code:: bash
 
    source ${HOME}/bundle_env2.7/bin/activate
-   cd ${HOME}/bundle_env2.6/src/pycbc
+   cd ${HOME}/bundle_env2.7/src/pycbc
 
-To update your virual environment with the one on github.
+To update your virtual environment with the one on github.
 
 .. code:: bash
 
@@ -541,7 +546,7 @@ To clean up the build directory on ``sugar-dev2`` after you move the bundles you
 Finishing up
 ------------
 
-Once everything has been built and moved to the git repositry, commit and push as usual
+Once everything has been built and moved to the git repository, commit and push as usual. This can be done either on ``sugar-dev2`` or on ``sugar-dev3``. 
 
 .. code:: bash
 
