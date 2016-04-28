@@ -710,7 +710,7 @@ class MaxOnlyObject(object):
         nstart = self.nstart
         howmany = self.howmany
         inline(self.code, ['inarr', 'mval', 'norm', 'mloc', 'nstart', 'howmany'],
-               extra_compile_args = [WEAVE_FLAGS + '-march=native -O3 -w'],
+               extra_compile_args = [WEAVE_FLAGS],
                #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
                #extra_compile_args = ['-msse4.1 -O3 -w'],
                support_code = self.support, auto_downcast = 1, verbose = self.verbose)
@@ -749,7 +749,7 @@ class WindowedMaxObject(object):
         winsize = self.winsize
         startoffset = self.startoffset
         inline(self.code, ['inarr', 'arrlen', 'cvals', 'norms', 'locs', 'winsize', 'startoffset'],
-               extra_compile_args = [WEAVE_FLAGS + '-march=native -O3 -w'],
+               extra_compile_args = [WEAVE_FLAGS],
                #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
                #extra_compile_args = ['-msse4.1 -O3 -w'],
                support_code = self.support, auto_downcast = 1, verbose = self.verbose)
@@ -802,7 +802,7 @@ class ThreshClusterObject(object):
         window = self.window
         segsize = self.segsize
         nthr = inline(self.code, ['series', 'slen', 'values', 'locs', 'thresh', 'window', 'segsize'],
-                      extra_compile_args = [WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags,
+                      extra_compile_args = [WEAVE_FLAGS] + omp_flags,
                       #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
                       #extra_compile_args = ['-msse4.1 -O3 -w'],
                       support_code = self.support, libraries = omp_libs,

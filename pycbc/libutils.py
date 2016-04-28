@@ -19,7 +19,7 @@ This module provides a simple interface for loading a shared library via ctypes,
 allowing it to be specified in an OS-independent way and searched for preferentially
 according to the paths that pkg-config specifies.
 """
-import os, fnmatch, ctypes, commands, sys
+import os, fnmatch, ctypes, commands, sys, subprocess
 from ctypes.util import find_library
 from collections import deque
 
@@ -81,6 +81,20 @@ def pkg_config_libdirs(packages):
     that the package may be found in the standard system locations, irrespective of
     pkg-config.
     """
+
+    # don't try calling pkg-config if NO_PKGCONFIG is set in environment
+    if os.environ.get("NO_PKGCONFIG", None):
+        return []
+
+    # if calling pkg-config failes, don't continue and don't try again.
+    try:
+        FNULL = open(os.devnull, 'w')
+        subprocess.check_call(["pkg-config", "--version"], stdout=FNULL, close_fds=True)
+    except:
+        print >>sys.stderr, "PyCBC.libutils: pkg-config call failed, setting NO_PKGCONFIG=1"
+        os.environ['NO_PKGCONFIG'] = "1"
+        return []
+
     # First, check that we can call pkg-config on each package in the list
     for pkg in packages:
         if not pkg_config_check_exists(pkg):
@@ -110,7 +124,7 @@ def get_libpath_from_dirlist(libname, dirs):
         # Our directory might be no good, so try/except
         try:
             for libfile in os.listdir(nextdir):
-                if fnmatch.fnmatch(libfile,'lib'+libname+'.so*') or fnmatch.fnmatch(libfile,'lib'+libname+'.dylib*'):
+                if fnmatch.fnmatch(libfile,'lib'+libname+'.so*') or fnmatch.fnmatch(libfile,'lib'+libname+'.dylib*') or fnmatch.fnmatch(libfile,libname+'.dll') or fnmatch.fnmatch(libfile,'cyg'+libname+'-*.dll'):
                     possible.append(libfile)
         except OSError:
             pass
