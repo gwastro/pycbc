@@ -187,9 +187,13 @@ class FDomainDetFrameGenerator(object):
 
     Attributes
     ----------
-    detectors : {None, dict}
+    detectors : dict
         The dictionary of detectors that antenna patterns are calculated for
-        on each call of generate.
+        on each call of generate. If no detectors were provided, will be
+        ``{'RF': None}``, where "RF" means "radiation frame".
+    detector_names : list
+        The list of detector names. If no detectors were provided, then this
+        will be ['RF'] for "radiation frame".
     current_params : dict
         A dictionary of name, value pairs of the arguments that were last
         used by the generate function.
@@ -199,11 +203,6 @@ class FDomainDetFrameGenerator(object):
         location params are passed to this class's generate function.
     frozen_location_args : dict
         Any location parameters that were included in the frozen_params.
-    sample_points : {None, array}
-        The frequency points at which the returned waveforms are evaluated. If
-        provided on initialization and if the rFrame generator produces a
-        waveform at non-uniform sample points, the points used by the rFrame
-        generator.
     variable_args : list
         The list of names of arguments that are passed to the generate
         function.
@@ -231,31 +230,22 @@ class FDomainDetFrameGenerator(object):
         loc_params = set(frozen_params.keys()) & self.location_args
         for param in loc_params:
             self.frozen_location_args[param] = frozen_params.pop(param)
-        # we'll need to store the sample_points for time shifting if this is
-        # an unequally sampled frequency series
-        if 'sample_points' in frozen_params:
-            self.sample_points = frozen_params['sample_points']
-        else:
-            self.sample_points = None
-
+        # set the epoch
         if epoch is not None:
             self.epoch = _lal.LIGOTimeGPS(epoch)
         else:
             self.epoch = None
-
         # set the order of the variable parameters
         self.variable_args = tuple(variable_args)
         # variables that are sent to the rFrame generator
-        rframe_variables = list(set(self.variable_args) - \
-            self.location_args)
+        rframe_variables = list(set(self.variable_args) - self.location_args)
         # initialize the radiation frame generator
         self.rframe_generator = rFrameGeneratorClass(
             variable_args=rframe_variables, **frozen_params)
-
         # if detectors are provided, convert to detector type; also ensure that
         # location variables are specified
         if detectors is not None:
-            self.detectors = [Detector(det) for det in detectors]
+            self.detectors = {det: Detector(det) for det in detectors}
             missing_args = [arg for arg in self.location_args if not
                 (arg in self.current_params or arg in self.variable_args)]
             if any(missing_args):
@@ -264,14 +254,8 @@ class FDomainDetFrameGenerator(object):
                     "These must be either in the frozen params or the "
                     "variable args.")
         else:
-            self.detectors = [None]
-
-    @property
-    def detector_names(self):
-        if self.detectors == [None]:
-            return [None]
-        else:
-            return [det.name for det in self.detectors]
+            self.detectors = {'RF': None}
+        self.detector_names = sorted(self.detectors.keys())
 
     def generate(self, *args):
         """Generates a waveform, applies a time shift and the detector response
@@ -280,48 +264,32 @@ class FDomainDetFrameGenerator(object):
         rfparams = {param: self.current_params[param]
             for param in self.rframe_generator.variable_args}
         hp, hc = self.rframe_generator.generate_from_kwargs(**rfparams)
-        if self.epoch is not None:
-            hp._epoch = self.epoch
-            hc._epoch = self.epoch
-        # we'll need the sample points for applying the time shift
-        if self.sample_points is None:
-            fseries = hp.sample_frequencies.numpy()
-        else:
-            fseries = self.sample_points
-            # in case the waveform terminated prior to the largest frequecy
-            # in the sample points
-            if len(fseries) > len(hp):
-                fseries = fseries[:len(hp)]
-            # in case the waveform terminated at a frequency larger than the
-            # largest desired in the sample points
-            if len(fseries) < len(hp):
-                hp = hp[:len(fseries)]
-                hc = hc[:len(fseries)]
         h = {}
-        if self.detectors != [None]:
-            for det in self.detectors:
-                tc = self.current_params['tc'] + \
-                    det.time_delay_from_earth_center(self.current_params['ra'],
-                                                     self.current_params['dec'],
-                                                     self.current_params['tc'])
-                # apply the time shift
-                thishp = apply_fd_time_shift(hp, tc,
-                        fseries=fseries, copy=True)
-                thishc = apply_fd_time_shift(hc, tc,
-                        fseries=fseries, copy=True)
+        if self.detector_names != ['RF']:
+            # we'll need the frequency points for applying the time shift
+            fseries = hp.sample_frequencies.numpy()
+            for detname, det in self.detectors.items():
                 # apply detector response function
                 fp, fc = det.antenna_pattern(self.current_params['ra'],
                             self.current_params['dec'],
                             self.current_params['polarization'],
                             self.current_params['tc'])
-                h[det.name] = fp*thishp + fc*thishc
-        else:
+                thish = fp*hp + fc*hc
+                # apply the time shift
+                tc = self.current_params['tc'] + \
+                    det.time_delay_from_earth_center(self.current_params['ra'],
+                                                     self.current_params['dec'],
+                                                     self.current_params['tc'])
+                if self.epoch is not None:
+                    thish._epoch = self.epoch 
+                h[detname] = apply_fd_time_shift(thish, tc, fseries=fseries,
+                    copy=False)
+        elif 'tc' in self.current_params:
             # apply the time shift if specified
-            try:
-                hp = apply_fd_time_shift(hp,
-                        self.current_params['tc'],
+            fseries = hp.sample_frequencies.numpy()
+            h['RF'] = apply_fd_time_shift(hp, self.current_params['tc'],
                         fseries=fseries, copy=False)
-            except KeyError:
-                pass
-            h[None] = hp
+        else:
+            # just return the plus polarization
+            h['RF'] = hp
         return h
