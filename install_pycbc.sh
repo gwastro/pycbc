@@ -349,7 +349,7 @@ while true ; do
 echo "What would you like to do with your pip cache?"
 echo "1. Use the existing pip cache.(Fastest)"
 echo "2. Ignore the pip cache."
-echo "3. Remove te pip cache. (Safest and slowest)"
+echo "3. Remove the pip cache. (Safest and slowest)"
 echo
 read -rp "Enter 1, 2 or 3: " pip_cache
 
