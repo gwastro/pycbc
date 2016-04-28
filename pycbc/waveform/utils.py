@@ -272,7 +272,6 @@ def apply_fd_time_shift(htilde, shifttime, fseries=None, copy=True):
         fseries = htilde.sample_frequencies.numpy()
     shift = Array(numpy.exp(-2j*numpy.pi*dt*fseries))
     if copy:
-        htilde = shift * htilde
-    else:
-        htilde *= shift
+        htilde = 1. * htilde
+    htilde *= shift
     return htilde
