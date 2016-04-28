@@ -93,16 +93,24 @@ class _BaseLikelihoodEvaluator:
         # we'll store the weight to apply to the inner product
         if psds is None:
             w = norm*Array(numpy.ones(N))
-            self._weight = {det: w for det in data} 
+            # FIXME: use the following when we've switched to 2.7
+            #self._weight = {det: w for det in data} 
+            self._weight = dict([(det, w) for det in data])
         else:
             # temporarily suppress numpy divide by 0 warning
             numpy.seterr(divide='ignore')
-            self._weight = {det: norm/psds[det] for det in data}
+            # FIXME: use the following when we've switched to 2.7
+            #self._weight = {det: norm/psds[det] for det in data}
+            self._weight = dict([(det, norm/psds[det]) for det in data])
             numpy.seterr(divide='warn')
         # compute <d, d>
-        self._dd = {det:
-            d[kmin:kmax].inner(d[kmin:kmax]*self._weight[det][kmin:kmax]).real/2.
-            for det,d in self._data.items()}
+        # FIXME: use the following when we've switched to 2.7
+        #self._dd = {det:
+        #    d[kmin:kmax].inner(d[kmin:kmax]*self._weight[det][kmin:kmax]).real/2.
+         #   for det,d in self._data.items()}
+        self._dd = dict([(det,
+            d[kmin:kmax].inner(d[kmin:kmax]*self._weight[det][kmin:kmax]).real/2.)
+            for det,d in self._data.items()])
 
 
     @property
