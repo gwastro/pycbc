@@ -116,17 +116,21 @@ class PhaseTDStatistic(NewSNRStatistic):
         """
         td = s1[:,2] - s2[:,2] - slide * step
         pd = (s1[:,1] - s2[:,1]) % (numpy.pi * 2)
+        rd = s1[:, 3] / s2[:, 3]
+        rd[rd > 1] = 1.0 / rd[rd > 1]
 
         # These are the bin boundaries stored in the hdf file        
         tbins = self.files['phasetd_newsnr']['tbins'][:]
         pbins = self.files['phasetd_newsnr']['pbins'][:]
         sbins = self.files['phasetd_newsnr']['sbins'][:]
+        rbins = self.files['phasetd_newsnr']['rbins'][:]
 
         # Find which bin each coinc falls into        
         tv = numpy.searchsorted(tbins, td) - 1 
         pv = numpy.searchsorted(pbins, pd) - 1
         s1v = numpy.searchsorted(sbins, s1[:,4]) - 1
-        s2v = numpy.searchsorted(sbins, s2[:,4]) - 1     
+        s2v = numpy.searchsorted(sbins, s2[:,4]) - 1    
+        rv = numpy.searchsorted(rbins, rd) - 1  
 
         # The following just enforces that the point fits into the bin boundaries        
         tv[tv < 0] = 0
@@ -137,8 +141,10 @@ class PhaseTDStatistic(NewSNRStatistic):
         s1v[s1v >= len(sbins) - 1] = len(sbins) - 2
         s2v[s2v < 0] = 0
         s2v[s2v >= len(sbins) - 1] = len(sbins) - 2
+        rv[rv < 0] = 0
+        rv[rv >= len(rbins) - 1] = len(rbins) - 2
         
-        m = self.hist[tv, pv, s1v, s2v]
+        m = self.hist[tv, pv, s1v, s2v, rv]
         rstat = s1[:,0]**2.0 + s2[:,0]**2.0
         cstat = rstat + 2.0 * m
         cstat[cstat < 0] = 0        

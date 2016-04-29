@@ -46,11 +46,13 @@ phase_error = .4
 tnum, twidth, tbins = bcount(-maxdt, maxdt, args.timing_error)
 pnum, pwidth, pbins = bcount(0, 2.0 * numpy.pi, phase_error)
 snum, swidth, sbins = bcount(args.min_snr, args.max_snr, snr_error)
+rnum, rwidth, rbins = bcount(.5, 1, .2)
 
-hist_bins = (tbins, pbins, sbins, sbins)
+hist_bins = (tbins, pbins, sbins, sbins, rbins)
 print tbins
 print pbins
 print sbins
+print rbins
 pycbc.init_logging(args.verbose)
 
 def generate_hist(size):
@@ -95,11 +97,12 @@ def generate_samples(size):
     f = 1000
     fsize = f * size
     dist = power(3, fsize) / args.min_snr
-    
-    sp1 = numpy.resize(fp1 * ip, len(dist)) / dist
-    sp2 = numpy.resize(fp2 * ip, len(dist)) / dist
+   
+    r = uniform(.5, 1, size=len(dist))
+    sp1 = numpy.resize(fp1 * ip, len(dist)) / dist * r
+    sp2 = numpy.resize(fp2 * ip, len(dist)) / dist * r
     sc1 = numpy.resize(fc1 * ic, len(dist)) / dist
-    sc2 = numpy.resize(fc2 * ic, len(dist)) / dist
+    sc2 = numpy.resize(fc2 * ic, len(dist)) / dist 
     td = numpy.resize(td, fsize)
 
     # Remove points below the SNR threshold
@@ -110,6 +113,7 @@ def generate_samples(size):
     sp2 = sp2[t]
     sc1 = sc1[t]
     sc2 = sc2[t]
+    r = r[t]
 
     s1 = (sp1**2.0 + sc1**2.0)**0.5
     s2 = (sp2**2.0 + sc2**2.0)**0.5
@@ -118,7 +122,8 @@ def generate_samples(size):
     phase_diff = (numpy.arctan2(sc1, sp1) - numpy.arctan2(sc2, sp2)) % (numpy.pi * 2)
     
     logging.info('keeping %s values' % len(s1))
-    return td, phase_diff, s1, s2
+
+    return td, phase_diff, s1, s2, r
 
 # This just makes sure that 3 chunks are submitted to each process
 fiddle = 1
@@ -139,12 +144,14 @@ f = h5py.File(args.output_file, 'w')
 errors = (args.timing_error / twidth, 
           phase_error / pwidth,
           snr_error / swidth,
-          snr_error / swidth)
+          snr_error / swidth,
+          .5)
 print errors
 f['map'] = gaussian_filter(h, errors, mode='nearest', truncate=8).astype(numpy.float32)
 f['tbins'] = tbins
 f['pbins'] = pbins
 f['sbins'] = sbins
+f['rbins'] = rbins
 f.attrs['ifo0'] = args.ifos[0]
 f.attrs['ifo1'] = args.ifos[1]
 f.attrs['stat'] = "phasetd_newsnr"
