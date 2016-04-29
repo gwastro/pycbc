@@ -115,13 +115,13 @@ else:
     # try asking for a LALSimulation frequency function
     parvals = pnutils.get_freq(args.fit_param, m1, m2, s1z, s2z)
 
-ntrigs = fits[args.ifo]['trigger_count'][:]
+ntrigs = fits[args.ifo]['ntrigs'][:]
 # normalize to average number of triggers per templates
 ntrigs = ntrigs/np.mean(ntrigs)
 nabove = fits[args.ifo]['count_above_thresh'][:]
 # for an exponential fit 1/alpha is linear in the trigger statistic values
 # so taking weighted sums/averages of 1/alpha is appropriate
-invalpha = 1./(fits[args.ifo]['fit_coeffs'][:])
+invalpha = 1./(fits[args.ifo]['fit_coeff'][:])
 
 # sort in ascending duration order
 parsort = np.argsort(parvals)

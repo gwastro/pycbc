@@ -78,11 +78,6 @@ parser.add_argument("--fit-function",
 parser.add_argument("--sngl-stat", default="new_snr",
                     choices=["snr", "snronchi", "effective_snr", "new_snr"],
                     help="Function of SNR and chisq to perform fits with")
-# FIXME: how to parse various possible mixtures of chisq
-#parser.add_argument("--chisq-choice", default="power",
-#                    choices=["power","bank","auto","maxpowerbank"],
-#                    help="Which chisq value or values to form the "
-#                   "single-trigger statistic with")
 parser.add_argument("--stat-factor", type=float,
                     help="Adjustable magic number used in some sngl "
                     "statistics.  Values commonly used: 6 for new_snr, 250 "
@@ -213,7 +208,7 @@ outfile = h5py.File(args.output, 'w')
 ifofits = outfile.create_group(args.ifo)
 # store template-dependent fit output
 ifofits.create_dataset("template_id", data=trange)
-ifofits.create_dataset("trigger_count", data=counts)
+ifofits.create_dataset("ntrigs", data=counts)
 ifofits.create_dataset("count_above_thresh", data=counts_above)
 ifofits.create_dataset("fit_coeff", data=fits)
 # add some metadata to the fits

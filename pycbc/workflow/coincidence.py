@@ -53,6 +53,13 @@ class PyCBCTrig2HDFExecutable(Executable):
                                  '--output-file', use_tmp_subdirs=True)
         return node
 
+class PyCBCFitSnglsByTemplateExecutable(Executable):
+    """ Calculates values that describe the background distribution template
+        by template.
+    """
+    current_retention_level = Executable.MERGED_TRIGGERS
+    
+
 class PyCBCFindCoincExecutable(Executable):
     """ Find coinc triggers using a folded interval method
     """
@@ -191,6 +198,9 @@ def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir,
         workflow += node
         out += node.output_files
     return out
+
+def fit_background_trigs_by_template(workflow, bank_file, trigger_files, ):
+    return None
 
 def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file, 
                                  veto_file, veto_name, out_dir, tags=None):
