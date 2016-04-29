@@ -524,14 +524,8 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
     echo -e "\\n\\n>> [`date`] building PyLAL"
     cd lalsuite/pylal
     python setup.py install --prefix="$PREFIX"
-# Note: building GLUE here is possible, but not really useful, as it will almost never be the version PyCBC is pinned to
-#  echo -e "\\n\\n>> [`date`] building GLUE"
-#  cd ../glue
-#  python setup.py install --prefix="$PREFIX"
-    git format-patch -1 --stdout 42dbfa2c > "../pycbc-glue-initialize-tp_base.patch"
     cd ../..
     test -r "$PREFIX/etc/pylal-user-env.sh" && source "$PREFIX/etc/pylal-user-env.sh"
-    test -r "$PREFIX/etc/glue-user-env.sh" && source "$PREFIX/etc/glue-user-env.sh"
 
     pushd $PYCBC/..
     tar -czf pycbc-preinst-lalsuite.tgz pycbc
@@ -589,20 +583,19 @@ pip $pip_install -r requirements.txt
 
 # PyCBC-GLUE
 if $compile_pycbc_glue; then
-    p=pycbc-glue-0.9.8
-    echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz || wget $wget_opts "$pypi/p/pycbc-glue/$p.tar.gz"
-    rm -rf $p
-    tar -xzf $p.tar.gz
-    cd $p
-    # This is pretty ugly just to get things compiled. It won't work when used.
-    # This avoids error: initializer element is not constant
-    ln -s . b
-    sed 's% [^ ]*glue/% %g' "../pycbc-glue-initialize-tp_base.patch" | patch -p0
-    rm -f b
+    echo -e "\\n\\n>> [`date`] building pycbc-glue v0.9.8"
+    if test -d pycbc-glue/.git; then
+        cd pycbc-glue
+    else
+        git clone https://github.com/ligo-cbc/pycbc-glue.git
+        cd pycbc-glue
+        git checkout v0.9.8
+        # this adds the initialization of *.tp_base,
+        # preserving the version for pycbc requirements
+        git cherry-pick 16c7eeff3fc2a5cca2c3ea0e259ee5f57abac65c
+    fi
     python setup.py install --prefix="$PREFIX"
     cd ..
-    $cleanup && rm -rf $p
 else
     echo -e "\\n\\n>> [`date`] pip install pycbc-glue==0.9.8"
     pip $pip_install pycbc-glue==0.9.8
