@@ -66,19 +66,27 @@ fi
 # defaults
 cleanup=true # usually, build directories are removed after a successful build
 verbose_pyinstalled_python=false
-pycbc_branch=einsteinathome_testing
+pycbc_branch=master
+pycbc_remote=ligo-cbc
+scratch_pycbc=false
 
 # handle command-line arguments, possibly overriding above settings
 for i in $*; do
     case $i in
 	--no-pycbc-update) pycbc_branch="HEAD";;
+	--scratch-pycbc) scratch_pycbc=true;;
+        --bema-testing)
+	    pycbc_branch=einsteinathome_testing
+	    pycbc_remote=bema-ligo;;
         --no-cleanup) cleanup=false;;
         --verbose-python) verbose_pyinstalled_python=true;;
 	*) echo "unknown option '$i', valid are:
 
-        --no-cleanup      : keep build directories after successful build for later inspection
-        --no-pycbc-update : don't update local pycbc repo from remote branch $pycbc_branch
-        --verbose-python  : run PyInstalled Python in verbose mode, showing imports">&2; exit 1;;
+    --no-pycbc-update : don't update local pycbc repo from remote branch $pycbc_branch
+    --bema-testing    : use einsteinathome_testing branch of bema-ligo pycbc repo
+    --scratch-pycbc   : check out pycbc git repo from scratch
+    --no-cleanup      : keep build directories after successful build for later inspection
+    --verbose-python  : run PyInstalled Python in verbose mode, showing imports">&2; exit 1;;
     esac
 done
 
@@ -740,36 +748,29 @@ fi
 echo -e "\\n\\n>> [`date`] downgrade to setuptools==18.2"
 pip $pip_install --upgrade setuptools==18.2
 echo -e "\\n\\n>> [`date`] building pycbc"
-# get rid of outdated repo reference
-if test -d pycbc/.git; then
-    cd pycbc
-    if git remote -v | fgrep gitmaster.atlas.aei.uni-hannover.de >/dev/null; then
-        mv .git .delete
-    fi
-    cd ..
-fi
-if test -d pycbc/.git; then
-    cd pycbc
-    if test ".$pycbc_branch" = ".HEAD"; then
-	:
-    else
-	# checkout branch from scratch, master must and should exist
-	git checkout master
-	git branch -D $pycbc_branch
-	git remote update
-	git checkout -b $pycbc_branch origin/$pycbc_branch
-    fi
-else
+if $scratch_pycbc || ! test -d pycbc/.git ; then
     # clone
     rm -rf pycbc
-    # git clone git://github.com/ligo-cbc/pycbc
-    git clone https://github.com/bema-ligo/pycbc.git
+    git clone git://github.com/ligo-cbc/pycbc
     cd pycbc
-    if test ".$pycbc_branch" = ".HEAD"; then
-	:
-    else
-	git checkout -b $pycbc_branch origin/$pycbc_branch
-    fi
+    git remote rename origin ligo-cbc
+    git remote add bema-ligo https://github.com/bema-ligo/pycbc.git
+    git remote update
+    git branch einsteinathome_testing bema-ligo/einsteinathome_testing
+    cd ..
+fi
+cd pycbc
+if test ".$pycbc_branch" = ".HEAD"; then
+    :
+elif test ".$pycbc_branch" = ".master"; then
+    git checkout master
+    git pull
+else
+    # checkout branch from scratch, master must and should exist
+    git checkout master
+    git branch -D $pycbc_branch
+    git remote update
+    git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
 pip install .
 hooks="$PWD/tools/static"
