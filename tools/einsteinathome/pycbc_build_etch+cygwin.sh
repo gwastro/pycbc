@@ -92,7 +92,7 @@ done
 
 # compilation environment
 PYCBC="$PWD/pycbc"
-SOURCE="$PYCBC/source"
+SOURCE="$PWD/pycbc-sources"
 PYTHON_PREFIX="$PYCBC"
 ENVIRONMENT="$PYCBC/environment"
 PREFIX="$ENVIRONMENT"
@@ -125,6 +125,9 @@ export GIT_SSL_NO_VERIFY=true
 wget_opts="-c --passive-ftp --no-check-certificate"
 pip_install="install --trusted-host pypi.python.org --trusted-host github.com"
 
+# make sure the sources directory exixts
+mkdir -p "$SOURCE"
+
 # use previously compiled scipy, lalsuite etc. if available
 if test -r pycbc-preinst.tgz -o -r pycbc-preinst-lalsuite.tgz; then
 
@@ -150,7 +153,6 @@ if test -r pycbc-preinst.tgz -o -r pycbc-preinst-lalsuite.tgz; then
 
 else # if pycbc-preinst.tgz
 
-    mkdir -p "$SOURCE"
     cd "$SOURCE"
 
     # OpenSSL
