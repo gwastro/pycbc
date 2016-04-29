@@ -19,18 +19,17 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
     shared="--enable-shared"
     build_dlls=false
     build_ssl=true
-    build_pyssl=true
     build_python=false
     build_lapack=true
-    compile_numpy=false
-    patch_scipy=false
-    compile_scipy=true
+    pyssl_from="tarball" # "pip-install"
+    numpy_from="pip-install" # "tarball"
+    scipy_from="git" # "git-patched" "pip-install"
     build_hdf5=true
     build_freetype=true
     build_libpq=false
     build_gsl=true
     build_swig=true
-    compile_pycbc_glue=false
+    glue_from="pip-install" # "git-patched"
     fake_psycopg26=true
     build_pegasus_source=true
     build_preinst_before_lalsuite=false
@@ -43,18 +42,17 @@ else
     shared="--enable-shared"
     build_dlls=true
     build_ssl=false
-    build_pyssl=true
     build_python=false
     build_lapack=true
-    compile_numpy=true
-    patch_scipy=false
-    compile_scipy=true
+    pyssl_from="tarball" # "pip-install"
+    numpy_from="tarball" # "pip-install"
+    scipy_from="git" # "git-patched" "pip-install"
     build_hdf5=false
     build_freetype=false
     build_libpq=false
     build_gsl=false
     build_swig=false
-    compile_pycbc_glue=true
+    glue_from="git-patched" # "pip-install"
     fake_psycopg26=true
     build_pegasus_source=false
     build_preinst_before_lalsuite=true
@@ -202,7 +200,10 @@ else # if pycbc-preinst.tgz
     export PYTHONPATH="$PREFIX/lib/python2.7/site-packages:$PYTHONPATH"
 
     # pyOpenSSL-0.13
-    if $build_pyssl; then
+    if [ "$pyssl_from" = "pip-install" ] ; then
+	echo -e "\\n\\n>> [`date`] pip install pyOpenSSL==0.13"
+	pip $pip_install pyOpenSSL==0.13
+    else
 	p=pyOpenSSL-0.13
 	echo -e "\\n\\n>> [`date`] building $p"
 	test -r $p.tar.gz || wget $wget_opts "$pypi/p/pyOpenSSL/$p.tar.gz"
@@ -215,9 +216,6 @@ else # if pycbc-preinst.tgz
 	python setup.py install --prefix="$PREFIX"
 	cd ..
 	$cleanup && rm -rf $p
-    else
-	echo -e "\\n\\n>> [`date`] pip install pyOpenSSL==0.13"
-	pip $pip_install pyOpenSSL==0.13
     fi
 
     # LAPACK & BLAS
@@ -239,7 +237,7 @@ else # if pycbc-preinst.tgz
     fi
     
     # NUMPY
-    if $compile_numpy; then
+    if [ "$numpy_from" = "tarball" ]; then
 	p=numpy-1.9.3
 	echo -e "\\n\\n>> [`date`] building $p"
 	test -r $p.tar.gz || wget $wget_opts https://pypi.python.org/packages/source/n/numpy/$p.tar.gz
@@ -261,7 +259,10 @@ else # if pycbc-preinst.tgz
     pip $pip_install Cython==0.23.2
 
     # SCIPY
-    if $compile_scipy; then
+    if [ "$scipy_from" = "pip-install" ] ; then
+	echo -e "\\n\\n>> [`date`] pip install scipy==0.16.0"
+	pip $pip_install scipy==0.16.0
+    else
 	p=scipy-0.16.0
 	echo -e "\\n\\n>> [`date`] building $p"
 	if test -d scipy/.git; then
@@ -271,7 +272,7 @@ else # if pycbc-preinst.tgz
 	    cd scipy
 	    git checkout v0.16.0
 	    git cherry-pick 832baa20f0b5d521bcdf4784dda13695b44bb89f
-	    if $patch_scipy; then
+            if [ "$scipy_from" = "git-patched" ] ; then
 		wget $wget_opts $atlas/PyCBC_Inspiral/0001-E-H-hack-always-use-dumb-shelve.patch
 		wget $wget_opts $atlas/PyCBC_Inspiral/0006-E-H-hack-_dumbdb-open-files-in-binary-mode.patch
 		git am 000*.patch
@@ -280,9 +281,6 @@ else # if pycbc-preinst.tgz
 	python setup.py build --fcompiler=$FC
 	python setup.py install --prefix=$PREFIX
 	cd ..
-    else
-	echo -e "\\n\\n>> [`date`] pip install scipy==0.16.0"
-	pip $pip_install scipy==0.16.0
     fi
 
     # this test will catch scipy build errors that would not emerge before running pycbc_inspiral
@@ -592,7 +590,10 @@ pip $pip_install -r requirements.txt
 # don't downgrade to setuptools==18.2 here yet
 
 # PyCBC-GLUE
-if $compile_pycbc_glue; then
+if [ "$glue_from" = "pip-install" ] ; then
+    echo -e "\\n\\n>> [`date`] pip install pycbc-glue==0.9.8"
+    pip $pip_install pycbc-glue==0.9.8
+else
     echo -e "\\n\\n>> [`date`] building pycbc-glue v0.9.8"
     if test -d pycbc-glue/.git; then
         cd pycbc-glue
@@ -606,9 +607,6 @@ if $compile_pycbc_glue; then
     fi
     python setup.py install --prefix="$PREFIX"
     cd ..
-else
-    echo -e "\\n\\n>> [`date`] pip install pycbc-glue==0.9.8"
-    pip $pip_install pycbc-glue==0.9.8
 fi
 
 # h5py
