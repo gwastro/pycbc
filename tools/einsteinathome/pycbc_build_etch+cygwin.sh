@@ -129,15 +129,15 @@ pip_install="install --trusted-host pypi.python.org --trusted-host github.com"
 mkdir -p "$SOURCE"
 
 # use previously compiled scipy, lalsuite etc. if available
-if test -r pycbc-preinst.tgz -o -r pycbc-preinst-lalsuite.tgz; then
+if test -r "$SOURCE/pycbc-preinst.tgz" -o -r "$SOURCE/pycbc-preinst-lalsuite.tgz"; then
 
     rm -rf pycbc
-    if test -r pycbc-preinst-lalsuite.tgz; then
+    if test -r "$SOURCE/pycbc-preinst-lalsuite.tgz"; then
 	echo -e "\\n\\n>> [`date`] using pycbc-preinst-lalsuite.tgz"
-	tar -xzf pycbc-preinst-lalsuite.tgz
+	tar -xzf "$SOURCE/pycbc-preinst-lalsuite.tgz"
     else
 	echo -e "\\n\\n>> [`date`] using pycbc-preinst.tgz"
-	tar -xzf pycbc-preinst.tgz
+	tar -xzf "$SOURCE/pycbc-preinst.tgz"
     fi
     # set up virtual environment
     unset PYTHONPATH
@@ -479,13 +479,13 @@ Libs: -L${libdir} -lhdf5' |
 
     if $build_preinst_before_lalsuite; then
 	pushd $PYCBC/..
-	tar -czf pycbc-preinst.tgz pycbc
+	tar -czf "$SOURCE/pycbc-preinst.tgz" pycbc
   popd
 fi
 
 fi # if pycbc-preinst.tgz
 
-if test -r $PYCBC/../pycbc-preinst-lalsuite.tgz; then
+if test -r "$SOURCE/pycbc-preinst-lalsuite.tgz"; then
     :
 else
 
@@ -538,7 +538,7 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
     test -r "$PREFIX/etc/pylal-user-env.sh" && source "$PREFIX/etc/pylal-user-env.sh"
 
     pushd $PYCBC/..
-    tar -czf pycbc-preinst-lalsuite.tgz pycbc
+    tar -czf "$SOURCE/pycbc-preinst-lalsuite.tgz" pycbc
     popd
 
 fi # if pycbc-preinst.tgz
