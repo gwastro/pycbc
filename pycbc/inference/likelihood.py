@@ -123,13 +123,13 @@ class _BaseLikelihoodEvaluator:
         """Returns the data that was set."""
         return self._data
 
-    def loglikelihood(self, *params):
+    def loglikelihood(self, params):
         """This function should return the log likelihood of the given params.
         """
         raise ValueError("Likelihood function not set.")
 
-    def __call__(self, *params):
-        return self.loglikelihood(*params)
+    def __call__(self, params):
+        return self.loglikelihood(params)
 
 
 
@@ -162,13 +162,13 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     >>> psd = pypsd.aLIGOZeroDetHighPower(seglen*2048/2+1, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
     >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, 20., psds=psds)
-    >>> likelihood_eval.loglikelihood(tsig)
+    >>> likelihood_eval.loglikelihood([tsig])
     ArrayWithAligned(0.0)
 
     Using the same likelihood evaluator, evaluate the log likelihood at several
     points in time, check that the max is at tsig, and plot:
     >>> times = numpy.arange(seglen*2048)/2048.
-    >>> lls = numpy.array([likelihood_eval.loglikelihood(t) for t in times])
+    >>> lls = numpy.array([likelihood_eval.loglikelihood([t]) for t in times])
     >>> times[lls.argmax()]
     3.10009765625
     >>> fig = pyplot.figure(); ax = fig.add_subplot(111)
@@ -177,7 +177,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     >>> fig.show()
     """
 
-    def loglikelihood(self, *params):
+    def loglikelihood(self, params):
         """Computes the log-likelihood at the given point in parameter space.
 
         Parameters
