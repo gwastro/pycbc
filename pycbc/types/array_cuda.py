@@ -121,7 +121,7 @@ def get_norm_kernel(dtype_x, dtype_out):
                 "tp_z": dtype_to_ctype(dtype_out),
                 },
             "z[i] = norm(x[i])",
-            "normalsize")
+            "normalize")
 
 def squared_norm(self):
     a = self.data
