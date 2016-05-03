@@ -123,10 +123,14 @@ class _BaseLikelihoodEvaluator:
         """Returns the data that was set."""
         return self._data
 
-    def loglikelihood(self, params):
+    def loglikelihood(self, *params):
         """This function should return the log likelihood of the given params.
         """
         raise ValueError("Likelihood function not set.")
+
+    def __call__(self, *params):
+        return self.loglikelihood(*params)
+
 
 
 class GaussianLikelihood(_BaseLikelihoodEvaluator):
@@ -200,6 +204,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
             # - <d, d>/2.
             - self._dd[det]
             for det,h in hs.items()])
+
 
 likelihood_evaluators = {'gaussian': GaussianLikelihood}
 
