@@ -298,7 +298,7 @@ from a previous one:
 Edit the ``README.md`` file and update the ``executables.ini`` file for the new release.
 
 .. note::
-      The ``README.md`` file and the ``executables.ini`` file live in ``${HOME}/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090/ `` with the version being the one you are building.
+      The ``README.md`` file and the ``executables.ini`` file live in ``${HOME}/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090/`` with the version being the one you are building.
 
 To find the commit to add to the ``README.md``:
  
@@ -458,19 +458,14 @@ Assuming everything goes well the resulting binaries will be placed in the
     Larne Pekowsky <larne.pekowsky@ligo.org> Build date: 2015-10-31 14:48:20 +0000
     Repository status is CLEAN: All modifications committed
 
-In principle jobs could fail if pyinstaller fails to build the executable,
-although this has never been seen in practice.  A job can also fail if
-pyinstaller succeeds but the resulting program throws an error when invoked
-with ``--help``.  Most of the time this happens it is because a new program has
-been added and pyinstaller needs to be told that it needs scipy.  This is done
-by adding the name of the new program to the ``needs_full_build`` file in the
-``tools/static`` directory. If there are failures during the bundling it my be because the program needs a complete build or can't be built at all. If it needs scipy add it to ``needs_full_build``. If it can't be built at all, add it to ``can't_be_built``.
 
-When the build finishes you will have to move the bundles to the directory under ``pycbc_software``.
+In principle jobs could fail if pyinstaller fails to build the executable, although this has never been seen in practice. A job can also fail if pyinstaller succeeds but the resulting program throws an error when invoked with --help. There are generally two ways in which a build can fail; it may need the full set of scipy hooks, or for some reason pyinstaller is just unable to bundle it. The first case might happen if a new program has been added and pyinstaller needs to be told that it needs scipy, which can be resolved by adding the name of the executable to the ``needs_full_build`` file in the ``tools/static`` directory and running the condor dag again. The second case can be handled by adding the name of the executable to the ``cant_be_built`` file in the ``tools/static`` directory, provided the program is not needed by the workflow and running the condor dag again. The executables.ini lists all the files needed by the workflow. Therefore, anything not there can be skipped.
+
+When the build finishes you will have to move the bundles to the directory under ``pycbc-software``.
 
 .. code:: bash
 
-   mv dist/* ${HOME}/pycbc_software/v1.2.5/x86_64/composer_xe_2015.0.090
+   mv dist/* ${HOME}/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090
 
 Making the change to the correct version.
 
@@ -530,11 +525,11 @@ and ensure that the resulting executable has the correct version
     Larne Pekowsky <larne.pekowsky@ligo.org> Build date: 2015-10-31 14:48:20 +0000
     Repository status is CLEAN: All modifications committed
 
-When the build finishes you will have to move ``pycbc_inspiral`` to the directory under ``pycbc_software``.
+When the build finishes you will have to move ``pycbc_inspiral`` to the directory under ``pycbc-software``.
 
 .. code:: bash
 
-      mv dist/pycbc_inspiral ${HOME}/pycbc_software/v1.2.5/x86_64/composer_xe_2015.0.090
+      mv dist/pycbc_inspiral ${HOME}/pycbc-software/v1.2.5/x86_64/composer_xe_2015.0.090
 
 To clean up the build directory on ``sugar-dev2`` after you move the bundles you will need to be in ``tools/static`` directory:
 
@@ -546,10 +541,12 @@ To clean up the build directory on ``sugar-dev2`` after you move the bundles you
 Finishing up
 ------------
 
-Once everything has been built and moved to the git repository, commit and push as usual. This can be done either on ``sugar-dev2`` or on ``sugar-dev3``. 
+Once everything has been built and moved to ``${HOME}/pycbc-software``, commit and push as usual to the git binaries repository doing the following steps, changing the version to the one you have built. This can be done either from ``sugar-dev2`` or from ``sugar-dev3``. 
 
 .. code:: bash
-
+ 
+    cd ${HOME}/pycbc-software
+    git add v1.2.5
     git commit -a -m "Version 1.2.5"
     git push
 
