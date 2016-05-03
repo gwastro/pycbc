@@ -51,4 +51,5 @@ SQLAlchemy==0.8.0
 traceback2==1.4.0
 Werkzeug==0.9.3
 WTForms==1.0.3
-
+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
+ligo-gracedb
