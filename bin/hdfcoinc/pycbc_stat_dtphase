@@ -16,6 +16,7 @@ parser.add_argument('--min-snr', type=float,
 parser.add_argument('--max-snr', type=float, default=100,
                     help="Maximum snr to draw signals out to")
 parser.add_argument('--timing-error', type=float)
+parser.add_argument('--min-detector-ratio', type=float, default=0.5)
 parser.add_argument('--snr-error', type=float)
 parser.add_argument('--coinc-threshold', default=0, type=float,
                     help="seconds to add to the TOF coinc window")
@@ -42,11 +43,12 @@ def bcount(left, right, error):
 
 snr_error = args.snr_error * 2 ** 0.5
 phase_error = .4
+detector_error = 0.2
 
 tnum, twidth, tbins = bcount(-maxdt, maxdt, args.timing_error)
 pnum, pwidth, pbins = bcount(0, 2.0 * numpy.pi, phase_error)
 snum, swidth, sbins = bcount(args.min_snr, args.max_snr, snr_error)
-rnum, rwidth, rbins = bcount(.5, 1, .2)
+rnum, rwidth, rbins = bcount(args.min_detector_ratio, 1, detector_error)
 
 hist_bins = (tbins, pbins, sbins, sbins, rbins)
 print tbins
