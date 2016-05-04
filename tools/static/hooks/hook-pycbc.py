@@ -82,8 +82,6 @@ if os.environ["NOW_BUILDING"] in needs_mkl:
     datas += find_lib_path('mkl_intel_lp64', [])
     datas += find_lib_path('mkl_avx2', [])
     datas += find_lib_path('mkl_def', [])
-    datas += find_lib_path('iomp5', [])
-    datas += find_lib_path('mkl_mc3', [])
 
 # try to pull in the openmp fftw files
 #datas += find_lib_path('fftw3', ['fftw3'])
