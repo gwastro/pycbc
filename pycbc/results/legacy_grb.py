@@ -454,6 +454,9 @@ def write_found_missed(page, args, injList):
     plots = []
     text  = {}
     ifos = [args.ifo_tag[i:i+2] for i in range(0, len(args.ifo_tag), 2)]
+    plots.extend(['dist', 'dist_time'])
+    text['dist'] = 'Dist vs Mchirp'
+    text['dist_time'] = 'Dist vs Time'
     for ifo in ifos:
         plots.extend(['effdist_%s' % ifo[0].lower(),\
                       'effdist_time_%s' % ifo[0].lower()])

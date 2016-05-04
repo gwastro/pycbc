@@ -366,8 +366,6 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
     # write trial results
     for ii,trial in zip(range(len(trials)),trials):
         reduced = False
-        if ii > 1:
-            reduced = True
         secname = 'Results for %s' % trial.replace('_',' ').title()
         i += 1
         webpage.input(id="input_%s" % i, type="button", class_="h2",
@@ -423,11 +421,11 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
     html_path = htmldir + "/" + os.path.basename(htmldir) + suffix
     
     if os.path.isdir(html_path):
-        warn = "WARNING: %s already exists! " % htmldir
+        warn = "WARNING: %s already exists! " % html_path
         html_path += "_"
         html_path += ''.join(random.choice(\
                      string.ascii_uppercase + string.digits) for _ in range(8))
-        warn += "Placing output page in %s." % htmldir
+        warn += "Placing output page in %s." % html_path
         sys.stdout.write(warn)
 
     shutil.copytree(outdir, html_path)
