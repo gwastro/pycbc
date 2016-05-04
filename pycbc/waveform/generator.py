@@ -118,10 +118,8 @@ class FDomainCBCGenerator(BaseGenerator):
     (<pycbc.types.frequencyseries.FrequencySeries at 0x1110c1450>,
      <pycbc.types.frequencyseries.FrequencySeries at 0x1110c1510>)
     """
-    generator_function = waveform.get_fd_waveform
-
     def __init__(self, variable_args=(), **frozen_params):
-        super(FDomainCBCGenerator, self).__init__(self.generator_function,
+        super(FDomainCBCGenerator, self).__init__(waveform.get_fd_waveform,
             variable_args=variable_args, **frozen_params)
 
 class TDomainCBCGenerator(BaseGenerator):
@@ -139,10 +137,8 @@ class TDomainCBCGenerator(BaseGenerator):
     (<pycbc.types.timeseries.TimeSeries at 0x10e546710>,
      <pycbc.types.timeseries.TimeSeries at 0x115f37690>)
     """
-    generator_function = waveform.get_td_waveform
-
     def __init__(self, variable_args=(), **frozen_params):
-        super(TDomainCBCGenerator, self).__init__(self.generator_function,
+        super(TDomainCBCGenerator, self).__init__(waveform.get_td_waveform,
             variable_args=variable_args, **frozen_params)
 
 
