@@ -159,7 +159,7 @@ def import_sys_wisdom():
     float_lib.fftwf_import_system_wisdom()
 
 # We provide an interface for changing the "measure level"
-# By default 1, which does some but not much planning,
+# By default this is 0, which does no planning,
 # but we provide functions to read and set it
 
 _default_measurelvl = 0
