@@ -313,36 +313,6 @@ else
 fi
 done
 
-#ROM Data Validation
-rom_hash=('f82ddc5dc0b6fdc75122e767bd5e78c8' '62afa5351d6b775ac33cb4d898f0016b' 'a6829fa05437cc0aad81e3f8dae839cc' '98ea14b01e729d15ff666caa25afaed6' 'b41f0f7fbaf8be1d1848de7ee702bc67' '20ee260c870109766a6f048e20c7e10f' '96c384617edd8375ceaa03f9b7456467' '67d4f206fe19104fbc98b923b37318bb' 'd0bf97b4e17b5c9a7cfd222aaaafd742' 'c2ea5d296fee01abe16c0dd9e5f71f04' '412953726ca4bc72a810b27b810831c7' '4d5378935a7fba5e96f671581bce99fb' '31f48cb651a60837a3e99ee050aa9bc2' '727d31f6dc678aba8539817c8d0ae930' 'd0e1601c7cf4bd727d03e6cf7d2f722b' 'e6c243f76609cada55612cfe53f82e41' '08186a21682d2e73cb00a3ef35aa5c9c' '1ef7953a977a1fb551f59585c5d63d7a' 'b5923860bf021e6a2a23d743e5724bee' '2947032d0ad7ffde9704e24bf9e676f5')
-
-if [[ ${install_rom} == "yes" ]] ; then
-md5sum_hash=$( echo -n 'test' | md5sum ${LAL_DATA_PATH}/SEOBNRv2ROM*.dat | cut -d' ' -f1)
-fi
-
-if [[ ${install_rom} == "no" ]] ; then
-md5sum_hash=$( echo -n 'test' | md5sum ${LAL_DATA_PATH}/share/lalsimulation/SEOBNRv2ROM*.dat | cut -d' ' -f1)
-fi
-
-for j in "${rom_hash[@]}" ; do
-  if [[ ${rom_hash[*]} == ${md5sum_hash[*]} ]] ; then
-    echo "All files are in ${LAL_DATA_PATH}." 
-    if [[ ${install_rom} == "yes" ]] ; then
-        echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >>  ${VIRTUAL_ENV}/bin/activate
-    elif [[ ${install_rom} == "no" ]] ; then
-        echo "export LAL_DATA_PATH=${LAL_DATA_PATH}/share/lalsimulation" >>  ${VIRTUAL_ENV}/bin/activate
-    fi
-    break
-  fi
-
-  if [[ ${rom_hash[*]} != ${md5sum_hash[*]} ]] ; then
-    echo "The files are not the same."
-    echo
-    exit 1
-  fi
-done
-
-
 echo "------------PLease check the inputs carefully-----------------"
 echo
 echo "LIGO.ORG username: " $directory
@@ -453,6 +423,38 @@ virtualenv $NAME
 #Enter Virtual Environment
 source $NAME/bin/activate
 mkdir -p $VIRTUAL_ENV/src
+
+#ROM Data Validation
+echo "--- checking rom data -------------------------------------------"
+rom_hash=('f82ddc5dc0b6fdc75122e767bd5e78c8' '62afa5351d6b775ac33cb4d898f0016b' 'a6829fa05437cc0aad81e3f8dae839cc' '98ea14b01e729d15ff666caa25afaed6' 'b41f0f7fbaf8be1d1848de7ee702bc67' '20ee260c870109766a6f048e20c7e10f' '96c384617edd8375ceaa03f9b7456467' '67d4f206fe19104fbc98b923b37318bb' 'd0bf97b4e17b5c9a7cfd222aaaafd742' 'c2ea5d296fee01abe16c0dd9e5f71f04' '412953726ca4bc72a810b27b810831c7' '4d5378935a7fba5e96f671581bce99fb' '31f48cb651a60837a3e99ee050aa9bc2' '727d31f6dc678aba8539817c8d0ae930' 'd0e1601c7cf4bd727d03e6cf7d2f722b' 'e6c243f76609cada55612cfe53f82e41' '08186a21682d2e73cb00a3ef35aa5c9c' '1ef7953a977a1fb551f59585c5d63d7a' 'b5923860bf021e6a2a23d743e5724bee' '2947032d0ad7ffde9704e24bf9e676f5')
+
+if [[ ${install_rom} == "yes" ]] ; then
+md5sum_hash=$( echo -n 'test' | md5sum ${LAL_DATA_PATH}/SEOBNRv2ROM*.dat | cut -d' ' -f1)
+fi
+
+if [[ ${install_rom} == "no" ]] ; then
+md5sum_hash=$( echo -n 'test' | md5sum ${LAL_DATA_PATH}/share/lalsimulation/SEOBNRv2ROM*.dat | cut -d' ' -f1)
+fi
+
+for j in "${rom_hash[@]}" ; do
+  if [[ ${rom_hash[*]} == ${md5sum_hash[*]} ]] ; then
+    echo "All files are in ${LAL_DATA_PATH}." 
+    if [[ ${install_rom} == "yes" ]] ; then
+        echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >>  ${VIRTUAL_ENV}/bin/activate
+    elif [[ ${install_rom} == "no" ]] ; then
+        echo "export LAL_DATA_PATH=${LAL_DATA_PATH}/share/lalsimulation" >>  ${VIRTUAL_ENV}/bin/activate
+    fi
+    break
+  fi
+
+  if [[ ${rom_hash[*]} != ${md5sum_hash[*]} ]] ; then
+    echo "The files are not the same."
+    echo
+    exit 1
+  fi
+done
+
+
 
 echo
 echo "--- setting up optimized libraries ------------------------------"
