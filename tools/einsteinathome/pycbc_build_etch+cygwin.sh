@@ -478,8 +478,8 @@ Libs: -L${libdir} -lhdf5' |
     if $build_preinst_before_lalsuite; then
 	pushd $PYCBC/..
 	tar -czf "$SOURCE/pycbc-preinst.tgz" pycbc
-  popd
-fi
+        popd
+    fi
 
 fi # if pycbc-preinst.tgz
 
