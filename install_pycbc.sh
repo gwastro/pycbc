@@ -535,10 +535,10 @@ echo "--- installing pegasus and dqsegdb ------------------------------"
 echo
 
 #Install Pegasus WMS python libraries
-pip $cache install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
+pip $cache install http://download.pegasus.isi.edu/pegasus/4.6.1/pegasus-python-source-4.6.1.tar.gz
 
 #Install dqsegb from Duncan's repository
-pip $cache install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
+pip $cache install git+https://github.com/ligo-cbc/dqsegdb.git@pypi_release#egg=dqsegdb
 
 #Install gracedb client tools
 pip install ligo-gracedb
