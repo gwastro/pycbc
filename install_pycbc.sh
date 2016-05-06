@@ -14,54 +14,6 @@ if [ "$1" != "noscript" ] ; then
 fi
 
 
-while true ; do
-#Check pip and virtualenv versions
-virtenv_ver=`virtualenv --version`
-echo "You are using virtualenv version: ${virtenv_ver}"
-read -rp  "Is your version of virtualenv greater than or equal to 13.1.1? (Enter yes or no) " version
-
-if [[ $version == "yes" ]] ; then
-  break
-
-elif [[ $version == "no" ]] ; then
-
-  while true ; do
-  
-  echo
-  pip_ver=`pip --version`
-  echo "You are using pip version: ${pip_ver}"
-  read -rp "Is your version of pip greater than 7.1.0? (Enter yes or no) " pip_version
-  
-  if [[ $pip_version == "yes" ]] ; then
-    break
-  
-  elif [[ $pip_version == "no" ]] ; then
-    echo
-    echo "You must have at least version 7.1.0 of pip to install virtualenv."
-    echo "To set up pip follow the instructions at:"
-    echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
-    echo
-    break
-  
-  else
-    echo "Please enter yes or no"
-  
-  fi
-  done
-
-  echo
-  echo "You must have at least version 13.1.1 of virtualenv."
-  echo "To set up virutalenv follow the instructions at:"
-  echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
-  echo
-  exit 1
-
-else
- echo "Please enter yes or no"
-
-fi
-done
-
 # Set up Python
 while true; do
   echo "Do you want to use the OSG build of Python 2.7?"
@@ -94,6 +46,31 @@ py_path=`which python`
 py_ver=`python --version 2>&1`
 echo "Using Python from ${py_path} which is ${py_ver}"
 echo
+
+#Check pip and virtualenv versions
+while true ; do
+  pip_ver=`pip --version`
+  echo "You are using pip version: ${pip_ver}"
+  read -rp "Is your version of pip greater than 7.1.0? (Enter yes or no) " pip_version
+  
+  if [[ $pip_version == "yes" ]] ; then
+    break
+  
+  elif [[ $pip_version == "no" ]] ; then
+    echo
+    echo "You must have at least version 7.1.0 of pip to install virtualenv."
+    echo "To set up pip follow the instructions at:"
+    echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
+    echo
+    break
+  
+  else
+    echo "Please enter yes or no"
+  fi
+done
+
+pip install virtualenv --upgrade --user
+export PATH=${HOME}/.local/bin:${PATH}
 
 #Installing pyCBC
 while true ; do
