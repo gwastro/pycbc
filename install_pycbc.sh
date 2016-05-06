@@ -65,6 +65,39 @@ else
 fi
 done
 
+# Set up Python
+while true; do
+  echo "Do you want to use the OSG build of Python 2.7?"
+  echo
+  echo "This is used for building bundled executables for use on OSG."
+  echo "If you are not sure, say no to use the standard system Python."
+  echo
+  read -p "Enter yes or no: " OSG_PYTHON
+  echo
+
+  if [[ $OSG_PYTHON == "yes" ]] ; then
+    if [ ! -e /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash ] ; then
+      echo "Error: Could not find sctipt to set up OSG modules."
+      echo "Check that /cvmfs/oasis.opensciencegrid.org is mounted on this machine."
+      exit 1
+    fi
+    set +e
+    source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
+    set -e
+    module load python/2.7
+    break
+  elif [[ $OSG_PYTHON == "no" ]] ; then
+    break
+  else
+    echo "Please enter yes or no."
+  fi
+done
+
+py_path=`which python`
+py_ver=`python --version 2>&1`
+echo "Using Python from ${py_path} which is ${py_ver}"
+echo
+
 #Installing pyCBC
 
 while true; do
