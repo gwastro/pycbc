@@ -275,6 +275,7 @@ elif [[ ${install_rom} == "no" ]] ; then
     if [[ ${rom_store} == ~* ]] ; then
       if [[ ! "${rom_store}" =~ "/" ]] ; then
         rom_store=${HOME}
+        break
       else
         # chomp the ~
         rom_store=${rom_store/##~}
@@ -282,23 +283,24 @@ elif [[ ${install_rom} == "no" ]] ; then
         rom_store=${rom_store#*\/}
         # expand to the user's home directory
         rom_store=${HOME}/${rom_store}
-      fi
-    fi
     
-    if [ ! -d ${rom_store} ] ; then
-      mkdir -p ${rom_store}
-      continue
-    fi
+       if [ ! -d ${rom_store} ] ; then
+        mkdir -p ${rom_store}
+       fi
+    
     LAL_DATA_PATH="${rom_store}"
     echo 
-    break  
+    break
+     fi
+   fi
 
   else
-  continue
+   continue
+
   fi
 
 else
-continue
+ continue
 
 fi
 done
