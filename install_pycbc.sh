@@ -62,7 +62,7 @@ while true ; do
     echo "To set up pip follow the instructions at:"
     echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
     echo
-    break
+    exit 1
   
   else
     echo "Please enter yes or no"
