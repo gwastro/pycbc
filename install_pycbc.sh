@@ -440,7 +440,11 @@ fi
 #Installing lalsuite into Virtual Environment
 #Install unitest2, python-cjson, and numpy
 echo "--- installing required packages --------------------------------"
-pip $cache install "numpy>=1.6.4" unittest2 python-cjson Cython
+if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
+  pip $cache install "numpy==1.9.3" unittest2 "python-cjson==1.1.0" "Cython==0.23.2"
+else
+  pip $cache install "numpy>=1.6.4" unittest2 python-cjson Cython
+fi
 pip $cache install git+http://github.com/ligo-cbc/pyinstaller.git@pycbc_install#egg=pyinstaller
 
 #Install HDF5
@@ -453,7 +457,11 @@ rm hdf5-1.8.12.tar.gz
 cd hdf5-1.8.12
 ./configure --prefix=$VIRTUAL_ENV
 make -j $nproc install
-HDF5_DIR=${VIRTUAL_ENV} pip $cache install h5py
+if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
+  HDF5_DIR=${VIRTUAL_ENV} pip $cache install "h5py==2.5.0"
+else
+  HDF5_DIR=${VIRTUAL_ENV} pip $cache install h5py
+fi
 
 #Authenticate with LIGO Data Grid services, install M2Crypto
 SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip $cache install M2Crypto
