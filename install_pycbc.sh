@@ -16,10 +16,8 @@ fi
 
 while true ; do
 #Check pip and virtualenv versions
-echo
-echo "virtualenv version:"
-virtualenv --version
-echo
+virtenv_ver=`virtualenv --version`
+echo "You are using virtualenv version: ${virtenv_ver}"
 read -rp  "Is your version of virtualenv greater than or equal to 13.1.1? (Enter yes or no) " version
 
 if [[ $version == "yes" ]] ; then
@@ -30,9 +28,8 @@ elif [[ $version == "no" ]] ; then
   while true ; do
   
   echo
-  echo "pip version:"
-  pip --version
-  echo
+  pip_ver=`pip --version`
+  echo "You are using pip version: ${pip_ver}"
   read -rp "Is your version of pip greater than 7.1.0? (Enter yes or no) " pip_version
   
   if [[ $pip_version == "yes" ]] ; then
