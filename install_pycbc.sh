@@ -30,6 +30,8 @@ while true; do
       echo "Check that /cvmfs/oasis.opensciencegrid.org is mounted on this machine."
       exit 1
     fi
+    unset PYTHONPATH
+    unset LD_LIBRARY_PATH
     set +e
     source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
     set -e
