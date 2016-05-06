@@ -96,57 +96,54 @@ echo "Using Python from ${py_path} which is ${py_ver}"
 echo
 
 #Installing pyCBC
+while true ; do
+  echo "Are you installing a virtualenv to build bundled exectuables for distribution?"
+  read -p "Enter yes or no (if you are not sure, say no): " IS_BUNDLE_ENV
 
-while true; do
+  if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
+    NAME=${TMPDIR}/pycbc-`uuidgen`
+    break
+  elif [[ $IS_BUNDLE_ENV == "no" ]] ; then
+    while true; do
+    # Ask the user where they want pycbc installed
+    read -p "Enter the location where you want the virtual env created: " NAME
 
-# Ask the user where they want pycbc installed
-read -p "Enter the location where you want the virtual env created: " NAME
+    if [[ $NAME == ~* ]] ; then
+      if [[ ! "$NAME" =~ "/" ]] ; then
+        NAME=${HOME}
+      else
+        # chomp the ~
+        NAME=${NAME/##~}
+        # chomp anything else before the first slash to catch e.g. ~alenon/
+        NAME=${NAME#*\/}
+        # expand to the user's home directory
+        NAME=${HOME}/${NAME}
+      fi
+    fi
 
-if [[ $NAME == ~* ]] ; then
-  if [[ ! "$NAME" =~ "/" ]] ; then
-    NAME=${HOME}
+    if [[ -z $NAME ]] ; then
+      echo "ERROR: you must specify a path for your virtual environment."
+      continue
+    fi
+
+    if [[ -d $NAME ]] ; then
+       echo "ERROR: the directory $NAME already exists."
+       echo "If you want to use this path, remove the directory and try again."
+    else
+      break
+    fi
+    done
+    break
   else
-    # chomp the ~
-    NAME=${NAME/##~}
-    # chomp anything else before the first slash to catch e.g. ~alenon/
-    NAME=${NAME#*\/}
-    # expand to the user's home directory
-    NAME=${HOME}/${NAME}
+    echo "Please enter yes or no."
   fi
-fi
-
-if [[ -z $NAME ]] ; then
-  echo "ERROR: you must specify a path for your virtual environment."
-  continue
-fi
-
-if [[ -d $NAME ]] ; then
-   echo "ERROR: the directory $NAME already exists."
-   echo "If you want to use this path, remove the directory and try again."
-   continue
-fi
+done
 
 #Virualenv check
 echo
-echo "You chose to install PyCBC in $NAME."
+echo "You are installing PyCBC in $NAME."
 echo
-read -rp "Is this where you want PyCBC installed? (Enter yes or no) " name_check
 
-if [[ $name_check == "yes" ]] ; then
- echo "Pycbc is being installed in $NAME." 
- break
-fi
-
-if [[ $name_check == "no" ]] ; then
- continue
-
-else
- echo "Please enter yes or no"
- continue
-
-fi
-
-done
 
 #Number of Processors for the installation
 read -p "Enter the number of processors that you want to use for builds: " nproc
