@@ -51,7 +51,7 @@ echo
 while true ; do
   pip_ver=`pip --version`
   echo "You are using pip version: ${pip_ver}"
-  read -rp "Is your version of pip greater than 7.1.0? (Enter yes or no) " pip_version
+  read -rp "Is your version of pip greater than or equal to 7.1.0? (Enter yes or no) " pip_version
   
   if [[ $pip_version == "yes" ]] ; then
     break
