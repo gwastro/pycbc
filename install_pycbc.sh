@@ -600,6 +600,8 @@ while true ; do
 
   if [[ $dev_or_rel -eq 1 ]] ; then
     #Installing a released version of pyCBC
+    curl https://raw.githubusercontent.com/ligo-cbc/pycbc/${reltag}/requirements.txt > ${VIRTUAL_ENV}/requirements.txt
+    pip install -r ${VIRTUAL_ENV}/requirements.txt
     #Install Version
     pip $cache install -e git+https://github.com/ligo-cbc/pycbc@${reltag}#egg=pycbc --process-dependency-links
     rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
