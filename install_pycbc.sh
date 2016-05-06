@@ -264,7 +264,7 @@ echo "     /opt/intel/bin/compilervars.sh intel64"
 echo "on atlas, enter"
 echo "     /opt/intel/2015/bin/compilervars.sh intel64"
 echo "on ldas-grid, enter"
-echo "     /opt/intel/composer_xe_2015.1.135/bin/compilervars.sh intel64"
+echo "     /opt/intel/composerxe/bin/compilervars.sh intel64"
 echo "If you do not have these tools installed, just press return."
 echo 
 read -p "Enter path and architecture for Intel compilervars.sh or press return: " intel_path
