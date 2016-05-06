@@ -630,6 +630,24 @@ while true ; do
 
 done
 
+#Build static sbank
+echo
+echo "--- building static version of lalapps sbank tools --------------"
+echo
+pushd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/inspiral
+for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank_plot_sim lalapps_cbc_sbank lalapps_cbc_sbank_sim lalapps_cbc_sbank_splitter
+do
+  pyinstaller ${prog}.py                       \
+    --hidden-import scipy.linalg.cython_blas   \
+    --hidden-import scipy.linalg.cython_lapack \
+    --hidden-import scipy.special._ufuncs_cxx  \
+    --hidden-import scipy.integrate            \
+    --strip                                    \
+    --onefile
+    cp dist/${prog} $VIRTUAL_ENV/bin
+done
+
+
 if [[ $dev_or_rel -eq 2 ]] ; then
   #Building and Installing Documentation
   #Install Sphinx and the helper tools
