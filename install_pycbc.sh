@@ -432,7 +432,6 @@ continue
 fi
 done
 
-
 #Valid ECP cookie to clone
 echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
 ecp-cookie-init LIGO.ORG https://versions.ligo.org/git $directory
@@ -448,10 +447,24 @@ virtualenv $NAME
 source $NAME/bin/activate
 mkdir -p $VIRTUAL_ENV/src
 
+echo
+echo "--- setting up optimized libraries ------------------------------"
+echo
+echo
+
+#Add script that sets up the MKL environment to virtualenv activate script
+if [[ ! -z "${intel_path}" ]] ; then 
+  echo "source ${intel_path}" >> ${VIRTUAL_ENV}/bin/activate
+  set +e
+  source ${intel_path}
+  set -e
+fi
+
 #Installing lalsuite into Virtual Environment
 #Install unitest2, python-cjson, and numpy
 echo "--- installing required packages --------------------------------"
 pip $cache install "numpy>=1.6.4" unittest2 python-cjson Cython
+pip $cache install git+http://github.com/ligo-cbc/pyinstaller.git@pycbc_install#egg=pyinstaller
 
 #Install HDF5
 echo "--- installing HDF5 libraries -----------------------------------"
@@ -477,7 +490,9 @@ echo
 git config --global http.cookiefile /tmp/ecpcookie.u`id -u`
 
 #Get Copy of LalSuite Repository
-cd $VIRTUAL_ENV/src
+LALSUITE_BUILD_DIR=`mktemp --tmpdir -d -t lalsuite-XXXXXXXXXX`
+ln -sf ${LALSUITE_BUILD_DIR} $VIRTUAL_ENV/src/lalsuite
+cd $VIRTUAL_ENV/src/lalsuite
 git clone https://versions.ligo.org/git/lalsuite.git
  
 #Obtaining source code and checking version
@@ -494,13 +509,22 @@ echo
 echo "--- building lalsuite -------------------------------------------"
 echo
 ./00boot
-./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar
+./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalapps --with-hdf5=no
 make -j $nproc
 make install
 
 #Add to virtualenv activate script
 echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc' >> ${VIRTUAL_ENV}/bin/activate
 source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc
+
+#Build a static lalapps_inspinj and install it
+cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps
+./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-mpi --disable-bambi --disable-cfitsio --disable-pss --disable-gds --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalpulsar
+cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/lalapps
+make -j $nproc
+cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/inspiral
+make lalapps_inspinj
+cp lalapps_inspinj $VIRTUAL_ENV/bin
 
 #Check that lalsuite is installed
 echo "LAL installed into $LAL_PREFIX"
@@ -649,15 +673,6 @@ EOF
   set -e
 fi
   
-echo
-echo "--- setting up optimized libraries ------------------------------"
-echo
-echo
-
-#Add script that sets up the MKL environment to virtualenv activate script
-if [[ ! -z "${intel_path}" ]] ; then 
-  echo "source ${intel_path}" >> ${VIRTUAL_ENV}/bin/activate
-fi
 
 echo
 
