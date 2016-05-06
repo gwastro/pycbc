@@ -101,7 +101,8 @@ while true ; do
   read -p "Enter yes or no (if you are not sure, say no): " IS_BUNDLE_ENV
 
   if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
-    NAME=${TMPDIR}/pycbc-`uuidgen`
+    UNIQUE_ID=pycbc-`uuidgen`
+    NAME=${TMPDIR}/${UNIQUE_ID}
     break
   elif [[ $IS_BUNDLE_ENV == "no" ]] ; then
     while true; do
@@ -727,13 +728,50 @@ if [[ $dev_or_rel -eq 2 ]] ; then
   echo
 fi
 
-#Leave the virtual environment and exit
-deactivate
-echo "PyCBC setup complete"
+if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
+  echo
+  echo "=================================================================="
+  echo
+  echo "Making bundled executables."
+  echo 
+  #Make the dag that makes the bundles
+  cd ${VIRTUAL_ENV}/src/pycbc/tools/static
+  ./build_dag.sh
+
+  #Run the dag that makes the bundles
+  condor_submit_dag build_static.dag
+
+  # Wait for the dag to finish
+  condor_wait -status -echo build_static.dag.dagman.log
+
+  #Copy the existing static files into the dist directory
+  cp -v ${VIRTUAL_ENV}/bin/lalapps_inspinj dist/
+  for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank_plot_sim lalapps_cbc_sbank lalapps_cbc_sbank_sim lalapps_cbc_sbank_splitter
+    do cp -v ${VIRTUAL_ENV}/bin/$prog dist/
+  done
+
+  #Copy the completed build
+  cp -v dist/ ${VIRTUAL_ENV}/../${UNIQUE_ID}-dist
+  cd ${VIRTUAL_ENV}/..
+  tar -zcvf ${UNIQUE_ID}.tar.gz ${VIRTUAL_ENV}
+
+  deactivate
+  echo 
+  rm -rf ${VIRTUAL_ENV}
+
+  echo
+  echo "Complete."
+  echo
+  echo "Bundles are in ${UNIQUE_ID}-dist"
+  echo "Environment saved in ${UNIQUE_ID}.tar.gz"
+  echo 
+  echo "=================================================================="
+else
+  #Leave the virtual environment and exit
+  deactivate
+  echo "PyCBC setup complete"
+fi
+
 echo
-
-
-# save log into virtualenv
-mv ${LOGPATH} ${NAME}/
 
 exit 0
