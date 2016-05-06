@@ -42,4 +42,8 @@ do
 	fi
 done > build_static.dag
 
+echo "JOB ligolw_segment_query_dqsegdb ${PWD}/build_one.sub DIR ${PWD}" >> build_static.dag
+echo "VARS ligolw_segment_query_dqsegdb prog=../../../../bin/ligolw_segment_query_dqsegdb" >> build_static.dag
 
+echo "JOB ligolw_segments_from_cats_dqsegdb ${PWD}/build_one.sub DIR ${PWD}" >> build_static.dag
+echo "VARS ligolw_segments_from_cats_dqsegdb prog=../../../../bin/ligolw_segments_from_cats_dqsegdb" >> build_static.dag
