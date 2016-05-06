@@ -74,6 +74,7 @@ export PATH=${HOME}/.local/bin:${PATH}
 
 #Installing pyCBC
 while true ; do
+  echo
   echo "Are you installing a virtualenv to build bundled exectuables for distribution?"
   read -p "Enter yes or no (if you are not sure, say no): " IS_BUNDLE_ENV
 
@@ -411,8 +412,10 @@ echo
 echo
 #Create a Virtual Environment
 echo "--- creating virtual environment --------------------------------"
-unset PYTHONPATH
-unset LD_LIBRARY_PATH
+if [[ $OSG_PYTHON == "no" ]] ; then
+  unset PYTHONPATH
+  unset LD_LIBRARY_PATH
+fi
 virtualenv $NAME
 
 #Enter Virtual Environment
