@@ -456,14 +456,14 @@ pip $cache install "numpy>=1.6.4" unittest2 python-cjson Cython
 #Install HDF5
 echo "--- installing HDF5 libraries -----------------------------------"
 cd $VIRTUAL_ENV/src
-pip install nose>=1.0.0 
+pip install "nose>=1.0.0"
 curl https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
 tar -zxvf hdf5-1.8.12.tar.gz
 rm hdf5-1.8.12.tar.gz
 cd hdf5-1.8.12
-./configure --prefix=$VIRTUAL_ENV/opt/hdf5-1.8.12
+./configure --prefix=$VIRTUAL_ENV
 make -j $nproc install
-HDF5_DIR=${VIRTUAL_ENV}/opt/hdf5-1.8.12 pip $cache install h5py
+HDF5_DIR=${VIRTUAL_ENV} pip $cache install h5py
 
 #Authenticate with LIGO Data Grid services, install M2Crypto
 SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip $cache install M2Crypto
