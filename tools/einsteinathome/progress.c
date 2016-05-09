@@ -15,29 +15,47 @@ int main(int argc, char*argv[]) {
   int delay = 1;
 
   // parse command-line options
-  while (argc >= arg) {
+  while (arg < argc) {
     // -v: verbose
     if (!strcmp("-v",argv[arg])) {
       debug++;
     }
     // -f: 'filter' input file, write non-matching lines to stdout
-    if (!strcmp("-f",argv[arg])) {
-	filter = 1;
+    else if (!strcmp("-f",argv[arg])) {
+      filter = 1;
+    }
+    // -c: 'copy' input file, write all lines to stdout
+    else if (!strcmp("-c",argv[arg])) {
+      filter = 2;
     }
     // -s <seconds>: set sleep period
-    if (!strcmp("-s",argv[arg])) {
+    else if(!strcmp("-s",argv[arg])) {
       arg++;
       delay = atoi(argv[arg]);
     }
     // -p <fraction>: initial progress value
-    if (!strcmp("-p",argv[arg])) {
+    else if(!strcmp("-p",argv[arg])) {
       arg++;
       progress = atof(argv[arg]);
     }
+    else if(!strcmp("-h",argv[arg]) || !strcmp("--help",argv[arg])) {
+      printf("Usage: progress -[vfsph]* [file]\n"
+             "  scans 'file' for lines indicating progress indication\n"
+             "  and writes 'fraction done' to a file progress.txt\n"
+             " - enable debug output (to stderr) with '-v'\n"
+             " - use '-f' ('filter') to write scanned lines not indicatiing progress to stdout\n"
+             " - use '-c' ('copy') to write all scanned lines to stdout\n"
+             " - adjust sleep period with '-s <seconds>' (defaults to 1s)\n"
+             " - specify initial 'fraction done' at progream start with '-p <fraction>' (defaults to 0.0001)\n"
+             " - pass name of the file to watch on command-line (last argument, defaults to 'stderr.txt')\n"
+             " - terminates when progress reaches 1.0\n"
+             );
+      exit(0);
+    }
+    else if(argv[arg][0] != '-') {
+      fname = argv[arg];
+    }
     arg++;
-  }
-  if (argc >= arg) {
-    fname = argv[arg];
   }
 
   if (debug) fprintf(stderr, "writing initial progress file\n");
@@ -60,7 +78,7 @@ int main(int argc, char*argv[]) {
 
     // wait for the file to be extended
     while(new <= old) {
-      if (debug) fprintf(stderr, "waiting for stderr.txt to be extended\n");
+      if (debug) fprintf(stderr, "waiting for '%s' to be extended\n", fname);
       sleep(delay);
       fseek(fp, 0, SEEK_END);
       new = ftell(fp);
@@ -78,6 +96,9 @@ int main(int argc, char*argv[]) {
 	if (4 == sscanf(buf, "%*s %*s Filtering template %f/%f segment %f/%f", &a, &b, &c, &d)) {
 	  if (debug) fprintf(stderr, "parsed values from line: %f %f %f %f\n", a, b, c, d);
 	  found = 1;
+	  if (filter>1) {
+	    printf("%s\n",buf);
+	  }
 	} else if (filter) {
 	  printf("%s\n",buf);
 	} else if (debug) {
@@ -98,7 +119,9 @@ int main(int argc, char*argv[]) {
 	fclose(fw);
       }
     }
-  }
+
+  } // while(progress < 1.0)
+
   fclose(fp);
 
   return 0;
