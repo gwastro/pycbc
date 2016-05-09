@@ -57,7 +57,7 @@ class PriorEvaluator(object):
         self.variable_params = variable_params
 
         # store the distribution for the variable params
-        self.params_dist = [getattr(PriorEvaluator, dist) for dist in params_dist]
+        self.params_dist = params_dist
 
         # store the minimum and maximum acceptable values for a variable param
         # if nothing is specified then use -inf to inf
@@ -87,7 +87,7 @@ class PriorEvaluator(object):
             return -numpy.inf
 
         # evaluate prior for each parameter
-        val = sum([self.params_dist[i](self, param) for i,param in enumerate(params)])
+        val = sum([getattr(self, self.params_dist[i])(param) for i,param in enumerate(params)])
 
         return val
 
