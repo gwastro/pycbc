@@ -115,10 +115,10 @@ class _BaseLikelihoodEvaluator:
             d[kmin:kmax].inner(d[kmin:kmax]*self._weight[det][kmin:kmax]).real/2.)
             for det,d in self._data.items()])
         # store prior
-        if prior:
-            self._prior = prior
-        else:
+        if prior is None:
             self._prior = pyprior.no_prior
+        else:
+            self._prior = prior
 
     @property
     def waveform_generator(self):
@@ -204,7 +204,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
             parameter space.
         """
         # get prior
-        prior = self.prior(params)
+        prior = self._prior(params)
         # prior will return -numpy.inf if params are invalid
         if prior == -numpy.inf:
             return -numpy.inf

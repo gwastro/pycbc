@@ -31,7 +31,7 @@ import numpy
 def no_prior(params):
     """ Function that returns default value if user does not specify a prior.
     """
-    return 0
+    return 0.0
 
 class PriorEvaluator(object):
     """
