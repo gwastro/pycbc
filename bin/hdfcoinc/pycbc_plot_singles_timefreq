@@ -188,6 +188,9 @@ for gate_type, hatch_style in [('file', '\\'), ('auto', '/')]:
     except KeyError:
         continue
     for gt, gw, gp in zip(gate_time, gate_width, gate_pad):
+        # only try to plot gates within the time window
+        if gt + gw < opts.gps_start_time or gt - gw > opts.gps_end_time:
+            continue
         ax.axvspan(gt - gw - center_time, gt + gw - center_time,
                    hatch=hatch_style, facecolor='none', edgecolor='#00ff00')
 
