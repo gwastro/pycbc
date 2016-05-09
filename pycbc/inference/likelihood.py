@@ -28,6 +28,7 @@ for parameter estimation.
 
 from pycbc import filter
 from pycbc.types import Array
+import prior as pyprior
 import numpy
 
 class _BaseLikelihoodEvaluator:
@@ -63,10 +64,12 @@ class _BaseLikelihoodEvaluator:
         An extra normalization weight to apply to the inner products. Can be
         either a float or an array. If None, 4*data.values()[0].delta_f will be
         used.
+    prior : callable
+        A callable class or function that computes the prior.
     """
 
     def __init__(self, waveform_generator, data, f_lower, psds=None,
-            f_upper=None, norm=None):
+            f_upper=None, norm=None, prior=None):
         self._waveform_generator = waveform_generator
         self._data = data
         # check that the data and waveform generator have the same detectors
@@ -111,7 +114,11 @@ class _BaseLikelihoodEvaluator:
         self._dd = dict([(det,
             d[kmin:kmax].inner(d[kmin:kmax]*self._weight[det][kmin:kmax]).real/2.)
             for det,d in self._data.items()])
-
+        # store prior
+        if prior:
+            self._prior = prior
+        else:
+            self._prior = pyprior.no_prior
 
     @property
     def waveform_generator(self):
@@ -122,6 +129,11 @@ class _BaseLikelihoodEvaluator:
     def data(self):
         """Returns the data that was set."""
         return self._data
+
+    def prior(self, params):
+        """This function should return the prior of the given params.
+        """
+        return self._prior(params)
 
     def loglikelihood(self, params):
         """This function should return the log likelihood of the given params.
@@ -191,10 +203,15 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
             The value of the log-likelhood evaluated at the given point in
             parameter space.
         """
+        # get prior
+        prior = self.prior(params)
+        # prior will return -numpy.inf if params are invalid
+        if prior == -numpy.inf:
+            return -numpy.inf
         hs = self._waveform_generator.generate(*params)
         # the kmax of the waveforms may be different than internal kmax
         kmax = min(len(hs.values()[0]), self._kmax)
-        return sum([
+        return prior + sum([
             # <h, d>
             self.data[det][self._kmin:kmax].inner(
                 h[self._kmin:kmax]*self._weight[det][self._kmin:kmax]).real
