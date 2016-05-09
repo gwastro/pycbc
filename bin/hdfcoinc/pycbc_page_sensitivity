@@ -255,7 +255,7 @@ pylab.ylabel(ylabel)
 pylab.xlabel(xlabel)
 
 pylab.grid()
-pylab.legend(loc='best')
+pylab.legend(loc='lower left')
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="Sensitive %s vs %s: binned by %s using %s method"
