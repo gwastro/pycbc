@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -v
 # Copyright 2015 Amber Lenon, Steve Reyes, Duncan Brown.
 
 # Exit if any command fails
@@ -13,6 +13,9 @@ if [ "$1" != "noscript" ] ; then
     exit 1;
 fi
 
+#Clear the paths so that the virtual envirobnment does not pick up any cruft
+unset PYTHONPATH
+unset LD_LIBRARY_PATH
 
 # Set up Python
 while true; do
@@ -30,8 +33,6 @@ while true; do
       echo "Check that /cvmfs/oasis.opensciencegrid.org is mounted on this machine."
       exit 1
     fi
-    unset PYTHONPATH
-    unset LD_LIBRARY_PATH
     set +e
     source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
     set -e
@@ -49,30 +50,25 @@ py_ver=`python --version 2>&1`
 echo "Using Python from ${py_path} which is ${py_ver}"
 echo
 
-#Check pip and virtualenv versions
-while true ; do
-  pip_ver=`pip --version`
-  echo "You are using pip version: ${pip_ver}"
-  read -rp "Is your version of pip greater than or equal to 7.1.0? (Enter yes or no) " pip_version
-  
-  if [[ $pip_version == "yes" ]] ; then
-    break
-  
-  elif [[ $pip_version == "no" ]] ; then
-    echo
-    echo "You must have at least version 7.1.0 of pip to install virtualenv."
-    echo "To set up pip follow the instructions at:"
-    echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
-    echo
-    exit 1
-  
-  else
-    echo "Please enter yes or no"
-  fi
-done
+#Make a temporary directory and install pip into it
+echo "--- installing pip and virtualenv into temporary directory ------"
+echo
+PY_VERSION=`python -c 'import sys; print "%d.%d" % (sys.version_info[0], sys.version_info[1])'`
+OLD_PATH=$PATH
+OLD_PYTHONPATH=$PYTHONPATH
+PIP_DIR=`mktemp --tmpdir -d -t pip-XXXXXXXXXX`
+PIP_PYTHONPATH=${PIP_DIR}/lib/python${PY_VERSION}/site-packages
+mkdir -p ${PIP_PYTHONPATH}
+export PATH=${PIP_DIR}/bin:${PATH}
+export PYTHONPATH=${PIP_PYTHONPATH}:${PYTHONPATH}
+easy_install --prefix=${PIP_DIR} https://pypi.python.org/packages/source/p/pip/pip-7.1.0.tar.gz#md5=d935ee9146074b1d3f26c5f0acfd120e
 
-pip install virtualenv --upgrade --user
-export PATH=${HOME}/.local/bin:${PATH}
+export PYTHONUSERBASE=`mktemp --tmpdir -d -t virtualenv-XXXXXXXXXX`
+pip --no-cache install virtualenv --user
+export PATH=${PYTHONUSERBASE}/bin:${OLD_PATH}
+export PYTHONPATH=${PYTHONUSERBASE}/lib/python${PY_VERSION}/site-packages:${OLD_PYTHONPATH}
+
+rm -rf ${PIP_DIR}
 
 #Installing pyCBC
 while true ; do
@@ -152,6 +148,19 @@ while true ; do
 
 #LIGO.ORG username
 read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " directory
+
+#Valid ECP cookie to clone
+set +e
+while true; do
+  echo
+  echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
+  ecp-cookie-init LIGO.ORG https://versions.ligo.org/git $directory
+  if [[ $? -eq 0 ]] ; then
+    break
+  fi
+done
+set -e
+echo
 
 #Lalsuite
 echo "--- select lalsuite branch or tag -------------------------------"
@@ -246,11 +255,16 @@ read -p "Enter path and architecture for Intel compilervars.sh or press return: 
 
 #ROM Data Path
 LAL_DATA_PATH=""
+check_rom="yes"
 while true; do
 echo
 read -rp "Is the LAL Reduce Order Model (ROM) data installed on your cluster (Enter yes or no, if unsure type no)? " install_rom
 
 if [[ ${install_rom} == "yes" ]] ; then
+ echo
+ echo "The install script will check that you have valid ROM data installed."
+ echo "Enter the path that contains the SEOBNRv2ROM*.dat files. This path probably"
+ echo "ends with lalsimulation/ if you installed the ROMS in the normal way."
  echo
  read -rp "Please enter the path to the ROM data: " rom_path
      if [[ ${rom_path} == ~* ]] ; then
@@ -274,8 +288,11 @@ elif [[ ${install_rom} == "no" ]] ; then
  read -rp "Do you want to download the ROM data now (Enter yes or no): " rom_download
 
   if [[ ${rom_download} == "no" ]] ; then
-    echo "Please determine the location of the ROM data, or chose yes to download it. Exiting install."
-    exit 1
+    echo
+    echo "Warning: SEOBNRv2ROM waveforms will not work without the ROM data"
+    echo
+    check_rom="no"
+    break
 
   elif [[ ${rom_download} == "yes" ]] ; then
     echo
@@ -313,7 +330,7 @@ else
 fi
 done
 
-echo "------------PLease check the inputs carefully-----------------"
+echo "------------Please check the inputs carefully-----------------"
 echo
 echo "LIGO.ORG username: " $directory
 echo "Lalsuite Branch or Tag: " $lalbranch
@@ -329,14 +346,17 @@ echo "Github Username: " $github
 fi
 
 echo "Path and architecture for Intel compilervars.sh:" $intel_path
-if [[ ${install_rom} == "yes" ]] ; then
-echo "ROM data is located in ${LAL_DATA_PATH}"
-fi
+if [[ ${check_rom} == "yes" ]] ; then 
+  if [[ ${install_rom} == "yes" ]] ; then
+    echo "ROM data is located in ${LAL_DATA_PATH}"
+  fi
 
-if [[ ${install_rom} == "no" ]] ; then
-echo "ROM data will be install in ${LAL_DATA_PATH}"
+  if [[ ${install_rom} == "no" ]] ; then
+    echo "ROM data will be install in ${LAL_DATA_PATH}"
+  fi
+else
+  echo "Not installing ROM data."
 fi
-echo
 echo
 read -rp "Are these correct? (Enter yes or no) " questions 
 
@@ -353,78 +373,52 @@ read -rp "Are these correct? (Enter yes or no) " questions
  fi
 done
 
-while true ; do
-
-while true ; do
-echo "What would you like to do with your pip cache?"
-echo "1. Use the existing pip cache.(Fastest)"
-echo "2. Ignore the pip cache."
-echo "3. Remove the pip cache. (Safest and slowest)"
-echo
-read -rp "Enter 1, 2 or 3: " pip_cache
-
-
-if [[ $pip_cache != 1 ]] && [[ $pip_cache != 2 ]] && [[ $pip_cache != 3 ]] ; then
- echo "You must enter 1, 2, or 3." 
- echo
- echo
- continue
-
-else
- break
-
-fi
-done
-
-#Pip Cache Check
-read -rp "You entered [ $pip_cache ]. Are you sure? (Enter yes or no) " check
-
-if [[ $check == "yes" ]] ; then 
-
- if [[ $pip_cache -eq 1 ]] ; then 
- cache=""
- break
- fi
-
- if [[ $pip_cache -eq 2 ]] ; then
- cache="--no-cache-dir"
- break
- fi
-
- if [[ $pip_cache -eq 3 ]] ; then
- rm -rfv ${HOME}/.cache/pip
- cache=""
- break
- fi
- 
-elif [[ $check == "no" ]] ; then
-continue
-
-else
-echo "You must enter yes or no."
-continue
-
-fi
-done
-
-#Valid ECP cookie to clone
-echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
-ecp-cookie-init LIGO.ORG https://versions.ligo.org/git $directory
-echo
 echo
 #Create a Virtual Environment
 echo "--- creating virtual environment --------------------------------"
-if [[ $OSG_PYTHON == "no" ]] ; then
-  unset PYTHONPATH
-  unset LD_LIBRARY_PATH
-fi
+VIRTENV_DIR=${PYTHONUSERBASE}
 virtualenv $NAME
+rm -rf ${VIRTENV_DIR}
+
+echo
+echo "--- setting up activate script ----------------------------------"
+echo
+
+mv $NAME/bin/activate $NAME/bin/activate.bak
+if [[ $OSG_PYTHON == "yes" ]] ; then
+  cat >$NAME/bin/activate <<EOF
+# Load OSG Python module
+source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
+module load python/2.7
+
+EOF
+else
+  touch $NAME/bin/activate
+fi
+echo "export XDG_CACHE_HOME=${NAME}/.cache" >> $NAME/bin/activate
+echo "export PYTHONUSERBASE=${NAME}/.local" >> $NAME/bin/activate
+if [[ ! -z "${intel_path}" ]] ; then 
+  echo "source ${intel_path}" >> ${NAME}/bin/activate
+fi
+cat $NAME/bin/activate.bak >> $NAME/bin/activate
+
 
 #Enter Virtual Environment
+echo
+echo "--- entering virtual environment --------------------------------"
+echo
+
+set +e
 source $NAME/bin/activate
+set -e
+
 mkdir -p $VIRTUAL_ENV/src
 
+# Upgrade pip to get rid of any warnings
+pip install --upgrade pip
+
 #ROM Data Validation
+if [[ ${check_rpm} == "yes" ]] ; then
 echo "--- checking rom data -------------------------------------------"
 rom_hash=('f82ddc5dc0b6fdc75122e767bd5e78c8' '62afa5351d6b775ac33cb4d898f0016b' 'a6829fa05437cc0aad81e3f8dae839cc' '98ea14b01e729d15ff666caa25afaed6' 'b41f0f7fbaf8be1d1848de7ee702bc67' '20ee260c870109766a6f048e20c7e10f' '96c384617edd8375ceaa03f9b7456467' '67d4f206fe19104fbc98b923b37318bb' 'd0bf97b4e17b5c9a7cfd222aaaafd742' 'c2ea5d296fee01abe16c0dd9e5f71f04' '412953726ca4bc72a810b27b810831c7' '4d5378935a7fba5e96f671581bce99fb' '31f48cb651a60837a3e99ee050aa9bc2' '727d31f6dc678aba8539817c8d0ae930' 'd0e1601c7cf4bd727d03e6cf7d2f722b' 'e6c243f76609cada55612cfe53f82e41' '08186a21682d2e73cb00a3ef35aa5c9c' '1ef7953a977a1fb551f59585c5d63d7a' 'b5923860bf021e6a2a23d743e5724bee' '2947032d0ad7ffde9704e24bf9e676f5')
 
@@ -453,21 +447,8 @@ for j in "${rom_hash[@]}" ; do
     exit 1
   fi
 done
-
-
-
-echo
-echo "--- setting up optimized libraries ------------------------------"
-echo
-echo
-
-#Add script that sets up the MKL environment to virtualenv activate script
-if [[ ! -z "${intel_path}" ]] ; then 
-  echo "source ${intel_path}" >> ${VIRTUAL_ENV}/bin/activate
-  set +e
-  source ${intel_path}
-  set -e
 fi
+
 
 #Installing lalsuite into Virtual Environment
 #Install unitest2, python-cjson, and numpy
