@@ -33,6 +33,16 @@ def no_prior(params):
     """
     return 0.0
 
+def flat_prior(param):
+    """ Simple flat prior for a single parameter.
+    """
+    return 0.0
+
+# different prior single parameters can have
+prior_distributions = {
+    "flat" : flat_prior,
+}
+
 class PriorEvaluator(object):
     """
     Callable class that calculates the prior.
@@ -70,11 +80,6 @@ class PriorEvaluator(object):
         else:
             self.params_max = numpy.array(params_max)
 
-    def flat(self, param):
-        """ Simple flat prior for a single parameter.
-        """
-        return 0.0
-
     def __call__(self, params):
         """ Evalualate prior for parameters.
         """
@@ -87,7 +92,5 @@ class PriorEvaluator(object):
             return -numpy.inf
 
         # evaluate prior for each parameter
-        val = sum([getattr(self, self.params_dist[i])(param) for i,param in enumerate(params)])
-
-        return val
+        return sum([prior_distributions[self.params_dist[i]](param) for i,param in enumerate(params)])
 
