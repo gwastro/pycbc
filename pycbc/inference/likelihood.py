@@ -116,7 +116,7 @@ class _BaseLikelihoodEvaluator:
             for det,d in self._data.items()])
         # store prior
         if prior is None:
-            self._prior = pyprior.no_prior
+            self._prior = pyprior.flat_prior
         else:
             self._prior = prior
 

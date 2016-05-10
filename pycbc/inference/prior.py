@@ -28,11 +28,6 @@ for parameter estimation.
 
 import numpy
 
-def no_prior(params):
-    """ Function that returns default value if user does not specify a prior.
-    """
-    return 0.0
-
 def flat_prior(param):
     """ Simple flat prior for a single parameter.
     """
