@@ -39,22 +39,22 @@ class PriorEvaluator(object):
 
     Parameters
     ----------
-    variable_names : list
+    variable_args : list
         A list of str that contain the names of the variable parameters.
     params_dist : {'flat'}
-        A list of str that contain the names of the PriorEvaluator class
-        function to use to calculate the prior for that variable.
+        A list of str that contain the names of the function in the prior
+        module to use to calculate the prior for that variable.
     params_min : {None, list}
         The lowest acceptable value for parameter.
     params_max : {None, list}
         The largest acceptable value for parameter.
     """
 
-    def __init__(self, variable_params, params_dist, params_min=None,
+    def __init__(self, variable_args, params_dist, params_min=None,
                  params_max=None):
 
         # store the names of the variable params
-        self.variable_params = variable_params
+        self.variable_args = variable_args
 
         # store the distribution for the variable params
         self.params_dist = params_dist
@@ -62,11 +62,11 @@ class PriorEvaluator(object):
         # store the minimum and maximum acceptable values for a variable param
         # if nothing is specified then use -inf to inf
         if params_min is None:
-            self.params_min = numpy.ones(len(self.variable_params)) * -numpy.inf
+            self.params_min = numpy.ones(len(self.variable_args)) * -numpy.inf
         else:
             self.params_min = numpy.array(params_min)
         if params_max is None:
-            self.params_max = numpy.ones(len(self.variable_params)) * numpy.inf
+            self.params_max = numpy.ones(len(self.variable_args)) * numpy.inf
         else:
             self.params_max = numpy.array(params_max)
 
