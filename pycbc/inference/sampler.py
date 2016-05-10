@@ -26,8 +26,6 @@ This modules provides classes and functions for using different sampler
 packages for parameter estimation.
 """
 
-import kombine
-
 class _BaseSampler(object):
     """ Base container class for running the MCMC sampler.
 
@@ -89,6 +87,11 @@ class KombineSampler(_BaseSampler):
 
     def __init__(self, likelihood_evaluator, nwalkers=0, ndim=0,
                         transd=False, nprocess=None):
+
+        try:
+            import kombine
+        except ImportError:
+            raise ImportError("kombine is not installed.")
 
         # construct sampler 
         sampler = kombine.Sampler(nwalkers, ndim, self.likelihood_evaluator,
