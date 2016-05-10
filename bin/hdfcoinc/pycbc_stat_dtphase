@@ -15,13 +15,17 @@ parser.add_argument('--min-snr', type=float,
                     help="SNR cutoff to apply to the drawn SNR values.")
 parser.add_argument('--max-snr', type=float, default=100,
                     help="Maximum snr to draw signals out to")
-parser.add_argument('--timing-error', type=float)
-parser.add_argument('--min-detector-ratio', type=float, default=0.5)
-parser.add_argument('--snr-error', type=float)
+parser.add_argument('--timing-error', type=float,
+                    help="Error on timing measurement in seconds")
+parser.add_argument('--min-detector-ratio', type=float, default=0.5,
+                    help="The minimum ratio between detector sensitivities to bin")
+parser.add_argument('--snr-error', type=float,
+                    help="Error on the SNR recovery.")
 parser.add_argument('--coinc-threshold', default=0, type=float,
                     help="seconds to add to the TOF coinc window")
 parser.add_argument('--seed', type=int, default=124)
-parser.add_argument('--bin-density', type=int, default=2)
+parser.add_argument('--bin-density', type=int, default=2,
+                    help="Density of bins to make as a multiplicity of errors in each bin paramter")
 parser.add_argument('--output-file')
 parser.add_argument('--cores', default=1, type=int)
 parser.add_argument('--verbose', action='store_true')
