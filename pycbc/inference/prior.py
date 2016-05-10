@@ -87,8 +87,7 @@ class PriorEvaluator(object):
         # check if values are valid and if params are outside of min and max
         # acceptable values then return -inf
         params = numpy.array(params)
-        result = sum((params < self.params_min) | (params > self.params_max))
-        if result:
+        if ((params < self.params_min) | (params > self.params_max)).all():
             return -numpy.inf
 
         # evaluate prior for each parameter
