@@ -141,7 +141,6 @@ class KombineSampler(_BaseSampler):
         ----------
         niterations : int
             Number of samples to get from MCMC.
-        
 
         Returns
         -------
