@@ -46,7 +46,9 @@ def bcount(left, right, error):
     return num, width, bins
 
 snr_error = args.snr_error * 2 ** 0.5
-phase_error = .4
+
+# Phase error is approximated for SNR ~ snr threshold
+phase_error = numpy.arctan(snr_error / args.min_snr)
 detector_error = 0.2
 
 tnum, twidth, tbins = bcount(-maxdt, maxdt, args.timing_error)
