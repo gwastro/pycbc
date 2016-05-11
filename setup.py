@@ -467,7 +467,7 @@ setup (
                'bin/inference/pycbc_mcmc_plot_acf',
                'bin/inference/pycbc_mcmc_plot_corner',
                'bin/inference/pycbc_mcmc_plot_samples',
-               'bin/plotting/pycbc_plot_waveform'
+               'bin/plotting/pycbc_plot_waveform',
                ],
     packages = [
                'pycbc',
