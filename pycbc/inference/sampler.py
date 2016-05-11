@@ -134,13 +134,14 @@ class KombineSampler(_BaseSampler):
         """
         return self.sampler.burnin(initial_values)
 
-    def run_mcmc(self, niterations):
+    def run_mcmc(self, niterations, **kwargs):
         """ Advance the MCMC for a number of samples.
 
         Parameters
         ----------
         niterations : int
             Number of samples to get from MCMC.
+        
 
         Returns
         -------
@@ -153,7 +154,7 @@ class KombineSampler(_BaseSampler):
             The list of log proposal densities for the walkers at positions p,
             with shape (nwalkers, ndim).
         """
-        return self.sampler.run_mcmc(niterations)
+        return self.sampler.run_mcmc(niterations, **kwargs)
 
 samplers = {
     "kombine" : KombineSampler,
