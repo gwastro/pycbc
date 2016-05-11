@@ -80,13 +80,13 @@ class KombineSampler(_BaseSampler):
         kombine.clustered_kde.TransdimensionalKDE proposal distribution. In
         this mode a masked array with samples in each of the possible sets of
         dimensions must be given for the initial ensemble distribution.
-    nprocesses : {None, int}
+    processes : {None, int}
         Number of processes to use with multiprocessing. If None, all available
         cores are used.
     """
 
     def __init__(self, likelihood_evaluator, nwalkers=0, ndim=0,
-                        transd=False, nprocess=None):
+                        transd=False, process=None):
 
         try:
             import kombine
@@ -95,7 +95,7 @@ class KombineSampler(_BaseSampler):
 
         # construct sampler 
         sampler = kombine.Sampler(nwalkers, ndim, self.likelihood_evaluator,
-                                          transd=transd, processes=nprocesses)
+                                          transd=transd, processes=processes)
         super(KombineSampler, self).__init__(self, sampler)
 
     @property
