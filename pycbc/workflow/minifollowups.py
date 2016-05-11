@@ -99,7 +99,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     
     workflow += node
     
-    # execute this is a sub-workflow
+    # execute this in a sub-workflow
     fil = node.output_files[0]
     
     job = dax.DAX(fil)
@@ -188,7 +188,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
 
     workflow += node
 
-    # execute this is a sub-workflow
+    # execute this in a sub-workflow
     fil = node.output_files[0]
 
     job = dax.DAX(fil)
@@ -273,7 +273,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     
     workflow += node
     
-    # execute this is a sub-workflow
+    # execute this in a sub-workflow
     fil = node.output_files[0]
     
     job = dax.DAX(fil)
