@@ -26,7 +26,7 @@
 """
 
 import numpy, lal
-from pycbc.types import FrequencySeries, complex64, zeros
+from pycbc.types import FrequencySeries, complex128, zeros
 
 default_ringdown_args = {'t_0':0, 'phi_0':0, 'Amp':1}
 
@@ -92,7 +92,6 @@ def get_fd_ringdown(template=None,**kwargs):
     """
 
     input_params = props_ringdown(template,**kwargs)
-    #wav_gen = fd_wav[type(_scheme.mgr.state)]
 
     f_0 = input_params['f_0']
     f_lower = input_params['f_lower']
@@ -118,8 +117,8 @@ def get_fd_ringdown(template=None,**kwargs):
     hp_tilde = Amp * tau * ( ( 1 + 2j * pi * freqs * tau ) * numpy.cos(phi_0) - two_pi * f_0 * tau * numpy.sin(phi_0) ) * time_shift / denominator
     hc_tilde = Amp * tau * ( ( 1 + 2j * pi * freqs * tau ) * numpy.sin(phi_0) + two_pi * f_0 * tau * numpy.cos(phi_0) ) * time_shift / denominator
 
-    hplustilde = FrequencySeries(zeros(n, dtype=complex64), delta_f=delta_f)
-    hcrosstilde = FrequencySeries(zeros(n, dtype=complex64), delta_f=delta_f)
+    hplustilde = FrequencySeries(zeros(n, dtype=complex128), delta_f=delta_f)
+    hcrosstilde = FrequencySeries(zeros(n, dtype=complex128), delta_f=delta_f)
     hplustilde.data[kmin:kmax] = hp_tilde
     hcrosstilde.data[kmin:kmax] = hc_tilde
 
