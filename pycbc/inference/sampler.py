@@ -86,7 +86,7 @@ class KombineSampler(_BaseSampler):
     """
 
     def __init__(self, likelihood_evaluator, nwalkers=0, ndim=0,
-                        transd=False, process=None):
+                        transd=False, processes=None):
 
         try:
             import kombine
@@ -94,9 +94,9 @@ class KombineSampler(_BaseSampler):
             raise ImportError("kombine is not installed.")
 
         # construct sampler 
-        sampler = kombine.Sampler(nwalkers, ndim, self.likelihood_evaluator,
+        sampler = kombine.Sampler(nwalkers, ndim, likelihood_evaluator,
                                           transd=transd, processes=processes)
-        super(KombineSampler, self).__init__(self, sampler)
+        super(KombineSampler, self).__init__(sampler)
 
     @property
     def acceptance_fraction(self):
