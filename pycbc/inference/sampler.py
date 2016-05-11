@@ -120,8 +120,19 @@ class KombineSampler(_BaseSampler):
         ----------
         initial_values : numpy.array
             An nwalkers x ndim array of initial values for walkers.
+
+        Returns
+        -------
+        p : numpy.array
+            An array of current walker positions with shape (nwalkers, ndim).
+        lnpost : numpy.array
+            The list of log posterior probabilities for the walkers at
+            positions p, with shape (nwalkers, ndim).
+        lnprop : numpy.array
+            The list of log proposal densities for the walkers at positions p,
+            with shape (nwalkers, ndim).
         """
-        self.sampler.burn_in(initial_values)
+        return self.sampler.burnin(initial_values)
 
     def run_mcmc(self, niterations):
         """ Advance the MCMC for a number of samples.
@@ -130,8 +141,19 @@ class KombineSampler(_BaseSampler):
         ----------
         niterations : int
             Number of samples to get from MCMC.
+
+        Returns
+        -------
+        p : numpy.array
+            An array of current walker positions with shape (nwalkers, ndim).
+        lnpost : numpy.array
+            The list of log posterior probabilities for the walkers at
+            positions p, with shape (nwalkers, ndim).
+        lnprop : numpy.array
+            The list of log proposal densities for the walkers at positions p,
+            with shape (nwalkers, ndim).
         """
-        self.sampler.run_mcmc(niterations)
+        return self.sampler.run_mcmc(niterations)
 
 samplers = {
     "kombine" : KombineSampler,
