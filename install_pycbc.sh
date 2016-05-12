@@ -255,6 +255,9 @@ read -p "Enter path and architecture for Intel compilervars.sh or press return: 
 
 #ROM Data Path
 LAL_DATA_PATH=""
+if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
+check_rom="no"
+else
 check_rom="yes"
 while true; do
 echo
@@ -329,6 +332,7 @@ else
 
 fi
 done
+fi
 
 echo "------------Please check the inputs carefully-----------------"
 echo
@@ -414,11 +418,8 @@ set -e
 
 mkdir -p $VIRTUAL_ENV/src
 
-# Upgrade pip to get rid of any warnings
-pip install --upgrade pip
-
 #ROM Data Validation
-if [[ ${check_rpm} == "yes" ]] ; then
+if [[ ${check_rom} == "yes" ]] ; then
 echo "--- checking rom data -------------------------------------------"
 rom_hash=('f82ddc5dc0b6fdc75122e767bd5e78c8' '62afa5351d6b775ac33cb4d898f0016b' 'a6829fa05437cc0aad81e3f8dae839cc' '98ea14b01e729d15ff666caa25afaed6' 'b41f0f7fbaf8be1d1848de7ee702bc67' '20ee260c870109766a6f048e20c7e10f' '96c384617edd8375ceaa03f9b7456467' '67d4f206fe19104fbc98b923b37318bb' 'd0bf97b4e17b5c9a7cfd222aaaafd742' 'c2ea5d296fee01abe16c0dd9e5f71f04' '412953726ca4bc72a810b27b810831c7' '4d5378935a7fba5e96f671581bce99fb' '31f48cb651a60837a3e99ee050aa9bc2' '727d31f6dc678aba8539817c8d0ae930' 'd0e1601c7cf4bd727d03e6cf7d2f722b' 'e6c243f76609cada55612cfe53f82e41' '08186a21682d2e73cb00a3ef35aa5c9c' '1ef7953a977a1fb551f59585c5d63d7a' 'b5923860bf021e6a2a23d743e5724bee' '2947032d0ad7ffde9704e24bf9e676f5')
 
@@ -449,35 +450,45 @@ for j in "${rom_hash[@]}" ; do
 done
 fi
 
-
-#Installing lalsuite into Virtual Environment
-#Install unitest2, python-cjson, and numpy
-echo "--- installing required packages --------------------------------"
-if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
-  pip $cache install "numpy==1.9.3" unittest2 "python-cjson==1.1.0" "Cython==0.23.2"
-else
-  pip $cache install "numpy>=1.6.4" unittest2 python-cjson Cython
-fi
-pip $cache install git+http://github.com/ligo-cbc/pyinstaller.git@pycbc_install#egg=pyinstaller
-
 #Install HDF5
 echo "--- installing HDF5 libraries -----------------------------------"
 cd $VIRTUAL_ENV/src
-pip install "nose>=1.0.0"
 curl https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
 tar -zxvf hdf5-1.8.12.tar.gz
 rm hdf5-1.8.12.tar.gz
 cd hdf5-1.8.12
 ./configure --prefix=$VIRTUAL_ENV
 make -j $nproc install
-if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
-  HDF5_DIR=${VIRTUAL_ENV} pip $cache install "h5py==2.5.0"
+
+#Set up the software for the virtual environment
+echo "--- installing required packages --------------------------------"
+
+#Install Pegasus WMS python libraries
+pip install http://download.pegasus.isi.edu/pegasus/4.6.1/pegasus-python-source-4.6.1.tar.gz
+
+if [[ $dev_or_rel -eq 1 ]] ; then
+  #Installing a released version of pyCBC
+  curl https://raw.githubusercontent.com/ligo-cbc/pycbc/${reltag}/requirements.txt > ${VIRTUAL_ENV}/requirements.txt
+  perl -pi.bak -e 's/pegasus-wms==4.5.2/pegasus-wms==4.6.1/g' ${VIRTUAL_ENV}/requirements.txt  
+  pylal_version=`grep pycbc-pylal ${VIRTUAL_ENV}/requirements.txt`
+  glue_version=`grep pycbc-glue ${VIRTUAL_ENV}/requirements.txt`
+  mv ${VIRTUAL_ENV}/requirements.txt ${VIRTUAL_ENV}/requirements.txt.bak
+  grep -v pycbc-pylal ${VIRTUAL_ENV}/requirements.txt.bak | grep -v pycbc-glue > ${VIRTUAL_ENV}/requirements.txt
+  HDF5_DIR=${VIRTUAL_ENV} pip install -r ${VIRTUAL_ENV}/requirements.txt
 else
-  HDF5_DIR=${VIRTUAL_ENV} pip $cache install h5py
-fi
+  # Upgrade pip to get rid of any warnings
+  pip install --upgrade pip
+  pip install "numpy>=1.6.4" unittest2 python-cjson Cython
+  pip install "nose>=1.0.0"
+  HDF5_DIR=${VIRTUAL_ENV} pip install h5py
+  pylal_version="pycbc-pylal"
+  glue_version="pycbc-glue"
+fi  
+
+pip install git+http://github.com/ligo-cbc/pyinstaller.git@pycbc_install#egg=pyinstaller
 
 #Authenticate with LIGO Data Grid services, install M2Crypto
-SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip $cache install M2Crypto
+SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
 echo
 echo
 echo "--- cloning lalsuite repository -----------------------------------"
@@ -529,23 +540,19 @@ echo "LAL installed into $LAL_PREFIX"
 
 #Installing pyCBC to Virtual Environment
 echo
-echo "--- installing pegasus and dqsegdb ------------------------------"
+echo "--- installing dqsegdb ------------------------------------------"
 echo
 
-#Install Pegasus WMS python libraries
-pip $cache install http://download.pegasus.isi.edu/pegasus/4.6.1/pegasus-python-source-4.6.1.tar.gz
-
 #Install dqsegb from Duncan's repository
-pip $cache install git+https://github.com/ligo-cbc/dqsegdb.git@pypi_release#egg=dqsegdb
+pip install git+https://github.com/ligo-cbc/dqsegdb.git@pypi_release#egg=dqsegdb
 
 #Install gracedb client tools
 pip install ligo-gracedb
 
 #Install pycbc and glue from non-cached versions to get the rpaths correct
-pip $cache install pycbc-glue pycbc-pylal
+pip --no-cache install ${glue_version} ${pylal_version}
 
 #ROM Data Download
-
 if [[ ${install_rom} == "no" ]] ; then
     pushd ${LAL_DATA_PATH}
     echo "--- Downloading ROM DATA ---------------------------------"
@@ -569,10 +576,7 @@ while true ; do
 
   if [[ $dev_or_rel -eq 1 ]] ; then
     #Installing a released version of pyCBC
-    curl https://raw.githubusercontent.com/ligo-cbc/pycbc/${reltag}/requirements.txt > ${VIRTUAL_ENV}/requirements.txt
-    pip install -r ${VIRTUAL_ENV}/requirements.txt
-    #Install Version
-    pip $cache install -e git+https://github.com/ligo-cbc/pycbc@${reltag}#egg=pycbc --process-dependency-links
+    pip install -e git+https://github.com/ligo-cbc/pycbc@${reltag}#egg=pycbc --process-dependency-links
     rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
 
     # continue with install
@@ -584,7 +588,7 @@ while true ; do
     echo 
   
     #Install PyCBC source code from GitHub URL
-    pip $cache install -e git+git@github.com:${github}/pycbc.git#egg=pycbc --process-dependency-links
+    pip install -e git+git@github.com:${github}/pycbc.git#egg=pycbc --process-dependency-links
   
     #Prevent Pip from removing source directory
     rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
@@ -618,6 +622,7 @@ do
     --onefile
     cp dist/${prog} $VIRTUAL_ENV/bin
 done
+popd
 
 
 if [[ $dev_or_rel -eq 2 ]] ; then
@@ -626,9 +631,9 @@ if [[ $dev_or_rel -eq 2 ]] ; then
   echo
   echo "--- downloading documentation tools -----------------------------"
   echo
-  pip $cache install "Sphinx>=1.3.1"
-  pip $cache install sphinxcontrib-programoutput
-  pip $cache install numpydoc
+  pip install "Sphinx>=1.3.1"
+  pip install sphinxcontrib-programoutput
+  pip install numpydoc
   
   #patch the bug in numpydoc for python 2.6
   cat <<EOF > ${VIRTUAL_ENV}/plot_directive.patch
