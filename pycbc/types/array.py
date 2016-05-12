@@ -909,9 +909,11 @@ class Array(object):
                 _numpy.savetxt(path, output)
         elif ext == '.hdf':
             key = 'data' if group is None else group
-            h5py.File(path)[key] = self.numpy()
+            f = h5py.File(path)
+            ds = f.create_dataset(key, data=self.numpy(), compression='gzip',
+                                  compression_opts=9, shuffle=True)
         else:
-            raise ValueError('Path must end with .npy, .txt, or hdf')  
+            raise ValueError('Path must end with .npy, .txt, or .hdf')
            
     @_convert 
     def trim_zeros(self):
