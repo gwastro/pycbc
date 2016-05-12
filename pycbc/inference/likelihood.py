@@ -28,7 +28,6 @@ for parameter estimation.
 
 from pycbc import filter
 from pycbc.types import Array
-import prior as pyprior
 import numpy
 
 def _noprior(*params):
