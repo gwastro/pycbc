@@ -124,6 +124,11 @@ class _BaseLikelihoodEvaluator:
         if prior is None:
             self._prior = _noprior 
         else:
+            # check that the variable args of the prior evaluator is the same
+            # as the waveform generator
+            if prior.variable_args != self._waveform_generator.variable_args:
+                raise ValueError("variable args of prior and waveform "
+                    "generator do not match")
             self._prior = prior
 
     @property
