@@ -411,11 +411,12 @@ class TimeSeries(Array):
         elif ext =='.hdf':
             key = 'data' if group is None else group
             f = h5py.File(path)
-            f[key] = self.numpy()
-            f[key].attrs['start_time'] = float(self.start_time)
-            f[key].attrs['delta_t'] = float(self.delta_t)
+            ds = f.create_dataset(key, data=self.numpy(), compression='gzip',
+                                  compression_opts=9, shuffle=True)
+            ds.attrs['start_time'] = float(self.start_time)
+            ds.attrs['delta_t'] = float(self.delta_t)
         else:
-            raise ValueError('Path must end with .npy or .txt')
+            raise ValueError('Path must end with .npy, .txt or .hdf')
                 
     @_nocomplex
     def to_frequencyseries(self, delta_f=None):

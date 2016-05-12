@@ -355,13 +355,15 @@ class FrequencySeries(Array):
                                  gz=path.endswith(".gz"))
         elif ext =='.hdf':
             key = 'data' if group is None else group
-            d = h5py.File(path)
-            d[key] = self.numpy()
-            d[key].attrs['epoch'] = float(self.epoch)
-            d[key].attrs['delta_f'] = float(self.delta_f)
+            f = h5py.File(path)
+            ds = f.create_dataset(key, data=self.numpy(), compression='gzip',
+                                  compression_opts=9, shuffle=True)
+            ds.attrs['epoch'] = float(self.epoch)
+            ds.attrs['delta_f'] = float(self.delta_f)
         else:
-            raise ValueError('Path must end with .npy or .txt')
-            
+            raise ValueError('Path must end with .npy, .txt, .xml, .xml.gz '
+                             'or .hdf')
+
     @_noreal
     def to_timeseries(self, delta_t=None):
         """ Return the Fourier transform of this time series
