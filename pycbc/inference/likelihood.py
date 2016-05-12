@@ -30,6 +30,12 @@ from pycbc import filter
 from pycbc.types import Array
 import numpy
 
+def _noprior(*params):
+    """Dummy function to just return 0 if no prior is provided in a
+    likelihood generator.
+    """
+    return 0.
+
 class _BaseLikelihoodEvaluator:
     """Base container class for generating waveforms, storing the data, and
     computing log likelihoods. The likelihood function defined here does
@@ -63,10 +69,12 @@ class _BaseLikelihoodEvaluator:
         An extra normalization weight to apply to the inner products. Can be
         either a float or an array. If None, 4*data.values()[0].delta_f will be
         used.
+    prior : callable
+        A callable class or function that computes the prior.
     """
 
     def __init__(self, waveform_generator, data, f_lower, psds=None,
-            f_upper=None, norm=None):
+            f_upper=None, norm=None, prior=None):
         self._waveform_generator = waveform_generator
         self._data = data
         # check that the data and waveform generator have the same detectors
@@ -111,7 +119,16 @@ class _BaseLikelihoodEvaluator:
         self._dd = dict([(det,
             d[kmin:kmax].inner(d[kmin:kmax]*self._weight[det][kmin:kmax]).real/2.)
             for det,d in self._data.items()])
-
+        # store prior
+        if prior is None:
+            self._prior = _noprior 
+        else:
+            # check that the variable args of the prior evaluator is the same
+            # as the waveform generator
+            if prior.variable_args != self._waveform_generator.variable_args:
+                raise ValueError("variable args of prior and waveform "
+                    "generator do not match")
+            self._prior = prior
 
     @property
     def waveform_generator(self):
@@ -122,6 +139,11 @@ class _BaseLikelihoodEvaluator:
     def data(self):
         """Returns the data that was set."""
         return self._data
+
+    def prior(self, params):
+        """This function should return the prior of the given params.
+        """
+        return self._prior(params)
 
     def loglikelihood(self, params):
         """This function should return the log likelihood of the given params.
@@ -175,6 +197,14 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     >>> ax.plot(times, lls)
     [<matplotlib.lines.Line2D at 0x12780ff90>]
     >>> fig.show()
+
+    Create a prior and use it (see prior module for more details):
+    >>> from pycbc.inference import prior
+    >>> uniform_prior = prior.Uniform(tc=(tsig-0.2,tsig+0.2))
+    >>> prior_eval = prior.PriorEvaluator(['tc'], uniform_prior)
+    >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, 20., psds=psds, prior=prior_eval)
+    >>> likelihood_eval.loglikelihood([tsig])
+    0.91629073187415422
     """
 
     def loglikelihood(self, params):
@@ -191,10 +221,15 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
             The value of the log-likelhood evaluated at the given point in
             parameter space.
         """
+        # get prior
+        prior = self._prior(*params)
+        # prior will return -numpy.inf if params are invalid
+        if prior == -numpy.inf:
+            return -numpy.inf
         hs = self._waveform_generator.generate(*params)
         # the kmax of the waveforms may be different than internal kmax
         kmax = min(len(hs.values()[0]), self._kmax)
-        return sum([
+        return prior + sum([
             # <h, d>
             self.data[det][self._kmin:kmax].inner(
                 h[self._kmin:kmax]*self._weight[det][self._kmin:kmax]).real

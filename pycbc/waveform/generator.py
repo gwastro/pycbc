@@ -80,7 +80,7 @@ class BaseGenerator(object):
     """
     def __init__(self, generator, variable_args=(), **frozen_params):
         self.generator = generator
-        self.variable_args = variable_args
+        self.variable_args = tuple(variable_args)
         self.frozen_params = frozen_params
         # we'll keep a dictionary of the current parameters for fast
         # generation
@@ -197,7 +197,7 @@ class FDomainDetFrameGenerator(object):
         location params are passed to this class's generate function.
     frozen_location_args : dict
         Any location parameters that were included in the frozen_params.
-    variable_args : list
+    variable_args : tuple
         The list of names of arguments that are passed to the generate
         function.
 
