@@ -31,6 +31,12 @@ from pycbc.types import Array
 import prior as pyprior
 import numpy
 
+def _noprior(*params):
+    """Dummy function to just return 0 if no prior is provided in a
+    likelihood generator.
+    """
+    return 0.
+
 class _BaseLikelihoodEvaluator:
     """Base container class for generating waveforms, storing the data, and
     computing log likelihoods. The likelihood function defined here does
@@ -116,7 +122,7 @@ class _BaseLikelihoodEvaluator:
             for det,d in self._data.items()])
         # store prior
         if prior is None:
-            self._prior = pyprior.flat_prior
+            self._prior = _noprior 
         else:
             self._prior = prior
 
@@ -204,7 +210,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
             parameter space.
         """
         # get prior
-        prior = self._prior(params)
+        prior = self._prior(*params)
         # prior will return -numpy.inf if params are invalid
         if prior == -numpy.inf:
             return -numpy.inf
