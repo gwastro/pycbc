@@ -198,6 +198,14 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     >>> ax.plot(times, lls)
     [<matplotlib.lines.Line2D at 0x12780ff90>]
     >>> fig.show()
+
+    Create a prior and use it (see prior module for more details):
+    >>> from pycbc.inference import prior
+    >>> uniform_prior = prior.Uniform(tc=(tsig-0.2,tsig+0.2))
+    >>> prior_eval = prior.PriorEvaluator(['tc'], uniform_prior)
+    >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, 20., psds=psds, prior=prior_eval)
+    >>> likelihood_eval.loglikelihood([tsig])
+    0.91629073187415422
     """
 
     def loglikelihood(self, params):
