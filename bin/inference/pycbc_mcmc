@@ -1,0 +1,278 @@
+#! /usr/bin/env python
+
+# Copyright (C) 2016 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import h5py
+import kombine
+import logging
+import numpy
+import pycbc.opt
+import pycbc.weave
+import random
+from pycbc import fft, inference, psd, scheme, strain, waveform
+from pycbc.types import MultiDetOptionAction
+
+def select_waveform_generator(approximant):
+    """ Returns the generator for the approximant.
+    """
+    if approximant in waveform.td_approximants():
+        return waveform.TDomainCBCGenerator
+    elif approximant in waveform.fd_approximants():
+        return waveform.FDomainCBCGenerator
+    else:
+        raise ValueError("%s is not a valid approximant."%approximant)
+
+# get all parameters and their default values for waveform generation
+# from waveform module
+waveform_params = dict([(param,None) for param in waveform.waveform.base_required_args])
+waveform_params.update( waveform.waveform.default_args )
+waveform_params.update( dict([(param,None) for param in waveform.FDomainDetFrameGenerator.location_args]) )
+
+# command line usage
+parser = argparse.ArgumentParser(usage="pycbc_mcmc [--options]",
+                  description="Runs an MCMC.")
+
+# add data options
+parser.add_argument("--instruments", type=str, nargs="+", required=True,
+    help="IFOs, eg. H1 L1.")
+parser.add_argument("--frame-type", type=str, nargs="+",
+    action=MultiDetOptionAction, metavar="IFO:FRAME_TYPE",
+    help="Frame type for each IFO.")
+parser.add_argument("--low-frequency-cutoff", type=float, required=True,
+    help="Low frequency cutoff for each IFO.")
+
+# add MCMC options
+parser.add_argument("--sampler", required=True,
+    choices=inference.samplers.keys(),
+    help="Sampler class to use for MCMC.")
+parser.add_argument("--likelihood-evaluator", required=True,
+    choices=inference.likelihood_evaluators.keys(),
+    help="Evaluator class to use to calculate the likelihood.")
+parser.add_argument("--nwalkers", type=int, required=True,
+    help="Number of walkers to use in MCMC.")
+parser.add_argument("--niterations", type=int, required=True,
+    help="Number of iterations to perform after burn in.")
+parser.add_argument("--nprocesses", type=int, default=None,
+    help="Number of processes to use. If not given then use maximum.")
+parser.add_argument("--skip-burn-in", action="store_true", default=False,
+    help="Do not burn in MCMC.")
+
+# add prior options
+parser.add_argument("--prior-min", type=float, nargs="+", required=True,
+    help="Lower limit of acceptable values for variable args.")
+parser.add_argument("--prior-max", type=float, nargs="+", required=True,
+    help="Upper limit of acceptable values for variable args.")
+parser.add_argument("--prior-dist", type=str, nargs="+",
+    help="Name of distribution to use.")
+
+# add waveform options
+parser.add_argument("--variable-args", type=str, nargs="+", required=True,
+    choices=waveform_params,
+    help="Parameters to change in MCMC.")
+parser.add_argument("--approximant", required=True,
+    choices=waveform.td_approximants()+waveform.fd_approximants(),
+    help="Name of approximant.")
+for param,val in waveform_params.iteritems():
+    dtype = type(val)
+    if val is not None:
+        parser.add_argument("--"+param.replace("_", "-"), default=val, type=dtype)
+    else:
+        parser.add_argument("--"+param.replace("_", "-"), default=val, type=float)
+
+# output options
+parser.add_argument("--output-file", type=str, required=True,
+    help="Output file path.")
+
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+    help="")
+
+# add module pre-defined options
+fft.insert_fft_option_group(parser)
+pycbc.opt.insert_optimization_option_group(parser)
+psd.insert_psd_option_group_multi_ifo(parser)
+scheme.insert_processing_option_group(parser)
+strain.insert_strain_option_group_multi_ifo(parser)
+pycbc.weave.insert_weave_option_group(parser)
+
+# parse command line
+opts = parser.parse_args()
+
+# verify options are sane
+fft.verify_fft_options(opts, parser)
+pycbc.opt.verify_optimization_options(opts, parser)
+#psd.verify_psd_options(opts, parser)
+scheme.verify_processing_options(opts, parser)
+#strain.verify_strain_options(opts, parser)
+pycbc.weave.verify_weave_options(opts, parser)
+
+# get variables for waveform generation that will not change in MCMC
+static_args = dict([(param,getattr(opts, param)) for param in waveform_params \
+                           if param not in opts.variable_args])
+
+# setup log
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+
+# change measure level for FFT to 0
+fft.fftw.set_measure_level(0)
+
+# get scheme
+ctx = scheme.from_cli(opts)
+fft.from_cli(opts)
+
+# get strain time series
+strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
+                                         precision="double")
+
+with ctx:
+
+    # FFT strain and save each of the length of the FFT, delta_f, and
+    # low frequency cutoff to a dict
+    logging.info("FFT strain")
+    stilde_dict = {}
+    length_dict = {}
+    delta_f_dict = {}
+    low_frequency_cutoff_dict = {}
+    for ifo in opts.instruments:
+        stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
+        length_dict[ifo] = len(stilde_dict[ifo])
+        delta_f_dict[ifo] = stilde_dict[ifo].delta_f
+        low_frequency_cutoff_dict[ifo] = opts.low_frequency_cutoff
+
+    # get PSD as frequency series
+    psd_dict = psd.from_cli_multi_ifos(opts, length_dict, delta_f_dict,
+                                   low_frequency_cutoff_dict, opts.instruments,
+                                   strain_dict=strain_dict, precision="double")
+
+    # select generator that will generate waveform
+    # for likelihood evaluator
+    logging.info("Setting up sampler")
+    generator_function = select_waveform_generator(opts.approximant)
+
+    # construct class that will generate waveforms
+    generator = waveform.FDomainDetFrameGenerator(generator_function,
+                        variable_args=opts.variable_args,
+                        detectors=opts.instruments,
+                        delta_f=delta_f_dict.values()[0],
+                        approximant=opts.approximant, **static_args)
+
+    # construct class that will return the prior
+    if opts.prior_dist:
+        prior = inference.PriorEvaluator(opts.variable_args, opts.prior_dist,
+                        params_min=opts.prior_min, params_max=opts.prior_max)
+    else:
+        prior = None
+
+    # construct class that will return the natural logarithm of likelihood
+    likelihood = inference.GaussianLikelihood(generator, stilde_dict,
+                        opts.low_frequency_cutoff, psds=psd_dict, prior=prior)
+
+    #! FIXME: leave in for development purposes and take out when read to merge
+    # if you just want a time series
+    if 0:
+        idx = opts.variable_args.index("tc")
+        tc_min = opts.prior_min[idx]
+        tc_max = opts.prior_max[idx]
+        x = numpy.arange(tc_min, tc_max, 0.001)
+        y = []
+        for tc in x:
+            val = likelihood([tc,1.4,1.4])
+            print val
+            y.append( val )
+        import matplotlib.pyplot as plt
+        plt.plot(x,y)
+        plt.savefig("/home/cbiwer/public_html/tmp/test.png")
+        import sys
+        sys.exit()
+
+    # create sampler that will run MCMC
+    ndim = len(opts.variable_args)
+    sampler = inference.samplers[opts.sampler](likelihood, ndim=ndim,
+                                               nwalkers=opts.nwalkers,
+                                               processes=opts.nprocesses)
+
+    # starting parameters of walkers
+    logging.info("Setting walkers initial conditions for varying parameters")
+
+    #loop over number of walkers
+    p0 = numpy.ones(shape=(opts.nwalkers, ndim))
+    for i,_ in enumerate(p0):
+
+        # set initial values for variable parameters for this walker
+        # initial values are uniformly drawn from an interval given
+        # on the command line
+        p0[i] = [random.uniform(opts.prior_min[j],opts.prior_max[j]) for j in range(ndim)]
+
+    if not opts.skip_burn_in:
+
+        # burn in
+        logging.info("MCMC burn in")
+        p, post, q = sampler.burn_in(p0)
+
+        # generate more samples
+        logging.info("Generating more MCMC samples")
+        p, post, q = sampler.run_mcmc(opts.niterations)
+
+    else:
+
+        # generate samples
+        logging.info("Generating MCMC samples")
+        p, post, q = sampler.run_mcmc(opts.niterations, p0=p0)
+
+# get all past samples as an niterations x nwalker x ndim array
+logging.info("Writing output file")
+chain = sampler.chain
+
+# transpose past samples to get an ndim x nwalker x niteration array
+chain = numpy.transpose(chain)
+
+# save samples to file
+fp = h5py.File(opts.output_file, "w")
+
+# save MCMC parameters
+fp.attrs["nwalkers"] = opts.nwalkers
+fp.attrs["niterations"] = opts.niterations
+
+# loop over number of dimensions
+for i,dim_name in zip(range(ndim), opts.variable_args):
+
+    # create a group in the output file for this dimension
+    group_dim = fp.create_group(dim_name)
+
+    # loop over number of walkers
+    for j in range(opts.nwalkers):
+
+        # get all samples from this walker for this dimension
+        samples = chain[i,j,:]
+
+        # write to output file
+        dataset_name = "walker%d"%j
+        group_dim.create_dataset(dataset_name, data=samples)
+
+# create a dataset for the acceptance fraction
+fp.create_dataset("acceptance_fraction", data=sampler.acceptance_fraction)
+
+# exit
+logging.info("Done")
+
+
+
