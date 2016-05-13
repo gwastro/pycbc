@@ -27,6 +27,7 @@ utilities.
 """
 
 import logging
+import nose.tools
 from math import sqrt
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import complex_same_precision_as, real_same_precision_as
@@ -517,8 +518,11 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
                                    high_frequency_cutoff, htilde.delta_f, N)  
     ht = htilde[kmin:kmax] 
 
-    if psd and ht.delta_f != psd.delta_f:
-        raise ValueError('Waveform does not have same delta_f as psd')
+    if psd:
+        try:
+            nose.tools.assert_almost_equal(ht.delta_f, psd.delta_f)
+        except:
+            raise ValueError('Waveform does not have same delta_f as psd')
 
     if psd is None:
         sq = ht.inner(ht)
