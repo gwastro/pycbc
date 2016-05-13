@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-import h5py, argparse, logging, numpy, numpy.random
+import h5py, argparse, logging, numpy
 from pycbc import events, detector, io
+from pycbc import pnutils
 from pycbc.events import veto, coinc
 import pycbc.version
 
@@ -72,22 +73,22 @@ class PhaseTDStatistic(NewSNRStatistic):
     def coinc(self, s0, s1, slide, step):
         """ Calculate the coincident statistic.
         """
-        td = s1[:,2] - s2[:,2] - slide * step
-        pd = (s1[:,1] - s2[:,1]) % (numpy.pi * 2)
-        rd = s1[:, 3] / s2[:, 3]
+        td = s0[:,2] - s1[:,2] - slide * step
+        pd = (s0[:,1] - s1[:,1]) % (numpy.pi * 2)
+        rd = s0[:, 3] / s1[:, 3]
         rd[rd > 1] = 1.0 / rd[rd > 1]
 
         # These are the bin boundaries stored in the hdf file
-        tbins = self.files['phasetd_newsnr']['tbins'][:]
-        pbins = self.files['phasetd_newsnr']['pbins'][:]
-        sbins = self.files['phasetd_newsnr']['sbins'][:]
-        rbins = self.files['phasetd_newsnr']['rbins'][:]
+        tbins = self.statfiles['phasetd_newsnr']['tbins'][:]
+        pbins = self.statfiles['phasetd_newsnr']['pbins'][:]
+        rbins = self.statfiles['phasetd_newsnr']['rbins'][:]
+        mbins = self.statfiles['phasetd_newsnr']['mbins'][:]
 
         # Find which bin each coinc falls into
         tv = numpy.searchsorted(tbins, td) - 1
         pv = numpy.searchsorted(pbins, pd) - 1
+        s0v = numpy.searchsorted(sbins, s0[:,4]) - 1
         s1v = numpy.searchsorted(sbins, s1[:,4]) - 1
-        s2v = numpy.searchsorted(sbins, s2[:,4]) - 1
         rv = numpy.searchsorted(rbins, rd) - 1
 
         # The following just enforces that the point fits into the bin boundaries
@@ -95,15 +96,15 @@ class PhaseTDStatistic(NewSNRStatistic):
         tv[tv >= len(tbins) - 1] = len(tbins) - 2
         pv[pv < 0] = 0
         pv[pv >= len(pbins) - 1] = len(pbins) - 2
+        s0v[s0v < 0] = 0
+        s0v[s0v >= len(sbins) - 1] = len(sbins) - 2
         s1v[s1v < 0] = 0
         s1v[s1v >= len(sbins) - 1] = len(sbins) - 2
-        s2v[s2v < 0] = 0
-        s2v[s2v >= len(sbins) - 1] = len(sbins) - 2
         rv[rv < 0] = 0
         rv[rv >= len(rbins) - 1] = len(rbins) - 2
 
-        m = self.hist[tv, pv, s1v, s2v, rv]
-        rstat = s1[:,0]**2.0 + s2[:,0]**2.0
+        m = self.hist[tv, pv, s0v, s1v, rv]
+        rstat = s0[:,0]**2.0 + s1[:,0]**2.0
         cstat = rstat + 2.0 * m
         cstat[cstat < 0] = 0
         return cstat ** 0.5
@@ -124,21 +125,36 @@ class ExpFitStatistic(NewSNRStatistic):
         NewSNRStatistic.__init__(self, files)
         if not len(files):
             raise RuntimeError("Can't find any statistic files !")
-        # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs' where
-        # %{ifo}
+        # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
         self.ifos = [f.split('-')[0] for f in self.statfiles.keys() if \
                      f.split('-')[1] == 'fit_coeffs']
         if (not len(files)) or (not len(self.ifos)):
             raise RuntimeError("None of the statistic files has the required "
                                "attribute called {ifo}-fit_coeffs !")
+        self.fits_by_tid = {}
+        for i in self.ifos:
+           self.fits_by_tid[i] = self.assign_fits(i)
+        # HACK: pretend that the normalization of the trigger rate was done at newsnr=5.5
+        self.count_thresh = 5.5
+
+    def assign_fits(self, ifo):
+        # the template_ids and fit coeffs are stored in an arbitrary order
+        # create new arrays in template_id order for easier recall
+        coeff_group = self.statfiles[ifo+'-fit_coeffs'][ifo]
+        template_id = coeff_group['template_id'][:]
+        alphas = coeff_group['fit_coeff'][:]
+        lambdas = coeff_group['ntrigs'][:]
+        tid_sort = numpy.argsort(template_id)
+        return {'alpha':alphas[tid_sort], 'lambda':lambdas[tid_sort]}
 
     def find_fits(self, trigs):
         # get the coeffs for a specific ifo and template id
         ifo = trigs.ifo
-        coeff_group = self.statfiles[ifo+'-fit_coeffs'][ifo]
         tnum = trigs.template_num
-        alphai = coeff_group['fit_coeff'][tnum]
-        lambdai = coeff_group['ntrigs'][tnum]
+        # fits_by_template is a dictionary of dictionaries of arrays
+        # indexed by ifo / coefficient name / template_id
+        alphai = self.fits_by_tid[ifo]['alpha'][tnum][0]
+        lambdai = self.fits_by_tid[ifo]['lambda'][tnum][0]
         return alphai, lambdai
 
     def single(self, trigs):
@@ -146,12 +162,19 @@ class ExpFitStatistic(NewSNRStatistic):
         statistic and rescale it by the fitted coefficients
         """
         alphai, lambdai = self.find_fits(trigs)
+        #print 'template duration', pnutils.get_seobnrrom_duration(trigs.param['mass1'], trigs.param['mass2'], trigs.param['spin1z'], trigs.param['spin2z'], 30.), 'alpha =', alphai
         dof = 2 * trigs['chisq_dof'] - 2
         newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / dof)
         # alphai is constant of proportionality between single-ifo newsnr and
         # negative log noise likelihood in given template
         # lambdai is rate of trigs in given template compared to average
-        lognoisel = - alphai * newsnr + numpy.log(lambdai)
+        lognoisel = - alphai * (newsnr - self.count_thresh) + numpy.log(lambdai)
+        # correction for detectability - NOT YET
+        #chirpfac = pnutils.mass1_mass2_to_mchirp_eta(trigs.param['mass1'], trigs.param['mass2'])[0] / 1.22
+        #volterm = (5./2.) * numpy.log(chirpfac)
+        # make make noise likelihood more negative for high chirp mass
+        # do half of the correction for each ifo (hack)
+        #lognoisel -= 0.5 * volterm
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
     def coinc(self, s0, s1, slide, step):
@@ -160,10 +183,7 @@ class ExpFitStatistic(NewSNRStatistic):
         loglr = - s1 - s0
         # convert back to a familiar statistic-like value
         # notionally, log likelihood ratio \propto rho_c^2 / 2
-        return (2 * loglr) ** 0.5
-
-def invoke_statistic(option, files):
-    return statistic_dict[option](files)
+        return (8. ** 2 + 2 * loglr) ** 0.5
 
 statistic_dict = {'newsnr': NewSNRStatistic,
                   'newsnr_cut': NewSNRCutStatistic,
@@ -233,7 +253,7 @@ if args.strict_coinc_time:
     trigs0.valid = veto.segments_to_start_end(trigs0.segs)
     trigs1.valid = veto.segments_to_start_end(trigs1.segs)
 
-rank_method = invoke_statistic(args.ranking_statistic, args.statistic_files)
+rank_method = statistic_dict[args.ranking_statistic](args.statistic_files)
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
 time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
 logging.info('The coincidence window is %3.1f ms' % (time_window * 1000))
