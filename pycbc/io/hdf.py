@@ -438,6 +438,31 @@ class SingleDetTriggers(object):
         return np.array(self.bank['spin2z'])[self.template_id]
 
     @property
+    def spin2x(self):
+        self.checkbank('spin2x')
+        return np.array(self.bank['spin2x'])[self.template_id]
+
+    @property
+    def spin2y(self):
+        self.checkbank('spin2y')
+        return np.array(self.bank['spin2y'])[self.template_id]
+
+    @property
+    def spin1x(self):
+        self.checkbank('spin1x')
+        return np.array(self.bank['spin1x'])[self.template_id]
+
+    @property
+    def spin1y(self):
+        self.checkbank('spin1y')
+        return np.array(self.bank['spin1y'])[self.template_id]
+
+    @property
+    def inclination(self):
+        self.checkbank('inclination')
+        return np.array(self.bank['inclination'])[self.template_id]
+
+    @property
     def mtotal(self):
         return self.mass1 + self.mass2
 
@@ -478,6 +503,10 @@ class SingleDetTriggers(object):
     @property
     def snr(self):
         return np.array(self.trigs['snr'])[self.mask]
+
+    @property
+    def u_vals(self):
+        return np.array(self.trigs['u_vals'])[self.mask]
 
     @property
     def rchisq(self):

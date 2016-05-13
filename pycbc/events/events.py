@@ -401,8 +401,14 @@ class EventManager(object):
         m2 = numpy.array([p['tmplt'].mass2 for p in self.template_params], dtype=numpy.float32)
         s1 = numpy.array([p['tmplt'].spin1z for p in self.template_params], dtype=numpy.float32)
         s2 = numpy.array([p['tmplt'].spin2z for p in self.template_params], dtype=numpy.float32)
+        # How to not store these in the case of not precession?
+        s1x = numpy.array([p['tmplt'].spin1x for p in self.template_params], dtype=numpy.float32)
+        s1y = numpy.array([p['tmplt'].spin1y for p in self.template_params], dtype=numpy.float32)
+        s2x = numpy.array([p['tmplt'].spin2x for p in self.template_params], dtype=numpy.float32)
+        s2y = numpy.array([p['tmplt'].spin2y for p in self.template_params], dtype=numpy.float32)
+        incl = numpy.array([p['tmplt'].alpha3 for p in self.template_params], dtype=numpy.float32)
         th = numpy.zeros(len(m1), dtype=int)
-        for j, v in enumerate(zip(m1, m2, s1, s2)):
+        for j, v in enumerate(zip(m1, m2, s1, s2, s1x, s1y, s2x, s2y, incl)):
             th[j] = hash(v)
 
         tid = self.events['template_id']
@@ -410,7 +416,13 @@ class EventManager(object):
 
         if len(self.events):
             f['snr'] = abs(self.events['snr'])
-            f['coa_phase'] = numpy.angle(self.events['snr'])
+            try:
+                # Precessing
+                f['u_vals'] = self.events['u_vals']
+                f['coa_phase'] = self.events['coa_phase']
+            except:
+                # Not precessing
+                f['coa_phase'] = numpy.angle(self.events['snr'])
             f['chisq'] = self.events['chisq']
             f['bank_chisq'] = self.events['bank_chisq']
             f['bank_chisq_dof'] = self.events['bank_chisq_dof']
@@ -582,6 +594,12 @@ class EventManager(object):
             row.end_time_ns = int(end_time.gpsNanoSeconds)
             row.process_id = proc_id
             row.coa_phase = numpy.angle(snr)
+            try:
+                # Good old alpha columns for hacking
+                row.alpha6 = event['u_vals']
+                row.coa_phase = event['coa_phase']
+            except:
+                pass
             row.sigmasq = sigmasq
 
             row.event_id = glue.ligolw.lsctables.SnglInspiralID(event_num)
