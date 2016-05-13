@@ -789,9 +789,12 @@ if $build_dlls; then
     echo -e "\\n\\n>> [`date`] Rebasing DLLs"
     find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
     rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
+    echo -e "\\n\\n>> [`date`] Building 'progress.exe' and 'fstab.exe'"
+    x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/progress.exe" $SOURCE/pycbc/tools/einsteinathome/progress.c
+    x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/fstab.exe" $SOURCE/pycbc/tools/einsteinathome/fstab.c
 else
 # on Linux, build "progress" and "wrapper"
-    echo -e "\\n\\n>> [`date`] Building BOINC wrapper & progress"
+    echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'progress', 'fstab' and 'fstab_test'"
     if test boinc/.git ; then
 	cd boinc
 	git pull
@@ -809,6 +812,8 @@ else
     cp samples/wrapper/wrapper "$ENVIRONMENT/dist"
     cd ..
     gcc -o "$ENVIRONMENT/dist/progress" $SOURCE/pycbc/tools/einsteinathome/progress.c
+    gcc -o "$ENVIRONMENT/dist/fstab_test" $SOURCE/pycbc/tools/einsteinathome/fstab.c
+    cp `which true` "$ENVIRONMENT/dist/fstab"
 fi
 
 # log environment
