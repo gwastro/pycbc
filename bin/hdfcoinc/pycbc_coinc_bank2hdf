@@ -25,9 +25,14 @@ m1 = numpy.array(sngl_table.get_column('mass1'), dtype=numpy.float32)
 m2 = numpy.array(sngl_table.get_column('mass2'), dtype=numpy.float32)
 s1 = numpy.array(sngl_table.get_column('spin1z'), dtype=numpy.float32)
 s2 = numpy.array(sngl_table.get_column('spin2z'), dtype=numpy.float32)
-
+# How to not store these in the case of not precession?
+s1x = numpy.array(sngl_table.get_column('spin1x'), dtype=numpy.float32)
+s1y = numpy.array(sngl_table.get_column('spin1y'), dtype=numpy.float32)
+s2x = numpy.array(sngl_table.get_column('spin2x'), dtype=numpy.float32)
+s2y = numpy.array(sngl_table.get_column('spin2y'), dtype=numpy.float32)
+incl = numpy.array(sngl_table.get_column('alpha3'), dtype=numpy.float32)
 th = numpy.zeros(len(m1), dtype=int)
-for j, v in enumerate(zip(m1, m2, s1, s2)):
+for j, v in enumerate(zip(m1, m2, s1, s2, s1x, s1y, s2x, s2y, incl)):
     th[j] = hash(v)
 
 # Store the templates by sorted id
@@ -36,6 +41,11 @@ m1 = m1[sorted_ind]
 m2 = m2[sorted_ind]
 s1 = s1[sorted_ind]
 s2 = s2[sorted_ind]
+s1x = s1x[sorted_ind]
+s1y = s1y[sorted_ind]
+s2x = s2x[sorted_ind]
+s2y = s2y[sorted_ind]
+incl = incl[sorted_ind]
 th = th[sorted_ind]
     
 f = h5py.File(args.output_file, "w")
@@ -43,5 +53,10 @@ f.create_dataset("mass1", data=m1)
 f.create_dataset("mass2", data=m2)
 f.create_dataset("spin1z", data=s1)
 f.create_dataset("spin2z", data=s2)
+f.create_dataset("spin1x", data=s1x)
+f.create_dataset("spin2x", data=s2x)
+f.create_dataset("spin1y", data=s1y)
+f.create_dataset("spin2y", data=s2y)
+f.create_dataset("inclination", data=incl)
 f.create_dataset("template_hash", data=th)
 f.close()
