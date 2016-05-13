@@ -15,7 +15,7 @@ GPS_END_TIME=$((${TRIGGER_TIME_INT} + 1024))
 CHANNEL_NAME=H1:DCS-CALIB_STRAIN_C02
 FRAME_TYPE=H1:H1_HOFT_C02
 
-CONFIG_FILE=inference.ini
+CONFIG_PATH=inference.ini
 
 pycbc_mcmc --verbose \
     --instruments H1 \

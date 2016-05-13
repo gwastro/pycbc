@@ -26,6 +26,7 @@ import pycbc.weave
 import random
 from pycbc import fft, inference, psd, scheme, strain, waveform
 from pycbc.types import MultiDetOptionAction
+from pycbc.workflow import WorkflowConfigParser
 
 def select_waveform_generator(approximant):
     """ Returns the generator for the approximant.
@@ -72,27 +73,9 @@ parser.add_argument("--nprocesses", type=int, default=None,
 parser.add_argument("--skip-burn-in", action="store_true", default=False,
     help="Do not burn in MCMC.")
 
-# add prior options
-parser.add_argument("--prior-min", type=float, nargs="+", required=True,
-    help="Lower limit of acceptable values for variable args.")
-parser.add_argument("--prior-max", type=float, nargs="+", required=True,
-    help="Upper limit of acceptable values for variable args.")
-parser.add_argument("--prior-dist", type=str, nargs="+",
-    help="Name of distribution to use.")
-
-# add waveform options
-parser.add_argument("--variable-args", type=str, nargs="+", required=True,
-    choices=waveform_params,
-    help="Parameters to change in MCMC.")
-parser.add_argument("--approximant", required=True,
-    choices=waveform.td_approximants()+waveform.fd_approximants(),
-    help="Name of approximant.")
-for param,val in waveform_params.iteritems():
-    dtype = type(val)
-    if val is not None:
-        parser.add_argument("--"+param.replace("_", "-"), default=val, type=dtype)
-    else:
-        parser.add_argument("--"+param.replace("_", "-"), default=val, type=float)
+# add config options
+parser.add_argument("--config-files", type=str, nargs="+", required=True,
+    help="A file parsable by pycbc.workflow.WorkflowConfigParser.")
 
 # output options
 parser.add_argument("--output-file", type=str, required=True,
@@ -120,10 +103,6 @@ pycbc.opt.verify_optimization_options(opts, parser)
 scheme.verify_processing_options(opts, parser)
 #strain.verify_strain_options(opts, parser)
 pycbc.weave.verify_weave_options(opts, parser)
-
-# get variables for waveform generation that will not change in MCMC
-static_args = dict([(param,getattr(opts, param)) for param in waveform_params \
-                           if param not in opts.variable_args])
 
 # setup log
 if opts.verbose:
@@ -163,24 +142,72 @@ with ctx:
                                    low_frequency_cutoff_dict, opts.instruments,
                                    strain_dict=strain_dict, precision="double")
 
+    # read configuration file
+    logging.info("Reading configuration file")
+    cp = WorkflowConfigParser(opts.config_files)
+
+    # sanity check that each parameter in [variable_args] has a priors section
+    variable_args = cp.options("variable_args")
+    subsections = cp.get_subsections("prior")
+    if not all(param in subsections for param in variable_args):
+        raise KeyError("You are missing a priors section in the config file.")
+
+    # get parameters that do not change in MCMC
+    static_args = dict([(key,cp.get_opt_tags("static_args",key,[])) \
+                                         for key in cp.options("static_args")])
+    for key,val in static_args.iteritems():
+        try:
+            static_args[key] = float(val)
+        except:
+            pass
+
+    # get prior distribution for each variable parameter
+    logging.info("Setting up priors for each parameter")
+    special_args = ["name", "min", "max"]
+    distributions = []
+    for param in variable_args:
+
+        # get name of prior distribution to use
+        name = cp.get_opt_tag("prior", "name", param)
+
+        # get a dict with bounds as value
+        low = float(cp.get_opt_tag("prior", "min", param))
+        high = float(cp.get_opt_tag("prior", "max", param))
+        dist_args = { param : (low,high) }
+
+        # add any additional options that user put in that section
+        for key in cp.options( "-".join(["prior",param]) ):
+
+            # ignore options that are already included
+            if key in special_args:
+                continue
+
+            # check if option can be cast as a float
+            val = cp.get_opt_tag("prior",key,param)
+            try:
+                val = float(val)
+            except:
+                pass
+
+            # add option
+            dist_args.update({key:val})
+
+        # construction distribution and add to list
+        distributions.append( inference.priors[name](**dist_args) )
+
+    # construct class that will return the prior
+    prior = inference.PriorEvaluator(variable_args, *distributions)
+
     # select generator that will generate waveform
     # for likelihood evaluator
     logging.info("Setting up sampler")
-    generator_function = select_waveform_generator(opts.approximant)
+    generator_function = select_waveform_generator(static_args["approximant"])
 
     # construct class that will generate waveforms
     generator = waveform.FDomainDetFrameGenerator(generator_function,
-                        variable_args=opts.variable_args,
+                        variable_args=variable_args,
                         detectors=opts.instruments,
-                        delta_f=delta_f_dict.values()[0],
-                        approximant=opts.approximant, **static_args)
-
-    # construct class that will return the prior
-    if opts.prior_dist:
-        prior = inference.PriorEvaluator(opts.variable_args, opts.prior_dist,
-                        params_min=opts.prior_min, params_max=opts.prior_max)
-    else:
-        prior = None
+                        delta_f=delta_f_dict.values()[0], **static_args)
 
     # construct class that will return the natural logarithm of likelihood
     likelihood = inference.GaussianLikelihood(generator, stilde_dict,
@@ -205,7 +232,7 @@ with ctx:
         sys.exit()
 
     # create sampler that will run MCMC
-    ndim = len(opts.variable_args)
+    ndim = len(variable_args)
     sampler = inference.samplers[opts.sampler](likelihood, ndim=ndim,
                                                nwalkers=opts.nwalkers,
                                                processes=opts.nprocesses)
@@ -220,7 +247,8 @@ with ctx:
         # set initial values for variable parameters for this walker
         # initial values are uniformly drawn from an interval given
         # on the command line
-        p0[i] = [random.uniform(opts.prior_min[j],opts.prior_max[j]) for j in range(ndim)]
+        p0[i] = [distributions[j].rvs(size=1, param=variable_args[j])[0][0] \
+                                                          for j in range(ndim)]
 
     if not opts.skip_burn_in:
 
