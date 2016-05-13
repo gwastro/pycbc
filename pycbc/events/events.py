@@ -127,13 +127,16 @@ def findchirp_cluster_over_window(times, values, window_length):
     times = times.astype(int)
     code = """
         int j = 0;
+        int curr_ind = 0;
         for (int i=0; i < tlen; i++){
-            if ((times[i] - times[indices[j]]) > window_length){
+            if ((times[i] - times[curr_ind]) > window_length){
                 j += 1;
                 indices[j] = i;
+                curr_ind = i;
             }
-            else if (absvalues[i] > absvalues[indices[j]]){
+            else if (absvalues[i] > absvalues[curr_ind]){
                 indices[j] = i;
+                curr_ind = i;
             }
         }
         k[0] = j;
