@@ -15,6 +15,8 @@ GPS_END_TIME=$((${TRIGGER_TIME_INT} + 1024))
 CHANNEL_NAME=H1:DCS-CALIB_STRAIN_C02
 FRAME_TYPE=H1:H1_HOFT_C02
 
+CONFIG_FILE=inference.ini
+
 pycbc_mcmc --verbose \
     --instruments H1 \
     --gps-start-time ${GPS_START_TIME} \
@@ -34,15 +36,7 @@ pycbc_mcmc --verbose \
     --likelihood-evaluator gaussian \
     --nwalkers 8 \
     --niterations 1000 \
-    --approximant TaylorF2 \
-    --variable-args tc mass1 mass2 \
-    --prior-min 1024.92 1.30 1.30 \
-    --prior-max 1025.04 10.00 10.00 \
-    --prior-dist flat flat flat \
-    --ra 0.0247836709 \
-    --dec 0.00715585006 \
-    --polarization 2.56616092 \
-    --f-lower 40.0 \
+    --config-file ${CONFIG_PATH} \
     --output-file test_cli.hdf
 
 
