@@ -58,7 +58,57 @@ def props_ringdown(obj, **kwargs):
 
     return input_params
 
-def get_fd_ringdown(template=None,**kwargs):
+def qnm_freq_decay(f_0, tau, decay):
+    """Return the frequency at which the amplitude of the 
+    ringdown falls to 1/decay of the peak amplitude.
+
+    Parameters
+    ----------
+    f_0 : float
+        The ringdown-frequency, which gives the peak amplitude.
+    tau : float
+        The damping time of the sinusoid.
+    decay: float
+        The fraction of the peak amplitude.
+
+    Returns
+    -------
+    f_decay: float
+        The frequency at which the amplitude of the frequency-domain
+        ringdown is 1/decay of the peak amplitude.
+    """
+
+    q_0 = numpy.pi * f_0 * tau
+    decay_sq = decay*decay
+
+    # Expression obtained analytically under the assumption
+    # that decay^2, q_0^2 >> 1
+    q_sq = (decay_sq + 4*q_0*q_0 + decay*numpy.sqrt(decay_sq + 16*q_0*q_0)) / 4.
+    f_decay = numpy.sqrt(q_sq) / numpy.pi / tau
+    return f_decay
+
+def qnm_time_decay(tau, decay):
+    """Return the time at which the amplitude of the 
+    ringdown falls to 1/decay of the peak amplitude.
+
+    Parameters
+    ----------
+    tau : float
+        The damping time of the sinusoid.
+    decay: float
+        The fraction of the peak amplitude.
+
+    Returns
+    -------
+    t_decay: float
+        The time at which the amplitude of the time-domain
+        ringdown is 1/decay of the peak amplitude.
+    """
+
+    t_decay = tau * numpy.log(decay)
+    return t_decay
+
+def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs):
     """Return a frequency domain ringdown.
 
     Parameters
@@ -74,16 +124,21 @@ def get_fd_ringdown(template=None,**kwargs):
         The starting time of the ringdown.
     phi_0 : {0, float}, optional
         The initial phase of the ringdown.
-    Amp : {1, float}
+    Amp : {1, float}, optional
         The amplitude of the ringdown (constant for now).
-    delta_f : float
+    delta_f : {None, float}, optional
         The frequency step used to generate the ringdown.
-    f_lower: float
+        If None, it will be set to the inverse of the time at which the
+        amplitude is a 1/1000 of the peak amplitude.
+    f_lower: {None, float}, optional
         The starting frequency of the output frequency series.
-    f_final : float
+        If None, it will be set to delta_f.
+    f_final : {None, float}, optional
         The ending frequency of the output frequency series.
+        If None, it will be set to the frequency at which the amplitude is 
+        1/100 of the peak amplitude.
 
-        Returns
+    Returns
     -------
     hplustilde: FrequencySeries
         The plus phase of the ringdown in frequency domain.
@@ -94,22 +149,27 @@ def get_fd_ringdown(template=None,**kwargs):
     input_params = props_ringdown(template,**kwargs)
 
     f_0 = input_params['f_0']
-    f_lower = input_params['f_lower']
-    f_final = input_params['f_final']
-    delta_f = input_params['delta_f']
     tau = input_params['tau']
     t_0 = input_params['t_0']
     phi_0 = input_params['phi_0']
     Amp = input_params['Amp']
+    if delta_f is None:
+        delta_f = 1. / qnm_time_decay(tau, 1000.)
+    if f_lower is None:
+        f_lower = delta_f
+        kmin = 0
+    else:
+        kmin = int(f_lower / delta_f)
+    if f_final is None:
+        f_final = qnm_freq_decay(f_0, tau, 100.)
+    kmax = int(f_final / delta_f)
+    n = int(f_final / delta_f) + 1
 
     pi = numpy.pi
     two_pi = 2 * numpy.pi
     pi_sq = numpy.pi * numpy.pi
 
     freqs = numpy.arange( f_lower, f_final, delta_f)
-    kmin = int(f_lower / delta_f)
-    kmax = int(f_final / delta_f)
-    n = int(f_final / delta_f) + 1
 
     denominator = 1 + ( 4j * pi * freqs * tau ) - ( 4 * pi_sq * ( freqs*freqs - f_0*f_0) * tau*tau )
     time_shift = [ numpy.exp( -1j * two_pi * f * t_0 ) for f in freqs ]
