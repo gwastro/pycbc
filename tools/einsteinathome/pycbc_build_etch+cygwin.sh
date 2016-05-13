@@ -561,6 +561,7 @@ pyRXP==2.1.0
 nose==1.3.7
 pkgconfig==1.1.0
 six==1.9.0
+kombine==0.5.0
 linecache2==1.0.0
 traceback2==1.4.0
 unittest2==1.1.0
