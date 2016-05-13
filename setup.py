@@ -463,6 +463,7 @@ setup (
                'bin/hdfcoinc/pycbc_plot_gating',
                'bin/pycbc_condition_strain',
                'bin/inference/pycbc_mcmc',
+               'bin/plotting/pycbc_plot_waveform'
                ],
     packages = [
                'pycbc',
