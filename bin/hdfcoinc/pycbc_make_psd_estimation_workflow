@@ -71,24 +71,42 @@ save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 result_plots += [(time_file,)]
 
 # Get segments and find where the data is
-science_segs, data_segs, science_seg_file = \
-        pycbc.workflow.get_analyzable_segments(workflow, "segments")
-datafind_files, science_segs = pycbc.workflow.setup_datafind_workflow(
-        workflow, science_segs, "datafind", science_seg_file)
+seg_dir = 'segments'
 
-cum_veto_files, veto_names, ind_cats = \
-        pycbc.workflow.get_cumulative_veto_group_files(
-                workflow, 'segments-veto-groups', 'segments')
+veto_cat_files = pycbc.workflow.get_files_for_vetoes(
+        workflow, seg_dir, runtime_names=['segments-science-veto'],
+        in_workflow_names=['segments-final-veto-group', 'segments-veto-groups'])
+
+science_seg_file, science_segs, _ = \
+        pycbc.workflow.get_science_segments(workflow, seg_dir)
+
+sci_ok_seg_file, sci_ok_segs, _ = \
+        pycbc.workflow.get_analyzable_segments(workflow, science_segs,
+                                                veto_cat_files, seg_dir)
+
+datafind_files, _, _, _ = \
+        pycbc.workflow.setup_datafind_workflow(workflow, sci_ok_segs,
+                                               'datafind',
+                                               seg_file=science_seg_file)
+cum_veto_files, veto_names, _ = \
+        pycbc.workflow.get_cumulative_veto_group_files(workflow,
+                                                       'segments-veto-groups',
+                                                       veto_cat_files,
+                                                       seg_dir,
+                                                       execute_now=False)
 final_veto_file, final_veto_name, ind_cats = \
-        pycbc.workflow.get_cumulative_veto_group_files(
-                workflow, 'segments-final-veto-group', "segments")
+        pycbc.workflow.get_cumulative_veto_group_files(workflow,
+                                                       'segments-final-veto-group',
+                                                       veto_cat_files,
+                                                       seg_dir,
+                                                       execute_now=False)
 
 psd_job_length = int(workflow.cp.get('workflow-matchedfilter', 'analysis-length'))
 pad_data = int(workflow.cp.get('calculate_psd', 'pad-data'))
 
 # calculate noise PSDs over SCIENCE_OK segments
 psd_files = []
-for ifo, segments in science_segs.items():
+for ifo, segments in sci_ok_segs.items():
     # break up SCIENCE_OK into small segments to use in pycbc_calculate_psd
     # FIXME use the same algorithm already in place for inspiral jobs
     broken_segments = []
@@ -104,7 +122,7 @@ for ifo, segments in science_segs.items():
     broken_segments_file = pycbc.workflow.SegFile.from_segment_list(
                      'SCIENCE_OK_BROKEN', broken_segments, 'SCIENCE_OK_BROKEN',
                      ifo, valid_segment=workflow.analysis_time,
-                     extension='xml', directory='segments')
+                     extension='xml', directory=seg_dir)
 
     # create pycbc_calculate_psd job
     ifo_psd_files = pycbc.workflow.make_psd_file(
@@ -125,12 +143,13 @@ for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
     pycbc.workflow.make_segments_plot(workflow, files, 'plots',
                           tags=['%s_VETO_SEGMENTS' % ifo])
 
-pycbc.workflow.make_segments_plot(workflow, science_seg_file, 'plots',
-                                  tags=['SCIENCE_MINUS_CAT1'])
+pycbc.workflow.make_segments_plot(workflow,
+                                  pycbc.workflow.FileList([science_seg_file]),
+                                  'plots', tags=['SCIENCE_MINUS_CAT1'])
 
 # get data segments to write to segment summary XML file
 seg_summ_names    = ['DATA', 'ANALYZABLE_DATA']
-seg_summ_seglists = [data_segs, science_segs]
+seg_summ_seglists = [science_segs, sci_ok_segs]
 
 # declare comparasion segments for table on summary page
 veto_summ_names = ['ANALYZABLE_DATA&CUMULATIVE_CAT_1H',
@@ -147,7 +166,7 @@ for segment_list,segment_name in zip(seg_summ_seglists, seg_summ_names):
 seg_summ_file = pycbc.workflow.SegFile.from_multi_segment_list(
                    'WORKFLOW_SEGMENT_SUMMARY', seg_list, names, ifos,
                    valid_segment=workflow.analysis_time, extension='xml',
-                   directory='segments')
+                   directory=seg_dir)
 
 # make segment table for summary page
 seg_summ_table = pycbc.workflow.make_seg_table(workflow, [seg_summ_file],
@@ -163,9 +182,6 @@ veto_summ_table = pycbc.workflow.make_seg_table(
 result_plots += [(seg_summ_table, veto_summ_table)]
 
 two_column_layout('plots', result_plots)
-
-for psd_file in psd_files:
-    os.symlink(psd_file.storage_path, os.path.join('plots', psd_file.name))
 
 pycbc.workflow.make_results_web_page(finalize_workflow,
                                      os.path.join(os.getcwd(),
