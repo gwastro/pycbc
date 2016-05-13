@@ -778,18 +778,43 @@ hooks="$PWD/tools/static"
 cd ..
 test -r "$PREFIX/etc/pycbc-user-env.sh" && source "$PREFIX/etc/pycbc-user-env.sh"
 
+# clean dist directory
+rm -rf "$ENVIRONMENT/dist"
+mkdir -p "$ENVIRONMENT/dist"
+
+# on Windows, rebase DLLs
+# from https://cygwin.com/ml/cygwin/2009-12/msg00168.html:
+# /bin/rebase -d -b 0x61000000 -o 0x20000 -v -T <file with list of dll and so files> > rebase.out
+if $build_dlls; then
+    echo -e "\\n\\n>> [`date`] Rebasing DLLs"
+    find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
+    rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
+else
+# on Linux, build "progress" and "wrapper"
+    echo -e "\\n\\n>> [`date`] Building BOINC wrapper & progress"
+    if test boinc/.git ; then
+	cd boinc
+	git pull
+	make
+    else
+	# clone
+	rm -rf boinc
+	git clone git://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/boinc.git
+	cd boinc
+	git checkout -b eah_wrapper_improvements origin/eah_wrapper_improvements
+	./_autosetup
+	./configure LDFLAGS=-static-libgcc --disable-client --disable-manager --disable-server --enable-apps --disable-shared
+	make
+    fi
+    cp samples/wrapper/wrapper "$ENVIRONMENT/dist"
+    cd ..
+    gcc -o "$ENVIRONMENT/dist/progress" $SOURCE/pycbc/tools/einsteinathome/progress.c
+fi
+
 # log environment
 echo -e "\\n\\n>> [`date`] ENVIRONMENT ..."
 env
 echo -e "... ENVIRONMENT"
-
-# rebase DLLs
-# from https://cygwin.com/ml/cygwin/2009-12/msg00168.html:
-# /bin/rebase -d -b 0x61000000 -o 0x20000 -v -T <file with list of dll and so files> > rebase.out
-if $build_dlls; then
-    find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
-    rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
-fi
 
 # TEST
 echo -e "\\n\\n>> [`date`] testing local executable"
@@ -798,7 +823,6 @@ cd $PREFIX
 
 # BUNDLE DIR
 echo -e "\\n\\n>> [`date`] building pyinstaller spec"
-rm -rf dist
 # create spec file
 # if the build machine has dbhash & shelve, scipy weave will use bsddb, so make sure these get added
 if python -c "import dbhash, shelve" 2>/dev/null; then
