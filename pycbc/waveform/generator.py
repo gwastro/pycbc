@@ -143,7 +143,7 @@ class TDomainCBCGenerator(BaseGenerator):
             variable_args=variable_args, **frozen_params)
 
 class FDomainRingdownGenerator(BaseGenerator):
-    """Uses ringdown.get_fd_ringdown as a generator function to create frequency-
+    """Uses ringdown.get_fd_qnm as a generator function to create frequency-
     domain ringdown waveforms in the radiation frame; i.e., with no detector response
     function applied. For more details, see BaseGenerator.
 
@@ -158,7 +158,7 @@ class FDomainRingdownGenerator(BaseGenerator):
      <pycbc.types.frequencyseries.FrequencySeries at 0x1110c1510>)
     """
     def __init__(self, variable_args=(), **frozen_params):
-        super(FDomainRingdownGenerator, self).__init__(ringdown.get_fd_ringdown,
+        super(FDomainRingdownGenerator, self).__init__(ringdown.get_fd_qnm,
             variable_args=variable_args, **frozen_params)
 
 class FDomainDetFrameGenerator(object):
