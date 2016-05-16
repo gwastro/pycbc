@@ -38,12 +38,6 @@ def select_waveform_generator(approximant):
     else:
         raise ValueError("%s is not a valid approximant."%approximant)
 
-# get all parameters and their default values for waveform generation
-# from waveform module
-waveform_params = dict([(param,None) for param in waveform.waveform.base_required_args])
-waveform_params.update( waveform.waveform.default_args )
-waveform_params.update( dict([(param,None) for param in waveform.FDomainDetFrameGenerator.location_args]) )
-
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_mcmc [--options]",
                   description="Runs an MCMC.")
