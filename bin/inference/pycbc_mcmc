@@ -245,11 +245,10 @@ with ctx:
     for i,_ in enumerate(p0):
 
         # set initial values for variable parameters for this walker
-        # initial values are uniformly drawn from an interval given
-        # on the command line
         p0[i] = [distributions[j].rvs(size=1, param=variable_args[j])[0][0] \
                                                           for j in range(ndim)]
 
+    # check if user wants to skip the burn in
     if not opts.skip_burn_in:
 
         # burn in
