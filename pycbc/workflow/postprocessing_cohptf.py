@@ -32,6 +32,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 from __future__ import division
 
 import os
+import urlparse
 import os.path
 import logging
 import Pegasus.DAX3 as dax
@@ -464,7 +465,17 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
         workflow._adag.addDependency(dep)
 
     # Make the open box shell script
-    open_box_cmd = html_summary_node.executable.get_pfn() + " "
+    try:
+        open_box_cmd = html_summary_node.executable.get_pfn() + " "
+    except:
+        exe_path = urlparse.urlsplit(html_summary_node.executable.get_pfn(\
+                'nonlocal')).path
+        exe_name = exe_path.rsplit('/', 1)[-1]
+        open_box_cmd = "globus-url-copy -vb "
+        open_box_cmd += "gsiftp://pycbc.phy.syr.edu/var/opt/gitlab/ligo-cbc%s"\
+                        % exe_path
+        open_box_cmd += " file:/%s/\nchmod 500 %s\n./%s " % (output_dir,
+                exe_name, exe_name)
     open_box_cmd += ' '.join(html_summary_node._args + \
                              html_summary_node._options)
     open_box_cmd += " --open-box"
