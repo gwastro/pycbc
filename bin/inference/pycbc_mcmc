@@ -281,7 +281,7 @@ fp.attrs["nwalkers"] = opts.nwalkers
 fp.attrs["niterations"] = opts.niterations
 
 # loop over number of dimensions
-for i,dim_name in zip(range(ndim), opts.variable_args):
+for i,dim_name in zip(range(ndim), variable_args):
 
     # create a group in the output file for this dimension
     group_dim = fp.create_group(dim_name)
