@@ -517,8 +517,11 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
                                    high_frequency_cutoff, htilde.delta_f, N)  
     ht = htilde[kmin:kmax] 
 
-    if psd and ht.delta_f != psd.delta_f:
-        raise ValueError('Waveform does not have same delta_f as psd')
+    if psd:
+        try:
+            numpy.testing.assert_almost_equal(ht.delta_f, psd.delta_f)
+        except:
+            raise ValueError('Waveform does not have same delta_f as psd')
 
     if psd is None:
         sq = ht.inner(ht)
