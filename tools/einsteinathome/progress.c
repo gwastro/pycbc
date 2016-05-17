@@ -2,14 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <signal.h>
-
-// continue waiting, set to 0 by signal handler
-int run = 1;
-
-void sighandler(int sig) {
-  run = 0;
-}
 
 int main(int argc, char*argv[]) {
   int debug = 0;
@@ -66,10 +58,6 @@ int main(int argc, char*argv[]) {
     arg++;
   }
 
-#ifndef _WIN32
-  signal(SIGTERM, sighandler);
-#endif
-
   if (debug) fprintf(stderr, "writing initial progress file\n");
   if((fw = fopen("progress.txt", "w"))) {
     fprintf(fw,"%f\n", progress);
@@ -83,13 +71,13 @@ int main(int argc, char*argv[]) {
     fp=fopen(fname,"r");
   }
 
-  while(run && progress < 1.0) {
+  while(progress < 1.0) {
     float a, b, c, d;
     int found=0;
     char buf[1024];
 
     // wait for the file to be extended
-    while(run && new <= old) {
+    while(new <= old) {
       if (debug) fprintf(stderr, "waiting for '%s' to be extended\n", fname);
       sleep(delay);
       fseek(fp, 0, SEEK_END);
@@ -103,7 +91,7 @@ int main(int argc, char*argv[]) {
     // - skip non-matching lines
     // - end scanning on eof
     found = 0;
-    while (run) {
+    while (1) {
       if(fgets(buf, sizeof(buf), fp)) {
 	if (4 == sscanf(buf, "%*s %*s Filtering template %f/%f segment %f/%f", &a, &b, &c, &d)) {
 	  if (debug) fprintf(stderr, "parsed values from line: %f %f %f %f\n", a, b, c, d);
