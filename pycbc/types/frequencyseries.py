@@ -19,7 +19,6 @@ Provides a class representing a frequency series.
 """
 
 import os as _os, h5py
-import nose.tools
 from pycbc.types.array import Array, _convert, zeros, _noreal
 import lal as _lal
 import numpy as _numpy
@@ -84,7 +83,8 @@ class FrequencySeries(Array):
     def _typecheck(self, other):
         if isinstance(other, FrequencySeries):
             try:
-                nose.tools.assert_almost_equal(other._delta_f, self._delta_f)
+                _numpy.testing.assert_almost_equal(other._delta_f,
+                                                   self._delta_f)
             except:
                 raise ValueError('different delta_f')
             # consistency of _epoch is not required because we may want
