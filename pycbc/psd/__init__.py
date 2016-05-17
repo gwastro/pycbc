@@ -345,7 +345,6 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
     # Figure out the data length used for PSD generation
     seg_stride = int(opt.psd_segment_stride * gwstrain.sample_rate)
     seg_len = int(opt.psd_segment_length * gwstrain.sample_rate)
-    num_segments = int(opt.psd_num_segments)
     input_data_len = len(gwstrain)
 
     if num_segments is None:
@@ -353,6 +352,8 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
         #        err_msg = "You must supply --num-segments."
         #        raise ValueError(err_msg)
         num_segments = int(input_data_len // seg_stride) - 1
+    else:
+        num_segments = int(opt.psd_num_segments)
 
     psd_data_len = (num_segments - 1) * seg_stride + seg_len
 
