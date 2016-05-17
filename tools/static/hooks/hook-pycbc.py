@@ -60,7 +60,7 @@ hiddenimports = ['pycbc.fft.fft_cpu',
                  'mpld3'
                  ]
 
-datas = [] 
+datas = []
 
 # Add html assets to all executables
 cwd     = os.getcwd()
@@ -71,6 +71,17 @@ for root, subdirs, files in os.walk(rootdir):
     for filename in files:
         if not filename.endswith('.py') and not filename.endswith('.pyc'):
             file_path  = os.path.join(root, filename)
+            store_path = '/'.join(file_path.split('/')[:-1])
+            store_path = store_path.replace(basedir, '')
+            datas.append( (file_path, store_path) )
+
+# Add em-bright data files
+rootdir = basedir + 'pycbc/tmpltbank/ns_sequences'
+
+for root, subdirs, files in os.walk(rootdir):
+    for filename in files:
+        if not filename.endswith('.py') and not filename.endswith('.pyc'):
+            file_path = os.path.join(root, filename)
             store_path = '/'.join(file_path.split('/')[:-1])
             store_path = store_path.replace(basedir, '')
             datas.append( (file_path, store_path) )
