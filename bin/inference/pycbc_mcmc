@@ -191,7 +191,10 @@ with ctx:
     # get distribution to draw from for each walker initial condition
     initial_distributions = []
     for param in variable_args:
-        initial_distributions.append( inference.distribution_from_config(cp, "initial", param) )
+        if cp.has_section("initial-%s"%param):
+            initial_distributions.append( inference.distribution_from_config(cp, "initial", param) )
+        else:
+            initial_distributions.append( inference.distribution_from_config(cp, "prior", param) )
 
     #loop over number of walkers
     # set initial values for variable parameters for this walker
