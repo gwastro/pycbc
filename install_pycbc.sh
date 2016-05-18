@@ -777,7 +777,7 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
   done
 
   #Copy the completed build
-  cp -v dist/ ${VIRTUAL_ENV}/../${UNIQUE_ID}-dist
+  cp -av dist/ ${VIRTUAL_ENV}/../${UNIQUE_ID}-dist
   cd ${VIRTUAL_ENV}/..
   rm $VIRTUAL_ENV/src/lalsuite
   mv ${LALSUITE_BUILD_DIR} $VIRTUAL_ENV/src
