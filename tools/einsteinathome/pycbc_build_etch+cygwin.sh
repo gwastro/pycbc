@@ -497,7 +497,7 @@ else
         git checkout -b eah_cbc origin/eah_cbc
     fi
     git reset --hard HEAD
-    echo -e "\\n\\n>> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
+    echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
     sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
     if $build_dlls; then
 	fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
@@ -773,6 +773,7 @@ else
     git remote update
     git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
+echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
 pip install .
 hooks="$PWD/tools/static"
 cd ..
@@ -798,7 +799,6 @@ else
     if test boinc/.git ; then
 	cd boinc
 	git pull
-	make
     else
 	# clone
 	rm -rf boinc
@@ -807,8 +807,9 @@ else
 	git checkout -b eah_wrapper_improvements origin/eah_wrapper_improvements
 	./_autosetup
 	./configure LDFLAGS=-static-libgcc --disable-client --disable-manager --disable-server --enable-apps --disable-shared
-	make
     fi
+    echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
+    make
     cp samples/wrapper/wrapper "$ENVIRONMENT/dist"
     cd ..
     gcc -o "$ENVIRONMENT/dist/progress" $SOURCE/pycbc/tools/einsteinathome/progress.c
