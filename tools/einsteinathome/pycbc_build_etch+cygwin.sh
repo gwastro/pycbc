@@ -159,7 +159,7 @@ else # if pycbc-preinst.tgz
     # pycbc/include/openssl/x509.h:751: note: previous declaration X509_REVOKED_ was here
 	p=openssl-1.0.1p
 	echo -e "\\n\\n>> [`date`] building $p"
-	test -r $p.tar.gz || wget $wget_opts http://www.openssl.org/source/$p.tar.gz
+	test -r $p.tar.gz || wget $wget_opts $atlas/tarballs/$p.tar.gz
 	rm -rf $p
 	tar -xzvf $p.tar.gz  &&
 	cd $p &&
