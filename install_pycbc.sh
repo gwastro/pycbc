@@ -1,4 +1,4 @@
-#!/bin/bash -v
+#!/bin/bash
 # Copyright 2015 Amber Lenon, Steve Reyes, Duncan Brown, Larne Pekowsky.
 
 # Exit if any command fails
