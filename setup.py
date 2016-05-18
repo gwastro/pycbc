@@ -461,7 +461,8 @@ setup (
                'bin/pygrb/pycbc_make_grb_summary_page',
                'bin/hdfcoinc/pycbc_merge_psds',
                'bin/hdfcoinc/pycbc_plot_gating',
-               'bin/pycbc_condition_strain'
+               'bin/pycbc_condition_strain',
+               'bin/inference/pycbc_mcmc',
                ],
     packages = [
                'pycbc',
