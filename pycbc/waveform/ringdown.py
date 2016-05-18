@@ -76,7 +76,7 @@ def qnm_time_decay(tau, decay):
         ringdown falls to decay of the peak amplitude.
     """
 
-    return t_decay = - tau * numpy.log(decay)
+    return - tau * numpy.log(decay)
 
 def qnm_freq_decay(f_0, tau, decay):
     """Return the frequency at which the amplitude of the 
@@ -105,7 +105,7 @@ def qnm_freq_decay(f_0, tau, decay):
     # Expression obtained analytically under the assumption
     # that alpha_sq, q_0^2 >> 1
     q_sq = (alpha_sq + 4*q_0*q_0 + alpha*numpy.sqrt(alpha_sq + 16*q_0*q_0)) / 4.
-    return f_decay = numpy.sqrt(q_sq) / numpy.pi / tau
+    return numpy.sqrt(q_sq) / numpy.pi / tau
 
 def get_td_qnm(template=None, delta_t=None, t_lower=None, t_final=None, **kwargs):
     """Return a time domain damped sinusoid.
