@@ -1,5 +1,5 @@
 #!/bin/bash -v
-# Copyright 2015 Amber Lenon, Steve Reyes, Duncan Brown.
+# Copyright 2015 Amber Lenon, Steve Reyes, Duncan Brown, Larne Pekowsky.
 
 # Exit if any command fails
 set -e 
@@ -13,9 +13,41 @@ if [ "$1" != "noscript" ] ; then
     exit 1;
 fi
 
-#Clear the paths so that the virtual envirobnment does not pick up any cruft
-unset PYTHONPATH
-unset LD_LIBRARY_PATH
+# Clear all environment variables except the ones we need
+KEEP="+USER+HOME+UID+SSH_AUTH_SOCK+SSH_AGENT_PID+TMPDIR+tmpdir+"
+
+for name in $(env | cut -d '=' -f 1); do 
+  if [[ $KEEP != *${name}* ]] ; then
+    # Some variables can't be unset, that's OK
+    unset $name || /bin/true
+  fi
+done
+
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+
+# Make sure there's nothing lingering from previous builds
+if [[ -e ${HOME}/.local ]]
+then
+  while true; do
+    echo "Existing .local directory found, this can interfere with the build process."
+    echo "Should I delete this directory (recommended)?"
+    echo
+    read -p "Enter yes or no: " DELETE_DOT_LOCAL
+    echo
+
+    if [[ $DELETE_DOT_LOCAL == "yes" ]] ; then
+      rm -rf ${HOME}/.local
+      echo ".local deleted"
+      break
+    elif [[ $DELETE_DOT_LOCAL == "no" ]] ; then
+      echo "Preserving .local"
+      break
+    else
+      echo "Please enter yes or no."
+    fi
+  done
+fi
 
 # Set up Python
 while true; do
@@ -78,7 +110,7 @@ while true ; do
 
   if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
     UNIQUE_ID=pycbc-`uuidgen`
-    NAME=${TMPDIR}/${UNIQUE_ID}
+    NAME=${HOME}/${UNIQUE_ID}
     break
   elif [[ $IS_BUNDLE_ENV == "no" ]] ; then
     while true; do
@@ -474,6 +506,9 @@ if [[ $dev_or_rel -eq 1 ]] ; then
   glue_version=`grep pycbc-glue ${VIRTUAL_ENV}/requirements.txt`
   mv ${VIRTUAL_ENV}/requirements.txt ${VIRTUAL_ENV}/requirements.txt.bak
   grep -v pycbc-pylal ${VIRTUAL_ENV}/requirements.txt.bak | grep -v pycbc-glue > ${VIRTUAL_ENV}/requirements.txt
+  set +e
+  HDF5_DIR=${VIRTUAL_ENV} pip install -r ${VIRTUAL_ENV}/requirements.txt
+  set -e
   HDF5_DIR=${VIRTUAL_ENV} pip install -r ${VIRTUAL_ENV}/requirements.txt
 else
   # Upgrade pip to get rid of any warnings
@@ -507,6 +542,9 @@ git clone https://versions.ligo.org/git/lalsuite.git
 #Obtaining source code and checking version
 #Change to lalsuite directory
 cd lalsuite
+
+#Upgrade numpy
+pip install --upgrade numpy
 
 #Determine which version of the code you want to install
 echo
@@ -554,6 +592,7 @@ pip --no-cache install ${glue_version} ${pylal_version}
 
 #ROM Data Download
 if [[ ${install_rom} == "no" ]] ; then
+  if [[ ${rom_download} == "yes" ]] ; then
     pushd ${LAL_DATA_PATH}
     echo "--- Downloading ROM DATA ---------------------------------"
     svn co https://svn.ligo.caltech.edu/svn/lalsuite-extra/
@@ -564,6 +603,7 @@ if [[ ${install_rom} == "no" ]] ; then
     popd
     popd
     #echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >> ${VIRTUAL_ENV}/bin/activate
+  fi
 fi
 
 #Released or Development
@@ -713,15 +753,22 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
   echo
   echo "Making bundled executables."
   echo 
+
   #Make the dag that makes the bundles
   cd ${VIRTUAL_ENV}/src/pycbc/tools/static
-  ./build_dag.sh
+  mkdir dist
+  perl -pi.bak -e 's+log = /usr1/\${USER}/log/pyinstaller_build_1.log+log = \${PWD}/pyinstaller_build_1.log+g' build_dag.sh
+  bash build_dag.sh
+  sed -i.bak "2 a cd ${VIRTUAL_ENV}/src/pycbc/tools/static " build_one.sh
 
   #Run the dag that makes the bundles
   condor_submit_dag build_static.dag
 
   # Wait for the dag to finish
   condor_wait -status -echo build_static.dag.dagman.log
+
+  # Check logs
+  condor_check_userlogs pyinstaller_build_1.log
 
   #Copy the existing static files into the dist directory
   cp -v ${VIRTUAL_ENV}/bin/lalapps_inspinj dist/
