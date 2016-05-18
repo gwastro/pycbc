@@ -60,7 +60,7 @@ def props_ringdown(obj, **kwargs):
 
 def qnm_time_decay(tau, decay):
     """Return the time at which the amplitude of the 
-    ringdown falls to 1/decay of the peak amplitude.
+    ringdown falls to decay of the peak amplitude.
 
     Parameters
     ----------
@@ -73,15 +73,14 @@ def qnm_time_decay(tau, decay):
     -------
     t_decay: float
         The time at which the amplitude of the time-domain
-        ringdown is 1/decay of the peak amplitude.
+        ringdown falls to decay of the peak amplitude.
     """
 
-    t_decay = tau * numpy.log(decay)
-    return t_decay
+    return t_decay = - tau * numpy.log(decay)
 
 def qnm_freq_decay(f_0, tau, decay):
     """Return the frequency at which the amplitude of the 
-    ringdown falls to 1/decay of the peak amplitude.
+    ringdown falls to decay of the peak amplitude.
 
     Parameters
     ----------
@@ -96,17 +95,17 @@ def qnm_freq_decay(f_0, tau, decay):
     -------
     f_decay: float
         The frequency at which the amplitude of the frequency-domain
-        ringdown is 1/decay of the peak amplitude.
+        ringdown falls to decay of the peak amplitude.
     """
 
     q_0 = numpy.pi * f_0 * tau
-    decay_sq = decay*decay
+    alpha = 1. / decay
+    alpha_sq = 1. / decay / decay
 
     # Expression obtained analytically under the assumption
-    # that decay^2, q_0^2 >> 1
-    q_sq = (decay_sq + 4*q_0*q_0 + decay*numpy.sqrt(decay_sq + 16*q_0*q_0)) / 4.
-    f_decay = numpy.sqrt(q_sq) / numpy.pi / tau
-    return f_decay
+    # that alpha_sq, q_0^2 >> 1
+    q_sq = (alpha_sq + 4*q_0*q_0 + alpha*numpy.sqrt(alpha_sq + 16*q_0*q_0)) / 4.
+    return f_decay = numpy.sqrt(q_sq) / numpy.pi / tau
 
 def get_td_qnm(template=None, delta_t=None, t_lower=None, t_final=None, **kwargs):
     """Return a time domain damped sinusoid.
@@ -129,7 +128,7 @@ def get_td_qnm(template=None, delta_t=None, t_lower=None, t_final=None, **kwargs
     delta_t : {None, float}, optional
         The time step used to generate the ringdown.
         If None, it will be set to the inverse of the frequency at which the
-        amplitude is a 1/100 of the peak amplitude.
+        amplitude is 1/100 of the peak amplitude.
     t_lower: {None, float}, optional
         The starting time of the output time series.
         If None, it will be set to delta_t.
@@ -154,14 +153,14 @@ def get_td_qnm(template=None, delta_t=None, t_lower=None, t_final=None, **kwargs
     phi_0 = input_params['phi_0']
     Amp = input_params['Amp']
     if delta_t is None:
-        delta_t = 1. / qnm_freq_decay(f_0, tau, 100.)
+        delta_t = 1. / qnm_freq_decay(f_0, tau, 1./100)
     if t_lower is None:
         t_lower = delta_t
         kmin = 0
     else:
         kmin=int(t_lower / delta_t)
     if t_final is None:
-        t_final = qnm_time_decay(tau, 1000.)
+        t_final = qnm_time_decay(tau, 1./1000)
     kmax = int(t_final / delta_t)
     n = int(t_final / delta_t) + 1
 
@@ -200,7 +199,7 @@ def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs
     delta_f : {None, float}, optional
         The frequency step used to generate the ringdown.
         If None, it will be set to the inverse of the time at which the
-        amplitude is a 1/1000 of the peak amplitude.
+        amplitude is 1/1000 of the peak amplitude.
     f_lower: {None, float}, optional
         The starting frequency of the output frequency series.
         If None, it will be set to delta_f.
@@ -225,14 +224,14 @@ def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs
     phi_0 = input_params['phi_0']
     Amp = input_params['Amp']
     if delta_f is None:
-        delta_f = 1. / qnm_time_decay(tau, 1000.)
+        delta_f = 1. / qnm_time_decay(tau, 1./1000)
     if f_lower is None:
         f_lower = delta_f
         kmin = 0
     else:
         kmin = int(f_lower / delta_f)
     if f_final is None:
-        f_final = qnm_freq_decay(f_0, tau, 100.)
+        f_final = qnm_freq_decay(f_0, tau, 1./100)
     kmax = int(f_final / delta_f)
     n = int(f_final / delta_f) + 1
 
