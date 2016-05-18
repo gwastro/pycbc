@@ -194,15 +194,15 @@ def distribution_from_config(cp, section, tag):
     special_args = ["name", "min", "max"]
 
     # get name of distribution to use
-    name = cp.get_opt_tag("prior", "name", tag)
+    name = cp.get_opt_tag(section, "name", tag)
 
     # get a dict with bounds as value
-    low = float(cp.get_opt_tag("prior", "min", tag))
-    high = float(cp.get_opt_tag("prior", "max", tag))
+    low = float(cp.get_opt_tag(section, "min", tag))
+    high = float(cp.get_opt_tag(section, "max", tag))
     dist_args = { tag : (low,high) }
 
     # add any additional options that user put in that section
-    for key in cp.options( "-".join(["prior",tag]) ):
+    for key in cp.options( "-".join([section,tag]) ):
 
         # ignore options that are already included
         if key in special_args:
