@@ -207,24 +207,6 @@ with ctx:
     likelihood = inference.GaussianLikelihood(generator, stilde_dict,
                         opts.low_frequency_cutoff, psds=psd_dict, prior=prior)
 
-    #! FIXME: leave in for development purposes and take out when read to merge
-    # if you just want a time series
-    if 0:
-        idx = opts.variable_args.index("tc")
-        tc_min = opts.prior_min[idx]
-        tc_max = opts.prior_max[idx]
-        x = numpy.arange(tc_min, tc_max, 0.001)
-        y = []
-        for tc in x:
-            val = likelihood([tc,1.4,1.4])
-            print val
-            y.append( val )
-        import matplotlib.pyplot as plt
-        plt.plot(x,y)
-        plt.savefig("/home/cbiwer/public_html/tmp/test.png")
-        import sys
-        sys.exit()
-
     # create sampler that will run MCMC
     ndim = len(variable_args)
     sampler = inference.samplers[opts.sampler](likelihood, ndim=ndim,
