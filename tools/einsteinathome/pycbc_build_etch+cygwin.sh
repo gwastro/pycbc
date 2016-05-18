@@ -796,7 +796,7 @@ if $build_dlls; then
 else
 # on Linux, build "progress" and "wrapper"
     echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'progress', 'fstab' and 'fstab_test'"
-    if test boinc/.git ; then
+    if test -d boinc/.git ; then
 	cd boinc
 	git pull
     else
