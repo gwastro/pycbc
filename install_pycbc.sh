@@ -761,6 +761,10 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
   bash build_dag.sh
   sed -i.bak "2 a cd ${VIRTUAL_ENV}/src/pycbc/tools/static " build_one.sh
 
+  if [[ $OSG_PYTHON == "yes" ]] ; then
+    perl -pi.bak -e 's+universe = vanilla+universe = local+' build_one.sub
+  fi
+
   #Run the dag that makes the bundles
   condor_submit_dag build_static.dag
 
@@ -769,6 +773,7 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
 
   # Check logs
   condor_check_userlogs pyinstaller_build_1.log
+  grep "Normal termination (return value 0)" build_static.dag.dagman.log
 
   #Copy the existing static files into the dist directory
   cp -v ${VIRTUAL_ENV}/bin/lalapps_inspinj dist/
