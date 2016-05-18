@@ -412,9 +412,9 @@ done
 echo
 #Create a Virtual Environment
 echo "--- creating virtual environment --------------------------------"
-VIRTENV_DIR=${PYTHONUSERBASE}
+VIRTENV_INSTALL_DIR=${PYTHONUSERBASE}
 virtualenv $NAME
-rm -rf ${VIRTENV_DIR}
+rm -rf ${VIRTENV_INSTALL_DIR}
 
 echo
 echo "--- setting up activate script ----------------------------------"
@@ -779,11 +779,16 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
   #Copy the completed build
   cp -v dist/ ${VIRTUAL_ENV}/../${UNIQUE_ID}-dist
   cd ${VIRTUAL_ENV}/..
+  rm $VIRTUAL_ENV/src/lalsuite
+  mv ${LALSUITE_BUILD_DIR} $VIRTUAL_ENV/src
+  pushd $VIRTUAL_ENV/src
+  ln -s ${LALSUITE_BUILD_DIR} lalsuite
+
   tar -zcvf ${UNIQUE_ID}.tar.gz ${VIRTUAL_ENV}
 
   deactivate
   echo 
-  rm -rf ${VIRTUAL_ENV}
+  rm -rf ${NAME}
 
   echo
   echo "Complete."
