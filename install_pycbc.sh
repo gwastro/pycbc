@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015 Amber Lenon, Steve Reyes, Duncan Brown, Larne Pekowsky.
+# Copyright 2015 Amber Lenon, Steve Reyes, Duncan Brown, Larne Pekowsky, Soumi De.
 
 # Exit if any command fails
 set -e 
@@ -788,12 +788,18 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
   mv ${LALSUITE_BUILD_DIR} $VIRTUAL_ENV/src
   pushd $VIRTUAL_ENV/src
   ln -s ${LALSUITE_BUILD_DIR} lalsuite
+  popd
 
-  tar -zcvf ${UNIQUE_ID}.tar.gz ${VIRTUAL_ENV}
+  tar -zcvf ${VIRTUAL_ENV}/../${UNIQUE_ID}-dist/${UNIQUE_ID}.tar.gz ${VIRTUAL_ENV}
 
+  echo
+  echo "=================================================================="
+  echo
+  echo "Exiting and removing Virtual Environment"
+  VIRTUAL_ENV_PATH=${VIRTUAL_ENV}
   deactivate
+  rm -rf ${VIRTUAL_ENV_PATH}
   echo 
-  rm -rf ${NAME}
 
   echo
   echo "Complete."
