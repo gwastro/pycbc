@@ -462,6 +462,7 @@ setup (
                'bin/hdfcoinc/pycbc_merge_psds',
                'bin/hdfcoinc/pycbc_plot_gating',
                'bin/pycbc_condition_strain',
+               'bin/inference/pycbc_make_inference_workflow',
                'bin/inference/pycbc_mcmc',
                'bin/inference/pycbc_mcmc_plot_acceptance_rate',
                'bin/inference/pycbc_mcmc_plot_acf',
