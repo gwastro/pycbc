@@ -60,7 +60,7 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 # get number of dimensions
 ndim = len(opts.variable_args)
 
-# get all past samples as an niterations x nwalker x ndim array
+# read input file
 logging.info("Reading input file")
 fp = h5py.File(opts.input_file, "r")
 
