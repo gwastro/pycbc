@@ -650,8 +650,15 @@ done
 echo
 echo "--- building static version of lalapps sbank tools --------------"
 echo
-pushd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/inspiral
-for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank_plot_sim lalapps_cbc_sbank lalapps_cbc_sbank_sim lalapps_cbc_sbank_splitter
+LALAPPS_INSPIRAL_DIR=${VIRTUAL_ENV}/src/lalsuite/lalsuite/lalapps/src/inspiral
+pushd ${LALAPPS_INSPIRAL_DIR}
+mkdir -p ${LALAPPS_INSPIRAL_DIR}/site-packages/lalapps
+touch ${LALAPPS_INSPIRAL_DIR}/site-packages/lalapps/__init__.py
+cp -v ${LALAPPS_INSPIRAL_DIR}/inspiral.py ${LALAPPS_INSPIRAL_DIR}/site-packages/lalapps/
+TMP_PYTHONPATH=${PYTHONPATH}
+export PYTHONPATH=${LALAPPS_INSPIRAL_DIR}/site-packages:${PYTHONPATH}
+
+for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank lalapps_cbc_sbank_sim 
 do
   pyinstaller ${prog}.py                       \
     --hidden-import scipy.linalg.cython_blas   \
@@ -664,6 +671,7 @@ do
 done
 popd
 
+export PYTHONPATH=${TMP_PYTHONPATH}
 
 if [[ $dev_or_rel -eq 2 ]] ; then
   #Building and Installing Documentation
@@ -777,7 +785,7 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
 
   #Copy the existing static files into the dist directory
   cp -v ${VIRTUAL_ENV}/bin/lalapps_inspinj dist/
-  for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank_plot_sim lalapps_cbc_sbank lalapps_cbc_sbank_sim lalapps_cbc_sbank_splitter
+  for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank lalapps_cbc_sbank_sim 
     do cp -v ${VIRTUAL_ENV}/bin/$prog dist/
   done
 
@@ -787,7 +795,7 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
   rm $VIRTUAL_ENV/src/lalsuite
   mv ${LALSUITE_BUILD_DIR} $VIRTUAL_ENV/src
   pushd $VIRTUAL_ENV/src
-  ln -s ${LALSUITE_BUILD_DIR} lalsuite
+  ln -s `basename ${LALSUITE_BUILD_DIR}` lalsuite
   popd
 
   tar -zcvf ${VIRTUAL_ENV}/../${UNIQUE_ID}-dist/${UNIQUE_ID}.tar.gz ${VIRTUAL_ENV}
