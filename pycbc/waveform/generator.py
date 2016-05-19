@@ -27,6 +27,7 @@ This modules provides classes for generating waveforms.
 
 import functools
 import waveform
+import ringdown
 from pycbc.waveform.utils import apply_fd_time_shift
 from pycbc.detector import Detector
 import lal as _lal
@@ -141,6 +142,24 @@ class TDomainCBCGenerator(BaseGenerator):
         super(TDomainCBCGenerator, self).__init__(waveform.get_td_waveform,
             variable_args=variable_args, **frozen_params)
 
+class FDomainRingdownGenerator(BaseGenerator):
+    """Uses ringdown.get_fd_qnm as a generator function to create frequency-
+    domain ringdown waveforms in the radiation frame; i.e., with no detector response
+    function applied. For more details, see BaseGenerator.
+
+    Examples
+    --------
+    Initialize a generator:
+    >>> generator = waveform.FDomainRingdownGenerator(variable_args=['tau', 'f_0'], delta_f=1./32, f_lower=30., f_final=500)
+
+    Create a ringdown with the variable arguments (in this case, tau, f_0):
+    >>> generator.generate(5, 100)
+    (<pycbc.types.frequencyseries.FrequencySeries at 0x1110c1450>,
+     <pycbc.types.frequencyseries.FrequencySeries at 0x1110c1510>)
+    """
+    def __init__(self, variable_args=(), **frozen_params):
+        super(FDomainRingdownGenerator, self).__init__(ringdown.get_fd_qnm,
+            variable_args=variable_args, **frozen_params)
 
 class FDomainDetFrameGenerator(object):
     """Generates a waveform using the given radiation frame generator class,

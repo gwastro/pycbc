@@ -24,7 +24,7 @@
 #
 """This module contains convenience utilities for manipulating waveforms
 """
-from pycbc.types import TimeSeries, Array, float32, float64
+from pycbc.types import TimeSeries, Array, float32, float64, complex_same_precision_as
 import lal
 import lalsimulation as sim
 from math import frexp
@@ -270,7 +270,8 @@ def apply_fd_time_shift(htilde, shifttime, fseries=None, copy=True):
     dt = float(shifttime - htilde.epoch)
     if fseries is None:
         fseries = htilde.sample_frequencies.numpy()
-    shift = Array(numpy.exp(-2j*numpy.pi*dt*fseries))
+    shift = Array(numpy.exp(-2j*numpy.pi*dt*fseries), 
+                dtype=complex_same_precision_as(htilde))
     if copy:
         htilde = 1. * htilde
     htilde *= shift
