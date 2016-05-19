@@ -1,0 +1,117 @@
+#! /usr/bin/evn python
+
+# Copyright (C) 2016 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import corner
+import h5py
+import logging
+import matplotlib as mpl; mpl.use("Agg")
+import matplotlib.pyplot as plt
+import numpy
+from pycbc import pnutils
+
+# command line usage
+parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_corner [--options]",
+    description="Plots corner plot of posteriors from MCMC.")
+
+# add data options
+parser.add_argument("--input-file", type=str, required=True,
+    help="Path to input HDF file.")
+parser.add_argument("--variable-args", type=str, nargs="+", required=True,
+    help="Name of parameters varied in MCMC.")
+
+# output plot options
+parser.add_argument("--output-file", type=str, required=True,
+    help="Path to output plot.")
+parser.add_argument("--labels", type=str, nargs="+",
+    help="Label for each parameter.")
+
+# add thinning options
+parser.add_argument("--thin-start", type=int, required=True,
+    help="Sample number to start collecting samples to plot.")
+parser.add_argument("--thin-interval", type=int, required=True,
+    help="Interval to use for thinning samples.")
+
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+    help="")
+
+# parse the command line
+opts = parser.parse_args()
+
+# setup log
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+
+# get all past samples as an niterations x nwalker x ndim array
+logging.info("Reading input file")
+fp = h5py.File(opts.input_file, "r")
+
+# thin samples to get independent samples from each sampler
+logging.info("Thinning samples")
+x = []
+
+# loop over each walkers
+for i in range(fp.attrs["nwalkers"]):
+
+    # loop over each parameter
+    samples = []
+    for param in opts.variable_args:
+
+        # derived parameters
+        if param == "mchirp":
+            idx1 = opts.variable_args.index("mass1")
+            idx2 = opts.variable_args.index("mass2")
+            mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(samples[idx1], samples[idx2])
+            samples.append( mchirp )
+        elif param == "eta":
+            idx1 = opts.variable_args.index("mass1")
+            idx2 = opts.variable_args.index("mass2")
+            _, eta = pnutils.mass1_mass2_to_mchirp_eta(samples[idx1], samples[idx2])
+            samples.append( eta )
+
+        # MCMC parameters
+        else:
+            samples.append( fp[param]["walker%d"%i][opts.thin_start::opts.thin_interval] )
+
+    # transpose walker samples to get an ndim x nwalker x niteration array
+    # add iteration to x
+    samples = numpy.array(samples)
+    samples = numpy.transpose(samples)
+    x.append(samples)
+
+# concatenate arrays so that all iterations are in a single array
+logging.info("Concatenating samples together")
+x = numpy.concatenate(x)
+
+# plot posterior
+logging.info("Plot posteriors")
+quantiles = [0.16, 0.5, 0.84]
+if opts.labels:
+    labels = [r"%s"%label for label in opts.labels]
+else:
+    labels = opts.variable_args
+fig = corner.corner(x, labels=labels, quantiles=quantiles)
+fig.savefig(opts.output_file)
+plt.close()
+
+# exit
+logging.info("Done")
