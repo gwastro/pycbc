@@ -16,12 +16,14 @@ fi
 # Clear all environment variables except the ones we need
 KEEP="+USER+HOME+UID+SSH_AUTH_SOCK+SSH_AGENT_PID+TMPDIR+tmpdir+"
 
+set +e
 for name in $(env | cut -d '=' -f 1); do 
   if [[ $KEEP != *${name}* ]] ; then
     # Some variables can't be unset, that's OK
-    unset $name || /bin/true
+    unset $name 2>/dev/null
   fi
 done
+set -e
 
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
