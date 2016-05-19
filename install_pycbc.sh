@@ -660,6 +660,8 @@ cp -v ${LALAPPS_INSPIRAL_DIR}/inspiral.py ${LALAPPS_INSPIRAL_DIR}/site-packages/
 TMP_PYTHONPATH=${PYTHONPATH}
 export PYTHONPATH=${LALAPPS_INSPIRAL_DIR}/site-packages:${PYTHONPATH}
 
+export PYINSTALLER_CONFIG_DIR=`mktemp --tmpdir -d -t pyinstaller-XXXXXXXXXX`
+
 for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank lalapps_cbc_sbank_sim 
 do
   pyinstaller ${prog}.py                       \
@@ -672,6 +674,9 @@ do
     cp dist/${prog} $VIRTUAL_ENV/bin
 done
 popd
+
+rm -rf ${PYINSTALLER_CONFIG_DIR}
+unset ${PYINSTALLER_CONFIG_DIR}
 
 export PYTHONPATH=${TMP_PYTHONPATH}
 
