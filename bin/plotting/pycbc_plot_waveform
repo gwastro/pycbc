@@ -69,7 +69,10 @@ parser.add_argument("--spin2y", type=float, default=0,
 parser.add_argument("--inclination", type=float, default=0,
                   help="Non-aligned spin of the second component object. ")
 parser.add_argument("--u-val", type=float, default=0,
-                  help="Ratio between h_+ and h_x according to .... . ")
+                  help="Ratio between h_+ and h_x according to 
+                        h(t) = h_+ * u_val + h_x. Only needed in the case of
+                        waveforms where h_+ and h_x are not related by a 
+                        simple phase shift.")
 # Other optional arguments
 parser.add_argument("--taper-template", choices=["start","end","startend"],
                     help="For time-domain approximants, taper the start and/or"
