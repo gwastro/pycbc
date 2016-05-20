@@ -733,7 +733,10 @@ def td_waveform_to_fd_waveform(waveform, out=None, length=None,
     return htilde
 
 def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
-    """Return a frequency domain waveform filter for the specified approximant
+    """Return a frequency domain waveform filter for the specified approximant.
+    Unlike get_waveform_filter this function returns both h_plus and h_cross
+    components of the waveform, which are needed for searches where h_plus
+    and h_cross are not related by a simple phase shift.
     """
     n = len(outplus)
 
