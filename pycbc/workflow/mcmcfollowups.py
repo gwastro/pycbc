@@ -121,7 +121,7 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
 
     logging.info("Leaving inference module")
 
-def make_inference_corner_plot(workflow, mcmc_file, output_dir,
+def make_inference_corner_plot(workflow, mcmc_file, output_dir, config_file,
                     name="mcmc_corner", analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
 
@@ -133,6 +133,9 @@ def make_inference_corner_plot(workflow, mcmc_file, output_dir,
         The file with MCMC samples.
     output_dir: str
         The directory to store result plots and files.
+    config_file: str
+        The path to the inference configuration file that has a
+        [variable_args] section.
     name: str
         The name in the [executables] section of the configuration file
         to use.
@@ -152,6 +155,14 @@ def make_inference_corner_plot(workflow, mcmc_file, output_dir,
     tags = [] if tags is None else tags
     analysis_seg = workflow.analysis_time \
                        if analysis_seg is None else analysis_seg
+
+    # read config file to get variables that vary
+    cp = WorkflowConfigParser([config_file])
+    variable_args = cp.options("variable_args")
+
+    # add derived mass parameters if mass1 and mass2 in variable_args
+    if "mass1" in variable_args and "mass2" in variable_args:
+        variable_args += ["mchirp", "eta"]
 
     # make the directory that will contain the output files
     makedir(output_dir)
