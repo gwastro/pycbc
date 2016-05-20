@@ -98,11 +98,10 @@ export PYTHONPATH=${PIP_PYTHONPATH}:${PYTHONPATH}
 easy_install --prefix=${PIP_DIR} https://pypi.python.org/packages/source/p/pip/pip-7.1.0.tar.gz#md5=d935ee9146074b1d3f26c5f0acfd120e
 
 export PYTHONUSERBASE=`mktemp --tmpdir -d -t virtualenv-XXXXXXXXXX`
-pip --no-cache install virtualenv --user
-export PATH=${PYTHONUSERBASE}/bin:${OLD_PATH}
+pip --no-cache install virtualenv --user --ignore-installed --upgrade
+export PATH=${PYTHONUSERBASE}/bin:${PATH}
 export PYTHONPATH=${PYTHONUSERBASE}/lib/python${PY_VERSION}/site-packages:${OLD_PYTHONPATH}
 
-rm -rf ${PIP_DIR}
 
 #Installing pyCBC
 while true ; do
@@ -415,8 +414,10 @@ echo
 #Create a Virtual Environment
 echo "--- creating virtual environment --------------------------------"
 VIRTENV_INSTALL_DIR=${PYTHONUSERBASE}
+unset PYTHONUSERBASE
 virtualenv $NAME
 rm -rf ${VIRTENV_INSTALL_DIR}
+rm -rf ${PIP_DIR}
 
 echo
 echo "--- setting up activate script ----------------------------------"
