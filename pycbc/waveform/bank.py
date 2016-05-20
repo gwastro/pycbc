@@ -234,9 +234,13 @@ class FilterBank(BaseFilterBank):
         if hasattr(htilde, 'length_in_time'):
             if htilde.length_in_time is not None:
                 self.table[index].ttotal = htilde.length_in_time
+        elif not self.table[index].ttotal:
+            self.table[index].ttotal = 0.
         if hasattr(htilde, 'chirp_length'):
             if htilde.chirp_length is not None:
                 self.table[index].template_duration = htilde.chirp_length
+        elif not self.table[index].template_duration:
+            self.table[index].template_duration = 0.
 
         htilde = htilde.astype(self.dtype)
         htilde.f_lower = f_low
@@ -266,3 +270,95 @@ def find_variable_start_frequency(approximant, parameters, f_start, max_length,
     return f
 
 
+class FilterBankSkyMax(FilterBank):
+    def __init__(self, filename, filter_length, delta_f, f_lower,
+                 dtype, out_plus=None, out_cross=None, **kwds):
+        super(FilterBankSkyMax, self).__init__(filename, filter_length,
+            delta_f, f_lower, dtype, out=None, **kwds)
+        self.out_plus = out_plus
+        self.out_cross = out_cross
+
+    def __getitem__(self, index):
+        # Make new memory for templates if we aren't given output memory
+        if self.out_plus is None:
+            tempoutplus = zeros(self.filter_length, dtype=self.dtype)
+        else:
+            tempoutplus = self.out_plus
+        if self.out_cross is None:
+            tempoutcross = zeros(self.filter_length, dtype=self.dtype)
+        else:
+            tempoutcross = self.out_cross
+
+        approximant = self.approximant(index)
+
+        # Get the end of the waveform if applicable (only for SPAtmplt atm)
+        f_end = pycbc.waveform.get_waveform_end_frequency(self.table[index],
+                              approximant=approximant, **self.extra_args)
+
+        if f_end is None or f_end >= (self.filter_length * self.delta_f):
+            f_end = (self.filter_length-1) * self.delta_f
+
+        # Find the start frequency, if variable
+        if self.max_template_length is not None:
+            f_low = find_variable_start_frequency(approximant,
+                                                  self.table[index],
+                                                  self.f_lower,
+                                                  self.max_template_length)
+        else:
+            f_low = self.f_lower
+
+        logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low
+))
+
+        # What does this do???
+        poke1 = tempoutplus.data
+        poke2 = tempoutcross.data
+
+        # Clear the storage memory
+        tempoutplus.clear()
+        tempoutcross.clear()
+
+        # Get the waveform filter
+        distance = 1.0 / DYN_RANGE_FAC
+        hplus, hcross = pycbc.waveform.get_two_pol_waveform_filter(
+            tempoutplus[0:self.filter_length],
+            tempoutcross[0:self.filter_length], self.table[index],
+            approximant=approximant, f_lower=f_low,
+            f_final=f_end, delta_f=self.delta_f, delta_t=self.delta_t,
+            distance=distance, **self.extra_args)
+
+        # For time domain templates, record the total duration (which may
+        # include ringdown) and the duration up to merger since they will be
+        # erased by the type conversion below
+        length_in_time = None
+        chirp_length = None
+        if hasattr(hplus, 'length_in_time') and \
+                                              hplus.length_in_time is not None:
+            self.table[index].ttotal = hplus.length_in_time
+        elif not self.table[index].ttotal:
+            self.table[index].ttotal = 0.
+        if hasattr(hplus, 'chirp_length') and hplus.chirp_length is not None:
+            self.table[index].template_duration = hplus.chirp_length
+        elif not self.table[index].template_duration:
+            self.table[index].template_duration = 0.
+
+        hplus = hplus.astype(self.dtype)
+        hcross = hcross.astype(self.dtype)
+        hplus.f_lower = self.f_low
+        hcross.f_lower = self.f_low
+        hplus.end_frequency = f_end
+        hcross.end_frequency = f_end
+        hplus.end_idx = int(hplus.end_frequency / hplus.delta_f)
+        hcross.end_idx = int(hplus.end_frequency / hplus.delta_f)
+        hplus.params = self.table[index]
+        hcross.params = self.table[index]
+        hplus.approximant = approximant
+        hcross.approximant = approximant
+
+        # Add sigmasq as a method of this instance
+        hplus.sigmasq = types.MethodType(sigma_cached, hplus)
+        hplus._sigmasq = {}
+        hcross.sigmasq = types.MethodType(sigma_cached, hcross)
+        hcross._sigmasq = {}
+
+        return hplus, hcross
