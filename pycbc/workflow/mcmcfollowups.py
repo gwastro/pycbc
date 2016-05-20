@@ -220,7 +220,7 @@ def make_inference_acceptance_rate_plot(workflow, mcmc_file, output_dir,
 
 def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
                     config_file, samples_name="mcmc_samples",
-                    auto_name="mcmc_auto", analysis_seg=None, tags=None):
+                    auto_name="mcmc_acf", analysis_seg=None, tags=None):
     """ Sets up single-parameter plots from MCMC in the workflow.
 
     Parameters
