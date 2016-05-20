@@ -68,12 +68,6 @@ parser.add_argument("--single-detector-triggers", nargs="+", required=True,
 parser.add_argument("--inference-config-file", type=str, required=True,
     help="workflow.WorkflowConfigParser parsable file with proir information.")
 
-# segment options
-parser.add_argument("--inspiral-data-read-name", required=True,
-    help="Name of inspiral segmentlist containing data read in by each analysis job.")
-parser.add_argument("--inspiral-data-analyzed-name", required=True,
-    help="Name of inspiral segmentlist containing data analyzed by each analysis job.")
-
 # add option groups
 wf.add_workflow_command_line_group(parser)
 

@@ -88,9 +88,6 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
     node.add_input_opt("--statmap-file", coinc_file)
     node.add_multiifo_input_list_opt("--single-detector-triggers",
                                      single_triggers)
-    node.add_input_opt("--inspiral-segments", insp_segs)
-    node.add_opt("--inspiral-data-read-name", insp_data_name)
-    node.add_opt("--inspiral-data-analyzed-name", insp_anal_name)
     node.new_output_file_opt(workflow.analysis_time, ".dax", "--output-file",
                                      tags=tags)
     node.new_output_file_opt(workflow.analysis_time, ".dax.map",
