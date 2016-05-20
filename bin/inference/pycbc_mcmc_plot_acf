@@ -1,0 +1,117 @@
+#! /usr/bin/evn python
+
+# Copyright (C) 2016 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import h5py
+import logging
+import matplotlib as mpl; mpl.use("Agg")
+import matplotlib.pyplot as plt
+import numpy
+
+# command line usage
+parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_acf [--options]",
+    description="Plots autocorrelation function from MCMC.")
+
+# add data options
+parser.add_argument("--input-file", type=str, required=True,
+    help="Path to input HDF file.")
+parser.add_argument("--variable-args", type=str, nargs="+", required=True,
+    help="Name of parameters varied in MCMC.")
+
+# add plotting options
+parser.add_argument("--ymin", type=float,
+    help="Minimum value to plot on y-axis.")
+parser.add_argument("--ymax", type=float,
+    help="Maximum value to plot on y-axis.")
+
+# output plot options
+parser.add_argument("--output-file", type=str, required=True,
+    help="Path to output plot.")
+
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+    help="")
+
+# parse the command line
+opts = parser.parse_args()
+
+# setup log
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+
+# get number of dimensions
+ndim = len(opts.variable_args)
+
+# read input file
+logging.info("Reading input file")
+fp = h5py.File(opts.input_file, "r")
+
+# calculate autocorrelation function for each walker
+logging.info("Calculating autocorrelation functions")
+all_acfs = []
+for param_name in opts.variable_args:
+
+    # loop over walkers and save an autocorrelation function
+    # for each walker
+    param_acfs = []
+    for i in range(fp.attrs["nwalkers"]):
+
+        # get all the past samples for this walker
+        y = fp[param_name]["walker%d"%i][:]
+
+        # subtract mean
+        z =  y - y.mean()
+
+        # autocorrelate
+        acf = numpy.correlate(z, z, mode="full")
+
+        # take only the second half of the autocorrelation time series
+        acf = acf[acf.size/2:]
+
+        # normalize
+        acf /= y.var() * numpy.arange(y.size, 0, -1)
+
+        # add to list of autocorrelation time series
+        param_acfs.append(acf)
+
+    # add list with parameters ACF to list of all ACFs
+    all_acfs.append(param_acfs)
+
+# plot autocorrelation
+logging.info("Plotting autocorrelation functions")
+for param_acfs in all_acfs:
+    for acf in param_acfs:
+        plt.plot(range(len(acf)), acf, alpha=0.5)
+plt.ylabel("Autocorrelation Function")
+plt.xlabel("iteration")
+
+# format plot
+if opts.ymin:
+    plt.ylim(ymin=opts.ymin)
+if opts.ymax:
+    plt.ylim(ymax=opts.ymax)
+
+# save plot
+plt.savefig(opts.output_file)
+plt.close()
+
+# exit
+logging.info("Done")
