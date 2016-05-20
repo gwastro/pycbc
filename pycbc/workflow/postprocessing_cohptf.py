@@ -464,7 +464,14 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
         workflow._adag.addDependency(dep)
 
     # Make the open box shell script
-    open_box_cmd = html_summary_node.executable.get_pfn() + " "
+    try:
+        open_box_cmd = html_summary_node.executable.get_pfn() + " "
+    except:
+        exe_path = html_summary_node.executable.get_pfn('nonlocal').replace(\
+                "https", "http")
+        exe_name = exe_path.rsplit('/', 1)[-1]
+        open_box_cmd = "wget %s\n" % exe_path
+        open_box_cmd += "chmod 500 ./%s\n./%s " % (exe_name, exe_name)
     open_box_cmd += ' '.join(html_summary_node._args + \
                              html_summary_node._options)
     open_box_cmd += " --open-box"
