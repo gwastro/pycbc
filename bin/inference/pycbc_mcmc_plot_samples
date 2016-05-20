@@ -66,6 +66,7 @@ fig, axs = plt.subplots(ndim, sharex=True)
 plt.xlabel("iterations")
 
 # loop over variable args
+axs = [axs] if type(axs) is not list else axs
 for i,arg in enumerate(opts.variable_args):
 
     # loop over walkers

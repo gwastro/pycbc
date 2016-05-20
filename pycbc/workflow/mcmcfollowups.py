@@ -158,7 +158,8 @@ def make_inference_corner_plot(workflow, mcmc_file, output_dir,
 
     # make a node for plotting the posterior as a corner plot
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
-                      out_dir=output_dir, tags=tags).create_node()
+                      out_dir=output_dir, universe="local",
+                      tags=tags).create_node()
 
     # add command line options
     node.add_input_opt("--input-file", mcmc_file)
