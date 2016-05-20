@@ -204,7 +204,7 @@ def make_inference_acceptance_rate_plot(workflow, mcmc_file, output_dir,
     # make the directory that will contain the output files
     makedir(output_dir)
 
-    # make a node for plotting the posterior as a corner plot
+    # make a node for plotting the acceptance rate
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
                       out_dir=output_dir, tags=tags).create_node()
 
@@ -280,7 +280,7 @@ def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
         samples_node.add_opt("--variable-args", arg)
         samples_node.add_opt("--labels", arg)
 
-        # make node for plotting the auto-correlation function for each walker
+        # make node for plotting the autocorrelation function for each walker
         auto_node = PlotExecutable(workflow.cp, auto_name, ifos=workflow.ifos,
                           out_dir=output_dir, tags=tags + [arg]).create_node()
 
