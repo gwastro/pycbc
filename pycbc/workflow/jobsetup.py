@@ -329,8 +329,16 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     job_tag = curr_exe_job.name.upper()
     data_seg, job_valid_seg = curr_exe_job.get_valid_times()
     curr_out_files = FileList([])
-    bank_veto = datafind_outs[-1]
-    frame_files = datafind_outs[:-1]
+    if 'SEARCH_POINTS' in datafind_outs[-1].description \
+            and 'bank_veto_bank' in datafind_outs[-2].description:
+        ipn_sky_points = datafind_outs[-1]
+        bank_veto = datafind_outs[-2]
+        frame_files = datafind_outs[:-2]
+    else:
+        ipn_sky_points = None
+        bank_veto = datafind_outs[-1]
+        frame_files = datafind_outs[:-1]
+
     split_bank_counter = 0
     
     if curr_exe_job.injection_file is None:
@@ -339,7 +347,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
             tag.append(split_bank.tag_str)
             node = curr_exe_job.create_node(data_seg, job_valid_seg,
                     parent=split_bank, dfParents=frame_files,
-                    bankVetoBank=bank_veto, tags=tag)
+                    bankVetoBank=bank_veto, ipn_file=ipn_sky_points, tags=tag)
             workflow.add_node(node)
             split_bank_counter += 1
             curr_out_files.extend(node.output_files)
@@ -351,7 +359,8 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
                 tag.append(split_bank.tag_str)
                 node = curr_exe_job.create_node(data_seg, job_valid_seg,
                         parent=split_bank, inj_file=inj_file, tags=tag,
-                        dfParents=frame_files, bankVetoBank=bank_veto)
+                        dfParents=frame_files, bankVetoBank=bank_veto,
+                        ipn_file=ipn_sky_points)
                 workflow.add_node(node)
                 split_bank_counter += 1
                 curr_out_files.extend(node.output_files)
@@ -1433,7 +1442,26 @@ class LalappsInspinjExecutable(Executable):
         else:
             ext = '.xml'
 
-        if exttrig_file is not None:
+        # Check if these injections are using trigger information to choose
+        # sky positions for the simulated signals
+        if (self.get_opt('l-distr') == 'exttrig' and exttrig_file is not None \
+                and 'SIM_POINTS' not in exttrig_file.description) \
+                or (self.get_opt('l-distr') == 'ipn' and \
+                    'SIM_POINTS' in exttrig_file.description):
+            triggered = True
+        elif (self.get_opt('l-distr') != 'exttrig') \
+                and (self.get_opt('l-distr') != 'ipn' and not \
+                     self.has_opt('ipn-file')):
+            triggered = False
+        else:
+            err_msg = "The argument 'l-distr' passed to the "
+            err_msg += "%s job has the value " % self.tagged_name
+            err_msg += "'%s' but you have not " % self.get_opt('l-distr')
+            err_msg += "provided the corresponding ExtTrig or IPN file. "
+            err_msg += "Please check your configuration files and try again."
+            raise ValueError(err_msg)
+        
+        if triggered:
             num_injs = int(self.cp.get_opt_tags('workflow-injections',
                                                 'num-injs', curr_tags))
             inj_tspace = float(segment[1] - segment[0]) / num_injs
@@ -1441,13 +1469,13 @@ class LalappsInspinjExecutable(Executable):
             node.add_opt('--time-step', inj_tspace)
             
             if self.get_opt('l-distr') == 'exttrig':
-                node.add_opt('--exttrig-file', '%s' % exttrig_file.storage_path)
-            
-            node.new_output_file_opt(segment, ext, '--output',
-                                     store_file=self.retain_files)
-        else:
-            node.new_output_file_opt(segment, ext, '--output',
-                                     store_file=self.retain_files)
+                #node.add_opt('--exttrig-file', '%s' % exttrig_file.storage_path)
+                node.add_input_opt('--exttrig-file', exttrig_file)
+            if self.get_opt('l-distr') == 'ipn':
+                node.add_input_opt('--ipn-file', exttrig_file)
+
+        node.new_output_file_opt(segment, ext, '--output',
+                                 store_file=self.retain_files)
         
         node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
         node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))

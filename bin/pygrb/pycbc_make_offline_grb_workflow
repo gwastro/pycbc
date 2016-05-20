@@ -160,6 +160,24 @@ wflow.ifos = ifos
 datafind_veto_files = _workflow.FileList([])
 datafind_veto_files.extend(datafind_files)
 
+# Is this an IPN GRB?
+if wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
+        and wflow.cp.has_option("workflow-injections", "ipn-sim-points"):
+    search_pts_file, sim_pts_file = _workflow.get_ipn_sky_files(wflow)
+    wflow.cp.set("injections", "ipn-gps-time", cp.get("workflow", "trigger-time"))
+    IPN = True
+    all_files.extend(_workflow.FileList([search_pts_file, sim_pts_file]))
+elif wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
+        or wflow.cp.has_option("workflow-injections", "ipn-sim-points"):
+    msg = "You have provided only one of 'ipn-search-points' under "
+    msg += "[workflow-inspiral] and 'ipn-sim-points' under "
+    msg += "[workflow-injections] in your configuration files. If this is an "
+    msg += "IPN GRB please provide both, otherwise provide neither."
+    logging.error(msg)
+    sys.exit()
+else:
+    IPN = False
+
 # If using coh_PTF_inspiral we need bank_veto_bank.xml
 if os.path.basename(wflow.cp.get("executables", "inspiral")) \
                     == "lalapps_coh_PTF_inspiral":
@@ -167,6 +185,9 @@ if os.path.basename(wflow.cp.get("executables", "inspiral")) \
                                                  bank_veto=True)
     datafind_veto_files.extend(bank_veto_file)
     
+    if IPN:
+        datafind_veto_files.extend(_workflow.FileList([search_pts_file]))
+
     # Make ExtTrig xml file (needed for lalapps_inspinj and summary pages)
     ext_file = _workflow.make_exttrig_file(wflow.cp, ifos, sciSegs[ifo][0],
                                            baseDir)
@@ -195,8 +216,12 @@ if wflow.cp.has_section("workflow-injections"):
     inj_insp_caches = _workflow.FileList([])
 
     # Generate injection files
-    inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, injDir,
-            exttrig_file=ext_file)
+    if IPN:
+        inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, injDir,
+                exttrig_file=sim_pts_file)
+    else:
+        inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, injDir,
+                exttrig_file=ext_file)
     all_files.extend(inj_files)
     injs = inj_files
 
