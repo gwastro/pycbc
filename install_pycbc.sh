@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015 Amber Lenon, Steve Reyes, Duncan Brown.
+# Copyright 2015 Amber Lenon, Steve Reyes, Duncan Brown, Larne Pekowsky, Soumi De.
 
 # Exit if any command fails
 set -e 
@@ -13,110 +13,147 @@ if [ "$1" != "noscript" ] ; then
     exit 1;
 fi
 
+# Clear all environment variables except the ones we need
+KEEP="+USER+HOME+UID+SSH_AUTH_SOCK+SSH_AGENT_PID+TMPDIR+tmpdir+"
 
-while true ; do
-#Check pip and virtualenv versions
-echo
-echo "virtualenv version:"
-virtualenv --version
-echo
-read -rp  "Is your version of virtualenv greater than or equal to 13.1.1? (Enter yes or no) " version
-
-if [[ $version == "yes" ]] ; then
-  break
-
-elif [[ $version == "no" ]] ; then
-
-  while true ; do
-  
-  echo
-  echo "pip version:"
-  pip --version
-  echo
-  read -rp "Is your version of pip greater than 7.1.0? (Enter yes or no) " pip_version
-  
-  if [[ $pip_version == "yes" ]] ; then
-    break
-  
-  elif [[ $pip_version == "no" ]] ; then
-    echo
-    echo "You must have at least version 7.1.0 of pip to install virtualenv."
-    echo "To set up pip follow the instructions at:"
-    echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
-    echo
-    break
-  
-  else
-    echo "Please enter yes or no"
-  
+set +e
+for name in $(env | cut -d '=' -f 1); do 
+  if [[ $KEEP != *${name}* ]] ; then
+    # Some variables can't be unset, that's OK
+    unset $name 2>/dev/null
   fi
+done
+set -e
+
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+
+# Make sure there's nothing lingering from previous builds
+if [[ -e ${HOME}/.local ]]
+then
+  while true; do
+    echo "Existing .local directory found, this can interfere with the build process."
+    echo "Should I delete this directory (recommended)?"
+    echo
+    read -p "Enter yes or no: " DELETE_DOT_LOCAL
+    echo
+
+    if [[ $DELETE_DOT_LOCAL == "yes" ]] ; then
+      rm -rf ${HOME}/.local
+      echo ".local deleted"
+      break
+    elif [[ $DELETE_DOT_LOCAL == "no" ]] ; then
+      echo "Preserving .local"
+      break
+    else
+      echo "Please enter yes or no."
+    fi
   done
-
-  echo
-  echo "You must have at least version 13.1.1 of virtualenv."
-  echo "To set up virutalenv follow the instructions at:"
-  echo "http://ligo-cbc.github.io/pycbc/latest/html/install_virtualenv.html"
-  echo
-  exit 1
-
-else
- echo "Please enter yes or no"
-
 fi
+
+# Set up Python
+while true; do
+  echo "Do you want to use the OSG build of Python 2.7?"
+  echo
+  echo "This is used for building bundled executables for use on OSG."
+  echo "If you are not sure, say no to use the standard system Python."
+  echo
+  read -p "Enter yes or no: " OSG_PYTHON
+  echo
+
+  if [[ $OSG_PYTHON == "yes" ]] ; then
+    if [ ! -e /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash ] ; then
+      echo "Error: Could not find sctipt to set up OSG modules."
+      echo "Check that /cvmfs/oasis.opensciencegrid.org is mounted on this machine."
+      exit 1
+    fi
+    set +e
+    source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
+    set -e
+    module load python/2.7
+    break
+  elif [[ $OSG_PYTHON == "no" ]] ; then
+    break
+  else
+    echo "Please enter yes or no."
+  fi
 done
 
+py_path=`which python`
+py_ver=`python --version 2>&1`
+echo "Using Python from ${py_path} which is ${py_ver}"
+echo
+
+#Make a temporary directory and install pip into it
+echo "--- installing pip and virtualenv into temporary directory ------"
+echo
+PY_VERSION=`python -c 'import sys; print "%d.%d" % (sys.version_info[0], sys.version_info[1])'`
+OLD_PATH=$PATH
+OLD_PYTHONPATH=$PYTHONPATH
+PIP_DIR=`mktemp --tmpdir -d -t pip-XXXXXXXXXX`
+PIP_PYTHONPATH=${PIP_DIR}/lib/python${PY_VERSION}/site-packages
+mkdir -p ${PIP_PYTHONPATH}
+export PATH=${PIP_DIR}/bin:${PATH}
+export PYTHONPATH=${PIP_PYTHONPATH}:${PYTHONPATH}
+easy_install --prefix=${PIP_DIR} https://pypi.python.org/packages/source/p/pip/pip-7.1.0.tar.gz#md5=d935ee9146074b1d3f26c5f0acfd120e
+
+export PYTHONUSERBASE=`mktemp --tmpdir -d -t virtualenv-XXXXXXXXXX`
+pip --no-cache install virtualenv --user --ignore-installed --upgrade
+export PATH=${PYTHONUSERBASE}/bin:${PATH}
+export PYTHONPATH=${PYTHONUSERBASE}/lib/python${PY_VERSION}/site-packages:${OLD_PYTHONPATH}
+
+
 #Installing pyCBC
+while true ; do
+  echo
+  echo "Are you installing a virtualenv to build bundled exectuables for distribution?"
+  read -p "Enter yes or no (if you are not sure, say no): " IS_BUNDLE_ENV
 
-while true; do
+  if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
+    UNIQUE_ID=pycbc-`uuidgen`
+    NAME=${HOME}/${UNIQUE_ID}
+    break
+  elif [[ $IS_BUNDLE_ENV == "no" ]] ; then
+    while true; do
+    # Ask the user where they want pycbc installed
+    read -p "Enter the location where you want the virtual env created: " NAME
 
-# Ask the user where they want pycbc installed
-read -p "Enter the location where you want the virtual env created: " NAME
+    if [[ $NAME == ~* ]] ; then
+      if [[ ! "$NAME" =~ "/" ]] ; then
+        NAME=${HOME}
+      else
+        # chomp the ~
+        NAME=${NAME/##~}
+        # chomp anything else before the first slash to catch e.g. ~alenon/
+        NAME=${NAME#*\/}
+        # expand to the user's home directory
+        NAME=${HOME}/${NAME}
+      fi
+    fi
 
-if [[ $NAME == ~* ]] ; then
-  if [[ ! "$NAME" =~ "/" ]] ; then
-    NAME=${HOME}
+    if [[ -z $NAME ]] ; then
+      echo "ERROR: you must specify a path for your virtual environment."
+      continue
+    fi
+
+    if [[ -d $NAME ]] ; then
+       echo "ERROR: the directory $NAME already exists."
+       echo "If you want to use this path, remove the directory and try again."
+    else
+      break
+    fi
+    done
+    break
   else
-    # chomp the ~
-    NAME=${NAME/##~}
-    # chomp anything else before the first slash to catch e.g. ~alenon/
-    NAME=${NAME#*\/}
-    # expand to the user's home directory
-    NAME=${HOME}/${NAME}
+    echo "Please enter yes or no."
   fi
-fi
-
-if [[ -z $NAME ]] ; then
-  echo "ERROR: you must specify a path for your virtual environment."
-  continue
-fi
-
-if [[ -d $NAME ]] ; then
-   echo "ERROR: the directory $NAME already exists."
-   echo "If you want to use this path, remove the directory and try again."
-   continue
-fi
+done
 
 #Virualenv check
 echo
-echo "You chose to install PyCBC in $NAME."
+echo "You are installing PyCBC in $NAME."
 echo
-read -rp "Is this where you want PyCBC installed? (Enter yes or no) " name_check
 
-if [[ $name_check == "yes" ]] ; then
- echo "Pycbc is being installed in $NAME." 
- break
-fi
-
-if [[ $name_check == "no" ]] ; then
- continue
-
-else
- echo "Please enter yes or no"
- continue
-
-fi
-
-done
 
 #Number of Processors for the installation
 read -p "Enter the number of processors that you want to use for builds: " nproc
@@ -144,6 +181,19 @@ while true ; do
 
 #LIGO.ORG username
 read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " directory
+
+#Valid ECP cookie to clone
+set +e
+while true; do
+  echo
+  echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
+  ecp-cookie-init LIGO.ORG https://versions.ligo.org/git $directory
+  if [[ $? -eq 0 ]] ; then
+    break
+  fi
+done
+set -e
+echo
 
 #Lalsuite
 echo "--- select lalsuite branch or tag -------------------------------"
@@ -231,18 +281,26 @@ echo "     /opt/intel/bin/compilervars.sh intel64"
 echo "on atlas, enter"
 echo "     /opt/intel/2015/bin/compilervars.sh intel64"
 echo "on ldas-grid, enter"
-echo "     /opt/intel/composer_xe_2015.1.135/bin/compilervars.sh intel64"
+echo "     /opt/intel/composerxe/bin/compilervars.sh intel64"
 echo "If you do not have these tools installed, just press return."
 echo 
 read -p "Enter path and architecture for Intel compilervars.sh or press return: " intel_path
 
 #ROM Data Path
 LAL_DATA_PATH=""
+if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
+check_rom="no"
+else
+check_rom="yes"
 while true; do
 echo
 read -rp "Is the LAL Reduce Order Model (ROM) data installed on your cluster (Enter yes or no, if unsure type no)? " install_rom
 
 if [[ ${install_rom} == "yes" ]] ; then
+ echo
+ echo "The install script will check that you have valid ROM data installed."
+ echo "Enter the path that contains the SEOBNRv2ROM*.dat files. This path probably"
+ echo "ends with lalsimulation/ if you installed the ROMS in the normal way."
  echo
  read -rp "Please enter the path to the ROM data: " rom_path
      if [[ ${rom_path} == ~* ]] ; then
@@ -266,8 +324,11 @@ elif [[ ${install_rom} == "no" ]] ; then
  read -rp "Do you want to download the ROM data now (Enter yes or no): " rom_download
 
   if [[ ${rom_download} == "no" ]] ; then
-    echo "Please determine the location of the ROM data, or chose yes to download it. Exiting install."
-    exit 1
+    echo
+    echo "Warning: SEOBNRv2ROM waveforms will not work without the ROM data"
+    echo
+    check_rom="no"
+    break
 
   elif [[ ${rom_download} == "yes" ]] ; then
     echo
@@ -304,8 +365,9 @@ else
 
 fi
 done
+fi
 
-echo "------------PLease check the inputs carefully-----------------"
+echo "------------Please check the inputs carefully-----------------"
 echo
 echo "LIGO.ORG username: " $directory
 echo "Lalsuite Branch or Tag: " $lalbranch
@@ -321,14 +383,17 @@ echo "Github Username: " $github
 fi
 
 echo "Path and architecture for Intel compilervars.sh:" $intel_path
-if [[ ${install_rom} == "yes" ]] ; then
-echo "ROM data is located in ${LAL_DATA_PATH}"
-fi
+if [[ ${check_rom} == "yes" ]] ; then 
+  if [[ ${install_rom} == "yes" ]] ; then
+    echo "ROM data is located in ${LAL_DATA_PATH}"
+  fi
 
-if [[ ${install_rom} == "no" ]] ; then
-echo "ROM data will be install in ${LAL_DATA_PATH}"
+  if [[ ${install_rom} == "no" ]] ; then
+    echo "ROM data will be install in ${LAL_DATA_PATH}"
+  fi
+else
+  echo "Not installing ROM data."
 fi
-echo
 echo
 read -rp "Are these correct? (Enter yes or no) " questions 
 
@@ -345,166 +410,52 @@ read -rp "Are these correct? (Enter yes or no) " questions
  fi
 done
 
-while true ; do
-
-while true ; do
-echo "What would you like to do with your pip cache?"
-echo "1. Use the existing pip cache.(Fastest)"
-echo "2. Ignore the pip cache."
-echo "3. Remove the pip cache. (Safest and slowest)"
-echo
-read -rp "Enter 1, 2 or 3: " pip_cache
-
-
-if [[ $pip_cache != 1 ]] && [[ $pip_cache != 2 ]] && [[ $pip_cache != 3 ]] ; then
- echo "You must enter 1, 2, or 3." 
- echo
- echo
- continue
-
-else
- break
-
-fi
-done
-
-#Pip Cache Check
-read -rp "You entered [ $pip_cache ]. Are you sure? (Enter yes or no) " check
-
-if [[ $check == "yes" ]] ; then 
-
- if [[ $pip_cache -eq 1 ]] ; then 
- cache=""
- break
- fi
-
- if [[ $pip_cache -eq 2 ]] ; then
- cache="--no-cache-dir"
- break
- fi
-
- if [[ $pip_cache -eq 3 ]] ; then
- rm -rfv ${HOME}/.cache/pip
- cache=""
- break
- fi
- 
-elif [[ $check == "no" ]] ; then
-continue
-
-else
-echo "You must enter yes or no."
-continue
-
-fi
-done
-
-
-#Valid ECP cookie to clone
-echo "Enter your LIGO.ORG password to get a cookie to clone lalsuite."
-ecp-cookie-init LIGO.ORG https://versions.ligo.org/git $directory
-echo
 echo
 #Create a Virtual Environment
 echo "--- creating virtual environment --------------------------------"
-unset PYTHONPATH
-unset LD_LIBRARY_PATH
+VIRTENV_INSTALL_DIR=${PYTHONUSERBASE}
+unset PYTHONUSERBASE
 virtualenv $NAME
+rm -rf ${VIRTENV_INSTALL_DIR}
+rm -rf ${PIP_DIR}
+
+echo
+echo "--- setting up activate script ----------------------------------"
+echo
+
+mv $NAME/bin/activate $NAME/bin/activate.bak
+if [[ $OSG_PYTHON == "yes" ]] ; then
+  cat >$NAME/bin/activate <<EOF
+# Load OSG Python module
+source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
+module load python/2.7
+
+EOF
+else
+  touch $NAME/bin/activate
+fi
+echo "export XDG_CACHE_HOME=${NAME}/.cache" >> $NAME/bin/activate
+echo "export PYTHONUSERBASE=${NAME}/.local" >> $NAME/bin/activate
+if [[ ! -z "${intel_path}" ]] ; then 
+  echo "source ${intel_path}" >> ${NAME}/bin/activate
+fi
+cat $NAME/bin/activate.bak >> $NAME/bin/activate
+
 
 #Enter Virtual Environment
+echo
+echo "--- entering virtual environment --------------------------------"
+echo
+
+set +e
 source $NAME/bin/activate
+set -e
+
 mkdir -p $VIRTUAL_ENV/src
 
-#Installing lalsuite into Virtual Environment
-#Install unitest2, python-cjson, and numpy
-echo "--- installing required packages --------------------------------"
-pip $cache install "numpy>=1.6.4" unittest2 python-cjson Cython
-
-#Install HDF5
-echo "--- installing HDF5 libraries -----------------------------------"
-cd $VIRTUAL_ENV/src
-pip install nose>=1.0.0 
-curl https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
-tar -zxvf hdf5-1.8.12.tar.gz
-rm hdf5-1.8.12.tar.gz
-cd hdf5-1.8.12
-./configure --prefix=$VIRTUAL_ENV/opt/hdf5-1.8.12
-make -j $nproc install
-HDF5_DIR=${VIRTUAL_ENV}/opt/hdf5-1.8.12 pip $cache install h5py
-
-#Authenticate with LIGO Data Grid services, install M2Crypto
-SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip $cache install M2Crypto
-echo
-echo
-echo "--- cloning lalsuite repository -----------------------------------"
-echo
-#Valid ECP cookie to clone
-
-#Tell git the location of the cookie
-git config --global http.cookiefile /tmp/ecpcookie.u`id -u`
-
-#Get Copy of LalSuite Repository
-cd $VIRTUAL_ENV/src
-git clone https://versions.ligo.org/git/lalsuite.git
- 
-#Obtaining source code and checking version
-#Change to lalsuite directory
-cd lalsuite
-
-#Determine which version of the code you want to install
-echo
-git checkout $lalbranch
-
-#Building and Installing into your Virtual Environment
-#Use the master configure script to build and install all the components
-echo
-echo "--- building lalsuite -------------------------------------------"
-echo
-./00boot
-./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar
-make -j $nproc
-make install
-
-#Add to virtualenv activate script
-echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc' >> ${VIRTUAL_ENV}/bin/activate
-source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc
-
-#Check that lalsuite is installed
-echo "LAL installed into $LAL_PREFIX"
-
-#Installing pyCBC to Virtual Environment
-echo
-echo "--- installing pegasus and dqsegdb ------------------------------"
-echo
-
-#Install Pegasus WMS python libraries
-pip $cache install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
-
-#Install dqsegb from Duncan's repository
-pip $cache install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
-
-#Install gracedb client tools
-pip install ligo-gracedb
-
-#Install pycbc and glue from non-cached versions to get the rpaths correct
-pip $cache install pycbc-glue pycbc-pylal
-
-#ROM Data Download
-
-if [[ ${install_rom} == "no" ]] ; then
-    pushd ${LAL_DATA_PATH}
-    echo "--- Downloading ROM DATA ---------------------------------"
-    svn co https://svn.ligo.caltech.edu/svn/lalsuite-extra/
-    pushd lalsuite-extra
-    ./00boot
-    ./configure --prefix=${LAL_DATA_PATH}
-    make install
-    popd
-    popd
-    #echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >> ${VIRTUAL_ENV}/bin/activate
-fi
-
 #ROM Data Validation
+if [[ ${check_rom} == "yes" ]] ; then
+echo "--- checking rom data -------------------------------------------"
 rom_hash=('f82ddc5dc0b6fdc75122e767bd5e78c8' '62afa5351d6b775ac33cb4d898f0016b' 'a6829fa05437cc0aad81e3f8dae839cc' '98ea14b01e729d15ff666caa25afaed6' 'b41f0f7fbaf8be1d1848de7ee702bc67' '20ee260c870109766a6f048e20c7e10f' '96c384617edd8375ceaa03f9b7456467' '67d4f206fe19104fbc98b923b37318bb' 'd0bf97b4e17b5c9a7cfd222aaaafd742' 'c2ea5d296fee01abe16c0dd9e5f71f04' '412953726ca4bc72a810b27b810831c7' '4d5378935a7fba5e96f671581bce99fb' '31f48cb651a60837a3e99ee050aa9bc2' '727d31f6dc678aba8539817c8d0ae930' 'd0e1601c7cf4bd727d03e6cf7d2f722b' 'e6c243f76609cada55612cfe53f82e41' '08186a21682d2e73cb00a3ef35aa5c9c' '1ef7953a977a1fb551f59585c5d63d7a' 'b5923860bf021e6a2a23d743e5724bee' '2947032d0ad7ffde9704e24bf9e676f5')
 
 if [[ ${install_rom} == "yes" ]] ; then
@@ -532,6 +483,131 @@ for j in "${rom_hash[@]}" ; do
     exit 1
   fi
 done
+fi
+
+#Install HDF5
+echo "--- installing HDF5 libraries -----------------------------------"
+cd $VIRTUAL_ENV/src
+curl https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
+tar -zxvf hdf5-1.8.12.tar.gz
+rm hdf5-1.8.12.tar.gz
+cd hdf5-1.8.12
+./configure --prefix=$VIRTUAL_ENV
+make -j $nproc install
+
+#Set up the software for the virtual environment
+echo "--- installing required packages --------------------------------"
+
+#Install Pegasus WMS python libraries
+pip install http://download.pegasus.isi.edu/pegasus/4.6.1/pegasus-python-source-4.6.1.tar.gz
+
+if [[ $dev_or_rel -eq 1 ]] ; then
+  #Installing a released version of pyCBC
+  curl https://raw.githubusercontent.com/ligo-cbc/pycbc/${reltag}/requirements.txt > ${VIRTUAL_ENV}/requirements.txt
+  perl -pi.bak -e 's/pegasus-wms==4.5.2/pegasus-wms==4.6.1/g' ${VIRTUAL_ENV}/requirements.txt  
+  pylal_version=`grep pycbc-pylal ${VIRTUAL_ENV}/requirements.txt`
+  glue_version=`grep pycbc-glue ${VIRTUAL_ENV}/requirements.txt`
+  mv ${VIRTUAL_ENV}/requirements.txt ${VIRTUAL_ENV}/requirements.txt.bak
+  grep -v pycbc-pylal ${VIRTUAL_ENV}/requirements.txt.bak | grep -v pycbc-glue > ${VIRTUAL_ENV}/requirements.txt
+  set +e
+  HDF5_DIR=${VIRTUAL_ENV} pip install -r ${VIRTUAL_ENV}/requirements.txt
+  set -e
+  HDF5_DIR=${VIRTUAL_ENV} pip install -r ${VIRTUAL_ENV}/requirements.txt
+else
+  # Upgrade pip to get rid of any warnings
+  pip install --upgrade pip
+  pip install "numpy>=1.6.4" unittest2 python-cjson Cython
+  pip install "nose>=1.0.0"
+  HDF5_DIR=${VIRTUAL_ENV} pip install h5py
+  pylal_version="pycbc-pylal"
+  glue_version="pycbc-glue"
+fi  
+
+pip install git+http://github.com/ligo-cbc/pyinstaller.git@pycbc_install#egg=pyinstaller
+
+#Authenticate with LIGO Data Grid services, install M2Crypto
+SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
+echo
+echo
+echo "--- cloning lalsuite repository -----------------------------------"
+echo
+#Valid ECP cookie to clone
+
+#Tell git the location of the cookie
+git config --global http.cookiefile /tmp/ecpcookie.u`id -u`
+
+#Get Copy of LalSuite Repository
+LALSUITE_BUILD_DIR=`mktemp --tmpdir -d -t lalsuite-XXXXXXXXXX`
+ln -sf ${LALSUITE_BUILD_DIR} $VIRTUAL_ENV/src/lalsuite
+cd $VIRTUAL_ENV/src/lalsuite
+git clone https://versions.ligo.org/git/lalsuite.git
+ 
+#Obtaining source code and checking version
+#Change to lalsuite directory
+cd lalsuite
+
+#Upgrade numpy
+pip install --upgrade numpy
+
+#Determine which version of the code you want to install
+echo
+git checkout $lalbranch
+
+#Building and Installing into your Virtual Environment
+#Use the master configure script to build and install all the components
+echo
+echo "--- building lalsuite -------------------------------------------"
+echo
+./00boot
+./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalapps --with-hdf5=no
+make -j $nproc
+make install
+
+#Add to virtualenv activate script
+echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc' >> ${VIRTUAL_ENV}/bin/activate
+source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc
+
+#Build a static lalapps_inspinj and install it
+cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps
+./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-mpi --disable-bambi --disable-cfitsio --disable-pss --disable-gds --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalpulsar
+cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/lalapps
+make -j $nproc
+cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/inspiral
+make lalapps_inspinj
+cp lalapps_inspinj $VIRTUAL_ENV/bin
+
+#Check that lalsuite is installed
+echo "LAL installed into $LAL_PREFIX"
+
+#Installing pyCBC to Virtual Environment
+echo
+echo "--- installing dqsegdb ------------------------------------------"
+echo
+
+#Install dqsegb from Duncan's repository
+pip install git+https://github.com/ligo-cbc/dqsegdb.git@pypi_release#egg=dqsegdb
+
+#Install gracedb client tools
+pip install ligo-gracedb
+
+#Install pycbc and glue from non-cached versions to get the rpaths correct
+pip --no-cache install ${glue_version} ${pylal_version}
+
+#ROM Data Download
+if [[ ${install_rom} == "no" ]] ; then
+  if [[ ${rom_download} == "yes" ]] ; then
+    pushd ${LAL_DATA_PATH}
+    echo "--- Downloading ROM DATA ---------------------------------"
+    svn co https://svn.ligo.caltech.edu/svn/lalsuite-extra/
+    pushd lalsuite-extra
+    ./00boot
+    ./configure --prefix=${LAL_DATA_PATH}
+    make install
+    popd
+    popd
+    #echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >> ${VIRTUAL_ENV}/bin/activate
+  fi
+fi
 
 #Released or Development
 echo
@@ -543,8 +619,8 @@ while true ; do
 
   if [[ $dev_or_rel -eq 1 ]] ; then
     #Installing a released version of pyCBC
-    #Install Version
-    pip $cache install git+https://github.com/ligo-cbc/pycbc@${reltag}#egg=pycbc --process-dependency-links
+    pip install -e git+https://github.com/ligo-cbc/pycbc@${reltag}#egg=pycbc --process-dependency-links
+    rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
 
     # continue with install
     break
@@ -555,7 +631,7 @@ while true ; do
     echo 
   
     #Install PyCBC source code from GitHub URL
-    pip $cache install -e git+git@github.com:${github}/pycbc.git#egg=pycbc --process-dependency-links
+    pip install -e git+git@github.com:${github}/pycbc.git#egg=pycbc --process-dependency-links
   
     #Prevent Pip from removing source directory
     rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
@@ -573,15 +649,47 @@ while true ; do
 
 done
 
+#Build static sbank
+echo
+echo "--- building static version of lalapps sbank tools --------------"
+echo
+LALAPPS_INSPIRAL_DIR=${VIRTUAL_ENV}/src/lalsuite/lalsuite/lalapps/src/inspiral
+pushd ${LALAPPS_INSPIRAL_DIR}
+mkdir -p ${LALAPPS_INSPIRAL_DIR}/site-packages/lalapps
+touch ${LALAPPS_INSPIRAL_DIR}/site-packages/lalapps/__init__.py
+cp -v ${LALAPPS_INSPIRAL_DIR}/inspiral.py ${LALAPPS_INSPIRAL_DIR}/site-packages/lalapps/
+TMP_PYTHONPATH=${PYTHONPATH}
+export PYTHONPATH=${LALAPPS_INSPIRAL_DIR}/site-packages:${PYTHONPATH}
+
+export PYINSTALLER_CONFIG_DIR=`mktemp --tmpdir -d -t pyinstaller-XXXXXXXXXX`
+
+for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank lalapps_cbc_sbank_sim 
+do
+  pyinstaller ${prog}.py                       \
+    --hidden-import scipy.linalg.cython_blas   \
+    --hidden-import scipy.linalg.cython_lapack \
+    --hidden-import scipy.special._ufuncs_cxx  \
+    --hidden-import scipy.integrate            \
+    --strip                                    \
+    --onefile
+    cp dist/${prog} $VIRTUAL_ENV/bin
+done
+popd
+
+rm -rf ${PYINSTALLER_CONFIG_DIR}
+unset PYINSTALLER_CONFIG_DIR
+
+export PYTHONPATH=${TMP_PYTHONPATH}
+
 if [[ $dev_or_rel -eq 2 ]] ; then
   #Building and Installing Documentation
   #Install Sphinx and the helper tools
   echo
   echo "--- downloading documentation tools -----------------------------"
   echo
-  pip $cache install "Sphinx>=1.3.1"
-  pip $cache install sphinxcontrib-programoutput
-  pip $cache install numpydoc
+  pip install "Sphinx>=1.3.1"
+  pip install sphinxcontrib-programoutput
+  pip install numpydoc
   
   #patch the bug in numpydoc for python 2.6
   cat <<EOF > ${VIRTUAL_ENV}/plot_directive.patch
@@ -616,15 +724,6 @@ EOF
   set -e
 fi
   
-echo
-echo "--- setting up optimized libraries ------------------------------"
-echo
-echo
-
-#Add script that sets up the MKL environment to virtualenv activate script
-if [[ ! -z "${intel_path}" ]] ; then 
-  echo "source ${intel_path}" >> ${VIRTUAL_ENV}/bin/activate
-fi
 
 echo
 
@@ -664,13 +763,73 @@ if [[ $dev_or_rel -eq 2 ]] ; then
   echo
 fi
 
-#Leave the virtual environment and exit
-deactivate
-echo "PyCBC setup complete"
+if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
+  echo
+  echo "=================================================================="
+  echo
+  echo "Making bundled executables."
+  echo 
+
+  #Make the dag that makes the bundles
+  cd ${VIRTUAL_ENV}/src/pycbc/tools/static
+  mkdir dist
+  perl -pi.bak -e 's+log = /usr1/\${USER}/log/pyinstaller_build_1.log+log = \${PWD}/pyinstaller_build_1.log+g' build_dag.sh
+  bash build_dag.sh
+  sed -i.bak "2 a cd ${VIRTUAL_ENV}/src/pycbc/tools/static " build_one.sh
+
+  if [[ $OSG_PYTHON == "yes" ]] ; then
+    perl -pi.bak -e 's+universe = vanilla+universe = local+' build_one.sub
+  fi
+
+  #Run the dag that makes the bundles
+  condor_submit_dag build_static.dag
+
+  # Wait for the dag to finish
+  condor_wait -status -echo build_static.dag.dagman.log
+
+  # Check logs
+  condor_check_userlogs pyinstaller_build_1.log
+  grep "Normal termination (return value 0)" build_static.dag.dagman.log
+
+  #Copy the existing static files into the dist directory
+  cp -v ${VIRTUAL_ENV}/bin/lalapps_inspinj dist/
+  for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank lalapps_cbc_sbank_sim 
+    do cp -v ${VIRTUAL_ENV}/bin/$prog dist/
+  done
+
+  #Copy the completed build
+  cp -av dist/ ${VIRTUAL_ENV}/../${UNIQUE_ID}-dist
+  cd ${VIRTUAL_ENV}/..
+  rm $VIRTUAL_ENV/src/lalsuite
+  mv ${LALSUITE_BUILD_DIR} $VIRTUAL_ENV/src
+  pushd $VIRTUAL_ENV/src
+  ln -s `basename ${LALSUITE_BUILD_DIR}` lalsuite
+  popd
+
+  tar -zcvf ${VIRTUAL_ENV}/../${UNIQUE_ID}-dist/${UNIQUE_ID}.tar.gz ${VIRTUAL_ENV}
+
+  echo
+  echo "=================================================================="
+  echo
+  echo "Exiting and removing Virtual Environment"
+  VIRTUAL_ENV_PATH=${VIRTUAL_ENV}
+  deactivate
+  rm -rf ${VIRTUAL_ENV_PATH}
+  echo 
+
+  echo
+  echo "Complete."
+  echo
+  echo "Bundles are in ${UNIQUE_ID}-dist"
+  echo "Environment saved in ${UNIQUE_ID}.tar.gz"
+  echo 
+  echo "=================================================================="
+else
+  #Leave the virtual environment and exit
+  deactivate
+  echo "PyCBC setup complete"
+fi
+
 echo
-
-
-# save log into virtualenv
-mv ${LOGPATH} ${NAME}/
 
 exit 0
