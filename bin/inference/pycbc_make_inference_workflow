@@ -142,6 +142,8 @@ for ifo in workflow.ifos:
                                       "datafind-%s-frame-type"%ifo.lower(), "")
     channel_names[ifo] = workflow.cp.get_opt_tags("workflow",
                                       "%s-channel-name"%ifo.lower(), "")
+frame_types_str = " ".join([key+":"+val for key,val in frame_types.iteritems()])
+channel_names_str = " ".join([key+":"+val for key,val in channel_names.iteritems()])
 
 # construct Executable for performing MCMC
 mcmc_exe = wf.Executable(workflow.cp, "mcmc", ifos=workflow.ifos,
@@ -177,8 +179,8 @@ for num_event in range(num_events):
     node.add_opt("--instruments", " ".join(workflow.ifos))
     node.add_opt("--gps-start-time", gps_start_time)
     node.add_opt("--gps-end-time", gps_end_time)
-    node.add_opt("--frame-type", frame_types[ifo])
-    node.add_opt("--channel-name", frame_types[ifo])
+    node.add_opt("--frame-type", frame_types_str)
+    node.add_opt("--channel-name", channel_names_str)
     node.add_input_opt("--config-file", config_file)
     analysis_time = segments.segment(gps_start_time, gps_end_time)
     mcmc_file = node.new_output_file_opt(analysis_time, ".hdf",
