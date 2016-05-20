@@ -83,19 +83,29 @@ def _lalsim_td_waveform(**p):
 
     return hp, hc
 
+def _spintaylor_aligned_prec_swapper(**p):
+    """
+    SpinTaylorF2 is only single spin, it also struggles with anti-aligned spin
+    waveforms. This construct chooses between the aligned-twospin TaylorF2 model
+    and the precessing singlespin SpinTaylorF2 models. If aligned spins are
+    given, use TaylorF2, if nonaligned spins are given use SpinTaylorF2. In
+    the case of nonaligned doublespin systems the code will fail at the
+    waveform generator level.
+    """
+    orig_approximant = p['approximant']
+    if p['spin2x'] == 0 and p['spin2y'] == 0 and p['spin1x'] == 0 and \
+                                                              p['spin1y'] == 0:
+        p['approximant'] = 'TaylorF2'
+    else:
+        p['approximant'] = 'SpinTaylorF2'
+    hp, hc = _lalsim_fd_waveform(**p)
+    p['approximant'] = orig_approximant
+    return hp, hc
+
 def _lalsim_fd_waveform(**p):
     flags = lalsimulation.SimInspiralCreateWaveformFlags()
     lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
     lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
-
-    # SpinTaylorF2 is only single spin. Fall back to TaylorF2 if aligned-spin
-    # and spin2z is not zero. If precessing and spin2 non-zero the code will
-    # fail later.
-    if p['approximant'] == 'SpinTaylorF2' and (not p['spin2z'] == 0):
-        if p['spin2x'] == 0 and p['spin2y'] == 0 and p['spin1x'] == 0 and p['spin1y'] == 0:
-            # Fall back to standard F2
-            p['approximant'] = 'TaylorF2'
-
 
     hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(float(p['coa_phase']),
                p['delta_f'],
@@ -587,9 +597,9 @@ _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
 _filter_ends["SPAtmplt"] = spa_tmplt_end
-_filter_ends["SEOBNRv1_ROM_SingleSpin"] = seobnrrom_final_frequency
+_filter_ends["SEOBNRv1_ROM_EffectiveSpin"] = seobnrrom_final_frequency
 _filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrrom_final_frequency
-_filter_ends["SEOBNRv2_ROM_SingleSpin"] = seobnrrom_final_frequency
+_filter_ends["SEOBNRv2_ROM_EffectiveSpin"] = seobnrrom_final_frequency
 _filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrrom_final_frequency
 _filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_final_frequency
 # PhenomD returns higher frequencies than this, so commenting this out for now
@@ -599,9 +609,9 @@ _filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_final_frequency
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
-_filter_time_lengths["SEOBNRv1_ROM_SingleSpin"] = seobnrrom_length_in_time
+_filter_time_lengths["SEOBNRv1_ROM_EffectiveSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrrom_length_in_time
-_filter_time_lengths["SEOBNRv2_ROM_SingleSpin"] = seobnrrom_length_in_time
+_filter_time_lengths["SEOBNRv2_ROM_EffectiveSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_length_in_time
 _filter_time_lengths["IMRPhenomC"] = seobnrrom_length_in_time
@@ -609,11 +619,17 @@ _filter_time_lengths["IMRPhenomD"] = seobnrrom_length_in_time
 _filter_time_lengths["IMRPhenomPv2"] = seobnrrom_length_in_time
 _filter_time_lengths["SpinTaylorF2"] = seobnrrom_length_in_time
 
+# Also add generators for switching between approximants
+apx_name = "SpinTaylorF2_SWAPPER"
+cpu_fd[apx_name] =  _spintaylor_aligned_prec_swapper
+_filter_time_lengths[apx_name] = _filter_time_lengths["SpinTaylorF2"]
+
 # We can do interpolation for waveforms that have a time length
 for apx in copy.copy(_filter_time_lengths):
-    apx_int = apx + '_INTERP'
-    cpu_fd[apx_int] = get_interpolated_fd_waveform
-    _filter_time_lengths[apx_int] = _filter_time_lengths[apx]  
+    if apx in cpu_fd:
+        apx_int = apx + '_INTERP'
+        cpu_fd[apx_int] = get_interpolated_fd_waveform
+        _filter_time_lengths[apx_int] = _filter_time_lengths[apx]
 
 td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()
