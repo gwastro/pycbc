@@ -140,10 +140,10 @@ class ExpFitStatistic(NewSNRStatistic):
     def assign_fits(self, ifo):
         # the template_ids and fit coeffs are stored in an arbitrary order
         # create new arrays in template_id order for easier recall
-        coeff_group = self.statfiles[ifo+'-fit_coeffs'][ifo]
-        template_id = coeff_group['template_id'][:]
-        alphas = coeff_group['fit_coeff'][:]
-        lambdas = coeff_group['ntrigs'][:]
+        coeff_file = self.statfiles[ifo+'-fit_coeffs']
+        template_id = coeff_file['template_id'][:]
+        alphas = coeff_file['fit_coeff'][:]
+        lambdas = coeff_file['count_above_thresh'][:]
         tid_sort = numpy.argsort(template_id)
         return {'alpha':alphas[tid_sort], 'lambda':lambdas[tid_sort]}
 
@@ -168,7 +168,7 @@ class ExpFitStatistic(NewSNRStatistic):
         # alphai is constant of proportionality between single-ifo newsnr and
         # negative log noise likelihood in given template
         # lambdai is rate of trigs in given template compared to average
-        lognoisel = - alphai * (newsnr - self.count_thresh) + numpy.log(lambdai)
+        lognoisel = - alphai * (newsnr - self.count_thresh) + numpy.log(alphai) + numpy.log(lambdai)
         # correction for detectability - NOT YET
         #chirpfac = pnutils.mass1_mass2_to_mchirp_eta(trigs.param['mass1'], trigs.param['mass2'])[0] / 1.22
         #volterm = (5./2.) * numpy.log(chirpfac)

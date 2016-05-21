@@ -18,11 +18,7 @@ import sys, h5py
 import argparse, logging
 
 import numpy as np
-#from scipy.interpolate import splrep, splev
 from sklearn import neighbors
-
-#from matplotlib import use; use('Agg')
-#from matplotlib import pyplot as pl
 
 from pycbc import pnutils
 import pycbc.version
@@ -45,15 +41,16 @@ parser.add_argument("--template-file", default=None,
 parser.add_argument("--output", required=True,
                     help="Location for output file containing smoothed fit "
                          "coefficients.  Required")
-parser.add_argument("--ifo", required=True,
-                    help="Ifo producing triggers to be fitted.  Required")
+#parser.add_argument("--ifo", required=True,
+#                    help="Ifo producing triggers to be fitted.  Required")
 parser.add_argument("--fit-param", required=True,  # don't hardcode choices yet?
                     #choices=[
                     #    'mchirp',
                     #    'mtotal',
-                    #    'template_duration'] \ 
+                    #    'template_duration'] \
                     #+ pnutils.named_frequency_cutoffs.keys()
                     help="Parameter over which to regress the background "
+
                          "distribution coefficients. Required. Choose from "
                          "mchirp, mtotal, template_duration or a named "
                          "frequency cutoff in pnutils or a frequency function "
@@ -94,7 +91,10 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 fits = h5py.File(args.template_fit_file, 'r')
 bank = h5py.File(args.template_file, 'r')
 
-tid = fits[args.ifo]['template_id'][:]
+# get the ifo from the template-level fit
+ifo = fits.attrs['ifo']
+
+tid = fits['template_id'][:]
 m1 = bank['mass1'][:][tid]
 m2 = bank['mass2'][:][tid]
 s1z = bank['spin1z'][:][tid]
@@ -115,13 +115,16 @@ else:
     # try asking for a LALSimulation frequency function
     parvals = pnutils.get_freq(args.fit_param, m1, m2, s1z, s2z)
 
-ntrigs = fits[args.ifo]['ntrigs'][:]
+ntrigs = fits['ntrigs'][:]
 # normalize to average number of triggers per templates
 ntrigs = ntrigs/np.mean(ntrigs)
-nabove = fits[args.ifo]['count_above_thresh'][:]
+nabove = fits['count_above_thresh'][:]
+# create mask for values where no trigs were fit at all
+nonzero_trigs = nabove > 0
+nabove = nabove/np.mean(nabove)
 # for an exponential fit 1/alpha is linear in the trigger statistic values
 # so taking weighted sums/averages of 1/alpha is appropriate
-invalpha = 1./(fits[args.ifo]['fit_coeff'][:])
+invalpha = 1./(fits['fit_coeff'][:])
 
 # sort in ascending duration order
 parsort = np.argsort(parvals)
@@ -130,6 +133,7 @@ parvals = parvals[parsort]
 ntrigs = ntrigs[parsort]
 nabove = nabove[parsort]
 invalpha = invalpha[parsort]
+nonzero_trigs = nonzero_trigs[parsort]
 
 if args.log_param:
     logging.info('Using log %s to perform smoothing' % args.fit_param)
@@ -142,36 +146,42 @@ else:
 if args.regression_method == 'nn':
     weights = lambda d:np.exp(-0.5 * (d/args.smoothing_width) ** 2)
     knn = neighbors.KNeighborsRegressor(args.num_neighbors, weights=weights)
+
     logging.info('Smoothing invalpha data')
-    invalpha_knn = knn.fit(parvals[:, np.newaxis], invalpha)
+    # only use values where nonzero number of trigs was fit
+    inputpars = parvals[nonzero_trigs]
+    inputalpha = invalpha[nonzero_trigs]
+    invalpha_knn = knn.fit(inputpars[:, np.newaxis], inputalpha)
     logging.info('Evaluating smoothed invalpha')
-    # loop over parameter values to try and avoid memory error in knn predict
+    # loop over parameter values to avoid memory error in knn predict
     invalpha_smoothed = [invalpha_knn.predict([[p]]) for p in parvals]
     del invalpha_knn
-    logging.info('Smoothing ntrigs data')
-    ntrigs_knn = knn.fit(parvals[:, np.newaxis], ntrigs)
-    logging.info('Evaluating smoothed ntrigs')
-    ntrigs_smoothed = [ntrigs_knn.predict([[p]]) for p in parvals]
-    del ntrigs_knn
 
-# write as ifo group
-outfile = h5py.File(args.output, 'w')
-ifofits = outfile.create_group(args.ifo)
+    logging.info('Smoothing ntrigs data')
+    nabove_knn = knn.fit(parvals[:, np.newaxis], nabove)
+    logging.info('Evaluating smoothed ntrigs')
+    nabove_smoothed = [nabove_knn.predict([[p]]) for p in parvals]
+    del nabove_knn
+
+#ifofits = outfile.create_group(args.ifo)
 # store template-dependent fit output
-ifofits.create_dataset('template_id', data=tid)
-ifofits.create_dataset('ntrigs', data=np.array(ntrigs_smoothed))
-ifofits.create_dataset('count_above_thresh', data=nabove) # counts_above is not smoothed!
-ifofits.create_dataset('fit_coeff', data=1. / np.array(invalpha_smoothed))
-# add some metadata to the fits
-ifofits.attrs.create('fit_param', data=args.fit_param)
-ifofits.attrs.create('regression_method', data=args.regression_method)
+outfile = h5py.File(args.output, 'w')
+outfile.create_dataset('template_id', data=tid)
+outfile.create_dataset('ntrigs', data=ntrigs) # ntrigs is not smoothed!
+outfile.create_dataset('count_above_thresh', data=nabove_smoothed)
+outfile.create_dataset('fit_coeff', data=1. / np.array(invalpha_smoothed))
+
+# add some metadata to the fits : some is inherited from template level fit
+outfile.attrs.create('ifo', data=ifo)
+outfile.attrs.create('stat_threshold', data=fits.attrs['stat_threshold'])
+outfile.attrs.create('fit_param', data=args.fit_param)
+outfile.attrs.create('regression_method', data=args.regression_method)
 if args.num_neighbors > 0:
-    ifofits.attrs.create('n_neighbors', data=args.num_neighbors)
-ifofits.attrs.create('smoothing_width', data=args.smoothing_width)
+    outfile.attrs.create('n_neighbors', data=args.num_neighbors)
+outfile.attrs.create('smoothing_width', data=args.smoothing_width)
 
 # add a magic file attribute so that coinc_findtrigs can parse it
-outfile.attrs.create('stat', data=args.ifo+'-fit_coeffs')
+outfile.attrs.create('stat', data=ifo+'-fit_coeffs')
 
 outfile.close()
 logging.info('Done!')
-
