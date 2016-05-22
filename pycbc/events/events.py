@@ -401,12 +401,14 @@ class EventManager(object):
         m2 = numpy.array([p['tmplt'].mass2 for p in self.template_params], dtype=numpy.float32)
         s1 = numpy.array([p['tmplt'].spin1z for p in self.template_params], dtype=numpy.float32)
         s2 = numpy.array([p['tmplt'].spin2z for p in self.template_params], dtype=numpy.float32)
+    
         # How to not store these in the case of not precession?
         s1x = numpy.array([p['tmplt'].spin1x for p in self.template_params], dtype=numpy.float32)
         s1y = numpy.array([p['tmplt'].spin1y for p in self.template_params], dtype=numpy.float32)
         s2x = numpy.array([p['tmplt'].spin2x for p in self.template_params], dtype=numpy.float32)
         s2y = numpy.array([p['tmplt'].spin2y for p in self.template_params], dtype=numpy.float32)
-        incl = numpy.array([p['tmplt'].alpha3 for p in self.template_params], dtype=numpy.float32)
+        incl = numpy.array([p['tmplt'].inclination for p in self.template_params], dtype=numpy.float32)
+
         th = numpy.zeros(len(m1), dtype=int)
         for j, v in enumerate(zip(m1, m2, s1, s2, s1x, s1y, s2x, s2y, incl)):
             th[j] = hash(v)
@@ -544,7 +546,14 @@ class EventManager(object):
 
             tmplt = self.template_params[tind]['tmplt']
 
-            row = copy.deepcopy(tmplt)
+            row = glue.ligolw.lsctables.SnglInspiral()
+
+            for key in tmplt.dtype.names:
+                okey = key
+                key = 'alpha3' if key == 'inclination' else key
+                if key not in glue.ligolw.lsctables.SnglInspiral.__slots__:
+                    pass
+                setattr(row, key, tmplt[okey])
 
             snr = event['snr']
             idx = event['time_index']
