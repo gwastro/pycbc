@@ -548,11 +548,17 @@ class EventManager(object):
 
             row = glue.ligolw.lsctables.SnglInspiral()
 
+            for key in glue.ligolw.lsctables.SnglInspiral.__slots__:
+                try:
+                    setattr(row, key, 0)
+                except:
+                    pass
+
             for key in tmplt.dtype.names:
                 okey = key
                 key = 'alpha3' if key == 'inclination' else key
                 if key not in glue.ligolw.lsctables.SnglInspiral.__slots__:
-                    pass
+                    continue
                 setattr(row, key, tmplt[okey])
 
             snr = event['snr']
@@ -596,6 +602,9 @@ class EventManager(object):
                 if self.opt.autochi_max_valued_dof:
                     cont_dof = self.opt.autochi_max_valued_dof
                 row.cont_chisq_dof = cont_dof
+            else:
+                row.cont_chisq_dof = 0
+                row.cont_chisq = 0
 
             row.eff_distance = sigmasq ** (0.5) / abs(snr)
             row.snr = abs(snr)
