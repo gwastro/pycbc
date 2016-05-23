@@ -23,7 +23,8 @@ import logging
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import numpy
-from pycbc import pnutils
+import sys
+from pycbc import pnutils, results
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_corner [--options]",
@@ -110,7 +111,23 @@ if opts.labels:
 else:
     labels = opts.variable_args
 fig = corner.corner(x, labels=labels, quantiles=quantiles)
-fig.savefig(opts.output_file)
+
+# save figure with meta-data
+caption_kwargs = {
+    "quantiles" : ", ".join(map(str, [q for q in quantiles])),
+    "thin_start" : opts.thin_start,
+    "thin_interval" : opts.thin_interval,
+    "niterations" : len(x[0]),
+}
+caption = """Posterior distributions for waveform parameters. The dashed
+vertical lines correspond to the {quantiles} quantiles. The thinning used to
+make this plot took samples beginning at the {thin_start} and then every
+{thin_interval}-th sample after that. Each chain of samples had {niterations}
+iterations.""".format(**caption_kwargs)
+results.save_fig_with_metadata(fig, opts.output_file,
+                               cmd=" ".join(sys.argv),
+                               title="Posterior Distributions",
+                               caption=caption)
 plt.close()
 
 # exit
