@@ -118,7 +118,7 @@ caption_kwargs = {
 }
 caption = """Autocorrelation function (ACF) from all the walker chains for the
 parameters {parameters}. Each line is an ACF for a chain of walker samples.""".format(**caption_kwargs)
-title = "Autocorrelation Function for {parameters}".format(**caption_kwargs)
+title = "Autocorrelation function for {parameters}".format(**caption_kwargs)
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),
                                title=title,

@@ -66,7 +66,7 @@ caption = """This plot shows the fraction of samples accepted at each
 iteration."""
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),
-                               title="Acceptance Rate",
+                               title="Acceptance rate",
                                caption=caption)
 plt.close()
 
