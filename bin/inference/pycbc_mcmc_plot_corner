@@ -126,7 +126,7 @@ make this plot took samples beginning at the {thin_start} and then every
 iterations.""".format(**caption_kwargs)
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),
-                               title="Posterior Distributions",
+                               title="Posterior distributions",
                                caption=caption)
 plt.close()
 
