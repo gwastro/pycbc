@@ -212,13 +212,13 @@ with ctx:
 
         # generate more samples
         logging.info("Generating more MCMC samples")
-        p, post, q = sampler.run_mcmc(opts.niterations)
+        sampler.run_mcmc(opts.niterations)
 
     else:
 
         # generate samples
         logging.info("Generating MCMC samples")
-        p, post, q = sampler.run_mcmc(opts.niterations, p0=p0)
+        sampler.run_mcmc(opts.niterations, p0=p0)
 
 # get all past samples as an niterations x nwalker x ndim array
 logging.info("Writing output file")
