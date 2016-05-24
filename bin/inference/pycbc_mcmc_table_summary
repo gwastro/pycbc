@@ -73,7 +73,7 @@ for param in opts.variable_args:
                            thin_interval=opts.thin_interval)
 
     # calculate the score at a given percentile
-    # 50 is the median, 16 and 84 correspond to 68 percentile
+    # eg. 50 is the median, 16 and 84 correspond to 68 percentile
     param_quantiles = []
     for q in opts.quantiles:
         param_quantiles.append( numpy.percentile(data, 100*q) )
