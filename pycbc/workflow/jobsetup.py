@@ -332,7 +332,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     job_tag = curr_exe_job.name.upper()
     data_seg, job_valid_seg = curr_exe_job.get_valid_times()
     curr_out_files = FileList([])
-    if 'SEARCH_POINTS' in datafind_outs[-1].description \
+    if 'IPN' in datafind_outs[-1].description \
             and 'bank_veto_bank' in datafind_outs[-2].description:
         ipn_sky_points = datafind_outs[-1]
         bank_veto = datafind_outs[-2]
@@ -1517,7 +1517,7 @@ class LalappsInspinjExecutable(Executable):
             triggered = True
             node.add_input_opt('--exttrig-file', exttrig_file)
         elif (self.get_opt('l-distr') == 'ipn' and exttrig_file is not None \
-                and 'SIM_POINTS' in exttrig_file.description):
+                and 'IPN' in exttrig_file.description):
             # Use an IPN sky points file
             triggered = True
             node.add_input_opt('--ipn-file', exttrig_file)

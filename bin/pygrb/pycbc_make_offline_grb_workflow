@@ -163,11 +163,9 @@ datafind_veto_files.extend(datafind_files)
 # Is this an IPN GRB?
 if wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
         and wflow.cp.has_option("workflow-injections", "ipn-sim-points"):
-    search_pts_file, sim_pts_file = _workflow.get_ipn_sky_files(wflow)
     wflow.cp.set("injections", "ipn-gps-time",
             wflow.cp.get("workflow", "trigger-time"))
     IPN = True
-    all_files.extend(_workflow.FileList([search_pts_file, sim_pts_file]))
 elif wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
         or wflow.cp.has_option("workflow-injections", "ipn-sim-points"):
     msg = "You have provided only one of 'ipn-search-points' under "
@@ -187,6 +185,9 @@ if os.path.basename(wflow.cp.get("executables", "inspiral")) \
     datafind_veto_files.extend(bank_veto_file)
     
     if IPN:
+        search_pts_file = _workflow.get_ipn_sky_files(wflow,
+                wflow.cp.get("workflow-inspiral", "ipn-search-points"),
+                tags=["SEARCH"])
         datafind_veto_files.extend(_workflow.FileList([search_pts_file]))
 
     # Make ExtTrig xml file (needed for lalapps_inspinj and summary pages)
@@ -218,6 +219,10 @@ if wflow.cp.has_section("workflow-injections"):
 
     # Generate injection files
     if IPN:
+        sim_pts_file = _workflow.get_ipn_sky_files(wflow,
+                wflow.cp.get("workflow-injections", "ipn-sim-points"),
+                tags=["SIM"])
+        all_files.extend(_workflow.FileList([sim_pts_file]))
         inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, injDir,
                 exttrig_file=sim_pts_file)
     else:
