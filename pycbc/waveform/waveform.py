@@ -854,7 +854,7 @@ def get_waveform_filter_length_in_time(approximant, template=None, **kwargs):
     else:
         return None
 
-__all__ = ["get_td_waveform", "get_fd_waveform",
+__all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "print_td_approximants", "print_fd_approximants",
            "td_approximants", "fd_approximants",
            "get_waveform_filter", "filter_approximants",
