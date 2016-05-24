@@ -21,6 +21,8 @@ import h5py
 import logging
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
+import sys
+from pycbc import results
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_samples [--options]",
@@ -78,8 +80,17 @@ for i,arg in enumerate(opts.variable_args):
         # y-axis label
         axs[i].set_ylabel(r"%s"%opts.labels[i])
 
-# save plot
-plt.savefig(opts.output_file)
+# save figure with meta-data
+caption_kwargs = {
+    "parameters" : ", ".join(opts.variable_args),
+}
+caption = """All samples from all the walker chains for the parameters
+{parameters}. Each line is a different chain of walker samples.""".format(**caption_kwargs)
+title = "Samples for {parameters}".format(**caption_kwargs)
+results.save_fig_with_metadata(fig, opts.output_file,
+                               cmd=" ".join(sys.argv),
+                               title=title,
+                               caption=caption)
 plt.close()
 
 # exit

@@ -21,6 +21,8 @@ import h5py
 import logging
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
+import sys
+from pycbc import results
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_acceptance_rate [--options]",
@@ -55,11 +57,17 @@ fp = h5py.File(opts.input_file, "r")
 # plot acceptance rate and drawn values
 logging.info("Plotting acceptance fraction")
 acceptance_fraction = fp["acceptance_fraction"][:]
+fig = plt.figure()
 plt.plot(acceptance_fraction, 'k', alpha=.5)
 plt.ylabel("Mean Acceptance Rate")
 
-# save plot
-plt.savefig(opts.output_file)
+# save figure with meta-data
+caption = """This plot shows the fraction of samples accepted at each
+iteration."""
+results.save_fig_with_metadata(fig, opts.output_file,
+                               cmd=" ".join(sys.argv),
+                               title="Acceptance rate",
+                               caption=caption)
 plt.close()
 
 # exit

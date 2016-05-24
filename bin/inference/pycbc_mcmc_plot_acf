@@ -22,6 +22,8 @@ import logging
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import numpy
+import sys
+from pycbc import results
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_acf [--options]",
@@ -97,6 +99,7 @@ for param_name in opts.variable_args:
 
 # plot autocorrelation
 logging.info("Plotting autocorrelation functions")
+fig = plt.figure()
 for param_acfs in all_acfs:
     for acf in param_acfs:
         plt.plot(range(len(acf)), acf, alpha=0.5)
@@ -109,8 +112,17 @@ if opts.ymin:
 if opts.ymax:
     plt.ylim(ymax=opts.ymax)
 
-# save plot
-plt.savefig(opts.output_file)
+# save figure with meta-data
+caption_kwargs = {
+    "parameters" : ", ".join(opts.variable_args),
+}
+caption = """Autocorrelation function (ACF) from all the walker chains for the
+parameters {parameters}. Each line is an ACF for a chain of walker samples.""".format(**caption_kwargs)
+title = "Autocorrelation function for {parameters}".format(**caption_kwargs)
+results.save_fig_with_metadata(fig, opts.output_file,
+                               cmd=" ".join(sys.argv),
+                               title=title,
+                               caption=caption)
 plt.close()
 
 # exit
