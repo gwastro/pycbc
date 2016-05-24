@@ -42,6 +42,8 @@ parser.add_argument("--thin-interval", type=int, default=1,
     help="Interval to use for thinning samples.")
 
 # add prior options
+parser.add_argument("--variable-args", type=str, nargs="+",  default=[],
+    help="Name of parameters varied in MCMC.")
 parser.add_argument("--config-file", type=str, required=True,
     help="A file parsable by pycbc.workflow.WorkflowConfigParser.")
 parser.add_argument("--bins", type=int, required=True,
@@ -72,7 +74,10 @@ logging.info("Reading configuration file")
 cp = WorkflowConfigParser([opts.config_file])
 
 # get variable parameters in MCMC from configuration file
-variable_args = cp.options("variable_args")
+if len(opts.variable_args):
+    variable_args = opts.variable_args
+else:
+    variable_args = cp.options("variable_args")
 
 # get distribution to use for evaluating prior
 # construct class that will return the prior
