@@ -20,6 +20,7 @@ import argparse
 import h5py
 import logging
 import numpy
+from pycbc.io.hdf import MCMCFile
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_mcmc_table_summary [--options]",
@@ -33,6 +34,17 @@ parser.add_argument("--variable-args", type=str, nargs="+", required=True,
 
 # output plot options
 parser.add_argument("--output-file", type=str, required=True,
+    help="Path to output plot.")
+
+# add thinning options
+parser.add_argument("--thin-start", type=int, required=True,
+    help="Sample number to start collecting samples to plot.")
+parser.add_argument("--thin-interval", type=int, required=True,
+    help="Interval to use for thinning samples.")
+
+# add quantile options
+parser.add_argument("--quantiles", type=float, nargs="+",
+    default=[0.16,0.50,0.84],
     help="Path to output plot.")
 
 # verbose option
@@ -51,38 +63,21 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 
 # read input file
 logging.info("Reading input file")
-fp = h5py.File(opts.input_file, "r")
+fp = MCMCFile(opts.input_file, "r")
 
-# loop over each parameter
-samples_dict = []
+# get thinned samples for each parameter
+samples = {}
+quantiles = {}
 for param in opts.variable_args:
+    samples[param] = fp.read_samples(variable_arg, thin_start=opts.thin_start,
+                           thin_interval=opts.thin_interval)
 
-    # loop over each walker
-    for i in range(fp.attrs["nwalkers"]):
-
-        # derived parameters
-        if param == "mchirp":
-            idx1 = opts.variable_args.index("mass1")
-            idx2 = opts.variable_args.index("mass2")
-            mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(samples[idx1], samples[idx2])
-            samples.append( mchirp )
-        elif param == "eta":
-            idx1 = opts.variable_args.index("mass1")
-            idx2 = opts.variable_args.index("mass2")
-            _, eta = pnutils.mass1_mass2_to_mchirp_eta(samples[idx1], samples[idx2])
-            samples.append( eta )
-
-        # MCMC parameters
-        else:
-            samples.append( fp[param]["walker%d"%i][opts.thin_start::opts.thin_interval] )
-
-#! FIXME: no data
-# calculate the score at a given percentile
-# 50 is the median, 16 and 84 correspond to 68 percentile
-low = numpy.percentile(data, 16)
-median = numpy.percentile(data, 50)
-high = numpy.percentile(data, 84)
-
+    # calculate the score at a given percentile
+    # 50 is the median, 16 and 84 correspond to 68 percentile
+    param_quantiles = []
+    for q in opts.quantiles:
+        param_quantiles.append( numpy.percentile(data, 100*q) )
+    quantiles[param] = param_quantiles
 
 
 
