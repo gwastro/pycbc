@@ -1445,13 +1445,19 @@ class LalappsInspinjExecutable(Executable):
         # Check if these injections are using trigger information to choose
         # sky positions for the simulated signals
         if (self.get_opt('l-distr') == 'exttrig' and exttrig_file is not None \
-                and 'SIM_POINTS' not in exttrig_file.description) \
-                or (self.get_opt('l-distr') == 'ipn' and \
-                    'SIM_POINTS' in exttrig_file.description):
+                and 'trigger' in exttrig_file.description):
+            # Use an XML file containing trigger information
             triggered = True
+            node.add_input_opt('--exttrig-file', exttrig_file)
+        elif (self.get_opt('l-distr') == 'ipn' and exttrig_file is not None \
+                and 'SIM_POINTS' in exttrig_file.description):
+            # Use an IPN sky points file
+            triggered = True
+            node.add_input_opt('--ipn-file', exttrig_file)
         elif (self.get_opt('l-distr') != 'exttrig') \
                 and (self.get_opt('l-distr') != 'ipn' and not \
                      self.has_opt('ipn-file')):
+            # Use no trigger information for generating injections
             triggered = False
         else:
             err_msg = "The argument 'l-distr' passed to the "
@@ -1467,12 +1473,6 @@ class LalappsInspinjExecutable(Executable):
             inj_tspace = float(segment[1] - segment[0]) / num_injs
             node.add_opt('--time-interval', inj_tspace)
             node.add_opt('--time-step', inj_tspace)
-            
-            if self.get_opt('l-distr') == 'exttrig':
-                #node.add_opt('--exttrig-file', '%s' % exttrig_file.storage_path)
-                node.add_input_opt('--exttrig-file', exttrig_file)
-            if self.get_opt('l-distr') == 'ipn':
-                node.add_input_opt('--ipn-file', exttrig_file)
 
         node.new_output_file_opt(segment, ext, '--output',
                                  store_file=self.retain_files)
