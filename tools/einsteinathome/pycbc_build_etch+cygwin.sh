@@ -544,7 +544,8 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
 
 fi # if pycbc-preinst.tgz
 
-# requirements for pegasus and PyCBC that can be installed via pip
+# don't pre-install requirements for pegasus and PyCBC anymore
+if false; then
 echo 'Flask==0.10
 Flask-Cache==0.13.1
 Flask-SQLAlchemy==0.16
@@ -592,6 +593,7 @@ sphinx-rtd-theme==0.1.9
 sphinxcontrib-programoutput==0.8' > requirements.txt
 pip install -r requirements.txt
 # don't downgrade to setuptools==18.2 here yet
+fi # if false
 
 # PyCBC-GLUE
 if [ "$glue_from" = "pip-install" ] ; then
@@ -668,8 +670,7 @@ fi
 echo -e "\\n\\n>> [`date`] building $p"
 tar -xzf $p-lib-pegasus-python.tgz
 pushd $p/lib/pegasus/python/
-# echo -e "\\n\\n>> [`date`] installing dependencies for $p"
-# pip install -r pegasus_wms.egg-info/requires.txt
+pip install -r pegasus_wms.egg-info/requires.txt
 python setup.py install --prefix="$PREFIX"
 popd
 $cleanup && rm -rf $p
