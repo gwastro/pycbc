@@ -66,17 +66,16 @@ logging.info("Reading input file")
 fp = MCMCFile(opts.input_file, "r")
 
 # get thinned samples for each parameter
-samples = {}
 quantiles = {}
 for param in opts.variable_args:
-    samples[param] = fp.read_samples(param, thin_start=opts.thin_start,
-                           thin_interval=opts.thin_interval)
+    samples = fp.read_samples(param, thin_start=opts.thin_start,
+                              thin_interval=opts.thin_interval)
 
     # calculate the score at a given percentile
     # eg. 50 is the median, 16 and 84 correspond to 68 percentile
     param_quantiles = []
     for q in opts.quantiles:
-        param_quantiles.append( numpy.percentile(data, 100*q) )
+        param_quantiles.append( numpy.percentile(samples, 100*q) )
     quantiles[param] = param_quantiles
 
 
