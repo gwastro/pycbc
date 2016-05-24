@@ -164,7 +164,8 @@ datafind_veto_files.extend(datafind_files)
 if wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
         and wflow.cp.has_option("workflow-injections", "ipn-sim-points"):
     search_pts_file, sim_pts_file = _workflow.get_ipn_sky_files(wflow)
-    wflow.cp.set("injections", "ipn-gps-time", cp.get("workflow", "trigger-time"))
+    wflow.cp.set("injections", "ipn-gps-time",
+            wflow.cp.get("workflow", "trigger-time"))
     IPN = True
     all_files.extend(_workflow.FileList([search_pts_file, sim_pts_file]))
 elif wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
