@@ -161,7 +161,7 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         self.num_threads = 1
 
     def create_node(self, data_seg, valid_seg, parent=None, inj_file=None,
-                    dfParents=None, bankVetoBank=None, tags=[]):
+                    dfParents=None, bankVetoBank=None, ipn_file=None, tags=[]):
         node = Node(self)
 
         if not dfParents:
@@ -206,6 +206,9 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
             node.add_input_opt('--%s-frame-cache' % frameCache.ifo.lower(),
                                frameCache)
             node.add_arg('--%s-data' % frameCache.ifo.lower())
+
+        if ipn_file is not None:
+            node.add_input_opt('--sky-positions-file', ipn_file)
 
         if inj_file is not None:
             if ('--do-short-slides' in node._options or \
