@@ -152,7 +152,7 @@ class MCMCFile(h5py.File):
         # create a dataset for the acceptance fraction
         if acceptance_fraction is not None:
             self.create_dataset("acceptance_fraction",
-                                data=sampler.acceptance_fraction)
+                                data=acceptance_fraction)
 
 
 

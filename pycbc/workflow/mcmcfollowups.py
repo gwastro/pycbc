@@ -159,7 +159,7 @@ def make_inference_summary_table(workflow, mcmc_file, output_dir,
 
     # add command line options
     node.add_input_opt("--input-file", mcmc_file)
-    node.new_output_file_opt(analysis_seg, ".png", "--output-file")
+    node.new_output_file_opt(analysis_seg, ".html", "--output-file")
 
     # add node to workflow
     workflow += node
