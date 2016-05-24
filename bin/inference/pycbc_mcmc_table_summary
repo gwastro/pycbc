@@ -20,7 +20,7 @@ import argparse
 import h5py
 import logging
 import numpy
-from pycbc.io.hdf import MCMCFile
+from pycbc.io.mcmc import MCMCFile
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_mcmc_table_summary [--options]",
@@ -37,15 +37,15 @@ parser.add_argument("--output-file", type=str, required=True,
     help="Path to output plot.")
 
 # add thinning options
-parser.add_argument("--thin-start", type=int, required=True,
+parser.add_argument("--thin-start", type=int, default=0,
     help="Sample number to start collecting samples to plot.")
-parser.add_argument("--thin-interval", type=int, required=True,
+parser.add_argument("--thin-interval", type=int, default=1,
     help="Interval to use for thinning samples.")
 
 # add quantile options
 parser.add_argument("--quantiles", type=float, nargs="+",
     default=[0.16,0.50,0.84],
-    help="Path to output plot.")
+    help="Quantiles to calculate.")
 
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
@@ -69,7 +69,7 @@ fp = MCMCFile(opts.input_file, "r")
 samples = {}
 quantiles = {}
 for param in opts.variable_args:
-    samples[param] = fp.read_samples(variable_arg, thin_start=opts.thin_start,
+    samples[param] = fp.read_samples(param, thin_start=opts.thin_start,
                            thin_interval=opts.thin_interval)
 
     # calculate the score at a given percentile
