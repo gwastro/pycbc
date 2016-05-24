@@ -1,0 +1,89 @@
+#! /usr/bin/env python
+
+# Copyright (C) 2016 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import h5py
+import logging
+import numpy
+
+# command line usage
+parser = argparse.ArgumentParser(usage="pycbc_mcmc_table_summary [--options]",
+    description="Makes a table of MCMC posterior results.")
+
+# add data options
+parser.add_argument("--input-file", type=str, required=True,
+    help="Path to input HDF file.")
+parser.add_argument("--variable-args", type=str, nargs="+", required=True,
+    help="Name of parameters varied in MCMC.")
+
+# output plot options
+parser.add_argument("--output-file", type=str, required=True,
+    help="Path to output plot.")
+
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+    help="")
+
+# parse the command line
+opts = parser.parse_args()
+
+# setup log
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+
+# read input file
+logging.info("Reading input file")
+fp = h5py.File(opts.input_file, "r")
+
+# loop over each parameter
+samples_dict = []
+for param in opts.variable_args:
+
+    # loop over each walker
+    for i in range(fp.attrs["nwalkers"]):
+
+        # derived parameters
+        if param == "mchirp":
+            idx1 = opts.variable_args.index("mass1")
+            idx2 = opts.variable_args.index("mass2")
+            mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(samples[idx1], samples[idx2])
+            samples.append( mchirp )
+        elif param == "eta":
+            idx1 = opts.variable_args.index("mass1")
+            idx2 = opts.variable_args.index("mass2")
+            _, eta = pnutils.mass1_mass2_to_mchirp_eta(samples[idx1], samples[idx2])
+            samples.append( eta )
+
+        # MCMC parameters
+        else:
+            samples.append( fp[param]["walker%d"%i][opts.thin_start::opts.thin_interval] )
+
+#! FIXME: no data
+# calculate the score at a given percentile
+# 50 is the median, 16 and 84 correspond to 68 percentile
+low = numpy.percentile(data, 16)
+median = numpy.percentile(data, 50)
+high = numpy.percentile(data, 84)
+
+
+
+
+
