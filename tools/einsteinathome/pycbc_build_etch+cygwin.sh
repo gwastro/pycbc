@@ -532,68 +532,12 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
     done
     cd ..
     $cleanup && rm -rf lalsuite-build
-    echo -e "\\n\\n>> [`date`] building PyLAL"
-    cd lalsuite/pylal
-    python setup.py install --prefix="$PREFIX"
-    cd ../..
-    test -r "$PREFIX/etc/pylal-user-env.sh" && source "$PREFIX/etc/pylal-user-env.sh"
 
     pushd $PYCBC/..
     tar -czf "$SOURCE/pycbc-preinst-lalsuite.tgz" pycbc
     popd
 
 fi # if pycbc-preinst.tgz
-
-# don't pre-install requirements for pegasus and PyCBC anymore
-if false; then
-echo 'Flask==0.10
-Flask-Cache==0.13.1
-Flask-SQLAlchemy==0.16
-Jinja2==2.7
-MarkupSafe==0.18
-MySQL-python==1.2.5
-SQLAlchemy==0.8.0
-WTForms==1.0.3
-Werkzeug==0.9.3
-boto==2.5.2
-itsdangerous==0.21
-pam==0.1.4
-requests==1.2.3
-decorator==4.0.4
-pycbc-pylal==0.9.5
-pyRXP==2.1.0
-nose==1.3.7
-pkgconfig==1.1.0
-six==1.9.0
-kombine==0.5.0
-linecache2==1.0.0
-traceback2==1.4.0
-unittest2==1.1.0
-cycler==0.9.0
-python-dateutil==2.4.2
-Babel==2.1.1
-M2Crypto==0.22.3
-Mako==1.0.2
-Pillow==2.9.0
-Pygments==2.0.2
-Sphinx==1.3.1
-alabaster==0.7.6
-argparse==1.3.0
-docutils==0.12
-funcsigs==0.4
-matplotlib==1.4.3
-mock==1.3.0
-numpydoc==0.5
-pbr==1.8.0
-pyparsing==2.0.3
-python-cjson==1.1.0
-pytz==2015.6
-snowballstemmer==1.2.0
-sphinx-rtd-theme==0.1.9
-sphinxcontrib-programoutput==0.8' > requirements.txt
-pip install -r requirements.txt
-# don't downgrade to setuptools==18.2 here yet
-fi # if false
 
 # PyCBC-GLUE
 if [ "$glue_from" = "pip-install" ] ; then
