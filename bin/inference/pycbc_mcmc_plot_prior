@@ -18,21 +18,34 @@
 
 import argparse
 import corner
-import h5py
 import logging
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import numpy
-from pycbc import inference, pnutils
+import sys
+from pycbc import inference, pnutils, results
+from pycbc.io.mcmc import MCMCFile
 from pycbc.workflow import WorkflowConfigParser
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_prior [--options]",
     description="Plots corner plot of prior from MCMC.")
 
+# add input options
+parser.add_argument("--input-file", type=str, required=True,
+    help="Path to input HDF file.")
+
+# add thinning options
+parser.add_argument("--thin-start", type=int, default=0,
+    help="Sample number to start collecting samples to plot.")
+parser.add_argument("--thin-interval", type=int, default=1,
+    help="Interval to use for thinning samples.")
+
 # add prior options
 parser.add_argument("--config-file", type=str, required=True,
     help="A file parsable by pycbc.workflow.WorkflowConfigParser.")
+parser.add_argument("--bins", type=int, required=True,
+    help="Number of points to evaluator parameter distributions.")
 parser.add_argument("--iterations", type=int, required=True,
     help="Number of samples to collect from each prior distribution.")
 
@@ -68,9 +81,74 @@ for param in variable_args:
     distributions.append( inference.distribution_from_config(cp, "prior", param) )
 prior = inference.PriorEvaluator(variable_args, *distributions)
 
-# loop over number of samples to draw from prior
-#for i in range(opts.iterations):
+# read input file
+logging.info("Reading input file")
+fp = MCMCFile(opts.input_file, "r")
 
+# make a subplot for each distribution
+fig, axs = plt.subplots(len(distributions))
+axs = [axs] if len(distributions) is 1 else axs
 
+# loop over distributions from prior
+for i,dist in enumerate(distributions):
+
+    # get bounds for each parameter
+    params = dist.params
+    if len(params) > 1:
+        raise ValueError("Can only handle one variable parameter at a time")
+    bounds = dist.bounds[params[0]]
+
+    # evaulate PDF between the bounds
+    pdf = []
+    x = []
+    step = float(bounds[1]-bounds[0])/opts.bins
+    for j in numpy.arange(bounds[0], bounds[1], step):
+        pdf.append( dist.pdf(**{params[0]:j}) )
+        x.append(j)
+
+    # plot each distribution as a different line on the subplot
+    axs[i].plot(x, pdf, label="PDF")
+
+    # read samples from file
+    samples = fp.read_samples(params[0], thin_start=opts.thin_start,
+                                    thin_interval=opts.thin_interval)
+    samples = numpy.concatenate(samples)
+
+    # plot histogram of samples
+    weights = numpy.ones(len(samples)) / float(len(samples))
+    axs[i].hist(samples, bins=opts.bins, weights=weights,
+                histtype="stepfilled", fc=(0, 0, 0, 0), label="Samples")
+
+    # y-axis label
+    axs[i].set_ylabel(", ".join([p for p in dist.params]))
+
+    # y-axis limits
+    axs[i].set_ylim(0, 1.1)
+
+    # x-axis limits
+    low = bounds[0] - 5 * step
+    high = bounds[1] + 5 * step
+    axs[i].set_xlim(low, high)
+
+    # legend
+    if i == 0:
+        axs[i].legend(loc="upper right")
+
+# save figure with meta-data
+caption_kwargs = {
+    "parameters" : ", ".join(variable_args),
+}
+caption = """The probability density function (PDF) is drawn in blue. Samples
+drawn from the MCMC are shown as a histogram outlined in black. The histogram
+is normalized to the total number of samples."""
+title = "Prior distribution for {parameters}".format(**caption_kwargs)
+results.save_fig_with_metadata(fig, opts.output_file,
+                               cmd=" ".join(sys.argv),
+                               title=title,
+                               caption=caption)
+plt.close()
+
+# exit
+logging.info("Done")
 
 
