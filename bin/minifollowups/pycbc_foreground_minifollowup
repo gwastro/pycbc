@@ -70,9 +70,11 @@ coinc_file = to_file(args.statmap_file)
 insp_segs = to_file(args.inspiral_segments)
 
 single_triggers = []
+fsdt = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
     single_triggers.append(to_file(fname, ifo=ifo))
+    fsdt[ifo] = h5py.File(args.single_detector_triggers[ifo], 'r')
     
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
@@ -116,15 +118,28 @@ for num_event in range(num_events):
     params = {}                          
     for ifo in times:
         params['%s_end_time' % ifo] = times[ifo][num_event]
+        try:
+            # Only present for precessing case
+            params['u_vals_%s'%ifo] = \
+                                 fsdt[ifo][ifo]['u_vals'][tids[ifo][num_event]]
+        except:
+            pass
 
     params['mass1'] = bank_data['mass1'][bank_id]
     params['mass2'] = bank_data['mass2'][bank_id]
     params['spin1z'] = bank_data['spin1z'][bank_id]
     params['spin2z'] = bank_data['spin2z'][bank_id]
+    params['spin1x'] = bank_data['spin1x'][bank_id]
+    params['spin1y'] = bank_data['spin1y'][bank_id]
+    params['spin2x'] = bank_data['spin2x'][bank_id]
+    params['spin2y'] = bank_data['spin2y'][bank_id]
+    params['inclination'] = bank_data['inclination'][bank_id]
+
     files += mini.make_single_template_plots(workflow, insp_segs,
                                     args.inspiral_data_read_name,
                                     args.inspiral_data_analyzed_name,  params,
-                                    args.output_dir, tags=args.tags + [str(num_event)])
+                                    args.output_dir,
+                                    tags=args.tags + [str(num_event)])
     
     for single in single_triggers:
         time = times[single.ifo][num_event]

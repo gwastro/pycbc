@@ -306,6 +306,20 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
                 node.add_opt('--mass2', "%.6f" % params['mass2'])
                 node.add_opt('--spin1z',"%.6f" % params['spin1z'])
                 node.add_opt('--spin2z',"%.6f" % params['spin2z'])
+                # Is this precessing?
+                if params.has_key('u_vals') or \
+                                             params.has_key('u_vals_%s' % ifo):
+                    node.add_opt('--spin1x',"%.6f" % params['spin1x'])
+                    node.add_opt('--spin1y',"%.6f" % params['spin1y'])
+                    node.add_opt('--spin2x',"%.6f" % params['spin2x'])
+                    node.add_opt('--spin2y',"%.6f" % params['spin2y'])
+                    node.add_opt('--inclination',"%.6f" % params['inclination'])
+                    try:
+                        node.add_opt('--u-val',"%.6f" % params['u_vals'])
+                    except:
+                        node.add_opt('--u-val',
+                                     "%.6f" % params['u_vals_%s' % ifo])
+
             # str(numpy.float64) restricts to 2d.p. BE CAREFUL WITH THIS!!!
             str_trig_time = '%.6f' %(params[ifo + '_end_time'])
             node.add_opt('--trigger-time', str_trig_time)
@@ -342,6 +356,37 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
             node.add_opt('--plot-caption', caption)
             workflow += node
             files += node.output_files
+    return files
+
+def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
+                            require=None, tags=None):
+    """ Add plot_waveform jobs to the workflow.
+    """
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'single_template_plot'
+    secs = requirestr(workflow.cp.get_subsections(name), require)
+    secs = excludestr(secs, exclude)
+    files = FileList([])
+    for tag in secs:
+        node = PlotExecutable(workflow.cp, 'plot_waveform', ifos=ifos,
+                              out_dir=out_dir, tags=[tag] + tags).create_node()
+        node.add_opt('--mass1', "%.6f" % params['mass1'])
+        node.add_opt('--mass2', "%.6f" % params['mass2'])
+        node.add_opt('--spin1z',"%.6f" % params['spin1z'])
+        node.add_opt('--spin2z',"%.6f" % params['spin2z'])
+        if params.has_key('u_vals'):
+            # Precessing options
+            node.add_opt('--spin1x',"%.6f" % params['spin1x'])
+            node.add_opt('--spin2x',"%.6f" % params['spin2x'])
+            node.add_opt('--spin1y',"%.6f" % params['spin1y'])
+            node.add_opt('--spin2y',"%.6f" % params['spin2y'])
+            node.add_opt('--inclination',"%.6f" % params['inclination'])
+            node.add_opt('--u-val', "%.6f" % params['u_vals'])
+        node.new_output_file_opt(workflow.analysis_time, '.png',
+                                     '--output-file')
+        workflow += node
+        files += node.output_files
     return files
 
 def make_inj_info(workflow, injection_file, injection_index, num, out_dir,

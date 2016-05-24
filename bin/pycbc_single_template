@@ -106,6 +106,26 @@ parser.add_argument("--spin1z", type=float, default=0,
 parser.add_argument("--spin2z", type=float, default=0,
                   help="The aligned pin of the second component object. "
                       "Do not use if using --use-params-of-closest-injection.")
+# Optional arguments for precessing templates
+parser.add_argument("--spin1x", type=float, default=0,
+                  help="The non-aligned spin of the first component object. "
+                    "Default = 0.")
+parser.add_argument("--spin2x", type=float, default=0,
+                  help="The non-aligned spin of the second component object. "
+                    "Default = 0.")
+parser.add_argument("--spin1y", type=float, default=0,
+                  help="The non-aligned spin of the first component object. "
+                    "Default = 0.")
+parser.add_argument("--spin2y", type=float, default=0,
+                  help="The non-aligned spin of the second component object. "
+                    "Default = 0.")
+parser.add_argument("--inclination", type=float, default=0,
+                  help="The inclination of the source w.r.t the observer. "
+                    "Default = 0.")
+parser.add_argument("--u-val", type=float, default=None,
+                  help="The ratio between hplus and hcross to use in the "
+                    "template, according to h(t) = hplus * u_val + hcross. "
+                    "If not given only hplus is used.")
 parser.add_argument("--window", type=float, 
                   help="Time to save around the trigger time (if given)")
 parser.add_argument("--order", type=int,
@@ -228,13 +248,33 @@ with ctx:
             opt.approximant = waveform.FilterBank.parse_option(row,
                                                                opt.approximant)
         logging.info("Making template: %s" % opt.approximant)
-        template = waveform.get_waveform_filter(zeros(flen, dtype=complex64), 
+        if opt.u_val is None:
+            template = waveform.get_waveform_filter(
+                                    zeros(flen, dtype=complex64),
                                     approximant=opt.approximant,
                                     mass1=opt.mass1, mass2=opt.mass2,
                                     spin1z=opt.spin1z, spin2z=opt.spin2z,
+                                    spin1y=opt.spin1y, spin2y=opt.spin2y,
+                                    spin1x=opt.spin1x, spin2x=opt.spin2x,
+                                    inclination=opt.inclination,
                                     taper=opt.taper_template, 
                                     f_lower=flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)
+        else:
+            tp, tc = waveform.get_two_pol_waveform_filter(
+                                    zeros(flen, dtype=complex64),
+                                    zeros(flen, dtype=complex64), None,
+                                    approximant=opt.approximant,
+                                    mass1=opt.mass1, mass2=opt.mass2,
+                                    spin1z=opt.spin1z, spin2z=opt.spin2z,
+                                    spin1y=opt.spin1y, spin2y=opt.spin2y,
+                                    spin1x=opt.spin1x, spin2x=opt.spin2x,
+                                    inclination=opt.inclination,
+                                    taper=opt.taper_template,
+                                    f_lower=flow, delta_f=delta_f,
+                                    delta_t=gwstrain.delta_t)
+            template = tc.multiply_and_add(tp, opt.u_val)
+
     chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(row,
                                                                opt.chisq_bins))
 
