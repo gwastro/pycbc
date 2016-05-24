@@ -1,0 +1,214 @@
+#!/bin/env python
+# Copyright (C) 2016 Christopher M. Biwer, Alexander Harvey Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Creates a DAX for a parameter estimation workflow.
+"""
+
+import os, argparse, logging, h5py
+import pycbc.workflow as wf
+import pycbc.workflow.mcmcfollowups as mcf
+import pycbc.workflow.minifollowups as mini
+import pycbc.workflow.pegasus_workflow as wdax
+import pycbc.version
+from glue import segments
+from pycbc.results import layout
+from pycbc.types import MultiDetOptionAction
+
+def to_file(path, ifo=None):
+    """ Takes a str and returns a pycbc.workflow.pegasus_workflow.File
+    instance.
+    """
+    fil = wdax.File(os.path.basename(path))
+    fil.ifo = ifo
+    path = os.path.abspath(path)
+    fil.PFN(path, "local")
+    return fil
+
+# command line parser
+parser = argparse.ArgumentParser(description=__doc__[1:])
+
+# version option
+parser.add_argument("--version", action="version",
+    version=pycbc.version.git_verbose_msg, 
+    help="Prints version information.")
+
+# workflow options
+parser.add_argument("--workflow-name", default="my_unamed_inference_run",
+    help="Name of the workflow to append in various places.")
+parser.add_argument("--tags", nargs="+", default=[],
+    help="Tags to apend in various places.")
+parser.add_argument("--output-dir", default=None,
+    help="Path to output directory.")
+parser.add_argument("--output-map", required=True,
+    help="Path to output map file.")
+parser.add_argument("--output-file", required=True,
+    help="Path to DAX file.")
+
+# input file options
+parser.add_argument("--bank-file", required=True,
+    help="HDF format template bank file.")
+parser.add_argument("--statmap-file", required=True,
+    help="HDF format clustered coincident trigger result file.")
+parser.add_argument("--single-detector-triggers", nargs="+", required=True,
+    action=MultiDetOptionAction,
+    help="HDF format merged single detector trigger files")
+parser.add_argument("--inference-config-file", type=str, required=True,
+    help="workflow.WorkflowConfigParser parsable file with proir information.")
+
+# add option groups
+wf.add_workflow_command_line_group(parser)
+
+# parser command line
+opts = parser.parse_args()
+
+# setup log
+logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s", 
+                    level=logging.INFO)
+
+# create workflow
+workflow = wf.Workflow(opts, opts.workflow_name)
+
+# create output directory
+wf.makedir(opts.output_dir)
+
+# create a list that will contain all output files
+layouts = []
+
+# typecast str from command line to File instances
+tmpltbank_file = to_file(opts.bank_file)
+coinc_file = to_file(opts.statmap_file)
+single_triggers = []
+for ifo in opts.single_detector_triggers:
+    fname = opts.single_detector_triggers[ifo]
+    single_triggers.append( to_file(fname, ifo=ifo) )
+config_file = to_file(opts.inference_config_file)
+
+# get number of events to analyze
+num_events = int(workflow.cp.get_opt_tags("workflow-inference", "num-events", ""))
+
+# get detection statistic from statmap file
+f = h5py.File(opts.statmap_file, "r")
+stat = f["foreground/stat"][:]
+
+# get index for sorted detection statistic
+sorting = stat.argsort()[::-1]
+
+# if less events that requested to analyze in config file then analyze
+# all events
+if len(stat) < num_events:
+    num_events = len(stat)
+
+# get ranking statistic in order of highest (index=0) to lowest
+# and grab the loudest events we will analyze
+stat = stat[sorting][0:num_events]
+
+# get times for loudest events
+times = {f.attrs["detector_1"]: f["foreground/time1"][:][sorting][0:num_events],
+         f.attrs["detector_2"]: f["foreground/time2"][:][sorting][0:num_events],
+        }
+
+# get trigger_id for the loudest events
+tids = {f.attrs["detector_1"]: f["foreground/trigger_id1"][:][sorting][0:num_events],
+         f.attrs["detector_2"]: f["foreground/trigger_id2"][:][sorting][0:num_events],
+        }
+
+# read template bank file
+bank_data = h5py.File(opts.bank_file, "r")
+
+# get frame type and channel name as a dict with IFO as keys
+frame_types = {}
+channel_names = {}
+for ifo in workflow.ifos:
+    frame_types[ifo] = workflow.cp.get_opt_tags("workflow-datafind",
+                                      "datafind-%s-frame-type"%ifo.lower(), "")
+    channel_names[ifo] = workflow.cp.get_opt_tags("workflow",
+                                      "%s-channel-name"%ifo.lower(), "")
+frame_types_str = " ".join([key+":"+val for key,val in frame_types.iteritems()])
+channel_names_str = " ".join([key+":"+val for key,val in channel_names.iteritems()])
+
+# construct Executable for performing MCMC
+mcmc_exe = wf.Executable(workflow.cp, "mcmc", ifos=workflow.ifos,
+                         out_dir=opts.output_dir)
+
+# loop over number of loudest events to be analyzed
+for num_event in range(num_events):
+
+    # get template_id
+    bank_id = f['foreground/template_id'][:][sorting][num_event]
+
+    # get a dict that holds event parameters
+    params = {}
+    for ifo in times:
+        params["%s_end_time" % ifo] = times[ifo][num_event]
+    params["mass1"] = bank_data["mass1"][bank_id]
+    params["mass2"] = bank_data["mass2"][bank_id]
+    params["spin1z"] = bank_data["spin1z"][bank_id]
+    params["spin2z"] = bank_data["spin2z"][bank_id]
+
+    # set GPS times for reading in data around the event
+    avg_end_time = sum([end_times[num_event] \
+                          for end_times in times.values()]) / len(times.keys())
+    seconds_before_time = int(workflow.cp.get_opt_tags("workflow-inference",
+                                            "data-seconds-before-trigger", ""))
+    seconds_after_time = int(workflow.cp.get_opt_tags("workflow-inference",
+                                            "data-seconds-after-trigger", ""))
+    gps_start_time = int(avg_end_time) - seconds_before_time
+    gps_end_time = int(avg_end_time) + seconds_after_time
+
+    # make node for performing MCMC
+    node = mcmc_exe.create_node()
+    node.add_opt("--instruments", " ".join(workflow.ifos))
+    node.add_opt("--gps-start-time", gps_start_time)
+    node.add_opt("--gps-end-time", gps_end_time)
+    node.add_opt("--frame-type", frame_types_str)
+    node.add_opt("--channel-name", channel_names_str)
+    node.add_input_opt("--config-file", config_file)
+    analysis_time = segments.segment(gps_start_time, gps_end_time)
+    mcmc_file = node.new_output_file_opt(analysis_time, ".hdf",
+                                 "--output-file", tags=[str(num_event)])
+
+    # add node to workflow
+    workflow += node
+
+    # add file that prints information about the event
+    layouts += [mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
+                          coinc_file, num_event, 
+                          opts.output_dir, tags=opts.tags + [str(num_event)])]
+
+    # add files from corner plot for this event
+    layouts += [mcf.make_inference_corner_plot(workflow, mcmc_file,
+                          opts.output_dir, opts.inference_config_file,
+                          analysis_seg=analysis_time,
+                          tags=opts.tags + [str(num_event)])]
+
+    # add files from plotting acceptance rate plot for this event
+    layouts += [mcf.make_inference_acceptance_rate_plot(workflow, mcmc_file, 
+                          opts.output_dir, analysis_seg=analysis_time,
+                          tags=opts.tags + [str(num_event)])]
+
+    # add files from plotting parameter samples and autocorrelation
+    # function for this event
+    files = mcf.make_inference_single_parameter_plots(workflow, mcmc_file,
+                          opts.output_dir, opts.inference_config_file,
+                          analysis_seg=analysis_time,
+                          tags=opts.tags + [str(num_event)]) 
+    layouts += list(layout.grouper(files, 2))
+
+# write dax
+workflow.save(filename=opts.output_file, output_map=opts.output_map)
+
+# write html well
+layout.two_column_layout(opts.output_dir, layouts)
