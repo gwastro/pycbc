@@ -29,6 +29,7 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
     build_libpq=false
     build_gsl=true
     build_swig=true
+    h5py_from="git"
     glue_from="pip-install" # "git-patched"
     fake_psycopg26=true
     build_pegasus_source=true
@@ -53,6 +54,7 @@ else
     build_gsl=false
     build_swig=false
     glue_from="git-patched" # "pip-install"
+    h5py_from="pip-install"
     fake_psycopg26=true
     build_pegasus_source=false
     build_preinst_before_lalsuite=true
@@ -560,8 +562,22 @@ else
 fi
 
 # h5py
-echo -e "\\n\\n>> [`date`] pip install h5py==2.5.0"
-pip install h5py==2.5.0
+if [ "$h5py_from" = "pip-install" ] ; then
+    echo -e "\\n\\n>> [`date`] pip install h5py==2.5.0"
+    pip install h5py==2.5.0
+else
+    echo -e "\\n\\n>> [`date`] building h5py v2.5.0"
+    if test -d h5py/.git; then
+        cd h5py
+    else
+        git clone https://github.com/h5py/h5py.git
+        cd h5py
+        git checkout 2.5.0
+    fi
+    pip install six==1.9.0 pkgconfig==1.1.0
+    python setup.py install --prefix="$PREFIX"
+    cd ..
+fi
 
 # This is a pretty dirty hack faking psycopg2-2.5.5 to be v2.6
 # pegasus-wms is pinned to 2.6 but I couldn't get 2.6 to compile
