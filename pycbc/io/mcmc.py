@@ -62,7 +62,7 @@ class MCMCFile(h5py.File):
         """
 
         nwalkers = self.attrs["nwalkers"]
-        return numpy.array([self.read_samples_from_walker(variable_arg, j, thin_start, thin_interval) for j in nwalkers])
+        return numpy.array([self.read_samples_from_walker(variable_arg, j, thin_start, thin_interval) for j in range(nwalkers)])
 
     def read_samples_from_walker(self, variable_arg, nwalker,
                                  thin_start=0, thin_interval=1):
