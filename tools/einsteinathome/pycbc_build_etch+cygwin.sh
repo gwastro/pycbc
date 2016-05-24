@@ -750,8 +750,6 @@ else
 fi
 
 # PyCBC
-echo -e "\\n\\n>> [`date`] downgrade to setuptools==18.2"
-pip install --upgrade setuptools==18.2
 echo -e "\\n\\n>> [`date`] building pycbc"
 if $scratch_pycbc || ! test -d pycbc/.git ; then
     # clone
@@ -777,6 +775,8 @@ else
     git remote update
     git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
+echo -e ">> [`date`] downgrade setuptools"
+pip install --upgrade `grep -w ^setuptools requirements.txt`
 echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
 pip install .
 hooks="$PWD/tools/static"
