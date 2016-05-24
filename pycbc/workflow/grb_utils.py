@@ -25,14 +25,15 @@
 """
 This library code contains functions and classes that are used in the
 generation of pygrb workflows. For details about pycbc.workflow see here:
-https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
+http://ligo-cbc.github.io/pycbc/latest/html/workflow.html
 """
 
 import os
 import shutil
+import urlparse, urllib
 from glue import segments
 from glue.ligolw import ligolw, lsctables, utils, ilwd
-from pycbc.workflow.core import File, FileList
+from pycbc.workflow.core import File, FileList, resolve_url
 
 
 def set_grb_start_end(cp, start, end):
@@ -191,8 +192,48 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
                                                     "trigger-name"))
     xml_file_path = os.path.join(out_dir, xml_file_name)
     utils.write_filename(xmldoc, xml_file_path)
-    xml_file_url = "file://localhost%s/%s" % (out_dir, xml_file_name)
+    xml_file_url = urlparse.urljoin("file:", urllib.pathname2url(xml_file_path))
     xml_file = File(ifos, xml_file_name, sci_seg, file_url=xml_file_url)
-    xml_file.PFN(xml_file.cache_entry.path, site="local")
+    xml_file.PFN(xml_file_url, site="local")
     
     return xml_file
+
+
+def get_ipn_sky_files(workflow, tags=[]):
+    '''
+    Retreive the sky point files for searching over the IPN error box and
+    populating it with injections.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.core.Workflow
+        An instanced class that manages the constructed workflow.
+    tags : list of strings
+        If given these tags are used to uniquely name and identify output files
+        that would be produced in multiple calls to this function.
+
+    Returns
+    --------
+    cp : pycbc.workflow.core.Workflow
+        The parsed configuration options for the workflow
+    ipn_files : pycbc.workflow.core.FileList
+        FileList holding the details of the IPN sky point files.
+    '''
+    cp = workflow.cp
+    ipn_search_points = cp.get("workflow-inspiral", "ipn-search-points")
+    ipn_search_points = resolve_url(ipn_search_points)
+    search_points_url = urlparse.urljoin("file:",
+            urllib.pathname2url(ipn_search_points))
+    search_points_file = File(workflow.ifos, "SEARCH_POINTS",
+            workflow.analysis_time, file_url=search_points_url, tags=tags)
+    search_points_file.PFN(search_points_url, site="local")
+
+    ipn_sim_points = cp.get("workflow-injections", "ipn-sim-points")
+    ipn_sim_points = resolve_url(ipn_sim_points)
+    sim_points_url = urlparse.urljoin("file:",
+            urllib.pathname2url(ipn_sim_points))
+    sim_points_file = File(workflow.ifos, "SIM_POINTS", workflow.analysis_time,
+            file_url=sim_points_url, tags=tags)
+    sim_points_file.PFN(sim_points_url, site="local")
+
+    return search_points_file, sim_points_file
