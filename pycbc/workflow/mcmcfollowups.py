@@ -118,6 +118,54 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
 
     logging.info("Leaving inference module")
 
+def make_inference_summary_table(workflow, mcmc_file, output_dir,
+                    name="mcmc_table", analysis_seg=None, tags=None):
+    """ Sets up the corner plot of the posteriors in the workflow.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    mcmc_file: pycbc.workflow.File
+        The file with MCMC samples.
+    output_dir: str
+        The directory to store result plots and files.
+    name: str
+        The name in the [executables] section of the configuration file
+        to use.
+    analysis_segs: {None, glue.segments.Segment}
+       The segment this job encompasses. If None then use the total analysis
+       time from the workflow.
+    tags: {None, optional}
+        Tags to add to the minifollowups executables.
+
+    Returns
+    -------
+    pycbc.workflow.FileList
+        A list of result and output files. 
+    """
+
+    # default values
+    tags = [] if tags is None else tags
+    analysis_seg = workflow.analysis_time \
+                       if analysis_seg is None else analysis_seg
+
+    # make the directory that will contain the output files
+    makedir(output_dir)
+
+    # make a node for plotting the posterior as a corner plot
+    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                      out_dir=output_dir, tags=tags).create_node()
+
+    # add command line options
+    node.add_input_opt("--input-file", mcmc_file)
+    node.new_output_file_opt(analysis_seg, ".png", "--output-file")
+
+    # add node to workflow
+    workflow += node
+
+    return node.output_files
+
 def make_inference_corner_plot(workflow, mcmc_file, output_dir, config_file,
                     name="mcmc_corner", analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.

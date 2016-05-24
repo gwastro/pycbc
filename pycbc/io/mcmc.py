@@ -150,7 +150,7 @@ class MCMCFile(h5py.File):
                 group_dim.create_dataset(dataset_name, data=samples_subset)
 
         # create a dataset for the acceptance fraction
-        if acceptance_fraction:
+        if acceptance_fraction is not None:
             self.create_dataset("acceptance_fraction",
                                 data=sampler.acceptance_fraction)
 

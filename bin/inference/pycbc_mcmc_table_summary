@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(usage="pycbc_mcmc_table_summary [--options]",
 # add data options
 parser.add_argument("--input-file", type=str, required=True,
     help="Path to input HDF file.")
-parser.add_argument("--variable-args", type=str, nargs="+", required=True,
+parser.add_argument("--variable-args", type=str, nargs="+", default=[],
     help="Name of parameters varied in MCMC.")
 
 # output plot options
@@ -67,9 +67,15 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 logging.info("Reading input file")
 fp = MCMCFile(opts.input_file, "r")
 
+# check if command line specifies variable parameters
+if opts.variable_args:
+    variable_args = opts.variable_args
+else:
+    variable_args = fp.attrs["variable_args"]
+
 # get thinned samples for each parameter
 table = []
-for param in opts.variable_args:
+for param in variable_args:
     samples = fp.read_samples(param, thin_start=opts.thin_start,
                               thin_interval=opts.thin_interval)
 
