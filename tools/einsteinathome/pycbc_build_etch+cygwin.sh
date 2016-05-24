@@ -61,7 +61,20 @@ else
     appendix="_Windows64"
 fi
 
-# defaults
+# compilation environment
+PYCBC="$PWD/pycbc"
+SOURCE="$PWD/pycbc-sources"
+PYTHON_PREFIX="$PYCBC"
+ENVIRONMENT="$PYCBC/environment"
+PREFIX="$ENVIRONMENT"
+PATH="$PREFIX/bin:$PYTHON_PREFIX/bin:$PATH"
+export FC=gfortran
+libgfortran="`$FC -print-file-name=libgfortran.so|sed 's%/[^/]*$%%'`"
+export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran:/usr/local/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+export LIBS="$LIBS -lgfortran"
+
+# defaults, possibly overwritten by command-line arguments
 cleanup=true # usually, build directories are removed after a successful build
 verbose_pyinstalled_python=false
 pycbc_branch=master
@@ -78,8 +91,11 @@ for i in $*; do
 	    pycbc_remote=bema-ligo;;
         --no-cleanup) cleanup=false;;
         --verbose-python) verbose_pyinstalled_python=true;;
+        --clean) rm -rf "$HOME/.cache" "$SOURCE/pycbc-preinst.tgz" "$SOURCE/pycbc-preinst-lalsuite.tgz";;
 	*) echo "unknown option '$i', valid are:
 
+    --clean           : perform a clean build (takes quite some time); delete ~/.cache and
+                        tarballs containing precompiled libraries (lalsuite, scipy etc.)
     --no-pycbc-update : don't update local pycbc repo from remote branch $pycbc_branch
     --bema-testing    : use einsteinathome_testing branch of bema-ligo pycbc repo
     --scratch-pycbc   : check out pycbc git repo from scratch
@@ -87,19 +103,6 @@ for i in $*; do
     --verbose-python  : run PyInstalled Python in verbose mode, showing imports">&2; exit 1;;
     esac
 done
-
-# compilation environment
-PYCBC="$PWD/pycbc"
-SOURCE="$PWD/pycbc-sources"
-PYTHON_PREFIX="$PYCBC"
-ENVIRONMENT="$PYCBC/environment"
-PREFIX="$ENVIRONMENT"
-PATH="$PREFIX/bin:$PYTHON_PREFIX/bin:$PATH"
-export FC=gfortran
-libgfortran="`$FC -print-file-name=libgfortran.so|sed 's%/[^/]*$%%'`"
-export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran:/usr/local/lib:$LD_LIBRARY_PATH"
-export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
-export LIBS="$LIBS -lgfortran"
 
 # log compilation environment
 echo "export PATH='$PATH'"
