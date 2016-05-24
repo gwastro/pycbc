@@ -199,7 +199,7 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
     return xml_file
 
 
-def get_ipn_sky_files(workflow, tags=None):
+def get_ipn_sky_files(workflow, file_url, tags=None):
     '''
     Retreive the sky point files for searching over the IPN error box and
     populating it with injections.
@@ -208,34 +208,24 @@ def get_ipn_sky_files(workflow, tags=None):
     ----------
     workflow: pycbc.workflow.core.Workflow
         An instanced class that manages the constructed workflow.
+    file_url : string
+        The URL of the IPN sky points file.
     tags : list of strings
         If given these tags are used to uniquely name and identify output files
         that would be produced in multiple calls to this function.
 
     Returns
     --------
-    cp : pycbc.workflow.core.Workflow
-        The parsed configuration options for the workflow
-    ipn_files : pycbc.workflow.core.FileList
-        FileList holding the details of the IPN sky point files.
+    sky_points_file : pycbc.workflow.core.File
+        File object representing the IPN sky points file.
     '''
-    if tags is None:
-        tags = []
-    cp = workflow.cp
-    ipn_search_points = cp.get("workflow-inspiral", "ipn-search-points")
-    ipn_search_points = resolve_url(ipn_search_points)
-    search_points_url = urlparse.urljoin("file:",
-            urllib.pathname2url(ipn_search_points))
-    search_points_file = File(workflow.ifos, "SEARCH_POINTS",
-            workflow.analysis_time, file_url=search_points_url, tags=tags)
-    search_points_file.PFN(search_points_url, site="local")
+    tags = tags or []
+    ipn_sky_points = resolve_url(file_url)
+    sky_points_url = urlparse.urljoin("file:",
+            urllib.pathname2url(ipn_sky_points))
+    sky_points_file = File(workflow.ifos, "IPN_SKY_POINTS",
+            workflow.analysis_time, file_url=sky_points_url, tags=tags)
+    sky_points_file.PFN(sky_points_url, site="local")
 
-    ipn_sim_points = cp.get("workflow-injections", "ipn-sim-points")
-    ipn_sim_points = resolve_url(ipn_sim_points)
-    sim_points_url = urlparse.urljoin("file:",
-            urllib.pathname2url(ipn_sim_points))
-    sim_points_file = File(workflow.ifos, "SIM_POINTS", workflow.analysis_time,
-            file_url=sim_points_url, tags=tags)
-    sim_points_file.PFN(sim_points_url, site="local")
+    return sky_points_file
 
-    return search_points_file, sim_points_file
