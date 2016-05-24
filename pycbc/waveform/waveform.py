@@ -83,6 +83,25 @@ def _lalsim_td_waveform(**p):
 
     return hp, hc
 
+def _spintaylor_aligned_prec_swapper(**p):
+    """
+    SpinTaylorF2 is only single spin, it also struggles with anti-aligned spin
+    waveforms. This construct chooses between the aligned-twospin TaylorF2 model
+    and the precessing singlespin SpinTaylorF2 models. If aligned spins are
+    given, use TaylorF2, if nonaligned spins are given use SpinTaylorF2. In
+    the case of nonaligned doublespin systems the code will fail at the
+    waveform generator level.
+    """
+    orig_approximant = p['approximant']
+    if p['spin2x'] == 0 and p['spin2y'] == 0 and p['spin1x'] == 0 and \
+                                                              p['spin1y'] == 0:
+        p['approximant'] = 'TaylorF2'
+    else:
+        p['approximant'] = 'SpinTaylorF2'
+    hp, hc = _lalsim_fd_waveform(**p)
+    p['approximant'] = orig_approximant
+    return hp, hc
+
 def _lalsim_fd_waveform(**p):
     flags = lalsimulation.SimInspiralCreateWaveformFlags()
     lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
@@ -578,9 +597,9 @@ _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
 _filter_ends["SPAtmplt"] = spa_tmplt_end
-_filter_ends["SEOBNRv1_ROM_SingleSpin"] = seobnrrom_final_frequency
+_filter_ends["SEOBNRv1_ROM_EffectiveSpin"] = seobnrrom_final_frequency
 _filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrrom_final_frequency
-_filter_ends["SEOBNRv2_ROM_SingleSpin"] = seobnrrom_final_frequency
+_filter_ends["SEOBNRv2_ROM_EffectiveSpin"] = seobnrrom_final_frequency
 _filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrrom_final_frequency
 _filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_final_frequency
 # PhenomD returns higher frequencies than this, so commenting this out for now
@@ -590,19 +609,27 @@ _filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_final_frequency
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
-_filter_time_lengths["SEOBNRv1_ROM_SingleSpin"] = seobnrrom_length_in_time
+_filter_time_lengths["SEOBNRv1_ROM_EffectiveSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrrom_length_in_time
-_filter_time_lengths["SEOBNRv2_ROM_SingleSpin"] = seobnrrom_length_in_time
+_filter_time_lengths["SEOBNRv2_ROM_EffectiveSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_length_in_time
 _filter_time_lengths["IMRPhenomC"] = seobnrrom_length_in_time
 _filter_time_lengths["IMRPhenomD"] = seobnrrom_length_in_time
+_filter_time_lengths["IMRPhenomPv2"] = seobnrrom_length_in_time
+_filter_time_lengths["SpinTaylorF2"] = seobnrrom_length_in_time
+
+# Also add generators for switching between approximants
+apx_name = "SpinTaylorF2_SWAPPER"
+cpu_fd[apx_name] =  _spintaylor_aligned_prec_swapper
+_filter_time_lengths[apx_name] = _filter_time_lengths["SpinTaylorF2"]
 
 # We can do interpolation for waveforms that have a time length
 for apx in copy.copy(_filter_time_lengths):
-    apx_int = apx + '_INTERP'
-    cpu_fd[apx_int] = get_interpolated_fd_waveform
-    _filter_time_lengths[apx_int] = _filter_time_lengths[apx]  
+    if apx in cpu_fd:
+        apx_int = apx + '_INTERP'
+        cpu_fd[apx_int] = get_interpolated_fd_waveform
+        _filter_time_lengths[apx_int] = _filter_time_lengths[apx]
 
 td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()
@@ -705,6 +732,69 @@ def td_waveform_to_fd_waveform(waveform, out=None, length=None,
     htilde.chirp_length = tChirp
     return htilde
 
+def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
+    """Return a frequency domain waveform filter for the specified approximant.
+    Unlike get_waveform_filter this function returns both h_plus and h_cross
+    components of the waveform, which are needed for searches where h_plus
+    and h_cross are not related by a simple phase shift.
+    """
+    n = len(outplus)
+
+    # If we don't have an inclination column alpha3 might be used
+    if not hasattr(template, 'inclination')\
+                                         and not kwargs.has_key('inclination'):
+        if hasattr(template, 'alpha3'):
+            kwargs['inclination'] = template.alpha3
+
+    input_params = props(template, **kwargs)
+
+    if input_params['approximant'] in fd_approximants(_scheme.mgr.state):
+        wav_gen = fd_wav[type(_scheme.mgr.state)]
+        hp, hc = wav_gen[input_params['approximant']](**input_params)
+        hp.resize(n)
+        hc.resize(n)
+        hp.chirp_length = get_waveform_filter_length_in_time(**input_params)
+        hp.length_in_time = hp.chirp_length
+        hc.chirp_length = hp.chirp_length
+        hc.length_in_time = hp.length_in_time
+        return hp, hc
+    elif input_params['approximant'] in td_approximants(_scheme.mgr.state):
+        # N: number of time samples required
+        N = (n-1)*2
+        delta_f = 1.0 / (N * input_params['delta_t'])
+        wav_gen = td_wav[type(_scheme.mgr.state)]
+        hp, hc = wav_gen[input_params['approximant']](**input_params)
+        # taper the time series hp if required
+        if ('taper' in input_params.keys() and \
+            input_params['taper'] is not None):
+            hp = wfutils.taper_timeseries(hp, input_params['taper'],
+                                          return_lal=False)
+            hc = wfutils.taper_timeseries(hc, input_params['taper'],
+                                          return_lal=False)
+        # total duration of the waveform
+        tmplt_length = len(hp) * hp.delta_t
+        # for IMR templates the zero of time is at max amplitude (merger)
+        # thus the start time is minus the duration of the template from
+        # lower frequency cutoff to merger, i.e. minus the 'chirp time'
+        tChirp = - float( hp.start_time )  # conversion from LIGOTimeGPS
+        hp.resize(N)
+        hc.resize(N)
+        k_zero = int(hp.start_time / hp.delta_t)
+        hp.roll(k_zero)
+        hc.roll(k_zero)
+        hp_tilde = FrequencySeries(outplus, delta_f=delta_f, copy=False)
+        hc_tilde = FrequencySeries(outcross, delta_f=delta_f, copy=False)
+        fft(hp.astype(real_same_precision_as(hp_tilde)), hp_tilde)
+        fft(hc.astype(real_same_precision_as(hc_tilde)), hc_tilde)
+        hp_tilde.length_in_time = tmplt_length
+        hp_tilde.chirp_length = tChirp
+        hc_tilde.length_in_time = tmplt_length
+        hc_tilde.chirp_length = tChirp
+        return hp_tilde, hc_tilde
+    else:
+        raise ValueError("Approximant %s not available" %
+                            (input_params['approximant']))
+
 
 def waveform_norm_exists(approximant):
     if approximant in _filter_norms:
@@ -770,4 +860,4 @@ __all__ = ["get_td_waveform", "get_fd_waveform",
            "waveform_norm_exists", "get_template_amplitude_norm",
            "get_waveform_filter_length_in_time", "get_sgburst_waveform",
            "print_sgburst_approximants", "sgburst_approximants",
-           "td_waveform_to_fd_waveform"]
+           "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter"]
