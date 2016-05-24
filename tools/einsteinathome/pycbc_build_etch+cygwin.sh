@@ -124,7 +124,7 @@ albert=http://albert.phys.uwm.edu/download
 # circumvent old certificate chains on old systems
 export GIT_SSL_NO_VERIFY=true
 wget_opts="-c --passive-ftp --no-check-certificate"
-pip_install="install --trusted-host pypi.python.org --trusted-host github.com"
+export PIP_TRUSTED_HOST="pypi.python.org github.com"
 
 # make sure the sources directory exixts
 mkdir -p "$SOURCE"
@@ -191,7 +191,7 @@ else # if pycbc-preinst.tgz
 	echo -e "\\n\\n>> [`date`] pip install --upgrade pip"
 	pip install --upgrade pip
 	echo -e "\\n\\n>> [`date`] pip install virtualenv"
-	pip $pip_install virtualenv
+	pip install virtualenv
     fi
 
     # set up virtual environment
@@ -205,7 +205,7 @@ else # if pycbc-preinst.tgz
     # pyOpenSSL-0.13
     if [ "$pyssl_from" = "pip-install" ] ; then
 	echo -e "\\n\\n>> [`date`] pip install pyOpenSSL==0.13"
-	pip $pip_install pyOpenSSL==0.13
+	pip install pyOpenSSL==0.13
     else
 	p=pyOpenSSL-0.13
 	echo -e "\\n\\n>> [`date`] building $p"
@@ -253,18 +253,18 @@ else # if pycbc-preinst.tgz
 	$cleanup && rm -rf $p
     else
 	echo -e "\\n\\n>> [`date`] pip install numpy==1.9.3"
-	pip $pip_install numpy==1.9.3
+	pip install numpy==1.9.3
     fi
 
     echo -e "\\n\\n>> [`date`] pip install nose"
-    pip $pip_install nose
+    pip install nose
     echo -e "\\n\\n>> [`date`] pip install Cython==0.23.2"
-    pip $pip_install Cython==0.23.2
+    pip install Cython==0.23.2
 
     # SCIPY
     if [ "$scipy_from" = "pip-install" ] ; then
 	echo -e "\\n\\n>> [`date`] pip install scipy==0.16.0"
-	pip $pip_install scipy==0.16.0
+	pip install scipy==0.16.0
     else
 	p=scipy-0.16.0
 	echo -e "\\n\\n>> [`date`] building $p"
@@ -418,7 +418,7 @@ Libs: -L${libdir} -lhdf5' |
     fi
 
     echo -e "\\n\\n>> [`date`] pip install --upgrade distribute"
-    pip $pip_install --upgrade distribute
+    pip install --upgrade distribute
 
     # LIBFRAME
     p=libframe-8.21
@@ -590,13 +590,13 @@ pytz==2015.6
 snowballstemmer==1.2.0
 sphinx-rtd-theme==0.1.9
 sphinxcontrib-programoutput==0.8' > requirements.txt
-pip $pip_install -r requirements.txt
+pip install -r requirements.txt
 # don't downgrade to setuptools==18.2 here yet
 
 # PyCBC-GLUE
 if [ "$glue_from" = "pip-install" ] ; then
     echo -e "\\n\\n>> [`date`] pip install pycbc-glue==0.9.8"
-    pip $pip_install pycbc-glue==0.9.8
+    pip install pycbc-glue==0.9.8
 else
     echo -e "\\n\\n>> [`date`] building pycbc-glue v0.9.8"
     if test -d pycbc-glue/.git; then
@@ -615,7 +615,7 @@ fi
 
 # h5py
 echo -e "\\n\\n>> [`date`] pip install h5py==2.5.0"
-pip $pip_install h5py==2.5.0
+pip install h5py==2.5.0
 
 # This is a pretty dirty hack faking psycopg2-2.5.5 to be v2.6
 # pegasus-wms is pinned to 2.6 but I couldn't get 2.6 to compile
@@ -641,7 +641,7 @@ if $fake_psycopg26; then
     $cleanup && rm -rf psycopg2-2.6
 else
     echo -e "\\n\\n>> [`date`] pip install psycopg2==2.6"
-    pip $pip_install psycopg2==2.6
+    pip install psycopg2==2.6
 fi
 
 # Pegasus
@@ -669,14 +669,14 @@ echo -e "\\n\\n>> [`date`] building $p"
 tar -xzf $p-lib-pegasus-python.tgz
 pushd $p/lib/pegasus/python/
 # echo -e "\\n\\n>> [`date`] installing dependencies for $p"
-# pip $pip_install -r pegasus_wms.egg-info/requires.txt
+# pip install -r pegasus_wms.egg-info/requires.txt
 python setup.py install --prefix="$PREFIX"
 popd
 $cleanup && rm -rf $p
 
 # MPLD
 p=mpld3-0.3git
-# pip $pip_install "https://github.com/ligo-cbc/mpld3/tarball/master#egg=$p"
+# pip install "https://github.com/ligo-cbc/mpld3/tarball/master#egg=$p"
 echo -e "\\n\\n>> [`date`] building $p"
 test -r $p.tar.gz || wget $wget_opts -O $p.tar.gz "https://github.com/ligo-cbc/mpld3/tarball/master#egg=$p"
 tar -xzf $p.tar.gz
@@ -750,7 +750,7 @@ fi
 
 # PyCBC
 echo -e "\\n\\n>> [`date`] downgrade to setuptools==18.2"
-pip $pip_install --upgrade setuptools==18.2
+pip install --upgrade setuptools==18.2
 echo -e "\\n\\n>> [`date`] building pycbc"
 if $scratch_pycbc || ! test -d pycbc/.git ; then
     # clone
