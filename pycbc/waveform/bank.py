@@ -344,8 +344,8 @@ class FilterBankSkyMax(FilterBank):
 
         hplus = hplus.astype(self.dtype)
         hcross = hcross.astype(self.dtype)
-        hplus.f_lower = self.f_low
-        hcross.f_lower = self.f_low
+        hplus.f_lower = f_low
+        hcross.f_lower = f_low
         hplus.end_frequency = f_end
         hcross.end_frequency = f_end
         hplus.end_idx = int(hplus.end_frequency / hplus.delta_f)
