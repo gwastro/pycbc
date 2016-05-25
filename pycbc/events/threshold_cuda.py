@@ -122,8 +122,11 @@ __global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int w
         for (int i = threadIdx.x; i < ${chunk}; i += 32){
             re = svr[i];
             im = svi[i];
-            if ((re * re + im * im) > (mvr * mvr + mvi * mvi))
+            if ((re * re + im * im) > (mvr * mvr + mvi * mvi)){
                 tl = i;
+                mvr = re;
+                mvi = im;
+            }
         }
         
         // Store the 32 candidates into shared memory
@@ -190,13 +193,13 @@ __global__ void threshold_and_cluster2(float2* outv, int* outl, float threshold,
 
     
     // Check right
-    if (i < (${blocks} - 1) && (val[i + 1] > val[i] && (loc[i+1] - loc[i]) < window)){
+    if ( (i < (${blocks} - 1)) && (val[i + 1] > val[i]) ){
         outl[i] = -1;
         return;
     }
     
     // Check left
-    if (i > 0 && (val[i - 1] > val[i] && (loc[i] - loc[i-1]) < window)){
+    if ( (i > 0) && (val[i - 1] > val[i]) ){
         outl[i] = -1;
         return;
     }
