@@ -300,7 +300,7 @@ def find_variable_start_frequency(approximant, parameters, f_start, max_length,
     return f
 
 
-class FilterBankSkyMax(FilterBank):
+class FilterBankSkyMax(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, f_lower,
                  dtype, out_plus=None, out_cross=None, **kwds):
         super(FilterBankSkyMax, self).__init__(filename, filter_length,
@@ -322,9 +322,7 @@ class FilterBankSkyMax(FilterBank):
         approximant = self.approximant(index)
 
         # Get the end of the waveform if applicable (only for SPAtmplt atm)
-        f_end = pycbc.waveform.get_waveform_end_frequency(self.table[index],
-                              approximant=approximant, **self.extra_args)
-
+        f_end = self.end_frequency(index)
         if f_end is None or f_end >= (self.filter_length * self.delta_f):
             f_end = (self.filter_length-1) * self.delta_f
 
@@ -357,20 +355,8 @@ class FilterBankSkyMax(FilterBank):
             f_final=f_end, delta_f=self.delta_f, delta_t=self.delta_t,
             distance=distance, **self.extra_args)
 
-        # For time domain templates, record the total duration (which may
-        # include ringdown) and the duration up to merger since they will be
-        # erased by the type conversion below
-        length_in_time = None
-        chirp_length = None
-        if hasattr(hplus, 'length_in_time') and \
-                                              hplus.length_in_time is not None:
-            self.table[index].ttotal = hplus.length_in_time
-        elif not self.table[index].ttotal:
-            self.table[index].ttotal = 0.
         if hasattr(hplus, 'chirp_length') and hplus.chirp_length is not None:
             self.table[index].template_duration = hplus.chirp_length
-        elif not self.table[index].template_duration:
-            self.table[index].template_duration = 0.
 
         hplus = hplus.astype(self.dtype)
         hcross = hcross.astype(self.dtype)
