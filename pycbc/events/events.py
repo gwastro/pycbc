@@ -422,6 +422,7 @@ class EventManager(object):
                 # Precessing
                 f['u_vals'] = self.events['u_vals']
                 f['coa_phase'] = self.events['coa_phase']
+                f['hplus_cross_corr'] = self.events['hplus_cross_corr']
             except:
                 # Not precessing
                 f['coa_phase'] = numpy.angle(self.events['snr'])
@@ -431,8 +432,21 @@ class EventManager(object):
             f['cont_chisq'] = self.events['cont_chisq']
             f['end_time'] = self.events['time_index'] / float(self.opt.sample_rate) + self.opt.gps_start_time
 
-            template_sigmasq = numpy.array([t['sigmasq'] for t in self.template_params], dtype=numpy.float32)
-            f['sigmasq'] = template_sigmasq[tid]
+            try:
+                # Precessing
+                template_sigmasq_plus = numpy.array([t['sigmasq_plus'] for t in self.template_params], dtype=numpy.float32)
+                f['sigmasq_plus'] = template_sigmasq_plus[tid]
+                template_sigmasq_cross = numpy.array([t['sigmasq_cross'] for t in self.template_params], dtype=numpy.float32)
+                f['sigmasq_cross'] = template_sigmasq_cross[tid]
+                # FIXME: I want to put something here, but I haven't yet
+                #        figured out what it should be. I think we would also
+                #        need information from the plus and cross correlation
+                #        (both real and imaginary(?)) to get this.
+                f['sigmasq'] = template_sigmasq_plus[tid]
+            except:
+                # Not precessing
+                template_sigmasq = numpy.array([t['sigmasq'] for t in self.template_params], dtype=numpy.float32)
+                f['sigmasq'] = template_sigmasq[tid]
 
             template_durations = [p['tmplt'].template_duration for p in self.template_params]
             f['template_duration'] = numpy.array(template_durations, dtype=numpy.float32)[tid]

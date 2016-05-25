@@ -235,8 +235,8 @@ class SingleDetBankVeto(object):
 class SingleDetSkyMaxBankVeto(SingleDetBankVeto):
     """Stub for precessing bank veto if anyone ever wants to code it up.
     """
-    def __init__(self, **kwds):
-        super(SingleDetSkyMaxBankVeto, self).__init__(**kwds)
+    def __init__(self, *args, **kwds):
+        super(SingleDetSkyMaxBankVeto, self).__init__(*args, **kwds)
 
     def values(self, *args, **kwargs):
         if self.do:

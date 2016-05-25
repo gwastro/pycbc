@@ -415,6 +415,8 @@ class MatchedFilterControl(object):
             raise ValueError("Invalid upsample method")            
 
 class MatchedFilterSkyMaxControl(object):
+    # FIXME: This seems much more simplistic than the aligned-spin class.
+    #        E.g. no correlators. Is this worth updating?
     def __init__(self, low_frequency_cutoff, high_frequency_cutoff,
                 snr_threshold, tlen, delta_f, dtype):
         """

@@ -281,8 +281,8 @@ class SingleDetAutoChisq(object):
 class SingleDetSkyMaxAutoChisq(SingleDetAutoChisq):
     """Stub for precessing auto chisq if anyone ever wants to code it up.
     """
-    def __init__(self, **kwds):
-        super(SingleDetSkyMaxAutoChisq, self).__init__(**kwds)
+    def __init__(self, *args, **kwds):
+        super(SingleDetSkyMaxAutoChisq, self).__init__(*args, **kwds)
 
     def values(self, *args, **kwargs):
         if self.do:
@@ -291,4 +291,4 @@ class SingleDetSkyMaxAutoChisq(SingleDetAutoChisq):
             err_msg += "write it?"
             raise NotImplementedError(err_msg)
         else:
-            return None, None
+            return None
