@@ -64,7 +64,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'jinja2',
                       'mpld3>=0.3git',
                       'pyRXP>=2.1.0',
-                      'pycbc-pylal>=0.9.5',
+                      'pycbc-pylal>=0.9.6',
                       'pycbc-glue>=0.9.8',
                       ]
 links = ['https://github.com/ligo-cbc/mpld3/tarball/master#egg=mpld3-0.3git']
@@ -258,8 +258,8 @@ def get_version_info():
             
     # If this is a release or another kind of source distribution of PyCBC
     except:
-        version = '1.5.dev0'
-        release = 'False'
+        version = '1.4.1'
+        release = 'True'
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
     
         with open('pycbc/version.py', 'w') as f:
