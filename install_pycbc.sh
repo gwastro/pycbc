@@ -791,6 +791,9 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
   condor_check_userlogs pyinstaller_build_1.log
   grep "Normal termination (return value 0)" build_static.dag.dagman.log
 
+  # Create the pycbc_submit_dax "bundle" (inline tar with config files)
+  ./bundle_pycbc_submit_dax.sh
+
   #Copy the existing static files into the dist directory
   cp -v ${VIRTUAL_ENV}/bin/lalapps_inspinj dist/
   for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank lalapps_cbc_sbank_sim 
