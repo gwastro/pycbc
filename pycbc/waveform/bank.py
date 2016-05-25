@@ -25,13 +25,14 @@
 """
 This module provides classes that describe banks of waveforms
 """
-import types, numpy, logging
+import types, numpy, logging, os.path, math, h5py
 import pycbc.waveform
 from pycbc.types import zeros
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from pycbc.filter import sigmasq
 from pycbc import DYN_RANGE_FAC
 from pycbc.pnutils import nearest_larger_binary_number
+from pycbc.io import FieldArray
 
 def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
@@ -63,32 +64,67 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
 lsctables.use_in(LIGOLWContentHandler)
 
-class BaseFilterBank(object):
+class TemplateBank(object):
     """ Class to provide some basic helper functions and information
     about elements of an xml template bank.
     """
     def __init__(self, filename, approximant=None, **kwds):
-        self.indoc = ligolw_utils.load_filename(
-            filename, False, contenthandler=LIGOLWContentHandler)
-        self.table = table.get_table(
-            self.indoc, lsctables.SnglInspiralTable.tableName)
-        self.extra_args = kwds  
+        ext = os.path.basename(filename)
+        if 'xml' in ext:
+            self.indoc = ligolw_utils.load_filename(
+                filename, False, contenthandler=LIGOLWContentHandler)
+            self.table = table.get_table(
+                self.indoc, lsctables.SnglInspiralTable.tableName)
+            self.table = FieldArray.from_ligolw_table(self.table)
 
+            # inclination stored in xml alpha3 column
+            names = list(self.table.dtype.names)
+            names = tuple([n if n != 'alpha3' else 'inclination' for n in names]) 
+            self.table.dtype.names = names    
+
+        elif 'hdf' in ext:
+            f = h5py.File(filename, 'r')
+            dtype = []
+            data = {}
+            for key in f.keys():
+                try:
+                    data[str(key)] = f[key][:]
+                    dtype.append((str(key), data[key].dtype))
+                except:
+                    pass
+
+            num = len(data[data.keys()[0]])
+            self.table = FieldArray(num, dtype=dtype)
+            for key in data:
+                self.table[key] = data[key]
+        else:
+            raise ValueError("Unsupported template bank file extension %s" % ext)
+
+        if not hasattr(self.table, 'template_duration'):
+            self.table = self.table.add_fields(numpy.zeros(len(self.table),
+                                     dtype=numpy.float32), 'template_duration') 
+        self.extra_args = kwds  
         self.approximant_str = approximant
 
     @staticmethod
     def parse_option(row, arg):
-        import math
         safe_dict = {}
         safe_dict.update(row.__dict__)
         safe_dict.update(math.__dict__)
         return eval(arg, {"__builtins__":None}, safe_dict)
 
     def end_frequency(self, index):
+        """ Return the end frequency of the waveform at the given index value
+        """
+        from pycbc.waveform.waveform import props
+
         return pycbc.waveform.get_waveform_end_frequency(self.table[index],
-                              approximant=self.approximant(index), **self.extra_args)      
+                              approximant=self.approximant(index),
+                              **self.extra_args)      
 
     def approximant(self, index):
+        """ Return the name of the approximant ot use at the given index
+        """
         if self.approximant_str is not None:
             if 'params' in self.approximant_str:
                 t = type('t', (object,), {'params' : self.table[index]})
@@ -103,7 +139,7 @@ class BaseFilterBank(object):
     def __len__(self):
         return len(self.table)
 
-class LiveFilterBank(BaseFilterBank):
+class LiveFilterBank(TemplateBank):
     def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
                        approximant=None,
                        **kwds):
@@ -149,14 +185,13 @@ class LiveFilterBank(BaseFilterBank):
         # If available, record the total duration (which may
         # include ringdown) and the duration up to merger since they will be 
         # erased by the type conversion below.
-        # NOTE: If these durations are not available the values in self.table
-        #       will continue to take the values in the input file.
+        ttotal = template_duration = -1
         if hasattr(htilde, 'length_in_time'):
-            if htilde.length_in_time is not None:
-                self.table[index].ttotal = htilde.length_in_time
+                ttotal = htilde.length_in_time
         if hasattr(htilde, 'chirp_length'):
-            if htilde.chirp_length is not None:
-                self.table[index].template_duration = htilde.chirp_length
+                template_duration = htilde.chirp_length
+
+        self.table[index].template_duration = template_duration        
 
         htilde = htilde.astype(numpy.complex64)
         htilde.f_lower = self.f_lower
@@ -164,8 +199,8 @@ class LiveFilterBank(BaseFilterBank):
         htilde.end_idx = int(htilde.end_frequency / htilde.delta_f)
         htilde.params = self.table[index]
         htilde.approximant = approximant
-        htilde.chirp_length = htilde.params.template_duration
-        htilde.length_in_time = htilde.params.ttotal
+        htilde.chirp_length = template_duration
+        htilde.length_in_time = ttotal
         
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
@@ -173,7 +208,7 @@ class LiveFilterBank(BaseFilterBank):
 
         return htilde
 
-class FilterBank(BaseFilterBank):
+class FilterBank(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, f_lower, dtype,
                  out=None, max_template_length=None,
                  approximant=None,
@@ -229,27 +264,22 @@ class FilterBank(BaseFilterBank):
         # If available, record the total duration (which may
         # include ringdown) and the duration up to merger since they will be 
         # erased by the type conversion below.
-        # NOTE: If these durations are not available the values in self.table
-        #       will continue to take the values in the input file.
+        ttotal = template_duration = None
         if hasattr(htilde, 'length_in_time'):
-            if htilde.length_in_time is not None:
-                self.table[index].ttotal = htilde.length_in_time
-        elif not self.table[index].ttotal:
-            self.table[index].ttotal = 0.
+                ttotal = htilde.length_in_time
         if hasattr(htilde, 'chirp_length'):
-            if htilde.chirp_length is not None:
-                self.table[index].template_duration = htilde.chirp_length
-        elif not self.table[index].template_duration:
-            self.table[index].template_duration = 0.
+                template_duration = htilde.chirp_length
 
-        htilde = htilde.astype(self.dtype)
-        htilde.f_lower = f_low
+        self.table[index].template_duration = template_duration        
+
+        htilde = htilde.astype(numpy.complex64)
+        htilde.f_lower = self.f_lower
         htilde.end_frequency = f_end
         htilde.end_idx = int(htilde.end_frequency / htilde.delta_f)
         htilde.params = self.table[index]
         htilde.approximant = approximant
-        htilde.chirp_length = htilde.params.template_duration
-        htilde.length_in_time = htilde.params.ttotal
+        htilde.chirp_length = template_duration
+        htilde.length_in_time = ttotal
         
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
@@ -270,7 +300,7 @@ def find_variable_start_frequency(approximant, parameters, f_start, max_length,
     return f
 
 
-class FilterBankSkyMax(FilterBank):
+class FilterBankSkyMax(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, f_lower,
                  dtype, out_plus=None, out_cross=None, **kwds):
         super(FilterBankSkyMax, self).__init__(filename, filter_length,
@@ -292,9 +322,7 @@ class FilterBankSkyMax(FilterBank):
         approximant = self.approximant(index)
 
         # Get the end of the waveform if applicable (only for SPAtmplt atm)
-        f_end = pycbc.waveform.get_waveform_end_frequency(self.table[index],
-                              approximant=approximant, **self.extra_args)
-
+        f_end = self.end_frequency(index)
         if f_end is None or f_end >= (self.filter_length * self.delta_f):
             f_end = (self.filter_length-1) * self.delta_f
 
@@ -327,20 +355,8 @@ class FilterBankSkyMax(FilterBank):
             f_final=f_end, delta_f=self.delta_f, delta_t=self.delta_t,
             distance=distance, **self.extra_args)
 
-        # For time domain templates, record the total duration (which may
-        # include ringdown) and the duration up to merger since they will be
-        # erased by the type conversion below
-        length_in_time = None
-        chirp_length = None
-        if hasattr(hplus, 'length_in_time') and \
-                                              hplus.length_in_time is not None:
-            self.table[index].ttotal = hplus.length_in_time
-        elif not self.table[index].ttotal:
-            self.table[index].ttotal = 0.
         if hasattr(hplus, 'chirp_length') and hplus.chirp_length is not None:
             self.table[index].template_duration = hplus.chirp_length
-        elif not self.table[index].template_duration:
-            self.table[index].template_duration = 0.
 
         hplus = hplus.astype(self.dtype)
         hcross = hcross.astype(self.dtype)

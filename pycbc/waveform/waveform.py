@@ -230,11 +230,15 @@ def filter_approximants(scheme=_scheme.mgr.state):
 # Input parameter handling ###################################################
 
 def props(obj, **kwargs):
-    """ DOCUMENT ME !!
+    """ Return a dictionary bult from the combination of defaults, kwargs,
+    and the attributes of the given object.
     """
     pr = {}
     if obj is not None:
-        if hasattr(obj, '__dict__'):
+        if isinstance(obj, numpy.core.records.record):
+            for name in obj.dtype.names:
+                pr[name] = getattr(obj, name)
+        elif hasattr(obj, '__dict__'):
             pr = obj.__dict__
         elif hasattr(obj, '__slots__'):
             for slot in obj.__slots__:
@@ -679,9 +683,9 @@ def seobnrrom_length_in_time(**kwds):
     spin1z = kwds['spin1z']
     spin2z = kwds['spin2z']
     fmin = kwds['f_lower']
-    chi = lalsimulation.SimIMRPhenomBComputeChi(mass1, mass2, spin1z, spin2z)
+    chi = lalsimulation.SimIMRPhenomBComputeChi(float(mass1), float(mass2), float(spin1z), float(spin2z))
     time_length = lalsimulation.SimIMRSEOBNRv2ChirpTimeSingleSpin(
-                               mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, chi, fmin)
+                               float(mass1)*lal.MSUN_SI, float(mass2)*lal.MSUN_SI, chi, float(fmin))
     # FIXME: This is still approximate so add a 10% error margin
     time_length = time_length * 1.1
     return time_length
