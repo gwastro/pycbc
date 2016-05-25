@@ -73,7 +73,8 @@ def select_tmpltbank_class(curr_exe):
     """
     exe_to_class_map = {
         'pycbc_geom_nonspinbank'  : PyCBCTmpltbankExecutable,
-        'pycbc_aligned_stoch_bank': PyCBCTmpltbankExecutable
+        'pycbc_aligned_stoch_bank': PyCBCTmpltbankExecutable,
+        'pycbc_inspiral_skymax'   : PyCBCInspiralExecutable
     }
     try:
         return exe_to_class_map[curr_exe]
