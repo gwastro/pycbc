@@ -454,6 +454,25 @@ class FieldArray(numpy.recarray):
     The ``bar`` and ``narf`` attributes may be accessed via field notation:
     ``foo.bar``, ``foo['bar']``, ``foo.narf(10)`` and ``foo['narf(10)']``.
 
+    * **Virtual fields**:
+    Virtual fields are methods wrapped as properties that operate on one or
+    more fields, thus returning an array of values. To outside code virtual
+    fields look the same as fields, and can be called similarily. Internally,
+    no additional data is stored; the operation is performed on the fly when
+    the virtual field is called. Virtual fields can be added to an array instance
+    with the add_virtualfields method. Alternatively, virtual fields can be
+    defined by sub-classing FieldArray:
+
+    .. code-block:: python
+
+        class Foo(FieldArray):
+            _virtualfields = ['bar']
+            @property
+            def bar(self):
+                return self['a']**2.
+
+    The fields property returns the names of both fields and virtual fields.
+
 
     Parameters
     ----------
@@ -507,6 +526,17 @@ class FieldArray(numpy.recarray):
 
     >>> x['sin(a/b)']
     array([ 0.19866933,  0.3271947 ,  0.41557185,  0.47942554])
+
+    Add a virtual field:
+
+    >>> def c(self):
+    ...     return self['a'] + self['b']
+    ...
+    >>> x = x.add_virtualfields('c', c)
+    >>> x.fields
+    ('a', 'b', 'c')
+    >>> x['c']
+    array([  6.,   8.,  10.,  12.])
 
     Create an array with subfields:
 
@@ -603,7 +633,8 @@ class FieldArray(numpy.recarray):
     arrays.
 
     """
-    __persistent_attributes__ = ['name', 'id_maps']
+    _virtualfields = []
+    __persistent_attributes__ = ['name', 'id_maps', '_virtualfields']
 
     def __new__(cls, shape, name=None, zero=True, **kwargs):
         """Initializes a new empty array.
@@ -698,12 +729,19 @@ class FieldArray(numpy.recarray):
 
             # pull out any attributes needed
             itemvars = get_fields_from_arg(item)
-            item_dict.update({attr: getattr(self, attr) for attr in \
-                set(dir(self)).intersection(itemvars)})
+            item_dict.update(dict([[attr, getattr(self, attr)] for attr in \
+                set(dir(self)).intersection(itemvars)]))
+            # FIXME: Replace above with following once we switch to 2.7
+            #item_dict.update({attr: getattr(self, attr) for attr in \
+            #    set(dir(self)).intersection(itemvars)})
 
             # add numpy functions
             item_dict.update(numpy.__dict__)
             return eval(item, {"__builtins__": None}, item_dict)
+
+    def __contains__(self, field):
+        """Returns True if the given field name is in self's fields."""
+        return field in self.fields
 
     def addattr(self, attrname, value=None, persistent=True):
         """Adds an attribute to self. If persistent is True, the attribute will
@@ -741,6 +779,17 @@ class FieldArray(numpy.recarray):
         for name,method in zip(names, methods):
             setattr(cls, name, property(method))
         return self.view(type=cls)
+
+    def add_virtualfields(self, names, methods):
+        """Returns a view of this array with the given methods added as virtual
+        fields. Specifically, the given methods are added using add_properties
+        and their names are added to the list of virtual fields. Virtual fields
+        are properties that are assumed to operate on one or more of self's
+        fields, thus returning an array of values.
+        """
+        out = self.add_properties(names, methods)
+        out._virtualfields.append(names)
+        return out
 
     @classmethod
     def from_arrays(cls, arrays, name=None, **kwargs):
@@ -858,6 +907,18 @@ class FieldArray(numpy.recarray):
         `array.dtype.names`, where `array` is self.
         """
         return self.dtype.names
+
+    @property
+    def virutalfields(self):
+        """Returns a tuple listing the names of virtual fields in self.
+        """
+        return tuple(self._virtualfields)
+
+    @property
+    def fields(self):
+        """Returns a tuple listing the names of fields and virtual fields in
+        self."""
+        return tuple(list(self.fieldnames) + self._virtualfields)
 
     @property
     def aliases(self):
