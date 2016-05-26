@@ -11,7 +11,7 @@ apt-get update
 # tools for pycbc
 apt-get install git-core ant gcc g++ gfortran automake autoconf make libtool pkg-config bzip2
 # libraries for pycbc
-apt-get install libpcre3-dev libfreetype6-dev libjpeg-dev libpng-dev libmysqlclient-dev libpq-dev libssl-dev
+apt-get install libpcre3-dev libfreetype6-dev libjpeg-dev libpng-dev libmysqlclient-dev libpq-dev libssl-dev libsqlite3-dev
 # make sure these libraries aren't on the system
 apt-get remove lapack3-dev atlas3-base atlas3-headers refblas3
 # further necessary / useful tools
