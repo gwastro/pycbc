@@ -101,7 +101,8 @@ def select_matchedfilter_class(curr_exe):
     """
     exe_to_class_map = {
         'pycbc_inspiral'          : PyCBCInspiralExecutable,
-        'lalapps_coh_PTF_inspiral': LegacyCohPTFInspiralExecutable
+        'lalapps_coh_PTF_inspiral': LegacyCohPTFInspiralExecutable,
+        'pycbc_inspiral_skymax'   : PyCBCInspiralExecutable
     }
     try:
         return exe_to_class_map[curr_exe]

@@ -302,11 +302,21 @@ def find_variable_start_frequency(approximant, parameters, f_start, max_length,
 
 class FilterBankSkyMax(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, f_lower,
-                 dtype, out_plus=None, out_cross=None, **kwds):
-        super(FilterBankSkyMax, self).__init__(filename, filter_length,
-            delta_f, f_lower, dtype, out=None, **kwds)
+                 dtype, out_plus=None, out_cross=None,
+                 max_template_length=None, **kwds):
         self.out_plus = out_plus
         self.out_cross = out_cross
+        self.dtype = dtype
+        self.f_lower = f_lower
+        self.filename = filename
+        self.delta_f = delta_f
+        self.N = (filter_length - 1 ) * 2
+        self.delta_t = 1.0 / (self.N * self.delta_f)
+        self.filter_length = filter_length
+        self.kmin = int(f_lower / delta_f)
+        self.max_template_length = max_template_length
+
+        super(FilterBankSkyMax, self).__init__(filename, **kwds)
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
