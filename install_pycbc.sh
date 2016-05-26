@@ -785,11 +785,14 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
   condor_submit_dag build_static.dag
 
   #Build the ligolw tools
+  export PYINSTALLER_CONFIG_DIR=`mktemp --tmpdir -d -t pyinstaller-XXXXXXXXXX`
   pushd ${VIRTUAL_ENV}/bin
   for prog in ligolw_add ligolw_combine_segments ligolw_segments_from_cats_dqsegdb ligolw_segment_query_dqsegdb
   do pyinstaller ${prog} --strip --onefile
   done
   popd
+  rm -rf ${PYINSTALLER_CONFIG_DIR}
+  unset PYINSTALLER_CONFIG_DIR
 
   # Wait for the dag to finish
   condor_wait -status -echo build_static.dag.dagman.log
