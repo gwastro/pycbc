@@ -5,7 +5,7 @@
 # FIXME/todo:
 #
 
-set -e
+trap 'exit 1' ERR
 
 echo -e ">> [`date`] Start $0 $*"
 
