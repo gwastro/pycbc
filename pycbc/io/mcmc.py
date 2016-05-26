@@ -84,7 +84,7 @@ class MCMCFile(h5py.File):
         numpy.array
             Samples from a specific walker for a parameter.
         """
-        return self[variable_arg]["walker%d"%nwalker][:]
+        return self[variable_arg]["walker%d"%nwalker][thin_start::thin_interval]
 
     def read_label(self, variable_arg):
         """ Returns the label for the parameter.
