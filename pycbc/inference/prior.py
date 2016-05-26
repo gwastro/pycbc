@@ -186,7 +186,7 @@ class Uniform(object):
 
          Returns
          -------
-         distribution
+         Uniform
              A distribution instance from the pycbc.inference.prior module.
         """
 
@@ -197,7 +197,6 @@ class Uniform(object):
         special_args = ["name"] + ["min-%s"%param for param in variable_args] \
                                 + ["max-%s"%param for param in variable_args]
 
-        print variable_args, tag
 
         # get a dict with bounds as value
         dist_args = {}
@@ -224,7 +223,6 @@ class Uniform(object):
             dist_args.update({key:val})
 
         # construction distribution and add to list
-        print dist_args
         return cls(**dist_args)
 
 priors = {Uniform.name: Uniform}

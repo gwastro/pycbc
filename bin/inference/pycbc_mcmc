@@ -201,16 +201,19 @@ with ctx:
     # get distribution to draw from for each walker initial condition
     for subsection in cp.get_subsections(section):
         name = cp.get_opt_tag(section, "name", subsection)
-        initial_distributions.append( inference.priors[name].from_config(cp, section, tag) )
+        initial_distributions.append( inference.priors[name].from_config(cp, section, subsection) )
 
-    #loop over number of walkers
-    # set initial values for variable parameters for this walker
+    # set initial values for variable parameters for each walker
+    # loop over all walkers and then parameters
+    # find the distribution that has that parameter in it and draw a
+    # random value from the distribution
     p0 = numpy.ones(shape=(opts.nwalkers, ndim))
     for i,_ in enumerate(p0):
         for j,param in enumerate(variable_args):
             for idist in initial_distributions:
                 if param in idist.params:
                     p0[i][j] = idist.rvs(size=1, param=param)[0][0]
+                    break
 
     # check if user wants to skip the burn in
     if not opts.skip_burn_in:
