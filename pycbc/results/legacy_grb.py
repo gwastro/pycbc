@@ -661,9 +661,12 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
         extent = segments.segment(int(wkflow.cp.get("workflow", "start-time")),
                                   int(wkflow.cp.get("workflow", "end-time")))
     else:
-        extent = science_segs.union([ifo for ifo in ifos \
-                                     if ifo in science_segs.keys()]).extent()
-    
+        pltpad = [science_segs.extent_all()[1] - trigger_time,
+                  trigger_time - science_segs.extent_all()[0]]
+        extent = segments.segmentlist([science_segs.extent_all(),
+            segments.segment(trigger_time - pltpad[0],
+                             trigger_time + pltpad[1])]).extent()
+
     ifo_colors = {}
     for ifo in ifos:
         ifo_colors[ifo] = ifo_color(ifo)

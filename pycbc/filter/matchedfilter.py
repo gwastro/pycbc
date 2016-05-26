@@ -517,8 +517,11 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
                                    high_frequency_cutoff, htilde.delta_f, N)  
     ht = htilde[kmin:kmax] 
 
-    if psd and ht.delta_f != psd.delta_f:
-        raise ValueError('Waveform does not have same delta_f as psd')
+    if psd:
+        try:
+            numpy.testing.assert_almost_equal(ht.delta_f, psd.delta_f)
+        except:
+            raise ValueError('Waveform does not have same delta_f as psd')
 
     if psd is None:
         sq = ht.inner(ht)
@@ -706,12 +709,12 @@ def smear(idx, factor):
         s += [idx + a]
     return numpy.unique(numpy.concatenate(s))
            
-def matched_filter(template, data, psd, low_frequency_cutoff=None,
-                  high_frequency_cutoff=None):
-    """ Return the complex snr and normalization. 
-    
-    Return the complex snr, along with its associated normalization of the template,
-    matched filtered against the data. 
+def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
+                  high_frequency_cutoff=None, sigmasq=None):
+    """ Return the complex snr and normalization.
+
+    Return the complex snr, along with its associated normalization of the
+    template, matched filtered against the data.
 
     Parameters
     ----------
@@ -727,13 +730,18 @@ def matched_filter(template, data, psd, low_frequency_cutoff=None,
     high_frequency_cutoff : {None, float}, optional
         The frequency to stop the filter calculation. If None, continue to the 
         the nyquist frequency.
+    sigmasq : {None, float}, optional
+        The template normalization. If none, this value is calculated
+        internally.
 
     Returns
     -------
     snr : TimeSeries
         A time series containing the complex snr. 
     """
-    snr, corr, norm = matched_filter_core(template, data, psd, low_frequency_cutoff, high_frequency_cutoff)
+    snr, corr, norm = matched_filter_core(template, data, psd=psd,
+            low_frequency_cutoff=low_frequency_cutoff,
+            high_frequency_cutoff=high_frequency_cutoff, h_norm=sigmasq)
     return snr * norm
     
 _snr = None 

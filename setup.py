@@ -64,7 +64,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'jinja2',
                       'mpld3>=0.3git',
                       'pyRXP>=2.1.0',
-                      'pycbc-pylal>=0.9.5',
+                      'pycbc-pylal>=0.9.6',
                       'pycbc-glue>=0.9.8',
                       ]
 links = ['https://github.com/ligo-cbc/mpld3/tarball/master#egg=mpld3-0.3git']

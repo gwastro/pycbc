@@ -52,8 +52,8 @@ def median_bias(n):
         ans += 1.0 / (2*i + 1) - 1.0 / (2*i)
     return ans
 
-def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
-        avg_method='median', num_segments=None, require_exact_data_fit=False):
+def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
+          avg_method='median', num_segments=None, require_exact_data_fit=False):
     """PSD estimator based on Welch's method.
 
     Parameters

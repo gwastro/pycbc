@@ -45,6 +45,13 @@ def threshold_only(series, value):
        larger (in absolute value) than value
     """
 
+#FIXME: This should be under schemed, but I don't understand that yet!
+def threshold_real_numpy(series, value):
+    arr = series.data
+    locs = numpy.where(arr > value)[0]
+    vals = arr[locs]
+    return locs, vals
+
 @schemed("pycbc.events.threshold_")
 def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series.
@@ -127,13 +134,16 @@ def findchirp_cluster_over_window(times, values, window_length):
     times = times.astype(int)
     code = """
         int j = 0;
+        int curr_ind = 0;
         for (int i=0; i < tlen; i++){
-            if ((times[i] - times[indices[j]]) > window_length){
+            if ((times[i] - times[curr_ind]) > window_length){
                 j += 1;
                 indices[j] = i;
+                curr_ind = i;
             }
-            else if (absvalues[i] > absvalues[indices[j]]){
+            else if (absvalues[i] > absvalues[curr_ind]){
                 indices[j] = i;
+                curr_ind = i;
             }
         }
         k[0] = j;
@@ -1030,4 +1040,5 @@ class EventManagerMultiDet(EventManager):
 __all__ = ['threshold_and_cluster', 'newsnr', 'effsnr',
            'findchirp_cluster_over_window',
            'threshold', 'cluster_reduce', 'ThresholdCluster',
+           'threshold_real_numpy',
            'EventManager', 'EventManagerMultiDet']
