@@ -784,6 +784,13 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
   #Run the dag that makes the bundles
   condor_submit_dag build_static.dag
 
+  #Build the ligolw tools
+  pushd ${VIRTUAL_ENV}/bin
+  for prog in ligolw_add ligolw_combine_segments ligolw_segments_from_cats_dqsegdb ligolw_segment_query_dqsegdb
+  do pyinstaller ${prog} --strip --onefile
+  done
+  popd
+
   # Wait for the dag to finish
   condor_wait -status -echo build_static.dag.dagman.log
 
@@ -796,7 +803,7 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
 
   #Copy the existing static files into the dist directory
   cp -v ${VIRTUAL_ENV}/bin/lalapps_inspinj dist/
-  for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank lalapps_cbc_sbank_sim 
+  for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank lalapps_cbc_sbank_sim ligolw_add ligolw_combine_segments ligolw_segments_from_cats_dqsegdb ligolw_segment_query_dqsegdb
     do cp -v ${VIRTUAL_ENV}/bin/$prog dist/
   done
 
