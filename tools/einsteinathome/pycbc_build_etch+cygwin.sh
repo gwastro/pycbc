@@ -629,10 +629,7 @@ else
 fi
 echo -e "\\n\\n>> [`date`] building $p"
 tar -xzf $p-lib-pegasus-python.tgz
-pushd $p/lib/pegasus/python/
-pip install -r pegasus_wms.egg-info/requires.txt
-python setup.py install --prefix="$PREFIX"
-popd
+pip install $p/lib/pegasus/python
 $cleanup && rm -rf $p
 
 # MPLD
