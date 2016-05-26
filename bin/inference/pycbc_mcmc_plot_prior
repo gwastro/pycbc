@@ -82,9 +82,9 @@ else:
 # get distribution to use for evaluating prior
 # construct class that will return the prior
 distributions = []
-for param in variable_args:
-    distributions.append( inference.distribution_from_config(cp, "prior", param) )
-prior = inference.PriorEvaluator(variable_args, *distributions)
+for subsection in cp.get_subsections("prior"):
+    name = cp.get_opt_tag("prior", "name", subsection)
+    distributions.append( inference.priors[name].from_config(cp, "prior", subsection) )
 
 # read input file
 logging.info("Reading input file")
@@ -101,6 +101,8 @@ for i,dist in enumerate(distributions):
     params = dist.params
     if len(params) > 1:
         raise ValueError("Can only handle one variable parameter at a time")
+    if params[0] not in variable_args:
+        continue
     bounds = dist.bounds[params[0]]
 
     # evaulate PDF between the bounds
