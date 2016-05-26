@@ -822,6 +822,9 @@ if test -r /usr/bin/cyggomp-1.dll; then
 else
     cp `gcc -print-file-name=libgomp.so.1` .
 fi
+# create (empty) "Tcl/Tk data directories"
+# I really don't know why the application needs to crash without these
+mkdir -p tcl tk
 
 # TEST BUNDLE
 echo -e "\\n\\n>> [`date`] testing"
