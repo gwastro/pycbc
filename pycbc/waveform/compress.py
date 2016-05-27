@@ -93,37 +93,6 @@ def rough_frequency_samples(m1, m2, flow, fmax, df_min):
     ksamples.append(kmax)
     return numpy.array(ksamples) 
 
-def phase_from_htilde(htilde):
-    """Returns the phase from the given frequency-domain waveform. This assumes
-    that the waveform has been sampled finely enough that the phase cannot
-    change by more than pi radians between each equivalent step in the time
-    domain.
-    """
-    return numpy.unwrap(numpy.angle(htilde))
-
-def phase_from_hphc(hp, hc):
-    """Returns the phase of a time domain waveform using the plus and cross
-    polarization."""
-    return numpy.unwrap(numpy.arctan2(hc, hp))
-
-def freq_from_hphc(hp, hc, sample_times=None):
-    """Returns the frequency as a function of time of a time domain waveform
-    using the plus and cross polarization. This assumes the stationary phase
-    approximation."""
-    if sample_times is None:
-        sample_times = hp.sample_times.numpy()
-    phase = phase_from_hphc(hp, hc)
-    return numpy.diff(phase)/(2.*numpy.pi*numpy.diff(sample_times))
-
-def fd_waveform_amp_phase(htilde):
-    """Returns the phase and amplitude of the given FD waveform. This assumes
-    that the waveform has been sampled finely enough that the phase cannot
-    change by more than pi radians between each equivalent step in the time
-    domain.
-    """
-    amp = abs(htilde)
-    phase = phase_from_htilde(htilde)
-    return amp, phase
 
 def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         f_lower=None, interpolation='linear'):
