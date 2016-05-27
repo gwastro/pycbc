@@ -46,38 +46,28 @@ parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_prior [--options]",
     description="Plots corner plot of prior from MCMC.")
 
 # add input options
-parser.add_argument("--input-file", type=str, required=True,
-    help="Path to input HDF file.")
+parser.add_argument("--config-file", type=str, required=True,
+    help="A file parsable by pycbc.workflow.WorkflowConfigParser.")
 parser.add_argument("--subsection", type=str, required=True,
     help="")
-
-# add thinning options
-parser.add_argument("--thin-start", type=int, default=0,
-    help="Sample number to start collecting samples to plot.")
-parser.add_argument("--thin-interval", type=int, default=1,
-    help="Interval to use for thinning samples.")
 
 # add prior options
 parser.add_argument("--variable-args", type=str, nargs="+",  default=[],
     help="Name of parameters varied in MCMC.")
-parser.add_argument("--config-file", type=str, required=True,
-    help="A file parsable by pycbc.workflow.WorkflowConfigParser.")
 parser.add_argument("--bins", type=int, required=True,
     help="Number of points to evaluator parameter distributions.")
-parser.add_argument("--iterations", type=int, required=True,
-    help="Number of samples to collect from each prior distribution.")
 
 # output plot options
 parser.add_argument("--output-file", type=str, required=True,
     help="Path to output plot.")
 parser.add_argument("--plot-test-points",
     action="store_true", default=False,
-    help="")
+    help="If true then use a small number of test points instead of prior values.")
 parser.add_argument("--plot-interpolation-points",
     action="store_true", default=False,
-    help="")
+    help="If true then plot points used to interpolate greyscale.")
 parser.add_argument("--levels", type=int, default=5,
-    help="")
+    help="Number of levels to use in contour plot.")
 
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
