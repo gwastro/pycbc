@@ -411,7 +411,12 @@ class SingleDetTriggers(object):
                 break
         index = np.array(new_index)
         self.stat = stat[index]
-        self.mask = self.mask[index]
+        if self.mask.dtype == 'bool':
+            orig_indices = self.mask.nonzero()[0][index]
+            self.mask = np.in1d(np.arange(len(self.mask)), orig_indices,
+                                assume_unique=True)
+        else:
+            self.mask = self.mask[index]
 
     @property
     def template_id(self):
