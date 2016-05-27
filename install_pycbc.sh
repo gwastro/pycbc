@@ -575,6 +575,9 @@ make -j $nproc
 cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/inspiral
 make lalapps_inspinj
 cp lalapps_inspinj $VIRTUAL_ENV/bin
+cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/ring
+make lalapps_coh_PTF_inspiral
+cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
 
 #Check that lalsuite is installed
 echo "LAL installed into $LAL_PREFIX"
@@ -781,6 +784,9 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
     perl -pi.bak -e 's+universe = vanilla+universe = local+' build_one.sub
   fi
 
+  yes | pip uninstall setuptools
+  pip install setuptools==19.2
+
   #Run the dag that makes the bundles
   condor_submit_dag build_static.dag
 
@@ -806,6 +812,7 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
 
   #Copy the existing static files into the dist directory
   cp -v ${VIRTUAL_ENV}/bin/lalapps_inspinj dist/
+  cp -v ${VIRTUAL_ENV}/bin/lalapps_coh_PTF_inspiral dist/
   for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank lalapps_cbc_sbank_sim ligolw_add ligolw_combine_segments ligolw_segments_from_cats_dqsegdb ligolw_segment_query_dqsegdb
     do cp -v ${VIRTUAL_ENV}/bin/$prog dist/
   done
