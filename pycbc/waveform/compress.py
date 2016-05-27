@@ -101,15 +101,6 @@ def phase_from_htilde(htilde):
     """
     return numpy.unwrap(numpy.angle(htilde))
 
-def time_from_htilde(htilde, sample_frequencies=None):
-    """Computes time as a function of frequency from the given frequency-domain
-    waveform.
-    """
-    if sample_frequencies is None:
-        sample_frequencies = htilde.sample_frequencies.numpy()
-    phase = phase_from_htilde(htilde)
-    return numpy.diff(phase) / (2.*numpy.pi*sample_frequencies[1:])
-
 def phase_from_hphc(hp, hc):
     """Returns the phase of a time domain waveform using the plus and cross
     polarization."""
