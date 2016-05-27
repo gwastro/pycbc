@@ -504,6 +504,7 @@ pip install http://download.pegasus.isi.edu/pegasus/4.6.1/pegasus-python-source-
 if [[ $dev_or_rel -eq 1 ]] ; then
   #Installing a released version of pyCBC
   curl https://raw.githubusercontent.com/ligo-cbc/pycbc/${reltag}/requirements.txt > ${VIRTUAL_ENV}/requirements.txt
+  sed -i 's/https:\/\/github.com\/duncan-brown\/dqsegdb.git/git+https:\/\/github.com\/duncan-brown\/dqsegdb.git/g' ${VIRTUAL_ENV}/requirements.txt
   perl -pi.bak -e 's/pegasus-wms==4.5.2/pegasus-wms==4.6.1/g' ${VIRTUAL_ENV}/requirements.txt  
   pylal_version=`grep pycbc-pylal ${VIRTUAL_ENV}/requirements.txt`
   glue_version=`grep pycbc-glue ${VIRTUAL_ENV}/requirements.txt`
