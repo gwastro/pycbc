@@ -24,7 +24,7 @@
 #
 """This module contains convenience utilities for manipulating waveforms
 """
-from pycbc.types import TimeSeries, Array, float32, float64, complex_same_precision_as
+from pycbc.types import TimeSeries, FrequencySeries, Array, float32, float64, complex_same_precision_as
 import lal
 import lalsimulation as sim
 from math import frexp
@@ -40,51 +40,78 @@ def ceilpow2(n):
         exponent -= 1;
     return (1) << exponent;
 
-def unwrap_phase(vec, discont, offset):
-    """Return a new vector that is unwrapped.
-
-    Return a new vector that is free from discontinuities caused by 
-    periodic boundary conditions.
-    Where the vector jumps by a value greater than or equal to `discont`,
-    it is incremented by the offset value. This function is intended to
-    remove boundaries placed by using a cyclic function.
+def phase_from_frequencyseries(htilde, remove_start_phase=True):
+    """Returns the phase from the given frequency-domain waveform. This assumes
+    that the waveform has been sampled finely enough that the phase cannot
+    change by more than pi radians between each step.
 
     Parameters
     ----------
-    vec : array_like
-        Vectors that can be converted to an array as defined by numpy.
-        PyCBC types, numpy types, lists, etc can be provided.
-    discont : float
-        Minimum size of discontinuity that triggers adding an offset to the
-        data.  Due to precision on many functions consider a value smaller
-        than the maximum (e.g. smaller than 2*pi for a function of an angular
-        variable).
-    offset : float
-        Quantity to be added to/subtracted from the vector at each
-        discontinuity.
+    htilde : FrequencySeries
+        The waveform to get the phase for; must be a complex frequency series.
+    remove_start_phase : {True, bool}
+        Subtract the initial phase before returning.
 
     Returns
     -------
-    nvec : array_like
-        New unwrapped vector, same type as vec.
+    FrequencySeries
+        The phase of the waveform as a function of frequency.
     """
-    nvec = copy.deepcopy(vec)
-    total_offset = 0
-    pval = None
-    index = 0
-    for val in vec:
-        if pval is None:
-            pass
-        elif val-pval>=discont:
-            total_offset -= offset
-        elif pval-val>=discont:
-            total_offset += offset
+    p = numpy.unwrap(numpy.angle(htilde.data))
+    if remove_start_phase:
+        p += -p[0]    
+    return FrequencySeries(p, delta_f=htilde.delta_f, epoch=htilde.epoch,
+        copy=False)
 
-        nvec[index] += total_offset
-        index += 1
-        pval = val
+def amplitude_from_frequencyseries(htilde):
+    """Returns the amplitude of the given frequency-domain waveform as a
+    FrequencySeries.
 
-    return nvec
+    Parameters
+    ----------
+    htilde : FrequencySeries
+        The waveform to get the amplitude of.
+
+    Returns
+    -------
+    FrequencySeries
+        The amplitude of the waveform as a function of frequency.
+    """
+    amp = abs(htilde.data)
+    return FrequencySeries(amp, delta_f=htilde.delta_f, epoch=htilde.epoch,
+        copy=False)
+
+def time_from_frequencyseries(htilde, sample_frequencies=None):
+    """Computes time as a function of frequency from the given
+    frequency-domain waveform. This assumes the stationary phase
+    approximation. Any frequencies lower than the first non-zero value in
+    htilde are assigned the time at the first non-zero value. Times for any
+    frequencies above the next-to-last non-zero value in htilde will be
+    assigned the time of the next-to-last non-zero value.
+
+    Parameters
+    ----------
+    htilde : FrequencySeries
+        The waveform to get the time evolution of; must be complex.
+    sample_frequencies : {None, array}
+        The frequencies at which the waveform is sampled. If None, will
+        retrieve from ``htilde.sample_frequencies``.
+
+    Returns
+    -------
+    FrequencySeries
+        The time evolution of the waveform as a function of frequency.
+    """
+    if sample_frequencies is None:
+        sample_frequencies = htilde.sample_frequencies.numpy()
+    phase = phase_from_frequencyseries(htilde).data
+    time = -numpy.diff(phase) / (2.*numpy.pi*numpy.diff(sample_frequencies))
+    nzidx = numpy.nonzero(abs(htilde.data))[0]
+    kmin, kmax = nzidx[0], nzidx[-2]
+    time[:kmin] = time[kmin]
+    time[kmax:] = time[kmax]
+    return FrequencySeries(time, delta_f=htilde.delta_f, epoch=htilde.epoch,
+        copy=False)
 
 def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
     """Return gravitational wave phase
@@ -115,11 +142,11 @@ def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
     >>> phase = phase_from_polarizations(hp, hc)
 
     """
-    p_wrapped = numpy.arctan2(h_plus, h_cross)
-    p = unwrap_phase(p_wrapped, 2*lal.PI*0.7, lal.PI*2)
+    p = numpy.unwrap(numpy.arctan2(h_cross.data, h_plus.data))
     if remove_start_phase:
         p += -p[0]    
-    return TimeSeries(abs(p), delta_t=h_plus.delta_t, epoch=h_plus.start_time)
+    return TimeSeries(p, delta_t=h_plus.delta_t, epoch=h_plus.start_time,
+        copy=False)
 
 def amplitude_from_polarizations(h_plus, h_cross):
     """Return gravitational wave amplitude

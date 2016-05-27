@@ -29,7 +29,8 @@ from pycbc.types import Array
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from scipy.weave import inline
-from pycbc.types import FrequencySeries, zeros
+from scipy import interpolate
+from pycbc.types import FrequencySeries, zeros, complex_same_precision_as
 
 def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
     """ A very rough estimate of the duration of the waveform.
@@ -91,4 +92,134 @@ def rough_frequency_samples(m1, m2, flow, fmax, df_min):
         k += int(1.0 / rough_time_estimate(m1, m2, k * df_min) / df_min)
     ksamples.append(kmax)
     return numpy.array(ksamples) 
-   
+
+
+def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
+        f_lower=None, interpolation='linear'):
+    """Decompresses an FD waveform using the given amplitude, phase, and the
+    frequencies at which they are sampled at.
+
+    Parameters
+    ----------
+    amp : array
+        The amplitude of the waveform at the sample frequencies.
+    phase : array
+        The phase of the waveform at the sample frequencies.
+    sample_frequencies : array
+        The frequency (in Hz) of the waveform at the sample frequencies.
+    out : {None, FrequencySeries}
+        The output array to save the decompressed waveform to. If this contains
+        slots for frequencies > the maximum frequency in sample_frequencies,
+        the rest of the values are zeroed. If not provided, must provide a df.
+    df : {None, float}
+        The frequency step to use for the decompressed waveform. Must be
+        provided if out is None.
+    f_lower : {None, float}
+        The frequency to start the decompression at. If None, will use whatever
+        the lowest frequency is in sample_frequencies. All values at
+        frequencies less than this will be 0 in the decompressed waveform.
+    interpolation : {'linear', str}
+        The interpolation to use for the amplitude and phase. Default is
+        'linear'. If 'linear' a custom interpolater is used. Otherwise,
+        ``scipy.interpolate.interp1d`` is used; for other options, see
+        possible values for that function's ``kind`` argument.
+
+    Returns
+    -------
+    out : FrqeuencySeries
+        If out was provided, writes to that array. Otherwise, a new
+        FrequencySeries with the decompressed waveform.
+    """
+        
+    if out is None:
+        if df is None:
+            raise ValueError("Either provide output memory or a df")
+        flen = int(numpy.ceil(sample_frequencies.max()/df+1))
+        out = FrequencySeries(numpy.zeros(flen,
+            dtype=numpy.complex128), copy=False, delta_f=df)
+    else:
+        df = out.delta_f
+        flen = len(out)
+    if f_lower is None:
+        jmin = 0
+        f_lower = sample_frequencies[0]
+    else:
+        if f_lower >= sample_frequencies.max():
+            raise ValueError("f_lower is > than the maximum sample frequency")
+        jmin = int(numpy.searchsorted(sample_frequencies, f_lower))
+    imin = int(numpy.floor(f_lower/df))
+    # interpolate the amplitude and the phase
+    if interpolation == "linear":
+        # use custom interpolation
+        sflen = len(sample_frequencies)
+        h = numpy.array(out.data, copy=False)
+        # make sure df is a float
+        df = float(df)
+        code = r"""
+        # include <math.h>
+        # include <stdio.h>
+        int j = jmin-1;
+        double sf = 0.;
+        double A = 0.;
+        double nextA = 0.;
+        double phi = 0.;
+        double nextPhi = 0.;
+        double next_sf = sample_frequencies[jmin];
+        double f = 0.;
+        double invsdf = 0.;
+        double mAmp = 0.;
+        double bAmp = 0.;
+        double mPhi = 0.;
+        double bPhi = 0.;
+        double interpAmp = 0.;
+        double interpPhi = 0.;
+        // zero-out beginning of array
+        std::fill(h, h+imin, std::complex<double>(0., 0.));
+        // cycle over desired samples
+        for (int i=imin; i<flen; i++){
+            f = i*df;
+            if (f >= next_sf){
+                // update linear interpolations
+                j += 1;
+                // if we have gone beyond the sampled frequencies, just break
+                if ((j+1) == sflen) {
+                    // zero-out rest the rest of the array & exit
+                    std::fill(h+i, h+flen, std::complex<double>(0., 0.));
+                    break;
+                }
+                sf = (double) sample_frequencies[j];
+                next_sf = (double) sample_frequencies[j+1];
+                A = (double) amp[j];
+                nextA = (double) amp[j+1];
+                phi = (double) phase[j];
+                nextPhi = (double) phase[j+1];
+                invsdf = 1./(next_sf - sf);
+                mAmp = (nextA - A)*invsdf;
+                bAmp = A - mAmp*sf;
+                mPhi = (nextPhi - phi)*invsdf;
+                bPhi = phi - mPhi*sf;
+            }
+            interpAmp = mAmp * f + bAmp;
+            interpPhi = mPhi * f + bPhi;
+            h[i] = std::complex<double> (interpAmp*cos(interpPhi),
+                                         interpAmp*sin(interpPhi));
+        }
+        """
+        inline(code, ['flen', 'sflen', 'df', 'sample_frequencies',
+                      'amp', 'phase', 'h', 'imin', 'jmin'],
+               extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] +\
+                                  omp_flags,
+               libraries=omp_libs)
+    else:
+        # use scipy for fancier interpolation
+        outfreq = out.sample_frequencies.numpy()
+        amp_interp = interpolate.interp1d(sample_frequencies, amp,
+            kind=interpolation, bounds_error=False, fill_value=0.,
+            assume_sorted=True)
+        phase_interp = interpolate.interp1d(sample_frequencies, phase,
+            kind=interpolation, bounds_error=False, fill_value=0.,
+            assume_sorted=True)
+        A = amp_interp(outfreq)
+        phi = phase_interp(outfreq)
+        out.data[:] = A*numpy.cos(phi) + (1j)*A*numpy.sin(phi)
+    return out
