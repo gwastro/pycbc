@@ -19,6 +19,8 @@
 import argparse
 import corner
 import logging
+import itertools
+import math
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import numpy
@@ -26,6 +28,17 @@ import sys
 from pycbc import inference, pnutils, results
 from pycbc.io.mcmc import MCMCFile
 from pycbc.workflow import WorkflowConfigParser
+
+def binomial_coeff(x, y):
+    """ Returns the binomial coefficient: x! / (y! * (x - y)!)
+    """
+    return  math.factorial(x) // math.factorial(y) // math.factorial(x - y)
+
+def cartesian(arrays):
+    """ Returns a cartesian product from a list of iterables.
+    """
+    return [element for element in itertools.product(*arrays)]
+
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_prior [--options]",
@@ -73,34 +86,78 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 logging.info("Reading configuration file")
 cp = WorkflowConfigParser([opts.config_file])
 
-# get variable parameters in MCMC from configuration file
-if len(opts.variable_args):
-    variable_args = opts.variable_args
-else:
-    variable_args = cp.options("variable_args")
+# get distribution from inference configuration file
+subsection = "mass1+mass2"
+name = cp.get_opt_tag("prior", "name", subsection)
+dist = inference.priors[name].from_config(cp, "prior", subsection)
 
-# get distribution to use for evaluating prior
-# construct class that will return the prior
-distributions = []
-for subsection in cp.get_subsections("prior"):
-    name = cp.get_opt_tag("prior", "name", subsection)
-    distributions.append( inference.priors[name].from_config(cp, "prior", subsection) )
+# find all unique combinations of parameters for subplots axes
+combos = itertools.combinations(dist.params, 2)
 
+# scale number of subplots with dimensions of the distribution
+fig, axs = plt.subplots( binomial_coeff(len(dist.params),2) )
+axs = [axs] if binomial_coeff(len(dist.params),2) is 1 else axs
+
+# get all points in space to calculate PDF
+vals = []
+for param in dist.params:
+    step = float(dist.bounds[param][1]-dist.bounds[param][0]) / opts.bins
+    vals.append( numpy.arange(dist.bounds[param][0],dist.bounds[param][1],step) )
+pts = cartesian(vals)
+
+# evaulate PDF between the bounds
+pdf = []
+for pt in pts:
+    pt_dict = dict([(param,pt[j]) for j,param in enumerate(dist.params)])
+    pdf.append( dist.pdf(**pt_dict) )
+
+print pts[0]
+
+# loop over all axes combinations
+for i,combo in enumerate(combos):
+
+    # select x and y axes
+    x_label = combo[0]
+    y_label = combo[1]
+
+    # get index for each parameter
+    x_idx = dist.params.index(x_label)
+    y_idx = dist.params.index(y_label)
+
+    x = [pt[x_idx] for pt in pts]
+    y = [pt[y_idx] for pt in pts]
+
+    print len(x), len(y), len(pts)
+
+    axs[i].contour(x,y,pdf)
+
+
+plt.savefig(opts.output_file)
+plt.close()
+
+
+sys.exit()
 # read input file
 logging.info("Reading input file")
 fp = MCMCFile(opts.input_file, "r")
 
 # make a subplot for each distribution
+#fig, axs = plt.subplots(len(distributions))
+#axs = [axs] if len(distributions) is 1 else axs
+
 fig, axs = plt.subplots(len(distributions))
-axs = [axs] if len(distributions) is 1 else axs
 
 # loop over distributions from prior
 for i,dist in enumerate(distributions):
 
-    # get bounds for each parameter
+    # if multi-parameter distribution
+    if len(dist.params) > 1:
+
+        
+        continue
+
+    # if single-parameter distribution
     params = dist.params
-    if len(params) > 1:
-        raise ValueError("Can only handle one variable parameter at a time")
     if params[0] not in variable_args:
         continue
     bounds = dist.bounds[params[0]]
