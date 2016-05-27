@@ -169,57 +169,63 @@ class Uniform(object):
                                         size=size)
         return arr
 
+    @classmethod
+    def from_config(cls, cp, section, tag):
+        """ Returns a distribution based on a configuration file.
+
+        Parameters
+         ----------
+         cp : pycbc.workflow.WorkflowConfigParser
+             A parsed configuration file that contains the distribution
+             options.
+         section : str
+             Name of the section in the configuration file.
+         tag : str
+             Name of the tag in the configuration file to use, eg. the
+             configuration file has a [section-tag] section.
+
+         Returns
+         -------
+         Uniform
+             A distribution instance from the pycbc.inference.prior module.
+        """
+
+        # seperate out tags from section tag
+        variable_args = tag.split("+")
+
+        # list of args that are used to construct distribution
+        special_args = ["name"] + ["min-%s"%param for param in variable_args] \
+                                + ["max-%s"%param for param in variable_args]
+
+
+        # get a dict with bounds as value
+        dist_args = {}
+        for param in variable_args:
+            low = float(cp.get_opt_tag(section, "min-%s"%param, tag))
+            high = float(cp.get_opt_tag(section, "max-%s"%param, tag))
+            dist_args[param] = (low,high)
+
+        # add any additional options that user put in that section
+        for key in cp.options( "-".join([section,tag]) ):
+
+            # ignore options that are already included
+            if key in special_args:
+                continue
+
+            # check if option can be cast as a float
+            val = cp.get_opt_tag("prior", key, tag)
+            try:
+                val = float(val)
+            except:
+                pass
+
+            # add option
+            dist_args.update({key:val})
+
+        # construction distribution and add to list
+        return cls(**dist_args)
+
 priors = {Uniform.name: Uniform}
-
-def distribution_from_config(cp, section, tag):
-    """ Returns a distribution based on a configuration file.
-
-    Parameters
-     ----------
-     cp : pycbc.workflow.WorkflowConfigParser
-         A parsed configuration file that contains the distribution options.
-     section : str
-         Name of the section in the configuration file.
-     tag : str
-         Name of the tag in the configuration file to use, eg. the
-         configuration file has a [section-tag] section.
-
-     Returns
-     -------
-     distribution
-         A distribution instance from the pycbc.inference.prior module.
-    """
-
-    # list of args that are used to construct distribution
-    special_args = ["name", "min", "max"]
-
-    # get name of distribution to use
-    name = cp.get_opt_tag(section, "name", tag)
-
-    # get a dict with bounds as value
-    low = float(cp.get_opt_tag(section, "min", tag))
-    high = float(cp.get_opt_tag(section, "max", tag))
-    dist_args = { tag : (low,high) }
-
-    # add any additional options that user put in that section
-    for key in cp.options( "-".join([section,tag]) ):
-
-        # ignore options that are already included
-        if key in special_args:
-            continue
-
-        # check if option can be cast as a float
-        val = cp.get_opt_tag("prior",key,tag)
-        try:
-            val = float(val)
-        except:
-            pass
-
-        # add option
-        dist_args.update({key:val})
-
-    # construction distribution and add to list
-    return priors[name](**dist_args)
 
 class PriorEvaluator(object):
     """
