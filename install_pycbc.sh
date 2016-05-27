@@ -785,8 +785,11 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
     perl -pi.bak -e 's+universe = vanilla+universe = local+' build_one.sub
   fi
 
-  yes | pip uninstall setuptools
-  pip install setuptools==19.2
+  SETUPTOOLS_VER=`python -c "import setuptools; print setuptools.__version__"`
+  if (( $(echo "$SETUPTOOLS_VER > 19.2" | bc -l) )) ; then
+    yes | pip uninstall setuptools
+    pip install setuptools==19.2
+  fi
 
   #Run the dag that makes the bundles
   condor_submit_dag build_static.dag
