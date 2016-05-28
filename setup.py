@@ -475,6 +475,7 @@ setup (
                'bin/plotting/pycbc_plot_waveform',
                'bin/workflows/pycbc_create_sbank_workflow',
                'bin/workflows/pycbc_create_uberbank_workflow',
+               'bin/pycbc_compress_bank',
                ],
     packages = [
                'pycbc',
