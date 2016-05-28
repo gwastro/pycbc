@@ -31,13 +31,14 @@ from pycbc import WEAVE_FLAGS
 from scipy.weave import inline
 from scipy import interpolate
 from pycbc.types import FrequencySeries, zeros, complex_same_precision_as
+from pycbc.waveform import utils
 
 def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
     """ A very rough estimate of the duration of the waveform.
 
     An estimate of the waveform duration starting from flow. This is intended
-    to be fast but not necessarily accurate. It should be an overestimate of the
-    length. It is derived from a simplification of the 0PN post-newtonian
+    to be fast but not necessarily accurate. It should be an overestimate of
+    the length. It is derived from a simplification of the 0PN post-newtonian
     terms and includes a fudge factor for possible ringdown, etc.
 
     Parameters
@@ -49,10 +50,11 @@ def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
     flow: float
         starting frequency of the waveform
     fudge_length: optional, {1.1, float}
-        Factor to multiply length estimate by to ensure it is a convservative value
+        Factor to multiply length estimate by to ensure it is a convservative
+        value
     fudge_min: optional, {0.2, float}
-        Minimum signal duration that can be returned. This should be long enough
-    to encompass the ringdown and errors in the precise end time.             
+        Minimum signal duration that can be returned. This should be long
+        enough to encompass the ringdown and errors in the precise end time.
 
     Returns
     -------
@@ -61,14 +63,15 @@ def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
     """
     m = m1 + m2
     msun = m * lal.MTSUN_SI
-    t =  5.0 / 256.0 * m * m * msun / (m1 * m2) / (numpy.pi * msun * flow) **  (8.0 / 3.0)
+    t =  5.0 / 256.0 * m * m * msun / (m1 * m2) / \
+        (numpy.pi * msun * flow) **  (8.0 / 3.0)
 
     # fudge factoriness
     return .022 if t < 0 else (t + fudge_min) * fudge_length 
 
-def rough_frequency_samples(m1, m2, flow, fmax, df_min):
-    """ Return a quick estimate of the frequency values which are needed to reproduce
-    a waveform. Results are integer multiples of the df_min.
+def mchirp_compression(m1, m2, fmin, fmax, min_seglen=0.02, df_multiple=None):
+    """Return the frequencies needed to compress a waveform with the given
+    chirp mass. This is based on the estimate in rough_time_estimate.
 
     Parameters
     ----------
@@ -76,22 +79,83 @@ def rough_frequency_samples(m1, m2, flow, fmax, df_min):
         mass of first component object in solar masses
     m2: float
         mass of second component object in solar masses
-    flow: float
-        starting frequency of the waveform
-    fmax: float
-        ending frequency of the waveform
-    df_min: float
-        The size of a frequency sample step.
+    fmin : float
+        The starting frequency of the compressed waveform.
+    fmax : float
+        The ending frequency of the compressed waveform.
+    min_seglen : float
+        The inverse of this gives the maximum frequency step that is used.
+    df_multiple : {None, float}
+        Make the compressed sampling frequencies a multiple of the given value.
+        If None provided, the returned sample points can have any floating
+        point value.
+
+    Returns
+    -------
+    array
+        The frequencies at which to evaluate the compressed waveform.
     """
-    kmin = int(flow / df_min)
-    kmax = int(fmax / df_min)
-    k = kmin
-    ksamples = []
-    while k < kmax:
-        ksamples.append(k)
-        k += int(1.0 / rough_time_estimate(m1, m2, k * df_min) / df_min)
-    ksamples.append(kmax)
-    return numpy.array(ksamples) 
+    sample_points = []
+    f = fmin
+    while f < fmax:
+        if df_multiple is not None:
+            f = int(f/df_multiple)*df_multiple
+        sample_points.append(f)
+        f += 1.0 / rough_time_estimate(m1, m2, f, fudge_min=min_seglen)
+    # add the last point
+    if sample_points[-1] < fmax:
+        sample_points.append(fmax)
+    return numpy.array(sample_points)
+
+def spa_compression(htilde, fmin, fmax, min_seglen=0.02,
+        sample_frequencies=None):
+    """Returns the frequencies needed to compress the given frequency domain
+    waveform. This is done by estimating t(f) of the waveform using the
+    stationary phase approximation.
+
+    Parameters
+    ----------
+    htilde : FrequencySeries
+        The waveform to compress.
+    fmin : float
+        The starting frequency of the compressed waveform.
+    fmax : float
+        The ending frequency of the compressed waveform.
+    min_seglen : float
+        The inverse of this gives the maximum frequency step that is used.
+    sample_frequencies : {None, array}
+        The frequencies that the waveform is evaluated at. If None, will
+        retrieve the frequencies from the waveform's sample_frequencies
+        attribute.
+
+    Returns
+    -------
+    array
+        The frequencies at which to evaluate the compressed waveform.
+    """
+    if sample_frequencies is None:
+        sample_frequencies = htilde.sample_frequencies.numpy()
+    kmin = int(fmin/htilde.delta_f)
+    kmax = int(fmax/htilde.delta_f)
+    tf = abs(utils.time_from_frequencyseries(htilde,
+            sample_frequencies=sample_frequencies).data[kmin:kmax])
+    sample_frequencies = sample_frequencies[kmin:kmax]
+    sample_points = []
+    f = fmin
+    while f < fmax:
+        f = int(f/htilde.delta_f)*htilde.delta_f
+        sample_points.append(f)
+        jj = numpy.searchsorted(sample_frequencies, f)
+        f += 1./(tf[jj:].max()+min_seglen)
+    # add the last point
+    if sample_points[-1] < fmax:
+        sample_points.append(fmax)
+    return numpy.array(sample_points)
+
+compression_algorithms = {
+        'mchirp': mchirp_compression,
+        'spa': spa_compression
+        }
 
 
 def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
