@@ -9,6 +9,10 @@ trap 'exit 1' ERR
 
 echo -e ">> [`date`] Start $0 $*"
 
+test ".$LANG" = "." && export LANG="en_US.UTF-8"
+test ".$LC_ALL" = "." && export LC_ALL="$LANG"
+export FC=gfortran
+
 # automatically detect a Debian 4.0 (Etch) installation.
 # if not found, use Cygwin settings.
 # "build" or "compile" here means "from source", opposed to
@@ -31,12 +35,45 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
     build_swig=true
     h5py_from="git"
     glue_from="pip-install" # "git-patched"
-    fake_psycopg26=true
+    psycopg26_from=fake-psycopg255 # "pip-install" "system"
     build_pegasus_source=true
     build_preinst_before_lalsuite=false
-    pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
+    pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
+    pyinstaller_lsb="--no-lsb"
     use_pycbc_pyinstaller_hooks=true
+    build_wrapper=true
     appendix="_Linux64"
+elif test "`uname -s`" = "Darwin" ; then
+    echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
+    export FC=gfortran-mp-4.8
+    export CC=gcc-mp-4.8
+    export CXX=g++-mp-4.8
+    export FFLAGS=-m64
+    export CFLAGS=-m64
+    export CXXFLAGS=-m64
+    export LDFLAGS=-m64
+    shared="--enable-shared"
+    build_dlls=false
+    build_ssl=false
+    build_python=false
+    build_lapack=true
+    pyssl_from="tarball" # "pip-install"
+    numpy_from="pip-install" # "tarball"
+    scipy_from="pip-install" # "git" "git-patched" "pip-install"
+    build_hdf5=true
+    build_freetype=true
+    build_libpq=false
+    build_gsl=true
+    build_swig=true
+    h5py_from="pip-install" # "git"
+    glue_from="pip-install" # "git-patched"
+    psycopg26_from=system
+    build_pegasus_source=false
+    build_preinst_before_lalsuite=true
+    pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
+    use_pycbc_pyinstaller_hooks=true
+    build_wrapper=false
+    appendix="_OSX64"
 else
     echo -e "\\n\\n>> [`date`] Using Cygwin settings"
     lal_cppflags="-D_WIN32"
@@ -55,11 +92,12 @@ else
     build_swig=false
     glue_from="git-patched" # "pip-install"
     h5py_from="pip-install"
-    fake_psycopg26=true
+    psycopg26_from=fake-psycopg255 # "pip-install" "system"
     build_pegasus_source=false
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
     use_pycbc_pyinstaller_hooks=true
+    build_wrapper=false
     appendix="_Windows64"
 fi
 
@@ -69,8 +107,7 @@ SOURCE="$PWD/pycbc-sources"
 PYTHON_PREFIX="$PYCBC"
 ENVIRONMENT="$PYCBC/environment"
 PREFIX="$ENVIRONMENT"
-PATH="$PREFIX/bin:$PYTHON_PREFIX/bin:$PATH"
-export FC=gfortran
+PATH="$PREFIX/bin:$PYTHON_PREFIX/bin:$PATH:/opt/local//Library/Frameworks/Python.framework/Versions/2.7/bin"
 libgfortran="`$FC -print-file-name=libgfortran.so|sed 's%/[^/]*$%%'`"
 export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran:/usr/local/lib:$LD_LIBRARY_PATH"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
@@ -232,7 +269,7 @@ else # if pycbc-preinst.tgz
 	tar -xzf $p.tgz
 	cd $p
         # configure: compile with -fPIC, remove -frecoursive, build deprecated functions
-	sed "s/ *-frecursive//;s/gfortran/$FC -fPIC/;s/^#MAKEDEPRECATED.*/BUILD_DEPRECATED = Yes/" make.inc.example > make.inc
+	sed "s/ *-frecursive//;s/gfortran/$FC -fPIC -m64/;s/^#MAKEDEPRECATED.*/BUILD_DEPRECATED = Yes/" make.inc.example > make.inc
 	make lapack_install lib blaslib
 	mkdir -p "$PREFIX/lib"
 	cp lib*.a "$PREFIX/lib"
@@ -584,7 +621,7 @@ fi
 # see https://github.com/psycopg/psycopg2/issues/305
 # psycopgmodule.c _IS_ compiled with -fPIC, but still doesn't link
 # tried with newer gcc-4.4.4 and newer binutils to no avail
-if $fake_psycopg26; then
+if [ "$psycopg26_from" = "fake-psycopg255" ]; then
     p=psycopg2-2.5.5
     echo -e "\\n\\n>> [`date`] building $p"
     test -r $p.tar.gz || wget $wget_opts "$pypi/p/psycopg2/$p.tar.gz"
@@ -601,7 +638,7 @@ if $fake_psycopg26; then
     python setup.py install --prefix="$PREFIX"
     cd ..
     $cleanup && rm -rf psycopg2-2.6
-else
+elif [ "$psycopg26_from" = "pip-install" ]; then
     echo -e "\\n\\n>> [`date`] pip install psycopg2==2.6"
     pip install psycopg2==2.6
 fi
@@ -691,17 +728,15 @@ else
     fi
 
     # build bootloader (in any case: for Cygwin it wasn't precompiled, for Linux it was patched)
+if false; then
     cd bootloader
     if echo "$pyinstaller_version" | grep '3\.' > /dev/null; then
 	python ./waf distclean all
     else
-	if $build_dlls; then
-	    python ./waf configure build install
-	else
-	    python ./waf configure --no-lsb build install
-	fi
+	python ./waf configure $pyinstaller_lsb build install
     fi
     cd ..
+fi
     python setup.py install --prefix="$PREFIX"
     cd ..
 fi
@@ -751,10 +786,9 @@ if $build_dlls; then
     echo -e "\\n\\n>> [`date`] Rebasing DLLs"
     find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
     rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
-    echo -e "\\n\\n>> [`date`] Building 'progress.exe' and 'fstab.exe'"
-    x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/progress.exe" $SOURCE/pycbc/tools/einsteinathome/progress.c
-    x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/fstab.exe" $SOURCE/pycbc/tools/einsteinathome/fstab.c
-else
+fi
+
+if $build_wrapper; then
 # on Linux, build "progress" and "wrapper"
     echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'progress', 'fstab' and 'fstab_test'"
     if test -d boinc/.git ; then
@@ -771,11 +805,20 @@ else
     fi
     echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
     make
-    cp samples/wrapper/wrapper "$ENVIRONMENT/dist"
+    cp samples/wrapper/wrapper "$ENVIRONMENT/dist/wrapper$appendix"
     cd ..
-    gcc -o "$ENVIRONMENT/dist/progress" $SOURCE/pycbc/tools/einsteinathome/progress.c
+    gcc -o "$ENVIRONMENT/dist/progress$appendix" $SOURCE/pycbc/tools/einsteinathome/progress.c
     gcc -o "$ENVIRONMENT/dist/fstab_test" $SOURCE/pycbc/tools/einsteinathome/fstab.c
-    cp `which true` "$ENVIRONMENT/dist/fstab"
+    cp `which true` "$ENVIRONMENT/dist/fstab$appendix"
+else
+    echo -e "\\n\\n>> [`date`] Building 'progress.exe' and 'fstab.exe'"
+    if $build_dlls; then
+        x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/progress$appendix.exe" $SOURCE/pycbc/tools/einsteinathome/progress.c
+        x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/fstab$appendix.exe" $SOURCE/pycbc/tools/einsteinathome/fstab.c
+    else
+        gcc -o "$ENVIRONMENT/dist/progress$appendix" $SOURCE/pycbc/tools/einsteinathome/progress.c
+        gcc -o "$ENVIRONMENT/dist/fstab$appendix" $SOURCE/pycbc/tools/einsteinathome/fstab.c
+    fi
 fi
 
 # log environment
@@ -817,8 +860,12 @@ cd dist/pycbc_inspiral
 if test -r /usr/bin/cyggomp-1.dll; then
     cp /usr/bin/cyggomp-1.dll .
 else
-    cp `gcc -print-file-name=libgomp.so.1` .
+    libgomp=`gcc -print-file-name=libgomp.so.1`
+    if test "$libgomp" != "libgomp.so.1"; then
+        cp "$libgomp" .
+    fi
 fi
+
 # create (empty) "Tcl/Tk data directories"
 # I really don't know why the application needs to crash without these
 mkdir -p tcl tk
@@ -847,28 +894,37 @@ cd test
 
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
-if ! echo "$md5  $p" | md5sum -c; then
+md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
+if test ".$md5" != .$md5s; then
     rm -f "$p"
     wget $wget_opts "$albert/$p"
-    echo "$md5  $p" | md5sum -c
+md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
+    if test ".$md5" != .$md5s; then
+        echo  "$p" md5 mismatch ".$md5 != .$md5s"
+        exit 1
+    fi
 fi
 f=$p
 
-p=SEOBNRv2ChirpTimeSS.dat
-md5=7b7dbadacc3f565fb2c8e6971df2ab74
-if ! echo "$md5  $p" | md5sum -c; then
+p="SEOBNRv2ChirpTimeSS.dat"
+md5="7b7dbadacc3f565fb2c8e6971df2ab74"
+md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
+if test ".$md5" != ".$md5s"; then
     rm -f "$p"
     wget $wget_opts "$albert/$p"
-    echo "$md5  $p" | md5sum -c
+    md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
+    test ".$md5" = ".$md5s"
 fi
 
 #fb5ec108c69f9e424813de104731370c  H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz
 p="H1L1-SBANK_FOR_GW150914.xml.gz"
 md5="401324352d30888a5df2e5cc65035b17"
-if ! echo "$md5  $p" | md5sum -c; then
+md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
+if test ".$md5" != ".$md5s"; then
     rm -f "$p"
     wget $wget_opts "$albert/$p"
-    echo "$md5  $p" | md5sum -c
+    md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
+    test ".$md5" = ".$md5s"
 fi
 
 LAL_DATA_PATH="." \
