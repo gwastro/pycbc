@@ -147,12 +147,14 @@ if args.fixed_sample_points:
     output['compressed_waveforms/frequency'] = fixed_points
 else:
     sample_points = None
+    
 # get the compressed sample points for each template
 logging.info("getting compressed amplitude and phase")
 for ii in range(imin, imax):
     htilde = bank[ii]
     tmplt = bank.table[ii]
     kmax = kmaxes[ii]
+    
     # get the compressed sample points
     if args.fixed_sample_points:
         sample_points = fixed_points[:kmax-1]
@@ -165,15 +167,19 @@ for ii in range(imin, imax):
     else:
         raise ValueError("unrecognized compression algorithm %s" %(
             args.compression_algorithm))
+            
     # compress
-    sample_index = (sample_points/df).astype(int)
+    sample_index = (sample_points / df).astype(int)
     amp = waveform.amplitude_from_frequencyseries(htilde)
     phase = waveform.phase_from_frequencyseries(htilde)
-    compAmp = amp[sample_index]
-    compPhase = phase[sample_index]
+    
+    
+    comp_amp = amp.take(sample_index)
+    comp_phase = phase.take(sample_index)
 
-    output['compressed_waveforms/%i/amplitude' %(ii-imin)] = compAmp.data 
-    output['compressed_waveforms/%i/phase' %(ii-imin)] = compPhase.data
+    output['compressed_waveforms/%i/amplitude' %(ii-imin)] = comp_amp.numpy()
+    output['compressed_waveforms/%i/phase' %(ii-imin)] = comp_phase.numpy()
+    
     if args.fixed_sample_points:
         output['compressed_waveforms/%i/frequency' %(ii-imin)] = \
             h5py.SoftLink('/compressed_waveforms/frequency')
@@ -181,11 +187,13 @@ for ii in range(imin, imax):
         output['compressed_waveforms/%i/frequency' %(ii-imin)] = \
             sample_points
     if args.check_compression:
-        hdecomp = compress.fd_decompress(compAmp, compPhase, sample_points,
+        hdecomp = compress.fd_decompress(comp_amp, comp_phase, sample_points,
             out=decomp_scratch, f_lower=fmin, interpolation=args.interpolation)
         ff = filter.overlap(hdecomp, htilde)
-        output['compressed_waveforms/%i' %(ii-imin)].attrs['interpolation'] = \
+        
+        logging.info('Overlap = %s' % ff)
+        output['compressed_waveforms/%i' %(ii - imin)].attrs['interpolation'] = \
             args.interpolation
-        output['compressed_waveforms/%i' %(ii-imin)].attrs['overlap'] = ff
+        output['compressed_waveforms/%i' %(ii - imin)].attrs['overlap'] = ff
 logging.info("finished")
 output.close()
