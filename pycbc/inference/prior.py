@@ -197,7 +197,6 @@ class Uniform(object):
         special_args = ["name"] + ["min-%s"%param for param in variable_args] \
                                 + ["max-%s"%param for param in variable_args]
 
-
         # get a dict with bounds as value
         dist_args = {}
         for param in variable_args:

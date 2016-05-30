@@ -1,0 +1,173 @@
+#! /usr/bin/evn python
+
+# Copyright (C) 2016 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import corner
+import logging
+import itertools
+import math
+import matplotlib as mpl; mpl.use("Agg")
+import matplotlib.pyplot as plt
+import numpy
+import scipy
+import sys
+from pycbc import inference, pnutils, results
+from pycbc.io.mcmc import MCMCFile
+from pycbc.workflow import WorkflowConfigParser
+
+def binomial_coeff(x, y):
+    """ Returns the binomial coefficient: x! / (y! * (x - y)!)
+    """
+    return  math.factorial(x) // math.factorial(y) // math.factorial(x - y)
+
+def cartesian(arrays):
+    """ Returns a cartesian product from a list of iterables.
+    """
+    return numpy.array([numpy.array(element) for element in itertools.product(*arrays)])
+
+
+# command line usage
+parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_prior [--options]",
+    description="Plots corner plot of prior from MCMC.")
+
+# add input options
+parser.add_argument("--config-file", type=str, required=True,
+    help="A file parsable by pycbc.workflow.WorkflowConfigParser.")
+parser.add_argument("--subsection", type=str, required=True,
+    help="")
+
+# add prior options
+parser.add_argument("--variable-args", type=str, nargs="+",  default=[],
+    help="Name of parameters varied in MCMC.")
+parser.add_argument("--bins", type=int, required=True,
+    help="Number of points to evaluator parameter distributions.")
+
+# output plot options
+parser.add_argument("--output-file", type=str, required=True,
+    help="Path to output plot.")
+parser.add_argument("--plot-test-points",
+    action="store_true", default=False,
+    help="If true then use a small number of test points instead of prior values.")
+parser.add_argument("--plot-interpolation-points",
+    action="store_true", default=False,
+    help="If true then plot points used to interpolate greyscale.")
+parser.add_argument("--levels", type=int, default=5,
+    help="Number of levels to use in contour plot.")
+
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+    help="")
+
+# parse the command line
+opts = parser.parse_args()
+
+# sanity check number of parameters to plot
+if len(opts.variable_args) > 2:
+    raise ValueError("You cannot plot more than two parameters.")
+
+# setup log
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+
+# read configuration file
+logging.info("Reading configuration file")
+cp = WorkflowConfigParser([opts.config_file])
+
+# get distribution from inference configuration file
+name = cp.get_opt_tag("prior", "name", opts.subsection)
+dist = inference.priors[name].from_config(cp, "prior", opts.subsection)
+
+# scale number of subplots with dimensions of the distribution
+fig, axs = plt.subplots( binomial_coeff(len(dist.params),2) )
+axs = [axs] if binomial_coeff(len(dist.params),2) is 1 else axs
+
+# get all points in space to calculate PDF
+logging.info("Getting grid of points")
+vals = []
+for param in dist.params:
+    step = float(dist.bounds[param][1]-dist.bounds[param][0]) / opts.bins
+    vals.append( numpy.arange(dist.bounds[param][0],dist.bounds[param][1],step) )
+pts = cartesian(vals)
+
+# evaulate PDF between the bounds
+logging.info("Calculating PDF")
+pdf = []
+for pt in pts:
+    pt_dict = dict([(param,pt[j]) for j,param in enumerate(dist.params)])
+    pdf.append( dist.pdf(**pt_dict) )
+pdf = numpy.array(pdf)
+
+# map data to (x,y,z) values
+# since we only have a uniform distribution
+# allow user to plot a set of test points
+logging.info("Plotting")
+if opts.plot_test_points:
+    x, y, z = 10 * numpy.random.random((3,10))
+else:
+    i = dist.params.index(opts.variable_args[0])
+    j = dist.params.index(opts.variable_args[1])
+    x = pts[:,i]
+    y = pts[:,j]
+    z = pdf
+
+# create grid of interpolation points
+xi = numpy.linspace(x.min(), x.max(), opts.bins)
+yi = numpy.linspace(y.min(), y.max(), opts.bins)
+xi, yi = numpy.meshgrid(xi, yi)
+
+# interpolate
+rbf = scipy.interpolate.Rbf(x, y, z, function='linear')
+zi = rbf(xi, yi)
+
+# plot interpolation points
+if opts.plot_interpolation_points:
+    plt.scatter(x, y)
+
+# plot contours
+extent = [x.min(), x.max(), y.min(), y.max()]
+low = 0.9*min(z)
+high = 1.1*max(z)
+levels = numpy.arange(low, high, (high-low)/opts.levels)
+c = plt.contour(zi, levels, hold='on', colors='w',
+        origin='lower', extent=extent)
+plt.clabel(c, inline=1, fontsize=10)
+
+# plot greyscale
+cmap = plt.get_cmap("Greys")
+plt.imshow(zi, vmin=z.min(), vmax=z.max(), origin='lower', aspect="auto",
+           extent=extent, cmap=cmap)
+
+# format plot
+if opts.plot_test_points:
+    plt.colorbar(label="random test variable")
+    plt.xlabel("random test variable")
+    plt.ylabel("random test variable")
+else:
+    plt.colorbar(label="Probability Density Function")
+    plt.xlabel(opts.variable_args[0])
+    plt.ylabel(opts.variable_args[1])
+
+# save
+plt.savefig(opts.output_file)
+plt.close()
+
+# exit
+logging.info("Finished")
