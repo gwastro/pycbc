@@ -169,7 +169,13 @@ class MCMCFile(h5py.File):
         if psds and low_frequency_cutoff:
             for key in psds.keys():
                 psd_dim = self.create_dataset(key+"/psds/0",
+<<<<<<< HEAD
                                               data=psds[key])
                 psd_dim.attrs["delta_f"] = psds[key].delta_f
+=======
+                                              data=psds[key].numpy())
+                psd_dim.attrs["delta_f"] = psds[key].delta_f
+                psd_dim.attrs["low_frequency_cutoff"] = low_frequency_cutoff
+>>>>>>> Save and plot PSD in inference workflow.
 
 
