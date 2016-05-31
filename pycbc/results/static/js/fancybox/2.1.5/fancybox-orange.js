@@ -172,3 +172,15 @@
 
 
 		});
+
+// prevents fancybox from moving to the top of the page again
+$(".fancybox").fancybox({
+    openEffect : 'fade',
+    closeEffect : 'fade',
+    padding: 0,
+    helpers: {
+        overlay: {
+            locked: false
+        }
+    }
+});
