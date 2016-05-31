@@ -101,13 +101,14 @@ class MCMCFile(h5py.File):
         """
         return self[variable_arg].attrs["label"]
 
-    def write(self, variable_args, samples, acceptance_fraction=None,
+    def write(self, variable_args, ifo_list, samples, acceptance_fraction=None,
               labels=None, low_frequency_cutoff=None, psds=None):
         """ Writes the output from pycbc.io.sampler to a file.
 
         Parameters
         -----------
         variable_args : list
+        ifo_list : list
         samples : numpy.Array
             An array with shape (ndim,nwalker,niterations) where ndim is the
             number of dimensions, nwalker is the number of walkers, and
@@ -129,6 +130,7 @@ class MCMCFile(h5py.File):
 
         # save MCMC parameters
         self.attrs["variable_args"] = variable_args
+        self.attrs["ifo_list"] = ifo_list
         self.attrs["nwalkers"] = nwalkers
         self.attrs["niterations"] = niterations
         self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())

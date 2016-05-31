@@ -240,17 +240,17 @@ chain = sampler.chain
 chain = numpy.transpose(chain)
 
 # calculate ASD
-asd_dict = {}
+psd_dyn_dict = {}
 for key,val in psd_dict.iteritems():
-     asd_dict[key] = FrequencySeries(psd_dict[key]*DYN_RANGE_FAC**2,
-                                     delta_f=psd_dict[key].delta_f)
+     psd_dyn_dict[key] = FrequencySeries(psd_dict[key]*DYN_RANGE_FAC**2,
+                                         delta_f=psd_dict[key].delta_f)
 
 # save samples to file
 fp = MCMCFile(opts.output_file, "w")
-fp.write(variable_args, chain,
+fp.write(variable_args, opts.instruments, chain,
          acceptance_fraction=sampler.acceptance_fraction,
          low_frequency_cutoff=low_frequency_cutoff_dict,
-         psds=asd_dict)
+         psds=psd_dyn_dict)
 fp.close()
 
 # exit
