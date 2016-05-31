@@ -134,7 +134,7 @@ if len(opts.variable_args) == 1:
     fig.axes[0].set_xlim(xmin - step, xmax + step)
 
     # make 10 tick marks on the boundaries of bins from the histogram
-    fig.axes[0].set_xticks(numpy.arange(xmin - step, xmax+step, (xmax-xmin)/step/10*step))
+    fig.axes[0].set_xticks(numpy.arange(xmin - step, xmax+2*step, (xmax-xmin)/step/10*step))
 
 # save figure with meta-data
 caption_kwargs = {
