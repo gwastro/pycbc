@@ -131,6 +131,7 @@ class MCMCFile(h5py.File):
         self.attrs["variable_args"] = variable_args
         self.attrs["nwalkers"] = nwalkers
         self.attrs["niterations"] = niterations
+        self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())
 
         # loop over number of dimensions
         for i,dim_name in zip(range(ndim), variable_args):
@@ -163,8 +164,7 @@ class MCMCFile(h5py.File):
         if psds and low_frequency_cutoff:
             for key in psds.keys():
                 psd_dim = self.create_dataset(key+"/psds/0",
-                                              data=psds[key].numpy())
+                                              data=psds[key])
                 psd_dim.attrs["delta_f"] = psds[key].delta_f
-                psd_dim.attrs["low_frequency_cutoff"] = low_frequency_cutoff
 
 
