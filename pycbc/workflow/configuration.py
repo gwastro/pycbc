@@ -29,6 +29,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.
 
 import os
 import re
+import logging
+import time
 import distutils.spawn
 import ConfigParser
 import glue.pipeline
