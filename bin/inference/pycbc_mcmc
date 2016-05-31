@@ -224,11 +224,7 @@ with ctx:
 
         # burn in
         logging.info("MCMC burn in")
-        res = sampler.burn_in(p0)
-        if len(res) == 4:
-            p, post, q, _ = res
-        else:
-            p, post, q = res
+        p, post, q = sampler.burn_in(p0)
 
         # generate more samples
         logging.info("Generating more MCMC samples")
