@@ -28,7 +28,7 @@
 import numpy, lal
 from pycbc.types import TimeSeries, FrequencySeries, complex128, zeros
 
-default_ringdown_args = {'t_0':0, 'phi_0':0, 'Amp':1}
+default_ringdown_args = {'t_0':0, 'phi_0':0, 'amp':1}
 
 def props_ringdown(obj, **kwargs):
     """ DOCUMENT ME !!
@@ -123,7 +123,7 @@ def get_td_qnm(template=None, delta_t=None, t_lower=None, t_final=None, **kwargs
         The starting time of the ringdown.
     phi_0 : {0, float}, optional
         The initial phase of the ringdown.
-    Amp : {1, float}, optional
+    amp : {1, float}, optional
         The amplitude of the ringdown (constant for now).
     delta_t : {None, float}, optional
         The time step used to generate the ringdown.
@@ -151,7 +151,7 @@ def get_td_qnm(template=None, delta_t=None, t_lower=None, t_final=None, **kwargs
     tau = input_params['tau']
     t_0 = input_params['t_0']
     phi_0 = input_params['phi_0']
-    Amp = input_params['Amp']
+    amp = input_params['amp']
     if delta_t is None:
         delta_t = 1. / qnm_freq_decay(f_0, tau, 1./100)
     if t_lower is None:
@@ -162,17 +162,16 @@ def get_td_qnm(template=None, delta_t=None, t_lower=None, t_final=None, **kwargs
     if t_final is None:
         t_final = qnm_time_decay(tau, 1./1000)
     kmax = int(t_final / delta_t)
-    n = int(t_final / delta_t) + 1
 
     two_pi = 2 * numpy.pi
 
-    times = numpy.arange(t_lower, t_final, delta_t)
+    times = numpy.arange(kmin, kmax)*delta_t
 
-    hp = Amp * numpy.exp(-times/tau) * numpy.cos(two_pi*f_0*times + phi_0)
-    hc = Amp * numpy.exp(-times/tau) * numpy.sin(two_pi*f_0*times + phi_0)
+    hp = amp * numpy.exp(-times/tau) * numpy.cos(two_pi*f_0*times + phi_0)
+    hc = amp * numpy.exp(-times/tau) * numpy.sin(two_pi*f_0*times + phi_0)
 
-    hplus = TimeSeries(zeros(n), delta_t=delta_t)
-    hcross = TimeSeries(zeros(n), delta_t=delta_t)
+    hplus = TimeSeries(zeros(kmax), delta_t=delta_t)
+    hcross = TimeSeries(zeros(kmax), delta_t=delta_t)
     hplus.data[kmin:kmax] = hp
     hcross.data[kmin:kmax] = hc
 
@@ -194,7 +193,7 @@ def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs
         The starting time of the ringdown.
     phi_0 : {0, float}, optional
         The initial phase of the ringdown.
-    Amp : {1, float}, optional
+    amp : {1, float}, optional
         The amplitude of the ringdown (constant for now).
     delta_f : {None, float}, optional
         The frequency step used to generate the ringdown.
@@ -222,7 +221,7 @@ def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs
     tau = input_params['tau']
     t_0 = input_params['t_0']
     phi_0 = input_params['phi_0']
-    Amp = input_params['Amp']
+    amp = input_params['amp']
     if delta_f is None:
         delta_f = 1. / qnm_time_decay(tau, 1./1000)
     if f_lower is None:
@@ -233,16 +232,15 @@ def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs
     if f_final is None:
         f_final = qnm_freq_decay(f_0, tau, 1./100)
     kmax = int(f_final / delta_f)
-    n = int(f_final / delta_f) + 1
 
     pi = numpy.pi
     two_pi = 2 * numpy.pi
     pi_sq = numpy.pi * numpy.pi
 
-    freqs = numpy.arange(f_lower, f_final, delta_f)
+    freqs = numpy.arange(kmin, kmax)*delta_f
 
     denominator = 1 + (4j * pi * freqs * tau) - (4 * pi_sq * ( freqs*freqs - f_0*f_0) * tau*tau)
-    norm = Amp * tau / denominator
+    norm = amp * tau / denominator
     if t_0 != 0:
         time_shift = numpy.exp(-1j * two_pi * freqs * t_0) 
         norm *= time_shift
@@ -250,10 +248,12 @@ def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs
     hp_tilde = norm * ( (1 + 2j * pi * freqs * tau) * numpy.cos(phi_0) - two_pi * f_0 * tau * numpy.sin(phi_0) )
     hc_tilde = norm * ( (1 + 2j * pi * freqs * tau) * numpy.sin(phi_0) + two_pi * f_0 * tau * numpy.cos(phi_0) )
 
-    hplustilde = FrequencySeries(zeros(n, dtype=complex128), delta_f=delta_f)
-    hcrosstilde = FrequencySeries(zeros(n, dtype=complex128), delta_f=delta_f)
+    hplustilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
+    hcrosstilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
     hplustilde.data[kmin:kmax] = hp_tilde
     hcrosstilde.data[kmin:kmax] = hc_tilde
 
     return hplustilde, hcrosstilde
 
+ringdown_fd_approximants = {'FdQNM': get_fd_qnm}
+ringdown_td_approximants = {'TdQNM': get_td_qnm}
