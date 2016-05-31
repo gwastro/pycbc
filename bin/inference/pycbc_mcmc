@@ -239,7 +239,7 @@ chain = sampler.chain
 # transpose past samples to get an ndim x nwalker x niteration array
 chain = numpy.transpose(chain)
 
-# calculate ASD
+# apply dynamic range factor to PSDs since plotting code expects it
 psd_dyn_dict = {}
 for key,val in psd_dict.iteritems():
      psd_dyn_dict[key] = FrequencySeries(psd_dict[key]*DYN_RANGE_FAC**2,

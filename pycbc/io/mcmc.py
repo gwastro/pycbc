@@ -108,7 +108,9 @@ class MCMCFile(h5py.File):
         Parameters
         -----------
         variable_args : list
+            A list of the varying MCMC parameters.
         ifo_list : list
+            A list of the IFOs.
         samples : numpy.Array
             An array with shape (ndim,nwalker,niterations) where ndim is the
             number of dimensions, nwalker is the number of walkers, and
@@ -129,6 +131,7 @@ class MCMCFile(h5py.File):
         ndim, nwalkers, niterations = samples.shape
 
         # save MCMC parameters
+        # keep the minimum low-frequency cutoff for plotting purposes
         self.attrs["variable_args"] = variable_args
         self.attrs["ifo_list"] = ifo_list
         self.attrs["nwalkers"] = nwalkers
