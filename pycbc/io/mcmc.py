@@ -102,7 +102,7 @@ class MCMCFile(h5py.File):
         return self[variable_arg].attrs["label"]
 
     def write(self, variable_args, samples, acceptance_fraction=None,
-              labels=None):
+              labels=None, low_frequency_cutoff=None, psds=None):
         """ Writes the output from pycbc.io.sampler to a file.
 
         Parameters
@@ -117,6 +117,11 @@ class MCMCFile(h5py.File):
             for each iteration.
         labels : list
             A list of str that have formatted names for parameter.
+        low_frequency_cutoff : dict
+            The low-frequency cutoff values each IFO PSD.
+        psds : dict
+            A dict with the IFO name as the key and a FreqeuncySeries as the
+            value.
         """
 
         # get number of dimensions, walkers, and iterations
@@ -154,6 +159,12 @@ class MCMCFile(h5py.File):
             self.create_dataset("acceptance_fraction",
                                 data=acceptance_fraction)
 
-
+        # create datasets for each PSD
+        if psds and low_frequency_cutoff:
+            for key in psds.keys():
+                psd_dim = self.create_dataset(key+"/psds/0",
+                                              data=psds[key].numpy())
+                psd_dim.attrs["delta_f"] = psds[key].delta_f
+                psd_dim.attrs["low_frequency_cutoff"] = low_frequency_cutoff
 
 

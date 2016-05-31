@@ -242,7 +242,9 @@ chain = numpy.transpose(chain)
 # save samples to file
 fp = MCMCFile(opts.output_file, "w")
 fp.write(variable_args, chain,
-         acceptance_fraction=sampler.acceptance_fraction)
+         acceptance_fraction=sampler.acceptance_fraction,
+         low_frequency_cutoff=low_frequency_cutoff_dict,
+         psds=psd_dict)
 fp.close()
 
 # exit
