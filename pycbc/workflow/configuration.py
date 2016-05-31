@@ -32,7 +32,64 @@ import re
 import distutils.spawn
 import ConfigParser
 import glue.pipeline
-import pycbc.workflow
+
+def resolve_url(url, directory=None, permissions=None):
+    """
+    Resolves a URL to a local file, and returns the path to
+    that file.
+    """
+    if directory is None:
+        directory = os.getcwd()
+        
+    # If the "url" is really a path, allow this to work as well and simply
+    # return
+    if os.path.isfile(url):
+        return os.path.abspath(url)
+
+    if url.startswith('http://') or url.startswith('https://') or \
+       url.startswith('file://'):
+        filename = url.split('/')[-1]
+        filename = os.path.join(directory, filename)
+        succeeded = False
+        num_tries = 5
+        t_sleep   = 10
+
+        while not succeeded and num_tries > 0: 
+            try:
+                response = urllib2.urlopen(url)
+                result   = response.read()
+                out_file = open(filename, 'w')
+                out_file.write(result)
+                out_file.close()
+                succeeded = True
+            except:
+                logging.warn("Unable to download %s, retrying" % url)
+                time.sleep(t_sleep)
+                num_tries -= 1
+                t_sleep   *= 2
+                
+        if not succeeded:
+            errMsg  = "Unable to download %s " % (url)
+            raise ValueError(errMsg)
+
+    elif url.find('://') != -1:
+        # TODO: We could support other schemes such as gsiftp by
+        # calling out to globus-url-copy
+        errMsg  = "%s: Only supported URL schemes are\n" % (url)
+        errMsg += "   file: http: https:" 
+        raise ValueError(errMsg)
+    else:
+        filename = url
+
+    if not os.path.isfile(filename):
+        errMsg = "File %s does not exist." %(url)
+        raise ValueError(errMsg)
+
+    if permissions:
+        os.chmod(filename, permissions)
+
+    return filename
+
 
 def add_workflow_command_line_group(parser):
     """
@@ -105,9 +162,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # Enable case sensitive options
         self.optionxform = str
 
-        # The full path needs to be specified to avoid circular imports between
-        # this file and pycbc.workflow.core
-        configFiles = [pycbc.workflow.core.resolve_url(cFile) for cFile in configFiles]
+        configFiles = [resolve_url(cFile) for cFile in configFiles]
 
         self.read_ini_file(configFiles)
 

@@ -37,7 +37,7 @@ from glue.ligolw import table, lsctables, ligolw
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import segments as ligolw_segments
 from glue.ligolw.utils import process as ligolw_process
-from pycbc.workflow.configuration import WorkflowConfigParser
+from pycbc.workflow.configuration import WorkflowConfigParser, resolve_url
 from pycbc.workflow import pegasus_workflow
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
@@ -1667,62 +1667,3 @@ def get_random_label():
     """
     return ''.join(random.choice(string.ascii_uppercase + string.digits) \
                    for _ in range(15))
-
-
-def resolve_url(url, directory=None, permissions=None):
-    """
-    Resolves a URL to a local file, and returns the path to
-    that file.
-    """
-    if directory is None:
-        directory = os.getcwd()
-        
-    # If the "url" is really a path, allow this to work as well and simply
-    # return
-    if os.path.isfile(url):
-        return os.path.abspath(url)
-
-    if url.startswith('http://') or url.startswith('https://') or \
-       url.startswith('file://'):
-        filename = url.split('/')[-1]
-        filename = os.path.join(directory, filename)
-        succeeded = False
-        num_tries = 5
-        t_sleep   = 10
-
-        while not succeeded and num_tries > 0: 
-            try:
-                response = urllib2.urlopen(url)
-                result   = response.read()
-                out_file = open(filename, 'w')
-                out_file.write(result)
-                out_file.close()
-                succeeded = True
-            except:
-                logging.warn("Unable to download %s, retrying" % url)
-                time.sleep(t_sleep)
-                num_tries -= 1
-                t_sleep   *= 2
-                
-        if not succeeded:
-            errMsg  = "Unable to download %s " % (url)
-            raise ValueError(errMsg)
-
-    elif url.find('://') != -1:
-        # TODO: We could support other schemes such as gsiftp by
-        # calling out to globus-url-copy
-        errMsg  = "%s: Only supported URL schemes are\n" % (url)
-        errMsg += "   file: http: https:" 
-        raise ValueError(errMsg)
-    else:
-        filename = url
-
-    if not os.path.isfile(filename):
-        errMsg = "File %s does not exist." %(url)
-        raise ValueError(errMsg)
-
-    if permissions:
-        os.chmod(filename, permissions)
-
-    return filename
-   
