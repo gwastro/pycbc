@@ -148,9 +148,13 @@ vertical lines correspond to the {quantiles} quantiles. The thinning used to
 make this plot took samples beginning at the {thin_start} and then every
 {thin_interval}-th sample after that. Each chain of samples had {niterations}
 iterations.""".format(**caption_kwargs)
+if len(opts.variable_args) == 1:
+    title = "%s posterior"%opts.variable_args[0]
+else:
+    title = "Posterior Distributions"
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),
-                               title="Posterior distributions",
+                               title=title,
                                caption=caption)
 plt.close()
 
