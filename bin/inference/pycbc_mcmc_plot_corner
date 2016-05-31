@@ -112,6 +112,30 @@ else:
     labels = opts.variable_args
 fig = corner.corner(x, labels=labels, quantiles=quantiles)
 
+# if there is only one histogram then change some formatting
+if len(opts.variable_args) == 1:
+
+    # make plot larger
+    fig.set_size_inches(8, 5)
+
+    # get max and min values in order to expand plot to show all values
+    xmin = x.min()
+    xmax = x.max()
+
+    # determine width of each bin the histogram
+    axs = fig.axes[0]
+    poly_xy = axs.patches[0].get_xy()
+    step = poly_xy[2][0] - poly_xy[0][0]
+
+    # remove whitespace
+    fig.set_tight_layout(True)
+
+    # set new x-axis limits
+    fig.axes[0].set_xlim(xmin - step, xmax + step)
+
+    # make 10 tick marks on the boundaries of bins from the histogram
+    fig.axes[0].set_xticks(numpy.arange(xmin - step, xmax+step, (xmax-xmin)/step/10*step))
+
 # save figure with meta-data
 caption_kwargs = {
     "quantiles" : ", ".join(map(str, [q for q in quantiles])),
