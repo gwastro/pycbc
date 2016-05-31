@@ -31,10 +31,14 @@ from pycbc.workflow import WorkflowConfigParser
 def select_waveform_generator(approximant):
     """ Returns the generator for the approximant.
     """
-    if approximant in waveform.td_approximants():
-        return waveform.TDomainCBCGenerator
-    elif approximant in waveform.fd_approximants():
+    if approximant in waveform.fd_approximants():
         return waveform.FDomainCBCGenerator
+    elif approximant in waveform.td_approximants():
+        return waveform.TDomainCBCGenerator
+    elif approximant in waveform.ringdown_fd_approximants:
+        return waveform.FDomainRingdownGenerator
+    elif approximant in waveform.ringdown_td_approximants:
+        raise ValueError("Time domain ringdowns not supported")
     else:
         raise ValueError("%s is not a valid approximant."%approximant)
 
@@ -220,7 +224,11 @@ with ctx:
 
         # burn in
         logging.info("MCMC burn in")
-        p, post, q = sampler.burn_in(p0)
+        res = sampler.burn_in(p0)
+        if len(res) == 4:
+            p, post, q, _ = res
+        else:
+            p, post, q = res
 
         # generate more samples
         logging.info("Generating more MCMC samples")
