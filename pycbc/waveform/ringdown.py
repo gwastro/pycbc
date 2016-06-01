@@ -28,7 +28,7 @@
 import numpy, lal
 from pycbc.types import TimeSeries, FrequencySeries, complex128, zeros
 
-default_ringdown_args = {'t_0':0, 'phi_0':0, 'Amp':1}
+default_ringdown_args = {'t_0':0, 'phi_0':0, 'amp':1}
 
 def props_ringdown(obj, **kwargs):
     """ DOCUMENT ME !!
@@ -107,7 +107,7 @@ def qnm_freq_decay(f_0, tau, decay):
     q_sq = (alpha_sq + 4*q_0*q_0 + alpha*numpy.sqrt(alpha_sq + 16*q_0*q_0)) / 4.
     return numpy.sqrt(q_sq) / numpy.pi / tau
 
-def get_td_qnm(template=None, delta_t=None, t_lower=None, t_final=None, **kwargs):
+def get_td_qnm(template=None, **kwargs):
     """Return a time domain damped sinusoid.
 
     Parameters
@@ -119,19 +119,14 @@ def get_td_qnm(template=None, delta_t=None, t_lower=None, t_final=None, **kwargs
         The ringdown-frequency.
     tau : float
         The damping time of the sinusoid.
-    t_0 :  {0, float}, optional
-        The starting time of the ringdown.
     phi_0 : {0, float}, optional
         The initial phase of the ringdown.
-    Amp : {1, float}, optional
+    amp : {1, float}, optional
         The amplitude of the ringdown (constant for now).
     delta_t : {None, float}, optional
         The time step used to generate the ringdown.
         If None, it will be set to the inverse of the frequency at which the
-        amplitude is 1/100 of the peak amplitude.
-    t_lower: {None, float}, optional
-        The starting time of the output time series.
-        If None, it will be set to delta_t.
+        amplitude is 1/1000 of the peak amplitude.
     t_final : {None, float}, optional
         The ending time of the output time series.
         If None, it will be set to the time at which the amplitude is 
@@ -147,38 +142,44 @@ def get_td_qnm(template=None, delta_t=None, t_lower=None, t_final=None, **kwargs
 
     input_params = props_ringdown(template,**kwargs)
 
-    f_0 = input_params['f_0']
-    tau = input_params['tau']
-    t_0 = input_params['t_0']
-    phi_0 = input_params['phi_0']
-    Amp = input_params['Amp']
+    # get required args
+    try:
+        f_0 = input_params['f_0']
+    except KeyError:
+        raise ValueError('f_0 is required')
+    try:
+        tau = input_params['tau']
+    except KeyError:
+        raise ValueError('tau is required')
+    # get optional args
+    # the following have defaults, and so will be populated
+    phi_0 = input_params.pop('phi_0')
+    amp = input_params.pop('amp')
+    # the following may not be in input_params
+    delta_t = input_params.pop('delta_t', None)
+    t_final = input_params.pop('t_final', None)
+
     if delta_t is None:
-        delta_t = 1. / qnm_freq_decay(f_0, tau, 1./100)
-    if t_lower is None:
-        t_lower = delta_t
-        kmin = 0
-    else:
-        kmin=int(t_lower / delta_t)
+        delta_t = 1. / qnm_freq_decay(f_0, tau, 1./1000)
     if t_final is None:
         t_final = qnm_time_decay(tau, 1./1000)
-    kmax = int(t_final / delta_t)
-    n = int(t_final / delta_t) + 1
+    kmax = int(t_final / delta_t) + 1
 
     two_pi = 2 * numpy.pi
 
-    times = numpy.arange(t_lower, t_final, delta_t)
+    times = numpy.arange(kmax)*delta_t
 
-    hp = Amp * numpy.exp(-times/tau) * numpy.cos(two_pi*f_0*times + phi_0)
-    hc = Amp * numpy.exp(-times/tau) * numpy.sin(two_pi*f_0*times + phi_0)
+    hp = amp * numpy.exp(-times/tau) * numpy.cos(two_pi*f_0*times + phi_0)
+    hc = amp * numpy.exp(-times/tau) * numpy.sin(two_pi*f_0*times + phi_0)
 
-    hplus = TimeSeries(zeros(n), delta_t=delta_t)
-    hcross = TimeSeries(zeros(n), delta_t=delta_t)
-    hplus.data[kmin:kmax] = hp
-    hcross.data[kmin:kmax] = hc
+    hplus = TimeSeries(zeros(kmax), delta_t=delta_t)
+    hcross = TimeSeries(zeros(kmax), delta_t=delta_t)
+    hplus.data[:kmax] = hp
+    hcross.data[:kmax] = hc
 
     return hplus, hcross
 
-def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs):
+def get_fd_qnm(template=None, **kwargs):
     """Return a frequency domain damped sinusoid.
 
     Parameters
@@ -194,7 +195,7 @@ def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs
         The starting time of the ringdown.
     phi_0 : {0, float}, optional
         The initial phase of the ringdown.
-    Amp : {1, float}, optional
+    amp : {1, float}, optional
         The amplitude of the ringdown (constant for now).
     delta_f : {None, float}, optional
         The frequency step used to generate the ringdown.
@@ -206,7 +207,7 @@ def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs
     f_final : {None, float}, optional
         The ending frequency of the output frequency series.
         If None, it will be set to the frequency at which the amplitude is 
-        1/100 of the peak amplitude.
+        1/1000 of the peak amplitude.
 
     Returns
     -------
@@ -218,11 +219,25 @@ def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs
 
     input_params = props_ringdown(template,**kwargs)
 
-    f_0 = input_params['f_0']
-    tau = input_params['tau']
-    t_0 = input_params['t_0']
-    phi_0 = input_params['phi_0']
-    Amp = input_params['Amp']
+    # get required args
+    try:
+        f_0 = input_params['f_0']
+    except KeyError:
+        raise ValueError('f_0 is required')
+    try:
+        tau = input_params['tau']
+    except KeyError:
+        raise ValueError('tau is required')
+    # get optional args
+    # the following have defaults, and so will be populated
+    t_0 = input_params.pop('t_0')
+    phi_0 = input_params.pop('phi_0')
+    amp = input_params.pop('amp')
+    # the following may not be in input_params
+    delta_f = input_params.pop('delta_f', None)
+    f_lower = input_params.pop('f_lower', None)
+    f_final = input_params.pop('f_final', None)
+
     if delta_f is None:
         delta_f = 1. / qnm_time_decay(tau, 1./1000)
     if f_lower is None:
@@ -231,18 +246,17 @@ def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs
     else:
         kmin = int(f_lower / delta_f)
     if f_final is None:
-        f_final = qnm_freq_decay(f_0, tau, 1./100)
-    kmax = int(f_final / delta_f)
-    n = int(f_final / delta_f) + 1
+        f_final = qnm_freq_decay(f_0, tau, 1./1000)
+    kmax = int(f_final / delta_f) + 1
 
     pi = numpy.pi
     two_pi = 2 * numpy.pi
     pi_sq = numpy.pi * numpy.pi
 
-    freqs = numpy.arange(f_lower, f_final, delta_f)
+    freqs = numpy.arange(kmin, kmax)*delta_f
 
     denominator = 1 + (4j * pi * freqs * tau) - (4 * pi_sq * ( freqs*freqs - f_0*f_0) * tau*tau)
-    norm = Amp * tau / denominator
+    norm = amp * tau / denominator
     if t_0 != 0:
         time_shift = numpy.exp(-1j * two_pi * freqs * t_0) 
         norm *= time_shift
@@ -250,10 +264,12 @@ def get_fd_qnm(template=None, delta_f=None, f_lower=None, f_final=None, **kwargs
     hp_tilde = norm * ( (1 + 2j * pi * freqs * tau) * numpy.cos(phi_0) - two_pi * f_0 * tau * numpy.sin(phi_0) )
     hc_tilde = norm * ( (1 + 2j * pi * freqs * tau) * numpy.sin(phi_0) + two_pi * f_0 * tau * numpy.cos(phi_0) )
 
-    hplustilde = FrequencySeries(zeros(n, dtype=complex128), delta_f=delta_f)
-    hcrosstilde = FrequencySeries(zeros(n, dtype=complex128), delta_f=delta_f)
+    hplustilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
+    hcrosstilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
     hplustilde.data[kmin:kmax] = hp_tilde
     hcrosstilde.data[kmin:kmax] = hc_tilde
 
     return hplustilde, hcrosstilde
 
+ringdown_fd_approximants = {'FdQNM': get_fd_qnm}
+ringdown_td_approximants = {'TdQNM': get_td_qnm}
