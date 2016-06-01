@@ -345,7 +345,6 @@ def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
         samples_node.add_input_opt("--input-file", mcmc_file)
         samples_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
         samples_node.add_opt("--variable-args", arg)
-        samples_node.add_opt("--labels", arg)
 
         # make node for plotting the autocorrelation function for each walker
         auto_node = PlotExecutable(workflow.cp, auto_name, ifos=workflow.ifos,

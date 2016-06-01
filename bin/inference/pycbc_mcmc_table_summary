@@ -80,7 +80,8 @@ for param in variable_args:
                               thin_interval=opts.thin_interval)
 
     # get label and set as first column in table
-    row = [fp.read_label(param)]
+    # include container for using LaTeX javascript
+    row = ["<div lang=latex>"+fp.read_label(param)+"</div>"]
 
     # calculate the score at a given percentile
     # eg. 50 is the median, 16 and 84 correspond to 68 percentile
