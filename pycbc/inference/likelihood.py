@@ -47,13 +47,14 @@ class _BaseLikelihoodEvaluator:
     ----------
     waveform_generator : generator class
         A generator class that creates waveforms. This must have a generate
-        function which takes a set of parameter values as arguments, and a
+        function which takes a set of parameter values as arguments, a
         detectors attribute which is a dictionary of detectors keyed by their
-        names.
+        names, and an epoch which specifies the start time of the generated waveform.
     data : dict
         A dictionary of data, in which the keys are the detector names and the
         values are the data (assumed to be unwhitened). The list of keys must
-        match the waveform generator's detectors keys.
+        match the waveform generator's detectors keys, and the epoch of every data
+        set must be the same as the waveform generator's epoch.
     f_lower : float
         The starting frequency to use for computing inner products.
     psds : {None, dict}
@@ -84,6 +85,10 @@ class _BaseLikelihoodEvaluator:
                 ','.join(sorted(waveform_generator.detector_names))) +
                 "does not match data (%s)" %(
                 ','.join(sorted(self._data.keys()))))
+        # check that the data and waveform generator have the same epoch
+        if any([waveform_generator.epoch != d.epoch for d in self._data.values()]):
+            raise ValueError("waveform generator does not have the same epoch as all "
+                "of the data sets.")
         # check that the data sets all have the same lengths
         dlens = numpy.array([len(d) for d in data.values()])
         if not all(dlens == dlens[0]):
@@ -179,7 +184,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     >>> from pycbc import psd as pypsd, inference, waveform
     >>> seglen = 4
     >>> m1, m2, s1z, s2z, tsig, ra, dec, pol = 38.6, 29.3, 0.33, -0.94, 3.1, 1.37, -1.26, 2.76
-    >>> generator = waveform.FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, variable_args=['tc'], detectors=['H1', 'L1'], delta_f=1./seglen, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin', mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra, dec=dec, polarization=pol)
+    >>> generator = waveform.FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=['tc'], detectors=['H1', 'L1'], delta_f=1./seglen, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin', mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra, dec=dec, polarization=pol)
     >>> signal = generator.generate(tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(seglen*2048/2+1, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
