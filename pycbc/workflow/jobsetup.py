@@ -805,10 +805,33 @@ class PyCBCInspiralExecutable(Executable):
         """ Determine possible dimensions of needed input and valid output
         """
         
-        min_analysis_segs = int(self.cp.get('workflow-matchedfilter',
-                                          'min-analysis-segments'))
-        max_analysis_segs = int(self.cp.get('workflow-matchedfilter',
-                                    'max-analysis-segments'))
+        if self.cp.has_option('workflow-matchedfilter',
+                                                      'min-analysis-segments'):
+            min_analysis_segs = int(self.cp.get('workflow-matchedfilter',
+                                                'min-analysis-segments'))
+        else:
+            min_analysis_segs = 0
+
+        if self.cp.has_option('workflow-matchedfilter',
+                                                      'max-analysis-segments'):
+            max_analysis_segs = int(self.cp.get('workflow-matchedfilter',
+                                                'max-analysis-segments'))
+        else:
+            # Choose ridiculously large default value
+            max_analysis_segs = 1000
+
+        if self.cp.has_option('workflow-matchedfilter', 'min-analysis-length'):
+            min_analysis_length = int(self.cp.get('workflow-matchedfilter',
+                                                  'min-analysis-length'))
+        else:
+            min_analysis_length = 0
+
+        if self.cp.has_option('workflow-matchedfilter', 'max-analysis-length'):
+            max_analysis_length = int(self.cp.get('workflow-matchedfilter',
+                                                  'max-analysis-length'))
+        else:
+            # Choose a ridiculously large default value
+            max_analysis_length = 100000
         
         segment_length = int(self.get_opt('segment-length'))
         pad_data = 0
@@ -835,11 +858,7 @@ class PyCBCInspiralExecutable(Executable):
         start_pad = int(self.get_opt( 'segment-start-pad'))
         end_pad = int(self.get_opt('segment-end-pad'))
 
-        # NOTE: Assuming here that the data-length for max-analysis-segs is
-        #       a multiple of min-analysis-segs, and then only allow data
-        #       lengths that *are* multiples of min-analysis-segs
-        seg_ranges = range(min_analysis_segs, max_analysis_segs + 1,
-                           min_analysis_segs+1)
+        seg_ranges = range(min_analysis_segs, max_analysis_segs + 1)
         data_lengths = []
         valid_regions = []
         for nsegs in seg_ranges:
@@ -854,6 +873,8 @@ class PyCBCInspiralExecutable(Executable):
                 data_length = analysis_length + pad_data * 2
                 start = pad_data
                 end = data_length - pad_data
+            if data_length > max_analysis_length: continue
+            if data_length < min_analysis_length: continue
             data_lengths += [data_length]
             valid_regions += [segments.segment(start, end)]
             
