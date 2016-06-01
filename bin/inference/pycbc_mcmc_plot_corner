@@ -146,7 +146,7 @@ make this plot took samples beginning at the {thin_start} and then every
 {thin_interval}-th sample after that. Each chain of samples had {niterations}
 iterations.""".format(**caption_kwargs)
 if len(opts.variable_args) == 1:
-    title = "%s posterior"%opts.variable_args[0]
+    title = "Posterior Distribtion for %s"%opts.variable_args[0]
 else:
     title = "Posterior Distributions"
 results.save_fig_with_metadata(fig, opts.output_file,
