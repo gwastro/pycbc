@@ -65,7 +65,7 @@ fp = h5py.File(opts.input_file, "r")
 # plot each variable arg has a different subplot
 logging.info("Plotting samples")
 fig, axs = plt.subplots(ndim, sharex=True)
-plt.xlabel("iterations")
+plt.xlabel("Iteration")
 
 # loop over variable args
 axs = [axs] if type(axs) is not list else axs
@@ -78,7 +78,7 @@ for i,arg in enumerate(opts.variable_args):
         axs[i].plot(fp[arg]["walker%d"%j][:], alpha=0.1)
 
         # y-axis label
-        axs[i].set_ylabel(r"%s"%opts.labels[i])
+        axs[i].set_ylabel(r"%s"%fp.get_label(fp.get_label(arg)))
 
 # save figure with meta-data
 caption_kwargs = {

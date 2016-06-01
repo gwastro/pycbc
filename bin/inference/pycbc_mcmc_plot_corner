@@ -106,10 +106,7 @@ x = numpy.concatenate(x)
 # plot posterior
 logging.info("Plot posteriors")
 quantiles = [0.16, 0.5, 0.84]
-if opts.labels:
-    labels = [r"%s"%label for label in opts.labels]
-else:
-    labels = opts.variable_args
+labels = [r"%s"%fp.get_label(param) for param in opts.variable_args]
 fig = corner.corner(x, labels=labels, quantiles=quantiles)
 
 # if there is only one histogram then change some formatting
