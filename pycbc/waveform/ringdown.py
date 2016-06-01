@@ -119,8 +119,6 @@ def get_td_qnm(template=None, **kwargs):
         The ringdown-frequency.
     tau : float
         The damping time of the sinusoid.
-    t_0 :  {0, float}, optional
-        The starting time of the ringdown.
     phi_0 : {0, float}, optional
         The initial phase of the ringdown.
     amp : {1, float}, optional
@@ -155,7 +153,6 @@ def get_td_qnm(template=None, **kwargs):
         raise ValueError('tau is required')
     # get optional args
     # the following have defaults, and so will be populated
-    t_0 = input_params.pop('t_0')
     phi_0 = input_params.pop('phi_0')
     amp = input_params.pop('amp')
     # the following may not be in input_params
