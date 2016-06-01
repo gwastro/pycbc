@@ -60,6 +60,7 @@ acceptance_fraction = fp["acceptance_fraction"][:]
 fig = plt.figure()
 plt.plot(acceptance_fraction, 'k', alpha=.5)
 plt.ylabel("Mean Acceptance Rate")
+plt.xlabel("Iteration")
 
 # save figure with meta-data
 caption = """This plot shows the fraction of samples accepted at each

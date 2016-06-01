@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 import numpy
 import sys
 from pycbc import results
+from pycbc.io.mcmc import MCMCFile
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_acf [--options]",
@@ -64,7 +65,7 @@ ndim = len(opts.variable_args)
 
 # read input file
 logging.info("Reading input file")
-fp = h5py.File(opts.input_file, "r")
+fp = MCMCFile(opts.input_file, "r")
 
 # calculate autocorrelation function for each walker
 logging.info("Calculating autocorrelation functions")
@@ -114,7 +115,7 @@ if opts.ymax:
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join([r"%s"%fp.get_label(param) for param in opts.variable_args]),
+    "parameters" : ", ".join([r"%s"%fp.read_label(param) for param in opts.variable_args]),
 }
 caption = """Autocorrelation function (ACF) from all the walker chains for the
 parameters {parameters}. Each line is an ACF for a chain of walker samples.""".format(**caption_kwargs)

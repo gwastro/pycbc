@@ -251,11 +251,11 @@ for key,val in psd_dict.iteritems():
                                          delta_f=psd_dict[key].delta_f)
 
 # get labels for each parameter from configuration file
-labels = dict([(param,cp.get_opt("labels",param) for param in variable_args)])
+labels = [cp.get("labels",param) for param in variable_args]
 
 # save samples to file
 fp = MCMCFile(opts.output_file, "w")
-fp.write(variable_args, opts.instruments, chain,
+fp.write(variable_args, opts.instruments, chain, labels=labels,
          acceptance_fraction=sampler.acceptance_fraction,
          low_frequency_cutoff=low_frequency_cutoff_dict,
          psds=psd_dyn_dict)

@@ -23,6 +23,7 @@ import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import sys
 from pycbc import results
+from pycbc.io.mcmc import MCMCFile
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_samples [--options]",
@@ -59,7 +60,7 @@ ndim = len(opts.variable_args)
 
 # read input file
 logging.info("Reading input file")
-fp = h5py.File(opts.input_file, "r")
+fp = MCMCFile(opts.input_file, "r")
 
 # plot samples
 # plot each variable arg has a different subplot
@@ -78,7 +79,7 @@ for i,arg in enumerate(opts.variable_args):
         axs[i].plot(fp[arg]["walker%d"%j][:], alpha=0.1)
 
         # y-axis label
-        axs[i].set_ylabel(r"%s"%fp.get_label(fp.get_label(arg)))
+        axs[i].set_ylabel(r"%s"%fp.read_label(arg))
 
 # save figure with meta-data
 caption_kwargs = {

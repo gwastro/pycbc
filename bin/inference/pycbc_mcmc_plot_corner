@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 import numpy
 import sys
 from pycbc import pnutils, results
+from pycbc.io.mcmc import MCMCFile
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_corner [--options]",
@@ -64,7 +65,7 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 
 # read input file
 logging.info("Reading input file")
-fp = h5py.File(opts.input_file, "r")
+fp = MCMCFile(opts.input_file, "r")
 
 # thin samples to get independent samples from each sampler
 logging.info("Thinning samples")
@@ -106,7 +107,7 @@ x = numpy.concatenate(x)
 # plot posterior
 logging.info("Plot posteriors")
 quantiles = [0.16, 0.5, 0.84]
-labels = [r"%s"%fp.get_label(param) for param in opts.variable_args]
+labels = [r"%s"%fp.read_label(param) for param in opts.variable_args]
 fig = corner.corner(x, labels=labels, quantiles=quantiles)
 
 # if there is only one histogram then change some formatting
