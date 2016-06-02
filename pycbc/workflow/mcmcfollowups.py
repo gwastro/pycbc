@@ -166,7 +166,8 @@ def make_inference_summary_table(workflow, mcmc_file, output_dir,
 
     return node.output_files
 
-def make_inference_corner_plot(workflow, mcmc_file, output_dir, config_file,
+def make_inference_corner_plot(workflow, mcmc_file, output_dir,
+                    config_file=None, variable_args=None,
                     name="mcmc_corner", analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
 
@@ -181,6 +182,8 @@ def make_inference_corner_plot(workflow, mcmc_file, output_dir, config_file,
     config_file: str
         The path to the inference configuration file that has a
         [variable_args] section.
+    variable_args : list
+        A list of parameters to use instead of [variable_args].
     name: str
         The name in the [executables] section of the configuration file
         to use.
@@ -202,8 +205,9 @@ def make_inference_corner_plot(workflow, mcmc_file, output_dir, config_file,
                        if analysis_seg is None else analysis_seg
 
     # read config file to get variables that vary
-    cp = WorkflowConfigParser([config_file])
-    variable_args = cp.options("variable_args")
+    if variable_args is None:
+        cp = WorkflowConfigParser([config_file])
+        variable_args = cp.options("variable_args")
 
     # add derived mass parameters if mass1 and mass2 in variable_args
     if "mass1" in variable_args and "mass2" in variable_args:
@@ -220,6 +224,7 @@ def make_inference_corner_plot(workflow, mcmc_file, output_dir, config_file,
     # add command line options
     node.add_input_opt("--input-file", mcmc_file)
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
+    node.add_opt("--variable-args", " ".join(variable_args))
 
     # add node to workflow
     workflow += node
@@ -326,6 +331,11 @@ def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
     # make a set of plots for each parameter
     for arg in variable_args:
 
+        # plot posterior distribution
+        corner_files = make_inference_corner_plot(workflow, mcmc_file,
+                          output_dir, variable_args=[arg],
+                          analysis_seg=analysis_seg, tags=tags + [arg])
+
         # make a node for plotting all the samples
         samples_node = PlotExecutable(workflow.cp, samples_name,
                           ifos=workflow.ifos, out_dir=output_dir,
@@ -351,7 +361,9 @@ def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
         workflow += auto_node
 
         # add files to output files list
+        files += corner_files
         files += samples_node.output_files
         files += auto_node.output_files
+        files += [None]
 
     return files
