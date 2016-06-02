@@ -77,14 +77,14 @@ for i,arg in enumerate(opts.variable_args):
         axs[i].plot(fp[arg]["walker%d"%j][:], alpha=0.1)
 
         # y-axis label
-        axs[i].set_ylabel(r'%s'%fp.read_label(arg))
+        axs[i].set_ylabel(r'$%s$'%fp.read_label(arg))
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join(opts.variable_args),
+    "parameters" : ", ".join([fp.read_label(param, html=True) for param in opts.variable_args]),
 }
-caption = r"""All samples from all the walker chains for the parameters
-{parameters}. Each line is a different chain of walker samples.""".format(**caption_kwargs)
+caption = r"""All samples from all the walker chains for the parameters. Each
+line is a different chain of walker samples."""
 title = "Samples for {parameters}".format(**caption_kwargs)
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),

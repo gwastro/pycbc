@@ -80,8 +80,7 @@ for param in variable_args:
                               thin_interval=opts.thin_interval)
 
     # get label and set as first column in table
-    # include container for using LaTeX javascript
-    row = [fp.read_label(param)]
+    row = [fp.read_label(param, html=True)]
 
     # calculate the score at a given percentile
     # eg. 50 is the median, 16 and 84 correspond to 68 percentile
@@ -102,5 +101,5 @@ html = str( results.static_table(table, headers) )
 # save HTML table
 results.save_fig_with_metadata(html, opts.output_file, {},
                  cmd=" ".join(sys.argv),
-                 title="Table of posterior parameters",
+                 title="Table of Posterior Parameters",
                  caption="Table with quantiles for variable MCMC parameters.")

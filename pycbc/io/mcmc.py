@@ -86,20 +86,30 @@ class MCMCFile(h5py.File):
         """
         return self[variable_arg]["walker%d"%nwalker][thin_start::thin_interval]
 
-    def read_label(self, variable_arg):
+    def read_label(self, variable_arg, html=False):
         """ Returns the label for the parameter.
 
         Parameters
         -----------
         variable_arg : str
             Name of parameter to get label.
+        html : bool
+            If true then escape LaTeX formatting for HTML rendering.
 
         Returns
         -------
         label : str
             A formatted string for the name of the paramter.
         """
-        return self[variable_arg].attrs["label"]
+
+        # get label
+        label = self[variable_arg].attrs["label"]
+
+        # escape LaTeX subscripts in a simple but not robust method
+        if html:
+            label = label.replace("_{", "<sub>").replace("}", "</sub>")
+
+        return label
 
     def write(self, variable_args, ifo_list, samples, acceptance_fraction=None,
               labels=None, low_frequency_cutoff=None, psds=None):

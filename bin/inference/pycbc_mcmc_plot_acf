@@ -104,8 +104,8 @@ fig = plt.figure()
 for param_acfs in all_acfs:
     for acf in param_acfs:
         plt.plot(range(len(acf)), acf, alpha=0.5)
-plt.ylabel("Autocorrelation Function")
 plt.xlabel("Iteration")
+plt.ylabel("Autocorrelation Function for "+", ".join(["%s"%fp.read_label(param) for param in opts.variable_args]))
 
 # format plot
 if opts.ymin:
@@ -115,11 +115,11 @@ if opts.ymax:
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join(["%s"%fp.read_label(param) for param in opts.variable_args]),
+    "parameters" : ", ".join(["%s"%fp.read_label(param, html=True) for param in opts.variable_args]),
 }
 caption = """Autocorrelation function (ACF) from all the walker chains for the
-parameters {parameters}. Each line is an ACF for a chain of walker samples.""".format(**caption_kwargs)
-title = "Autocorrelation function for {parameters}".format(**caption_kwargs)
+parameters. Each line is an ACF for a chain of walker samples."""
+title = "Autocorrelation Function for {parameters}".format(**caption_kwargs)
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),
                                title=title,
