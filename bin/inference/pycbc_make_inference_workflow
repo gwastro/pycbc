@@ -199,10 +199,19 @@ for num_event in range(num_events):
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
 
-    # add files from plotting acceptance rate plot for this event
-    layouts += [mcf.make_inference_acceptance_rate_plot(workflow, mcmc_file, 
-                          opts.output_dir, analysis_seg=analysis_time,
-                          tags=opts.tags + [str(num_event)])]
+    # get files from plotting acceptance rate plot for this event
+    rate_files = mcf.make_inference_acceptance_rate_plot(workflow,
+                          mcmc_file,  opts.output_dir,
+                          analysis_seg=analysis_time,
+                          tags=opts.tags + [str(num_event)])
+
+    # get files from plotting PSD for this event
+    psd_file = wf.make_spectrum_plot(workflow, [mcmc_file], opts.output_dir,
+                          tags=opts.tags + [str(num_event)])
+
+    # add a row to the HTML page with accpetance rate on the left
+    # and the PSD plot on the right
+    layouts += list(layout.grouper(rate_files+[psd_file], 2))
 
     # add files from plotting parameter samples and autocorrelation
     # function for this event

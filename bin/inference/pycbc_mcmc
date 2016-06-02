@@ -23,9 +23,9 @@ import numpy
 import pycbc.opt
 import pycbc.weave
 import random
-from pycbc import fft, inference, psd, scheme, strain, waveform
+from pycbc import DYN_RANGE_FAC, fft, inference, psd, scheme, strain, waveform
 from pycbc.io.mcmc import MCMCFile
-from pycbc.types import MultiDetOptionAction
+from pycbc.types import FrequencySeries, MultiDetOptionAction
 from pycbc.workflow import WorkflowConfigParser
 
 def select_waveform_generator(approximant):
@@ -239,10 +239,18 @@ chain = sampler.chain
 # transpose past samples to get an ndim x nwalker x niteration array
 chain = numpy.transpose(chain)
 
+# apply dynamic range factor to PSDs since plotting code expects it
+psd_dyn_dict = {}
+for key,val in psd_dict.iteritems():
+     psd_dyn_dict[key] = FrequencySeries(psd_dict[key]*DYN_RANGE_FAC**2,
+                                         delta_f=psd_dict[key].delta_f)
+
 # save samples to file
 fp = MCMCFile(opts.output_file, "w")
-fp.write(variable_args, chain,
-         acceptance_fraction=sampler.acceptance_fraction)
+fp.write(variable_args, opts.instruments, chain,
+         acceptance_fraction=sampler.acceptance_fraction,
+         low_frequency_cutoff=low_frequency_cutoff_dict,
+         psds=psd_dyn_dict)
 fp.close()
 
 # exit

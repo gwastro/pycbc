@@ -101,13 +101,16 @@ class MCMCFile(h5py.File):
         """
         return self[variable_arg].attrs["label"]
 
-    def write(self, variable_args, samples, acceptance_fraction=None,
-              labels=None):
+    def write(self, variable_args, ifo_list, samples, acceptance_fraction=None,
+              labels=None, low_frequency_cutoff=None, psds=None):
         """ Writes the output from pycbc.io.sampler to a file.
 
         Parameters
         -----------
         variable_args : list
+            A list of the varying MCMC parameters.
+        ifo_list : list
+            A list of the IFOs.
         samples : numpy.Array
             An array with shape (ndim,nwalker,niterations) where ndim is the
             number of dimensions, nwalker is the number of walkers, and
@@ -117,15 +120,23 @@ class MCMCFile(h5py.File):
             for each iteration.
         labels : list
             A list of str that have formatted names for parameter.
+        low_frequency_cutoff : dict
+            The low-frequency cutoff values each IFO PSD.
+        psds : dict
+            A dict with the IFO name as the key and a FreqeuncySeries as the
+            value.
         """
 
         # get number of dimensions, walkers, and iterations
         ndim, nwalkers, niterations = samples.shape
 
         # save MCMC parameters
+        # keep the minimum low-frequency cutoff for plotting purposes
         self.attrs["variable_args"] = variable_args
+        self.attrs["ifo_list"] = ifo_list
         self.attrs["nwalkers"] = nwalkers
         self.attrs["niterations"] = niterations
+        self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())
 
         # loop over number of dimensions
         for i,dim_name in zip(range(ndim), variable_args):
@@ -154,6 +165,11 @@ class MCMCFile(h5py.File):
             self.create_dataset("acceptance_fraction",
                                 data=acceptance_fraction)
 
-
+        # create datasets for each PSD
+        if psds and low_frequency_cutoff:
+            for key in psds.keys():
+                psd_dim = self.create_dataset(key+"/psds/0",
+                                              data=psds[key])
+                psd_dim.attrs["delta_f"] = psds[key].delta_f
 
 

@@ -27,28 +27,34 @@ y_min = None
 
 for psd_file in args.psd_files:
     f = h5py.File(psd_file, 'r')
-    ifo = f.keys()[0]
-    df = f[ifo + '/psds/0'].attrs['delta_f']
-    keys = f[ifo + '/psds'].keys()
-    psds = [f[ifo + '/psds/' + key][:] for key in keys]
 
-    flow = f.attrs['low_frequency_cutoff']
-    kmin = int(flow / df)
+    if "ifo_list" in f.attrs.keys():
+        ifo_list = f.attrs["ifo_list"]
+    else:
+        ifo_list = [f.keys()[0]]
 
-    fac = 1.0 / pycbc.DYN_RANGE_FAC
-    high = numpy.percentile(psds, 95, axis=0)[kmin:] ** 0.5 * fac
-    low = numpy.percentile(psds, 5, axis=0)[kmin:] ** 0.5 * fac
-    middle = numpy.percentile(psds, 50, axis=0)[kmin:] ** 0.5 * fac
-    samples = numpy.arange(0, len(psds[0]))[kmin:] * df
+    for ifo in ifo_list:
+        df = f[ifo + '/psds/0'].attrs['delta_f']
+        keys = f[ifo + '/psds'].keys()
+        psds = [f[ifo + '/psds/' + key][:] for key in keys]
 
-    if y_min is None or y_min > low.min():
-        y_min = low.min()
+        flow = f.attrs['low_frequency_cutoff']
+        kmin = int(flow / df)
 
-    color = pycbc.results.ifo_color(ifo)
+        fac = 1.0 / pycbc.DYN_RANGE_FAC
+        high = numpy.percentile(psds, 95, axis=0)[kmin:] ** 0.5 * fac
+        low = numpy.percentile(psds, 5, axis=0)[kmin:] ** 0.5 * fac
+        middle = numpy.percentile(psds, 50, axis=0)[kmin:] ** 0.5 * fac
+        samples = numpy.arange(0, len(psds[0]))[kmin:] * df
 
-    ax.fill_between(samples, low, high, alpha=0.4, linewidth=0, color=color)
-    ax.loglog(samples, middle, linewidth=0.3, color=color, label=ifo)
-    ax.set_xlim(flow, samples[-1])
+        if y_min is None or y_min > low.min():
+            y_min = low.min()
+
+        color = pycbc.results.ifo_color(ifo)
+
+        ax.fill_between(samples, low, high, alpha=0.4, linewidth=0, color=color)
+        ax.loglog(samples, middle, linewidth=0.3, color=color, label=ifo)
+        ax.set_xlim(flow, samples[-1])
 
 reference_psd = pycbc.psd.from_cli(args, 2048, 1., 10., None)
 if reference_psd is not None:
