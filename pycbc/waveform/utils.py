@@ -30,6 +30,9 @@ import lalsimulation as sim
 from math import frexp
 import numpy
 import copy
+from pycbc.opt import omp_libs, omp_flags
+from pycbc import WEAVE_FLAGS
+from scipy.weave import inline
 
 def ceilpow2(n):
     """convenience function to determine a power-of-2 upper frequency limit"""
@@ -269,7 +272,63 @@ def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
         return TimeSeries(ts_lal.data.data[:], delta_t=ts_lal.deltaT,
                           epoch=ts_lal.epoch)
 
-def apply_fd_time_shift(htilde, shifttime, fseries=None, copy=True):
+_apply_shift_code = r"""
+    #include <math.h>
+    // cast the output to a float array for faster processing
+    // this takes advantage of the fact that complex arrays store
+    // their real and imaginary values next to each other in memory
+    double* outptr = (double*) out;
+    outptr += 2*kmin; // move to the start position
+    double cphi = (double) phi;
+    double re_h, im_h;
+    int update_interval = 100;
+    int jj = update_interval;
+    double re_shift, im_shift, re_lastshift, im_lastshift;
+    double re_inc = cos(cphi);
+    double im_inc = sin(cphi);
+    for (int kk=kmin; kk<kmax; kk++){
+        if (jj == update_interval) {
+            // recompute the added value to reduce numerical error
+            re_shift = cos(cphi * (double) kk);
+            im_shift = sin(cphi * (double) kk);
+            jj = 0;
+        }
+        re_h = *outptr;
+        im_h = *(outptr+1);
+        *outptr = re_shift * re_h - im_shift * im_h; // the real part
+        *(outptr+1) = re_shift * im_h + im_shift * re_h; // the imag part
+        // increase the shift for the next element
+        re_lastshift = re_shift;
+        im_lastshift = im_shift;
+        re_shift = re_lastshift * re_inc - im_lastshift * im_inc;
+        im_shift = re_lastshift * im_inc + im_lastshift * re_inc;
+        jj += 1;
+        outptr += 2; // move to the next element
+    }
+    """
+# for single precision
+_apply_shift_code32 = _apply_shift_code.replace('double', 'float')
+
+def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
+    """Shifts a frequency domain waveform in time. The waveform is assumed to
+    be sampled at equal frequency intervals.
+    """
+    out = numpy.array(htilde.data, copy=copy)
+    phi = -2 * numpy.pi * dt * htilde.delta_f
+    kmax = len(htilde)
+    if htilde.precision == 'single':
+        code = _apply_shift_code32
+    else:
+        code = _apply_shift_code
+    inline(code, ['out', 'phi', 'kmin', 'kmax'],
+           extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w']+omp_flags,
+           libraries=omp_libs)
+    if copy:
+        htilde = FrequencySeries(out, delta_f=htilde.delta_f, epoch=htilde.epoch,
+                                 copy=False)
+    return htilde
+
+def apply_fd_time_shift(htilde, shifttime, kmin=0, fseries=None, copy=True):
     """Shifts a frequency domain waveform in time. The shift applied is
     shiftime - htilde.epoch.
 
@@ -279,10 +338,11 @@ def apply_fd_time_shift(htilde, shifttime, fseries=None, copy=True):
         The waveform frequency series.
     shifttime : float
         The time to shift the frequency series to.
+    kmin : {0, int}
+        The starting index of htilde to apply the time shift. Default is 0.
     fseries : {None, numpy array}
-        The frequencies of each element in the the FrequencySeries. If None,
-        will use htilde.sample_frequencies. Note: providing a frequency series
-        can reduce the exectution time of this function by as much as a 1/2.
+        The frequencies of each element in htilde. This is only needed if htilde is not
+        sampled at equal frequency steps.
     copy : {True, bool}
         Make a copy of htilde before applying the time shift. If False, the time
         shift will be applied to htilde's data.
@@ -295,11 +355,19 @@ def apply_fd_time_shift(htilde, shifttime, fseries=None, copy=True):
         the same as htilde.
     """
     dt = float(shifttime - htilde.epoch)
-    if fseries is None:
-        fseries = htilde.sample_frequencies.numpy()
-    shift = Array(numpy.exp(-2j*numpy.pi*dt*fseries), 
-                dtype=complex_same_precision_as(htilde))
-    if copy:
-        htilde = 1. * htilde
-    htilde *= shift
+    if dt == 0.:
+        # no shift to apply, just copy if desired
+        if copy:
+            htilde = 1. * htilde
+    elif isinstance(htilde, FrequencySeries):
+        # FrequencySeries means equally sampled in frequency, use faster shifting
+        htilde = apply_fseries_time_shift(htilde, dt, kmin=kmin, copy=copy)
+    else:
+        if fseries is None:
+            fseries = htilde.sample_frequencies.numpy()
+        shift = Array(numpy.exp(-2j*numpy.pi*dt*fseries), 
+                    dtype=complex_same_precision_as(htilde))
+        if copy:
+            htilde = 1. * htilde
+        htilde *= shift
     return htilde

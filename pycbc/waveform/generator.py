@@ -177,6 +177,9 @@ class FDomainDetFrameGenerator(object):
         must be included in either the variable args or the frozen params. If
         None, the generate function will just return the plus polarization
         returned by the rFrameGeneratorClass shifted by any desired time shift.
+    epoch : {float, lal.LIGOTimeGPS
+        The epoch start time to set the waveform to. A time shift = tc - epoch is
+        applied to waveforms before returning.
     variable_args : {(), list or tuple}
         A list or tuple of strings giving the names and order of parameters
         that will be passed to the generate function.
@@ -207,6 +210,10 @@ class FDomainDetFrameGenerator(object):
     detector_names : list
         The list of detector names. If no detectors were provided, then this
         will be ['RF'] for "radiation frame".
+    epoch : lal.LIGOTimeGPS
+        The GPS start time of the frequency series returned by the generate function.
+        A time shift is applied to the waveform equal to tc-epoch. Update by using
+        ``set_epoch``.
     current_params : dict
         A dictionary of name, value pairs of the arguments that were last
         used by the generate function.
@@ -223,7 +230,7 @@ class FDomainDetFrameGenerator(object):
     Examples
     --------
     Initialize a generator:
-    >>> generator = waveform.FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec', 'polarization'], detectors=['H1', 'L1'], delta_f=1./64, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin')
+    >>> generator = waveform.FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec', 'polarization'], detectors=['H1', 'L1'], delta_f=1./64, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin')
 
     Generate a waveform:
     >>> generator.generate(38.6, 29.3, 0.33, -0.94, 2.43, 1.37, -1.26, 2.76)
@@ -233,7 +240,7 @@ class FDomainDetFrameGenerator(object):
 
     location_args = set(['tc', 'ra', 'dec', 'polarization'])
 
-    def __init__(self, rFrameGeneratorClass, detectors=None,
+    def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
             variable_args=(), **frozen_params):
         # initialize frozen & current parameters:
         self.current_params = frozen_params.copy()
@@ -250,6 +257,7 @@ class FDomainDetFrameGenerator(object):
         # initialize the radiation frame generator
         self.rframe_generator = rFrameGeneratorClass(
             variable_args=rframe_variables, **frozen_params)
+        self.set_epoch(epoch)
         # if detectors are provided, convert to detector type; also ensure that
         # location variables are specified
         if detectors is not None:
@@ -267,6 +275,14 @@ class FDomainDetFrameGenerator(object):
             self.detectors = {'RF': None}
         self.detector_names = sorted(self.detectors.keys())
 
+    def set_epoch(self, epoch):
+        """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
+        self._epoch = _lal.LIGOTimeGPS(epoch)
+
+    @property
+    def epoch(self):
+        return self._epoch
+
     def generate(self, *args):
         """Generates a waveform, applies a time shift and the detector response
         function."""
@@ -277,10 +293,14 @@ class FDomainDetFrameGenerator(object):
         rfparams = dict([(param, self.current_params[param])
             for param in self.rframe_generator.variable_args])
         hp, hc = self.rframe_generator.generate_from_kwargs(**rfparams)
+        hp._epoch = hc._epoch = self._epoch
         h = {}
+        if 'tc' in self.current_params:
+            try:
+                kmin = int(self.current_params['f_lower']/hp.delta_f)
+            except KeyError:
+                kmin = 0
         if self.detector_names != ['RF']:
-            # we'll need the frequency points for applying the time shift
-            fseries = hp.sample_frequencies.numpy()
             for detname, det in self.detectors.items():
                 # apply detector response function
                 fp, fc = det.antenna_pattern(self.current_params['ra'],
@@ -293,14 +313,11 @@ class FDomainDetFrameGenerator(object):
                     det.time_delay_from_earth_center(self.current_params['ra'],
                                                      self.current_params['dec'],
                                                      self.current_params['tc'])
-                h[detname] = apply_fd_time_shift(thish, tc, fseries=fseries,
-                    copy=False)
-        elif 'tc' in self.current_params:
-            # apply the time shift if specified
-            fseries = hp.sample_frequencies.numpy()
-            h['RF'] = apply_fd_time_shift(hp, self.current_params['tc'],
-                        fseries=fseries, copy=False)
+                h[detname] = apply_fd_time_shift(thish, tc, kmin=kmin, copy=False)
         else:
-            # just return the plus polarization
+            # no detector response, just use the + polarization
+            if 'tc' in self.current_params:
+                hp = apply_fd_time_shift(hp, self.current_params['tc'],
+                            kmin=kmin, copy=False)
             h['RF'] = hp
         return h

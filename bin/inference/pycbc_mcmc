@@ -31,10 +31,10 @@ from pycbc.workflow import WorkflowConfigParser
 def select_waveform_generator(approximant):
     """ Returns the generator for the approximant.
     """
-    if approximant in waveform.td_approximants():
-        return waveform.TDomainCBCGenerator
-    elif approximant in waveform.fd_approximants():
+    if approximant in waveform.fd_approximants():
         return waveform.FDomainCBCGenerator
+    elif approximant in waveform.td_approximants():
+        return waveform.TDomainCBCGenerator
     else:
         raise ValueError("%s is not a valid approximant."%approximant)
 
@@ -173,6 +173,7 @@ with ctx:
 
     # construct class that will generate waveforms
     generator = waveform.FDomainDetFrameGenerator(generator_function,
+                        epoch=stilde_dict.values()[0].epoch,
                         variable_args=variable_args,
                         detectors=opts.instruments,
                         delta_f=delta_f_dict.values()[0], **static_args)
