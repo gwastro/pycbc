@@ -26,6 +26,7 @@ import pycbc.version
 from glue import segments
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
+from pycbc.workflow import WorkflowConfigParser
 
 def to_file(path, ifo=None):
     """ Takes a str and returns a pycbc.workflow.pegasus_workflow.File
@@ -143,6 +144,15 @@ channel_names_str = " ".join([key+":"+val for key,val in channel_names.iteritems
 mcmc_exe = wf.Executable(workflow.cp, "mcmc", ifos=workflow.ifos,
                          out_dir=opts.output_dir)
 
+# get plotting parameters
+cp = WorkflowConfigParser([opts.inference_config_file])
+variable_args = cp.options("variable_args")
+
+# add derived mass parameters if mass1 and mass2 in [variable_args]
+if "mass1" in variable_args and "mass2" in variable_args:
+    variable_args += ["mchirp", "eta"]
+variable_args.sort()
+
 # loop over number of loudest events to be analyzed
 for num_event in range(num_events):
 
@@ -188,14 +198,15 @@ for num_event in range(num_events):
                           coinc_file, num_event, 
                           opts.output_dir, tags=opts.tags + [str(num_event)])]
 
-    # add files from corner plot for this event
+    # add files from summart table for this event
     layouts += [mcf.make_inference_summary_table(workflow, mcmc_file,
-                          opts.output_dir, analysis_seg=analysis_time,
+                          opts.output_dir, variable_args=variable_args,
+                          analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
 
     # add files from corner plot for this event
     layouts += [mcf.make_inference_corner_plot(workflow, mcmc_file,
-                          opts.output_dir, opts.inference_config_file,
+                          opts.output_dir, variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
 
@@ -216,7 +227,7 @@ for num_event in range(num_events):
     # add files from plotting parameter samples and autocorrelation
     # function for this event
     files = mcf.make_inference_single_parameter_plots(workflow, mcmc_file,
-                          opts.output_dir, opts.inference_config_file,
+                          opts.output_dir, variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)]) 
     layouts += list(layout.grouper(files, 2))

@@ -77,7 +77,7 @@ for i,arg in enumerate(opts.variable_args):
         axs[i].plot(fp[arg]["walker%d"%j][:], alpha=0.1)
 
         # y-axis label
-        axs[i].set_ylabel(r'$%s$'%fp.read_label(arg))
+        axs[i].set_ylabel(r'%s'%fp.read_label(arg))
 
 # save figure with meta-data
 caption_kwargs = {

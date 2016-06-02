@@ -119,7 +119,8 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
     logging.info("Leaving inference module")
 
 def make_inference_summary_table(workflow, mcmc_file, output_dir,
-                    name="mcmc_table", analysis_seg=None, tags=None):
+                    variable_args=None, name="mcmc_table",
+                    analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
 
     Parameters
@@ -130,6 +131,8 @@ def make_inference_summary_table(workflow, mcmc_file, output_dir,
         The file with MCMC samples.
     output_dir: str
         The directory to store result plots and files.
+    variable_args : list
+        A list of parameters to use instead of [variable_args].
     name: str
         The name in the [executables] section of the configuration file
         to use.
@@ -160,6 +163,7 @@ def make_inference_summary_table(workflow, mcmc_file, output_dir,
     # add command line options
     node.add_input_opt("--input-file", mcmc_file)
     node.new_output_file_opt(analysis_seg, ".html", "--output-file")
+    node.add_opt("--variable-args", " ".join(variable_args))
 
     # add node to workflow
     workflow += node
@@ -167,7 +171,7 @@ def make_inference_summary_table(workflow, mcmc_file, output_dir,
     return node.output_files
 
 def make_inference_corner_plot(workflow, mcmc_file, output_dir,
-                    config_file=None, variable_args=None,
+                    variable_args=None,
                     name="mcmc_corner", analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
 
@@ -203,15 +207,6 @@ def make_inference_corner_plot(workflow, mcmc_file, output_dir,
     tags = [] if tags is None else tags
     analysis_seg = workflow.analysis_time \
                        if analysis_seg is None else analysis_seg
-
-    # read config file to get variables that vary
-    if variable_args is None:
-        cp = WorkflowConfigParser([config_file])
-        variable_args = cp.options("variable_args")
-
-    # add derived mass parameters if mass1 and mass2 in variable_args
-    if "mass1" in variable_args and "mass2" in variable_args:
-        variable_args += ["mchirp", "eta"]
 
     # make the directory that will contain the output files
     makedir(output_dir)
@@ -280,7 +275,7 @@ def make_inference_acceptance_rate_plot(workflow, mcmc_file, output_dir,
     return node.output_files
 
 def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
-                    config_file, samples_name="mcmc_samples",
+                    variable_args=None, samples_name="mcmc_samples",
                     auto_name="mcmc_acf", analysis_seg=None, tags=None):
     """ Sets up single-parameter plots from MCMC in the workflow.
 
@@ -295,6 +290,8 @@ def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
     config_file: str
         The path to the inference configuration file that has a
         [variable_args] section.
+    variable_args : list
+        A list of parameters to use instead of [variable_args].
     samples_name: str
         The name in the [executables] section of the configuration file
         to use for the plot that shows all samples.
@@ -318,10 +315,6 @@ def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
     analysis_seg = workflow.analysis_time \
                        if analysis_seg is None else analysis_seg
 
-    # read config file to get variables that vary
-    cp = WorkflowConfigParser([config_file])
-    variable_args = cp.options("variable_args")
-
     # make the directory that will contain the output files
     makedir(output_dir)
 
@@ -336,7 +329,7 @@ def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
                           output_dir, variable_args=[arg],
                           analysis_seg=analysis_seg, tags=tags + [arg])
 
-        # make a node for plotting all the samples
+        # make a node for plotting all the samples for each walker
         samples_node = PlotExecutable(workflow.cp, samples_name,
                           ifos=workflow.ifos, out_dir=output_dir,
                           tags=tags + [arg]).create_node()

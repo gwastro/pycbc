@@ -27,6 +27,7 @@ samplers generate.
 
 import h5py
 import numpy
+from pycbc import pnutils
 
 class MCMCFile(h5py.File):
     """ A subclass of the h5py.File object that has extra functions for
@@ -84,6 +85,29 @@ class MCMCFile(h5py.File):
         numpy.array
             Samples from a specific walker for a parameter.
         """
+
+        # derived parameter case for mchirp will calculate mchrip
+        # from mass1 and mass2
+        if variable_arg == "mchirp" and "mchirp" not in self.keys():
+            mass1 = self.read_samples_from_walker("mass1", nwalker,
+                                      thin_start=thin_start,
+                                      thin_interval=thin_interval)
+            mass2 = self.read_samples_from_walker("mass2", nwalker,
+                                      thin_start=thin_start,
+                                      thin_interval=thin_interval)
+            return pnutils.mass1_mass2_to_mchirp_eta(mass1, mass2)[0]
+
+        # derived parameter case for eta will calculate eta
+        # from mass1 and mass2
+        elif variable_arg == "eta" and "eta" not in self.keys():
+            mass1 = self.read_samples_from_walker("mass1", nwalker,
+                                      thin_start=thin_start,
+                                      thin_interval=thin_interval)
+            mass2 = self.read_samples_from_walker("mass2", nwalker,
+                                      thin_start=thin_start,
+                                      thin_interval=thin_interval)
+            return pnutils.mass1_mass2_to_mchirp_eta(mass1, mass2)[1]
+
         return self[variable_arg]["walker%d"%nwalker][thin_start::thin_interval]
 
     def read_label(self, variable_arg, html=False):
@@ -103,10 +127,16 @@ class MCMCFile(h5py.File):
         """
 
         # get label
-        label = self[variable_arg].attrs["label"]
+        if variable_arg == "mchirp" and "mchirp" not in self.keys():
+            labels.append( r'$M_\mathrm{c}$' )
+        elif variable_arg == "eta" and "eta" not in self.keys():
+            labels.append( r'$\eta$' )
+        else:
+            label = self[variable_arg].attrs["label"]
 
         # escape LaTeX subscripts in a simple but not robust method
         if html:
+            label = label.replace("$", "")
             label = label.replace("_{", "<sub>").replace("}", "</sub>")
 
         return label

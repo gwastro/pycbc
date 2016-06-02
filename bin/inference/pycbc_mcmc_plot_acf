@@ -105,7 +105,7 @@ for param_acfs in all_acfs:
     for acf in param_acfs:
         plt.plot(range(len(acf)), acf, alpha=0.5)
 plt.xlabel("Iteration")
-plt.ylabel("Autocorrelation Function for "+", ".join(["%s"%fp.read_label(param) for param in opts.variable_args]))
+plt.ylabel(r'Autocorrelation Function for '+r', '.join([r'%s'%fp.read_label(param) for param in opts.variable_args]))
 
 # format plot
 if opts.ymin:
