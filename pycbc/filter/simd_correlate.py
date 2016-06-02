@@ -42,8 +42,15 @@ ccorrf_parallel: Runs multicore, but not explicitly vectorized.
 
 corr_common_support = omp_support + pycbc.opt.simd_intel_intrin_support + """
 #include <stdint.h> // For uint32_t, int64_t
-#include <error.h>
 #include <complex> // Must use C++ header with weave
+#ifdef __APPLE__
+#include <stdio.h>
+static void error(int status, int errnum, const char* errstr){
+    fprintf(stderr,"pycbc_inspiral: %s: %d:%d\\n", errstr, status, errnum);
+}
+#else
+#include <error.h>
+#endif
 """
 
 corr_support = corr_common_support + """
