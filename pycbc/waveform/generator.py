@@ -277,11 +277,11 @@ class FDomainDetFrameGenerator(object):
 
     def set_epoch(self, epoch):
         """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
-        self._epoch = _lal.LIGOTimeGPS(epoch)
+        self._epoch = float(epoch)
 
     @property
     def epoch(self):
-        return self._epoch
+        return _lal.LIGOTimeGPS(self._epoch)
 
     def generate(self, *args):
         """Generates a waveform, applies a time shift and the detector response
