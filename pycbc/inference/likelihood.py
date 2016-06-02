@@ -105,7 +105,7 @@ class _BaseLikelihoodEvaluator:
             norm = 4*d.delta_f
         # we'll store the weight to apply to the inner product
         if psds is None:
-            w = norm*Array(numpy.ones(N))
+            w = Array(numpy.sqrt(norm)*numpy.ones(N))
             # FIXME: use the following when we've switched to 2.7
             #self._weight = {det: w for det in data} 
             self._weight = dict([(det, w) for det in data])
@@ -113,16 +113,19 @@ class _BaseLikelihoodEvaluator:
             # temporarily suppress numpy divide by 0 warning
             numpy.seterr(divide='ignore')
             # FIXME: use the following when we've switched to 2.7
-            #self._weight = {det: norm/psds[det] for det in data}
-            self._weight = dict([(det, norm/psds[det]) for det in data])
+            #self._weight = {det: Array(numpy.sqrt(norm/psds[det])) for det in data}
+            self._weight = dict([(det, Array(numpy.sqrt(norm/psds[det]))) for det in data])
             numpy.seterr(divide='warn')
+        # whiten the data
+        for det in self._data:
+            self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
         # compute <d, d>
         # FIXME: use the following when we've switched to 2.7
         #self._dd = {det:
-        #    d[kmin:kmax].inner(d[kmin:kmax]*self._weight[det][kmin:kmax]).real/2.
+        #    d[kmin:kmax].inner(d[kmin:kmax]).real/2.
          #   for det,d in self._data.items()}
         self._dd = dict([(det,
-            d[kmin:kmax].inner(d[kmin:kmax]*self._weight[det][kmin:kmax]).real/2.)
+            d[kmin:kmax].inner(d[kmin:kmax]).real/2.)
             for det,d in self._data.items()])
         # store prior
         if prior is None:
@@ -227,23 +230,24 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
             parameter space.
         """
         # get prior
-        prior = self._prior(*params)
+        logl = self._prior(*params)
         # prior will return -numpy.inf if params are invalid
-        if prior == -numpy.inf:
-            return -numpy.inf
-        hs = self._waveform_generator.generate(*params)
-        # the kmax of the waveforms may be different than internal kmax
-        kmax = min(len(hs.values()[0]), self._kmax)
-        return prior + sum([
-            # <h, d>
-            self.data[det][self._kmin:kmax].inner(
-                h[self._kmin:kmax]*self._weight[det][self._kmin:kmax]).real
-            # - <h, h>/2.
-            - h[self._kmin:kmax].inner(
-                h[self._kmin:kmax]*self._weight[det][self._kmin:kmax]).real/2.
-            # - <d, d>/2.
-            - self._dd[det]
-            for det,h in hs.items()])
+        if logl == -numpy.inf:
+            return logl
+        for det,h in self._waveform_generator.generate(*params).items():
+            # the kmax of the waveforms may be different than internal kmax
+            kmax = min(len(h), self._kmax)
+            # whiten the waveform
+            h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
+            logl += (
+                # <h, d>
+                self.data[det][self._kmin:kmax].inner(h[self._kmin:kmax]).real
+                # - <h, h>/2.
+                - h[self._kmin:kmax].inner(h[self._kmin:kmax]).real/2.
+                # - <d, d>/2.
+                - self._dd[det]
+                )
+        return logl
 
 
 likelihood_evaluators = {'gaussian': GaussianLikelihood}

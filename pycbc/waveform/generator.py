@@ -183,11 +183,6 @@ class FDomainDetFrameGenerator(object):
     variable_args : {(), list or tuple}
         A list or tuple of strings giving the names and order of parameters
         that will be passed to the generate function.
-    cache_fseries : {True, bool}
-        If True, the frequency series of the first generated waveform will be cached,
-        to speed up subsequent generations. This assumes that all subsequent generations
-        will be equally sampled. The frequency cache can be updated using the
-        set_cached_frequencies method.
     \**frozen_params
         Keyword arguments setting the parameters that will not be changed from
         call-to-call of the generate function.
@@ -219,10 +214,6 @@ class FDomainDetFrameGenerator(object):
         The GPS start time of the frequency series returned by the generate function.
         A time shift is applied to the waveform equal to tc-epoch. Update by using
         ``set_epoch``.
-    cache_fseries : bool
-        Whether or not ``cached_frequencies`` are used for applying time shifts.
-    cached_frequencies : {None, array}
-        The cached frequencies. Update by using ``set_cached_frequencies``.
     current_params : dict
         A dictionary of name, value pairs of the arguments that were last
         used by the generate function.
@@ -250,7 +241,7 @@ class FDomainDetFrameGenerator(object):
     location_args = set(['tc', 'ra', 'dec', 'polarization'])
 
     def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
-            variable_args=(), cache_fseries=True, **frozen_params):
+            variable_args=(), **frozen_params):
         # initialize frozen & current parameters:
         self.current_params = frozen_params.copy()
         # we'll separate out frozen location parameters from the frozen
@@ -267,8 +258,6 @@ class FDomainDetFrameGenerator(object):
         self.rframe_generator = rFrameGeneratorClass(
             variable_args=rframe_variables, **frozen_params)
         self.set_epoch(epoch)
-        self.cache_fseries = cache_fseries
-        self._cached_frequencies = None
         # if detectors are provided, convert to detector type; also ensure that
         # location variables are specified
         if detectors is not None:
@@ -294,13 +283,6 @@ class FDomainDetFrameGenerator(object):
     def epoch(self):
         return self._epoch
 
-    def set_cached_frequencies(self, fseries):
-        self._cached_frequencies = fseries
-
-    @property
-    def cached_frequencies(self):
-        return self._cached_frequencies
-
     def generate(self, *args):
         """Generates a waveform, applies a time shift and the detector response
         function."""
@@ -314,21 +296,10 @@ class FDomainDetFrameGenerator(object):
         hp._epoch = hc._epoch = self._epoch
         h = {}
         if 'tc' in self.current_params:
-            # we'll need the frequency points for applying the time shift
-            if self._cached_frequencies is None or not self.cache_fseries:
-                fseries = hp.sample_frequencies.numpy()
-                if self.cache_fseries:
-                    self.set_cached_frequencies(fseries)
-            else:
-                fseries = self._cached_frequencies
-                # the cahced fseries may not be the right size
-                if len(fseries) < len(hp):
-                    fseries = hp.sample_frequencies.numpy()
-                    # update with the longer frequency series
-                    self.set_cached_frequencies(fseries)
-                elif len(fseries) > len(hp):
-                    fseries = fseries[:len(hp)]
-
+            try:
+                kmin = int(self.current_params['f_lower']/hp.delta_f)
+            except KeyError:
+                kmin = 0
         if self.detector_names != ['RF']:
             for detname, det in self.detectors.items():
                 # apply detector response function
@@ -342,11 +313,11 @@ class FDomainDetFrameGenerator(object):
                     det.time_delay_from_earth_center(self.current_params['ra'],
                                                      self.current_params['dec'],
                                                      self.current_params['tc'])
-                h[detname] = apply_fd_time_shift(thish, tc, fseries=fseries, copy=False)
+                h[detname] = apply_fd_time_shift(thish, tc, kmin=kmin, copy=False)
         else:
             # no detector response, just use the + polarization
             if 'tc' in self.current_params:
                 hp = apply_fd_time_shift(hp, self.current_params['tc'],
-                            fseries=fseries, copy=False)
+                            kmin=kmin, copy=False)
             h['RF'] = hp
         return h
