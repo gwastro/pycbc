@@ -115,7 +115,7 @@ if opts.ymax:
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join([r"%s"%fp.read_label(param) for param in opts.variable_args]),
+    "parameters" : ", ".join(["%s"%fp.read_label(param) for param in opts.variable_args]),
 }
 caption = """Autocorrelation function (ACF) from all the walker chains for the
 parameters {parameters}. Each line is an ACF for a chain of walker samples.""".format(**caption_kwargs)

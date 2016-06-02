@@ -81,7 +81,7 @@ for param in variable_args:
 
     # get label and set as first column in table
     # include container for using LaTeX javascript
-    row = ["<div lang=latex>"+fp.read_label(param)+"</div>"]
+    row = [fp.read_label(param)]
 
     # calculate the score at a given percentile
     # eg. 50 is the median, 16 and 84 correspond to 68 percentile

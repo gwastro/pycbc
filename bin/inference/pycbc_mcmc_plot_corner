@@ -133,7 +133,7 @@ if len(opts.variable_args) == 1:
     step = poly_xy[2][0] - poly_xy[0][0]
 
     # remove whitespace that corner.corner creates
-    fig.subplots_adjust(left=0.125, bottom=0.1, right=0.9, top=0.9,
+    fig.subplots_adjust(left=0.125, bottom=0.2, right=0.9, top=0.9,
                         wspace=0.2, hspace=0.2)
     fig.axes[0].xaxis.set_label_coords(0.5, -0.1)
 
@@ -150,13 +150,13 @@ caption_kwargs = {
     "thin_interval" : opts.thin_interval,
     "niterations" : len(x[0]),
 }
-caption = r"""Posterior distributions for waveform parameters. The dashed
+caption = """Posterior distributions for waveform parameters. The dashed
 vertical lines correspond to the {quantiles} quantiles. The thinning used to
 make this plot took samples beginning at the {thin_start} and then every
 {thin_interval}-th sample after that. Each chain of samples had {niterations}
 iterations.""".format(**caption_kwargs)
 if len(opts.variable_args) == 1:
-    title = r"Posterior Distribtion for %s"%fp.read_label(opts.variable_args[0])
+    title = "Posterior Distribtion for %s"%fp.read_label(opts.variable_args[0])
 else:
     title = "Posterior Distributions"
 results.save_fig_with_metadata(fig, opts.output_file,
