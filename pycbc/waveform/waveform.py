@@ -666,13 +666,6 @@ def seobnrrom_final_frequency(**kwds):
     return get_final_freq("SEOBNRv2", kwds['mass1'], kwds['mass2'],
                    kwds['spin1z'], kwds['spin2z'])
 
-_filter_ends["SPAtmplt"] = _filter_ends["TaylorF2"] = spa_tmplt_end
-_filter_ends["SEOBNRv2_ROM_DoubleSpin"] = _filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] =  seobnrrom_final_frequency
-
-_template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
-_filter_time_lengths["SPAtmplt"] = spa_length_in_time
-
-
 def seobnrrom_length_in_time(**kwds):
     """
     This is a stub for holding the calculation for getting length of the ROM
@@ -694,6 +687,7 @@ _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
 _filter_ends["SPAtmplt"] = spa_tmplt_end
+_filter_ends["TaylorF2"] = spa_tmplt_end
 _filter_ends["SEOBNRv1_ROM_EffectiveSpin"] = seobnrrom_final_frequency
 _filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrrom_final_frequency
 _filter_ends["SEOBNRv2_ROM_EffectiveSpin"] = seobnrrom_final_frequency
@@ -704,8 +698,8 @@ _filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_final_frequency
 #_filter_ends["IMRPhenomD"] = seobnrrom_final_frequency
 
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
-
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
+_filter_time_lengths["TaylorF2"] = spa_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_EffectiveSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_EffectiveSpin"] = seobnrrom_length_in_time
