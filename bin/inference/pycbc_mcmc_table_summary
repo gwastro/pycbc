@@ -88,15 +88,19 @@ for param in variable_args:
     for q in opts.quantiles:
         quantiles.append( numpy.percentile(samples, 100*q) )
 
-    # add qunatiles to row
-    row += ["%.2f"%val for val in quantiles]
+    # add qunatiles to row; we'll quote using scientific notation with
+    # 3 sig figs
+    row += ['$%s$' %(results.format_value(val, val/100., include_error=False))
+        for val in quantiles]
 
     # add row to table
     table.append(row)
 
 # make HTML table
 headers = ["Parameter"] + ["%.2f Quantile"%val for val in opts.quantiles]
-html = str( results.static_table(table, headers) )
+# add mathjax header to display latex
+html = results.mathjax_html_header() + '\n%s'%(
+    str( results.static_table(table, headers) ))
 
 # save HTML table
 results.save_fig_with_metadata(html, opts.output_file, {},
