@@ -5,6 +5,14 @@
 # FIXME/todo:
 #
 
+# check an md5 sum of a file, independent of platform
+# $1 file to check, $2 md5 checksum
+# returns 0 for fail, 1 for success(!)
+check_md5() {
+    md5s=`( md5sum $1 2>/dev/null || md5 $1 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
+    test ".$2" != ".$md5s"
+}
+
 trap 'exit 1' ERR
 
 echo -e ">> [`date`] Start $0 $*"
@@ -895,13 +903,11 @@ cd test
 
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
-md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
-if test ".$md5" != .$md5s; then
+if check_md5 "$p" "$md5"; then
     rm -f "$p"
     wget $wget_opts "$albert/$p"
-md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
-    if test ".$md5" != .$md5s; then
-        echo  "$p" md5 mismatch ".$md5 != .$md5s"
+    if check_md5 "$p" "$md5"; then
+        echo "can't download $p - md5 mismatch"
         exit 1
     fi
 fi
@@ -909,23 +915,25 @@ f="$PWD/$p"
 
 p="SEOBNRv2ChirpTimeSS.dat"
 md5="7b7dbadacc3f565fb2c8e6971df2ab74"
-md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
-if test ".$md5" != ".$md5s"; then
+if check_md5 "$p" "$md5"; then
     rm -f "$p"
     wget $wget_opts "$albert/$p"
-    md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
-    test ".$md5" = ".$md5s"
+    if check_md5 "$p" "$md5"; then
+        echo "can't download $p - md5 mismatch"
+        exit 1
+    fi
 fi
 
 #fb5ec108c69f9e424813de104731370c  H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz
 p="H1L1-SBANK_FOR_GW150914.xml.gz"
 md5="401324352d30888a5df2e5cc65035b17"
-md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
-if test ".$md5" != ".$md5s"; then
+if check_md5 "$p" "$md5"; then
     rm -f "$p"
     wget $wget_opts "$albert/$p"
-    md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s/^\(................................\).*/\1/'`
-    test ".$md5" = ".$md5s"
+    if check_md5 "$p" "$md5"; then
+        echo "can't download $p - md5 mismatch"
+        exit 1
+    fi
 fi
 
 LAL_DATA_PATH="." \
