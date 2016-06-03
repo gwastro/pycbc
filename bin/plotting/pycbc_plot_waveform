@@ -18,7 +18,7 @@
 """
 
 # imports
-import sys, argparse, matplotlib, numpy
+import sys, argparse, matplotlib, numpy, math
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
@@ -93,18 +93,40 @@ flen = tlen / 2 + 1
 class WaveformTemplate(object):
     pass
 
+tmp_params = WaveformTemplate()
+tmp_params.mass1 = opt.mass1
+tmp_params.mass2 = opt.mass2
+tmp_params.spin1x = opt.spin1x
+tmp_params.spin1y = opt.spin1y
+tmp_params.spin1z = opt.spin1z
+tmp_params.spin2x = opt.spin2x
+tmp_params.spin2y = opt.spin2y
+tmp_params.spin2z = opt.spin2z
+tmp_params.inclination = opt.inclination
+
+# Deal with parameter-dependent approximant string
+def parse_option(row, arg):
+    safe_dict = {}
+    safe_dict.update(row.__dict__)
+    safe_dict.update(math.__dict__)
+    return eval(arg, {"__builtins__":None}, safe_dict)
+
+if 'params' in opt.approximant:
+    t = type('t', (object,), {'params' : tmp_params})
+    approximant = str(parse_option(t, opt.approximant))
+else:
+    approximant = opt.approximant
+
+# This is a hack. We don't have a two-pol SPATmplt, so use TaylorF2
+if approximant == 'SPAtmplt':
+    approximant = 'TaylorF2'
+
 hp, hc = waveform.get_two_pol_waveform_filter(zeros(flen, dtype=complex64),
                                     zeros(flen, dtype=complex64),
-                                    WaveformTemplate(),
-                                    approximant=opt.approximant,
-                                    mass1=opt.mass1, mass2=opt.mass2,
-                                    spin1z=opt.spin1z, spin2z=opt.spin2z,
-                                    spin1y=opt.spin1y, spin2y=opt.spin2y,
-                                    spin1x=opt.spin1x, spin2x=opt.spin2x,
+                                    tmp_params, approximant=approximant,
                                     taper=opt.taper_template, 
                                     f_lower=opt.low_frequency_cutoff,
-                                    delta_f=delta_f, delta_t=delta_t,
-                                    inclination=opt.inclination)
+                                    delta_f=delta_f, delta_t=delta_t)
 
 # 0.1s (post-merger) added for safety
 tmplt_length = hp.length_in_time + 0.1
