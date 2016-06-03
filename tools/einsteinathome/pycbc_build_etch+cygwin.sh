@@ -808,8 +808,8 @@ if $build_wrapper; then
     cp samples/wrapper/wrapper "$ENVIRONMENT/dist/wrapper$appendix"
     cd ..
     gcc -o "$ENVIRONMENT/dist/progress$appendix" $SOURCE/pycbc/tools/einsteinathome/progress.c
-    gcc -o "$ENVIRONMENT/dist/fstab_test" $SOURCE/pycbc/tools/einsteinathome/fstab.c
-    cp `which true` "$ENVIRONMENT/dist/fstab$appendix"
+    gcc -o "$ENVIRONMENT/dist/fstab" $SOURCE/pycbc/tools/einsteinathome/fstab.c
+    gcc -DTEST_WIN32 -o "$ENVIRONMENT/dist/fstab_test" $SOURCE/pycbc/tools/einsteinathome/fstab.c
 else
     echo -e "\\n\\n>> [`date`] Building 'progress.exe' and 'fstab.exe'"
     if $build_dlls; then
