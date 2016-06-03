@@ -74,7 +74,7 @@ for i,arg in enumerate(opts.variable_args):
     for j in range(fp.attrs["nwalkers"]):
 
         # plot each walker as a different line on the subplot
-        axs[i].plot(fp[arg]["walker%d"%j][:], alpha=0.1)
+        axs[i].plot(fp.read_samples_from_walker(arg, j))
 
         # y-axis label
         axs[i].set_ylabel(r'%s'%fp.read_label(arg))

@@ -128,16 +128,20 @@ class MCMCFile(h5py.File):
 
         # get label
         if variable_arg == "mchirp" and "mchirp" not in self.keys():
-            labels.append( r'$M_\mathrm{c}$' )
+            label = r'$M_{c}$'
         elif variable_arg == "eta" and "eta" not in self.keys():
-            labels.append( r'$\eta$' )
+            label = r'$\eta$'
         else:
             label = self[variable_arg].attrs["label"]
 
         # escape LaTeX subscripts in a simple but not robust method
+        # will change LaTeX subscript to HTML subscript
+        # will change LaTeX eta to HTML eta symbol
         if html:
             label = label.replace("$", "")
-            label = label.replace("_{", "<sub>").replace("}", "</sub>")
+            label = label.replace("_{", "<sub>").replace("_", "<sub>")
+            label = label.replace("}", "</sub>")
+            label = label.replace("\eta", "&#951;")
 
         return label
 

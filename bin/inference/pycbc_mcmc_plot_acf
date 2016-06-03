@@ -78,7 +78,7 @@ for param_name in opts.variable_args:
     for i in range(fp.attrs["nwalkers"]):
 
         # get all the past samples for this walker
-        y = fp[param_name]["walker%d"%i][:]
+        y = fp.read_samples_from_walker(param_name, i)
 
         # subtract mean
         z =  y - y.mean()
@@ -105,7 +105,7 @@ for param_acfs in all_acfs:
     for acf in param_acfs:
         plt.plot(range(len(acf)), acf, alpha=0.5)
 plt.xlabel("Iteration")
-plt.ylabel(r'Autocorrelation Function for '+r', '.join([r'%s'%fp.read_label(param) for param in opts.variable_args]))
+plt.ylabel(r'Autocorrelation Function for '+r'%s'%', '.join(['%s'%fp.read_label(param) for param in opts.variable_args]))
 
 # format plot
 if opts.ymin:
