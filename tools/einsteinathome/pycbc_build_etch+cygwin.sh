@@ -52,6 +52,7 @@ elif test "`uname -s`" = "Darwin" ; then
     export CFLAGS=-m64
     export CXXFLAGS=-m64
     export LDFLAGS=-m64
+    lal_cppflags="-DDONT_RESOLVE_LALCACHE_PATH"
     shared="--enable-shared"
     build_dlls=false
     build_ssl=false
@@ -904,7 +905,7 @@ md5s=`( md5sum $p 2>/dev/null || md5 $p 2>/dev/null) | sed 's/.* = //;s/  .*//;s
         exit 1
     fi
 fi
-f=$p
+f="$PWD/$p"
 
 p="SEOBNRv2ChirpTimeSS.dat"
 md5="7b7dbadacc3f565fb2c8e6971df2ab74"
