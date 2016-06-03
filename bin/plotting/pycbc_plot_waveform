@@ -117,10 +117,13 @@ if 'params' in opt.approximant:
 else:
     approximant = opt.approximant
 
+# This is a hack. We don't have a two-pol SPATmplt, so use TaylorF2
+if approximant == 'SPAtmplt':
+    approximant = 'TaylorF2'
 
 hp, hc = waveform.get_two_pol_waveform_filter(zeros(flen, dtype=complex64),
                                     zeros(flen, dtype=complex64),
-                                    tmp_params, approximant=opt.approximant,
+                                    tmp_params, approximant=approximant,
                                     taper=opt.taper_template, 
                                     f_lower=opt.low_frequency_cutoff,
                                     delta_f=delta_f, delta_t=delta_t)
