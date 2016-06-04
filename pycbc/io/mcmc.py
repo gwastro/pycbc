@@ -27,6 +27,7 @@ samplers generate.
 
 import h5py
 import numpy
+from pycbc import pnutils
 
 class MCMCFile(h5py.File):
     """ A subclass of the h5py.File object that has extra functions for
@@ -84,22 +85,65 @@ class MCMCFile(h5py.File):
         numpy.array
             Samples from a specific walker for a parameter.
         """
+
+        # derived parameter case for mchirp will calculate mchrip
+        # from mass1 and mass2
+        if variable_arg == "mchirp" and "mchirp" not in self.keys():
+            mass1 = self.read_samples_from_walker("mass1", nwalker,
+                                      thin_start=thin_start,
+                                      thin_interval=thin_interval)
+            mass2 = self.read_samples_from_walker("mass2", nwalker,
+                                      thin_start=thin_start,
+                                      thin_interval=thin_interval)
+            return pnutils.mass1_mass2_to_mchirp_eta(mass1, mass2)[0]
+
+        # derived parameter case for eta will calculate eta
+        # from mass1 and mass2
+        elif variable_arg == "eta" and "eta" not in self.keys():
+            mass1 = self.read_samples_from_walker("mass1", nwalker,
+                                      thin_start=thin_start,
+                                      thin_interval=thin_interval)
+            mass2 = self.read_samples_from_walker("mass2", nwalker,
+                                      thin_start=thin_start,
+                                      thin_interval=thin_interval)
+            return pnutils.mass1_mass2_to_mchirp_eta(mass1, mass2)[1]
+
         return self[variable_arg]["walker%d"%nwalker][thin_start::thin_interval]
 
-    def read_label(self, variable_arg):
+    def read_label(self, variable_arg, html=False):
         """ Returns the label for the parameter.
 
         Parameters
         -----------
         variable_arg : str
             Name of parameter to get label.
+        html : bool
+            If true then escape LaTeX formatting for HTML rendering.
 
         Returns
         -------
         label : str
             A formatted string for the name of the paramter.
         """
-        return self[variable_arg].attrs["label"]
+
+        # get label
+        if variable_arg == "mchirp" and "mchirp" not in self.keys():
+            label = r'$M_{c}$'
+        elif variable_arg == "eta" and "eta" not in self.keys():
+            label = r'$\eta$'
+        else:
+            label = self[variable_arg].attrs["label"]
+
+        # escape LaTeX subscripts in a simple but not robust method
+        # will change LaTeX subscript to HTML subscript
+        # will change LaTeX eta to HTML eta symbol
+        if html:
+            label = label.replace("$", "")
+            label = label.replace("_{", "<sub>").replace("_", "<sub>")
+            label = label.replace("}", "</sub>")
+            label = label.replace("\eta", "&#951;")
+
+        return label
 
     def write(self, variable_args, ifo_list, samples, acceptance_fraction=None,
               labels=None, low_frequency_cutoff=None, psds=None):
