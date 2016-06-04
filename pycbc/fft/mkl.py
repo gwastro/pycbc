@@ -136,6 +136,8 @@ def _get_desc(fftobj):
     # Now we set various things depending on exactly what kind of transform we're
     # performing.
 
+    lib.DftiSetValue.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int]
+
     # The following only matters if the transform is C2R or R2C
     status = lib.DftiSetValue(desc, DFTI_CONJUGATE_EVEN_STORAGE,
                               DFTI_COMPLEX_COMPLEX)
