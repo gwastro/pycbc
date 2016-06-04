@@ -130,7 +130,7 @@ def _check_inv_args(invec, itype, outvec, otype, nbatch, size):
     olen = len(outvec)
     if nbatch < 1:
         raise ValueError("nbatch must be >= 1")
-    if (nbatch > 1) and size is not None:
+    if (nbatch > 1) and size is None:
         raise ValueError("When nbatch > 1, size cannot be 'None'")
     if size is None:
         size = olen
