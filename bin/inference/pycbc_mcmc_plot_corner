@@ -44,9 +44,9 @@ parser.add_argument("--labels", type=str, nargs="+",
     help="Label for each parameter.")
 
 # add thinning options
-parser.add_argument("--thin-start", type=int, required=True,
+parser.add_argument("--thin-start", type=int, default=None,
     help="Sample number to start collecting samples to plot.")
-parser.add_argument("--thin-interval", type=int, required=True,
+parser.add_argument("--thin-interval", type=int, default=1,
     help="Interval to use for thinning samples.")
 
 # verbose option
