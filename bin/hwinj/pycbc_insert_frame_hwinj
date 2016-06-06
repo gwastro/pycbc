@@ -22,8 +22,6 @@ import numpy
 from pycbc.frame import write_frame
 from pycbc import strain as _strain
 
-ifo_list = ['H1', 'L1']
-
 # command line usage
 parser = argparse.ArgumentParser(usage='pycbc_insert_frame_hwinj [--options]',
              description="Inserts a single-column ASCII file into frame data.")
@@ -36,7 +34,6 @@ parser.add_argument('--hwinj-start-time', type=int, required=True,
 
 # frame options
 parser.add_argument('--ifo', type=str, required=True,
-             choices=ifo_list,
              help='IFO.')
 parser.add_argument('--output-file', type=str, required=True,
              help='Path to output frame file.')
