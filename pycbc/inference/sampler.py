@@ -37,6 +37,7 @@ class _BaseSampler(object):
 
     def __init__(self, sampler):
         self.sampler = sampler
+        self.burn_in_iterations = 0
 
     @property
     def acceptance_fraction(self):
@@ -51,6 +52,12 @@ class _BaseSampler(object):
         initerations x nwalker x ndim array.
         """
         return ValueError("chain function not set.")
+
+    @property
+    def burn_in_iterations(self):
+        """ This function should return the number of samples from burn in.
+        """
+        return ValueError("burn_in_iterations function not set.")
 
     def burn_in(self, initial_values):
         """ This function should burn in the MCMC.
@@ -110,6 +117,12 @@ class KombineSampler(_BaseSampler):
         """
         return self.sampler.chain
 
+    @property
+    def burn_in_iterations(self):
+        """ Get number of samples from burn in.
+        """
+        return self.burn_in_iterations
+
     def burn_in(self, initial_values):
         """ Evolve an ensemble until the acceptance rate becomes roughly
         constant. This is done by splitting acceptances in half and checking
@@ -132,7 +145,12 @@ class KombineSampler(_BaseSampler):
             The list of log proposal densities for the walkers at positions p,
             with shape (nwalkers, ndim).
         """
-        return self.sampler.burnin(initial_values)
+        if self.burn_in_iterations == 0:
+            p, post, q = self.sampler.burnin(initial_values)
+            self.burn_in_iterations = self.chain.shape[0]
+        else:
+            raise ValueError("Burn in has already been performed")
+        return p, post, q
 
     def run_mcmc(self, niterations, **kwargs):
         """ Advance the MCMC for a number of samples.

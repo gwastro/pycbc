@@ -66,7 +66,7 @@ class MCMCFile(h5py.File):
         return numpy.array([self.read_samples_from_walker(variable_arg, j, thin_start, thin_interval) for j in range(nwalkers)])
 
     def read_samples_from_walker(self, variable_arg, nwalker,
-                                 thin_start=0, thin_interval=1):
+                                 thin_start=None, thin_interval=1):
         """ Reads all samples from a specific walker for a parameter.
 
         Parameters
@@ -85,6 +85,9 @@ class MCMCFile(h5py.File):
         numpy.array
             Samples from a specific walker for a parameter.
         """
+
+        # default is to skip burn in samples
+        thin_start = self.attrs["burn_in_iterations"] if thin_start is None else thin_start
 
         # derived parameter case for mchirp will calculate mchrip
         # from mass1 and mass2
@@ -145,7 +148,7 @@ class MCMCFile(h5py.File):
 
         return label
 
-    def write(self, variable_args, ifo_list, samples, acceptance_fraction=None,
+    def write(self, variable_args, ifo_list, sampler, acceptance_fraction=None,
               labels=None, low_frequency_cutoff=None, psds=None):
         """ Writes the output from pycbc.io.sampler to a file.
 
@@ -155,10 +158,8 @@ class MCMCFile(h5py.File):
             A list of the varying MCMC parameters.
         ifo_list : list
             A list of the IFOs.
-        samples : numpy.Array
-            An array with shape (ndim,nwalker,niterations) where ndim is the
-            number of dimensions, nwalker is the number of walkers, and
-            niterations is the number of iterations.
+        sampler : pycbc.inference._BaseSampler
+            A sampler instance from pycbc.inference.sampler.
         acceptance_fraction : numpy.Array
             A 1-dimensional array that contains the number of samples accepted
             for each iteration.
@@ -171,6 +172,9 @@ class MCMCFile(h5py.File):
             value.
         """
 
+        # transpose past samples to get an ndim x nwalker x niteration array
+        samples = numpy.transpose(sampler.chain)
+
         # get number of dimensions, walkers, and iterations
         ndim, nwalkers, niterations = samples.shape
 
@@ -181,6 +185,7 @@ class MCMCFile(h5py.File):
         self.attrs["nwalkers"] = nwalkers
         self.attrs["niterations"] = niterations
         self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())
+        self.attrs["burn_in_iterations"] = sampler.burn_in_iterations
 
         # loop over number of dimensions
         for i,dim_name in zip(range(ndim), variable_args):
