@@ -63,7 +63,7 @@ while true; do
 
   if [[ $OSG_PYTHON == "yes" ]] ; then
     if [ ! -e /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash ] ; then
-      echo "Error: Could not find sctipt to set up OSG modules."
+      echo "Error: Could not find script to set up OSG modules."
       echo "Check that /cvmfs/oasis.opensciencegrid.org is mounted on this machine."
       exit 1
     fi
@@ -138,7 +138,21 @@ while true ; do
 
     if [[ -d $NAME ]] ; then
        echo "ERROR: the directory $NAME already exists."
-       echo "If you want to use this path, remove the directory and try again."
+       echo "Do you want to remove the previous directory and overwrite the existing location?"
+       echo
+       read -p "Enter yes or no: " DEL_EXISTING_VIRTENV
+       echo
+
+       if [[ $DEL_EXISTING_VIRTENV == "yes" ]] ; then
+         echo "Deleting previous virtual environment directory with the same name"
+         rm -rf $NAME
+         break
+       elif [[ $DEL_EXISTING_VIRTENV == "no" ]] ; then
+          echo "You have to enter a new location for your virtual environment."
+       else 
+          echo "Please enter yes or no."
+       fi  
+
     else
       break
     fi
@@ -151,7 +165,7 @@ done
 
 #Virualenv check
 echo
-echo "You are installing PyCBC in $NAME."
+echo "You are installing PyCBC in $NAME ."
 echo
 
 
