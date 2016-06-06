@@ -148,7 +148,7 @@ class MCMCFile(h5py.File):
 
         return label
 
-    def write(self, variable_args, ifo_list, sampler, acceptance_fraction=None,
+    def write(self, variable_args, ifo_list, sampler,
               labels=None, low_frequency_cutoff=None, psds=None):
         """ Writes the output from pycbc.io.sampler to a file.
 
@@ -160,9 +160,6 @@ class MCMCFile(h5py.File):
             A list of the IFOs.
         sampler : pycbc.inference._BaseSampler
             A sampler instance from pycbc.inference.sampler.
-        acceptance_fraction : numpy.Array
-            A 1-dimensional array that contains the number of samples accepted
-            for each iteration.
         labels : list
             A list of str that have formatted names for parameter.
         low_frequency_cutoff : dict
@@ -210,9 +207,8 @@ class MCMCFile(h5py.File):
                 group_dim.create_dataset(dataset_name, data=samples_subset)
 
         # create a dataset for the acceptance fraction
-        if acceptance_fraction is not None:
-            self.create_dataset("acceptance_fraction",
-                                data=acceptance_fraction)
+        self.create_dataset("acceptance_fraction",
+                            data=sampler.acceptance_fraction)
 
         # create datasets for each PSD
         if psds and low_frequency_cutoff:
