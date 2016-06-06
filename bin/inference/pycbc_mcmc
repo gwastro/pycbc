@@ -225,7 +225,7 @@ with ctx:
 
         # burn in
         logging.info("MCMC burn in")
-        p, post, q = sampler.burn_in(p0)
+        sampler.burn_in(p0)
 
         # generate more samples
         logging.info("Generating more MCMC samples")
@@ -255,8 +255,7 @@ labels = [cp.get("labels",param) for param in variable_args]
 
 # save samples to file
 fp = MCMCFile(opts.output_file, "w")
-fp.write(variable_args, opts.instruments, chain, labels=labels,
-         acceptance_fraction=sampler.acceptance_fraction,
+fp.write(variable_args, opts.instruments, sampler, labels=labels,
          low_frequency_cutoff=low_frequency_cutoff_dict,
          psds=psd_dyn_dict)
 fp.close()

@@ -37,6 +37,7 @@ class _BaseSampler(object):
 
     def __init__(self, sampler):
         self.sampler = sampler
+        self.burn_in_iterations = 0
 
     @property
     def acceptance_fraction(self):
@@ -132,7 +133,12 @@ class KombineSampler(_BaseSampler):
             The list of log proposal densities for the walkers at positions p,
             with shape (nwalkers, ndim).
         """
-        return self.sampler.burnin(initial_values)
+        if self.burn_in_iterations == 0:
+            p, post, q = self.sampler.burnin(initial_values)
+            self.burn_in_iterations = self.chain.shape[0]
+        else:
+            raise ValueError("Burn in has already been performed")
+        return p, post, q
 
     def run_mcmc(self, niterations, **kwargs):
         """ Advance the MCMC for a number of samples.
