@@ -53,12 +53,6 @@ class _BaseSampler(object):
         """
         return ValueError("chain function not set.")
 
-    @property
-    def burn_in_iterations(self):
-        """ This function should return the number of samples from burn in.
-        """
-        return ValueError("burn_in_iterations function not set.")
-
     def burn_in(self, initial_values):
         """ This function should burn in the MCMC.
         """
@@ -116,12 +110,6 @@ class KombineSampler(_BaseSampler):
         """ Get all past samples as an niterations x nwalker x ndim array.
         """
         return self.sampler.chain
-
-    @property
-    def burn_in_iterations(self):
-        """ Get number of samples from burn in.
-        """
-        return self.burn_in_iterations
 
     def burn_in(self, initial_values):
         """ Evolve an ensemble until the acceptance rate becomes roughly

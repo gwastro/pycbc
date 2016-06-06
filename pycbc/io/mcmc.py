@@ -44,7 +44,7 @@ class MCMCFile(h5py.File):
     def __init__(self, path, mode=None, **kwargs):
         super(MCMCFile, self).__init__(path, mode, **kwargs)
 
-    def read_samples(self, variable_arg, thin_start=0, thin_interval=1):
+    def read_samples(self, variable_arg, thin_start=None, thin_interval=1):
         """ Reads independent samples from all walkers for a parameter.
 
         Parameters
