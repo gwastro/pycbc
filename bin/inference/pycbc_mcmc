@@ -237,41 +237,57 @@ with ctx:
     # get labels for each parameter from configuration file
     labels = [cp.get("labels",param) for param in variable_args]
 
-    # create empty datasets in output file
+    # setup checkpointing
     if opts.checkpoint_interval:
+
+        # write empty datasets
         logging.info("Writing empty datasets to output file")
         with MCMCFile(opts.output_file, "a") as fp:
             fp.write_samples(variable_args, nwalkers=opts.nwalkers,
                              niterations=opts.niterations, labels=labels)
 
-    # check if user wants to skip the burn in
-    if not opts.skip_burn_in:
+        # determine intervals to run sampler save samples 
+        intervals = [i for i in range(0, opts.niterations, checkpoint_interval)] \
+                    + [opts.niterations]
 
-        # burn in
+        # determine if there is a small bit at the end
+        remainder = niterations % opts.checkpoint_interval
+        if remainder:
+            intervals += [intervals[-1]+remainder]
+
+    # if not checkpointing then set intervals to run sampler in one call
+    else:
+        intervals = [0, opts.niterations]
+
+    # check if user wants to skip the burn in
+    # if burn in then switch p0 to None and sampler should pick up from last
+    # position after burn in
+    if not opts.skip_burn_in:
         logging.info("MCMC burn in")
         sampler.burn_in(p0)
+        p0 = None
 
-        # write sampler attrs to file
+    # write sampler attrs to file
+    with MCMCFile(opts.output_file, "a") as fp:
+        fp.write_sampler_attrs(sampler)
+
+    # loop over number of checkpoints
+    for i,end in enumerate(intervals):
+
+        # if its the first sample then skip
+        # otherwise start from the last time chain was checkpointed
+        if i == 0:
+            continue
+        start = intervals[i-1]
+
+        # run sampler
+        logging.info("Running sampler for %s to %s out of %s iterations"%(start,end,opts.niterations))
+        sampler.run_mcmc(end-start, p0=p0)
+
+        # write new samples
+        logging.info("Writing samples for %s to %s out of %s iterations"%(start,end,opts.niterations))
         with MCMCFile(opts.output_file, "a") as fp:
-            fp.write_sampler_attrs(sampler)
-
-        # generate more samples
-        logging.info("Generating more MCMC samples")
-        sampler.run_mcmc(opts.niterations,
-                         output_file=opts.output_file,
-                         checkpoint_interval=opts.checkpoint_interval)
-
-    else:
-
-        # write sampler attrs to file
-        with MCMCFile(opts.output_file, "a") as fp:
-            fp.write_sampler_attrs(sampler)
-
-        # generate samples
-        logging.info("Generating MCMC samples")
-        sampler.run_mcmc(opts.niterations, p0=p0,
-                         output_file=opts.output_file,
-                         checkpoint_interval=opts.checkpoint_interval)
+            fp.write_samples_from_sampler(sampler, start=start, end=end)
 
 # exit
 logging.info("Done")

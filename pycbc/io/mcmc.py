@@ -223,7 +223,7 @@ class MCMCFile(h5py.File):
                 dataset_name = "walker%d"%j
                 if dataset_name not in self[dim_name].keys():
                     samples_subset = numpy.empty(niterations)
-                    if data:
+                    if data is not None:
                         samples_subset[start:end] = samples[i,j,start:end]
                     group_dim.create_dataset(dataset_name,
                                              data=samples_subset)
