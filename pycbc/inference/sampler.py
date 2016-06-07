@@ -37,8 +37,8 @@ class _BaseSampler(object):
         An instance of the sampler class from its package.
     """
 
-    def __init__(self, sampler):
-        self.sampler = sampler
+    def __init__(self, likelihood_evaluator):
+        self.likelihood_evaluator = likelihood_evaluator
         self.burn_in_iterations = 0
 
     @property
@@ -96,22 +96,24 @@ class KombineSampler(_BaseSampler):
         except ImportError:
             raise ImportError("kombine is not installed.")
 
-        # construct sampler 
-        sampler = kombine.Sampler(nwalkers, ndim, likelihood_evaluator,
+        # construct sampler for use in KombineSampler
+        self._sampler = kombine.Sampler(nwalkers, ndim, likelihood_evaluator,
                                           transd=transd, processes=processes)
-        super(KombineSampler, self).__init__(sampler)
+
+        # initialize
+        super(KombineSampler, self).__init__(likelihood_evaluator)
 
     @property
     def acceptance_fraction(self):
         """ Get the fraction of walkers that accepted each step as an arary.
         """
-        return self.sampler.acceptance_fraction
+        return self._sampler.acceptance_fraction
 
     @property
     def chain(self):
         """ Get all past samples as an niterations x nwalker x ndim array.
         """
-        return self.sampler.chain
+        return self._sampler.chain
 
     def burn_in(self, initial_values):
         """ Evolve an ensemble until the acceptance rate becomes roughly
@@ -136,13 +138,13 @@ class KombineSampler(_BaseSampler):
             with shape (nwalkers, ndim).
         """
         if self.burn_in_iterations == 0:
-            p, post, q = self.sampler.burnin(initial_values)
+            p, post, q = self._sampler.burnin(initial_values)
             self.burn_in_iterations = self.chain.shape[0]
         else:
             raise ValueError("Burn in has already been performed")
         return p, post, q
 
-    def run_mcmc(self, variable_args, niterations, output_file=None,
+    def run_mcmc(self, niterations, output_file=None,
                  checkpoint_interval=None, **kwargs):
         """ Advance the MCMC for a number of samples.
 
@@ -162,6 +164,9 @@ class KombineSampler(_BaseSampler):
             The list of log proposal densities for the walkers at positions p,
             with shape (nwalkers, ndim).
         """
+
+        # get variable_args from waveform generator
+        variable_args = self.likelihood_evaluator.waveform_generator.variable_args
 
         # check if user wants to checkpoint
         if output_file and checkpoint_interval:
@@ -185,11 +190,11 @@ class KombineSampler(_BaseSampler):
                 start = intervals[i-1]
 
                 # run sampler
-                self.sampler.run_mcmc(end-start, **kwargs)
+                self._sampler.run_mcmc(end-start, **kwargs)
 
                 # write new samples
                 with MCMCFile(output_file, "a") as fp:
-                    fp.write_samples(variable_args, self.sampler,
+                    fp.write_samples(variable_args, self,
                                      start=start, end=end)
 
         # sanity check that user did not forget an option in the case above
@@ -198,7 +203,7 @@ class KombineSampler(_BaseSampler):
 
         # else run without checkpointing
         else:
-            return self.sampler.run_mcmc(niterations, **kwargs)
+            return self._sampler.run_mcmc(niterations, **kwargs)
 
 samplers = {
     "kombine" : KombineSampler,
