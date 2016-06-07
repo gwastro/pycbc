@@ -273,5 +273,4 @@ with ctx:
                          checkpoint_interval=opts.checkpoint_interval)
 
 # exit
-fp.close()
 logging.info("Done")

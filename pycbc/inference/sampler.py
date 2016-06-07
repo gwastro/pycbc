@@ -178,15 +178,14 @@ class KombineSampler(_BaseSampler):
             # loop over number of checkpoints
             for i,end in enumerate(intervals):
 
-                # if its the first checkpoint then start from 0
+                # if its the first sample then skip
                 # otherwise start from the last time chain was checkpointed
                 if i == 0:
-                    start = 0
-                else:
-                     start = end - intervals[i-1]
+                    continue
+                start = intervals[i-1]
 
                 # run sampler
-                self.sampler.run_mcmc(checkpoint_interval, **kwargs)
+                self.sampler.run_mcmc(end-start, **kwargs)
 
                 # write new samples
                 with MCMCFile(output_file, "a") as fp:
