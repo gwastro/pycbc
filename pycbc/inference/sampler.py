@@ -140,7 +140,8 @@ class KombineSampler(_BaseSampler):
             raise ValueError("Burn in has already been performed")
         return p, post, q
 
-    def run_mcmc(self, niterations, **kwargs):
+    def run_mcmc(self, variable_args, niterations, output_file=None,
+                 checkpoint_interval=None, **kwargs):
         """ Advance the MCMC for a number of samples.
 
         Parameters
@@ -159,7 +160,46 @@ class KombineSampler(_BaseSampler):
             The list of log proposal densities for the walkers at positions p,
             with shape (nwalkers, ndim).
         """
-        return self.sampler.run_mcmc(niterations, **kwargs)
+
+        # check if user wants to checkpoint
+        if output_file and checkpoint_interval:
+
+            # figure out samples to perform each checkpoint
+            intervals = [i for i in range(0, niterations, checkpoint_interval)]
+
+            # determine if there is a small bin at the end
+            # and add to list
+            remainder = niterations % checkpoint_interval
+            if remainder:
+                print "intb", intervals
+                intervals += [intervals[-1]+remainder]
+                print "inta", intervals
+
+            # loop over number of checkpoints
+            for i,end in enumerate(intervals):
+
+                # if its the first checkpoint then start from 0
+                if i == 0:
+                    start = 0
+                else:
+                     start = end - intervals[i-1]
+
+                # run sampler
+                self.sampler.run_mcmc(checkpoint_interval, **kwargs)
+
+                print start, end, "dsad"
+
+                # write new samples
+                output_file.write_samples(variable_args, self.sampler,
+                                          start=start, end=end)
+
+        # sanity check that user did not forget an option in the case above
+        elif output_file or checkpoint_interval:
+            raise ValueError("Must specify both output_file and checkpoint_interval")
+
+        # else run without checkpointing
+        else:
+            return self.sampler.run_mcmc(niterations, **kwargs)
 
 samplers = {
     "kombine" : KombineSampler,

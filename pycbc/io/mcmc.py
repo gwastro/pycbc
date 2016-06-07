@@ -205,10 +205,10 @@ class MCMCFile(h5py.File):
             # create a group in the output file for this dimension
             if dim_name not in self.keys():
                 group_dim = self.create_group(dim_name)
-            if labels:
-                group_dim.attrs["label"] = labels[i]
-            else:
-                group_dim.attrs["label"] = dim_name
+                if labels:
+                    group_dim.attrs["label"] = labels[i]
+                else:
+                    group_dim.attrs["label"] = dim_name
 
             # loop over number of walkers
             for j in range(nwalkers):
@@ -216,14 +216,16 @@ class MCMCFile(h5py.File):
                 # create dataset with shape (ndim,nwalkers,niterations)
                 dataset_name = "walker%d"%j
                 if dataset_name not in self[dim_name].keys():
+                    samples_subset = numpy.empty(niterations)
                     if sampler:
-                        samples_subset = numpy.empty(niterations)
                         samples_subset[start:end] = samples[i,j,start:end]
                     group_dim.create_dataset(dataset_name,
                                              data=samples_subset)
 
                 # write all samples in range from walker for this dimension
                 else:
+                    if end > len(samples[i,j,:]):
+                        end = None
                     samples_subset = samples[i,j,start:end]
                     self[dim_name+"/"+dataset_name][start:end] = samples_subset
 
