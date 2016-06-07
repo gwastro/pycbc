@@ -46,6 +46,12 @@ parser.add_argument("--ymax", type=float,
 parser.add_argument("--output-file", type=str, required=True,
     help="Path to output plot.")
 
+# add thinning options
+parser.add_argument("--thin-start", type=int, default=None,
+    help="Sample number to start collecting samples to plot.")
+parser.add_argument("--thin-interval", type=int, default=1,
+    help="Interval to use for thinning samples.")
+
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
     help="")
