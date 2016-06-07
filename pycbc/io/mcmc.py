@@ -157,9 +157,13 @@ class MCMCFile(h5py.File):
                                           data=psds[key])
             psd_dim.attrs["delta_f"] = psds[key].delta_f
 
-    def write_sampler_attrs(self, variable_args, ifo_list, sampler):
+    def write_sampler_attrs(self, sampler):
         """
         """
+
+        # get attributes from waveform generator
+        variable_args = sampler.likelihood_evaluator.waveform_generator.variable_args
+        ifo_list = sampler.likelihood_evaluator.waveform_generator.detector_names
 
         # get shape of data from a (niterations,nwalkers,ndim) array
         niterations, nwalkers, _ = sampler.chain.shape
@@ -174,12 +178,14 @@ class MCMCFile(h5py.File):
         if "niterations" not in self.attrs.keys():
             self.attrs["niterations"] = niterations
 
-    def write_samples(self, variable_args, sampler=None, start=None, end=None,
+    def write_samples(self, variable_args, data=None, start=None, end=None,
                       nwalkers=0, niterations=0, labels=None):
+        """
+        """
 
         # transpose past samples to get an (ndim,nwalkers,niteration) array
-        if sampler:
-            samples = numpy.transpose(sampler.chain)
+        if data is not None:
+            samples = numpy.transpose(data)
             ndim, nwalkers, niterations = samples.shape
 
         # sanity check options
@@ -217,7 +223,7 @@ class MCMCFile(h5py.File):
                 dataset_name = "walker%d"%j
                 if dataset_name not in self[dim_name].keys():
                     samples_subset = numpy.empty(niterations)
-                    if sampler:
+                    if data:
                         samples_subset[start:end] = samples[i,j,start:end]
                     group_dim.create_dataset(dataset_name,
                                              data=samples_subset)
@@ -228,6 +234,18 @@ class MCMCFile(h5py.File):
                         end = None
                     samples_subset = samples[i,j,start:end]
                     self[dim_name+"/"+dataset_name][start:end] = samples_subset
+
+    def write_samples_from_sampler(self, sampler, start=None, end=None,
+                      nwalkers=0, niterations=0, labels=None):
+        """
+        """
+
+        # write samples
+        variable_args = sampler.likelihood_evaluator.waveform_generator.variable_args
+        self.write_samples(variable_args, data=sampler.chain,
+                           start=start, end=end,
+                           nwalkers=nwalkers, niterations=niterations,
+                           labels=labels)
 
         # create a dataset for the acceptance fraction
         if "acceptance_fraction" not in self.keys():

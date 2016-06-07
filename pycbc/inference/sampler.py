@@ -194,8 +194,7 @@ class KombineSampler(_BaseSampler):
 
                 # write new samples
                 with MCMCFile(output_file, "a") as fp:
-                    fp.write_samples(variable_args, self,
-                                     start=start, end=end)
+                    fp.write_samples_from_sampler(self, start=start, end=end)
 
         # sanity check that user did not forget an option in the case above
         elif output_file or checkpoint_interval:
