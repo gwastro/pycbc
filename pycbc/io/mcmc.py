@@ -148,49 +148,63 @@ class MCMCFile(h5py.File):
 
         return label
 
-    def write(self, variable_args, ifo_list, sampler,
-              labels=None, low_frequency_cutoff=None, psds=None):
-        """ Writes the output from pycbc.io.sampler to a file.
+    def write_psds(self, psds, low_frequency_cutoff):
+        """
+        """
+        self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())
+        for key in psds.keys():
+            psd_dim = self.create_dataset(key+"/psds/0",
+                                          data=psds[key])
+            psd_dim.attrs["delta_f"] = psds[key].delta_f
 
-        Parameters
-        -----------
-        variable_args : list
-            A list of the varying MCMC parameters.
-        ifo_list : list
-            A list of the IFOs.
-        sampler : pycbc.inference._BaseSampler
-            A sampler instance from pycbc.inference.sampler.
-        labels : list
-            A list of str that have formatted names for parameter.
-        low_frequency_cutoff : dict
-            The low-frequency cutoff values each IFO PSD.
-        psds : dict
-            A dict with the IFO name as the key and a FreqeuncySeries as the
-            value.
+    def write_sampler_attrs(self, variable_args, ifo_list, sampler):
+        """
         """
 
-        # transpose past samples to get an ndim x nwalker x niteration array
-        samples = numpy.transpose(sampler.chain)
+        # get shape of data from a (niterations,nwalkers,ndim) array
+        niterations, nwalkers, _ = sampler.chain.shape
 
-        # get number of dimensions, walkers, and iterations
-        ndim, nwalkers, niterations = samples.shape
-
-        # save MCMC parameters
-        # keep the minimum low-frequency cutoff for plotting purposes
+        # save parameters
         self.attrs["variable_args"] = variable_args
         self.attrs["ifo_list"] = ifo_list
         self.attrs["nwalkers"] = nwalkers
-        self.attrs["niterations"] = niterations
-        self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())
         self.attrs["burn_in_iterations"] = sampler.burn_in_iterations
+
+        # save number of iterations so far
+        if "niterations" not in self.attrs.keys():
+            self.attrs["niterations"] = niterations
+
+    def write_samples(self, variable_args, sampler=None, start=None, end=None,
+                      nwalkers=0, niterations=0, labels=None):
+
+        # transpose past samples to get an (ndim,nwalkers,niteration) array
+        if sampler:
+            samples = numpy.transpose(sampler.chain)
+            ndim, nwalkers, niterations = samples.shape
+
+        # sanity check options
+        elif nwalkers == 0 and niterations != 0:
+            raise ValueError("If nwalkers is 0 then niterations must be 0")
+
+        # if no data is given then initialize to array of numpy.NAN
+        # with shape (ndim,nwalkers,niterations)
+        else:
+            ndim = len(variable_args)
+            shape = (ndim, nwalkers, niterations)
+            samples = numpy.empty(shape)
+
+        # save number of iterations so far
+        if "niterations" in self.attrs.keys():
+            self.attrs["niterations"] += niterations - self.attrs["niterations"]
+        else:
+            self.attrs["niterations"] = niterations
 
         # loop over number of dimensions
         for i,dim_name in zip(range(ndim), variable_args):
 
             # create a group in the output file for this dimension
-            group_dim = self.create_group(dim_name)
-
-            # add label
+            if dim_name not in self.keys():
+                group_dim = self.create_group(dim_name)
             if labels:
                 group_dim.attrs["label"] = labels[i]
             else:
@@ -199,22 +213,33 @@ class MCMCFile(h5py.File):
             # loop over number of walkers
             for j in range(nwalkers):
 
-                # get all samples from this walker for this dimension
-                samples_subset = samples[i,j,:]
-
-                # write to output file
+                # create dataset with shape (ndim,nwalkers,niterations)
                 dataset_name = "walker%d"%j
-                group_dim.create_dataset(dataset_name, data=samples_subset)
+                if dataset_name not in self[dim_name].keys():
+                    if sampler:
+                        samples_subset = numpy.empty(niterations)
+                        samples_subset[start:end] = samples[i,j,start:end]
+                    group_dim.create_dataset(dataset_name,
+                                             data=samples_subset)
+
+                # write all samples in range from walker for this dimension
+                else:
+                    samples_subset = samples[i,j,start:end]
+                    self[dim_name+"/"+dataset_name][start:end] = samples_subset
 
         # create a dataset for the acceptance fraction
-        self.create_dataset("acceptance_fraction",
-                            data=sampler.acceptance_fraction)
+        if "acceptance_fraction" not in self.keys():
+            self.create_dataset("acceptance_fraction",
+                                data=numpy.empty(niterations))
+        else:
+            self["acceptance_fraction"][start:end] = sampler.acceptance_fraction[start:end]
 
-        # create datasets for each PSD
-        if psds and low_frequency_cutoff:
-            for key in psds.keys():
-                psd_dim = self.create_dataset(key+"/psds/0",
-                                              data=psds[key])
-                psd_dim.attrs["delta_f"] = psds[key].delta_f
+    def write(self, variable_args, ifo_list, sampler, labels=None,
+              psds=None, low_frequency_cutoff=None):
+        """
+        """
 
-
+        self.write_sampler_attrs(variable_args, ifo_list, sampler)
+        self.write_samples(variable_args, sampler=sampler, labels=labels)
+        if psds:
+            self.write_psds(psds, low_frequency_cutoff)
