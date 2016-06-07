@@ -36,6 +36,12 @@ parser.add_argument("--input-file", type=str, required=True,
 parser.add_argument("--output-file", type=str, required=True,
     help="Path to output plot.")
 
+# add thinning options
+parser.add_argument("--thin-start", type=int, default=None,
+    help="Sample number to start collecting samples to plot.")
+parser.add_argument("--thin-interval", type=int, default=1,
+    help="Interval to use for thinning samples.")
+
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
     help="")
@@ -56,7 +62,7 @@ fp = h5py.File(opts.input_file, "r")
 
 # plot acceptance rate and drawn values
 logging.info("Plotting acceptance fraction")
-acceptance_fraction = fp["acceptance_fraction"][:]
+acceptance_fraction = fp["acceptance_fraction"][opts.thin_start::opts.thin_interval]
 fig = plt.figure()
 plt.plot(acceptance_fraction, 'k', alpha=.5)
 plt.ylabel("Mean Acceptance Rate")
