@@ -26,6 +26,8 @@ This modules provides classes and functions for using different sampler
 packages for parameter estimation.
 """
 
+from pycbc.io.mcmc import MCMCFile
+
 class _BaseSampler(object):
     """ Base container class for running the MCMC sampler.
 
@@ -171,14 +173,13 @@ class KombineSampler(_BaseSampler):
             # and add to list
             remainder = niterations % checkpoint_interval
             if remainder:
-                print "intb", intervals
                 intervals += [intervals[-1]+remainder]
-                print "inta", intervals
 
             # loop over number of checkpoints
             for i,end in enumerate(intervals):
 
                 # if its the first checkpoint then start from 0
+                # otherwise start from the last time chain was checkpointed
                 if i == 0:
                     start = 0
                 else:
@@ -187,11 +188,10 @@ class KombineSampler(_BaseSampler):
                 # run sampler
                 self.sampler.run_mcmc(checkpoint_interval, **kwargs)
 
-                print start, end, "dsad"
-
                 # write new samples
-                output_file.write_samples(variable_args, self.sampler,
-                                          start=start, end=end)
+                with MCMCFile(output_file, "a") as fp:
+                    fp.write_samples(variable_args, self.sampler,
+                                     start=start, end=end)
 
         # sanity check that user did not forget an option in the case above
         elif output_file or checkpoint_interval:

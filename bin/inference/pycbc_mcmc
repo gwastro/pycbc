@@ -150,9 +150,9 @@ with ctx:
                                              delta_f=psd_dict[key].delta_f)
 
     # save PSD
-    fp = MCMCFile(opts.output_file, "w")
-    fp.write_psds(psds=psd_dyn_dict,
-                  low_frequency_cutoff=low_frequency_cutoff_dict)
+    with MCMCFile(opts.output_file, "w") as fp:
+        fp.write_psds(psds=psd_dyn_dict,
+                      low_frequency_cutoff=low_frequency_cutoff_dict)
 
     # read configuration file
     logging.info("Reading configuration file")
@@ -239,8 +239,9 @@ with ctx:
 
     # create empty datasets in output file
     logging.info("Writing empty datasets to output file")
-    fp.write_samples(variable_args, nwalkers=opts.nwalkers,
-                     niterations=opts.niterations, labels=labels)
+    with MCMCFile(opts.output_file, "a") as fp:
+        fp.write_samples(variable_args, nwalkers=opts.nwalkers,
+                         niterations=opts.niterations, labels=labels)
 
     # check if user wants to skip the burn in
     if not opts.skip_burn_in:
@@ -250,21 +251,25 @@ with ctx:
         sampler.burn_in(p0)
 
         # write sampler attrs to file
-        fp.write_sampler_attrs(variable_args, opts.instruments, sampler)
+        with MCMCFile(opts.output_file, "a") as fp:
+            fp.write_sampler_attrs(variable_args, opts.instruments, sampler)
 
         # generate more samples
         logging.info("Generating more MCMC samples")
-        sampler.run_mcmc(variable_args, opts.niterations, output_file=fp,
+        sampler.run_mcmc(variable_args, opts.niterations,
+                         output_file=opts.output_file,
                          checkpoint_interval=opts.checkpoint_interval)
 
     else:
 
         # write sampler attrs to file
-        fp.write_sampler_attrs(variable_args, opts.instruments, sampler)
+        with MCMCFile(opts.output_file, "a") as fp:
+            fp.write_sampler_attrs(variable_args, opts.instruments, sampler)
 
         # generate samples
         logging.info("Generating MCMC samples")
-        sampler.run_mcmc(variable_args, opts.niterations, p0=p0, output_file=fp,
+        sampler.run_mcmc(variable_args, opts.niterations, p0=p0,
+                         output_file=opts.output_file,
                          checkpoint_interval=opts.checkpoint_interval)
 
 # exit
