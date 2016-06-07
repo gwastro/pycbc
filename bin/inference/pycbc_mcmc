@@ -246,12 +246,12 @@ with ctx:
             fp.write_samples(variable_args, nwalkers=opts.nwalkers,
                              niterations=opts.niterations, labels=labels)
 
-        # determine intervals to run sampler save samples 
-        intervals = [i for i in range(0, opts.niterations, checkpoint_interval)] \
+        # determine intervals to run sampler until we save the new samples 
+        intervals = [i for i in range(0, opts.niterations, opts.checkpoint_interval)] \
                     + [opts.niterations]
 
         # determine if there is a small bit at the end
-        remainder = niterations % opts.checkpoint_interval
+        remainder = opts.niterations % opts.checkpoint_interval
         if remainder:
             intervals += [intervals[-1]+remainder]
 
@@ -267,7 +267,7 @@ with ctx:
         sampler.burn_in(p0)
         p0 = None
 
-    # write sampler attrs to file
+    # write sampler attributes to file
     with MCMCFile(opts.output_file, "a") as fp:
         fp.write_sampler_attrs(sampler)
 
