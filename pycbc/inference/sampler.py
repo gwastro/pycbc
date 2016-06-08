@@ -26,8 +26,6 @@ This modules provides classes and functions for using different sampler
 packages for parameter estimation.
 """
 
-from pycbc.io.mcmc import MCMCFile
-
 class _BaseSampler(object):
     """ Base container class for running the MCMC sampler.
 
