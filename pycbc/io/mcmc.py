@@ -149,7 +149,15 @@ class MCMCFile(h5py.File):
         return label
 
     def write_psds(self, psds, low_frequency_cutoff):
-        """
+        """ Writes PSD for each IFO to file.
+
+        Parameters
+        -----------
+        psds : {dict, FrequencySeries}
+            A dict of FrequencySeries where the key is the IFO.
+        low_frequency_cutoff : {dict, float}
+            A dict of the low-frequency cutoff where the key is the IFO. The
+            minimum value will be stored as an attr in the File.
         """
         self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())
         for key in psds.keys():
@@ -158,7 +166,12 @@ class MCMCFile(h5py.File):
             psd_dim.attrs["delta_f"] = psds[key].delta_f
 
     def write_sampler_attrs(self, sampler):
-        """
+        """ Write information about the sampler to the file attrs.
+
+        Parameters
+        -----------
+        sampler : pycbc.inference._BaseSampler
+            An instance of a sampler class from pycbc.inference.sampler.
         """
 
         # get attributes from waveform generator
@@ -180,7 +193,28 @@ class MCMCFile(h5py.File):
 
     def write_samples(self, variable_args, data=None, start=None, end=None,
                       nwalkers=0, niterations=0, labels=None):
-        """
+        """ Writes samples to the file. To write to a subsample of the array
+        use start and end. To initialize an empty array of length niterations
+        for each walker use nwalkers and niterations.
+
+        Parameters
+        -----------
+        variable_args : {list, str}
+            List of names of parameters.
+        data : numpy.array
+            Data to be saved with shape (niterations,nwalkers,ndim). if data is
+            None then create an array fo zeros for each walker with
+            length niterations.
+        start : int
+            If given then begin inserting this data at this index.
+        end : int
+            If given then stop inserting data at this index.
+        nwalkers : int
+            Number of walkers should be given if data is None.
+        niterations : int
+            Number of iterations should be given if data is None.
+        labels : {list, str}
+            A list of str to use as dislay by downsteam executables.
         """
 
         # transpose past samples to get an (ndim,nwalkers,niteration) array
@@ -235,8 +269,24 @@ class MCMCFile(h5py.File):
                     samples_subset = samples[i,j,start:end]
                     self[dim_name+"/"+dataset_name][start:end] = samples_subset
 
-    def write_acceptance_fraction(self, data=None, niterations=None, start=None, end=None):
-        """
+    def write_acceptance_fraction(self, data=None, start=None, end=None,
+                                  niterations=None):
+        """ Write acceptance_fraction data to file. To write to a subsample
+        of the array use start and end. To initialize an array of zeros, set
+        data to None and specify niterations.
+
+        Parameters
+        -----------
+        data : numpy.array
+            Data to be saved with shape (niterations,nwalkers,ndim). if data is
+            None then create an array fo zeros for each walker with
+            length niterations.
+        start : int
+            If given then begin inserting this data at this index.
+        end : int
+            If given then stop inserting data at this index.
+        niterations : int
+            Number of iterations should be given if data is None.
         """
 
         # sanity check options and if data is not given then make empty array
@@ -254,7 +304,22 @@ class MCMCFile(h5py.File):
 
     def write_samples_from_sampler(self, sampler, start=None, end=None,
                       nwalkers=0, niterations=0, labels=None):
-        """
+        """ Wtite data from sampler to file.
+
+        Parameters
+        -----------
+        sampler : pycbc.inference._BaseSampler
+            An instance of a sampler class from pycbc.inference.sampler.
+        start : int
+            If given then begin inserting this data at this index.
+        end : int
+            If given then stop inserting data at this index.
+        nwalkers : int
+            Number of walkers should be given if data is None.
+        niterations : int
+            Number of iterations should be given if data is None.
+        labels : {list, str}
+            A list of str to use as dislay by downsteam executables.
         """
         variable_args = sampler.likelihood_evaluator.waveform_generator.variable_args
         self.write_samples(variable_args, data=sampler.chain,
