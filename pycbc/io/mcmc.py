@@ -166,7 +166,9 @@ class MCMCFile(h5py.File):
             psd_dim.attrs["delta_f"] = psds[key].delta_f
 
     def write_sampler_attrs(self, sampler):
-        """ Write information about the sampler to the file attrs.
+        """ Write information about the sampler to the file attrs. If sampler
+        will run burn in, this should be called after sampler has already
+        run burn in.
 
         Parameters
         -----------
