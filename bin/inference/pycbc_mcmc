@@ -281,9 +281,11 @@ with ctx:
             continue
         start = intervals[i-1]
 
-        # run sampler
+        # run sampler and set initial values to None so that sampler
+        # picks up from where it left off next call
         logging.info("Running sampler for %s to %s out of %s iterations"%(start,end,opts.niterations))
         sampler.run_mcmc(end-start, p0=p0)
+        p0 = None
 
         # write new samples
         logging.info("Writing samples for %s to %s out of %s iterations"%(start,end,opts.niterations))

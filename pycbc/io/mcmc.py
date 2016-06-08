@@ -197,7 +197,7 @@ class MCMCFile(h5py.File):
         else:
             ndim = len(variable_args)
             shape = (ndim, nwalkers, niterations)
-            samples = numpy.empty(shape)
+            samples = numpy.zeros(shape)
 
         # save number of iterations so far
         if "niterations" in self.attrs.keys():
@@ -222,7 +222,7 @@ class MCMCFile(h5py.File):
                 # create dataset with shape (ndim,nwalkers,niterations)
                 dataset_name = "walker%d"%j
                 if dataset_name not in self[dim_name].keys():
-                    samples_subset = numpy.empty(niterations)
+                    samples_subset = numpy.zeros(niterations)
                     if data is not None:
                         samples_subset[start:end] = samples[i,j,start:end]
                     group_dim.create_dataset(dataset_name,
@@ -243,7 +243,7 @@ class MCMCFile(h5py.File):
         if data is None and niterations is None:
             raise ValueError("Must specify either data or niterations")
         elif data is None:
-            data = numpy.empty(niterations)
+            data = numpy.zeros(niterations)
 
         # write data
         if "acceptance_fraction" not in self.keys():
@@ -251,7 +251,6 @@ class MCMCFile(h5py.File):
                                 data=data)
         else:
             self["acceptance_fraction"][start:end] = data[start:end]
-            print self["acceptance_fraction"][start:end], start, end, data[start:end]
 
     def write_samples_from_sampler(self, sampler, start=None, end=None,
                       nwalkers=0, niterations=0, labels=None):
