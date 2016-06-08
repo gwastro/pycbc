@@ -235,31 +235,32 @@ class MCMCFile(h5py.File):
                     samples_subset = samples[i,j,start:end]
                     self[dim_name+"/"+dataset_name][start:end] = samples_subset
 
+    def write_acceptance_fraction(self, data=None, niterations=None, start=None, end=None):
+        """
+        """
+
+        # sanity check options and if data is not given then make empty array
+        if data is None and niterations is None:
+            raise ValueError("Must specify either data or niterations")
+        elif data is None:
+            data = numpy.empty(niterations)
+
+        # write data
+        if "acceptance_fraction" not in self.keys():
+            self.create_dataset("acceptance_fraction",
+                                data=data)
+        else:
+            self["acceptance_fraction"][start:end] = data[start:end]
+            print self["acceptance_fraction"][start:end], start, end, data[start:end]
+
     def write_samples_from_sampler(self, sampler, start=None, end=None,
                       nwalkers=0, niterations=0, labels=None):
         """
         """
-
-        # write samples
         variable_args = sampler.likelihood_evaluator.waveform_generator.variable_args
         self.write_samples(variable_args, data=sampler.chain,
                            start=start, end=end,
                            nwalkers=nwalkers, niterations=niterations,
                            labels=labels)
 
-        # create a dataset for the acceptance fraction
-        if "acceptance_fraction" not in self.keys():
-            self.create_dataset("acceptance_fraction",
-                                data=numpy.empty(niterations))
-        else:
-            self["acceptance_fraction"][start:end] = sampler.acceptance_fraction[start:end]
 
-    def write(self, variable_args, ifo_list, sampler, labels=None,
-              psds=None, low_frequency_cutoff=None):
-        """
-        """
-
-        self.write_sampler_attrs(variable_args, ifo_list, sampler)
-        self.write_samples(variable_args, sampler=sampler, labels=labels)
-        if psds:
-            self.write_psds(psds, low_frequency_cutoff)

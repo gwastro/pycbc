@@ -245,6 +245,7 @@ with ctx:
         with MCMCFile(opts.output_file, "a") as fp:
             fp.write_samples(variable_args, nwalkers=opts.nwalkers,
                              niterations=opts.niterations, labels=labels)
+            fp.write_acceptance_fraction(niterations=opts.niterations)
 
         # determine intervals to run sampler until we save the new samples 
         intervals = [i for i in range(0, opts.niterations, opts.checkpoint_interval)] \
@@ -288,6 +289,8 @@ with ctx:
         logging.info("Writing samples for %s to %s out of %s iterations"%(start,end,opts.niterations))
         with MCMCFile(opts.output_file, "a") as fp:
             fp.write_samples_from_sampler(sampler, start=start, end=end)
+            fp.write_acceptance_fraction(data=sampler.acceptance_fraction,
+                                         start=start, end=end)
 
 # exit
 logging.info("Done")
