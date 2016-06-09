@@ -33,7 +33,7 @@ parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_acf [--options]",
 # add data options
 parser.add_argument("--input-file", type=str, required=True,
     help="Path to input HDF file.")
-parser.add_argument("--variable-args", type=str, nargs="+", required=True,
+parser.add_argument("--variable-args", type=str, nargs="+", default=None,
     help="Name of parameters varied in MCMC.")
 
 # add plotting options
@@ -66,17 +66,18 @@ else:
     log_level = logging.WARN
 logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 
-# get number of dimensions
-ndim = len(opts.variable_args)
-
 # read input file
 logging.info("Reading input file")
 fp = MCMCFile(opts.input_file, "r")
+variable_args = fp.read_variable_args() if opts.variable_args is None else opts.variable_args
+
+# get number of dimensions
+ndim = len(variable_args)
 
 # calculate autocorrelation function for each walker
 logging.info("Calculating autocorrelation functions")
 all_acfs = []
-for param_name in opts.variable_args:
+for param_name in variable_args:
 
     # loop over walkers and save an autocorrelation function
     # for each walker
@@ -111,9 +112,9 @@ logging.info("Plotting autocorrelation functions")
 fig = plt.figure()
 for param_acfs in all_acfs:
     for acf in param_acfs:
-        plt.plot(range(len(acf)), acf, alpha=0.5)
+        plt.plot(range(len(acf)), acf, alpha=0.25)
 plt.xlabel("Iteration")
-plt.ylabel(r'Autocorrelation Function for %s'%', '.join(['%s'%fp.read_label(param) for param in opts.variable_args]))
+plt.ylabel(r'Autocorrelation Function for %s'%', '.join(['%s'%fp.read_label(param) for param in variable_args]))
 
 # format plot
 if opts.ymin:
@@ -123,7 +124,7 @@ if opts.ymax:
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join(["%s"%fp.read_label(param, html=True) for param in opts.variable_args]),
+    "parameters" : ", ".join(["%s"%fp.read_label(param, html=True) for param in variable_args]),
 }
 caption = """Autocorrelation function (ACF) from all the walker chains for the
 parameters. Each line is an ACF for a chain of walker samples."""

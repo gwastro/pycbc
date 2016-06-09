@@ -113,6 +113,16 @@ class MCMCFile(h5py.File):
 
         return self[variable_arg]["walker%d"%nwalker][thin_start::thin_interval]
 
+    def read_variable_args(self):
+        """ Returns list of variable_args.
+
+        Returns
+        -------
+        variable_args : {list, str}
+            List of str that contain variable_args keys.
+        """
+        return self.attrs["variable_args"]
+
     def read_label(self, variable_arg, html=False):
         """ Returns the label for the parameter.
 
