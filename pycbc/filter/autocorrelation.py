@@ -31,6 +31,23 @@ import numpy
 def calculate_acf(data):
     """ Calculates the autocorrelation function (ACF) and returns the one-sided
     ACF.
+
+    ACF is estimated using
+
+        \hat{R}(k) = \frac{1}{\left( n-k \right) \sigma^{2}} \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right) 
+
+    Where \hat{R}(k) is the ACF, X_{t} is the data series at time t, \mu is the
+    mean of X_{t}, and \sigma^{2} is the variance of X_{t}.
+
+    Parameters
+    -----------
+    data : numpy.array
+        A numpy.array of data series.
+
+    Returns
+    -------
+    acf : numpy.array
+        A numpy.array of one-sided ACF.
     """
 
     # subtract mean
@@ -43,23 +60,45 @@ def calculate_acf(data):
     acf = acf[acf.size/2:]
 
     # normalize
-    acf /= data.var() * numpy.arange(data.size, 0, -1)
+    # note that ACF is function of k and we have a factor of n-k
+    # at each k so the array here is a vectorized version of computing it
+    acf /= ( data.var() * numpy.arange(data.size, 0, -1) )
 
     return acf
 
-def calculate_acl(data, m=5, k=2):
+def calculate_acl(data, m=5, k=2, dtype=int):
     """ Calculates the autocorrelation length (ACL).
+
+    ACL is estimated using
+
+        r = 1 + 2 \sum_{k=1}^{n} \hat{R}(k)
+
+    Where r is the ACL and \hat{R}(k) is the ACF.
+
+    The parameter k sets the maximum samples to use in calculation of ACL.
+
+    The parameter m controls the length of the window that is summed to
+    compute the ACL.
+
+    Parameters
+    -----------
+    data : numpy.array
+        A numpy.array of data series.
+    dtype : {int, float}
+        The datatype of the output.
+
+    Returns
+    -------
+    acl : {int, float}
+        The ACL. If ACL can not be estimated then returns numpy.inf.
     """
 
     # calculate ACF
-    # get number of points in ACF
     acf = calculate_acf(data)
-    n = len(acf)
-
-    print acf
 
     # get maximum index in ACF for calculation
     # will terminate at this index
+    n = len(data)
     imax = n / k
 
     # loop over ACF indexes
@@ -69,14 +108,19 @@ def calculate_acl(data, m=5, k=2):
         # see if we have reached terminating condition
         s = float(i+1) / m
         if not acl >= s:
-            print acl, s
             break
 
         # see if ACL is indeterminate
-        if s > imax:
+        if i > imax:
             return numpy.inf
 
         # add term for ACL
         acl += 2 * acf[i]
 
-    return numpy.ceil(acl)
+    # typecast and return
+    if dtype == int:
+        return int(numpy.ceil(acl))
+    elif dtype == float:
+        return acl
+    else:
+        raise ValueError("Invalid value for dtype")
