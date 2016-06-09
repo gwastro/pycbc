@@ -71,7 +71,7 @@ fp = MCMCFile(opts.input_file, "r")
 if opts.variable_args:
     variable_args = opts.variable_args
 else:
-    variable_args = fp.attrs["variable_args"]
+    variable_args = fp.read_variable_args()
 
 # get thinned samples for each parameter
 table = []
