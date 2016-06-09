@@ -34,7 +34,7 @@ parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_corner [--options]",
 # add data options
 parser.add_argument("--input-file", type=str, required=True,
     help="Path to input HDF file.")
-parser.add_argument("--variable-args", type=str, nargs="+", required=True,
+parser.add_argument("--variable-args", type=str, nargs="+", default=None,
     help="Name of parameters varied in MCMC.")
 
 # output plot options
@@ -66,6 +66,7 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 # read input file
 logging.info("Reading input file")
 fp = MCMCFile(opts.input_file, "r")
+variable_args = fp.read_variable_args() if opts.variable_args is None else opts.variable_args
 
 # thin samples to get independent samples from each sampler
 logging.info("Thinning samples")
@@ -76,7 +77,7 @@ for i in range(fp.attrs["nwalkers"]):
 
     # loop over each parameter
     samples = []
-    for param in opts.variable_args:
+    for param in variable_args:
 
         # get MCMC parameters
         samples.append( fp.read_samples_from_walker(param, i,
@@ -96,11 +97,11 @@ x = numpy.concatenate(x)
 # plot posterior
 logging.info("Plot posteriors")
 quantiles = [0.16, 0.5, 0.84]
-labels = [r'%s'%str(fp.read_label(param)) for param in opts.variable_args]
+labels = [r'%s'%str(fp.read_label(param)) for param in variable_args]
 fig = corner.corner(x, labels=labels, quantiles=quantiles)
 
 # if there is only one histogram then change some formatting
-if len(opts.variable_args) == 1:
+if len(variable_args) == 1:
 
     # make plot larger
     fig.set_size_inches(8, 6)
@@ -137,8 +138,8 @@ vertical lines correspond to the {quantiles} quantiles. The thinning used to
 make this plot took samples beginning at the {thin_start} and then every
 {thin_interval}-th sample after that. Each chain of samples had {niterations}
 iterations.""".format(**caption_kwargs)
-if len(opts.variable_args) == 1:
-    title = "Posterior Distribution for %s"%fp.read_label(opts.variable_args[0], html=True)
+if len(variable_args) == 1:
+    title = "Posterior Distribution for %s"%fp.read_label(variable_args[0], html=True)
 else:
     title = "Posterior Distributions"
 results.save_fig_with_metadata(fig, opts.output_file,
