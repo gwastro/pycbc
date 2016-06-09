@@ -176,7 +176,7 @@ def spa_tmplt(**kwds):
 
     #Calculate the PN terms 
     phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(float(mass1), 
-                                        float(mass2), float(s1z), float(s2z), 1, 1, spin_order)
+                                        float(mass2), float(s1z), float(s2z), 1, 1, spin_order, None)
                                            
     pfaN = phasing.v[0]
     pfa2 = phasing.v[2] / pfaN
