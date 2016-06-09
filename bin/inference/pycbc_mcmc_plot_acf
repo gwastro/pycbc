@@ -93,8 +93,6 @@ for param_name in variable_args:
         # autocorrelate and add to list
         param_acfs.append( calculate_acf(y) )
 
-        print calculate_acl(y)
-
     # add list with parameters ACF to list of all ACFs
     all_acfs.append(param_acfs)
 
