@@ -42,6 +42,7 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
     build_gsl=true
     build_swig=true
     h5py_from="git"
+    patch_libframe=false
     glue_from="pip-install" # "git-patched"
     psycopg26_from=fake-psycopg255 # "pip-install" "system"
     build_pegasus_source=true
@@ -75,6 +76,8 @@ elif test "`uname -s`" = "Darwin" ; then
     build_gsl=true
     build_swig=true
     h5py_from="pip-install" # "git"
+    patch_libframe=true
+    libframe_debug_level=3
     glue_from="pip-install" # "git-patched"
     psycopg26_from=system
     build_pegasus_source=false
@@ -101,6 +104,7 @@ else
     build_swig=false
     glue_from="git-patched" # "pip-install"
     h5py_from="pip-install"
+    patch_libframe=false
     psycopg26_from=fake-psycopg255 # "pip-install" "system"
     build_pegasus_source=false
     build_preinst_before_lalsuite=true
@@ -469,14 +473,111 @@ Libs: -L${libdir} -lhdf5' |
     pip install --upgrade distribute
 
     # LIBFRAME
-    p=libframe-8.21
+    p=libframe-8.30
     echo -e "\\n\\n>> [`date`] building $p"
     test -r $p.tar.gz || wget $wget_opts http://lappweb.in2p3.fr/virgo/FrameL/$p.tar.gz
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
-    # make sure frame files are read in binary mode
-    sed -i~ 's/\([Oo]pen.*"r\)"/\1b"/' src/FrameL.c # `egrep -r '[Oo]pen.*"r"' .`
+    if $patch_libframe; then
+        patch -p0 <<EndOfPatchHereDocument
+--- src/FrameL.c	2016-04-20 14:09:11.000000000 +0200
++++ src/FrameL.c	2016-06-08 15:31:13.000000000 +0200
+@@ -24,8 +24,8 @@
+ #define FRMAXTAG 1000
+ /*--------------------------------------------------miscellaneous variables--*/
+ int    FrSshort, FrSint, FrSlong, FrSfloat, FrSdouble;
+-FILE  *FrFOut = NULL;
+-int    FrDebugLvl = 0;
++#define FrFOut stderr
++int    FrDebugLvl = 3;
+ char  *FrErrorMsg[] = {"OK",
+               "No Frame Error",
+               "No file Error",
+@@ -62,6 +62,9 @@
+  memset(mem,0,nobj*size);
+  return(mem);};
+ 
++int myisspace(int c) { return (c == '\t' || c == '\n') }
++#define isspace myisspace
++
+ #define malloc fftw_malloc
+ #define calloc FrCalloc
+ #define free   fftw_free
+@@ -92,7 +95,7 @@
+          {printf("\n !! Opening file error, output stay on screen\n");
+           FrFOut = stdout;}}
+   
+-  FrDebugLvl = dbglvl;
++  FrDebugLvl = 3;
+ 
+   FrLibVersion(FrFOut);
+ 
+@@ -164,7 +167,7 @@
+ void FrLibSetLvl(int dbglvl)
+ /*---------------------------------------------------------------------------*/
+ { 
+-  FrDebugLvl = dbglvl;
++  FrDebugLvl = 3;
+   if(FrFOut == NULL) FrFOut = stdout;
+   
+   return;}
+@@ -3608,7 +3611,7 @@
+   char buf[BUFLEN];
+   unsigned int crc = 0, nBytes = 0, bytes_read;
+ 
+-  if ((fp = fopen (argv[1], "r")) == NULL) exit(0);
++  if ((fp = fopen (argv[1], "rb")) == NULL) exit(0);
+  
+   while ((bytes_read = fread (buf, 1, BUFLEN, fp)) > 0)
+     {FrCksumGnu(buf, bytes_read, &crc);
+@@ -5640,7 +5643,7 @@
+      else {token = tag->start;}}
+  else 
+    {ffl = FR_YES;
+-    fp = fopen(fullName,"r");
++    fp = fopen(fullName,"rb");
+     if(fp == NULL) 
+        {FrError(3,"FrFileBreakName","open ffl file failed");
+         return(NULL);}
+@@ -8068,7 +8071,7 @@
+   FILE  *fp;
+   int length, i;
+ 
+-  fp = fopen(fullName,"r");
++  fp = fopen(fullName,"rb");
+   if(fp == NULL){
+     FrError(3,"FrFileOpenCacheFile","open cache file failed");
+     return(NULL);}
+@@ -8076,7 +8079,7 @@
+   fileHFirst = NULL;
+   fileHLast = NULL;
+ 
+-  while(fscanf(fp,"%s",FrBuf) == 1) {
++  while(fscanf(fp,"%[^\t\n]",FrBuf) == 1) {
+ 
+     if(strncmp(FrBuf,"file:",5) != 0) continue; /*--search for the file name-*/
+ 
+@@ -11300,7 +11303,7 @@
+   FrSegList *segList;
+ 
+   if(fileName == NULL) return(NULL);
+-  fp = fopen(fileName, "r");
++  fp = fopen(fileName, "rb");
+   if(fp == NULL) return(NULL);
+ 
+   segList = FrSegListReadFP(fp, fileName);
+EndOfPatchHereDocument
+    else
+    if test -n "$libframe_debug_level"; then
+        sed -i~ "s/^FILE *\\*FrFOut *= *NULL;/#define FrFOut stderr/;
+                 s/FrDebugLvl *= *[^;]*;/FrDebugLvl = $libframe_debug_level;/" src/FrameL.c
+    fi
+    # make sure frame files are opened in binary mode, and paths may contain blanks
+    sed -i~ 's/ while(fscanf(fp,"%s",FrBuf) / while(fscanf(fp,"%[^\\t\\n]",FrBuf) /;
+             s/\([Oo]pen.*"r\)"/\1b"/;' src/FrameL.c # `egrep -r '[Oo]pen.*"r"' .`
+    sed -i~ "s/#include <ctype.h>/int isspace(int c) { return (c == '\\t' || c == '\\n') }/" src/FrameL.c
+    fi
     if $build_dlls; then
 	for i in src/Makefile*; do
 	    echo 'libFrame_la_LDFLAGS += -no-undefined' >> $i
