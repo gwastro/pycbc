@@ -221,6 +221,7 @@ class EventManager(object):
         self.template_params = []
         self.template_index = -1
         self.template_events = numpy.array([], dtype=self.event_dtype)
+        self.write_performance = False
 
     @classmethod
     def from_multi_ifo_interface(cls, opt, ifo, column, column_types, **kwds):
@@ -372,6 +373,15 @@ class EventManager(object):
             if not os.path.exists(path) and path is not None:
                 os.makedirs(path)
 
+    def save_performance(self, ncores, ntemplates, run_time):
+        """
+        Calls variables from pycbc_inspiral to be used in a timing calculation
+        """
+        self.run_time = run_time
+        self.ncores = ncores
+        self.ntemplates = ntemplates
+        self.write_performance = True
+
     def write_events(self, outname):
         """ Write the found events to a sngl inspiral table
         """
@@ -433,7 +443,6 @@ class EventManager(object):
             f['bank_chisq_dof'] = self.events['bank_chisq_dof']
             f['cont_chisq'] = self.events['cont_chisq']
             f['end_time'] = self.events['time_index'] / float(self.opt.sample_rate) + self.opt.gps_start_time
-
             try:
                 # Precessing
                 template_sigmasq_plus = numpy.array([t['sigmasq_plus'] for t in self.template_params], dtype=numpy.float32)
@@ -472,13 +481,23 @@ class EventManager(object):
 
         if self.opt.trig_start_time:
             f['search/start_time'] = numpy.array([self.opt.trig_start_time])
+            search_start_time = float(self.opt.trig_start_time)
         else:
             f['search/start_time'] = numpy.array([self.opt.gps_start_time + self.opt.segment_start_pad])
-
+            search_start_time = float(self.opt.gps_start_time + self.opt.segment_start_pad)
         if self.opt.trig_end_time:
             f['search/end_time'] = numpy.array([self.opt.trig_end_time])
+            search_end_time = float(self.opt.trig_end_time)
         else:
             f['search/end_time'] = numpy.array([self.opt.gps_end_time - self.opt.segment_end_pad])
+            search_end_time = float(self.opt.gps_end_time - self.opt.segment_end_pad)
+
+        if self.write_performance:
+            self.analysis_time = search_end_time - search_start_time
+            time_ratio = numpy.array([float(self.analysis_time) / float(self.run_time)])
+            temps_per_core = float(self.ntemplates) / float(self.ncores)
+            f['search/templates_per_core'] = numpy.array([float(temps_per_core) * float(time_ratio)])
+
 
         if 'gating_info' in self.global_params:
             gating_info = self.global_params['gating_info']
