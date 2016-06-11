@@ -78,6 +78,8 @@ parser.add_argument("--config-files", type=str, nargs="+", required=True,
 # output options
 parser.add_argument("--output-file", type=str, required=True,
     help="Output file path.")
+parser.add_argument("--checkpoint-interval", type=int, default=None,
+    help="Number of iterations to take before saving new samples to file.")
 
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
@@ -139,6 +141,18 @@ with ctx:
     psd_dict = psd.from_cli_multi_ifos(opts, length_dict, delta_f_dict,
                                    low_frequency_cutoff_dict, opts.instruments,
                                    strain_dict=strain_dict, precision="double")
+
+    # apply dynamic range factor for saving PSDs since plotting code expects it
+    logging.info("Saving PSDs")
+    psd_dyn_dict = {}
+    for key,val in psd_dict.iteritems():
+         psd_dyn_dict[key] = FrequencySeries(psd_dict[key]*DYN_RANGE_FAC**2,
+                                             delta_f=psd_dict[key].delta_f)
+
+    # save PSD
+    with MCMCFile(opts.output_file, "w") as fp:
+        fp.write_psds(psds=psd_dyn_dict,
+                      low_frequency_cutoff=low_frequency_cutoff_dict)
 
     # read configuration file
     logging.info("Reading configuration file")
@@ -220,45 +234,65 @@ with ctx:
                     p0[i][j] = idist.rvs(size=1, param=param)[0][0]
                     break
 
-    # check if user wants to skip the burn in
-    if not opts.skip_burn_in:
+    # get labels for each parameter from configuration file
+    labels = [cp.get("labels",param) for param in variable_args]
 
-        # burn in
+    # setup checkpointing
+    if opts.checkpoint_interval:
+
+        # write empty datasets
+        logging.info("Writing empty datasets to output file")
+        with MCMCFile(opts.output_file, "a") as fp:
+            fp.write_samples(variable_args, nwalkers=opts.nwalkers,
+                             niterations=opts.niterations, labels=labels)
+            fp.write_acceptance_fraction(niterations=opts.niterations)
+
+        # determine intervals to run sampler until we save the new samples 
+        intervals = [i for i in range(0, opts.niterations, opts.checkpoint_interval)] \
+                    + [opts.niterations]
+
+        # determine if there is a small bit at the end
+        remainder = opts.niterations % opts.checkpoint_interval
+        if remainder:
+            intervals += [intervals[-1]+remainder]
+
+    # if not checkpointing then set intervals to run sampler in one call
+    else:
+        intervals = [0, opts.niterations]
+
+    # check if user wants to skip the burn in
+    # if burn in then switch p0 to None and sampler should pick up from last
+    # position after burn in
+    if not opts.skip_burn_in:
         logging.info("MCMC burn in")
         sampler.burn_in(p0)
+        p0 = None
 
-        # generate more samples
-        logging.info("Generating more MCMC samples")
-        sampler.run_mcmc(opts.niterations)
+    # write sampler attributes to file
+    with MCMCFile(opts.output_file, "a") as fp:
+        fp.write_sampler_attrs(sampler)
 
-    else:
+    # loop over number of checkpoints
+    for i,end in enumerate(intervals):
 
-        # generate samples
-        logging.info("Generating MCMC samples")
-        sampler.run_mcmc(opts.niterations, p0=p0)
+        # if its the first sample then skip
+        # otherwise start from the last time chain was checkpointed
+        if i == 0:
+            continue
+        start = intervals[i-1]
 
-# get all past samples as an niterations x nwalker x ndim array
-logging.info("Writing output file")
-chain = sampler.chain
+        # run sampler and set initial values to None so that sampler
+        # picks up from where it left off next call
+        logging.info("Running sampler for %s to %s out of %s iterations"%(start,end,opts.niterations))
+        sampler.run_mcmc(end-start, p0=p0)
+        p0 = None
 
-# transpose past samples to get an ndim x nwalker x niteration array
-chain = numpy.transpose(chain)
-
-# apply dynamic range factor to PSDs since plotting code expects it
-psd_dyn_dict = {}
-for key,val in psd_dict.iteritems():
-     psd_dyn_dict[key] = FrequencySeries(psd_dict[key]*DYN_RANGE_FAC**2,
-                                         delta_f=psd_dict[key].delta_f)
-
-# get labels for each parameter from configuration file
-labels = [cp.get("labels",param) for param in variable_args]
-
-# save samples to file
-fp = MCMCFile(opts.output_file, "w")
-fp.write(variable_args, opts.instruments, sampler, labels=labels,
-         low_frequency_cutoff=low_frequency_cutoff_dict,
-         psds=psd_dyn_dict)
-fp.close()
+        # write new samples
+        logging.info("Writing samples for %s to %s out of %s iterations"%(start,end,opts.niterations))
+        with MCMCFile(opts.output_file, "a") as fp:
+            fp.write_samples_from_sampler(sampler, start=start, end=end)
+            fp.write_acceptance_fraction(data=sampler.acceptance_fraction,
+                                         start=start, end=end)
 
 # exit
 logging.info("Done")

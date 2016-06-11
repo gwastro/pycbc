@@ -158,73 +158,185 @@ class MCMCFile(h5py.File):
 
         return label
 
-    def write(self, variable_args, ifo_list, sampler,
-              labels=None, low_frequency_cutoff=None, psds=None):
-        """ Writes the output from pycbc.io.sampler to a file.
+    def write_psds(self, psds, low_frequency_cutoff):
+        """ Writes PSD for each IFO to file.
 
         Parameters
         -----------
-        variable_args : list
-            A list of the varying MCMC parameters.
-        ifo_list : list
-            A list of the IFOs.
+        psds : {dict, FrequencySeries}
+            A dict of FrequencySeries where the key is the IFO.
+        low_frequency_cutoff : {dict, float}
+            A dict of the low-frequency cutoff where the key is the IFO. The
+            minimum value will be stored as an attr in the File.
+        """
+        self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())
+        for key in psds.keys():
+            psd_dim = self.create_dataset(key+"/psds/0",
+                                          data=psds[key])
+            psd_dim.attrs["delta_f"] = psds[key].delta_f
+
+    def write_sampler_attrs(self, sampler):
+        """ Write information about the sampler to the file attrs. If sampler
+        will run burn in, this should be called after sampler has already
+        run burn in.
+
+        Parameters
+        -----------
         sampler : pycbc.inference._BaseSampler
-            A sampler instance from pycbc.inference.sampler.
-        labels : list
-            A list of str that have formatted names for parameter.
-        low_frequency_cutoff : dict
-            The low-frequency cutoff values each IFO PSD.
-        psds : dict
-            A dict with the IFO name as the key and a FreqeuncySeries as the
-            value.
+            An instance of a sampler class from pycbc.inference.sampler.
         """
 
-        # transpose past samples to get an ndim x nwalker x niteration array
-        samples = numpy.transpose(sampler.chain)
+        # get attributes from waveform generator
+        variable_args = sampler.likelihood_evaluator.waveform_generator.variable_args
+        ifo_list = sampler.likelihood_evaluator.waveform_generator.detector_names
 
-        # get number of dimensions, walkers, and iterations
-        ndim, nwalkers, niterations = samples.shape
+        # get shape of data from a (niterations,nwalkers,ndim) array
+        niterations, nwalkers, _ = sampler.chain.shape
 
-        # save MCMC parameters
-        # keep the minimum low-frequency cutoff for plotting purposes
+        # save parameters
         self.attrs["variable_args"] = variable_args
         self.attrs["ifo_list"] = ifo_list
         self.attrs["nwalkers"] = nwalkers
-        self.attrs["niterations"] = niterations
-        self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())
         self.attrs["burn_in_iterations"] = sampler.burn_in_iterations
+
+        # save number of iterations so far
+        if "niterations" not in self.attrs.keys():
+            self.attrs["niterations"] = niterations
+
+    def write_samples(self, variable_args, data=None, start=None, end=None,
+                      nwalkers=0, niterations=0, labels=None):
+        """ Writes samples to the file. To write to a subsample of the array
+        use start and end. To initialize an empty array of length niterations
+        for each walker use nwalkers and niterations.
+
+        Parameters
+        -----------
+        variable_args : {list, str}
+            List of names of parameters.
+        data : numpy.array
+            Data to be saved with shape (niterations,nwalkers,ndim). if data is
+            None then create an array fo zeros for each walker with
+            length niterations.
+        start : int
+            If given then begin inserting this data at this index.
+        end : int
+            If given then stop inserting data at this index.
+        nwalkers : int
+            Number of walkers should be given if data is None.
+        niterations : int
+            Number of iterations should be given if data is None.
+        labels : {list, str}
+            A list of str to use as dislay by downsteam executables.
+        """
+
+        # transpose past samples to get an (ndim,nwalkers,niteration) array
+        if data is not None:
+            samples = numpy.transpose(data)
+            ndim, nwalkers, niterations = samples.shape
+
+        # sanity check options
+        elif nwalkers == 0 and niterations != 0:
+            raise ValueError("If nwalkers is 0 then niterations must be 0")
+
+        # if no data is given then initialize to array of numpy.NAN
+        # with shape (ndim,nwalkers,niterations)
+        else:
+            ndim = len(variable_args)
+            shape = (ndim, nwalkers, niterations)
+            samples = numpy.zeros(shape)
+
+        # save number of iterations so far
+        if "niterations" in self.attrs.keys():
+            self.attrs["niterations"] += niterations - self.attrs["niterations"]
+        else:
+            self.attrs["niterations"] = niterations
 
         # loop over number of dimensions
         for i,dim_name in zip(range(ndim), variable_args):
 
             # create a group in the output file for this dimension
-            group_dim = self.create_group(dim_name)
-
-            # add label
-            if labels:
-                group_dim.attrs["label"] = labels[i]
-            else:
-                group_dim.attrs["label"] = dim_name
+            if dim_name not in self.keys():
+                group_dim = self.create_group(dim_name)
+                if labels:
+                    group_dim.attrs["label"] = labels[i]
+                else:
+                    group_dim.attrs["label"] = dim_name
 
             # loop over number of walkers
             for j in range(nwalkers):
 
-                # get all samples from this walker for this dimension
-                samples_subset = samples[i,j,:]
-
-                # write to output file
+                # create dataset with shape (ndim,nwalkers,niterations)
                 dataset_name = "walker%d"%j
-                group_dim.create_dataset(dataset_name, data=samples_subset)
+                if dataset_name not in self[dim_name].keys():
+                    samples_subset = numpy.zeros(niterations)
+                    if data is not None:
+                        samples_subset[start:end] = samples[i,j,start:end]
+                    group_dim.create_dataset(dataset_name,
+                                             data=samples_subset)
 
-        # create a dataset for the acceptance fraction
-        self.create_dataset("acceptance_fraction",
-                            data=sampler.acceptance_fraction)
+                # write all samples in range from walker for this dimension
+                else:
+                    if end > len(samples[i,j,:]):
+                        end = None
+                    samples_subset = samples[i,j,start:end]
+                    self[dim_name+"/"+dataset_name][start:end] = samples_subset
 
-        # create datasets for each PSD
-        if psds and low_frequency_cutoff:
-            for key in psds.keys():
-                psd_dim = self.create_dataset(key+"/psds/0",
-                                              data=psds[key])
-                psd_dim.attrs["delta_f"] = psds[key].delta_f
+    def write_acceptance_fraction(self, data=None, start=None, end=None,
+                                  niterations=None):
+        """ Write acceptance_fraction data to file. To write to a subsample
+        of the array use start and end. To initialize an array of zeros, set
+        data to None and specify niterations.
+
+        Parameters
+        -----------
+        data : numpy.array
+            Data to be saved with shape (niterations,nwalkers,ndim). if data is
+            None then create an array fo zeros for each walker with
+            length niterations.
+        start : int
+            If given then begin inserting this data at this index.
+        end : int
+            If given then stop inserting data at this index.
+        niterations : int
+            Number of iterations should be given if data is None.
+        """
+
+        # sanity check options and if data is not given then make empty array
+        if data is None and niterations is None:
+            raise ValueError("Must specify either data or niterations")
+        elif data is None:
+            data = numpy.zeros(niterations)
+
+        # write data
+        if "acceptance_fraction" not in self.keys():
+            self.create_dataset("acceptance_fraction",
+                                data=data)
+        else:
+            self["acceptance_fraction"][start:end] = data[start:end]
+
+    def write_samples_from_sampler(self, sampler, start=None, end=None,
+                      nwalkers=0, niterations=0, labels=None):
+        """ Wtite data from sampler to file.
+
+        Parameters
+        -----------
+        sampler : pycbc.inference._BaseSampler
+            An instance of a sampler class from pycbc.inference.sampler.
+        start : int
+            If given then begin inserting this data at this index.
+        end : int
+            If given then stop inserting data at this index.
+        nwalkers : int
+            Number of walkers should be given if data is None.
+        niterations : int
+            Number of iterations should be given if data is None.
+        labels : {list, str}
+            A list of str to use as dislay by downsteam executables.
+        """
+        variable_args = sampler.likelihood_evaluator.waveform_generator.variable_args
+        self.write_samples(variable_args, data=sampler.chain,
+                           start=start, end=end,
+                           nwalkers=nwalkers, niterations=niterations,
+                           labels=labels)
 
 
