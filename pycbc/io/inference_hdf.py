@@ -21,17 +21,17 @@
 #
 # =============================================================================
 #
-"""This modules defines functions for reading and writing samples that the MCMC
-samplers generate.
+"""This modules defines functions for reading and writing samples that the
+inference samplers generate.
 """
 
 import h5py
 import numpy
 from pycbc import pnutils
 
-class MCMCFile(h5py.File):
+class InferenceFile(h5py.File):
     """ A subclass of the h5py.File object that has extra functions for
-    handling reading and writing the samples from the MCMC samplers.
+    handling reading and writing the samples from the samplers.
 
     Parameters
     -----------
@@ -42,7 +42,7 @@ class MCMCFile(h5py.File):
     """
 
     def __init__(self, path, mode=None, **kwargs):
-        super(MCMCFile, self).__init__(path, mode, **kwargs)
+        super(InferenceFile, self).__init__(path, mode, **kwargs)
 
     def read_samples(self, variable_arg, thin_start=None, thin_interval=1):
         """ Reads independent samples from all walkers for a parameter.

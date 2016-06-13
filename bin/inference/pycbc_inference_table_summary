@@ -22,7 +22,7 @@ import logging
 import numpy
 import sys
 from pycbc import results
-from pycbc.io.mcmc import MCMCFile
+from pycbc.io.inference_hdf import InferenceFile
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_inference_table_summary [--options]",
@@ -65,7 +65,7 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 
 # read input file
 logging.info("Reading input file")
-fp = MCMCFile(opts.input_file, "r")
+fp = InferenceFile(opts.input_file, "r")
 
 # check if command line specifies variable parameters
 if opts.variable_args:

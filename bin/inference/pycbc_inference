@@ -24,7 +24,7 @@ import pycbc.opt
 import pycbc.weave
 import random
 from pycbc import DYN_RANGE_FAC, fft, inference, psd, scheme, strain, waveform
-from pycbc.io.mcmc import MCMCFile
+from pycbc.io.inference_hdf import InferenceFile
 from pycbc.types import FrequencySeries, MultiDetOptionAction
 from pycbc.workflow import WorkflowConfigParser
 
@@ -150,7 +150,7 @@ with ctx:
                                              delta_f=psd_dict[key].delta_f)
 
     # save PSD
-    with MCMCFile(opts.output_file, "w") as fp:
+    with InferenceFile(opts.output_file, "w") as fp:
         fp.write_psds(psds=psd_dyn_dict,
                       low_frequency_cutoff=low_frequency_cutoff_dict)
 
@@ -242,7 +242,7 @@ with ctx:
 
         # write empty datasets
         logging.info("Writing empty datasets to output file")
-        with MCMCFile(opts.output_file, "a") as fp:
+        with InferenceFile(opts.output_file, "a") as fp:
             fp.write_samples(variable_args, nwalkers=opts.nwalkers,
                              niterations=opts.niterations, labels=labels)
             fp.write_acceptance_fraction(niterations=opts.niterations)
@@ -269,7 +269,7 @@ with ctx:
         p0 = None
 
     # write sampler attributes to file
-    with MCMCFile(opts.output_file, "a") as fp:
+    with InferenceFile(opts.output_file, "a") as fp:
         fp.write_sampler_attrs(sampler)
 
     # loop over number of checkpoints
@@ -289,7 +289,7 @@ with ctx:
 
         # write new samples
         logging.info("Writing samples for %s to %s out of %s iterations"%(start,end,opts.niterations))
-        with MCMCFile(opts.output_file, "a") as fp:
+        with InferenceFile(opts.output_file, "a") as fp:
             fp.write_samples_from_sampler(sampler, start=start, end=end)
             fp.write_acceptance_fraction(data=sampler.acceptance_fraction,
                                          start=start, end=end)

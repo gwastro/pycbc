@@ -23,7 +23,7 @@ import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import sys
 from pycbc import results
-from pycbc.io.mcmc import MCMCFile
+from pycbc.io.inference_hdf import InferenceFile
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_inference_plot_samples [--options]",
@@ -61,7 +61,7 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 
 # read input file
 logging.info("Reading input file")
-fp = MCMCFile(opts.input_file, "r")
+fp = InferenceFile(opts.input_file, "r")
 variable_args = fp.read_variable_args() if opts.variable_args is None else opts.variable_args
 
 # get number of dimensions
@@ -103,4 +103,5 @@ results.save_fig_with_metadata(fig, opts.output_file,
 plt.close()
 
 # exit
+fp.close()
 logging.info("Done")

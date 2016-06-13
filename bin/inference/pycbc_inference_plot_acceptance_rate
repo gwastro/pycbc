@@ -23,6 +23,7 @@ import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import sys
 from pycbc import results
+from pycbc.io.inference_hdf import InferenceFile
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_inference_plot_acceptance_rate [--options]",
@@ -58,10 +59,9 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 
 # read input file
 logging.info("Reading input file")
-fp = h5py.File(opts.input_file, "r")
+fp = InferenceFile(opts.input_file, "r")
 acceptance_fraction = fp.read_acceptance_fraction(thin_start=opts.thin_start,
                                               thin_interval=opts.thin_interval)
-fp.close()
 
 # plot acceptance rate and drawn values
 logging.info("Plotting acceptance fraction")
@@ -80,4 +80,5 @@ results.save_fig_with_metadata(fig, opts.output_file,
 plt.close()
 
 # exit
+fp.close()
 logging.info("Done")
