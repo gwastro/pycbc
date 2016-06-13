@@ -27,7 +27,8 @@ packages for parameter estimation.
 """
 
 class _BaseSampler(object):
-    """ Base container class for running the MCMC sampler.
+    """ Base container class for running the inference sampler that will
+    generate the posterior distributions.
 
     Parameters
     ----------
@@ -54,14 +55,14 @@ class _BaseSampler(object):
         return ValueError("chain function not set.")
 
     def burn_in(self, initial_values):
-        """ This function should burn in the MCMC.
+        """ This function should burn in the sampler.
         """
         raise ValueError("burn_in function not set.")
 
-    def run_mcmc(self, niterations):
-        """ This function should run the MCMC for the number of samples.
+    def run(self, niterations):
+        """ This function should run the sampler.
         """
-        raise ValueError("run_mcmc function not set.")
+        raise ValueError("run function not set.")
 
 class KombineSampler(_BaseSampler):
     """ This class is used to construct the sampler from the kombine package.
@@ -72,7 +73,7 @@ class KombineSampler(_BaseSampler):
         An instance of the likelihood class from the
         pycbc.inference.likelihood module.
     nwalkers : int
-        Number of walkers to use in MCMC.
+        Number of walkers to use in sampler.
     ndim : int
         Number of dimensions in the parameter space. If transd is True this is
         the number of unique dimensions across the parameter spaces.
@@ -142,13 +143,13 @@ class KombineSampler(_BaseSampler):
             raise ValueError("Burn in has already been performed")
         return p, post, q
 
-    def run_mcmc(self, niterations, **kwargs):
-        """ Advance the MCMC for a number of samples.
+    def run(self, niterations, **kwargs):
+        """ Advance the sampler for a number of samples.
 
         Parameters
         ----------
         niterations : int
-            Number of samples to get from MCMC.
+            Number of samples to get from sampler.
 
         Returns
         -------
