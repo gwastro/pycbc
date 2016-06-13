@@ -65,7 +65,8 @@ class _BaseSampler(object):
         raise ValueError("run function not set.")
 
 class KombineSampler(_BaseSampler):
-    """ This class is used to construct the sampler from the kombine package.
+    """ This class is used to construct the MCMC sampler from the kombine
+    package.
 
     Parameters
     ----------
