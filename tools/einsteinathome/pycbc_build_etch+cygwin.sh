@@ -57,7 +57,7 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
     pyinstaller_lsb="--no-lsb"
     use_pycbc_pyinstaller_hooks=true
-    build_wrapper=true
+    build_wrapper=false
     appendix="_Linux64"
 elif test "`uname -s`" = "Darwin" ; then
     echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
