@@ -23,10 +23,11 @@
 #
 """
 This modules provides functions for calculating the autocorrelation function
-and length of time series.
+and length of an numpy.array.
 """
 
 import numpy
+from pycbc.types import TimeSeries
 
 def calculate_acf(data):
     """ Calculates the autocorrelation function (ACF) and returns the one-sided
@@ -41,30 +42,42 @@ def calculate_acf(data):
 
     Parameters
     -----------
-    data : numpy.array
-        A numpy.array of data series.
+    data : {TimeSeries, numpy.array}
+        A TimeSeries or numpy.array of data.
 
     Returns
     -------
     acf : numpy.array
-        A numpy.array of one-sided ACF.
+        If data is a TimeSeries then acf will be a TimeSeries of the
+        one-sided ACF. Else acf is a numpy.array.
     """
 
+    # if given a TimeSeries instance then get numpy.array
+    if isinstance(data, TimeSeries):
+        y = data.numpy()
+    else:
+        y = data
+
     # subtract mean
-    z =  data - data.mean()
+    z =  y - y.mean()
 
     # autocorrelate
     acf = numpy.correlate(z, z, mode="full")
 
-    # take only the second half of the autocorrelation time series
+    # take only the second half of the autocorrelation function
     acf = acf[acf.size/2:]
 
     # normalize
     # note that ACF is function of k and we have a factor of n-k
     # at each k so the array here is a vectorized version of computing it
-    acf /= ( data.var() * numpy.arange(data.size, 0, -1) )
+    acf /= ( y.var() * numpy.arange(y.size, 0, -1) )
 
-    return acf
+    # return a TimeSeries if input was a TimeSeries
+    # otherwise return the numpy.array
+    if isinstance(data, TimeSeries):
+        return TimeSeries(acf, delta_t=data.delta_t)
+    else:
+        return acf
 
 def calculate_acl(data, m=5, k=2, dtype=int):
     """ Calculates the autocorrelation length (ACL).
@@ -82,15 +95,17 @@ def calculate_acl(data, m=5, k=2, dtype=int):
 
     Parameters
     -----------
-    data : numpy.array
-        A numpy.array of data series.
+    data : {TimeSeries, numpy.array}
+        A TimeSeries or numpy.array of data.
     dtype : {int, float}
         The datatype of the output.
 
     Returns
     -------
     acl : {int, float}
-        The ACL. If ACL can not be estimated then returns numpy.inf.
+        The ACL. If ACL can not be estimated then returns numpy.inf. If data
+        was a TimeSeries then the ACL will be the number of samples times the
+        delta_t attribute.
     """
 
     # calculate ACF
@@ -116,6 +131,10 @@ def calculate_acl(data, m=5, k=2, dtype=int):
 
         # add term for ACL
         acl += 2 * acf[i]
+
+    # if input was a TimeSeries then multiply ACL by the delta_t attribute
+    if isinstance(data, TimeSeries):
+        acl *= data.delta_t
 
     # typecast and return
     if dtype == int:
