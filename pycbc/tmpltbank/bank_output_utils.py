@@ -35,7 +35,7 @@ def return_empty_sngl():
         elif cols[entry] == 'lstring':
             setattr(sngl,entry,'')
         elif entry == 'process_id':
-            sngl.process_id = ilwd.ilwdchar("sngl_inspiral:process_id:0")
+            sngl.process_id = ilwd.ilwdchar("process:process_id:0")
         elif entry == 'event_id':
             sngl.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
         else:
