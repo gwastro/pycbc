@@ -23,7 +23,7 @@
 #
 """
 This modules provides functions for calculating the autocorrelation function
-and length of an numpy.array.
+and length of a data series.
 """
 
 import numpy
