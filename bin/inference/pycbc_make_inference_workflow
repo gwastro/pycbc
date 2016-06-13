@@ -140,8 +140,8 @@ for ifo in workflow.ifos:
 frame_types_str = " ".join([key+":"+val for key,val in frame_types.iteritems()])
 channel_names_str = " ".join([key+":"+val for key,val in channel_names.iteritems()])
 
-# construct Executable for performing MCMC
-mcmc_exe = wf.Executable(workflow.cp, "mcmc", ifos=workflow.ifos,
+# construct Executable for running sampler
+inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
                          out_dir=opts.output_dir)
 
 # get plotting parameters
@@ -178,8 +178,8 @@ for num_event in range(num_events):
     gps_start_time = int(avg_end_time) - seconds_before_time
     gps_end_time = int(avg_end_time) + seconds_after_time
 
-    # make node for performing MCMC
-    node = mcmc_exe.create_node()
+    # make node for running sampler
+    node = inference_exe.create_node()
     node.add_opt("--instruments", " ".join(workflow.ifos))
     node.add_opt("--gps-start-time", gps_start_time)
     node.add_opt("--gps-end-time", gps_end_time)
@@ -187,7 +187,7 @@ for num_event in range(num_events):
     node.add_opt("--channel-name", channel_names_str)
     node.add_input_opt("--config-file", config_file)
     analysis_time = segments.segment(gps_start_time, gps_end_time)
-    mcmc_file = node.new_output_file_opt(analysis_time, ".hdf",
+    inference_file = node.new_output_file_opt(analysis_time, ".hdf",
                                  "--output-file", tags=[str(num_event)])
 
     # add node to workflow
@@ -199,25 +199,25 @@ for num_event in range(num_events):
                           opts.output_dir, tags=opts.tags + [str(num_event)])]
 
     # add files from summart table for this event
-    layouts += [mcf.make_inference_summary_table(workflow, mcmc_file,
+    layouts += [mcf.make_inference_summary_table(workflow, inference_file,
                           opts.output_dir, variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
 
     # add files from corner plot for this event
-    layouts += [mcf.make_inference_corner_plot(workflow, mcmc_file,
+    layouts += [mcf.make_inference_corner_plot(workflow, inference_file,
                           opts.output_dir, variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
 
     # get files from plotting acceptance rate plot for this event
     rate_files = mcf.make_inference_acceptance_rate_plot(workflow,
-                          mcmc_file,  opts.output_dir,
+                          inference_file,  opts.output_dir,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])
 
     # get files from plotting PSD for this event
-    psd_file = wf.make_spectrum_plot(workflow, [mcmc_file], opts.output_dir,
+    psd_file = wf.make_spectrum_plot(workflow, [inference_file], opts.output_dir,
                           tags=opts.tags + [str(num_event)])
 
     # add a row to the HTML page with accpetance rate on the left
@@ -226,7 +226,7 @@ for num_event in range(num_events):
 
     # add files from plotting parameter samples and autocorrelation
     # function for this event
-    files = mcf.make_inference_single_parameter_plots(workflow, mcmc_file,
+    files = mcf.make_inference_single_parameter_plots(workflow, inference_file,
                           opts.output_dir, variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)]) 
