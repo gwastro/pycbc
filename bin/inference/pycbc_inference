@@ -43,8 +43,8 @@ def select_waveform_generator(approximant):
         raise ValueError("%s is not a valid approximant."%approximant)
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_mcmc [--options]",
-                  description="Runs an MCMC.")
+parser = argparse.ArgumentParser(usage="pycbc_inference [--options]",
+                  description="Runs an sampler to find the posterior.")
 
 # add data options
 parser.add_argument("--instruments", type=str, nargs="+", required=True,
@@ -55,21 +55,21 @@ parser.add_argument("--frame-type", type=str, nargs="+",
 parser.add_argument("--low-frequency-cutoff", type=float, required=True,
     help="Low frequency cutoff for each IFO.")
 
-# add MCMC options
+# add inference options
 parser.add_argument("--sampler", required=True,
     choices=inference.samplers.keys(),
-    help="Sampler class to use for MCMC.")
+    help="Sampler class to use for finding posterior.")
 parser.add_argument("--likelihood-evaluator", required=True,
     choices=inference.likelihood_evaluators.keys(),
     help="Evaluator class to use to calculate the likelihood.")
 parser.add_argument("--nwalkers", type=int, required=True,
-    help="Number of walkers to use in MCMC.")
+    help="Number of walkers to use in sampler.")
 parser.add_argument("--niterations", type=int, required=True,
     help="Number of iterations to perform after burn in.")
 parser.add_argument("--nprocesses", type=int, default=None,
     help="Number of processes to use. If not given then use maximum.")
 parser.add_argument("--skip-burn-in", action="store_true", default=False,
-    help="Do not burn in MCMC.")
+    help="Do not burn in with sampler.")
 
 # add config options
 parser.add_argument("--config-files", type=str, nargs="+", required=True,
@@ -165,7 +165,7 @@ with ctx:
     if not any(param in tags for param in variable_args):
         raise KeyError("You are missing a priors section in the config file.")
 
-    # get parameters that do not change in MCMC
+    # get parameters that do not change in sampler
     static_args = dict([(key,cp.get_opt_tags("static_args",key,[])) \
                                          for key in cp.options("static_args")])
     for key,val in static_args.iteritems():
@@ -200,7 +200,7 @@ with ctx:
     likelihood = inference.GaussianLikelihood(generator, stilde_dict,
                         opts.low_frequency_cutoff, psds=psd_dict, prior=prior)
 
-    # create sampler that will run MCMC
+    # create sampler that will run
     ndim = len(variable_args)
     sampler = inference.samplers[opts.sampler](likelihood, ndim=ndim,
                                                nwalkers=opts.nwalkers,
@@ -264,7 +264,7 @@ with ctx:
     # if burn in then switch p0 to None and sampler should pick up from last
     # position after burn in
     if not opts.skip_burn_in:
-        logging.info("MCMC burn in")
+        logging.info("Burn in")
         sampler.burn_in(p0)
         p0 = None
 

@@ -25,14 +25,14 @@ from pycbc import results
 from pycbc.io.mcmc import MCMCFile
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_mcmc_table_summary [--options]",
-    description="Makes a table of MCMC posterior results.")
+parser = argparse.ArgumentParser(usage="pycbc_inference_table_summary [--options]",
+    description="Makes a table of posterior results.")
 
 # add data options
 parser.add_argument("--input-file", type=str, required=True,
     help="Path to input HDF file.")
 parser.add_argument("--variable-args", type=str, nargs="+", default=[],
-    help="Name of parameters varied in MCMC.")
+    help="Name of parameters varied in sampler.")
 
 # output plot options
 parser.add_argument("--output-file", type=str, required=True,
@@ -106,4 +106,4 @@ html = results.mathjax_html_header() + '\n%s'%(
 results.save_fig_with_metadata(html, opts.output_file, {},
                  cmd=" ".join(sys.argv),
                  title="Table of Posterior Parameters",
-                 caption="Table with quantiles for variable MCMC parameters.")
+                 caption="Table with quantiles for variable parameters.")

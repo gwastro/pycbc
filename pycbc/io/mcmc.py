@@ -113,6 +113,24 @@ class MCMCFile(h5py.File):
 
         return self[variable_arg]["walker%d"%nwalker][thin_start::thin_interval]
 
+    def read_acceptance_fraction(self, thin_start=None, thin_interval=None):
+        """ Returns a numpy.array of the fraction of samples acceptanced at
+        each iteration in the sampler..
+
+        Parameters
+        -----------
+        thin_start : int
+            Index of the sample to begin returning samples.
+        thin_interval : int
+            Interval to accept every i-th sample.
+
+        Returns
+        -------
+        numpy.array
+            The acceptance fraction.
+        """
+        return self["acceptance_fraction"][thin_start::thin_interval]
+
     def read_variable_args(self):
         """ Returns list of variable_args.
 

@@ -26,14 +26,14 @@ from pycbc import results
 from pycbc.io.mcmc import MCMCFile
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_samples [--options]",
-    description="Plots samples from MCMC.")
+parser = argparse.ArgumentParser(usage="pycbc_inference_plot_samples [--options]",
+    description="Plots samples from inference sampler.")
 
 # add data options
 parser.add_argument("--input-file", type=str, required=True,
     help="Path to input HDF file.")
 parser.add_argument("--variable-args", type=str, nargs="+", default=None,
-    help="Name of parameters varied in MCMC.")
+    help="Name of parameters varied.")
 
 # output plot options
 parser.add_argument("--output-file", type=str, required=True,

@@ -25,7 +25,7 @@ import sys
 from pycbc import results
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_acceptance_rate [--options]",
+parser = argparse.ArgumentParser(usage="pycbc_inference_plot_acceptance_rate [--options]",
     description="Plots fraction of walkers that accepted each step.")
 
 # add data options
@@ -59,10 +59,12 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 # read input file
 logging.info("Reading input file")
 fp = h5py.File(opts.input_file, "r")
+acceptance_fraction = fp.read_acceptance_fraction(thin_start=opts.thin_start,
+                                              thin_interval=opts.thin_interval)
+fp.close()
 
 # plot acceptance rate and drawn values
 logging.info("Plotting acceptance fraction")
-acceptance_fraction = fp["acceptance_fraction"][opts.thin_start::opts.thin_interval]
 fig = plt.figure()
 plt.plot(acceptance_fraction, 'k', alpha=.5)
 plt.ylabel("Mean Acceptance Rate")

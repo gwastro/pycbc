@@ -27,7 +27,6 @@ import numpy
 import scipy
 import sys
 from pycbc import inference, pnutils, results
-from pycbc.io.mcmc import MCMCFile
 from pycbc.workflow import WorkflowConfigParser
 
 def binomial_coeff(x, y):
@@ -42,8 +41,8 @@ def cartesian(arrays):
 
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_prior [--options]",
-    description="Plots corner plot of prior from MCMC.")
+parser = argparse.ArgumentParser(usage="pycbc_inference_plot_prior [--options]",
+    description="Plots priors from inference configuration file.")
 
 # add input options
 parser.add_argument("--config-file", type=str, required=True,
@@ -53,7 +52,7 @@ parser.add_argument("--subsection", type=str, required=True,
 
 # add prior options
 parser.add_argument("--variable-args", type=str, nargs="+",  default=[],
-    help="Name of parameters varied in MCMC.")
+    help="Name of parameters varied.")
 parser.add_argument("--bins", type=int, required=True,
     help="Number of points to evaluator parameter distributions.")
 
