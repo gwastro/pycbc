@@ -25,17 +25,17 @@ import numpy
 import sys
 from pycbc import results
 from pycbc.filter import autocorrelation
-from pycbc.io.mcmc import MCMCFile
+from pycbc.io.inference_hdf import InferenceFile
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_acf [--options]",
-    description="Plots autocorrelation function from MCMC.")
+parser = argparse.ArgumentParser(usage="pycbc_inference_plot_acf [--options]",
+    description="Plots autocorrelation function from inference samples.")
 
 # add data options
 parser.add_argument("--input-file", type=str, required=True,
     help="Path to input HDF file.")
 parser.add_argument("--variable-args", type=str, nargs="+", default=None,
-    help="Name of parameters varied in MCMC.")
+    help="Name of parameters varied.")
 
 # add plotting options
 parser.add_argument("--ymin", type=float,
@@ -69,7 +69,7 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 
 # read input file
 logging.info("Reading input file")
-fp = MCMCFile(opts.input_file, "r")
+fp = InferenceFile(opts.input_file, "r")
 variable_args = fp.read_variable_args() if opts.variable_args is None else opts.variable_args
 
 # get number of dimensions
@@ -125,4 +125,5 @@ results.save_fig_with_metadata(fig, opts.output_file,
 plt.close()
 
 # exit
+fp.close()
 logging.info("Done")

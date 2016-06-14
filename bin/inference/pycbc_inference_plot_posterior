@@ -25,17 +25,17 @@ import matplotlib.pyplot as plt
 import numpy
 import sys
 from pycbc import pnutils, results
-from pycbc.io.mcmc import MCMCFile
+from pycbc.io.inference_hdf import InferenceFile
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_mcmc_plot_corner [--options]",
-    description="Plots corner plot of posteriors from MCMC.")
+parser = argparse.ArgumentParser(usage="pycbc_inference_plot_corner [--options]",
+    description="Plots corner plot of posteriors from inference sampler.")
 
 # add data options
 parser.add_argument("--input-file", type=str, required=True,
     help="Path to input HDF file.")
 parser.add_argument("--variable-args", type=str, nargs="+", default=None,
-    help="Name of parameters varied in MCMC.")
+    help="Name of parameters varied.")
 
 # output plot options
 parser.add_argument("--output-file", type=str, required=True,
@@ -65,7 +65,7 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 
 # read input file
 logging.info("Reading input file")
-fp = MCMCFile(opts.input_file, "r")
+fp = InferenceFile(opts.input_file, "r")
 variable_args = fp.read_variable_args() if opts.variable_args is None else opts.variable_args
 
 # thin samples to get independent samples from each sampler
@@ -79,7 +79,7 @@ for i in range(fp.attrs["nwalkers"]):
     samples = []
     for param in variable_args:
 
-        # get MCMC parameters
+        # get varied parameters
         samples.append( fp.read_samples_from_walker(param, i,
                                         thin_start=opts.thin_start,
                                         thin_interval=opts.thin_interval) )
@@ -149,4 +149,5 @@ results.save_fig_with_metadata(fig, opts.output_file,
 plt.close()
 
 # exit
+fp.close()
 logging.info("Done")

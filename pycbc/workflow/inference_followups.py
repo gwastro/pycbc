@@ -118,8 +118,8 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
 
     logging.info("Leaving inference module")
 
-def make_inference_summary_table(workflow, mcmc_file, output_dir,
-                    variable_args=None, name="mcmc_table",
+def make_inference_summary_table(workflow, inference_file, output_dir,
+                    variable_args=None, name="inference_table",
                     analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
 
@@ -127,8 +127,8 @@ def make_inference_summary_table(workflow, mcmc_file, output_dir,
     ----------
     workflow: pycbc.workflow.Workflow
         The core workflow instance we are populating
-    mcmc_file: pycbc.workflow.File
-        The file with MCMC samples.
+    inference_file: pycbc.workflow.File
+        The file with posterior samples.
     output_dir: str
         The directory to store result plots and files.
     variable_args : list
@@ -161,7 +161,7 @@ def make_inference_summary_table(workflow, mcmc_file, output_dir,
                       out_dir=output_dir, tags=tags).create_node()
 
     # add command line options
-    node.add_input_opt("--input-file", mcmc_file)
+    node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".html", "--output-file")
     node.add_opt("--variable-args", " ".join(variable_args))
 
@@ -170,17 +170,17 @@ def make_inference_summary_table(workflow, mcmc_file, output_dir,
 
     return node.output_files
 
-def make_inference_corner_plot(workflow, mcmc_file, output_dir,
+def make_inference_corner_plot(workflow, inference_file, output_dir,
                     variable_args=None,
-                    name="mcmc_corner", analysis_seg=None, tags=None):
+                    name="inference_posterior", analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
 
     Parameters
     ----------
     workflow: pycbc.workflow.Workflow
         The core workflow instance we are populating
-    mcmc_file: pycbc.workflow.File
-        The file with MCMC samples.
+    inference_file: pycbc.workflow.File
+        The file with posterior samples.
     output_dir: str
         The directory to store result plots and files.
     config_file: str
@@ -217,7 +217,7 @@ def make_inference_corner_plot(workflow, mcmc_file, output_dir,
                       tags=tags).create_node()
 
     # add command line options
-    node.add_input_opt("--input-file", mcmc_file)
+    node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
     node.add_opt("--variable-args", " ".join(variable_args))
 
@@ -226,16 +226,16 @@ def make_inference_corner_plot(workflow, mcmc_file, output_dir,
 
     return node.output_files
 
-def make_inference_acceptance_rate_plot(workflow, mcmc_file, output_dir,
-                    name="mcmc_rate", analysis_seg=None, tags=None):
+def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
+                    name="inference_rate", analysis_seg=None, tags=None):
     """ Sets up the acceptance rate plot in the workflow.
 
     Parameters
     ----------
     workflow: pycbc.workflow.Workflow
         The core workflow instance we are populating
-    mcmc_file: pycbc.workflow.File
-        The file with MCMC samples.
+    inference_file: pycbc.workflow.File
+        The file with posterior samples.
     output_dir: str
         The directory to store result plots and files.
     name: str
@@ -266,7 +266,7 @@ def make_inference_acceptance_rate_plot(workflow, mcmc_file, output_dir,
                       out_dir=output_dir, tags=tags).create_node()
 
     # add command line options
-    node.add_input_opt("--input-file", mcmc_file)
+    node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
 
     # add node to workflow
@@ -274,17 +274,17 @@ def make_inference_acceptance_rate_plot(workflow, mcmc_file, output_dir,
 
     return node.output_files
 
-def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
-                    variable_args=None, samples_name="mcmc_samples",
-                    auto_name="mcmc_acf", analysis_seg=None, tags=None):
-    """ Sets up single-parameter plots from MCMC in the workflow.
+def make_inference_single_parameter_plots(workflow, inference_file, output_dir,
+                    variable_args=None, samples_name="inference_samples",
+                    auto_name="inference_acf", analysis_seg=None, tags=None):
+    """ Sets up single-parameter plots for inference workflow.
 
     Parameters
     ----------
     workflow: pycbc.workflow.Workflow
         The core workflow instance we are populating
-    mcmc_file: pycbc.workflow.File
-        The file with MCMC samples.
+    inference_file: pycbc.workflow.File
+        The file with posterior samples.
     output_dir: str
         The directory to store result plots and files.
     config_file: str
@@ -325,7 +325,7 @@ def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
     for arg in variable_args:
 
         # plot posterior distribution
-        corner_files = make_inference_corner_plot(workflow, mcmc_file,
+        corner_files = make_inference_corner_plot(workflow, inference_file,
                           output_dir, variable_args=[arg],
                           analysis_seg=analysis_seg, tags=tags + [arg])
 
@@ -335,7 +335,7 @@ def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
                           tags=tags + [arg]).create_node()
 
         # add command line options
-        samples_node.add_input_opt("--input-file", mcmc_file)
+        samples_node.add_input_opt("--input-file", inference_file)
         samples_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
         samples_node.add_opt("--variable-args", arg)
 
@@ -344,7 +344,7 @@ def make_inference_single_parameter_plots(workflow, mcmc_file, output_dir,
                           out_dir=output_dir, tags=tags + [arg]).create_node()
 
         # add command line options
-        auto_node.add_input_opt("--input-file", mcmc_file)
+        auto_node.add_input_opt("--input-file", inference_file)
         auto_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
         auto_node.add_opt("--variable-args", arg)
 
