@@ -392,6 +392,20 @@ class DataBuffer(object):
                        channel_name,
                        start_time,
                        max_buffer=2048):
+        """ Create a rolling buffer of frame data
+
+        Parameters
+        ---------
+        frame_src: str of list of strings
+            Strings that indicate where to read from files from. This can be a
+        list of frame files, a glob, etc.
+        channel_name: str
+            Name of the channel to read from the frame files
+        start_time: 
+            Time to start reading from.
+        max_buffer: {int, 2048}, Optional
+            Length of the buffer in seconds
+        """
         self.frame_src = frame_src
         self.channel_name = channel_name
         self.read_pos = start_time
@@ -469,7 +483,12 @@ class DataBuffer(object):
             raise RuntimeError('Cannot read requested frame data') 
 
     def null_advance(self, blocksize):
-        """ Don't read new frames, just advance and insert zeros
+        """ Advance and insert zeros
+
+        Parameters
+        ----------
+        blocksize: int
+            The number of seconds to attempt to read from the channel
         """
         self.raw_buffer.roll(-int(blocksize * self.sample_rate))       
         self.raw_buffer.start_time += blocksize
@@ -477,6 +496,11 @@ class DataBuffer(object):
     def advance(self, blocksize):
         """ Add blocksize seconds more to the buffer, push blocksize seconds
         from the beginning.
+
+        Parameters
+        ----------
+        blocksize: int
+            The number of seconds to attempt to read from the channel
         """
         ts = self._read_frame(blocksize)
 
@@ -487,6 +511,21 @@ class DataBuffer(object):
         return ts
 
     def attempt_advance(self, blocksize, timeout=10):
+        """ Attempt to advance the frame buffer. Retry upon failure, except
+        if the frame file is beyond the timeout limit.
+
+        Parameters
+        ----------
+        blocksize: int
+            The number of seconds to attempt to read from the channel
+        timeout: {int, 10}, Optional
+            Number of seconds before giving up on reading a frame
+
+        Returns
+        -------
+        data: TimeSeries
+            TimeSeries containg 'blocksize' seconds of frame data
+        """
         self.update_cache()
         
         try:
@@ -526,22 +565,77 @@ class StatusBuffer(DataBuffer):
                        start_time,
                        max_buffer=2048,
                        valid_mask=HOFT_OK | SCIENCE_INTENT):
+        """ Create a rolling buffer of status data from a frame
+
+        Parameters
+        ---------
+        frame_src: str of list of strings
+            Strings that indicate where to read from files from. This can be a
+        list of frame files, a glob, etc.
+        channel_name: str
+            Name of the channel to read from the frame files
+        start_time: 
+            Time to start reading from.
+        max_buffer: {int, 2048}, Optional
+            Length of the buffer in seconds
+        valid_mask: {int, HOFT_OK | SCIENCE_INTENT}, Optional
+            Set of flags that must be on to indicate valid frame data.
+        """
         DataBuffer.__init__(self, frame_src, channel_name, start_time, max_buffer) 
         self.valid_mask = valid_mask
 
     def check_valid(self, values):
+        """ Check if the data contains any non-valid status information
+        
+        Parameters
+        ----------
+        values: pycbc.types.Array
+            Array of status information
+
+        Returns
+        -------
+        status: boolean
+            Returns True if all of the status information if valid, False if any is not.
+        """ 
         if numpy.any(numpy.bitwise_and(values.numpy(), self.valid_mask) != self.valid_mask):
             return False
         else:
             return True
         
     def is_extent_valid(self, start_time, duration):
+        """ Check if the duration contains any non-valid frames
+
+        Parameters
+        ----------
+        start_time: int
+            Begging of the duration to check in gps seconds
+        duration: int
+            Number of seconds after the start_time to check
+
+        Returns
+        -------
+        status: boolean
+            Returns True if all of the status information if valid, False if any is not.        
+        """
         s = self.raw_buffer.start_time - start_time
         e = s + duration
         values = self.raw_buffer[s * self.sample_rate: e * self.sample_rate]
         return self.check_valid(values)
 
     def advance(self, blocksize):
+        """ Add blocksize seconds more to the buffer, push blocksize seconds
+        from the beginning.
+
+        Parameters
+        ----------
+        blocksize: int
+            The number of seconds to attempt to read from the channel
+
+        Returns
+        -------
+        status: boolean
+            Returns True if all of the status information if valid, False if any is not.  
+        """
         return self.check_valid(DataBuffer.advance(self, blocksize))
         
 
