@@ -41,6 +41,7 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
     build_libpq=false
     build_gsl=true
     build_swig=true
+    build_framecpp=false
     h5py_from="git"
     glue_from="pip-install" # "git-patched"
     psycopg26_from=fake-psycopg255 # "pip-install" "system"
@@ -60,7 +61,8 @@ elif test "`uname -s`" = "Darwin" ; then
     export CFLAGS=-m64
     export CXXFLAGS=-m64
     export LDFLAGS=-m64
-    lal_cppflags="-DDONT_RESOLVE_LALCACHE_PATH"
+#    libframe_debug_level=3
+#    lal_cppflags="-DDONT_RESOLVE_LALCACHE_PATH"
     shared="--enable-shared"
     build_dlls=false
     build_ssl=false
@@ -74,6 +76,7 @@ elif test "`uname -s`" = "Darwin" ; then
     build_libpq=false
     build_gsl=true
     build_swig=true
+    build_framecpp=true
     h5py_from="pip-install" # "git"
     glue_from="pip-install" # "git-patched"
     psycopg26_from=system
@@ -99,6 +102,7 @@ else
     build_libpq=false
     build_gsl=false
     build_swig=false
+    build_framecpp=false
     glue_from="git-patched" # "pip-install"
     h5py_from="pip-install"
     psycopg26_from=fake-psycopg255 # "pip-install" "system"
@@ -468,25 +472,50 @@ Libs: -L${libdir} -lhdf5' |
     echo -e "\\n\\n>> [`date`] pip install --upgrade distribute"
     pip install --upgrade distribute
 
-    # LIBFRAME
-    p=libframe-8.21
-    echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz || wget $wget_opts http://lappweb.in2p3.fr/virgo/FrameL/$p.tar.gz
-    rm -rf $p
-    tar -xzf $p.tar.gz
-    cd $p
-    # make sure frame files are read in binary mode
-    sed -i~ 's/\([Oo]pen.*"r\)"/\1b"/' src/FrameL.c # `egrep -r '[Oo]pen.*"r"' .`
-    if $build_dlls; then
-	for i in src/Makefile*; do
-	    echo 'libFrame_la_LDFLAGS += -no-undefined' >> $i
-	done
-    fi
-    ./configure $shared --enable-static --prefix="$PREFIX"
-    make
-    make install
-    mkdir -p "$PREFIX/lib/pkgconfig"
-    sed "s%^prefix=.*%prefix=$PREFIX%" src/libframe.pc > $PREFIX/lib/pkgconfig/libframe.pc
+    if $build_framecpp; then
+
+        # FrameCPP
+        p=ldas-tools-2.4.2
+        echo -e "\\n\\n>> [`date`] building $p"
+        test -r $p.tar.gz || wget $wget_opts http://software.ligo.org/lscsoft/source/$p.tar.gz
+        rm -rf $p
+        tar -xzf $p.tar.gz
+        cd $p
+        # sed -i~ '/^CXXSTD[A-Z]*FLAGS=/d' ./libraries/ldastoolsal/ldastoolsal*.pc
+        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit --disable-cxx11 $shared --enable-static --prefix="$PREFIX"
+        make
+        make -k install || true
+        # cd ..
+        # $cleanup && rm -rf $p
+
+    else # build_framecpp
+
+        # LIBFRAME / FrameL
+        p=libframe-8.30
+        echo -e "\\n\\n>> [`date`] building $p"
+        test -r $p.tar.gz || wget $wget_opts http://lappweb.in2p3.fr/virgo/FrameL/$p.tar.gz
+        rm -rf $p
+        tar -xzf $p.tar.gz
+        cd $p
+        if test -n "$libframe_debug_level"; then
+            sed -i~ "s/^FILE *\\*FrFOut *= *NULL;/#define FrFOut stderr/;
+                s/FrDebugLvl *= *[^;]*;/FrDebugLvl = $libframe_debug_level;/" src/FrameL.c
+        fi
+        # make sure frame files are opened in binary mode
+        sed -i~ 's/\([Oo]pen.*"r\)"/\1b"/;' src/FrameL.c # `egrep -r '[Oo]pen.*"r"' .`
+        if $build_dlls; then
+            for i in src/Makefile*; do
+                echo 'libFrame_la_LDFLAGS += -no-undefined' >> $i
+            done
+        fi
+        ./configure $shared --enable-static --prefix="$PREFIX"
+        make
+        make install
+        mkdir -p "$PREFIX/lib/pkgconfig"
+        sed "s%^prefix=.*%prefix=$PREFIX%" src/libframe.pc > $PREFIX/lib/pkgconfig/libframe.pc
+
+    fi # build_framecpp
+
     cd ..
     $cleanup && rm -rf $p
 
@@ -560,6 +589,10 @@ else
              s/swiglal_python_la/libswiglal_python_la/g;
              s/mv -f swiglal_python/mv -f cygswiglal_python/;' gnuscripts/lalsuite_swig.am
 	shared="$shared --enable-win32-dll"
+    fi
+    if $build_framecpp; then
+	shared="$shared --enable-framec --disable-framel"
+	lal_cppflags="$lal_cppflags -DLAL_FRAME_LIBRARY=FrameC"
     fi
     ./00boot
     cd ..
