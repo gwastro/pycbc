@@ -46,6 +46,30 @@ def correlate(x, y, z):
 def _correlate_factory(x, y, z):
     pass
 
+class BatchCorrelator(object):
+    """ Create a batch correlation engine 
+    """
+    def __init__(self, xs, zs, size):
+        """ Correlate x and y, store in z. Arrays need not be equal length, but
+        must be at least size long and of the same dtype. No error checking
+        will be performed, so be careful. All dtypes must be the same.
+        Note, must be created within the processing context that it will be used in.
+        """
+        self.size = int(size)
+        self.dtype = xs[0].dtype
+        self.num_vectors = len(xs)
+
+        # Store each pointer as in integer array
+        self.x = Array([v.ptr for v in xs], dtype=numpy.int)
+        self.z = Array([v.ptr for v in zs], dtype=numpy.int)
+
+    @pycbc.scheme.schemed(BACKEND_PREFIX)
+    def batch_correlate_execute(self, y):
+        pass
+
+    execute = batch_correlate_execute
+
+
 class Correlator(object):
     """ Create a correlator engine
 
@@ -1204,7 +1228,6 @@ def quadratic_interpolate_peak(left, middle, right):
     bin_offset = 1.0/2.0 * (left - right) / (left - 2 * middle + right)
     peak_value = middle + 0.25 * (left - right) * bin_offset
     return bin_offset, peak_value
-        
 
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
