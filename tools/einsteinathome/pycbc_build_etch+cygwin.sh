@@ -21,6 +21,13 @@ test ".$LANG" = "." && export LANG="en_US.UTF-8"
 test ".$LC_ALL" = "." && export LC_ALL="$LANG"
 export FC=gfortran
 
+# defaults, possibly overwritten by command-line arguments
+cleanup=true # usually, build directories are removed after a successful build
+verbose_pyinstalled_python=false
+pycbc_branch=master
+pycbc_remote=ligo-cbc
+scratch_pycbc=false
+
 # automatically detect a Debian 4.0 (Etch) installation.
 # if not found, use Cygwin settings.
 # "build" or "compile" here means "from source", opposed to
@@ -54,6 +61,8 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
     appendix="_Linux64"
 elif test "`uname -s`" = "Darwin" ; then
     echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
+    pycbc_branch=einsteinathome_testing
+    pycbc_remote=bema-ligo
     export FC=gfortran-mp-4.8
     export CC=gcc-mp-4.8
     export CXX=g++-mp-4.8
@@ -126,25 +135,18 @@ export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran:
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LIBS="$LIBS -lgfortran"
 
-# defaults, possibly overwritten by command-line arguments
-cleanup=true # usually, build directories are removed after a successful build
-verbose_pyinstalled_python=false
-pycbc_branch=master
-pycbc_remote=ligo-cbc
-scratch_pycbc=false
-
 # handle command-line arguments, possibly overriding above settings
 for i in $*; do
     case $i in
-	--no-pycbc-update) pycbc_branch="HEAD";;
-	--scratch-pycbc) scratch_pycbc=true;;
+        --no-pycbc-update) pycbc_branch="HEAD";;
+        --scratch-pycbc) scratch_pycbc=true;;
         --bema-testing)
-	    pycbc_branch=einsteinathome_testing
-	    pycbc_remote=bema-ligo;;
+            pycbc_branch=einsteinathome_testing
+            pycbc_remote=bema-ligo;;
         --no-cleanup) cleanup=false;;
         --verbose-python) verbose_pyinstalled_python=true;;
         --clean) rm -rf "$HOME/.cache" "$SOURCE/pycbc-preinst.tgz" "$SOURCE/pycbc-preinst-lalsuite.tgz";;
-	*) echo "unknown option '$i', valid are:
+        *) echo "unknown option '$i', valid are:
 
     --clean           : perform a clean build (takes quite some time); delete ~/.cache and
                         tarballs containing precompiled libraries (lalsuite, scipy etc.)
