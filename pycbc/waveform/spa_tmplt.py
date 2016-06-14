@@ -152,8 +152,17 @@ def spa_tmplt_engine(htilde, kmin, phase_order, delta_f, piM, pfaN,
     """ Calculate the spa tmplt phase
     """
 
+# FIXME: This a workaround untill all the bundles are upgraded to a new
+# version of lalsuite
+
+try:
+    lalsimulation.SimInspiralTaylorF2AlignedPhasing(1, 1, 0, 0, 1, 1, -1, None)
+    NEW_F2_SYNTAX=True
+except TypeError:
+    NEW_F2_SYNTAX=False
+
 def spa_tmplt(**kwds):
-    """
+    """ Generate a minimal TaylorF2 approximant with optimations for the sin/cos
     """
     # Pull out the input arguments
     f_lower = kwds['f_lower']
@@ -174,9 +183,16 @@ def spa_tmplt(**kwds):
 
     amp_factor = spa_amplitude_factor(mass1=mass1, mass2=mass2) / distance
 
-    #Calculate the PN terms 
-    phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(float(mass1), 
-                                        float(mass2), float(s1z), float(s2z), 1, 1, spin_order, None)
+    #Calculate the PN terms
+    if NEW_F2_SYNTAX:
+        phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(float(mass1), 
+                                        float(mass2), float(s1z), float(s2z), 1, 1,
+                                        spin_order, None)
+    else:
+        phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(float(mass1), 
+                                        float(mass2), float(s1z), float(s2z), 1, 1,
+                                        spin_order)
+        
                                            
     pfaN = phasing.v[0]
     pfa2 = phasing.v[2] / pfaN
