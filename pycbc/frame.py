@@ -19,8 +19,8 @@ This modules contains functions for reading in data from frame files or caches
 import lalframe, logging
 import lal
 import numpy
-import os.path, glob
-from pycbc.types import TimeSeries
+import os.path, glob, time
+from pycbc.types import TimeSeries, zeros
 
 
 # map LAL series types to corresponding functions and Numpy types
@@ -384,4 +384,138 @@ def write_frame(location, channels, timeseries):
 
     # write frame
     lalframe.FrameWrite(frame, location)
+
+class DataBuffer(object):
+    """ A linear buffer that acts a a FILO for reading in frame data
+    """
+
+    def __init__(self, frame_src, 
+                       channel_name,
+                       start_time,
+                       max_buffer=2048):
+        self.frame_src = frame_src
+        self.channel_name = channel_name
+        self.read_pos = start_time
+
+        self.update_cache()
+        self.channel_type, self.sample_rate = self._retrieve_metadata(self.stream, self.channel_name)
+
+        raw_size = self.sample_rate * max_buffer
+        self.raw_buffer = TimeSeries(zeros(raw_size, dtype=numpy.float64),
+                                     copy=False,
+                                     epoch=start_time - max_buffer,
+                                     delta_t=1.0/self.sample_rate)
+
+    def update_cache(self):
+        """ Reset the lal cache. This can be used to update the cache if the 
+        result may change due to more files being added to the filesystem, 
+        for example.
+        """
+        cache = locations_to_cache(self.frame_src)
+        stream = lalframe.FrStreamCacheOpen(cache)
+        self.stream = stream
+
+    def _retrieve_metadata(self, stream, channel_name):
+        """ Retrieve basic metadata by reading the first file in the cache
+        """
+        data_length = lalframe.FrStreamGetVectorLength(channel_name, stream)
+        channel_type = lalframe.FrStreamGetTimeSeriesType(channel_name, stream)
+        create_series_func = _fr_type_map[channel_type][2]
+        get_series_metadata_func = _fr_type_map[channel_type][3]
+        series = create_series_func(channel_name, stream.epoch, 0, 0,
+                            lal.ADCCountUnit, 0)
+        get_series_metadata_func(series, stream)
+        return channel_type, int(1.0/series.deltaT)        
+
+    def _read_frame(self, blocksize):
+        """ Try to read the block of data blocksize seconds long
+        """
+        try:
+            read_func = _fr_type_map[self.channel_type][0]
+            dtype = _fr_type_map[self.channel_type][1]
+            data = read_func(self.stream, self.channel_name, self.read_pos, blocksize, 0)
+            return TimeSeries(data.data.data, delta_t=data.deltaT,
+                              epoch=self.read_pos, 
+                              dtype=dtype)     
+        except:
+            raise RuntimeError('Cannot read requested frame data') 
+
+    def null_advance(self, blocksize):
+        """ Don't read new frames, just advance and insert zeros
+        """
+        self.raw_buffer.roll(-int(blocksize * self.sample_rate))       
+        self.raw_buffer.start_time += blocksize
+
+    def advance(self, blocksize):
+        """ Add blocksize seconds more to the buffer, push blocksize seconds
+        from the beginning.
+        """
+        ts = self._read_frame(blocksize)
+
+        self.raw_buffer.roll(-len(ts))
+        self.raw_buffer[-len(ts):] = ts[:] 
+        self.read_pos += blocksize
+        self.raw_buffer.start_time += blocksize
+        return ts
+
+    def attempt_advance(self, blocksize, timeout=10):
+        self.update_cache()
+        
+        try:
+            return DataBuffer.advance(self, blocksize)
+        except ValueError:
+            if lal.GPSTimeNow() > timeout + self.raw_buffer.end_time:
+                # The frame is not there and it should be by now, so we give up
+                # and treat it as zeros
+                self.null_advance(blocksize)
+                return None
+            else:
+                # I am too early to give up on this frame, so we should try again
+                return self.attempt_advance(self, blocksize, timeout=timeout)
+  
+HOFT_OK = 1
+SCIENCE_INTENT = 2
+SCIENCE_QUALITY = 4
+HOFT_PROD = 8
+FILTERS_OK = 16
+NO_STOCH_HW_INJ = 32
+NO_CBC_HW_INJ = 64
+NO_BURST_HW_INJ = 128
+NO_DETCHAR_HW_INJ = 256
+KAPPA_A_OK = 512
+KAPPA_PU_OK = 1024
+KAPPA_TST_OK = 2048
+KAPPA_C_OK = 4096
+FCC_OK = 8192
+NO_GAP = 16384    
+               
+class StatusBuffer(DataBuffer):
+
+
+    def __init__(self, frame_src, 
+                       channel_name,
+                       start_time,
+                       max_buffer=2048,
+                       valid_mask=HOFT_OK | SCIENCE_INTENT):
+        DataBuffer.__init__(self, frame_src, channel_name, start_time, max_buffer) 
+        self.valid_mask = valid_mask
+
+    def check_valid(self, values):
+        if numpy.any(numpy.bitwise_and(values.numpy(), self.valid_mask) != self.valid_mask):
+            return False
+        else:
+            return True
+        
+    def is_extent_valid(self, start_time, duration):
+        s = self.raw_buffer.start_time - start_time
+        e = s + duration
+        values = self.raw_buffer[s * self.sample_rate: e * self.sample_rate]
+        return self.check_valid(values)
+
+    def advance(self, blocksize):
+        return self.check_valid(DataBuffer.advance(self, blocksize))
+        
+
+
+        
 
