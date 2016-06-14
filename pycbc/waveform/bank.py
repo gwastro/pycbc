@@ -33,6 +33,7 @@ from pycbc.filter import sigmasq
 from pycbc import DYN_RANGE_FAC
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.io import FieldArray
+from copy import copy
 
 def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
@@ -56,7 +57,10 @@ def sigma_cached(self, psd):
             self._sigmasq[key] = psd.sigmasq_vec[self.approximant][self.end_idx] * (scale) **2
 
         else:
-            self._sigmasq[key] = sigmasq(self, psd, low_frequency_cutoff=self.f_lower)                    
+            if not hasattr(psd, 'invsqrt'):
+                psd.invsqrt = 1.0 / psd ** 0.5
+
+            self._sigmasq[key] = sigmasq(self * psd.invsqrt, low_frequency_cutoff=self.f_lower)                    
     return self._sigmasq[key]
     
 # dummy class needed for loading LIGOLW files
@@ -151,20 +155,36 @@ class LiveFilterBank(TemplateBank):
 
         super(LiveFilterBank, self).__init__(filename, approximant=approximant, **kwds)
 
-        self.table = sorted(self.table, key=lambda t: t.mchirp)        
+        from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+        self.table = sorted(self.table, key=lambda t: mass1_mass2_to_mchirp_eta(t.mass1, t.mass2)[0])        
+
+    def round_up(self, num):
+        inc = 8
+        size = numpy.ceil(num / self.sample_rate / inc) * self.sample_rate * inc
+        return size
+
+    def getslice(self, sindex):
+        instance = copy(self)
+        instance.table = self.table[sindex]
+        return instance
 
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            return self.getslice(index)
+
         approximant = self.approximant(index)
         f_end = self.end_frequency(index)
 
         # Determine the length of time of the filter, rounded up to
         # nearest power of two
-        min_buffer = 1.0 + self.minimum_buffer
+        min_buffer = .5 + self.minimum_buffer
     
         from pycbc.waveform.waveform import props
         buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, f_lower=self.f_lower, 
                                                                       **props(self.table[index]))
-        tlen = nearest_larger_binary_number((buff_size + min_buffer) * self.sample_rate)
+
+        
+        tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
         flen = tlen / 2 + 1
 
         delta_f = self.sample_rate / float(tlen)
@@ -206,6 +226,8 @@ class LiveFilterBank(TemplateBank):
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
         htilde._sigmasq = {}
 
+        htilde.id = hash((htilde.params.mass1, htilde.params.mass2, 
+                          htilde.params.spin1z, htilde.params.spin2z))
         return htilde
 
 class FilterBank(TemplateBank):
@@ -284,7 +306,6 @@ class FilterBank(TemplateBank):
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
         htilde._sigmasq = {}
-
         return htilde
 
 def find_variable_start_frequency(approximant, parameters, f_start, max_length, 
