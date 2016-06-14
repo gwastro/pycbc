@@ -60,7 +60,9 @@ def sigma_cached(self, psd):
             if not hasattr(psd, 'invsqrt'):
                 psd.invsqrt = 1.0 / psd ** 0.5
 
-            self._sigmasq[key] = sigmasq(self * psd.invsqrt, low_frequency_cutoff=self.f_lower)                    
+            self._sigmasq[key] = sigmasq(self * psd.invsqrt,
+                                            low_frequency_cutoff=self.f_lower, 
+                                            high_frequency_cutoff=self.end_frequency)                    
     return self._sigmasq[key]
     
 # dummy class needed for loading LIGOLW files
