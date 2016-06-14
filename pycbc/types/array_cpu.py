@@ -27,6 +27,10 @@ import numpy as _np
 from array import common_kind, complex128, float64
 import aligned as _algn
 from scipy.linalg import blas
+from scipy.weave import inline
+from pycbc.opt import omp_libs, omp_flags
+from pycbc import WEAVE_FLAGS
+from pycbc.types import real_same_precision_as
 
 def zeros(length, dtype=_np.float64):
     return _algn.zeros(length, dtype=dtype)
@@ -41,12 +45,40 @@ def dot(self, other):
     return _np.dot(self._data,other)     
 
 def min(self):
-    return self.data.min()  
+    return self.data.min()
+
+code_abs_arg_max = """
+float val = 0;
+for (int i=0; i<N; i++){
+    float mag = data[i*2] * data[i*2] + data[i*2+1] * data[i*2+1];
+    if ( mag > val){
+        loc[0] = i;
+        val = mag;
+    }
+}
+"""
+
+def abs_arg_max(self):
+    if self.kind == 'real':
+        return _np.argmax(self.data)
+    else:
+        data = _np.array(self._data, copy=False).view(real_same_precision_as(self))
+        loc = _np.array([0])
+        N = len(self)
+        inline(code_abs_arg_max, ['data', 'loc', 'N'], libraries=omp_libs,
+                extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags)
+        return loc[0]
 
 def abs_max_loc(self):
-    tmp = abs(self.data)
-    ind = _np.argmax(tmp)
-    return tmp[ind], ind
+    if self.kind == 'real':
+        tmp = abs(self.data)
+        ind = _np.argmax(tmp)
+        return tmp[ind], ind
+    else:
+        tmp = self.data.real ** 2.0 
+        tmp += self.data.imag ** 2.0
+        ind = _np.argmax(tmp)
+        return tmp[ind] ** 0.5, ind
 
 def cumsum(self):
     return self.data.cumsum()
