@@ -20,6 +20,8 @@ import copy
 import logging, math, numpy, lal
 import pycbc.noise
 import pycbc.types
+from pycbc.types import float32, TimeSeries, zeros
+from pycbc.types import Array, FrequencySeries, complex_same_precision_as
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
 from pycbc.types import required_opts, required_opts_multi_ifo
@@ -32,7 +34,9 @@ from pycbc.filter.zpk import filter_zpk
 import pycbc.psd
 import pycbc.fft
 import pycbc.events
-
+import pycbc.frame
+import pycbc.filter
+from scipy.signal import kaiserord
 
 next_power_of_2 = lambda n: 2 ** (math.ceil(math.log(n, 2)) + 1)
 
@@ -1046,3 +1050,238 @@ class StrainSegments(object):
     def verify_segment_options_multi_ifo(cls, opt, parser, ifos):
         for ifo in ifos:
             required_opts_multi_ifo(opt, parser, ifo, cls.required_opts_list)
+
+class StrainBuffer(pycbc.frame.DataBuffer):
+    def __init__(self, frame_src, channel_name, start_time,
+                       max_buffer=512,
+                       sample_rate=4096,
+                       low_frequency_cutoff=20,
+                       highpass_frequency=15.0,
+                       highpass_reduction=200.0,
+                       highpass_bandwidth=5.0,
+                       psd_samples=30,
+                       psd_segment_length=4,
+                       psd_inverse_length=3.5,
+                       trim_padding=0.25,
+                       autogating_threshold=100,
+                       autogating_cluster=0.25,
+                       autogating_window=0.5,
+                       autogating_pad=0.25,
+                       state_channel=None,
+                       dyn_range_fac=pycbc.DYN_RANGE_FAC,
+                 ):
+        """ Class to produce overwhitened strain incrementally
+        """ 
+        super(StrainBuffer, self).__init__(frame_src, channel_name, start_time, max_buffer=max_buffer)
+
+        self.low_frequency_cutoff = low_frequency_cutoff
+
+        # We could similarly add a dq vector here when that becomes available.
+        self.state_channel = state_channel
+        if 'None' not in self.state_channel:
+            self.state = pycbc.frame.StatusBuffer(frame_src, state_channel, start_time, max_buffer)
+        else:
+            self.state = None
+
+        self.highpass_frequency = highpass_frequency
+        self.highpass_reduction = highpass_reduction
+        self.highpass_bandwidth = highpass_bandwidth
+
+        self.autogating_threshold = autogating_threshold
+        self.autogating_cluster = autogating_cluster
+        self.autogating_pad = autogating_pad
+        self.autogating_window = autogating_window
+
+        self.sample_rate = sample_rate
+        self.dyn_range_fac = dyn_range_fac
+
+        self.psd_segment_length = psd_segment_length
+        self.psd_samples = psd_samples
+        self.psd_inverse_length = psd_inverse_length
+        self.psd = None
+        self.psds = {}
+
+        strain_len = int(sample_rate * self.raw_buffer.delta_t * len(self.raw_buffer))
+        self.strain = TimeSeries(zeros(strain_len, dtype=numpy.float32),
+                                 delta_t=1.0/self.sample_rate, 
+                                 epoch=start_time-max_buffer)
+
+        highpass_samples, self.beta = kaiserord(self.highpass_reduction, 
+          self.highpass_bandwidth / self.raw_buffer.sample_rate * 2 * numpy.pi)
+        self.highpass_samples =  int(highpass_samples / 2)
+        resample_corruption = 10 # If using the ldas method
+        self.factor = int(1.0 / self.raw_buffer.delta_t / self.sample_rate)
+        self.corruption = self.highpass_samples / self.factor + resample_corruption
+
+        self.psd_corruption =  self.psd_inverse_length * self.sample_rate
+        self.total_corruption = self.corruption + self.psd_corruption
+
+        self.trim_padding = int(trim_padding * self.sample_rate)
+        if self.trim_padding > self.total_corruption:
+            self.trim_padding = self.total_corruption
+
+        self.psd_duration = (psd_samples - 1) / 2 * psd_segment_length
+
+        self.reduced_pad = int(self.total_corruption - self.trim_padding)
+        self.segments = {}
+        
+        # time to ignore output of frame (for initial buffering)
+        self.add_hard_count()
+
+    @property
+    def start_time(self):
+        return self.end_time - self.blocksize
+
+    @property
+    def end_time(self):
+        return float(self.strain.start_time + (len(self.strain) - self.total_corruption) / self.sample_rate)
+
+    def add_hard_count(self):
+        """ Advance far enough to be able to estimate a new PSD
+        """
+        self.wait_duration = int(numpy.ceil(self.total_corruption / self.sample_rate +  self.psd_duration))
+        self.invalidate_psd()
+
+    def invalidate_psd(self):
+        self.psd = None
+        self.psds = {}
+
+    def recalculate_psd(self):
+        """ Recalculate the psd 
+        """ 
+
+        seg_len = self.sample_rate * self.psd_segment_length
+        e = len(self.strain)
+        s = e - ((self.psd_samples + 1) * self.psd_segment_length / 2) * self.sample_rate
+        self.psd = pycbc.psd.welch(self.strain[s:e], seg_len=seg_len, 
+                                                     seg_stride=seg_len / 2) 
+        
+        self.psds = {}          
+
+    def overwhitened_data(self, delta_f):
+        """ Return overwhitened data
+        """
+        if delta_f not in self.segments:
+            buffer_length = int(1.0 / delta_f)
+            e = len(self.strain)
+            s = int(e - buffer_length * self.sample_rate - self.reduced_pad * 2)
+            fseries = make_frequency_series(self.strain[s:e])
+
+            if delta_f not in self.psds:
+                psdt = pycbc.psd.interpolate(self.psd, fseries.delta_f)
+                psdt = pycbc.psd.inverse_spectrum_truncation(psdt, 
+                                       int(self.sample_rate * self.psd_inverse_length),
+                                       low_frequency_cutoff=self.low_frequency_cutoff)
+                psdt._delta_f = fseries.delta_f
+
+                psd = pycbc.psd.interpolate(self.psd, delta_f)
+                psd = pycbc.psd.inverse_spectrum_truncation(psd, 
+                                       int(self.sample_rate * self.psd_inverse_length),
+                                       low_frequency_cutoff=self.low_frequency_cutoff)
+
+                psd.psdt = psdt
+                self.psds[delta_f] = psd
+
+            psd = self.psds[delta_f]                
+            fseries /= psd.psdt
+
+            # trim ends of strain
+            if self.reduced_pad  != 0:
+                overwhite = TimeSeries(zeros(e-s, dtype=self.strain.dtype),
+                                             delta_t=self.strain.delta_t)
+                pycbc.fft.ifft(fseries, overwhite)
+                overwhite2 = overwhite[self.reduced_pad:len(overwhite)-self.reduced_pad]
+                taper_window = self.trim_padding / 2.0 / overwhite.sample_rate         
+                gate_params = [(overwhite2.start_time, 0., taper_window),
+                               (overwhite2.end_time, 0., taper_window)]
+                gate_data(overwhite2, gate_params)
+                fseries_trimmed = FrequencySeries(zeros(len(overwhite2) / 2 + 1,
+                                                  dtype=fseries.dtype), delta_f=delta_f)
+                pycbc.fft.fft(overwhite2, fseries_trimmed)
+            else:
+                fseries_trimmed = fseries
+
+            fseries_trimmed.psd = psd
+            self.segments[delta_f] = fseries_trimmed
+            
+        stilde = self.segments[delta_f]
+        return stilde  
+
+    def null_advance_strain(self, blocksize):
+        sample_step = int(blocksize * self.sample_rate)
+        csize = sample_step + self.corruption * 2
+        self.strain.roll(-sample_step)
+
+        # We should roll this off at some point too...
+        self.strain[len(self.strain) - csize + self.corruption:] = 0
+        self.strain.start_time += blocksize
+       
+    def advance(self, blocksize):
+        """ Prepare another segment of data
+        """
+        ts = super(StrainBuffer, self).attempt_advance(blocksize)
+
+        # We have given up so there is no time series
+        if ts is None:
+            logging.info("Giving on up frame...")
+            if self.state:
+                self.state.null_advance(blocksize)
+                self.null_advance_strain(blocksize)
+            return False
+
+        # We collected some data so we are closer to being able to analyze data
+        self.wait_duration -= blocksize
+
+        # If the data we got was invalid, reset the counter on how much to collect
+        if self.state and self.state.advance(blocksize) is False:
+            self.add_hard_count()
+            self.null_advance_strain(blocksize)
+            logging.info("Time has invalid data, resetting buffer")
+            return False
+
+        self.segments = {}
+        self.blocksize = blocksize
+
+        # only condition with the needed raw data so we can continuously add
+        # to the existing result
+
+        ###### Precondition
+        sample_step = int(blocksize * self.sample_rate)
+        csize = sample_step + self.corruption * 2
+        start = len(self.raw_buffer) - csize * self.factor
+        strain = self.raw_buffer[start:]
+
+        strain =  pycbc.filter.highpass_fir(strain, self.highpass_frequency,
+                                       self.highpass_samples,
+                                       beta=self.beta)
+        strain = (strain * self.dyn_range_fac).astype(numpy.float32)
+        
+        strain = pycbc.filter.resample_to_delta_t(strain, 
+                                           1.0/self.sample_rate, method='ldas')
+
+        ###### Apply gating
+        glitch_times = detect_loud_glitches(strain + 0.,
+               threshold=self.autogating_threshold,
+               cluster_window=self.autogating_cluster,
+               low_freq_cutoff=self.highpass_frequency,
+               high_freq_cutoff= self.sample_rate / 2,
+               corrupt_time=self.corruption / float(self.sample_rate))
+            
+        gate_params = [[gt, self.autogating_window, self.autogating_pad] for gt in glitch_times]
+        if len(glitch_times) > 0:
+            logging.info('Autogating at %s', ', '.join(['%.3f' % gt for gt in glitch_times]))
+
+        #strain = gate_data(strain, gate_params)
+
+        ###### Stitch into continuous stream
+        self.strain.roll(-sample_step)
+        self.strain[len(self.strain) - csize + self.corruption:] = strain[self.corruption:]
+        self.strain.start_time += blocksize
+
+        if self.psd == None and self.wait_duration <=0:
+            self.recalculate_psd()
+
+        if self.wait_duration > 0:
+            return False
+        else:
+            return True
