@@ -137,7 +137,6 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
 
     >>> h_plus_sampled = resample_to_delta_t(h_plus, 1.0/2048)
     """
-
     if not isinstance(timeseries,TimeSeries):
         raise TypeError("Can only resample time series")
 
@@ -160,15 +159,21 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
         # and is in the same configuration as used in the original lalinspiral
         filter_coefficients = scipy.signal.firwin(numtaps, 1.0 / factor,
                                                   window=('kaiser', 5))             
+
         # apply the filter and decimate
         data = fir_zero_filter(filter_coefficients, timeseries)[::factor]
         
     else:
         raise ValueError('Invalid resampling method: %s' % method)
         
-    return TimeSeries(data, delta_t = delta_t,
+    ts = TimeSeries(data, delta_t = delta_t,
                       dtype=timeseries.dtype, 
                       epoch=timeseries._epoch)
+                      
+    # From the construction of the LDAS FIR filter there will be 10 corrupted samples
+    # explanation here http://software.ligo.org/docs/lalsuite/lal/group___resample_time_series__c.html
+    ts.corrupted_samples = 10
+    return ts
        
 
 _highpass_func = {numpy.dtype('float32'): lal.HighPassREAL4TimeSeries,
