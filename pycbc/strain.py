@@ -1071,8 +1071,53 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                        dyn_range_fac=pycbc.DYN_RANGE_FAC,
                  ):
         """ Class to produce overwhitened strain incrementally
+
+        Parameters
+        ---------
+        frame_src: str of list of strings
+            Strings that indicate where to read from files from. This can be a
+        list of frame files, a glob, etc.
+        channel_name: str
+            Name of the channel to read from the frame files
+        start_time: 
+            Time to start reading from.
+        max_buffer: {int, 512}, Optional
+            Length of the buffer in seconds
+        sample_rate: {int, 2048}, Optional
+            Rate in Hz to sample the data.
+        low_frequency_cutoff: {float, 20}, Optional
+            The low frequency cutoff to use for inverse spectrum truncation
+        highpass_frequency: {float, 15}, Optional
+            The frequency to apply a highpass filter at before downsampling.
+        highpass_reduction: {float, 200}, Optional
+            The amount of reduction to apply to the low frequencies.
+        highpass_bandwidth: {float, 5}, Optional
+            The width of the transition region for the highpass filter.
+        psd_samples: {int, 30}, Optional
+            The number of sample to use for psd estimation
+        psd_segment_length: {float, 4}, Optional
+            The number of seconds in each psd sample.
+        psd_inverse_length: {float, 3.5}, Optional
+            The length in seconds for fourier transform of the inverse of the
+        PSD to be truncated to.
+        trim_padding: {float, 0.25}, Optional
+            Amount of padding in seconds to give for truncated the overwhitened
+        data stream.
+        autogating_threshold: {float, 100}, Optional
+            Sigma deviation required to cause gating of data
+        autogating_cluster: {float, 0.25}, Optional
+            Seconds to cluster possible gating locations
+        autogating_window: {float, 0.5}, Optional
+            Seconds to window out when gating a time
+        autogating_pad: {float, 0.25}, Optional
+            Seconds to pad either side of the gating window.
+        state_channel: {str, None}, Optional
+            Channel to use for state information about the strain
+        dyn_range_fac: {float, pycbc.DYN_RANGE_FAC}, Optional
+            Scale factor to apply to strain
         """ 
-        super(StrainBuffer, self).__init__(frame_src, channel_name, start_time, max_buffer=max_buffer)
+        super(StrainBuffer, self).__init__(frame_src, channel_name, start_time,
+                                           max_buffer=max_buffer)
 
         self.low_frequency_cutoff = low_frequency_cutoff
 
@@ -1106,6 +1151,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                                  delta_t=1.0/self.sample_rate, 
                                  epoch=start_time-max_buffer)
 
+        # Determine the total number of corrupted samples for highpass 
+        # and PSD over whitening
         highpass_samples, self.beta = kaiserord(self.highpass_reduction, 
           self.highpass_bandwidth / self.raw_buffer.sample_rate * 2 * numpy.pi)
         self.highpass_samples =  int(highpass_samples / 2)
@@ -1116,6 +1163,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.psd_corruption =  self.psd_inverse_length * self.sample_rate
         self.total_corruption = self.corruption + self.psd_corruption
 
+        # Determine how much padding is needed after removing the parts
+        # associated with PSD over whitening and highpass filtering
         self.trim_padding = int(trim_padding * self.sample_rate)
         if self.trim_padding > self.total_corruption:
             self.trim_padding = self.total_corruption
@@ -1130,19 +1179,24 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
     @property
     def start_time(self):
+        """ Return the start time of the current valid segment of data """
         return self.end_time - self.blocksize
 
     @property
     def end_time(self):
+        """ Return the end time of the current valid segment of data """
         return float(self.strain.start_time + (len(self.strain) - self.total_corruption) / self.sample_rate)
 
     def add_hard_count(self):
-        """ Advance far enough to be able to estimate a new PSD
+        """ Reset the countdown timer, so that we don't analyze data long enough
+        to generate a new PSD.
         """
         self.wait_duration = int(numpy.ceil(self.total_corruption / self.sample_rate +  self.psd_duration))
         self.invalidate_psd()
 
     def invalidate_psd(self):
+        """ Make the current PSD invalid. A new one will be generated when
+        it is next required """
         self.psd = None
         self.psds = {}
 
@@ -1154,19 +1208,30 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         e = len(self.strain)
         s = e - ((self.psd_samples + 1) * self.psd_segment_length / 2) * self.sample_rate
         self.psd = pycbc.psd.welch(self.strain[s:e], seg_len=seg_len, 
-                                                     seg_stride=seg_len / 2) 
-        
+                                                     seg_stride=seg_len / 2)        
         self.psds = {}          
 
     def overwhitened_data(self, delta_f):
         """ Return overwhitened data
+
+        Parameters
+        ----------
+        delta_f: float
+            The sample step to generate overwhitened frequency domain data for
+        
+        Returns
+        -------
+        htilde: FrequencySeries
+            Overwhited strain data
         """
+        # we haven't alread computed htilde for this delta_f
         if delta_f not in self.segments:
             buffer_length = int(1.0 / delta_f)
             e = len(self.strain)
             s = int(e - buffer_length * self.sample_rate - self.reduced_pad * 2)
             fseries = make_frequency_series(self.strain[s:e])
 
+            # we haven't calculate a resample psd for this delta_f
             if delta_f not in self.psds:
                 psdt = pycbc.psd.interpolate(self.psd, fseries.delta_f)
                 psdt = pycbc.psd.inverse_spectrum_truncation(psdt, 
@@ -1208,6 +1273,13 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         return stilde  
 
     def null_advance_strain(self, blocksize):
+        """ Advance and insert zeros
+
+        Parameters
+        ----------
+        blocksize: int
+            The number of seconds to attempt to read from the channel
+        """
         sample_step = int(blocksize * self.sample_rate)
         csize = sample_step + self.corruption * 2
         self.strain.roll(-sample_step)
@@ -1217,7 +1289,18 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.strain.start_time += blocksize
        
     def advance(self, blocksize):
-        """ Prepare another segment of data
+        """ Add blocksize seconds more to the buffer, push blocksize seconds
+        from the beginning.
+
+        Parameters
+        ----------
+        blocksize: int
+            The number of seconds to attempt to read from the channel
+
+        Returns
+        -------
+        status: boolean
+            Returns True if this block is analyzable.         
         """
         ts = super(StrainBuffer, self).attempt_advance(blocksize)
 
