@@ -388,7 +388,6 @@ def write_frame(location, channels, timeseries):
 class DataBuffer(object):
     """ A linear buffer that acts a a FILO for reading in frame data
     """
-
     def __init__(self, frame_src, 
                        channel_name,
                        start_time,
@@ -417,6 +416,20 @@ class DataBuffer(object):
 
     def _retrieve_metadata(self, stream, channel_name):
         """ Retrieve basic metadata by reading the first file in the cache
+    
+        Parameters
+        ----------
+        stream: lal stream object
+            Stream containing a channel we want to learn about
+        channel_name: str
+            The name of the channel we want to know the dtype and sample rate of
+
+        Returns
+        -------
+        channel_type: lal type enum
+            Enum value which indicates the dtype of the channel
+        sample_rate: int
+            The sample rate of the data within this channel
         """
         data_length = lalframe.FrStreamGetVectorLength(channel_name, stream)
         channel_type = lalframe.FrStreamGetTimeSeriesType(channel_name, stream)
@@ -429,6 +442,21 @@ class DataBuffer(object):
 
     def _read_frame(self, blocksize):
         """ Try to read the block of data blocksize seconds long
+
+        Parameters
+        ----------
+        blocksize: int
+            The number of seconds to attempt to read from the channel
+
+        Returns
+        -------
+        data: TimeSeries
+            TimeSeries containg 'blocksize' seconds of frame data
+
+        Raises
+        ------
+        RuntimeError:
+            If data cannot be read for any reason
         """
         try:
             read_func = _fr_type_map[self.channel_type][0]
@@ -472,7 +500,8 @@ class DataBuffer(object):
             else:
                 # I am too early to give up on this frame, so we should try again
                 return self.attempt_advance(self, blocksize, timeout=timeout)
-  
+
+# Status flags for the calibration state vector 
 HOFT_OK = 1
 SCIENCE_INTENT = 2
 SCIENCE_QUALITY = 4
@@ -490,7 +519,7 @@ FCC_OK = 8192
 NO_GAP = 16384    
                
 class StatusBuffer(DataBuffer):
-
+    """ Read state vector information from a frame file """
 
     def __init__(self, frame_src, 
                        channel_name,
