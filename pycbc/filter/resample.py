@@ -169,6 +169,9 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     ts = TimeSeries(data, delta_t = delta_t,
                       dtype=timeseries.dtype, 
                       epoch=timeseries._epoch)
+                      
+    # From the construction of the LDAS FIR filter there will be 10 corrupted samples
+    # explanation here http://software.ligo.org/docs/lalsuite/lal/group___resample_time_series__c.html
     ts.corrupted_samples = 10
     return ts
        
