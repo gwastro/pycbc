@@ -275,7 +275,9 @@ class InferenceFile(h5py.File):
             # create a group in the output file for this dimension
             if dim_name not in self.keys():
                 group_dim = self.create_group(dim_name)
-                if labels:
+                if "label" in group_dim.attrs.keys():
+                    pass
+                elif labels != None:
                     group_dim.attrs["label"] = labels[i]
                 else:
                     group_dim.attrs["label"] = dim_name
