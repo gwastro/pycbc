@@ -197,8 +197,9 @@ with ctx:
                         delta_f=delta_f_dict.values()[0], **static_args)
 
     # construct class that will return the natural logarithm of likelihood
-    likelihood = inference.GaussianLikelihood(generator, stilde_dict,
-                        opts.low_frequency_cutoff, psds=psd_dict, prior=prior)
+    likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](generator,
+                        stilde_dict, opts.low_frequency_cutoff,
+                        psds=psd_dict, prior=prior)
 
     # create sampler that will run
     ndim = len(variable_args)
