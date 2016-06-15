@@ -236,7 +236,12 @@ with ctx:
                     break
 
     # get labels for each parameter from configuration file
-    labels = [cp.get("labels",param) for param in variable_args]
+    labels = []
+    for param in variable_args:
+        if cp.has_option("labels", param):
+            labels.append( cp.get("labels", param) )
+        else:
+            labels.append( param )
 
     # setup checkpointing
     if opts.checkpoint_interval:
@@ -247,6 +252,7 @@ with ctx:
             fp.write_samples(variable_args, nwalkers=opts.nwalkers,
                              niterations=opts.niterations, labels=labels)
             fp.write_acceptance_fraction(niterations=opts.niterations)
+            labels = None
 
         # determine intervals to run sampler until we save the new samples 
         intervals = [i for i in range(0, opts.niterations, opts.checkpoint_interval)] \
@@ -291,7 +297,8 @@ with ctx:
         # write new samples
         logging.info("Writing samples for %s to %s out of %s iterations"%(start,end,opts.niterations))
         with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_samples_from_sampler(sampler, start=start, end=end)
+            fp.write_samples_from_sampler(sampler, start=start, end=end,
+                                          labels=labels)
             fp.write_acceptance_fraction(data=sampler.acceptance_fraction,
                                          start=start, end=end)
 
