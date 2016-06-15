@@ -183,9 +183,6 @@ def make_inference_corner_plot(workflow, inference_file, output_dir,
         The file with posterior samples.
     output_dir: str
         The directory to store result plots and files.
-    config_file: str
-        The path to the inference configuration file that has a
-        [variable_args] section.
     variable_args : list
         A list of parameters to use instead of [variable_args].
     name: str
