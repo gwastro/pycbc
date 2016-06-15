@@ -51,9 +51,9 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
     dax_output : str
         The name of the output DAX file.
     out_dir: path
-        The directory to store minifollowups result plots and files
+        The directory to store inference result plots and files
     tags: {None, optional}
-        Tags to add to the minifollowups executables
+        Tags to add to the inference executables
     """
 
     logging.info("Entering inference module")
@@ -140,7 +140,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: {None, optional}
-        Tags to add to the minifollowups executables.
+        Tags to add to the inference executables.
 
     Returns
     -------
@@ -183,9 +183,6 @@ def make_inference_corner_plot(workflow, inference_file, output_dir,
         The file with posterior samples.
     output_dir: str
         The directory to store result plots and files.
-    config_file: str
-        The path to the inference configuration file that has a
-        [variable_args] section.
     variable_args : list
         A list of parameters to use instead of [variable_args].
     name: str
@@ -195,7 +192,7 @@ def make_inference_corner_plot(workflow, inference_file, output_dir,
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: {None, optional}
-        Tags to add to the minifollowups executables.
+        Tags to add to the inference executables.
 
     Returns
     -------
@@ -245,7 +242,7 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: {None, optional}
-        Tags to add to the minifollowups executables.
+        Tags to add to the inference executables.
 
     Returns
     -------
@@ -302,7 +299,7 @@ def make_inference_single_parameter_plots(workflow, inference_file, output_dir,
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: {None, optional}
-        Tags to add to the minifollowups executables.
+        Tags to add to the inference executables.
 
     Returns
     -------
