@@ -386,7 +386,7 @@ def write_frame(location, channels, timeseries):
     lalframe.FrameWrite(frame, location)
 
 class DataBuffer(object):
-    """ A linear buffer that acts a a FILO for reading in frame data
+    """ A linear buffer that acts as a FILO for reading in frame data
     """
     def __init__(self, frame_src, 
                        channel_name,
