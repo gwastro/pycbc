@@ -483,8 +483,8 @@ Libs: -L${libdir} -lhdf5' |
         rm -rf $p
         tar -xzf $p.tar.gz
         cd $p
-        # sed -i~ '/^CXXSTD[A-Z]*FLAGS=/d' ./libraries/ldastoolsal/ldastoolsal*.pc
-        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit --disable-cxx11 $shared --enable-static --prefix="$PREFIX"
+        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit $shared --enable-static --prefix="$PREFIX" # --disable-cxx11
+        sed -i~ '/^CXXSTD[A-Z]*FLAGS=/d' ./libraries/ldastoolsal/ldastoolsal*.pc
         make
         make -k install || true
         # cd ..
