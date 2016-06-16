@@ -27,6 +27,7 @@ for parameter estimation.
 """
 
 import numpy
+import scipy.stats
 
 #
 #   Distributions for priors
@@ -224,7 +225,7 @@ class Uniform(object):
         # construction distribution and add to list
         return cls(**dist_args)
 
-class Gaussian(object):
+class Gaussian(Uniform):
     """
     A gaussian distribution on the given parameters. The parameters are
     independent of each other. Instances of this class can be called like
@@ -233,48 +234,46 @@ class Gaussian(object):
 
     Parameters
     ----------
-    \**params :
-        The keyword arguments should provide the names of parameters and their
-        corresponding bounds, as tuples.
+    variable_args : {list, str}
+        A list of str for each parameter name. Other parameters are list types
+        and the index for a particular param is used as a map.
+    low : {list, float}
+        A list of lower bounds as float.
+    high : {list, float}
+        A list of higher bounds as float.
+    mean : {list, float}
+        A list of means as float.
+    var : {list, float}
+        A list of variances as float.
 
     Class Attributes
     ----------------
     name : 'guassian'
         The name of this distribution.
-
-    Attributes
-    ----------
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds.
-    norm : float
-        The normalization of the multi-dimensional pdf.
-    lognorm : float
-        The log of the normalization.
     """
     name = "gaussian"
-
     def __init__(self, variable_args, low, high, mean, var, **kwargs):
 
-        # save variable parameters
-        self._params = sorted(variable_args)
-
         # save distribution parameters as dict
+        # calculate the norm and exponential norm ahead of time
+        # and save to self._norm, self._lognorm, and self._expnorm
         self._bounds = {}
         self._mean = {}
         self._var = {}
         self._norm = {}
         self._lognorm = {}
-        self._argnorm = {}
-        for i,param in enumerate(self._params):
-            idx = variable_args.index(param)
-            self._bounds[param] = (low[idx],high[idx])
-            self._mean[param] = mean[idx]
-            self._var[param] = var[idx]
-            self._norm[param] = numpy.sqrt( 2 * self._var[param] * numpy.pi )
+        self._expnorm = {}
+        for i,param in enumerate(variable_args):
+            self._bounds[param] = (low[i],high[i])
+            self._mean[param] = mean[i]
+            self._var[param] = var[i]
+            norm = numpy.sqrt( 2 * self._var[param] * numpy.pi )
+            self._norm[param] = 1.0 / norm
             self._lognorm[param] = numpy.log(self._norm[param])
-            self._argnorm[param] = 2 * self._var[param]
+            self._expnorm[param] = 2 * self._var[param]
+
+        # save variable parameters
+        self._params = sorted(variable_args)
 
     @property
     def params(self):
@@ -284,44 +283,118 @@ class Gaussian(object):
     def bounds(self):
         return self._bounds
 
-    def __contains__(self, params):
-        try:
-            return all([(params[p] >= self._bounds[p][0]) &
-                        (params[p] < self._bounds[p][1])
-                       for p in self._params])
-        except KeyError:
-            raise ValueError("must provide all parameters [%s]" %(
-                ', '.join(self._params)))
+    @property
+    def mean(self):
+        return self._mean
+
+    @property
+    def var(self):
+        return self._var
 
     def pdf(self, **kwargs):
+        """ Returns the probability density function (PDF) at the given values.
+        The keyword arguments must contain all of parameters in self's params.
+        Unrecognized arguments are ignored.
+
+        The PDF is calculated using
+
+            p(x) = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp{- \frac{\left( x - \mu \right^2}{2 \sigma^2} }
+
+        Parameters
+        ----------
+        kwargs : **dict
+            An unpacked dict with variable parameter as key and parameter value as value.
+
+        Returns
+        -------
+        _pdf : float
+            The PDF.
+        """
         if kwargs in self:
             _pdf = 1.0
             for param in kwargs.keys():
                 if param in self._params:
-                    _pdf *= self._lognorm[param]
-                    _pdf *= numpy.exp( -1 * (kwargs[param] - self._mean[param])**2 / self._argnorm[param] )
+                    _pdf *= self._norm[param]
+                    _pdf *= numpy.exp( -1 * (kwargs[param] - self._mean[param])**2 / self._expnorm[param] )
             return _pdf
         else:
-            return 0.
+            return 0.0
 
     def logpdf(self, **kwargs):
+       """ Returns the natural logarithm of the probability density function
+        (PDF) at the given values. For PDF formula see self._pdf docstring.
+        The keyword arguments must contain all of parameters in self's params.
+        Unrecognized arguments are ignored.
+
+        Parameters
+        ----------
+        kwargs : **dict
+            An unpacked dict with variable parameter as key and parameter value as value.
+
+        Returns
+        -------
+        logpdf : float
+            The natural logarithm of the PDF.
+        """
         if kwargs in self:
-            logpdf = 0
+            logpdf = 0.0
             for param in kwargs.keys():
                 if param in self._params:
                     logpdf += self._lognorm[param]
-                    logpdf += -1 * (kwargs[param] - self._mean[param])**2 / self._argnorm[param]
+                    logpdf += -1 * (kwargs[param] - self._mean[param])**2 / self._expnorm[param]
             return logpdf
         else:
             return -numpy.inf
 
-    __call__ = logpdf
-
     def rvs(self, size=1, param=None):
-        pass
+        """Gives a set of random values drawn from this distribution.
+
+        Parameters
+        ----------
+        size : {1, int}
+            The number of values to generate; default is 1.
+        param : {None, string}
+            If provided, will just return values for the given parameter.
+            Otherwise, returns random values for each parameter.
+
+        Returns
+        -------
+        structured array
+            The random values in a numpy array with shape (niterations,ndim).
+            If a param was specified, the array will only have an element
+            corresponding to the given parameter. Otherwise, the array will
+            have an element for each parameter in self's params.
+        """
+        params = [param] if param != None else self._params
+        vals = numpy.zeros(shape=(size,len(params)))
+        for i,param in enumerate(params):
+            sigma = numpy.sqrt(self._var[param])
+            vals[:,i] = scipy.stats.truncnorm.rvs(
+                              (self._bounds[param][0]-self._mean[param])/sigma,
+                              (self._bounds[param][1]-self._mean[param])/sigma,
+                              loc=self._mean[param], scale=sigma, size=size)
+        return vals
 
     @classmethod
     def from_config(cls, cp, section, tag):
+        """ Returns a distribution based on a configuration file.
+
+        Parameters
+         ----------
+         cp : pycbc.workflow.WorkflowConfigParser
+             A parsed configuration file that contains the distribution
+             options.
+         section : str
+             Name of the section in the configuration file.
+         tag : str
+             Name of the tag in the configuration file to use, eg. the
+             configuration file has a [section-tag] section.
+
+         Returns
+         -------
+         Gaussian
+             A distribution instance from the pycbc.inference.prior module.
+        """
 
         # seperate out tags from section tag
         variable_args = tag.split("+")
@@ -332,8 +405,7 @@ class Gaussian(object):
                                 + ["mean-%s"%param for param in variable_args] \
                                 + ["var-%s"%param for param in variable_args]
 
-        # get a dict with bounds as value
-        dist_args = {}
+        # get input kwargs
         low = []
         high = []
         mean = []
@@ -345,20 +417,19 @@ class Gaussian(object):
             var.append( float(cp.get_opt_tag(section, "var-%s"%param, tag)) )
 
         # add any additional options that user put in that section
+        dist_args = {}
         for key in cp.options( "-".join([section,tag]) ):
 
             # ignore options that are already included
             if key in special_args:
                 continue
 
-            # check if option can be cast as a float
+            # check if option can be cast as a float then add option
             val = cp.get_opt_tag("prior", key, tag)
             try:
                 val = float(val)
             except:
                 pass
-
-            # add option
             dist_args.update({key:val})
 
         # construction distribution and add to list
