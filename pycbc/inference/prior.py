@@ -269,7 +269,7 @@ class Gaussian(Uniform):
             self._var[param] = var[i]
             norm = numpy.sqrt( 2 * self._var[param] * numpy.pi )
             self._norm[param] = 1.0 / norm
-            self._lognorm[param] = numpy.log(self._norm[param])
+            self._lognorm[param] = numpy.log(norm)
             self._expnorm[param] = 2 * self._var[param]
 
         # save variable parameters
