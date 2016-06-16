@@ -321,7 +321,7 @@ class Gaussian(Uniform):
             return 0.0
 
     def logpdf(self, **kwargs):
-       """ Returns the natural logarithm of the probability density function
+        """ Returns the natural logarithm of the probability density function
         (PDF) at the given values. For PDF formula see self._pdf docstring.
         The keyword arguments must contain all of parameters in self's params.
         Unrecognized arguments are ignored.
