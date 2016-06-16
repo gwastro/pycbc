@@ -224,7 +224,150 @@ class Uniform(object):
         # construction distribution and add to list
         return cls(**dist_args)
 
-priors = {Uniform.name: Uniform}
+class Gaussian(object):
+    """
+    A gaussian distribution on the given parameters. The parameters are
+    independent of each other. Instances of this class can be called like
+    a function. By default, logpdf will be called, but this can be changed
+    by setting the class's __call__ method to its pdf method.
+
+    Parameters
+    ----------
+    \**params :
+        The keyword arguments should provide the names of parameters and their
+        corresponding bounds, as tuples.
+
+    Class Attributes
+    ----------------
+    name : 'guassian'
+        The name of this distribution.
+
+    Attributes
+    ----------
+    params : list of strings
+        The list of parameter names.
+    bounds : dict
+        A dictionary of the parameter names and their bounds.
+    norm : float
+        The normalization of the multi-dimensional pdf.
+    lognorm : float
+        The log of the normalization.
+    """
+    name = "gaussian"
+
+    def __init__(self, variable_args, low, high, mean, var, **kwargs):
+
+        # save variable parameters
+        self._params = sorted(variable_args)
+
+        # save distribution parameters as dict
+        self._bounds = {}
+        self._mean = {}
+        self._var = {}
+        self._norm = {}
+        self._lognorm = {}
+        self._argnorm = {}
+        for i,param in enumerate(self._params):
+            idx = variable_args.index(param)
+            self._bounds[param] = (low[idx],high[idx])
+            self._mean[param] = mean[idx]
+            self._var[param] = var[idx]
+            self._norm[param] = numpy.sqrt( 2 * self._var[param] * numpy.pi )
+            self._lognorm[param] = numpy.log(self._norm[param])
+            self._argnorm[param] = 2 * self._var[param]
+
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def bounds(self):
+        return self._bounds
+
+    def __contains__(self, params):
+        try:
+            return all([(params[p] >= self._bounds[p][0]) &
+                        (params[p] < self._bounds[p][1])
+                       for p in self._params])
+        except KeyError:
+            raise ValueError("must provide all parameters [%s]" %(
+                ', '.join(self._params)))
+
+    def pdf(self, **kwargs):
+        if kwargs in self:
+            _pdf = 1.0
+            for param in kwargs.keys():
+                if param in self._params:
+                    _pdf *= self._lognorm[param]
+                    _pdf *= numpy.exp( -1 * (kwargs[param] - self._mean[param])**2 / self._argnorm[param] )
+            return _pdf
+        else:
+            return 0.
+
+    def logpdf(self, **kwargs):
+        if kwargs in self:
+            logpdf = 0
+            for param in kwargs.keys():
+                if param in self._params:
+                    logpdf += self._lognorm[param]
+                    logpdf += -1 * (kwargs[param] - self._mean[param])**2 / self._argnorm[param]
+            return logpdf
+        else:
+            return -numpy.inf
+
+    __call__ = logpdf
+
+    def rvs(self, size=1, param=None):
+        pass
+
+    @classmethod
+    def from_config(cls, cp, section, tag):
+
+        # seperate out tags from section tag
+        variable_args = tag.split("+")
+
+        # list of args that are used to construct distribution
+        special_args = ["name"] + ["min-%s"%param for param in variable_args] \
+                                + ["max-%s"%param for param in variable_args] \
+                                + ["mean-%s"%param for param in variable_args] \
+                                + ["var-%s"%param for param in variable_args]
+
+        # get a dict with bounds as value
+        dist_args = {}
+        low = []
+        high = []
+        mean = []
+        var = []
+        for param in variable_args:
+            low.append( float(cp.get_opt_tag(section, "min-%s"%param, tag)) )
+            high.append( float(cp.get_opt_tag(section, "max-%s"%param, tag)) )
+            mean.append( float(cp.get_opt_tag(section, "mean-%s"%param, tag)) )
+            var.append( float(cp.get_opt_tag(section, "var-%s"%param, tag)) )
+
+        # add any additional options that user put in that section
+        for key in cp.options( "-".join([section,tag]) ):
+
+            # ignore options that are already included
+            if key in special_args:
+                continue
+
+            # check if option can be cast as a float
+            val = cp.get_opt_tag("prior", key, tag)
+            try:
+                val = float(val)
+            except:
+                pass
+
+            # add option
+            dist_args.update({key:val})
+
+        # construction distribution and add to list
+        return cls(variable_args, low, high, mean, var, **dist_args)
+
+priors = {
+    Uniform.name : Uniform,
+    Gaussian.name : Gaussian,
+}
 
 class PriorEvaluator(object):
     """
