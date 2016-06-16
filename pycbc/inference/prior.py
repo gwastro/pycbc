@@ -359,8 +359,8 @@ class Gaussian(Uniform):
 
         Returns
         -------
-        structured array
-            The random values in a numpy array with shape (niterations,ndim).
+        vals : numpy array
+            The random values in a numpy.array with shape (niterations,ndim).
             If a param was specified, the array will only have an element
             corresponding to the given parameter. Otherwise, the array will
             have an element for each parameter in self's params.
