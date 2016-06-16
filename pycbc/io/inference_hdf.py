@@ -336,7 +336,7 @@ class InferenceFile(h5py.File):
 
     def write_samples_from_sampler(self, sampler, start=None, end=None,
                       nwalkers=0, niterations=0, labels=None):
-        """ Wtite data from sampler to file.
+        """ Write data from sampler to file.
 
         Parameters
         -----------
@@ -359,4 +359,12 @@ class InferenceFile(h5py.File):
                            nwalkers=nwalkers, niterations=niterations,
                            labels=labels)
 
+    def write_acl(self, acl):
+        """ Writes the autocorrelation length (ACL) to file.
 
+        Parameters
+        ----------
+        acl : float
+            The ACL.
+        """
+        self.attrs["acl"] = acl
