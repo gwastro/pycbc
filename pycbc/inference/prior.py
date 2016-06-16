@@ -341,7 +341,7 @@ class Gaussian(Uniform):
             for param in kwargs.keys():
                 if param in self._params:
                     logpdf += self._lognorm[param]
-                    logpdf += -1 * (kwargs[param] - self._mean[param])**2 / self._expnorm[param]
+                    logpdf -= (kwargs[param] - self._mean[param])**2 / self._expnorm[param]
             return logpdf
         else:
             return -numpy.inf
