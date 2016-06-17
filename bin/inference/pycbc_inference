@@ -308,18 +308,17 @@ acls = []
 with InferenceFile(opts.output_file, "r") as fp:
     for i in range(opts.nwalkers):
         for param in fp.variable_args:
-            acls.append( autocorrelation.calculate_acl(fp.read_samples_from_walker(param, i), dtype=float) )
+            acls.append( autocorrelation.calculate_acl(fp.read_samples_from_walker(param, i), dtype=int) )
 
 # get max ACL to save to file
 # if ACL is infinity then set it to the length of the chain of samples
 max_acl = numpy.array(acls).max()
 if max_acl == numpy.inf:
-    max_acl = len(fp.niterations)
+    max_acl = opts.niterations
 
-# write ACL
+# write ACL as an int rounding up
 logging.info("Writing ACL of %f samples to file"%max_acl)
 with InferenceFile(opts.output_file, "a") as fp:
-    max_acl = int(numpy.ceil(max_acl))
     fp.write_acl(max_acl)
 
 # exit

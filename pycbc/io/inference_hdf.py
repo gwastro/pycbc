@@ -64,7 +64,7 @@ class InferenceFile(h5py.File):
         nwalkesr : int
             Number of walkers used.
         """
-        return self.attrs["niterations"]
+        return self.attrs["nwalkers"]
 
     @property
     def niterations(self):
@@ -106,7 +106,7 @@ class InferenceFile(h5py.File):
             All independent samples from all walkers for a parameter.
         """
 
-        nwalkers = self.attrs["nwalkers"]
+        nwalkers = self.nwalkers
         return numpy.array([self.read_samples_from_walker(variable_arg, j, thin_start, thin_interval) for j in range(nwalkers)])
 
     def read_samples_from_walker(self, variable_arg, nwalker,
