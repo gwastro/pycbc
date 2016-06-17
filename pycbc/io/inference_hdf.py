@@ -44,6 +44,39 @@ class InferenceFile(h5py.File):
     def __init__(self, path, mode=None, **kwargs):
         super(InferenceFile, self).__init__(path, mode, **kwargs)
 
+    @property
+    def variable_args(self):
+        """ Returns list of variable_args.
+
+        Returns
+        -------
+        variable_args : {list, str}
+            List of str that contain variable_args keys.
+        """
+        return self.attrs["variable_args"]
+
+    @property
+    def niterations(self):
+        """ Returns number of iterations performed.
+
+        Returns
+        -------
+        niterations : int
+            Number of iterations performed.
+        """
+        return self.attrs["niterations"]
+
+    @property
+    def acl(self):
+        """ Returns the saved autocorelation length (ACL).
+
+        Returns
+        -------
+        acl : {int, float}
+            The ACL.
+        """
+        return self.attrs["acl"]
+
     def read_samples(self, variable_arg, thin_start=None, thin_interval=1):
         """ Reads independent samples from all walkers for a parameter.
 
@@ -130,16 +163,6 @@ class InferenceFile(h5py.File):
             The acceptance fraction.
         """
         return self["acceptance_fraction"][thin_start::thin_interval]
-
-    def read_variable_args(self):
-        """ Returns list of variable_args.
-
-        Returns
-        -------
-        variable_args : {list, str}
-            List of str that contain variable_args keys.
-        """
-        return self.attrs["variable_args"]
 
     def read_label(self, variable_arg, html=False):
         """ Returns the label for the parameter.

@@ -307,7 +307,7 @@ logging.info("Calculating maximum ACL")
 acls = []
 with InferenceFile(opts.output_file, "r") as fp:
     for i in range(opts.nwalkers):
-        for param in fp.read_variable_args():
+        for param in fp.variable_args:
             acls.append( autocorrelation.calculate_acl(fp.read_samples_from_walker(param, i), dtype=int) )
 
 # get max ACL to save to file
