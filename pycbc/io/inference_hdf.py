@@ -110,7 +110,7 @@ class InferenceFile(h5py.File):
         return numpy.array([self.read_samples_from_walker(variable_arg, j, thin_start, thin_interval) for j in range(nwalkers)])
 
     def read_samples_from_walker(self, variable_arg, nwalker,
-                                 thin_start=None, thin_interval=1):
+                                 thin_start=None, thin_interval=None):
         """ Reads all samples from a specific walker for a parameter.
 
         Parameters
@@ -120,9 +120,12 @@ class InferenceFile(h5py.File):
         nwalker : int
             Index of the walker to get samples.
         thin_start : int
-            Index of the sample to begin returning samples.
+            Index of the sample to begin returning samples. Default is to read
+            samples after burn in. To start from the beginning set thin_start
+            to 0.
         thin_interval : int
-            Interval to accept every i-th sample.
+            Interval to accept every i-th sample. Default is to use the
+            self.acl attribute. To use all samples set thin_interval to 1.
 
         Returns
         -------
@@ -132,6 +135,9 @@ class InferenceFile(h5py.File):
 
         # default is to skip burn in samples
         thin_start = self.attrs["burn_in_iterations"] if thin_start is None else thin_start
+
+        # default is to use stored ACL and accept every i-th sample
+        thin_interval = self.acl
 
         # derived parameter case for mchirp will calculate mchrip
         # from mass1 and mass2
