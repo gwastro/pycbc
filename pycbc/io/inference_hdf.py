@@ -137,7 +137,7 @@ class InferenceFile(h5py.File):
         thin_start = self.attrs["burn_in_iterations"] if thin_start is None else thin_start
 
         # default is to use stored ACL and accept every i-th sample
-        thin_interval = self.acl
+        thin_interval = self.acl if thin_interval is None else thin_interval
 
         # derived parameter case for mchirp will calculate mchrip
         # from mass1 and mass2
