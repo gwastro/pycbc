@@ -346,6 +346,8 @@ class Gaussian(Uniform):
         else:
             return -numpy.inf
 
+    __call__ = logpdf
+
     def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from this distribution.
 
