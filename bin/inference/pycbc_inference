@@ -314,7 +314,7 @@ with InferenceFile(opts.output_file, "r") as fp:
 # if ACL is infinity then set it to the length of the chain of samples
 max_acl = numpy.array(acls).max()
 if max_acl == numpy.inf:
-    max_acl = len(fp.attrs["niterations"])
+    max_acl = len(fp.niterations)
 
 # write ACL
 logging.info("Writing ACL of %f samples to file"%max_acl)

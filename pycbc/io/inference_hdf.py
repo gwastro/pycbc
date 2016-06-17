@@ -56,6 +56,17 @@ class InferenceFile(h5py.File):
         return self.attrs["variable_args"]
 
     @property
+    def nwalkers(self):
+        """ Returns number of walkers used.
+
+        Returns
+        -------
+        nwalkesr : int
+            Number of walkers used.
+        """
+        return self.attrs["niterations"]
+
+    @property
     def niterations(self):
         """ Returns number of iterations performed.
 

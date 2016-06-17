@@ -73,7 +73,7 @@ logging.info("Thinning samples")
 x = []
 
 # loop over each walkers
-for i in range(fp.attrs["nwalkers"]):
+for i in range(fp.nwalkers):
 
     # loop over each parameter
     samples = []

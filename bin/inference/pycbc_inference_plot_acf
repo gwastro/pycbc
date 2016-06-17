@@ -83,7 +83,7 @@ for param_name in variable_args:
     # loop over walkers and save an autocorrelation function
     # for each walker
     param_acfs = []
-    for i in range(fp.attrs["nwalkers"]):
+    for i in range(fp.nwalkers):
 
         # get all the past samples for this walker
         y = fp.read_samples_from_walker(param_name, i,

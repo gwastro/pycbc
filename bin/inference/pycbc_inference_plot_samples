@@ -78,7 +78,7 @@ axs = [axs] if not hasattr(axs, "__iter__") else axs
 for i,arg in enumerate(variable_args):
 
     # loop over walkers
-    for j in range(fp.attrs["nwalkers"]):
+    for j in range(fp.nwalkers):
 
         # plot each walker as a different line on the subplot
         axs[i].plot(fp.read_samples_from_walker(arg, j,
