@@ -219,3 +219,22 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
     else:
         txt = r'%s%s' %(valtxt, powfactor)
     return txt 
+
+def latex_to_html(text):
+    """ Replaces LaTeX substrings with HTML replacements.
+
+    Parameters
+    ----------
+    text : str
+        Text to be replaced.
+
+    Returns
+    -------
+    text : str
+        Replaced text.
+    """
+    text = text.replace("$", "")
+    text = text.replace("_{", "<sub>")
+    text = text.replace("}", "</sub>")
+    text = text.replace("\eta", "&#951;")
+    return text

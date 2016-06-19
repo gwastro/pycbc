@@ -28,6 +28,39 @@ inference samplers generate.
 import h5py
 import numpy
 from pycbc import pnutils
+from pycbc.results import str_utils
+
+def read_label_from_config(cp, variable_arg, section="labels", html=False):
+    """ Returns the label for the variable_arg.
+
+    Parameters
+    ----------
+    cp : WorkflowConfigParser
+        A WorkflowConfigParser instance with [labels] section
+    variable_arg : str
+        The parameter to get label.
+    section : str
+        Name of section in configuration file to get label.
+    html : bool
+        If True then replace LaTeX substrings with HTML substrings.
+
+    Returns
+    -------
+    label : str
+        The label for the parameter.
+    """
+
+    # get label from configuration file if it exists
+    if cp.has_option(section, variable_arg):
+        label = cp.get(section, variable_arg)
+    else:
+        label = variable_arg
+
+    # replace LaTeX with HTML
+    if html:
+        label = str_utils.latex_to_html(label)
+
+    return label
 
 class InferenceFile(h5py.File):
     """ A subclass of the h5py.File object that has extra functions for
@@ -165,14 +198,9 @@ class InferenceFile(h5py.File):
         else:
             label = self[variable_arg].attrs["label"]
 
-        # escape LaTeX subscripts in a simple but not robust method
-        # will change LaTeX subscript to HTML subscript
-        # will change LaTeX eta to HTML eta symbol
+        # replace LaTeX with HTML
         if html:
-            label = label.replace("$", "")
-            label = label.replace("_{", "<sub>").replace("_", "<sub>")
-            label = label.replace("}", "</sub>")
-            label = label.replace("\eta", "&#951;")
+            label = str_utils.latex_to_html(label)
 
         return label
 
