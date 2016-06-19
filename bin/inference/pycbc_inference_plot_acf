@@ -70,7 +70,7 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 # read input file
 logging.info("Reading input file")
 fp = InferenceFile(opts.input_file, "r")
-variable_args = fp.read_variable_args() if opts.variable_args is None else opts.variable_args
+variable_args = fp.variable_args if opts.variable_args is None else opts.variable_args
 
 # get number of dimensions
 ndim = len(variable_args)
@@ -83,7 +83,7 @@ for param_name in variable_args:
     # loop over walkers and save an autocorrelation function
     # for each walker
     param_acfs = []
-    for i in range(fp.attrs["nwalkers"]):
+    for i in range(fp.nwalkers):
 
         # get all the past samples for this walker
         y = fp.read_samples_from_walker(param_name, i,

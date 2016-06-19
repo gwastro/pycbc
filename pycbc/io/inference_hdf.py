@@ -77,6 +77,50 @@ class InferenceFile(h5py.File):
     def __init__(self, path, mode=None, **kwargs):
         super(InferenceFile, self).__init__(path, mode, **kwargs)
 
+    @property
+    def variable_args(self):
+        """ Returns list of variable_args.
+
+        Returns
+        -------
+        variable_args : {list, str}
+            List of str that contain variable_args keys.
+        """
+        return self.attrs["variable_args"]
+
+    @property
+    def nwalkers(self):
+        """ Returns number of walkers used.
+
+        Returns
+        -------
+        nwalkesr : int
+            Number of walkers used.
+        """
+        return self.attrs["nwalkers"]
+
+    @property
+    def niterations(self):
+        """ Returns number of iterations performed.
+
+        Returns
+        -------
+        niterations : int
+            Number of iterations performed.
+        """
+        return self.attrs["niterations"]
+
+    @property
+    def acl(self):
+        """ Returns the saved autocorelation length (ACL).
+
+        Returns
+        -------
+        acl : {int, float}
+            The ACL.
+        """
+        return self.attrs["acl"]
+
     def read_samples(self, variable_arg, thin_start=None, thin_interval=1):
         """ Reads independent samples from all walkers for a parameter.
 
@@ -95,11 +139,11 @@ class InferenceFile(h5py.File):
             All independent samples from all walkers for a parameter.
         """
 
-        nwalkers = self.attrs["nwalkers"]
+        nwalkers = self.nwalkers
         return numpy.array([self.read_samples_from_walker(variable_arg, j, thin_start, thin_interval) for j in range(nwalkers)])
 
     def read_samples_from_walker(self, variable_arg, nwalker,
-                                 thin_start=None, thin_interval=1):
+                                 thin_start=None, thin_interval=None):
         """ Reads all samples from a specific walker for a parameter.
 
         Parameters
@@ -109,9 +153,13 @@ class InferenceFile(h5py.File):
         nwalker : int
             Index of the walker to get samples.
         thin_start : int
-            Index of the sample to begin returning samples.
+            Index of the sample to begin returning samples. Default is to read
+            samples after burn in. To start from the beginning set thin_start
+            to 0.
         thin_interval : int
-            Interval to accept every i-th sample.
+            Interval to accept every i-th sample. Default is to use the
+            self.acl attribute. If self.acl is not set, then use all samples
+            set thin_interval to 1.
 
         Returns
         -------
@@ -121,6 +169,12 @@ class InferenceFile(h5py.File):
 
         # default is to skip burn in samples
         thin_start = self.attrs["burn_in_iterations"] if thin_start is None else thin_start
+
+        # default is to use stored ACL and accept every i-th sample
+        if "acl" in self.attrs.keys():
+            thin_interval = self.acl if thin_interval is None else thin_interval
+        else:
+            thin_interval = 1 if thin_interval is None else thin_interval
 
         # derived parameter case for mchirp will calculate mchrip
         # from mass1 and mass2
@@ -163,16 +217,6 @@ class InferenceFile(h5py.File):
             The acceptance fraction.
         """
         return self["acceptance_fraction"][thin_start::thin_interval]
-
-    def read_variable_args(self):
-        """ Returns list of variable_args.
-
-        Returns
-        -------
-        variable_args : {list, str}
-            List of str that contain variable_args keys.
-        """
-        return self.attrs["variable_args"]
 
     def read_label(self, variable_arg, html=False):
         """ Returns the label for the parameter.
@@ -364,7 +408,7 @@ class InferenceFile(h5py.File):
 
     def write_samples_from_sampler(self, sampler, start=None, end=None,
                       nwalkers=0, niterations=0, labels=None):
-        """ Wtite data from sampler to file.
+        """ Write data from sampler to file.
 
         Parameters
         -----------
@@ -387,4 +431,12 @@ class InferenceFile(h5py.File):
                            nwalkers=nwalkers, niterations=niterations,
                            labels=labels)
 
+    def write_acl(self, acl):
+        """ Writes the autocorrelation length (ACL) to file.
 
+        Parameters
+        ----------
+        acl : float
+            The ACL.
+        """
+        self.attrs["acl"] = acl

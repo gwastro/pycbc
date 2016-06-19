@@ -66,14 +66,14 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 # read input file
 logging.info("Reading input file")
 fp = InferenceFile(opts.input_file, "r")
-variable_args = fp.read_variable_args() if opts.variable_args is None else opts.variable_args
+variable_args = fp.variable_args if opts.variable_args is None else opts.variable_args
 
 # thin samples to get independent samples from each sampler
 logging.info("Thinning samples")
 x = []
 
 # loop over each walkers
-for i in range(fp.attrs["nwalkers"]):
+for i in range(fp.nwalkers):
 
     # loop over each parameter
     samples = []

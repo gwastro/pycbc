@@ -27,6 +27,7 @@ and length of a data series.
 """
 
 import numpy
+from math import isnan
 from pycbc.types import TimeSeries
 
 def calculate_acf(data):
@@ -126,7 +127,7 @@ def calculate_acl(data, m=5, k=2, dtype=int):
             break
 
         # see if ACL is indeterminate
-        if i > imax:
+        if i > imax or isnan(acf[i]):
             return numpy.inf
 
         # add term for ACL
