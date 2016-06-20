@@ -235,7 +235,7 @@ def latex_to_html(text):
     """
     html_mappings = {
         "\eta" : "&#951;",
-        "\phi" : "&#934;",
+        "\phi" : "&#966;",
         "\iota" : "&#953;",
     }
     text = text.replace("$", "")
