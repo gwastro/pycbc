@@ -76,6 +76,8 @@ parser.add_argument("--gps-end-time", type=float, nargs="+", default=None,
 # input configuration file options
 parser.add_argument("--inference-config-file", type=str, required=True,
     help="workflow.WorkflowConfigParser parsable file with proir information.")
+parser.add_argument("--prior-section", type=str, default="prior",
+    help="Name of the section in inference configuration file that contains priors.")
 
 # add option groups
 wf.add_workflow_command_line_group(parser)
@@ -236,11 +238,10 @@ for num_event in range(num_events):
 # add files from prior plots for this event
 # do not add them to layouts so that they appear in the
 # additional files section
-section = "prior"
-for subsection in cp.get_subsections(section):
+for subsection in cp.get_subsections(opts.prior_section):
     inffu.make_inference_prior_plot(workflow, config_file, opts.output_dir,
                           analysis_seg=workflow.analysis_time,
-                          sections=[section + "-" + subsection],
+                          sections=[opts.prior_section + "-" + subsection],
                           tags=opts.tags + [subsection])
 
 # write dax
