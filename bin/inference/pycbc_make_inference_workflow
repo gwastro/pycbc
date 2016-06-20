@@ -240,7 +240,8 @@ section = "prior"
 for subsection in cp.get_subsections(section):
     inffu.make_inference_prior_plot(workflow, config_file, opts.output_dir,
                           analysis_seg=workflow.analysis_time,
-                          sections=[section+"-"+subsection], tags=opts.tags)
+                          sections=[section + "-" + subsection],
+                          tags=opts.tags + [subsection])
 
 # write dax
 workflow.save(filename=opts.output_file, output_map=opts.output_map)

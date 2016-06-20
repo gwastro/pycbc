@@ -91,8 +91,6 @@ for sec in opts.sections:
 variable_args = sorted(variable_args)
 ndim = len(variable_args)
 
-print distributions
-
 # construct class that will return draws from the prior
 prior = inference.PriorEvaluator(variable_args, *distributions)
 
@@ -151,7 +149,7 @@ else:
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join(labels)
+    "parameters" : ", ".join([read_label_from_config(cp, param, html=True) for param in variable_args])
 }
 caption = """This plot shows the probability density function (PDF) from the 
 prior distributions."""
