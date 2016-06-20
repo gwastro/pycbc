@@ -44,8 +44,8 @@ parser.add_argument("--section", type=str, default="prior",
     help="Name of section that contains subsections with distribution configurations.")
 
 # add prior options
-parser.add_argument("--bins", type=int, required=True,
-    help="Number of points to grid a parameter.")
+parser.add_argument("--bins", type=int, default=20,
+    help="Number of points to grid a parameter. Need at least 20 bins to fill in the plot.")
 
 # add output options
 parser.add_argument("--output-file", type=str, required=True,
@@ -113,10 +113,17 @@ fig = corner.corner(pts, weights=pdf, labels=labels, plot_contours=False,
 delaxs = fig.axes[::ndim+1]
 [fig.delaxes(ax) for ax in delaxs]
 
+# adjust size of remaining plots to cover entire canvas
+fig.subplots_adjust(top=1+1.0/(ndim))
+fig.subplots_adjust(right=1+1.0/(ndim))
+for ax in fig.axes:
+    ax.yaxis.get_label().set_position((-0.2,0.5))
+    ax.xaxis.get_label().set_position((0.5,-0.2))
+
 # save figure with meta-data
 caption = """This plot shows the probability density function (PDF) from the 
 prior distributions."""
-title = "Prior Probability Density Functions"
+title = "Prior Distributions"
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),
                                title=title,
