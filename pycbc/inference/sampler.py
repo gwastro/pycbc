@@ -76,20 +76,16 @@ class KombineSampler(_BaseSampler):
     nwalkers : int
         Number of walkers to use in sampler.
     ndim : int
-        Number of dimensions in the parameter space. If transd is True this is
-        the number of unique dimensions across the parameter spaces.
-    transd : bool
-        If True, the sampler will operate across parameter spaces using a
-        kombine.clustered_kde.TransdimensionalKDE proposal distribution. In
-        this mode a masked array with samples in each of the possible sets of
-        dimensions must be given for the initial ensemble distribution.
+        Number of dimensions in the parameter space. If kwargs["transd"] is
+        True this is the number of unique dimensions across the parameter
+        spaces.
     processes : {None, int}
         Number of processes to use with multiprocessing. If None, all available
         cores are used.
     """
 
     def __init__(self, likelihood_evaluator, nwalkers=0, ndim=0,
-                        transd=False, processes=None):
+                                        processes=None, **kwargs):
 
         try:
             import kombine
@@ -98,7 +94,7 @@ class KombineSampler(_BaseSampler):
 
         # construct sampler for use in KombineSampler
         self._sampler = kombine.Sampler(nwalkers, ndim, likelihood_evaluator,
-                                          transd=transd, processes=processes)
+                                          processes=processes, **kwargs)
 
         # initialize
         super(KombineSampler, self).__init__(likelihood_evaluator)
