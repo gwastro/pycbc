@@ -82,7 +82,7 @@ class KombineSampler(_BaseSampler):
     processes : {None, int}
         Number of processes to use with multiprocessing. If None, all available
         cores are used.
-    **kwargs : {dict}
+    **kwargs
         Any other keyword arguments are passed to the initialization of
         Kombine.Sampler.
     """
