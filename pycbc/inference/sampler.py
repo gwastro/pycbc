@@ -82,6 +82,9 @@ class KombineSampler(_BaseSampler):
     processes : {None, int}
         Number of processes to use with multiprocessing. If None, all available
         cores are used.
+    **kwargs : {dict}
+        Any other keyword arguments are passed to the initialization of
+        Kombine.Sampler.
     """
 
     def __init__(self, likelihood_evaluator, nwalkers=0, ndim=0,
