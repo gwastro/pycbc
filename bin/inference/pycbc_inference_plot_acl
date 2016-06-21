@@ -115,8 +115,8 @@ caption_kwargs = {
     "parameters" : ", ".join(["%s"%fp.read_label(param, html=True) for param in variable_args]),
 }
 caption = """Autocorrelation length (ACL) from all the walker chains for the
-parameters. Each line is an ACF for a chain of walker samples."""
-title = "Autocorrelation Function for {parameters}".format(**caption_kwargs)
+parameters. Each line is an ACL for a chain of walker samples."""
+title = "Autocorrelation Length for {parameters}".format(**caption_kwargs)
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),
                                title=title,
