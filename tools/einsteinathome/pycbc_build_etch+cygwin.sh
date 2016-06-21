@@ -575,10 +575,13 @@ else
     echo -e "\\n\\n>> [`date`] building lalsuite"
     if test -d lalsuite/.git; then
         cd lalsuite
-    else
+    elif test ".$lalsuite_branch" = ".eah_cbc"; then
         git clone git://$gitmaster/lalsuite.git
         cd lalsuite
         git checkout -b eah_cbc origin/eah_cbc
+    else
+        git clone git://versions.ligo.org/lalsuite.git
+        cd lalsuite
     fi
     git reset --hard HEAD
     echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
