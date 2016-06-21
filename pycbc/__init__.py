@@ -69,7 +69,7 @@ def init_logging(verbose=False):
 try:
     # This is a crude check to make sure that the driver is installed
     try:
-        loaded_modules = subprocess.check_output(["lsmod"], stderr=subprocess.STDOUT)
+        loaded_modules = subprocess.Popen(['lsmod'], stdout=subprocess.PIPE).communicate()[0]
         if str.find(loaded_modules, "nvidia") == -1:
             raise ImportError("nvidia driver may not be installed correctly")
     except OSError:
