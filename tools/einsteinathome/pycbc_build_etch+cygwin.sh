@@ -146,10 +146,12 @@ for i in $*; do
         --no-cleanup) cleanup=false;;
         --verbose-python) verbose_pyinstalled_python=true;;
         --clean) rm -rf "$HOME/.cache" "$SOURCE/pycbc-preinst.tgz" "$SOURCE/pycbc-preinst-lalsuite.tgz";;
+        --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/pycbc-preinst-lalsuite.tgz";;
         *) echo "unknown option '$i', valid are:
 
     --clean           : perform a clean build (takes quite some time); delete ~/.cache and
                         tarballs containing precompiled libraries (lalsuite, scipy etc.)
+    --clean-lalsuite  : clean lalsuite before building, checkout and build it from scratch
     --no-pycbc-update : don't update local pycbc repo from remote branch $pycbc_branch
     --bema-testing    : use einsteinathome_testing branch of bema-ligo pycbc repo
     --scratch-pycbc   : check out pycbc git repo from scratch
