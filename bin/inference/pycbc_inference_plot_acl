@@ -114,8 +114,9 @@ plt.vlines(fp.acl, 0, int(1.1*y.max()))
 caption_kwargs = {
     "parameters" : ", ".join(["%s"%fp.read_label(param, html=True) for param in variable_args]),
 }
-caption = """Autocorrelation length (ACL) from all the walker chains for the
-parameters. Each line is an ACL for a chain of walker samples."""
+caption = """ The histogram (blue) is the autocorrelation length (ACL) from all
+ the walker chains for the parameters. The vertical black line is the ACL
+read from the input file."""
 title = "Autocorrelation Length for {parameters}".format(**caption_kwargs)
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),
