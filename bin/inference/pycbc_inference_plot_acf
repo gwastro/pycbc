@@ -50,7 +50,7 @@ parser.add_argument("--output-file", type=str, required=True,
 # add thinning options
 parser.add_argument("--thin-start", type=int, default=None,
     help="Sample number to start collecting samples to plot.")
-parser.add_argument("--thin-interval", type=int, default=1,
+parser.add_argument("--thin-interval", type=int, default=None,
     help="Interval to use for thinning samples.")
 
 # verbose option
