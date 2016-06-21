@@ -76,6 +76,8 @@ parser.add_argument("--gps-end-time", type=float, nargs="+", default=None,
 # input configuration file options
 parser.add_argument("--inference-config-file", type=str, required=True,
     help="workflow.WorkflowConfigParser parsable file with proir information.")
+parser.add_argument("--prior-section", type=str, default="prior",
+    help="Name of the section in inference configuration file that contains priors.")
 
 # add option groups
 wf.add_workflow_command_line_group(parser)
@@ -99,9 +101,6 @@ workflow = wf.Workflow(opts, opts.workflow_name)
 
 # create output directory
 wf.makedir(opts.output_dir)
-
-# create a list that will contain all output files
-layouts = []
 
 # typecast str from command line to File instances
 config_file = to_file(opts.inference_config_file)
@@ -165,6 +164,9 @@ if "mass1" in variable_args and "mass2" in variable_args:
     variable_args += ["mchirp", "eta"]
 variable_args.sort()
 
+# create a list that will contain all output files
+layouts = []
+
 # loop over number of loudest events to be analyzed
 for num_event in range(num_events):
 
@@ -199,14 +201,14 @@ for num_event in range(num_events):
                               coinc_file, num_event, 
                               opts.output_dir, tags=opts.tags + [str(num_event)])]
 
-    # add files from summart table for this event
+    # add files from posterior summary table for this event
     layouts += [inffu.make_inference_summary_table(workflow, inference_file,
                           opts.output_dir, variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
 
-    # add files from corner plot for this event
-    layouts += [inffu.make_inference_corner_plot(workflow, inference_file,
+    # add files from posterior corner plot for this event
+    layouts += [inffu.make_inference_posterior_plot(workflow, inference_file,
                           opts.output_dir, variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
@@ -232,6 +234,15 @@ for num_event in range(num_events):
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)]) 
     layouts += list(layout.grouper(files, 2))
+
+# add files from prior plots for this event
+# do not add them to layouts so that they appear in the
+# additional files section
+for subsection in cp.get_subsections(opts.prior_section):
+    inffu.make_inference_prior_plot(workflow, config_file, opts.output_dir,
+                          analysis_seg=workflow.analysis_time,
+                          sections=[opts.prior_section + "-" + subsection],
+                          tags=opts.tags + [subsection])
 
 # write dax
 workflow.save(filename=opts.output_file, output_map=opts.output_map)

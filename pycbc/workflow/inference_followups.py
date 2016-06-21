@@ -118,6 +118,60 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
 
     logging.info("Leaving inference module")
 
+def make_inference_prior_plot(workflow, config_file, output_dir,
+                    sections=None, name="inference_prior",
+                    analysis_seg=None, tags=None):
+    """ Sets up the corner plot of the priors in the workflow.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    config_file: pycbc.workflow.File
+        The WorkflowConfigParser parasable inference configuration file..
+    output_dir: str
+        The directory to store result plots and files.
+    sections : list
+        A list of subsections to use.
+    name: str
+        The name in the [executables] section of the configuration file
+        to use.
+    analysis_segs: {None, glue.segments.Segment}
+       The segment this job encompasses. If None then use the total analysis
+       time from the workflow.
+    tags: {None, optional}
+        Tags to add to the inference executables.
+
+    Returns
+    -------
+    pycbc.workflow.FileList
+        A list of result and output files. 
+    """
+
+    # default values
+    tags = [] if tags is None else tags
+    analysis_seg = workflow.analysis_time \
+                       if analysis_seg is None else analysis_seg
+
+    # make the directory that will contain the output files
+    makedir(output_dir)
+
+    # make a node for plotting the posterior as a corner plot
+    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                      out_dir=output_dir, universe="local",
+                      tags=tags).create_node()
+
+    # add command line options
+    node.add_input_opt("--config-file", config_file)
+    node.new_output_file_opt(analysis_seg, ".png", "--output-file")
+    if sections != None:
+        node.add_opt("--sections", " ".join(sections))
+
+    # add node to workflow
+    workflow += node
+
+    return node.output_files
+
 def make_inference_summary_table(workflow, inference_file, output_dir,
                     variable_args=None, name="inference_table",
                     analysis_seg=None, tags=None):
@@ -170,7 +224,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
 
     return node.output_files
 
-def make_inference_corner_plot(workflow, inference_file, output_dir,
+def make_inference_posterior_plot(workflow, inference_file, output_dir,
                     variable_args=None,
                     name="inference_posterior", analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
@@ -284,9 +338,6 @@ def make_inference_single_parameter_plots(workflow, inference_file, output_dir,
         The file with posterior samples.
     output_dir: str
         The directory to store result plots and files.
-    config_file: str
-        The path to the inference configuration file that has a
-        [variable_args] section.
     variable_args : list
         A list of parameters to use instead of [variable_args].
     samples_name: str
@@ -322,7 +373,7 @@ def make_inference_single_parameter_plots(workflow, inference_file, output_dir,
     for arg in variable_args:
 
         # plot posterior distribution
-        corner_files = make_inference_corner_plot(workflow, inference_file,
+        corner_files = make_inference_posterior_plot(workflow, inference_file,
                           output_dir, variable_args=[arg],
                           analysis_seg=analysis_seg, tags=tags + [arg])
 
