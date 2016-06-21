@@ -93,7 +93,9 @@ for param_name in variable_args:
 # plot autocorrelation length
 logging.info("Plotting autocorrelation lengths")
 fig = plt.figure()
-y,x,patches = plt.hist(acls, opts.bins, align="left", histtype="step")
+range_max = max(fp.acl, max(acls))
+y,x,patches = plt.hist(acls, opts.bins, range=(0,range_max),
+                                        histtype="step")
 
 # get histogram bin width
 poly_xy = patches[0].get_xy()
@@ -102,7 +104,8 @@ step = poly_xy[2][0] - poly_xy[0][0]
 plt.xlabel("Iteration")
 plt.ylabel(r'Autocorrelation Length for %s'%', '.join(['%s'%fp.read_label(param) for param in variable_args]))
 plt.ylim(0, int(1.1*y.max()))
-plt.xlim(x.min()-2*step, x.max()+2*step)
+x_min = max(0, x.min()-2*step)
+plt.xlim(x_min, x.max()+2*step)
 
 # plot autocorrelation length saved in InferenceFile
 plt.vlines(fp.acl, 0, int(1.1*y.max()))
