@@ -327,7 +327,8 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
 
 def make_inference_single_parameter_plots(workflow, inference_file, output_dir,
                     variable_args=None, samples_name="inference_samples",
-                    auto_name="inference_acf", analysis_seg=None, tags=None):
+                    acf_name="inference_acf", acl_name="inference_acl",
+                    analysis_seg=None, tags=None):
     """ Sets up single-parameter plots for inference workflow.
 
     Parameters
@@ -343,9 +344,12 @@ def make_inference_single_parameter_plots(workflow, inference_file, output_dir,
     samples_name: str
         The name in the [executables] section of the configuration file
         to use for the plot that shows all samples.
-    auto_name: str
+    acf_name: str
         The name in the [executables] section of the configuration file
         to use for the autocorrelation function plot.
+    acl_name: str
+        The name in the [executables] section of the configuration file
+        to use for the autocorrelation length histogram.
     analysis_segs: {None, glue.segments.Segment}
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
@@ -381,29 +385,33 @@ def make_inference_single_parameter_plots(workflow, inference_file, output_dir,
         samples_node = PlotExecutable(workflow.cp, samples_name,
                           ifos=workflow.ifos, out_dir=output_dir,
                           tags=tags + [arg]).create_node()
-
-        # add command line options
         samples_node.add_input_opt("--input-file", inference_file)
         samples_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
         samples_node.add_opt("--variable-args", arg)
 
         # make node for plotting the autocorrelation function for each walker
-        auto_node = PlotExecutable(workflow.cp, auto_name, ifos=workflow.ifos,
+        acf_node = PlotExecutable(workflow.cp, acf_name, ifos=workflow.ifos,
                           out_dir=output_dir, tags=tags + [arg]).create_node()
+        acf_node.add_input_opt("--input-file", inference_file)
+        acf_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
+        acf_node.add_opt("--variable-args", arg)
 
-        # add command line options
-        auto_node.add_input_opt("--input-file", inference_file)
-        auto_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-        auto_node.add_opt("--variable-args", arg)
+        # make node for plotting the autocorrelation function for each walker
+        acl_node = PlotExecutable(workflow.cp, acl_name, ifos=workflow.ifos,
+                          out_dir=output_dir, tags=tags + [arg]).create_node()
+        acl_node.add_input_opt("--input-file", inference_file)
+        acl_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
+        acl_node.add_opt("--variable-args", arg)
 
         # add nodes to workflow
         workflow += samples_node
-        workflow += auto_node
+        workflow += acf_node
+        workflow += acl_node
 
         # add files to output files list
         files += corner_files
         files += samples_node.output_files
-        files += auto_node.output_files
-        files += [None]
+        files += acf_node.output_files
+        files += acl_node.output_files
 
     return files
