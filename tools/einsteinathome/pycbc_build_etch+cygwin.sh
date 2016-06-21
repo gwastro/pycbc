@@ -599,7 +599,6 @@ else
     fi
     if $build_framecpp; then
 	shared="$shared --enable-framec --disable-framel"
-	lal_cppflags="$lal_cppflags -DLAL_FRAME_LIBRARY=FrameC"
     fi
     ./00boot
     cd ..
@@ -974,6 +973,12 @@ if check_md5 "$p" "$md5"; then
         echo "can't download $p - md5 mismatch"
         exit 1
     fi
+fi
+
+if $build_framecpp; then
+    export LAL_FRAME_LIBRARY=FrameC
+else
+    export LAL_FRAME_LIBRARY=FrameL
 fi
 
 LAL_DATA_PATH="." \
