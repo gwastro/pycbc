@@ -398,10 +398,10 @@ Libs: -L${libdir} -lpq' |
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
-    ./configure $shared --enable-static --prefix="$PREFIX" --enable-sse2
+    ./configure $shared --enable-static --prefix="$PREFIX" --enable-sse2 --enable-avx
     make
     make install
-    ./configure $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse
+    ./configure $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse --enable-avx
     make
     make install
     cd ..
