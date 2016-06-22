@@ -35,6 +35,7 @@ scratch_pycbc=false
 if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
     echo -e "\\n\\n>> [`date`] Using Debian 4.0 (etch) settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
+    fftw_flags=--enable-avx
     shared="--enable-shared"
     build_dlls=false
     build_ssl=true
@@ -97,6 +98,7 @@ elif test "`uname -s`" = "Darwin" ; then
     appendix="_OSX64"
 else
     echo -e "\\n\\n>> [`date`] Using Cygwin settings"
+    fftw_flags=--enable-avx
     lal_cppflags="-D_WIN32"
     shared="--enable-shared"
     build_dlls=true
@@ -398,10 +400,10 @@ Libs: -L${libdir} -lpq' |
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
-    ./configure $shared --enable-static --prefix="$PREFIX" --enable-sse2 --enable-avx
+    ./configure $shared --enable-static --prefix="$PREFIX" --enable-sse2 $fftw_flags
     make
     make install
-    ./configure $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse --enable-avx
+    ./configure $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
     make
     make install
     cd ..
