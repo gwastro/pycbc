@@ -274,6 +274,11 @@ with ctx:
         logging.info("Burn in")
         sampler.burn_in(p0)
         p0 = None
+        with InferenceFile(opts.output_file, "a") as fp:
+            fp.write_samples_from_sampler(sampler, start=None, end=None,
+                                          labels=labels)
+            fp.write_acceptance_fraction(data=sampler.acceptance_fraction,
+                                         start=None, end=None)
 
     # write sampler attributes to file
     with InferenceFile(opts.output_file, "a") as fp:
