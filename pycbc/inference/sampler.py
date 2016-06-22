@@ -118,7 +118,7 @@ class KombineSampler(_BaseSampler):
     def burn_in(self, initial_values):
         """ Evolve an ensemble until the acceptance rate becomes roughly
         constant. This is done by splitting acceptances in half and checking
-        for statistical consistency. This isn’t guaranteed to return a fully
+        for statistical consistency. This isn't guaranteed to return a fully
         burned-in ensemble, but usually does.
 
         Parameters
