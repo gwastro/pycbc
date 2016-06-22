@@ -11,8 +11,9 @@ pythoncompiled*.zip
 # binaries for transfer, packaging etc.
 wrapper*
 fstab
-fstab.exe
 progress
-progress.exe
+*.exe
+*_OSX64
+*_Linux64
 validator_test_CBC1
 validator_test_CBC1.exe
