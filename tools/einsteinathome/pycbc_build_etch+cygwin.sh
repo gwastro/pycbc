@@ -62,8 +62,6 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0"; then
     appendix="_Linux64"
 elif test "`uname -s`" = "Darwin" ; then
     echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
-    pycbc_branch=einsteinathome_testing
-    pycbc_remote=bema-ligo
     export FC=gfortran-mp-4.8
     export CC=gcc-mp-4.8
     export CXX=g++-mp-4.8
