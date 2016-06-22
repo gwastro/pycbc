@@ -937,6 +937,12 @@ fi
 # build zip file from dir
 zip -r pycbc_inspiral$appendix.zip pycbc_inspiral
 
+# OSX doesn't have a GNU error C extension, so drop an "error.h" header
+# with a fake 'error' function somewhere for scipy wave to pick it up
+if test ".$appendix" = "._OSX64"; then
+    echo '#define error(status, errnum, errstr, ...) fprintf(stderr,"pycbc_inspiral: %d:%d:" errstr, status, errnum, ##__VA_ARGS__)' > "$ENVIRONMENT/dist/pycbc_inspiral/scipy/weave/error.h"
+fi
+
 # run 10min self-test, build wave cache
 echo -e "\\n\\n>> [`date`] running analysis"
 cd "$SOURCE"
