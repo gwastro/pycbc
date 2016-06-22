@@ -926,9 +926,6 @@ echo -e "\\n\\n>> [`date`] testing"
 ./pycbc_inspiral --help
 cd ..
 
-# build zip file from dir
-zip -r pycbc_inspiral$appendix.zip pycbc_inspiral
-
 # if the executable is "pycbc_inspiral.exe", add a "XML soft link" "pycbc_inspiral" to the bundle for the wrapper
 if $build_dlls; then
     mkdir -p tmp/pycbc_inspiral
@@ -936,6 +933,9 @@ if $build_dlls; then
     cd tmp
     zip ../pycbc_inspiral.zip pycbc_inspiral/pycbc_inspiral
 fi
+
+# build zip file from dir
+zip -r pycbc_inspiral$appendix.zip pycbc_inspiral
 
 # run 10min self-test, build wave cache
 echo -e "\\n\\n>> [`date`] running analysis"
