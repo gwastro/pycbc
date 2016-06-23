@@ -31,6 +31,7 @@ import os, sys, types, re, copy, numpy, inspect
 import lal
 import lalsimulation as lalsim
 from glue.ligolw import types as ligolw_types
+from pycbc.detector import Detector
 from pycbc.waveform import parameters
 
 #
@@ -1211,9 +1212,8 @@ class _FieldArrayWithDefaults(FieldArray):
 #
 
 # we'll vectorize TimeDelayFromEarthCenter for faster processing of end times
-def _time_delay_from_center(tc, detector, ra, dec):
-    return tc + lal.TimeDelayFromEarthCenter(detector.location,
-        ra, dec, tc)
+def _time_delay_from_center(detector, ra, dec, tc):
+    return tc + detector.time_delay_from_earth_center(ra, dec, tc)
 time_delay_from_center = numpy.vectorize(_time_delay_from_center)
 
 class WaveformArray(_FieldArrayWithDefaults):
@@ -1394,9 +1394,8 @@ class WaveformArray(_FieldArrayWithDefaults):
 
     def det_tc(self, detector):
         """Returns the coalesence time in the given detector."""
-        detector = lalsim.DetectorPrefixToLALDetector(detector)
-        return time_delay_from_center(self.tc, detector, self.ra,
-            self.dec)
+        detector = Detector(detector)
+        return time_delay_from_center(detector, self.ra, self.dec, self.tc)
 
 
 __all__ = ['FieldArray', 'WaveformArray']
