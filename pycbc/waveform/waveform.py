@@ -35,20 +35,17 @@ from pycbc.fft import fft
 from pycbc import pnutils
 from pycbc import psd
 from pycbc.waveform import utils as wfutils
+from pycbc.waveform import parameters
 from pycbc.filter import interpolate_complex_frequency
 import pycbc
 
-default_args = {'spin1x':0, 'spin1y':0, 'spin1z':0, 'spin2x':0, 'spin2y':0,
-                'spin2z':0, 'lambda1':0, 'lambda2':0,
-                'inclination':0, 'distance':1, 'f_final':0, 'f_ref':0,
-                'coa_phase':0, 'amplitude_order':-1, 'phase_order':-1,
-                'spin_order':-1, 'tidal_order':-1, 'numrel_data':""}
+default_args = (parameters.fd_waveform_params.default_dict() + \
+    parameters.td_waveform_params).default_dict()
 
 default_sgburst_args = {'eccentricity':0, 'polarization':0}
 
-base_required_args = ['mass1','mass2','f_lower']
-td_required_args = base_required_args + ['delta_t']
-fd_required_args = base_required_args + ['delta_f']
+td_required_args = parameters.td_waveform_params.nodefaults.aslist
+fd_required_args = parameters.fd_waveform_params.nodefaults.aslist
 sgburst_required_args = ['q','frequency','hrss']
 
 # td, fd, filter waveforms generated on the CPU
@@ -284,58 +281,16 @@ def props_sgburst(obj, **kwargs):
 
 # Waveform generation ########################################################
 def get_fd_waveform_sequence(template=None, **kwds):
-    """  Return values of the waveform evaluated at the sequence of frequency 
+    """
+    Return values of the waveform evaluated at the sequence of frequency 
     points.
 
     Parameters
     ----------
     template: object
         An object that has attached properties. This can be used to substitute
-        for keyword arguments. A common example would be a row in an xml table. 
-    approximant : string
-        A string that indicates the chosen approximant. See `fd_approximants` 
-        for available options. 
-    mass1 : float
-        The mass of the first component object in the binary in solar masses.
-    mass2 : float
-        The mass of the second component object in the binary in solar masses.
-    f_ref : {float}, optional
-        The reference frequency.
-    distance : {1, float}, optional
-        The distance from the observer to the source in megaparsecs.
-    inclination : {0, float}, optional
-        The inclination angle of the source. 
-    coa_phase : {0, float}, optional
-        The final phase or phase at the peak of the waveform. See documentation
-        on specific approximants for exact usage. 
-    spin1x : {0, float}, optional
-        The x component of the first binary component's spin vector.
-    spin1y : {0, float}, optional
-        y component of the first binary component's spin.
-    spin1z : {0, float}, optional
-        z component of the first binary component's spin.
-    spin2x : {0, float}, optional
-        The x component of the second binary component's spin vector.
-    spin2y : {0, float}, optional
-        y component of the second binary component's spin.
-    spin2z : {0, float}, optional
-        z component of the second binary component's spin.
-    lambda1: {0, float}, optional
-        The tidal deformability parameter of object 1.
-    lambda2: {0, float}, optional
-        The tidal deformability parameter of object 2.
-    phase_order: {-1, int}, optional
-        The pN order of the orbital phase. The default of -1 indicates that 
-        all implemented orders are used.
-    spin_order: {-1, int}, optional
-        The pN order of the spin corrections. The default of -1 indicates that 
-        all implemented orders are used.
-    tidal_order: {-1, int}, optional
-        The pN order of the tidal corrections. The default of -1 indicates that 
-        all implemented orders are used.
-    amplitude_order: {-1, int}, optional
-        The pN order of the amplitude. The default of -1 indicates that 
-        all implemented orders are used.
+        for keyword arguments. A common example would be a row in an xml table.
+    {params}
 
     Returns
     -------
@@ -346,6 +301,7 @@ def get_fd_waveform_sequence(template=None, **kwds):
         The cross phase of the waveform in frequency domain evaluated at the
     frequency points.
     """
+
     kwds['delta_f'] = -1
     kwds['f_lower'] = -1
     p = props(template, **kwds)
@@ -369,6 +325,10 @@ def get_fd_waveform_sequence(template=None, **kwds):
               
     return Array(hp.data.data), Array(hc.data.data)
 
+get_fd_waveform_sequence.__doc__ = get_fd_waveform_sequence.__doc__.format(
+    params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
+           include_label=False).lstrip(' '))
+
 def get_td_waveform(template=None, **kwargs):
     """Return the plus and cross polarizations of a time domain waveform. 
 
@@ -376,55 +336,8 @@ def get_td_waveform(template=None, **kwargs):
     ----------
     template: object
         An object that has attached properties. This can be used to subsitute
-        for keyword arguments. A common example would be a row in an xml table. 
-    approximant : string
-        A string that indicates the chosen approximant. See `td_approximants` 
-        for available options. 
-    mass1 : float
-        The mass of the first component object in the binary in solar masses.
-    mass2 : 
-        The mass of the second component object in the binary in solar masses.
-    delta_t :
-        The time step used to generate the waveform. 
-    f_lower :
-        The starting frequency of the waveform.
-    f_ref : {float}, optional
-        The reference frequency
-    distance : {1, float}, optional
-        The distance from the observer to the source in megaparsecs.
-    inclination : {0, float}, optional
-        The inclination angle of the source. 
-    coa_phase : {0, float}, optional
-        The final phase or phase at the peak of the wavform. See documentation
-        on specific approximants for exact usage. 
-    spin1x : {0, float}, optional
-        The x component of the first binary component's spin vector.
-    spin1y : {0, float}, optional
-        y component of the first binary component's spin.
-    spin1z : {0, float}, optional
-        z component of the first binary component's spin.
-    spin2x : {0, float}, optional
-        The x component of the second binary component's spin vector.
-    spin2y : {0, float}, optional
-        y component of the second binary component's spin.
-    spin2z : {0, float}, optional
-        z component of the second binary component's spin.
-    lambda1: {0, float}, optional
-        The tidal deformability parameter of object 1.
-    lambda2: {0, float}, optional
-        The tidal deformability parameter of object 2.
-    phase_order: {-1, int}, optional
-        The pN order of the orbital phase. The default of -1 indicates that 
-        all implemented orders are used.
-    spin_order: {-1, int}, optional
-        The pN order of the spin corrections. The default of -1 indicates that 
-        all implemented orders are used.
-    tidal_order: {-1, int}, optional
-        The pN order of the tidal corrections. The default of -1 indicates that 
-        all implemented orders are used.
-    amplitude_order: {-1, int}, optional
-        The pN order of the amplitude. The default of -1 indicates that 
-        all implemented orders are used.
+        for keyword arguments. A common example would be a row in an xml table.
+    {params}
 
     Returns
     -------
@@ -450,6 +363,10 @@ def get_td_waveform(template=None, **kwargs):
 
     return wav_gen[input_params['approximant']](**input_params)
 
+get_td_waveform.__doc__ = get_td_waveform.__doc__.format(
+    params=parameters.td_waveform_params.docstr(prefix="    ",
+           include_label=False).lstrip(' '))
+
 def get_fd_waveform(template=None, **kwargs):
     """Return a frequency domain gravitational waveform.
 
@@ -457,58 +374,8 @@ def get_fd_waveform(template=None, **kwargs):
     ----------
     template: object
         An object that has attached properties. This can be used to substitute
-        for keyword arguments. A common example would be a row in an xml table. 
-    approximant : string
-        A string that indicates the chosen approximant. See `fd_approximants` 
-        for available options. 
-    mass1 : float
-        The mass of the first component object in the binary in solar masses.
-    mass2 : float
-        The mass of the second component object in the binary in solar masses.
-    delta_f : float
-        The frequency step used to generate the waveform. 
-    f_lower : float
-        The starting frequency of the waveform.
-    f_final : {-1, float}, optional
-        The ending frequency of the waveform. The default indicates that the
-        choice is made by the respective approximant. 
-    f_ref : {float}, optional
-        The reference frequency.
-    distance : {1, float}, optional
-        The distance from the observer to the source in megaparsecs.
-    inclination : {0, float}, optional
-        The inclination angle of the source. 
-    coa_phase : {0, float}, optional
-        The final phase or phase at the peak of the waveform. See documentation
-        on specific approximants for exact usage. 
-    spin1x : {0, float}, optional
-        The x component of the first binary component's spin vector.
-    spin1y : {0, float}, optional
-        y component of the first binary component's spin.
-    spin1z : {0, float}, optional
-        z component of the first binary component's spin.
-    spin2x : {0, float}, optional
-        The x component of the second binary component's spin vector.
-    spin2y : {0, float}, optional
-        y component of the second binary component's spin.
-    spin2z : {0, float}, optional
-        z component of the second binary component's spin.
-    lambda1: {0, float}, optional
-        The tidal deformability parameter of object 1.
-    lambda2: {0, float}, optional
-        The tidal deformability parameter of object 2.
-    phase_order: {-1, int}, optional
-        The pN order of the orbital phase. The default of -1 indicates that 
-        all implemented orders are used.
-    spin_order: {-1, int}, optional
-        The pN order of the spin corrections. The default of -1 indicates that 
-        all implemented orders are used.
-    tidal_order: {-1, int}, optional
-        The pN order of the tidal corrections. The default of -1 indicates that 
-        all implemented orders are used.
-    amplitude_order: {-1, int}, optional
-        The pN order of the amplitude. The default of -1 indicates that 
-        all implemented orders are used.
+        for keyword arguments. A common example would be a row in an xml table.
+    {params}
 
     Returns
     -------
@@ -534,6 +401,10 @@ def get_fd_waveform(template=None, **kwargs):
             raise ValueError("Please provide " + str(arg) )
 
     return wav_gen[input_params['approximant']](**input_params)
+
+get_fd_waveform.__doc__ = get_fd_waveform.__doc__.format(
+    params=parameters.fd_waveform_params.docstr(prefix="    ",
+           include_label=False).lstrip(' '))
 
 def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
                                  **params):

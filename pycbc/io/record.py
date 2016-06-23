@@ -31,6 +31,7 @@ import os, sys, types, re, copy, numpy, inspect
 import lal
 import lalsimulation as lalsim
 from glue.ligolw import types as ligolw_types
+from pycbc.waveform import parameters
 
 #
 # =============================================================================
@@ -1221,11 +1222,14 @@ class WaveformArray(_FieldArrayWithDefaults):
     
     1. With just the size of the array. In this case, the returned array will
     have all of the default field names. Example:
+    >>> warr = WaveformArray(10)
     >>> warr.fieldnames
-    ('polarization',
+    ('distance',
+     'spin2x',
      'mass1',
      'mass2',
-     'spin2x',
+     'lambda1',
+     'polarization',
      'spin2y',
      'spin2z',
      'spin1y',
@@ -1235,6 +1239,7 @@ class WaveformArray(_FieldArrayWithDefaults):
      'coa_phase',
      'dec',
      'tc',
+     'lambda2',
      'ra')
 
     2. With some subset of the default field names. Example:
@@ -1258,33 +1263,37 @@ class WaveformArray(_FieldArrayWithDefaults):
 
     Additional fields can also be specified using the additional_fields
     keyword argument. Example:
-    >>> warr = WaveformArray(10, names=['mass1', 'mass2'], additional_fields=[('lambda1', float)])
+    >>> warr = WaveformArray(10, names=['mass1', 'mass2'], additional_fields=[('bar', float)])
     >>> warr.fieldnames
-    ('mass1', 'mass2', 'lambda1')
+    ('mass1', 'mass2', 'bar')
+
+    .. note::
+        If an array is initialized with all of the default fields (case 1,
+        above), then the names come from waveform.parameters; i.e., they
+        are actually Parameter instances, not just strings. This means that the
+        field names carry all of the metadata that a Parameter has. For
+        example:
+        >>> warr = WaveformArray(10)
+        >>> warr.fields[0]
+        'distance'
+        >>> warr.fields[0].description
+        'Luminosity distance to the binary (in Mpc).'
+        >>> warr.fields[0].label
+        '$d_L$ (Mpc)'
     """
 
-    _staticfields = {
-            'mass1': float,
-            'mass2': float,
-            'spin1x': float,
-            'spin1y': float,
-            'spin1z': float,
-            'spin2x': float,
-            'spin2y': float,
-            'spin2z': float,
-            'tc': float,
-            'coa_phase': float,
-            'ra': float,
-            'dec': float,
-            'polarization': float,
-            'inclination': float,
-    }
+    _staticfields = (parameters.cbc_intrinsic_params +
+                     parameters.extrinsic_params).dtype_dict
 
-    _virtualfields = ['mP', 'mS', 'mtotal', 'q', 'eta', 'mchirp']
+    _virtualfields = [parameters.mchirp, parameters.eta, parameters.mtotal,
+        parameters.q, parameters.m_p, parameters.m_s, parameters.chi_eff,
+        parameters.spin_px, parameters.spin_py, parameters.spin_pz,
+        parameters.spin_sx, parameters.spin_sy, parameters.spin_sz]
+
 
     @property
-    def mP(self):
-        """Returns the larger of self.mass1 and self.mass2 (P = primary)."""
+    def m_p(self):
+        """Returns the larger of self.mass1 and self.mass2 (p = primary)."""
         out = numpy.zeros(self.size, dtype=self.mass1.dtype)
         out[:] = self.mass1
         mask = self.mass1 < self.mass2
@@ -1292,8 +1301,8 @@ class WaveformArray(_FieldArrayWithDefaults):
         return out
 
     @property
-    def mS(self):
-        """Returns the smaller of self.mass1 and self.mass2 (S = secondary)."""
+    def m_s(self):
+        """Returns the smaller of self.mass1 and self.mass2 (s = secondary)."""
         out = numpy.zeros(self.size, dtype=self.mass2.dtype)
         out[:] = self.mass2
         mask = self.mass1 < self.mass2
@@ -1330,7 +1339,7 @@ class WaveformArray(_FieldArrayWithDefaults):
                 self.mtotal
 
     @property
-    def spinPx(self):
+    def spin_px(self):
         """Returns the x-component of the primary mass."""
         out = numpy.zeros(self.size, dtype=self.spin1x.dtype)
         out[:] = self.spin1x
@@ -1339,7 +1348,7 @@ class WaveformArray(_FieldArrayWithDefaults):
         return out
 
     @property
-    def spinPy(self):
+    def spin_py(self):
         """Returns the y-component of the primary mass."""
         out = numpy.zeros(self.size, dtype=self.spin1y.dtype)
         out[:] = self.spin1y
@@ -1348,7 +1357,7 @@ class WaveformArray(_FieldArrayWithDefaults):
         return out
 
     @property
-    def spinPz(self):
+    def spin_pz(self):
         """Returns the z-component of the secondary mass."""
         out = numpy.zeros(self.size, dtype=self.spin1z.dtype)
         out[:] = self.spin1z
@@ -1357,7 +1366,7 @@ class WaveformArray(_FieldArrayWithDefaults):
         return out
 
     @property
-    def spinSx(self):
+    def spin_sx(self):
         """Returns the x-component of the secondary mass."""
         out = numpy.zeros(self.size, dtype=self.spin2x.dtype)
         out[:] = self.spin2x
@@ -1366,7 +1375,7 @@ class WaveformArray(_FieldArrayWithDefaults):
         return out
 
     @property
-    def spinSy(self):
+    def spin_sy(self):
         """Returns the y-component of the secondary mass."""
         out = numpy.zeros(self.size, dtype=self.spin2y.dtype)
         out[:] = self.spin2y
@@ -1375,7 +1384,7 @@ class WaveformArray(_FieldArrayWithDefaults):
         return out
 
     @property
-    def spinSz(self):
+    def spin_sz(self):
         """Returns the z-component of the secondary mass."""
         out = numpy.zeros(self.size, dtype=self.spin2z.dtype)
         out[:] = self.spin2z
