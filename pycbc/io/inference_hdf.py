@@ -30,6 +30,7 @@ import numpy
 from pycbc import pnutils
 from pycbc.results import str_utils
 from pycbc.io.record import WaveformArray
+from pycbc.waveform import parameters as wfparams
 
 def read_label_from_config(cp, variable_arg, section="labels", html=False):
     """ Returns the label for the variable_arg.
@@ -86,7 +87,8 @@ class InferenceFile(h5py.File):
 
     def _create_arraycls(self):
         """Returns a sub-class of WaveformArray, with the _staticfields
-        set to the variable args that are in the file."""
+        set to the variable args that are in the file.
+        """
         # we'll need the name of a walker to get the dtypes
         refwalker = self[self.variable_args[0]].keys()[0]
         # get the names, dtypes of the variable args
@@ -186,8 +188,10 @@ class InferenceFile(h5py.File):
             thin_interval = 1 if thin_interval is None else thin_interval
 
         # figure out the size of the output array to create
-        n_per_walker = 1 + \
-            int((self.niterations-thin_start)/float(thin_interval))
+        #n_per_walker = 1 + \
+        #    int((self.niterations-thin_start)/float(thin_interval))
+        n_per_walker = \
+            self[self.variable_args[0]]['walker0'][thin_start::thin_interval].size
         arrsize = len(walkers) * n_per_walker
 
         # create an array to store the results
@@ -224,30 +228,43 @@ class InferenceFile(h5py.File):
         """
         return self["acceptance_fraction"][thin_start::thin_interval]
 
-    def read_label(self, variable_arg, html=False):
-        """ Returns the label for the parameter.
+    def read_label(self, parameter, html=False, error_on_none=False):
+        """Returns the label for the parameter.
 
         Parameters
         -----------
-        variable_arg : str
-            Name of parameter to get label.
+        parameter : str
+            Name of parameter to get a label for. Will first try to retrieve
+            a label from this file's "label" attributes. If the parameter
+            is not found there, will look for a label from
+            pycbc.waveform.parameters.
         html : bool
             If true then escape LaTeX formatting for HTML rendering.
+        error_on_none : {False, bool}
+            If True, will raise a ValueError if a label cannot be found, or if
+            the label is None. Otherwise, the parameter will just be returned
+            if no label can be found.
 
         Returns
         -------
         label : str
             A formatted string for the name of the paramter.
         """
-
         # get label
-        if variable_arg == "mchirp" and "mchirp" not in self.keys():
-            label = r'$M_{c}$'
-        elif variable_arg == "eta" and "eta" not in self.keys():
-            label = r'$\eta$'
-        else:
-            label = self[variable_arg].attrs["label"]
-
+        try:
+            label = self[parameter].attrs["label"]
+        except KeyError:
+            # try looking in pycbc.waveform.parameters
+            try:
+                label = getattr(wfparams, parameter).label
+            except AttributeError:
+                label = None
+        if label == None:
+            if error_on_none:
+                raise ValueError("Cannot find a label for paramter %s" %(
+                    parameter))
+            else:
+                return parameter
         # replace LaTeX with HTML
         if html:
             label = str_utils.latex_to_html(label)
