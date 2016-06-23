@@ -160,6 +160,24 @@ for i in $*; do
     esac
 done
 
+# hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
+if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
+    # WORKSPACE='/Users/jenkins/workspace/workspace/EAH_PyCBC_Master/label/OSX107'
+    if [ ".$CYGWIN_HOST" = "." ]; then
+        CYGWIN_HOST=cygwin64-qemu
+    fi
+    # copy the script
+    scp "$0" "$CYGWIN_HOST:."
+    # run it remotely
+    ssh "$CYGWIN_HOST" bash `basename $0` "$@"
+    # fetch the artifacts to local workspace
+    dist="pycbc/environment/dist"
+    rm -rf "$dist"
+    mkdir -p "$dist"
+    scp "$CYGWIN_HOST:$dist/*" "$dist" || true
+    exit 0
+fi
+
 # log compilation environment
 echo "export PATH='$PATH'"
 echo "export LD_LIBRARY_PATH='$LD_LIBRARY_PATH'"
