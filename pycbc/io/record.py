@@ -23,13 +23,12 @@
 #
 """
 This modules provides definitions of, and helper functions for, FieldArrays.
-FieldArrays are wrappers of numpy recarrays with additional functionality useful
-for storing and retrieving data created by a search for gravitational waves.
+FieldArrays are wrappers of numpy recarrays with additional functionality
+useful for storing and retrieving data created by a search for gravitationa
+waves.
 """
 
 import os, sys, types, re, copy, numpy, inspect
-import lal
-import lalsimulation as lalsim
 from glue.ligolw import types as ligolw_types
 from pycbc.detector import Detector
 from pycbc.waveform import parameters
@@ -1044,19 +1043,18 @@ class FieldArray(numpy.recarray):
         return newself
 
 def aliases_from_fields(fields):
-    """
-    Given a dictionary of fields, will return a dictionary mapping the aliases
-    to the names.
+    """Given a dictionary of fields, will return a dictionary mapping the
+    aliases to the names.
     """
     return dict(c for c in fields if isinstance(c, tuple))
 
 
 def fields_from_names(fields, names=None):
+    """Given a dictionary of fields and a list of names, will return a
+    dictionary consisting of the fields specified by names. Names can be
+    either the names of fields, or their aliases.
     """
-    Given a dictionary of fields and a list of names, will return a dictionary
-    consisting of the fields specified by names. Names can be either the names
-    of fields, or their aliases.
-    """
+
     if names is None:
         return fields
     if isinstance(names, str) or isinstance(names, unicode):
@@ -1088,7 +1086,8 @@ def fields_from_names(fields, names=None):
 #
 
 class _FieldArrayWithDefaults(FieldArray):
-    """Subclasses FieldArray, adding class attribute ``_staticfields``, and
+    """
+    Subclasses FieldArray, adding class attribute ``_staticfields``, and
     class method ``default_fields``. The ``_staticfields`` should be a
     dictionary that defines some field names and corresponding dtype. The
     ``default_fields`` method returns a dictionary of the static fields
@@ -1124,6 +1123,7 @@ class _FieldArrayWithDefaults(FieldArray):
     returns an empty dictionary. This class is mostly meant to be subclassed
     by other classes, so they can add their own defaults.
     """
+
     _staticfields = {}
     @classmethod
     def default_fields(cls, include_virtual=True, **kwargs):
@@ -1142,7 +1142,7 @@ class _FieldArrayWithDefaults(FieldArray):
         return dict(cls._staticfields.items() + add_fields.items())
         
 
-    def __new__(cls, shape, name=None, additional_fields=[], field_kwargs={},
+    def __new__(cls, shape, name=None, additional_fields=None, field_kwargs={},
             **kwargs):
         """The ``additional_fields`` should be specified in the same way as
         ``dtype`` is normally given to FieldArray. The ``field_kwargs`` are
@@ -1163,13 +1163,18 @@ class _FieldArrayWithDefaults(FieldArray):
             arr = cls(1, field_kwargs=field_kwargs)
             names = get_needed_fieldnames(arr, names)
             # add the fields as the dtype argument for initializing 
-            kwargs['dtype'] = [(name, default_fields[name]) for name in names]
+            kwargs['dtype'] = [(fld, default_fields[fld]) for fld in names]
         if 'dtype' not in kwargs:
             kwargs['dtype'] = default_fields.items()
         # add the additional fields
-        kwargs['dtype'] += additional_fields
+        if additional_fields is not None:
+            if not isinstance(additional_fields, list):
+                additional_fields = [additional_fields]
+            if not isinstance(kwargs['dtype'], list):
+                kwargs['dtype'] = [kwargs['dtype']]
+            kwargs['dtype'] += additional_fields
         return super(_FieldArrayWithDefaults, cls).__new__(cls, shape,
-            name=None, **kwargs)
+            name=name, **kwargs)
 
     def add_default_fields(self, names, **kwargs):
         """
@@ -1190,7 +1195,7 @@ class _FieldArrayWithDefaults(FieldArray):
         """
         if isinstance(names, str) or isinstance(names, unicode):
             names = [names]
-        default_fields = cls.default_fields(include_virtual=False, **kwargs)
+        default_fields = self.default_fields(include_virtual=False, **kwargs)
         # parse out any virtual fields
         arr = self.__class__(1, field_kwargs=kwargs)
         names = get_needed_fieldnames(arr, names)
@@ -1217,7 +1222,8 @@ def _time_delay_from_center(detector, ra, dec, tc):
 time_delay_from_center = numpy.vectorize(_time_delay_from_center)
 
 class WaveformArray(_FieldArrayWithDefaults):
-    """A FieldArray with some default fields and properties commonly used
+    """
+    A FieldArray with some default fields and properties commonly used
     by CBC waveforms. This may be initialized in one of 3 ways:
     
     1. With just the size of the array. In this case, the returned array will

@@ -65,7 +65,8 @@ class Parameter(str):
 
 class ParameterList(UserList):
     """A list of parameters. Each element in the list is expected to be a
-    Parameter instance."""
+    Parameter instance.
+    """
 
     @property
     def names(self):
@@ -86,25 +87,29 @@ class ParameterList(UserList):
         """Returns a list of the name and default value of each parameter,
         as tuples. If include_nulls is False, only parameters that do not
         have None as a default are returnted. Otherwise, all parameters
-        are returned."""
+        are returned.
+        """
         return [(x, x.default) for x in self
                     if include_nulls or x.default is not None]
 
     def default_dict(self, include_nulls=False):
         """Returns a dictionary of the name and default value of each
-        parameter."""
+        parameter.
+        """
         return dict(self.defaults(include_nulls=include_nulls))
 
     @property
     def nodefaults(self):
         """Returns a ParameterList of the parameters that have None for
-        defaults."""
+        defaults.
+        """
         return ParameterList([x for x in self if x.default is None])
 
     @property
     def dtypes(self):
         """Returns a list of the name and dtype of each parameter,
-        as tuples."""
+        as tuples.
+        """
         return [(x, x.dtype) for x in self]
 
     @property
@@ -115,7 +120,8 @@ class ParameterList(UserList):
     @property
     def descriptions(self):
         """Returns a list of the name and description of each parameter,
-        as tuples."""
+        as tuples.
+        """
         return [(x, x.description) for x in self]
 
     @property
@@ -126,8 +132,7 @@ class ParameterList(UserList):
 
     @property
     def labels(self):
-        """Returns a list of each parameter and its label, as tuples.
-        """
+        """Returns a list of each parameter and its label, as tuples."""
         return [(x, x.label) for x in self]
 
     @property
@@ -137,8 +142,7 @@ class ParameterList(UserList):
         return dict(self.labels)
 
     def docstr(self, prefix='', include_label=True):
-        """Returns the ``docstr`` of each parameter joined together.
-        """
+        """Returns the ``docstr`` of each parameter joined together."""
         return '\n'.join([x.docstr(prefix, include_label) for x in self])
 
 #

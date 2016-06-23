@@ -281,8 +281,7 @@ def props_sgburst(obj, **kwargs):
 
 # Waveform generation ########################################################
 def get_fd_waveform_sequence(template=None, **kwds):
-    """
-    Return values of the waveform evaluated at the sequence of frequency 
+    """Return values of the waveform evaluated at the sequence of frequency 
     points.
 
     Parameters
