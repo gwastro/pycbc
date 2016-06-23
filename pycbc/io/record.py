@@ -242,7 +242,11 @@ def get_needed_fieldnames(arr, names):
                 # no fget attribute, assume is an instance method
                 func = getattr(arr, name)
             # evaluate the source code of the function
-            sourcecode = inspect.getsource(func)
+            try:
+                sourcecode = inspect.getsource(func)
+            except TypeError:
+                # not a function, just pass
+                continue
             # evaluate the source code for the fields
             possible_fields = get_instance_fields_from_arg(sourcecode)
             # some of the variables returned by possible fields may themselves
@@ -1323,7 +1327,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def q(self):
         """Returns the mass ratio m1/m2, where m1 >= m2."""
-        return self.mP / self.mS
+        return self.m_p / self.m_s
 
     # FIXME: mchirp and eta functions should be added to pnutils as separate
     # functions
