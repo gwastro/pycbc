@@ -778,7 +778,6 @@ else
     fi
 
     # build bootloader (in any case: for Cygwin it wasn't precompiled, for Linux it was patched)
-if false; then
     cd bootloader
     if echo "$pyinstaller_version" | grep '3\.' > /dev/null; then
 	python ./waf distclean all
@@ -786,7 +785,6 @@ if false; then
 	python ./waf configure $pyinstaller_lsb build install
     fi
     cd ..
-fi
     python setup.py install --prefix="$PREFIX"
     cd ..
 fi
