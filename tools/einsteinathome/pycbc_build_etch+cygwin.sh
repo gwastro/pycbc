@@ -936,26 +936,26 @@ fi
 # I really don't know why the application needs to crash without these
 mkdir -p tcl tk
 
+# OSX doesn't have a GNU error C extension, so drop an "error.h" header
+# with a fake 'error' function somewhere for scipy wave to pick it up
+if test ".$appendix" = "._OSX64"; then
+    echo '#define error(status, errnum, errstr, ...) fprintf(stderr,"pycbc_inspiral: %d:%d:" errstr, status, errnum, ##__VA_ARGS__)' > scipy/weave/error.h
+fi
+
 # TEST BUNDLE
 echo -e "\\n\\n>> [`date`] testing"
 ./pycbc_inspiral --help
 cd ..
+
+# build zip file from dir
+zip -r pycbc_inspiral$appendix.zip pycbc_inspiral
 
 # if the executable is "pycbc_inspiral.exe", add a "XML soft link" "pycbc_inspiral" to the bundle for the wrapper
 if $build_dlls; then
     mkdir -p tmp/pycbc_inspiral
     echo '<soft_link>pycbc_inspiral/pycbc_inspiral.exe<soft_link/>' > tmp/pycbc_inspiral/pycbc_inspiral
     cd tmp
-    zip ../pycbc_inspiral.zip pycbc_inspiral/pycbc_inspiral
-fi
-
-# build zip file from dir
-zip -r pycbc_inspiral$appendix.zip pycbc_inspiral
-
-# OSX doesn't have a GNU error C extension, so drop an "error.h" header
-# with a fake 'error' function somewhere for scipy wave to pick it up
-if test ".$appendix" = "._OSX64"; then
-    echo '#define error(status, errnum, errstr, ...) fprintf(stderr,"pycbc_inspiral: %d:%d:" errstr, status, errnum, ##__VA_ARGS__)' > "$ENVIRONMENT/dist/pycbc_inspiral/scipy/weave/error.h"
+    zip ../pycbc_inspiral$appendix.zip pycbc_inspiral/pycbc_inspiral
 fi
 
 # run 10min self-test, build wave cache
