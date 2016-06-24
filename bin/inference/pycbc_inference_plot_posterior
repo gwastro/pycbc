@@ -27,35 +27,19 @@ import sys
 from pycbc import pnutils, results
 from pycbc.results import str_utils
 from pycbc.io.inference_hdf import InferenceFile
+from pycbc.inference import option_utils
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_inference_plot_corner [--options]",
+parser = argparse.ArgumentParser(
     description="Plots corner plot of posteriors from inference sampler.")
-
-# add data options
-parser.add_argument("--input-file", type=str, required=True,
-    help="Path to input HDF file.")
-parser.add_argument("--parameters", type=str, nargs="+", default=None,
-    help="Name of parameters to plot.")
-parser.add_argument("--labels", type=str, nargs="+", default=None,
-    help="Labels to use on the plots for each parameter. If None provided, "
-         "will use the labels in the input file for any parameter that is "
-         "the same as the variable-args. If provided, must be the same number "
-         "as --parameters.")
-
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+    help="Print logging info.")
 # output plot options
 parser.add_argument("--output-file", type=str, required=True,
     help="Path to output plot.")
-
-# add thinning options
-parser.add_argument("--thin-start", type=int, default=None,
-    help="Sample number to start collecting samples to plot.")
-parser.add_argument("--thin-interval", type=int, default=None,
-    help="Interval to use for thinning samples.")
-
-# verbose option
-parser.add_argument("--verbose", action="store_true", default=False,
-    help="")
+# add results group
+option_utils.add_inference_results_option_group(parser)
 
 # parse the command line
 opts = parser.parse_args()
@@ -67,27 +51,11 @@ else:
     log_level = logging.WARN
 logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 
-# read input file
-logging.info("Reading input file")
-fp = InferenceFile(opts.input_file, "r")
-parameters = fp.variable_args if opts.parameters is None \
-             else opts.parameters
+# load the results
+fp, parameters, labels, samples = option_utils.results_from_cli(opts,
+    load_samples=True, walkers=None)
 
-# load the parameters
-logging.info("Loading samples")
-samples = fp.read_samples(parameters, thin_start=opts.thin_start,
-                          thin_interval=opts.thin_interval)
-# load the labels
-if opts.labels is None:
-    labels = []
-    for p in parameters:
-        # try to get a label from the file
-        label = fp.read_label(p)
-        labels.append(label)
-else:
-    labels = opts.labels
-
-# convert to 2D array
+# convert the samples to a 2D array
 x = numpy.zeros((samples.size, len(parameters)))
 for ii,p in enumerate(parameters):
     x[:,ii] = samples[p]
@@ -95,7 +63,7 @@ for ii,p in enumerate(parameters):
 # plot posterior
 logging.info("Plot posteriors")
 quantiles = [0.16, 0.5, 0.84]
-fig = corner.corner(x, labels=labels, quantiles=quantiles)
+fig = corner.corner(x, labels=labels, quantiles=quantiles, color='navy')
 
 # if there is only one histogram then change some formatting
 if len(parameters) == 1:
