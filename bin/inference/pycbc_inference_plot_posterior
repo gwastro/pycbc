@@ -26,7 +26,6 @@ import numpy
 import sys
 from pycbc import pnutils, results
 from pycbc.results import str_utils
-from pycbc.io.inference_hdf import InferenceFile
 from pycbc.inference import option_utils
 
 # command line usage
