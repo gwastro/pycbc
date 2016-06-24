@@ -23,12 +23,15 @@
 #
 """
 This modules provides definitions of, and helper functions for, FieldArrays.
-FieldArrays are wrappers of numpy recarrays with additional functionality useful
-for storing and retrieving data created by a search for gravitational waves.
+FieldArrays are wrappers of numpy recarrays with additional functionality
+useful for storing and retrieving data created by a search for gravitationa
+waves.
 """
 
-import os, sys, types, re, copy, numpy
+import os, sys, types, re, copy, numpy, inspect
 from glue.ligolw import types as ligolw_types
+from pycbc.detector import Detector
+from pycbc.waveform import parameters
 
 #
 # =============================================================================
@@ -47,6 +50,7 @@ numpy.typeDict.update(ligolw_types.ToNumPyType)
 # we define here an integer to indicate 'id not set'. 
 ID_NOT_SET = -1
 EMPTY_OBJECT = None
+VIRTUALFIELD_DTYPE = 'VIRTUAL'
 
 def set_default_empty(array):
     if array.dtype.names is None:
@@ -176,8 +180,83 @@ def get_fields_from_arg(arg):
     """
     return set(_fieldparser.findall(arg))
 
+# this parser looks for fields inside a class method function. This is done by
+# looking for variables that start with self.{x} or self["{x}"]; e.g.,
+# self.a.b*3 + self.c, self['a.b']*3 + self.c, self.a.b*3 + self["c"], all
+# return set('a.b', 'c').
+_instfieldparser = re.compile(
+    r'''self(?:\.|(?:\[['"]))(?P<identifier>[\w_][.\w\d_]*)''')
+def get_instance_fields_from_arg(arg):
+    """Given a python string definining a method function on an instance of an
+    FieldArray, returns the field names used in it. This differs from
+    get_fields_from_arg in that it looks for variables that start with 'self'.
+    """
+    return set(_instfieldparser.findall(arg))
 
-#
+def get_needed_fieldnames(arr, names):
+    """Given a FieldArray-like array and a list of names, determines what
+    fields are needed from the array so that using the names does not result
+    in an error.
+
+    Parameters
+    ----------
+    arr : instance of a FieldArray or similar
+        The array from which to determine what fields to get.
+    names : (list of) strings
+        A list of the names that are desired. The names may be either a field,
+        a virtualfield, a property, a method of ``arr``, or any function of
+        these. If a virtualfield/property or a method, the source code of that
+        property/method will be analyzed to pull out what fields are used in
+        it.
+
+    Returns
+    -------
+    set
+        The set of the fields needed to evaluate the names.
+    """
+    fieldnames = set([])
+    # we'll need the class that the array is an instance of to evaluate some 
+    # things
+    cls = arr.__class__
+    if isinstance(names, str) or isinstance(names, unicode):
+        names = [names]
+    # parse names for variables, incase some of them are functions of fields
+    parsed_names = set([])
+    for name in names:
+        parsed_names.update(get_fields_from_arg(name))
+    # only include things that are in the array's namespace
+    names = list(parsed_names & (set(dir(arr)) | set(arr.fieldnames)))
+    for name in names:
+        if name in arr.fieldnames:
+            # is a field, just add the name
+            fieldnames.update([name])
+        else:
+            # the name is either a virtualfield, a method, or some other
+            # property; we need to evaluate the source code to figure out what
+            # fields we need
+            try:
+                # the underlying functions of properties need to be retrieved
+                # using their fget attribute
+                func = getattr(cls, name).fget
+            except AttributeError:
+                # no fget attribute, assume is an instance method
+                func = getattr(arr, name)
+            # evaluate the source code of the function
+            try:
+                sourcecode = inspect.getsource(func)
+            except TypeError:
+                # not a function, just pass
+                continue
+            # evaluate the source code for the fields
+            possible_fields = get_instance_fields_from_arg(sourcecode)
+            # some of the variables returned by possible fields may themselves
+            # be methods/properties that depend on other fields. For instance,
+            # mchirp relies on eta and mtotal, which each use mass1 and mass2;
+            # we therefore need to anayze each of the possible fields
+            fieldnames.update(get_needed_fieldnames(arr, possible_fields))
+    return fieldnames
+
+
 def get_dtype_descr(dtype):
     """Numpy's ``dtype.descr`` will return empty void fields if a dtype has
     offsets specified. This function tries to fix that by not including
@@ -967,4 +1046,366 @@ class FieldArray(numpy.recarray):
         self.__copy_attributes__(newself)
         return newself
 
-__all__ = ['FieldArray']
+def aliases_from_fields(fields):
+    """Given a dictionary of fields, will return a dictionary mapping the
+    aliases to the names.
+    """
+    return dict(c for c in fields if isinstance(c, tuple))
+
+
+def fields_from_names(fields, names=None):
+    """Given a dictionary of fields and a list of names, will return a
+    dictionary consisting of the fields specified by names. Names can be
+    either the names of fields, or their aliases.
+    """
+
+    if names is None:
+        return fields
+    if isinstance(names, str) or isinstance(names, unicode):
+        names = [names]
+    aliases_to_names = aliases_from_fields(fields)
+    names_to_aliases = dict(zip(aliases_to_names.values(),
+        aliases_to_names.keys()))
+    outfields = {}
+    for name in names:
+        try:
+            outfields[name] = fields[name]
+        except KeyError:
+            if name in aliases_to_names:
+                key = (name, aliases_to_names[name])
+            elif name in names_to_aliases:
+                key = (names_to_aliases[name], name)
+            else:
+                raise KeyError('default fields has no field %s' % name)
+            outfields[key] = fields[key]
+    return outfields
+
+
+#
+# =============================================================================
+#
+#                           FieldArrays with default fields
+#
+# =============================================================================
+#
+
+class _FieldArrayWithDefaults(FieldArray):
+    """
+    Subclasses FieldArray, adding class attribute ``_staticfields``, and
+    class method ``default_fields``. The ``_staticfields`` should be a
+    dictionary that defines some field names and corresponding dtype. The
+    ``default_fields`` method returns a dictionary of the static fields
+    and any default virtualfields that were added. A field array can then
+    be initialized in one of 3 ways:
+
+     1. With just a shape. In this case, the returned array will have all
+     of the default fields.
+
+     2. With a shape and a list of names, given by the ``names`` keyword
+     argument. The names may be default fields, virtual fields, a method or
+     property of the class, or any python function of these things. If a
+     virtual field, method, or property is in the names, the needed underlying
+     fields will be included in the return array. For example, if the class
+     has a virtual field called 'mchirp', which is a function of fields called
+     'mass1' and 'mass2', then 'mchirp' or any function of 'mchirp' may be
+     included in the list of names (e.g., names=['mchirp**(5/6)']). If so, the
+     returned array will have fields 'mass1' and 'mass2' even if these were
+     not specified in names, so that 'mchirp' may be used without error.
+     names must be names of either default fields or virtualfields, else a
+     KeyError is raised.
+
+     3. With a shape and a dtype. Any field specified by the dtype will be
+     used. The fields need not be in the list of default fields, and/or the
+     dtype can be different than that specified by the default fields.
+
+    If additional fields are desired beyond the default fields, these can
+    be specified using the ``additional_fields`` keyword argument; these should
+    be provided in the same way as ``dtype``; i.e, as a list of (name, dtype)
+    tuples.
+
+    This class does not define any static fields, and ``default_fields`` just
+    returns an empty dictionary. This class is mostly meant to be subclassed
+    by other classes, so they can add their own defaults.
+    """
+
+    _staticfields = {}
+    @classmethod
+    def default_fields(cls, include_virtual=True, **kwargs):
+        """The default fields and their dtypes. By default, this returns
+        whatever the class's ``_staticfields`` and ``_virtualfields`` is set
+        to as a dictionary of fieldname, dtype (the dtype of virtualfields is
+        given by VIRTUALFIELD_DTYPE). This function should be overridden by
+        subclasses to add dynamic fields; i.e., fields that require some input
+        parameters at initialization. Keyword arguments can be passed to this
+        to set such dynamic fields.
+        """
+        add_fields = {}
+        if include_virtual:
+            add_fields.update(dict([[name, VIRTUALFIELD_DTYPE]
+                for name in cls._virtualfields]))
+        return dict(cls._staticfields.items() + add_fields.items())
+        
+
+    def __new__(cls, shape, name=None, additional_fields=None, field_kwargs={},
+            **kwargs):
+        """The ``additional_fields`` should be specified in the same way as
+        ``dtype`` is normally given to FieldArray. The ``field_kwargs`` are
+        passed to the class's default_fields method as keyword arguments.
+        """
+        if 'names' in kwargs and 'dtype' in kwargs:
+            raise ValueError("Please provide names or dtype, not both")
+        default_fields = cls.default_fields(include_virtual=False,
+            **field_kwargs)
+        if 'names' in kwargs:
+            names = kwargs.pop('names')
+            if isinstance(names, str) or isinstance(names, unicode):
+                names = [names]
+            # evaluate the names to figure out what base fields are needed
+            # to do this, we'll create a small default instance of self (since
+            # no names are specified in the following initialization, this
+            # block of code is skipped)
+            arr = cls(1, field_kwargs=field_kwargs)
+            names = get_needed_fieldnames(arr, names)
+            # add the fields as the dtype argument for initializing 
+            kwargs['dtype'] = [(fld, default_fields[fld]) for fld in names]
+        if 'dtype' not in kwargs:
+            kwargs['dtype'] = default_fields.items()
+        # add the additional fields
+        if additional_fields is not None:
+            if not isinstance(additional_fields, list):
+                additional_fields = [additional_fields]
+            if not isinstance(kwargs['dtype'], list):
+                kwargs['dtype'] = [kwargs['dtype']]
+            kwargs['dtype'] += additional_fields
+        return super(_FieldArrayWithDefaults, cls).__new__(cls, shape,
+            name=name, **kwargs)
+
+    def add_default_fields(self, names, **kwargs):
+        """
+        Adds one or more empty default fields to self.
+
+        Parameters
+        ----------
+        names : (list of) string(s)
+            The names of the fields to add. Must be a field in self's default
+            fields.
+        
+        Other keyword args are any arguments passed to self's default fields.
+
+        Returns
+        -------
+        new array : instance of this array
+            A copy of this array with the field added.
+        """
+        if isinstance(names, str) or isinstance(names, unicode):
+            names = [names]
+        default_fields = self.default_fields(include_virtual=False, **kwargs)
+        # parse out any virtual fields
+        arr = self.__class__(1, field_kwargs=kwargs)
+        names = get_needed_fieldnames(arr, names)
+        fields = [(name, default_fields[name]) for name in names]
+        arrays = []
+        names = []
+        for name,dt in fields:
+            arrays.append(default_empty(self.size, dtype=[(name, dt)])) 
+            names.append(name)
+        return self.add_fields(arrays, names)
+
+
+#
+# =============================================================================
+#
+#                           WaveformArray
+#
+# =============================================================================
+#
+
+# we'll vectorize TimeDelayFromEarthCenter for faster processing of end times
+def _time_delay_from_center(detector, ra, dec, tc):
+    return tc + detector.time_delay_from_earth_center(ra, dec, tc)
+time_delay_from_center = numpy.vectorize(_time_delay_from_center)
+
+class WaveformArray(_FieldArrayWithDefaults):
+    """
+    A FieldArray with some default fields and properties commonly used
+    by CBC waveforms. This may be initialized in one of 3 ways:
+    
+    1. With just the size of the array. In this case, the returned array will
+    have all of the default field names. Example:
+    >>> warr = WaveformArray(10)
+    >>> warr.fieldnames
+    ('distance',
+     'spin2x',
+     'mass1',
+     'mass2',
+     'lambda1',
+     'polarization',
+     'spin2y',
+     'spin2z',
+     'spin1y',
+     'spin1x',
+     'spin1z',
+     'inclination',
+     'coa_phase',
+     'dec',
+     'tc',
+     'lambda2',
+     'ra')
+
+    2. With some subset of the default field names. Example:
+    >>> warr = WaveformArray(10, names=['mass1', 'mass2'])
+    >>> warr.fieldnames
+    ('mass1', 'mass2')
+
+    The list of names may include virtual fields, and methods, as well as
+    functions of these. If one or more virtual fields or methods are specified,
+    the source code is analyzed to pull out whatever underlying fields are
+    needed. Example:
+    >>> warr = WaveformArray(10, names=['mchirp**(5/6)', 'chi_eff', 'cos(coa_phase)'])
+    >>> warr.fieldnames
+    ('spin2z', 'mass1', 'mass2', 'coa_phase', 'spin1z')
+
+    3. By specifying a dtype. In this case, only the provided fields will
+    be used, even if they are not in the defaults. Example:
+    >>> warr = WaveformArray(10, dtype=[('foo', float)])
+    >>> warr.fieldnames
+    ('foo',)    
+
+    Additional fields can also be specified using the additional_fields
+    keyword argument. Example:
+    >>> warr = WaveformArray(10, names=['mass1', 'mass2'], additional_fields=[('bar', float)])
+    >>> warr.fieldnames
+    ('mass1', 'mass2', 'bar')
+
+    .. note::
+        If an array is initialized with all of the default fields (case 1,
+        above), then the names come from waveform.parameters; i.e., they
+        are actually Parameter instances, not just strings. This means that the
+        field names carry all of the metadata that a Parameter has. For
+        example:
+        >>> warr = WaveformArray(10)
+        >>> warr.fields[0]
+        'distance'
+        >>> warr.fields[0].description
+        'Luminosity distance to the binary (in Mpc).'
+        >>> warr.fields[0].label
+        '$d_L$ (Mpc)'
+    """
+
+    _staticfields = (parameters.cbc_intrinsic_params +
+                     parameters.extrinsic_params).dtype_dict
+
+    _virtualfields = [parameters.mchirp, parameters.eta, parameters.mtotal,
+        parameters.q, parameters.m_p, parameters.m_s, parameters.chi_eff,
+        parameters.spin_px, parameters.spin_py, parameters.spin_pz,
+        parameters.spin_sx, parameters.spin_sy, parameters.spin_sz]
+
+
+    @property
+    def m_p(self):
+        """Returns the larger of self.mass1 and self.mass2 (p = primary)."""
+        out = numpy.zeros(self.size, dtype=self.mass1.dtype)
+        out[:] = self.mass1
+        mask = self.mass1 < self.mass2
+        out[mask] = self.mass2[mask]
+        return out
+
+    @property
+    def m_s(self):
+        """Returns the smaller of self.mass1 and self.mass2 (s = secondary)."""
+        out = numpy.zeros(self.size, dtype=self.mass2.dtype)
+        out[:] = self.mass2
+        mask = self.mass1 < self.mass2
+        out[mask] = self.mass1[mask]
+        return out
+
+    @property
+    def mtotal(self):
+        """Returns the total mass."""
+        return self.mass1 + self.mass2
+
+    @property
+    def q(self):
+        """Returns the mass ratio m1/m2, where m1 >= m2."""
+        return self.m_p / self.m_s
+
+    # FIXME: mchirp and eta functions should be added to pnutils as separate
+    # functions
+    @property
+    def eta(self):
+        """Returns the symmetric mass ratio."""
+        return self.mass1*self.mass2 / (self.mass1 + self.mass2)**2.
+
+    @property
+    def mchirp(self):
+        """Returns the chirp mass."""
+        return self.eta**(3./5) * self.mtotal
+
+    # FIXME: this should probably be moved to pnutils at some point
+    @property
+    def chi_eff(self):
+        """Returns the effective spin."""
+        return (self.spin1z * self.mass1 + self.spin2z * self.mass2) / \
+                self.mtotal
+
+    @property
+    def spin_px(self):
+        """Returns the x-component of the primary mass."""
+        out = numpy.zeros(self.size, dtype=self.spin1x.dtype)
+        out[:] = self.spin1x
+        mask = self.mass1 < self.mass2
+        out[mask] = self.spin2x[mask]
+        return out
+
+    @property
+    def spin_py(self):
+        """Returns the y-component of the primary mass."""
+        out = numpy.zeros(self.size, dtype=self.spin1y.dtype)
+        out[:] = self.spin1y
+        mask = self.mass1 < self.mass2
+        out[mask] = self.spin2y[mask]
+        return out
+
+    @property
+    def spin_pz(self):
+        """Returns the z-component of the secondary mass."""
+        out = numpy.zeros(self.size, dtype=self.spin1z.dtype)
+        out[:] = self.spin1z
+        mask = self.mass1 < self.mass2
+        out[mask] = self.spin2z[mask]
+        return out
+
+    @property
+    def spin_sx(self):
+        """Returns the x-component of the secondary mass."""
+        out = numpy.zeros(self.size, dtype=self.spin2x.dtype)
+        out[:] = self.spin2x
+        mask = self.mass1 < self.mass2
+        out[mask] = self.spin1x[mask]
+        return out
+
+    @property
+    def spin_sy(self):
+        """Returns the y-component of the secondary mass."""
+        out = numpy.zeros(self.size, dtype=self.spin2y.dtype)
+        out[:] = self.spin2y
+        mask = self.mass1 < self.mass2
+        out[mask] = self.spin1y[mask]
+        return out
+
+    @property
+    def spin_sz(self):
+        """Returns the z-component of the secondary mass."""
+        out = numpy.zeros(self.size, dtype=self.spin2z.dtype)
+        out[:] = self.spin2z
+        mask = self.mass1 < self.mass2
+        out[mask] = self.spin1z[mask]
+        return out
+
+    def det_tc(self, detector):
+        """Returns the coalesence time in the given detector."""
+        detector = Detector(detector)
+        return time_delay_from_center(detector, self.ra, self.dec, self.tc)
+
+
+__all__ = ['FieldArray', 'WaveformArray']

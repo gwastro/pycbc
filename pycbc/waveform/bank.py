@@ -32,7 +32,7 @@ from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from pycbc.filter import sigmasq
 from pycbc import DYN_RANGE_FAC
 from pycbc.pnutils import nearest_larger_binary_number
-from pycbc.io import FieldArray
+import pycbc.io
 from copy import copy
 
 def sigma_cached(self, psd):
@@ -81,7 +81,7 @@ class TemplateBank(object):
                 filename, False, contenthandler=LIGOLWContentHandler)
             self.table = table.get_table(
                 self.indoc, lsctables.SnglInspiralTable.tableName)
-            self.table = FieldArray.from_ligolw_table(self.table)
+            self.table = pycbc.io.FieldArray.from_ligolw_table(self.table)
 
             # inclination stored in xml alpha3 column
             names = list(self.table.dtype.names)
@@ -100,7 +100,7 @@ class TemplateBank(object):
                     pass
 
             num = len(data[data.keys()[0]])
-            self.table = FieldArray(num, dtype=dtype)
+            self.table = pycbc.io.FieldArray(num, dtype=dtype)
             for key in data:
                 self.table[key] = data[key]
         else:
