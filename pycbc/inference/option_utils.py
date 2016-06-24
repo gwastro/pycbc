@@ -41,8 +41,10 @@ def add_inference_results_option_group(parser):
     results_reading_group.add_argument("--input-file", type=str, required=True,
         help="Path to input HDF file.")
     results_reading_group.add_argument("--parameters", type=str, nargs="+",
-        required=True, metavar="PARAM[:LABEL]",
-        help="Name of parameters to plot. Can be any of the variable args in "
+        metavar="PARAM[:LABEL]",
+        help="Name of parameters to plot. If none provided will load all of "
+             "the variable args in the input-file. If provided, the "
+             "parameters can be any of the variable args in "
              "the input file, derived parameters from them, or any function "
              "of them. Syntax for functions is python; any math functions in "
              "the numpy libary may be used. Can optionally also specify a "
