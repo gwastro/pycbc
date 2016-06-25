@@ -82,8 +82,10 @@ class InferenceFile(h5py.File):
         # WaveformArray, with the _staticfields set to the variable args
         # that are in the file. We can only do this if there are actual
         # results in the file
-        if self.variable_args[0] in self:
+        try:
             self._arraycls = self._create_arraycls()
+        except KeyError:
+            self._arraycls = None
 
     def _create_arraycls(self):
         """Returns a sub-class of WaveformArray, with the _staticfields
@@ -188,8 +190,6 @@ class InferenceFile(h5py.File):
             thin_interval = 1 if thin_interval is None else thin_interval
 
         # figure out the size of the output array to create
-        #n_per_walker = 1 + \
-        #    int((self.niterations-thin_start)/float(thin_interval))
         n_per_walker = \
             self[self.variable_args[0]]['walker0'][thin_start::thin_interval].size
         arrsize = len(walkers) * n_per_walker
