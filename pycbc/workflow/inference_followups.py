@@ -217,7 +217,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
     # add command line options
     node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".html", "--output-file")
-    node.add_opt("--variable-args", " ".join(variable_args))
+    node.add_opt("--parameters", " ".join(variable_args))
 
     # add node to workflow
     workflow += node
@@ -270,7 +270,7 @@ def make_inference_posterior_plot(workflow, inference_file, output_dir,
     # add command line options
     node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-    node.add_opt("--variable-args", " ".join(variable_args))
+    node.add_opt("--parameters", " ".join(variable_args))
 
     # add node to workflow
     workflow += node
@@ -387,21 +387,21 @@ def make_inference_single_parameter_plots(workflow, inference_file, output_dir,
                           tags=tags + [arg]).create_node()
         samples_node.add_input_opt("--input-file", inference_file)
         samples_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-        samples_node.add_opt("--variable-args", arg)
+        samples_node.add_opt("--parameters", arg)
 
         # make node for plotting the autocorrelation function for each walker
         acf_node = PlotExecutable(workflow.cp, acf_name, ifos=workflow.ifos,
                           out_dir=output_dir, tags=tags + [arg]).create_node()
         acf_node.add_input_opt("--input-file", inference_file)
         acf_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-        acf_node.add_opt("--variable-args", arg)
+        acf_node.add_opt("--parameters", arg)
 
         # make node for plotting the autocorrelation function for each walker
         acl_node = PlotExecutable(workflow.cp, acl_name, ifos=workflow.ifos,
                           out_dir=output_dir, tags=tags + [arg]).create_node()
         acl_node.add_input_opt("--input-file", inference_file)
         acl_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-        acl_node.add_opt("--variable-args", arg)
+        acl_node.add_opt("--parameters", arg)
 
         # add nodes to workflow
         workflow += samples_node
