@@ -23,31 +23,21 @@ import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import sys
 from pycbc import results
-from pycbc.io.inference_hdf import InferenceFile
+from pycbc.results import str_utils
+from pycbc.inference import option_utils
 
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_inference_plot_samples [--options]",
     description="Plots samples from inference sampler.")
 
-# add data options
-parser.add_argument("--input-file", type=str, required=True,
-    help="Path to input HDF file.")
-parser.add_argument("--variable-args", type=str, nargs="+", default=None,
-    help="Name of parameters varied.")
-
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+    help="Print logging info.")
 # output plot options
 parser.add_argument("--output-file", type=str, required=True,
     help="Path to output plot.")
-
-# add thinning options
-parser.add_argument("--thin-start", type=int, default=None,
-    help="Sample number to start collecting samples to plot.")
-parser.add_argument("--thin-interval", type=int, default=None,
-    help="Interval to use for thinning samples.")
-
-# verbose option
-parser.add_argument("--verbose", action="store_true", default=False,
-    help="")
+# add results group
+option_utils.add_inference_results_option_group(parser)
 
 # parse the command line
 opts = parser.parse_args()
@@ -59,39 +49,38 @@ else:
     log_level = logging.WARN
 logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 
-# read input file
-logging.info("Reading input file")
-fp = InferenceFile(opts.input_file, "r")
-variable_args = fp.variable_args if opts.variable_args is None else opts.variable_args
+# load the results
+fp, parameters, labels, _ = option_utils.results_from_cli(opts,
+    load_samples=False)
 
 # get number of dimensions
-ndim = len(variable_args)
+ndim = len(parameters)
 
 # plot samples
-# plot each variable arg has a different subplot
+# plot each parameter as a different subplot
 logging.info("Plotting samples")
 fig, axs = plt.subplots(ndim, sharex=True)
 plt.xlabel("Iteration")
 
-# loop over variable args
+# loop over parameters
 axs = [axs] if not hasattr(axs, "__iter__") else axs
-for i,arg in enumerate(variable_args):
+for i,arg in enumerate(parameters):
 
     # loop over walkers
     for j in range(fp.nwalkers):
 
         # plot each walker as a different line on the subplot
-        axs[i].plot(fp.read_samples_from_walker(arg, j,
-                                                thin_start=opts.thin_start,
-                                                thin_interval=opts.thin_interval),
-                    alpha=0.25)
+        y = fp.read_samples_from_walkers(arg, walkers=i,
+                                 thin_start=opts.thin_start,
+                                 thin_interval=opts.thin_interval)
+        axs[i].plot(y[arg], alpha=0.25)
 
         # y-axis label
-        axs[i].set_ylabel(r'%s'%fp.read_label(arg))
+        axs[i].set_ylabel(labels[i])
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join([fp.read_label(param, html=True) for param in variable_args]),
+    "parameters" : ", ".join(map(str_utils.latex_to_html, labels)),
 }
 caption = r"""All samples from all the walker chains for the parameters. Each
 line is a different chain of walker samples."""

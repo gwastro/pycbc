@@ -29,6 +29,8 @@ import h5py
 import numpy
 from pycbc import pnutils
 from pycbc.results import str_utils
+from pycbc.io.record import WaveformArray
+from pycbc.waveform import parameters as wfparams
 
 def read_label_from_config(cp, variable_arg, section="labels", html=False):
     """ Returns the label for the variable_arg.
@@ -76,6 +78,27 @@ class InferenceFile(h5py.File):
 
     def __init__(self, path, mode=None, **kwargs):
         super(InferenceFile, self).__init__(path, mode, **kwargs)
+        # create a result class to return values as. This is a sub-class
+        # WaveformArray, with the _staticfields set to the variable args
+        # that are in the file. We can only do this if there are actual
+        # results in the file
+        try:
+            self._arraycls = self._create_arraycls()
+        except KeyError:
+            self._arraycls = None
+
+    def _create_arraycls(self):
+        """Returns a sub-class of WaveformArray, with the _staticfields
+        set to the variable args that are in the file.
+        """
+        # we'll need the name of a walker to get the dtypes
+        refwalker = self[self.variable_args[0]].keys()[0]
+        # get the names, dtypes of the variable args
+        fields = dict([[name, self[name][refwalker].dtype]
+            for name in self.variable_args])
+        class ResultArray(WaveformArray):
+            _staticfields = fields
+        return ResultArray
 
     @property
     def variable_args(self):
@@ -121,37 +144,21 @@ class InferenceFile(h5py.File):
         """
         return self.attrs["acl"]
 
-    def read_samples(self, variable_arg, thin_start=None, thin_interval=1):
-        """ Reads independent samples from all walkers for a parameter.
-
-        Parameters
-        -----------
-        variable_arg : str
-            Name of parameter to get independent samples.
-        thin_start : int
-            Index of the sample to begin returning samples.
-        thin_interval : int
-            Interval to accept every i-th sample.
-
-        Returns
-        -------
-        numpy.array
-            All independent samples from all walkers for a parameter.
-        """
-
-        nwalkers = self.nwalkers
-        return numpy.array([self.read_samples_from_walker(variable_arg, j, thin_start, thin_interval) for j in range(nwalkers)])
-
-    def read_samples_from_walker(self, variable_arg, nwalker,
+    def read_samples_from_walkers(self, parameters, walkers=None,
                                  thin_start=None, thin_interval=None):
-        """ Reads all samples from a specific walker for a parameter.
+        """Reads samples from the specified walker(s) for the given
+        parameter(s).
 
         Parameters
         -----------
-        variable_arg : str
-            Name of parameter to get independent samples.
-        nwalker : int
-            Index of the walker to get samples.
+        parameters : (list of) strings
+            The parameter(s) to retrieve. A parameter can be the name of a
+            variable argument, a virtual field or method of WaveformArray
+            (as long as the file contains the necessary variables to derive
+            the virtual field or method), and/or a function of these.
+        walkers : {None, (list of) int}
+            The walker index (or a list of indices) to retrieve. If None,
+            samples from all walkers will be obtained.
         thin_start : int
             Index of the sample to begin returning samples. Default is to read
             samples after burn in. To start from the beginning set thin_start
@@ -159,46 +166,49 @@ class InferenceFile(h5py.File):
         thin_interval : int
             Interval to accept every i-th sample. Default is to use the
             self.acl attribute. If self.acl is not set, then use all samples
-            set thin_interval to 1.
+            (set thin_interval to 1).
 
         Returns
         -------
-        numpy.array
-            Samples from a specific walker for a parameter.
+        WaveformArray
+            Samples for the given parameters, as an instance of a
+            WaveformArray.
         """
-
+        if walkers is None:
+            walkers = range(self.nwalkers)
+        if isinstance(walkers, int):
+            walkers = [walkers]
         # default is to skip burn in samples
-        thin_start = self.attrs["burn_in_iterations"] if thin_start is None else thin_start
+        thin_start = self.attrs["burn_in_iterations"] if thin_start is None \
+            else thin_start
 
         # default is to use stored ACL and accept every i-th sample
         if "acl" in self.attrs.keys():
-            thin_interval = self.acl if thin_interval is None else thin_interval
+            thin_interval = self.acl if thin_interval is None \
+                else thin_interval
         else:
             thin_interval = 1 if thin_interval is None else thin_interval
 
-        # derived parameter case for mchirp will calculate mchrip
-        # from mass1 and mass2
-        if variable_arg == "mchirp" and "mchirp" not in self.keys():
-            mass1 = self.read_samples_from_walker("mass1", nwalker,
-                                      thin_start=thin_start,
-                                      thin_interval=thin_interval)
-            mass2 = self.read_samples_from_walker("mass2", nwalker,
-                                      thin_start=thin_start,
-                                      thin_interval=thin_interval)
-            return pnutils.mass1_mass2_to_mchirp_eta(mass1, mass2)[0]
+        # figure out the size of the output array to create
+        n_per_walker = \
+            self[self.variable_args[0]]['walker0'][thin_start::thin_interval].size
+        arrsize = len(walkers) * n_per_walker
 
-        # derived parameter case for eta will calculate eta
-        # from mass1 and mass2
-        elif variable_arg == "eta" and "eta" not in self.keys():
-            mass1 = self.read_samples_from_walker("mass1", nwalker,
-                                      thin_start=thin_start,
-                                      thin_interval=thin_interval)
-            mass2 = self.read_samples_from_walker("mass2", nwalker,
-                                      thin_start=thin_start,
-                                      thin_interval=thin_interval)
-            return pnutils.mass1_mass2_to_mchirp_eta(mass1, mass2)[1]
+        # create an array to store the results
+        arr = self._arraycls(arrsize, names=parameters)
+        # populate
+        for name in arr.fieldnames:
+            for ii,walker in enumerate(walkers):
+                arr[name][ii*n_per_walker:(ii+1)*n_per_walker] = \
+                    self[name]['walker%i' % walker][thin_start::thin_interval]
+        return arr
 
-        return self[variable_arg]["walker%d"%nwalker][thin_start::thin_interval]
+    def read_samples(self, parameters, thin_start=None, thin_interval=None):
+        """ Reads samples from all of the walkers for the given
+        parameter(s). See read_samples_from_walkers for more details.
+        """
+        return self.read_samples_from_walkers(parameters, walkers=None,
+            thin_start=thin_start, thin_interval=thin_interval)
 
     def read_acceptance_fraction(self, thin_start=None, thin_interval=None):
         """ Returns a numpy.array of the fraction of samples acceptanced at
@@ -218,30 +228,43 @@ class InferenceFile(h5py.File):
         """
         return self["acceptance_fraction"][thin_start::thin_interval]
 
-    def read_label(self, variable_arg, html=False):
-        """ Returns the label for the parameter.
+    def read_label(self, parameter, html=False, error_on_none=False):
+        """Returns the label for the parameter.
 
         Parameters
         -----------
-        variable_arg : str
-            Name of parameter to get label.
+        parameter : str
+            Name of parameter to get a label for. Will first try to retrieve
+            a label from this file's "label" attributes. If the parameter
+            is not found there, will look for a label from
+            pycbc.waveform.parameters.
         html : bool
             If true then escape LaTeX formatting for HTML rendering.
+        error_on_none : {False, bool}
+            If True, will raise a ValueError if a label cannot be found, or if
+            the label is None. Otherwise, the parameter will just be returned
+            if no label can be found.
 
         Returns
         -------
         label : str
             A formatted string for the name of the paramter.
         """
-
         # get label
-        if variable_arg == "mchirp" and "mchirp" not in self.keys():
-            label = r'$M_{c}$'
-        elif variable_arg == "eta" and "eta" not in self.keys():
-            label = r'$\eta$'
-        else:
-            label = self[variable_arg].attrs["label"]
-
+        try:
+            label = self[parameter].attrs["label"]
+        except KeyError:
+            # try looking in pycbc.waveform.parameters
+            try:
+                label = getattr(wfparams, parameter).label
+            except AttributeError:
+                label = None
+        if label == None:
+            if error_on_none:
+                raise ValueError("Cannot find a label for paramter %s" %(
+                    parameter))
+            else:
+                return parameter
         # replace LaTeX with HTML
         if html:
             label = str_utils.latex_to_html(label)
