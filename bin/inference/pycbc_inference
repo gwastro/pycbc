@@ -176,9 +176,7 @@ with ctx:
             pass
 
     # get labels for each parameter from configuration file
-    labels = []
-    for param in variable_args:
-        labels.append( read_label_from_config(cp, param) )
+    labels = [read_label_from_config(cp, param) for param in variable_args]
 
     # get prior distribution for each variable parameter
     logging.info("Setting up priors for each parameter")
