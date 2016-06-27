@@ -161,20 +161,22 @@ for i in $*; do
 done
 
 # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
+# WORKSPACE='/Users/jenkins/workspace/workspace/EAH_PyCBC_Master/label/OSX107'
 if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
-    # WORKSPACE='/Users/jenkins/workspace/workspace/EAH_PyCBC_Master/label/OSX107'
-    if [ ".$CYGWIN_HOST" = "." ]; then
-        CYGWIN_HOST=cygwin64-qemu
-    fi
+    unset WORKSPACE # avoid endless recoursion
+    test ".$CYGWIN_HOST" = "."      && CYGWIN_HOST=moss
+    test ".$CYGWIN_HOST_USER" = "." && CYGWIN_HOST_USER=jenkins
+    test ".$CYGWIN_HOST_PORT" = "." && CYGWIN_HOST_PORT=2222
+    echo -e "\\n\\n>> [`date`] running remotely at $CYGWIN_HOST_USER@$CYGWIN_HOST:$CYGWIN_HOST_PORT"
     # copy the script
-    scp "$0" "$CYGWIN_HOST:."
+    scp "-P$CYGWIN_HOST_PORT" "$0" "$CYGWIN_HOST_USER@$CYGWIN_HOST:."
     # run it remotely
-    ssh "$CYGWIN_HOST" bash `basename $0` "$@"
+    ssh "-p$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST" bash `basename $0` "$@"
     # fetch the artifacts to local workspace
     dist="pycbc/environment/dist"
     rm -rf "$dist"
     mkdir -p "$dist"
-    scp "$CYGWIN_HOST:$dist/*" "$dist" || true
+    scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*" "$dist" || true
     exit 0
 fi
 
