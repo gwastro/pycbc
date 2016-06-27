@@ -42,6 +42,16 @@ def select_waveform_generator(approximant):
     else:
         raise ValueError("%s is not a valid approximant."%approximant)
 
+def read_distributions_from_config(cp, section):
+    """ Returns a list of PyCBC distribution instances for a section in the
+    configuration file.
+    """
+    dist = []
+    for subsection in cp.get_subsections(section):
+        name = cp.get_opt_tag(section, "name", subsection)
+        dists.append( inference.priors[name].from_config(cp, section, subsection) )
+    return dists
+
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_inference [--options]",
                   description="Runs an sampler to find the posterior.")
@@ -179,10 +189,7 @@ with ctx:
 
     # get prior distribution for each variable parameter
     logging.info("Setting up priors for each parameter")
-    distributions = []
-    for subsection in cp.get_subsections("prior"):
-        name = cp.get_opt_tag("prior", "name", subsection)
-        distributions.append( inference.priors[name].from_config(cp, "prior", subsection) )
+    distributions = read_distributions_from_config(cp, "prior")
 
     # construct class that will return the prior
     prior = inference.PriorEvaluator(variable_args, *distributions)
@@ -215,16 +222,10 @@ with ctx:
 
     # check if user wants to use different distributions than prior for setting
     # walkers initial positions
-    initial_distributions = []
     if len(cp.get_subsections("initial")):
-        section = "initial"
+        initial_distributions = read_distributions_from_config(cp, "initial")
     else:
-        section = "prior"
-
-    # get distribution to draw from for each walker initial condition
-    for subsection in cp.get_subsections(section):
-        name = cp.get_opt_tag(section, "name", subsection)
-        initial_distributions.append( inference.priors[name].from_config(cp, section, subsection) )
+        initial_distributions = read_distributions_from_config(cp, "prior")
 
     # set initial values for variable parameters for each walker
     # loop over all walkers and then parameters
