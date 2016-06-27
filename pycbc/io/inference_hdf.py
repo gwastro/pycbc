@@ -350,7 +350,7 @@ class InferenceFile(h5py.File):
         # transpose past samples to get an (ndim,nwalkers,niteration) array
         if data is not None:
             samples = numpy.transpose(data)
-            ndim, nwalkers, niterations = samples.shape
+            _, nwalkers, niterations = samples.shape
 
         # sanity check options
         elif nwalkers == 0 and niterations != 0:
