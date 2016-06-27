@@ -55,8 +55,6 @@ parser.add_argument("--frame-type", type=str, nargs="+",
     help="Frame type for each IFO.")
 parser.add_argument("--low-frequency-cutoff", type=float, required=True,
     help="Low frequency cutoff for each IFO.")
-parser.add_argument("--input-file", type=str, default=None,
-    help="InferenceFile to set proposal distribution and initial positions.")
 
 # add inference options
 parser.add_argument("--sampler", required=True,
