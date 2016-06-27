@@ -64,13 +64,20 @@ for param, label in zip(parameters, labels):
 
     # calculate the score at a given percentile
     # eg. 50 is the median, 16 and 84 correspond to 68 percentile
-    quantiles = []
-    for q in opts.quantiles:
-        quantiles.append( numpy.percentile(samples[param], 100*q) )
+    x = samples[param]
+    quantiles = numpy.array([numpy.percentile(x, 100*q)
+        for q in opts.quantiles])
 
-    # add qunatiles to row; we'll quote using scientific notation with
-    # 3 sig figs
-    row += ['$%s$' %(results.format_value(val, val/100., include_error=False))
+    # add qunatiles to row;
+    # we'll quote using the range of quanitles as the error; if there was
+    # only a single value, then we'll just do 1/100
+    if len(quantiles) > 1:
+        med = numpy.median(x)
+        err = min(abs(quantiles.max()-med), abs(quantiles.min()-med))
+    else:
+        err = quantiles[0]/100.
+    row += ['$%s$' %(results.format_value(val, err, include_error=False,
+        use_scientific_notation=10 if numpy.log10(val) > 0 else 3))
         for val in quantiles]
 
     # add row to table
