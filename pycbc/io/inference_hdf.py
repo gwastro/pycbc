@@ -359,8 +359,7 @@ class InferenceFile(h5py.File):
         # if no data is given then initialize to array of numpy.NAN
         # with shape (ndim,nwalkers,niterations)
         else:
-            ndim = len(variable_args)
-            shape = (ndim, nwalkers, niterations)
+            shape = (len(variable_args), nwalkers, niterations)
             samples = numpy.zeros(shape)
 
         # save number of iterations so far
