@@ -58,10 +58,10 @@ def read_label_from_config(cp, variable_arg, section="labels", html=False):
     else:
         # try looking in pycbc.waveform.parameters
         try:
-            label = getattr(wfparams, param).label
+            label = getattr(wfparams, varable_arg).label
         except AttributeError:
             # just use the parameter name
-            label = param
+            label = variable_arg
 
     # replace LaTeX with HTML
     if html:
