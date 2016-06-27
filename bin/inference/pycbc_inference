@@ -47,9 +47,15 @@ def read_distributions_from_config(cp, section):
     configuration file.
     """
     dists = []
+    variable_args = []
     for subsection in cp.get_subsections(section):
         name = cp.get_opt_tag(section, "name", subsection)
-        dists.append( inference.priors[name].from_config(cp, section, subsection) )
+        dist = inference.priors[name].from_config(cp, section, subsection)
+        if set(dist.params).isdisjoint(variable_args):
+            dists.append(dist)
+            variable_args += dist.params
+        else:
+            raise ValueError("Same parameter in more than one distribution.")
     return dists
 
 # command line usage
