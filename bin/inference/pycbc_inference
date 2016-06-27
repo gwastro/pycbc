@@ -24,8 +24,7 @@ import pycbc.weave
 import random
 from pycbc import DYN_RANGE_FAC, fft, inference, psd, scheme, strain, waveform
 from pycbc.filter import autocorrelation
-from pycbc.waveform import parameters as wfparams
-from pycbc.io.inference_hdf import InferenceFile
+from pycbc.io.inference_hdf import InferenceFile, read_label_from_config
 from pycbc.types import FrequencySeries, MultiDetOptionAction
 from pycbc.workflow import WorkflowConfigParser
 
@@ -175,6 +174,9 @@ with ctx:
         except:
             pass
 
+    # get labels for each parameter from configuration file
+    labels = [read_label_from_config(cp, param) for param in variable_args]
+
     # get prior distribution for each variable parameter
     logging.info("Setting up priors for each parameter")
     distributions = []
@@ -235,20 +237,6 @@ with ctx:
                 if param in idist.params:
                     p0[i][j] = idist.rvs(size=1, param=param)[0][0]
                     break
-
-    # get labels for each parameter from configuration file
-    labels = []
-    for param in variable_args:
-        if cp.has_option("labels", param):
-            label = cp.get("labels", param)
-        else:
-            # try looking in pycbc.waveform.parameters
-            try:
-                label = getattr(wfparams, param).label
-            except AttributeError:
-                # just use the parameter name
-                label = param
-        labels.append(label)
 
     # setup checkpointing
     if opts.checkpoint_interval:
