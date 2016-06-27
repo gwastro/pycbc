@@ -370,7 +370,7 @@ class InferenceFile(h5py.File):
             self.attrs["niterations"] = niterations
 
         # loop over number of dimensions
-        for i,dim_name in zip(range(ndim), variable_args):
+        for i,dim_name in enumerate(variable_args):
 
             # create a group in the output file for this dimension
             if dim_name not in self.keys():
