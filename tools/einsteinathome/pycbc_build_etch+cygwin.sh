@@ -596,6 +596,7 @@ else
     echo -e "\\n\\n>> [`date`] building lalsuite"
     if test -d lalsuite/.git; then
         cd lalsuite
+        git reset --hard HEAD
         git pull
     elif test ".$lalsuite_branch" = ".eah_cbc"; then
         git clone git://$gitmaster/lalsuite.git
