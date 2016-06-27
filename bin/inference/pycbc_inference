@@ -46,7 +46,7 @@ def read_distributions_from_config(cp, section):
     """ Returns a list of PyCBC distribution instances for a section in the
     configuration file.
     """
-    dist = []
+    dists = []
     for subsection in cp.get_subsections(section):
         name = cp.get_opt_tag(section, "name", subsection)
         dists.append( inference.priors[name].from_config(cp, section, subsection) )
