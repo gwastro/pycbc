@@ -56,7 +56,12 @@ def read_label_from_config(cp, variable_arg, section="labels", html=False):
     if cp.has_option(section, variable_arg):
         label = cp.get(section, variable_arg)
     else:
-        label = variable_arg
+        # try looking in pycbc.waveform.parameters
+        try:
+            label = getattr(wfparams, param).label
+        except AttributeError:
+            # just use the parameter name
+            label = param
 
     # replace LaTeX with HTML
     if html:
