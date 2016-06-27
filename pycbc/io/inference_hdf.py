@@ -58,7 +58,7 @@ def read_label_from_config(cp, variable_arg, section="labels", html=False):
     else:
         # try looking in pycbc.waveform.parameters
         try:
-            label = getattr(wfparams, varable_arg).label
+            label = getattr(wfparams, variable_arg).label
         except AttributeError:
             # just use the parameter name
             label = variable_arg
