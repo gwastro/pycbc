@@ -350,7 +350,7 @@ class InferenceFile(h5py.File):
         # transpose past samples to get an (ndim,nwalkers,niteration) array
         if data is not None:
             samples = numpy.transpose(data)
-            ndim, nwalkers, niterations = samples.shape
+            _, nwalkers, niterations = samples.shape
 
         # sanity check options
         elif nwalkers == 0 and niterations != 0:
@@ -359,8 +359,7 @@ class InferenceFile(h5py.File):
         # if no data is given then initialize to array of numpy.NAN
         # with shape (ndim,nwalkers,niterations)
         else:
-            ndim = len(variable_args)
-            shape = (ndim, nwalkers, niterations)
+            shape = (len(variable_args), nwalkers, niterations)
             samples = numpy.zeros(shape)
 
         # save number of iterations so far
@@ -370,7 +369,7 @@ class InferenceFile(h5py.File):
             self.attrs["niterations"] = niterations
 
         # loop over number of dimensions
-        for i,dim_name in zip(range(ndim), variable_args):
+        for i,dim_name in enumerate(variable_args):
 
             # create a group in the output file for this dimension
             if dim_name not in self.keys():
