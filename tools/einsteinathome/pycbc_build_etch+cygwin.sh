@@ -174,7 +174,7 @@ if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     # copy the script
     scp "-P$CYGWIN_HOST_PORT" "$0" "$CYGWIN_HOST_USER@$CYGWIN_HOST:."
     # run it remotely
-    ssh "-p$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST" bash `basename $0` "$@"
+    ssh "-p$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST" bash -l `basename $0` "$@"
     # fetch the artifacts to local workspace
     dist="pycbc/environment/dist"
     rm -rf "$dist"
