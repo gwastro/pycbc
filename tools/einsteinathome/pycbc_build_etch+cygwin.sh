@@ -147,11 +147,13 @@ for i in $*; do
         --verbose-python) verbose_pyinstalled_python=true;;
         --clean) rm -rf "$HOME/.cache" "$SOURCE/pycbc-preinst.tgz" "$SOURCE/pycbc-preinst-lalsuite.tgz";;
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/pycbc-preinst-lalsuite.tgz";;
+        --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
         *) echo "unknown option '$i', valid are:
 
     --clean           : perform a clean build (takes quite some time); delete ~/.cache and
                         tarballs containing precompiled libraries (lalsuite, scipy etc.)
     --clean-lalsuite  : clean lalsuite before building, checkout and build it from scratch
+    --lalsuite-commit=<commit> : specify a commit (tag or branch) of lalsuite to build from
     --no-pycbc-update : don't update local pycbc repo from remote branch $pycbc_branch
     --bema-testing    : use einsteinathome_testing branch of bema-ligo pycbc repo
     --scratch-pycbc   : check out pycbc git repo from scratch
@@ -597,7 +599,11 @@ else
     if test -d lalsuite/.git; then
         cd lalsuite
         git reset --hard HEAD
+        git checkout master
         git pull
+        if [ ".$lalsuite_branch" != "." ]; then
+            git checkout "$lalsuite_branch"
+        fi
     elif test ".$lalsuite_branch" = ".eah_cbc"; then
         git clone git://$gitmaster/lalsuite.git
         cd lalsuite
@@ -605,8 +611,10 @@ else
     else
         git clone git://versions.ligo.org/lalsuite.git
         cd lalsuite
+        if [ ".$lalsuite_branch" != "." ]; then
+            git checkout "$lalsuite_branch"
+        fi
     fi
-    git reset --hard HEAD
     echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
     sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
     if $build_dlls; then
