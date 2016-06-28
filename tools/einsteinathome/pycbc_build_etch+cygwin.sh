@@ -165,11 +165,12 @@ done
 # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
 # WORKSPACE='/Users/jenkins/workspace/workspace/EAH_PyCBC_Master/label/OSX107'
 if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
-    unset WORKSPACE # avoid endless recoursion
     test ".$CYGWIN_HOST" = "."      && CYGWIN_HOST=moss
     test ".$CYGWIN_HOST_USER" = "." && CYGWIN_HOST_USER=jenkins
     test ".$CYGWIN_HOST_PORT" = "." && CYGWIN_HOST_PORT=2222
     echo -e "\\n\\n>> [`date`] running remotely at $CYGWIN_HOST_USER@$CYGWIN_HOST:$CYGWIN_HOST_PORT"
+    echo "WORKSPACE='$WORKSPACE'" # for Jenkins jobs
+    unset WORKSPACE # avoid endless recoursion
     # copy the script
     scp "-P$CYGWIN_HOST_PORT" "$0" "$CYGWIN_HOST_USER@$CYGWIN_HOST:."
     # run it remotely
