@@ -17,8 +17,8 @@ A simple workflow configuration file::
     [workflow]
     ; basic information used by the workflow generator
     file-retention-level = all_triggers
-    h1-channel-name = H1:DCS-CALIB_STRAIN_C01
-    l1-channel-name = L1:DCS-CALIB_STRAIN_C01
+    h1-channel-name = H1:DCS-CALIB_STRAIN_C02
+    l1-channel-name = L1:DCS-CALIB_STRAIN_C02
 
     [workflow-ifos]
     ; the IFOs to analyze
@@ -27,18 +27,16 @@ A simple workflow configuration file::
 
     [workflow-datafind]
     ; how the workflow generator should get frame data
-    datafind-l1-frame-type = L1_HOFT_C01
+    datafind-h1-frame-type = H1_HOFT_C02
+    datafind-l1-frame-type = L1_HOFT_C02
     datafind-method = AT_RUNTIME_SINGLE_FRAMES
     datafind-check-segment-gaps = raise_error
-    datafind-h1-frame-type = H1_HOFT_C01
     datafind-check-frames-exist = raise_error
     datafind-check-segment-summary = warn
 
     [workflow-inference]
     ; how the workflow generator should setup inference nodes
     num-events = 1
-    data-seconds-before-trigger = 220
-    data-seconds-after-trigger = 1828
 
     [executables]
     ; paths to executables to use in workflow
