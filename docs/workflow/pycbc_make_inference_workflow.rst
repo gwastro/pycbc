@@ -6,7 +6,7 @@
 Introduction
 ===============
 
-The executable ``pycbc_make_inference_workflow`` is a tool used to analyse data
+The executable ``pycbc_make_inference_workflow`` is a workflow generator to setup a parameter estimation analysis.
 
 ===========================
 Workflow configuration file
@@ -19,9 +19,6 @@ A simple workflow configuration file::
     file-retention-level = all_triggers
     h1-channel-name = H1:DCS-CALIB_STRAIN_C01
     l1-channel-name = L1:DCS-CALIB_STRAIN_C01
-    ; dummy variables for start and end time of workflow
-    start-time = 0
-    end-time = 0
 
     [workflow-ifos]
     ; the IFOs to analyze
