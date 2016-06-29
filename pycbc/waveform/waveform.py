@@ -226,9 +226,8 @@ def filter_approximants(scheme=_scheme.mgr.state):
 
 # Input parameter handling ###################################################
 
-def props(obj, **kwargs):
-    """ Return a dictionary bult from the combination of defaults, kwargs,
-    and the attributes of the given object.
+def get_obj_attrs(obj):
+    """ Return a dictionary built from the attributes of the given object.
     """
     pr = {}
     if obj is not None:
@@ -249,6 +248,14 @@ def props(obj, **kwargs):
                         pr[name] = value
                 except:
                     continue
+
+    return pr
+
+def props(obj, **kwargs):
+    """ Return a dictionary built from the combination of defaults, kwargs,
+    and the attributes of the given object.
+    """
+    pr = get_obj_attrs(obj) 
 
     # Get the parameters to generate the waveform
     # Note that keyword arguments override values in the template object
