@@ -222,7 +222,8 @@ class InferenceFile(h5py.File):
         parameter(s). See read_samples_from_walkers for more details.
         """
         return self.read_samples_from_walkers(parameters, walkers=None,
-            thin_start=thin_start, thin_interval=thin_interval, thin_end=None)
+            thin_start=thin_start, thin_interval=thin_interval,
+            thin_end=thin_end)
 
     def read_acceptance_fraction(self, thin_start=None, thin_interval=None):
         """ Returns a numpy.array of the fraction of samples acceptanced at
