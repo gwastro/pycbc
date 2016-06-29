@@ -12,7 +12,7 @@ The executable ``pycbc_make_inference_workflow`` is a tool used to analyse data
 Workflow configuration file
 ===========================
 
-If you want to analyse a different set of ifos, you will have to edit some additional options::
+A simple workflow configuration file::
 
     [workflow]
     ; basic information used by the workflow generator
@@ -110,11 +110,75 @@ If you want to analyse a different set of ifos, you will have to edit some addit
 Inference configuration file
 ============================
 
+You will also need a configuration file with sections that tells ``pycbc_inference`` how to construct the priors. A simple inference configuration file is::
+
+    [variable_args]
+    ; parameters to vary in MCMC
+    tc =
+    mass1 =
+    mass2 =
+    distance =
+    coa_phase =
+    inclination =
+
+    [labels]
+    ; LaTeX expressions to use in HTML and plotting executables
+    tc = $t_{c}$
+    mass1 = $m_{1}$
+    mass2 = $m_{2}$
+    distance = $d$
+    coa_phase = $\phi_{c}$
+    inclination = $\iota$
+
+    [static_args]
+    ; parameters that do not vary in MCMC
+    approximant = TaylorF2
+    ra = 0.0247836709
+    dec = 0.00715585006
+    polarization = 2.56616092
+    f_lower = 40.0
+
+    [prior-tc]
+    ; how to construct prior distribution
+    name = uniform
+    min-tc = 1137215767.92
+    max-tc = 1137215768.04
+
+    [prior-mass1]
+    ; how to construct prior distribution
+    name = uniform
+    min-mass1 = 1.3
+    max-mass1 = 10.0
+
+    [prior-mass2]
+    ; how to construct prior distribution
+    name = uniform
+    min-mass2 = 1.3
+    max-mass2 = 10.0
+
+    [prior-distance]
+    ; how to construct prior distribution
+    name = uniform
+    min-distance = 30.0
+    max-distance = 100.0
+
+    [prior-coa_phase]
+    ; how to construct prior distribution
+    name = uniform
+    min-coa_phase = 0.0
+    max-coa_phase = 6.28
+
+    [prior-inclination]
+    ; how to construct prior distribution
+    name = uniform
+    min-inclination = 0.0
+    max-inclination = 1.57
+
 =====================
 Generate the workflow
 =====================
 
-When you are ready, you can generate the workflow. Here is an example::
+To generate a workflow you will need your configuration files. We set the following enviroment variables for this example::
 
     # remove proxy from env
     unset X509_USER_PROXY
@@ -156,6 +220,10 @@ Else you can run from a specific GPS end time with the ``--gps-end-time`` option
         --gps-end-time ${GPS_END_TIME}
 
 Where ``${GPS_END_TIME}`` is the GPS end time of the trigger.
+
+=============================
+Plan and execute the workflow
+=============================
 
 Finally plan and submit the workflow with::
 
