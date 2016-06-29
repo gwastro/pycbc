@@ -26,6 +26,7 @@
 """
 
 import numpy, lal
+import lalsimulation as lalsim
 from pycbc.types import TimeSeries, FrequencySeries, complex128, zeros
 
 default_ringdown_args = {'t_0':0, 'phi_0':0, 'amp':1}
@@ -271,5 +272,117 @@ def get_fd_qnm(template=None, **kwargs):
 
     return hplustilde, hcrosstilde
 
+ringdown_required_args = ['Mfinal','Sfinal','l','m','nmodes']
+
+def get_fd_ringdown(template=None, **kwargs):
+    """Return a frequency domain ringdown with higher modes.
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to substitute
+        for keyword arguments. A common example would be a row in an xml table.
+    Mfinal : float
+        Mass of the final black hole.
+    Sfinal : float
+        Spin of the final black hole.
+    l : int
+        l mode (lm modes available: 22, 21, 33, 44, 55).
+    m : int
+        m mode (lm modes available: 22, 21, 33, 44, 55).
+    nmodes: int
+        Number of overtones desired (maximum n=8)
+    amp_n : float
+        Amplitude of the n overtone, as many as the number of nmodes.
+    phi_n : float
+        Phase of the n overtone, as many as the number of nmodes.
+    delta_f : {None, float}, optional
+        The frequency step used to generate the ringdown.
+        If None, it will be set to the inverse of the time at which the
+        amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
+    f_lower: {None, float}, optional
+        The starting frequency of the output frequency series.
+        If None, it will be set to delta_f.
+    f_final : {None, float}, optional
+        The ending frequency of the output frequency series.
+        If None, it will be set to the frequency at which the amplitude
+        is 1/1000 of the peak amplitude (the maximum of all modes).
+    Returns
+    -------
+    hplustilde: FrequencySeries
+        The plus phase of a lm mode with overtones (n) in frequency domain.
+    hcrosstilde: FrequencySeries
+        The cross phase of a lm mode with overtones (n) in frequency domain.
+    """
+
+    input_params = props_ringdown(template,**kwargs)
+
+    for arg in ringdown_required_args:
+        if arg in input_params:
+            pass
+        else:
+            raise ValueError('Please provide ' + str(arg))
+
+    # get required amplitudes and phases
+    amps = zeros(nmodes)
+    phis = zeros(nmodes) 
+    for n in range(nmodes):
+        try:
+            amps[n] = input_params['amp_%d' %n]
+        except KeyError:
+            raise ValueError('amp_%d is required' %n)
+        try:
+            phis[n] = input_params['phi_%d' %n]
+        except KeyError:
+            raise ValueError('phi_%d is required' %n)
+
+#    try:
+#        Mfinal = input_params['Mfinal']
+#    except KeyError:
+#        raise ValueError('Mfinal is required')
+#    try:
+#        Sfinal = input_params['Sfinal']
+#    except KeyError:
+#        raise ValueError('Sfinal is required')
+#    try:
+#        l = input_params['l']
+#    except KeyError:
+#        raise ValueError('l is required')
+#    try:
+#        m = input_params['m']
+#    except KeyError:
+#        raise ValueError('m is required')
+#    try:
+#        nmodes = input_params['nmodes']
+#    except KeyError:
+#        raise ValueError('nmodes is required')
+
+    qnmfreq = lal.CreateCOMPLEX16Vector(nmodes)
+    lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(qnmfreq, Mfinal, Sfinal, l, m, nmodes)
+
+    f_0, tau, f_max, df = zeros(nmodes), zeros(nmodes), zeros(nmodes), zeros(nmodes)
+    for n in range(nmodes):
+        f_0[n] = qnmfreq.data[n].real / (2 * numpy.pi)
+        tau[n] = 1. / qnmfreq.data[n].imag
+        if delta_f is None:
+            df[n] = 1. / qnm_time_decay(tau[n], 1./1000)
+        if f_final is None:
+            f_max[n] = qnm_freq_decay(f_0[n], tau[n], 1./1000)
+
+    if delta_f is None:
+        delta_f = min(df.data)
+    if f_final is None:
+        f_final = max(f_max.data)
+    kmax = int(f_final / delta_f) + 1
+
+    outplus = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
+    outcross = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
+    for n in range(nmodes):
+        hplus, hcross = get_fd_qnm(template=None, f_0=f_0[n], tau=tau[n], 
+                          phi_0=phis[n], amp=amps[n], delta_f=delta_f, f_final=f_final)
+        outplus.data += hplus
+        outcross.data += hcross
+
+    return outplus, outcross
+----------------------------------------
 ringdown_fd_approximants = {'FdQNM': get_fd_qnm}
 ringdown_td_approximants = {'TdQNM': get_td_qnm}
