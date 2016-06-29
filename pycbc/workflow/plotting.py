@@ -98,7 +98,8 @@ def make_spectrum_plot(workflow, psd_files, out_dir, tags=None, precalc_psd_file
     workflow += node
     return node.output_files[0]
  
-def make_segments_plot(workflow, seg_files, out_dir, tags=[]):
+def make_segments_plot(workflow, seg_files, out_dir, tags=None):
+    tags = [] if tags == None else tags
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_segments', ifos=workflow.ifos,
                          out_dir=out_dir, tags=tags).create_node()
@@ -106,7 +107,8 @@ def make_segments_plot(workflow, seg_files, out_dir, tags=[]):
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
 
-def make_gating_plot(workflow, insp_files, out_dir, tags=[]):
+def make_gating_plot(workflow, insp_files, out_dir, tags=None):
+    tags = [] if tags == None else tags
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_gating', ifos=workflow.ifos,
                           out_dir=out_dir, tags=tags).create_node()
@@ -130,7 +132,8 @@ def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir,
     workflow += node
     return node.output_files[0]
 
-def make_sensitivity_plot(workflow, inj_file, out_dir, exclude=None, require=None, tags=[]):
+def make_sensitivity_plot(workflow, inj_file, out_dir, exclude=None, require=None, tags=None):
+    tags = [] if tags == None else tags
     makedir(out_dir)   
     secs = requirestr(workflow.cp.get_subsections('plot_sensitivity'), require)  
     secs = excludestr(secs, exclude)
@@ -145,7 +148,8 @@ def make_sensitivity_plot(workflow, inj_file, out_dir, exclude=None, require=Non
     return files
 
 def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file, out_dir,
-                           exclude=None, require=None, tags=[]):
+                           exclude=None, require=None, tags=None):
+    tags = [] if tags == None else tags
     makedir(out_dir)    
     secs = requirestr(workflow.cp.get_subsections('plot_coinc_snrchi'), require)  
     secs = excludestr(secs, exclude)
@@ -162,7 +166,8 @@ def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file, o
         files += node.output_files
     return files
 
-def make_inj_table(workflow, inj_file, out_dir, missed=False, singles=None, tags=[]):
+def make_inj_table(workflow, inj_file, out_dir, missed=False, singles=None, tags=None):
+    tags = [] if tags == None else tags
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'page_injections', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
@@ -259,7 +264,8 @@ def make_ifar_plot(workflow, trigger_file, out_dir, tags=None):
     return node.output_files[0]
 
 def make_snrchi_plot(workflow, trig_files, veto_file, veto_name, 
-                     out_dir, exclude=None, require=None, tags=[]):
+                     out_dir, exclude=None, require=None, tags=None):
+    tags = [] if tags == None else tags
     makedir(out_dir)    
     secs = requirestr(workflow.cp.get_subsections('plot_snrchi'), require)  
     secs = excludestr(secs, exclude)
@@ -280,7 +286,7 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
             files += node.output_files
     return files
 
-def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None, require=None, tags=[]):
+def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None, require=None, tags=None):
     makedir(out_dir)   
     secs = requirestr(workflow.cp.get_subsections('plot_foundmissed'), require)  
     secs = excludestr(secs, exclude)
@@ -296,7 +302,8 @@ def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None, require=Non
         files += node.output_files
     return files
   
-def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False, tags=[]):
+def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False, tags=None):
+    tags = [] if tags == None else tags
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_snrratehist', ifos=workflow.ifos,
                 out_dir=out_dir, tags=tags).create_node()
@@ -310,7 +317,8 @@ def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False, tags=[])
     return node.output_files[0]
     
     
-def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False, cumulative=True, tags=[]):
+def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False, cumulative=True, tags=None):
+    tags = [] if tags == None else tags
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_snrifar', ifos=workflow.ifos,
                 out_dir=out_dir, tags=tags).create_node()
@@ -339,7 +347,8 @@ def make_results_web_page(workflow, results_dir):
 
 def make_single_hist(workflow, trig_file, veto_file, veto_name, 
                      out_dir, bank_file=None, exclude=None,
-                     require=None, tags=[]):
+                     require=None, tags=None):
+    tags = [] if tags == None else tags
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_hist'), require)  
     secs = excludestr(secs, exclude)
@@ -361,7 +370,8 @@ def make_single_hist(workflow, trig_file, veto_file, veto_name,
     return files
 
 def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name, 
-                     out_dir, exclude=None, require=None, tags=[]):
+                     out_dir, exclude=None, require=None, tags=None):
+    tags = [] if tags == None else tags
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_singles'), require)  
     secs = excludestr(secs, exclude)
