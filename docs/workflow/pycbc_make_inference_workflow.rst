@@ -16,11 +16,12 @@ A simple workflow configuration file::
 
     [workflow]
     ; basic information used by the workflow generator
-    end-time = 1137254417
-    start-time = 1133173817
     file-retention-level = all_triggers
     h1-channel-name = H1:DCS-CALIB_STRAIN_C01
     l1-channel-name = L1:DCS-CALIB_STRAIN_C01
+    ; dummy variables for start and end time of workflow
+    start-time = 0
+    end-time = 0
 
     [workflow-ifos]
     ; the IFOs to analyze
@@ -113,7 +114,7 @@ Inference configuration file
 You will also need a configuration file with sections that tells ``pycbc_inference`` how to construct the priors. A simple inference configuration file is::
 
     [variable_args]
-    ; parameters to vary in MCMC
+    ; parameters to vary in inference sampler
     tc =
     mass1 =
     mass2 =
@@ -131,7 +132,7 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
     inclination = $\iota$
 
     [static_args]
-    ; parameters that do not vary in MCMC
+    ; parameters that do not vary in inference sampler
     approximant = TaylorF2
     ra = 0.0247836709
     dec = 0.00715585006
@@ -174,6 +175,8 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
     min-inclination = 0.0
     max-inclination = 1.57
 
+If you want to use another variable parameter in the inference sampler then add its name to ``[variable_args]`` and add a prior section like shown above.
+
 =====================
 Generate the workflow
 =====================
@@ -205,8 +208,12 @@ If you want to run on the loudest triggers from a PyCBC coincident search workfl
         --bank-file ${BANK_PATH} \
         --statmap-file ${STATMAP_PATH} \
         --single-detector-triggers ${SNGL_H1_PATHS} ${SNGL_L1_PATHS}
+        --config-overrides workflow:start-time:${WORKFLOW_START_TIME} \
+                           workflow:end-time:$((${WORKFLOW_END_TIME} \
+                           workflow-inference:data-seconds-before-trigger:1024 \
+                           workflow-inference:data-seconds-after-trigger:1024
 
-Where ``${BANK_FILE}`` is the path to the template bank HDF file, ``${STATMAP_FILE}`` is the path to the combined statmap HDF file, and ``${SNGL_H1_PATHS}`` and ``${SNGL_L1_PATHS}`` are the paths to the merged single-detector HDF files.
+Where ``${BANK_FILE}`` is the path to the template bank HDF file, ``${STATMAP_FILE}`` is the path to the combined statmap HDF file, ``${SNGL_H1_PATHS}`` and ``${SNGL_L1_PATHS}`` are the paths to the merged single-detector HDF files,  and ``${WORKFLOW_START_TIME}`` and ``${WORKFLOW_END_TIME}`` are the start and end time of the coincidence workflow.
 
 Else you can run from a specific GPS end time with the ``--gps-end-time`` option like::
 
@@ -217,7 +224,11 @@ Else you can run from a specific GPS end time with the ``--gps-end-time`` option
         --output-dir ${OUTPUT_DIR} \
         --output-file ${WORKFLOW_NAME}.dax \
         --output-map ${OUTPUT_MAP_PATH} \
-        --gps-end-time ${GPS_END_TIME}
+        --gps-end-time ${GPS_END_TIME} \
+        --config-overrides workflow:start-time:$((${GPS_END_TIME}-1024)) \
+                           workflow:end-time:$((${GPS_END_TIME}+1024)) \
+                           workflow-inference:data-seconds-before-trigger:1024 \
+                           workflow-inference:data-seconds-after-trigger:1024
 
 Where ``${GPS_END_TIME}`` is the GPS end time of the trigger.
 
