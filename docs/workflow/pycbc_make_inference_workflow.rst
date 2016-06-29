@@ -15,6 +15,7 @@ Workflow configuration file
 If you want to analyse a different set of ifos, you will have to edit some additional options::
 
     [workflow]
+    ; basic information used by the workflow generator
     end-time = 1137254417
     start-time = 1133173817
     file-retention-level = all_triggers
@@ -22,10 +23,12 @@ If you want to analyse a different set of ifos, you will have to edit some addit
     l1-channel-name = L1:DCS-CALIB_STRAIN_C01
 
     [workflow-ifos]
+    ; the IFOs to analyze
     h1 =
     l1 =
 
     [workflow-datafind]
+    ; how the workflow generator should get frame data
     datafind-l1-frame-type = L1_HOFT_C01
     datafind-method = AT_RUNTIME_SINGLE_FRAMES
     datafind-check-segment-gaps = raise_error
@@ -34,11 +37,13 @@ If you want to analyse a different set of ifos, you will have to edit some addit
     datafind-check-segment-summary = warn
 
     [workflow-inference]
+    ; how the workflow generator should setup inference nodes
     num-events = 1
     data-seconds-before-trigger = 220
     data-seconds-after-trigger = 1828
 
     [executables]
+    ; paths to executables to use in workflow
     inference = ${which:pycbc_inference}
     inference_acf = ${which:pycbc_inference_plot_acf}
     inference_acl = ${which:pycbc_inference_plot_acl}
@@ -50,9 +55,11 @@ If you want to analyse a different set of ifos, you will have to edit some addit
     plot_spectrum = ${which:pycbc_plot_psd_file}
 
     [datafind]
+    ; datafind options
     urltype = file
 
     [inference]
+    ; command line options use --help for more information
     sample-rate = 2048
     low-frequency-cutoff = 40
     strain-high-pass = 30
@@ -69,26 +76,35 @@ If you want to analyse a different set of ifos, you will have to edit some addit
     niterations = 320
 
     [pegasus_profile-inference]
+    ; pegasus profile for inference nodes
     condor|universe = local
     condor|request_memory = 150000
 
     [inference_acf]
+    ; command line options use --help for more information
     ymax = 1.1
     ymin = -1.1
 
     [inference_acl]
+    ; command line options use --help for more information
 
     [inference_posterior]
+    ; command line options use --help for more information
 
     [inference_prior]
+    ; command line options use --help for more information
 
     [inference_rate]
+    ; command line options use --help for more information
 
     [inference_samples]
+    ; command line options use --help for more information
 
     [inference_table]
+    ; command line options use --help for more information
 
     [plot_spectrum]
+    ; command line options use --help for more information
 
 ============================
 Inference configuration file
