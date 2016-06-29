@@ -62,6 +62,9 @@ def add_inference_results_option_group(parser):
         default=None,
         help="Interval to use for thinning samples. If none provided, will "
              "use the auto-correlation length found in the file.")
+    results_reading_group.add_argument("--thin-end", type=int, default=None,
+        help="Sample number to stop collecting samples to plot. If none "
+             "provided, will stop at the last sample from the sampler.")
 
     return results_reading_group
 
@@ -109,7 +112,8 @@ def results_from_cli(opts, load_samples=True, walkers=None):
     if load_samples:
         logging.info("Loading samples")
         samples = fp.read_samples_from_walkers(parameters, walkers=walkers, 
-            thin_start=opts.thin_start, thin_interval=opts.thin_interval)
+            thin_start=opts.thin_start, thin_interval=opts.thin_interval,
+            thin_end=opts.thin_end)
     else:
         samples = None
     return fp, parameters, labels, samples
