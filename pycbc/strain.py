@@ -308,7 +308,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
                                                 seed=opt.fake_strain_seed)
         else:
             logging.info("Making zero-noise time series")
-            strain = TimeSeries(numpy.zeros(tlen), delta_t=1.0/opt.sample_rate)
+            strain = TimeSeries(pycbc.types.zeros(tlen),
+                                delta_t=1.0/opt.sample_rate)
         strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
 
         if opt.injection_file:
