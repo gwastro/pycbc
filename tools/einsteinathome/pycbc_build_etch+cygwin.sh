@@ -179,7 +179,8 @@ if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     dist="pycbc/environment/dist"
     rm -rf "$dist"
     mkdir -p "$dist"
-    scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*" "$dist" || true
+    scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.exe" "$dist"
+    scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.zip" "$dist"
     exit 0
 fi
 
