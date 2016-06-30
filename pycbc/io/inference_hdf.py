@@ -149,9 +149,8 @@ class InferenceFile(h5py.File):
         """
         return self.attrs["acl"]
 
-    def read_samples_from_walkers(self, parameters, walkers=None,
-                                 thin_start=None, thin_interval=None,
-                                 thin_end=None):
+    def read_samples(self, parameters, walkers=None, thin_start=None,
+                    thin_interval=None, thin_end=None):
         """Reads samples from the specified walker(s) for the given
         parameter(s).
 
@@ -215,15 +214,6 @@ class InferenceFile(h5py.File):
                 arr[name][ii*n_per_walker:(ii+1)*n_per_walker] = self[name] \
                          ['walker%i'%walker][thin_start:thin_end:thin_interval]
         return arr
-
-    def read_samples(self, parameters, thin_start=None, thin_interval=None,
-                    thin_end=None):
-        """ Reads samples from all of the walkers for the given
-        parameter(s). See read_samples_from_walkers for more details.
-        """
-        return self.read_samples_from_walkers(parameters, walkers=None,
-            thin_start=thin_start, thin_interval=thin_interval,
-            thin_end=thin_end)
 
     def read_acceptance_fraction(self, thin_start=None, thin_interval=None):
         """ Returns a numpy.array of the fraction of samples acceptanced at
