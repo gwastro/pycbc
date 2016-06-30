@@ -30,11 +30,11 @@ import numpy
 import scipy.stats
 from ConfigParser import Error
 
+VARARGS_DELIM = '+'
+
 #
 #   Distributions for priors
 #
-
-# helper function for getting bounds from config file
 def get_param_bounds_from_config(cp, section, tag, param):
     """
     Gets bounds for the given parameter from a section in a config file.
@@ -115,73 +115,60 @@ class _BoundedDist(object):
                 ', '.join(self._params)))
 
     @classmethod
-    def from_config(cls, cp, section, tag, bounds_required=False):
-        """ Returns a distribution based on a configuration file.
+    def from_config(cls, cp, section, variable_args, bounds_required=False):
+        """Returns a distribution based on a configuration file. The parameters
+        for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
 
         Parameters
-         ----------
-         cp : pycbc.workflow.WorkflowConfigParser
-             A parsed configuration file that contains the distribution
-             options.
-         section : str
-             Name of the section in the configuration file.
-         tag : str
-             Name of the tag in the configuration file to use, eg. the
-             configuration file has a [section-tag] section.
-         bounds_required : {False, bool}
-            If True, raise a ValueError if a min and max are not provided for
-            every parameter. Otherwise, the prior will be initialized with the
-            parameter set to None. Even if bounds are not required, a
-            ValueError will be raised if only one bound is provided; i.e.,
-            either both bounds need to provided or no bounds.
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        variable_args : str
+            The names of the parameters for this distribution, separated by
+            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
+        bounds_required : {False, bool}
+           If True, raise a ValueError if a min and max are not provided for
+           every parameter. Otherwise, the prior will be initialized with the
+           parameter set to None. Even if bounds are not required, a
+           ValueError will be raised if only one bound is provided; i.e.,
+           either both bounds need to provided or no bounds.
 
-         Returns
-         -------
-         _BoundedDist
-             A distribution instance from the pycbc.inference.prior module.
+        Returns
+        -------
+        _BoundedDist
+            A distribution instance from the pycbc.inference.prior module.
         """
-
-        # seperate out tags from section tag
-        variable_args = tag.split("+")
+        tag = variable_args
+        variable_args = variable_args.split(VARARGS_DELIM)
 
         # list of args that are used to construct distribution
-        special_args = ["name"] + ["min-%s"%param for param in variable_args] \
-                                + ["max-%s"%param for param in variable_args]
+        special_args = ["name"] + variable_args
 
         # get a dict with bounds as value
         dist_args = {}
         for param in variable_args:
-            try:
-                low = float(cp.get_opt_tag(section, "min-%s"%param, tag))
-            except Error:
-                low = None
-            try:
-                high = float(cp.get_opt_tag(section, "max-%s"%param, tag))
-            except Error:
-                high = None
-            if low is None and high is None and not bounds_required:
-                bounds = None
-            elif low is None or high is None:
+            bounds = get_param_bounds_from_config(cp, section, tag, param)
+            if bounds_required and bounds is None:
                 raise ValueError("min and/or max missing for parameter %s"%(
                     param))
-            else:
-                bounds = (low, high)
             dist_args[param] = bounds
 
         # add any additional options that user put in that section
         for key in cp.options( "-".join([section,tag]) ):
-
             # ignore options that are already included
             if key in special_args:
                 continue
-
             # check if option can be cast as a float
             val = cp.get_opt_tag("prior", key, tag)
             try:
                 val = float(val)
             except:
                 pass
-
             # add option
             dist_args.update({key:val})
 
@@ -311,26 +298,29 @@ class Uniform(_BoundedDist):
         return arr
 
     @classmethod
-    def from_config(cls, cp, section, tag):
-        """ Returns a distribution based on a configuration file.
+    def from_config(cls, cp, section, variable_args):
+        """Returns a distribution based on a configuration file. The parameters
+        for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
 
         Parameters
-         ----------
-         cp : pycbc.workflow.WorkflowConfigParser
-             A parsed configuration file that contains the distribution
-             options.
-         section : str
-             Name of the section in the configuration file.
-         tag : str
-             Name of the tag in the configuration file to use, eg. the
-             configuration file has a [section-tag] section.
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        variable_args : str
+            The names of the parameters for this distribution, separated by
+            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
 
-         Returns
-         -------
-         Uniform
-             A distribution instance from the pycbc.inference.prior module.
+        Returns
+        -------
+        Uniform
+            A distribution instance from the pycbc.inference.prior module.
         """
-        return super(Uniform, cls).from_config(cp, section, tag,
+        return super(Uniform, cls).from_config(cp, section, variable_args,
             bounds_required=True)
 
 
@@ -385,26 +375,29 @@ class UniformAngle(Uniform):
         super(UniformAngle, self).__init__(**params)
 
     @classmethod
-    def from_config(cls, cp, section, tag):
-        """ Returns a distribution based on a configuration file.
+    def from_config(cls, cp, section, variable_args):
+        """Returns a distribution based on a configuration file. The parameters
+        for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
 
         Parameters
-         ----------
-         cp : pycbc.workflow.WorkflowConfigParser
-             A parsed configuration file that contains the distribution
-             options.
-         section : str
-             Name of the section in the configuration file.
-         tag : str
-             Name of the tag in the configuration file to use, eg. the
-             configuration file has a [section-tag] section.
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        variable_args : str
+            The names of the parameters for this distribution, separated by
+            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
 
-         Returns
-         -------
-         UniformAngle
-             A distribution instance from the pycbc.inference.prior module.
+        Returns
+        -------
+        UniformAngle
+            A distribution instance from the pycbc.inference.prior module.
         """
-        return super(UniformAngle, cls).from_config(cp, section, tag,
+        return super(Uniform, cls).from_config(cp, section, variable_args,
             bounds_required=False)
 
 
@@ -479,6 +472,7 @@ class SinAngle(_BoundedDist):
     def lognorm(self):
         return self._lognorm
 
+
     def pdf(self, **kwargs):
         """
         Returns the pdf at the given values. The keyword arguments must contain
@@ -487,7 +481,7 @@ class SinAngle(_BoundedDist):
         if kwargs not in self:
             return 0.
         return self._norm * \
-            self._dfunc(numpy.array(kwargs.values())).prod()
+            self._dfunc(numpy.array([kwargs[p] for p in self._params])).prod()
 
     def logpdf(self, **kwargs):
         """
@@ -498,7 +492,8 @@ class SinAngle(_BoundedDist):
         if kwargs not in self:
             return -numpy.inf
         return self._lognorm + \
-            numpy.log(self._dfunc(numpy.array(kwargs.values()))).sum()
+            numpy.log(self._dfunc(
+                numpy.array([kwargs[p] for p in self._params]))).sum()
 
     __call__ = logpdf
 
@@ -723,7 +718,7 @@ class UniformSolidAngle(_BoundedDist):
         return arr
 
     @classmethod
-    def from_config(cls, cp, section, tag):
+    def from_config(cls, cp, section, variable_args):
         """Returns a distribution based on a configuration file. The section
         must have the names of the polar and azimuthal angles in the tag part
         of the section header. For example:
@@ -764,17 +759,18 @@ class UniformSolidAngle(_BoundedDist):
             The config file.
         section : str
             The name of the section.
-        tag : str
-            Any tag in the section name. The full section name searched for in
-            the config file is `{section}(-{tag})`.
+        variable_args : str
+            The names of the parameters for this distribution, separated by
+            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
 
         Returns
         -------
         UniformSolidAngle
             A distribution instance from the pycbc.inference.prior module.
         """
-        # seperate out tags from section tag
-        variable_args = tag.split("+")
+        tag = variable_args
+        variable_args = variable_args.split(VARARGS_DELIM)
 
         # get the variables that correspond to the polar/azimuthal angles
         try:
@@ -990,9 +986,8 @@ class Gaussian(Uniform):
          Gaussian
              A distribution instance from the pycbc.inference.prior module.
         """
-
-        # seperate out tags from section tag
-        variable_args = tag.split("+")
+        tag = variable_args
+        variable_args = variable_args.split(VARARGS_DELIM)
 
         # list of args that are used to construct distribution
         special_args = ["name"] + ["min-%s"%param for param in variable_args] \
