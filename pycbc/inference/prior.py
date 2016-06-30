@@ -408,12 +408,19 @@ class UniformAngle(Uniform):
             bounds_required=False)
 
 
-class CosAngle(BoundedDist):
+class SinAngle(BoundedDist):
     """
-    A cosine distribution between the given bounds, which must be within
+    A sine distribution between the given bounds, which must be within
     [0,pi). If no bounds are provided, will default to [0, pi). The
     parameter bounds are initialized as multiples of pi, while the stored
     bounds are in radians.
+
+    The pdf of each parameter `\theta` is given by:
+    ..math::
+        p(\theta) = \frac{\sin \theta}{\cos\theta_0 - \cos\theta_1}, \theta_0 \leq \theta < \theta_1,
+
+    and 0 otherwise. Here, :math:`\theta_0, \theta_1` are the bounds of the
+    parameter.
 
     Parameters
     ----------
@@ -426,7 +433,7 @@ class CosAngle(BoundedDist):
 
     Class Attributes
     ----------------
-    name : 'cos_angle'
+    name : 'sin_angle'
         The name of this distribution.
 
     Attributes
@@ -439,7 +446,7 @@ class CosAngle(BoundedDist):
         then the bounds will be:
         `{'psi': (0, 3.141592653589793), 'theta': (0, 3.141592653589793)}`
     """
-    name = 'cos_angle'
+    name = 'sin_angle'
     _func = numpy.cos
     _dfunc = numpy.sin
     _arcfunc = numpy.arccos
@@ -457,7 +464,7 @@ class CosAngle(BoundedDist):
                     "for param %s" %(p))
             params[p] = (bnds[0]*numpy.pi, bnds[1]*numpy.pi)
         # set the params, bounds
-        super(CosAngle, self).__init__(**params)
+        super(SinAngle, self).__init__(**params)
         # compute the norms
         self._lognorm = -sum([numpy.log(
             abs(self._func(bnd[1]) - self._func(bnd[0]))) \
@@ -528,12 +535,19 @@ class CosAngle(BoundedDist):
         return arr
 
 
-class SinAngle(CosAngle):
+class CosAngle(SinAngle):
     """
     A sine distribution between the given bounds, which must be within
     [-pi/2,pi/2). If no bounds are provided, will default to [-pi/2, pi/2). The
     parameter bounds are initialized as multiples of pi, while the stored
     bounds are in radians.
+
+    The pdf of each parameter `\theta` is given by:
+    ..math::
+        p(\theta) = \frac{\cos \theta}{\sin\theta_0 - \sin\theta_1}, \theta_0 \leq \theta < \theta_1,
+
+    and 0 otherwise. Here, :math:`\theta_0, \theta_1` are the bounds of the
+    parameter.
 
     Parameters
     ----------
@@ -546,7 +560,7 @@ class SinAngle(CosAngle):
 
     Class Attributes
     ----------------
-    name : 'sin_angle'
+    name : 'cos_angle'
         The name of this distribution.
 
     Attributes
@@ -559,7 +573,7 @@ class SinAngle(CosAngle):
         then the bounds will be:
         `{'psi': (-1.57[...], 1.57[...]), 'theta': (-0.314[...], 0.314[...])}`
     """
-    name = 'sin_angle'
+    name = 'cos_angle'
     _func = numpy.sin
     _dfunc = numpy.cos
     _arcfunc = numpy.arcsin
@@ -610,7 +624,7 @@ class UniformSolidAngle(BoundedDist):
         The name of the azimuthal angle.
     """
     name = 'uniform_solidangle'
-    _polardistcls = CosAngle
+    _polardistcls = SinAngle
     _azimuthaldistcls = UniformAngle
     _default_polar_angle = 'theta'
     _default_azimuthal_angle = 'phi'
@@ -800,7 +814,7 @@ class UniformSky(UniformSolidAngle):
     ascension) for the azimuthal angle, instead of "theta" and "phi".
     """
     name = 'uniform_sky'
-    _polardistcls = SinAngle
+    _polardistcls = CosAngle
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
