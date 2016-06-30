@@ -55,6 +55,14 @@ binaries should read the documentation in the links at:
    workflow/pycbc_make_sngl_workflow
    workflow/pygrb.rst
 
+Users who want to create and run parameter estimation workflows should read the
+documentation at:
+
+.. toctree::
+      :maxdepth: 1
+
+   workflow/pycbc_make_inference_workflow
+
 Users who are interested in tools that PyCBC provides for various other
 analysis tasks (e.g. template bank generation, hardware injections, and testing
 template banks) should read the documentation at:
