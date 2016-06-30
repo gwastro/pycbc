@@ -479,7 +479,6 @@ class SinAngle(BoundedDist):
     def lognorm(self):
         return self._lognorm
 
-
     def pdf(self, **kwargs):
         """
         Returns the pdf at the given values. The keyword arguments must contain
@@ -650,45 +649,43 @@ class UniformSolidAngle(BoundedDist):
     def azimuthal_angle(self):
         return self._azimuthal_angle
 
-    def pdf(self, polar_val, azimuthal_val):
+    def pdf(self, **kwargs):
         """
         Returns the pdf at the given angles.
 
         Parameters
         ----------
-        polar_val : float
-            The value (in rad) of the polar angle.
-
-        azimuthal_val : float
-            The value (in rad) of the azimuthal angle.
+        \**kwargs:
+            The keyword arguments should specify the value for each angle,
+            using the names of the polar and azimuthal angles as the keywords.
+            Unrecognized arguments are ignored.
 
         Returns
         -------
         float
             The value of the pdf at the given values.
         """
-        return self._polardist.pdf(**{self._polar_angle: polar_val}) *\
-            self._azimuthaldist.pdf(**{self._azimuthal_angle: azimuthal_val})
+        return self._polardist.pdf(**kwargs) * \
+            self._azimuthaldist.pdf(**kwargs)
         
-    def logpdf(self, polar_val, azimuthal_val):
+    def logpdf(self, **kwargs):
         """
         Returns the logpdf at the given angles.
 
         Parameters
         ----------
-        polar_val : float
-            The value (in rad) of the polar angle.
-
-        azimuthal_val : float
-            The value (in rad) of the azimuthal angle.
+        \**kwargs:
+            The keyword arguments should specify the value for each angle,
+            using the names of the polar and azimuthal angles as the keywords.
+            Unrecognized arguments are ignored.
 
         Returns
         -------
         float
             The value of the pdf at the given values.
         """
-        return self._polardist.logpdf(**{self._polar_angle: polar_val}) +\
-           self._azimuthaldist.logpdf(**{self._azimuthal_angle: azimuthal_val})
+        return self._polardist.logpdf(**kwargs) +\
+            self._azimuthaldist.logpdf(**kwargs)
 
     __call__ = logpdf
 
