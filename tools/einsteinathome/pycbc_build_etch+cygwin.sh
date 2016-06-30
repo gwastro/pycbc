@@ -162,6 +162,11 @@ for i in $*; do
     esac
 done
 
+# log environment
+echo -e "\\n\\n>> [`date`] ENVIRONMENT ..."
+env
+echo -e "... ENVIRONMENT"
+
 # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
 # WORKSPACE='/Users/jenkins/workspace/workspace/EAH_PyCBC_Master/label/OSX107'
 if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
