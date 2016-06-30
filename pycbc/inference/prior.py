@@ -35,7 +35,7 @@ from ConfigParser import Error
 #
 
 # helper function for getting bounds from config file
-def get_param_bounds_fromcp(cp, section, tag, param):
+def get_param_bounds_from_config(cp, section, tag, param):
     """
     Gets bounds for the given parameter from a section in a config file.
     Bounds are specified by setting the parameter name equal to a comma-
@@ -75,7 +75,7 @@ def get_param_bounds_fromcp(cp, section, tag, param):
     return bnds
 
 
-class BoundedDist(object):
+class _BoundedDist(object):
     """
     A generic class for storing common properties of distributions in which
     each parameter has a minimum and maximum value.
@@ -137,7 +137,7 @@ class BoundedDist(object):
 
          Returns
          -------
-         BoundedDist
+         _BoundedDist
              A distribution instance from the pycbc.inference.prior module.
         """
 
@@ -189,7 +189,7 @@ class BoundedDist(object):
         return cls(**dist_args)
 
 
-class Uniform(BoundedDist):
+class Uniform(_BoundedDist):
     """
     A uniform distribution on the given parameters. The parameters are
     independent of each other. Instances of this class can be called like
@@ -408,7 +408,7 @@ class UniformAngle(Uniform):
             bounds_required=False)
 
 
-class SinAngle(BoundedDist):
+class SinAngle(_BoundedDist):
     """
     A sine distribution between the given bounds, which must be within
     [0,pi). If no bounds are provided, will default to [0, pi). The
@@ -579,7 +579,7 @@ class CosAngle(SinAngle):
     _defaultbnds = (-0.5, 0.5)
 
 
-class UniformSolidAngle(BoundedDist):
+class UniformSolidAngle(_BoundedDist):
     """
     A distribution that is uniform in the solid angle of a sphere. The names
     of the two angluar parameters can be specified on initalization.
@@ -794,8 +794,9 @@ class UniformSolidAngle(BoundedDist):
                 azimuthal_angle) + "(%s)"%(', '.join(variable_args)))
 
         # get the bounds, if provided
-        polar_bounds = get_param_bounds_fromcp(cp, section, tag, polar_angle)
-        azimuthal_bounds = get_param_bounds_fromcp(cp, section, tag,
+        polar_bounds = get_param_bounds_from_config(cp, section, tag,
+            polar_angle)
+        azimuthal_bounds = get_param_bounds_from_config(cp, section, tag,
             azimuthal_angle)
 
         return cls(polar_angle=polar_angle, azimuthal_angle=azimuthal_angle,
