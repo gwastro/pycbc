@@ -33,13 +33,16 @@ from pycbc.waveform.waveform import get_obj_attrs
 default_qnm_args = {'t_0':0, 'phi':0, 'amp':1}
 qnm_required_args = ['f_0', 'tau']
 lm_required_args = ['Mfinal','Sfinal','l','m','nmodes']
+lm_allmodes_required_args = ['Mfinal','Sfinal', 'lmns']
 
 max_freq = 16384.
+min_dt = 1. / (2 * max_freq)
 pi = numpy.pi
 two_pi = 2 * numpy.pi
 pi_sq = numpy.pi * numpy.pi
 
 # Input parameters ############################################################
+
 def props(obj, required, **kwargs):
     """ Return a dictionary built from the combination of defaults, kwargs,
     and the attributes of the given object.
@@ -60,24 +63,54 @@ def props(obj, required, **kwargs):
 
     return input_params
 
-def lm_amps_phases(kwargs)
-    """From an input_params dictionary, return the amplitudes and phases of
-    each overtone of an lm mode, checking that all of them are given.
+def lm_amps_phases(**kwargs):
+    """ Take input_params and return dictionaries with amplitudes and phases 
+    of each overtone of a specific lm mode, checking that all of them are given.
     """
-    amps, phis = numpy.zeros(nmodes), numpy.zeros(nmodes)
+    l, m = kwargs['l'], kwargs['m']
+    amps, phis = {}, {}
     for n in range(kwargs['nmodes']):
         try:
-            amps[n] = kwargs['amp_%d' %n]
+            amps['%d%d%d' %(l,m,n)] = kwargs['amp%d%d%d' %(l,m,n)]
         except KeyError:
-            raise ValueError('amp_%d is required' %n)
+            raise ValueError('amp%d%d%d is required' %(l,m,n))
         try:
-            phis[n] = kwargs['phi_%d' %n]
+            phis['%d%d%d' %(l,m,n)] = kwargs['phi%d%d%d' %(l,m,n)]
         except KeyError:
-            raise ValueError('phi_%d is required' %n)
+            raise ValueError('phi%d%d%d is required' %(l,m,n))
 
     return amps, phis
 
+# Functions to obtain f_0 and tau for the higher modes ########################
+
+def get_lm_f0tau(mass, spin, l, m, nmodes):
+    """Return the f_0 and the tau of each overtone for a given lm mode 
+    """
+    qnmfreq = lal.CreateCOMPLEX16Vector(nmodes)
+    lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(qnmfreq, mass, spin, l, m, nmodes)
+
+    f_0 = [qnmfreq.data[n].real / (2 * pi) for n in range(nmodes)]
+    tau = [1. / qnmfreq.data[n].imag for n in range(nmodes)]
+
+    return f_0, tau
+
+def get_lm_f0tau_allmodes(mass, spin, modes):
+    """Return a dictionary with the f_0 and tau for all the modes
+    in the list lmns (list of strings)
+    """
+
+    f_0, tau = {}, {}
+    for lmn in modes:
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        tmp_f0, tmp_tau = get_lm_f0tau(mass, spin, l, m, nmodes)
+        for n in range(nmodes):
+            f_0['%d%d%d' %(l,m,n)] = tmp_f0[n]
+            tau['%d%d%d' %(l,m,n)] = tmp_tau[n]
+
+    return f_0, tau
+
 # Functions to obtain t_final and f_final #####################################
+
 def qnm_time_decay(tau, decay):
     """Return the time at which the amplitude of the 
     ringdown falls to decay of the peak amplitude.
@@ -127,7 +160,76 @@ def qnm_freq_decay(f_0, tau, decay):
     q_sq = (alpha_sq + 4*q_0*q_0 + alpha*numpy.sqrt(alpha_sq + 16*q_0*q_0)) / 4.
     return numpy.sqrt(q_sq) / pi / tau
 
+def lm_tfinal(mass, spin, modes):
+    """Return the maximum t_final of the modes given, with t_final the time
+    at which the amplitude falls to 1/1000 of the peak amplitude
+    """
+
+    f_0, tau = get_lm_f0tau_allmodes(mass, spin, modes)
+    t_max = {}
+    for lmn in modes:
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        for n in range(nmodes):
+            t_max['%d%d%d' %(l,m,n)] = qnm_time_decay(tau['%d%d%d' %(l,m,n)], 1./1000)
+
+    return max(t_max.values())
+
+def lm_deltat(mass, spin, modes):
+    """Return the minimum delta_t of all the modes given, with delta_t given by
+    the inverse of the frequency at which the amplitude of the ringdown falls to
+    1/1000 of the peak amplitude.
+    """
+
+    f_0, tau = get_lm_f0tau_allmodes(mass, spin, modes)
+    dt = {}
+    for lmn in modes:
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        for n in range(nmodes):
+            dt['%d%d%d' %(l,m,n)] = 1. / qnm_freq_decay(f_0['%d%d%d' %(l,m,n)],
+                                                tau['%d%d%d' %(l,m,n)], 1./1000)
+
+    delta_t = min(dt.values())
+    if delta_t < min_dt:
+        delta_t = min_dt
+
+    return delta_t
+
+def lm_ffinal(mass, spin, modes):
+    """Return the maximum f_final of the modes given, with f_final the frequency
+    at which the amplitude falls to 1/1000 of the peak amplitude
+    """
+
+    f_0, tau = get_lm_f0tau_allmodes(mass, spin, modes)
+    f_max = {}
+    for lmn in modes:
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        for n in range(nmodes):
+            f_max['%d%d%d' %(l,m,n)] = qnm_freq_decay(f_0['%d%d%d' %(l,m,n)],
+                                                tau['%d%d%d' %(l,m,n)], 1./1000)
+
+    f_final = max(f_max.values())
+    if f_final > max_freq:
+        f_final = max_freq
+    
+    return f_final
+
+def lm_deltaf(mass, spin, modes):
+    """Return the minimum delta_f of all the modes given, with delta_f given by
+    the inverse of the time at which the amplitude of the ringdown falls to
+    1/1000 of the peak amplitude.
+    """
+
+    f_0, tau = get_lm_f0tau_allmodes(mass, spin, modes)
+    df = {}
+    for lmn in modes:
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        for n in range(nmodes):
+            df['%d%d%d' %(l,m,n)] = 1. / qnm_time_decay(tau['%d%d%d' %(l,m,n)], 1./1000)
+
+    return min(df.values())
+
 # Functions to generate ringdown waveforms ####################################
+
 def get_td_qnm(template=None, **kwargs):
     """Return a time domain damped sinusoid.
 
@@ -162,8 +264,10 @@ def get_td_qnm(template=None, **kwargs):
     """
 
     input_params = props(template, qnm_required_args, **kwargs)
-
-    # the following args have defaults, and so will be populated
+    
+    f_0 = input_params.pop('f_0')
+    tau = input_params.pop('tau')
+    # the following have defaults, and so will be populated
     phi = input_params.pop('phi')
     amp = input_params.pop('amp')
     # the following may not be in input_params
@@ -172,6 +276,8 @@ def get_td_qnm(template=None, **kwargs):
 
     if delta_t is None:
         delta_t = 1. / qnm_freq_decay(f_0, tau, 1./1000)
+        if delta_t < min_dt:
+            delta_t = min_dt
     if t_final is None:
         t_final = qnm_time_decay(tau, 1./1000)
     kmax = int(t_final / delta_t) + 1
@@ -228,7 +334,8 @@ def get_fd_qnm(template=None, **kwargs):
 
     input_params = props(template, qnm_required_args, **kwargs)
 
-    # get optional args
+    f_0 = input_params.pop('f_0')
+    tau = input_params.pop('tau')
     # the following have defaults, and so will be populated
     t_0 = input_params.pop('t_0')
     phi = input_params.pop('phi')
@@ -253,8 +360,7 @@ def get_fd_qnm(template=None, **kwargs):
 
     freqs = numpy.arange(kmin, kmax)*delta_f
 
-    denominator = 1 + (4j * pi * freqs * tau)
-                    - (4 * pi_sq * ( freqs*freqs - f_0*f_0) * tau*tau)
+    denominator = 1 + (4j * pi * freqs * tau) - (4 * pi_sq * ( freqs*freqs - f_0*f_0) * tau*tau)
     norm = amp * tau / denominator
     if t_0 != 0:
         time_shift = numpy.exp(-1j * two_pi * freqs * t_0) 
@@ -273,18 +379,6 @@ def get_fd_qnm(template=None, **kwargs):
 
     return hplustilde, hcrosstilde
 
-def get_lm_f0tau(mass, spin, l, m, nmodes):
-    """Return the f_0 and the tau of each overtone for a given lm mode 
-    """
-
-    qnmfreq = lal.CreateCOMPLEX16Vector(nmodes)
-    lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(qnmfreq, Mfinal, Sfinal, l, m, nmodes)
-
-    f_0 = [qnmfreq.data[n].real / (2 * pi) for n in range(nmodes)]
-    tau = [1. / qnmfreq.data[n].imag for n in range(nmodes)]
-
-    return f_0, tau
-
 def get_td_lm(template=None, **kwargs):
     """Return frequency domain lm mode with the given number of overtones.
     Parameters
@@ -302,10 +396,10 @@ def get_td_lm(template=None, **kwargs):
         m mode (lm modes available: 22, 21, 33, 44, 55).
     nmodes: int
         Number of overtones desired (maximum n=8)
-    amp_n : float
-        Amplitude of the n overtone, as many as the number of nmodes.
-    phi_n : float
-        Phase of the n overtone, as many as the number of nmodes.
+    amplmn : float
+        Amplitude of the lmn overtone, as many as the number of nmodes.
+    philmn : float
+        Phase of the lmn overtone, as many as the number of nmodes.
     delta_t : {None, float}, optional
         The time step used to generate the ringdown.
         If None, it will be set to the inverse of the frequency at which the
@@ -323,27 +417,31 @@ def get_td_lm(template=None, **kwargs):
     """
 
     input_params = props(template, lm_required_args, **kwargs)
-    amps, phis = lm_amps_phases(input_params)
+
+    # Get required args
+    amps, phis = lm_amps_phases(**input_params)
+    Mfinal = input_params.pop('Mfinal')
+    Sfinal = input_params.pop('Sfinal')
+    l, m = input_params.pop('l'), input_params.pop('m')
+    nmodes = input_params.pop('nmodes')
     # The following may not be in input_params
     delta_t = input_params.pop('delta_t', None)
     t_final = input_params.pop('t_final', None)
 
-    f_0, tau = get_lm_f0tau(Mfinal, Sfinal, l, m, nmodes)
-
     if delta_t is None:
-        dt = [1. / qnm_freq_decay(f_0[n], tau[n], 1./1000) for n in range(nmodes)]
-        delta_t = min(dt)
+        delta_t = lm_deltat(Mfinal, Sfinal, ['%d%d%d' %(l,m,nmodes)]) 
     if t_final is None:
-        t_max = [qnm_time_decay(tau[n], 1./1000) for n in range(nmodes)]
-        t_final = max(t_max)
+        t_final = lm_tfinal(Mfinal, Sfinal, ['%d%d%d' %(l, m, nmodes)])
     kmax = int(t_final / delta_t) + 1
 
     outplus = TimeSeries(zeros(kmax, dtype=complex128), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=complex128), delta_t=delta_t)
+
+    f_0, tau = get_lm_f0tau(Mfinal, Sfinal, l, m, nmodes)
     for n in range(nmodes):
         hplus, hcross = get_td_qnm(template=None, f_0=f_0[n], tau=tau[n],
-                            phi=phis[n], amp=amps[n], delta_t=delta_t,
-                            t_final=t_final)
+                            phi=phis['%d%d%d' %(l,m,n)], amp=amps['%d%d%d' %(l,m,n)],
+                            delta_t=delta_t, t_final=t_final)
         outplus.data += hplus.data
         outcross.data += hcross.data
 
@@ -366,10 +464,10 @@ def get_fd_lm(template=None, **kwargs):
         m mode (lm modes available: 22, 21, 33, 44, 55).
     nmodes: int
         Number of overtones desired (maximum n=8)
-    amp_n : float
-        Amplitude of the n overtone, as many as the number of nmodes.
-    phi_n : float
-        Phase of the n overtone, as many as the number of nmodes.
+    amplmn : float
+        Amplitude of the lmn overtone, as many as the number of nmodes.
+    philmn : float
+        Phase of the lmn overtone, as many as the number of nmodes.
     delta_f : {None, float}, optional
         The frequency step used to generate the ringdown.
         If None, it will be set to the inverse of the time at which the
@@ -384,49 +482,178 @@ def get_fd_lm(template=None, **kwargs):
     Returns
     -------
     hplustilde: FrequencySeries
-        The plus phase of a lm mode with overtones (n) in frequency domain.
+        The plus phase of a lm mode with n overtones in frequency domain.
     hcrosstilde: FrequencySeries
-        The cross phase of a lm mode with overtones (n) in frequency domain.
+        The cross phase of a lm mode with n overtones in frequency domain.
     """
 
     input_params = props(template, lm_required_args, **kwargs)
-    amps, phis = lm_amps_phases(input_params) 
-    # the following may not be in input_params
+
+    # Get required args
+    amps, phis = lm_amps_phases(**input_params)
+    Mfinal = input_params.pop('Mfinal')
+    Sfinal = input_params.pop('Sfinal')
+    l, m = input_params.pop('l'), input_params.pop('m')
+    nmodes = input_params.pop('nmodes')
+    # The following may not be in input_params
     delta_f = input_params.pop('delta_f', None)
     f_lower = input_params.pop('f_lower', None)
     f_final = input_params.pop('f_final', None)
-    # get required amplitudes and phases
-#    amps, phis = numpy.zeros(nmodes), numpy.zeros(nmodes)
-#    for n in range(nmodes):
-#        try:
-#            amps[n] = input_params['amp_%d' %n]
-#        except KeyError:
-#            raise ValueError('amp_%d is required' %n)
-#        try:
-#            phis[n] = input_params['phi_%d' %n]
-#        except KeyError:
-#            raise ValueError('phi_%d is required' %n)
-
-    f_0, tau = get_lm_f0tau(Mfinal, Sfinal, l, m, nmodes)
 
     if delta_f is None:
-        df = [1. / qnm_time_decay(tau[n], 1./1000) for n in range(nmodes)]
-        delta_f = min(df)
+        delta_f = lm_deltaf(Mfinal, Sfinal, ['%d%d%d' %(l,m,nmodes)])
     if f_final is None:
-        f_max = [qnm_freq_decay(f_0[n], tau[n], 1./1000) for n in range(nmodes)]
-        f_final = max(f_max)
+        f_final = lm_ffinal(Mfinal, Sfinal, ['%d%d%d' %(l, m, nmodes)])
     kmax = int(f_final / delta_f) + 1
 
     outplus = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
     outcross = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
+
+    f_0, tau = get_lm_f0tau(Mfinal, Sfinal, l, m, nmodes)
     for n in range(nmodes):
         hplus, hcross = get_fd_qnm(template=None, f_0=f_0[n], tau=tau[n], 
-                            phi=phis[n], amp=amps[n], delta_f=delta_f, 
+                            phi=phis['%d%d%d' %(l,m,n)], amp=amps['%d%d%d' %(l,m,n)], delta_f=delta_f, 
                             f_lower=f_lower, f_final=f_final)
         outplus.data += hplus.data
         outcross.data += hcross.data
 
     return outplus, outcross
+
+def get_td_lm_allmodes(template=None, **kwargs):
+    """Return time domain ringdown with all the modes specified.
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to substitute
+        for keyword arguments. A common example would be a row in an xml table.
+    Mfinal : float
+        Mass of the final black hole.
+    Sfinal : float
+        Spin of the final black hole.
+    lmns : list
+        Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
+        The n specifies the number of overtones desired for the corresponding
+        lm pair (maximum n=8).
+        Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
+    amplmn : float
+        Amplitude of the lmn overtone, as many as the number of modes.
+    philmn : float
+        Phase of the lmn overtone, as many as the number of modes.
+    delta_t : {None, float}, optional
+        The time step used to generate the ringdown.
+        If None, it will be set to the inverse of the frequency at which the
+        amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
+    t_final : {None, float}, optional
+        The ending time of the output frequency series.
+        If None, it will be set to the time at which the amplitude
+        is 1/1000 of the peak amplitude (the maximum of all modes).
+    Returns
+    -------
+    hplustilde: FrequencySeries
+        The plus phase of a ringdown with the lm modes specified and
+        n overtones in frequency domain.
+    hcrosstilde: FrequencySeries
+        The cross phase of a ringdown with the lm modes specified and
+        n overtones in frequency domain.
+    """
+
+    input_params = props(template, lm_allmodes_required_args, **kwargs)
+
+    # Get required args
+    Mfinal = input_params['Mfinal']
+    Sfinal = input_params['Sfinal']
+    lmns = input_params['lmns']
+    # The following may not be in input_params
+    delta_t = input_params.pop('delta_t', None)
+    t_final = input_params.pop('t_final', None)
+
+    if delta_t is None:
+        delta_t = lm_deltat(Mfinal, Sfinal, lmns)
+    if t_final is None:
+        t_final = lm_tfinal(Mfinal, Sfinal, lmns)
+    kmax = int(t_final / delta_t) + 1
+
+    outplus = TimeSeries(zeros(kmax, dtype=complex128), delta_t=delta_t)
+    outcross = TimeSeries(zeros(kmax, dtype=complex128), delta_t=delta_t)
+    for lmn in lmns:
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        hplus, hcross = get_td_lm(l=l, m=m, nmodes=nmodes, delta_t=delta_t,
+                                    t_final=t_final, **input_params)
+        outplus.data += hplus.data
+        outcross.data += hcross.data
+
+    return outplus, outcross
+
+def get_fd_lm_allmodes(template=None, **kwargs):
+    """Return frequency domain ringdown with all the modes specified.
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to substitute
+        for keyword arguments. A common example would be a row in an xml table.
+    Mfinal : float
+        Mass of the final black hole.
+    Sfinal : float
+        Spin of the final black hole.
+    lmns : list
+        Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
+        The n specifies the number of overtones desired for the corresponding
+        lm pair (maximum n=8).
+        Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
+    amplmn : float
+        Amplitude of the lmn overtone, as many as the number of modes.
+    philmn : float
+        Phase of the lmn overtone, as many as the number of modes.
+    delta_f : {None, float}, optional
+        The frequency step used to generate the ringdown.
+        If None, it will be set to the inverse of the time at which the
+        amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
+    f_lower: {None, float}, optional
+        The starting frequency of the output frequency series.
+        If None, it will be set to delta_f.
+    f_final : {None, float}, optional
+        The ending frequency of the output frequency series.
+        If None, it will be set to the frequency at which the amplitude
+        is 1/1000 of the peak amplitude (the maximum of all modes).
+    Returns
+    -------
+    hplustilde: FrequencySeries
+        The plus phase of a ringdown with the lm modes specified and
+        n overtones in frequency domain.
+    hcrosstilde: FrequencySeries
+        The cross phase of a ringdown with the lm modes specified and
+        n overtones in frequency domain.
+    """
+
+    input_params = props(template, lm_allmodes_required_args, **kwargs)
+
+    # Get required args
+    Mfinal = input_params['Mfinal']
+    Sfinal = input_params['Sfinal']
+    lmns = input_params['lmns']
+    # The following may not be in input_params
+    delta_f = input_params.pop('delta_f', None)
+    f_lower = input_params.pop('f_lower', None)
+    f_final = input_params.pop('f_final', None)
+
+    if delta_f is None:
+        delta_f = lm_deltaf(Mfinal, Sfinal, lmns)
+    if f_final is None:
+        f_final = lm_ffinal(Mfinal, Sfinal, lmns)
+    if f_lower is None:
+        f_lower = delta_f
+    kmax = int(f_final / delta_f) + 1
+
+    outplustilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
+    outcrosstilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
+    for lmn in lmns:
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        hplustilde, hcrosstilde = get_fd_lm(l=l, m=m, nmodes=nmodes, delta_f=delta_f,
+                                       f_lower=f_lower, f_final=f_final, **input_params)
+        outplustilde.data += hplustilde.data
+        outcrosstilde.data += hcrosstilde.data
+
+    return outplustilde, outcrosstilde
 
 # Approximant names ###########################################################
 ringdown_fd_approximants = {'FdQNM': get_fd_qnm}
