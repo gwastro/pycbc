@@ -362,9 +362,7 @@ def get_td_waveform(template=None, **kwargs):
                             (input_params['approximant']))
 
     for arg in td_required_args:
-        if arg in input_params:
-            pass
-        else:
+        if arg not in input_params:
             raise ValueError("Please provide " + str(arg) )
 
     return wav_gen[input_params['approximant']](**input_params)
@@ -401,9 +399,7 @@ def get_fd_waveform(template=None, **kwargs):
                             (input_params['approximant']))
 
     for arg in fd_required_args:
-        if arg in input_params:
-            pass
-        else:
+        if arg not in input_params:
             raise ValueError("Please provide " + str(arg) )
 
     return wav_gen[input_params['approximant']](**input_params)
@@ -507,9 +503,7 @@ def get_sgburst_waveform(template=None, **kwargs):
     input_params = props_sgburst(template,**kwargs)
 
     for arg in sgburst_required_args:
-        if arg in input_params:
-            pass
-        else:
+        if arg not in input_params:
             raise ValueError("Please provide " + str(arg))
 
     return _lalsim_sgburst_waveform(**input_params)
