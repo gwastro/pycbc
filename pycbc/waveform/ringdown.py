@@ -656,5 +656,5 @@ def get_fd_lm_allmodes(template=None, **kwargs):
     return outplustilde, outcrosstilde
 
 # Approximant names ###########################################################
-ringdown_fd_approximants = {'FdQNM': get_fd_qnm}
-ringdown_td_approximants = {'TdQNM': get_td_qnm}
+ringdown_fd_approximants = {'FdQNM': get_fd_qnm, 'FdQNMmultiModes': get_fd_lm_allmodes}
+ringdown_td_approximants = {'TdQNM': get_td_qnm, 'TdQNMmultiModes': get_td_lm_allmodes}
