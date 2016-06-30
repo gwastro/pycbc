@@ -28,11 +28,168 @@ for parameter estimation.
 
 import numpy
 import scipy.stats
+from ConfigParser import Error
 
 #
 #   Distributions for priors
 #
-class Uniform(object):
+
+# helper function for getting bounds from config file
+def get_param_bounds_fromcp(cp, section, tag, param):
+    """
+    Gets bounds for the given parameter from a section in a config file.
+    Bounds are specified by setting the parameter name equal to a comma-
+    separated minimum and maximum, e.g., `foo = 3.2,4.1`. If the parameter is
+    not found in the section, or the parameter is not equal to anything (i.e.,
+    `foo =`), will just return None. If bounds are specified, both a minimum
+    and maximum must be provided, else a Value or Type Error will be raised.
+
+    Parameters
+    ----------
+    cp : ConfigParser instance
+        The config file.
+    section : str
+        The name of the section.
+    tag : str
+        Any tag in the section name. The full section name searched for in
+        the config file is `{section}(-{tag})`.
+    param : str
+        The name of the parameter to retrieve bounds for.
+
+    Returns
+    -------
+    bounds : {tuple | None}
+        If bounds were provided, a tuple giving the minimum and maximum value,
+        as floats. Otherwise, None.
+    """
+    try:
+        bnds = cp.get_opt_tag(section, param, tag)
+    except Error:
+        bnds = None
+    if bnds is not None:
+        bnds = bnds.split(',')
+        if len(bnds) != 2:
+            raise ValueError("if specifying bounds for %s, " %(param) +
+                "you must provide both a minimum and a maximum")
+        bnds = map(float, bnds)
+    return bnds
+
+
+class BoundedDist(object):
+    """
+    A generic class for storing common properties of distributions in which
+    each parameter has a minimum and maximum value.
+
+    Parameters
+    ----------
+    \**params :
+        The keyword arguments should provide the names of parameters and their
+        corresponding bounds, as tuples.
+
+    Attributes
+    ----------
+    params : list of strings
+        The list of parameter names.
+    bounds : dict
+        A dictionary of the parameter names and their bounds.
+    """
+    def __init__(self, **params):
+        self._bounds = params
+        self._params = sorted(params.keys())
+
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def bounds(self):
+        return self._bounds
+
+    def __contains__(self, params):
+        try:
+            return all([(params[p] >= self._bounds[p][0]) &
+                        (params[p] < self._bounds[p][1])
+                       for p in self._params])
+        except KeyError:
+            raise ValueError("must provide all parameters [%s]" %(
+                ', '.join(self._params)))
+
+    @classmethod
+    def from_config(cls, cp, section, tag, bounds_required=False):
+        """ Returns a distribution based on a configuration file.
+
+        Parameters
+         ----------
+         cp : pycbc.workflow.WorkflowConfigParser
+             A parsed configuration file that contains the distribution
+             options.
+         section : str
+             Name of the section in the configuration file.
+         tag : str
+             Name of the tag in the configuration file to use, eg. the
+             configuration file has a [section-tag] section.
+         bounds_required : {False, bool}
+            If True, raise a ValueError if a min and max are not provided for
+            every parameter. Otherwise, the prior will be initialized with the
+            parameter set to None. Even if bounds are not required, a
+            ValueError will be raised if only one bound is provided; i.e.,
+            either both bounds need to provided or no bounds.
+
+         Returns
+         -------
+         BoundedDist
+             A distribution instance from the pycbc.inference.prior module.
+        """
+
+        # seperate out tags from section tag
+        variable_args = tag.split("+")
+
+        # list of args that are used to construct distribution
+        special_args = ["name"] + ["min-%s"%param for param in variable_args] \
+                                + ["max-%s"%param for param in variable_args]
+
+        # get a dict with bounds as value
+        dist_args = {}
+        for param in variable_args:
+            try:
+                low = float(cp.get_opt_tag(section, "min-%s"%param, tag))
+            except Error:
+                low = None
+            try:
+                high = float(cp.get_opt_tag(section, "max-%s"%param, tag))
+            except Error:
+                high = None
+            if low is None and high is None and not bounds_required:
+                bounds = None
+            elif low is None or high is None:
+                raise ValueError("min and/or max missing for parameter %s"%(
+                    param))
+            else:
+                bounds = (low, high)
+            dist_args[param] = bounds
+
+        # add any additional options that user put in that section
+        for key in cp.options( "-".join([section,tag]) ):
+
+            # ignore options that are already included
+            if key in special_args:
+                continue
+
+            # check if option can be cast as a float
+            val = cp.get_opt_tag("prior", key, tag)
+            try:
+                val = float(val)
+            except:
+                pass
+
+            # add option
+            dist_args.update({key:val})
+
+        # construction distribution and add to list
+        return cls(**dist_args)
+
+
+class Uniform(BoundedDist):
     """
     A uniform distribution on the given parameters. The parameters are
     independent of each other. Instances of this class can be called like
@@ -83,8 +240,8 @@ class Uniform(object):
     """
     name = 'uniform'
     def __init__(self, **params):
-        self._bounds = params
-        self._params = sorted(params.keys())
+        super(Uniform, self).__init__(**params)
+        # compute the norm and save
         # temporarily suppress numpy divide by 0 warning
         numpy.seterr(divide='ignore')
         self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
@@ -93,29 +250,12 @@ class Uniform(object):
         numpy.seterr(divide='warn')
 
     @property
-    def params(self):
-        return self._params
-
-    @property
-    def bounds(self):
-        return self._bounds
-
-    @property
     def norm(self):
         return self._norm
 
     @property
     def lognorm(self):
         return self._lognorm
-
-    def __contains__(self, params):
-        try:
-            return all([(params[p] >= self._bounds[p][0]) &
-                        (params[p] < self._bounds[p][1])
-                       for p in self._params])
-        except KeyError:
-            raise ValueError("must provide all parameters [%s]" %(
-                ', '.join(self._params)))
 
     def pdf(self, **kwargs):
         """
@@ -190,40 +330,481 @@ class Uniform(object):
          Uniform
              A distribution instance from the pycbc.inference.prior module.
         """
+        return super(Uniform, cls).from_config(cp, section, tag,
+            bounds_required=True)
 
+
+class UniformAngle(Uniform):
+    """
+    A uniform distribution between the given bounds, which must be within
+    [0,2pi). If no bounds are provided, will default to [0, 2pi). The
+    parameter bounds are initialized as multiples of pi, while the stored
+    bounds are in radians.
+
+    Parameters
+    ----------
+    \**params :
+        The keyword arguments should provide the names of parameters and
+        (optionally) their corresponding bounds, as tuples. The bounds must be
+        in [0,2). These are converted to radians for storage. None may also
+        be passed; in that case, the parameter will be uniform between 0 and
+        2\pi.
+
+    Class Attributes
+    ----------------
+    name : 'uniform_rad'
+        The name of this distribution.
+
+    Attributes
+    ----------
+    params : list of strings
+        The list of parameter names.
+    bounds : dict
+        A dictionary of the parameter names and their bounds, in radians. For
+        example, if the class is initialized with `psi=None, theta=(0,1)`, then
+        the bounds will be:
+        `{'psi': (0, 6.283185307179586), 'theta': (0, 3.141592653589793)}`
+
+    For more information, see Uniform.
+    """
+    name = 'uniform_angle'
+    _defaultbnds = (0,2)
+
+    def __init__(self, **params):
+        for p,bnds in params.items():
+            if bnds is None:
+                bnds = self._defaultbnds
+            elif (bnds[0] < self._defaultbnds[0] or
+                  bnds[0] > self._defaultbnds[1]) or (
+                  bnds[1] < self._defaultbnds[0] or 
+                  bnds[1] > self._defaultbnds[1]):
+                raise ValueError("bounds must be in [0,2]; got [%i,%i] "%bnds +
+                    "for param %s" %(p))
+            # convert to radians
+            params[p] = (bnds[0]*numpy.pi, bnds[1]*numpy.pi)
+        super(UniformAngle, self).__init__(**params)
+
+    @classmethod
+    def from_config(cls, cp, section, tag):
+        """ Returns a distribution based on a configuration file.
+
+        Parameters
+         ----------
+         cp : pycbc.workflow.WorkflowConfigParser
+             A parsed configuration file that contains the distribution
+             options.
+         section : str
+             Name of the section in the configuration file.
+         tag : str
+             Name of the tag in the configuration file to use, eg. the
+             configuration file has a [section-tag] section.
+
+         Returns
+         -------
+         UniformAngle
+             A distribution instance from the pycbc.inference.prior module.
+        """
+        return super(UniformAngle, cls).from_config(cp, section, tag,
+            bounds_required=False)
+
+
+class CosAngle(BoundedDist):
+    """
+    A cosine distribution between the given bounds, which must be within
+    [0,pi). If no bounds are provided, will default to [0, pi). The
+    parameter bounds are initialized as multiples of pi, while the stored
+    bounds are in radians.
+
+    Parameters
+    ----------
+    \**params :
+        The keyword arguments should provide the names of parameters and
+        (optionally) their corresponding bounds, as tuples. The bounds must be
+        in [0,1). These are converted to radians for storage. None may also
+        be passed; in that case, the parameter will be cosine distributed
+        between 0 and pi.
+
+    Class Attributes
+    ----------------
+    name : 'cos_angle'
+        The name of this distribution.
+
+    Attributes
+    ----------
+    params : list of strings
+        The list of parameter names.
+    bounds : dict
+        A dictionary of the parameter names and their bounds, in radians. For
+        example, if the class is initialized with `psi=None, theta=(0,0.5)`,
+        then the bounds will be:
+        `{'psi': (0, 3.141592653589793), 'theta': (0, 3.141592653589793)}`
+    """
+    name = 'cos_angle'
+    _func = numpy.cos
+    _dfunc = numpy.sin
+    _arcfunc = numpy.arccos
+    _defaultbnds = (0,1)
+
+    def __init__(self, **params):
+        for p,bnds in params.items():
+            if bnds is None:
+                bnds = self._defaultbnds
+            elif (bnds[0] < self._defaultbnds[0] or
+                  bnds[0] > self._defaultbnds[1]) or (
+                  bnds[1] < self._defaultbnds[0] or 
+                  bnds[1] > self._defaultbnds[1]):
+                raise ValueError("bounds must be in [0,1]; got [%i,%i) "%bnds +
+                    "for param %s" %(p))
+            params[p] = (bnds[0]*numpy.pi, bnds[1]*numpy.pi)
+        # set the params, bounds
+        super(CosAngle, self).__init__(**params)
+        # compute the norms
+        self._lognorm = -sum([numpy.log(
+            abs(self._func(bnd[1]) - self._func(bnd[0]))) \
+            for bnd in self._bounds.values()])
+        self._norm = numpy.exp(self._lognorm)
+
+    @property
+    def norm(self):
+        return self._norm
+
+    @property
+    def lognorm(self):
+        return self._lognorm
+
+
+    def pdf(self, **kwargs):
+        """
+        Returns the pdf at the given values. The keyword arguments must contain
+        all of parameters in self's params. Unrecognized arguments are ignored.
+        """
+        if kwargs not in self:
+            return 0.
+        return self._norm * \
+            self._dfunc(numpy.array(kwargs.values())).prod()
+
+    def logpdf(self, **kwargs):
+        """
+        Returns the log of the pdf at the given values. The keyword arguments
+        must contain all of parameters in self's params. Unrecognized arguments
+        are ignored.
+        """
+        if kwargs not in self:
+            return -numpy.inf
+        return self._lognorm + \
+            numpy.log(self._dfunc(numpy.array(kwargs.values()))).sum()
+
+    __call__ = logpdf
+
+    def rvs(self, size=1, param=None):
+        """Gives a set of random values drawn from this distribution.
+
+        Parameters
+        ----------
+        size : {1, int}
+            The number of values to generate; default is 1.
+        param : {None, string}
+            If provided, will just return values for the given parameter.
+            Otherwise, returns random values for each parameter.
+
+        Returns
+        -------
+        structured array
+            The random values in a numpy structured array. If a param was
+            specified, the array will only have an element corresponding to the
+            given parameter. Otherwise, the array will have an element for each
+            parameter in self's params.
+        """
+        if param is not None:
+            dtype = [(param, float)]
+        else:
+            dtype = [(p, float) for p in self.params]
+        arr = numpy.zeros(size, dtype=dtype)
+        for (p,_) in dtype:
+            arr[p] = self._arcfunc(numpy.random.uniform(
+                                    self._func(self._bounds[p][0]),
+                                    self._func(self._bounds[p][1]),
+                                    size=size))
+        return arr
+
+
+class SinAngle(CosAngle):
+    """
+    A sine distribution between the given bounds, which must be within
+    [-pi/2,pi/2). If no bounds are provided, will default to [-pi/2, pi/2). The
+    parameter bounds are initialized as multiples of pi, while the stored
+    bounds are in radians.
+
+    Parameters
+    ----------
+    \**params :
+        The keyword arguments should provide the names of parameters and
+        (optionally) their corresponding bounds, as tuples. The bounds must be
+        in [-0.5,0.5). These are converted to radians for storage.
+        None may also be passed; in that case, the parameter will sine
+        distributed between -pi/2 and pi/2.
+
+    Class Attributes
+    ----------------
+    name : 'sin_angle'
+        The name of this distribution.
+
+    Attributes
+    ----------
+    params : list of strings
+        The list of parameter names.
+    bounds : dict
+        A dictionary of the parameter names and their bounds, in radians. For
+        example, if the class is initialized with `psi=None, theta=(-0.1,0.1)`,
+        then the bounds will be:
+        `{'psi': (-1.57[...], 1.57[...]), 'theta': (-0.314[...], 0.314[...])}`
+    """
+    name = 'sin_angle'
+    _func = numpy.sin
+    _dfunc = numpy.cos
+    _arcfunc = numpy.arcsin
+    _defaultbnds = (-0.5, 0.5)
+
+
+class UniformSolidAngle(BoundedDist):
+    """
+    A distribution that is uniform in the solid angle of a sphere. The names
+    of the two angluar parameters can be specified on initalization.
+
+    Parameters
+    ----------
+    polar_angle : {'theta', str}
+        The name of the polar angle.
+    azimuthal_angle : {'phi', str}
+        The name of the azimuthal angle.
+    polar_bounds : {None, (min, max)}
+        Limit the polar angle to the given bounds. If None provided, the polar
+        angle will vary from 0 (the north pole) to pi (the south pole). The
+        bounds should be specified as factors of pi. For example, to limit
+        the distribution to the northern hemisphere, set
+        `polar_bounds=(0,0.5)`.
+    azimuthal_bounds : {None, (min, max)}
+        Limit the azimuthal angle to the given bounds. If None provided, the
+        azimuthal angle will vary from 0 to 2pi. The
+        bounds should be specified as factors of pi. For example, to limit
+        the distribution to the one hemisphere, set `azimuthal_bounds=(0,1)`.
+
+    Class Attributes
+    ----------------
+    name : 'uniform_solidangle'
+        The name of the distribution.
+
+    Attributes
+    ----------
+    bounds : dict
+        The bounds on each angle. The keys are the names of the polar and
+        azimuthal angles, the values are the minimum and maximum of each, in
+        radians. For example, if the distribution was initialized with
+        `polar_angle='theta', polar_bounds=(0,0.5)` then the bounds will have
+        `'theta': 0, 1.5707963267948966` as an entry.
+    params : list
+        The names of the polar and azimuthal angles.
+    polar_angle : str
+        The name of the polar angle.
+    azimuthal_angle : str
+        The name of the azimuthal angle.
+    """
+    name = 'uniform_solidangle'
+    _polardistcls = CosAngle
+    _azimuthaldistcls = UniformAngle
+    _default_polar_angle = 'theta'
+    _default_azimuthal_angle = 'phi'
+
+    def __init__(self, polar_angle=_default_polar_angle,
+                 azimuthal_angle=_default_azimuthal_angle,
+                 polar_bounds=None, azimuthal_bounds=None):
+        self._polardist = self._polardistcls(**{
+            polar_angle: polar_bounds}) 
+        self._azimuthaldist = self._azimuthaldistcls(**{
+            azimuthal_angle: azimuthal_bounds})
+        self._polar_angle = polar_angle
+        self._azimuthal_angle = azimuthal_angle
+        self._bounds = dict(self._polardist.bounds.items() +
+                            self._azimuthaldist.bounds.items())
+        self._params = sorted(self._bounds.keys())
+
+    @property
+    def polar_angle(self):
+        return self._polar_angle
+
+    @property
+    def azimuthal_angle(self):
+        return self._azimuthal_angle
+
+    def pdf(self, polar_val, azimuthal_val):
+        """
+        Returns the pdf at the given angles.
+
+        Parameters
+        ----------
+        polar_val : float
+            The value (in rad) of the polar angle.
+
+        azimuthal_val : float
+            The value (in rad) of the azimuthal angle.
+
+        Returns
+        -------
+        float
+            The value of the pdf at the given values.
+        """
+        return self._polardist.pdf(**{self._polar_angle: polar_val}) *\
+            self._azimuthaldist.pdf(**{self._azimuthal_angle: azimuthal_val})
+        
+    def logpdf(self, polar_val, azimuthal_val):
+        """
+        Returns the logpdf at the given angles.
+
+        Parameters
+        ----------
+        polar_val : float
+            The value (in rad) of the polar angle.
+
+        azimuthal_val : float
+            The value (in rad) of the azimuthal angle.
+
+        Returns
+        -------
+        float
+            The value of the pdf at the given values.
+        """
+        return self._polardist.logpdf(**{self._polar_angle: polar_val}) +\
+           self._azimuthaldist.logpdf(**{self._azimuthal_angle: azimuthal_val})
+
+    __call__ = logpdf
+
+    def rvs(self, size=1, param=None):
+        """Gives a set of random values drawn from this distribution.
+
+        Parameters
+        ----------
+        size : {1, int}
+            The number of values to generate; default is 1.
+        param : {None, string}
+            If provided, will just return values for the given parameter.
+            Otherwise, returns random values for each parameter.
+
+        Returns
+        -------
+        structured array
+            The random values in a numpy structured array. If a param was
+            specified, the array will only have an element corresponding to the
+            given parameter. Otherwise, the array will have an element for each
+            parameter in self's params.
+        """
+        if param is not None:
+            dtype = [(param, float)]
+        else:
+            dtype = [(p, float) for p in self.params]
+        arr = numpy.zeros(size, dtype=dtype)
+        for (p,_) in dtype:
+            if p == self._polar_angle:
+                arr[p] = self._polardist.rvs(size=size)
+            elif p == self._azimuthal_angle:
+                arr[p] = self._azimuthaldist.rvs(size=size)
+            else:
+                raise ValueError("unrecognized parameter %s" %(p))
+        return arr
+
+    @classmethod
+    def from_config(cls, cp, section, tag):
+        """Returns a distribution based on a configuration file. The section
+        must have the names of the polar and azimuthal angles in the tag part
+        of the section header. For example:
+
+        .. code-block::
+            [prior-theta+phi]
+            name = uniform_solidangle
+
+        If nothing else is provided, the default names and bounds of the polar
+        and azimuthal angles will be used. To specify a different name for
+        each angle, set the `polar-angle` and `azimuthal-angle` attributes. For
+        example: 
+
+        ..code-block::
+            [prior-foo+bar]
+            name = uniform_solidangle
+            polar-angle = foo
+            azimuthal-angle = bar
+        
+        Note that the names of the variable args in the tag part of the section
+        name must match the names of the polar and azimuthal angles.
+
+        Bounds may also be specified for each angle, as factors of pi. For
+        example:
+
+        .. code-block::
+            [prior-theta+phi]
+            polar-angle = theta
+            azimuthal-angle = phi
+            theta = 0,0.5
+
+        This will return a distribution that is uniform in the upper
+        hemisphere.
+
+        Parameters
+        ----------
+        cp : ConfigParser instance
+            The config file.
+        section : str
+            The name of the section.
+        tag : str
+            Any tag in the section name. The full section name searched for in
+            the config file is `{section}(-{tag})`.
+
+        Returns
+        -------
+        UniformSolidAngle
+            A distribution instance from the pycbc.inference.prior module.
+        """
         # seperate out tags from section tag
         variable_args = tag.split("+")
 
-        # list of args that are used to construct distribution
-        special_args = ["name"] + ["min-%s"%param for param in variable_args] \
-                                + ["max-%s"%param for param in variable_args]
+        # get the variables that correspond to the polar/azimuthal angles
+        try:
+            polar_angle = cp.get_opt_tag(section, 'polar-angle', tag)
+        except Error:
+            polar_angle = cls._default_polar_angle
+        try:
+            azimuthal_angle = cp.get_opt_tag(section, 'azimuthal-angle', tag)
+        except Error:
+            azimuthal_angle = cls._default_azimuthal_angle
 
-        # get a dict with bounds as value
-        dist_args = {}
-        for param in variable_args:
-            low = float(cp.get_opt_tag(section, "min-%s"%param, tag))
-            high = float(cp.get_opt_tag(section, "max-%s"%param, tag))
-            dist_args[param] = (low,high)
+        if polar_angle not in variable_args:
+            raise Error("polar-angle %s is not one of the variable args (%s)"%(
+                polar_angle, ', '.join(variable_args)))
+        if azimuthal_angle not in variable_args:
+            raise Error("azimuthal-angle %s is not one of the variable args "%(
+                azimuthal_angle) + "(%s)"%(', '.join(variable_args)))
 
-        # add any additional options that user put in that section
-        for key in cp.options( "-".join([section,tag]) ):
+        # get the bounds, if provided
+        polar_bounds = get_param_bounds_fromcp(cp, section, tag, polar_angle)
+        azimuthal_bounds = get_param_bounds_fromcp(cp, section, tag,
+            azimuthal_angle)
 
-            # ignore options that are already included
-            if key in special_args:
-                continue
+        return cls(polar_angle=polar_angle, azimuthal_angle=azimuthal_angle,
+            polar_bounds=polar_bounds, azimuthal_bounds=azimuthal_bounds)
 
-            # check if option can be cast as a float
-            val = cp.get_opt_tag("prior", key, tag)
-            try:
-                val = float(val)
-            except:
-                pass
 
-            # add option
-            dist_args.update({key:val})
+class UniformSky(UniformSolidAngle):
+    """
+    A distribution that is uniform on the sky. This is the same as
+    UniformSolidAngle, except that the polar angle varies from pi/2 (the north
+    pole) to -pi/2 (the south pole) instead of 0 to pi. Also, the default
+    names are "dec" (declination) for the polar angle and "ra" (right
+    ascension) for the azimuthal angle, instead of "theta" and "phi".
+    """
+    name = 'uniform_sky'
+    _polardistcls = SinAngle
+    _default_polar_angle = 'dec'
+    _default_azimuthal_angle = 'ra'
 
-        # construction distribution and add to list
-        return cls(**dist_args)
+        
 
 class Gaussian(Uniform):
     """
@@ -439,6 +1020,11 @@ class Gaussian(Uniform):
 
 priors = {
     Uniform.name : Uniform,
+    UniformAngle.name : UniformAngle,
+    CosAngle.name : CosAngle,
+    SinAngle.name : SinAngle,
+    UniformSolidAngle.name : UniformSolidAngle,
+    UniformSky.name : UniformSky,
     Gaussian.name : Gaussian,
 }
 
