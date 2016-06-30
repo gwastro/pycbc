@@ -150,7 +150,8 @@ class InferenceFile(h5py.File):
         return self.attrs["acl"]
 
     def read_samples_from_walkers(self, parameters, walkers=None,
-                                 thin_start=None, thin_interval=None):
+                                 thin_start=None, thin_interval=None,
+                                 thin_end=None):
         """Reads samples from the specified walker(s) for the given
         parameter(s).
 
@@ -172,6 +173,9 @@ class InferenceFile(h5py.File):
             Interval to accept every i-th sample. Default is to use the
             self.acl attribute. If self.acl is not set, then use all samples
             (set thin_interval to 1).
+        thin_end : int
+            Index of the last sample to read. If not given then
+            self.niterations is used.
 
         Returns
         -------
@@ -183,6 +187,7 @@ class InferenceFile(h5py.File):
             walkers = range(self.nwalkers)
         if isinstance(walkers, int):
             walkers = [walkers]
+
         # default is to skip burn in samples
         thin_start = self.attrs["burn_in_iterations"] if thin_start is None \
             else thin_start
@@ -194,9 +199,12 @@ class InferenceFile(h5py.File):
         else:
             thin_interval = 1 if thin_interval is None else thin_interval
 
+        # default is to read only as far as niterations
+        thin_end = self.niterations if thin_end is None else thin_end
+
         # figure out the size of the output array to create
-        n_per_walker = \
-            self[self.variable_args[0]]['walker0'][thin_start::thin_interval].size
+        n_per_walker = self[self.variable_args[0]]['walker0'] \
+                                       [thin_start:thin_end:thin_interval].size
         arrsize = len(walkers) * n_per_walker
 
         # create an array to store the results
@@ -204,16 +212,18 @@ class InferenceFile(h5py.File):
         # populate
         for name in arr.fieldnames:
             for ii,walker in enumerate(walkers):
-                arr[name][ii*n_per_walker:(ii+1)*n_per_walker] = \
-                    self[name]['walker%i' % walker][thin_start::thin_interval]
+                arr[name][ii*n_per_walker:(ii+1)*n_per_walker] = self[name] \
+                         ['walker%i'%walker][thin_start:thin_end:thin_interval]
         return arr
 
-    def read_samples(self, parameters, thin_start=None, thin_interval=None):
+    def read_samples(self, parameters, thin_start=None, thin_interval=None,
+                    thin_end=None):
         """ Reads samples from all of the walkers for the given
         parameter(s). See read_samples_from_walkers for more details.
         """
         return self.read_samples_from_walkers(parameters, walkers=None,
-            thin_start=thin_start, thin_interval=thin_interval)
+            thin_start=thin_start, thin_interval=thin_interval,
+            thin_end=thin_end)
 
     def read_acceptance_fraction(self, thin_start=None, thin_interval=None):
         """ Returns a numpy.array of the fraction of samples acceptanced at
