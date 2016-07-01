@@ -188,7 +188,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         Result of parsing the CLI with OptionParser, or any object with the
         required attributes  (gps-start-time, gps-end-time, strain-high-pass, 
         pad-data, sample-rate, (frame-cache or frame-files), channel-name, 
-        fake-strain, fake-strain-seed, gating_file).
+        fake-strain, fake-strain-seed, fake-strain-from-file, gating_file).
 
     dyn_range_fac: {float, 1}, optional
         A large constant to reduce the dynamic range of the strain.
