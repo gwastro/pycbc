@@ -306,7 +306,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             strain_psd = pycbc.psd.from_txt(opt.fake_strain_from_file, plen, pdf,
                                             opt.low_frequency_cutoff, is_asd_file=True)
 
-        if opt.fake_strain = 'zeroNoise':
+        if opt.fake_strain == 'zeroNoise':
             logging.info("Making zero-noise time series")
             strain = TimeSeries(pycbc.types.zeros(tlen),
                                 delta_t=1.0/opt.sample_rate)
