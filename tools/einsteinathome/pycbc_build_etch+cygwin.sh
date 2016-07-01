@@ -148,11 +148,26 @@ for i in $*; do
         --clean) rm -rf "$HOME/.cache" "$SOURCE/pycbc-preinst.tgz" "$SOURCE/pycbc-preinst-lalsuite.tgz";;
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/pycbc-preinst-lalsuite.tgz";;
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
+        --clean-sundays)
+            if [ `date +%u` -eq 7 ]; then
+                if [ -r "$SOURCE/last_sunday_build" ]; then
+                    last_build=`cat "$SOURCE/last_sunday_build"`
+                else
+                    last_build=0
+                fi
+                now=`date +%s`
+                d2_ago=`expr $now - 172800` # two days ago
+                if [  $last_build -le $d2_ago ]; then # last 'clean-sundays' build was two days ago or older
+                    rm -rf "$HOME/.cache" "$SOURCE/pycbc-preinst.tgz" "$SOURCE/pycbc-preinst-lalsuite.tgz"
+                    echo $now > "$SOURCE/last_sunday_build"
+                fi
+            fi ;;
         *) echo "unknown option '$i', valid are:
 
     --clean           : perform a clean build (takes quite some time); delete ~/.cache and
                         tarballs containing precompiled libraries (lalsuite, scipy etc.)
     --clean-lalsuite  : clean lalsuite before building, checkout and build it from scratch
+    --clean-sundays   : perform a clean build on sundays
     --lalsuite-commit=<commit> : specify a commit (tag or branch) of lalsuite to build from
     --no-pycbc-update : don't update local pycbc repo from remote branch $pycbc_branch
     --bema-testing    : use einsteinathome_testing branch of bema-ligo pycbc repo
