@@ -894,7 +894,7 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
     outfile = File(workflow.ifos, name, workflow.analysis_time,
                                             directory=out_dir, extension='xml',
                                             tags=[segment_name] + tags)
-    add_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifo, out_dir=out_dir,
+    add_job = LigolwAddExecutable(cp, 'llwadd', ifos=ifo, out_dir=out_dir,
                                   tags=tags)
     add_node = add_job.create_node(valid_segment, add_inputs, output=outfile)
     if file_needs_generating(add_node.output_files[0].cache_entry.path,

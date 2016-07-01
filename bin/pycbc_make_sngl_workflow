@@ -105,7 +105,7 @@ insps = _workflow.setup_matchedfltr_workflow(workflow, scienceSegs, datafinds,
 # setup ligolw_add executable
 llwadds = _workflow.FileList([])
 llwadd_exe = _workflow.LigolwAddExecutable(workflow.cp, 'llwadd',
-                                   ifo=''.join(scienceSegs.keys()),
+                                   ifos=''.join(scienceSegs.keys()),
                                    out_dir=fulldataDir)
 
 # group inspiral files by IFO and loop over IFOs

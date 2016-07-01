@@ -140,7 +140,7 @@ class Node(ProfileShortcuts):
     def add_opt(self, opt, value=None):
         """ Add a option
         """
-        if value:
+        if value is not None:
             if not isinstance(value, File):
                 value = str(value)
             self._options += [opt, value]

@@ -1012,11 +1012,12 @@ class LigolwAddExecutable(Executable):
     """ The class used to create nodes for the ligolw_add Executable. """
     
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
-    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
-        super(LigolwAddExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
+    def __init__(self, *args, **kwargs):
+        super(LigolwAddExecutable, self).__init__(*args, **kwargs)
         self.set_memory(2000)
 
-    def create_node(self, jobSegment, input_files, output=None, tags=[]):
+    def create_node(self, jobSegment, input_files, output=None,
+                    use_tmp_subdirs=True, tags=[]):
         node = Node(self)
 
         # Very few options to ligolw_add, all input files are given as a long
@@ -1036,7 +1037,7 @@ class LigolwAddExecutable(Executable):
         else:
             node.new_output_file_opt(jobSegment, '.xml.gz', '--output',
                                     tags=tags, store_file=self.retain_files,
-                                    use_tmp_subdirs=True)
+                                    use_tmp_subdirs=use_tmp_subdirs)
         return node
 
 class LigolwSSthincaExecutable(Executable):
