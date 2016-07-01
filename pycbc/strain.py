@@ -290,7 +290,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         end = len(strain)-opt.sample_rate*opt.pad_data
         strain = strain[start:end]
 
-    if opt.fake_strain:
+    if opt.fake_strain or opt.fake_strain_from_file:
         logging.info("Generating Fake Strain")
         duration = opt.gps_end_time - opt.gps_start_time
         tlen = duration * opt.sample_rate
@@ -301,15 +301,20 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             logging.info("Making PSD for strain")
             strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
                                                opt.low_frequency_cutoff)
+        elif opt.fake_strain_from_file:
+            logging.info("Reading ASD from file")
+            strain_psd = pycbc.psd.from_txt(opt.fake_strain_from_file, plen, pdf,
+                                            opt.low_frequency_cutoff, is_asd_file=True)
 
+        if opt.fake_strain = 'zeroNoise':
+            logging.info("Making zero-noise time series")
+            strain = TimeSeries(pycbc.types.zeros(tlen),
+                                delta_t=1.0/opt.sample_rate)
+        else:
             logging.info("Making colored noise")
             strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate,
                                                 strain_psd,
                                                 seed=opt.fake_strain_seed)
-        else:
-            logging.info("Making zero-noise time series")
-            strain = TimeSeries(pycbc.types.zeros(tlen),
-                                delta_t=1.0/opt.sample_rate)
         strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
 
         if opt.injection_file:
@@ -327,20 +332,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if precision == 'single':
             logging.info("Converting to float32")
             strain = (dyn_range_fac * strain).astype(pycbc.types.float32)
-
-    if opt.fake_strain_from_file:
-        logging.info("Generating Fake Strain from ASD file")
-        duration = opt.gps_end_time - opt.gps_start_time
-        tlen = duration * opt.sample_rate
-        pdf = 1.0/128
-        plen = int(opt.sample_rate / pdf) / 2 + 1
-
-        strain_psd = pycbc.psd.from_txt(opt.fake_strain_from_file, plen, pdf,
-                                        opt.low_frequency_cutoff, is_asd_file=True)
-
-        strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate,
-                                            strain_psd,
-                                            seed=opt.fake_strain_seed)
 
     if opt.injection_file or opt.sgburst_injection_file:
         strain.injections = injections
