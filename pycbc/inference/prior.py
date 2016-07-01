@@ -75,6 +75,69 @@ def get_param_bounds_from_config(cp, section, tag, param):
     return bnds
 
 
+def _bounded_from_config(cls, cp, section, variable_args,
+        bounds_required=False):
+    """Returns a bounded distribution based on a configuration file. The
+    parameters for the distribution are retrieved from the section titled
+    "[`section`-`variable_args`]" in the config file.
+
+    Parameters
+    ----------
+    cls : pycbc.prior class
+        The class to initialize with.
+    cp : pycbc.workflow.WorkflowConfigParser
+        A parsed configuration file that contains the distribution
+        options.
+    section : str
+        Name of the section in the configuration file.
+    variable_args : str
+        The names of the parameters for this distribution, separated by
+        `prior.VARARGS_DELIM`. These must appear in the "tag" part
+        of the section header.
+    bounds_required : {False, bool}
+       If True, raise a ValueError if a min and max are not provided for
+       every parameter. Otherwise, the prior will be initialized with the
+       parameter set to None. Even if bounds are not required, a
+       ValueError will be raised if only one bound is provided; i.e.,
+       either both bounds need to provided or no bounds.
+
+    Returns
+    -------
+    cls
+        An instance of the given class.
+    """
+    tag = variable_args
+    variable_args = variable_args.split(VARARGS_DELIM)
+
+    # list of args that are used to construct distribution
+    special_args = ["name"] + variable_args
+
+    # get a dict with bounds as value
+    dist_args = {}
+    for param in variable_args:
+        bounds = get_param_bounds_from_config(cp, section, tag, param)
+        if bounds_required and bounds is None:
+            raise ValueError("min and/or max missing for parameter %s"%(
+                param))
+        dist_args[param] = bounds
+
+    # add any additional options that user put in that section
+    for key in cp.options( "-".join([section,tag]) ):
+        # ignore options that are already included
+        if key in special_args:
+            continue
+        # check if option can be cast as a float
+        val = cp.get_opt_tag("prior", key, tag)
+        try:
+            val = float(val)
+        except:
+            pass
+        # add option
+        dist_args.update({key:val})
+
+    # construction distribution and add to list
+    return cls(**dist_args)
+
 class _BoundedDist(object):
     """
     A generic class for storing common properties of distributions in which
@@ -143,37 +206,8 @@ class _BoundedDist(object):
         _BoundedDist
             A distribution instance from the pycbc.inference.prior module.
         """
-        tag = variable_args
-        variable_args = variable_args.split(VARARGS_DELIM)
-
-        # list of args that are used to construct distribution
-        special_args = ["name"] + variable_args
-
-        # get a dict with bounds as value
-        dist_args = {}
-        for param in variable_args:
-            bounds = get_param_bounds_from_config(cp, section, tag, param)
-            if bounds_required and bounds is None:
-                raise ValueError("min and/or max missing for parameter %s"%(
-                    param))
-            dist_args[param] = bounds
-
-        # add any additional options that user put in that section
-        for key in cp.options( "-".join([section,tag]) ):
-            # ignore options that are already included
-            if key in special_args:
-                continue
-            # check if option can be cast as a float
-            val = cp.get_opt_tag("prior", key, tag)
-            try:
-                val = float(val)
-            except:
-                pass
-            # add option
-            dist_args.update({key:val})
-
-        # construction distribution and add to list
-        return cls(**dist_args)
+        return _bounded_from_config(cls, cp, section, variable_args,
+            bounds_required=bounds_required)
 
 
 class Uniform(_BoundedDist):
@@ -245,9 +279,9 @@ class Uniform(_BoundedDist):
         return self._lognorm
 
     def pdf(self, **kwargs):
-        """
-        Returns the pdf at the given values. The keyword arguments must contain
-        all of parameters in self's params. Unrecognized arguments are ignored.
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored.
         """
         if kwargs in self:
             return self._norm
@@ -255,10 +289,9 @@ class Uniform(_BoundedDist):
             return 0.
 
     def logpdf(self, **kwargs):
-        """
-        Returns the log of the pdf at the given values. The keyword arguments
-        must contain all of parameters in self's params. Unrecognized arguments
-        are ignored.
+        """Returns the log of the pdf at the given values. The keyword
+        arguments must contain all of parameters in self's params. Unrecognized
+        arguments are ignored.
         """
         if kwargs in self:
             return self._lognorm
@@ -397,7 +430,7 @@ class UniformAngle(Uniform):
         UniformAngle
             A distribution instance from the pycbc.inference.prior module.
         """
-        return super(Uniform, cls).from_config(cp, section, variable_args,
+        return _bounded_from_config(cls, cp, section, variable_args,
             bounds_required=False)
 
 
@@ -474,9 +507,9 @@ class SinAngle(_BoundedDist):
 
 
     def pdf(self, **kwargs):
-        """
-        Returns the pdf at the given values. The keyword arguments must contain
-        all of parameters in self's params. Unrecognized arguments are ignored.
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored.
         """
         if kwargs not in self:
             return 0.
@@ -484,10 +517,9 @@ class SinAngle(_BoundedDist):
             self._dfunc(numpy.array([kwargs[p] for p in self._params])).prod()
 
     def logpdf(self, **kwargs):
-        """
-        Returns the log of the pdf at the given values. The keyword arguments
-        must contain all of parameters in self's params. Unrecognized arguments
-        are ignored.
+        """Returns the log of the pdf at the given values. The keyword
+        arguments must contain all of parameters in self's params. Unrecognized
+        arguments are ignored.
         """
         if kwargs not in self:
             return -numpy.inf
@@ -967,24 +999,25 @@ class Gaussian(Uniform):
         return vals
 
     @classmethod
-    def from_config(cls, cp, section, tag):
+    def from_config(cls, cp, section, variable_args):
         """ Returns a distribution based on a configuration file.
 
         Parameters
-         ----------
-         cp : pycbc.workflow.WorkflowConfigParser
-             A parsed configuration file that contains the distribution
-             options.
-         section : str
-             Name of the section in the configuration file.
-         tag : str
-             Name of the tag in the configuration file to use, eg. the
-             configuration file has a [section-tag] section.
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        variable_args : str
+            The names of the parameters for this distribution, separated by
+            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
 
-         Returns
-         -------
-         Gaussian
-             A distribution instance from the pycbc.inference.prior module.
+        Returns
+        -------
+        Gaussian
+            A distribution instance from the pycbc.inference.prior module.
         """
         tag = variable_args
         variable_args = variable_args.split(VARARGS_DELIM)
