@@ -336,7 +336,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         plen = int(opt.sample_rate / pdf) / 2 + 1
 
         strain_psd = pycbc.psd.from_txt(opt.fake_strain_from_file, plen, pdf,
-                                        opt.low_frequency_cutoff)
+                                        opt.low_frequency_cutoff, is_asd_file=True)
 
         strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate,
                                             strain_psd,
