@@ -34,6 +34,7 @@ import urllib2
 import time
 import distutils.spawn
 import ConfigParser
+import itertools
 import glue.pipeline
 
 def resolve_url(url, directory=None, permissions=None):
@@ -175,10 +176,12 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
         self.split_multi_sections() 
 
+        # Populate shared options from the [sharedoptions] section
+        self.populate_shared_sections()
+
         # Do overrides from command line
         for override in overrideTuples:
             if len(override) not in [2,3]:
-                print override
                 errMsg = "Overrides must be tuples of length 2 or 3."
                 errMsg = "Got %s." %(str(override))
                 raise ValueError(errMsg)
@@ -481,6 +484,34 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                 self.add_options_to_section(newSec, self.items(section))
             self.remove_section(section)
 
+    def populate_shared_sections(self):
+        """ Parse the [sharedoptions] section of the ini file. That section
+        should contain entries according to:
+
+          * massparams = inspiral, tmpltbank
+          * dataparams = tmpltbank
+
+        This will result in all options in [sharedoptions-massparams] being
+        copied into the [inspiral] and [tmpltbank] sections and the options
+        in [sharedoptions-dataparams] being copited into [tmpltbank].
+        In the case of duplicates an error will be raised.
+        """
+        if not self.has_section('sharedoptions'):
+            # No sharedoptions, exit
+            return
+        for key, value in self.items('sharedoptions'):
+            assert(self.has_section('sharedoptions-%s' %(key)))
+            # Comma separated
+            values = value.split(',')
+            common_options = self.items('sharedoptions-%s' %(key))
+            for section in values:
+                for arg, val in common_options:
+                    if arg in self.options(section):
+                        raise ValueError('Option exists in both original ' + \
+                               'ConfigParser section [%s] and ' %(section,) + \
+                               'sharedoptions section: %s %s' \
+                               %(option,'sharedoptions-%s' %(key)))
+                    self.set(section, arg, val)
 
     def add_options_to_section(self ,section, items, overwrite_options=False):
         """
@@ -638,18 +669,28 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             if not tags:
                 raise ConfigParser.Error(errString + ".")
             returnVals = []
-            sectionList = ["%s-%s" %(section, tag) for tag in tags]
-            for tag in tags:
-                if self.has_section('%s-%s' %(section, tag)):
-                    if self.has_option('%s-%s' %(section, tag), option):
-                        returnVals.append(self.get('%s-%s' %(section, tag),
+            subSectionList = []
+            for secLen in range(1, len(tags)+1):
+                for tagPermutation in itertools.permutations(tags, secLen):
+                    joinedName = '-'.join(tagPermutation)
+                    subSectionList.append(joinedName)
+            sectionList = ["%s-%s" %(section, sub) for sub in subSectionList]
+            errSectionList = []
+            for sub in subSectionList:
+                if self.has_section('%s-%s' %(section, sub)):
+                    if self.has_option('%s-%s' %(section, sub), option):
+                        errSectionList.append("%s-%s" %(section, sub))
+                        returnVals.append(self.get('%s-%s' %(section, sub),
                                                     option))
+
+            # We also want to recursively go into sections
+
             if not returnVals:
                 errString += "or in sections [%s]." %("] [".join(sectionList))
                 raise ConfigParser.Error(errString)
             if len(returnVals) > 1:
                 errString += "and multiple entries found in sections [%s]."\
-                              %("] [".join(sectionList))
+                              %("] [".join(errSectionList))
                 raise ConfigParser.Error(errString)
             return returnVals[0]
 

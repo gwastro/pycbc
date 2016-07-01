@@ -424,6 +424,15 @@ class File(DataStorage, dax.File):
         
     def insert_into_dax(self, dax):
         dax.addFile(self)
+
+    @classmethod
+    def from_path(cls, path):
+        """ Takes a path and returns a File object with the path as the PFN.
+        """
+        path = os.path.abspath(path)
+        fil = File(os.path.basename(path))
+        fil.PFN(path, "local")
+        return fil
     
 class Database(DataStorage):
     pass

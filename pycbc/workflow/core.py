@@ -29,7 +29,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 import sys, os, stat, subprocess, logging, math, string, urllib2, urlparse
 import ConfigParser, copy, time
 import numpy, cPickle, random
-from itertools import combinations, groupby
+from itertools import combinations, groupby, permutations
 from operator import attrgetter
 import lal as lalswig
 from glue import lal, segments
@@ -106,6 +106,8 @@ def is_condor_exec(exe_path):
         return True
     else:
         return False
+
+file_input_from_config_dict = {}
         
 class Executable(pegasus_workflow.Executable):
     # These are the file retention levels
@@ -113,6 +115,15 @@ class Executable(pegasus_workflow.Executable):
     ALL_TRIGGERS = 2
     MERGED_TRIGGERS = 3
     FINAL_RESULT = 4
+
+    # Set this parameter to indicate that this option is used to specify a
+    # file and is *not* handled explicitly in the create_node or __init__
+    # methods of the sub-class. Usually that is to say that this option is a
+    # file and is normally specified in an file, e.g. a PSD file. As files
+    # need to be identified as such to pegasus, this attempts to catch this
+    # case.
+    # file_input_options = ['--psd-file, '--bank-file'] (as an example)
+    file_input_options = []
     
     # This is the default value. It will give a warning if a class is
     # used where the retention level is not set. The file will still be stored
@@ -231,11 +242,15 @@ class Executable(pegasus_workflow.Executable):
                 sec_tags = tags + self.ifo_list
         else:
             sec_tags = tags
-        for tag in sec_tags:
-             section = '%s-%s' %(name, tag.lower())
-             if cp.has_section(section):
-                sections.append(section)
+        for secLen in range(1, len(sec_tags)+1):
+            for tagPermutation in permutations(sec_tags, secLen):
+                joinedName = '-'.join(tagPermutation)
+                section = '%s-%s' %(name, joinedName.lower())
+                if cp.has_section(section):
+                    sections.append(section)
+
         self.sections = sections   
+
         # Do some basic sanity checking on the options      
         for sec1, sec2 in combinations(sections, 2):
             cp.check_duplicate_options(sec1, sec2, raise_error=True)
@@ -243,6 +258,7 @@ class Executable(pegasus_workflow.Executable):
         # collect the options and profile information 
         # from the ini file section(s)
         self.common_options = []        
+        self.common_input_files = []
         for sec in sections:
             if cp.has_section(sec):
                 self.add_ini_opts(cp, sec)
@@ -337,7 +353,23 @@ class Executable(pegasus_workflow.Executable):
     def add_ini_opts(self, cp, sec):
         for opt in cp.options(sec):
             value = string.strip(cp.get(sec, opt))
-            self.common_options += ['--%s' % opt, value]
+            opt = '--%s' %(opt,)
+            if opt in self.file_input_options:
+                # This now expects the option to be a file
+                # Get LFN and PFN
+                curr_lfn = os.path.basename(value)
+                curr_pfn = os.path.abspath(value)
+                if curr_lfn in file_input_from_config_dict.keys():
+                    file_pfn = file_input_from_config_dict[curr_lfn][0]
+                    assert(file_pfn == curr_pfn)
+                    curr_file = file_input_from_config_dict[curr_lfn][1]
+                else:
+                    curr_file = File.from_path(value)
+                    tuple_val = (curr_pfn, curr_file)
+                    file_input_from_config_dict[curr_lfn] = tuple_val
+                self.common_input_files.append(curr_file)
+                value = curr_file._dax_repr()
+            self.common_options += [opt, value]
             
     def add_opt(self, opt, value=None):
         if value is None:
@@ -536,6 +568,8 @@ class Node(pegasus_workflow.Node):
             self.add_profile('hints', 'executionPool', executable.execution_site)
             
         self._options += self.executable.common_options
+        for inp in self.executable.common_input_files:
+            self._add_input(inp)
     
     def get_command_line(self):
         self._finalize()
@@ -758,9 +792,11 @@ class File(pegasus_workflow.File):
             err = "segs input must be either glue.segments.segment or "
             err += "segments.segmentlist. Got %s." %(str(type(segs)),)
             raise ValueError(err)
-            
-        self.tags = tags 
         if tags is not None:
+            self.tags = [t.upper() for t in tags]
+        else:
+            self.tags = []
+        if len(self.tags):
             self.tag_str = '_'.join(tags)
             tagged_description = '_'.join([self.description] + tags)
         else:
