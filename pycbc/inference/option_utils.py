@@ -111,7 +111,7 @@ def results_from_cli(opts, load_samples=True, walkers=None):
         labels.append(label)
     if load_samples:
         logging.info("Loading samples")
-        samples = fp.read_samples_from_walkers(parameters, walkers=walkers, 
+        samples = fp.read_samples(parameters, walkers=walkers,
             thin_start=opts.thin_start, thin_interval=opts.thin_interval,
             thin_end=opts.thin_end)
     else:
