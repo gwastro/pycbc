@@ -473,6 +473,7 @@ setup (
                'bin/inference/pycbc_inference_plot_samples',
                'bin/inference/pycbc_inference_table_summary',
                'bin/plotting/pycbc_plot_waveform',
+               'bin/workflows/pycbc_create_sbank_workflow',
                ],
     packages = [
                'pycbc',
