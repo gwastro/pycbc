@@ -328,6 +328,20 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             logging.info("Converting to float32")
             strain = (dyn_range_fac * strain).astype(pycbc.types.float32)
 
+    if opt.fake_strain_from_file:
+        logging.info("Generating Fake Strain from ASD file")
+        duration = opt.gps_end_time - opt.gps_start_time
+        tlen = duration * opt.sample_rate
+        pdf = 1.0/128
+        plen = int(opt.sample_rate / pdf) / 2 + 1
+
+        strain_psd = pycbc.psd.from_txt(opt.fake_strain_from_file, plen, pdf,
+                                        opt.low_frequency_cutoff)
+
+        strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate,
+                                            strain_psd,
+                                            seed=opt.fake_strain_seed)
+
     if opt.injection_file or opt.sgburst_injection_file:
         strain.injections = injections
 
@@ -426,6 +440,8 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
+    data_reading_group.add_argument("--fake-strain-from-file",
+                help="File containing ASD for generating fake noise from it.")
 
     #optional
     data_reading_group.add_argument("--injection-file", type=str,
@@ -562,6 +578,10 @@ def insert_strain_option_group_multi_ifo(parser):
                             action=MultiDetOptionAction, metavar='IFO:SEED',
                             help="Seed value for the generation of fake "
                             "colored gaussian noise")
+    data_reading_group.add_argument("--fake-strain-from-file", nargs="+",
+                            action=MultiDetOptionAction, metavar='IFO:FILE',
+                            help="File containing ASD for generating fake "
+                            "noise from it.")
 
     #optional
     data_reading_group.add_argument("--injection-file", type=str, nargs="+",
@@ -644,7 +664,7 @@ def insert_strain_option_group_multi_ifo(parser):
 
 
 ensure_one_opt_groups = []
-ensure_one_opt_groups.append(['--frame-cache','--fake-strain','--frame-files', '--frame-type'])
+ensure_one_opt_groups.append(['--frame-cache','--fake-strain','--fake-strain-from-file','--frame-files', '--frame-type'])
 
 required_opts_list = ['--gps-start-time', '--gps-end-time',
                       '--strain-high-pass', '--pad-data', '--sample-rate',
