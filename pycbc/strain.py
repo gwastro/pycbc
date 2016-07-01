@@ -188,7 +188,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         Result of parsing the CLI with OptionParser, or any object with the
         required attributes  (gps-start-time, gps-end-time, strain-high-pass, 
         pad-data, sample-rate, (frame-cache or frame-files), channel-name, 
-        fake-strain, fake-strain-seed, gating_file).
+        fake-strain, fake-strain-seed, fake-strain-from-file, gating_file).
 
     dyn_range_fac: {float, 1}, optional
         A large constant to reduce the dynamic range of the strain.
@@ -290,26 +290,31 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         end = len(strain)-opt.sample_rate*opt.pad_data
         strain = strain[start:end]
 
-    if opt.fake_strain:
+    if opt.fake_strain or opt.fake_strain_from_file:
         logging.info("Generating Fake Strain")
         duration = opt.gps_end_time - opt.gps_start_time
         tlen = duration * opt.sample_rate
         pdf = 1.0/128
         plen = int(opt.sample_rate / pdf) / 2 + 1
 
-        if opt.fake_strain != 'zeroNoise':
+        if opt.fake_strain_from_file:
+            logging.info("Reading ASD from file")
+            strain_psd = pycbc.psd.from_txt(opt.fake_strain_from_file, plen, pdf,
+                                            opt.low_frequency_cutoff, is_asd_file=True)
+        elif opt.fake_strain != 'zeroNoise':
             logging.info("Making PSD for strain")
             strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
                                                opt.low_frequency_cutoff)
 
+        if opt.fake_strain == 'zeroNoise':
+            logging.info("Making zero-noise time series")
+            strain = TimeSeries(pycbc.types.zeros(tlen),
+                                delta_t=1.0/opt.sample_rate)
+        else:
             logging.info("Making colored noise")
             strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate,
                                                 strain_psd,
                                                 seed=opt.fake_strain_seed)
-        else:
-            logging.info("Making zero-noise time series")
-            strain = TimeSeries(pycbc.types.zeros(tlen),
-                                delta_t=1.0/opt.sample_rate)
         strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
 
         if opt.injection_file:
@@ -426,6 +431,8 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
+    data_reading_group.add_argument("--fake-strain-from-file",
+                help="File containing ASD for generating fake noise from it.")
 
     #optional
     data_reading_group.add_argument("--injection-file", type=str,
@@ -562,6 +569,10 @@ def insert_strain_option_group_multi_ifo(parser):
                             action=MultiDetOptionAction, metavar='IFO:SEED',
                             help="Seed value for the generation of fake "
                             "colored gaussian noise")
+    data_reading_group.add_argument("--fake-strain-from-file", nargs="+",
+                            action=MultiDetOptionAction, metavar='IFO:FILE',
+                            help="File containing ASD for generating fake "
+                            "noise from it.")
 
     #optional
     data_reading_group.add_argument("--injection-file", type=str, nargs="+",
@@ -644,7 +655,7 @@ def insert_strain_option_group_multi_ifo(parser):
 
 
 ensure_one_opt_groups = []
-ensure_one_opt_groups.append(['--frame-cache','--fake-strain','--frame-files', '--frame-type'])
+ensure_one_opt_groups.append(['--frame-cache','--fake-strain','--fake-strain-from-file','--frame-files', '--frame-type'])
 
 required_opts_list = ['--gps-start-time', '--gps-end-time',
                       '--strain-high-pass', '--pad-data', '--sample-rate',
