@@ -297,14 +297,14 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         pdf = 1.0/128
         plen = int(opt.sample_rate / pdf) / 2 + 1
 
-        if opt.fake_strain != 'zeroNoise':
-            logging.info("Making PSD for strain")
-            strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
-                                               opt.low_frequency_cutoff)
-        elif opt.fake_strain_from_file:
+        if opt.fake_strain_from_file:
             logging.info("Reading ASD from file")
             strain_psd = pycbc.psd.from_txt(opt.fake_strain_from_file, plen, pdf,
                                             opt.low_frequency_cutoff, is_asd_file=True)
+        elif opt.fake_strain != 'zeroNoise':
+            logging.info("Making PSD for strain")
+            strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
+                                               opt.low_frequency_cutoff)
 
         if opt.fake_strain == 'zeroNoise':
             logging.info("Making zero-noise time series")
