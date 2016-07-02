@@ -135,6 +135,33 @@ export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran:
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LIBS="$LIBS -lgfortran"
 
+# log environment
+echo -e "\\n\\n>> [`date`] ENVIRONMENT ..."
+env
+echo -e "... ENVIRONMENT"
+
+# hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
+# WORKSPACE='/Users/jenkins/workspace/workspace/EAH_PyCBC_Master/label/OSX107'
+if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
+    test ".$CYGWIN_HOST" = "."      && CYGWIN_HOST=moss-cygwin64
+    test ".$CYGWIN_HOST_USER" = "." && CYGWIN_HOST_USER=jenkins
+    test ".$CYGWIN_HOST_PORT" = "." && CYGWIN_HOST_PORT=2222
+    echo -e "\\n\\n>> [`date`] running remotely at $CYGWIN_HOST_USER@$CYGWIN_HOST:$CYGWIN_HOST_PORT"
+    echo "WORKSPACE='$WORKSPACE'" # for Jenkins jobs
+    unset WORKSPACE # avoid endless recoursion
+    # copy the script
+    scp "-P$CYGWIN_HOST_PORT" "$0" "$CYGWIN_HOST_USER@$CYGWIN_HOST:."
+    # run it remotely
+    ssh "-p$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST" bash -l `basename $0` "$@"
+    # fetch the artifacts to local workspace
+    dist="pycbc/environment/dist"
+    rm -rf "$dist"
+    mkdir -p "$dist"
+    scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.exe" "$dist"
+    scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.zip" "$dist"
+    exit 0
+fi
+
 # handle command-line arguments, possibly overriding above settings
 for i in $*; do
     case $i in
@@ -176,33 +203,6 @@ for i in $*; do
     --verbose-python  : run PyInstalled Python in verbose mode, showing imports">&2; exit 1;;
     esac
 done
-
-# log environment
-echo -e "\\n\\n>> [`date`] ENVIRONMENT ..."
-env
-echo -e "... ENVIRONMENT"
-
-# hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
-# WORKSPACE='/Users/jenkins/workspace/workspace/EAH_PyCBC_Master/label/OSX107'
-if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
-    test ".$CYGWIN_HOST" = "."      && CYGWIN_HOST=moss-cygwin64
-    test ".$CYGWIN_HOST_USER" = "." && CYGWIN_HOST_USER=jenkins
-    test ".$CYGWIN_HOST_PORT" = "." && CYGWIN_HOST_PORT=2222
-    echo -e "\\n\\n>> [`date`] running remotely at $CYGWIN_HOST_USER@$CYGWIN_HOST:$CYGWIN_HOST_PORT"
-    echo "WORKSPACE='$WORKSPACE'" # for Jenkins jobs
-    unset WORKSPACE # avoid endless recoursion
-    # copy the script
-    scp "-P$CYGWIN_HOST_PORT" "$0" "$CYGWIN_HOST_USER@$CYGWIN_HOST:."
-    # run it remotely
-    ssh "-p$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST" bash -l `basename $0` "$@"
-    # fetch the artifacts to local workspace
-    dist="pycbc/environment/dist"
-    rm -rf "$dist"
-    mkdir -p "$dist"
-    scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.exe" "$dist"
-    scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.zip" "$dist"
-    exit 0
-fi
 
 # log compilation environment
 echo "export PATH='$PATH'"
