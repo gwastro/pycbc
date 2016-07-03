@@ -558,11 +558,11 @@ _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
 _filter_ends["SPAtmplt"] = spa_tmplt_end
 _filter_ends["TaylorF2"] = spa_tmplt_end
-_filter_ends["SEOBNRv1_ROM_EffectiveSpin"] = seobnrrom_final_frequency
-_filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrrom_final_frequency
-_filter_ends["SEOBNRv2_ROM_EffectiveSpin"] = seobnrrom_final_frequency
-_filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrrom_final_frequency
-_filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_final_frequency
+#_filter_ends["SEOBNRv1_ROM_EffectiveSpin"] = seobnrrom_final_frequency
+#_filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrrom_final_frequency
+#_filter_ends["SEOBNRv2_ROM_EffectiveSpin"] = seobnrrom_final_frequency
+#_filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrrom_final_frequency
+#_filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_final_frequency
 # PhenomD returns higher frequencies than this, so commenting this out for now
 #_filter_ends["IMRPhenomC"] = seobnrrom_final_frequency
 #_filter_ends["IMRPhenomD"] = seobnrrom_final_frequency
