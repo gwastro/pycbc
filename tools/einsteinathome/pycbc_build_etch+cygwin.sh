@@ -13,7 +13,7 @@ check_md5() {
     test ".$2" != ".$md5s"
 }
 
-trap 'exit 1' ERR
+trap 'rm -f "$PYCBC/lock"; exit 1' ERR
 
 echo -e ">> [`date`] Start $0 $*"
 
@@ -134,6 +134,19 @@ libgfortran="`$FC -print-file-name=libgfortran.so|sed 's%/[^/]*$%%'`"
 export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran:/usr/local/lib:$LD_LIBRARY_PATH"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LIBS="$LIBS -lgfortran"
+
+# locking
+if [ -r "$PYCBC/lock" ]; then
+    for pid in `cat "$PYCBC/lock"`; do
+        while ps -p "$pid" >/dev/null; do
+            echo -e ">> [`date`] waiting for PID $i to finish"
+            sleep 30
+        done
+    done
+else
+    mkdir -p "$PYCBC"
+fi
+echo "$$" > "$PYCBC/lock"
 
 # log environment
 echo -e "\\n\\n>> [`date`] ENVIRONMENT ..."
@@ -1086,5 +1099,8 @@ echo -e "\\n\\n>> [`date`] zipping weave cache"
 cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
 rm -f "$cache"
 zip -r "$cache" pycbc_inspiral SEOBNRv2ChirpTimeSS.dat
+
+# remove lock
+rm -f "$PYCBC/lock"
 
 echo -e "\\n\\n>> [`date`] Success $0"
