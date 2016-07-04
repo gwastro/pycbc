@@ -135,19 +135,6 @@ export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran:
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LIBS="$LIBS -lgfortran"
 
-# locking
-if [ -r "$PYCBC/lock" ]; then
-    for pid in `cat "$PYCBC/lock"`; do
-        while ps -p "$pid" >/dev/null; do
-            echo -e ">> [`date`] waiting for PID $i to finish"
-            sleep 30
-        done
-    done
-else
-    mkdir -p "$PYCBC"
-fi
-echo "$$" > "$PYCBC/lock"
-
 # log environment
 echo -e "\\n\\n>> [`date`] ENVIRONMENT ..."
 env
@@ -174,6 +161,19 @@ if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.zip" "$dist"
     exit 0
 fi
+
+# locking
+if [ -r "$PYCBC/lock" ]; then
+    for pid in `cat "$PYCBC/lock"`; do
+        while ps -p "$pid" >/dev/null; do
+            echo -e ">> [`date`] waiting for build with PID $i to finish"
+            sleep 30
+        done
+    done
+else
+    mkdir -p "$PYCBC"
+fi
+echo "$$" > "$PYCBC/lock"
 
 # handle command-line arguments, possibly overriding above settings
 for i in $*; do
