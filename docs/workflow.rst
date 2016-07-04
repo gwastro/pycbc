@@ -25,11 +25,14 @@ Workflow module documentation
 
 The following contains a list of the sub-modules in pycbc's workflow module, a bried description of what each does, and a link to documentation on how to use each module. Collectively these pages should provide complete details on how to set up a workflow from scratch.
 
---------------------
-Initialization
---------------------
+---------------------
+Basics and overview
+---------------------
 
-Take in command line input and the configuration file.
+The following page gives a description of how the workflow module expects
+configuration files to be layed out and how the basic command-line interface
+functions. If writing a workflow for the first time we recommend you read
+through this page!
 
 .. toctree::
    :maxdepth: 1
