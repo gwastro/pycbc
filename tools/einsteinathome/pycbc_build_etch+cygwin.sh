@@ -35,6 +35,8 @@ scratch_pycbc=false
 if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0" || lsb_release -a | grep 'Ubuntu 6.06' >/dev/null; then
     echo -e "\\n\\n>> [`date`] Using Debian 4.0 (etch) settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
+    export CC=gcc-4.8.5
+    export CXX=g++-4.8.5
     fftw_flags=--enable-avx
     shared="--enable-shared"
     build_dlls=false
