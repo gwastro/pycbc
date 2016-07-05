@@ -116,6 +116,9 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
     distance =
     coa_phase =
     inclination =
+    ra =
+    dec =
+    polarization =
 
     [labels]
     ; LaTeX expressions to use in HTML and plotting executables
@@ -125,13 +128,12 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
     distance = $d$
     coa_phase = $\phi_{c}$
     inclination = $\iota$
+    ra = $\alpha$
+    dec = $\delta$
 
     [static_args]
     ; parameters that do not vary in inference sampler
     approximant = TaylorF2
-    ra = 0.0247836709
-    dec = 0.00715585006
-    polarization = 2.56616092
     f_lower = 40.0
 
     [prior-tc]
@@ -160,15 +162,24 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
 
     [prior-coa_phase]
     ; how to construct prior distribution
-    name = uniform
-    min-coa_phase = 0.0
-    max-coa_phase = 6.28
+    name = uniform_angle
+    ; uniform_angle defaults to [0,2pi), so we
+    ; don't need to specify anything here
 
     [prior-inclination]
     ; how to construct prior distribution
-    name = uniform
-    min-inclination = 0.0
-    max-inclination = 1.57
+    name = uniform_angle
+    ; inclination between 0 and pi
+    min-inclination = 0
+    max-inclination = 1
+
+    [prior-ra+dec]
+    ; how to construct prior distribution
+    name = uniform_sky
+
+    [prior-polarization]
+    ; how to construct prior distribution
+    name = uniform_angle
 
 If you want to use another variable parameter in the inference sampler then add its name to ``[variable_args]`` and add a prior section like shown above.
 
