@@ -388,8 +388,9 @@ class FrequencySeries(Array):
         nat_delta_t =  1.0 / ((len(self)-1)*2) / self.delta_f
         if not delta_t:
             delta_t = nat_delta_t
-            
-        tlen  = int(round(1.0 / self.delta_f / delta_t))
+            tlen = (len(self)-1)*2
+        else:
+            tlen  = int(1.0 / self.delta_f / delta_t)
         flen = tlen / 2 + 1
         
         if flen < len(self):
