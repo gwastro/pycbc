@@ -485,8 +485,9 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             self.remove_section(section)
 
     def populate_shared_sections(self):
-        """ Parse the [sharedoptions] section of the ini file. That section
-        should contain entries according to:
+        """Parse the [sharedoptions] section of the ini file.
+
+        That section should contain entries according to:
 
           * massparams = inspiral, tmpltbank
           * dataparams = tmpltbank
@@ -494,8 +495,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         This will result in all options in [sharedoptions-massparams] being
         copied into the [inspiral] and [tmpltbank] sections and the options
         in [sharedoptions-dataparams] being copited into [tmpltbank].
-        In the case of duplicates an error will be raised.
-        """
+        In the case of duplicates an error will be raised."""
+
         if not self.has_section('sharedoptions'):
             # No sharedoptions, exit
             return
@@ -510,7 +511,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                         raise ValueError('Option exists in both original ' + \
                                'ConfigParser section [%s] and ' %(section,) + \
                                'sharedoptions section: %s %s' \
-                               %(option,'sharedoptions-%s' %(key)))
+                               %(arg,'sharedoptions-%s' %(key)))
                     self.set(section, arg, val)
 
     def add_options_to_section(self ,section, items, overwrite_options=False):
@@ -668,31 +669,32 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             errString = "No option '%s' in section [%s] " %(option,section)
             if not tags:
                 raise ConfigParser.Error(errString + ".")
-            returnVals = []
-            subSectionList = []
-            for secLen in range(1, len(tags)+1):
-                for tagPermutation in itertools.permutations(tags, secLen):
-                    joinedName = '-'.join(tagPermutation)
-                    subSectionList.append(joinedName)
-            sectionList = ["%s-%s" %(section, sub) for sub in subSectionList]
-            errSectionList = []
-            for sub in subSectionList:
+            return_vals = []
+            sub_section_list = []
+            for sec_len in range(1, len(tags)+1):
+                for tag_permutation in itertools.permutations(tags, sec_len):
+                    joined_name = '-'.join(tag_permutation)
+                    sub_section_list.append(joined_name)
+            section_list = ["%s-%s" %(section, sb) for sb in sub_section_list]
+            err_section_list = []
+            for sub in sub_section_list:
                 if self.has_section('%s-%s' %(section, sub)):
                     if self.has_option('%s-%s' %(section, sub), option):
-                        errSectionList.append("%s-%s" %(section, sub))
-                        returnVals.append(self.get('%s-%s' %(section, sub),
+                        err_section_list.append("%s-%s" %(section, sub))
+                        return_vals.append(self.get('%s-%s' %(section, sub),
                                                     option))
 
             # We also want to recursively go into sections
 
-            if not returnVals:
-                errString += "or in sections [%s]." %("] [".join(sectionList))
-                raise ConfigParser.Error(errString)
-            if len(returnVals) > 1:
-                errString += "and multiple entries found in sections [%s]."\
-                              %("] [".join(errSectionList))
-                raise ConfigParser.Error(errString)
-            return returnVals[0]
+            if not return_vals:
+                err_string += "or in sections [%s]." \
+                               %("] [".join(section_list))
+                raise ConfigParser.Error(err_string)
+            if len(return_vals) > 1:
+                err_string += "and multiple entries found in sections [%s]."\
+                              %("] [".join(err_section_list))
+                raise ConfigParser.Error(err_string)
+            return return_vals[0]
 
 
     def has_option_tag(self, section, option, tag):

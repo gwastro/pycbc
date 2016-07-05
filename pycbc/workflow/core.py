@@ -242,10 +242,10 @@ class Executable(pegasus_workflow.Executable):
                 sec_tags = tags + self.ifo_list
         else:
             sec_tags = tags
-        for secLen in range(1, len(sec_tags)+1):
-            for tagPermutation in permutations(sec_tags, secLen):
-                joinedName = '-'.join(tagPermutation)
-                section = '%s-%s' %(name, joinedName.lower())
+        for sec_len in range(1, len(sec_tags)+1):
+            for tag_permutation in permutations(sec_tags, sec_len):
+                joined_name = '-'.join(tag_permutation)
+                section = '%s-%s' %(name, joined_name.lower())
                 if cp.has_section(section):
                     sections.append(section)
 
