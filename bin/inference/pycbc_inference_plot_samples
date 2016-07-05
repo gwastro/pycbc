@@ -23,7 +23,6 @@ import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import sys
 from pycbc import results
-from pycbc.results import str_utils
 from pycbc.inference import option_utils
 
 # command line usage
@@ -79,7 +78,7 @@ for i,arg in enumerate(parameters):
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join(map(str_utils.latex_to_html, labels)),
+    "parameters" : ", ".join(labels),
 }
 caption = r"""All samples from all the walker chains for the parameters. Each
 line is a different chain of walker samples."""

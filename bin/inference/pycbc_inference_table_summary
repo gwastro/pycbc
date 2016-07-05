@@ -22,7 +22,6 @@ import logging
 import numpy
 import sys
 from pycbc import results
-from pycbc.results import str_utils
 from pycbc.inference import option_utils
 
 # command line usage
@@ -60,7 +59,7 @@ table = []
 for param, label in zip(parameters, labels):
 
     # convert label to html
-    row = [str_utils.latex_to_html(label)]
+    row = [label]
 
     # calculate the score at a given percentile
     # eg. 50 is the median, 16 and 84 correspond to 68 percentile

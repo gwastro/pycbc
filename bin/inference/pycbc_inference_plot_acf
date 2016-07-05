@@ -25,7 +25,6 @@ import numpy
 import sys
 from pycbc import results
 from pycbc.filter import autocorrelation
-from pycbc.results import str_utils
 from pycbc.inference import option_utils
 
 # command line usage
@@ -97,7 +96,7 @@ if opts.ymax:
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join(map(str_utils.latex_to_html, labels)),
+    "parameters" : ", ".join(labels),
 }
 caption = """Autocorrelation function (ACF) from all the walker chains for the
 parameters. Each line is an ACF for a chain of walker samples."""

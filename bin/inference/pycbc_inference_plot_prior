@@ -149,7 +149,8 @@ else:
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join([read_label_from_config(cp, param, html=True) for param in variable_args])
+    "parameters" : ", ".join([read_label_from_config(cp, param)
+        for param in variable_args])
 }
 caption = """This plot shows the probability density function (PDF) from the 
 prior distributions."""

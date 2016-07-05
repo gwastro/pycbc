@@ -28,11 +28,10 @@ inference samplers generate.
 import h5py
 import numpy
 from pycbc import pnutils
-from pycbc.results import str_utils
 from pycbc.io.record import WaveformArray
 from pycbc.waveform import parameters as wfparams
 
-def read_label_from_config(cp, variable_arg, section="labels", html=False):
+def read_label_from_config(cp, variable_arg, section="labels"):
     """ Returns the label for the variable_arg.
 
     Parameters
@@ -43,8 +42,6 @@ def read_label_from_config(cp, variable_arg, section="labels", html=False):
         The parameter to get label.
     section : str
         Name of section in configuration file to get label.
-    html : bool
-        If True then replace LaTeX substrings with HTML substrings.
 
     Returns
     -------
@@ -62,11 +59,6 @@ def read_label_from_config(cp, variable_arg, section="labels", html=False):
         except AttributeError:
             # just use the parameter name
             label = variable_arg
-
-    # replace LaTeX with HTML
-    if html:
-        label = str_utils.latex_to_html(label)
-
     return label
 
 class InferenceFile(h5py.File):
@@ -233,7 +225,7 @@ class InferenceFile(h5py.File):
         """
         return self["acceptance_fraction"][thin_start::thin_interval]
 
-    def read_label(self, parameter, html=False, error_on_none=False):
+    def read_label(self, parameter, error_on_none=False):
         """Returns the label for the parameter.
 
         Parameters
@@ -243,8 +235,6 @@ class InferenceFile(h5py.File):
             a label from this file's "label" attributes. If the parameter
             is not found there, will look for a label from
             pycbc.waveform.parameters.
-        html : bool
-            If true then escape LaTeX formatting for HTML rendering.
         error_on_none : {False, bool}
             If True, will raise a ValueError if a label cannot be found, or if
             the label is None. Otherwise, the parameter will just be returned
@@ -270,10 +260,6 @@ class InferenceFile(h5py.File):
                     parameter))
             else:
                 return parameter
-        # replace LaTeX with HTML
-        if html:
-            label = str_utils.latex_to_html(label)
-
         return label
 
     def write_psds(self, psds, low_frequency_cutoff):
