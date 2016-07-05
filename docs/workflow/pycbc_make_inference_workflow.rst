@@ -139,22 +139,26 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
     [prior-tc]
     ; how to construct prior distribution
     name = uniform
-    tc = 1137215767.92, 1137215768.04
+    min-tc = 1137215767.92
+    max-tc = 1137215768.04
 
     [prior-mass1]
     ; how to construct prior distribution
     name = uniform
-    mass1 = 1.3, 10.0
+    min-mass1 = 1.3
+    max-mass1 = 10.0
 
     [prior-mass2]
     ; how to construct prior distribution
     name = uniform
-    mass2 = 1.3, 10.0
+    min-mass2 = 1.3
+    max-mass2 = 10.0
 
     [prior-distance]
     ; how to construct prior distribution
     name = uniform
-    distance = 30.0, 100.0
+    min-distance = 30.0
+    max-distance = 100.0
 
     [prior-coa_phase]
     ; how to construct prior distribution
@@ -166,7 +170,8 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
     ; how to construct prior distribution
     name = uniform_angle
     ; inclination between 0 and pi
-    inclination = 0,1
+    min-inclination = 0
+    max-inclination = 1
 
     [prior-ra+dec]
     ; how to construct prior distribution

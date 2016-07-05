@@ -63,15 +63,20 @@ def get_param_bounds_from_config(cp, section, tag, param):
         as floats. Otherwise, None.
     """
     try:
-        bnds = cp.get_opt_tag(section, param, tag)
+        minbnd = cp.get_opt_tag(section, 'min-%s'%param, tag)
     except Error:
+        minbnd = None
+    try:
+        maxbnd = cp.get_opt_tag(section, 'max-%s'%param, tag)
+    except Error:
+        maxbnd = None
+    if minbnd is None and maxbnd is None:
         bnds = None
-    if bnds is not None:
-        bnds = bnds.split(',')
-        if len(bnds) != 2:
-            raise ValueError("if specifying bounds for %s, " %(param) +
-                "you must provide both a minimum and a maximum")
-        bnds = map(float, bnds)
+    elif minbnd is None or maxbnd is None:
+        raise ValueError("if specifying bounds for %s, " %(param) +
+            "you must provide both a minimum and a maximum")
+    else:
+        bnds = (float(minbnd), float(maxbnd))
     return bnds
 
 
@@ -110,7 +115,8 @@ def _bounded_from_config(cls, cp, section, variable_args,
     variable_args = variable_args.split(VARARGS_DELIM)
 
     # list of args that are used to construct distribution
-    special_args = ["name"] + variable_args
+    special_args = ["name"] + ['min-%s'%(arg) for arg in variable_args] + \
+                              ['max-%s'%(arg) for arg in variable_args]
 
     # get a dict with bounds as value
     dist_args = {}
@@ -780,7 +786,8 @@ class UniformSolidAngle(_BoundedDist):
             [prior-theta+phi]
             polar-angle = theta
             azimuthal-angle = phi
-            theta = 0,0.5
+            min-theta = 0
+            max-theta = 0.5
 
         This will return a distribution that is uniform in the upper
         hemisphere.
