@@ -73,18 +73,18 @@ def calculate_acf(data, delta_t=1.0):
     correlate(fdata, fdata, cdata)
 
     # IFFT correlated data
-    data = cdata.to_timeseries()
+    acf = cdata.to_timeseries()
 
     # normalize
     # note that ACF is function of k and we have a factor of n-k
     # at each k so the array here is a vectorized version of computing it
-    data /= ( y.var() * numpy.arange(y.size, 0, -1) )
+    acf /= ( y.var() * numpy.arange(y.size, 0, -1) )
 
     # return input datatype
     if isinstance(data, TimeSeries):
-        return TimeSeries(data, delta_t=delta_t)
+        return TimeSeries(acf, delta_t=delta_t)
     else:
-        return data
+        return acf
 
 def calculate_acl(data, m=5, k=2, dtype=int):
     """ Calculates the autocorrelation length (ACL).
