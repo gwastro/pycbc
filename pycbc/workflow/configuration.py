@@ -668,7 +668,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         except ConfigParser.Error:
             err_string = "No option '%s' in section [%s] " %(option,section)
             if not tags:
-                raise ConfigParser.Error(errString + ".")
+                raise ConfigParser.Error(err_string + ".")
             return_vals = []
             sub_section_list = []
             for sec_len in range(1, len(tags)+1):
