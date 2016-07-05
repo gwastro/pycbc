@@ -368,7 +368,7 @@ class Executable(pegasus_workflow.Executable):
                     tuple_val = (curr_pfn, curr_file)
                     file_input_from_config_dict[curr_lfn] = tuple_val
                 self.common_input_files.append(curr_file)
-                value = curr_file.dax_repr()
+                value = curr_file.dax_repr
             self.common_options += [opt, value]
             
     def add_opt(self, opt, value=None):
