@@ -25,7 +25,6 @@ import matplotlib.pyplot as plt
 import numpy
 import sys
 from pycbc import pnutils, results
-from pycbc.results import str_utils
 from pycbc.inference import option_utils
 
 # command line usage
@@ -108,8 +107,7 @@ make this plot took samples beginning at the {thin_start} and then every
 {thin_interval}-th sample after that. Each chain of samples had {niterations}
 iterations.""".format(**caption_kwargs)
 if len(parameters) == 1:
-    title = "Posterior Distribution for %s" %(
-        str_utils.latex_to_html(labels[0]))
+    title = "Posterior Distribution for %s" % labels[0]
 else:
     title = "Posterior Distributions"
 results.save_fig_with_metadata(fig, opts.output_file,

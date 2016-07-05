@@ -22,7 +22,6 @@ import logging
 import numpy
 import sys
 from pycbc import results
-from pycbc.results import str_utils
 from pycbc.inference import option_utils
 
 # command line usage
@@ -59,8 +58,7 @@ fp, parameters, labels, samples = option_utils.results_from_cli(opts,
 table = []
 for param, label in zip(parameters, labels):
 
-    # convert label to html
-    row = [str_utils.latex_to_html(label)]
+    row = [label]
 
     # calculate the score at a given percentile
     # eg. 50 is the median, 16 and 84 correspond to 68 percentile
@@ -77,7 +75,7 @@ for param, label in zip(parameters, labels):
     else:
         err = quantiles[0]/100.
     row += ['$%s$' %(results.format_value(val, err, include_error=False,
-        use_scientific_notation=10 if numpy.log10(val) > 0 else 3))
+        use_scientific_notation=10 if numpy.log10(abs(val)) > 0 else 3))
         for val in quantiles]
 
     # add row to table
