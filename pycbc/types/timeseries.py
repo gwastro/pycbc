@@ -437,7 +437,7 @@ class TimeSeries(Array):
         if not delta_f:
             delta_f = 1.0 / self.duration
         
-        tlen  = int(1.0 / delta_f / self.delta_t)
+        tlen  = int(round(1.0 / delta_f / self.delta_t))
         flen = tlen / 2 + 1
         
         if tlen < len(self):
