@@ -96,7 +96,7 @@ plt.vlines(fp.acl, 0, int(1.1*y.max()))
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join(map(str_utils.latex_to_html, labels)),
+    "parameters" : ", ".join(labels),
 }
 caption = """ The histogram (blue) is the autocorrelation length (ACL) from all
  the walker chains for the parameters. The vertical black line is the ACL
