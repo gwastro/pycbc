@@ -165,6 +165,8 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
     >>> format_value(val, err, plus_error=err_plus, use_relative_error=True)
     '3.93\\times 10^{-22}\\,^{+2\\%}_{-6\\%}'
     """
+    minus_sign = '-' if value < 0. else ''
+    value = abs(value)
     minus_err = abs(error)
     if plus_error is None:
         plus_err = minus_err 
@@ -217,5 +219,5 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
                 txt = r'%s^{+%s}_{-%s}%s' %(valtxt, plus_err_txt,
                     minus_err_txt, powfactor)
     else:
-        txt = r'%s%s' %(valtxt, powfactor)
+        txt = r'%s%s%s' %(minus_sign, valtxt, powfactor)
     return txt 
