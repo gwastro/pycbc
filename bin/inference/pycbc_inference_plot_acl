@@ -25,7 +25,6 @@ import numpy
 import sys
 from pycbc import results
 from pycbc.filter import autocorrelation
-from pycbc.results import str_utils
 from pycbc.inference import option_utils
 
 # command line usage
