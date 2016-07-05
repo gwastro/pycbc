@@ -30,7 +30,7 @@ import numpy
 from math import isnan
 from pycbc.types import TimeSeries
 
-def calculate_acf(data):
+def calculate_acf(data, delta_t=1.0):
     """ Calculates the autocorrelation function (ACF) and returns the one-sided
     ACF.
 
