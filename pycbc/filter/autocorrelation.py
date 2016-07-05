@@ -28,7 +28,8 @@ and length of a data series.
 
 import numpy
 from math import isnan
-from pycbc.types import TimeSeries
+from pycbc.filter.matchedfilter import correlate
+from pycbc.types import FrequencySeries, TimeSeries, zeros
 
 def calculate_acf(data, delta_t=1.0):
     """ Calculates the autocorrelation function (ACF) and returns the one-sided
