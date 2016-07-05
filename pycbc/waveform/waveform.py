@@ -713,6 +713,10 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         hp, hc = wav_gen[input_params['approximant']](**input_params)
         hp.resize(n)
         hc.resize(n)
+        outplus[0:len(hp)] = hp[:]
+        hp = FrequencySeries(outplus, delta_f=hp.delta_f, copy=False)
+        outcross[0:len(hc)] = hc[:]
+        hc = FrequencySeries(outcross, delta_f=hc.delta_f, copy=False)
         hp.chirp_length = get_waveform_filter_length_in_time(**input_params)
         hp.length_in_time = hp.chirp_length
         hc.chirp_length = hp.chirp_length
