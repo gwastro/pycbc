@@ -46,6 +46,8 @@ def calculate_acf(data, delta_t=1.0):
     -----------
     data : {TimeSeries, numpy.array}
         A TimeSeries or numpy.array of data.
+    delta_t : float
+        The time step of the data series if it is not a TimeSeries instance.
 
     Returns
     -------
@@ -57,6 +59,7 @@ def calculate_acf(data, delta_t=1.0):
     # if given a TimeSeries instance then get numpy.array
     if isinstance(data, TimeSeries):
         y = data.numpy()
+        delta_t = data.delta_t
     else:
         y = data
 
