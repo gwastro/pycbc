@@ -85,7 +85,7 @@ def calculate_acf(data, delta_t=1.0):
 
     # return input datatype
     if isinstance(data, TimeSeries):
-        return TimeSeries(data, delta_t=data.delta_t)
+        return TimeSeries(data, delta_t=delta_t)
     else:
         return data
 
