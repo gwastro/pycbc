@@ -166,7 +166,7 @@ fi
 if [ -r "$PYCBC/lock" ]; then
     for pid in `cat "$PYCBC/lock"`; do
         while ps -p "$pid" >/dev/null; do
-            echo -e ">> [`date`] waiting for build with PID $i to finish"
+            echo -e ">> [`date`] waiting for build with PID $pid to finish"
             sleep 30
         done
     done
