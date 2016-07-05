@@ -78,7 +78,7 @@ def calculate_acf(data, delta_t=1.0):
     # normalize
     # note that ACF is function of k and we have a factor of n-k
     # at each k so the array here is a vectorized version of computing it
-    acf /= ( y.var() * numpy.arange(y.size, 0, -1) )
+    acf /= ( y.var() * numpy.arange(len(acf), 0, -1) )
 
     # return input datatype
     if isinstance(data, TimeSeries):
