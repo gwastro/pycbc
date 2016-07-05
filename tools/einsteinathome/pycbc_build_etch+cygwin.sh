@@ -125,11 +125,6 @@ else
     appendix="_Windows64"
 fi
 
-# detect a local PyCBC source tree
-if [ -d ./.git -a -r ./pycbc/__init__.py ]; then
-    pycbc_source="$PWD"
-fi
-
 # compilation environment
 PYCBC="$PWD/pycbc"
 SOURCE="$PWD/pycbc-sources"
@@ -862,10 +857,6 @@ fi
 
 # PyCBC
 echo -e "\\n\\n>> [`date`] building pycbc"
-if test ".$pycbc_source" != "."; then
-    rm -rf pycbc
-    ln -s "$pycbc_source" pycbc
-fi
 if $scratch_pycbc || ! test -d pycbc/.git ; then
     # clone
     rm -rf pycbc
