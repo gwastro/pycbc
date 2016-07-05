@@ -63,11 +63,8 @@ def calculate_acf(data, delta_t=1.0):
     else:
         y = data
 
-    # subtract mean
-    z = y - y.mean()
-
-    # FFT data
-    fdata = TimeSeries(z, delta_t=delta_t).to_frequencyseries()
+    # FFT data minus the mean
+    fdata = TimeSeries(y-y.mean(), delta_t=delta_t).to_frequencyseries()
 
     # correlate
     # do not need to give the congjugate since correlate function does it
