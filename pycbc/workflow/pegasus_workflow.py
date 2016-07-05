@@ -398,6 +398,10 @@ class File(DataStorage, dax.File):
 
     def _dax_repr(self):
         return self
+
+    @property
+    def dax_repr(self):
+        return self._dax_repr()
         
     def _set_as_input_of(self, node):
         node._dax_node.uses(self, link=dax.Link.INPUT, register=False, 

@@ -495,8 +495,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         This will result in all options in [sharedoptions-massparams] being
         copied into the [inspiral] and [tmpltbank] sections and the options
         in [sharedoptions-dataparams] being copited into [tmpltbank].
-        In the case of duplicates an error will be raised."""
-
+        In the case of duplicates an error will be raised.
+        """
         if not self.has_section('sharedoptions'):
             # No sharedoptions, exit
             return
