@@ -39,7 +39,7 @@ svn co --username=christopher.biwer https://daqsvn.ligo-la.caltech.edu/svn/l1_fi
 CALEX_FILTER_FILE=h1_archive/H1CALEX.txt
 
 # time options
-GPS_START_TIME=$((`lalapps_tconvert` - 30000))
+GPS_START_TIME=$((`lalapps_tconvert` - 3600))
 GPS_END_TIME=$((${GPS_START_TIME}+1))
 
 # filter injection
