@@ -436,15 +436,15 @@ class TimeSeries(Array):
         from pycbc.fft import fft
         if not delta_f:
             delta_f = 1.0 / self.duration
-            tlen = int(self.duration / self.delta_t)
-        else:
-            tlen  = int(1.0 / delta_f / self.delta_t)
+
+        # add 0.5 to round integer
+        tlen  = int(1.0 / delta_f / self.delta_t + 0.5)
         flen = tlen / 2 + 1
-        
+
         if tlen < len(self):
             raise ValueError("The value of delta_f (%s) would be "
                              "undersampled. Maximum delta_f "
-                             "is %s." % (delta_f, 1.0 / self.duration))         
+                             "is %s." % (delta_f, 1.0 / self.duration))
         if not delta_f:
             tmp = self
         else:

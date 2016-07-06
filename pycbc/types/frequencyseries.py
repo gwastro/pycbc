@@ -388,15 +388,15 @@ class FrequencySeries(Array):
         nat_delta_t =  1.0 / ((len(self)-1)*2) / self.delta_f
         if not delta_t:
             delta_t = nat_delta_t
-            tlen = (len(self)-1)*2
-        else:
-            tlen  = int(1.0 / self.delta_f / delta_t)
+
+
+        tlen  = int(1.0 / self.delta_f / delta_t + 0.5)
         flen = tlen / 2 + 1
         
         if flen < len(self):
             raise ValueError("The value of delta_t (%s) would be "
                              "undersampled. Maximum delta_t "
-                             "is %s." % (delta_t, nat_delta_t))         
+                             "is %s." % (delta_t, nat_delta_t))
         if not delta_t:
             tmp = self
         else:
