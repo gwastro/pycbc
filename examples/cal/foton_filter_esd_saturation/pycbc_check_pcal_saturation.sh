@@ -29,7 +29,7 @@ SAMPLE_RATE=16384
 CALEX_FILTER_FILE=""
 
 # parse command line
-GETOPT_CMD=`getopt -o d:c:a:F:h:l --long data-file:,gps-start-time:,gps-end-time:,ifo:,frame-type:,sample-rate:,calcs-filter-file:,sus-filter-file:,help -n 'pycbc_check_esd_saturation.sh' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:a:F:h:l --long data-file:,gps-start-time:,gps-end-time:,ifo:,frame-type:,sample-rate:,calex-filter-file:,sus-filter-file:,help -n 'pycbc_check_esd_saturation.sh' -- "$@"`
 eval set -- "$GETOPT_CMD"
 while true ; do
   case "$1" in
