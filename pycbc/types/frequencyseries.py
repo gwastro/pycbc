@@ -389,7 +389,7 @@ class FrequencySeries(Array):
         if not delta_t:
             delta_t = nat_delta_t
 
-
+        # add 0.5 to round integer
         tlen  = int(1.0 / self.delta_f / delta_t + 0.5)
         flen = tlen / 2 + 1
         
