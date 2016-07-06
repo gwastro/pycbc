@@ -161,6 +161,28 @@ class FDomainRingdownGenerator(BaseGenerator):
         super(FDomainRingdownGenerator, self).__init__(ringdown.get_fd_qnm,
             variable_args=variable_args, **frozen_params)
 
+class FDomainMultiModeRingdownGenerator(BaseGenerator):
+    """Uses ringdown.get_fd_lm_allmodes as a generator function to create 
+    frequency-domain ringdown waveforms with higher modes in the radiation 
+    frame; i.e., with no detector response function applied. 
+    For more details, see BaseGenerator.
+
+    Examples
+    --------
+    Initialize a generator:
+    >>> generator = waveform.FDomainMultiModeRingdownGenerator(
+            variable_args=['Mfinal', 'Sfinal', 'lmns','amp220','amp210','phi220','phi210'],
+            delta_f=1./32, f_lower=30., f_final=500)
+
+    Create a ringdown with the variable arguments:
+    >>> generator.generate(65., 0.7, ['221','211'], 1e-21, 0.1e-21, 0., 0.)
+    (<pycbc.types.frequencyseries.FrequencySeries at 0x51614d0>,
+    <pycbc.types.frequencyseries.FrequencySeries at 0x5161550>)
+    """
+    def __init__(self, variable_args=(), **frozen_params):
+        super(FDomainMultiModeRingdownGenerator, self).__init__(ringdown.get_fd_lm_allmodes,
+            variable_args=variable_args, **frozen_params)
+
 class FDomainDetFrameGenerator(object):
     """Generates a waveform using the given radiation frame generator class,
     and applies the detector response function and appropriate time offset.
