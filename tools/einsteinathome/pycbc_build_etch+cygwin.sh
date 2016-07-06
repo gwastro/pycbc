@@ -181,7 +181,6 @@ echo "$$" > "$PYCBC/lock"
 for i in $*; do
     case $i in
         --no-pycbc-update) pycbc_branch="HEAD";;
-        --scratch-pycbc) scratch_pycbc=true;;
         --bema-testing)
             pycbc_branch=einsteinathome_testing
             pycbc_remote=bema-ligo;;
@@ -190,6 +189,7 @@ for i in $*; do
         --clean) rm -rf "$HOME/.cache" "$SOURCE/pycbc-preinst.tgz" "$SOURCE/pycbc-preinst-lalsuite.tgz";;
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/pycbc-preinst-lalsuite.tgz";;
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
+        --clean-pycbc) scratch_pycbc=true;;
         --clean-sundays)
             if [ `date +%u` -eq 7 ]; then
                 if [ -r "$SOURCE/last_sunday_build" ]; then
@@ -200,7 +200,7 @@ for i in $*; do
                 now=`date +%s`
                 d2_ago=`expr $now - 172800` # two days ago
                 if [  $last_build -le $d2_ago ]; then # last 'clean-sundays' build was two days ago or older
-                    rm -rf "$HOME/.cache" "$SOURCE/pycbc-preinst.tgz" "$SOURCE/pycbc-preinst-lalsuite.tgz"
+                    rm -rf "$HOME/.cache" "$SOURCE/pycbc-preinst-lalsuite.tgz"
                     echo $now > "$SOURCE/last_sunday_build"
                 fi
             fi ;;
@@ -210,10 +210,10 @@ for i in $*; do
                         tarballs containing precompiled libraries (lalsuite, scipy etc.)
     --clean-lalsuite  : clean lalsuite before building, checkout and build it from scratch
     --clean-sundays   : perform a clean build on sundays
+    --clean-pycbc     : check out pycbc git repo from scratch
     --lalsuite-commit=<commit> : specify a commit (tag or branch) of lalsuite to build from
     --no-pycbc-update : don't update local pycbc repo from remote branch $pycbc_branch
     --bema-testing    : use einsteinathome_testing branch of bema-ligo pycbc repo
-    --scratch-pycbc   : check out pycbc git repo from scratch
     --no-cleanup      : keep build directories after successful build for later inspection
     --verbose-python  : run PyInstalled Python in verbose mode, showing imports">&2; exit 1;;
     esac
