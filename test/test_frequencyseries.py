@@ -104,7 +104,7 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
         # These are FrequencySeries that have problems specific to FrequencySeries
         self.bad3 = FrequencySeries([1,1,1], 0.2, epoch=self.epoch, dtype = self.dtype)
         # This next one is actually okay for frequencyseries
-        if self.epoch == None:
+        if self.epoch is None:
             self.bad4 = FrequencySeries([1,1,1], 0.1, epoch = lal.LIGOTimeGPS(1000, 1000), dtype = self.dtype)
         else:
             self.bad4 = FrequencySeries([1,1,1], 0.1, epoch=None, dtype = self.dtype)

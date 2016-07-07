@@ -1198,7 +1198,7 @@ def check_ethinca_against_bank_params(ethincaParams, metricParams):
             raise ValueError("Ethinca metric calculation does not currently "
                              "support a f-low value different from the bank "
                              "metric!")
-        if ethincaParams.pnOrder == None:
+        if ethincaParams.pnOrder is None:
             ethincaParams.pnOrder = metricParams.pnOrder
     else: pass
 

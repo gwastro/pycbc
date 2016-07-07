@@ -97,7 +97,7 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     else: raise NotImplementedError("%s is not a recognized parameter" % limits_param)
 
     # if no max distance param given, use maximum physical distance actually injected
-    if max_param == None:
+    if max_param is None:
         max_distance = max(found_d.max(), missed_d.max())
 
     # volume of sphere
