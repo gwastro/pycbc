@@ -31,13 +31,14 @@ from math import isnan
 from pycbc.filter.matchedfilter import correlate
 from pycbc.types import FrequencySeries, TimeSeries, zeros
 
-def calculate_acf(data, delta_t=1.0, norm=True):
+def calculate_acf(data, delta_t=1.0, unbiased=False):
     """ Calculates the autocorrelation function (ACF) and returns the one-sided
     ACF.
 
-    ACF is estimated using
+    The ACF is defined as the autocovariance divided by the variance. The ACF
+    can be estimated using
 
-        \hat{R}(k) = \frac{1}{\left( n-k \right) \sigma^{2}} \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right) 
+        \hat{R}(k) = \frac{1}{\left( n \sigma^{2}} \right) \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right) 
 
     Where \hat{R}(k) is the ACF, X_{t} is the data series at time t, \mu is the
     mean of X_{t}, and \sigma^{2} is the variance of X_{t}.
@@ -48,9 +49,10 @@ def calculate_acf(data, delta_t=1.0, norm=True):
         A TimeSeries or numpy.array of data.
     delta_t : float
         The time step of the data series if it is not a TimeSeries instance.
-    norm : bool
-        Default is true to normalize by the variance. If False normalize by the
-        zero-lag element, ie. \hat{R}(0) = 1.0.
+    unbiased : bool
+        If True the normalization of the autocovariance function is n-k
+        instead of n. This is called the unbiased estimation of the
+        autocovariance. Note that this does not mean the ACF is unbiased.
 
     Returns
     -------
@@ -75,13 +77,12 @@ def calculate_acf(data, delta_t=1.0, norm=True):
                            delta_f=fdata.delta_f, copy=False)
     correlate(fdata, fdata, cdata)
 
-    # IFFT correlated data
+    # IFFT correlated data to get unnormalized autocovariance time series
     acf = cdata.to_timeseries()
 
-    # normalize
-    # note that ACF is function of k and we have a factor of n-k
-    # at each k so the array here is a vectorized version of computing it
-    if norm:
+    # normalize the autocovariance
+    # note that dividing by acf[0] is the same as ( y.var() * len(acf) )
+    if unbiased:
         acf /= ( y.var() * numpy.arange(len(acf), 0, -1) )
     else:
         acf /= acf[0]
@@ -90,7 +91,7 @@ def calculate_acf(data, delta_t=1.0, norm=True):
     if isinstance(data, TimeSeries):
         return TimeSeries(acf, delta_t=delta_t)
     else:
-        return acf.numpy()
+        return acf
 
 def calculate_acl(data, m=5, k=2, dtype=int):
     """ Calculates the autocorrelation length (ACL).
@@ -128,7 +129,7 @@ def calculate_acl(data, m=5, k=2, dtype=int):
         raise ValueError("The dtype must be either int or float.")
 
     # calculate ACF that is normalized by the zero-lag value
-    acf = calculate_acf(data, norm=False)
+    acf = calculate_acf(data)
 
     # multiply all values beyond the zero-lag value by 2.0
     acf[1:] *= 2.0
