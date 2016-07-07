@@ -50,7 +50,7 @@ def calculate_acf(data, delta_t=1.0, norm=True):
         The time step of the data series if it is not a TimeSeries instance.
     norm : bool
         Default is true to normalize by the variance. If False normalize by the
-        zero-lag element, ie. the first value of the unnormalized ACF.
+        zero-lag element, ie. \hat{R}(0) = 1.0.
 
     Returns
     -------
@@ -90,18 +90,20 @@ def calculate_acf(data, delta_t=1.0, norm=True):
     if isinstance(data, TimeSeries):
         return TimeSeries(acf, delta_t=delta_t)
     else:
-        return acf
+        return acf.numpy()
 
 def calculate_acl(data, m=5, k=2, dtype=int):
     """ Calculates the autocorrelation length (ACL).
 
     ACL is estimated using
 
-        r = 1 + 2 \sum_{k=1}^{n} \hat{R}(k)
+        r = 1 + 2 \sum_{i=1}^{m*s} \hat{R}(i) < s
 
-    Where r is the ACL and \hat{R}(k) is the ACF.
+    Where r is the ACL and \hat{R}(i) is the ACF that has been normalized so
+    that \hat{R}(0) is 1.0. And s is equal to i/m.
 
-    The parameter k sets the maximum samples to use in calculation of ACL.
+    The parameter k sets the maximum samples to use in calculation of ACL. The
+    maximum number of samples will be the length of the ACL divided by k.
 
     The parameter m controls the length of the window that is summed to
     compute the ACL.
@@ -111,35 +113,43 @@ def calculate_acl(data, m=5, k=2, dtype=int):
     data : {TimeSeries, numpy.array}
         A TimeSeries or numpy.array of data.
     dtype : {int, float}
-        The datatype of the output.
+        The datatype of the output. If the dtype was set to int, then the
+        ceiling is returned.
 
     Returns
     -------
     acl : {int, float}
-        The ACL. If ACL can not be estimated then returns numpy.inf. If data
-        was a TimeSeries then the ACL will be the number of samples times the
-        delta_t attribute.
+        The length s which is longer than the ACL. If ACL can not be estimated
+        then returns numpy.inf.
     """
+
+    # sanity check output data type
+    if dtype not in [int, float]:
+        raise ValueError("The dtype must be either int or float.")
 
     # calculate ACF that is normalized by the zero-lag value
     acf = calculate_acf(data, norm=False)
 
-    # multiply all values beyond the zero-lag value by 2
+    # multiply all values beyond the zero-lag value by 2.0
     acf[1:] *= 2.0
-
-    # the maximum index to calculate ACF up until
-    imax = int(len(acf)/k)
 
     # sanity check ACF
     if isnan(acf[0]):
         return numpy.inf
     assert acf[0] == 1.0
 
-    # calculate cumlative ACL
-    cum_acl = acf[0]
-    for i,val in enumerate(acf[1:imax]):
-        if cum_acl+val < float(i+1)/m:
-            return numpy.ceil(cum_acl)
+    # the maximum index to calculate ACF
+    imax = int(len(acf)/k)
+
+    # calculate cumlative ACL until s is less than the cumulative ACL
+    cum_acl = 0.0
+    for i,val in enumerate(acf[:imax]):
+        s = float(i)/m
+        if cum_acl+val < s:
+            if dtype == int:
+                return numpy.ceil(s)
+            elif dtype == float:
+                return s
         cum_acl += val
 
     return numpy.inf
