@@ -68,9 +68,6 @@ for param_name in parameters:
     # loop over walkers and save an autocorrelation length
     # for each walker
     for i in range(fp.nwalkers):
-
-        print j, "of", k , i, "of", fp.nwalkers
-
         y = fp.read_samples(param_name, walkers=i, thin_start=opts.thin_start,
                            thin_interval=opts.thin_interval)
         acl = autocorrelation.calculate_acl(y[param_name], dtype=int)
