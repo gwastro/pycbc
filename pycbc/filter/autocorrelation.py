@@ -117,36 +117,20 @@ def calculate_acl(data, m=5, k=2, dtype=int):
 
     # calculate ACF
     acf = calculate_acf(data)
+    acf[1:] *= 2.0
 
-    # get maximum index in ACF for calculation
-    # will terminate at this index
-    n = len(data)
-    imax = n / k
+    # the maximum index
+    imax = int(len(acf)/k)
 
-    # loop over ACF indexes
-    acl = 1.0
-    for i in range(n):
+    cum_acl = 1.0
+    for i,val in enumerate(acf[1:imax]):
 
-        # see if we have reached terminating condition
-        s = float(i+1) / m
-        if not acl >= s:
-            break
+        # check 
+        if cum_acl+val < float(i+1)/m:
+            return numpy.ceil(cum_acl)
 
-        # see if ACL is indeterminate
-        if i > imax or isnan(acf[i]):
-            return numpy.inf
+        cum_acl += val
 
-        # add term for ACL
-        acl += 2 * acf[i]
+    return numpy.inf
 
-    # if input was a TimeSeries then multiply ACL by the delta_t attribute
-    if isinstance(data, TimeSeries):
-        acl *= data.delta_t
 
-    # typecast and return
-    if dtype == int:
-        return int(numpy.ceil(acl))
-    elif dtype == float:
-        return acl
-    else:
-        raise ValueError("Invalid value for dtype")

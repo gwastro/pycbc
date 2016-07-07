@@ -62,9 +62,14 @@ logging.info("Calculating autocorrelation length")
 acls = []
 for param_name in parameters:
 
+    j = numpy.where(parameters == param_name)
+    k = len(parameters)
+
     # loop over walkers and save an autocorrelation length
     # for each walker
     for i in range(fp.nwalkers):
+
+        print j, "of", k , i, "of", fp.nwalkers
 
         y = fp.read_samples(param_name, walkers=i, thin_start=opts.thin_start,
                            thin_interval=opts.thin_interval)
