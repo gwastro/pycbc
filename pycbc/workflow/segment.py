@@ -911,7 +911,7 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
     return outfile
 
 def add_cumulative_files(workflow, output_file, input_files, out_dir,
-                         execute_now=False, tags=[]):
+                         execute_now=False, tags=None):
     """
     Function to combine a set of segment files into a single one. This function
     will not merge the segment lists but keep each separate.
@@ -932,6 +932,8 @@ def add_cumulative_files(workflow, output_file, input_files, out_dir,
     tags : list of strings, optional
         A list of strings that is used to identify this job
     """
+    if tags is None:
+        tags = []
     llwadd_job = LigolwAddExecutable(workflow.cp, 'llwadd', 
                        ifo=output_file.ifo_list, out_dir=out_dir, tags=tags)
     add_node = llwadd_job.create_node(output_file.segment, input_files,

@@ -321,10 +321,12 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
 def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
                                  science_segs, datafind_outs, output_dir,
-                                 parents=None, tags=[]):
+                                 parents=None, tags=None):
     """
     Method for setting up coherent inspiral jobs.
     """
+    if tags is None:
+        tags = []
     cp = workflow.cp
     ifos = science_segs.keys()
     job_tag = curr_exe_job.name.upper()
@@ -718,7 +720,9 @@ class PyCBCInspiralExecutable(Executable):
 
     current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, ifo=None, out_dir=None, injection_file=None, 
-                 gate_files=None, tags=[]):
+                 gate_files=None, tags=None):
+        if tags is None:
+            tags = []
         super(PyCBCInspiralExecutable, self).__init__(cp, exe_name, None, ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
@@ -743,7 +747,9 @@ class PyCBCInspiralExecutable(Executable):
             if len(stxt.split(':')) > 1:
                 self.num_threads = stxt.split(':')[1]
 
-    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
         pad_data = int(self.get_opt('pad-data'))
         if pad_data is None:
@@ -906,14 +912,18 @@ class PyCBCTmpltbankExecutable(Executable):
     
     current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, ifo=None, out_dir=None,
-                 tags=[], write_psd=False, psd_files=None):
+                 tags=None, write_psd=False, psd_files=None):
+        if tags is None:
+            tags = []
         super(PyCBCTmpltbankExecutable, self).__init__(cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.write_psd = write_psd
         self.psd_files = psd_files
 
-    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         if not dfParents:
@@ -941,7 +951,7 @@ class PyCBCTmpltbankExecutable(Executable):
         node.add_input_list_opt('--frame-files', dfParents)
         return node
 
-    def create_nodata_node(self, valid_seg, tags=[]):
+    def create_nodata_node(self, valid_seg, tags=None):
         """ A simplified version of create_node that creates a node that does not
         need to read in data.
 
@@ -956,6 +966,8 @@ class PyCBCTmpltbankExecutable(Executable):
         node : pycbc.workflow.core.Node
             The instance corresponding to the created node.
         """
+        if tags is None:
+            tags = []
         node = Node(self)
 
         # Set the output file
@@ -1017,7 +1029,9 @@ class LigolwAddExecutable(Executable):
         self.set_memory(2000)
 
     def create_node(self, jobSegment, input_files, output=None,
-                    use_tmp_subdirs=True, tags=[]):
+                    use_tmp_subdirs=True, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         # Very few options to ligolw_add, all input files are given as a long
@@ -1045,14 +1059,18 @@ class LigolwSSthincaExecutable(Executable):
 
     current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 dqVetoName=None, tags=[]):
+                 dqVetoName=None, tags=None):
+        if tags is None:
+            tags = []
         super(LigolwSSthincaExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         if dqVetoName:
             self.add_opt("--vetoes-name", dqVetoName)
 
-    def create_node(self, jobSegment, coincSegment, inputFile, tags=[],
+    def create_node(self, jobSegment, coincSegment, inputFile, tags=None,
                     write_likelihood=False):
+        if tags is None:
+            tags = []
         node = Node(self)
         node.add_input_arg(inputFile)
 
@@ -1081,7 +1099,9 @@ class PycbcSqliteSimplifyExecutable(Executable):
     """ The class responsible for making jobs for pycbc_sqlite_simplify. """
     
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
-    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=None):
+        if tags is None:
+            tags = []
         super(PycbcSqliteSimplifyExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
 
@@ -1145,7 +1165,9 @@ class SQLInOutExecutable(Executable):
     one output.
     """
     current_retention_level=Executable.ALL_TRIGGERS
-    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=None):
+        if tags is None:
+            tags = []
         super(SQLInOutExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, job_segment, input_file):
@@ -1175,7 +1197,9 @@ class ExtractToXMLExecutable(Executable):
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, input_file):
@@ -1204,7 +1228,9 @@ class InspinjfindExecutable(Executable):
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, input_file):
@@ -1224,7 +1250,9 @@ class PycbcSplitInspinjExecutable(Executable):
         super(PycbcSplitInspinjExecutable, self).__init__(cp, exe_name,
                 universe, ifo, out_dir, tags=[])
         self.num_splits = int(num_splits)
-    def create_node(self, parent, tags=[]):
+    def create_node(self, parent, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         node.add_input_opt('--input-file', parent)
@@ -1256,7 +1284,9 @@ class PycbcPickleHorizonDistsExecutable(Executable):
     # FIXME: This class will soon be removed when gstlal post-proc is updated
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, trigger_files):
@@ -1275,7 +1305,9 @@ class PycbcCombineLikelihoodExecutable(Executable):
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, likelihood_files, horizon_dist_file):
@@ -1294,7 +1326,9 @@ class PycbcGenerateRankingDataExecutable(Executable):
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_num_cpus(4)
@@ -1315,7 +1349,9 @@ class PycbcCalculateLikelihoodExecutable(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, trigger_file, likelihood_file,
@@ -1341,7 +1377,9 @@ class GstlalMarginalizeLikelihoodExecutable(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, input_file):
@@ -1357,7 +1395,9 @@ class GstlalFarfromsnrchisqhistExecutable(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, non_inj_db, marg_input_file,
@@ -1383,7 +1423,9 @@ class GstlalPlotSensitivity(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_memory('4000')
@@ -1400,7 +1442,9 @@ class GstlalPlotSummary(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_memory('4000')
@@ -1417,7 +1461,9 @@ class GstlalPlotBackground(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_memory('4000')
@@ -1433,7 +1479,9 @@ class GstlalSummaryPage(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_and_add_node(self, workflow, parent_nodes):
@@ -1453,7 +1501,9 @@ class LalappsInspinjExecutable(Executable):
     The class used to create jobs for the lalapps_inspinj Executable.
     """
     current_retention_level = Executable.FINAL_RESULT
-    def create_node(self, segment, exttrig_file=None, tags=[]):
+    def create_node(self, segment, exttrig_file=None, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         curr_tags = self.tags + tags
@@ -1510,14 +1560,18 @@ class PycbcDarkVsBrightInjectionsExecutable(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
                             tags=tags)
         self.cp = cp
         self.out_dir = out_dir
         self.exe_name = exe_name
 
-    def create_node(self, parent, segment, tags=[]):
+    def create_node(self, parent, segment, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
         if not parent:
             raise ValueError("Must provide an input file.")
@@ -1548,14 +1602,18 @@ class LigolwCBCJitterSkylocExecutable(Executable):
     """
     current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
                             tags=tags)
         self.cp = cp
         self.out_dir = out_dir
         self.exe_name = exe_name
             
-    def create_node(self, parent, segment, tags=[]):
+    def create_node(self, parent, segment, tags=None):
+        if tags is None:
+            tags = []
         if not parent:
             raise ValueError("Must provide an input file.")
 
@@ -1574,14 +1632,18 @@ class LigolwCBCAlignTotalSpinExecutable(Executable):
     """
     current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
                             tags=tags)
         self.cp = cp
         self.out_dir = out_dir
         self.exe_name = exe_name
 
-    def create_node(self, parent, segment, tags=[]):
+    def create_node(self, parent, segment, tags=None):
+        if tags is None:
+            tags = []
         if not parent:
             raise ValueError("Must provide an input file.")
 
@@ -1615,7 +1677,7 @@ class PycbcSplitBankExecutable(Executable):
                 ifo, out_dir, tags=[])
         self.num_banks = int(num_banks)
 
-    def create_node(self, bank, tags=[]):
+    def create_node(self, bank, tags=None):
         """
         Set up a CondorDagmanNode class to run lalapps_splitbank code
 
@@ -1629,6 +1691,8 @@ class PycbcSplitBankExecutable(Executable):
         node : pycbc.workflow.core.Node
             The node to run the job
         """
+        if tags is None:
+            tags = []
         node = Node(self)
         node.add_input_opt('--bank-file', bank)
 

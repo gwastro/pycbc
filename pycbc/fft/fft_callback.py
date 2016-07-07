@@ -199,9 +199,11 @@ def compile(source, name):
     fhash.write(str(hash(source)))
     return lib_file
  
-def get_fn_plan(callback=None, out_callback=None, name='pycbc_cufft', parameters=[]):
+def get_fn_plan(callback=None, out_callback=None, name='pycbc_cufft', parameters=None):
     """ Get the IFFT execute and plan functions
     """
+    if parameters is None:
+        parameters = []
     source = fftsrc.render(input_callback=callback, output_callback=out_callback, parameters=parameters)
     path = compile(source, name)
     lib = ctypes.cdll.LoadLibrary(path)

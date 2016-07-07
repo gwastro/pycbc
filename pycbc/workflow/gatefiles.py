@@ -36,7 +36,7 @@ import logging
 from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
 
 def setup_gating_workflow(workflow, science_segs, datafind_outs,
-                             output_dir=None, tags=[]):
+                             output_dir=None, tags=None):
     '''
     Setup gating section of CBC workflow. At present this only supports pregenerated
     gating files, in the future these could be created within the workflow.
@@ -61,6 +61,8 @@ def setup_gating_workflow(workflow, science_segs, datafind_outs,
     gate_files : pycbc.workflow.core.FileList
         The FileList holding the gate files, 0 or 1 per ifo
     '''
+    if tags is None:
+        tags = []
     logging.info("Entering gating module.")
     make_analysis_dir(output_dir)
     cp = workflow.cp
@@ -86,7 +88,7 @@ def setup_gating_workflow(workflow, science_segs, datafind_outs,
     return gate_files
 
 
-def setup_gate_pregenerated(workflow, tags=[]):
+def setup_gate_pregenerated(workflow, tags=None):
     '''
     Setup CBC workflow to use pregenerated gating files.
     The file given in cp.get('workflow','pregenerated-gating-file-(ifo)') will 
@@ -105,6 +107,8 @@ def setup_gate_pregenerated(workflow, tags=[]):
     gate_files : pycbc.workflow.core.FileList
         The FileList holding the gating files
     '''
+    if tags is None:
+        tags = []
     gate_files = FileList([])
 
     cp = workflow.cp

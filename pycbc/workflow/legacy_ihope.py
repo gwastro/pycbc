@@ -104,10 +104,14 @@ class LegacyAnalysisExecutable(Executable):
     Executables.
     """
     current_retention_level = Executable.MERGED_TRIGGERS
-    def __init__(self, cp, name, universe=None, ifo=None, tags=[], out_dir=None):
+    def __init__(self, cp, name, universe=None, ifo=None, tags=None, out_dir=None):
+        if tags is None:
+            tags = []
         super(LegacyAnalysisExecutable, self).__init__(cp, name, universe, ifo, out_dir, tags=tags)
 
-    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=None):
+        if tags is None:
+            tags = []
         node = LegacyAnalysisNode(self)
         
         if not dfParents: 
@@ -152,7 +156,9 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
     """
     current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
-                 gate_files=None, out_dir=None, tags=[]):
+                 gate_files=None, out_dir=None, tags=None):
+        if tags is None:
+            tags = []
         super(LegacyCohPTFInspiralExecutable, self).__init__(cp, name, universe,
                 ifo, out_dir=out_dir, tags=tags)
         self.injection_file = injection_file
@@ -161,7 +167,9 @@ class LegacyCohPTFInspiralExecutable(LegacyAnalysisExecutable):
         self.num_threads = 1
 
     def create_node(self, data_seg, valid_seg, parent=None, inj_file=None,
-                    dfParents=None, bankVetoBank=None, ipn_file=None, tags=[]):
+                    dfParents=None, bankVetoBank=None, ipn_file=None, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         if not dfParents:
@@ -243,7 +251,9 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
-                 out_dir=None, tags=[]):
+                 out_dir=None, tags=None):
+        if tags is None:
+            tags = []
         super(LegacyCohPTFTrigCombiner, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
         self.cp = cp
@@ -251,7 +261,11 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         self.num_threads = 1
 
     def create_node(self, trig_files=None, segment_dir=None, analysis_seg=None,
-                    out_tags=[], tags=[]):
+                    out_tags=None, tags=None):
+        if out_tags is None:
+            out_tags = []
+        if tags is None:
+            tags = []
         node = Node(self)
 
         if not trig_files:
@@ -305,14 +319,18 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
     """
     current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
-                 out_dir=None, tags=[]):
+                 out_dir=None, tags=None):
+        if tags is None:
+            tags = []
         super(LegacyCohPTFTrigCluster, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
         self.cp = cp
         self.ifos = ifo
         self.num_threads = 1
  
-    def create_node(self, parent, tags=[]):
+    def create_node(self, parent, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         # Set input / output options
@@ -338,14 +356,18 @@ class LegacyCohPTFInjfinder(LegacyAnalysisExecutable):
     """
     current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
-                 out_dir=None, tags=[]):
+                 out_dir=None, tags=None):
+        if tags is None:
+            tags = []
         super(LegacyCohPTFInjfinder, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
         self.cp = cp
         self.ifos = ifo
         self.num_threads = 1
 
-    def create_node(self, trig_files, inj_files, seg_dir, tags=[]):
+    def create_node(self, trig_files, inj_files, seg_dir, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         # Set input / output options
@@ -378,7 +400,9 @@ class LegacyCohPTFInjcombiner(LegacyAnalysisExecutable):
     """
     current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
-                 out_dir=None, tags=[]):
+                 out_dir=None, tags=None):
+        if tags is None:
+            tags = []
         super(LegacyCohPTFInjcombiner, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
         self.ifos = ifo
@@ -415,13 +439,17 @@ class LegacyCohPTFSbvPlotter(LegacyAnalysisExecutable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
-                 out_dir=None, tags=[]):
+                 out_dir=None, tags=None):
+        if tags is None:
+            tags = []
         super(LegacyCohPTFSbvPlotter, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
         self.ifos = ifo
         self.num_threads = 1
 
-    def create_node(self, parent=None, seg_dir=None, inj_file=None, tags=[]):
+    def create_node(self, parent=None, seg_dir=None, inj_file=None, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         if not parent:
@@ -457,14 +485,18 @@ class LegacyCohPTFEfficiency(LegacyAnalysisExecutable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
-                 out_dir=None, tags=[]):
+                 out_dir=None, tags=None):
+        if tags is None:
+            tags = []
         super(LegacyCohPTFEfficiency, self).__init__(cp, name, universe,
               ifo=ifo, out_dir=out_dir, tags=tags)
         self.ifos = ifo
         self.num_threads = 1
 
     def create_node(self, parent=None, offsource_file=None, seg_dir=None,
-                    found_file=None, missed_file=None, tags=[]):
+                    found_file=None, missed_file=None, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         if not parent:
@@ -519,7 +551,9 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
-                 out_dir=None, tags=[]):
+                 out_dir=None, tags=None):
+        if tags is None:
+            tags = []
         super(PyGRBMakeSummaryPage, self).__init__(cp, name, universe, ifo=ifo,
               out_dir=out_dir, tags=tags)
         self.ifos = ifo
@@ -527,7 +561,9 @@ class PyGRBMakeSummaryPage(LegacyAnalysisExecutable):
 
     def create_node(self, parent=None, c_file=None, open_box=False,
                     seg_plot=None, tuning_tags=None, exclusion_tags=None,
-                    html_dir=None, tags=[]):
+                    html_dir=None, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         node.add_opt('--grb-name', self.cp.get('workflow', 'trigger-name'))

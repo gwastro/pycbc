@@ -301,7 +301,7 @@ def _test_lal_tf_ifft(test_case,inarr,outarr,tol):
     emsg = "Direct call to LAL TimeFreqFFT() did not agree with fft() to within precision {0}".format(tol)
     tc.assertTrue(outarr.almost_equal_norm(cmparr,tol=tol),msg=emsg)
 
-def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
+def _test_raise_excep_fft(test_case,inarr,outarr,other_args=None):
     # As far as can be told from the unittest module documentation, the
     # 'assertRaises' tests do not permit a custom message.  So more
     # comments than usual here, to help diagnose and test failures.
@@ -310,6 +310,8 @@ def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
     # the constructors of some types (T/F series); we cannot simply copy since
     # the whole point is to vary the input/output in some way that should cause
     # an exception.
+    if other_args is None:
+        other_args = {}
     tc = test_case
     with tc.context:
         outty = type(outarr)
@@ -337,7 +339,7 @@ def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
         args = [in_badtype,outarr,tc.backends]
         tc.assertRaises(TypeError,pycbc.fft.fft,*args)
 
-def _test_raise_excep_ifft(test_case,inarr,outarr,other_args={}):
+def _test_raise_excep_ifft(test_case,inarr,outarr,other_args=None):
     # As far as can be told from the unittest module documentation, the
     # 'assertRaises' tests do not permit a custom message.  So more
     # comments than usual here, to help diagnose and test failures.
@@ -346,6 +348,8 @@ def _test_raise_excep_ifft(test_case,inarr,outarr,other_args={}):
     # the constructors of some types (T/F series); we cannot simply copy since
     # the whole point is to vary the input/output in some way that should cause
     # an exception.
+    if other_args is None:
+        other_args = {}
     tc = test_case
     with tc.context:
         outty = type(outarr)
