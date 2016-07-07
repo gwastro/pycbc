@@ -49,8 +49,8 @@ def calculate_acf(data, delta_t=1.0, norm=True):
     delta_t : float
         The time step of the data series if it is not a TimeSeries instance.
     norm : bool
-        If true normalize by the variance. If False normalize by the first
-        element.
+        Default is true to normalize by the variance. If False normalize by the
+        zero-lag element, ie. the first value of the unnormalized ACF.
 
     Returns
     -------
@@ -121,24 +121,25 @@ def calculate_acl(data, m=5, k=2, dtype=int):
         delta_t attribute.
     """
 
-    # calculate ACF
+    # calculate ACF that is normalized by the zero-lag value
     acf = calculate_acf(data, norm=False)
+
+    # multiply all values beyond the zero-lag value by 2
     acf[1:] *= 2.0
 
-    # the maximum index
+    # the maximum index to calculate ACF up until
     imax = int(len(acf)/k)
 
+    # sanity check ACF
     if isnan(acf[0]):
         return numpy.inf
-
     assert acf[0] == 1.0
+
+    # calculate cumlative ACL
     cum_acl = acf[0]
     for i,val in enumerate(acf[1:imax]):
-
-        # check 
         if cum_acl+val < float(i+1)/m:
             return numpy.ceil(cum_acl)
-
         cum_acl += val
 
     return numpy.inf
