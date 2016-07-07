@@ -31,7 +31,7 @@ from math import isnan
 from pycbc.filter.matchedfilter import correlate
 from pycbc.types import FrequencySeries, TimeSeries, zeros
 
-def calculate_acf(data, delta_t=1.0):
+def calculate_acf(data, delta_t=1.0, norm=True):
     """ Calculates the autocorrelation function (ACF) and returns the one-sided
     ACF.
 
@@ -48,6 +48,9 @@ def calculate_acf(data, delta_t=1.0):
         A TimeSeries or numpy.array of data.
     delta_t : float
         The time step of the data series if it is not a TimeSeries instance.
+    norm : bool
+        If true normalize by the variance. If False normalize by the first
+        element.
 
     Returns
     -------
@@ -78,7 +81,10 @@ def calculate_acf(data, delta_t=1.0):
     # normalize
     # note that ACF is function of k and we have a factor of n-k
     # at each k so the array here is a vectorized version of computing it
-    acf /= ( y.var() * numpy.arange(len(acf), 0, -1) )
+    if norm:
+        acf /= ( y.var() * numpy.arange(len(acf), 0, -1) )
+    else:
+        acf /= acf[0]
 
     # return input datatype
     if isinstance(data, TimeSeries):
@@ -116,13 +122,17 @@ def calculate_acl(data, m=5, k=2, dtype=int):
     """
 
     # calculate ACF
-    acf = calculate_acf(data)
+    acf = calculate_acf(data, norm=False)
     acf[1:] *= 2.0
 
     # the maximum index
     imax = int(len(acf)/k)
 
-    cum_acl = 1.0
+    if isnan(acf[0]):
+        return numpy.inf
+
+    assert acf[0] == 1.0
+    cum_acl = acf[0]
     for i,val in enumerate(acf[1:imax]):
 
         # check 
