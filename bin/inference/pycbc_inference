@@ -36,7 +36,10 @@ def select_waveform_generator(approximant):
     elif approximant in waveform.td_approximants():
         return waveform.TDomainCBCGenerator
     elif approximant in waveform.ringdown_fd_approximants:
-        return waveform.FDomainRingdownGenerator
+        if approximant=='FdQNM':
+            return waveform.FDomainRingdownGenerator
+        elif approximant=='FdQNMmultiModes':
+            return waveform.FDomainMultiModeRingdownGenerator
     elif approximant in waveform.ringdown_td_approximants:
         raise ValueError("Time domain ringdowns not supported")
     else:

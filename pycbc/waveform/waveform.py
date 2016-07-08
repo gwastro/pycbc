@@ -226,9 +226,8 @@ def filter_approximants(scheme=_scheme.mgr.state):
 
 # Input parameter handling ###################################################
 
-def props(obj, **kwargs):
-    """ Return a dictionary bult from the combination of defaults, kwargs,
-    and the attributes of the given object.
+def get_obj_attrs(obj):
+    """ Return a dictionary built from the attributes of the given object.
     """
     pr = {}
     if obj is not None:
@@ -249,6 +248,14 @@ def props(obj, **kwargs):
                         pr[name] = value
                 except:
                     continue
+
+    return pr
+
+def props(obj, **kwargs):
+    """ Return a dictionary built from the combination of defaults, kwargs,
+    and the attributes of the given object.
+    """
+    pr = get_obj_attrs(obj) 
 
     # Get the parameters to generate the waveform
     # Note that keyword arguments override values in the template object
@@ -355,9 +362,7 @@ def get_td_waveform(template=None, **kwargs):
                             (input_params['approximant']))
 
     for arg in td_required_args:
-        if arg in input_params:
-            pass
-        else:
+        if arg not in input_params:
             raise ValueError("Please provide " + str(arg) )
 
     return wav_gen[input_params['approximant']](**input_params)
@@ -394,9 +399,7 @@ def get_fd_waveform(template=None, **kwargs):
                             (input_params['approximant']))
 
     for arg in fd_required_args:
-        if arg in input_params:
-            pass
-        else:
+        if arg not in input_params:
             raise ValueError("Please provide " + str(arg) )
 
     return wav_gen[input_params['approximant']](**input_params)
@@ -500,9 +503,7 @@ def get_sgburst_waveform(template=None, **kwargs):
     input_params = props_sgburst(template,**kwargs)
 
     for arg in sgburst_required_args:
-        if arg in input_params:
-            pass
-        else:
+        if arg not in input_params:
             raise ValueError("Please provide " + str(arg))
 
     return _lalsim_sgburst_waveform(**input_params)
