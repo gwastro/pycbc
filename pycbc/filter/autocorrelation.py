@@ -28,9 +28,10 @@ and length of a data series.
 
 import numpy
 from math import isnan
-from pycbc.types import TimeSeries
+from pycbc.filter.matchedfilter import correlate
+from pycbc.types import FrequencySeries, TimeSeries, zeros
 
-def calculate_acf(data):
+def calculate_acf(data, delta_t=1.0):
     """ Calculates the autocorrelation function (ACF) and returns the one-sided
     ACF.
 
@@ -45,6 +46,8 @@ def calculate_acf(data):
     -----------
     data : {TimeSeries, numpy.array}
         A TimeSeries or numpy.array of data.
+    delta_t : float
+        The time step of the data series if it is not a TimeSeries instance.
 
     Returns
     -------
@@ -56,27 +59,30 @@ def calculate_acf(data):
     # if given a TimeSeries instance then get numpy.array
     if isinstance(data, TimeSeries):
         y = data.numpy()
+        delta_t = data.delta_t
     else:
         y = data
 
-    # subtract mean
-    z =  y - y.mean()
+    # FFT data minus the mean
+    fdata = TimeSeries(y-y.mean(), delta_t=delta_t).to_frequencyseries()
 
-    # autocorrelate
-    acf = numpy.correlate(z, z, mode="full")
+    # correlate
+    # do not need to give the congjugate since correlate function does it
+    cdata = FrequencySeries(zeros(len(fdata), dtype=numpy.complex64),
+                           delta_f=fdata.delta_f, copy=False)
+    correlate(fdata, fdata, cdata)
 
-    # take only the second half of the autocorrelation function
-    acf = acf[acf.size/2:]
+    # IFFT correlated data
+    acf = cdata.to_timeseries()
 
     # normalize
     # note that ACF is function of k and we have a factor of n-k
     # at each k so the array here is a vectorized version of computing it
-    acf /= ( y.var() * numpy.arange(y.size, 0, -1) )
+    acf /= ( y.var() * numpy.arange(len(acf), 0, -1) )
 
-    # return a TimeSeries if input was a TimeSeries
-    # otherwise return the numpy.array
+    # return input datatype
     if isinstance(data, TimeSeries):
-        return TimeSeries(acf, delta_t=data.delta_t)
+        return TimeSeries(acf, delta_t=delta_t)
     else:
         return acf
 
