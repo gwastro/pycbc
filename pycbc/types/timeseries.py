@@ -56,7 +56,7 @@ class TimeSeries(Array):
     def __init__(self, initial_array, delta_t=None, epoch="", dtype=None, copy=True):
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
-        if delta_t == None:
+        if delta_t is None:
             try:
                 delta_t = initial_array.delta_t
             except AttributeError:

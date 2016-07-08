@@ -995,7 +995,7 @@ class Gaussian(Uniform):
             corresponding to the given parameter. Otherwise, the array will
             have an element for each parameter in self's params.
         """
-        params = [param] if param != None else self._params
+        params = [param] if param is not None else self._params
         vals = numpy.zeros(shape=(size,len(params)))
         for i,param in enumerate(params):
             sigma = numpy.sqrt(self._var[param])
