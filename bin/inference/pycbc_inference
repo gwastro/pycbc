@@ -70,6 +70,10 @@ parser.add_argument("--frame-type", type=str, nargs="+",
     help="Frame type for each IFO.")
 parser.add_argument("--low-frequency-cutoff", type=float, required=True,
     help="Low frequency cutoff for each IFO.")
+parser.add_argument("--psd-start-time", type=float, default=None,
+    help="Start time to use for PSD estimation if different from analysis.")
+parser.add_argument("--psd-end-time", type=float, default=None,
+    help="End time to use for PSD estimation if different from analysis.")
 
 # add inference options
 parser.add_argument("--sampler", required=True,
@@ -138,6 +142,20 @@ fft.from_cli(opts)
 strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
                                          precision="double")
 
+# get strain time series to use for PSD estimation
+# if user has not given the PSD time options then use same data as analysis
+if opts.psd_start_time and opts.psd_end_time:
+    logging.info("Will generate a different time series for PSD estimation")
+    psd_opts = opts
+    psd_opts.gps_start_time = psd_opts.psd_start_time
+    psd_opts.gps_end_time = psd_opts.psd_end_time
+    psd_strain_dict = strain.from_cli_multi_ifos(psd_opts, opts.instruments,
+                                                precision="double")
+elif opts.psd_start_time or opts.psd_end_time:
+    raise ValueError("Must give --psd-start-time and --psd-end-time")
+else:
+    psd_strain_dict = strain_dict
+
 with ctx:
 
     # FFT strain and save each of the length of the FFT, delta_f, and
@@ -155,8 +173,8 @@ with ctx:
 
     # get PSD as frequency series
     psd_dict = psd.from_cli_multi_ifos(opts, length_dict, delta_f_dict,
-                                   low_frequency_cutoff_dict, opts.instruments,
-                                   strain_dict=strain_dict, precision="double")
+                               low_frequency_cutoff_dict, opts.instruments,
+                               strain_dict=psd_strain_dict, precision="double")
 
     # apply dynamic range factor for saving PSDs since plotting code expects it
     logging.info("Saving PSDs")
