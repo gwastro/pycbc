@@ -103,6 +103,11 @@ parser.add_argument("--random-seed", action="store", type=int,\
                             translating all points back to physical space.
                             If this is used the code should give the same
                             output if run with the same random seed.""")
+parser.add_argument('--reject-file', default=None,
+            help="If given, store the rejected points into this file.")
+parser.add_argument('--depths-file', default=None,
+            help="If given store the parameter space depth in this file.")
+
 
 pycbc.tmpltbank.insert_base_bank_options(parser)
 
@@ -199,10 +204,11 @@ maxBHspin = opts.max_bh_spin_mag
 
 # Here we start looping over bank
 temp_number = 0
-outFile = opts.output_file
-outPointer = open(outFile,'w')
-outPointer2 = open(outFile+'.reject','w')
-outPointer3 = open(outFile+'.depths','w')
+outPointer = open(opts.output_file, 'w')
+if opts.reject_file is not None:
+    outPointer2 = open(opts.reject_file, 'w')
+if opts.depths_file is not None:
+    outPointer3 = open(opts.depths_file, 'w')
 numtemps = len(tempBank)
 for entry in tempBank:
     temp_number += 1
@@ -229,6 +235,8 @@ for entry in tempBank:
     if dist.min() > 2.:
         logging.info("Template %d rejected as too far away" % temp_number)
         # Print info to the rejected points file
+        if opts.reject_file is None:
+            continue
         if opts.threed_lattice:
             print >> outPointer2, "%e %e %e %e %e %e %e %e" \
                      %(xi1_des, xi2_des, xi3_des, 0, 0, 0, 0, dist.min())
@@ -248,6 +256,8 @@ for entry in tempBank:
     if masses[5] > opts.max_mismatch:
         # Reject point, it is too far away
         logging.info("Template %d rejected as too far away" % temp_number)
+        if opts.reject_file is None:
+            continue
         if opts.threed_lattice:
             print >> outPointer2, "%e %e %e %e %e %e %e %e" \
                      %(xi1_des, xi2_des, xi3_des, masses[0], masses[1],\
@@ -333,12 +343,13 @@ for entry in tempBank:
     else:
         vec5_min = vec5_max = vec5_depth = 0
     # Output depths
-    if opts.threed_lattice:
-        print >> outPointer3, "%e %e %e %e %e"\
-                 %(xi1_des, xi2_des, xi3_des, vec4_depth, vec5_depth)
-    else:
-        print >> outPointer3, "%e %e %e %e %e"\
-                 %(xi1_des, xi2_des, vec3_depth, vec4_depth, vec5_depth)
+    if opts.depths_file is not None:
+        if opts.threed_lattice:
+            print >> outPointer3, "%e %e %e %e %e"\
+                     %(xi1_des, xi2_des, xi3_des, vec4_depth, vec5_depth)
+        else:
+            print >> outPointer3, "%e %e %e %e %e"\
+                     %(xi1_des, xi2_des, vec3_depth, vec4_depth, vec5_depth)
    # Figure out how many templates we need to stack in 3rd direction
     vec3DepthVal = opts.stack_distance
     if opts.threed_lattice:
@@ -396,3 +407,7 @@ for entry in tempBank:
                             masses[5])
 
 outPointer.close()
+if opts.reject_file is not None:
+    outPointer2.close()
+if opts.depths_file is not None:
+    outPointer3.close()
