@@ -233,7 +233,7 @@ echo "WORKSPACE='$WORKSPACE'" # for Jenkins jobs
 
 # URL abbrevations
 pypi="http://pypi.python.org/packages/source"
-gitmaster="gitmaster.atlas.aei.uni-hannover.de/einsteinathome"
+gitlab="https://gitlab.aei.uni-hannover.de/einsteinathome"
 atlas="https://www.atlas.aei.uni-hannover.de/~bema"
 albert=http://albert.phys.uwm.edu/download
 
@@ -636,18 +636,21 @@ else
     if test -d lalsuite/.git; then
         cd lalsuite
         git reset --hard HEAD
-        git checkout master
-        git pull
-        if [ ".$lalsuite_branch" != "." ]; then
+        if [ ".$lalsuite_branch" != ".HEAD" ]; then
+            git checkout master
+            git pull
+        fi
+        if [ ".$lalsuite_branch" = ".eah_cbc" ]; then
+            git remote update gitlab
+            git branch -D eah_cbc
+            git checkout -b eah_cbc gitlab/eah_cbc
+        elif [ ".$lalsuite_branch" != "." ]; then
             git checkout "$lalsuite_branch"
         fi
-    elif test ".$lalsuite_branch" = ".eah_cbc"; then
-        git clone git://$gitmaster/lalsuite.git
-        cd lalsuite
-        git checkout -b eah_cbc origin/eah_cbc
     else
         git clone git://versions.ligo.org/lalsuite.git
         cd lalsuite
+        git add remote gitlab $gitlab/lalsuite.git
         if [ ".$lalsuite_branch" != "." ]; then
             git checkout "$lalsuite_branch"
         fi
@@ -911,7 +914,7 @@ if $build_wrapper; then
     else
 	# clone
 	rm -rf boinc
-	git clone git://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/boinc.git
+	git clone $gitlab/boinc.git
 	cd boinc
 	git checkout -b eah_wrapper_improvements origin/eah_wrapper_improvements
 	./_autosetup
