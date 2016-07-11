@@ -31,13 +31,14 @@ from math import isnan
 from pycbc.filter.matchedfilter import correlate
 from pycbc.types import FrequencySeries, TimeSeries, zeros
 
-def calculate_acf(data, delta_t=1.0):
+def calculate_acf(data, delta_t=1.0, unbiased=False):
     """ Calculates the autocorrelation function (ACF) and returns the one-sided
     ACF.
 
-    ACF is estimated using
+    The ACF is defined as the autocovariance divided by the variance. The ACF
+    can be estimated using
 
-        \hat{R}(k) = \frac{1}{\left( n-k \right) \sigma^{2}} \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right) 
+        \hat{R}(k) = \frac{1}{\left( n \sigma^{2}} \right) \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right) 
 
     Where \hat{R}(k) is the ACF, X_{t} is the data series at time t, \mu is the
     mean of X_{t}, and \sigma^{2} is the variance of X_{t}.
@@ -48,6 +49,10 @@ def calculate_acf(data, delta_t=1.0):
         A TimeSeries or numpy.array of data.
     delta_t : float
         The time step of the data series if it is not a TimeSeries instance.
+    unbiased : bool
+        If True the normalization of the autocovariance function is n-k
+        instead of n. This is called the unbiased estimation of the
+        autocovariance. Note that this does not mean the ACF is unbiased.
 
     Returns
     -------
@@ -72,13 +77,15 @@ def calculate_acf(data, delta_t=1.0):
                            delta_f=fdata.delta_f, copy=False)
     correlate(fdata, fdata, cdata)
 
-    # IFFT correlated data
+    # IFFT correlated data to get unnormalized autocovariance time series
     acf = cdata.to_timeseries()
 
-    # normalize
-    # note that ACF is function of k and we have a factor of n-k
-    # at each k so the array here is a vectorized version of computing it
-    acf /= ( y.var() * numpy.arange(len(acf), 0, -1) )
+    # normalize the autocovariance
+    # note that dividing by acf[0] is the same as ( y.var() * len(acf) )
+    if unbiased:
+        acf /= ( y.var() * numpy.arange(len(acf), 0, -1) )
+    else:
+        acf /= acf[0]
 
     # return input datatype
     if isinstance(data, TimeSeries):
@@ -91,11 +98,13 @@ def calculate_acl(data, m=5, k=2, dtype=int):
 
     ACL is estimated using
 
-        r = 1 + 2 \sum_{k=1}^{n} \hat{R}(k)
+        r = 1 + 2 \sum_{i=1}^{m*s} \hat{R}(i) < s
 
-    Where r is the ACL and \hat{R}(k) is the ACF.
+    Where r is the ACL and \hat{R}(i) is the ACF that has been normalized so
+    that \hat{R}(0) is 1.0. And s is equal to i/m.
 
-    The parameter k sets the maximum samples to use in calculation of ACL.
+    The parameter k sets the maximum samples to use in calculation of ACL. The
+    maximum number of samples will be the length of the ACL divided by k.
 
     The parameter m controls the length of the window that is summed to
     compute the ACL.
@@ -105,48 +114,45 @@ def calculate_acl(data, m=5, k=2, dtype=int):
     data : {TimeSeries, numpy.array}
         A TimeSeries or numpy.array of data.
     dtype : {int, float}
-        The datatype of the output.
+        The datatype of the output. If the dtype was set to int, then the
+        ceiling is returned.
 
     Returns
     -------
     acl : {int, float}
-        The ACL. If ACL can not be estimated then returns numpy.inf. If data
-        was a TimeSeries then the ACL will be the number of samples times the
-        delta_t attribute.
+        The length s which is longer than the ACL. If ACL can not be estimated
+        then returns numpy.inf.
     """
 
-    # calculate ACF
+    # sanity check output data type
+    if dtype not in [int, float]:
+        raise ValueError("The dtype must be either int or float.")
+
+    # calculate ACF that is normalized by the zero-lag value
     acf = calculate_acf(data)
 
-    # get maximum index in ACF for calculation
-    # will terminate at this index
-    n = len(data)
-    imax = n / k
+    # multiply all values beyond the zero-lag value by 2.0
+    acf[1:] *= 2.0
 
-    # loop over ACF indexes
-    acl = 1.0
-    for i in range(n):
+    # sanity check ACF
+    if isnan(acf[0]):
+        return numpy.inf
+    assert acf[0] == 1.0
 
-        # see if we have reached terminating condition
-        s = float(i+1) / m
-        if not acl >= s:
-            break
+    # the maximum index to calculate ACF
+    imax = int(len(acf)/k)
 
-        # see if ACL is indeterminate
-        if i > imax or isnan(acf[i]):
-            return numpy.inf
+    # calculate cumlative ACL until s is less than the cumulative ACL
+    cum_acl = 0.0
+    for i,val in enumerate(acf[:imax]):
+        s = float(i)/m
+        if cum_acl+val < s:
+            if dtype == int:
+                return numpy.ceil(s)
+            elif dtype == float:
+                return s
+        cum_acl += val
 
-        # add term for ACL
-        acl += 2 * acf[i]
+    return numpy.inf
 
-    # if input was a TimeSeries then multiply ACL by the delta_t attribute
-    if isinstance(data, TimeSeries):
-        acl *= data.delta_t
 
-    # typecast and return
-    if dtype == int:
-        return int(numpy.ceil(acl))
-    elif dtype == float:
-        return acl
-    else:
-        raise ValueError("Invalid value for dtype")
