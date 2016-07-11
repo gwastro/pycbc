@@ -473,6 +473,7 @@ setup (
                'bin/inference/pycbc_inference_plot_samples',
                'bin/inference/pycbc_inference_table_summary',
                'bin/plotting/pycbc_plot_waveform',
+               'bin/pycbc_compress_bank',
                ],
     packages = [
                'pycbc',
