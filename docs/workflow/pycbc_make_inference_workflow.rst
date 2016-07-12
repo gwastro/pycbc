@@ -181,6 +181,63 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
     ; how to construct prior distribution
     name = uniform_angle
 
+A simple configuration file for parameter estimation on the ringdown is::
+
+    [variable-args]
+    ; parameters to vary in inference sampler
+    tc =
+    f_0 =
+    tau =
+    amp =
+    phi =
+
+    [labels]
+    ; LaTeX expressions to use in HTML and plotting executables
+    tc = $t_c$
+    f_0 = $f_0$
+    tau = $\tau$
+    amp = $A$
+    phi = $\phi_0$
+
+    [static_args]
+    ; parameters that do not vary in inference sampler
+    approximant = FdQNM
+    ra = 2.21535724066
+    dec = -1.23649695537
+    polarization = 0.
+    f_lower = 28.0
+    f_final = 512
+
+    [prior-tc]
+    ; how to construct prior distribution
+    name = uniform
+    min-tc = 1126259462.4
+    max-tc = 1126259462.5
+
+    [prior-f_0]
+    ; how to construct prior distribution
+    name = uniform
+    min-f_0 = 200.
+    max-f_0 = 300.
+
+    [prior-tau]
+    ; how to construct prior distribution
+    name = uniform
+    min-tau = 0.0008
+    max-tau = 0.020
+
+    [prior-amp]
+    ; how to construct prior distribution
+    name = uniform
+    min-amp = 0
+    max-amp = 1e-20
+
+    [prior-phi]
+    ; how to construct prior distribution
+    name = uniform
+    min-phi = 0
+    max-phi = 6.283185307179586
+
 If you want to use another variable parameter in the inference sampler then add its name to ``[variable_args]`` and add a prior section like shown above.
 
 =====================
