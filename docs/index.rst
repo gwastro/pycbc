@@ -71,6 +71,7 @@ template banks) should read the documentation at:
    :maxdepth: 1
 
    tmpltbank
+   inference
    hwinj
    banksim
    faithsim
