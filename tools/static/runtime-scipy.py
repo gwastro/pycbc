@@ -23,17 +23,21 @@ os.symlink(python_lib, python_lib_dest)
 # add the libaries to the include and library directories
 import scipy.weave.inline_tools
 scipy.weave.inline_tools.inline_real = scipy.weave.inline_tools.inline
-def inline(code,arg_names=[],local_dict=None, global_dict=None,
+def inline(code,arg_names=None,local_dict=None, global_dict=None,
            force=0,
            compiler='',
            verbose=0,
            support_code=None,
-           headers=[],
+           headers=None,
            customize=None,
            type_converters=None,
            auto_downcast=1,
            newarr_converter=0,
            **kw):
+           if arg_names is None:
+                      arg_names = []
+           if headers is None:
+                      headers = []
            kw['library_dirs'] = [basedir]
            kw['include_dirs'] = [os.path.join(basedir, 'include')]
            call_frame = sys._getframe().f_back

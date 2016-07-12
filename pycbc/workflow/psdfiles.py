@@ -36,7 +36,7 @@ import logging
 from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
 
 def setup_psd_workflow(workflow, science_segs, datafind_outs,
-                             output_dir=None, tags=[]):
+                             output_dir=None, tags=None):
     '''
     Setup static psd section of CBC workflow. At present this only supports pregenerated
     psd files, in the future these could be created within the workflow.
@@ -61,6 +61,8 @@ def setup_psd_workflow(workflow, science_segs, datafind_outs,
     psd_files : pycbc.workflow.core.FileList
         The FileList holding the psd files, 0 or 1 per ifo
     '''
+    if tags is None:
+        tags = []
     logging.info("Entering static psd module.")
     make_analysis_dir(output_dir)
     cp = workflow.cp
@@ -86,7 +88,7 @@ def setup_psd_workflow(workflow, science_segs, datafind_outs,
     return psd_files
 
 
-def setup_psd_pregenerated(workflow, tags=[]):
+def setup_psd_pregenerated(workflow, tags=None):
     '''
     Setup CBC workflow to use pregenerated psd files.
     The file given in cp.get('workflow','pregenerated-psd-file-(ifo)') will 
@@ -106,6 +108,8 @@ def setup_psd_pregenerated(workflow, tags=[]):
     psd_files : pycbc.workflow.core.FileList
         The FileList holding the gating files
     '''
+    if tags is None:
+        tags = []
     psd_files = FileList([])
 
     cp = workflow.cp

@@ -77,7 +77,7 @@ def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
 
 def setup_injection_workflow(workflow, output_dir=None,
                              inj_section_name='injections', exttrig_file=None,
-                             tags =[]):
+                             tags =None):
     """
     This function is the gateway for setting up injection-generation jobs in a
     workflow. It should be possible for this function to support a number
@@ -109,6 +109,8 @@ def setup_injection_workflow(workflow, output_dir=None,
         identify them. The FileList class contains functions to search
         based on tags.
     """
+    if tags is None:
+        tags = []
     logging.info("Entering injection module.")
     make_analysis_dir(output_dir)
     

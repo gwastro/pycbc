@@ -38,7 +38,7 @@ from pycbc.workflow.jobsetup import (select_matchedfilter_class,
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                tmplt_banks, output_dir=None,
-                               injection_file=None, gate_files=None, tags=[]):
+                               injection_file=None, gate_files=None, tags=None):
     '''
     This function aims to be the gateway for setting up a set of matched-filter
     jobs in a workflow. This function is intended to support multiple
@@ -78,6 +78,8 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
         If you require access to any intermediate products produced at this
         stage you can call the various sub-functions directly.
     '''
+    if tags is None:
+        tags = []
     logging.info("Entering matched-filtering setup module.")
     make_analysis_dir(output_dir)
     cp = workflow.cp
@@ -137,7 +139,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
 def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
                                     tmplt_banks, output_dir,
                                     injection_file=None, gate_files=None,
-                                    tags=[], link_to_tmpltbank=False,
+                                    tags=None, link_to_tmpltbank=False,
                                     compatibility_mode=False):
     '''
     Setup matched-filter jobs that are generated as part of the workflow.
@@ -181,6 +183,8 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         If you require access to any intermediate products produced at this
         stage you can call the various sub-functions directly.
     '''
+    if tags is None:
+        tags = []
     # Need to get the exe to figure out what sections are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
     # will require a bit of effort here .... 
@@ -234,7 +238,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
 def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                                           tmplt_banks, output_dir,
                                           injection_file=None, gate_files=None,
-                                          tags=[], link_to_tmpltbank=False,
+                                          tags=None, link_to_tmpltbank=False,
                                           compatibility_mode=False):
     '''
     Setup matched-filter jobs that are generated as part of the workflow in
@@ -275,6 +279,8 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         If you require access to any intermediate products produced at this
         stage you can call the various sub-functions directly.
     '''
+    if tags is None:
+        tags = []
     # Need to get the exe to figure out what sections are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
     # will require a bit of effort here ....

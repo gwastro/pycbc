@@ -68,7 +68,7 @@ def select_splitfilejob_instance(curr_exe):
 
     return exe_class
 
-def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=[]):
+def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=None):
     '''
     This function aims to be the gateway for code that is responsible for taking
     some input file containing some table, and splitting into multiple files
@@ -90,6 +90,8 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=[]):
     split_table_outs : pycbc.workflow.core.FileList
         The list of split up files as output from this job.
     '''
+    if tags is None:
+        tags = []
     logging.info("Entering split output files module.")
     make_analysis_dir(out_dir)
     # Parse for options in .ini file

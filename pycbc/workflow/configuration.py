@@ -139,7 +139,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
     This is a sub-class of glue.pipeline.DeepCopyableConfigParser, which lets
     us add a few additional helper features that are useful in workflows.
     """
-    def __init__(self, configFiles=[], overrideTuples=[], parsedFilePath=None):
+    def __init__(self, configFiles=None, overrideTuples=None, parsedFilePath=None):
         """
         Initialize an WorkflowConfigParser. This reads the input configuration
         files, overrides values if necessary and performs the interpolation.
@@ -161,6 +161,10 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         WorkflowConfigParser
             Initialized WorkflowConfigParser instance.
         """
+        if configFiles is None:
+            configFiles = []
+        if overrideTuples is None:
+            overrideTuples = []
         glue.pipeline.DeepCopyableConfigParser.__init__(self)
         
         # Enable case sensitive options

@@ -199,7 +199,7 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
     return xml_file
 
 
-def get_ipn_sky_files(workflow, tags=[]):
+def get_ipn_sky_files(workflow, tags=None):
     '''
     Retreive the sky point files for searching over the IPN error box and
     populating it with injections.
@@ -219,6 +219,8 @@ def get_ipn_sky_files(workflow, tags=[]):
     ipn_files : pycbc.workflow.core.FileList
         FileList holding the details of the IPN sky point files.
     '''
+    if tags is None:
+        tags = []
     cp = workflow.cp
     ipn_search_points = cp.get("workflow-inspiral", "ipn-search-points")
     ipn_search_points = resolve_url(ipn_search_points)
