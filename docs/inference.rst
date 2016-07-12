@@ -152,5 +152,14 @@ The function ``InferenceFile.read_samples`` includes the options to thin the sam
     samples = fp.read_samples("mass1", walkers=0, thin_start=0, thin_end=-1, thin_interval=1)
     print samples.mass1
 
+Some standard parameters that are derived from the variable arguments (listed via ``fp.variable_args``) can also be retrieved. For example, if ``fp.variable_args`` includes ``mass1`` and ``mass2``, then you can retrieve the chirp mass with::
+
+   samples = samples = fp.read_samples("mchirp")
+   print samples.mchirp
+
+In this case, ``fp.read_samples`` will retrieve ``mass1`` and ``mass2`` (since they are needed to compute chirp mass); ``samples.mchirp`` then returns an array of the chirp mass computed from ``mass1`` and ``mass2``. 
+
+For more information, including the list of predefined derived parameters, see the docstring of ``pycbc.io.InferenceFile``.
+
 See the docstring of ``pycbc.io.InferenceFile`` for more information.
 
