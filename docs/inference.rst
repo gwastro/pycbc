@@ -223,5 +223,3 @@ In this case, ``fp.read_samples`` will retrieve ``mass1`` and ``mass2`` (since t
 
 For more information, including the list of predefined derived parameters, see the docstring of ``pycbc.io.InferenceFile``.
 
-See the docstring of ``pycbc.io.InferenceFile`` for more information.
-
