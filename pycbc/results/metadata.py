@@ -94,7 +94,7 @@ _metadata_loader = {'.png':load_png_metadata,
                     '.html':load_html_metadata,
                    }
 
-def save_fig_with_metadata(fig, filename, fig_kwds={}, **kwds):
+def save_fig_with_metadata(fig, filename, fig_kwds=None, **kwds):
     """ Save plot to file with metadata included. Kewords translate to metadata
     that is stored directly in the plot file. Limited format types available.
     
@@ -105,6 +105,8 @@ def save_fig_with_metadata(fig, filename, fig_kwds={}, **kwds):
     filename: str
         Name of file to store the plot.
     """
+    if fig_kwds is None:
+        fig_kwds = {}
     try:
         extension = os.path.splitext(filename)[1]
         kwds['version'] = pycbc.version.git_verbose_msg

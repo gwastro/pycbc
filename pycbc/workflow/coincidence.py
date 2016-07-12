@@ -57,7 +57,9 @@ class PyCBCFindCoincExecutable(Executable):
     """ Find coinc triggers using a folded interval method
     """
     current_retention_level = Executable.ALL_TRIGGERS
-    def create_node(self, trig_files, bank_file, veto_file, veto_name, template_str, tags=[]):
+    def create_node(self, trig_files, bank_file, veto_file, veto_name, template_str, tags=None):
+        if tags is None:
+            tags = []
         segs = trig_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
         node = Node(self)
@@ -75,7 +77,9 @@ class PyCBCStatMapExecutable(Executable):
     """ Calculate FAP, IFAR, etc
     """
     current_retention_level = Executable.MERGED_TRIGGERS
-    def create_node(self, coinc_files, tags=[]):
+    def create_node(self, coinc_files, tags=None):
+        if tags is None:
+            tags = []
         segs = coinc_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
 
@@ -89,7 +93,9 @@ class PyCBCStatMapInjExecutable(Executable):
     """ Calculate FAP, IFAR, etc
     """
     current_retention_level = Executable.MERGED_TRIGGERS
-    def create_node(self, zerolag, full_data, injfull, fullinj, tags=[]):
+    def create_node(self, zerolag, full_data, injfull, fullinj, tags=None):
+        if tags is None:
+            tags = []
         segs = zerolag.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
 
@@ -106,7 +112,9 @@ class PyCBCHDFInjFindExecutable(Executable):
     """ Find injections in the hdf files output
     """
     current_retention_level = Executable.MERGED_TRIGGERS
-    def create_node(self, inj_coinc_file, inj_xml_file, veto_file, veto_name, tags=[]):
+    def create_node(self, inj_coinc_file, inj_xml_file, veto_file, veto_name, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)        
         node.add_input_list_opt('--trigger-file', inj_coinc_file)
         node.add_input_list_opt('--injection-file', inj_xml_file)
@@ -120,7 +128,9 @@ class PyCBCHDFInjFindExecutable(Executable):
 class PyCBCDistributeBackgroundBins(Executable):
     """ Distribute coinc files amoung different background bins """
     current_retention_level = Executable.ALL_TRIGGERS
-    def create_node(self, coinc_files, bank_file, background_bins, tags=[]):
+    def create_node(self, coinc_files, bank_file, background_bins, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
         node.add_input_list_opt('--coinc-files', coinc_files)
         node.add_input_opt('--bank-file', bank_file)
@@ -140,7 +150,9 @@ class PyCBCDistributeBackgroundBins(Executable):
         
 class PyCBCCombineStatmap(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS
-    def create_node(self, stat_files, tags=[]):
+    def create_node(self, stat_files, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
         node.add_input_list_opt('--statmap-files', stat_files)
         node.new_output_file_opt(stat_files[0].segment, '.hdf', '--output-file', tags=tags)
@@ -165,7 +177,9 @@ def make_foreground_censored_veto(workflow, bg_file, veto_file, veto_name,
     workflow += node
     return node.output_files[0]
 
-def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir, tags=[]):
+def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir, tags=None):
+    if tags is None:
+        tags = []
     make_analysis_dir(out_dir)
     out = FileList()
     for ifo in workflow.ifos:
@@ -179,7 +193,9 @@ def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir,
     return out
 
 def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file, 
-                                 veto_file, veto_name, out_dir, tags=[]):
+                                 veto_file, veto_name, out_dir, tags=None):
+    if tags is None:
+        tags = []
     make_analysis_dir(out_dir)
     exe = PyCBCHDFInjFindExecutable(workflow.cp, 'hdfinjfind', 
                                     ifos=workflow.ifos, 
@@ -188,9 +204,11 @@ def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file,
     workflow += node
     return node.output_files[0]     
 
-def convert_bank_to_hdf(workflow, xmlbank, out_dir, tags=[]):
+def convert_bank_to_hdf(workflow, xmlbank, out_dir, tags=None):
     """Return the template bank in hdf format
     """
+    if tags is None:
+        tags = []
     #FIXME, make me not needed
     if len(xmlbank) > 1:
         raise ValueError('Can only convert a single template bank')
@@ -204,9 +222,11 @@ def convert_bank_to_hdf(workflow, xmlbank, out_dir, tags=[]):
     workflow.add_node(bank2hdf_node)
     return bank2hdf_node.output_files
 
-def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=[]):
+def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None):
     """Return the list of hdf5 trigger files outpus
     """
+    if tags is None:
+        tags = []
     #FIXME, make me not needed
     logging.info('convert single inspiral trigger files to hdf5')
     make_analysis_dir(out_dir)
@@ -325,11 +345,13 @@ def setup_background_bins_inj(workflow, coinc_files, background_file, bank_file,
     return cstat_node.output_files[0]
 
 def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
-                           background_file, veto_file, veto_name, out_dir, tags=[]):
+                           background_file, veto_file, veto_name, out_dir, tags=None):
     """
     This function sets up exact match coincidence and background estimation
     using a folded interval technique.
     """
+    if tags is None:
+        tags = []
     make_analysis_dir(out_dir)
     logging.info('Setting up coincidence for injection')
 
@@ -374,11 +396,13 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
     return setup_statmap_inj(workflow, bg_files, background_file, hdfbank, out_dir, tags=tags)
     
 def setup_interval_coinc(workflow, hdfbank, trig_files,
-                         veto_files, veto_names, out_dir, tags=[]):
+                         veto_files, veto_names, out_dir, tags=None):
     """
     This function sets up exact match coincidence and background estimation
     using a folded interval technique.
     """
+    if tags is None:
+        tags = []
     make_analysis_dir(out_dir)
     logging.info('Setting up coincidence')
 

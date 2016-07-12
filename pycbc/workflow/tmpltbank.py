@@ -38,7 +38,7 @@ from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
 from pycbc.workflow.jobsetup import select_tmpltbank_class, select_matchedfilter_class, sngl_ifo_job_setup
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
-                             output_dir=None, psd_files=None, tags=[]):
+                             output_dir=None, psd_files=None, tags=None):
     '''
     Setup template bank section of CBC workflow. This function is responsible
     for deciding which of the various template bank workflow generation
@@ -66,6 +66,8 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     tmplt_banks : pycbc.workflow.core.FileList
         The FileList holding the details of all the template bank jobs.
     '''
+    if tags is None:
+        tags = []
     logging.info("Entering template bank generation module.")
     make_analysis_dir(output_dir)
     cp = workflow.cp
@@ -131,7 +133,7 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     return tmplt_banks
 
 def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
-                                  output_dir, tags=[],
+                                  output_dir, tags=None,
                                   link_to_matchedfltr=True,
                                   compatibility_mode=False,
                                   psd_files=None):
@@ -171,6 +173,8 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     tmplt_banks : pycbc.workflow.core.FileList
         The FileList holding the details of all the template bank jobs.
     '''
+    if tags is None:
+        tags = []
     cp = workflow.cp
     # Need to get the exe to figure out what sections are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
@@ -228,7 +232,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     return tmplt_banks
 
 def setup_tmpltbank_without_frames(workflow, output_dir,
-                                   tags=[], independent_ifos=False,
+                                   tags=None, independent_ifos=False,
                                    psd_files=None):
     '''
     Setup CBC workflow to use a template bank (or banks) that are generated in
@@ -257,6 +261,8 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
     tmplt_banks : pycbc.workflow.core.FileList
         The FileList holding the details of the template bank(s).
     '''
+    if tags is None:
+        tags = []
     cp = workflow.cp
     # Need to get the exe to figure out what sections are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
@@ -300,7 +306,7 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
         
     return tmplt_banks
 
-def setup_tmpltbank_pregenerated(workflow, tags=[]):
+def setup_tmpltbank_pregenerated(workflow, tags=None):
     '''
     Setup CBC workflow to use a pregenerated template bank.
     The bank given in cp.get('workflow','pregenerated-template-bank') will be used
@@ -321,6 +327,8 @@ def setup_tmpltbank_pregenerated(workflow, tags=[]):
     tmplt_banks : pycbc.workflow.core.FileList
         The FileList holding the details of the template bank.
     '''
+    if tags is None:
+        tags = []
     # Currently this uses the *same* fixed bank for all ifos.
     # Maybe we want to add capability to analyse separate banks in all ifos?
     
