@@ -49,7 +49,7 @@ class FrequencySeries(Array):
     def __init__(self, initial_array, delta_f=None, epoch="", dtype=None, copy=True):
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
-        if delta_f == None:
+        if delta_f is None:
             try:
                 delta_f = initial_array.delta_f
             except AttributeError:

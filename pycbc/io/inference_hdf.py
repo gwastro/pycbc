@@ -254,7 +254,7 @@ class InferenceFile(h5py.File):
                 label = getattr(wfparams, parameter).label
             except AttributeError:
                 label = None
-        if label == None:
+        if label is None:
             if error_on_none:
                 raise ValueError("Cannot find a label for paramter %s" %(
                     parameter))
@@ -362,7 +362,7 @@ class InferenceFile(h5py.File):
                 group_dim = self.create_group(dim_name)
                 if "label" in group_dim.attrs.keys():
                     pass
-                elif labels != None:
+                elif labels is not None:
                     group_dim.attrs["label"] = labels[i]
                 else:
                     group_dim.attrs["label"] = dim_name

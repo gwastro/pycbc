@@ -1377,7 +1377,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.strain[len(self.strain) - csize + self.corruption:] = strain[self.corruption:]
         self.strain.start_time += blocksize
 
-        if self.psd == None and self.wait_duration <=0:
+        if self.psd is None and self.wait_duration <=0:
             self.recalculate_psd()
 
         if self.wait_duration > 0:
