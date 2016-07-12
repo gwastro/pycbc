@@ -176,9 +176,9 @@ class _BoundedDist(object):
 
     def __contains__(self, params):
         try:
-            return all([(params[p] >= self._bounds[p][0]) &
+            return all( (params[p] >= self._bounds[p][0]) &
                         (params[p] < self._bounds[p][1])
-                       for p in self._params])
+                       for p in self._params)
         except KeyError:
             raise ValueError("must provide all parameters [%s]" %(
                 ', '.join(self._params)))
