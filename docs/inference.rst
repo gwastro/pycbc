@@ -86,7 +86,7 @@ software injection in fake data.
 
     # create injection file
     lalapps_inspinj \
-        --output ${INJ_OUTPUT} \
+        --output ${INJ_PATH} \
         --seed 1000 \
         --f-lower ${INJ_F_MIN} \
         --waveform ${INJ_APPROX} \
@@ -122,7 +122,7 @@ software injection in fake data.
         --sample-rate ${SAMPLE_RATE} \
         --low-frequency-cutoff ${F_MIN} \
         --channel-name H1:FOOBAR L1:FOOBAR \
-        --injection-file ${INJ_OUTPUT} \
+        --injection-file ${INJ_PATH} \
         --processing-scheme ${PROCESSING_SCHEME} \
         --sampler kombine \
         --likelihood-evaluator gaussian \
