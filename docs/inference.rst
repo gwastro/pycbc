@@ -77,7 +77,7 @@ software injection in fake data.
     NPROCS=12
     CONFIG_PATH=inference.ini
 
-    # get coalescne time as an integer
+    # get coalescence time as an integer
     TRIGGER_TIME_INT=${TRIGGER_TIME%.*}
 
     # start and end time of data to read in
