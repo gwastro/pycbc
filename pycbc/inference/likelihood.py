@@ -86,7 +86,7 @@ class _BaseLikelihoodEvaluator:
                 "does not match data (%s)" %(
                 ','.join(sorted(self._data.keys()))))
         # check that the data and waveform generator have the same epoch
-        if any([waveform_generator.epoch != d.epoch for d in self._data.values()]):
+        if any( waveform_generator.epoch != d.epoch for d in self._data.values()):
             raise ValueError("waveform generator does not have the same epoch as all "
                 "of the data sets.")
         # check that the data sets all have the same lengths

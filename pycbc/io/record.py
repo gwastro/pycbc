@@ -740,7 +740,8 @@ class FieldArray(numpy.recarray):
         # numpy has some issues with dtype field names that are unicode,
         # so we'll force them to strings here
         if obj.dtype.names is not None and \
-                any([isinstance(name, unicode) for name in obj.dtype.names]):
+                any( \
+                isinstance(name, unicode) for name in obj.dtype.names):
             obj.dtype.names = map(str, obj.dtype.names)
 
     def __copy_attributes__(self, other, default=None):
