@@ -164,7 +164,7 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
     # add command line options
     node.add_input_opt("--config-file", config_file)
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-    if sections != None:
+    if sections is not None:
         node.add_opt("--sections", " ".join(sections))
 
     # add node to workflow

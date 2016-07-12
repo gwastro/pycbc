@@ -95,7 +95,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
         The name with which the analysable time is stored in the
         sci_avlble_file.
     """
-    if tags == None:
+    if tags is None:
         tags = []
     logging.info("Entering datafind module")
     make_analysis_dir(outputDir)
@@ -394,7 +394,7 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
         List of all the datafind output files for use later in the pipeline.
 
     """
-    if tags == None:
+    if tags is None:
         tags = []
 
     # First job is to do setup for the datafind jobs
@@ -475,7 +475,7 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
         List of all the datafind output files for use later in the pipeline.
 
     """
-    if tags == None:
+    if tags is None:
         tags = []
 
     # First job is to do setup for the datafind jobs
@@ -644,7 +644,7 @@ def setup_datafind_from_pregenerated_lcf_files(cp, ifos, outputDir, tags=None):
     datafindOuts : pycbc.workflow.core.FileList
         List of all the datafind output files for use later in the pipeline.
     """
-    if tags == None:
+    if tags is None:
         tags = []
 
     datafindcaches = []
@@ -790,7 +790,7 @@ def setup_datafind_server_connection(cp, tags=None):
     connection
         The open connection to the datafind server.
     """
-    if tags == None:
+    if tags is None:
         tags = []
 
     if cp.has_option_tags("workflow-datafind",

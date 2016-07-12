@@ -36,7 +36,7 @@ def render_workflow_html_template(filename, subtemplate, filelists):
     dir = os.path.dirname(filename)
 
     try:
-        filenames = [f.name for filelist in filelists for f in filelist if f != None]
+        filenames = [f.name for filelist in filelists for f in filelist if f is not None]
     except TypeError:
         filenames = []
 
