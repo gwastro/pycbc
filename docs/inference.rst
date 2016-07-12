@@ -133,6 +133,68 @@ software injection in fake data.
         --checkpoint-interval ${N_CHECKPOINT} \
         --nprocesses ${NPROCS}
 
+An example configuration file (named ``inference.ini`` above) is::
+
+    [variable_args]
+    ; waveform parameters that will vary in MCMC
+    tc =
+    mass1 =
+    mass2 =
+    distance =
+    coa_phase =
+    inclination =
+    polarization =
+    ra =
+    dec =
+
+    [static_args]
+    ; waveform parameters that will not change in MCMC
+    approximant = SEOBNRv2_ROM_DoubleSpin
+    f_lower = 28.0
+
+    [prior-tc]
+    ; coalescence time prior
+    name = uniform
+    min-tc = 1126259461.8
+    max-tc= 1126259462.2
+
+    [prior-mass1]
+    ; component mass prior
+    name = uniform
+    min-mass1 = 10.
+    max-mass1 = 80.
+
+    [prior-mass2]
+    ; component mass prior
+    name = uniform
+    min-mass2 = 10.
+    max-mass2 = 80.
+
+    [prior-distance]
+    ; distance prior
+    name = uniform
+    min-distance = 10
+    max-distance = 500
+
+    [prior-coa_phase]
+    ; coalescence phase prior
+    name = uniform_angle
+
+    [prior-inclination]
+    ; inclination prior
+    name = uniform_angle
+    min-inclination = 0
+    max-inclination = 1
+
+    [prior-ra+dec]
+    ; sky position prior
+    name = uniform_sky
+
+    [prior-polarization]
+    ; polarization prior
+    name = uniform_angle
+
+
 ---------------------------------------------------
 HDF output file handler: ``pycbc.io.InferenceFile``
 ---------------------------------------------------
