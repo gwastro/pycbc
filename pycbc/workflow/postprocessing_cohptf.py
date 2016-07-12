@@ -43,7 +43,7 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, trigger_cache,
         output_dir, segment_dir, injection_trigger_files=None,
         injection_files=None, injection_trigger_caches=None,
         injection_caches=None, config_file=None, run_dir=None, ifos=None,
-        web_dir=None, segments_plot=None, inj_tags=[], tags=[], **kwargs):
+        web_dir=None, segments_plot=None, inj_tags=None, tags=None, **kwargs):
     """
     This function aims to be the gateway for running postprocessing in CBC
     offline workflows. Post-processing generally consists of calculating the
@@ -72,6 +72,10 @@ def setup_coh_PTF_post_processing(workflow, trigger_files, trigger_cache,
         A list of the output from this stage.
 
     """
+    if inj_tags is None:
+        inj_tags = []
+    if tags is None:
+        tags = []
     logging.info("Entering post-processing stage.")
     make_analysis_dir(output_dir)
 
@@ -103,7 +107,7 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
                                     inj_trig_files, inj_files, inj_trig_caches,
                                     inj_caches, config_file, output_dir,
                                     html_dir, segment_dir, segs_plot, ifos,
-                                    inj_tags=[], tags=[]):
+                                    inj_tags=None, tags=None):
     """
     This module sets up the post-processing stage in the workflow, using a
     coh_PTF style set up. This consists of running trig_combiner to find
@@ -121,6 +125,10 @@ def setup_postproc_coh_PTF_workflow(workflow, trig_files, trig_cache,
     --------
     
     """
+    if inj_tags is None:
+        inj_tags = []
+    if tags is None:
+        tags = []
     cp = workflow.cp
     full_segment = trig_files[0].segment
     trig_name = cp.get("workflow", "trigger-name")

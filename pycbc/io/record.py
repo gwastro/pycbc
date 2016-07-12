@@ -1146,12 +1146,14 @@ class _FieldArrayWithDefaults(FieldArray):
         return dict(cls._staticfields.items() + add_fields.items())
         
 
-    def __new__(cls, shape, name=None, additional_fields=None, field_kwargs={},
+    def __new__(cls, shape, name=None, additional_fields=None, field_kwargs=None,
             **kwargs):
         """The ``additional_fields`` should be specified in the same way as
         ``dtype`` is normally given to FieldArray. The ``field_kwargs`` are
         passed to the class's default_fields method as keyword arguments.
         """
+        if field_kwargs is None:
+            field_kwargs = {}
         if 'names' in kwargs and 'dtype' in kwargs:
             raise ValueError("Please provide names or dtype, not both")
         default_fields = cls.default_fields(include_virtual=False,
