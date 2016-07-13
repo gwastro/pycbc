@@ -280,8 +280,8 @@ Else you can run from a specific GPS end time with the ``--gps-end-time`` option
                            workflow:end-time:$((${GPS_END_TIME}+2)) \
                            workflow-inference:data-seconds-before-trigger:2 \
                            workflow-inference:data-seconds-after-trigger:2 \
-                           inference:psd-start-time:$((${GPS_END_TIME}-1024)) \
-                           inference:psd-end-time:$((${GPS_END_TIME}-1024))
+                           inference:psd-start-time:$((${GPS_END_TIME}-300)) \
+                           inference:psd-end-time:$((${GPS_END_TIME}+1748))
 
 Where ``${GPS_END_TIME}`` is the GPS end time of the trigger.
 
