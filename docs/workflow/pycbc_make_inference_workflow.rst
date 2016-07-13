@@ -57,8 +57,8 @@ A simple workflow configuration file::
     [inference]
     ; command line options use --help for more information
     sample-rate = 2048
-    low-frequency-cutoff = 40
-    strain-high-pass = 30
+    low-frequency-cutoff = 30
+    strain-high-pass = 20
     pad-data = 8
     psd-estimation = median
     psd-segment-length = 16
@@ -67,9 +67,8 @@ A simple workflow configuration file::
     processing-scheme = mkl
     sampler = kombine
     likelihood-evaluator = gaussian
-    skip-burn-in =
-    nwalkers = 10
-    niterations = 320
+    nwalkers = 500
+    niterations = 100000
 
     [pegasus_profile-inference]
     ; pegasus profile for inference nodes
@@ -120,45 +119,34 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
     dec =
     polarization =
 
-    [labels]
-    ; LaTeX expressions to use in HTML and plotting executables
-    tc = $t_{c}$
-    mass1 = $m_{1}$
-    mass2 = $m_{2}$
-    distance = $d$
-    coa_phase = $\phi_{c}$
-    inclination = $\iota$
-    ra = $\alpha$
-    dec = $\delta$
-
     [static_args]
     ; parameters that do not vary in inference sampler
-    approximant = TaylorF2
-    f_lower = 40.0
+    approximant = SEOBNRv2_ROM_DoubleSpin
+    f_lower = 28.0
 
     [prior-tc]
     ; how to construct prior distribution
     name = uniform
-    min-tc = 1137215767.92
-    max-tc = 1137215768.04
+    min-tc = 1126259462.2
+    max-tc = 1126259462.6
 
     [prior-mass1]
     ; how to construct prior distribution
     name = uniform
-    min-mass1 = 1.3
-    max-mass1 = 10.0
+    min-mass1 = 10.
+    max-mass1 = 80.
 
     [prior-mass2]
     ; how to construct prior distribution
     name = uniform
-    min-mass2 = 1.3
-    max-mass2 = 10.0
+    min-mass1 = 10.
+    max-mass1 = 80.
 
     [prior-distance]
     ; how to construct prior distribution
     name = uniform
-    min-distance = 30.0
-    max-distance = 100.0
+    min-distance = 10
+    max-distance = 500
 
     [prior-coa_phase]
     ; how to construct prior distribution
@@ -272,9 +260,9 @@ If you want to run on the loudest triggers from a PyCBC coincident search workfl
         --statmap-file ${STATMAP_PATH} \
         --single-detector-triggers ${SNGL_H1_PATHS} ${SNGL_L1_PATHS}
         --config-overrides workflow:start-time:${WORKFLOW_START_TIME} \
-                           workflow:end-time:$((${WORKFLOW_END_TIME} \
-                           workflow-inference:data-seconds-before-trigger:1024 \
-                           workflow-inference:data-seconds-after-trigger:1024
+                           workflow:end-time:${WORKFLOW_END_TIME} \
+                           workflow-inference:data-seconds-before-trigger:8 \
+                           workflow-inference:data-seconds-after-trigger:8
 
 Where ``${BANK_FILE}`` is the path to the template bank HDF file, ``${STATMAP_FILE}`` is the path to the combined statmap HDF file, ``${SNGL_H1_PATHS}`` and ``${SNGL_L1_PATHS}`` are the paths to the merged single-detector HDF files,  and ``${WORKFLOW_START_TIME}`` and ``${WORKFLOW_END_TIME}`` are the start and end time of the coincidence workflow.
 
@@ -288,10 +276,12 @@ Else you can run from a specific GPS end time with the ``--gps-end-time`` option
         --output-file ${WORKFLOW_NAME}.dax \
         --output-map ${OUTPUT_MAP_PATH} \
         --gps-end-time ${GPS_END_TIME} \
-        --config-overrides workflow:start-time:$((${GPS_END_TIME}-1024)) \
-                           workflow:end-time:$((${GPS_END_TIME}+1024)) \
-                           workflow-inference:data-seconds-before-trigger:1024 \
-                           workflow-inference:data-seconds-after-trigger:1024
+        --config-overrides workflow:start-time:$((${GPS_END_TIME}-2)) \
+                           workflow:end-time:$((${GPS_END_TIME}+2)) \
+                           workflow-inference:data-seconds-before-trigger:2 \
+                           workflow-inference:data-seconds-after-trigger:2 \
+                           inference:psd-start-time:$((${GPS_END_TIME}-1024)) \
+                           inference:psd-end-time:$((${GPS_END_TIME}-1024))
 
 Where ``${GPS_END_TIME}`` is the GPS end time of the trigger.
 
