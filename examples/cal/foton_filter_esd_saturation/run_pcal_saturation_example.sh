@@ -21,7 +21,8 @@ IFO=H1
 FRAME_TYPE=H1_R
 
 # get single-column ASCII file that contains h(t) time series
-DATA_FILE=`ls ${PWD}/H1-HWINJ_CBC-*-*.txt`
+# first option on command line should be the *full* path to the data file
+DATA_FILE=${1}
 
 # injection options
 SAMPLE_RATE=16384
@@ -38,7 +39,7 @@ svn co --username=christopher.biwer https://daqsvn.ligo-la.caltech.edu/svn/l1_fi
 CALEX_FILTER_FILE=h1_archive/H1CALEX.txt
 
 # time options
-GPS_START_TIME=$((`lalapps_tconvert` - 30000))
+GPS_START_TIME=$((`lalapps_tconvert` - 3600))
 GPS_END_TIME=$((${GPS_START_TIME}+1))
 
 # filter injection
@@ -46,7 +47,8 @@ sh pycbc_check_pcal_saturation.sh --data-file ${DATA_FILE} --gps-start-time ${GP
 
 # source detchar env
 # note that this path is specific to the CIT, LHO, and LLO clusters
-source /home/detchar/opt/gwpysoft/etc/gwpy-user-env.sh
+deactivate
+source /home/detchar/opt/gwpysoft-2.7/bin/activate
 
 # output options
 INPUT_FILE=${DATA_FILE}
@@ -54,12 +56,12 @@ TIMESERIES_FILE=${HTMLDIR}/${IFO}-TIMESERIES_HOFT.png
 SPECTROGRAM_FILE=${HTMLDIR}/${IFO}-SPECTROGRAM_HOFT.png
 
 # run plotting script
-python gwpy_plot_hwinj ${INPUT_FILE} ${TIMESERIES_FILE} ${SPECTROGRAM_FILE} 0 1027 -1e-22 1e-22 1e-21 1e-27
+python gwpy_plot_hwinj ${INPUT_FILE} ${TIMESERIES_FILE} ${SPECTROGRAM_FILE} 0 13 -1e-22 1e-22 1e-21 1e-27
 
 # output options
-INPUT_FILE=`ls pcal_output/${IFO}-FILTER_PINJX_HARDWARE-*.txt`
-TIMESERIES_FILE=${HTMLDIR}/${IFO}-TIMESERIES_PINJX_HARDWARE.png
-SPECTROGRAM_FILE=${HTMLDIR}/${IFO}-SPECTROGRAM_PINJX_HARDWARE.png
+INPUT_FILE=`ls pcal_output/${IFO}-FILTER_PINJX_TRANSIENT-${GPS_START_TIME}.txt`
+TIMESERIES_FILE=${HTMLDIR}/${IFO}-TIMESERIES_PINJX_TRANSIENT.png
+SPECTROGRAM_FILE=${HTMLDIR}/${IFO}-SPECTROGRAM_PINJX_TRANSIENT.png
 
 # run plotting script
-python gwpy_plot_hwinj ${INPUT_FILE} ${TIMESERIES_FILE} ${SPECTROGRAM_FILE} 0 21 -30000 30000 1e1 1e-7
+python gwpy_plot_hwinj ${INPUT_FILE} ${TIMESERIES_FILE} ${SPECTROGRAM_FILE} 0 13 -30000 30000 1e1 1e-7

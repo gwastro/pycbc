@@ -23,12 +23,12 @@ Add ROOT and foton to pycbc installation
 Do the following to add both the ROOT and foton python packages to the virtual environment ::
 
   NAME=/path/to/virtualenv
-  cd ${NAME}/lib64/python2.6/site-packages
-  ln -s /usr/lib64/python2.6/site-packages/libPyROOT.so
-  ln -s /usr/lib64/python2.6/site-packages/ROOT.py
-  ln -s /usr/lib64/python2.6/site-packages/ROOTwriter.py
-  cd ${NAME}/lib/python2.6/site-packages
-  ln -s /usr/lib/python2.6/site-packages/foton.py
+  cd ${NAME}/lib64/python2.7/site-packages
+  ln -s /usr/lib64/python2.7/site-packages/libPyROOT.so
+  ln -s /usr/lib64/python2.7/site-packages/ROOT.py
+  ln -s /usr/lib64/python2.7/site-packages/ROOTwriter.py
+  cd ${NAME}/lib/python2.7/site-packages
+  ln -s /usr/lib/python2.7/site-packages/foton.py
 
 =================================================
 Set variables

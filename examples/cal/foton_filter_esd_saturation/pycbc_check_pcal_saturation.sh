@@ -29,7 +29,7 @@ SAMPLE_RATE=16384
 CALEX_FILTER_FILE=""
 
 # parse command line
-GETOPT_CMD=`getopt -o d:c:a:F:h:l --long data-file:,gps-start-time:,gps-end-time:,ifo:,frame-type:,sample-rate:,calcs-filter-file:,sus-filter-file:,help -n 'pycbc_check_esd_saturation.sh' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:a:F:h:l --long data-file:,gps-start-time:,gps-end-time:,ifo:,frame-type:,sample-rate:,calex-filter-file:,sus-filter-file:,help -n 'pycbc_check_esd_saturation.sh' -- "$@"`
 eval set -- "$GETOPT_CMD"
 while true ; do
   case "$1" in
@@ -63,7 +63,7 @@ while true ; do
         "") shift 2 ;;
         *) SAMPLE_RATE=$2 ; shift 2 ;;
       esac ;;
-    -c|--calcs-filter-file)
+    -c|--calex-filter-file)
       case "$2" in
         "") shift 2 ;;
         *) CALEX_FILTER_FILE=$2 ; shift 2 ;;
@@ -78,7 +78,7 @@ while true ; do
       echo "  -i, --ifo IFO                                   IFO, eg. H1 or L1"
       echo "  -f, --frame-type FRAME_TYPE                     frame type that has SWSTAT and GAIN channels"
       echo "  -r, --sample-rate SAMPLE_RATE                   sample rate of the input file"
-      echo "  -c, --calcs-filter-file CALEX_FILTER_FILE       path to CALEX.txt"
+      echo "  -c, --calex-filter-file CALEX_FILTER_FILE       path to CALEX.txt"
       echo
       echo "Filter a single-column ASCII file to see if it saturates the ETMY DAC."
       echo
@@ -108,7 +108,7 @@ cd ${RUN_DIR}
 
 # filter with CAL-INJ_HARDWARE
 MODEL_NAME=CAL
-FILTERBANK_NAME=PINJX_HARDWARE
+FILTERBANK_NAME=PINJX_TRANSIENT
 #DATA_FILE=`ls /home/cbiwer/src/pycbc_foton_dev/examples/cal/foton_filter_INJ_BLIND/hwinj/${IFO}-HWINJ_CBC-*-*.txt`
 OUTPUT_FILE=${IFO}-FILTER_${FILTERBANK_NAME}-${GPS_START_TIME}.txt
 python ${EXE_DIR}/pycbc_foton_filter --filterbank-ignore-off --model-name ${MODEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --filterbank-name ${FILTERBANK_NAME} --data-file ${DATA_FILE} --filter-file ${CALEX_FILTER_FILE} --output-file ${OUTPUT_FILE} --sample-rate ${SAMPLE_RATE} --frame-type ${FRAME_TYPE} --ifo ${IFO}
