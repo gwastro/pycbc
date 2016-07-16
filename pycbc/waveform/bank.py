@@ -39,7 +39,8 @@ def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
     """
     key = id(psd)
-    if key not in self._sigmasq:
+    if key not in self._sigmasq or not hasattr(psd, '_sigma_cached_key'):
+        psd._sigma_cached_key = True
         # If possible, we precalculate the sigmasq vector for all possible waveforms
         if pycbc.waveform.waveform_norm_exists(self.approximant):
             if not hasattr(psd, 'sigmasq_vec'):
