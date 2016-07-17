@@ -477,8 +477,6 @@ def load_timeseries(path, group=None):
     ValueError
         If path does not end in .npy or .txt.
     """
-    import os
-    
     ext = _os.path.splitext(path)[1]
     if ext == '.npy':
         data = _numpy.load(path)    
@@ -497,11 +495,11 @@ def load_timeseries(path, group=None):
         
     if data.ndim == 2:
         delta_t = (data[-1][0] - data[0][0]) / (len(data)-1)
-        epoch = lal.LIGOTimeGPS(data[0][0])
+        epoch = _lal.LIGOTimeGPS(data[0][0])
         return TimeSeries(data[:,1], delta_t=delta_t, epoch=epoch)
     elif data.ndim == 3:
         delta_t = (data[-1][0] - data[0][0]) / (len(data)-1)
-        epoch = lal.LIGOTimeGPS(data[0][0])
+        epoch = _lal.LIGOTimeGPS(data[0][0])
         return TimeSeries(data[:,1] + 1j*data[:,2],
                           delta_t=delta_t, epoch=epoch)
     else:
