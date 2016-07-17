@@ -457,8 +457,6 @@ class TimeSeries(Array):
                            delta_f=delta_f)
         fft(tmp, f)
         return f
-        
-        
 
 def load_timeseries(path, group=None):
     """
@@ -479,15 +477,13 @@ def load_timeseries(path, group=None):
     ValueError
         If path does not end in .npy or .txt.
     """
-    import numpy
     import os
-    import lal
     
-    ext = os.path.splitext(path)[1]
+    ext = _os.path.splitext(path)[1]
     if ext == '.npy':
-        data = numpy.load(path)    
+        data = _numpy.load(path)    
     elif ext == '.txt':
-        data = numpy.loadtxt(path)
+        data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
         f = h5py.File(path)
@@ -506,7 +502,8 @@ def load_timeseries(path, group=None):
     elif data.ndim == 3:
         delta_t = (data[-1][0] - data[0][0]) / (len(data)-1)
         epoch = lal.LIGOTimeGPS(data[0][0])
-        return TimeSeries(data[:,1] + 1j*data[:,2], delta_t=delta_t, epoch=epoch)
+        return TimeSeries(data[:,1] + 1j*data[:,2],
+                          delta_t=delta_t, epoch=epoch)
     else:
         raise ValueError('File has %s dimensions, cannot convert to Array, \
                           must be 2 (real) or 3 (complex)' % data.ndim)

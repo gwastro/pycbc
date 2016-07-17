@@ -46,7 +46,6 @@ def lfilter(coefficients, timeseries):
     tseries: numpy.ndarray
         filtered array
     """
-    from pycbc.fft import fft, ifft
     from pycbc.filter import correlate
 
     # If there aren't many points just use the default scipy method

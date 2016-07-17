@@ -118,7 +118,7 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
         if scaleFactor > 64:
             scaleFactor = 1
     # Shouldn't be here!
-    raise BrokenError
+    raise RuntimeError
 
 def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
                           metricParams, fUpper,

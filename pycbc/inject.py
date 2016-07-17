@@ -229,38 +229,6 @@ class InjectionSet(object):
         """ Return the end times of all injections
         """
         return [inj.get_time_geocent() for inj in self.table]      
-        
-        
-    def maximum_snrs(self, psd):
-        """ Calculate the maximum SNR (without noise), for each signal in the
-        injection set, using the given PSD.        
-
-        Parameters
-        ----------
-
-
-        Returns
-        -------
-        None
-
-        """
-        raise NotImplementedError("This is not yet implemented")
-        
-    def expected_snrs(self, template, psd):
-        """ Calculate the expected SNR (without noise), for each signal in the
-        injection set, using the given PSD, when matched with the given template.       
-
-        Parameters
-        ----------
-
-
-        Returns
-        -------
-        None
-
-        """
-        raise NotImplementedError("This is not yet implemented")
-    
     
 class SGBurstInjectionSet(object):
     """Manages sets of sine-Gaussian burst injections: reads injections
@@ -333,9 +301,6 @@ class SGBurstInjectionSet(object):
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
 
-        # pick lalsimulation tapering function
-        taper = taper_func_map[strain.dtype]
-
         # pick lalsimulation injection function
         add_injection = injection_func_map[strain.dtype]
 
@@ -363,41 +328,8 @@ class SGBurstInjectionSet(object):
 
             # compute the detector response, taper it if requested
             # and add it to the strain
-            #signal = detector.project_wave(
-            #        hp, hc, inj.longitude, inj.latitude, inj.polarization)
+            strain = wfutils.taper_timeseries(strain, inj.taper)
             signal_lal = hp.astype(strain.dtype).lal()
-            if taper_map['TAPER_NONE'] is not None:
-                taper(signal_lal.data, taper_map['TAPER_NONE'])
             add_injection(lalstrain, signal_lal, None)
 
         strain.data[:] = lalstrain.data.data[:]
-
-    def maximum_snrs(self, psd):
-        """ Calculate the maximum SNR (without noise), for each signal in the
-        injection set, using the given PSD.
-
-        Parameters
-        ----------
-
-
-        Returns
-        -------
-        None
-
-        """
-        raise NotImplementedError("This is not yet implemented")
-
-    def expected_snrs(self, template, psd):
-        """ Calculate the expected SNR (without noise), for each signal in the
-        injection set, using the given PSD, when matched with the given template.
-
-        Parameters
-        ----------
-
-
-        Returns
-        -------
-        None
-
-        """
-        raise NotImplementedError("This is not yet implemented")

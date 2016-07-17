@@ -435,5 +435,5 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
              
         stat_files += [setup_statmap(workflow, bg_files, hdfbank, out_dir, tags=tags + [veto_name])]
 
-    return stat_files
     logging.info('...leaving coincidence ')
+    return stat_files

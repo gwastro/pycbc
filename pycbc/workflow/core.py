@@ -1149,7 +1149,7 @@ class FileList(list):
         File class
            The File that is most appropriate for the time range
         '''
-        currsegment_list = segments.segmentlist([current_segment])
+        currsegment_list = segments.segmentlist([segments.segment(start, end)])
 
         # First filter Files corresponding to ifo
         outFiles = [i for i in self if ifo in i.ifo_list]
@@ -1327,7 +1327,7 @@ class FileList(list):
             return True
 
     @classmethod
-    def load(self, filename):
+    def load(cls, filename):
         """
         Load an AhopeFileList from a pickle file
         """

@@ -1506,8 +1506,6 @@ def cat_to_veto_def_cat(val):
     else:
         raise ValueError('Invalid Category Choice')
 
-    return cat_sets
-
 def file_needs_generating(file_path, cp, tags=None):
     """
     This job tests the file location and determines if the file should be

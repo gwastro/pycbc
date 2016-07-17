@@ -116,7 +116,7 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
                          missed_mchirp ** mchirp_power
     else:
         raise NotImplementedError("%s is not a recognized distance parameter"
-                                                              % distance_param)
+                                                              % distribution_param)
 
     all_weights = numpy.concatenate((found_weights, missed_weights))
 

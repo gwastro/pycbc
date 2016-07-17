@@ -6,7 +6,6 @@ import h5py
 import numpy as np
 import logging
 import inspect
-import numpy
 
 from lal import LIGOTimeGPS, YRJUL_SI
 
@@ -44,7 +43,7 @@ class HFile(h5py.File):
 
         Returns
         -------
-        values : numpy.ndarrays
+        values : np.ndarrays
             A variable number of arrays depending on the number of keys into the
         hdf5 file that are given.
 
@@ -79,9 +78,9 @@ class HFile(h5py.File):
 
         # Combine the partial results into full arrays
         if len(args) == 1:
-            return numpy.concatenate(data[args[0]])
+            return np.concatenate(data[args[0]])
         else:
-            return tuple(numpy.concatenate(data[arg]) for arg in args)
+            return tuple(np.concatenate(data[arg]) for arg in args)
 
 
 class DictArray(object):
@@ -788,6 +787,6 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
     elif chisq_choice == 'max_bank_cont_trad':
         chisq = np.maximum(np.maximum(bank_chisq, cont_chisq), trad_chisq)
     else:
-        err_msg="Do not recognized --chisq-choice %s" %(args.chisq_choice,)
+        err_msg="Do not recognized --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)
     return chisq

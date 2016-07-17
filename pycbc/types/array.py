@@ -982,14 +982,11 @@ def load_array(path, group=None):
     ValueError
         If path does not end in .npy or .txt.
     """
-    import numpy
-    import os
-    
-    ext = os.path.splitext(path)[1]
+    ext = _os.path.splitext(path)[1]
     if ext == '.npy':
-        data = numpy.load(path)    
+        data = _numpy.load(path)    
     elif ext == '.txt':
-        data = numpy.loadtxt(path)
+        data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
         return Array(h5py.File(path)[key]) 
