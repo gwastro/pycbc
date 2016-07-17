@@ -650,7 +650,7 @@ else
     else
         git clone git://versions.ligo.org/lalsuite.git
         cd lalsuite
-        git add remote gitlab $gitlab/lalsuite.git
+        git remote add gitlab $gitlab/lalsuite.git
         if [ ".$lalsuite_branch" != "." ]; then
             git checkout "$lalsuite_branch"
         fi
