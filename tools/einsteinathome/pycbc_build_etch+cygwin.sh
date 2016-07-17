@@ -177,6 +177,9 @@ else
 fi
 echo "$$" > "$PYCBC/lock"
 
+# make sure the sources directory exixts
+mkdir -p "$SOURCE"
+
 # handle command-line arguments, possibly overriding above settings
 for i in $*; do
     case $i in
@@ -241,9 +244,6 @@ albert=http://albert.phys.uwm.edu/download
 export GIT_SSL_NO_VERIFY=true
 wget_opts="-c --passive-ftp --no-check-certificate"
 export PIP_TRUSTED_HOST="pypi.python.org github.com"
-
-# make sure the sources directory exixts
-mkdir -p "$SOURCE"
 
 # use previously compiled scipy, lalsuite etc. if available
 if test -r "$SOURCE/pycbc-preinst.tgz" -o -r "$SOURCE/pycbc-preinst-lalsuite.tgz"; then
