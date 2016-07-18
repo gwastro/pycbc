@@ -134,8 +134,8 @@ class ExpFitStatistic(NewSNRStatistic):
         self.fits_by_tid = {}
         for i in self.ifos:
            self.fits_by_tid[i] = self.assign_fits(i)
-        # HACK: pretend that the normalization of the trigger rate was done at newsnr=5.5
-        self.count_thresh = 5.5
+        # HACK: hard-code the point at which normalization of trigger rate was done
+        self.count_thresh = 6.
 
     def assign_fits(self, ifo):
         # the template_ids and fit coeffs are stored in an arbitrary order
@@ -162,7 +162,6 @@ class ExpFitStatistic(NewSNRStatistic):
         statistic and rescale it by the fitted coefficients
         """
         alphai, lambdai = self.find_fits(trigs)
-        #print 'template duration', pnutils.get_seobnrrom_duration(trigs.param['mass1'], trigs.param['mass2'], trigs.param['spin1z'], trigs.param['spin2z'], 30.), 'alpha =', alphai
         dof = 2 * trigs['chisq_dof'] - 2
         newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / dof)
         # alphai is constant of proportionality between single-ifo newsnr and
@@ -172,7 +171,7 @@ class ExpFitStatistic(NewSNRStatistic):
         # correction for detectability - NOT YET
         #chirpfac = pnutils.mass1_mass2_to_mchirp_eta(trigs.param['mass1'], trigs.param['mass2'])[0] / 1.22
         #volterm = (5./2.) * numpy.log(chirpfac)
-        # make make noise likelihood more negative for high chirp mass
+        # make noise likelihood more negative for high chirp mass
         # do half of the correction for each ifo (hack)
         #lognoisel -= 0.5 * volterm
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
@@ -180,10 +179,10 @@ class ExpFitStatistic(NewSNRStatistic):
     def coinc(self, s0, s1, slide, step):
         # approximate log likelihood ratio by sum of single-ifo negative
         # log noise likelihoods
-        loglr = - s1 - s0
+        loglr = - s0 - s1
         # convert back to a familiar statistic-like value
         # notionally, log likelihood ratio \propto rho_c^2 / 2
-        return (8. ** 2 + 2 * loglr) ** 0.5
+        return (2 * self.count_thresh**2 + 2 * loglr) ** 0.5
 
 statistic_dict = {'newsnr': NewSNRStatistic,
                   'newsnr_cut': NewSNRCutStatistic,

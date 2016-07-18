@@ -115,12 +115,10 @@ else:
     # try asking for a LALSimulation frequency function
     parvals = pnutils.get_freq(args.fit_param, m1, m2, s1z, s2z)
 
-ntrigs = fits['ntrigs'][:]
-# normalize to average number of triggers per templates
-ntrigs = ntrigs/np.mean(ntrigs)
 nabove = fits['count_above_thresh'][:]
 # create mask for values where no trigs were fit at all
 nonzero_trigs = nabove > 0
+# normalize to average number of triggers per template
 nabove = nabove/np.mean(nabove)
 # for an exponential fit 1/alpha is linear in the trigger statistic values
 # so taking weighted sums/averages of 1/alpha is appropriate
@@ -130,7 +128,6 @@ invalpha = 1./(fits['fit_coeff'][:])
 parsort = np.argsort(parvals)
 tid = tid[parsort]
 parvals = parvals[parsort]
-ntrigs = ntrigs[parsort]
 nabove = nabove[parsort]
 invalpha = invalpha[parsort]
 nonzero_trigs = nonzero_trigs[parsort]
@@ -157,9 +154,9 @@ if args.regression_method == 'nn':
     invalpha_smoothed = [invalpha_knn.predict([[p]]) for p in parvals]
     del invalpha_knn
 
-    logging.info('Smoothing ntrigs data')
+    logging.info('Smoothing nabove data')
     nabove_knn = knn.fit(parvals[:, np.newaxis], nabove)
-    logging.info('Evaluating smoothed ntrigs')
+    logging.info('Evaluating smoothed nabove')
     nabove_smoothed = [nabove_knn.predict([[p]]) for p in parvals]
     del nabove_knn
 
@@ -167,7 +164,6 @@ if args.regression_method == 'nn':
 # store template-dependent fit output
 outfile = h5py.File(args.output, 'w')
 outfile.create_dataset('template_id', data=tid)
-outfile.create_dataset('ntrigs', data=ntrigs) # ntrigs is not smoothed!
 outfile.create_dataset('count_above_thresh', data=nabove_smoothed)
 outfile.create_dataset('fit_coeff', data=1. / np.array(invalpha_smoothed))
 
