@@ -129,11 +129,15 @@ for num_event in range(num_events):
     params['mass2'] = bank_data['mass2'][bank_id]
     params['spin1z'] = bank_data['spin1z'][bank_id]
     params['spin2z'] = bank_data['spin2z'][bank_id]
-    params['spin1x'] = bank_data['spin1x'][bank_id]
-    params['spin1y'] = bank_data['spin1y'][bank_id]
-    params['spin2x'] = bank_data['spin2x'][bank_id]
-    params['spin2y'] = bank_data['spin2y'][bank_id]
-    params['inclination'] = bank_data['inclination'][bank_id]
+    # don't require precessing template info if not present
+    try:
+        params['spin1x'] = bank_data['spin1x'][bank_id]
+        params['spin1y'] = bank_data['spin1y'][bank_id]
+        params['spin2x'] = bank_data['spin2x'][bank_id]
+        params['spin2y'] = bank_data['spin2y'][bank_id]
+        params['inclination'] = bank_data['inclination'][bank_id]
+    except KeyError:
+        pass
 
     files += mini.make_single_template_plots(workflow, insp_segs,
                                     args.inspiral_data_read_name,

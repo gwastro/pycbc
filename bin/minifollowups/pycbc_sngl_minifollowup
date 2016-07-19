@@ -90,7 +90,6 @@ trigs = hdf.SingleDetTriggers(args.single_detector_file, args.bank_file,
                               args.veto_file, args.veto_segment_name,
                               None, args.instrument)
 
-
 trigs.mask_to_n_loudest_clustered_events(n_loudest=num_events,
                                       ranking_statistic=args.ranking_statistic)
 
@@ -122,11 +121,15 @@ for num_event in range(num_events):
     curr_params['spin1z'] = trigs.spin1z[num_event]
     curr_params['spin2z'] = trigs.spin2z[num_event]
     curr_params[args.instrument + '_end_time'] = time
-    curr_params['spin1x'] = trigs.spin1x[num_event]
-    curr_params['spin2x'] = trigs.spin2x[num_event]
-    curr_params['spin1y'] = trigs.spin1y[num_event]
-    curr_params['spin2y'] = trigs.spin2y[num_event]
-    curr_params['inclination'] = trigs.inclination[num_event]
+    # don't require precessing template info if not present
+    try:
+        curr_params['spin1x'] = trigs.spin1x[num_event]
+        curr_params['spin2x'] = trigs.spin2x[num_event]
+        curr_params['spin1y'] = trigs.spin1y[num_event]
+        curr_params['spin2y'] = trigs.spin2y[num_event]
+        curr_params['inclination'] = trigs.inclination[num_event]
+    except KeyError:
+        pass
     try:
         # Only present for precessing search
         curr_params['u_vals'] = trigs.u_vals[num_event]
