@@ -453,12 +453,12 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
                     self.corr_mem = zeros(len(corr_plus),
                                 dtype=complex_same_precision_as(corr_plus))
 
-                tmplt_data = template_cross._data
-                corr_data = corr_cross._data
-                numpy.copyto(self.template_mem._data, template_cross._data)
-                numpy.copyto(self.corr_mem._data, corr_cross._data)
-                template_cross._data = self.template_mem._data
-                corr_cross._data = self.corr_mem._data
+                tmplt_data = template_cross.data
+                corr_data = corr_cross.data
+                numpy.copyto(self.template_mem.data, template_cross.data)
+                numpy.copyto(self.corr_mem.data, corr_cross.data)
+                template_cross._data = self.template_mem.data
+                corr_cross._data = self.corr_mem.data
 
                 for lidx, index in enumerate(above_indices):
                     above_local_indices = numpy.array([index])
