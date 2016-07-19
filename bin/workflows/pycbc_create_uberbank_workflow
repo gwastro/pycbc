@@ -1,0 +1,217 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2016 Ian W. Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Workflow generator for the 'uberbank' template bank construction. The script
+as written runs one configurable example of sbank, and one of
+pycbc_geom_aligned_bank independently. It then combines these two banks
+together and runs a second example of sbank and the resulting output. It is
+foreseen that this script would be altered to generate workflows in slightly
+different configurations to the one described, so hopefully the script is
+clear enough to allow someone to do that.
+"""
+
+#imports
+from __future__ import division
+import os
+import argparse
+import urlparse
+from Pegasus import DAX3 as dax
+import pycbc
+import pycbc.version
+import pycbc.workflow as wf
+
+# Boiler-plate stuff
+__author__  = "Ian Harry <ian.harry@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_create_sbank_workflow"
+
+# Define classes for executables
+
+class GeomBankExecutable(wf.Executable):
+    """ Class for running pycbc_geom_aligned_bank.
+    """
+    # This outputs a dax file.
+    current_retention_level = wf.Executable.FINAL_RESULT
+
+    # This tells us about input file options
+    file_input_options = ['--psd-file', '--asd-file',
+                          '--fake-strain-from-file', '--injection-file',
+                          '--sgburst-injection-file', '--gating-file']
+
+    def create_node(self, analysis_time, geom_out_file,
+                    workflow_name='geom_bank'):
+        node = wf.Executable.create_node(self)
+        
+        # Output file: This one is done weirdly because this job doesn't
+        # actually produce this file, the resulting dax will do that.
+        node.add_opt('--output-file', geom_out_file.name)
+
+        # Intermediate outputs and dax files
+        node.new_output_file_opt(analysis_time, '.hdf',
+                                 '--intermediate-data-file',
+                                 tags=self.tags + ['INTERMEDIATE'])
+        node.new_output_file_opt(analysis_time, '.xml',
+                                 '--metadata-file', 
+                                 tags=self.tags + ['METADATA'])
+        node.new_output_file_opt(analysis_time, '.map',
+                                 '--map-filename',
+                                 tags=self.tags + ['MAP'])
+        node.new_output_file_opt(analysis_time, '.dax',
+                                 '--dax-filename',
+                                 tags=self.tags + ['DAX'])
+        return node
+
+class SbankDaxGenerator(wf.Executable):
+    """ Class for running pycbc_geom_aligned_bank.
+    """
+    # This outputs a dax file.
+    current_retention_level = wf.Executable.FINAL_RESULT
+
+    # This tells us about input file options
+    file_input_options = []
+ 
+    def create_node(self, analysis_time, config_file, workflow_name='sbank'):
+        """ Create a sbank dax generator node.
+        """
+        node = wf.Executable.create_node(self)
+
+        dax_lfn = '%s.dax' % workflow_name
+        dax_path = os.path.join(geom_exe.out_dir, dax_lfn)
+        dax_url = urlparse.urlunparse(['file', 'localhost', dax_path,
+                                       None, None, None])
+        dax_file = wf.File(self.ifo_list, geom_exe.name,
+                           analysis_time, file_url=dax_url,
+                           store_file=True)
+        map_lfn = '%s.map' % workflow_name
+        map_path = os.path.join(geom_exe.out_dir, map_lfn)
+        map_url = urlparse.urlunparse(['file', 'localhost', map_path,
+                                       None, None, None])
+        map_file = wf.File(self.ifo_list, geom_exe.name,
+                           analysis_time, file_url=map_url,
+                           store_file=True)
+
+        node.add_opt('--workflow-name', workflow_name)
+        node.add_opt('--output-dir', '.')
+
+        node.add_input_opt('--config-files', config_file)
+
+        node._add_output(dax_file)
+        node._add_output(map_file)
+
+        return node
+
+##############################################################################
+# Argument parsing and setup of workflow                                     #
+##############################################################################
+
+
+# Use the standard workflow command-line parsing routines. Things like a 
+# configuration file are specified within the "workflow command line group"
+# so run this with --help to see what options are added.
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(description=_desc)
+parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument("--workflow-name", type=str, default='sbank_workflow',
+                    help="Descriptive name of the analysis.")
+parser.add_argument("-d", "--output-dir", default=None,
+                    help="Path to output directory.")
+wf.add_workflow_command_line_group(parser)
+args = parser.parse_args()
+
+# Create the workflow object
+workflow = wf.Workflow(args, args.workflow_name)
+
+wf.makedir(args.output_dir)
+os.chdir(args.output_dir)
+wf.makedir('daxes')
+
+##############################################
+# Run the geom_bank workflow the first time  #
+##############################################
+
+geom_exe = GeomBankExecutable(workflow.cp, 'geom_aligned_bank',
+                              ifos=workflow.ifos, out_dir='daxes')
+# This one's a bit weird as the dag generator names the final output file,
+# but that job doesn't *generate* it, so we create this file first.
+geom_out_file = wf.File(geom_exe.ifo_list, geom_exe.name,
+                        workflow.analysis_time, extension='.xml',
+                        store_file=True, directory=geom_exe.out_dir,
+                        tags=[], use_tmp_subdirs=False)
+geom_node = geom_exe.create_node(workflow.analysis_time,
+                                 workflow_name='initial_geom_bank',
+                                 geom_out_file=geom_out_file)
+workflow += geom_node
+
+intermediate_file = geom_node.output_files[0]
+metadata_file = geom_node.output_files[1]
+dax_file = geom_node.output_files[2]
+map_file = geom_node.output_files[3]
+
+# NOTE: One can use workflow += dax_job, but this seems to miss a bunch of
+#       the stuff done below, and does not consider file management
+dax_job = dax.DAX(dax_file)
+dax_job.addArguments('--basename %s' % \
+                     os.path.splitext(os.path.basename(dax_file.name))[0])
+wf.Workflow.set_job_properties(dax_job, map_file.name)
+
+# Tell the dax job that it needs some input files
+# FIXME: I think we need to add some more functionality to our sub-dax classes
+dax_job.uses(metadata_file, link=dax.Link.INPUT, register=False, transfer=True)
+dax_job.uses(intermediate_file, link=dax.Link.INPUT, register=False,
+             transfer=True)
+dax_job.uses(map_file, link=dax.Link.INPUT, register=False, transfer=True)
+dax_job.uses(geom_out_file, link=dax.Link.OUTPUT, register=False,
+             transfer=True)
+
+workflow._adag.addJob(dax_job)
+dep = dax.Dependency(parent=geom_node._dax_node, child=dax_job)
+workflow._adag.addDependency(dep)
+geom_out_file.node = dax_job
+
+workflow._outputs += [geom_out_file]
+
+##############################################
+# Run the sbank workflow for the first time  #
+##############################################
+
+sbank_exe = SbankDaxGenerator(workflow.cp, 'sbank', ifos=workflow.ifos,
+                              out_dir='daxes')
+
+config_path = os.path.abspath('daxes' + '/' + 'sbank_workflow.ini')
+workflow.cp.write(open(config_path, 'w'))
+
+config_file = wf.File.from_path(config_path)
+
+sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
+                                   workflow_name='sbank_first')
+
+workflow += sbank_node
+
+dax_file = sbank_node.output_files[0]
+map_file = sbank_node.output_files[1]
+dax_job = dax.DAX(dax_file)
+dax_job.addArguments('--basename %s' % \
+                     os.path.splitext(os.path.basename(dax_file.name))[0])
+wf.Workflow.set_job_properties(dax_job, map_file.name)
+workflow._adag.addJob(dax_job)
+# dep = dax.Dependency(parent=geom_node._dax_node, child=dax_job)
+# workflow._adag.addDependency(dep)
+
+workflow.save()
