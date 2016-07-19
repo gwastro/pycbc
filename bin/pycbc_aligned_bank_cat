@@ -27,6 +27,7 @@ import glob
 import argparse
 import numpy
 import pycbc.version
+import h5py
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils
@@ -135,7 +136,23 @@ if options.input_files:
     input_files = options.input_files
 else:
     input_files = glob.glob(options.input_glob)
-tempBank = loadtxt(fileinput.input(input_files))
+
+mass1 = []
+mass2 = []
+spin1z = []
+spin2z = []
+for inp_file in input_files:
+    inp_fp = h5py.File(inp_file, 'r')
+    data = inp_fp['accepted_templates'][:]
+    if len(data) == 0:
+        continue
+    mass1.extend(data[:,0])
+    mass2.extend(data[:,1])
+    spin1z.extend(data[:,2])
+    spin2z.extend(data[:,3])
+    inp_fp.close()
+
+temp_bank = numpy.array([mass1,mass2,spin1z,spin2z]).T
 
 # FIXME: Currently the aligned spin bank will not output the ethinca components.
 # They are not meaningful for an aligned spin bank anyway. If these values are
@@ -150,7 +167,7 @@ if options.metadata_file:
                                      contenthandler=LIGOLWContentHandler)
 else:
     outdoc = None
-tmpltbank.output_sngl_inspiral_table(options.output_file, tempBank,
+tmpltbank.output_sngl_inspiral_table(options.output_file, temp_bank,
     metricParams, ethincaParams, programName=__program__,
     optDict=options.__dict__,
     outdoc=outdoc, comment="", version=pycbc.version.git_hash,

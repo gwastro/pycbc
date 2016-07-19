@@ -31,6 +31,7 @@ import argparse
 import copy
 import numpy
 import logging
+import h5py
 import pycbc.tmpltbank
 import pycbc.version
 from pycbc.tmpltbank.lambda_mapping import pycbcValidOrdersHelpDescriptions
@@ -67,22 +68,14 @@ parser.add_argument("--f0", action="store", type=float,\
                        "applications. OPTIONAL"+\
                        "WARNING: If using ethinca calculation this must be "+\
                        "equal to f-low. UNITS=Hz")
-parser.add_argument("-I", "--input-bank-file", action="store", type=str,\
-                   default=None,\
-                   help="ASCII file containing the input bank. "+\
+parser.add_argument("-I", "--input-file", action="store", type=str,
+                   required=True,
+                   help="HDF file containing the input bank and the "
+                        "various metric information. "
                         "REQUIRED ARGUMENT.")
-parser.add_argument("--metric-evals-file", action="store", type=str,\
-                   default=None,\
-                   help="ASCII file containing the metric eigenvalues. "+\
-                        "REQUIRED ARGUMENT.")
-parser.add_argument("--metric-evecs-file", action="store", type=str,\
-                   default=None,\
-                   help="ASCII file containing the metric eigenvectors ."+\
-                        "REQUIRED ARGUMENT.")
-parser.add_argument("--cov-evecs-file", action="store", type=str,\
-                   default=None,\
-                   help="ASCII file containing the covariance eigenvectors. "+\
-                        "REQUIRED ARGUMENT.")
+parser.add_argument("--split-bank-num", action="store", type=int,
+                    required=True,
+                    help="Which splitbank do I read out of the HDF file?.")
 parser.add_argument("--stack-distance", action="store", type=float,\
                   default=0.2, help="Minimum metric spacing before we stack"+\
                                     "OPTIONAL")
@@ -103,11 +96,6 @@ parser.add_argument("--random-seed", action="store", type=int,\
                             translating all points back to physical space.
                             If this is used the code should give the same
                             output if run with the same random seed.""")
-parser.add_argument('--reject-file', default=None,
-            help="If given, store the rejected points into this file.")
-parser.add_argument('--depths-file', default=None,
-            help="If given store the parameter space depth in this file.")
-
 
 pycbc.tmpltbank.insert_base_bank_options(parser)
 
@@ -127,15 +115,7 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
 # Sanity check options
 if not opts.pn_order:
     parser.error("Must supply --pn-order")
-if not opts.input_bank_file:
-    parser.error("Must supply --input-bank-file")
 opts.max_mismatch = 1 - opts.min_match
-if not opts.metric_evals_file:
-    parser.error("Must supply --metric-evals-file")
-if not opts.metric_evecs_file:
-    parser.error("Must supply --metric-evecs-file")
-if not opts.cov_evecs_file:
-    parser.error("Must supply --cov-evecs-file")
 pycbc.tmpltbank.verify_mass_range_options(opts, parser)
 massRangeParams=pycbc.tmpltbank.massRangeParameters.from_argparse(opts)
 # Set random seed if needed
@@ -151,18 +131,20 @@ metricParams = pycbc.tmpltbank.metricParameters(opts.pn_order, 0, opts.f0, \
                                                 0, f0=opts.f0)
 
 # Load the list of points from file
-tempBank = numpy.loadtxt(opts.input_bank_file)
-# If only one template numpy only outputs a 1D array: make 2D
-try:
-    len(tempBank[0])
-except TypeError:
-    tempBank = [tempBank]
+h5file = h5py.File(opts.input_file, 'r')
+v1s = h5file['split_banks/split_bank_%05d/v1s' % opts.split_bank_num][:]
+v2s = h5file['split_banks/split_bank_%05d/v2s' % opts.split_bank_num][:]
+if 'v3s' in h5file['split_banks/split_bank_%05d' % opts.split_bank_num].keys():
+    v3s = h5file['split_banks/split_bank_%05d/v3s' % opts.split_bank_num][:]
+    temp_bank = numpy.array([v1s,v2s,v3s]).T
+else:
+    temp_bank = numpy.array([v1s,v2s]).T
 
 # Load the files giving the information needed to define the xi_i
 # parameter space
-evals = numpy.loadtxt(opts.metric_evals_file)
-evecs = numpy.matrix(numpy.loadtxt(opts.metric_evecs_file))
-evecsCV = numpy.matrix(numpy.loadtxt(opts.cov_evecs_file))
+evals = h5file['metric_evals']
+evecs = h5file['metric_evecs']
+evecsCV = h5file['cov_evecs']
 
 metricParams.evals = {}
 metricParams.evecs = {}
@@ -204,13 +186,11 @@ maxBHspin = opts.max_bh_spin_mag
 
 # Here we start looping over bank
 temp_number = 0
-outPointer = open(opts.output_file, 'w')
-if opts.reject_file is not None:
-    outPointer2 = open(opts.reject_file, 'w')
-if opts.depths_file is not None:
-    outPointer3 = open(opts.depths_file, 'w')
-numtemps = len(tempBank)
-for entry in tempBank:
+reject_info = []
+depths_info = []
+points_info = []
+numtemps = len(temp_bank)
+for entry in temp_bank:
     temp_number += 1
     logging.info("Analysing template %d" % temp_number)
     # First find the closest point in our set of 2000000 defined above 
@@ -235,14 +215,11 @@ for entry in tempBank:
     if dist.min() > 2.:
         logging.info("Template %d rejected as too far away" % temp_number)
         # Print info to the rejected points file
-        if opts.reject_file is None:
-            continue
         if opts.threed_lattice:
-            print >> outPointer2, "%e %e %e %e %e %e %e %e" \
-                     %(xi1_des, xi2_des, xi3_des, 0, 0, 0, 0, dist.min())
+            reject_info.append([xi1_des, xi2_des, xi3_des, 0, 0,
+                                0, 0, dist.min()])
         else:
-            print >> outPointer2, "%e %e %e %e %e %e %e" \
-                     %(xi1_des, xi2_des, 0, 0, 0, 0, dist.min())
+            reject_info.append([xi1_des, xi2_des, 0, 0, 0, 0, dist.min()])
         continue
     # This function will use the starting point and iteratively find a
     # physical point has a mismatch < 0.0001 with the desired one
@@ -256,16 +233,12 @@ for entry in tempBank:
     if masses[5] > opts.max_mismatch:
         # Reject point, it is too far away
         logging.info("Template %d rejected as too far away" % temp_number)
-        if opts.reject_file is None:
-            continue
         if opts.threed_lattice:
-            print >> outPointer2, "%e %e %e %e %e %e %e %e" \
-                     %(xi1_des, xi2_des, xi3_des, masses[0], masses[1],\
-                       masses[2], masses[3], masses[5])
+            reject_info.append([xi1_des, xi2_des, xi3_des, masses[0],
+                                masses[1], masses[2], masses[3], masses[5]])
         else:
-            print >> outPointer2, "%e %e %e %e %e %e %e" \
-                     %(xi1_des, xi2_des, masses[0], masses[1], masses[2],\
-                       masses[3], masses[5])
+            reject_info.append([xi1_des, xi2_des, masses[0], masses[1],
+                                masses[2], masses[3], masses[5]])
         continue
     # If we got this far the point will be accepted.
     # Now we figure out if the depth of the *other* directions are wide enough
@@ -343,13 +316,11 @@ for entry in tempBank:
     else:
         vec5_min = vec5_max = vec5_depth = 0
     # Output depths
-    if opts.depths_file is not None:
-        if opts.threed_lattice:
-            print >> outPointer3, "%e %e %e %e %e"\
-                     %(xi1_des, xi2_des, xi3_des, vec4_depth, vec5_depth)
-        else:
-            print >> outPointer3, "%e %e %e %e %e"\
-                     %(xi1_des, xi2_des, vec3_depth, vec4_depth, vec5_depth)
+    if opts.threed_lattice:
+        depths_info.append([xi1_des, xi2_des, xi3_des, vec4_depth, vec5_depth])
+    else:
+        depths_info.append([xi1_des, xi2_des, vec3_depth, vec4_depth,
+                            vec5_depth])
    # Figure out how many templates we need to stack in 3rd direction
     vec3DepthVal = opts.stack_distance
     if opts.threed_lattice:
@@ -373,8 +344,8 @@ for entry in tempBank:
         if vec4_depth < vec3DepthVal or masses[5] > opts.max_mismatch:
             if masses[5]:
                 # Write point to file
-                print >> outPointer, "%e %e %e %e %e" \
-                      %(masses[0], masses[1], masses[2], masses[3], masses[5])
+                points_info.append([masses[0], masses[1], masses[2], masses[3],
+                                    masses[5]])
         else:
             # OR we need to estimate the depth in the 4th direction at this
             # 3d point
@@ -401,13 +372,11 @@ for entry in tempBank:
                            copy.deepcopy(bestMasses), copy.deepcopy(bestXis), \
                            req_match, massRangeParams, metricParams, opts.f0)
                 if masses[5]:
-                    # Write point to file
-                    print >> outPointer, "%e %e %e %e %e"\
-                          %(masses[0], masses[1], masses[2], masses[3],\
-                            masses[5])
+                    points_info.append([masses[0], masses[1], masses[2],
+                                        masses[3], masses[5]])
 
-outPointer.close()
-if opts.reject_file is not None:
-    outPointer2.close()
-if opts.depths_file is not None:
-    outPointer3.close()
+h5outfile = h5py.File(opts.output_file, 'w')
+h5outfile['reject_points'] = numpy.array(reject_info)
+h5outfile['point_depths'] = numpy.array(depths_info)
+h5outfile['accepted_templates'] = numpy.array(points_info)
+h5outfile.close()
