@@ -375,6 +375,7 @@ def get_cov_params(totmass, eta, beta, sigma, gamma, chis, metricParams, \
     mus = get_conv_params(totmass, eta, beta, sigma, gamma, chis, \
                           metricParams, fUpper)
     # and then mus -> xis
+    mus = numpy.array(mus, copy=False)
     xis = get_covaried_params(mus, metricParams.evecsCV[fUpper])
     return xis
 
@@ -417,6 +418,7 @@ def get_conv_params(totmass, eta, beta, sigma, gamma, chis, metricParams, \
     # Do this by masses -> lambdas
     lambdas = get_chirp_params(totmass, eta, beta, sigma, gamma, chis, \
                                metricParams.f0, metricParams.pnOrder)
+    lambdas = numpy.array(lambdas, copy=False)
     # and lambdas -> mus
     mus = get_mu_params(lambdas, metricParams, fUpper)
     return mus
@@ -448,9 +450,11 @@ def get_mu_params(lambdas, metricParams, fUpper):
     evecs = metricParams.evecs[fUpper]
     evals = metricParams.evals[fUpper]
 
-    mus = []
-    for i in xrange(len(evals)):
-        mus.append(rotate_vector(evecs,lambdas,numpy.sqrt(evals[i]),i))
+    evecs = numpy.array(evecs, copy=False)
+
+    mus = ((lambdas.T).dot(evecs)).T
+    mus = mus * numpy.sqrt(evals)[:,None]
+
     return mus
 
 def get_covaried_params(mus, evecsCV):
@@ -471,10 +475,7 @@ def get_covaried_params(mus, evecsCV):
     xis : list of floats or numpy.arrays
         Position of the system(s) in the xi coordinate system
     """
-    xis = []
-    for i in xrange(len(evecsCV)):
-        xis.append(rotate_vector(evecsCV,mus,1.,i))
-    return xis
+    return ((mus.T).dot(evecsCV)).T
 
 def rotate_vector(evecs, old_vector, rescale_factor, index):
     """
@@ -501,8 +502,7 @@ def rotate_vector(evecs, old_vector, rescale_factor, index):
     """
     temp = 0
     for i in xrange(len(evecs)):
-        temp += evecs[i,index] * old_vector[i]
-    temp *= rescale_factor
+        temp += (evecs[i,index] * rescale_factor) * old_vector[i]
     return temp
 
 def get_point_distance(point1, point2, metricParams, fUpper):
