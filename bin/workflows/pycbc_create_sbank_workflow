@@ -85,13 +85,13 @@ class SbankExecutable(wf.Executable):
 class SbankChooseMchirpBinsExecutable(wf.Executable):
     """ Class for running lalapps_cbc_sbank_choose_mchirp_boundaries
     """
-    current_retention_level = wf.Executable.FINAL_RESULT
+    current_retention_level = wf.Executable.ALL_TRIGGERS
 
-    def create_node(self, input_file, nbanks):
+    def create_node(self, analysis_time, input_file, nbanks):
         node = wf.Executable.create_node(self)
 
         # Here we add the output file
-        node.new_output_file_opt(workflow.analysis_time, '.txt',
+        node.new_output_file_opt(analysis_time, '.txt',
                                  '--output-file', tags=self.tags)
 
         # And the input file, which is an argument, not an option
@@ -140,6 +140,7 @@ wf.makedir('coarse')
 # section of the ini file are sent to this job, and *only* this job
 coarse_sbank_exe = SbankExecutable(workflow.cp, 'sbank', ifos=workflow.ifos,
                                    out_dir='coarse', tags=['coarse'])
+coarse_sbank_exe.current_retention_level=wf.Executable.MERGED_TRIGGERS
 # Then make a specific node
 coarse_node = coarse_sbank_exe.create_node(workflow.analysis_time)
 # Add to workflow
@@ -179,7 +180,8 @@ for cycle_idx in range(num_cycles):
     bins_exe = SbankChooseMchirpBinsExecutable(workflow.cp, 'sbank_mchirp_bins',
                                     ifos=workflow.ifos, out_dir=out_dir,
                                     tags=[cycle_tag])
-    bins_node = bins_exe.create_node(input_file, nbanks)
+    bins_node = bins_exe.create_node(workflow.analysis_time,
+                                     input_file, nbanks)
     workflow += bins_node
     assert(len(bins_node.output_files) == 1)
     bins_file = bins_node.output_files[0]
@@ -190,6 +192,9 @@ for cycle_idx in range(num_cycles):
 
     main_sbank_exe = SbankExecutable(workflow.cp, 'sbank', ifos=workflow.ifos,
                                  out_dir=out_dir, tags=['parallel', cycle_tag])
+    # These jobs we don't always want to store
+    main_sbank_exe.current_retention_level=wf.Executable.INTERMEDIATE_PRODUCT
+
     main_sbank_files = wf.FileList([])
     for nbank_idx in range(nbanks):
         nbank_tag = 'nbank%d' %(nbank_idx)
@@ -208,6 +213,7 @@ for cycle_idx in range(num_cycles):
 
     llwadd_exe = wf.LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
                                     out_dir=out_dir, tags=[cycle_tag, 'FIRST'])
+    llwadd_exe.current_retention_level = wf.Executable.ALL_TRIGGERS
     llwadd_node = llwadd_exe.create_node(workflow.analysis_time,
                                          main_sbank_files,
                                          use_tmp_subdirs=False)
@@ -222,9 +228,9 @@ for cycle_idx in range(num_cycles):
     readder_sbank_exe = SbankExecutable(workflow.cp, 'sbank',
                                         ifos=workflow.ifos, out_dir=out_dir,
                                         tags=[cycle_tag, 'readder'])
+    readder_sbank_execurrent_retention_level = wf.Executable.ALL_TRIGGERS
     readder_sbank_node = readder_sbank_exe.create_node(workflow.analysis_time,
-                                              seed_bank=input_file,
-                                              trial_bank=llwadd_out)
+                                                       trial_bank=llwadd_out)
     workflow += readder_sbank_node
     assert(len(readder_sbank_node.output_files) == 1)
     readder_out = readder_sbank_node.output_files[0]
@@ -236,9 +242,14 @@ for cycle_idx in range(num_cycles):
     # Is this the final output file?
     if cycle_idx == (num_cycles - 1):
         out_dir ='.'
+        crl = wf.Executable.FINAL_RESULT
+    else:
+        crl = wf.Executable.MERGED_TRIGGERS
 
     llwadd_exe = wf.LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
                                     out_dir=out_dir, tags=[cycle_tag, 'FINAL'])
+    llwadd_exe.current_retention_level = crl
+
     llwadd_node = llwadd_exe.create_node(workflow.analysis_time,
                                          [input_file, readder_out],
                                          use_tmp_subdirs=False)
