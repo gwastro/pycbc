@@ -49,7 +49,7 @@ try:
         exit(1)
 except ImportError:
     pass
-                           
+ 
 requires = ['lal.lal', 'lalsimulation.lalsimulation', 'glue', 'pylal']
 setup_requires = []
 install_requires =  setup_requires + ['Mako>=1.0.1',
