@@ -55,13 +55,17 @@ class GeomBankExecutable(wf.Executable):
                           '--fake-strain-from-file', '--injection-file',
                           '--sgburst-injection-file', '--gating-file']
 
-    def create_node(self, analysis_time, geom_out_file,
+    def create_node(self, analysis_time, geom_out_file, out_storage_path,
                     workflow_name='geom_bank'):
         node = wf.Executable.create_node(self)
         
         # Output file: This one is done weirdly because this job doesn't
         # actually produce this file, the resulting dax will do that.
         node.add_opt('--output-file', geom_out_file.name)
+      
+
+        node.add_opt('--storage-path-base', out_storage_path)      
+        node.add_opt('--is-sub-workflow','')
 
         # Intermediate outputs and dax files
         node.new_output_file_opt(analysis_time, '.hdf',
@@ -70,16 +74,16 @@ class GeomBankExecutable(wf.Executable):
         node.new_output_file_opt(analysis_time, '.xml',
                                  '--metadata-file', 
                                  tags=self.tags + ['METADATA'])
-        node.new_output_file_opt(analysis_time, '.map',
-                                 '--map-filename',
-                                 tags=self.tags + ['MAP'])
         node.new_output_file_opt(analysis_time, '.dax',
                                  '--dax-filename',
                                  tags=self.tags + ['DAX'])
+        node.new_output_file_opt(analysis_time, '.map',
+                                 '--map-filename',
+                                 tags=self.tags + ['MAP'])
         return node
 
 class SbankDaxGenerator(wf.Executable):
-    """ Class for running pycbc_geom_aligned_bank.
+    """ Class for running pycbc_create_sbank_workflow.
     """
     # This outputs a dax file.
     current_retention_level = wf.Executable.FINAL_RESULT
@@ -87,33 +91,38 @@ class SbankDaxGenerator(wf.Executable):
     # This tells us about input file options
     file_input_options = []
  
-    def create_node(self, analysis_time, config_file, workflow_name='sbank'):
+    def create_node(self, analysis_time, config_file, out_storage_path,
+                    seed_file=None, use_seed_file_for_chirp_bins=True,
+                    workflow_name='sbank_workflow'):
         """ Create a sbank dax generator node.
         """
         node = wf.Executable.create_node(self)
 
-        dax_lfn = '%s.dax' % workflow_name
-        dax_path = os.path.join(geom_exe.out_dir, dax_lfn)
-        dax_url = urlparse.urlunparse(['file', 'localhost', dax_path,
-                                       None, None, None])
-        dax_file = wf.File(self.ifo_list, geom_exe.name,
-                           analysis_time, file_url=dax_url,
-                           store_file=True)
-        map_lfn = '%s.map' % workflow_name
-        map_path = os.path.join(geom_exe.out_dir, map_lfn)
-        map_url = urlparse.urlunparse(['file', 'localhost', map_path,
-                                       None, None, None])
-        map_file = wf.File(self.ifo_list, geom_exe.name,
-                           analysis_time, file_url=map_url,
-                           store_file=True)
-
         node.add_opt('--workflow-name', workflow_name)
-        node.add_opt('--output-dir', '.')
+        node.add_opt('--output-dir', out_storage_path)
+        node.add_opt('--is-sub-workflow','')
 
         node.add_input_opt('--config-files', config_file)
 
-        node._add_output(dax_file)
-        node._add_output(map_file)
+        config_overrides = []
+
+        if seed_file is not None:
+            seed_file = os.path.basename(seed_file)
+            config_overrides.append('workflow:seed-bank:%s' % seed_file)
+            if use_seed_file_for_chirp_bins:
+                config_overrides.append\
+                    ('workflow:use-seed-bank-for-chirp-bins:')
+
+        if len(config_overrides):
+            node.add_opt('--config-overrides', ' '.join(config_overrides))
+                                       
+
+        node.new_output_file_opt(analysis_time, '.dax',
+                                 '--dax-filename',
+                                 tags=self.tags + ['DAX'])
+        node.new_output_file_opt(analysis_time, '.map',
+                                 '--map-filename',
+                                 tags=self.tags + ['MAP'])
 
         return node
 
@@ -150,19 +159,29 @@ geom_exe = GeomBankExecutable(workflow.cp, 'geom_aligned_bank',
                               ifos=workflow.ifos, out_dir='daxes')
 # This one's a bit weird as the dag generator names the final output file,
 # but that job doesn't *generate* it, so we create this file first.
+# However, this file must *not* appear in the output mapper, as then the 
+# sub-workflow will think that it already exists. So for now we are setting
+# store_file=False and relying on the sub-workflow to specify the PFN for this
+# file. Hopefully this will work if we need to add this file as a dependancy
+# for a later sub-workflow.
 geom_out_file = wf.File(geom_exe.ifo_list, geom_exe.name,
                         workflow.analysis_time, extension='.xml',
                         store_file=True, directory=geom_exe.out_dir,
                         tags=[], use_tmp_subdirs=False)
-geom_node = geom_exe.create_node(workflow.analysis_time,
-                                 workflow_name='initial_geom_bank',
-                                 geom_out_file=geom_out_file)
+geom_node = geom_exe.create_node(workflow.analysis_time, geom_out_file,
+                                 os.path.abspath('initial_geom_bank'),
+                                 workflow_name='initial_geom_bank')
 workflow += geom_node
 
+# Verify files are the correct ones, they have unique extensions
 intermediate_file = geom_node.output_files[0]
+assert(intermediate_file.name.endswith('hdf'))
 metadata_file = geom_node.output_files[1]
+assert(metadata_file.name.endswith('xml'))
 dax_file = geom_node.output_files[2]
+assert(dax_file.name.endswith('.dax'))
 map_file = geom_node.output_files[3]
+assert(map_file.name.endswith('.map'))
 
 # NOTE: One can use workflow += dax_job, but this seems to miss a bunch of
 #       the stuff done below, and does not consider file management
@@ -177,13 +196,16 @@ dax_job.uses(metadata_file, link=dax.Link.INPUT, register=False, transfer=True)
 dax_job.uses(intermediate_file, link=dax.Link.INPUT, register=False,
              transfer=True)
 dax_job.uses(map_file, link=dax.Link.INPUT, register=False, transfer=True)
-dax_job.uses(geom_out_file, link=dax.Link.OUTPUT, register=False,
-             transfer=True)
+# NOTE: Telling the dax that it uses the output file causes the sub-workflow
+#       to fail as the output file is then passed in the input map, and the
+#       sub-workflow believes it already exists and doesn't produce it!
+#dax_job.uses(geom_out_file, link=dax.Link.OUTPUT, register=False,
+#             transfer=True)
 
 workflow._adag.addJob(dax_job)
 dep = dax.Dependency(parent=geom_node._dax_node, child=dax_job)
 workflow._adag.addDependency(dep)
-geom_out_file.node = dax_job
+geom_dax_job = dax_job
 
 workflow._outputs += [geom_out_file]
 
@@ -191,8 +213,8 @@ workflow._outputs += [geom_out_file]
 # Run the sbank workflow for the first time  #
 ##############################################
 
-sbank_exe = SbankDaxGenerator(workflow.cp, 'sbank', ifos=workflow.ifos,
-                              out_dir='daxes')
+sbank_exe = SbankDaxGenerator(workflow.cp, 'sbank_workflow',
+                              ifos=workflow.ifos, out_dir='daxes')
 
 config_path = os.path.abspath('daxes' + '/' + 'sbank_workflow.ini')
 workflow.cp.write(open(config_path, 'w'))
@@ -200,6 +222,9 @@ workflow.cp.write(open(config_path, 'w'))
 config_file = wf.File.from_path(config_path)
 
 sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
+                                   os.path.abspath('sbank_first'),
+                                   seed_file=geom_out_file.name,
+                                   use_seed_file_for_chirp_bins=False,
                                    workflow_name='sbank_first')
 
 workflow += sbank_node
@@ -210,8 +235,18 @@ dax_job = dax.DAX(dax_file)
 dax_job.addArguments('--basename %s' % \
                      os.path.splitext(os.path.basename(dax_file.name))[0])
 wf.Workflow.set_job_properties(dax_job, map_file.name)
+
+# Cannot tell the dax job it uses the geom_file because it doesn't understand
+# where this will come from until the sub-workflow gets planned.
+# dax_job.uses(geom_out_file, link=dax.Link.INPUT, register=False,
+#              transfer=True)
+
 workflow._adag.addJob(dax_job)
-# dep = dax.Dependency(parent=geom_node._dax_node, child=dax_job)
-# workflow._adag.addDependency(dep)
+dep = dax.Dependency(parent=sbank_node._dax_node, child=dax_job)
+workflow._adag.addDependency(dep)
+# We must explicitly connect the daxes to allow file dependancies across
+# sub-workflows
+dep = dax.Dependency(parent=geom_dax_job, child=dax_job)
+workflow._adag.addDependency(dep)
 
 workflow.save()
