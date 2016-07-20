@@ -375,7 +375,6 @@ def get_cov_params(totmass, eta, beta, sigma, gamma, chis, metricParams, \
     mus = get_conv_params(totmass, eta, beta, sigma, gamma, chis, \
                           metricParams, fUpper)
     # and then mus -> xis
-    mus = numpy.array(mus, copy=False)
     xis = get_covaried_params(mus, metricParams.evecsCV[fUpper])
     return xis
 
@@ -418,7 +417,6 @@ def get_conv_params(totmass, eta, beta, sigma, gamma, chis, metricParams, \
     # Do this by masses -> lambdas
     lambdas = get_chirp_params(totmass, eta, beta, sigma, gamma, chis, \
                                metricParams.f0, metricParams.pnOrder)
-    lambdas = numpy.array(lambdas, copy=False)
     # and lambdas -> mus
     mus = get_mu_params(lambdas, metricParams, fUpper)
     return mus
@@ -447,6 +445,11 @@ def get_mu_params(lambdas, metricParams, fUpper):
     mus : list of floats or numpy.arrays
         Position of the system(s) in the mu coordinate system
     """
+    lambdas = numpy.array(lambdas, copy=False)
+    # If original inputs were floats we need to make this a 2D array
+    if len(lambdas.shape) == 1:
+        lambdas = lambdas[:,None]
+
     evecs = metricParams.evecs[fUpper]
     evals = metricParams.evals[fUpper]
 
@@ -475,6 +478,11 @@ def get_covaried_params(mus, evecsCV):
     xis : list of floats or numpy.arrays
         Position of the system(s) in the xi coordinate system
     """
+    mus = numpy.array(mus, copy=False)
+    # If original inputs were floats we need to make this a 2D array
+    if len(mus.shape) == 1:
+        mus = mus[:,None]
+
     return ((mus.T).dot(evecsCV)).T
 
 def rotate_vector(evecs, old_vector, rescale_factor, index):
