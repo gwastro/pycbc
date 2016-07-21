@@ -1,4 +1,4 @@
-# requirements for the 1.2.0 environment
+# requirements for the 1.2.0 environment (is this out of date?)
 decorator==4.0.4
 numpy==1.9.3
 numpydoc==0.5

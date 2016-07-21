@@ -23,7 +23,7 @@
 #
 import numpy, logging, math, pycbc.fft
 
-from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as, force_precision_to_match
+from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
 from pycbc.filter import sigmasq_series, make_frequency_series, matched_filter_core, get_cutoff_indices
 from pycbc.scheme import schemed
 import pycbc.pnutils
@@ -321,7 +321,8 @@ class SingleDetPowerChisq(object):
 
     def cached_chisq_bins(self, template, psd):
         key = (id(template.params), id(psd))
-        if key not in self._bin_cache:
+        if key not in self._bin_cache or not hasattr(psd, '_chisq_cached_key'):
+            psd._chisq_cached_key = True
             num_bins = int(self.parse_option(template, self.num_bins))
 
             if hasattr(psd, 'sigmasq_vec') and template.approximant in psd.sigmasq_vec:
@@ -452,12 +453,12 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
                     self.corr_mem = zeros(len(corr_plus),
                                 dtype=complex_same_precision_as(corr_plus))
 
-                tmplt_data = template_cross._data
-                corr_data = corr_cross._data
-                numpy.copyto(self.template_mem._data, template_cross._data)
-                numpy.copyto(self.corr_mem._data, corr_cross._data)
-                template_cross._data = self.template_mem._data
-                corr_cross._data = self.corr_mem._data
+                tmplt_data = template_cross.data
+                corr_data = corr_cross.data
+                numpy.copyto(self.template_mem.data, template_cross.data)
+                numpy.copyto(self.corr_mem.data, corr_cross.data)
+                template_cross._data = self.template_mem.data
+                corr_cross._data = self.corr_mem.data
 
                 for lidx, index in enumerate(above_indices):
                     above_local_indices = numpy.array([index])
