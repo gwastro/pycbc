@@ -207,7 +207,7 @@ if workflow.cp.has_option_tags('workflow', 'seed-bank', args.tags):
         llwadd_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
                                          out_dir=out_dir,
                                          tags=['INPUT'] + args.tags)
-        llwadd_exe.current_retention_level = wf.Executable.ALL_TRIGGERS
+        llwadd_exe.update_current_retention_level(wf.Executable.ALL_TRIGGERS)
         llwadd_node = llwadd_exe.create_node(workflow.analysis_time,
                                              seed_files,
                                              use_tmp_subdirs=False)
@@ -230,7 +230,8 @@ if not workflow.cp.has_option_tags('workflow', 'use-seed-bank-for-chirp-bins',
                                        ifos=workflow.ifos,
                                        out_dir=out_dir,
                                        tags=['coarse']+args.tags)
-    coarse_sbank_exe.current_retention_level=wf.Executable.MERGED_TRIGGERS
+    coarse_sbank_exe.update_current_retention_level\
+           (wf.Executable.MERGED_TRIGGERS)
     # Then make a specific node
     coarse_node = coarse_sbank_exe.create_node(workflow.analysis_time)
     # Add to workflow
@@ -294,7 +295,8 @@ for cycle_idx in range(num_cycles):
                                      out_dir=out_dir,
                                      tags=['parallel', cycle_tag] + args.tags)
     # These jobs we don't always want to store
-    main_sbank_exe.current_retention_level=wf.Executable.INTERMEDIATE_PRODUCT
+    main_sbank_exe.update_current_retention_level\
+            (wf.Executable.INTERMEDIATE_PRODUCT)
 
     main_sbank_files = wf.FileList([])
     for nbank_idx in range(nbanks):
@@ -315,7 +317,7 @@ for cycle_idx in range(num_cycles):
     llwadd_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
                                      out_dir=out_dir,
                                      tags=[cycle_tag, 'FIRST'] + args.tags)
-    llwadd_exe.current_retention_level = wf.Executable.ALL_TRIGGERS
+    llwadd_exe.update_current_retention_level(wf.Executable.ALL_TRIGGERS)
     llwadd_node = llwadd_exe.create_node(workflow.analysis_time,
                                          main_sbank_files,
                                          use_tmp_subdirs=False)
@@ -330,7 +332,8 @@ for cycle_idx in range(num_cycles):
     readder_sbank_exe = SbankExecutable(workflow.cp, 'sbank',
                                         ifos=workflow.ifos, out_dir=out_dir,
                                         tags=[cycle_tag, 'readder'] + args.tags)
-    readder_sbank_execurrent_retention_level = wf.Executable.ALL_TRIGGERS
+    readder_sbank_exe.update_current_retention_level\
+            (wf.Executable.ALL_TRIGGERS)
     readder_sbank_node = readder_sbank_exe.create_node(workflow.analysis_time,
                                                        trial_bank=llwadd_out)
     workflow += readder_sbank_node
@@ -353,7 +356,7 @@ for cycle_idx in range(num_cycles):
     llwadd_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
                                      out_dir=out_dir,
                                      tags=[cycle_tag, 'FINAL'] + args.tags)
-    llwadd_exe.current_retention_level = crl
+    llwadd_exe.update_current_retention_level(crl)
 
     if seed_file is None:
         inputs = [readder_out]

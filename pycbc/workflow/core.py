@@ -276,55 +276,10 @@ class Executable(pegasus_workflow.Executable):
             self.add_ini_profile(cp, 'pegasus_profile')
 
         # Determine the level at which output files should be kept
-        try:
-            global_retention_level = \
-                cp.get_opt_tags("workflow", "file-retention-level",
-                                   tags+[name])
-        except:
-            msg="Cannot find file-retention-level in [workflow] section "
-            msg+="of the configuration file. Setting a default value of "
-            msg+="retain all files."
-            logging.warn(msg)
-            self.retain_files = True
-            self.global_retention_threshold = 1
-            cp.set("workflow", "file-retention-level", "all_files")
-        else:
-            # FIXME: Are these names suitably descriptive?
-            retention_choices = {
-                                 'all_files' : 1,
-                                 'all_triggers' : 2,
-                                 'merged_triggers' : 3,
-                                 'results' : 4
-                                }
-            try:
-                self.global_retention_threshold = \
-                      retention_choices[global_retention_level]
-            except KeyError:
-                err_msg = "Cannot recognize the file-retention-level in the "
-                err_msg += "[workflow] section of the ini file. "
-                err_msg += "Got : %s." %(global_retention_level,)
-                err_msg += "Valid options are: 'all_files', 'all_triggers',"
-                err_msg += "'merged_triggers' or 'results' "
-                raise ValueError(err_msg)
-            if self.current_retention_level == 5:
-                self.retain_files = True
-                if type(self).__name__ in Executable._warned_classes_list:
-                    pass
-                else:
-                    warn_msg = "Attribute current_retention_level has not "
-                    warn_msg += "been set in class %s. " %(type(self),)
-                    warn_msg += "This value should be set explicitly. "
-                    warn_msg += "All output from this class will be stored."
-                    logging.warn(warn_msg)
-                    Executable._warned_classes_list.append(type(self).__name__)
-            elif self.global_retention_threshold > self.current_retention_level:
-                self.retain_files = False
-            else:
-                self.retain_files = True
+        self.update_current_retention_level(self.current_retention_level)
                 
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)        
-
     @property
     def ifo(self):
         """
@@ -403,6 +358,59 @@ class Executable(pegasus_workflow.Executable):
         of Executable.
         """
         return Node(self)
+
+    def update_current_retention_level(self, value):
+        """ Update the value of self.retain_files for an updated value of the
+        retention level.
+        """
+        # Determine the level at which output files should be kept
+        self.current_retention_level = value
+        try:
+            global_retention_level = \
+                self.cp.get_opt_tags("workflow", "file-retention-level",
+                                   self.tags+[self.name])
+        except:
+            msg="Cannot find file-retention-level in [workflow] section "
+            msg+="of the configuration file. Setting a default value of "
+            msg+="retain all files."
+            logging.warn(msg)
+            self.retain_files = True
+            self.global_retention_threshold = 1
+            self.cp.set("workflow", "file-retention-level", "all_files")
+        else:
+            # FIXME: Are these names suitably descriptive?
+            retention_choices = {
+                                 'all_files' : 1,
+                                 'all_triggers' : 2,
+                                 'merged_triggers' : 3,
+                                 'results' : 4
+                                }
+            try:
+                self.global_retention_threshold = \
+                      retention_choices[global_retention_level]
+            except KeyError:
+                err_msg = "Cannot recognize the file-retention-level in the "
+                err_msg += "[workflow] section of the ini file. "
+                err_msg += "Got : %s." %(global_retention_level,)
+                err_msg += "Valid options are: 'all_files', 'all_triggers',"
+                err_msg += "'merged_triggers' or 'results' "
+                raise ValueError(err_msg)
+            if self.current_retention_level == 5:
+                self.retain_files = True
+                if type(self).__name__ in Executable._warned_classes_list:
+                    pass
+                else:
+                    warn_msg = "Attribute current_retention_level has not "
+                    warn_msg += "been set in class %s. " %(type(self),)
+                    warn_msg += "This value should be set explicitly. "
+                    warn_msg += "All output from this class will be stored."
+                    logging.warn(warn_msg)
+                    Executable._warned_classes_list.append(type(self).__name__)
+            elif self.global_retention_threshold > self.current_retention_level:
+                self.retain_files = False
+            else:
+                self.retain_files = True
+
 
 class Workflow(pegasus_workflow.Workflow):
     """
