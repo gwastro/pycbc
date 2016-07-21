@@ -1,4 +1,4 @@
-# Copyright (C) 2015 Larne Pekowsky
+# Copyright (C) 2015 Larne Pekowsky, Alex Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -28,13 +28,15 @@ def pycbc_compile_function(code,arg_names,local_dict,global_dict,
                      compiler='',
                      verbose=1,
                      support_code=None,
-                     headers=[],
+                     headers=None,
                      customize=None,
                      type_converters=None,
                      auto_downcast=1,
                      **kw):
+    """ Dummy wrapper around scipy weave compile to implement file locking
+    """
     from scipy.weave.inline_tools import _compile_function
-
+    headers = [] if headers is None else headers
     print("attempting to aquire lock for compiling code")
     lockfile_name = os.path.join(os.path.dirname(module_dir), 'code_lockfile')
     lockfile = open(lockfile_name, 'w')
@@ -97,7 +99,7 @@ def _clear_weave_cache():
     cache_dir = os.environ['PYTHONCOMPILED']
     if os.path.exists(cache_dir):
         shutil.rmtree(cache_dir)
-    logging.info("Cleared weave cache %s" % cache_dir)
+    logging.info("Cleared weave cache %s", cache_dir)
 
 
 def verify_weave_options(opt, parser):
@@ -120,7 +122,7 @@ def verify_weave_options(opt, parser):
     if opt.fixed_weave_cache:
         cache_dir = os.path.join(os.getcwd(),"pycbc_inspiral")
         os.environ['PYTHONCOMPILED'] = cache_dir
-        logging.debug("fixed_weave_cache: Setting weave cache to %s" % cache_dir)
+        logging.debug("fixed_weave_cache: Setting weave cache to %s", cache_dir)
         sys.path = [cache_dir] + sys.path
         try: os.makedirs(cache_dir)
         except OSError: pass
@@ -129,13 +131,13 @@ def verify_weave_options(opt, parser):
     if opt.per_process_weave_cache:
         cache_dir = os.path.join(cache_dir, str(os.getpid()))
         os.environ['PYTHONCOMPILED'] = cache_dir
-        logging.info("Setting weave cache to %s" % cache_dir)
+        logging.info("Setting weave cache to %s", cache_dir)
 
     if not os.path.exists(cache_dir):
         try:
             os.makedirs(cache_dir)
         except:
-            logging.error("Unable to create weave cache %s" % cache_dir)
+            logging.error("Unable to create weave cache %s", cache_dir)
             sys.exit(1)
         
     if opt.clear_weave_cache_at_start:
