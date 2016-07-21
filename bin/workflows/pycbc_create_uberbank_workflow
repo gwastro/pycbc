@@ -61,7 +61,7 @@ class GeomBankExecutable(wf.Executable):
         
         # Output file: This one is done weirdly because this job doesn't
         # actually produce this file, the resulting dax will do that.
-        node.add_opt('--output-file', geom_out_file.name)
+        node.add_opt('--output-file', geom_out_file.storage_path)
       
 
         node.add_opt('--storage-path-base', out_storage_path)      
@@ -92,26 +92,34 @@ class SbankDaxGenerator(wf.Executable):
     file_input_options = []
  
     def create_node(self, analysis_time, config_file, out_storage_path,
-                    seed_file=None, use_seed_file_for_chirp_bins=True,
-                    workflow_name='sbank_workflow'):
+                    output_file, seed_files=None,
+                    workflow_name='sbank_workflow', sub_wf_tags=None):
         """ Create a sbank dax generator node.
         """
         node = wf.Executable.create_node(self)
+
+        # Output file: This one is done weirdly because this job doesn't
+        # actually produce this file, the resulting dax will do that.
+        node.add_opt('--output-file', output_file.storage_path)
+
 
         node.add_opt('--workflow-name', workflow_name)
         node.add_opt('--output-dir', out_storage_path)
         node.add_opt('--is-sub-workflow','')
 
+        if sub_wf_tags is not None:
+            node.add_opt('--tags', ' '.join(sub_wf_tags))
+
         node.add_input_opt('--config-files', config_file)
 
         config_overrides = []
 
-        if seed_file is not None:
-            seed_file = os.path.basename(seed_file)
-            config_overrides.append('workflow:seed-bank:%s' % seed_file)
-            if use_seed_file_for_chirp_bins:
-                config_overrides.append\
-                    ('workflow:use-seed-bank-for-chirp-bins:')
+        if seed_files is not None:
+            sfs = []
+            for seed_file in seed_files:
+                seed_file = os.path.basename(seed_file)
+                sfs.append(seed_file)
+            config_overrides.append('workflow:seed-bank:"%s"' % ' '.join(sfs))
 
         if len(config_overrides):
             node.add_opt('--config-overrides', ' '.join(config_overrides))
@@ -119,10 +127,10 @@ class SbankDaxGenerator(wf.Executable):
 
         node.new_output_file_opt(analysis_time, '.dax',
                                  '--dax-filename',
-                                 tags=self.tags + ['DAX'])
+                                 tags=self.tags + sub_wf_tags + ['DAX'])
         node.new_output_file_opt(analysis_time, '.map',
                                  '--map-filename',
-                                 tags=self.tags + ['MAP'])
+                                 tags=self.tags + sub_wf_tags + ['MAP'])
 
         return node
 
@@ -191,41 +199,41 @@ dax_job.addArguments('--basename %s' % \
 wf.Workflow.set_job_properties(dax_job, map_file.name)
 
 # Tell the dax job that it needs some input files
-# FIXME: I think we need to add some more functionality to our sub-dax classes
 dax_job.uses(metadata_file, link=dax.Link.INPUT, register=False, transfer=True)
 dax_job.uses(intermediate_file, link=dax.Link.INPUT, register=False,
              transfer=True)
 dax_job.uses(map_file, link=dax.Link.INPUT, register=False, transfer=True)
-# NOTE: Telling the dax that it uses the output file causes the sub-workflow
-#       to fail as the output file is then passed in the input map, and the
-#       sub-workflow believes it already exists and doesn't produce it!
+
+# And this output is used again so declare it. See notes at bottom!!!
 #dax_job.uses(geom_out_file, link=dax.Link.OUTPUT, register=False,
-#             transfer=True)
+#             transfer=False)
 
 workflow._adag.addJob(dax_job)
 dep = dax.Dependency(parent=geom_node._dax_node, child=dax_job)
 workflow._adag.addDependency(dep)
 geom_dax_job = dax_job
 
-workflow._outputs += [geom_out_file]
-
-##############################################
-# Run the sbank workflow for the first time  #
-##############################################
+###############################################
+# Run the sbank workflow for the first time   #
+###############################################
 
 sbank_exe = SbankDaxGenerator(workflow.cp, 'sbank_workflow',
                               ifos=workflow.ifos, out_dir='daxes')
 
+sbank_out_file_bbh = wf.File(sbank_exe.ifo_list, sbank_exe.name,
+                             workflow.analysis_time, extension='.xml',
+                             store_file=True, directory=sbank_exe.out_dir,
+                             tags=['sbank_bbh'], use_tmp_subdirs=False)
+
 config_path = os.path.abspath('daxes' + '/' + 'sbank_workflow.ini')
 workflow.cp.write(open(config_path, 'w'))
-
 config_file = wf.File.from_path(config_path)
 
 sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
-                                   os.path.abspath('sbank_first'),
-                                   seed_file=geom_out_file.name,
-                                   use_seed_file_for_chirp_bins=False,
-                                   workflow_name='sbank_first')
+                                   os.path.abspath('sbank_bbh'),
+                                   sbank_out_file_bbh,
+                                   workflow_name='sbank_bbh',
+                                   sub_wf_tags=['bbh'])
 
 workflow += sbank_node
 
@@ -236,17 +244,75 @@ dax_job.addArguments('--basename %s' % \
                      os.path.splitext(os.path.basename(dax_file.name))[0])
 wf.Workflow.set_job_properties(dax_job, map_file.name)
 
-# Cannot tell the dax job it uses the geom_file because it doesn't understand
-# where this will come from until the sub-workflow gets planned.
-# dax_job.uses(geom_out_file, link=dax.Link.INPUT, register=False,
-#              transfer=True)
+#dax_job.uses(sbank_out_file_bbh, link=dax.Link.OUTPUT, register=False,
+#             transfer=False)
+dax_job.uses(map_file, link=dax.Link.INPUT, register=False,
+             transfer=False)
 
 workflow._adag.addJob(dax_job)
 dep = dax.Dependency(parent=sbank_node._dax_node, child=dax_job)
 workflow._adag.addDependency(dep)
-# We must explicitly connect the daxes to allow file dependancies across
-# sub-workflows
+sbank_bbh_dax_job = dax_job
+
+###############################################
+# Run the sbank workflow for the second time  #
+###############################################
+
+sbank_out_file_final = wf.File(sbank_exe.ifo_list, sbank_exe.name,
+                         workflow.analysis_time, extension='.xml',
+                         store_file=True, directory='.',
+                         tags=['sbank_final'], use_tmp_subdirs=False)
+
+sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
+                                   os.path.abspath('sbank_final'),
+                                   sbank_out_file_final,
+                                   seed_files=[geom_out_file.name,
+                                               sbank_out_file_bbh.name],
+                                   workflow_name='sbank_final',
+                                   sub_wf_tags=['final'])
+
+workflow += sbank_node
+
+dax_file = sbank_node.output_files[0]
+map_file = sbank_node.output_files[1]
+dax_job = dax.DAX(dax_file)
+dax_job.addArguments('--basename %s' % \
+                     os.path.splitext(os.path.basename(dax_file.name))[0])
+wf.Workflow.set_job_properties(dax_job, map_file.name)
+
+dax_job.uses(map_file, link=dax.Link.INPUT, register=False,
+             transfer=True)
+
+workflow._adag.addJob(dax_job)
+dep = dax.Dependency(parent=sbank_node._dax_node, child=dax_job)
+workflow._adag.addDependency(dep)
+dep = dax.Dependency(parent=sbank_bbh_dax_job, child=dax_job)
+workflow._adag.addDependency(dep)
 dep = dax.Dependency(parent=geom_dax_job, child=dax_job)
 workflow._adag.addDependency(dep)
 
+
 workflow.save()
+
+# NOTES: Here are things that I found during writing this that will be useful
+#        if changing this around in the future.
+
+# 1: If we have two sub-daxes with a file dependancy (ie. dax B uses a file
+#    produced from dax A). Even if these are not *direct* parent-child related
+#    one must add an explicit dax dependency between the two sub-daxes:
+#    dep = dax.Dependency(parent=parent_dax_job, child=child_dax_job)
+
+# 2: If a sub-dax uses as input a file from the parent workflow, one can a
+#    dax.uses() command to list that file as an input. This is probably
+#    unncessary but it does avoid potential issues with cleanup jobs. The
+#    input mapper should be listed as an input! Should the dax file itself
+#    also be listed? Currently it is not
+
+# 3: The case of a sub-dax producing an output file used by a job (not another
+#    sub-dax) in the uberworkflow appears unsupported. If I do not list the
+#    file as an output of the dax job - with dax.uses - then the uberworkflow
+#    will not plan as it does not understand where that file comes from.
+#    However, if the file *is* listed as an output it will be sent in the
+#    input map catalog to the sub-dax (which contains the local locations of
+#    all files in the uber-workflow). Then the sub-workflow thinks that this
+#    file already exists and does not run the job that generates it.
