@@ -104,8 +104,29 @@ class SbankChooseMchirpBinsExecutable(wf.Executable):
 
         return node
 
-# There is already a ligolw_add executable (wf.LigolwAddExecutable), so we
-# just use that directly.
+# There is already a ligolw_add executable (wf.LigolwAddExecutable), this needs
+# a minor change because we are potentially dealing with sub-daxes here.
+class LigolwAddExecutable(wf.LigolwAddExecutable):
+
+    def create_node(self, jobSegment, input_files, output=None,
+                    use_tmp_subdirs=True, tags=None):
+        if output is not None:
+            # Convert path to file
+            out_file = wf.File.from_path(output)
+            if self.retain_files:
+                if not os.path.isabs(output):
+                    out_file.storage_path = os.path.join(self.out_dir,
+                                                         output)
+                else:
+                    out_file.storage_path = output
+        else:
+            out_file = output
+
+        return super(LigolwAddExecutable, self).create_node\
+                        (jobSegment, input_files, output=out_file,
+                         use_tmp_subdirs=use_tmp_subdirs, tags=tags)
+
+
 
 ##############################################################################
 # Argument parsing and setup of workflow                                     #
@@ -122,6 +143,11 @@ parser.add_argument("--workflow-name", type=str, default='sbank_workflow',
                     help="Descriptive name of the analysis.")
 parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
+parser.add_argument("--output-file", type=str, default=None,
+                    help="Specify the output file name. Either a name can be "
+                         "provided or a full path to file. Is this is not "
+                         "given a filename and location is chosen "
+                         "automatically.")
 parser.add_argument("--dax-filename", type=str, default=None,
                     help="This can be used if running this job in a "
                          "sub-workflow to specify the dax filename.")
@@ -135,6 +161,12 @@ parser.add_argument("--is-sub-workflow", default=False, action="store_true",
                     help="Only give this option if this code is being run "
                     "as a sub-workflow within pegasus. If this means nothing "
                     "to you, do not give this option.")
+parser.add_argument("--tags", default=None, nargs="*", action="store",
+                    help="If this option is given all jobs, and all workflow "
+                          "configuration options, will use the tags given "
+                          "here. This can be used if running this as a "
+                          "sub-workflow to give two sets of options to two "
+                          "different invocations of the sbank workflow.")
 
 
 wf.add_workflow_command_line_group(parser)
@@ -154,21 +186,41 @@ if not args.is_sub_workflow:
 
 seed_file = None
 bins_inp_file = None
-if workflow.cp.has_option_tags('workflow', 'seed-bank', []):
+if workflow.cp.has_option_tags('workflow', 'seed-bank', args.tags):
     # If a seed bank is provided register it as a File object 
-    if not args.is_sub_workflow:
-        seed_file = wf.File.from_path(workflow.cp.get_opt_tags\
-                                      ('workflow', 'seed-bank', []))
+    seed_banks = workflow.cp.get_opt_tags('workflow', 'seed-bank', args.tags)
+    seed_banks = seed_banks.split(' ')
+    if len(seed_banks) == 0:
+        raise ValueError("No seed bank actually provided!")
+    seed_files = []
+    for seed_bank in seed_banks:
+        if not args.is_sub_workflow:
+            seed_file = wf.File.from_path(seed_bank)
+        else:
+            seed_file = pwf.File(os.path.basename(seed_bank))
+        seed_files.append(seed_file)
+    if len(seed_files) == 1:
+        seed_file = seed_files[0]
     else:
-        seed_file = pwf.File(os.path.basename\
-                             (workflow.cp.get_opt_tags('workflow', 'seed-bank',
-                                              [])))
+        # Combine with llwadd
+        out_dir = os.path.join(args.output_dir, 'input_combine')
+        llwadd_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
+                                         out_dir=out_dir,
+                                         tags=['INPUT'] + args.tags)
+        llwadd_exe.current_retention_level = wf.Executable.ALL_TRIGGERS
+        llwadd_node = llwadd_exe.create_node(workflow.analysis_time,
+                                             seed_files,
+                                             use_tmp_subdirs=False)
+        workflow += llwadd_node
+        assert(len(llwadd_node.output_files) == 1)
+        seed_file = llwadd_node.output_files[0]
+
     # bins_inp_file will go to the mchirp_bins generator. seed file will go to
     # the first set of sbank jobs if not None.
     bins_inp_file = seed_file
 
 if not workflow.cp.has_option_tags('workflow', 'use-seed-bank-for-chirp-bins',
-                                   []):
+                                   args.tags):
     out_dir = os.path.join(args.output_dir, 'coarse')
     # Generate Executable class (similar to Job in the old terminology)
     # The tags=coarse option is used to ensure that options in the
@@ -176,7 +228,8 @@ if not workflow.cp.has_option_tags('workflow', 'use-seed-bank-for-chirp-bins',
     # this job
     coarse_sbank_exe = SbankExecutable(workflow.cp, 'sbank',
                                        ifos=workflow.ifos,
-                                       out_dir=out_dir, tags=['coarse'])
+                                       out_dir=out_dir,
+                                       tags=['coarse']+args.tags)
     coarse_sbank_exe.current_retention_level=wf.Executable.MERGED_TRIGGERS
     # Then make a specific node
     coarse_node = coarse_sbank_exe.create_node(workflow.analysis_time)
@@ -188,8 +241,8 @@ if not workflow.cp.has_option_tags('workflow', 'use-seed-bank-for-chirp-bins',
     if seed_file is None:
         if not workflow.cp.has_option_tags('workflow',
                                            'do-not-use-coarse-job-as-seed',
-                                           tags):
-            seed_file = seed_file
+                                           args.tags):
+            seed_file = bins_inp_file
 
 if bins_inp_file is None:
     # Only get here if weird options are given
@@ -204,7 +257,7 @@ if bins_inp_file is None:
 # How many repetitions to try? Get this from config-parser. Special
 # config-parser options like this go in the [workflow] section
 
-num_cycles = int(workflow.cp.get('workflow', 'num-cycles'))
+num_cycles = int(workflow.cp.get_opt_tags('workflow', 'num-cycles', args.tags))
 
 for cycle_idx in range(num_cycles):
     #########
@@ -216,7 +269,8 @@ for cycle_idx in range(num_cycles):
     # How many banks to use? This can vary cycle to cycle, or be the same for
     # all. Either supply it once in [workflow], or in [workflow-cycleN] for
     # N in range(num_cycles)
-    nbanks = workflow.cp.get_opt_tags('workflow', 'nbanks', tags=[cycle_tag])
+    nbanks = workflow.cp.get_opt_tags('workflow', 'nbanks',
+                                      tags=[cycle_tag]+args.tags)
     nbanks = int(nbanks)
     
     #############
@@ -225,7 +279,7 @@ for cycle_idx in range(num_cycles):
 
     bins_exe = SbankChooseMchirpBinsExecutable(workflow.cp, 'sbank_mchirp_bins',
                                     ifos=workflow.ifos, out_dir=out_dir,
-                                    tags=[cycle_tag])
+                                    tags=[cycle_tag] + args.tags)
     bins_node = bins_exe.create_node(workflow.analysis_time,
                                      bins_inp_file, nbanks)
     workflow += bins_node
@@ -237,7 +291,8 @@ for cycle_idx in range(num_cycles):
     #######################
 
     main_sbank_exe = SbankExecutable(workflow.cp, 'sbank', ifos=workflow.ifos,
-                                 out_dir=out_dir, tags=['parallel', cycle_tag])
+                                     out_dir=out_dir,
+                                     tags=['parallel', cycle_tag] + args.tags)
     # These jobs we don't always want to store
     main_sbank_exe.current_retention_level=wf.Executable.INTERMEDIATE_PRODUCT
 
@@ -257,8 +312,9 @@ for cycle_idx in range(num_cycles):
     # COMBINER #
     ############
 
-    llwadd_exe = wf.LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
-                                    out_dir=out_dir, tags=[cycle_tag, 'FIRST'])
+    llwadd_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
+                                     out_dir=out_dir,
+                                     tags=[cycle_tag, 'FIRST'] + args.tags)
     llwadd_exe.current_retention_level = wf.Executable.ALL_TRIGGERS
     llwadd_node = llwadd_exe.create_node(workflow.analysis_time,
                                          main_sbank_files,
@@ -273,7 +329,7 @@ for cycle_idx in range(num_cycles):
 
     readder_sbank_exe = SbankExecutable(workflow.cp, 'sbank',
                                         ifos=workflow.ifos, out_dir=out_dir,
-                                        tags=[cycle_tag, 'readder'])
+                                        tags=[cycle_tag, 'readder'] + args.tags)
     readder_sbank_execurrent_retention_level = wf.Executable.ALL_TRIGGERS
     readder_sbank_node = readder_sbank_exe.create_node(workflow.analysis_time,
                                                        trial_bank=llwadd_out)
@@ -289,20 +345,23 @@ for cycle_idx in range(num_cycles):
     if cycle_idx == (num_cycles - 1):
         out_dir = args.output_dir
         crl = wf.Executable.FINAL_RESULT
+        output_path = args.output_file
     else:
         crl = wf.Executable.MERGED_TRIGGERS
+        output_path = None
 
-    llwadd_exe = wf.LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
-                                    out_dir=out_dir, tags=[cycle_tag, 'FINAL'])
+    llwadd_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
+                                     out_dir=out_dir,
+                                     tags=[cycle_tag, 'FINAL'] + args.tags)
     llwadd_exe.current_retention_level = crl
 
     if seed_file is None:
-        inputs = [seed_file]
+        inputs = [readder_out]
     else:
         inputs = [seed_file, readder_out]
 
     llwadd_node = llwadd_exe.create_node(workflow.analysis_time,
-                                         [seed_file, readder_out],
+                                         inputs, output=output_path,
                                          use_tmp_subdirs=False)
     workflow += llwadd_node
     assert(len(llwadd_node.output_files) == 1)
