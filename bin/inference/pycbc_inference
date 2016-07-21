@@ -72,10 +72,6 @@ parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
 # add data options
 parser.add_argument("--instruments", type=str, nargs="+", required=True,
                     help="IFOs, eg. H1 L1.")
-parser.add_argument("--frame-type", type=str, nargs="+",
-                    action=types.MultiDetOptionAction,
-                    metavar="IFO:FRAME_TYPE",
-                    help="Frame type for each IFO.")
 parser.add_argument("--low-frequency-cutoff", type=float, required=True,
                     help="Low frequency cutoff for each IFO.")
 parser.add_argument("--psd-start-time", type=float, default=None,

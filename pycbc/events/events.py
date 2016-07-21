@@ -586,15 +586,149 @@ class EventManagerMultiDet(EventManager):
                         self.coinc_list.append((event1, event2))
         for ifo in self.ifos:
             self.events = numpy.append(self.events,
-                                                 self.template_event_dict[ifo])
+                                       self.template_event_dict[ifo])
             self.template_event_dict[ifo] = numpy.array([],
                                                         dtype=self.event_dtype)
 
     def write_events(self, outname):
         """ Write the found events to a sngl inspiral table
         """
-        raise NotImplementedError
+        self.make_output_dir(outname)
+ 
+        if '.hdf' in outname:
+            self.write_to_hdf(outname)
+        else:
+            raise ValueError('Cannot write to this format')
 
+    def write_to_hdf(self, outname):
+        class fw(object):
+            def __init__(self, name, prefix):
+                import h5py
+                self.f = h5py.File(name, 'w')
+                self.prefix = prefix
+
+            def __setitem__(self, name, data):
+                col = self.prefix + '/' + name
+                self.f.create_dataset(col, data=data,
+                                      compression='gzip',
+                                      compression_opts=9,
+                                      shuffle=True)
+
+        self.events.sort(order='template_id')
+        th = numpy.array([p['tmplt'].template_hash for p in \
+                          self.template_params])
+        tid = self.events['template_id']
+        f = fw(outname, ''.join(self.opt.instruments))
+
+        if len(self.events):
+            ifo_str = self.opt.instruments[0]
+            f['snr'] = abs(self.events['snr'])
+            try:
+                # Precessing
+                f['u_vals'] = self.events['u_vals']
+                f['coa_phase'] = self.events['coa_phase']
+                f['hplus_cross_corr'] = self.events['hplus_cross_corr']
+            except:
+                # Not precessing
+                f['coa_phase'] = numpy.angle(self.events['snr'])
+            f['chisq'] = self.events['chisq']
+            f['bank_chisq'] = self.events['bank_chisq']
+            f['bank_chisq_dof'] = self.events['bank_chisq_dof']
+            f['cont_chisq'] = self.events['cont_chisq']
+            f['end_time'] = self.events['time_index'] / \
+                    float(self.opt.sample_rate[ifo_str]) + \
+                    self.opt.gps_start_time[ifo_str]
+            try:
+                # Precessing
+                template_sigmasq_plus = numpy.array([t['sigmasq_plus'] for t \
+                        in self.template_params], dtype=numpy.float32)
+                f['sigmasq_plus'] = template_sigmasq_plus[tid]
+                template_sigmasq_cross = numpy.array([t['sigmasq_cross'] for t \
+                        in self.template_params], dtype=numpy.float32)
+                f['sigmasq_cross'] = template_sigmasq_cross[tid]
+                # FIXME: I want to put something here, but I haven't yet
+                #        figured out what it should be. I think we would also
+                #        need information from the plus and cross correlation
+                #        (both real and imaginary(?)) to get this.
+                f['sigmasq'] = template_sigmasq_plus[tid]
+            except:
+                # Not precessing
+                for ifo in self.opt.instruments:
+                    template_sigmasq = numpy.array([t['sigmasq'][ifo] for t in \
+                            self.template_params], dtype=numpy.float32)
+                    if ifo == "H1":
+                        ii = ifo.lower()
+                    else:
+                        ii = ifo.lower()[0]
+                    f['sigmasq_%s' % ii] = template_sigmasq[tid]
+
+            template_durations = [p['tmplt'].template_duration for p in \
+                    self.template_params]
+            f['template_duration'] = numpy.array(template_durations, \
+                    dtype=numpy.float32)[tid]
+
+            # FIXME: Can we get this value from the autochisq instance?
+            cont_dof = self.opt.autochi_number_points
+            if self.opt.autochi_onesided is None:
+                cont_dof = cont_dof * 2
+            #if self.opt.autochi_two_phase:
+            #    cont_dof = cont_dof * 2
+            #if self.opt.autochi_max_valued_dof:
+            #    cont_dof = self.opt.autochi_max_valued_dof
+            f['cont_chisq_dof'] = numpy.repeat(cont_dof, len(self.events))
+
+            if 'chisq_dof' in self.events.dtype.names:
+                f['chisq_dof'] = self.events['chisq_dof'] / 2 + 1
+            else:
+                f['chisq_dof'] = numpy.zeros(len(self.events))
+
+            f['template_hash'] = th[tid]
+
+        for ifo in self.opt.instruments:
+            if self.opt.trig_start_time:
+                f['search/start_time_%s' % ifo.lower()] = numpy.array([\
+                        self.opt.trig_start_time[ifo]], dtype=numpy.int32)
+                search_start_time = float(self.opt.trig_start_time[ifo])
+            else:
+                f['search/start_time_%s' % ifo.lower()] = numpy.array([\
+                        self.opt.gps_start_time[ifo] + \
+                        self.opt.segment_start_pad[ifo]], dtype=numpy.int32)
+                search_start_time = float(self.opt.gps_start_time[ifo] + \
+                                          self.opt.segment_start_pad[ifo])
+            if self.opt.trig_end_time:
+                f['search/end_time_%s' % ifo.lower()] = numpy.array(\
+                        [self.opt.trig_end_time[ifo]], dtype=numpy.int32)
+                search_end_time = float(self.opt.trig_end_time[ifo])
+            else:
+                f['search/end_time_%s' % ifo.lower()] = numpy.array([\
+                        self.opt.gps_end_time[ifo] \
+                        - self.opt.segment_end_pad[ifo]], dtype=numpy.int32)
+                search_end_time = float(self.opt.gps_end_time[ifo] - \
+                        self.opt.segment_end_pad[ifo])
+
+        #if self.write_performance:
+        #    self.analysis_time = search_end_time - search_start_time
+        #    time_ratio = numpy.array([float(self.analysis_time) / float(self.run_time)])
+        #    temps_per_core = float(self.ntemplates) / float(self.ncores)
+        #    filters_per_core = float(self.nfilters) / float(self.ncores)
+        #    f['search/templates_per_core'] = \
+        #        numpy.array([float(temps_per_core) * float(time_ratio)])
+        #    f['search/filter_rate_per_core'] = \
+        #        numpy.array([filters_per_core / float(self.run_time)])
+        #    f['search/setup_time_fraction'] = \
+        #        numpy.array([float(self.setup_time) / float(self.run_time)])
+
+        if 'gating_info' in self.global_params:
+            gating_info = self.global_params['gating_info']
+            for gate_type in ['file', 'auto']:
+                if gate_type in gating_info:
+                    f['gating/' + gate_type + '/time'] = \
+                            numpy.array([float(g[0]) for g in \
+                                         gating_info[gate_type]])
+                    f['gating/' + gate_type + '/width'] = \
+                            numpy.array([g[1] for g in gating_info[gate_type]])
+                    f['gating/' + gate_type + '/pad'] = \
+                            numpy.array([g[2] for g in gating_info[gate_type]])
 
 __all__ = ['threshold_and_cluster', 'newsnr', 'effsnr',
            'findchirp_cluster_over_window',
