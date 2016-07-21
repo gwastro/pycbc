@@ -17,9 +17,40 @@
 """
 This module provides methods for controlling scipy.weave
 """
-import os, sys
+import os.path, sys
 import logging
 import shutil, atexit, signal
+import fcntl
+
+## Blatently taken from weave to implement a crude file locking scheme
+def pycbc_compile_function(code,arg_names,local_dict,global_dict,
+                     module_dir,
+                     compiler='',
+                     verbose=1,
+                     support_code=None,
+                     headers=[],
+                     customize=None,
+                     type_converters=None,
+                     auto_downcast=1,
+                     **kw):
+    from scipy.weave.inline_tools import _compile_function
+
+    print("attempting to aquire lock for compiling code")
+    lockfile_name = os.path.join(os.path.dirname(module_dir), 'code_lockfile')
+    lockfile = open(lockfile_name, 'w')
+    fcntl.lockf(lockfile, fcntl.LOCK_EX)
+    print ("we have aquired the lock")
+    
+    func = _compile_function(code,arg_names, local_dict, global_dict,
+                     module_dir, compiler, verbose,
+                     support_code, headers, customize,
+                     type_converters,
+                     auto_downcast, **kw)
+
+    fcntl.lockf(lockfile, fcntl.LOCK_UN)
+    print ("the lock has been released")
+
+    return func
 
 
 def insert_weave_option_group(parser):
