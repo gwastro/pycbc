@@ -304,7 +304,6 @@ class Executable(pegasus_workflow.Executable):
         sec : string
             The section containing options for this job.
         """
-
         for opt in cp.options(sec):
             namespace = opt.split('|')[0]
             if namespace == 'pycbc':
@@ -328,7 +327,6 @@ class Executable(pegasus_workflow.Executable):
         sec : string
             The section containing options for this job.
         """
-
         for opt in cp.options(sec):
             value = string.strip(cp.get(sec, opt))
             opt = '--%s' %(opt,)
@@ -359,7 +357,6 @@ class Executable(pegasus_workflow.Executable):
         value : string, (default=None)
             The value for the option (no value if set to None).
         """
-
         if value is None:
             self.common_options += [opt]
         else:
@@ -378,7 +375,6 @@ class Executable(pegasus_workflow.Executable):
         value : string
             The value for the option. Returns None if option not present.
         """
-
         for sec in self.sections:
             try:
                 key = self.cp.get(sec, opt)
@@ -397,7 +393,6 @@ class Executable(pegasus_workflow.Executable):
         opt : string
             Name of option (e.g. output-file-format)
         """
-
         for sec in self.sections:
             val = self.cp.has_option(sec, opt)
             if val:
@@ -429,7 +424,7 @@ class Executable(pegasus_workflow.Executable):
             global_retention_level = \
                 self.cp.get_opt_tags("workflow", "file-retention-level",
                                    self.tags+[self.name])
-        except:
+        except ConfigParser.Error:
             msg="Cannot find file-retention-level in [workflow] section "
             msg+="of the configuration file. Setting a default value of "
             msg+="retain all files."
