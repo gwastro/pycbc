@@ -145,7 +145,7 @@ parser.add_argument("--keep-loudest-interval", type=float,
 parser.add_argument("--keep-loudest-num", type=int,
                     help="Number of triggers to keep from each maximization interval")
 parser.add_argument("--gpu-callback-method", default='none')
-parser.add_argument("--threshold", type= float)
+parser.add_argument("--threshold-template-filtering", type= float)
 
 
 
@@ -174,10 +174,6 @@ pycbc.init_logging(opt.verbose)
 ctx = scheme.from_cli(opt)
 gwstrain, injection_parameters= strain.from_cli(opt, DYN_RANGE_FAC, return_injections=True)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
-
-print injection_parameters
-for inj in injection_parameters:
-      print inj.mass1, inj.mass2
       
 
 with ctx:
@@ -260,11 +256,11 @@ with ctx:
                                  reverse_template=opt.autochi_reverse_template,
                                  take_maximum_value=opt.autochi_max_valued,
                                  maximal_value_dof=opt.autochi_max_valued_dof)
-    threshold= opt.threshold
+    threshold= opt.threshold_template_filtering
     logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
         seg /= seg.psd
-    print opt.threshold 
+  
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
                     flow, dtype=complex64, phase_order=opt.order,

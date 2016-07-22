@@ -169,7 +169,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
              for idx in indices[cluster_idx]]
     return times
 
-def from_cli(opt, dyn_range_fac=1, precision='single', return_injections=False):  #### Edit 1 
+def from_cli(opt, dyn_range_fac=1, precision='single', return_injections=False):  
     """Parses the CLI options related to strain data reading and conditioning.
     Parameters
     ----------
@@ -224,7 +224,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single', return_injections=False):
         if opt.injection_file:
             logging.info("Applying injections")
             injections = InjectionSet(opt.injection_file)
-            injection_parameters= injections.apply(strain, opt.channel_name[0:2],         #### Edit 3 
+            injection_parameters= injections.apply(strain, opt.channel_name[0:2],        
                              distance_scale=opt.injection_scale_factor)
             full_parameters= full_parameters + injection_parameters
 
@@ -339,7 +339,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single', return_injections=False):
 
 
     strain.gating_info = gating_info
-    if return_injections:                            ## Edit 4 
+    if return_injections:                            
     	return strain, full_parameters
     else:
     	return strain  

@@ -142,7 +142,7 @@ class InjectionSet(object):
             injections = [inj for inj in injections \
                           if inj.simulation_id in simulation_ids]
         l= 0
-        injection_parameters= []             ##################Edit 1
+        injection_parameters= []             
         for inj in injections:
             if f_lower is None:
                 f_l = inj.f_lower
@@ -167,12 +167,12 @@ class InjectionSet(object):
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
-            injection_parameters.append(inj)                            ############## Edit 2 
+            injection_parameters.append(inj)                            
             
         strain.data[:] = lalstrain.data.data[:]
 
         return injection_parameters
-        print injection_parameters
+       
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
                                     f_lower=None, distance_scale=1):
         """Make a h(t) strain time-series from an injection object as read from

@@ -38,8 +38,6 @@ import numpy as np
 from math import *
 import h5py
 
-g= open('accepted_templates.txt','w')
-h= open('rejected_templates.txt','w') 
 
 fref= 30
 def sigma_cached(self, psd):
@@ -78,7 +76,7 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
 lsctables.use_in(LIGOLWContentHandler)
 
-class TemplateBank(object): ## Edit !! 
+class TemplateBank(object): 
     """ Class to provide some basic helper functions and information
     about elements of an xml template bank.
     """
@@ -167,15 +165,8 @@ class TemplateBank(object): ## Edit !!
     		tau0_inj, tau3_inj= pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2, fref)
                 
 		inj_indices = np.where(abs(tau0_temp - tau0_inj) <= threshold)[0]
-                
-	
-                
-                            
-
-                
-		indices.append(inj_indices)
+                indices.append(inj_indices)
                 indices_combined= np.concatenate(indices)
-		
 		indices_unique= np.unique(indices_combined)
 		restricted= self.table[indices_unique]
 						
