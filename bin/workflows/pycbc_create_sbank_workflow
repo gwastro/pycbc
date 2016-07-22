@@ -161,7 +161,7 @@ parser.add_argument("--is-sub-workflow", default=False, action="store_true",
                     help="Only give this option if this code is being run "
                     "as a sub-workflow within pegasus. If this means nothing "
                     "to you, do not give this option.")
-parser.add_argument("--tags", default=None, nargs="*", action="store",
+parser.add_argument("--tags", default=[], nargs="*", action="store",
                     help="If this option is given all jobs, and all workflow "
                           "configuration options, will use the tags given "
                           "here. This can be used if running this as a "
