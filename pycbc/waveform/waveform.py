@@ -554,6 +554,19 @@ def seobnrrom_length_in_time(**kwds):
     time_length = time_length * 1.1
     return time_length
 
+def imrphenomd_length_in_time(**kwds):
+    mass1 = float(kwds['mass1'])
+    mass2 = float(kwds['mass2'])
+    spin1z = float(kwds['spin1z'])
+    spin2z = float(kwds['spin2z'])
+    fmin = float(kwds['f_lower'])
+    time_length = lalsimulation.SimIMRPhenomDChirpTime(mass1 * lal.MSUN_SI,
+                                                       mass2 * lal.MSUN_SI,
+                                                       spin1z, spin2z, fmin)
+    # FIXME add a 10% error margin for consistency
+    # with seobnrrom_length_in_time()
+    return time_length * 1.1
+
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
@@ -577,9 +590,9 @@ _filter_time_lengths["SEOBNRv2_ROM_EffectiveSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin"] = seobnrrom_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_length_in_time
 _filter_time_lengths["IMRPhenomC"] = seobnrrom_length_in_time
-_filter_time_lengths["IMRPhenomD"] = seobnrrom_length_in_time
-_filter_time_lengths["IMRPhenomPv2"] = seobnrrom_length_in_time
-_filter_time_lengths["SpinTaylorF2"] = seobnrrom_length_in_time
+_filter_time_lengths["IMRPhenomD"] = imrphenomd_length_in_time
+_filter_time_lengths["IMRPhenomPv2"] = imrphenomd_length_in_time
+_filter_time_lengths["SpinTaylorF2"] = spa_length_in_time
 
 # Also add generators for switching between approximants
 apx_name = "SpinTaylorF2_SWAPPER"
