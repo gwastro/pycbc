@@ -282,7 +282,8 @@ class Executable(pegasus_workflow.Executable):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)        
     @property
     def ifo(self):
-        """
+        """Return the ifo.
+
         If only one ifo in the ifo list this will be that ifo. Otherwise an
         error is raised.
         """
@@ -294,6 +295,16 @@ class Executable(pegasus_workflow.Executable):
             raise TypeError(errMsg)
 
     def add_ini_profile(self, cp, sec):
+        """Add profile from configuration file.
+
+        Parameters
+        -----------
+        cp : ConfigParser object
+            The ConfigParser object holding the workflow configuration settings
+        sec : string
+            The section containing options for this job.
+        """
+
         for opt in cp.options(sec):
             namespace = opt.split('|')[0]
             if namespace == 'pycbc':
@@ -308,6 +319,16 @@ class Executable(pegasus_workflow.Executable):
                 self.execution_site = value
 
     def add_ini_opts(self, cp, sec):
+        """Add job-specific options from configuration file.
+
+        Parameters
+        -----------
+        cp : ConfigParser object
+            The ConfigParser object holding the workflow configuration settings
+        sec : string
+            The section containing options for this job.
+        """
+
         for opt in cp.options(sec):
             value = string.strip(cp.get(sec, opt))
             opt = '--%s' %(opt,)
@@ -329,12 +350,35 @@ class Executable(pegasus_workflow.Executable):
             self.common_options += [opt, value]
             
     def add_opt(self, opt, value=None):
+        """Add option to job.
+
+        Parameters
+        -----------
+        opt : string
+            Name of option (e.g. --output-file-format)
+        value : string, (default=None)
+            The value for the option (no value if set to None).
+        """
+
         if value is None:
             self.common_options += [opt]
         else:
             self.common_options += [opt, value]
             
     def get_opt(self, opt):
+        """Get value of option from configuration file
+
+        Parameters
+        -----------
+        opt : string
+            Name of option (e.g. output-file-format)
+
+        Returns
+        --------
+        value : string
+            The value for the option. Returns None if option not present.
+        """
+
         for sec in self.sections:
             try:
                 key = self.cp.get(sec, opt)
@@ -346,6 +390,14 @@ class Executable(pegasus_workflow.Executable):
         return None
 
     def has_opt(self, opt):
+        """Check if option is present in configuration file
+
+        Parameters
+        -----------
+        opt : string
+            Name of option (e.g. output-file-format)
+        """
+
         for sec in self.sections:
             val = self.cp.has_option(sec, opt)
             if val:
@@ -354,14 +406,22 @@ class Executable(pegasus_workflow.Executable):
         return False
 
     def create_node(self):
-        """ Default node constructor. This is usually overridden by subclasses
-        of Executable.
+        """Default node constructor.
+
+        This is usually overridden by subclasses of Executable.
         """
         return Node(self)
 
     def update_current_retention_level(self, value):
-        """ Update the value of self.retain_files for an updated value of the
+        """Set a new value for the current retention level.
+
+        This updates the value of self.retain_files for an updated value of the
         retention level.
+
+        Parameters
+        -----------
+        value : int
+            The new value to use for the retention level.
         """
         # Determine the level at which output files should be kept
         self.current_retention_level = value
@@ -391,7 +451,7 @@ class Executable(pegasus_workflow.Executable):
             except KeyError:
                 err_msg = "Cannot recognize the file-retention-level in the "
                 err_msg += "[workflow] section of the ini file. "
-                err_msg += "Got : %s." %(global_retention_level,)
+                err_msg += "Got : {0}.".format(global_retention_level)
                 err_msg += "Valid options are: 'all_files', 'all_triggers',"
                 err_msg += "'merged_triggers' or 'results' "
                 raise ValueError(err_msg)
@@ -401,7 +461,7 @@ class Executable(pegasus_workflow.Executable):
                     pass
                 else:
                     warn_msg = "Attribute current_retention_level has not "
-                    warn_msg += "been set in class %s. " %(type(self),)
+                    warn_msg += "been set in class {0}. ".format(type(self))
                     warn_msg += "This value should be set explicitly. "
                     warn_msg += "All output from this class will be stored."
                     logging.warn(warn_msg)
