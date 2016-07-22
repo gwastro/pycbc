@@ -1,4 +1,4 @@
-# Copyright (C) 2013 Alex Nitz
+#Copyright (C) 2013 Alex Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -37,6 +37,7 @@ import pycbc.events
 import pycbc.frame
 import pycbc.filter
 from scipy.signal import kaiserord
+ 
 
 next_power_of_2 = lambda n: 2 ** (math.ceil(math.log(n, 2)) + 1)
 
@@ -50,43 +51,32 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     estimate. Finally, it computes the magnitude of the whitened series,
     thresholds it and applies the FindChirp clustering over time to the
     surviving samples.
-
     Parameters
     ----------
     strain : TimeSeries
         Input strain time series to detect glitches over.
-
     psd_duration : {float, 4}
         Duration of the segments for PSD estimation in seconds.
-
     psd_stride : {float, 2}
         Separation between PSD estimation segments in seconds.
-
     psd_avg_method : {string, 'median'}
         Method for averaging PSD estimation segments.
-
     low_freq_cutoff : {float, 30}
         Minimum frequency to include in the whitened strain.
-
     threshold : {float, 50}
         Minimum magnitude of whitened strain for considering a transient to
         be present.
-
     cluster_window : {float, 5}
         Length of time window to cluster surviving samples over, in seconds.
-
     corrupt_time : {float, 4}
         Amount of time to be discarded at the beginning and end of the input
         time series.
-
     high_frequency_cutoff : {float, None}
         Maximum frequency to include in the whitened strain. If given, the
         input series is downsampled accordingly. If omitted, the Nyquist
         frequency is used.
-
     output_intermediates : {bool, False}
         Save intermediate time series for debugging.
-
     Returns
     -------
     """
@@ -179,9 +169,8 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
              for idx in indices[cluster_idx]]
     return times
 
-def from_cli(opt, dyn_range_fac=1, precision='single'):
+def from_cli(opt, dyn_range_fac=1, precision='single', return_injections=False):  #### Edit 1 
     """Parses the CLI options related to strain data reading and conditioning.
-
     Parameters
     ----------
     opt : object
@@ -192,7 +181,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
 
     dyn_range_fac: {float, 1}, optional
         A large constant to reduce the dynamic range of the strain.
-
     Returns
     -------
     strain : TimeSeries
@@ -200,7 +188,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
     """
 
     gating_info = {}
-
+    full_parameters= []   ### Edit 2 
     if opt.frame_cache or opt.frame_files or opt.frame_type:
         if opt.frame_cache:
             frame_source = opt.frame_cache
@@ -236,14 +224,16 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if opt.injection_file:
             logging.info("Applying injections")
             injections = InjectionSet(opt.injection_file)
-            injections.apply(strain, opt.channel_name[0:2],
+            injection_parameters= injections.apply(strain, opt.channel_name[0:2],         #### Edit 3 
                              distance_scale=opt.injection_scale_factor)
+            full_parameters= full_parameters + injection_parameters
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
             injections = SGBurstInjectionSet(opt.sgburst_injection_file)
-            injections.apply(strain, opt.channel_name[0:2],
+            injection_parameters= injections.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
+            full_parameters= full_parameters + injection_parameters
 
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
@@ -320,14 +310,16 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if opt.injection_file:
             logging.info("Applying injections")
             injections = InjectionSet(opt.injection_file)
-            injections.apply(strain, opt.channel_name[0:2],
+            injection_parameters= injections.apply(strain, opt.channel_name[0:2],  ### Edit 4 
                              distance_scale=opt.injection_scale_factor)
+            full_parameters= full_parameters + injection_parameters
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
             injections = SGBurstInjectionSet(opt.sgburst_injection_file)
-            injections.apply(strain, opt.channel_name[0:2],
+            injection_parameters= injections.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
+            full_parameters= full_parameters + injection_parameters
 
         if precision == 'single':
             logging.info("Converting to float32")
@@ -347,8 +339,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
 
 
     strain.gating_info = gating_info
-
-    return strain
+    if return_injections:                            ## Edit 4 
+    	return strain, full_parameters
+    else:
+    	return strain  
 
 def from_cli_single_ifo(opt, ifo, **kwargs):
     """
@@ -372,7 +366,6 @@ def insert_strain_option_group(parser, gps_times=True):
     Adds the options used to call the pycbc.strain.from_cli function to an
     optparser as an OptionGroup. This should be used if you
     want to use these options in your code.
-
     Parameters
     -----------
     parser : object
@@ -500,7 +493,6 @@ def insert_strain_option_group_multi_ifo(parser):
     Adds the options used to call the pycbc.strain.from_cli function to an
     optparser as an OptionGroup. This should be used if you
     want to use these options in your code.
-
     Parameters
     -----------    parser : object
         OptionParser instance.
@@ -664,7 +656,6 @@ required_opts_list = ['--gps-start-time', '--gps-end-time',
 def verify_strain_options(opts, parser):
     """Parses the strain data CLI options and verifies that they are consistent
     and reasonable.
-
     Parameters
     ----------
     opt : object
@@ -682,7 +673,6 @@ def verify_strain_options(opts, parser):
 def verify_strain_options_multi_ifo(opts, parser, ifos):
     """Parses the strain data CLI options and verifies that they are consistent
     and reasonable.
-
     Parameters
     ----------
     opt : object
@@ -706,7 +696,6 @@ def gate_data(data, gate_params):
     defined by a central time, a given duration (centered on the given
     time) to zero out, and a given duration of smooth tapering on each side of
     the window. The window function used for tapering is a Tukey window.
-
     Parameters
     ----------
     data : TimeSeries
@@ -718,7 +707,6 @@ def gate_data(data, gate_params):
         Tukey tapering on each side. All times in seconds. The total duration
         of the data affected by one gating window is thus twice the second
         parameter plus twice the third parameter.
-
     Returns
     -------
     data: TimeSeries
@@ -918,7 +906,6 @@ class StrainSegments(object):
 
     def fourier_segments(self):
         """ Return a list of the FFT'd segments.
-
         Return the list of FrequencySeries. Additional properties are
         added that describe the strain segment. The property 'analyze'
         is a slice corresponding to the portion of the time domain equivelant
@@ -1087,7 +1074,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                        dyn_range_fac=pycbc.DYN_RANGE_FAC,
                  ):
         """ Class to produce overwhitened strain incrementally
-
         Parameters
         ---------
         frame_src: str of list of strings
@@ -1229,7 +1215,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
     def overwhitened_data(self, delta_f):
         """ Return overwhitened data
-
         Parameters
         ----------
         delta_f: float
@@ -1290,7 +1275,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
     def null_advance_strain(self, blocksize):
         """ Advance and insert zeros
-
         Parameters
         ----------
         blocksize: int
@@ -1307,12 +1291,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
     def advance(self, blocksize):
         """ Add blocksize seconds more to the buffer, push blocksize seconds
         from the beginning.
-
         Parameters
         ----------
         blocksize: int
             The number of seconds to attempt to read from the channel
-
         Returns
         -------
         status: boolean
@@ -1384,3 +1366,5 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             return False
         else:
             return True
+
+

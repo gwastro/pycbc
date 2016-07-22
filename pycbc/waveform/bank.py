@@ -34,7 +34,14 @@ from pycbc import DYN_RANGE_FAC
 from pycbc.pnutils import nearest_larger_binary_number
 import pycbc.io
 from copy import copy
+import numpy as np
+from math import *
+import h5py
 
+g= open('accepted_templates.txt','w')
+h= open('rejected_templates.txt','w') 
+
+fref= 30
 def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
     """
@@ -71,7 +78,7 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
 lsctables.use_in(LIGOLWContentHandler)
 
-class TemplateBank(object):
+class TemplateBank(object): ## Edit !! 
     """ Class to provide some basic helper functions and information
     about elements of an xml template bank.
     """
@@ -132,12 +139,12 @@ class TemplateBank(object):
     def approximant(self, index):
         """ Return the name of the approximant ot use at the given index
         """
-        if self.approximant_str is not None:
-            if 'params' in self.approximant_str:
-                t = type('t', (object,), {'params' : self.table[index]})
-                approximant = str(self.parse_option(t, self.approximant_str)) 
-            else:
-                approximant = self.approximant_str
+    	if self.approximant_str is not None:
+        	if 'params' in self.approximant_str:
+                	t = type('t', (object,), {'params' : self.table[index]})
+                	approximant = str(self.parse_option(t, self.approximant_str)) 
+            	else:
+                	approximant = self.approximant_str
         else:
             raise ValueError("Reading approximant from template bank not yet supported")
 
@@ -145,55 +152,86 @@ class TemplateBank(object):
 
     def __len__(self):
         return len(self.table)
-
-class LiveFilterBank(TemplateBank):
-    def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
-                       approximant=None,
-                       **kwds):
-
-        self.f_lower = f_lower
-        self.filename = filename
-        self.sample_rate = sample_rate
-        self.minimum_buffer = minimum_buffer
-
-        super(LiveFilterBank, self).__init__(filename, approximant=approximant, **kwds)
-
-        from pycbc.pnutils import mass1_mass2_to_mchirp_eta
-        self.table = sorted(self.table, key=lambda t: mass1_mass2_to_mchirp_eta(t.mass1, t.mass2)[0])        
-
-    def round_up(self, num):
-        inc = 8
-        size = numpy.ceil(num / self.sample_rate / inc) * self.sample_rate * inc
-        return size
-
-    def getslice(self, sindex):
-        instance = copy(self)
-        instance.table = self.table[sindex]
-        return instance
-
-    def __getitem__(self, index):
-        if isinstance(index, slice):
-            return self.getslice(index)
-
-        approximant = self.approximant(index)
-        f_end = self.end_frequency(index)
-
-        # Determine the length of time of the filter, rounded up to
-        # nearest power of two
-        min_buffer = .5 + self.minimum_buffer
-    
-        from pycbc.waveform.waveform import props
-        buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, f_lower=self.f_lower, 
-                                                                      **props(self.table[index]))
-
         
-        tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
-        flen = tlen / 2 + 1
+    def template_thinning(self, injection_parameters, threshold):
+    	from pycbc.pnutils import mass1_mass2_to_tau0_tau3
+        m1= self.table['mass1']
+        m2= self.table['mass2']
+        thinning_bank=[]
+        tau0_temp, tau3_temp= pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, fref)
+        indices = []
+      
+        
+    	for inj in injection_parameters:
+            
+    		tau0_inj, tau3_inj= pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2, fref)
+                
+		inj_indices = np.where(abs(tau0_temp - tau0_inj) <= threshold)[0]
+                
+	
+                
+                            
 
-        delta_f = self.sample_rate / float(tlen)
+                
+		indices.append(inj_indices)
+                indices_combined= np.concatenate(indices)
+		
+		indices_unique= np.unique(indices_combined)
+		restricted= self.table[indices_unique]
+						
+		return restricted 
 
-        if f_end is None or f_end >= (flen * delta_f):
-            f_end = (flen-1) * delta_f
+		
+	    
+
+	class LiveFilterBank(TemplateBank):
+	    def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
+			       approximant=None,
+			       **kwds):
+
+		self.f_lower = f_lower
+		self.filename = filename
+		self.sample_rate = sample_rate
+		self.minimum_buffer = minimum_buffer
+
+		super(LiveFilterBank, self).__init__(filename, approximant=approximant, **kwds)
+
+		from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+		self.table = sorted(self.table, key=lambda t: mass1_mass2_to_mchirp_eta(t.mass1, t.mass2)[0])        
+
+	    def round_up(self, num):
+		inc = 8
+		size = numpy.ceil(num / self.sample_rate / inc) * self.sample_rate * inc
+		return size
+
+	    def getslice(self, sindex):
+		instance = copy(self)
+		instance.table = self.table[sindex]
+		return instance
+
+	    def __getitem__(self, index):
+		if isinstance(index, slice):
+		    return self.getslice(index)
+
+		approximant = self.approximant(index)
+		f_end = self.end_frequency(index)
+
+		# Determine the length of time of the filter, rounded up to
+		# nearest power of two
+		min_buffer = .5 + self.minimum_buffer
+	    
+		from pycbc.waveform.waveform import props
+		buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, f_lower=self.f_lower, 
+									      **props(self.table[index]))
+
+		
+		tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
+		flen = tlen / 2 + 1
+
+		delta_f = self.sample_rate / float(tlen)
+
+		if f_end is None or f_end >= (flen * delta_f):
+            		f_end = (flen-1) * delta_f
 
         logging.info("Generating %s, %ss, %i" % (approximant, 1.0/delta_f, index))
 
@@ -233,7 +271,7 @@ class LiveFilterBank(TemplateBank):
                           htilde.params.spin1z, htilde.params.spin2z))
         return htilde
 
-class FilterBank(TemplateBank):
+class FilterBank(TemplateBank): ##Edit !!
     def __init__(self, filename, filter_length, delta_f, f_lower, dtype,
                  out=None, max_template_length=None,
                  approximant=None,
@@ -310,6 +348,8 @@ class FilterBank(TemplateBank):
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
         htilde._sigmasq = {}
         return htilde
+
+       
 
 def find_variable_start_frequency(approximant, parameters, f_start, max_length, 
                                   delta_f = 1):
