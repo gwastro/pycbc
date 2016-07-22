@@ -172,12 +172,13 @@ geom_exe = GeomBankExecutable(workflow.cp, 'geom_aligned_bank',
 # store_file=False and relying on the sub-workflow to specify the PFN for this
 # file. Hopefully this will work if we need to add this file as a dependancy
 # for a later sub-workflow.
+geom_out_dir = os.path.abspath('initial_geom_bank')
 geom_out_file = wf.File(geom_exe.ifo_list, geom_exe.name,
                         workflow.analysis_time, extension='.xml',
-                        store_file=True, directory=geom_exe.out_dir,
+                        store_file=True, directory=geom_out_dir,
                         tags=[], use_tmp_subdirs=False)
 geom_node = geom_exe.create_node(workflow.analysis_time, geom_out_file,
-                                 os.path.abspath('initial_geom_bank'),
+                                 geom_out_dir,
                                  workflow_name='initial_geom_bank')
 workflow += geom_node
 
