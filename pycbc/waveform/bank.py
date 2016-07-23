@@ -35,8 +35,7 @@ from pycbc.pnutils import nearest_larger_binary_number
 import pycbc.io
 from copy import copy
 import numpy as np
-from math import *
-import h5py
+
 
 
 fref= 30
@@ -262,7 +261,7 @@ class TemplateBank(object):
                           htilde.params.spin1z, htilde.params.spin2z))
         return htilde
 
-class FilterBank(TemplateBank): ##Edit !!
+class FilterBank(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, f_lower, dtype,
                  out=None, max_template_length=None,
                  approximant=None,
