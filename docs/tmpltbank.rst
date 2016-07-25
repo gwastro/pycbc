@@ -493,7 +493,6 @@ involved than the sbank example given above. Here we provide a particularly
 detailed potential configuration for generating an uberbank on O1-like data.
 
 .. literalinclude:: resources/uberbank_example1.ini
-
    :language: ini
 
 ==========================
