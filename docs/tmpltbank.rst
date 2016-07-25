@@ -455,16 +455,46 @@ usage, wall-clock time, avoiding too many templates at the readder stage.
 Please ask for help if you have a specific example and want some help to
 optimize.**
 
+.. _tmpltbank_uberbankworkflow:
+
 ===================================================
 Hybrid approaches: the best of both worlds
 ===================================================
 
-We are currently looking into hybrid bank construction techniques. This is
-where one of the methods used above is used to create a preliminary bank and
-then a second method is run on that output to fill in any holes that might 
-exist in parameter space.
+We have found that in many cases it makes sense to combine the techniques of
+sbank with the geometric lattic algorithm to produce a template bank. This
+technique was used in Advanced LIGO's first observing run to produce what was
+called the "uberbank". The reference for this is the following:
 
-Documentation on hybrid approaches will be added soon.
+* Capano et al., Phys.Rev. D93 (2016) 124007
+
+The uberbank construction process is now written up in a single workflow,
+pycbc_create_uberbank_workflow. The current setup of this workflow is as
+follows:
+
+* Run in parallel one sbank workflow and one geometric workflow
+* Combine the two outputs together (this assumes the two do not overlap)
+* Run a further sbank workflow to fill in the remaining space and any holes
+
+The idea to this 3-part workflow is it allows us to first focus on covering
+well both the BNS and BBH regions of parameter space, before filling in the
+rest with potentially different settings. There is a lot of scope for editing
+and reordering this workflow, potentially adding, or removing various of the
+stages.
+
+The command-line help for the workflow generator is as follows:
+
+.. command-output:: pycbc_create_uberbank_workflow --help
+
+As with the sbank workflow generator the main bulk of the configuration is the
+configuration file, which is provided on the command line. This configuration
+file contains options for all 3 stages of the workflow, and so is a little more
+involved than the sbank example given above. Here we provide a particularly
+detailed potential configuration for generating an uberbank on O1-like data.
+
+.. literalinclude:: resources/uberbank_example1.ini
+
+   :language: ini
 
 ==========================
 The module's source code
