@@ -574,6 +574,7 @@ out_bank = combine_node.output_files[0]
 chiparams_exe = TmpltbankToChiParams(workflow.cp, 'dumptochis',
                                       ifos=workflow.ifos, out_dir=curr_dir)
 chiparams_node = chiparams_exe.create_node(out_bank, workflow.analysis_time)
+workflow += chiparams_node
 
 workflow.save(filename=opts.dax_filename, output_map=opts.map_filename)
 
