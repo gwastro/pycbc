@@ -41,8 +41,6 @@ parser.add_argument("--template-file", default=None,
 parser.add_argument("--output", required=True,
                     help="Location for output file containing smoothed fit "
                          "coefficients.  Required")
-#parser.add_argument("--ifo", required=True,
-#                    help="Ifo producing triggers to be fitted.  Required")
 parser.add_argument("--fit-param", required=True,  # don't hardcode choices yet?
                     #choices=[
                     #    'mchirp',
@@ -50,7 +48,6 @@ parser.add_argument("--fit-param", required=True,  # don't hardcode choices yet?
                     #    'template_duration'] \
                     #+ pnutils.named_frequency_cutoffs.keys()
                     help="Parameter over which to regress the background "
-
                          "distribution coefficients. Required. Choose from "
                          "mchirp, mtotal, template_duration or a named "
                          "frequency cutoff in pnutils or a frequency function "
@@ -58,7 +55,8 @@ parser.add_argument("--fit-param", required=True,  # don't hardcode choices yet?
 parser.add_argument("--f-lower", default=-1.,
                     help="Starting frequency for calculating template "
                          "duration, required if this is the fit parameter")
-parser.add_argument("--min-duration", default=0.,
+# FIXME : Would like to have choice of SEOBNRv2 or PhenD duration formula
+parser.add_argument("--min-duration", type=float, default=0.,
                     help="Fudge factor for templates with tiny or negative "
                          "values of template_duration: add to duration values"
                          " before fitting. Units seconds.")
@@ -70,12 +68,12 @@ parser.add_argument("--regression-method", required=True, choices=["nn"],
                          "only choice.")
 parser.add_argument("--num-neighbors", type=int, default=-1,
                     help="Number of neighbors used in nn method. Try 2500, or "
-                         "1/20th the total number of templates if that is "
+                         "1/10th the total number of templates if that is "
                          "smaller.")
 parser.add_argument("--smoothing-width", type=float, required=True,
                     help="Distance in the space of fit param values (or the "
                          "logs of them) to smooth over. Required. For log "
-                         "template duration, try 0.25")
+                         "template duration, try 0.2")
 
 args = parser.parse_args()
 
@@ -116,9 +114,6 @@ else:
     parvals = pnutils.get_freq(args.fit_param, m1, m2, s1z, s2z)
 
 nabove = fits['count_above_thresh'][:]
-# create mask for values where no trigs were fit at all
-nonzero_trigs = nabove > 0
-# normalize to average number of triggers per template
 nabove = nabove/np.mean(nabove)
 # for an exponential fit 1/alpha is linear in the trigger statistic values
 # so taking weighted sums/averages of 1/alpha is appropriate
@@ -130,7 +125,6 @@ tid = tid[parsort]
 parvals = parvals[parsort]
 nabove = nabove[parsort]
 invalpha = invalpha[parsort]
-nonzero_trigs = nonzero_trigs[parsort]
 
 if args.log_param:
     logging.info('Using log %s to perform smoothing' % args.fit_param)
@@ -141,18 +135,8 @@ else:
 # do nearest-neighbours regression
 # use Gaussian weight over fitting parameter
 if args.regression_method == 'nn':
-    weights = lambda d:np.exp(-0.5 * (d/args.smoothing_width) ** 2)
+    weights = lambda d:np.exp(-0.5 * (d/args.smoothing_width)**2)
     knn = neighbors.KNeighborsRegressor(args.num_neighbors, weights=weights)
-
-    logging.info('Smoothing invalpha data')
-    # only use values where nonzero number of trigs was fit
-    inputpars = parvals[nonzero_trigs]
-    inputalpha = invalpha[nonzero_trigs]
-    invalpha_knn = knn.fit(inputpars[:, np.newaxis], inputalpha)
-    logging.info('Evaluating smoothed invalpha')
-    # loop over parameter values to avoid memory error in knn predict
-    invalpha_smoothed = [invalpha_knn.predict([[p]]) for p in parvals]
-    del invalpha_knn
 
     logging.info('Smoothing nabove data')
     nabove_knn = knn.fit(parvals[:, np.newaxis], nabove)
@@ -160,14 +144,24 @@ if args.regression_method == 'nn':
     nabove_smoothed = [nabove_knn.predict([[p]]) for p in parvals]
     del nabove_knn
 
-#ifofits = outfile.create_group(args.ifo)
+    logging.info('Smoothing invalpha data')
+    # smooth the inverse alpha values times trig count above threshold
+    invalphan = invalpha * nabove
+    invalphan_knn = knn.fit(parvals[:, np.newaxis], invalphan)
+    logging.info('Evaluating smoothed invalpha')
+    # loop over parameter values to avoid memory error in knn predict
+    invalphan_smoothed = [invalphan_knn.predict([[p]]) for p in parvals]
+    del invalphan_knn
+    # divide out by smoothed trig count
+    invalpha_smoothed = np.array(invalphan_smoothed) / np.array(nabove_smoothed)
+
 # store template-dependent fit output
 outfile = h5py.File(args.output, 'w')
 outfile.create_dataset('template_id', data=tid)
 outfile.create_dataset('count_above_thresh', data=nabove_smoothed)
 outfile.create_dataset('fit_coeff', data=1. / np.array(invalpha_smoothed))
 
-# add some metadata to the fits : some is inherited from template level fit
+# add metadata, some is inherited from template level fit
 outfile.attrs.create('ifo', data=ifo)
 outfile.attrs.create('stat_threshold', data=fits.attrs['stat_threshold'])
 outfile.attrs.create('fit_param', data=args.fit_param)
