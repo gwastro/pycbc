@@ -451,10 +451,10 @@ cp.set('executables', 'dumptochis', '${which:pycbc_tmpltbank_to_chi_params}')
 
 # Shared option groups
 cp.add_section('sharedoptions')
-cp.set('sharedoptions', 'massranges', 'aligned2dstack')
-cp.set('sharedoptions', 'metric', 'alignedbankcat')
-cp.set('sharedoptions', 'psd', 'alignedbankcat')
-cp.set('sharedoptions', 'data', 'alignedbankcat')
+cp.set('sharedoptions', 'massranges', 'aligned2dstack, dumptochis')
+cp.set('sharedoptions', 'metric', 'alignedbankcat, dumptochis')
+cp.set('sharedoptions', 'psd', 'alignedbankcat, dumptochis')
+cp.set('sharedoptions', 'data', 'alignedbankcat, dumptochis')
 cp.set('sharedoptions', 'ethinca', 'alignedbankcat')
 
 cp.add_section('sharedoptions-massranges')
@@ -490,23 +490,6 @@ cp.add_section('alignedbankcat')
 
 # dumptochis
 cp.add_section('dumptochis')
-# Add options by parsing the options sent to this job. Convert to dict
-print_chis_opts = vars(copy.deepcopy(orig_opts))
-# Remove options we don't want to send on
-remove_opts = ['output_file', 'min_match', 'stack_distance',
-               'threed_lattice', 'split_bank_num', 'filter_points',
-               'print_chi_points', 'verbose']
-for opt in remove_opts:
-    if opt in print_chis_opts.keys():
-        del print_chis_opts[opt]
-# Add the rest
-for opt, val in print_chis_opts.items():
-    if val is None:
-        continue
-    elif val is True or val is False:
-        cp.set('dumptochis', str(opt.replace("_","-")), "")
-    else:
-        cp.set('dumptochis', str(opt.replace("_","-")), str(val))
 
 temp_fp = open('temp.ini', 'w')
 cp.write(temp_fp)
