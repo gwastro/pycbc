@@ -474,6 +474,7 @@ setup (
                'bin/inference/pycbc_inference_table_summary',
                'bin/plotting/pycbc_plot_waveform',
                'bin/workflows/pycbc_create_sbank_workflow',
+               'bin/workflows/pycbc_create_uberbank_workflow',
                ],
     packages = [
                'pycbc',

@@ -388,7 +388,9 @@ fi
 
 # ugly shell to extract the sub-dax names from the uberdax xml
 for dax in `egrep '<[[:blank:]]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do 
-  cp ${dax} workflow/dax
+  if [ -e ${dax} ] ; then
+    cp ${dax} workflow/dax
+  fi
   map=`basename ${dax} .dax`.map
   if [ -e ${map} ] ; then
     cp ${map} workflow/output_map

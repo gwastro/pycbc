@@ -33,6 +33,7 @@ import numpy
 import logging
 import distutils.spawn
 import h5py
+from scipy import spatial
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
@@ -45,7 +46,7 @@ import pycbc.strain
 import pycbc.version
 import pycbc.tmpltbank
 import pycbc.workflow as wf
-from scipy import spatial
+import pycbc.workflow.pegasus_workflow as pwf
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -100,7 +101,11 @@ class AlignedBankCatExecutable(wf.Executable):
             # Convert path to file
             out_file = wf.File.from_path(output_file_path)
             if self.retain_files:
-                out_file.storage_path = output_file_path
+                if not os.path.isabs(output_file_path):
+                    out_file.storage_path = os.path.join(self.out_dir,
+                                                         output_file_path)
+                else:
+                    out_file.storage_path = output_file_path
             node.add_output_opt('--output-file', out_file)
         return node
 
@@ -183,6 +188,13 @@ parser.add_argument("--intermediate-data-file", type=str, required=True,
 parser.add_argument("--metadata-file", type=str, required=True,
                     help="Location of the output file containing the metadata "
                     "that will be added to the final XML file.")
+parser.add_argument("--is-sub-workflow", default=False, action="store_true",
+                    help="Only give this option if this code is being run "
+                    "as a sub-workflow within pegasus. If this means nothing "
+                    "to you, do not give this option.")
+parser.add_argument("--storage-path-base", default=None,
+                    help="If running this code as a sub-workflow then this "
+                    "path is pretended to all storage directories.")
 
 pycbc.tmpltbank.insert_base_bank_options(parser)
 
@@ -223,13 +235,6 @@ log_format='%(asctime)s %(message)s'
 logging.basicConfig(format=log_format, level=log_level)
 
 opts.max_mismatch = 1 - opts.min_match
-if not opts.write_metric:
-    warn_message = "--write-metric is required by this code. Enabling it."
-    logging.warn(warn_message)
-    opts.write_metric = True
-if orig_opts.write_metric:
-    # Do not want the combiner job to write these files again
-    orig_opts.write_metric = False
 
 pycbc.tmpltbank.verify_metric_calculation_options(opts, parser)
 metricParams=pycbc.tmpltbank.metricParameters.from_argparse(opts)
@@ -419,12 +424,9 @@ if len(v1s):
         h5file['split_banks/split_bank_%05d/v3s' % bank_num] = v3s
 
 logging.info('Adding metric information to HDF file.')
-cov_evecs = numpy.loadtxt('covariance_evecs_%d.dat' % metricParams.fUpper)
-metric_evals = numpy.loadtxt('metric_evals_%d.dat' % metricParams.fUpper)
-metric_evecs = numpy.loadtxt('metric_evecs_%d.dat' % metricParams.fUpper)
-h5file['cov_evecs'] = cov_evecs
-h5file['metric_evals'] = metric_evals
-h5file['metric_evecs'] = metric_evecs
+h5file['cov_evecs'] = metricParams.evecsCV[metricParams.fUpper]
+h5file['metric_evals'] = metricParams.evals[metricParams.fUpper]
+h5file['metric_evecs'] = metricParams.evecs[metricParams.fUpper]
 
 h5file.close()
   
@@ -517,12 +519,24 @@ opts.config_overrides=[]
 workflow = wf.Workflow(opts, opts.workflow_name)
 
 # Start with 2dstack jobs
-wf.makedir('stack2d')
+if opts.storage_path_base:
+    curr_dir = os.path.join(opts.storage_path_base, 'stack2d')
+else:
+    curr_dir = 'stack2d'
+#wf.makedir(curr_dir)
 
 stack_exe = GeomAligned2DStackExecutable(workflow.cp, 'aligned2dstack',
-                                   ifos=workflow.ifos, out_dir='stack2d')
+                                   ifos=workflow.ifos, out_dir=curr_dir)
 num_banks = int((len(newV1s) - 0.5)//opts.split_bank_num) + 1
-input_h5file = wf.File.from_path(opts.intermediate_data_file)
+if not opts.is_sub_workflow:
+    input_h5file = wf.File.from_path(opts.intermediate_data_file)
+else:
+    # Basically, if this is a sub-workflow do not store a PFN, as it will be
+    # some meaningless temporary path, but instead tell the uber-workflow
+    # that these files are outputs and used within the sub-dax and let it
+    # handle the rest.
+    input_h5file = pwf.File(os.path.basename(opts.intermediate_data_file))
+
 
 all_outs = wf.FileList([])
 
@@ -537,9 +551,18 @@ for idx in xrange(num_banks):
     all_outs.append(stack_outs[0])
 
 # Then combine everything together
+if opts.storage_path_base:
+    curr_dir = opts.storage_path_base
+else:
+    curr_dir = '.'
+
 combine_exe = AlignedBankCatExecutable(workflow.cp, 'alignedbankcat',
-                                        ifos=workflow.ifos, out_dir='.')
-metadata_file = wf.File.from_path(cmds_file_name)
+                                        ifos=workflow.ifos, out_dir=curr_dir)
+if not opts.is_sub_workflow:
+    metadata_file = wf.File.from_path(cmds_file_name)
+else:
+    metadata_file = pwf.File(os.path.basename(cmds_file_name))
+
 combine_node = combine_exe.create_node(all_outs, metadata_file,
                                        workflow.analysis_time,
                                        output_file_path=opts.output_file)
@@ -549,7 +572,7 @@ out_bank = combine_node.output_files[0]
 
 # And do the convert to chis job
 chiparams_exe = TmpltbankToChiParams(workflow.cp, 'dumptochis',
-                                      ifos=workflow.ifos, out_dir='.')
+                                      ifos=workflow.ifos, out_dir=curr_dir)
 chiparams_node = chiparams_exe.create_node(out_bank, workflow.analysis_time)
 
 workflow.save(filename=opts.dax_filename, output_map=opts.map_filename)
