@@ -332,8 +332,8 @@ class PartitionedTmpltbank(object):
             # vecs1 gives a 2x2 vector: idx0 = stored index, idx1 = mu index
             vecs1 = mus[freq_idxes, :]
             # vecs2 gives a 2x2 vector: idx0 = stored index, idx1 = mu index
-            range_idx = numpy.arange(len(freq_idxes))
-            vecs2 = curr_bank['mus'][range_idx,freq_idx,:]
+            range_idxes = numpy.arange(len(freq_idxes))
+            vecs2 = curr_bank['mus'][range_idxes, freq_idxes, :]
             
             # Now do the sums
             dists = (vecs1 - vecs2)*(vecs1 - vecs2)
@@ -541,8 +541,15 @@ class PartitionedTmpltbank(object):
 
         # Get mus and best fupper for this point, if needed
         if vary_fupper:
+            mass_dict = {}
+            mass_dict['m1'] = numpy.array([mass1])
+            mass_dict['m2'] = numpy.array([mass2])
+            mass_dict['s1z'] = numpy.array([spin1z])
+            mass_dict['s2z'] = numpy.array([spin2z])
+            freqs = numpy.array([self.frequency_map.keys()], dtype=float)
             freq_cutoff = coord_utils.return_nearest_cutoff(\
-                         self.upper_freq_formula, tot_mass, self.frequency_map)
+                                     self.upper_freq_formula, mass_dict, freqs)
+            freq_cutoff = freq_cutoff[0]
             lambdas = coord_utils.get_chirp_params(tot_mass, eta, beta, sigma,
                                            gamma, chis, self.metric_params.f0,
                                            self.metric_params.pnOrder)
