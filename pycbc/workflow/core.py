@@ -134,7 +134,7 @@ class Executable(pegasus_workflow.Executable):
     # file will be retained, but a warning given
     current_retention_level = KEEP_BUT_RAISE_WARNING
     def __init__(self, cp, name, 
-                       universe=None, ifos=None, out_dir=None, tags=None):
+                 universe=None, ifos=None, out_dir=None, tags=None):
         """
         Initialize the Executable class.
 
@@ -157,10 +157,6 @@ class Executable(pegasus_workflow.Executable):
         tags : list of strings
             A list of strings that is used to identify this job.
         """
-        if tags is None:
-            tags = []
-        tags = [tag.upper() for tag in tags]
-        self.tags = tags
         if isinstance(ifos, (str, unicode)):
             self.ifo_list = [ifos]
         else:
@@ -172,32 +168,25 @@ class Executable(pegasus_workflow.Executable):
         self.cp = cp
         self.universe=universe
         
-        if len(tags) != 0:
-            self.tagged_name = "%s-%s" % (name, '_'.join(tags))
-        else:
-            self.tagged_name = name
-        if self.ifo_string is not None:
-            self.tagged_name = "%s-%s" % (self.tagged_name, self.ifo_string)
-
         try:
             self.installed = cp.getboolean('pegasus_profile-%s' % name, 'pycbc|installed')
         except:
             self.installed = True
 
-        super(Executable, self).__init__(self.tagged_name, installed=self.installed)
-        
         self.name=name
-        
-        # Determine the output directory
-        if out_dir is not None:
-            self.out_dir = out_dir
-        elif len(tags) == 0:
-            self.out_dir = name
-        else:
-            self.out_dir = self.tagged_name            
-        if not os.path.isabs(self.out_dir):
-            self.out_dir = os.path.join(os.getcwd(), self.out_dir) 
-              
+
+        self.update_current_tags(tags)
+
+        self.update_output_directory(out_dir=out_dir)
+
+        # Determine the level at which output files should be kept
+        self.update_current_retention_level(self.current_retention_level)
+
+        super(Executable, self).__init__(self.tagged_name,
+                                         installed=self.installed)
+
+        self._set_pegasus_profile_options()
+
         # Check that the executable actually exists locally or 
         # looks like a URL, in which case trust Pegasus to be
         # able to fetch it.
@@ -234,50 +223,6 @@ class Executable(pegasus_workflow.Executable):
     
         self.set_universe(self.universe)
 
-        # Determine the sections from the ini file that will configure
-        # this executable
-        sections = [name]
-        if self.ifo_list is not None:
-            if len(self.ifo_list) > 1:
-                sec_tags = tags + self.ifo_list + [self.ifo_string]
-            else:
-                sec_tags = tags + self.ifo_list
-        else:
-            sec_tags = tags
-        for sec_len in range(1, len(sec_tags)+1):
-            for tag_permutation in permutations(sec_tags, sec_len):
-                joined_name = '-'.join(tag_permutation)
-                section = '%s-%s' %(name, joined_name.lower())
-                if cp.has_section(section):
-                    sections.append(section)
-
-        self.sections = sections   
-
-        # Do some basic sanity checking on the options      
-        for sec1, sec2 in combinations(sections, 2):
-            cp.check_duplicate_options(sec1, sec2, raise_error=True)
-             
-        # collect the options and profile information 
-        # from the ini file section(s)
-        self.common_options = []        
-        self.common_input_files = []
-        for sec in sections:
-            if cp.has_section(sec):
-                self.add_ini_opts(cp, sec)
-            else:
-                warnString = "warning: config file is missing section [%s]"\
-                             %(sec,)
-                logging.warn(warnString)
-            if cp.has_section('pegasus_profile-%s' % sec):
-                self.add_ini_profile(cp, 'pegasus_profile-%s' % sec)
-                
-        # Add executable non-specific profile information
-        if cp.has_section('pegasus_profile'):
-            self.add_ini_profile(cp, 'pegasus_profile')
-
-        # Determine the level at which output files should be kept
-        self.update_current_retention_level(self.current_retention_level)
-                
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)        
     @property
@@ -466,6 +411,102 @@ class Executable(pegasus_workflow.Executable):
             else:
                 self.retain_files = True
 
+    def update_current_tags(self, tags):
+        """Set a new set of tags for this executable.
+
+        Update the set of tags that this job will use. This updated default
+        file naming and shared options. It will *not* update the pegasus
+        profile, which belong to the executable and cannot be different for
+        different nodes.
+
+        Parameters
+        -----------
+        tags : list
+            The new list of tags to consider.
+        """
+        if tags is None:
+            tags = []
+        tags = [tag.upper() for tag in tags]
+        self.tags = tags
+
+        if len(tags) != 0:
+            self.tagged_name = "%s-%s" % (self.name, '_'.join(tags))
+        else:
+            self.tagged_name = self.name
+        if self.ifo_string is not None:
+            self.tagged_name = "%s-%s" % (self.tagged_name, self.ifo_string)
+
+
+        # Determine the sections from the ini file that will configure
+        # this executable
+        sections = [self.name]
+        if self.ifo_list is not None:
+            if len(self.ifo_list) > 1:
+                sec_tags = tags + self.ifo_list + [self.ifo_string]
+            else:
+                sec_tags = tags + self.ifo_list
+        else:
+            sec_tags = tags
+        for sec_len in range(1, len(sec_tags)+1):
+            for tag_permutation in permutations(sec_tags, sec_len):
+                joined_name = '-'.join(tag_permutation)
+                section = '%s-%s' %(self.name, joined_name.lower())
+                if self.cp.has_section(section):
+                    sections.append(section)
+
+        self.sections = sections
+
+        # Do some basic sanity checking on the options
+        for sec1, sec2 in combinations(sections, 2):
+            self.cp.check_duplicate_options(sec1, sec2, raise_error=True)
+
+        # collect the options and profile information
+        # from the ini file section(s)
+        self.common_options = []
+        self.common_input_files = []
+        for sec in sections:
+            if self.cp.has_section(sec):
+                self.add_ini_opts(self.cp, sec)
+            else:
+                warnString = "warning: config file is missing section [%s]"\
+                             %(sec,)
+                logging.warn(warnString)
+
+    def update_output_directory(self, out_dir=None):
+        """Update the default output directory for output files.
+
+        Parameters
+        -----------
+        out_dir : string (optional, default=None)
+            If provided use this as the output directory. Else choose this
+            automatically from the tags.
+        """
+        # Determine the output directory
+        if out_dir is not None:
+            self.out_dir = out_dir
+        elif len(self.tags) == 0:
+            self.out_dir = self.name
+        else:
+            self.out_dir = self.tagged_name
+        if not os.path.isabs(self.out_dir):
+            self.out_dir = os.path.join(os.getcwd(), self.out_dir)
+
+    def _set_pegasus_profile_options(self):
+        """Set the pegasus-profile settings for this Executable.
+
+        These are a property of the Executable and not of nodes that it will
+        spawn. Therefore it *cannot* be updated without also changing values
+        for nodes that might already have been created. Therefore this is
+        only called once in __init__. Second calls to this will fail.
+        """
+        # Add executable non-specific profile information
+        if self.cp.has_section('pegasus_profile'):
+            self.add_ini_profile(cp, 'pegasus_profile')
+
+        # Executable- and tag-specific profile information
+        for sec in self.sections:
+            if self.cp.has_section('pegasus_profile-%s' % sec):
+                self.add_ini_profile(self.cp, 'pegasus_profile-%s' % sec)
 
 class Workflow(pegasus_workflow.Workflow):
     """
