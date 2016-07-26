@@ -37,6 +37,82 @@ from pycbc.types import FrequencySeries
 from pycbc import pnutils
 from pycbc import filter
 
+def _vecdiff(htilde, hinterp, fmin, fmax):
+    return abs(filter.overlap_cplx(htilde, htilde,
+                          low_frequency_cutoff=fmin,
+                          high_frequency_cutoff=fmax,
+                          normalized=False)
+                - filter.overlap_cplx(htilde, hinterp,
+                          low_frequency_cutoff=fmin,
+                          high_frequency_cutoff=fmax,
+                          normalized=False))
+
+def vecdiff(htilde, hinterp, sample_points):
+    """Computes a statistic indicating between which sample points a waveform
+    and the interpolated waveform differ the most.
+    """
+    vecdiffs = numpy.zeros(sample_points.size-1, dtype=float)
+    for kk,thisf in enumerate(sample_points[:-1]):
+        nextf = sample_points[kk+1]
+        vecdiffs[kk] = abs(_vecdiff(htilde, hinterp, thisf, nextf))
+    return vecdiffs
+
+def compress_waveform(htilde, sample_points, precision, interpolation,
+        decomp_scratch=None):
+    """Adds frequency points in order to ensure that the interpolated waveform
+    has a mismatch with the full waveform that is <= the desired precision.
+    """
+    fmin = sample_points.min()
+    df = htilde.delta_f
+    sample_index = (sample_points / df).astype(int)
+    amp = waveform.amplitude_from_frequencyseries(htilde)
+    phase = waveform.phase_from_frequencyseries(htilde)
+
+    comp_amp = amp.take(sample_index)
+    comp_phase = phase.take(sample_index)
+    hdecomp = compress.fd_decompress(comp_amp, comp_phase, sample_points,
+        out=decomp_scratch, f_lower=fmin, interpolation=args.interpolation)
+    mismatch = 1. - filter.overlap(hdecomp, htilde, low_frequency_cutoff=fmin)
+    if mismatch > precision:
+        # we'll need the difference in the waveforms as a function of frequency
+        vecdiffs = vecdiff(htilde, hdecomp, sample_points)
+
+    # We will find where in the frequency series the interpolated waveform
+    # has the smallest overlap with the full waveform, add a sample point
+    # there, and re-interpolate. We repeat this until the overall mismatch
+    # is > than the desired precision 
+    added_points = []
+    while mismatch > args.precision:
+        minpt = vecdiffs.argmax()
+        # add a point at the frequency halfway between minpt and minpt+1
+        add_freq = sample_points[[minpt, minpt+1]].mean()
+        addidx = int(add_freq/df)
+        new_index = numpy.zeros(sample_index.size+1, dtype=int)
+        new_index[:minpt+1] = sample_index[:minpt+1]
+        new_index[minpt+1] = addidx
+        new_index[minpt+2:] = sample_index[minpt+1:]
+        sample_index = new_index
+        sample_points = sample_index * df
+        # get the new compressed points
+        comp_amp = amp.take(sample_index)
+        comp_phase = phase.take(sample_index)
+        # update the vecdiffs and mismatch
+        hdecomp = compress.fd_decompress(comp_amp, comp_phase, sample_points,
+            out=decomp_scratch, f_lower=fmin, interpolation=args.interpolation)
+        new_vecdiffs = numpy.zeros(vecdiffs.size+1)
+        new_vecdiffs[:minpt] = vecdiffs[:minpt]
+        new_vecdiffs[minpt+2:] = vecdiffs[minpt+1:]
+        new_vecdiffs[minpt:minpt+2] = vecdiff(htilde, hdecomp,
+            sample_points[minpt:minpt+2])
+        vecdiffs = new_vecdiffs
+        mismatch = 1. - filter.overlap(hdecomp, htilde,
+            low_frequency_cutoff=fmin)
+        added_points.append(addidx)
+    logging.info("mismatch: %f, N points: %i (%i added)" %(mismatch,
+        len(comp_amp), len(added_points)))
+    return comp_amp, comp_phase, mismatch, numpy.array(added_points)*df
+
+
 parser = argparse.ArgumentParser(description=__description__)
 parser.add_argument("--bank-file", type=str,
                 help="Bank hdf file to load.")
@@ -61,28 +137,29 @@ parser.add_argument("--tmplt-index", nargs=2, type=int, default=None,
                      "indices in the bank file. Must provide both a start "
                      "and a stop index. Default is to compress all of the "
                      "templates in the bank file.")
-parser.add_argument("--compression-algorithm", type=str, default="mchirp",
+parser.add_argument("--compression-algorithm", type=str, required=True,
+                choices=compress.compression_algorithms.keys(),
                 help="The compression algorithm to use for selecting "
-                     "frequency points. Options are %s. Default is mchirp." %(
-                     ', '.join(compress.compression_algorithms.keys())))
-parser.add_argument("--fixed-sample-points", action="store_true",
-                help="Use the same frequency vector for all waveforms. "
-                     "To use, the compression algorithm must be 'mchirp'. In "
-                     "this case, the frequency vector will be based on the "
-                     "lowest-mass template in the desried range.")
-parser.add_argument("--t-pad", type=float, default=0.02,
+                     "frequency points.")
+parser.add_argument("--t-pad", type=float, default=0.001,
                 help="The minimum duration used for t(f) in seconds. The "
                      "inverse of this gives the maximum frequency step that "
                      "will be used in the compressed waveforms. Default is "
-                     "0.02.")
-parser.add_argument("--check-compression", action="store_true", default=False,
-                help="Check the overlap between the compressed waveform and "
-                     "the full waveform. Results are saved to the output.")
+                     "0.001.")
+parser.add_argument("--precision", type=float, default=0.001,
+                help="The maximum mismatch to allow between the interpolated "
+                     "waveform must and the full waveform. Points will be "
+                     "added to the compressed waveform until its "
+                     "interpolation has a mismatch <= this value. Default is "
+                     "0.001.")
 parser.add_argument("--interpolation", type=str, default="linear",
-                help="If check-compression, the interpolation to use for "
-                     "decompressing the waveforms. Options are 'linear', or "
-                     "any interpolation recognized by scipy's interp1d kind "
-                     "argument. Default is linear.")
+                help="The interpolation to use for decompressing the "
+                     "waveforms for checking precision. Options are 'linear', "
+                     "or any interpolation recognized by scipy's interp1d "
+                     "kind argument. Default is linear.")
+parser.add_argument("--save-added-points", action="store_true", default=False,
+                help="Save the indices of points that had to be added in "
+                     "order for the mismatch to be <= the desired precision.")
 parser.add_argument("--verbose", action="store_true", default=False)
 
 
@@ -90,24 +167,23 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-if args.fixed_sample_points and args.compression_algorithm != 'mchirp':
-    raise ValueError("fixed-sample-points requires the mchirp algorithm")
-
 df = 1./args.segment_length
 fmin = args.low_frequency_cutoff
+fmax = args.sample_rate/2.
 # figure out the length of the full waveforms in the frequency domain
 N = int(args.sample_rate*args.segment_length/2 + 1)
 # scratch space
 scratch = FrequencySeries(numpy.zeros(N, dtype=numpy.complex128), delta_f=df)
-if args.check_compression is not None:
-    decomp_scratch = FrequencySeries(numpy.zeros(N, dtype=numpy.complex128),
-        delta_f=df)
+decomp_scratch = FrequencySeries(numpy.zeros(N, dtype=numpy.complex128),
+                                 delta_f=df)
 # we'll need the full frequency series
 allf = numpy.arange(N)*df
 
 # load the bank
 logging.info("loading bank")
-bank = waveform.FilterBank(args.bank_file, N, df, fmin, numpy.complex128,
+# Note: we'll budge the waveform starting frequency down by 1df to ensure the
+# first point is correct
+bank = waveform.FilterBank(args.bank_file, N, df, fmin-df, numpy.complex128,
     approximant=args.approximant, out=scratch)
 templates = bank.table
 if args.tmplt_index is not None:
@@ -115,17 +191,6 @@ if args.tmplt_index is not None:
     templates = templates[imin:imax]
 else:
     imin, imax = 0, templates.size
-
-# the index of the starting frequency in the full frequency series
-kmin = int(fmin*args.segment_length)
-
-# we'll use the SEOBNRv2 ringdown frequency as maximum frequencies for the
-# sample points
-logging.info("computing maximum frequencies")
-kmaxes = (args.segment_length*pnutils.get_freq('fSEOBNRv2RD',
-            templates.mass1, templates.mass2,
-            templates.spin1z, templates.spin2z)).astype(int)
-kmaxes[kmaxes > N] = N
 
 # generate output file
 # FIXME: this should be moved to a class or function
@@ -137,28 +202,16 @@ output['spin1z'] = templates['spin1z']
 output['spin2z'] = templates['spin2z']
 output['template_hash'] = templates['template_hash']
 
-if args.fixed_sample_points:
-    logging.info("getting fixed sample points")
-    useidx = pnutils.mass1_mass2_to_mchirp_eta(
-        templates.mass1, templates.mass2)[0].argmin()
-    fixed_points = compress.mchirp_compression(templates.mass1[useidx],
-        templates.mass2[useidx], fmin, df*(kmaxes.max()-1),
-        min_seglen=args.t_pad, df_multiple=df)
-    output['compressed_waveforms/frequency'] = fixed_points
-else:
-    sample_points = None
-    
 # get the compressed sample points for each template
 logging.info("getting compressed amplitude and phase")
+mismatches = numpy.zeros(imax-imin, dtype=float)
 for ii in range(imin, imax):
     htilde = bank[ii]
     tmplt = bank.table[ii]
-    kmax = kmaxes[ii]
+    kmax = min(N, len(htilde))
     
     # get the compressed sample points
-    if args.fixed_sample_points:
-        sample_points = fixed_points[:kmax-1]
-    elif args.compression_algorithm == 'mchirp':
+    if args.compression_algorithm == 'mchirp':
         sample_points = compress.mchirp_compression(tmplt.mass1, tmplt.mass2,
             fmin, (kmax-1)*df, min_seglen=args.t_pad, df_multiple=df)
     elif args.compression_algorithm == 'spa':
@@ -169,31 +222,25 @@ for ii in range(imin, imax):
             args.compression_algorithm))
             
     # compress
-    sample_index = (sample_points / df).astype(int)
-    amp = waveform.amplitude_from_frequencyseries(htilde)
-    phase = waveform.phase_from_frequencyseries(htilde)
-    
-    
-    comp_amp = amp.take(sample_index)
-    comp_phase = phase.take(sample_index)
+    comp_amp, comp_phase, mismatch, added_points = compress_waveform(
+        htilde, sample_points, args.precision, args.interpolation,
+        decomp_scratch=decomp_scratch)
 
+    mismatches[ii-imin] = mismatch
+
+    # save results
     output['compressed_waveforms/%i/amplitude' %(ii-imin)] = comp_amp.numpy()
     output['compressed_waveforms/%i/phase' %(ii-imin)] = comp_phase.numpy()
-    
-    if args.fixed_sample_points:
-        output['compressed_waveforms/%i/frequency' %(ii-imin)] = \
-            h5py.SoftLink('/compressed_waveforms/frequency')
-    else:
-        output['compressed_waveforms/%i/frequency' %(ii-imin)] = \
-            sample_points
-    if args.check_compression:
-        hdecomp = compress.fd_decompress(comp_amp, comp_phase, sample_points,
-            out=decomp_scratch, f_lower=fmin, interpolation=args.interpolation)
-        ff = filter.overlap(hdecomp, htilde)
-        
-        logging.info('Overlap = %s' % ff)
-        output['compressed_waveforms/%i' %(ii - imin)].attrs['interpolation'] = \
-            args.interpolation
-        output['compressed_waveforms/%i' %(ii - imin)].attrs['overlap'] = ff
+    output['compressed_waveforms/%i/frequency' %(ii-imin)] = sample_points
+    #output['compressed_waveforms/%i' %(ii - imin)].attrs['mismatch'] = mismatch
+    if args.save_added_points:
+        output['compressed_waveforms/%i/added_points' %(ii - imin)] = \
+            added_points
+
+output['compressed_waveforms/mismatch'] = mismatches
+# save metadata
+output['compressed_waveforms'].attrs['interpolation'] = args.interpolation
+output['compressed_waveforms'].attrs['precision'] = args.precision
+
 logging.info("finished")
 output.close()
