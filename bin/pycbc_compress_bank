@@ -129,9 +129,6 @@ parser.add_argument("--approximant", type=str,
 parser.add_argument("--sample-rate", type=int, required=True,
                 help="Half this value sets the maximum frequency of the "
                      "compressed waveforms.")
-parser.add_argument("--segment-length", type=float, required=True,
-                help="The inverse of this sets the delta-f used for "
-                     "generating waveforms prior to compressing.")
 parser.add_argument("--tmplt-index", nargs=2, type=int, default=None,
                 help="Only generate compressed waveforms for the given "
                      "indices in the bank file. Must provide both a start "
@@ -167,30 +164,26 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-df = 1./args.segment_length
 fmin = args.low_frequency_cutoff
 fmax = args.sample_rate/2.
-# figure out the length of the full waveforms in the frequency domain
-N = int(args.sample_rate*args.segment_length/2 + 1)
-# scratch space
-scratch = FrequencySeries(numpy.zeros(N, dtype=numpy.complex128), delta_f=df)
-decomp_scratch = FrequencySeries(numpy.zeros(N, dtype=numpy.complex128),
-                                 delta_f=df)
-# we'll need the full frequency series
-allf = numpy.arange(N)*df
 
 # load the bank
 logging.info("loading bank")
-# Note: we'll budge the waveform starting frequency down by 1df to ensure the
-# first point is correct
-bank = waveform.FilterBank(args.bank_file, N, df, fmin-df, numpy.complex128,
-    approximant=args.approximant, out=scratch)
+# we'll just use dummy values for N, df for now
+bank = waveform.FilterBank(args.bank_file, 5, 0.25, fmin, numpy.complex128,
+    approximant=args.approximant)
 templates = bank.table
 if args.tmplt_index is not None:
     imin, imax = args.tmplt_index
     templates = templates[imin:imax]
 else:
     imin, imax = 0, templates.size
+
+# figure out the dfs needed for each waveform
+logging.info("getting needed dfs")
+seg_lens = 2*numpy.array([
+    waveform.ceilpow2(compress.rough_time_estimate(m1, m2, fmin))
+    for m1,m2 in zip(templates.mass1, templates.mass2)])
 
 # generate output file
 # FIXME: this should be moved to a class or function
@@ -206,7 +199,20 @@ output['template_hash'] = templates['template_hash']
 logging.info("getting compressed amplitude and phase")
 mismatches = numpy.zeros(imax-imin, dtype=float)
 for ii in range(imin, imax):
-
+    # update the N, df to use based on this waveform
+    N = int(args.sample_rate*seg_lens[ii])
+    df = 1./seg_lens[ii]
+    bank.delta_f = df
+    bank.N = N
+    bank.filter_length = N/2 + 1
+    # We'll budge the waveform starting frequency down by 1df to ensure 
+    # the first point is correct
+    bank.f_lower = fmin-df
+    bank.kmin = int(bank.f_lower / df)
+    # scratch space
+    decomp_scratch = FrequencySeries(numpy.zeros(N, dtype=numpy.complex128),
+                                 delta_f=df)
+    # generate the waveform
     htilde = bank[ii]
     tmplt = bank.table[ii]
     kmax = htilde.end_idx
@@ -217,7 +223,7 @@ for ii in range(imin, imax):
             fmin, (kmax-1)*df, min_seglen=args.t_pad, df_multiple=df)
     elif args.compression_algorithm == 'spa':
         sample_points = compress.spa_compression(htilde, fmin, (kmax-1)*df,
-            min_seglen=args.t_pad, sample_frequencies=allf)
+            min_seglen=args.t_pad)
     else:
         raise ValueError("unrecognized compression algorithm %s" %(
             args.compression_algorithm))
