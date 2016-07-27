@@ -112,7 +112,7 @@ class AlignedBankCatExecutable(wf.Executable):
 class TmpltbankToChiParams(wf.Executable):
     """ Class for running pycbc_tmpltbank_to_chi_params.
     """
-    current_retention_level = wf.Executable.FINAL_RESULT
+    current_retention_level = wf.Executable.ALL_TRIGGERS
 
     def create_node(self, input_bank, analysis_time):
         """ Create a node.
@@ -123,6 +123,23 @@ class TmpltbankToChiParams(wf.Executable):
 
         node.new_output_file_opt(analysis_time, '.dat', '--output-file',
                                  tags=self.tags)
+        return node
+
+class BankVerification(wf.Executable):
+    """ Class for running pycbc_bank_verification.
+    """
+    current_retention_level = wf.Executable.FINAL_RESULT
+
+    def create_node(self, input_bank, analysis_time):
+        """ Create a node.
+        """
+        node = wf.Executable.create_node(self)
+
+        node.add_input_opt('--input-bank', input_bank)
+
+        node.new_output_file_opt(analysis_time, '.png',
+                                 '--histogram-output-file', tags=self.tags)
+
         return node
 
 def add_commands_to_cp(commands, options, cp, section_name):
@@ -448,13 +465,14 @@ cp.add_section('executables')
 cp.set('executables', 'aligned2dstack', '${which:pycbc_geom_aligned_2dstack}')
 cp.set('executables', 'alignedbankcat', '${which:pycbc_aligned_bank_cat}')
 cp.set('executables', 'dumptochis', '${which:pycbc_tmpltbank_to_chi_params}')
+cp.set('executables', 'bankverify', '${which:pycbc_bank_verification}')
 
 # Shared option groups
 cp.add_section('sharedoptions')
-cp.set('sharedoptions', 'massranges', 'aligned2dstack')
-cp.set('sharedoptions', 'metric', 'alignedbankcat')
-cp.set('sharedoptions', 'psd', 'alignedbankcat')
-cp.set('sharedoptions', 'data', 'alignedbankcat')
+cp.set('sharedoptions', 'massranges', 'aligned2dstack,dumptochis,bankverify')
+cp.set('sharedoptions', 'metric', 'alignedbankcat,dumptochis,bankverify')
+cp.set('sharedoptions', 'psd', 'alignedbankcat,dumptochis,bankverify')
+cp.set('sharedoptions', 'data', 'alignedbankcat,dumptochis,bankverify')
 cp.set('sharedoptions', 'ethinca', 'alignedbankcat')
 
 cp.add_section('sharedoptions-massranges')
@@ -490,23 +508,10 @@ cp.add_section('alignedbankcat')
 
 # dumptochis
 cp.add_section('dumptochis')
-# Add options by parsing the options sent to this job. Convert to dict
-print_chis_opts = vars(copy.deepcopy(orig_opts))
-# Remove options we don't want to send on
-remove_opts = ['output_file', 'min_match', 'stack_distance',
-               'threed_lattice', 'split_bank_num', 'filter_points',
-               'print_chi_points', 'verbose']
-for opt in remove_opts:
-    if opt in print_chis_opts.keys():
-        del print_chis_opts[opt]
-# Add the rest
-for opt, val in print_chis_opts.items():
-    if val is None:
-        continue
-    elif val is True or val is False:
-        cp.set('dumptochis', str(opt.replace("_","-")), "")
-    else:
-        cp.set('dumptochis', str(opt.replace("_","-")), str(val))
+
+# bank verification
+cp.add_section('bankverify')
+cp.set('bankverify', 'bin-spacing', str(1 - opts.min_match))
 
 temp_fp = open('temp.ini', 'w')
 cp.write(temp_fp)
@@ -574,6 +579,13 @@ out_bank = combine_node.output_files[0]
 chiparams_exe = TmpltbankToChiParams(workflow.cp, 'dumptochis',
                                       ifos=workflow.ifos, out_dir=curr_dir)
 chiparams_node = chiparams_exe.create_node(out_bank, workflow.analysis_time)
+workflow += chiparams_node
+
+# And the bank verification job
+bankverify_exe = BankVerification(workflow.cp, 'bankverify',
+                                  ifos=workflow.ifos, out_dir=curr_dir)
+bankverify_node = bankverify_exe.create_node(out_bank, workflow.analysis_time)
+workflow += bankverify_node
 
 workflow.save(filename=opts.dax_filename, output_map=opts.map_filename)
 

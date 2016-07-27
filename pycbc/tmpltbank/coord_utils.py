@@ -448,7 +448,10 @@ def get_mu_params(lambdas, metricParams, fUpper):
     lambdas = numpy.array(lambdas, copy=False)
     # If original inputs were floats we need to make this a 2D array
     if len(lambdas.shape) == 1:
+        resize_needed = True
         lambdas = lambdas[:,None]
+    else:
+        resize_needed = False
 
     evecs = metricParams.evecs[fUpper]
     evals = metricParams.evals[fUpper]
@@ -457,6 +460,9 @@ def get_mu_params(lambdas, metricParams, fUpper):
 
     mus = ((lambdas.T).dot(evecs)).T
     mus = mus * numpy.sqrt(evals)[:,None]
+
+    if resize_needed:
+        mus = numpy.ndarray.flatten(mus)
 
     return mus
 
@@ -481,9 +487,17 @@ def get_covaried_params(mus, evecsCV):
     mus = numpy.array(mus, copy=False)
     # If original inputs were floats we need to make this a 2D array
     if len(mus.shape) == 1:
+        resize_needed = True
         mus = mus[:,None]
+    else:
+        resize_needed = False
 
-    return ((mus.T).dot(evecsCV)).T
+    xis = ((mus.T).dot(evecsCV)).T
+
+    if resize_needed:
+        xis = numpy.ndarray.flatten(xis)
+
+    return xis
 
 def rotate_vector(evecs, old_vector, rescale_factor, index):
     """
