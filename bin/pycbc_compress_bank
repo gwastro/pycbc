@@ -206,9 +206,10 @@ output['template_hash'] = templates['template_hash']
 logging.info("getting compressed amplitude and phase")
 mismatches = numpy.zeros(imax-imin, dtype=float)
 for ii in range(imin, imax):
+
     htilde = bank[ii]
     tmplt = bank.table[ii]
-    kmax = min(N, len(htilde))
+    kmax = htilde.end_idx
     
     # get the compressed sample points
     if args.compression_algorithm == 'mchirp':
