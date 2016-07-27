@@ -215,7 +215,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # Dump parsed .ini file if needed
         if parsedFilePath:
             fp = open(parsedFilePath,'w')
-            cp.write(fp)
+            self.write(fp)
             fp.close()
 
 

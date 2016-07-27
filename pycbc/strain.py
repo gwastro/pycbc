@@ -882,29 +882,11 @@ class StrainSegments(object):
             if trig_end_idx < cum_end:
                 stop -= (cum_end - trig_end_idx)
 
-            injections_in_segment = 0
             if filter_inj_only and hasattr(strain, 'injections'):
                 analyze_this = False
                 for inj_id in inj_idx:
                     if inj_id < cum_end and inj_id > cum_start:
                         analyze_this = True
-
-                        # This can only optimize the case of 1 injection in a segment
-                        # If there are more, the entire segment is analyzed
-                        #if injection_window is not None:
-                        #    injections_in_segment += 1
-                        #    inj_pos = inj_id - seg.start
-                        #    win_points = int(injection_window * strain.sample_rate)
-                        #    inj_start = int(inj_pos - win_points)
-                        #    inj_end = int(inj_pos + win_points)
-                        #    if inj_start < start:
-                        #        inj_start = start
-                        #    if inj_end > stop:
-                        #        inj_end = stop
-
-                if injections_in_segment == 1:
-                    start = inj_start
-                    stop = inj_end
 
                 if not analyze_this:
                     continue

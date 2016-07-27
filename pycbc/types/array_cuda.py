@@ -182,7 +182,7 @@ vdot = inner
 
 def weighted_inner(self, b, w):
     if w is None:
-        return self.inner(other)  
+        return self.inner(b)  
     a = self.data
     dtype_out = _get_common_dtype(a, b)
     krnl = get_weighted_inner_kernel(a.dtype, b.dtype, w.dtype, dtype_out)

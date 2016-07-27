@@ -27,7 +27,7 @@ This library code contains functions and classes that are used in the
 generation of pygrb workflows. For details about pycbc.workflow see here:
 http://ligo-cbc.github.io/pycbc/latest/html/workflow.html
 """
-
+import sys
 import os
 import shutil
 import urlparse, urllib
