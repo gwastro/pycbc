@@ -19,7 +19,8 @@ def volume_to_distance_with_errors(vol, vol_err):
     """
     dist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
     ehigh = ((vol + vol_err) * 3.0/4.0/numpy.pi) ** (1.0/3.0) - dist
-    elow = dist - ((vol - vol_err) * 3.0/4.0/numpy.pi) ** (1.0/3.0)
+    delta = numpy.where(vol >= vol_err, vol - vol_err, 0)
+    elow = dist - (delta * 3.0/4.0/numpy.pi) ** (1.0/3.0)
     return dist, ehigh, elow
 
 def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
