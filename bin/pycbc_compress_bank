@@ -106,9 +106,10 @@ else:
 
 # figure out the dfs needed for each waveform
 logging.info("getting needed dfs")
+
 seg_lens = 2*numpy.array([
-    waveform.ceilpow2(compress.rough_time_estimate(m1, m2, fmin))
-    for m1,m2 in zip(templates.mass1, templates.mass2)])
+    2**numpy.ceil(numpy.log2(compress.rough_time_estimate(m1, m2, fmin)))
+    for m1,m2 in zip(templates.mass1, templates.mass2)]).astype(int)
 
 # generate output file
 # FIXME: this should be moved to a class or function
