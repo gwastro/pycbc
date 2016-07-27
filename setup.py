@@ -234,6 +234,7 @@ def get_version_info():
             f.write('version = \'%s\'\n' % vcs_info.version)
             f.write('date = \'%s\'\n' % vcs_info.date)
             f.write('release = %s\n' % vcs_info.release)
+            f.write('last_release = \'%s\'\n' % vcs_info.last_release)
 
             # print git info
             f.write('\ngit_hash = \'%s\'\n' % vcs_info.hash)
