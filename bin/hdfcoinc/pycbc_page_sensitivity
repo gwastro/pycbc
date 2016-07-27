@@ -1,5 +1,5 @@
 #!/usr/bin/python
-""" Make plot of search sensitive distance
+""" Plot search sensitivity as a function of significance.
 """
 import argparse, h5py, numpy, logging, matplotlib, sys
 matplotlib.use('Agg')
@@ -7,12 +7,13 @@ from matplotlib.pyplot import cm
 import pylab, pycbc.pnutils, pycbc.results, pycbc, pycbc.version
 from pycbc import sensitivity
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--injection-file', required=True,
                     help="Required. HDF format injection result file.")
-parser.add_argument('--output-file', required=True) # DOCUMENTME
+parser.add_argument('--output-file', required=True,
+                    help='Destination file for the plot')
 parser.add_argument('--bin-type', choices=['spin', 'mchirp',
                                            'total_mass', 'eta'],
                     default='mchirp',
@@ -28,9 +29,10 @@ parser.add_argument('--sig-bins', nargs='*',
                    help="Boundaries of x-axis significance bins. If not given"
                         ", hard-coded defaults will be used"),
 parser.add_argument('--dist-type', choices=['distance', 'volume', 'vt'],
-                    default='distance')
+                    default='distance',
+                    help="y-axis sensitivity measure. Default 'distance'")
 parser.add_argument('--log-dist', action='store_true', 
-                    help='Plot the sensitive distance axis in log scale')
+                    help='Plot the sensitivity axis in log scale')
 parser.add_argument('--min-dist', type=float,
                     help="Lower y-axis limit for sensitive distance")
 parser.add_argument('--max-dist', type=float,
@@ -207,8 +209,6 @@ for j in range(len(args.bins)-1):
                       found_mchirp, missed_mchirp, args.distance_param,
                       args.distribution, args.limits_param,
                       args.max_param, args.min_param)
-
-            sdist, ehigh, elow = sensitivity.volume_to_distance_with_errors(vol, vol_err)
 
             vols.append(vol)
             vol_errors.append(vol_err)
