@@ -1,4 +1,4 @@
-# Copyright (C) 2015  Alex Nitz
+# Copyright (C) 2016  Alex Nitz, Collin Capano
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -23,8 +23,8 @@
 """ Utilities for handling frequency compressed an unequally spaced frequency
 domain waveforms.
 """
-import lalsimulation, lal, numpy
-from pycbc import pnutils
+import lalsimulation, lal, numpy, logging
+from pycbc import pnutils, filter
 from pycbc.types import Array
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
@@ -156,6 +156,83 @@ compression_algorithms = {
         'mchirp': mchirp_compression,
         'spa': spa_compression
         }
+
+def _vecdiff(htilde, hinterp, fmin, fmax):
+    return abs(filter.overlap_cplx(htilde, htilde,
+                          low_frequency_cutoff=fmin,
+                          high_frequency_cutoff=fmax,
+                          normalized=False)
+                - filter.overlap_cplx(htilde, hinterp,
+                          low_frequency_cutoff=fmin,
+                          high_frequency_cutoff=fmax,
+                          normalized=False))
+
+def vecdiff(htilde, hinterp, sample_points):
+    """Computes a statistic indicating between which sample points a waveform
+    and the interpolated waveform differ the most.
+    """
+    vecdiffs = numpy.zeros(sample_points.size-1, dtype=float)
+    for kk,thisf in enumerate(sample_points[:-1]):
+        nextf = sample_points[kk+1]
+        vecdiffs[kk] = abs(_vecdiff(htilde, hinterp, thisf, nextf))
+    return vecdiffs
+
+def compress_waveform(htilde, sample_points, precision, interpolation,
+        decomp_scratch=None):
+    """Retrieves the amplitude and phase at the desired sample points, and adds
+    frequency points in order to ensure that the interpolated waveform
+    has a mismatch with the full waveform that is <= the desired precision.
+    """
+    fmin = sample_points.min()
+    df = htilde.delta_f
+    sample_index = (sample_points / df).astype(int)
+    amp = utils.amplitude_from_frequencyseries(htilde)
+    phase = utils.phase_from_frequencyseries(htilde)
+
+    comp_amp = amp.take(sample_index)
+    comp_phase = phase.take(sample_index)
+    hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
+        out=decomp_scratch, f_lower=fmin, interpolation=interpolation)
+    mismatch = 1. - filter.overlap(hdecomp, htilde, low_frequency_cutoff=fmin)
+    if mismatch > precision:
+        # we'll need the difference in the waveforms as a function of frequency
+        vecdiffs = vecdiff(htilde, hdecomp, sample_points)
+
+    # We will find where in the frequency series the interpolated waveform
+    # has the smallest overlap with the full waveform, add a sample point
+    # there, and re-interpolate. We repeat this until the overall mismatch
+    # is > than the desired precision 
+    added_points = []
+    while mismatch > precision:
+        minpt = vecdiffs.argmax()
+        # add a point at the frequency halfway between minpt and minpt+1
+        add_freq = sample_points[[minpt, minpt+1]].mean()
+        addidx = int(add_freq/df)
+        new_index = numpy.zeros(sample_index.size+1, dtype=int)
+        new_index[:minpt+1] = sample_index[:minpt+1]
+        new_index[minpt+1] = addidx
+        new_index[minpt+2:] = sample_index[minpt+1:]
+        sample_index = new_index
+        sample_points = sample_index * df
+        # get the new compressed points
+        comp_amp = amp.take(sample_index)
+        comp_phase = phase.take(sample_index)
+        # update the vecdiffs and mismatch
+        hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
+            out=decomp_scratch, f_lower=fmin, interpolation=interpolation)
+        new_vecdiffs = numpy.zeros(vecdiffs.size+1)
+        new_vecdiffs[:minpt] = vecdiffs[:minpt]
+        new_vecdiffs[minpt+2:] = vecdiffs[minpt+1:]
+        new_vecdiffs[minpt:minpt+2] = vecdiff(htilde, hdecomp,
+            sample_points[minpt:minpt+2])
+        vecdiffs = new_vecdiffs
+        mismatch = 1. - filter.overlap(hdecomp, htilde,
+            low_frequency_cutoff=fmin)
+        added_points.append(addidx)
+    logging.info("mismatch: %f, N points: %i (%i added)" %(mismatch,
+        len(comp_amp), len(added_points)))
+
+    return comp_amp, comp_phase, mismatch, numpy.array(added_points)*df
 
 
 def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
