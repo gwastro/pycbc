@@ -106,10 +106,10 @@ else:
 
 # figure out the dfs needed for each waveform
 logging.info("getting needed dfs")
-
-seg_lens = 2*numpy.array([
-    2**numpy.ceil(numpy.log2(compress.rough_time_estimate(m1, m2, fmin)))
-    for m1,m2 in zip(templates.mass1, templates.mass2)]).astype(int)
+# we'll ensure that the there are atleast 2 samples in a waveform
+seg_lens = 2*numpy.array([max(4./args.sample_rate,
+    2**numpy.ceil(numpy.log2(compress.rough_time_estimate(m1, m2, fmin))))
+    for m1,m2 in zip(templates.mass1, templates.mass2)])
 
 # generate output file
 # FIXME: this should be moved to a class or function
@@ -126,8 +126,8 @@ logging.info("getting compressed amplitude and phase")
 mismatches = numpy.zeros(imax-imin, dtype=float)
 for ii in range(imin, imax):
     # update the N, df to use based on this waveform
-    N = int(args.sample_rate*seg_lens[ii])
-    df = 1./seg_lens[ii]
+    N = int(args.sample_rate*seg_lens[ii-imin])
+    df = 1./seg_lens[ii-imin]
     bank.delta_f = df
     bank.N = N
     bank.filter_length = N/2 + 1
