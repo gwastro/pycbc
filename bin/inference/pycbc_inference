@@ -218,6 +218,8 @@ with ctx:
         try:
             static_args[key] = float(val)
             continue
+        except:
+            pass
         try:
             static_args[key] = convert_liststring_to_list(val) 
         except:
