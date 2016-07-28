@@ -61,6 +61,15 @@ def read_distributions_from_config(cp, section):
             raise ValueError("Same parameter in more than one distribution.")
     return dists
 
+def convert_liststring_to_list(lstring):
+    """ Checks if an argument of the configuration file is a string of a list
+    and returns the corresponding list (of strings)
+    """
+    if lstring[0]=='[' and lstring[-1]==']':
+        lvalue = [str(lstring[1:-1].split(',')[n].strip().strip("'"))
+                      for n in range(len(lstring[1:-1].split(',')))]
+    return lvalue
+
 # command line usage
 parser = argparse.ArgumentParser(usage="pycbc_inference [--options]",
                   description="Runs an sampler to find the posterior.")
@@ -208,12 +217,11 @@ with ctx:
     for key,val in static_args.iteritems():
         try:
             static_args[key] = float(val)
+            continue
+        try:
+            static_args[key] = convert_liststring_to_list(val) 
         except:
-            if val[0]=='[' and val[-1]==']':
-                static_args[key] = [str(val[1:-1].split(',')[n].strip().strip("'")) 
-                                        for n in range(len(val[1:-1].split(',')))]
-            else:
-                pass
+            pass
 
     # get labels for each parameter from configuration file
     labels = [read_label_from_config(cp, param) for param in variable_args]
