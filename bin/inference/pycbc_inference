@@ -209,7 +209,11 @@ with ctx:
         try:
             static_args[key] = float(val)
         except:
-            pass
+            if val[0]=='[' and val[-1]==']':
+                static_args[key] = [str(val[1:-1].split(',')[n].strip().strip("'")) 
+                                        for n in range(len(val[1:-1].split(',')))]
+            else:
+                pass
 
     # get labels for each parameter from configuration file
     labels = [read_label_from_config(cp, param) for param in variable_args]
