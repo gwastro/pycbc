@@ -1229,8 +1229,238 @@ def quadratic_interpolate_peak(left, middle, right):
     peak_value = middle + 0.25 * (left - right) * bin_offset
     return bin_offset, peak_value
 
+class LiveBatchMatchedFilter(object):
+    def __init__(self, templates, snr_threshold, chisq_bins,
+                 maxelements=2**27,
+                 snr_abort_threshold=None,
+                 newsnr_threshold=None,
+                 max_triggers_in_batch=None):
+        self.snr_threshold = snr_threshold
+        self.snr_abort_threshold = snr_abort_threshold
+        self.newsnr_threshold = newsnr_threshold
+        self.max_triggers_in_batch = max_triggers_in_batch
+
+        from pycbc import vetoes
+        self.power_chisq = vetoes.SingleDetPowerChisq(chisq_bins, None)
+
+        durations = numpy.array([1.0 / t.delta_f for t in templates])
+
+        lsort = durations.argsort()
+        durations = durations[lsort]
+        templates = [templates[li] for li in lsort]
+
+        # Figure out how to chunk together the templates into groups to process
+        sizes, counts = numpy.unique(durations, return_counts=True)
+        tsamples = [(len(t) - 1) * 2 for t in templates]
+        grabs = maxelements / numpy.unique(tsamples) 
+
+        chunks = numpy.array([])
+        num = 0
+        for count, grab in zip(counts, grabs):
+            chunks = numpy.append(chunks, numpy.arange(num, count + num, grab))
+            chunks = numpy.append(chunks, [count + num])
+            num += count
+        chunks = numpy.unique(chunks).astype(numpy.uint32)
+
+        # We now have how many templates to grab at a time.
+        self.chunks = chunks[1:] - chunks[0:-1]
+
+        self.out_mem = {}
+        self.cout_mem = {}
+        self.ifts = {}
+        chunk_durations = [durations[i] for i in chunks[:-1]]
+        self.chunk_tsamples = [tsamples[int(i)] for i in chunks[:-1]]
+        samples = self.chunk_tsamples * self.chunks
+ 
+        # Create workspace memory for correlate and snr      
+        mem_ids = [(a, b) for a, b in zip(chunk_durations, self.chunks)]
+        mem_types = set(zip(mem_ids, samples))
+
+        self.tgroups, self.mids = [], []
+        for i, size in mem_types:
+            dur, count = i
+            self.out_mem[i] = zeros(size, dtype=numpy.complex64)
+            self.cout_mem[i] = zeros(size, dtype=numpy.complex64)
+            self.ifts[i] = IFFT(self.cout_mem[i], self.out_mem[i],
+                                nbatch=count,
+                                size=len(self.cout_mem[i]) / count)
+
+        # Split the templates into their processing groups
+        for dur, count in mem_ids:
+            tgroup = templates[0:count]
+            self.tgroups.append(tgroup)
+            self.mids.append((dur, count))
+            templates = templates[count:]
+
+        # Associate the snr and corr memory block to each template
+        self.corr = []
+        for i, tgroup in enumerate(self.tgroups):
+            psize = self.chunk_tsamples[i]
+            s = 0
+            e = psize
+            mid = self.mids[i]
+            for htilde in tgroup:
+                htilde.out = self.out_mem[mid][s:e]
+                htilde.cout = self.cout_mem[mid][s:e]
+                s += psize
+                e += psize
+            self.corr.append(BatchCorrelator(tgroup, [t.cout for t in tgroup], len(tgroup[0])))
+            
+
+    def set_data(self, data):
+        self.data = data
+        self.block_id = 0
+
+    def combine_results(self, results):
+        result = {}
+        for key in results[0]:
+            result[key] = numpy.concatenate([r[key] for r in results])
+        return result
+
+    def process_data(self, data_reader):
+        self.set_data(data_reader)
+        return self.process_all()
+
+    def process_all(self):
+        """ Process every batch group and return as single result
+        """
+        results = []
+        veto_info = []
+        while 1:
+            result, veto = self._process_batch()
+            if result is False: return False
+            if result is None: break
+            results.append(result)
+            veto_info += veto
+
+        result = self.combine_results(results)
+        
+        if self.max_triggers_in_batch:
+            sort = result['snr'].argsort()[::-1][:self.max_triggers_in_batch]
+            for key in result:
+                result[key] = result[key][sort]
+            
+            tmp = veto_info
+            veto_info = [tmp[i] for i in sort]
+        
+        result = self._process_vetoes(result, veto_info)
+        return result
+
+    def _process_vetoes(self, results, veto_info):
+        """ Calculate signal based vetoes
+        """  
+        chisq = numpy.array(numpy.zeros(len(veto_info)), numpy.float32, ndmin=1)
+        dof = numpy.array(numpy.zeros(len(veto_info)), numpy.uint32, ndmin=1)
+        results['chisq'] = chisq
+        results['chisq_dof'] = dof
+        
+        keep = []
+        for i, (snrv, norm, l, htilde, stilde) in enumerate(veto_info): 
+            correlate(htilde, stilde, htilde.cout)
+            c, d = self.power_chisq.values(htilde.cout, snrv, norm, stilde.psd, [l], htilde)
+            chisq[i] = c[0] / d[0]
+            dof[i] = d[0]
+            
+            if self.newsnr_threshold:
+                newsnr = pycbc.events.newsnr(results['snr'][i], chisq[i])
+                if newsnr >= self.newsnr_threshold:
+                    keep.append(i)
+                    
+        if self.newsnr_threshold:
+            keep = numpy.array(keep, dtype=numpy.uint32)
+            for key in results:
+                results[key] = results[key][keep]
+                
+        return results 
+
+    def _process_batch(self):
+        """ Process only a single batch group of data
+        """  
+        from pycbc.events import newsnr
+   
+        if self.block_id == len(self.tgroups):
+            return None, None
+
+        tgroup = self.tgroups[self.block_id]
+        psize = self.chunk_tsamples[self.block_id]
+        mid = self.mids[self.block_id]
+        stilde = self.data.overwhitened_data(tgroup[0].delta_f)
+        psd = stilde.psd 
+
+        valid_end = int(psize - self.data.trim_padding)
+        valid_start = int(valid_end - self.data.blocksize * self.data.sample_rate)
+
+        seg = slice(valid_start, valid_end)
+        
+        self.corr[self.block_id].execute(stilde)
+        self.ifts[mid].execute()
+
+        snr = numpy.zeros(len(tgroup), dtype=numpy.complex64)
+        time = numpy.zeros(len(tgroup), dtype=numpy.float64)
+        templates = numpy.zeros(len(tgroup), dtype=numpy.uint64)
+        sigmasq = numpy.zeros(len(tgroup), dtype=numpy.float32)
+
+        time[:] = self.data.start_time
+
+        result = {}
+        tkeys = tgroup[0].params.dtype.names
+        for key in tkeys:
+            result[key] = []
+
+        veto_info = []
+
+        # Find the peaks in our SNR times series from the various templates
+        i = 0
+        for htilde in tgroup:
+            m, l = htilde.out[seg].abs_max_loc()
+
+            sgm = htilde.sigmasq(psd)
+            norm = 4.0 * htilde.delta_f / (sgm ** 0.5)
+
+            # If nothing is above threshold we can exit this template
+            s = m * norm
+            if s < self.snr_threshold:
+                continue    
+
+            time[i] += float(l) / self.data.sample_rate            
+            l += valid_start
+
+            # We have an SNR so high that we will drop the entire analysis 
+            # of this chunk of time!
+            if self.snr_abort_threshold is not None and s > self.snr_abort_threshold:
+                logging.info("We are seeing some *really* high SNRs, lets"
+                             "assume they aren't signals and just give up")
+                return False, []
+     
+            snrv = numpy.array([htilde.out[l]])
+            veto_info.append((snrv, norm, l, htilde, stilde))
+     
+            snr[i] = snrv[0] * norm
+            sigmasq[i] = sgm
+            templates[i] = htilde.id
+            if not hasattr(htilde, 'dict_params'):
+                htilde.dict_params = {}
+                for key in tkeys:
+                    htilde.dict_params[key] = htilde.params[key]
+            
+            for key in tkeys:            
+                result[key].append(htilde.dict_params[key])
+            i += 1
+        
+        result['snr'] = abs(snr[0:i])
+        result['coa_phase'] = numpy.angle(snr[0:i])
+        result['end_time'] = time[0:i]
+        result['template_id'] = templates[0:i]
+        result['sigmasq'] = sigmasq[0:i]
+
+        for key in tkeys:
+            result[key] = numpy.array(result[key])
+
+        self.block_id += 1
+        return result, veto_info  
+
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
-           'matched_filter_core', 'correlate', 'MatchedFilterControl',
+           'matched_filter_core', 'correlate', 'MatchedFilterControl', 'LiveBatchMatchedFilter',
            'MatchedFilterSkyMaxControl', 'compute_max_snr_over_sky_loc_stat']
 
