@@ -24,10 +24,26 @@
 """ This modules contains functions for calculating coincident ranking
 statistic values
 """
+
 import numpy
 from . import events
 
 def get_statistic(option, files):
+    """ Return an appropriate coincident statistic class instance.
+
+    Parameters
+    ----------
+    option: str
+        Name of the statistic class to instantiate
+    files: list of strs
+        A list containing the filenames of hdf format files used to help
+    construct the coincident statistics.
+
+    Returns
+    -------
+    stat: instance of `Stat` class
+        The requested class instance        
+    """
     if option == 'newsnr':
         return NewSNRStatistic(files)
     elif option == 'newsnr_cut':
@@ -40,7 +56,19 @@ def get_statistic(option, files):
         raise ValueError('%s is not an available detection statistic' % option)
 
 class Stat(object):
+    """ Base class which should be extended to provide a coincident statistic
+    """
     def __init__(self, files):
+        """ Create a statistic class instance
+
+        Parameters
+        ----------
+        files: list of strs
+            A list containing the filenames of hdf format files used to help
+        construct the coincident statistics. The files must have a 'stat'
+        attribute which is used to associate them with the appropriate
+        statistic class.       
+        """
         import h5py
         self.files = {}
         for filename in files:
@@ -59,7 +87,7 @@ class NewSNRStatistic(Stat):
         return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
 
     def coinc(self, s1, s2, slide, step):
-        """ Calculate the coincident statistic.
+        """ Calculate the network NewSNR
         """
         return (s1**2.0 + s2**2.0) ** 0.5
 
