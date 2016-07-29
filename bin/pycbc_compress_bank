@@ -79,9 +79,6 @@ parser.add_argument("--interpolation", type=str, default="linear",
                      "waveforms for checking precision. Options are 'linear', "
                      "or any interpolation recognized by scipy's interp1d "
                      "kind argument. Default is linear.")
-parser.add_argument("--save-added-points", action="store_true", default=False,
-                help="Save the indices of points that had to be added in "
-                     "order for the mismatch to be <= the desired precision.")
 parser.add_argument("--verbose", action="store_true", default=False)
 
 
@@ -107,7 +104,7 @@ else:
 # figure out the dfs needed for each waveform
 logging.info("getting needed dfs")
 # we'll ensure that the there are atleast 2 samples in a waveform
-seg_lens = 2*numpy.array([max(4./args.sample_rate,
+seg_lens = 4*numpy.array([max(4./args.sample_rate,
     2**numpy.ceil(numpy.log2(compress.rough_time_estimate(m1, m2, fmin))))
     for m1,m2 in zip(templates.mass1, templates.mass2)])
 
@@ -155,7 +152,7 @@ for ii in range(imin, imax):
             args.compression_algorithm))
             
     # compress
-    comp_amp, comp_phase, mismatch, added_points = compress.compress_waveform(
+    sample_points, comp_amp, comp_phase, mismatch = compress.compress_waveform(
         htilde, sample_points, args.precision, args.interpolation,
         decomp_scratch=decomp_scratch)
 
@@ -165,12 +162,8 @@ for ii in range(imin, imax):
     output['compressed_waveforms/%i/amplitude' %(ii-imin)] = comp_amp.numpy()
     output['compressed_waveforms/%i/phase' %(ii-imin)] = comp_phase.numpy()
     output['compressed_waveforms/%i/frequency' %(ii-imin)] = sample_points
-    #output['compressed_waveforms/%i' %(ii - imin)].attrs['mismatch'] = mismatch
-    if args.save_added_points:
-        output['compressed_waveforms/%i/added_points' %(ii - imin)] = \
-            added_points
+    output['compressed_waveforms/%i' %(ii - imin)].attrs['mismatch'] = mismatch
 
-output['compressed_waveforms/mismatch'] = mismatches
 # save metadata
 output['compressed_waveforms'].attrs['interpolation'] = args.interpolation
 output['compressed_waveforms'].attrs['precision'] = args.precision
