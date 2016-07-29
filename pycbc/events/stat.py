@@ -56,8 +56,9 @@ def get_statistic(option, files):
         raise ValueError('%s is not an available detection statistic' % option)
 
 class Stat(object):
-    """ Base class which should be extended to provide a coincident statistic
-    """
+
+    """ Base class which should be extended to provide a coincident statistic"""
+    
     def __init__(self, files):
         """ Create a statistic class instance
 
@@ -77,8 +78,9 @@ class Stat(object):
             self.files[stat] = f
 
 class NewSNRStatistic(Stat):
-    """ Calculate the NewSNR coincident detection statistic
-    """
+
+    """ Calculate the NewSNR coincident detection statistic """
+    
     def single(self, trigs):
         """ Calculate the single detector statistic.
         
@@ -117,9 +119,9 @@ class NewSNRStatistic(Stat):
         return (s1**2.0 + s2**2.0) ** 0.5
 
 class NewSNRCutStatistic(Stat):
-    """ Same as the NewSNR statistic, but demonstrates how to do a simply cut
-    of the triggers
-    """
+
+    """ Same as the NewSNR statistic, but demonstrates a cut of the triggers"""
+
     def single(self, trigs):
         """ Calculate the single detector statistic.
         
@@ -163,9 +165,11 @@ class NewSNRCutStatistic(Stat):
         return cstat
 
 class PhaseTDStatistic(NewSNRStatistic):
+
     """ Detection statistic that re-weights the network SNR based on the
     PDF of time delays, phase difference, and amplitude ratios.
     """
+    
     def __init__(self, files):
         NewSNRStatistic.__init__(self, files)
         self.hist = self.files['phasetd_newsnr']['map'][:]
@@ -253,7 +257,9 @@ class PhaseTDStatistic(NewSNRStatistic):
         return cstat ** 0.5
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
+
     """ Combination of NewSNR with the power chisq and auto chisq """
+    
     def single(self, trigs):
         """ Calculate the single detector statistic.
         
