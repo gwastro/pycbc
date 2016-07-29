@@ -77,22 +77,63 @@ class Stat(object):
             self.files[stat] = f
 
 class NewSNRStatistic(Stat):
+    """ Calculate the NewSNR coincident detection statistic
+    """
     def single(self, trigs):
-        """ Read in the single detector information and make a single detector
-        statistic. Results can either be a single number or a record array.
-        """
+        """ Calculate the single detector statistic.
         
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+            Dictionary of the single detector trigger information. 'chisq_dof',
+        'snr', and 'chisq' are required arrays for this statistic.
+        
+        Returns
+        -------
+        stat: numpy.ndarray
+            The array of single detector values
+        """
         dof = 2 * trigs['chisq_dof'] - 2
         newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / dof)
         return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
 
     def coinc(self, s1, s2, slide, step):
-        """ Calculate the network NewSNR
+        """ Calculate the coincident detection statistic. 
+        
+        Parameters
+        ----------
+        s1: numpy.ndarray
+            Single detector ranking statistic for the first detector.
+        s2: numpy.ndarray
+            Single detector ranking statistic for the second detector.
+        slide: (unused in this statistic!)
+        step: (unused in this statistic!)
+        
+        Returns
+        -------
+        coinc_stat: numpy.ndarray
+            An array of the coincident ranking statitic values
         """
         return (s1**2.0 + s2**2.0) ** 0.5
 
 class NewSNRCutStatistic(Stat):
+    """ Same as the NewSNR statistic, but demonstrates how to do a simply cut
+    of the triggers
+    """
     def single(self, trigs):
+        """ Calculate the single detector statistic.
+        
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+            Dictionary of the single detector trigger information. 'chisq_dof',
+        'snr', and 'chisq' are requierd arrays for this statistic.
+        
+        Returns
+        -------
+        stat: numpy.ndarray
+            The array of single detector values
+        """
         dof = 2 * trigs['chisq_dof'] - 2
         rchisq = trigs['chisq'] / dof
         newsnr = events.newsnr(trigs['snr'], rchisq)
@@ -100,12 +141,31 @@ class NewSNRCutStatistic(Stat):
         return newsnr
 
     def coinc(self, s1, s2, slide, step):
+        """ Calculate the coincident detection statistic. 
+        
+        Parameters
+        ----------
+        s1: numpy.ndarray
+            Single detector ranking statistic for the first detector.
+        s2: numpy.ndarray
+            Single detector ranking statistic for the second detector.
+        slide: (unused in this statistic!)
+        step: (unused in this statistic!)
+        
+        Returns
+        -------
+        coinc_stat: numpy.ndarray
+            An array of the coincident ranking statitic values
+        """
         cstat = (s1**2.0 + s2**2.0) ** 0.5
         cstat[s1==-1] = 0
         cstat[s2==-1] = 0
         return cstat
 
 class PhaseTDStatistic(NewSNRStatistic):
+    """ Detection statistic that re-weights the network SNR based on the
+    PDF of time delays, phase difference, and amplitude ratios.
+    """
     def __init__(self, files):
         NewSNRStatistic.__init__(self, files)
         self.hist = self.files['phasetd_newsnr']['map'][:]
@@ -116,12 +176,43 @@ class PhaseTDStatistic(NewSNRStatistic):
         self.hist = numpy.log(self.hist) 
 
     def single(self, trigs):
+        """ Calculate the single detector statistic.
+        
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+            Dictionary of the single detector trigger information. 'chisq_dof',
+        'snr', and 'chisq', 'coa_phase', 'end_time', and 'sigmasq'
+        are required arrays for this statistic.
+        
+        Returns
+        -------
+        stat: numpy.ndarray
+            The array of single detector values
+        """
         newsnr = NewSNRStatistic.single(self, trigs)
         return numpy.array((newsnr, trigs['coa_phase'], trigs['end_time'],
                             trigs['sigmasq']**0.5, trigs['snr'])).transpose()
 
     def coinc(self, s1, s2, slide, step):
-        """ Calculate the coincident statistic.
+        """ Calculate the coincident detection statistic. 
+        
+        Parameters
+        ----------
+        s1: numpy.ndarray
+            Single detector ranking statistic for the first detector.
+        s2: numpy.ndarray
+            Single detector ranking statistic for the second detector.
+        slide: numpy.ndarray 
+            Array of ints. These represent the multiple of the timeslide
+        interval to bring a pair of single detector triggers into coincidence.
+        step: float
+            The timeslide interval in seconds.
+        
+        Returns
+        -------
+        coinc_stat: numpy.ndarray
+            An array of the coincident ranking statitic values
         """
         td = s1[:,2] - s2[:,2] - slide * step
         pd = (s1[:,1] - s2[:,1]) % (numpy.pi * 2)
@@ -162,8 +253,22 @@ class PhaseTDStatistic(NewSNRStatistic):
         return cstat ** 0.5
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
+    """ Combination of NewSNR with the power chisq and auto chisq """
     def single(self, trigs):
-        """Combined chisq calculation for each trigger."""
+        """ Calculate the single detector statistic.
+        
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+            Dictionary of the single detector trigger information. 'chisq_dof',
+        'snr', 'cont_chisq', 'cont_chisq_dof', and 'chisq' are required arrays
+        for this statistic.
+        
+        Returns
+        -------
+        stat: numpy.ndarray
+            The array of single detector values
+        """
         chisq_dof = 2 * trigs['chisq_dof'] - 2
         chisq_newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / chisq_dof)
         autochisq_dof = trigs['cont_chisq_dof']
