@@ -297,7 +297,7 @@ class FilterBank(TemplateBank):
 
         self.table[index].template_duration = template_duration        
 
-        htilde = htilde.astype(numpy.complex64)
+        htilde = htilde.astype(self.dtype)
         htilde.f_lower = self.f_lower
         htilde.end_frequency = f_end
         htilde.end_idx = int(htilde.end_frequency / htilde.delta_f)

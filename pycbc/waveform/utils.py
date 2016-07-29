@@ -84,13 +84,24 @@ def amplitude_from_frequencyseries(htilde):
     return FrequencySeries(amp, delta_f=htilde.delta_f, epoch=htilde.epoch,
         copy=False)
 
-def time_from_frequencyseries(htilde, sample_frequencies=None):
+def time_from_frequencyseries(htilde, sample_frequencies=None,
+        discont_threshold=0.99*numpy.pi):
     """Computes time as a function of frequency from the given
     frequency-domain waveform. This assumes the stationary phase
     approximation. Any frequencies lower than the first non-zero value in
     htilde are assigned the time at the first non-zero value. Times for any
     frequencies above the next-to-last non-zero value in htilde will be
     assigned the time of the next-to-last non-zero value.
+
+    .. note::
+        Some waveform models (e.g., `SEOBNRv2_ROM_DoubleSpin`) can have
+        discontinuities in the phase towards the end of the waveform due to
+        numerical error. We therefore exclude any points that occur after a
+        discontinuity in the phase, as the time estimate becomes untrustworthy
+        beyond that point. What determines a discontinuity in the phase is set
+        by the `discont_threshold`. To turn this feature off, just set
+        `discont_threshold` to a value larger than pi (due to the unwrapping
+        of the phase, no two points can have a difference > pi).
 
     Parameters
     ----------
@@ -99,6 +110,9 @@ def time_from_frequencyseries(htilde, sample_frequencies=None):
     sample_frequencies : {None, array}
         The frequencies at which the waveform is sampled. If None, will
         retrieve from ``htilde.sample_frequencies``.
+    discont_threshold : {0.99*pi, float}
+        If the difference in the phase changes by more than this threshold,
+        it is considered to be a discontinuity. Default is 0.99*pi.
 
     Returns
     -------
@@ -108,9 +122,14 @@ def time_from_frequencyseries(htilde, sample_frequencies=None):
     if sample_frequencies is None:
         sample_frequencies = htilde.sample_frequencies.numpy()
     phase = phase_from_frequencyseries(htilde).data
-    time = -numpy.diff(phase) / (2.*numpy.pi*numpy.diff(sample_frequencies))
+    dphi = numpy.diff(phase)
+    time = -dphi / (2.*numpy.pi*numpy.diff(sample_frequencies))
     nzidx = numpy.nonzero(abs(htilde.data))[0]
     kmin, kmax = nzidx[0], nzidx[-2]
+    # exclude everything after a discontinuity
+    discont_idx = numpy.where(abs(dphi[kmin:]) >= discont_threshold)[0]
+    if discont_idx.size != 0:
+        kmax = min(kmax, kmin + discont_idx[0]-1)
     time[:kmin] = time[kmin]
     time[kmax:] = time[kmax]
     return FrequencySeries(time, delta_f=htilde.delta_f, epoch=htilde.epoch,
