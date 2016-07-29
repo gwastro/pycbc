@@ -21,10 +21,9 @@
 #
 # =============================================================================
 #
-""" This modules contains functions for calculating the coincident 
+""" This modules contains functions for calculating coincident ranking
 statistic values
 """
-import h5py
 import numpy
 from . import events
 
@@ -42,6 +41,7 @@ def get_statistic(option, files):
 
 class Stat(object):
     def __init__(self, files):
+        import h5py
         self.files = {}
         for filename in files:
             f = h5py.File(filename, 'r')
@@ -113,7 +113,9 @@ class PhaseTDStatistic(NewSNRStatistic):
         s2v = numpy.searchsorted(sbins, s2[:,4]) - 1    
         rv = numpy.searchsorted(rbins, rd) - 1  
 
-        # The following just enforces that the point fits into the bin boundaries        
+        # The following just enforces that the point fits into
+        # the bin boundaries. If a point lies outside the boundaries it is
+        # pushed back to the nearest bin.
         tv[tv < 0] = 0
         tv[tv >= len(tbins) - 1] = len(tbins) - 2
         pv[pv < 0] = 0
@@ -130,3 +132,14 @@ class PhaseTDStatistic(NewSNRStatistic):
         cstat = rstat + 2.0 * m
         cstat[cstat < 0] = 0        
         return cstat ** 0.5
+
+class MaxContTradNewSNRStatistic(NewSNRStatistic):
+    def single(self, trigs):
+        """Combined chisq calculation for each trigger."""
+        chisq_dof = 2 * trigs['chisq_dof'] - 2
+        chisq_newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / chisq_dof)
+        autochisq_dof = trigs['cont_chisq_dof']
+        autochisq_newsnr = events.newsnr(trigs['snr'],
+                                         trigs['cont_chisq'] / autochisq_dof)
+        return numpy.array(numpy.minimum(chisq_newsnr, autochisq_newsnr,
+                             dtype=numpy.float32), ndmin=1, copy=False)
