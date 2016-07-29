@@ -39,6 +39,7 @@ try:
 except:
     pass
 
+
 try:
     # This will fail when pycbc is imported during the build process,
     # before version.py has been generated.
@@ -48,7 +49,7 @@ except:
     git_hash = 'none'
     pycbc_version = 'none'
 
-def init_logging(verbose=False):
+def init_logging(verbose=False, format='%(asctime)s %(message)s'):
     """
     Common utility for setting up logging in PyCBC. Installs a signal handler
     such that verbosity can be activated at run-time by sending a SIGUSR1 to
@@ -72,7 +73,7 @@ def init_logging(verbose=False):
     else:
         initial_level = logging.WARN
     logging.getLogger().setLevel(initial_level)
-    logging.basicConfig(format='%(asctime)s %(message)s', level=initial_level)
+    logging.basicConfig(format=format, level=initial_level)
 
 
 # Check for optional components of the PyCBC Package
