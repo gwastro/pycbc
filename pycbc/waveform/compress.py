@@ -23,7 +23,7 @@
 """ Utilities for handling frequency compressed an unequally spaced frequency
 domain waveforms.
 """
-import lalsimulation, lal, numpy, logging
+import lalsimulation, lal, numpy, logging, h5py
 from pycbc import pnutils, filter
 from pycbc.types import Array
 from pycbc.opt import omp_libs, omp_flags
@@ -238,8 +238,10 @@ def compress_waveform(htilde, sample_points, precision, interpolation,
         added_points.append(addidx)
     logging.info("mismatch: %f, N points: %i (%i added)" %(mismatch,
         len(comp_amp), len(added_points)))
-
-    return sample_points, comp_amp, comp_phase, mismatch
+    
+    return CompressedWaveform(sample_points, comp_amp, comp_phase,
+                interpolation=interpolation, precision=precision,
+                mismatch=mismatch)
 
 
 def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
@@ -372,3 +374,95 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         phi = phase_interp(outfreq)
         out.data[:] = A*numpy.cos(phi) + (1j)*A*numpy.sin(phi)
     return out
+
+
+class CompressedWaveform(object):
+    """Class to store information about a compressed waveform."""
+    
+    def __init__(self, sample_points, amplitude, phase,
+            interpolation=None, precision=None, mismatch=None,
+            load_to_memory=True):
+        self._sample_points = sample_points
+        self._amplitude = amplitude
+        self._phase = phase
+        self._cache = {}
+        self.load_to_memory = load_to_memory
+        # metadata
+        self.interpolation = interpolation
+        self.precision = precision
+        self.mismatch = mismatch
+
+    def _get(self, param):
+        val = getattr(self, '_%s' %param)
+        if isinstance(val, h5py.Dataset):
+            try:
+                val = self._cache[param]
+            except KeyError:
+                val = val[:]
+                if self.load_to_memory:
+                    self._cache[param] = val
+        return val
+
+    @property
+    def amplitude(self):
+        return self._get('amplitude')
+
+    @property
+    def phase(self):
+        return self._get('phase')
+
+    @property
+    def sample_points(self):
+        return self._get('sample_points')
+
+    def clear_cache(self):
+        """Clear self's cache of amplitude, phase, and sample_points."""
+        self._cache.clear()
+
+    def decompress(self, out=None, df=None, f_lower=None, interpolation=None):
+        """Decompress self."""
+        if f_lower is None:
+            # use the minimum of the samlpe points
+            f_lower = self.sample_points.min()
+        if interpolation is None:
+            interpolation = self.interpolation
+        return fd_decompress(self.amplitude, self.phase, self.sample_points,
+            out=out, df=df, f_lower=f_lower, interpolation=interpolation)
+
+    def write_to_hdf(self, fp, template_hash, root=None):
+        """Write the compressed waveform to the given hdf file handler.
+        """
+        if root is None:
+            root = ''
+        else:
+            root = '%s/'%(root)
+        group = '%scompressed_waveforms/%s' %(root, str(template_hash))
+        for param in ['amplitude', 'phase', 'sample_points']:
+            fp['%s/%s' %(group, param)] = self._get(param)
+        fp[group].attrs['mismatch'] = self.mismatch
+        fp[group].attrs['interpolation'] = self.interpolation
+        fp[group].attrs['precision'] = self.precision
+
+    @classmethod
+    def from_hdf(cls, fp, template_hash, root=None, load_to_memory=True,
+            load_now=False):
+        """Load a compressed waveform from the given hdf file handler.
+        """
+        if root is None:
+            root = ''
+        else:
+            root = '%s/'%(root)
+        group = '%scompressed_waveforms/%s' %(root, str(template_hash))
+        sample_points = fp[group]['sample_points']
+        amp = fp[group]['amplitude']
+        phase = fp[group]['phase']
+        if load_now:
+            sample_points = sample_points[:]
+            amp = amp[:]
+            phase = phase[:]
+        return cls(sample_points, amp, phase,
+            interpolation=fp[group].attrs['interpolation'],
+            precision=fp[group].attrs['precision'],
+            mismatch=fp[group].attrs['mismatch'],
+            load_to_memory=load_to_memory)
+
