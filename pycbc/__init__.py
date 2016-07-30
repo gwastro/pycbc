@@ -23,7 +23,6 @@
 # =============================================================================
 #
 """PyCBC contains a toolkit for CBC gravitational wave analysis
-
 """
 import subprocess, os, sys, tempfile
 import logging
@@ -48,11 +47,11 @@ except:
     git_hash = 'none'
     pycbc_version = 'none'
 
-def init_logging(verbose=False):
-    """
-    Common utility for setting up logging in PyCBC. Installs a signal handler
-    such that verbosity can be activated at run-time by sending a SIGUSR1 to
-    the process.
+def init_logging(verbose=False, format='%(asctime)s %(message)s'):
+    """ Common utility for setting up logging in PyCBC.
+
+    Installs a signal handler such that verbosity can be activated at
+    run-time by sending a SIGUSR1 to the process.
     """
     def sig_handler(signum, frame):
         logger = logging.getLogger()
@@ -72,7 +71,7 @@ def init_logging(verbose=False):
     else:
         initial_level = logging.WARN
     logging.getLogger().setLevel(initial_level)
-    logging.basicConfig(format='%(asctime)s %(message)s', level=initial_level)
+    logging.basicConfig(format=format, level=initial_level)
 
 
 # Check for optional components of the PyCBC Package
@@ -113,7 +112,8 @@ PYCBC_ALIGNMENT = 32
 DYN_RANGE_FAC =  5.9029581035870565e+20
 
 if os.environ.get("INITIAL_LOG_LEVEL", None):
-    logging.basicConfig(format='%(asctime)s %(message)s', level=int(os.environ["INITIAL_LOG_LEVEL"]))
+    logging.basicConfig(format='%(asctime)s %(message)s',
+                        level=int(os.environ["INITIAL_LOG_LEVEL"]))
 
 # Make sure we use a user specific, machine specific compiled cache location
 _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
