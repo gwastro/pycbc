@@ -181,7 +181,42 @@ def compress_waveform(htilde, sample_points, precision, interpolation,
         decomp_scratch=None):
     """Retrieves the amplitude and phase at the desired sample points, and adds
     frequency points in order to ensure that the interpolated waveform
-    has a mismatch with the full waveform that is <= the desired precision.
+    has a mismatch with the full waveform that is <= the desired precision. The
+    mismatch is computed by finding 1-overlap between `htilde` and the
+    decompressed waveform; no maximimization over phase/time is done, nor is
+    any PSD used.
+    
+    .. note::
+        The decompressed waveform is only garaunteed to have a true mismatch
+        <= the precision for the given `interpolation` and for no PSD.
+        However, since no maximization over time/phase is performed when
+        adding points, the actual mismatch between the decompressed waveform
+        and `htilde` is better than the precision, using no PSD. Using a PSD
+        does increase the mismatch, and can lead to mismatches > than the
+        desired precision, but typically by only a factor of a few worse.
+
+    Parameters
+    ----------
+    htilde : FrequencySeries
+        The waveform to compress.
+    sample_points : array
+        The frequencies at which to store the amplitude and phase. More points
+        may be added to this, depending on the desired precision.
+    precision : float
+        The maximum mismatch to allow between a decompressed waveform and
+        `htilde`.
+    interpolation : str
+        The interpolation to use for decompressing the waveform when computing
+        overlaps.
+    decomp_scratch : {None, FrequencySeries}
+        Optionally provide scratch space for decompressing the waveform. The
+        provided frequency series must have the same `delta_f` and length
+        as `htilde`.
+
+    Returns
+    -------
+    CompressedWaveform
+        The compressed waveform data; see `CompressedWaveform` for details.
     """
     fmin = sample_points.min()
     df = htilde.delta_f
@@ -377,7 +412,76 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
 
 
 class CompressedWaveform(object):
-    """Class to store information about a compressed waveform."""
+    """Class that stores information about a compressed waveform.
+    
+    Parameters
+    ----------
+    sample_points : {array, h5py.Dataset}
+        The frequency points at which the compressed waveform is sampled.
+    amplitude : {array, h5py.Dataset}
+        The amplitude of the waveform at the given `sample_points`.
+    phase : {array, h5py.Dataset}
+        The phase of the waveform at the given `sample_points`.
+    interpolation : {None, str}
+        The interpolation that was used when compressing the waveform for
+        computing precision. This is also the default interpolation used when
+        decompressing; see `decompress` for details.
+    precision : {None, float}
+        The precision that was used when compressing the waveform.
+    mismatch : {None, float}
+        The actual mismatch between the decompressed waveform (using the given
+        `interpolation`) and the full waveform.
+    load_to_memory : {True, bool}
+        If `sample_points`, `amplitude`, and/or `phase` is an hdf dataset, they
+        will be cached in memory the first time they are accessed. Default is
+        True.
+
+    Attributes
+    ----------
+    sample_points : array
+        The frequencies at which the compressed waveform is sampled. This is
+        always returned as an array, even if the stored `sample_points` is an
+        hdf dataset. If `load_to_memory` is True and the stored points are
+        an hdf dataset, the `sample_points` will cached in memory the first
+        time this attribute is accessed.
+    amplitude : array
+        The amplitude of the waveform at the `sample_points`. This is always
+        returned as an array; the same logic as for `sample_points` is used
+        to determine whether or not to cache in memory.
+    phase : array
+        The phase of the waveform as the `sample_points`. This is always
+        returned as an array; the same logic as for `sample_points` is used to
+        determine whether or not to cache in memory.
+    load_to_memory : bool
+        Whether or not to load `sample_points`/`amplitude`/`phase` into memory
+        the first time they are accessed, if they are hdf datasets. Can be
+        set directly to toggle this behavior.
+    interpolation : str
+        The interpolation that was used when compressing the waveform, for
+        checking the mismatch. Also the default interpolation used when
+        decompressing.
+    precision : {None, float}
+        The precision that was used when compressing the waveform.
+    mismatch : {None, float}
+        The mismatch between the decompressed waveform and the original
+        waveform.
+
+    Methods
+    -------
+    decompress :
+        Decompresses the waveform to the desired sampling.
+    write_to_hdf :
+        Writes the compressed waveform to an open hdf file.
+    clear_cache :
+        Clears the in-memory cache used to hold the
+        `sample_points`/`amplitude`/`phase`; only relevant if `load_to_memory`
+        is True.
+
+    Class Methods
+    -------------
+    from_hdf :
+        Loads a compressed waveform from the given open hdf file.
+    """
     
     def __init__(self, sample_points, amplitude, phase,
             interpolation=None, precision=None, mismatch=None,
@@ -420,7 +524,30 @@ class CompressedWaveform(object):
         self._cache.clear()
 
     def decompress(self, out=None, df=None, f_lower=None, interpolation=None):
-        """Decompress self."""
+        """Decompress self.
+        
+        Parameters
+        ----------
+        out : {None, FrequencySeries}
+            Write the decompressed waveform to the given frequency series. The
+            decompressed waveform will have the same `delta_f` as `out`.
+            Either this or `df` must be provided.
+        df : {None, float}
+            Decompress the waveform such that its `delta_f` has the given
+            value. Either this or `out` must be provided.
+        f_lower : {None, float}
+            The starting frequency at which to decompress the waveform. Cannot
+            be less than the minimum frequency in `sample_points`. If `None`
+            provided, will default to the minimum frequency in `sample_points`.
+        interpolation : {None, str}
+            The interpolation to use for decompressing the waveform. If `None`
+            provided, will default to `self.interpolation`.
+
+        Returns
+        -------
+        FrequencySeries
+            The decompressed waveform.
+        """
         if f_lower is None:
             # use the minimum of the samlpe points
             f_lower = self.sample_points.min()
@@ -431,6 +558,23 @@ class CompressedWaveform(object):
 
     def write_to_hdf(self, fp, template_hash, root=None):
         """Write the compressed waveform to the given hdf file handler.
+
+        The waveform is written to:
+        `fp['[{root}/]compressed_waveforms/{template_hash}/{param}']`,
+        where `param` is the `sample_points`, `amplitude`, and `phase`. The
+        `interpolation`, `precision`, and `mismatch` are saved to the group's
+        attributes.
+
+        Parameters
+        ----------
+        fp : h5py.File
+            An open hdf file to write the compressed waveform to.
+        template_hash : {hash, int, str}
+            A hash, int, or string to map the template to the waveform.
+        root : {None, str}
+            Put the `compressed_waveforms` group in the given directory in the
+            hdf file. If `None`, `compressed_waveforms` will be the root
+            directory.
         """
         if root is None:
             root = ''
@@ -447,6 +591,32 @@ class CompressedWaveform(object):
     def from_hdf(cls, fp, template_hash, root=None, load_to_memory=True,
             load_now=False):
         """Load a compressed waveform from the given hdf file handler.
+
+        The waveform is retrieved from:
+        `fp['[{root}/]compressed_waveforms/{template_hash}/{param}']`,
+        where `param` is the `sample_points`, `amplitude`, and `phase`.
+
+        Parameters
+        ----------
+        fp : h5py.File
+            An open hdf file to write the compressed waveform to.
+        template_hash : {hash, int, str}
+            The id of the waveform.
+        root : {None, str}
+            Retrieve the `compressed_waveforms` group from the given string.
+            If `None`, `compressed_waveforms` will be assumed to be in the
+            top level.
+        load_to_memory : {True, bool}
+            Set the `load_to_memory` attribute to the given value in the
+            returned instance.
+        load_now : {False, bool}
+            Immediately load the `sample_points`/`amplitude`/`phase` to memory.
+
+
+        Returns
+        -------
+        CompressedWaveform
+            An instance of this class with parameters loaded from the hdf file.
         """
         if root is None:
             root = ''
