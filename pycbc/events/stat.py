@@ -29,7 +29,7 @@ import numpy
 from . import events
 
 def get_statistic(option, files):
-    """ Return an appropriate coincident statistic class instance.
+    """Return an appropriate coincident statistic class instance.
 
     Parameters
     ----------
@@ -42,7 +42,7 @@ def get_statistic(option, files):
     Returns
     -------
     stat: instance of `Stat` class
-        The requested class instance        
+        The requested class instance
     """
     if option == 'newsnr':
         return NewSNRStatistic(files)
@@ -60,7 +60,7 @@ class Stat(object):
     """ Base class which should be extended to provide a coincident statistic"""
 
     def __init__(self, files):
-        """ Create a statistic class instance
+        """Create a statistic class instance
 
         Parameters
         ----------
@@ -68,7 +68,7 @@ class Stat(object):
             A list containing the filenames of hdf format files used to help
         construct the coincident statistics. The files must have a 'stat'
         attribute which is used to associate them with the appropriate
-        statistic class.       
+        statistic class.
         """
         import h5py
         self.files = {}
@@ -82,14 +82,14 @@ class NewSNRStatistic(Stat):
     """ Calculate the NewSNR coincident detection statistic """
     
     def single(self, trigs):
-        """ Calculate the single detector statistic.
-        
+        """Calculate the single detector statistic.
+
         Parameters
         ----------
         trigs: dict of numpy.ndarrays
             Dictionary of the single detector trigger information. 'chisq_dof',
         'snr', and 'chisq' are required arrays for this statistic.
-        
+
         Returns
         -------
         stat: numpy.ndarray
@@ -100,7 +100,7 @@ class NewSNRStatistic(Stat):
         return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
 
     def coinc(self, s1, s2, slide, step):
-        """ Calculate the coincident detection statistic. 
+        """Calculate the coincident detection statistic.
 
         Parameters
         ----------
@@ -120,17 +120,17 @@ class NewSNRStatistic(Stat):
 
 class NewSNRCutStatistic(Stat):
 
-    """ Same as the NewSNR statistic, but demonstrates a cut of the triggers"""
+    """Same as the NewSNR statistic, but demonstrates a cut of the triggers"""
 
     def single(self, trigs):
-        """ Calculate the single detector statistic.
+        """Calculate the single detector statistic.
 
         Parameters
         ----------
         trigs: dict of numpy.ndarrays
             Dictionary of the single detector trigger information. 'chisq_dof',
         'snr', and 'chisq' are requierd arrays for this statistic.
-        
+
         Returns
         -------
         stat: numpy.ndarray
@@ -143,7 +143,7 @@ class NewSNRCutStatistic(Stat):
         return newsnr
 
     def coinc(self, s1, s2, slide, step):
-        """ Calculate the coincident detection statistic. 
+        """Calculate the coincident detection statistic.
 
         Parameters
         ----------
@@ -166,10 +166,10 @@ class NewSNRCutStatistic(Stat):
 
 class PhaseTDStatistic(NewSNRStatistic):
 
-    """ Detection statistic that re-weights the network SNR based on the
+    """Detection statistic that re-weights the network SNR based on the
     PDF of time delays, phase difference, and amplitude ratios.
     """
-    
+
     def __init__(self, files):
         NewSNRStatistic.__init__(self, files)
         self.hist = self.files['phasetd_newsnr']['map'][:]
@@ -180,8 +180,8 @@ class PhaseTDStatistic(NewSNRStatistic):
         self.hist = numpy.log(self.hist) 
 
     def single(self, trigs):
-        """ Calculate the single detector statistic.
-        
+        """Calculate the single detector statistic.
+
         Parameters
         ----------
         trigs: dict of numpy.ndarrays
@@ -199,7 +199,7 @@ class PhaseTDStatistic(NewSNRStatistic):
                             trigs['sigmasq']**0.5, trigs['snr'])).transpose()
 
     def coinc(self, s1, s2, slide, step):
-        """ Calculate the coincident detection statistic. 
+        """Calculate the coincident detection statistic.
 
         Parameters
         ----------
@@ -223,7 +223,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         rd = s1[:, 3] / s2[:, 3]
         rd[rd > 1] = 1.0 / rd[rd > 1]
 
-        # These are the bin boundaries stored in the hdf file        
+        # These are the bin boundaries stored in the hdf file
         tbins = self.files['phasetd_newsnr']['tbins'][:]
         pbins = self.files['phasetd_newsnr']['pbins'][:]
         sbins = self.files['phasetd_newsnr']['sbins'][:]
@@ -257,8 +257,8 @@ class PhaseTDStatistic(NewSNRStatistic):
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
-    """ Combination of NewSNR with the power chisq and auto chisq """
-    
+    """Combination of NewSNR with the power chisq and auto chisq"""
+
     def single(self, trigs):
         """ Calculate the single detector statistic.
 
