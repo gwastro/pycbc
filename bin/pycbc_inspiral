@@ -172,7 +172,7 @@ pycbc.weave.verify_weave_options(opt, parser)
 pycbc.init_logging(opt.verbose)
 
 ctx = scheme.from_cli(opt)
-gwstrain, injection_parameters= strain.from_cli(opt, DYN_RANGE_FAC, return_injections=True)
+gwstrain = strain.from_cli(opt, DYN_RANGE_FAC, return_injections=True)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
       
 
@@ -256,7 +256,7 @@ with ctx:
                                  reverse_template=opt.autochi_reverse_template,
                                  take_maximum_value=opt.autochi_max_valued,
                                  maximal_value_dof=opt.autochi_max_valued_dof)
-    threshold= opt.threshold_template_filtering
+
     logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
         seg /= seg.psd
@@ -266,9 +266,11 @@ with ctx:
                     flow, dtype=complex64, phase_order=opt.order,
                     taper=opt.taper_template, approximant=opt.approximant,
                     out=template_mem, max_template_length=opt.max_template_length)
-    if threshold is not None:
+
+    if opt.threshold_template_filtering is not None:
     	logging.info("Template Bank Size Before Cut: %s", len(bank))
-    	bank.table = bank.template_thinning(injection_parameters, threshold)
+    	bank.table = bank.template_thinning(gwstrain.injections,
+                                            opt.threshold_template_filtering)
         logging.info("Template Bank Size After Cut: %s", len(bank))
       
     # Note: in the class-based approach used now, 'template' is not explicitly used
