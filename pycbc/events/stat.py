@@ -58,7 +58,7 @@ def get_statistic(option, files):
 class Stat(object):
 
     """ Base class which should be extended to provide a coincident statistic"""
-    
+
     def __init__(self, files):
         """ Create a statistic class instance
 
@@ -101,7 +101,7 @@ class NewSNRStatistic(Stat):
 
     def coinc(self, s1, s2, slide, step):
         """ Calculate the coincident detection statistic. 
-        
+
         Parameters
         ----------
         s1: numpy.ndarray
@@ -110,7 +110,7 @@ class NewSNRStatistic(Stat):
             Single detector ranking statistic for the second detector.
         slide: (unused in this statistic!)
         step: (unused in this statistic!)
-        
+
         Returns
         -------
         coinc_stat: numpy.ndarray
@@ -124,7 +124,7 @@ class NewSNRCutStatistic(Stat):
 
     def single(self, trigs):
         """ Calculate the single detector statistic.
-        
+
         Parameters
         ----------
         trigs: dict of numpy.ndarrays
@@ -144,7 +144,7 @@ class NewSNRCutStatistic(Stat):
 
     def coinc(self, s1, s2, slide, step):
         """ Calculate the coincident detection statistic. 
-        
+
         Parameters
         ----------
         s1: numpy.ndarray
@@ -153,7 +153,7 @@ class NewSNRCutStatistic(Stat):
             Single detector ranking statistic for the second detector.
         slide: (unused in this statistic!)
         step: (unused in this statistic!)
-        
+
         Returns
         -------
         coinc_stat: numpy.ndarray
@@ -188,7 +188,7 @@ class PhaseTDStatistic(NewSNRStatistic):
             Dictionary of the single detector trigger information. 'chisq_dof',
         'snr', and 'chisq', 'coa_phase', 'end_time', and 'sigmasq'
         are required arrays for this statistic.
-        
+
         Returns
         -------
         stat: numpy.ndarray
@@ -200,7 +200,7 @@ class PhaseTDStatistic(NewSNRStatistic):
 
     def coinc(self, s1, s2, slide, step):
         """ Calculate the coincident detection statistic. 
-        
+
         Parameters
         ----------
         s1: numpy.ndarray
@@ -212,7 +212,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         interval to bring a pair of single detector triggers into coincidence.
         step: float
             The timeslide interval in seconds.
-        
+
         Returns
         -------
         coinc_stat: numpy.ndarray
@@ -250,9 +250,8 @@ class PhaseTDStatistic(NewSNRStatistic):
         rv[rv < 0] = 0
         rv[rv >= len(rbins) - 1] = len(rbins) - 2
         
-        m = self.hist[tv, pv, s1v, s2v, rv]
         rstat = s1[:,0]**2.0 + s2[:,0]**2.0
-        cstat = rstat + 2.0 * m
+        cstat = rstat + 2.0 * self.hist[tv, pv, s1v, s2v, rv]
         cstat[cstat < 0] = 0        
         return cstat ** 0.5
 
@@ -262,14 +261,14 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
     
     def single(self, trigs):
         """ Calculate the single detector statistic.
-        
+
         Parameters
         ----------
         trigs: dict of numpy.ndarrays
             Dictionary of the single detector trigger information. 'chisq_dof',
         'snr', 'cont_chisq', 'cont_chisq_dof', and 'chisq' are required arrays
         for this statistic.
-        
+
         Returns
         -------
         stat: numpy.ndarray
