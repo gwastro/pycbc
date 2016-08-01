@@ -393,8 +393,10 @@ def write_frame(location, channels, timeseries):
     lalframe.FrameWrite(frame, location)
 
 class DataBuffer(object):
-    """ A linear buffer that acts as a FILO for reading in frame data
+
+    """A linear buffer that acts as a FILO for reading in frame data
     """
+
     def __init__(self, frame_src, 
                        channel_name,
                        start_time,
@@ -431,7 +433,7 @@ class DataBuffer(object):
                                      delta_t=1.0/self.raw_sample_rate)
 
     def update_cache(self):
-        """ Reset the lal cache. This can be used to update the cache if the 
+        """Reset the lal cache. This can be used to update the cache if the 
         result may change due to more files being added to the filesystem, 
         for example.
         """
@@ -440,7 +442,7 @@ class DataBuffer(object):
         self.stream = stream
 
     def _retrieve_metadata(self, stream, channel_name):
-        """ Retrieve basic metadata by reading the first file in the cache
+        """Retrieve basic metadata by reading the first file in the cache
     
         Parameters
         ----------
@@ -463,10 +465,10 @@ class DataBuffer(object):
         series = create_series_func(channel_name, stream.epoch, 0, 0,
                             lal.ADCCountUnit, 0)
         get_series_metadata_func(series, stream)
-        return channel_type, int(1.0/series.deltaT)        
+        return channel_type, int(1.0/series.deltaT)
 
     def _read_frame(self, blocksize):
-        """ Try to read the block of data blocksize seconds long
+        """Try to read the block of data blocksize seconds long
 
         Parameters
         ----------
@@ -486,7 +488,8 @@ class DataBuffer(object):
         try:
             read_func = _fr_type_map[self.channel_type][0]
             dtype = _fr_type_map[self.channel_type][1]
-            data = read_func(self.stream, self.channel_name, self.read_pos, int(blocksize), 0)
+            data = read_func(self.stream, self.channel_name,
+                             self.read_pos, int(blocksize), 0)
             return TimeSeries(data.data.data, delta_t=data.deltaT,
                               epoch=self.read_pos, 
                               dtype=dtype)     
@@ -494,7 +497,7 @@ class DataBuffer(object):
             raise RuntimeError('Cannot read requested frame data') 
 
     def null_advance(self, blocksize):
-        """ Advance and insert zeros
+        """Advance and insert zeros
 
         Parameters
         ----------
@@ -506,7 +509,7 @@ class DataBuffer(object):
         self.raw_buffer.start_time += blocksize
 
     def advance(self, blocksize):
-        """ Add blocksize seconds more to the buffer, push blocksize seconds
+        """Add blocksize seconds more to the buffer, push blocksize seconds
         from the beginning.
 
         Parameters
@@ -523,6 +526,18 @@ class DataBuffer(object):
         return ts
         
     def update_cache_by_increment(self, blocksize):
+        """Update the internal cache by starting from the first frame
+        and incrementing.
+
+        Guess the next frame file name by incrementing from the first found
+        one. This allows a pattern to be used for the GPS folder of the file,
+        which is indicated by `GPSX` where x is the number of digits to use.
+
+        Parameters
+        ----------
+        blocksize: int
+            Number of seconds to increment the next frame file.
+        """
         start = float(self.raw_buffer.end_time)
         end = float(start + blocksize)
         
@@ -612,6 +627,7 @@ FCC_OK = 8192
 NO_GAP = 16384    
                
 class StatusBuffer(DataBuffer):
+
     """ Read state vector information from a frame file """
 
     def __init__(self, frame_src, 
@@ -644,7 +660,7 @@ class StatusBuffer(DataBuffer):
         self.valid_mask = valid_mask
 
     def check_valid(self, values):
-        """ Check if the data contains any non-valid status information
+        """Check if the data contains any non-valid status information
         
         Parameters
         ----------
@@ -662,7 +678,7 @@ class StatusBuffer(DataBuffer):
             return True
         
     def is_extent_valid(self, start_time, duration):
-        """ Check if the duration contains any non-valid frames
+        """Check if the duration contains any non-valid frames
 
         Parameters
         ----------
@@ -699,8 +715,3 @@ class StatusBuffer(DataBuffer):
             self.update_cache_by_increment(blocksize)
 
         return self.check_valid(DataBuffer.advance(self, blocksize))
-        
-
-
-        
-
