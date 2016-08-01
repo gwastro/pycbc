@@ -1230,11 +1230,37 @@ def quadratic_interpolate_peak(left, middle, right):
     return bin_offset, peak_value
 
 class LiveBatchMatchedFilter(object):
+
+    """Calculate SNR and signal consistency tests in a batched progression"""        
+
     def __init__(self, templates, snr_threshold, chisq_bins,
                  maxelements=2**27,
                  snr_abort_threshold=None,
                  newsnr_threshold=None,
                  max_triggers_in_batch=None):
+        """ Create a batched matchedfilter instance
+
+        Parameters
+        ----------
+        templates: list of `FrequencySeries`
+            List of templates from the FilterBank class.
+        snr_threshold: float
+            Minimum value to record peaks in the SNR time series.
+        chisq_bins: str
+            Str that determines how the number of chisq bins varies as a
+        function of the template bank parameters.
+        maxelements: {int, 2**27}
+            Maximum size of a batched fourier transform.
+        snr_abort_threshold: {float, None}
+            If the SNR is above this threshold, do not record any triggers.
+        newsnr_threshold: {float, None}
+            Only record triggers that have a re-weighted NewSNR above this
+        threshold.
+        max_triggers_in_batch: {int, None}
+            Record X number of the loudest triggers by newsnr in each mpi
+        process group. Signal consistency values will also only be calculated
+        for these triggers.
+        """
         self.snr_threshold = snr_threshold
         self.snr_abort_threshold = snr_abort_threshold
         self.newsnr_threshold = newsnr_threshold
@@ -1308,22 +1334,24 @@ class LiveBatchMatchedFilter(object):
             
 
     def set_data(self, data):
+        """Set the data reader object to use"""
         self.data = data
         self.block_id = 0
 
     def combine_results(self, results):
+        """Combine results from different batches of filtering"""
         result = {}
         for key in results[0]:
             result[key] = numpy.concatenate([r[key] for r in results])
         return result
 
     def process_data(self, data_reader):
+        """Process the data for all of the templates"""
         self.set_data(data_reader)
         return self.process_all()
 
     def process_all(self):
-        """ Process every batch group and return as single result
-        """
+        """Process every batch group and return as single result"""
         results = []
         veto_info = []
         while 1:
@@ -1347,8 +1375,7 @@ class LiveBatchMatchedFilter(object):
         return result
 
     def _process_vetoes(self, results, veto_info):
-        """ Calculate signal based vetoes
-        """  
+        """Calculate signal based vetoes"""  
         chisq = numpy.array(numpy.zeros(len(veto_info)), numpy.float32, ndmin=1)
         dof = numpy.array(numpy.zeros(len(veto_info)), numpy.uint32, ndmin=1)
         results['chisq'] = chisq
@@ -1357,7 +1384,8 @@ class LiveBatchMatchedFilter(object):
         keep = []
         for i, (snrv, norm, l, htilde, stilde) in enumerate(veto_info): 
             correlate(htilde, stilde, htilde.cout)
-            c, d = self.power_chisq.values(htilde.cout, snrv, norm, stilde.psd, [l], htilde)
+            c, d = self.power_chisq.values(htilde.cout, snrv,
+                                           norm, stilde.psd, [l], htilde)
             chisq[i] = c[0] / d[0]
             dof[i] = d[0]
             
@@ -1374,8 +1402,7 @@ class LiveBatchMatchedFilter(object):
         return results 
 
     def _process_batch(self):
-        """ Process only a single batch group of data
-        """  
+        """Process only a single batch group of data"""  
         from pycbc.events import newsnr
    
         if self.block_id == len(self.tgroups):
