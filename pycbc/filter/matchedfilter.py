@@ -1238,7 +1238,7 @@ class LiveBatchMatchedFilter(object):
                  snr_abort_threshold=None,
                  newsnr_threshold=None,
                  max_triggers_in_batch=None):
-        """ Create a batched matchedfilter instance
+        """Create a batched matchedfilter instance
 
         Parameters
         ----------
@@ -1276,7 +1276,7 @@ class LiveBatchMatchedFilter(object):
         templates = [templates[li] for li in lsort]
 
         # Figure out how to chunk together the templates into groups to process
-        sizes, counts = numpy.unique(durations, return_counts=True)
+        _, counts = numpy.unique(durations, return_counts=True)
         tsamples = [(len(t) - 1) * 2 for t in templates]
         grabs = maxelements / numpy.unique(tsamples) 
 
@@ -1376,6 +1376,8 @@ class LiveBatchMatchedFilter(object):
 
     def _process_vetoes(self, results, veto_info):
         """Calculate signal based vetoes"""  
+        import pycbc.events
+   
         chisq = numpy.array(numpy.zeros(len(veto_info)), numpy.float32, ndmin=1)
         dof = numpy.array(numpy.zeros(len(veto_info)), numpy.uint32, ndmin=1)
         results['chisq'] = chisq
@@ -1403,8 +1405,7 @@ class LiveBatchMatchedFilter(object):
 
     def _process_batch(self):
         """Process only a single batch group of data"""  
-        from pycbc.events import newsnr
-   
+
         if self.block_id == len(self.tgroups):
             return None, None
 
