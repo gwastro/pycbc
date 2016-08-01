@@ -1375,9 +1375,7 @@ class LiveBatchMatchedFilter(object):
         return result
 
     def _process_vetoes(self, results, veto_info):
-        """Calculate signal based vetoes"""  
-        import pycbc.events
-   
+        """Calculate signal based vetoes"""            
         chisq = numpy.array(numpy.zeros(len(veto_info)), numpy.float32, ndmin=1)
         dof = numpy.array(numpy.zeros(len(veto_info)), numpy.uint32, ndmin=1)
         results['chisq'] = chisq
@@ -1392,7 +1390,7 @@ class LiveBatchMatchedFilter(object):
             dof[i] = d[0]
             
             if self.newsnr_threshold:
-                newsnr = pycbc.events.newsnr(results['snr'][i], chisq[i])
+                newsnr = events.newsnr(results['snr'][i], chisq[i])
                 if newsnr >= self.newsnr_threshold:
                     keep.append(i)
                     
@@ -1404,8 +1402,7 @@ class LiveBatchMatchedFilter(object):
         return results 
 
     def _process_batch(self):
-        """Process only a single batch group of data"""  
-
+        """Process only a single batch group of data"""
         if self.block_id == len(self.tgroups):
             return None, None
 
