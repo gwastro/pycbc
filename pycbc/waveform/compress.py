@@ -287,11 +287,10 @@ _linear_decompress_code = r"""
     // their real and imaginary values next to each other in memory
     double* outptr = (double*) h;
 
-    // zero out the beginning & end
-    memset(outptr, 0, sizeof(*outptr)*2*kmin);
-    memset(outptr+flen, 0, sizeof((double) h));
+    // zero out the beginning
+    memset(outptr, 0, sizeof(*outptr)*2*imin);
 
-    outptr += 2*kmin; // move to the start position
+    outptr += 2*imin; // move to the start position
 
     // variables for computing the interpolation
     double df = (double) delta_f;
@@ -339,6 +338,8 @@ _linear_decompress_code = r"""
             jj += 1;
             // if we have gone beyond the sampled frequencies, just break
             if ((jj+1) == sflen) {
+                // zero out the rest of the array
+                memset(outptr, 0, 2*(flen-ii));
                 break;
             }
             sf = (double) sample_frequencies[jj];
@@ -381,7 +382,7 @@ _linear_decompress_code = r"""
             kk += 1;
         }
         *outptr = h_re;
-        *outptr+1 = h_im;
+        *(outptr+1) = h_im;
         outptr += 2;
     }
 """
