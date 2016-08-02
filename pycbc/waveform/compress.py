@@ -365,8 +365,8 @@ _linear_decompress_code = r"""
             dPhi_im = sin(mPhi * df);
             h_re = interpAmp * cos(interpPhi);
             h_im = interpAmp * sin(interpPhi);
-            g_re = mAmp * df * cos(mPhi * f);
-            g_im = mAmp * df * sin(mPhi * f);
+            g_re = mAmp * df * cos(interpPhi);
+            g_im = mAmp * df * sin(interpPhi);
             kk = 0;
         }
         else {
@@ -433,7 +433,6 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         out = FrequencySeries(numpy.zeros(flen,
             dtype=numpy.complex128), copy=False, delta_f=df)
     else:
-        out.clear()
         df = out.delta_f
         flen = len(out)
     if f_lower is None:
