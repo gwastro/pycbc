@@ -1,0 +1,112 @@
+# Copyright (C) 2016 Miriam Cabero Mueller
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+"""
+Create an HDF file with a ringdown injection
+"""
+
+import argparse
+import h5py
+from pycbc.waveform import ringdown
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--output',
+                    help='Path to output hdf file.')
+parser.add_argument('--approximant', required=True, 
+                    help='Name of the ringdown approximant.')
+parser.add_argument('--gps-start-time', required=True,
+                    help='Time of the injection.')
+parser.add_argument('--f-0',
+                    help='Central frequency of the ringdown for '
+                         'single mode approximants.')
+parser.add_argument('--tau',
+                    help='Damping time of the ringdown for '
+                         'single mode approximants.')
+parser.add_argument('--amp',
+                    help='Amplitude for single mode approximants.')
+parser.add_argument('--phi',
+                    help='Phase for single mode approximants.')
+parser.add_argument('--Mfinal',
+                    help='Mass of the final black hole for '
+                         'multi-mode approximants.')
+parser.add_argument('--Sfinal',
+                    help='Spin of the final black hole for ' 
+                         'multi-mode approximants.')
+parser.add_argument('--lmns', nargs='+',
+                    help='Modes desired for multi-mode approximants ' 
+                         '(lm modes available: 22, 21, 33, 44, 55). '
+                         'Example: 222 331 gives the modes 220, 221, and 330.')
+parser.add_argument('--amps-phis', nargs='+',
+                    help='Amplitudes and phases for each mode. '
+                         'Use format mode:amplitude:phase. '
+                         'Example: 220:1e-21:0 221:0.1e-21:3.14 330:0.05e-21:3.14')
+parser.add_argument('--delta-t',
+                    help='Time step for time domain approximants.')
+parser.add_argument('--t-final',
+                    help='Ending time of the output time series '
+                         'for time domain approximants.')
+parser.add_argument('--delta-f',
+                    help='Frequency step for frequency domain approximants.')
+parser.add_argument('--f-lower',
+                    help='Starting frequency of the output freqeucny series '
+                         'for frequency domain approximants.')
+parser.add_argument('--f-final',
+                    help='Ending frequency of the output frequency series '
+                         'for frequency domain approximants.')
+
+opts = parser.parse_args()
+
+# Check that the approximant given is a valid rindown approximant
+approxs = ringdown.ringdown_fd_approximants.copy()
+approxs.update(ringdown.ringdown_td_approximants)
+
+if opts.approximant not in approxs.keys():
+    raise ValueError('Invalid ringdown approximant')
+
+# Check that the necessary arguments are given
+if opts.approximant=='FdQNM' or opts.approximant=='TdQNM':
+    for parameter in ringdown.qnm_required_args:
+        if getattr(opts, parameter) is None:
+            raise ValueError('%s is required' %parameter)
+elif opts.approximant=='FdQNMmultiModes' or opts.approximant=='TdQNMmultiModes':
+    for parameter in ringdown.lm_allmodes_required_args:
+        if getattr(opts, parameter) is None:
+            raise ValueError('%s is required' %parameter)
+    # Amplitudes and phases for each mode have to be given
+    all_modes = []
+    for lmn in opts.lmns:
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        [all_modes.append('%d%d%d' %(l,m,n)) for n in range(nmodes)]
+    info_modes=[info.split(':')[0] for info in opts.amps_phis]
+    for mode in all_modes:
+        if mode not in info_modes:
+            raise ValueError('Amplitude and phase for mode %s are required' %mode)
+    try:
+        amps_modes=[info.split(':')[1] for info in opts.amps_phis]
+        phis_modes=[info.split(':')[2] for info in opts.amps_phis]
+    except:
+        raise ValueError('Amplitude or phase for one of the modes is missing')
+
+# Write hdf file with the parameters for the injection
