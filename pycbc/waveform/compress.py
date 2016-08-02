@@ -279,6 +279,115 @@ def compress_waveform(htilde, sample_points, precision, interpolation,
                 mismatch=mismatch)
 
 
+_linear_decompress_code = r"""
+    #include <math.h>
+    # include <stdio.h>
+    // cast the output to a float array for faster processing
+    // this takes advantage of the fact that complex arrays store
+    // their real and imaginary values next to each other in memory
+    double* outptr = (double*) h;
+
+    // zero out the beginning & end
+    memset(outptr, 0, sizeof(*outptr)*2*kmin);
+    memset(outptr+flen, 0, sizeof((double) h));
+
+    outptr += 2*kmin; // move to the start position
+
+    // variables for computing the interpolation
+    double df = (double) delta_f;
+    double sf = 0.;
+    double A = 0.;
+    double nextA = 0.;
+    double phi = 0.;
+    double nextPhi = 0.;
+    double next_sf = sample_frequencies[jmin];
+    double f = 0.;
+    double invsdf = 0.;
+    double mAmp = 0.;
+    double bAmp = 0.;
+    double mPhi = 0.;
+    double bPhi = 0.;
+    double interpAmp = 0.;
+    double interpPhi = 0.;
+
+    // variables for updating each interpolated frequency
+    double h_re = 0.;
+    double h_im = 0.;
+    double incrh_re = 0.;
+    double incrh_im = 0.;
+    double g_re = 0.;
+    double g_im = 0.;
+    double incrg_re = 0.;
+    double incrg_im = 0.;
+    double dPhi_re = 0.;
+    double dPhi_im = 0.;
+
+    // jj keeps track of where in the sample_frequencies we are
+    int jj = jmin-1;
+
+    // we will re-compute cos/sin of the phase at the following intervals:
+    int update_interval = 100;
+
+    // kk keeps track of how many steps into the update interval we are
+    int kk = update_interval;
+    
+    // cycle over desired samples
+    for (int ii=imin; ii<flen; ii++){
+        f = ii*df;
+        if (f >= next_sf){
+            // update linear interpolations
+            jj += 1;
+            // if we have gone beyond the sampled frequencies, just break
+            if ((jj+1) == sflen) {
+                break;
+            }
+            sf = (double) sample_frequencies[jj];
+            next_sf = (double) sample_frequencies[jj+1];
+            A = (double) amp[jj];
+            nextA = (double) amp[jj+1];
+            phi = (double) phase[jj];
+            nextPhi = (double) phase[jj+1];
+            invsdf = 1./(next_sf - sf);
+            mAmp = (nextA - A)*invsdf;
+            bAmp = A - mAmp*sf;
+            mPhi = (nextPhi - phi)*invsdf;
+            bPhi = phi - mPhi*sf;
+            // set the step counter to the update interval to force a
+            // reevaluation
+            kk = update_interval;
+        }
+        if (kk == update_interval){
+            // update the amp and phase and h with their exact values
+            interpAmp = mAmp * f + bAmp;
+            interpPhi = mPhi * f + bPhi;
+            dPhi_re = cos(mPhi * df);
+            dPhi_im = sin(mPhi * df);
+            h_re = interpAmp * cos(interpPhi);
+            h_im = interpAmp * sin(interpPhi);
+            g_re = mAmp * df * cos(mPhi * f);
+            g_im = mAmp * df * sin(mPhi * f);
+            kk = 0;
+        }
+        else {
+            // compute h by incrementing the last h
+            incrh_re = h_re * dPhi_re - h_im * dPhi_im;
+            incrh_im = h_re * dPhi_im + h_im * dPhi_re;
+            incrg_re = g_re * dPhi_re - g_im * dPhi_im;
+            incrg_im = g_re * dPhi_im + g_im * dPhi_re;
+            h_re = incrh_re + incrg_re;
+            h_im = incrh_im + incrg_im;
+            g_re = incrg_re;
+            g_im = incrg_im;
+            kk += 1;
+        }
+        *outptr = h_re;
+        *outptr+1 = h_im;
+        outptr += 2;
+    }
+"""
+# for single precision
+_linear_decompress_code32 = _linear_decompress_code.replace('double', 'float')
+
 def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         f_lower=None, interpolation='linear'):
     """Decompresses an FD waveform using the given amplitude, phase, and the
@@ -336,62 +445,12 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
     imin = int(numpy.floor(f_lower/df))
     # interpolate the amplitude and the phase
     if interpolation == "linear":
+        code = _linear_decompress_code
         # use custom interpolation
         sflen = len(sample_frequencies)
         h = numpy.array(out.data, copy=False)
-        # make sure df is a float
-        df = float(df)
-        code = r"""
-        # include <math.h>
-        # include <stdio.h>
-        int j = jmin-1;
-        double sf = 0.;
-        double A = 0.;
-        double nextA = 0.;
-        double phi = 0.;
-        double nextPhi = 0.;
-        double next_sf = sample_frequencies[jmin];
-        double f = 0.;
-        double invsdf = 0.;
-        double mAmp = 0.;
-        double bAmp = 0.;
-        double mPhi = 0.;
-        double bPhi = 0.;
-        double interpAmp = 0.;
-        double interpPhi = 0.;
-        // zero-out beginning of array
-        std::fill(h, h+imin, std::complex<double>(0., 0.));
-        // cycle over desired samples
-        for (int i=imin; i<flen; i++){
-            f = i*df;
-            if (f >= next_sf){
-                // update linear interpolations
-                j += 1;
-                // if we have gone beyond the sampled frequencies, just break
-                if ((j+1) == sflen) {
-                    // zero-out rest the rest of the array & exit
-                    std::fill(h+i, h+flen, std::complex<double>(0., 0.));
-                    break;
-                }
-                sf = (double) sample_frequencies[j];
-                next_sf = (double) sample_frequencies[j+1];
-                A = (double) amp[j];
-                nextA = (double) amp[j+1];
-                phi = (double) phase[j];
-                nextPhi = (double) phase[j+1];
-                invsdf = 1./(next_sf - sf);
-                mAmp = (nextA - A)*invsdf;
-                bAmp = A - mAmp*sf;
-                mPhi = (nextPhi - phi)*invsdf;
-                bPhi = phi - mPhi*sf;
-            }
-            interpAmp = mAmp * f + bAmp;
-            interpPhi = mPhi * f + bPhi;
-            h[i] = std::complex<double> (interpAmp*cos(interpPhi),
-                                         interpAmp*sin(interpPhi));
-        }
-        """
-        inline(code, ['flen', 'sflen', 'df', 'sample_frequencies',
+        delta_f = float(df)
+        inline(code, ['flen', 'sflen', 'delta_f', 'sample_frequencies',
                       'amp', 'phase', 'h', 'imin', 'jmin'],
                extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] +\
                                   omp_flags,
