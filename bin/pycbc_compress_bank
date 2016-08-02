@@ -68,7 +68,7 @@ parser.add_argument("--t-pad", type=float, default=0.001,
                      "inverse of this gives the maximum frequency step that "
                      "will be used in the compressed waveforms. Default is "
                      "0.001.")
-parser.add_argument("--precision", type=float, default=0.001,
+parser.add_argument("--tolerance", type=float, default=0.001,
                 help="The maximum mismatch to allow between the interpolated "
                      "waveform must and the full waveform. Points will be "
                      "added to the compressed waveform until its "
@@ -76,7 +76,7 @@ parser.add_argument("--precision", type=float, default=0.001,
                      "0.001.")
 parser.add_argument("--interpolation", type=str, default="linear",
                 help="The interpolation to use for decompressing the "
-                     "waveforms for checking precision. Options are 'linear', "
+                     "waveforms for checking tolerance. Options are 'linear', "
                      "or any interpolation recognized by scipy's interp1d "
                      "kind argument. Default is linear.")
 parser.add_argument("--verbose", action="store_true", default=False)
@@ -153,7 +153,7 @@ for ii in range(imin, imax):
             
     # compress
     hcompressed = compress.compress_waveform(
-        htilde, sample_points, args.precision, args.interpolation,
+        htilde, sample_points, args.tolerance, args.interpolation,
         decomp_scratch=decomp_scratch)
 
     # save results

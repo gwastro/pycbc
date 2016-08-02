@@ -177,23 +177,23 @@ def vecdiff(htilde, hinterp, sample_points):
         vecdiffs[kk] = abs(_vecdiff(htilde, hinterp, thisf, nextf))
     return vecdiffs
 
-def compress_waveform(htilde, sample_points, precision, interpolation,
+def compress_waveform(htilde, sample_points, tolerance, interpolation,
         decomp_scratch=None):
     """Retrieves the amplitude and phase at the desired sample points, and adds
     frequency points in order to ensure that the interpolated waveform
-    has a mismatch with the full waveform that is <= the desired precision. The
+    has a mismatch with the full waveform that is <= the desired tolerance. The
     mismatch is computed by finding 1-overlap between `htilde` and the
     decompressed waveform; no maximimization over phase/time is done, nor is
     any PSD used.
     
     .. note::
         The decompressed waveform is only garaunteed to have a true mismatch
-        <= the precision for the given `interpolation` and for no PSD.
+        <= the tolerance for the given `interpolation` and for no PSD.
         However, since no maximization over time/phase is performed when
         adding points, the actual mismatch between the decompressed waveform
-        and `htilde` is better than the precision, using no PSD. Using a PSD
+        and `htilde` is better than the tolerance, using no PSD. Using a PSD
         does increase the mismatch, and can lead to mismatches > than the
-        desired precision, but typically by only a factor of a few worse.
+        desired tolerance, but typically by only a factor of a few worse.
 
     Parameters
     ----------
@@ -201,8 +201,8 @@ def compress_waveform(htilde, sample_points, precision, interpolation,
         The waveform to compress.
     sample_points : array
         The frequencies at which to store the amplitude and phase. More points
-        may be added to this, depending on the desired precision.
-    precision : float
+        may be added to this, depending on the desired tolerance.
+    tolerance : float
         The maximum mismatch to allow between a decompressed waveform and
         `htilde`.
     interpolation : str
@@ -235,16 +235,16 @@ def compress_waveform(htilde, sample_points, precision, interpolation,
         out=decomp_scratch, df=outdf, f_lower=fmin,
         interpolation=interpolation)
     mismatch = 1. - filter.overlap(hdecomp, htilde, low_frequency_cutoff=fmin)
-    if mismatch > precision:
+    if mismatch > tolerance:
         # we'll need the difference in the waveforms as a function of frequency
         vecdiffs = vecdiff(htilde, hdecomp, sample_points)
 
     # We will find where in the frequency series the interpolated waveform
     # has the smallest overlap with the full waveform, add a sample point
     # there, and re-interpolate. We repeat this until the overall mismatch
-    # is > than the desired precision 
+    # is > than the desired tolerance 
     added_points = []
-    while mismatch > precision:
+    while mismatch > tolerance:
         minpt = vecdiffs.argmax()
         # add a point at the frequency halfway between minpt and minpt+1
         add_freq = sample_points[[minpt, minpt+1]].mean()
@@ -275,7 +275,7 @@ def compress_waveform(htilde, sample_points, precision, interpolation,
         len(comp_amp), len(added_points)))
     
     return CompressedWaveform(sample_points, comp_amp, comp_phase,
-                interpolation=interpolation, precision=precision,
+                interpolation=interpolation, tolerance=tolerance,
                 mismatch=mismatch)
 
 
@@ -483,10 +483,10 @@ class CompressedWaveform(object):
         The phase of the waveform at the given `sample_points`.
     interpolation : {None, str}
         The interpolation that was used when compressing the waveform for
-        computing precision. This is also the default interpolation used when
+        computing tolerance. This is also the default interpolation used when
         decompressing; see `decompress` for details.
-    precision : {None, float}
-        The precision that was used when compressing the waveform.
+    tolerance : {None, float}
+        The tolerance that was used when compressing the waveform.
     mismatch : {None, float}
         The actual mismatch between the decompressed waveform (using the given
         `interpolation`) and the full waveform.
@@ -519,8 +519,8 @@ class CompressedWaveform(object):
         The interpolation that was used when compressing the waveform, for
         checking the mismatch. Also the default interpolation used when
         decompressing.
-    precision : {None, float}
-        The precision that was used when compressing the waveform.
+    tolerance : {None, float}
+        The tolerance that was used when compressing the waveform.
     mismatch : {None, float}
         The mismatch between the decompressed waveform and the original
         waveform.
@@ -543,7 +543,7 @@ class CompressedWaveform(object):
     """
     
     def __init__(self, sample_points, amplitude, phase,
-            interpolation=None, precision=None, mismatch=None,
+            interpolation=None, tolerance=None, mismatch=None,
             load_to_memory=True):
         self._sample_points = sample_points
         self._amplitude = amplitude
@@ -552,7 +552,7 @@ class CompressedWaveform(object):
         self.load_to_memory = load_to_memory
         # metadata
         self.interpolation = interpolation
-        self.precision = precision
+        self.tolerance = tolerance
         self.mismatch = mismatch
 
     def _get(self, param):
@@ -621,7 +621,7 @@ class CompressedWaveform(object):
         The waveform is written to:
         `fp['[{root}/]compressed_waveforms/{template_hash}/{param}']`,
         where `param` is the `sample_points`, `amplitude`, and `phase`. The
-        `interpolation`, `precision`, and `mismatch` are saved to the group's
+        `interpolation`, `tolerance`, and `mismatch` are saved to the group's
         attributes.
 
         Parameters
@@ -644,7 +644,7 @@ class CompressedWaveform(object):
             fp['%s/%s' %(group, param)] = self._get(param)
         fp[group].attrs['mismatch'] = self.mismatch
         fp[group].attrs['interpolation'] = self.interpolation
-        fp[group].attrs['precision'] = self.precision
+        fp[group].attrs['tolerance'] = self.tolerance
 
     @classmethod
     def from_hdf(cls, fp, template_hash, root=None, load_to_memory=True,
@@ -691,7 +691,7 @@ class CompressedWaveform(object):
             phase = phase[:]
         return cls(sample_points, amp, phase,
             interpolation=fp[group].attrs['interpolation'],
-            precision=fp[group].attrs['precision'],
+            tolerance=fp[group].attrs['tolerance'],
             mismatch=fp[group].attrs['mismatch'],
             load_to_memory=load_to_memory)
 
