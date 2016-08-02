@@ -169,7 +169,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
              for idx in indices[cluster_idx]]
     return times
 
-def from_cli(opt, dyn_range_fac=1, precision='single', return_injections=False):  
+def from_cli(opt, dyn_range_fac=1, precision='single'):  
     """Parses the CLI options related to strain data reading and conditioning.
     Parameters
     ----------
@@ -188,7 +188,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single', return_injections=False):
     """
 
     gating_info = {}
-    full_parameters= []   ### Edit 2 
+    injections = []
     if opt.frame_cache or opt.frame_files or opt.frame_type:
         if opt.frame_cache:
             frame_source = opt.frame_cache
@@ -223,17 +223,15 @@ def from_cli(opt, dyn_range_fac=1, precision='single', return_injections=False):
 
         if opt.injection_file:
             logging.info("Applying injections")
-            injections = InjectionSet(opt.injection_file)
-            injection_parameters= injections.apply(strain, opt.channel_name[0:2],        
+            InjectionSet(opt.injection_file)
+            injections += injections.apply(strain, opt.channel_name[0:2],        
                              distance_scale=opt.injection_scale_factor)
-            full_parameters= full_parameters + injection_parameters
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
-            injections = SGBurstInjectionSet(opt.sgburst_injection_file)
-            injection_parameters= injections.apply(strain, opt.channel_name[0:2],
+            injections += SGBurstInjectionSet(opt.sgburst_injection_file)
+            injections.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
-            full_parameters= full_parameters + injection_parameters
 
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
@@ -307,19 +305,20 @@ def from_cli(opt, dyn_range_fac=1, precision='single', return_injections=False):
                                                 seed=opt.fake_strain_seed)
         strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
 
+        injections = []
         if opt.injection_file:
             logging.info("Applying injections")
-            injections = InjectionSet(opt.injection_file)
-            injection_parameters= injections.apply(strain, opt.channel_name[0:2],  ### Edit 4 
+            InjectionSet(opt.injection_file)
+            injections += injections.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
-            full_parameters= full_parameters + injection_parameters
+
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
-            injections = SGBurstInjectionSet(opt.sgburst_injection_file)
-            injection_parameters= injections.apply(strain, opt.channel_name[0:2],
+            injections += SGBurstInjectionSet(opt.sgburst_injection_file)
+            injections.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
-            full_parameters= full_parameters + injection_parameters
+                
 
         if precision == 'single':
             logging.info("Converting to float32")
@@ -339,10 +338,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single', return_injections=False):
 
 
     strain.gating_info = gating_info
-    if return_injections:                            
-    	return strain, full_parameters
-    else:
-    	return strain  
+    return strain  
 
 def from_cli_single_ifo(opt, ifo, **kwargs):
     """
