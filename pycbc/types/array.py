@@ -961,7 +961,7 @@ def _return_array(fn, *args, **kwds):
 def zeros(length, dtype=float64):
     """ Return an Array filled with zeros.
     """
-    pass
+    return
 
 def load_array(path, group=None):
     """
