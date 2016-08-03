@@ -261,6 +261,19 @@ if bins_inp_file is None:
 
 num_cycles = int(workflow.cp.get_opt_tags('workflow', 'num-cycles', args.tags))
 
+# Create executables up front to make plots nicer in the dashboard
+bins_exe = SbankChooseMchirpBinsExecutable(workflow.cp, 'sbank_mchirp_bins',
+                                    ifos=workflow.ifos, tags=args.tags)
+main_sbank_exe = SbankExecutable(workflow.cp, 'sbank', ifos=workflow.ifos,
+                                     tags=['parallel'] + args.tags)
+llwadd_first_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
+                                     tags=['FIRST'] + args.tags)
+readder_sbank_exe = SbankExecutable(workflow.cp, 'sbank',
+                                    ifos=workflow.ifos,
+                                    tags=['readder'] + args.tags)
+llwadd_final_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
+                                     tags=['FINAL'] + args.tags)
+
 for cycle_idx in range(num_cycles):
     #########
     # SETUP #
@@ -278,10 +291,8 @@ for cycle_idx in range(num_cycles):
     #############
     # MASS BINS #
     #############
-
-    bins_exe = SbankChooseMchirpBinsExecutable(workflow.cp, 'sbank_mchirp_bins',
-                                    ifos=workflow.ifos, out_dir=out_dir,
-                                    tags=[cycle_tag] + args.tags)
+    bins_exe.update_current_tags([cycle_tag] + args.tags)
+    bins_exe.update_output_directory(out_dir=out_dir)
     bins_node = bins_exe.create_node(workflow.analysis_time,
                                      bins_inp_file, nbanks)
     workflow += bins_node
@@ -292,9 +303,8 @@ for cycle_idx in range(num_cycles):
     # PARALELLIZED SBANKS #
     #######################
 
-    main_sbank_exe = SbankExecutable(workflow.cp, 'sbank', ifos=workflow.ifos,
-                                     out_dir=out_dir,
-                                     tags=['parallel', cycle_tag] + args.tags)
+    main_sbank_exe.update_current_tags(['parallel', cycle_tag] + args.tags)
+    main_sbank_exe.update_output_directory(out_dir=out_dir)
     # These jobs we don't always want to store
     main_sbank_exe.update_current_retention_level\
             (wf.Executable.INTERMEDIATE_PRODUCT)
@@ -315,11 +325,10 @@ for cycle_idx in range(num_cycles):
     # COMBINER #
     ############
 
-    llwadd_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
-                                     out_dir=out_dir,
-                                     tags=[cycle_tag, 'FIRST'] + args.tags)
-    llwadd_exe.update_current_retention_level(wf.Executable.ALL_TRIGGERS)
-    llwadd_node = llwadd_exe.create_node(workflow.analysis_time,
+    llwadd_first_exe.update_current_tags([cycle_tag, 'FIRST'] + args.tags)
+    llwadd_first_exe.update_output_directory(out_dir=out_dir)
+    llwadd_first_exe.update_current_retention_level(wf.Executable.ALL_TRIGGERS)
+    llwadd_node = llwadd_first_exe.create_node(workflow.analysis_time,
                                          main_sbank_files,
                                          use_tmp_subdirs=False)
     workflow += llwadd_node
@@ -330,9 +339,8 @@ for cycle_idx in range(num_cycles):
     # READDER #
     ###########
 
-    readder_sbank_exe = SbankExecutable(workflow.cp, 'sbank',
-                                        ifos=workflow.ifos, out_dir=out_dir,
-                                        tags=[cycle_tag, 'readder'] + args.tags)
+    readder_sbank_exe.update_current_tags([cycle_tag, 'readder'] + args.tags)
+    readder_sbank_exe.update_output_directory(out_dir=out_dir)
     readder_sbank_exe.update_current_retention_level\
             (wf.Executable.ALL_TRIGGERS)
     readder_sbank_node = readder_sbank_exe.create_node(workflow.analysis_time,
@@ -354,17 +362,16 @@ for cycle_idx in range(num_cycles):
         crl = wf.Executable.MERGED_TRIGGERS
         output_path = None
 
-    llwadd_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
-                                     out_dir=out_dir,
-                                     tags=[cycle_tag, 'FINAL'] + args.tags)
-    llwadd_exe.update_current_retention_level(crl)
+    llwadd_final_exe.update_current_tags([cycle_tag, 'FINAL'] + args.tags)
+    llwadd_final_exe.update_output_directory(out_dir)
+    llwadd_final_exe.update_current_retention_level(crl)
 
     if seed_file is None:
         inputs = [readder_out]
     else:
         inputs = [seed_file, readder_out]
 
-    llwadd_node = llwadd_exe.create_node(workflow.analysis_time,
+    llwadd_node = llwadd_final_exe.create_node(workflow.analysis_time,
                                          inputs, output=output_path,
                                          use_tmp_subdirs=False)
     workflow += llwadd_node

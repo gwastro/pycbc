@@ -68,8 +68,7 @@ class Executable(ProfileShortcuts):
     id = 0
     def __init__(self, name, namespace=None, os='linux', 
                        arch='x86_64', installed=True, version=None):
-        self.name = name
-        self.logical_name = self.name + "_ID%s" % str(Executable.id)
+        self.logical_name = name + "_ID%s" % str(Executable.id)
         Executable.id += 1
         self.namespace = namespace
         self.version = version
