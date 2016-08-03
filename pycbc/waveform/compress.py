@@ -30,7 +30,7 @@ from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from scipy.weave import inline
 from scipy import interpolate
-from pycbc.types import FrequencySeries, zeros, complex_same_precision_as
+from pycbc.types import Array, FrequencySeries, zeros, complex_same_precision_as, real_same_precision_as
 from pycbc.waveform import utils
 
 def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
@@ -254,7 +254,8 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         new_index[minpt+1] = addidx
         new_index[minpt+2:] = sample_index[minpt+1:]
         sample_index = new_index
-        sample_points = sample_index * df
+        sample_points = (sample_index * df).astype(
+            real_same_precision_as(htilde))
         # get the new compressed points
         comp_amp = amp.take(sample_index)
         comp_phase = phase.take(sample_index)
@@ -425,14 +426,25 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         If out was provided, writes to that array. Otherwise, a new
         FrequencySeries with the decompressed waveform.
     """
-        
+    amp = Array(amp, copy=False)
+    phase = Array(phase, copy=False)
+    sample_frequencies = Array(sample_frequencies, copy=False)
+    if amp.precision != sample_frequencies.precision or \
+            phase.precision != sample_frequencies.precision::
+        raise ValueError("amp, phase, and sample_points must all have the "
+            "same precision")
     if out is None:
         if df is None:
             raise ValueError("Either provide output memory or a df")
         flen = int(numpy.ceil(sample_frequencies.max()/df+1))
         out = FrequencySeries(numpy.zeros(flen,
-            dtype=numpy.complex128), copy=False, delta_f=df)
+            dtype=complex_same_precision_as(sample_frequencies)), copy=False,
+            delta_f=df)
     else:
+        # check for precision compatibility
+        if out.precision == 'double' and \
+                sample_frequencies.precision == 'single':
+            raise ValueError("cannot cast single precision to double")
         df = out.delta_f
         flen = len(out)
     if f_lower is None:
@@ -445,8 +457,14 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
     imin = int(numpy.floor(f_lower/df))
     # interpolate the amplitude and the phase
     if interpolation == "linear":
-        code = _linear_decompress_code
+        if sample_frequencies.precision == 'single':
+            code = _linear_decompress_code32
+        else:
+            code = _linear_decompress_code
         # use custom interpolation
+        sample_frequencies = sample_frequencies.numpy()
+        amp = amp.numpy()
+        phase = phase.numpy()
         sflen = len(sample_frequencies)
         h = numpy.array(out.data, copy=False)
         delta_f = float(df)
@@ -458,12 +476,12 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
     else:
         # use scipy for fancier interpolation
         outfreq = out.sample_frequencies.numpy()
-        amp_interp = interpolate.interp1d(sample_frequencies, amp,
-            kind=interpolation, bounds_error=False, fill_value=0.,
+        amp_interp = interpolate.interp1d(sample_frequencies.numpy(),
+            amp.numpy(), kind=interpolation, bounds_error=False, fill_value=0.,
             assume_sorted=True)
-        phase_interp = interpolate.interp1d(sample_frequencies, phase,
-            kind=interpolation, bounds_error=False, fill_value=0.,
-            assume_sorted=True)
+        phase_interp = interpolate.interp1d(sample_frequencies.numpy(),
+            phase.numpy(), kind=interpolation, bounds_error=False,
+            fill_value=0., assume_sorted=True)
         A = amp_interp(outfreq)
         phi = phase_interp(outfreq)
         out.data[:] = A*numpy.cos(phi) + (1j)*A*numpy.sin(phi)

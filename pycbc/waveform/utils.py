@@ -24,7 +24,7 @@
 #
 """This module contains convenience utilities for manipulating waveforms
 """
-from pycbc.types import TimeSeries, FrequencySeries, Array, float32, float64, complex_same_precision_as
+from pycbc.types import TimeSeries, FrequencySeries, Array, float32, float64, complex_same_precision_as, real_same_precision_as
 import lal
 import lalsimulation as sim
 from math import frexp
@@ -60,7 +60,8 @@ def phase_from_frequencyseries(htilde, remove_start_phase=True):
     FrequencySeries
         The phase of the waveform as a function of frequency.
     """
-    p = numpy.unwrap(numpy.angle(htilde.data))
+    p = numpy.unwrap(numpy.angle(htilde.data)).astype(
+            real_same_precision_as(htilde))
     if remove_start_phase:
         p += -p[0]    
     return FrequencySeries(p, delta_f=htilde.delta_f, epoch=htilde.epoch,
@@ -80,7 +81,7 @@ def amplitude_from_frequencyseries(htilde):
     FrequencySeries
         The amplitude of the waveform as a function of frequency.
     """
-    amp = abs(htilde.data)
+    amp = abs(htilde.data).astype(real_same_precision_as(htilde))
     return FrequencySeries(amp, delta_f=htilde.delta_f, epoch=htilde.epoch,
         copy=False)
 
@@ -132,7 +133,8 @@ def time_from_frequencyseries(htilde, sample_frequencies=None,
         kmax = min(kmax, kmin + discont_idx[0]-1)
     time[:kmin] = time[kmin]
     time[kmax:] = time[kmax]
-    return FrequencySeries(time, delta_f=htilde.delta_f, epoch=htilde.epoch,
+    return FrequencySeries(time.astype(real_same_precision_as(htilde)),
+        delta_f=htilde.delta_f, epoch=htilde.epoch,
         copy=False)
 
 def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
@@ -164,7 +166,8 @@ def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
     >>> phase = phase_from_polarizations(hp, hc)
 
     """
-    p = numpy.unwrap(numpy.arctan2(h_cross.data, h_plus.data))
+    p = numpy.unwrap(numpy.arctan2(h_cross.data, h_plus.data)).astype(
+        real_same_precision_as(h_plus))
     if remove_start_phase:
         p += -p[0]    
     return TimeSeries(p, delta_t=h_plus.delta_t, epoch=h_plus.start_time,
@@ -235,7 +238,8 @@ def frequency_from_polarizations(h_plus, h_cross):
     phase = phase_from_polarizations(h_plus, h_cross)
     freq = numpy.diff(phase) / ( 2 * lal.PI * phase.delta_t )
     start_time = phase.start_time + phase.delta_t / 2
-    return TimeSeries(freq, delta_t=phase.delta_t, epoch=start_time)
+    return TimeSeries(freq.astype(real_same_precision_as(h_plus)),
+        delta_t=phase.delta_t, epoch=start_time)
 
 # map between tapering string in sim_inspiral table or inspiral 
 # code option and lalsimulation constants
