@@ -390,6 +390,23 @@ _linear_decompress_code = r"""
 # for single precision
 _linear_decompress_code32 = _linear_decompress_code.replace('double', 'float')
 
+_precision_map = {
+    'float32': 'single',
+    'float64': 'double',
+    'complex64': 'single',
+    'complex128': 'double'
+}
+
+_complex_dtypes = {
+    'single': numpy.complex64,
+    'double': numpy.complex128
+}
+
+_real_dtypes = {
+    'single': numpy.float32,
+    'double': numpy.float64
+}
+
 def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         f_lower=None, interpolation='linear'):
     """Decompresses an FD waveform using the given amplitude, phase, and the
@@ -426,11 +443,9 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         If out was provided, writes to that array. Otherwise, a new
         FrequencySeries with the decompressed waveform.
     """
-    amp = Array(amp, copy=False)
-    phase = Array(phase, copy=False)
-    sample_frequencies = Array(sample_frequencies, copy=False)
-    if amp.precision != sample_frequencies.precision or \
-            phase.precision != sample_frequencies.precision::
+    precision = _precision_map[sample_frequencies.dtype.name]
+    if _precision_map[amp.dtype.name] != precision or \
+            _precision_map[phase.dtype.name] != precision:
         raise ValueError("amp, phase, and sample_points must all have the "
             "same precision")
     if out is None:
@@ -438,12 +453,11 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
             raise ValueError("Either provide output memory or a df")
         flen = int(numpy.ceil(sample_frequencies.max()/df+1))
         out = FrequencySeries(numpy.zeros(flen,
-            dtype=complex_same_precision_as(sample_frequencies)), copy=False,
+            dtype=_complex_dtypes[precision]), copy=False,
             delta_f=df)
     else:
         # check for precision compatibility
-        if out.precision == 'double' and \
-                sample_frequencies.precision == 'single':
+        if out.precision == 'double' and precision == 'single':
             raise ValueError("cannot cast single precision to double")
         df = out.delta_f
         flen = len(out)
@@ -457,14 +471,11 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
     imin = int(numpy.floor(f_lower/df))
     # interpolate the amplitude and the phase
     if interpolation == "linear":
-        if sample_frequencies.precision == 'single':
+        if precision == 'single':
             code = _linear_decompress_code32
         else:
             code = _linear_decompress_code
         # use custom interpolation
-        sample_frequencies = sample_frequencies.numpy()
-        amp = amp.numpy()
-        phase = phase.numpy()
         sflen = len(sample_frequencies)
         h = numpy.array(out.data, copy=False)
         delta_f = float(df)
