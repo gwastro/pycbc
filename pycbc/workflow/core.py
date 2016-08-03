@@ -430,11 +430,12 @@ class Executable(pegasus_workflow.Executable):
         self.tags = tags
 
         if len(tags) != 0:
-            self.tagged_name = "%s-%s" % (self.name, '_'.join(tags))
+            self.tagged_name = "{0}-{1}".format(self.name, '_'.join(tags))
         else:
             self.tagged_name = self.name
         if self.ifo_string is not None:
-            self.tagged_name = "%s-%s" % (self.tagged_name, self.ifo_string)
+            self.tagged_name = "{0}-{1}".format(self.tagged_name,
+                                                self.ifo_string)
 
 
         # Determine the sections from the ini file that will configure
@@ -450,7 +451,7 @@ class Executable(pegasus_workflow.Executable):
         for sec_len in range(1, len(sec_tags)+1):
             for tag_permutation in permutations(sec_tags, sec_len):
                 joined_name = '-'.join(tag_permutation)
-                section = '%s-%s' %(self.name, joined_name.lower())
+                section = '{0}-{1}'.format(self.name, joined_name.lower())
                 if self.cp.has_section(section):
                     sections.append(section)
 
@@ -468,9 +469,9 @@ class Executable(pegasus_workflow.Executable):
             if self.cp.has_section(sec):
                 self.add_ini_opts(self.cp, sec)
             else:
-                warnString = "warning: config file is missing section [%s]"\
-                             %(sec,)
-                logging.warn(warnString)
+                warn_string = "warning: config file is missing section "
+                warn_string += "[{0}]".format(sec)
+                logging.warn(warn_string)
 
     def update_output_directory(self, out_dir=None):
         """Update the default output directory for output files.
@@ -501,12 +502,13 @@ class Executable(pegasus_workflow.Executable):
         """
         # Add executable non-specific profile information
         if self.cp.has_section('pegasus_profile'):
-            self.add_ini_profile(cp, 'pegasus_profile')
+            self.add_ini_profile(self.cp, 'pegasus_profile')
 
         # Executable- and tag-specific profile information
         for sec in self.sections:
-            if self.cp.has_section('pegasus_profile-%s' % sec):
-                self.add_ini_profile(self.cp, 'pegasus_profile-%s' % sec)
+            if self.cp.has_section('pegasus_profile-{0}'.format(sec)):
+                self.add_ini_profile(self.cp,
+                                     'pegasus_profile-{0}'.format(sec))
 
 class Workflow(pegasus_workflow.Workflow):
     """
