@@ -1044,12 +1044,12 @@ class massRangeParameters(object):
 
         # Chirp mass test
         chirp_mass = mTot * eta**(3./5.)
-        if self.min_chirp_mass is not None:
-            if chirp_mass * 1.001 < min_chirp_mass:
-                return 1
-        if self.max_chirp_mass is not None:
-            if chirp_mass > max_chirp_mass * 1.001:
-                return
+        if self.min_chirp_mass is not None \
+                and chirp_mass * 1.001 < self.min_chirp_mass:
+            return 1
+        if self.max_chirp_mass is not None \
+                and chirp_mass > self.max_chirp_mass * 1.001:
+            return 1
 
         return 0
 
