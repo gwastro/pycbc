@@ -81,6 +81,8 @@ test_exec_help pycbc_make_banksim
 test_exec_help pycbc_faithsim
 test_exec_help pycbc_make_faithsim
 
+#test_exec_help pycbc_coinc_time
+
 test_exec_help pycbc_inspiral
 test_exec_help pycbc_inspiral_skymax
 
