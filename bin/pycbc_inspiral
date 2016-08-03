@@ -172,7 +172,7 @@ pycbc.weave.verify_weave_options(opt, parser)
 pycbc.init_logging(opt.verbose)
 
 ctx = scheme.from_cli(opt)
-gwstrain = strain.from_cli(opt, DYN_RANGE_FAC, return_injections=True)
+gwstrain = strain.from_cli(opt, DYN_RANGE_FAC)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
       
 
