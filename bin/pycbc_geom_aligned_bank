@@ -114,6 +114,8 @@ class TmpltbankToChiParams(wf.Executable):
     """
     current_retention_level = wf.Executable.ALL_TRIGGERS
 
+    file_input_options = ['--asd-file', '--psd-file']
+
     def create_node(self, input_bank, analysis_time):
         """ Create a node.
         """
@@ -129,6 +131,8 @@ class BankVerification(wf.Executable):
     """ Class for running pycbc_bank_verification.
     """
     current_retention_level = wf.Executable.FINAL_RESULT
+
+    file_input_options = ['--asd-file', '--psd-file']
 
     def create_node(self, input_bank, analysis_time):
         """ Create a node.
