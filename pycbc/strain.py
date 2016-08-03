@@ -223,14 +223,14 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
 
         if opt.injection_file:
             logging.info("Applying injections")
-            InjectionSet(opt.injection_file)
-            injections += injections.apply(strain, opt.channel_name[0:2],        
+            injector = InjectionSet(opt.injection_file)
+            injections += injector.apply(strain, opt.channel_name[0:2],        
                              distance_scale=opt.injection_scale_factor)
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
-            injections += SGBurstInjectionSet(opt.sgburst_injection_file)
-            injections.apply(strain, opt.channel_name[0:2],
+            injector =  SGBurstInjectionSet(opt.sgburst_injection_file)
+            injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
 
         logging.info("Highpass Filtering")
@@ -305,19 +305,18 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
                                                 seed=opt.fake_strain_seed)
         strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
 
-        injections = []
         if opt.injection_file:
             logging.info("Applying injections")
-            InjectionSet(opt.injection_file)
-            injections += injections.apply(strain, opt.channel_name[0:2],
+            injector = InjectionSet(opt.injection_file)
+            injections += injector.apply(strain, opt.channel_name[0:2],        
                              distance_scale=opt.injection_scale_factor)
-
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
-            injections += SGBurstInjectionSet(opt.sgburst_injection_file)
-            injections.apply(strain, opt.channel_name[0:2],
+            injector =  SGBurstInjectionSet(opt.sgburst_injection_file)
+            injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
+
                 
 
         if precision == 'single':
@@ -846,8 +845,7 @@ class StrainSegments(object):
         trig_end_idx = (trigger_end - int(strain.start_time)) * strain.sample_rate
 
         if filter_inj_only and hasattr(strain, 'injections'):
-            inj = strain.injections
-            end_times= inj.end_times()
+            end_times= [inj.get_time_geocent() for inj in strain.injections]   
             end_times = [time for time in end_times if float(time) < trigger_end and float(time) > trigger_start]
 
             inj_idx = [(float(time) - float(strain.start_time)) * strain.sample_rate for time in end_times]
