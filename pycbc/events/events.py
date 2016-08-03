@@ -255,7 +255,7 @@ class EventManager(object):
         if len(self.events) == 0:
             return
         
-        inj_time = numpy.array(injections.end_times())
+        inj_time = numpy.array([inj.get_time_geocent() for inj in injections])
         gpstime = self.events['time_index'].astype(numpy.float64)
         gpstime = gpstime / self.opt.sample_rate + self.opt.gps_start_time
         i = indices_within_times(gpstime, inj_time - window, inj_time + window)
