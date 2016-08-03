@@ -268,8 +268,8 @@ with ctx:
                     out=template_mem, max_template_length=opt.max_template_length)
 
     if opt.threshold_template_filtering is not None:
-    	logging.info("Template Bank Size Before Cut: %s", len(bank))
-    	bank.table = bank.template_thinning(gwstrain.injections,
+        logging.info("Template Bank Size Before Cut: %s", len(bank))
+        bank.table = bank.template_thinning(gwstrain.injections,
                                             opt.threshold_template_filtering)
         logging.info("Template Bank Size After Cut: %s", len(bank))
       
