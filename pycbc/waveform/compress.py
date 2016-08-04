@@ -402,7 +402,7 @@ _linear_decompress_code = r"""
     }
 
     // zero out the rest of the array
-    memset(outptr, 0, 2*(hlen-findex));
+    memset(outptr, 0, sizeof(*outptr)*2*(hlen-findex));
 """
 # for single precision
 _linear_decompress_code32 = _linear_decompress_code.replace('double', 'float')
