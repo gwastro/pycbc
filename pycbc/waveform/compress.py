@@ -331,7 +331,7 @@ _linear_decompress_code = r"""
     double dphi_re, dphi_im;
 
     // we will re-compute cos/sin of the phase at the following intervals:
-    int update_interval = 100;
+    int update_interval = 128;
 
     // zero out the beginning
     memset(outptr, 0, sizeof(*outptr)*2*start_index);
