@@ -60,6 +60,13 @@ _fr_type_map = {
         lal.CreateUINT4Sequence,
         lalframe.FrameAddUINT4TimeSeriesProcData
     ],
+    lal.I4_TYPE_CODE: [
+        lalframe.FrStreamReadINT4TimeSeries, numpy.int32,
+        lal.CreateINT4TimeSeries,
+        lalframe.FrStreamGetINT4TimeSeriesMetadata,
+        lal.CreateINT4Sequence,
+        lalframe.FrameAddINT4TimeSeriesProcData
+    ],
 }
 
 def _read_channel(channel, stream, start, duration):
@@ -386,12 +393,16 @@ def write_frame(location, channels, timeseries):
     lalframe.FrameWrite(frame, location)
 
 class DataBuffer(object):
-    """ A linear buffer that acts as a FILO for reading in frame data
+
+    """A linear buffer that acts as a FILO for reading in frame data
     """
+
     def __init__(self, frame_src, 
                        channel_name,
                        start_time,
-                       max_buffer=2048):
+                       max_buffer=2048, 
+                       force_update_cache=True,
+                       increment_update_cache=None):
         """ Create a rolling buffer of frame data
 
         Parameters
@@ -409,18 +420,20 @@ class DataBuffer(object):
         self.frame_src = frame_src
         self.channel_name = channel_name
         self.read_pos = start_time
+        self.force_update_cache = force_update_cache
+        self.increment_update_cache = increment_update_cache
 
         self.update_cache()
-        self.channel_type, self.sample_rate = self._retrieve_metadata(self.stream, self.channel_name)
+        self.channel_type, self.raw_sample_rate = self._retrieve_metadata(self.stream, self.channel_name)
 
-        raw_size = self.sample_rate * max_buffer
+        raw_size = self.raw_sample_rate * max_buffer
         self.raw_buffer = TimeSeries(zeros(raw_size, dtype=numpy.float64),
                                      copy=False,
                                      epoch=start_time - max_buffer,
-                                     delta_t=1.0/self.sample_rate)
+                                     delta_t=1.0/self.raw_sample_rate)
 
     def update_cache(self):
-        """ Reset the lal cache. This can be used to update the cache if the 
+        """Reset the lal cache. This can be used to update the cache if the 
         result may change due to more files being added to the filesystem, 
         for example.
         """
@@ -429,7 +442,7 @@ class DataBuffer(object):
         self.stream = stream
 
     def _retrieve_metadata(self, stream, channel_name):
-        """ Retrieve basic metadata by reading the first file in the cache
+        """Retrieve basic metadata by reading the first file in the cache
     
         Parameters
         ----------
@@ -452,10 +465,10 @@ class DataBuffer(object):
         series = create_series_func(channel_name, stream.epoch, 0, 0,
                             lal.ADCCountUnit, 0)
         get_series_metadata_func(series, stream)
-        return channel_type, int(1.0/series.deltaT)        
+        return channel_type, int(1.0/series.deltaT)
 
     def _read_frame(self, blocksize):
-        """ Try to read the block of data blocksize seconds long
+        """Try to read the block of data blocksize seconds long
 
         Parameters
         ----------
@@ -475,26 +488,28 @@ class DataBuffer(object):
         try:
             read_func = _fr_type_map[self.channel_type][0]
             dtype = _fr_type_map[self.channel_type][1]
-            data = read_func(self.stream, self.channel_name, self.read_pos, blocksize, 0)
+            data = read_func(self.stream, self.channel_name,
+                             self.read_pos, int(blocksize), 0)
             return TimeSeries(data.data.data, delta_t=data.deltaT,
                               epoch=self.read_pos, 
                               dtype=dtype)     
-        except:
+        except Exception as e:
             raise RuntimeError('Cannot read requested frame data') 
 
     def null_advance(self, blocksize):
-        """ Advance and insert zeros
+        """Advance and insert zeros
 
         Parameters
         ----------
         blocksize: int
             The number of seconds to attempt to read from the channel
         """
-        self.raw_buffer.roll(-int(blocksize * self.sample_rate))       
+        self.raw_buffer.roll(-int(blocksize * self.raw_sample_rate))
+        self.read_pos += blocksize       
         self.raw_buffer.start_time += blocksize
 
     def advance(self, blocksize):
-        """ Add blocksize seconds more to the buffer, push blocksize seconds
+        """Add blocksize seconds more to the buffer, push blocksize seconds
         from the beginning.
 
         Parameters
@@ -509,6 +524,52 @@ class DataBuffer(object):
         self.read_pos += blocksize
         self.raw_buffer.start_time += blocksize
         return ts
+        
+    def update_cache_by_increment(self, blocksize):
+        """Update the internal cache by starting from the first frame
+        and incrementing.
+
+        Guess the next frame file name by incrementing from the first found
+        one. This allows a pattern to be used for the GPS folder of the file,
+        which is indicated by `GPSX` where x is the number of digits to use.
+
+        Parameters
+        ----------
+        blocksize: int
+            Number of seconds to increment the next frame file.
+        """
+        start = float(self.raw_buffer.end_time)
+        end = float(start + blocksize)
+        
+        if not hasattr(self, 'dur'):       
+            fname = glob.glob(self.frame_src[0])[0]
+            fname = os.path.splitext(os.path.basename(fname))[0].split('-')
+            
+            self.beg = '-'.join([fname[0], fname[1]])
+            self.ref = int(fname[2])
+            self.dur = int(fname[3])
+        
+        fstart = int(self.ref + numpy.floor((start - self.ref) / float(self.dur)) * self.dur)
+        starts = numpy.arange(fstart, end, self.dur).astype(numpy.int)
+        
+        keys = []
+        for s in starts:
+            pattern = self.increment_update_cache
+            if 'GPS' in pattern:
+                n = int(pattern[int(pattern.index('GPS') + 3)])
+                pattern = pattern.replace('GPS%s' % n, str(s)[0:n])
+                
+            name = '%s/%s-%s-%s.gwf' % (pattern, self.beg, s, self.dur)
+            # check that file actually exists, else abort now
+            if not os.path.exists(name):
+                logging.info("%s does not seem to exist yet" % name)
+                raise RuntimeError
+
+            keys.append(name)
+        cache = locations_to_cache(keys)
+        stream = lalframe.FrStreamCacheOpen(cache)
+        self.stream = stream
+        self.channel_type, self.raw_sample_rate = self._retrieve_metadata(self.stream, self.channel_name)
 
     def attempt_advance(self, blocksize, timeout=10):
         """ Attempt to advance the frame buffer. Retry upon failure, except
@@ -526,19 +587,27 @@ class DataBuffer(object):
         data: TimeSeries
             TimeSeries containg 'blocksize' seconds of frame data
         """
-        self.update_cache()
+        if self.force_update_cache:
+            self.update_cache()
         
         try:
+            if self.increment_update_cache:
+                self.update_cache_by_increment(blocksize)
+
             return DataBuffer.advance(self, blocksize)
-        except ValueError:
+
+        except RuntimeError:
             if lal.GPSTimeNow() > timeout + self.raw_buffer.end_time:
                 # The frame is not there and it should be by now, so we give up
                 # and treat it as zeros
-                self.null_advance(blocksize)
+                logging.info('Frame missing, giving up...')
+                DataBuffer.null_advance(self, blocksize)
                 return None
             else:
                 # I am too early to give up on this frame, so we should try again
-                return self.attempt_advance(self, blocksize, timeout=timeout)
+                logging.info('Frame missing, waiting a bit more...')
+                time.sleep(1)
+                return self.attempt_advance(blocksize, timeout=timeout)
 
 # Status flags for the calibration state vector 
 HOFT_OK = 1
@@ -558,13 +627,16 @@ FCC_OK = 8192
 NO_GAP = 16384    
                
 class StatusBuffer(DataBuffer):
+
     """ Read state vector information from a frame file """
 
     def __init__(self, frame_src, 
                        channel_name,
                        start_time,
                        max_buffer=2048,
-                       valid_mask=HOFT_OK | SCIENCE_INTENT):
+                       valid_mask=HOFT_OK | SCIENCE_INTENT,
+                       force_update_cache=False,
+                       increment_update_cache=None):
         """ Create a rolling buffer of status data from a frame
 
         Parameters
@@ -581,11 +653,14 @@ class StatusBuffer(DataBuffer):
         valid_mask: {int, HOFT_OK | SCIENCE_INTENT}, Optional
             Set of flags that must be on to indicate valid frame data.
         """
-        DataBuffer.__init__(self, frame_src, channel_name, start_time, max_buffer) 
+        DataBuffer.__init__(self, frame_src, channel_name, start_time,
+                                 max_buffer=max_buffer,
+                                 force_update_cache=force_update_cache,
+                                 increment_update_cache=increment_update_cache) 
         self.valid_mask = valid_mask
 
     def check_valid(self, values):
-        """ Check if the data contains any non-valid status information
+        """Check if the data contains any non-valid status information
         
         Parameters
         ----------
@@ -603,7 +678,7 @@ class StatusBuffer(DataBuffer):
             return True
         
     def is_extent_valid(self, start_time, duration):
-        """ Check if the duration contains any non-valid frames
+        """Check if the duration contains any non-valid frames
 
         Parameters
         ----------
@@ -619,7 +694,7 @@ class StatusBuffer(DataBuffer):
         """
         s = self.raw_buffer.start_time - start_time
         e = s + duration
-        values = self.raw_buffer[s * self.sample_rate: e * self.sample_rate]
+        values = self.raw_buffer[s * self.raw_sample_rate: e * self.raw_sample_rate]
         return self.check_valid(values)
 
     def advance(self, blocksize):
@@ -636,9 +711,7 @@ class StatusBuffer(DataBuffer):
         status: boolean
             Returns True if all of the status information if valid, False if any is not.  
         """
+        if self.increment_update_cache:
+            self.update_cache_by_increment(blocksize)
+
         return self.check_valid(DataBuffer.advance(self, blocksize))
-        
-
-
-        
-
