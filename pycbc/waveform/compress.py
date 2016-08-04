@@ -282,110 +282,127 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
 
 _linear_decompress_code = r"""
     #include <math.h>
-    # include <stdio.h>
-    // cast the output to a float array for faster processing
-    // this takes advantage of the fact that complex arrays store
-    // their real and imaginary values next to each other in memory
+    #include <stdio.h>
+    // This code expects to be passed:
+    // h: array of complex doubles
+    //      the output array to write the results to.
+    // delta_f: double
+    //      the df of the output array
+    // hlen: int
+    //      the length of h
+    // start_index: int
+    //      the index to start the waveform in the output
+    //      frequency series; i.e., floor(f_lower*df)
+    // sample_frequencies: array of real doubles
+    //      the frequencies at which the compressed waveform is sampled
+    // amp: array of real doubles
+    //      the amplitude of the waveform at the sample frequencies
+    // phase: array of real doubles
+    //      the phase of the waveform at the sample frequencies
+    // sflen: int
+    //      the length of the sample frequencies
+    // imin: int
+    //      the index to start at in the compressed series
+
+    // We will cast the output to a double array for faster processing.
+    // This takes advantage of the fact that complex arrays store
+    // their real and imaginary values next to each other in memory.
+
     double* outptr = (double*) h;
 
-    // zero out the beginning
-    memset(outptr, 0, sizeof(*outptr)*2*imin);
-
-    outptr += 2*imin; // move to the start position
+    // for keeping track of where in the output frequencies we are
+    int findex, next_sfindex, kmax; 
 
     // variables for computing the interpolation
     double df = (double) delta_f;
-    double sf = 0.;
-    double A = 0.;
-    double nextA = 0.;
-    double phi = 0.;
-    double nextPhi = 0.;
-    double next_sf = sample_frequencies[jmin];
-    double f = 0.;
-    double invsdf = 0.;
-    double mAmp = 0.;
-    double bAmp = 0.;
-    double mPhi = 0.;
-    double bPhi = 0.;
-    double interpAmp = 0.;
-    double interpPhi = 0.;
+    double inv_df = 1./df;
+    double f, inv_sdf;
+    double sf, this_amp, this_phi;
+    double next_sf = sample_frequencies[imin];
+    double next_amp = amp[imin];
+    double next_phi = phase[imin];
+    double m_amp, b_amp;
+    double m_phi, b_phi;
+    double interp_amp, interp_phi;
 
     // variables for updating each interpolated frequency
-    double h_re = 0.;
-    double h_im = 0.;
-    double incrh_re = 0.;
-    double incrh_im = 0.;
-    double g_re = 0.;
-    double g_im = 0.;
-    double incrg_re = 0.;
-    double incrg_im = 0.;
-    double dPhi_re = 0.;
-    double dPhi_im = 0.;
-
-    // jj keeps track of where in the sample_frequencies we are
-    int jj = jmin-1;
+    double h_re, h_im, incrh_re, incrh_im;
+    double g_re, g_im, incrg_re, incrg_im;
+    double dphi_re, dphi_im;
 
     // we will re-compute cos/sin of the phase at the following intervals:
     int update_interval = 100;
 
-    // kk keeps track of how many steps into the update interval we are
-    int kk = update_interval;
-    
-    // cycle over desired samples
-    for (int ii=imin; ii<flen; ii++){
-        f = ii*df;
-        if (f >= next_sf){
-            // update linear interpolations
-            jj += 1;
-            // if we have gone beyond the sampled frequencies, just break
-            if ((jj+1) == sflen) {
-                // zero out the rest of the array
-                memset(outptr, 0, 2*(flen-ii));
-                break;
+    // zero out the beginning
+    memset(outptr, 0, sizeof(*outptr)*2*start_index);
+
+    // move to the start position
+    outptr += 2*start_index;
+    findex = start_index;
+
+    // cycle over the compressed samples
+    for (int ii=imin; ii<(sflen-1); ii++){
+        // update the linear interpolations
+        sf = next_sf;
+        next_sf = (double) sample_frequencies[ii+1];
+        next_sfindex = (int) ceil(next_sf * inv_df);
+        inv_sdf = 1./(next_sf - sf);
+        this_amp = next_amp;
+        next_amp = (double) amp[ii+1];
+        this_phi = next_phi;
+        next_phi = (double) phase[ii+1];
+        m_amp = (next_amp - this_amp)*inv_sdf;
+        b_amp = this_amp - m_amp*sf;
+        m_phi = (next_phi - this_phi)*inv_sdf;
+        b_phi = this_phi - m_phi*sf;
+
+        // cycle over the interpolated points between this and the next
+        // compressed sample
+        while (findex < next_sfindex){
+            // for the first step, compute the value of h from the interpolated
+            // amplitude and phase
+            f = findex*df;
+            interp_amp = m_amp * f + b_amp;
+            interp_phi = m_phi * f + b_phi;
+            dphi_re = cos(m_phi * df);
+            dphi_im = sin(m_phi * df);
+            h_re = interp_amp * cos(interp_phi);
+            h_im = interp_amp * sin(interp_phi);
+            g_re = m_amp * df * cos(interp_phi);
+            g_im = m_amp * df * sin(interp_phi);
+
+            // save and update counters
+            *outptr = h_re;
+            *(outptr+1) = h_im;
+            outptr += 2;
+            findex++;
+
+            // for the next update_interval steps, compute h by incrementing
+            // the last h
+            kmax = findex + update_interval;
+            if (kmax > next_sfindex) 
+                kmax = next_sfindex;
+            while (findex < kmax){
+                incrh_re = h_re * dphi_re - h_im * dphi_im;
+                incrh_im = h_re * dphi_im + h_im * dphi_re;
+                incrg_re = g_re * dphi_re - g_im * dphi_im;
+                incrg_im = g_re * dphi_im + g_im * dphi_re;
+                h_re = incrh_re + incrg_re;
+                h_im = incrh_im + incrg_im;
+                g_re = incrg_re;
+                g_im = incrg_im;
+
+                // save and update counters
+                *outptr = h_re;
+                *(outptr+1) = h_im;
+                outptr += 2;
+                findex++;
             }
-            sf = (double) sample_frequencies[jj];
-            next_sf = (double) sample_frequencies[jj+1];
-            A = (double) amp[jj];
-            nextA = (double) amp[jj+1];
-            phi = (double) phase[jj];
-            nextPhi = (double) phase[jj+1];
-            invsdf = 1./(next_sf - sf);
-            mAmp = (nextA - A)*invsdf;
-            bAmp = A - mAmp*sf;
-            mPhi = (nextPhi - phi)*invsdf;
-            bPhi = phi - mPhi*sf;
-            // set the step counter to the update interval to force a
-            // reevaluation
-            kk = update_interval;
         }
-        if (kk == update_interval){
-            // update the amp and phase and h with their exact values
-            interpAmp = mAmp * f + bAmp;
-            interpPhi = mPhi * f + bPhi;
-            dPhi_re = cos(mPhi * df);
-            dPhi_im = sin(mPhi * df);
-            h_re = interpAmp * cos(interpPhi);
-            h_im = interpAmp * sin(interpPhi);
-            g_re = mAmp * df * cos(interpPhi);
-            g_im = mAmp * df * sin(interpPhi);
-            kk = 0;
-        }
-        else {
-            // compute h by incrementing the last h
-            incrh_re = h_re * dPhi_re - h_im * dPhi_im;
-            incrh_im = h_re * dPhi_im + h_im * dPhi_re;
-            incrg_re = g_re * dPhi_re - g_im * dPhi_im;
-            incrg_im = g_re * dPhi_im + g_im * dPhi_re;
-            h_re = incrh_re + incrg_re;
-            h_im = incrh_im + incrg_im;
-            g_re = incrg_re;
-            g_im = incrg_im;
-            kk += 1;
-        }
-        *outptr = h_re;
-        *(outptr+1) = h_im;
-        outptr += 2;
     }
+
+    // zero out the rest of the array
+    memset(outptr, 0, 2*(hlen-findex));
 """
 # for single precision
 _linear_decompress_code32 = _linear_decompress_code.replace('double', 'float')
@@ -451,7 +468,7 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
     if out is None:
         if df is None:
             raise ValueError("Either provide output memory or a df")
-        flen = int(numpy.ceil(sample_frequencies.max()/df+1))
+        hlen = int(numpy.ceil(sample_frequencies.max()/df+1))
         out = FrequencySeries(numpy.zeros(flen,
             dtype=_complex_dtypes[precision]), copy=False,
             delta_f=df)
@@ -460,15 +477,15 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         if out.precision == 'double' and precision == 'single':
             raise ValueError("cannot cast single precision to double")
         df = out.delta_f
-        flen = len(out)
+        hlen = len(out)
     if f_lower is None:
-        jmin = 0
+        imin = 0
         f_lower = sample_frequencies[0]
     else:
         if f_lower >= sample_frequencies.max():
             raise ValueError("f_lower is > than the maximum sample frequency")
-        jmin = int(numpy.searchsorted(sample_frequencies, f_lower))
-    imin = int(numpy.floor(f_lower/df))
+        imin = int(numpy.searchsorted(sample_frequencies, f_lower))
+    start_index = int(numpy.floor(f_lower/df))
     # interpolate the amplitude and the phase
     if interpolation == "linear":
         if precision == 'single':
@@ -479,8 +496,8 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         sflen = len(sample_frequencies)
         h = numpy.array(out.data, copy=False)
         delta_f = float(df)
-        inline(code, ['flen', 'sflen', 'delta_f', 'sample_frequencies',
-                      'amp', 'phase', 'h', 'imin', 'jmin'],
+        inline(code, ['h', 'hlen', 'sflen', 'delta_f', 'sample_frequencies',
+                      'amp', 'phase', 'start_index', 'imin'],
                extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] +\
                                   omp_flags,
                libraries=omp_libs)
