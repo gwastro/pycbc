@@ -1329,7 +1329,6 @@ class FileList(list):
             self._splitLists.append(FileList([]))
         
         # Sort the files
-
         for ix, currFile in enumerate(self):
             segExtent = currFile.segment_list.extent()
             segExtStart = float(segExtent[0])

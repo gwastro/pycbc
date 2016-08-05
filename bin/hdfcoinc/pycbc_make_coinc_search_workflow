@@ -140,8 +140,8 @@ cum_veto_files, veto_names, ind_cats = wf.get_cumulative_veto_group_files(\
                                             rdir['analysis_time/segment_data'],
                                             execute_now=False)
 
-final_veto_file, final_veto_name, ind_cats =\
-                                   wf.get_cumulative_veto_group_files(workflow, 
+final_veto_file, final_veto_name, ind_cats = \
+                                   wf.get_cumulative_veto_group_files(workflow,
                                             'segments-final-veto-group',
                                             veto_cat_files,
                                             rdir['analysis_time/segment_data'],
@@ -186,8 +186,8 @@ insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],
 # setup sngl trigger distribution fitting jobs
 # 'statfiles' is list of files used in calculating coinc statistic
 statfiles = []
-statfiles += wf.setup_trigger_fits(workflow, insps, hdfbank, final_veto_file,
-                                 final_veto_name)
+statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
+                                      final_veto_file, final_veto_name)
 
 # setup coinc for the filtering jobs
 full_insps = insps
