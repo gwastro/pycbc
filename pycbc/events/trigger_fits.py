@@ -225,7 +225,7 @@ def fit_above_thresh(distr, vals, thresh=None):
     value
     """
     vals = numpy.array(vals)
-    if thresh == None:
+    if thresh is None:
         thresh = min(vals)
     else:
         vals = vals[vals >= thresh]
@@ -260,10 +260,11 @@ def KS_test(distr, vals, alpha, thresh=None):
     probable under the hypothesis of a perfect fit
     """
     vals = numpy.array(vals)
-    if thresh == None:
+    if thresh is None:
         thresh = min(vals)
     else:
         vals = vals[vals >= thresh]
-    cdf_fn = lambda x: 1 - cum_fndict[distr](x, alpha, thresh)
+    def cdf_fn(x):
+        return 1 - cum_fndict[distr](x, alpha, thresh)
     return kstest(vals, cdf_fn)
 
