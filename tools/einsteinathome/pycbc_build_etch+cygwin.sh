@@ -390,8 +390,10 @@ else # if pycbc-preinst.tgz
 	    git clone https://github.com/scipy/scipy.git
 	    cd scipy
 	    git checkout v0.16.0
+	    git config user.name "Dummy"
+	    git config user.email "dummy@dummy.net"
 	    git cherry-pick 832baa20f0b5d521bcdf4784dda13695b44bb89f
-            if [ "$scipy_from" = "git-patched" ] ; then
+	    if [ "$scipy_from" = "git-patched" ] ; then
 		wget $wget_opts $atlas/PyCBC_Inspiral/0001-E-H-hack-always-use-dumb-shelve.patch
 		wget $wget_opts $atlas/PyCBC_Inspiral/0006-E-H-hack-_dumbdb-open-files-in-binary-mode.patch
 		git am 000*.patch
@@ -711,6 +713,8 @@ else
         git checkout v0.9.8
         # this adds the initialization of *.tp_base,
         # preserving the version for pycbc requirements
+        git config user.name "Dummy"
+        git config user.email "dummy@dummy.net"
         git cherry-pick 16c7eeff3fc2a5cca2c3ea0e259ee5f57abac65c
     fi
     python setup.py install --prefix="$PREFIX"
