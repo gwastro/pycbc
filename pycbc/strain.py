@@ -443,7 +443,7 @@ def insert_strain_option_group(parser, gps_times=True):
 
     data_reading_group.add_argument("--ringdown-injection-file", type=str,
                       help="(optional) Injection file used to add "
-                           "ringdown-only waveforms into the strain."
+                           "ringdown-only waveforms into the strain.")
 
     data_reading_group.add_argument("--injection-scale-factor", type=float,
                     default=1, help="Divide injections by this factor "
