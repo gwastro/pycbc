@@ -29,7 +29,9 @@
 import numpy as np
 import lal
 import lalsimulation as sim
+import h5py
 from pycbc.waveform import get_td_waveform, utils as wfutils
+from pycbc.waveform import ringdown_td_approximants
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import ligolw, table, lsctables
 from pycbc.types import float64, float32, TimeSeries
@@ -337,3 +339,112 @@ class SGBurstInjectionSet(object):
             add_injection(lalstrain, signal_lal, None)
 
         strain.data[:] = lalstrain.data.data[:]
+
+class RingdownInjectionSet(object):
+    """Manages a ringdown injection: reads injection from hdf file
+    and injects it into time series.
+
+    Parameters
+    ----------
+    hdf_file : string
+        Path to hdf file containing injection definitions.
+
+    Attributes
+    ----------
+    table
+    """
+
+    def __init__(self, hdf_file, **kwds):
+        self.name = hdf_file
+
+        injfile = h5py.File(hdf_file,'r')
+        pnames = map(str, injfile.keys())
+        self.table = dict([(p, injfile[p].value) for p in pnames])
+        injfile.close()
+
+        self.extra_args = kwds
+
+    def apply(self, strain, detector_name, distance_scale=1):
+        """Add injection (as seen by a particular detector) to a time series.
+
+        Parameters
+        ----------
+        strain : TimeSeries
+            Time series to inject signals into, of type float32 or float64.
+        detector_name : string
+            Name of the detector used for projecting injections.
+        distance_scale: {1, float}, optional
+            Factor to scale the distance of an injection with. The default is 
+            no scaling. 
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        TypeError
+            For invalid types of `strain`.
+        """
+
+        if not strain.dtype in (float32, float64):
+            raise TypeError("Strain dtype must be float32 or float64, not " \
+                    + str(strain.dtype))
+
+        lalstrain = strain.lal()
+        earth_travel_time = lal.REARTH_SI / lal.C_SI
+        t0 = float(strain.start_time) - earth_travel_time
+        t1 = float(strain.end_time) + earth_travel_time
+
+        # pick lalsimulation injection function
+        add_injection = injection_func_map[strain.dtype]
+
+        # Read injection parameters (for now, only one injection in file)
+        injection = self.table
+
+        signal = self.make_strain_from_inj_object(injection, strain.delta_t,
+                     detector_name, distance_scale=distance_scale)
+        signal = signal.astype(strain.dtype)
+        signal_lal = signal.lal()
+        add_injection(lalstrain, signal_lal, None)
+
+        strain.data[:] = lalstrain.data.data[:]
+
+    def make_strain_from_inj_object(self, inj, delta_t, detector_name,
+                                    distance_scale=1):
+        """Make a h(t) strain time-series from an injection object as read from
+        an hdf file.
+
+        Parameters
+        -----------
+        inj : injection object
+            The injection object to turn into a strain h(t).
+        delta_t : float
+            Sample rate to make injection at.
+        detector_name : string
+            Name of the detector used for projecting injections.
+        distance_scale: {1, float}, optional
+            Factor to scale the distance of an injection with. The default is 
+            no scaling. 
+
+        Returns
+        --------
+        signal : float
+            h(t) corresponding to the injection.
+        """
+        detector = Detector(detector_name)
+
+        # compute the waveform time series
+        hp, hc = ringdown_td_approximants[inj['approximant']](
+            delta_t=delta_t, **inj)
+        hp /= distance_scale
+        hc /= distance_scale
+
+        hp._epoch += inj['tc']
+        hc._epoch += inj['tc']
+
+        # compute the detector response and add it to the strain
+        signal = detector.project_wave(hp, hc,
+                             inj['ra'], inj['declination'], inj['polarization'])
+
+        return signal
