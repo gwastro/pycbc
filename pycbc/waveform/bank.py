@@ -163,13 +163,12 @@ class TemplateBank(object):
         fref = 30
         tau0_temp, tau3_temp= pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, fref)
         indices = []
-      
-        
+            
         for inj in injection_parameters:
             tau0_inj, tau3_inj= pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2, fref)    
             inj_indices = np.where(abs(tau0_temp - tau0_inj) <= threshold)[0]
             indices.append(inj_indices)
-            indices_combined= np.concatenate(indices)
+            indices_combined = np.concatenate(indices)
 
         indices_unique= np.unique(indices_combined)
         restricted= self.table[indices_unique]
