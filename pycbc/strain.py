@@ -28,7 +28,7 @@ from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 from pycbc.types import copy_opts_for_single_ifo
 from pycbc.frame import read_frame, query_and_read_frame
-from pycbc.inject import InjectionSet, SGBurstInjectionSet
+from pycbc.inject import InjectionSet, SGBurstInjectionSet, RingdownInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk
 import pycbc.psd
@@ -233,6 +233,12 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
 
+        if opt.ringdown_injection_file:
+            logging.info("Applying ringdown-only injection.")
+            injections = RingdownInjectionSet(opt.ringdown_injection_file)
+            injections.apply(strain, opt.channel_name[0:2],
+                             distance_scale=opt.injection_scale_factor)
+
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
 
@@ -317,13 +323,17 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
 
-                
+        if opt.ringdown_injection_file:
+            logging.info("Applying ringdown-only injection.")
+            injections = RingdownInjectionSet(opt.ringdown_injection_file)
+            injections.apply(strain, opt.channel_name[0:2],
+                             distance_scale=opt.injection_scale_factor)
 
         if precision == 'single':
             logging.info("Converting to float32")
             strain = (dyn_range_fac * strain).astype(pycbc.types.float32)
 
-    if opt.injection_file or opt.sgburst_injection_file:
+    if opt.injection_file or opt.sgburst_injection_file or opt.ringdown_injection_file:
         strain.injections = injections
 
     if opt.taper_data:
@@ -430,6 +440,10 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
                       help="(optional) Injection file used to add "
                       "sine-Gaussian burst waveforms into the strain")
+
+    data_reading_group.add_argument("--ringdown-injection-file", type=str,
+                      help="(optional) Injection file used to add "
+                           "ringdown-only waveforms into the strain."
 
     data_reading_group.add_argument("--injection-scale-factor", type=float,
                     default=1, help="Divide injections by this factor "
@@ -572,6 +586,11 @@ def insert_strain_option_group_multi_ifo(parser):
                       metavar='IFO:FILE',
                       help="(optional) Injection file used to add "
                       "sine-Gaussian burst waveforms into the strain")
+
+    data_reading_group.add_argument("--ringdown-injection-file", type=str,
+                    nargs="+", action=MultiDetOptionAction, metavar='IFO:FILE',
+                    help="(optional) Injection file used to add "
+                           "ringdown-only waveforms into the strain."
 
     data_reading_group.add_argument("--injection-scale-factor", type=float,
                     nargs="+", action=MultiDetOptionAction, metavar="IFO:VAL",
