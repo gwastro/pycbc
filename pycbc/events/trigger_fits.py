@@ -13,6 +13,8 @@ from __future__ import division
 # Public License for more details.
 
 """
+Tools for maximum likelihood fits to single trigger statistic values
+
 For some set of values above a threshold, e.g. trigger SNRs, the functions
 in this module perform maximum likelihood fits with 1-sigma uncertainties
 to various simple functional forms of PDF, all normalized to 1.
@@ -48,13 +50,15 @@ import numpy
 from scipy.stats import kstest
 
 def fit_exponential(vals, thresh):
-    '''
-    Maximum likelihood fit for the coefficient alpha for a distribution of
-    discrete values p(x) = alpha exp(-alpha (x-x_t)) above a threshold x_t.
+    """
+    Maximum likelihood fit to an exponential distribution
+
+    Fit the coefficient alpha for a distribution of discrete values 
+    p(x) = alpha exp(-alpha (x-x_t)) above a threshold x_t.
 
     vals: sequence of real numbers none of which lies below thresh
     thresh: threshold used in the fitting formula 
-    '''
+    """
     vals = numpy.array(vals)
     if min(vals) < thresh:
         raise RuntimeError("Values to be fit must all be above threshold!")
@@ -64,14 +68,15 @@ def fit_exponential(vals, thresh):
     return alpha, sigma_alpha
 
 def fit_rayleigh(vals, thresh):
-    '''
-    Maximum likelihood fit for the coefficient alpha for a distribution of
-    discrete values p(x) = alpha x exp(-alpha (x**2-x_t**2)/2) above a 
-    threshold x_t.
+    """
+    Maximum likelihood fit to a scaled Rayleigh distribution
+
+    Fit the coefficient alpha for a distribution of discrete values 
+    p(x) = alpha x exp(-alpha (x**2-x_t**2)/2) above a threshold x_t.
 
     vals: sequence of real numbers none of which lies below thresh
     thresh: threshold used in the fitting formula
-    '''
+    """
     vals = numpy.array(vals)
     if min(vals) < thresh:
         raise RuntimeError("Values to be fit must all be above threshold!")
@@ -81,14 +86,15 @@ def fit_rayleigh(vals, thresh):
     return alpha, sigma_alpha
 
 def fit_power(vals, thresh):
-    '''
-    Maximum likelihood fit for the coefficient alpha for a distribution of
-    discrete values p(x) = ((alpha-1)/x_t) (x/x_t)**-alpha above a threshold 
-    x_t.
+    """
+    Maximum likelihood fit to a power law
+
+    Fit the coefficient alpha for a distribution of discrete values 
+    p(x) = ((alpha-1)/x_t) (x/x_t)**-alpha above a threshold x_t.
 
     vals: sequence of real numbers none of which lies below thresh
     thresh: threshold used in the fitting formula
-    '''
+    """
     vals = numpy.array(vals)
     if min(vals) < thresh:
         raise RuntimeError("Values to be fit must all be above threshold!")
@@ -98,7 +104,7 @@ def fit_power(vals, thresh):
     return alpha, sigma_alpha
 
 def expfit(xvals, alpha, thresh):
-    '''
+    """
     The fitted exponential function normalized to 1 above threshold
 
     xvals: the values at which the fit PDF is to be evaluated
@@ -106,7 +112,7 @@ def expfit(xvals, alpha, thresh):
     thresh: threshold value for the fitting process 
 
     To normalize to a given total count multiply by the count.
-    '''
+    """
     xvals = numpy.array(xvals)
     fit = alpha * numpy.exp(-alpha * (xvals - thresh))
     # set fitted values below threshold to 0
@@ -114,12 +120,11 @@ def expfit(xvals, alpha, thresh):
     return fit
 
 def expfit_cum(xvals, alpha, thresh):
-    '''
+    """
     The integral of the exponential fit above a given value (reverse CDF)
-    normalized to 1 above threshold
 
-    To normalize to a given total count multiply by the count.
-    '''
+    Distributions is normalized to 1 above threshold
+    """
     xvals = numpy.array(xvals)
     cum_fit = numpy.exp(-alpha * (xvals - thresh))
     # set fitted values below threshold to 0
@@ -127,7 +132,7 @@ def expfit_cum(xvals, alpha, thresh):
     return cum_fit
 
 def rayleighfit(xvals, alpha, thresh):
-    '''
+    """
     The fitted Rayleigh function normalized to 1 above threshold
 
     xvals: the values at which the fit PDF is to be evaluated
@@ -135,7 +140,7 @@ def rayleighfit(xvals, alpha, thresh):
     thresh: threshold value for the fitting process 
 
     To normalize to a given total count multiply by the count.
-    '''
+    """
     if thresh < 0:
         raise RuntimeError('Threshold for Rayleigh distribution cannot be negative!')
     xvals = numpy.array(xvals)
@@ -145,12 +150,11 @@ def rayleighfit(xvals, alpha, thresh):
     return fit
 
 def rayleighfit_cum(xvals, alpha, thresh):
-    '''
+    """
     The integral of the Rayleigh fit above the x-values given (reverse CDF)
-    normalized to 1 above threshold
 
-    To normalize to a given total count multiply by the count.
-    '''
+    Distribution is normalized to 1 above threshold
+    """
     if thresh < 0:
         raise RuntimeError('Threshold for Rayleigh distribution cannot be negative!')
     xvals = numpy.array(xvals)
@@ -160,7 +164,7 @@ def rayleighfit_cum(xvals, alpha, thresh):
     return cum_fit
 
 def powerfit(xvals, alpha, thresh):
-    '''
+    """
     The fitted power-law function normalized to 1 above threshold
 
     xvals: the values at which the fit PDF is to be evaluated
@@ -168,7 +172,7 @@ def powerfit(xvals, alpha, thresh):
     thresh: threshold value for the fitting process 
 
     To normalize to a given total count multiply by the count.
-    '''
+    """
     xvals = numpy.array(xvals)
     fit = (alpha - 1.) * xvals**(-alpha) * thresh**(alpha - 1.)
     # set fitted values below threshold to 0
@@ -176,12 +180,11 @@ def powerfit(xvals, alpha, thresh):
     return fit
 
 def powerfit_cum(xvals, alpha, thresh):
-    '''
+    """
     The integral of the power-law fit above the x-values given (reverse CDF)
-    normalized to 1 above threshold
 
-    To normalize to a given total count multiply by the count.
-    '''
+    Distribution is normalized to 1 above threshold
+    """
     xvals = numpy.array(xvals)
     cum_fit = xvals**(1. - alpha) * thresh**(alpha - 1.)
     # set fitted values below threshold to 0
@@ -207,11 +210,12 @@ cum_fndict = {
 }
 
 def fit_above_thresh(distr, vals, thresh=None):
-    '''
-    Maximum likelihood fit for the coefficient alpha for a distribution of
-    discrete values p(x) = alpha exp(-alpha*x) above a given threshold.
-    Values below threshold will be discarded.  If no threshold is specified, 
-    the minimum sample value will be used.
+    """
+    Maximum likelihood fit for the coefficient alpha
+
+    Fitting a distribution of discrete values p(x) = alpha exp(-alpha*x) 
+    above a given threshold.  Values below threshold will be discarded.
+    If no threshold is specified the minimum sample value will be used.
 
     distr: name of distribution, either 'exponential' or 'rayleigh' or 'power'
 
@@ -219,7 +223,7 @@ def fit_above_thresh(distr, vals, thresh=None):
 
     thresh: threshold to apply before fitting - if thresh=None, use the lowest
     value
-    '''
+    """
     vals = numpy.array(vals)
     if thresh == None:
         thresh = min(vals)
@@ -228,9 +232,7 @@ def fit_above_thresh(distr, vals, thresh=None):
     return fitdict[distr](vals, thresh)
 
 def tail_threshold(vals, N=1000):
-    '''
-    Determine a threshold above which there are N louder values
-    '''
+    """Determine a threshold above which there are N louder values"""
     vals = numpy.array(vals)
     if len(vals) < N:
         raise RuntimeError('Not enough input values to determine threshold')
@@ -238,28 +240,25 @@ def tail_threshold(vals, N=1000):
     return min(vals[-N:])
 
 def fit_fn(distr, xvals, alpha, thresh):
-    '''
-    The fitted function normalized to 1 above threshold
-    '''
+    """The fitted function normalized to 1 above threshold"""
     return fndict[distr](xvals, alpha, thresh)
 
 def cum_fit(distr, xvals, alpha, thresh):
-    '''
-    The integral of the fitted function above a given value (reverse CDF)
-    normalized to 1 above threshold
-    '''
+    """Integral of the fitted function above a given value (reverse CDF) normalized to 1 above threshold"""
     return cum_fndict[distr](xvals, alpha, thresh)
 
 def KS_test(distr, vals, alpha, thresh=None):
-    '''
-    Perform Kolmogorov-Smirnov test of the given set of discrete values 
-    above a given threshold for the fitted distribution function
+    """
+    Perform Kolmogorov-Smirnov test for fitted distribution
+
+    Compare the given set of discrete values above a given threshold to the 
+    fitted distribution function
     ex.: KS_test('exponential', vals, alpha, thresh)
     If no threshold is specified, the minimum sample value will be used.
 
     Returns the KS test statistic and its p-value: lower p means less
     probable under the hypothesis of a perfect fit
-    '''
+    """
     vals = numpy.array(vals)
     if thresh == None:
         thresh = min(vals)
