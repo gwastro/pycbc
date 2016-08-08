@@ -590,7 +590,7 @@ def insert_strain_option_group_multi_ifo(parser):
     data_reading_group.add_argument("--ringdown-injection-file", type=str,
                     nargs="+", action=MultiDetOptionAction, metavar='IFO:FILE',
                     help="(optional) Injection file used to add "
-                           "ringdown-only waveforms into the strain."
+                           "ringdown-only waveforms into the strain.")
 
     data_reading_group.add_argument("--injection-scale-factor", type=float,
                     nargs="+", action=MultiDetOptionAction, metavar="IFO:VAL",

@@ -362,8 +362,6 @@ class RingdownInjectionSet(object):
         self.table = dict([(p, injfile[p].value) for p in pnames])
         injfile.close()
 
-        self.extra_args = kwds
-
     def apply(self, strain, detector_name, distance_scale=1):
         """Add injection (as seen by a particular detector) to a time series.
 

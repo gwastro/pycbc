@@ -84,10 +84,7 @@ parser.add_argument('--polarization', required=True, type=float,
 opts = parser.parse_args()
 
 # Check that the approximant given is a valid rindown approximant
-approxs = ringdown.ringdown_fd_approximants.copy()
-approxs.update(ringdown.ringdown_td_approximants)
-
-if opts.approximant not in approxs.keys():
+if opts.approximant not in ringdown.ringdown_fd_approximants.keys()+ringdown.ringdown_td_approximants.keys():
     raise ValueError('Invalid ringdown approximant')
 
 # Write hdf file with the parameters for the injection
