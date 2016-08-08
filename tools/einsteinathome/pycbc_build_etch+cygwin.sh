@@ -238,7 +238,8 @@ echo "WORKSPACE='$WORKSPACE'" # for Jenkins jobs
 pypi="http://pypi.python.org/packages/source"
 gitlab="https://gitlab.aei.uni-hannover.de/einsteinathome"
 atlas="https://www.atlas.aei.uni-hannover.de/~bema"
-albert=http://albert.phys.uwm.edu/download
+albert="http://albert.phys.uwm.edu/download"
+aei="http://www.aei.mpg.de/~bema"
 
 # circumvent old certificate chains on old systems
 export GIT_SSL_NO_VERIFY=true
@@ -278,7 +279,7 @@ else # if pycbc-preinst.tgz
     # pycbc/include/openssl/x509.h:751: note: previous declaration X509_REVOKED_ was here
 	p=openssl-1.0.1p
 	echo -e "\\n\\n>> [`date`] building $p"
-	test -r $p.tar.gz || wget $wget_opts $atlas/tarballs/$p.tar.gz
+	test -r $p.tar.gz || wget $wget_opts $aei/$p.tar.gz
 	rm -rf $p
 	tar -xzvf $p.tar.gz  &&
 	cd $p &&
@@ -607,7 +608,7 @@ Libs: -L${libdir} -lhdf5' |
     if $build_swig; then
 	p=swig-3.0.7
 	echo -e "\\n\\n>> [`date`] building $p"
-	test -r $p.tar.gz || wget $wget_opts "$atlas/tarballs/$p.tar.gz"
+	test -r $p.tar.gz || wget $wget_opts "$aei/$p.tar.gz"
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
@@ -785,7 +786,7 @@ elif $build_pegasus_source; then
     tar -czf $p-lib-pegasus-python.tgz $p/lib/pegasus/python $p/release-tools $p/build.properties
     $cleanup && rm -rf $p
 else
-    wget $wget_opts "$atlas/tarballs/$p-lib-pegasus-python.tgz"
+    wget $wget_opts "$aei/$p-lib-pegasus-python.tgz"
 fi
 echo -e "\\n\\n>> [`date`] building $p"
 tar -xzf $p-lib-pegasus-python.tgz
