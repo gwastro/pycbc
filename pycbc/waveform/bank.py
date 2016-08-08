@@ -196,6 +196,20 @@ class LiveFilterBank(TemplateBank):
             self.hash_lookup[hash_value] = i
 
     def round_up(self, num):
+        """Determine the length to use for this waveform by rounding.
+
+        Parameters
+        ----------
+        num : int
+            Proposed size of waveform in seconds
+
+        Returns
+        -------
+        size: int
+            The rounded size to use for the waveform buffer in seconds. This
+        is calculaed using an internal `increment` attribute, which determines
+        the discreteness of the rounding.
+        """
         inc = self.increment
         size = numpy.ceil(num / self.sample_rate / inc) * self.sample_rate * inc
         return size
@@ -206,6 +220,18 @@ class LiveFilterBank(TemplateBank):
         return instance
 
     def id_from_hash(self, hash_value):
+        """Get the index of this template based on its hash value
+
+        Parameters
+        ----------
+        hash : int
+            Value of the template hash
+    
+        Returns
+        --------
+        index : int
+            The ordered index that this template has in the template bank.
+        """   
         return self.hash_lookup[hash_value]        
 
     def __getitem__(self, index):
@@ -357,7 +383,8 @@ def find_variable_start_frequency(approximant, parameters, f_start, max_length,
     f = f_start - delta_f
     while l > max_length:
         f += delta_f
-        l = pycbc.waveform.get_waveform_filter_length_in_time(approximant, parameters, f_lower=f)
+        l = pycbc.waveform.get_waveform_filter_length_in_time(approximant,
+                                                      parameters, f_lower=f)
     return f
 
 
