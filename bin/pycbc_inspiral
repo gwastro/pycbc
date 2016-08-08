@@ -26,6 +26,8 @@ import pycbc.fft.fftw, pycbc.version
 import pycbc.opt
 import pycbc.weave
 
+
+
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
 
@@ -143,6 +145,9 @@ parser.add_argument("--keep-loudest-interval", type=float,
 parser.add_argument("--keep-loudest-num", type=int,
                     help="Number of triggers to keep from each maximization interval")
 parser.add_argument("--gpu-callback-method", default='none')
+parser.add_argument("--threshold-template-filtering", type= float)
+
+
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -169,6 +174,7 @@ pycbc.init_logging(opt.verbose)
 ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, DYN_RANGE_FAC)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
+      
 
 with ctx:
     fft.from_cli(opt)
@@ -177,6 +183,7 @@ with ctx:
     flen = strain_segments.freq_len
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
+    
 
     logging.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
@@ -253,13 +260,19 @@ with ctx:
     logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
         seg /= seg.psd
-
+  
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
                     flow, dtype=complex64, phase_order=opt.order,
                     taper=opt.taper_template, approximant=opt.approximant,
                     out=template_mem, max_template_length=opt.max_template_length)
 
+    if opt.threshold_template_filtering is not None:
+        logging.info("Template Bank Size Before Cut: %s", len(bank))
+        bank.table = bank.template_thinning(gwstrain.injections,
+                                            opt.threshold_template_filtering)
+        logging.info("Template Bank Size After Cut: %s", len(bank))
+      
     # Note: in the class-based approach used now, 'template' is not explicitly used
     # within the loop.  Rather, the iteration simply fills the memory specifed in
     # the 'template_mem' argument to MatchedFilterControl with the next template
