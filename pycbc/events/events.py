@@ -39,11 +39,14 @@ from . import coinc
 def threshold(series, value):
     """Return list of values and indices values over threshold in series.
     """
+    return
+    
 @schemed("pycbc.events.threshold_")
 def threshold_only(series, value):
     """Return list of values and indices whose values in series are
        larger (in absolute value) than value
     """
+    return
 
 #FIXME: This should be under schemed, but I don't understand that yet!
 def threshold_real_numpy(series, value):
@@ -56,6 +59,7 @@ def threshold_real_numpy(series, value):
 def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series.
     """
+    return
 
 @schemed("pycbc.events.threshold_")
 def _threshold_cluster_factory(series):
