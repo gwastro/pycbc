@@ -152,21 +152,12 @@ for ii in range(imin, imax):
             args.compression_algorithm))
             
     # compress
-    sample_points, comp_amp, comp_phase, mismatch = compress.compress_waveform(
+    hcompressed = compress.compress_waveform(
         htilde, sample_points, args.precision, args.interpolation,
         decomp_scratch=decomp_scratch)
 
-    mismatches[ii-imin] = mismatch
-
     # save results
-    output['compressed_waveforms/%i/amplitude' %(ii-imin)] = comp_amp.numpy()
-    output['compressed_waveforms/%i/phase' %(ii-imin)] = comp_phase.numpy()
-    output['compressed_waveforms/%i/frequency' %(ii-imin)] = sample_points
-    output['compressed_waveforms/%i' %(ii - imin)].attrs['mismatch'] = mismatch
-
-# save metadata
-output['compressed_waveforms'].attrs['interpolation'] = args.interpolation
-output['compressed_waveforms'].attrs['precision'] = args.precision
+    hcompressed.write_to_hdf(output, tmplt.template_hash)
 
 logging.info("finished")
 output.close()
