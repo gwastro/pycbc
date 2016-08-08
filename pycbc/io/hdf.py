@@ -21,7 +21,7 @@ from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, pnutils
 
-class HFile(h5py.File):   
+class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
 
@@ -52,12 +52,12 @@ class HFile(h5py.File):
         """
 
         # get references to each array
-        refs = {}        
+        refs = {}
         data = {}
         for arg in args:
             refs[arg] = self[arg]
             data[arg] = []
-        
+
         # To conserve memory read the array in chunks
         chunksize = kwds.get('chunksize', int(1e6))
         size = len(refs[arg])
@@ -65,7 +65,7 @@ class HFile(h5py.File):
         i = 0
         while i < size:
             r = i + chunksize if i + chunksize < size else size
-         
+
             #Read each chunks worth of data and find where it passes the function
             partial = [refs[arg][i:r] for arg in args]
             keep = fcn(*partial)
@@ -84,8 +84,8 @@ class HFile(h5py.File):
 
 
 class DictArray(object):
-    """ Utility for organizing sets of arrays of equal length. 
-    
+    """ Utility for organizing sets of arrays of equal length.
+
     Manages a dictionary of arrays of equal length. This can also
     be instantiated with a set of hdf5 files and the key values. The full
     data is always in memory and all operations create new instances of the
@@ -93,7 +93,7 @@ class DictArray(object):
     """
     def __init__(self, data=None, files=None, groups=None):
         """ Create a DictArray
-        
+
         Parameters
         ----------
         data: dict, optional
@@ -104,18 +104,18 @@ class DictArray(object):
             List of keys into each file. Required by the files options.
         """
         self.data = data
-        
+
         if files:
             self.data = {}
             for g in groups:
                 self.data[g] = []
-            
+
             for f in files:
                 d = HFile(f)
                 for g in groups:
                     if g in d:
                         self.data[g].append(d[g][:])
-                    
+
             for k in self.data:
                 if not len(self.data[k]) == 0:
                     self.data[k] = np.concatenate(self.data[k])
@@ -142,7 +142,7 @@ class DictArray(object):
         for k in self.data:
             data[k] = self.data[k][idx]
         return self._return(data=data)
-   
+
     def remove(self, idx):
         """ Return a new DictArray that does not contain the indexed values
         """
@@ -155,10 +155,10 @@ class DictArray(object):
 class StatmapData(DictArray):
     def __init__(self, data=None, seg=None, attrs=None,
                        files=None):
-        groups = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2', 
+        groups = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2',
                'template_id', 'decimation_factor', 'timeslide_id']
         super(StatmapData, self).__init__(data=data, files=files, groups=groups)
-        
+
         if data:
             self.seg=seg
             self.attrs=attrs
@@ -181,19 +181,19 @@ class StatmapData(DictArray):
         interval = self.attrs['timeslide_interval']
         cid = cluster_coincs(self.stat, self.time1, self.time2,
                                  self.timeslide_id, interval, window)
-        return self.select(cid) 
+        return self.select(cid)
 
     def save(self, outname):
         f = HFile(outname, "w")
         for k in self.attrs:
             f.attrs[k] = self.attrs[k]
-            
+
         for k in self.data:
-            f.create_dataset(k, data=self.data[k], 
+            f.create_dataset(k, data=self.data[k],
                       compression='gzip',
                       compression_opts=9,
                       shuffle=True)
-            
+
 
         for key in self.seg.keys():
             f['segments/%s/start' % key] = self.seg[key]['start'][:]
@@ -209,8 +209,8 @@ class FileData(object):
         group : string
             Name of group to be read from the file
         columnlist : list of strings
-            Names of columns to be read; if None, use all existing columns 
-        filter_func : string 
+            Names of columns to be read; if None, use all existing columns
+        filter_func : string
             String should evaluate to a Boolean expression using attributes
             of the class instance derived from columns: ex. 'self.snr < 6.5'
         """
@@ -314,12 +314,13 @@ class DataFromFiles(object):
 
 class ReadSnglsByTemplate(object):
 
-    def __init__(self, filename, bank=None, segment_name=None, veto_files=[]):
+    def __init__(self, filename, bank=None, segment_name=None, veto_files=None):
         self.filename = filename
         self.file = h5py.File(filename, 'r')
         self.ifo = self.file.keys()[0]
         self.valid = None
         self.bank = h5py.File(bank) if bank else None
+        veto_files = veto_files if veto_files else []
 
         # Determine the segments which define the boundaries of valid times
         # to use triggers
@@ -337,34 +338,34 @@ class ReadSnglsByTemplate(object):
 
     def get_data(self, col, num):
         """ Get a column of data for template with id 'num'
-        
+
         Parameters
         ----------
         col: str
             Name of column to read
         num: int
             The template id to read triggers for
-        
+
         Returns
         -------
         data: numpy.ndarray
-            The requested column of data       
+            The requested column of data
         """
         ref = self.file['%s/%s_template' % (self.ifo, col)][num]
         return self.file['%s/%s' % (self.ifo, col)][ref]
 
     def set_template(self, num):
         """ Set the active template to read from
-        
+
         Parameters
         ----------
         num: int
             The template id to read triggers for
-        
+
         Returns
         -------
         trigger_id: numpy.ndarray
-            The indices of this templates triggers
+            The indices of this template's triggers
         """
         self.template_num = num
         times = self.get_data('end_time', num)
@@ -391,16 +392,16 @@ class ReadSnglsByTemplate(object):
     def __getitem__(self, col):
         """ Return the column of data for current active template after
         applying vetoes
-        
+
         Parameters
         ----------
         col: str
             Name of column to read
-        
+
         Returns
         -------
         data: numpy.ndarray
-            The requested column of data  
+            The requested column of data
         """
         if self.template_num == None:
             raise ValueError('You must call set_template to first pick the '
@@ -430,7 +431,7 @@ class SingleDetTriggers(object):
         if veto_file:
             logging.info('Applying veto segments')
             # veto_mask is an array of indices into the trigger arrays
-            # giving the surviving triggers 
+            # giving the surviving triggers
             logging.info('%i triggers before vetoes',
                           len(self.trigs['end_time'][:]))
             self.veto_mask, segs = events.veto.indices_outside_segments(
@@ -466,7 +467,7 @@ class SingleDetTriggers(object):
 
     def checkbank(self, param):
         if self.bank == {}:
-            return RuntimeError("Can't get %s values without a bank file" 
+            return RuntimeError("Can't get %s values without a bank file"
                                                                        % param)
 
     @classmethod
@@ -497,7 +498,7 @@ class SingleDetTriggers(object):
         new_times = []
         new_index = []
         for curr_idx in index:
-            curr_time = times[curr_idx] 
+            curr_time = times[curr_idx]
             for time in new_times:
                 if abs(curr_time - time) < cluster_window:
                     break
