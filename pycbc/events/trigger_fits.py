@@ -57,9 +57,9 @@ fitalpha_dict = {
 
 # measurement standard deviation = (-d^2 log L/d alpha^2)^(-1/2)
 fitstd_dict = {
-    'exponential' : lambda vals, thresh : alpha / len(vals)**0.5,
-    'rayleigh'    : lambda vals, thresh : alpha / len(vals)**0.5,
-    'power'       : lambda vals, thresh : (alpha - 1.) / len(vals)**0.5
+    'exponential' : lambda vals, alpha : alpha / len(vals)**0.5,
+    'rayleigh'    : lambda vals, alpha : alpha / len(vals)**0.5,
+    'power'       : lambda vals, alpha : (alpha - 1.) / len(vals)**0.5
 }
 
 def fit_above_thresh(distr, vals, thresh=None):
@@ -94,7 +94,8 @@ def fit_above_thresh(distr, vals, thresh=None):
         thresh = min(vals)
     else:
         vals = vals[vals >= thresh]
-    return fitalpha_dict[distr](vals, thresh), fitstd_dict[distr](vals, thresh)
+    alpha = fitalpha_dict[distr](vals, thresh)
+    return alpha, fitstd_dict[distr](vals, alpha)
 
 
 fitfn_dict = {
