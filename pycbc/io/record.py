@@ -1284,7 +1284,11 @@ class _FieldArrayWithDefaults(FieldArray):
             # no names are specified in the following initialization, this
             # block of code is skipped)
             arr = cls(1, field_kwargs=field_kwargs)
-            names = get_needed_fieldnames(arr, names)
+            # try to perserve order
+            sortdict = dict([[nm, ii] for ii,nm in enumerate(names)])
+            names = list(get_needed_fieldnames(arr, names))
+            names.sort(key=lambda x: sortdict[x] if x in sortdict
+                else len(names))
             # add the fields as the dtype argument for initializing 
             kwargs['dtype'] = [(fld, default_fields[fld]) for fld in names]
         if 'dtype' not in kwargs:
@@ -1321,7 +1325,11 @@ class _FieldArrayWithDefaults(FieldArray):
         default_fields = self.default_fields(include_virtual=False, **kwargs)
         # parse out any virtual fields
         arr = self.__class__(1, field_kwargs=kwargs)
-        names = get_needed_fieldnames(arr, names)
+        # try to perserve order
+        sortdict = dict([[nm, ii] for ii,nm in enumerate(names)])
+        names = list(get_needed_fieldnames(arr, names))
+        names.sort(key=lambda x: sortdict[x] if x in sortdict
+            else len(names))
         fields = [(name, default_fields[name]) for name in names]
         arrays = []
         names = []
