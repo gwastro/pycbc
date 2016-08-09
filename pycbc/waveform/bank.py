@@ -36,9 +36,6 @@ import pycbc.io
 from copy import copy
 import numpy as np
 
-
-
-fref= 30
 def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
     """
@@ -53,21 +50,29 @@ def sigma_cached(self, psd):
             if self.approximant not in psd.sigmasq_vec:
                 psd.sigmasq_vec[self.approximant] = pycbc.waveform.get_waveform_filter_norm(
                      self.approximant, psd, len(psd), psd.delta_f, self.f_lower)
+    
+            if not hasattr(self, 'sigma_scale'):                
+                # Get an amplitude normalization (mass dependant constant norm)
+                amp_norm = pycbc.waveform.get_template_amplitude_norm(
+                                     self.params, approximant=self.approximant)
+                amp_norm = 1 if amp_norm is None else amp_norm
+                self.sigma_scale = (DYN_RANGE_FAC * amp_norm) ** 2.0
                 
-            # Get an amplitude normalization (mass dependant constant norm)
-            amp_norm = pycbc.waveform.get_template_amplitude_norm(
-                                 self.params, approximant=self.approximant)
-            amp_norm = 1 if amp_norm is None else amp_norm
-            scale = DYN_RANGE_FAC * amp_norm
-            self._sigmasq[key] = psd.sigmasq_vec[self.approximant][self.end_idx] * (scale) **2
+                
+            self._sigmasq[key] = psd.sigmasq_vec[self.approximant][self.end_idx] * self.sigma_scale
 
         else:
+            if not hasattr(self, 'sigma_view'):
+                from pycbc.filter.matchedfilter import get_cutoff_indices
+                N = (len(self) -1) * 2
+                kmin, kmax = get_cutoff_indices(self.f_lower, self.end_frequency, self.delta_f, N)
+                self.sslice = slice(kmin, kmax)
+                self.sigma_view = self[self.sslice].squared_norm() * 4.0 * self.delta_f
+        
             if not hasattr(psd, 'invsqrt'):
-                psd.invsqrt = 1.0 / psd ** 0.5
-
-            self._sigmasq[key] = sigmasq(self * psd.invsqrt,
-                                            low_frequency_cutoff=self.f_lower, 
-                                            high_frequency_cutoff=self.end_frequency)                    
+                psd.invsqrt = 1.0 / psd[self.sslice]
+                
+            return self.sigma_view.inner(psd.invsqrt)                 
     return self._sigmasq[key]
     
 # dummy class needed for loading LIGOLW files
@@ -136,12 +141,12 @@ class TemplateBank(object):
     def approximant(self, index):
         """ Return the name of the approximant ot use at the given index
         """
-    	if self.approximant_str is not None:
-        	if 'params' in self.approximant_str:
-                	t = type('t', (object,), {'params' : self.table[index]})
-                	approximant = str(self.parse_option(t, self.approximant_str)) 
-            	else:
-                	approximant = self.approximant_str
+        if self.approximant_str is not None:
+            if 'params' in self.approximant_str:
+                t = type('t', (object,), {'params' : self.table[index]})
+                approximant = str(self.parse_option(t, self.approximant_str)) 
+            else:
+                approximant = self.approximant_str
         else:
             raise ValueError("Reading approximant from template bank not yet supported")
 
@@ -149,79 +154,107 @@ class TemplateBank(object):
 
     def __len__(self):
         return len(self.table)
-        
+
     def template_thinning(self, injection_parameters, threshold):
-    	from pycbc.pnutils import mass1_mass2_to_tau0_tau3
+        from pycbc.pnutils import mass1_mass2_to_tau0_tau3
         m1= self.table['mass1']
         m2= self.table['mass2']
-        thinning_bank=[]
+        thinning_bank = []
+        fref = 30
         tau0_temp, tau3_temp= pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, fref)
         indices = []
-      
-        
-    	for inj in injection_parameters:
             
-    		tau0_inj, tau3_inj= pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2, fref)
-                
-		inj_indices = np.where(abs(tau0_temp - tau0_inj) <= threshold)[0]
-                indices.append(inj_indices)
-                indices_combined= np.concatenate(indices)
-		indices_unique= np.unique(indices_combined)
-		restricted= self.table[indices_unique]
-						
-		return restricted 
+        for inj in injection_parameters:
+            tau0_inj, tau3_inj= pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2, fref)    
+            inj_indices = np.where(abs(tau0_temp - tau0_inj) <= threshold)[0]
+            indices.append(inj_indices)
+            indices_combined = np.concatenate(indices)
 
-		
-	    
+        indices_unique= np.unique(indices_combined)
+        restricted= self.table[indices_unique]
+        return restricted 
 
-	class LiveFilterBank(TemplateBank):
-	    def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
-			       approximant=None,
-			       **kwds):
+class LiveFilterBank(TemplateBank):
+    def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
+                       approximant=None, increment=8,
+                       **kwds):
 
-		self.f_lower = f_lower
-		self.filename = filename
-		self.sample_rate = sample_rate
-		self.minimum_buffer = minimum_buffer
+        self.increment = increment
+        self.f_lower = f_lower
+        self.filename = filename
+        self.sample_rate = sample_rate
+        self.minimum_buffer = minimum_buffer
 
-		super(LiveFilterBank, self).__init__(filename, approximant=approximant, **kwds)
+        super(LiveFilterBank, self).__init__(filename, approximant=approximant, **kwds)
 
-		from pycbc.pnutils import mass1_mass2_to_mchirp_eta
-		self.table = sorted(self.table, key=lambda t: mass1_mass2_to_mchirp_eta(t.mass1, t.mass2)[0])        
+        from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+        self.table = sorted(self.table, key=lambda t: mass1_mass2_to_mchirp_eta(t.mass1, t.mass2)[0])
 
-	    def round_up(self, num):
-		inc = 8
-		size = numpy.ceil(num / self.sample_rate / inc) * self.sample_rate * inc
-		return size
+        self.hash_lookup = {}
+        for i, p in enumerate(self.table):
+            hash_value =  hash((p.mass1, p.mass2, p.spin1z, p.spin2z))
+            self.hash_lookup[hash_value] = i
 
-	    def getslice(self, sindex):
-		instance = copy(self)
-		instance.table = self.table[sindex]
-		return instance
+    def round_up(self, num):
+        """Determine the length to use for this waveform by rounding.
 
-	    def __getitem__(self, index):
-		if isinstance(index, slice):
-		    return self.getslice(index)
+        Parameters
+        ----------
+        num : int
+            Proposed size of waveform in seconds
 
-		approximant = self.approximant(index)
-		f_end = self.end_frequency(index)
+        Returns
+        -------
+        size: int
+            The rounded size to use for the waveform buffer in seconds. This
+        is calculaed using an internal `increment` attribute, which determines
+        the discreteness of the rounding.
+        """
+        inc = self.increment
+        size = numpy.ceil(num / self.sample_rate / inc) * self.sample_rate * inc
+        return size
 
-		# Determine the length of time of the filter, rounded up to
-		# nearest power of two
-		min_buffer = .5 + self.minimum_buffer
-	    
-		from pycbc.waveform.waveform import props
-		buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, f_lower=self.f_lower, 
-									      **props(self.table[index]))
+    def getslice(self, sindex):
+        instance = copy(self)
+        instance.table = self.table[sindex]
+        return instance
 
-		
-		tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
-		flen = tlen / 2 + 1
+    def id_from_hash(self, hash_value):
+        """Get the index of this template based on its hash value
 
-		delta_f = self.sample_rate / float(tlen)
+        Parameters
+        ----------
+        hash : int
+            Value of the template hash
+    
+        Returns
+        --------
+        index : int
+            The ordered index that this template has in the template bank.
+        """   
+        return self.hash_lookup[hash_value]        
 
-		if f_end is None or f_end >= (flen * delta_f):
-            		f_end = (flen-1) * delta_f
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return self.getslice(index)
+
+        approximant = self.approximant(index)
+        f_end = self.end_frequency(index)
+
+        # Determine the length of time of the filter, rounded up to
+        # nearest power of two
+        min_buffer = .5 + self.minimum_buffer
+    
+        from pycbc.waveform.waveform import props
+        buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, f_lower=self.f_lower, 
+                                                                      **props(self.table[index]))
+        tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
+        flen = tlen / 2 + 1
+
+        delta_f = self.sample_rate / float(tlen)
+
+        if f_end is None or f_end >= (flen * delta_f):
+            f_end = (flen-1) * delta_f
 
         logging.info("Generating %s, %ss, %i" % (approximant, 1.0/delta_f, index))
 
@@ -257,8 +290,8 @@ class TemplateBank(object):
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
         htilde._sigmasq = {}
 
-        htilde.id = hash((htilde.params.mass1, htilde.params.mass2, 
-                          htilde.params.spin1z, htilde.params.spin2z))
+        htilde.id = self.id_from_hash(hash((htilde.params.mass1, htilde.params.mass2, 
+                          htilde.params.spin1z, htilde.params.spin2z)))
         return htilde
 
 class FilterBank(TemplateBank):
@@ -350,7 +383,8 @@ def find_variable_start_frequency(approximant, parameters, f_start, max_length,
     f = f_start - delta_f
     while l > max_length:
         f += delta_f
-        l = pycbc.waveform.get_waveform_filter_length_in_time(approximant, parameters, f_lower=f)
+        l = pycbc.waveform.get_waveform_filter_length_in_time(approximant,
+                                                      parameters, f_lower=f)
     return f
 
 
@@ -399,8 +433,7 @@ class FilterBankSkyMax(TemplateBank):
         else:
             f_low = self.f_lower
 
-        logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low
-))
+        logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
 
         # What does this do???
         poke1 = tempoutplus.data
