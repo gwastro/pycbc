@@ -72,8 +72,6 @@ parser.add_argument('--f-lower', type=float,
 parser.add_argument('--f-final', type=float, 
                     help='Ending frequency of the output frequency series '
                          'for frequency domain approximants.')
-parser.add_argument('--distance', required=True, type=float,
-                    help='Distance in Mpc for detector frame waveform generator class.')
 parser.add_argument('--ra', required=True, type=float,
                     help='Right ascension for detector frame waveform generator class.')
 parser.add_argument('--dec', required=True, type=float,
@@ -92,7 +90,6 @@ injection = h5py.File('%s' %opts.output, 'w')
 # Store common arguments
 injection.create_dataset('approximant', data=opts.approximant)
 injection.create_dataset('tc', data=opts.tc)
-injection.create_dataset('distance', data=opts.distance)
 injection.create_dataset('ra', data=opts.ra)
 injection.create_dataset('dec', data=opts.dec)
 injection.create_dataset('polarization', data=opts.polarization)
