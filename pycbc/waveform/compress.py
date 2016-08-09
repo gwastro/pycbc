@@ -25,7 +25,6 @@ domain waveforms.
 """
 import lalsimulation, lal, numpy, logging, h5py
 from pycbc import pnutils, filter
-from pycbc.types import Array
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from scipy.weave import inline
