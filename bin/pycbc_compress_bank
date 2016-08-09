@@ -33,7 +33,7 @@ import logging
 import pycbc
 from pycbc.waveform import compress
 from pycbc import waveform
-from pycbc.types import FrequencySeries
+from pycbc.types import FrequencySeries, real_same_precision_as
 from pycbc import pnutils
 from pycbc import filter
 
@@ -68,7 +68,7 @@ parser.add_argument("--t-pad", type=float, default=0.001,
                      "inverse of this gives the maximum frequency step that "
                      "will be used in the compressed waveforms. Default is "
                      "0.001.")
-parser.add_argument("--precision", type=float, default=0.001,
+parser.add_argument("--tolerance", type=float, default=0.001,
                 help="The maximum mismatch to allow between the interpolated "
                      "waveform must and the full waveform. Points will be "
                      "added to the compressed waveform until its "
@@ -76,9 +76,13 @@ parser.add_argument("--precision", type=float, default=0.001,
                      "0.001.")
 parser.add_argument("--interpolation", type=str, default="linear",
                 help="The interpolation to use for decompressing the "
-                     "waveforms for checking precision. Options are 'linear', "
+                     "waveforms for checking tolerance. Options are 'linear', "
                      "or any interpolation recognized by scipy's interp1d "
                      "kind argument. Default is linear.")
+parser.add_argument("--precision", type=str, choices=["double", "single"],
+                default="double",
+                help="What precision to generate and store the waveforms with;"
+                     " default is double.")
 parser.add_argument("--verbose", action="store_true", default=False)
 
 
@@ -91,8 +95,15 @@ fmax = args.sample_rate/2.
 
 # load the bank
 logging.info("loading bank")
+# set the dtype to use
+# FIXME: there really should be a funciont in pycbc.types that provides this
+# mapping
+if args.precision == "single":
+    dtype = numpy.complex64
+else:
+    dtype = numpy.complex128
 # we'll just use dummy values for N, df for now
-bank = waveform.FilterBank(args.bank_file, 5, 0.25, fmin, numpy.complex128,
+bank = waveform.FilterBank(args.bank_file, 5, 0.25, fmin, dtype,
     approximant=args.approximant)
 templates = bank.table
 if args.tmplt_index is not None:
@@ -133,8 +144,7 @@ for ii in range(imin, imax):
     bank.f_lower = fmin-df
     bank.kmin = int(bank.f_lower / df)
     # scratch space
-    decomp_scratch = FrequencySeries(numpy.zeros(N, dtype=numpy.complex128),
-                                 delta_f=df)
+    decomp_scratch = FrequencySeries(numpy.zeros(N, dtype=dtype), delta_f=df)
     # generate the waveform
     htilde = bank[ii]
     tmplt = bank.table[ii]
@@ -143,17 +153,18 @@ for ii in range(imin, imax):
     # get the compressed sample points
     if args.compression_algorithm == 'mchirp':
         sample_points = compress.mchirp_compression(tmplt.mass1, tmplt.mass2,
-            fmin, (kmax-1)*df, min_seglen=args.t_pad, df_multiple=df)
+            fmin, (kmax-1)*df, min_seglen=args.t_pad, df_multiple=df).astype(
+            real_same_precision_as(htilde))
     elif args.compression_algorithm == 'spa':
         sample_points = compress.spa_compression(htilde, fmin, (kmax-1)*df,
-            min_seglen=args.t_pad)
+            min_seglen=args.t_pad).astype(real_same_precision_as(htilde))
     else:
         raise ValueError("unrecognized compression algorithm %s" %(
             args.compression_algorithm))
             
     # compress
     hcompressed = compress.compress_waveform(
-        htilde, sample_points, args.precision, args.interpolation,
+        htilde, sample_points, args.tolerance, args.interpolation,
         decomp_scratch=decomp_scratch)
 
     # save results
