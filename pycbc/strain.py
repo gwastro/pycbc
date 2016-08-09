@@ -1054,6 +1054,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                        increment_update_cache=None,
                  ):
         """ Class to produce overwhitened strain incrementally
+        
         Parameters
         ---------
         frame_src: str of list of strings
@@ -1097,6 +1098,19 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Channel to use for state information about the strain
         dyn_range_fac: {float, pycbc.DYN_RANGE_FAC}, Optional
             Scale factor to apply to strain
+        psd_abort_difference: {float, None}, Optional
+            The relative change in the inspiral range from the previous PSD
+        estimate to trigger the data to be considered invalid.
+        psd_recalculate_difference: {float, None}, Optional
+            the relative change in the inspiral range from the previous PSD
+        to trigger a re-estimatoin of the PSD.
+        force_update_cache: {boolean, True}, Optional
+            Re-check the filesystem for frame files on every attempt to 
+        read more data.
+        increment_update_cache: {str, None}, Optional
+            Pattern to look for frame files in a GPS dependent directory. This
+        is an alternate to the forced updated of the frame cache, and attempts
+        to predict the next frame file name without probing the filesystem.
         """ 
         super(StrainBuffer, self).__init__(frame_src, channel_name, start_time,
                                            max_buffer=max_buffer,
