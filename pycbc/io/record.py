@@ -1047,6 +1047,122 @@ class FieldArray(numpy.recarray):
         self.__copy_attributes__(newself)
         return newself
 
+    def parse_boolargs(self, args):
+        """Returns an array populated by given values, with the indices of
+        those values dependent on given boolen tests on self.
+        
+        The given `args` should be a list of tuples, with the first element the
+        return value and the second argument a string that evaluates to either
+        True or False for each element in self.
+
+        Each boolean argument is evaluated on elements for which every prior
+        boolean argument was False. For example, if array `foo` has a field
+        `bar`, and `args = [(1, 'bar < 10'), (2, 'bar < 20'), (3, 'bar < 30')]`,
+        then the returned array will have `1`s at the indices for
+        which `foo.bar < 10`, `2`s where `foo.bar < 20 and not foo.bar < 10`,
+        and `3`s where `foo.bar < 30 and not (foo.bar < 10 or foo.bar < 20)`.
+        
+        The last argument in the list may have "else", an empty string, None,
+        or simply list a return value. In any of these cases, any element not
+        yet populated will be assigned the last return value.
+        
+        Parameters
+        ----------
+        args : {(list of) tuples, value}
+            One or more return values and boolean argument determining where
+            they should go.
+
+        Returns
+        -------
+        return_values : array
+            An array with length equal to self, with values populated with the
+            return values.
+        leftover_indices : array
+            An array of indices that evaluated to False for all arguments.
+            These indices will not have been popluated with any value,
+            defaulting to whatever numpy uses for a zero for the return
+            values' dtype. If there are no leftovers, an empty array is
+            returned.
+
+        Examples
+        --------
+        Given the following array:
+        >>> arr = FieldArray(5, dtype=[('mtotal', float)])
+        >>> arr['mtotal'] = numpy.array([3., 5., 2., 1., 4.])
+
+        Return `"TaylorF2"` for all elements with `mtotal < 4` (note that the
+        elements 1 and 4 are leftover):
+        >>> arr.parse_boolargs(('TaylorF2', 'mtotal<4'))
+        (array(['TaylorF2', '', 'TaylorF2', 'TaylorF2', ''], 
+              dtype='|S8'),
+        array([1, 4]))
+
+        Return `"TaylorF2"` for all elements with `mtotal < 4`,
+        `"SEOBNR_ROM_DoubleSpin"` otherwise:
+        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', 'else')])
+        (array(['TaylorF2', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
+               'SEOBNRv2_ROM_DoubleSpin'], 
+              dtype='|S23'),
+         array([], dtype=int64))
+        
+        The following will also return the same:
+        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin',)])
+
+        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', '')])
+        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), 'SEOBNRv2_ROM_DoubleSpin'])
+
+        Return `"TaylorF2"` for all elements with `mtotal < 3`, `"IMRPhenomD"`
+        for all elements with `3 <= mtotal < 4`, `"SEOBNRv2_ROM_DoubleSpin"`
+        otherwise:
+
+        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<3'), ('IMRPhenomD', 'mtotal<4'), 'SEOBNRv2_ROM_DoubleSpin'])
+        (array(['IMRPhenomD', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
+               'SEOBNRv2_ROM_DoubleSpin'], 
+              dtype='|S23'),
+         array([], dtype=int64))
+
+        Just return `"TaylorF2"` for all elements:
+        >>> arr.parse_boolargs('TaylorF2')
+        (array(['TaylorF2', 'TaylorF2', 'TaylorF2', 'TaylorF2', 'TaylorF2'], 
+              dtype='|S8'),
+         array([], dtype=int64))
+        """
+        if not isinstance(args, list):
+            args = [args]
+        # format the arguments
+        return_vals = []
+        bool_args = []
+        for arg in args:
+            if not isinstance(arg, tuple):
+                return_val = arg
+                bool_arg = None
+            elif len(arg) == 1:
+                return_val = arg[0]
+                bool_arg = None
+            elif len(arg) == 2:
+                return_val, bool_arg = arg
+            else:
+                raise ValueError("argument not formatted correctly")
+            return_vals.append(return_val)
+            bool_args.append(bool_arg)
+        # get the output dtype
+        outdtype = numpy.array(return_vals).dtype
+        out = numpy.zeros(self.size, dtype=outdtype)
+        mask = numpy.zeros(self.size, dtype=bool)
+        leftovers = numpy.ones(self.size, dtype=bool)
+        for ii,(boolarg,val) in enumerate(zip(bool_args, return_vals)):
+            if boolarg is None or boolarg == '' or boolarg.lower() == 'else': 
+                if ii+1 != len(bool_args):
+                    raise ValueError("only the last item may not provide "
+                        "any boolean arguments")
+                mask = leftovers
+            else:
+                mask = leftovers & self[boolarg] 
+            out[mask] = val
+            leftovers &= ~mask
+        return out, numpy.where(leftovers)[0]
+
+
 def aliases_from_fields(fields):
     """Given a dictionary of fields, will return a dictionary mapping the
     aliases to the names.
