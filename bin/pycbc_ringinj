@@ -111,7 +111,11 @@ if opts.approximant=='FdQNM' or opts.approximant=='TdQNM':
     # Create datasets for each argument
     injection.create_dataset('f_0', data=opts.f_0)
     injection.create_dataset('tau', data=opts.tau)
-
+    # These have default values, will not complain if not given
+    if opts.amp:
+        injection.create_dataset('amp', data=opts.amp)
+    if opts.phi:
+        injection.create_dataset('phi', data=opts.phi)
 
 # Multi-mode approximant
 if opts.approximant=='FdQNMmultiModes' or opts.approximant=='TdQNMmultiModes':
