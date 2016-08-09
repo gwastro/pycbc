@@ -55,20 +55,20 @@ parser.add_argument("--trigger-file",
                     "Required")
 parser.add_argument("--template-file", default=None,
                     help="hdf file containing template parameters. Required")
-parser.add_argument("--template-fraction-range", help="Optional, format string to"
-                    " analyze part of template bank. Format is PART/NUM_PARTS",
-                    default="0/1")
-parser.add_argument("--veto-files", nargs='*',
-                    help="Files in .xml format with veto segments to apply to "
-                    "triggers before fitting")
-parser.add_argument("--veto-segment-name", default=None,
-                    help="Name of veto segments to apply. Optional: if not "
-                    "given, all segments for a given ifo will be used")
+parser.add_argument("--template-fraction-range", default="0/1",
+                    help="Optional, analyze only part of template bank. "
+                    "Format is PART/NUM_PARTS")
+parser.add_argument("--veto-file", nargs='*',
+                    help="File(s) in .xml format with veto segments to apply "
+                    "to triggers before fitting")
+parser.add_argument("--veto-segment-name", nargs='*', default=None,
+                    help="Name(s) of veto segments to apply. Optional, if not "
+                    "given all segments for a given ifo will be used")
 parser.add_argument("--output", required=True,
                     help="Location for output file containing fit coefficients"
-                    ".  Required")
+                    ". Required")
 parser.add_argument("--ifo", required=True,
-                    help="Ifo producing triggers to be fitted.  Required")
+                    help="Ifo producing triggers to be fitted. Required")
 parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
@@ -77,7 +77,7 @@ parser.add_argument("--sngl-stat", default="new_snr",
                     help="Function of SNR and chisq to perform fits with")
 parser.add_argument("--stat-factor", type=float,
                     help="Adjustable magic number used in some sngl "
-                    "statistics.  Values commonly used: 6 for new_snr, 250 "
+                    "statistics. Values commonly used: 6 for new_snr, 250 "
                     "or 50 for effective_snr")
 parser.add_argument("--stat-threshold", type=float,
                     help="Only fit triggers with statistic value above this "
@@ -154,13 +154,13 @@ time = trigf[args.ifo+'/end_time'][:][abovethresh]
 logging.info('%i trigs left after thresholding' % len(stat))
 
 # now do vetoing
-retain, junk = events.veto.indices_outside_segments(time, args.veto_files,
+retain, junk = events.veto.indices_outside_segments(time, args.veto_file,
                              ifo=args.ifo, segment_name=args.veto_segment_name)
 stat = stat[retain]
 tid = tid[retain]
 time = time[retain]
 logging.info('%i trigs left after vetoing with %s' %
-                                                  (len(stat), args.veto_files))
+                                                   (len(stat), args.veto_file))
 
 ### Functions for doing the pruning (removal of trigs at loudest times)
 
