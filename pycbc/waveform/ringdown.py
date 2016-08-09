@@ -30,8 +30,8 @@ import lalsimulation as lalsim
 from pycbc.types import TimeSeries, FrequencySeries, complex128, zeros
 from pycbc.waveform.waveform import get_obj_attrs
 
-default_qnm_args = {'t_0':0, 'phi':0, 'amp':1}
-qnm_required_args = ['f_0', 'tau']
+default_qnm_args = {'t_0':0}
+qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
 lm_required_args = ['Mfinal','Sfinal','l','m','nmodes']
 lm_allmodes_required_args = ['Mfinal','Sfinal', 'lmns']
 
@@ -242,9 +242,9 @@ def get_td_qnm(template=None, **kwargs):
         The ringdown-frequency.
     tau : float
         The damping time of the sinusoid.
-    phi : {0, float}, optional
+    phi : float
         The initial phase of the ringdown.
-    amp : {1, float}, optional
+    amp : float
         The amplitude of the ringdown (constant for now).
     delta_t : {None, float}, optional
         The time step used to generate the ringdown.
@@ -267,9 +267,8 @@ def get_td_qnm(template=None, **kwargs):
     
     f_0 = input_params.pop('f_0')
     tau = input_params.pop('tau')
-    # the following have defaults, and so will be populated
-    phi = input_params.pop('phi')
     amp = input_params.pop('amp')
+    phi = input_params.pop('phi')
     # the following may not be in input_params
     delta_t = input_params.pop('delta_t', None)
     t_final = input_params.pop('t_final', None)
@@ -306,12 +305,12 @@ def get_fd_qnm(template=None, **kwargs):
         The ringdown-frequency.
     tau : float
         The damping time of the sinusoid.
+    phi : float
+        The initial phase of the ringdown.
+    amp : float
+        The amplitude of the ringdown (constant for now).
     t_0 :  {0, float}, optional
         The starting time of the ringdown.
-    phi : {0, float}, optional
-        The initial phase of the ringdown.
-    amp : {1, float}, optional
-        The amplitude of the ringdown (constant for now).
     delta_f : {None, float}, optional
         The frequency step used to generate the ringdown.
         If None, it will be set to the inverse of the time at which the
@@ -336,10 +335,10 @@ def get_fd_qnm(template=None, **kwargs):
 
     f_0 = input_params.pop('f_0')
     tau = input_params.pop('tau')
+    amp = input_params.pop('amp')
+    phi = input_params.pop('phi')
     # the following have defaults, and so will be populated
     t_0 = input_params.pop('t_0')
-    phi = input_params.pop('phi')
-    amp = input_params.pop('amp')
     # the following may not be in input_params
     delta_f = input_params.pop('delta_f', None)
     f_lower = input_params.pop('f_lower', None)
