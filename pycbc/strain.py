@@ -1048,8 +1048,13 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                        autogating_pad=0.25,
                        state_channel=None,
                        dyn_range_fac=pycbc.DYN_RANGE_FAC,
+                       psd_abort_difference=None,
+                       psd_recalculate_difference=None,
+                       force_update_cache=True,
+                       increment_update_cache=None,
                  ):
         """ Class to produce overwhitened strain incrementally
+        
         Parameters
         ---------
         frame_src: str of list of strings
@@ -1093,16 +1098,34 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Channel to use for state information about the strain
         dyn_range_fac: {float, pycbc.DYN_RANGE_FAC}, Optional
             Scale factor to apply to strain
+        psd_abort_difference: {float, None}, Optional
+            The relative change in the inspiral range from the previous PSD
+        estimate to trigger the data to be considered invalid.
+        psd_recalculate_difference: {float, None}, Optional
+            the relative change in the inspiral range from the previous PSD
+        to trigger a re-estimatoin of the PSD.
+        force_update_cache: {boolean, True}, Optional
+            Re-check the filesystem for frame files on every attempt to 
+        read more data.
+        increment_update_cache: {str, None}, Optional
+            Pattern to look for frame files in a GPS dependent directory. This
+        is an alternate to the forced updated of the frame cache, and attempts
+        to predict the next frame file name without probing the filesystem.
         """ 
         super(StrainBuffer, self).__init__(frame_src, channel_name, start_time,
-                                           max_buffer=max_buffer)
+                                           max_buffer=max_buffer,
+                                           force_update_cache=force_update_cache,
+                                           increment_update_cache=increment_update_cache)
 
         self.low_frequency_cutoff = low_frequency_cutoff
 
         # We could similarly add a dq vector here when that becomes available.
         self.state_channel = state_channel
         if 'None' not in self.state_channel:
-            self.state = pycbc.frame.StatusBuffer(frame_src, state_channel, start_time, max_buffer)
+            self.state = pycbc.frame.StatusBuffer(frame_src, state_channel, start_time,
+                                           max_buffer=max_buffer,
+                                           force_update_cache=force_update_cache,
+                                           increment_update_cache=increment_update_cache)
         else:
             self.state = None
 
@@ -1118,6 +1141,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.sample_rate = sample_rate
         self.dyn_range_fac = dyn_range_fac
 
+        self.psd_abort_difference = psd_abort_difference
+        self.psd_recalculate_difference = psd_recalculate_difference
         self.psd_segment_length = psd_segment_length
         self.psd_samples = psd_samples
         self.psd_inverse_length = psd_inverse_length
@@ -1154,6 +1179,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         
         # time to ignore output of frame (for initial buffering)
         self.add_hard_count()
+        self.taper_immediate_strain = True
 
     @property
     def start_time(self):
@@ -1185,9 +1211,30 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         seg_len = self.sample_rate * self.psd_segment_length
         e = len(self.strain)
         s = e - ((self.psd_samples + 1) * self.psd_segment_length / 2) * self.sample_rate
-        self.psd = pycbc.psd.welch(self.strain[s:e], seg_len=seg_len, 
-                                                     seg_stride=seg_len / 2)        
-        self.psds = {}          
+        psd = pycbc.psd.welch(self.strain[s:e], seg_len=seg_len, seg_stride=seg_len / 2)
+
+        from pycbc.waveform.spa_tmplt import spa_distance
+        psd.dist = spa_distance(psd, 1.4, 1.4, self.low_frequency_cutoff) * pycbc.DYN_RANGE_FAC
+
+        # If the new psd is similar to the old one, don't replace it
+        if self.psd and self.psd_recalculate_difference:
+            if abs(self.psd.dist - psd.dist) / self.psd.dist < self.psd_recalculate_difference:
+                logging.info("Skipping Recalculation of PSD, %s-%s", self.psd.dist, psd.dist)
+                return True
+        
+        # If the new psd is *really* different than the old one, return an error
+        if self.psd and self.psd_abort_difference:
+            if abs(self.psd.dist - psd.dist) / self.psd.dist > self.psd_abort_difference:
+                logging.info("PSD is CRAZY, aborting!!!!, %s-%s", self.psd.dist, psd.dist)
+                self.psd = psd
+                self.psds = {}  
+                return False
+
+        # If the new estimate replaces the current one, invalide the ineterpolate PSDs
+        self.psd = psd
+        self.psds = {}     
+        logging.info("Recalculating PSD, %s", psd.dist)  
+        return True   
 
     def overwhitened_data(self, delta_f):
         """ Return overwhitened data
@@ -1263,8 +1310,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         # We should roll this off at some point too...
         self.strain[len(self.strain) - csize + self.corruption:] = 0
         self.strain.start_time += blocksize
+        
+        # The next time we need strain will need to be tapered
+        self.taper_immediate_strain = True
        
-    def advance(self, blocksize):
+    def advance(self, blocksize, timeout=10):
         """ Add blocksize seconds more to the buffer, push blocksize seconds
         from the beginning.
         Parameters
@@ -1276,7 +1326,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         status: boolean
             Returns True if this block is analyzable.         
         """
-        ts = super(StrainBuffer, self).attempt_advance(blocksize)
+        ts = super(StrainBuffer, self).attempt_advance(blocksize, timeout=timeout)
 
         # We have given up so there is no time series
         if ts is None:
@@ -1316,23 +1366,19 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         strain = pycbc.filter.resample_to_delta_t(strain, 
                                            1.0/self.sample_rate, method='ldas')
 
-        ###### Apply gating
-        glitch_times = detect_loud_glitches(strain + 0.,
-               threshold=self.autogating_threshold,
-               cluster_window=self.autogating_cluster,
-               low_freq_cutoff=self.highpass_frequency,
-               high_freq_cutoff= self.sample_rate / 2,
-               corrupt_time=self.corruption / float(self.sample_rate))
-            
-        gate_params = [[gt, self.autogating_window, self.autogating_pad] for gt in glitch_times]
-        if len(glitch_times) > 0:
-            logging.info('Autogating at %s', ', '.join(['%.3f' % gt for gt in glitch_times]))
+        # remove corruption at begginning 
+        strain = strain[self.corruption:]
+        
+        # taper begginning if needed
+        if self.taper_immediate_strain:
+            logging.info("tapering start of strain block")
+            strain = gate_data(strain, [(strain.start_time, 0., self.autogating_pad)])
+            self.taper_immediate_strain = False
 
-        #strain = gate_data(strain, gate_params)
 
         ###### Stitch into continuous stream
         self.strain.roll(-sample_step)
-        self.strain[len(self.strain) - csize + self.corruption:] = strain[self.corruption:]
+        self.strain[len(self.strain) - csize + self.corruption:] = strain[:]
         self.strain.start_time += blocksize
 
         if self.psd is None and self.wait_duration <=0:
