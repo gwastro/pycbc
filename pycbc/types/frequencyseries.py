@@ -429,16 +429,12 @@ def load_frequencyseries(path, group=None):
     ------
     ValueError
         If path does not end in .npy or .txt.
-    """
-    import numpy
-    import os
-    import lal
-    
-    ext = os.path.splitext(path)[1]
+    """    
+    ext = _os.path.splitext(path)[1]
     if ext == '.npy':
-        data = numpy.load(path)    
+        data = _numpy.load(path)    
     elif ext == '.txt':
-        data = numpy.loadtxt(path)
+        data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
         f = h5py.File(path)
@@ -452,11 +448,11 @@ def load_frequencyseries(path, group=None):
         
     if data.ndim == 2:
         delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
-        epoch = lal.LIGOTimeGPS(data[0][0])
+        epoch = _lal.LIGOTimeGPS(data[0][0])
         return FrequencySeries(data[:,1], delta_f=delta_f)
     elif data.ndim == 3:
         delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
-        epoch = lal.LIGOTimeGPS(data[0][0])
+        epoch = _lal.LIGOTimeGPS(data[0][0])
         return FrequencySeries(data[:,1] + 1j*data[:,2], delta_f=delta_f)
     else:
         raise ValueError('File has %s dimensions, cannot convert to Array, \

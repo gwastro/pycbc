@@ -44,7 +44,7 @@ def correlate(x, y, z):
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def _correlate_factory(x, y, z):
-    pass
+    return
 
 class BatchCorrelator(object):
     """ Create a batch correlation engine 
