@@ -354,7 +354,7 @@ class RingdownInjectionSet(object):
     table
     """
 
-    def __init__(self, hdf_file, **kwds):
+    def __init__(self, hdf_file):
         self.name = hdf_file
 
         injfile = h5py.File(hdf_file,'r')
@@ -385,14 +385,11 @@ class RingdownInjectionSet(object):
             For invalid types of `strain`.
         """
 
-        if not strain.dtype in (float32, float64):
+        if strain.dtype not in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
 
         lalstrain = strain.lal()
-        earth_travel_time = lal.REARTH_SI / lal.C_SI
-        t0 = float(strain.start_time) - earth_travel_time
-        t1 = float(strain.end_time) + earth_travel_time
 
         # pick lalsimulation injection function
         add_injection = injection_func_map[strain.dtype]
