@@ -189,6 +189,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
 
     gating_info = {}
     injections = []
+<<<<<<< HEAD
+=======
+
+>>>>>>> Adapt changes to last update in strain.py
     if opt.frame_cache or opt.frame_files or opt.frame_type:
         if opt.frame_cache:
             frame_source = opt.frame_cache
@@ -224,19 +228,27 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if opt.injection_file:
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
+<<<<<<< HEAD
             injections += injector.apply(strain, opt.channel_name[0:2],        
+=======
+            injections += injector.apply(strain, opt.channel_name[0:2],
+>>>>>>> Adapt changes to last update in strain.py
                              distance_scale=opt.injection_scale_factor)
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
+<<<<<<< HEAD
             injector =  SGBurstInjectionSet(opt.sgburst_injection_file)
+=======
+            injector = SGBurstInjectionSet(opt.sgburst_injection_file)
+>>>>>>> Adapt changes to last update in strain.py
             injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
 
         if opt.ringdown_injection_file:
             logging.info("Applying ringdown-only injection.")
-            injections = RingdownInjectionSet(opt.ringdown_injection_file)
-            injections.apply(strain, opt.channel_name[0:2],
+            injector = RingdownInjectionSet(opt.ringdown_injection_file)
+            injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
 
         logging.info("Highpass Filtering")
@@ -314,7 +326,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if opt.injection_file:
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
-            injections += injector.apply(strain, opt.channel_name[0:2],        
+            injections += injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
 
         if opt.sgburst_injection_file:
@@ -325,8 +337,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
 
         if opt.ringdown_injection_file:
             logging.info("Applying ringdown-only injection.")
-            injections = RingdownInjectionSet(opt.ringdown_injection_file)
-            injections.apply(strain, opt.channel_name[0:2],
+            injector = RingdownInjectionSet(opt.ringdown_injection_file)
+            injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
 
         if precision == 'single':
