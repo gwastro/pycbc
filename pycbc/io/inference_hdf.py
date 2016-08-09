@@ -185,7 +185,7 @@ class InferenceFile(h5py.File):
 
         # default is to use stored ACL and accept every i-th sample
         if "acl" in self.attrs.keys():
-            thin_interval = int(self.acl) if thin_interval is None \
+            thin_interval = int(numpy.ceil(self.acl)) if thin_interval is None \
                 else thin_interval
         else:
             thin_interval = 1 if thin_interval is None else thin_interval
