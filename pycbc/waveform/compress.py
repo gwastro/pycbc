@@ -29,7 +29,7 @@ from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from scipy.weave import inline
 from scipy import interpolate
-from pycbc.types import Array, FrequencySeries, zeros, complex_same_precision_as, real_same_precision_as
+from pycbc.types import FrequencySeries, zeros, complex_same_precision_as, real_same_precision_as
 from pycbc.waveform import utils
 
 def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
@@ -468,7 +468,7 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         if df is None:
             raise ValueError("Either provide output memory or a df")
         hlen = int(numpy.ceil(sample_frequencies.max()/df+1))
-        out = FrequencySeries(numpy.zeros(flen,
+        out = FrequencySeries(numpy.zeros(hlen,
             dtype=_complex_dtypes[precision]), copy=False,
             delta_f=df)
     else:
