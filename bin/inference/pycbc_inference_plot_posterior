@@ -17,13 +17,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-import corner
 import h5py
 import logging
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import numpy
 import sys
+import corner
 from pycbc import pnutils, results
 from pycbc.inference import option_utils
 
