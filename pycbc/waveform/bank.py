@@ -137,6 +137,27 @@ def add_approximant_arg(parser):
              "operations may also be used on parameters; syntax is python, "
              "with any operation recognized by numpy.")
 
+def parse_approximant_arg(approximant_arg, warray):
+    """Given an approximant arg (see add_approximant_arg) and a field
+    array, figures out what approximant to use for each template in the array.
+
+    Parameters
+    ----------
+    approximant_arg : list
+        The approximant argument to parse. Should be the thing returned by
+        ArgumentParser when parsing the argument added by add_approximant_arg.
+    warray : FieldArray
+        The array to parse. Must be an instance of a FieldArray, or a class
+        that inherits from FieldArray.
+
+    Returns
+    -------
+    array
+        A numpy array listing the approximants to use for each element in
+        the warray.
+    """
+    return warray.parse_boolargs(boolargs_from_apprxstr(approximant_arg))[0]
+        
                        
 class TemplateBank(object):
     """Class to provide some basic helper functions and information
@@ -258,7 +279,7 @@ class TemplateBank(object):
         # (if anything was in the file)
         if approximant is not None:
             # get the approximant for each template
-            apprxs = self.parse_approximant_str(approximant)
+            apprxs = self.parse_approximant(approximant)
             if 'approximant' not in self.table.fieldnames:
                 self.table = self.table.add_fields(apprxs, 'approximant')
             else:
@@ -306,11 +327,12 @@ class TemplateBank(object):
                               approximant=self.approximant(index),
                               **self.extra_args)      
 
-    def parse_approximant_str(self, approximant_str):
-        """Parses the given approximant string, returning the approximant to
-        use for each template in self."""
-        return self.table.parse_boolargs(boolargs_from_apprxstr(
-                approximant_str))[0]
+    def parse_approximant(self, approximant):
+        """Parses the given approximant argument, returning the approximant to
+        use for each template in self. This is done by calling
+        `parse_approximant_arg` using self's table as the array; see that
+        function for more details."""
+        return parse_approximant_arg(approximant, self.table)
 
     def approximant(self, index):
         """ Return the name of the approximant ot use at the given index
