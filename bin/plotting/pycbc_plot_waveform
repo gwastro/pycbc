@@ -37,7 +37,8 @@ parser.add_argument('--version', action='version',
 parser.add_argument('--output-file', required=True)
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for generation.")
-parser.add_argument("--approximant", type=str,
+# add the approximant argument
+waveform.bank.add_approximant_arg(parser,
                   help="The name of the approximant to use for filtering. "
                       "Do not use if using --use-params-of-closest-injection.")
 parser.add_argument("--mass1", type=float, required=True,
