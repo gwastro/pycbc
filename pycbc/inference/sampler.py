@@ -138,7 +138,11 @@ class KombineSampler(_BaseSampler):
             with shape (nwalkers, ndim).
         """
         if self.burn_in_iterations == 0:
-            p, post, q = self._sampler.burnin(initial_values)
+            res = self._sampler.burnin(initial_values)
+            if len(res) == 4:
+                p, post, q, _ = res
+            else:
+                p, post, q = res
             self.burn_in_iterations = self.chain.shape[0]
         else:
             raise ValueError("Burn in has already been performed")
