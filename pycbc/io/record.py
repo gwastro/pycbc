@@ -928,6 +928,41 @@ class FieldArray(numpy.recarray):
         return obj
 
     @classmethod
+    def from_kwargs(cls, **kwargs):
+        """Creates a new instance of self from the given keyword arguments.
+        Each argument will correspond to a field in the returned array, with
+        the name of the field given by the keyword, and the value(s) whatever
+        the keyword was set to. Each keyword may be set to a single value or
+        a list of values. The number of values that each argument is set to
+        must be the same; this will be the size of the returned array.
+
+        Examples
+        --------
+        Create an array with fields 'mass1' and 'mass2':
+        >>> a = FieldArray.from_kwargs(mass1=[1.1, 3.], mass2=[2., 3.])
+        >>> a.fieldnames
+        ('mass1', 'mass2')
+        >>> a.mass1, a.mass2
+        (array([ 1.1,  3. ]), array([ 2.,  3.]))
+
+        Create an array with only a single element in it:
+        >>> a = FieldArray.from_kwargs(mass1=1.1, mass2=2.)
+        >>> a.mass1, a.mass2
+        (array([ 1.1]), array([ 2.]))
+        """
+        arrays = []
+        names = []
+        for p,vals in kwargs.items():
+            if not isinstance(vals, numpy.ndarray):
+                if not isinstance(vals, list):
+                    vals = [vals]
+                vals = numpy.array(vals)
+            arrays.append(vals)
+            names.append(p)
+        return cls.from_arrays(arrays, names=names)
+
+
+    @classmethod
     def from_ligolw_table(cls, table, columns=None, cast_to_dtypes=None):
         """Converts the given ligolw table into an FieldArray. The `tableName`
         attribute is copied to the array's `name`.
