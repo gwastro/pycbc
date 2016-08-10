@@ -237,8 +237,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if opt.ringdown_injection_file:
             logging.info("Applying ringdown-only injection.")
             injector = RingdownInjectionSet(opt.ringdown_injection_file)
-            injector.apply(strain, opt.channel_name[0:2],
-                             distance_scale=opt.injection_scale_factor)
+            injector.apply(strain, opt.channel_name[0:2])
 
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
@@ -327,8 +326,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if opt.ringdown_injection_file:
             logging.info("Applying ringdown-only injection.")
             injector = RingdownInjectionSet(opt.ringdown_injection_file)
-            injector.apply(strain, opt.channel_name[0:2],
-                             distance_scale=opt.injection_scale_factor)
+            injector.apply(strain, opt.channel_name[0:2])
 
         if precision == 'single':
             logging.info("Converting to float32")

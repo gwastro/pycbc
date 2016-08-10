@@ -362,7 +362,7 @@ class RingdownInjectionSet(object):
         self.table = dict([(p, injfile[p].value) for p in pnames])
         injfile.close()
 
-    def apply(self, strain, detector_name, distance_scale=1):
+    def apply(self, strain, detector_name):
         """Add injection (as seen by a particular detector) to a time series.
 
         Parameters
@@ -398,15 +398,14 @@ class RingdownInjectionSet(object):
         injection = self.table
 
         signal = self.make_strain_from_inj_object(injection, strain.delta_t,
-                     detector_name, distance_scale=distance_scale)
+                     detector_name)
         signal = signal.astype(strain.dtype)
         signal_lal = signal.lal()
         add_injection(lalstrain, signal_lal, None)
 
         strain.data[:] = lalstrain.data.data[:]
 
-    def make_strain_from_inj_object(self, inj, delta_t, detector_name,
-                                    distance_scale=1):
+    def make_strain_from_inj_object(self, inj, delta_t, detector_name):
         """Make a h(t) strain time-series from an injection object as read from
         an hdf file.
 
@@ -432,8 +431,6 @@ class RingdownInjectionSet(object):
         # compute the waveform time series
         hp, hc = ringdown_td_approximants[inj['approximant']](
             delta_t=delta_t, **inj)
-        hp /= distance_scale
-        hc /= distance_scale
 
         hp._epoch += inj['tc']
         hc._epoch += inj['tc']
