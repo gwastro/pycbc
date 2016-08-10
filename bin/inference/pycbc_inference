@@ -286,6 +286,7 @@ with ctx:
                 if param in idist.params:
                     p0[i][j] = idist.rvs(size=1, param=param)[0][0]
                     break
+
     # setup checkpointing
     if opts.checkpoint_interval:
 
