@@ -102,6 +102,9 @@ parser.add_argument("--nprocesses", type=int, default=None,
     help="Number of processes to use. If not given then use maximum.")
 parser.add_argument("--skip-burn-in", action="store_true", default=False,
     help="Do not burn in with sampler.")
+parser.add_argument("--seed", type=int, default=0,
+    help="Seed to use for the random number generator that initially "
+         "distributes the walkers. Default is 0.")
 
 # add config options
 parser.add_argument("--config-files", type=str, nargs="+", required=True,
@@ -142,6 +145,10 @@ if opts.verbose:
 else:
     log_level = logging.WARN
 logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+
+# set the seed
+numpy.random.seed(opts.seed)
+logging.info("Using seed %i" %(opts.seed))
 
 # change measure level for FFT to 0
 fft.fftw.set_measure_level(0)
@@ -279,7 +286,7 @@ with ctx:
                 if param in idist.params:
                     p0[i][j] = idist.rvs(size=1, param=param)[0][0]
                     break
-
+    print p0
     # setup checkpointing
     if opts.checkpoint_interval:
 
