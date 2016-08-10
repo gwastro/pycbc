@@ -1024,16 +1024,20 @@ class FieldArray(numpy.recarray):
         return self.dtype.names
 
     @property
-    def virutalfields(self):
+    def virtualfields(self):
         """Returns a tuple listing the names of virtual fields in self.
         """
-        return tuple(self._virtualfields)
+        if self._virtualfields is None:
+            vfs = tuple()
+        else:
+            vfs = tuple(self._virtualfields)
+        return vfs
 
     @property
     def fields(self):
         """Returns a tuple listing the names of fields and virtual fields in
         self."""
-        return tuple(list(self.fieldnames) + self._virtualfields)
+        return tuple(list(self.fieldnames) + list(self.virtualfields))
 
     @property
     def aliases(self):
