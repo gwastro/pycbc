@@ -106,6 +106,38 @@ def boolargs_from_apprxstr(approximant_strs):
     return [tuple(arg.split(':')) for arg in approximant_strs]
 
 
+def add_approximant_arg(parser):
+    """Adds an approximant argument to the given parser.
+
+    Parameters
+    ----------
+    parser : ArgumentParser
+        The argument parser to add the argument to.
+    """
+    parser.add_argument("--approximant", nargs='+', type=str, default=None,
+        metavar='APPRX[:COND]',
+        help="The approximant(s) to use. Multiple approximants to use "
+             "in different regions may be provided. If multiple "
+             "approximants are provided, every one but the last must be "
+             "be followed by a conditional statement defining where that "
+             "approximant should be used. Conditionals can be any boolean "
+             "test understood by numpy. For example, 'Apprx:(mtotal > 4) & "
+             "(mchirp <= 5)' would use approximant 'Apprx' where total mass "
+             "is > 4 and chirp mass is <= 5. "
+             "Conditionals are applied in order, with each successive one "
+             "only applied to regions not covered by previous arguments. "
+             "For example, `'TaylorF2:mtotal < 4' 'IMRPhenomD:mchirp < 3'` "
+             "would result in IMRPhenomD being used where chirp mass is < 3 "
+             "and total mass is >= 4. The last approximant given may use "
+             "'else' as the conditional or include no conditional. In either "
+             "case, this will cause the last approximant to be used in any "
+             "remaning regions after all the previous conditionals have been "
+             "applied. For the full list of possible parameters to apply "
+             "conditionals to, see WaveformArray.default_fields(). Math "
+             "operations may also be used on parameters; syntax is python, "
+             "with any operation recognized by numpy.")
+
+                       
 class TemplateBank(object):
     """Class to provide some basic helper functions and information
     about elements of a template bank.
@@ -529,7 +561,8 @@ def find_variable_start_frequency(approximant, parameters, f_start, max_length,
 class FilterBankSkyMax(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, f_lower,
                  dtype, out_plus=None, out_cross=None,
-                 max_template_length=None, **kwds):
+                 max_template_length=None, parameters=None,
+                 **kwds):
         self.out_plus = out_plus
         self.out_cross = out_cross
         self.dtype = dtype
@@ -542,7 +575,8 @@ class FilterBankSkyMax(TemplateBank):
         self.kmin = int(f_lower / delta_f)
         self.max_template_length = max_template_length
 
-        super(FilterBankSkyMax, self).__init__(filename, **kwds)
+        super(FilterBankSkyMax, self).__init__(filename, parameters=parameters,
+            **kwds)
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
