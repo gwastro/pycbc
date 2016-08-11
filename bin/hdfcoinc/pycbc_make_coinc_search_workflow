@@ -140,7 +140,7 @@ cum_veto_files, veto_names, ind_cats = wf.get_cumulative_veto_group_files(\
                                             rdir['analysis_time/segment_data'],
                                             execute_now=False)
 
-final_veto_file, final_veto_name, ind_cats =\
+final_veto_file, final_veto_name, ind_cats = \
                                    wf.get_cumulative_veto_group_files(workflow, 
                                             'segments-final-veto-group',
                                             veto_cat_files,
@@ -183,12 +183,18 @@ ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
 insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
                                            insps, output_dir, tags=[tag])
 
+# setup sngl trigger distribution fitting jobs
+# 'statfiles' is list of files used in calculating coinc statistic
+statfiles = []
+statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
+                                      final_veto_file, final_veto_name)
+
 # setup coinc for the filtering jobs
 full_insps = insps
-bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, 
+bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, statfiles,
                                cum_veto_files, veto_names, 
-                               output_dir, tags=ctags)  
-final_bg_files =  wf.setup_interval_coinc(workflow, hdfbank, insps, 
+                               output_dir, tags=ctags)
+final_bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, statfiles,
                                final_veto_file, final_veto_name,
                                output_dir, tags=ctags)
 final_bg_file = final_bg_files[0][0]                   
@@ -437,12 +443,12 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                                insps, output_dir, tags=[tag])
                                                
     inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
-                                    full_insps, insps, bin_files, 
+                                    full_insps, insps, statfiles, bin_files,
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, tags = ctags)
     found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
-                                    wf.FileList([file_for_injfind]), final_veto_file[0], 
-                                    final_veto_name[0],
+                                    wf.FileList([file_for_injfind]),
+                                    final_veto_file[0], final_veto_name[0],
                                     output_dir, tags=ctags)
     inj_coincs += [inj_coinc]  
     

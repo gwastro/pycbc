@@ -53,11 +53,40 @@ class PyCBCTrig2HDFExecutable(Executable):
                                  '--output-file', use_tmp_subdirs=True)
         return node
 
+class PyCBCFitByTemplateExecutable(Executable):
+    """ Calculates values that describe the background distribution template
+        by template.
+    """
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, trig_file, bank_file, veto_file, veto_name):
+        node = Node(self)
+        # Executable objects are initialized with ifo information
+        node.add_opt('--ifo', self.ifo_string)
+        node.add_input_opt('--trigger-file', trig_file)
+        node.add_input_opt('--template-file', bank_file)
+        node.add_input_opt('--veto-file', veto_file)
+        node.add_opt('--veto-segment-name', veto_name)
+        node.new_output_file_opt(trig_file.segment, '.hdf', '--output')
+        return node
+
+class PyCBCFitOverParamExecutable(Executable):
+    """ Smooths the background distribution parameters over a continuous
+        parameter
+    """
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, raw_fit_file, bank_file):
+        node = Node(self)
+        node.add_input_opt('--template-fit-file', raw_fit_file)
+        node.add_input_opt('--template-file', bank_file)
+        node.new_output_file_opt(raw_fit_file.segment, '.hdf', '--output')
+        return node
+
 class PyCBCFindCoincExecutable(Executable):
     """ Find coinc triggers using a folded interval method
     """
     current_retention_level = Executable.ALL_TRIGGERS
-    def create_node(self, trig_files, bank_file, veto_file, veto_name, template_str, tags=None):
+    def create_node(self, trig_files, bank_file, stat_files, veto_file,
+                    veto_name, template_str, tags=None):
         if tags is None:
             tags = []
         segs = trig_files.get_times_covered_by_files()
@@ -66,6 +95,7 @@ class PyCBCFindCoincExecutable(Executable):
         node.set_memory(10000)
         node.add_input_opt('--template-bank', bank_file)
         node.add_input_list_opt('--trigger-files', trig_files)
+        node.add_input_list_opt('--statistic-files', stat_files)
         if veto_file is not None:
             node.add_input_opt('--veto-files', veto_file)
             node.add_opt('--segment-name', veto_name)
@@ -150,12 +180,13 @@ class PyCBCDistributeBackgroundBins(Executable):
         
 class PyCBCCombineStatmap(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS
-    def create_node(self, stat_files, tags=None):
+    def create_node(self, statmap_files, tags=None):
         if tags is None:
             tags = []
         node = Node(self)
-        node.add_input_list_opt('--statmap-files', stat_files)
-        node.new_output_file_opt(stat_files[0].segment, '.hdf', '--output-file', tags=tags)
+        node.add_input_list_opt('--statmap-files', statmap_files)
+        node.new_output_file_opt(statmap_files[0].segment, '.hdf',
+                                 '--output-file', tags=tags)
         return node
  
 class MergeExecutable(Executable):
@@ -191,6 +222,28 @@ def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir,
         workflow += node
         out += node.output_files
     return out
+
+def setup_trigger_fitting(workflow, insps, hdfbank, veto_file, veto_name):
+    if not workflow.cp.has_option('workflow-coincidence', 'do-trigger-fitting'):
+        return FileList()
+    else:
+        assert len(hdfbank) == 1  # must be a list with exactly 1 bank file
+        assert len(veto_file) == 1
+        assert len(veto_name) == 1
+        smoothed_fit_files = FileList()
+        for i in workflow.ifos:
+            ifo_insp = [insp for insp in insps if (insp.ifo == i)]
+            assert len(ifo_insp)==1
+            raw_node = PyCBCFitByTemplateExecutable(workflow.cp,
+                'fit_by_template', ifos=i).create_node(ifo_insp[0], hdfbank[0],
+                                                    veto_file[0], veto_name[0])
+            workflow += raw_node
+            smooth_node = PyCBCFitOverParamExecutable(workflow.cp,
+                'fit_over_param', ifos=i).create_node(raw_node.output_files[0],
+                                                                    hdfbank[0])
+            workflow += smooth_node
+            smoothed_fit_files += smooth_node.output_files
+        return smoothed_fit_files
 
 def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file, 
                                  veto_file, veto_name, out_dir, tags=None):
@@ -278,18 +331,18 @@ def setup_background_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
     background_bins = [x for x in background_bins if x != '']
     bins_node = bins_exe.create_node(coinc_files, bank_file, background_bins)
     workflow += bins_node
-    
-    stat_files = FileList([])
+
+    statmap_files = FileList([])
     for i, coinc_file in enumerate(bins_node.output_files):
         statnode = statmap_exe.create_node(FileList([coinc_file]), tags=tags + ['BIN_%s' % i])
         workflow += statnode
-        stat_files.append(statnode.output_files[0])
-        stat_files[i].bin_name = bins_node.names[i]
+        statmap_files.append(statnode.output_files[0])
+        statmap_files[i].bin_name = bins_node.names[i]
     
-    cstat_node = cstat_exe.create_node(stat_files, tags=tags)
+    cstat_node = cstat_exe.create_node(statmap_files, tags=tags)
     workflow += cstat_node
     
-    return cstat_node.output_files[0], stat_files
+    return cstat_node.output_files[0], statmap_files
     
 def setup_statmap_inj(workflow, coinc_files, background_file, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -331,21 +384,21 @@ def setup_background_bins_inj(workflow, coinc_files, background_file, bank_file,
         workflow += bins_node
         coinc_files[inj_type] = bins_node.output_files
     
-    stat_files = FileList([])
+    statmap_files = FileList([])
     for i in range(len(background_bins)):
         statnode = statmap_exe.create_node(FileList([coinc_files['injinj'][i]]), FileList([background_file[i]]), 
                                      FileList([coinc_files['injfull'][i]]), FileList([coinc_files['fullinj'][i]]), 
                                      tags=tags + ['BIN_%s' % i])
         workflow += statnode
-        stat_files.append(statnode.output_files[0])
+        statmap_files.append(statnode.output_files[0])
         
-    cstat_node = cstat_exe.create_node(stat_files, tags=tags)
+    cstat_node = cstat_exe.create_node(statmap_files, tags=tags)
     workflow += cstat_node
     
     return cstat_node.output_files[0]
 
 def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
-                           background_file, veto_file, veto_name, out_dir, tags=None):
+              stat_files, background_file, veto_file, veto_name, out_dir, tags=None):
     """
     This function sets up exact match coincidence and background estimation
     using a folded interval technique.
@@ -387,15 +440,17 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
                                               tags=tags + [ctag], out_dir=out_dir)
         for i in range(factor):
             group_str = '%s/%s' % (i, factor)
-            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, 
-                                           veto_file, veto_name,
-                                           group_str, tags=([str(i)]))
+            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
+                                                   stat_files,
+                                                   veto_file, veto_name,
+                                                   group_str,
+                                                   tags=[str(i)])
             bg_files[ctag] += coinc_node.output_files
             workflow.add_node(coinc_node)
 
     return setup_statmap_inj(workflow, bg_files, background_file, hdfbank, out_dir, tags=tags)
     
-def setup_interval_coinc(workflow, hdfbank, trig_files,
+def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                          veto_files, veto_names, out_dir, tags=None):
     """
     This function sets up exact match coincidence and background estimation
@@ -406,34 +461,35 @@ def setup_interval_coinc(workflow, hdfbank, trig_files,
     make_analysis_dir(out_dir)
     logging.info('Setting up coincidence')
 
-    if len(hdfbank) > 1:
-        raise ValueError('This coincidence method only supports a '
-                         'pregenerated template bank')
+    if len(hdfbank) != 1:
+        raise ValueError('Must use exactly 1 bank file for this coincidence '
+                         'method, I got %i !' % len(hdfbank))
     hdfbank = hdfbank[0]
 
     if len(workflow.ifos) > 2:
         raise ValueError('This coincidence method only supports two ifo searches')
 
     findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
-                                              ifos=workflow.ifos,
-                                              tags=tags, out_dir=out_dir)
+                                             ifos=workflow.ifos,
+                                             tags=tags, out_dir=out_dir)
                                          
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
-    stat_files = []
+    statmap_files = []
     for veto_file, veto_name in zip(veto_files, veto_names):
         bg_files = FileList()
         for i in range(factor):
             group_str = '%s/%s' % (i, factor)
-            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, 
+            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
+                                                   stat_files,
                                                    veto_file, veto_name,
                                                    group_str,
                                                    tags=[veto_name, str(i)])
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
              
-        stat_files += [setup_statmap(workflow, bg_files, hdfbank, out_dir, tags=tags + [veto_name])]
+        statmap_files += [setup_statmap(workflow, bg_files, hdfbank, out_dir, tags=tags + [veto_name])]
 
     logging.info('...leaving coincidence ')
-    return stat_files
+    return statmap_files
