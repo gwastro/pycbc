@@ -466,6 +466,7 @@ setup (
                'bin/workflows/pycbc_create_sbank_workflow',
                'bin/workflows/pycbc_create_uberbank_workflow',
                'bin/pycbc_compress_bank',
+               'bin/pycbc_ringinj',
                ],
     packages = [
                'pycbc',

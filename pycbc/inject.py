@@ -29,7 +29,9 @@
 import numpy as np
 import lal
 import lalsimulation as sim
+import h5py
 from pycbc.waveform import get_td_waveform, utils as wfutils
+from pycbc.waveform import ringdown_td_approximants
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import ligolw, table, lsctables
 from pycbc.types import float64, float32, TimeSeries
@@ -337,3 +339,98 @@ class SGBurstInjectionSet(object):
             add_injection(lalstrain, signal_lal, None)
 
         strain.data[:] = lalstrain.data.data[:]
+
+class RingdownInjectionSet(object):
+    """Manages a ringdown injection: reads injection from hdf file
+    and injects it into time series.
+
+    Parameters
+    ----------
+    hdf_file : string
+        Path to hdf file containing injection definitions.
+
+    Attributes
+    ----------
+    table
+    """
+
+    def __init__(self, hdf_file):
+        self.name = hdf_file
+
+        injfile = h5py.File(hdf_file,'r')
+        pnames = map(str, injfile.keys())
+        self.table = dict([(p, injfile[p].value) for p in pnames])
+        injfile.close()
+
+    def apply(self, strain, detector_name):
+        """Add injection (as seen by a particular detector) to a time series.
+
+        Parameters
+        ----------
+        strain : TimeSeries
+            Time series to inject signals into, of type float32 or float64.
+        detector_name : string
+            Name of the detector used for projecting injections.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        TypeError
+            For invalid types of `strain`.
+        """
+
+        if strain.dtype not in (float32, float64):
+            raise TypeError("Strain dtype must be float32 or float64, not " \
+                    + str(strain.dtype))
+
+        lalstrain = strain.lal()
+
+        # pick lalsimulation injection function
+        add_injection = injection_func_map[strain.dtype]
+
+        # Read injection parameters (for now, only one injection in file)
+        injection = self.table
+
+        signal = self.make_strain_from_inj_object(injection, strain.delta_t,
+                     detector_name)
+        signal = signal.astype(strain.dtype)
+        signal_lal = signal.lal()
+        add_injection(lalstrain, signal_lal, None)
+
+        strain.data[:] = lalstrain.data.data[:]
+
+    def make_strain_from_inj_object(self, inj, delta_t, detector_name):
+        """Make a h(t) strain time-series from an injection object as read from
+        an hdf file.
+
+        Parameters
+        -----------
+        inj : injection object
+            The injection object to turn into a strain h(t).
+        delta_t : float
+            Sample rate to make injection at.
+        detector_name : string
+            Name of the detector used for projecting injections.
+
+        Returns
+        --------
+        signal : float
+            h(t) corresponding to the injection.
+        """
+        detector = Detector(detector_name)
+
+        # compute the waveform time series
+        hp, hc = ringdown_td_approximants[inj['approximant']](
+            delta_t=delta_t, **inj)
+
+        hp._epoch += inj['tc']
+        hc._epoch += inj['tc']
+
+        # compute the detector response and add it to the strain
+        signal = detector.project_wave(hp, hc,
+                             inj['ra'], inj['dec'], inj['polarization'])
+
+        return signal
