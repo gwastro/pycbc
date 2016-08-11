@@ -53,7 +53,7 @@ class Stat(object):
 class NewSNRStatistic(Stat):
 
     """ Calculate the NewSNR coincident detection statistic """
-    
+
     def single(self, trigs):
         """Calculate the single detector statistic.
 
@@ -146,11 +146,11 @@ class PhaseTDStatistic(NewSNRStatistic):
     def __init__(self, files):
         NewSNRStatistic.__init__(self, files)
         self.hist = self.files['phasetd_newsnr']['map'][:]
-        top = float(self.hist.max())     
+        top = float(self.hist.max())
 
         #normalize so that peak has no effect on newsnr
         self.hist = self.hist / top
-        self.hist = numpy.log(self.hist) 
+        self.hist = numpy.log(self.hist)
 
     def single(self, trigs):
         """Calculate the single detector statistic.
@@ -180,7 +180,7 @@ class PhaseTDStatistic(NewSNRStatistic):
             Single detector ranking statistic for the first detector.
         s2: numpy.ndarray
             Single detector ranking statistic for the second detector.
-        slide: numpy.ndarray 
+        slide: numpy.ndarray
             Array of ints. These represent the multiple of the timeslide
         interval to bring a pair of single detector triggers into coincidence.
         step: float
@@ -202,12 +202,12 @@ class PhaseTDStatistic(NewSNRStatistic):
         sbins = self.files['phasetd_newsnr']['sbins'][:]
         rbins = self.files['phasetd_newsnr']['rbins'][:]
 
-        # Find which bin each coinc falls into        
-        tv = numpy.searchsorted(tbins, td) - 1 
+        # Find which bin each coinc falls into
+        tv = numpy.searchsorted(tbins, td) - 1
         pv = numpy.searchsorted(pbins, pd) - 1
         s1v = numpy.searchsorted(sbins, s1[:,4]) - 1
-        s2v = numpy.searchsorted(sbins, s2[:,4]) - 1    
-        rv = numpy.searchsorted(rbins, rd) - 1  
+        s2v = numpy.searchsorted(sbins, s2[:,4]) - 1
+        rv = numpy.searchsorted(rbins, rd) - 1
 
         # The following just enforces that the point fits into
         # the bin boundaries. If a point lies outside the boundaries it is
@@ -222,10 +222,10 @@ class PhaseTDStatistic(NewSNRStatistic):
         s2v[s2v >= len(sbins) - 1] = len(sbins) - 2
         rv[rv < 0] = 0
         rv[rv >= len(rbins) - 1] = len(rbins) - 2
-        
+
         rstat = s1[:,0]**2.0 + s2[:,0]**2.0
         cstat = rstat + 2.0 * self.hist[tv, pv, s1v, s2v, rv]
-        cstat[cstat < 0] = 0        
+        cstat[cstat < 0] = 0
         return cstat ** 0.5
 
 class ExpFitStatistic(NewSNRStatistic):
@@ -269,7 +269,7 @@ class ExpFitStatistic(NewSNRStatistic):
         """
         Calculate the parts of the coinc statistic depending on sngl parameters
 
-        Read in single trigger information, make the newsnr statistic 
+        Read in single trigger information, make the newsnr statistic
         and rescale by the fitted coefficients alpha and lambda
         """
         alphai, lambdai, thresh = self.find_fits(trigs)
