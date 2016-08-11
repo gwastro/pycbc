@@ -371,9 +371,6 @@ class RingdownInjectionSet(object):
             Time series to inject signals into, of type float32 or float64.
         detector_name : string
             Name of the detector used for projecting injections.
-        distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
 
         Returns
         -------
@@ -417,9 +414,6 @@ class RingdownInjectionSet(object):
             Sample rate to make injection at.
         detector_name : string
             Name of the detector used for projecting injections.
-        distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
 
         Returns
         --------
