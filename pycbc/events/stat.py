@@ -330,3 +330,27 @@ statistic_dict = {
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
 }
 
+def get_statistic(stat):
+    """
+    Error-handling sugar around dict lookup
+
+    Parameters
+    ----------
+    stat : string
+        Name of the statistic
+
+    Returns
+    -------
+    class
+        Subclass of Stat base class
+
+    Raises
+    ------
+    RuntimeError
+        If the string is not recognized as corresponding to a Stat subclass
+    """
+    try:
+        return statistic_dict[stat]
+    except KeyError:
+        raise RuntimeError('%s is not an available detection statistic' % stat)
+
