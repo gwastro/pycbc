@@ -19,6 +19,7 @@ a specific Nth loudest coincident event.
 """
 import sys, logging, argparse, numpy, itertools, pycbc, h5py
 from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter
+from pycbc.io import WaveformArray
 from pycbc import events
 from pycbc.filter import resample_to_delta_t
 from pycbc.types import zeros, float32, complex64, TimeSeries, FrequencySeries
@@ -91,7 +92,8 @@ parser.add_argument("--use-params-of-closest-injection", action="store_true",
                        "using this do not supply mass and spin options. "
                        "Using this requires trigger-time and injection-file "
                        "to be given.")
-parser.add_argument("--approximant", type=str,
+# add approximant arg
+waveform.bank.add_approximant_arg(parser,
                   help="The name of the approximant to use for filtering. "
                       "Do not use if using --use-params-of-closest-injection.")
 parser.add_argument("--mass1", type=float, 
@@ -187,15 +189,16 @@ ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, pycbc.DYN_RANGE_FAC)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
-class t(object):
-    pass
- 
-row = t()
-row.params = t()
-row.params.mass1 = opt.mass1
-row.params.mass2 = opt.mass2
-row.params.spin1z = opt.spin1z
-row.params.spin2z = opt.spin2z
+if not opt.use_params_of_closest_injection:
+    row = WaveformArray.from_kwargs(
+            mass1=opt.mass1,
+            mass2=opt.mass2,
+            spin1x=opt.spin1x,
+            spin1y=opt.spin1y,
+            spin1z=opt.spin1z,
+            spin2x=opt.spin2x,
+            spin2y=opts.spin2y,
+            spin2z=opt.spin2z)
 
 with ctx:
     fft.from_cli(opt)
@@ -224,10 +227,15 @@ with ctx:
         inj_idx = abs(end_times - opt.trigger_time).argmin()
         inj = inj_set.table[inj_idx]
         # Use injection values for things like choosing number of chisq bins
-        row.params.mass1 = opt.mass1 = inj.mass1
-        row.params.mass2 = opt.mass2 = inj.mass2
-        row.params.spin1z = opt.spin1z = inj.spin1z
-        row.params.spin2z = opt.spin2z = inj.spin2z
+        row = WaveformArray.from_kwargs(
+            mass1=inj.mass1,
+            mass2=inj.mass2,
+            spin1x=inj.spin1x,
+            spin1y=inj.spin1y,
+            spin1z=inj.spin1z,
+            spin2x=inj.spin2x,
+            spin2y=inj.spin2y,
+            spin2z=inj.spin2z)
         # FIXME: Don't like hardcoded 16384 here
         # NOTE: f_lower is set in strain.py as inj.f_lower, but this is a
         #       little unclear to see and caused me some problems! Stating
@@ -239,23 +247,17 @@ with ctx:
                                           method='ldas')
         td_template = td_template * pycbc.DYN_RANGE_FAC
         td_template._epoch -= inj.get_end(site=opt.channel_name[0])
-        opt.approximant = inj.waveform
+        approximant = inj.waveform
         template = waveform.td_waveform_to_fd_waveform(td_template, length=flen)
         template = template.astype(complex_same_precision_as(segments[0]))
     else:
-        # FIXME: This check is hacky!
-        if opt.approximant and 'params' in opt.approximant:
-            opt.approximant = waveform.FilterBank.parse_option(row,
-                                                               opt.approximant)
+        approximant = waveform.bank.parse_approximant_arg(opt.approximant, row)[0] 
         logging.info("Making template: %s" % opt.approximant)
         if opt.u_val is None:
             template = waveform.get_waveform_filter(
                                     zeros(flen, dtype=complex64),
-                                    approximant=opt.approximant,
-                                    mass1=opt.mass1, mass2=opt.mass2,
-                                    spin1z=opt.spin1z, spin2z=opt.spin2z,
-                                    spin1y=opt.spin1y, spin2y=opt.spin2y,
-                                    spin1x=opt.spin1x, spin2x=opt.spin2x,
+                                    approximant=approximant,
+                                    template=row[0],
                                     inclination=opt.inclination,
                                     taper=opt.taper_template, 
                                     f_lower=flow, delta_f=delta_f,
@@ -263,19 +265,23 @@ with ctx:
         else:
             tp, tc = waveform.get_two_pol_waveform_filter(
                                     zeros(flen, dtype=complex64),
-                                    zeros(flen, dtype=complex64), None,
-                                    approximant=opt.approximant,
-                                    mass1=opt.mass1, mass2=opt.mass2,
-                                    spin1z=opt.spin1z, spin2z=opt.spin2z,
-                                    spin1y=opt.spin1y, spin2y=opt.spin2y,
-                                    spin1x=opt.spin1x, spin2x=opt.spin2x,
+                                    zeros(flen, dtype=complex64), row[0],
+                                    approximant=approximant,
                                     inclination=opt.inclination,
                                     taper=opt.taper_template,
                                     f_lower=flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)
             template = tc.multiply_and_add(tp, opt.u_val)
 
-    chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(row,
+    # FIXME: should probably switch to something like what is done for parsing
+    # the approximant for chisq bins at some point
+    class t(object):
+        pass
+    parse_row = t()
+    parse_row.params = t()
+    for param in row.fieldnames:
+        setattr(parse_row.params, param, row[param][0])
+    chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(parse_row,
                                                                opt.chisq_bins))
 
     f['template'] = template.numpy()                  
@@ -349,7 +355,7 @@ with ctx:
     f['chisq'] = numpy.concatenate([chisq.numpy() for chisq in chisqs])[sidx:eidx]
     f['chisq'].attrs['start_time'] = start_time
     f['chisq'].attrs['delta_t'] = snr.delta_t 
-    f.attrs['approximant'] = opt.approximant
+    f.attrs['approximant'] = approximant
     f.attrs['ifo'] = ifo
     
 logging.info("Finished")
