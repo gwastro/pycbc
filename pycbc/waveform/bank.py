@@ -372,6 +372,7 @@ class TemplateBank(object):
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
                        approximant=None, increment=8, parameters=None,
+                       load_compressed=True, load_compressed_now=False, 
                        **kwds):
 
         self.increment = increment
@@ -381,7 +382,8 @@ class LiveFilterBank(TemplateBank):
         self.minimum_buffer = minimum_buffer
 
         super(LiveFilterBank, self).__init__(filename, approximant=approximant,
-                parameters=parameters, **kwds)
+                parameters=parameters, load_compressed=load_compressed,
+                load_compressed_now=load_compressed_now, **kwds)
 
         from pycbc.pnutils import mass1_mass2_to_mchirp_eta
         self.table = sorted(self.table, key=lambda t: mass1_mass2_to_mchirp_eta(t.mass1, t.mass2)[0])
@@ -494,6 +496,7 @@ class FilterBank(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, f_lower, dtype,
                  out=None, max_template_length=None,
                  approximant=None, parameters=None,
+                 load_compressed=True, load_compressed_now=False, 
                  **kwds):
         self.out = out
         self.dtype = dtype
@@ -507,7 +510,9 @@ class FilterBank(TemplateBank):
         self.max_template_length = max_template_length
 
         super(FilterBank, self).__init__(filename, approximant=approximant,
-            parameters=parameters, **kwds)
+            parameters=parameters, load_compressed=load_compressed,
+            load_compressed_now=load_compressed_now,
+            **kwds)
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
@@ -589,6 +594,7 @@ class FilterBankSkyMax(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, f_lower,
                  dtype, out_plus=None, out_cross=None,
                  max_template_length=None, parameters=None,
+                 load_compressed=True, load_compressed_now=False, 
                  **kwds):
         self.out_plus = out_plus
         self.out_cross = out_cross
@@ -603,6 +609,7 @@ class FilterBankSkyMax(TemplateBank):
         self.max_template_length = max_template_length
 
         super(FilterBankSkyMax, self).__init__(filename, parameters=parameters,
+            load_compressed=True, load_compressed_now=False,
             **kwds)
 
     def __getitem__(self, index):
