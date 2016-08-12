@@ -28,6 +28,7 @@
 
 import numpy as np
 import lal
+import copy
 import lalsimulation as sim
 import h5py
 from pycbc.waveform import get_td_waveform, utils as wfutils
@@ -78,12 +79,10 @@ class InjectionSet(object):
     indoc
     table
     """
-
     def __init__(self, sim_file, **kwds):
-        self.indoc = ligolw_utils.load_filename(
+        indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
-        self.table = table.get_table(
-            self.indoc, lsctables.SimInspiralTable.tableName)
+        self.table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
         self.extra_args = kwds
 
     def getswigrow(self, glue_row):
@@ -173,7 +172,10 @@ class InjectionSet(object):
             
         strain.data[:] = lalstrain.data.data[:]
 
-        return injection_parameters
+        injected = copy.copy(self)
+        injected.table = lsctables.SimInspiralTable()
+        injected.table += injection_parameters
+        return injected
        
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
                                     f_lower=None, distance_scale=1):

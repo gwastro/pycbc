@@ -188,8 +188,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
     """
 
     gating_info = {}
-    injections = []
-
     if opt.frame_cache or opt.frame_files or opt.frame_type:
         if opt.frame_cache:
             frame_source = opt.frame_cache
@@ -225,7 +223,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if opt.injection_file:
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
-            injections += injector.apply(strain, opt.channel_name[0:2],        
+            injections = injector.apply(strain, opt.channel_name[0:2],        
                              distance_scale=opt.injection_scale_factor)
 
         if opt.sgburst_injection_file:
@@ -314,7 +312,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if opt.injection_file:
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
-            injections += injector.apply(strain, opt.channel_name[0:2],
+            injections = injector.apply(strain, opt.channel_name[0:2],        
                              distance_scale=opt.injection_scale_factor)
 
         if opt.sgburst_injection_file:
@@ -332,7 +330,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             logging.info("Converting to float32")
             strain = (dyn_range_fac * strain).astype(pycbc.types.float32)
 
-    if opt.injection_file or opt.sgburst_injection_file or opt.ringdown_injection_file:
+    if opt.injection_file:
         strain.injections = injections
 
     if opt.taper_data:
@@ -863,9 +861,8 @@ class StrainSegments(object):
         trig_end_idx = (trigger_end - int(strain.start_time)) * strain.sample_rate
 
         if filter_inj_only and hasattr(strain, 'injections'):
-            end_times= [inj.get_time_geocent() for inj in strain.injections]   
+            end_times = strain.injections.end_time()   
             end_times = [time for time in end_times if float(time) < trigger_end and float(time) > trigger_start]
-
             inj_idx = [(float(time) - float(strain.start_time)) * strain.sample_rate for time in end_times]
 
         for seg, ana in zip(self.segment_slices, self.analyze_slices):
