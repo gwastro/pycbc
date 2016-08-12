@@ -328,6 +328,7 @@ with ctx:
             fp.write_samples_from_sampler(sampler, start=0, end=n_burnin)
             fp.write_acceptance_fraction(data=sampler.acceptance_fraction,
                                          start=0, end=n_burnin)
+            fp.write_lnpost(data=sampler.lnpost, start=0, end=n_burnin)
 
     # write sampler attributes to file
     with InferenceFile(opts.output_file, "a") as fp:
@@ -353,6 +354,7 @@ with ctx:
             fp.write_samples_from_sampler(sampler, start=start, end=end)
             fp.write_acceptance_fraction(data=sampler.acceptance_fraction,
                                          start=start, end=end)
+            fp.write_lnpost(data=sampler.lnpost, start=start, end=end)
 
 # calculate ACL for each series of samples for each parameter for each walker
 logging.info("Calculating maximum ACL")

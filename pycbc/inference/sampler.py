@@ -48,9 +48,16 @@ class _BaseSampler(object):
         return ValueError("acceptance_fraction function not set.")
 
     @property
+    def lnpost(self):
+    """ This function should return the natural logarithm of the likelihood
+    as an niterations x nwalker array.
+    """
+    return ValueError("lnpost function not set.")
+
+    @property
     def chain(self):
         """ This function should return the past samples as a
-        initerations x nwalker x ndim array.
+        niterations x nwalker x ndim array.
         """
         return ValueError("chain function not set.")
 
@@ -108,6 +115,13 @@ class KombineSampler(_BaseSampler):
         """ Get the fraction of walkers that accepted each step as an arary.
         """
         return self._sampler.acceptance_fraction
+
+    @property
+    def lnpost(self):
+        """ Get the natural logarithm of the likelihoodi as an 
+        niterations x nwalkers array.
+        """
+        return self._sampler.lnpost
 
     @property
     def chain(self):
