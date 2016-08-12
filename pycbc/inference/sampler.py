@@ -118,7 +118,7 @@ class KombineSampler(_BaseSampler):
 
     @property
     def lnpost(self):
-        """ Get the natural logarithm of the likelihoodi as an 
+        """ Get the natural logarithm of the likelihood as an 
         niterations x nwalkers array.
         """
         return self._sampler.lnpost
