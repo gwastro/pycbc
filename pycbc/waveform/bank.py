@@ -27,6 +27,7 @@ This module provides classes that describe banks of waveforms
 """
 import types, numpy, logging, os.path, math, h5py
 import pycbc.waveform
+import pycbc.waveform.compress
 from pycbc.types import zeros
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from pycbc.filter import sigmasq
@@ -272,8 +273,8 @@ class TemplateBank(object):
                 self.compressed_waveforms = {}
                 for tmplt_hash in self.table['template_hash']:
                     self.compressed_waveforms[tmplt_hash] = \
-                        CompressedWaveform.from_hdf(f, tmplt_hash,
-                            load_now=load_compressed_now)
+                        pycbc.waveform.compress.CompressedWaveform.from_hdf(f,
+                            tmplt_hash, load_now=load_compressed_now)
         else:
             raise ValueError("Unsupported template bank file extension %s" % ext)
 
