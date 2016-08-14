@@ -49,10 +49,10 @@ class _BaseSampler(object):
 
     @property
     def lnpost(self):
-    """ This function should return the natural logarithm of the likelihood
-    as an niterations x nwalker array.
-    """
-    return ValueError("lnpost function not set.")
+        """ This function should return the natural logarithm of the likelihood
+        as an niterations x nwalker array.
+        """
+        return ValueError("lnpost function not set.")
 
     @property
     def chain(self):

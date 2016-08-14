@@ -511,5 +511,5 @@ class InferenceFile(h5py.File):
             else:
                 if end > len(lnlikelihood[i,:]):
                     end = None
-                lnlikelihood_subset = lnlikelihood[i,start_end]
-                self["ln_likelihood/" + dataset_name][start:end] = lnlikelihoo_subset
+                lnlikelihood_subset = lnlikelihood[i,start:end]
+                self["ln_likelihood/" + dataset_name][start:end] = lnlikelihood_subset
