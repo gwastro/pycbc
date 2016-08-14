@@ -323,7 +323,8 @@ with ctx:
                          niterations=opts.niterations+n_burnin,
                          labels=labels)
         fp.write_acceptance_fraction(niterations=opts.niterations+n_burnin)
-        fp.write_lnpost(niterations=opts.niterations+n_burnin)
+        fp.write_lnpost(nwalkers=opts.nwalkers,
+                        niterations=opts.niterations+n_burnin)
         # write the burn in
         if not opts.skip_burn_in:
             fp.write_samples_from_sampler(sampler, start=0, end=n_burnin)
