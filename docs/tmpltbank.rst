@@ -464,8 +464,9 @@ Hybrid approaches: the best of both worlds
 We have found that in many cases it makes sense to combine the techniques of
 sbank with the geometric lattic algorithm to produce a template bank. This
 technique was used in Advanced LIGO's first observing run to produce what was
-called the "uberbank". The reference for this is the following:
+called the "uberbank". The references for this are the following:
 
+* Abbott et al., Phys.Rev. D93 (2016) 122003
 * Capano et al., Phys.Rev. D93 (2016) 124007
 
 The uberbank construction process is now written up in a single workflow,
