@@ -962,7 +962,8 @@ if python -c "import dbhash, shelve" 2>/dev/null; then
 fi
 if $use_pycbc_pyinstaller_hooks; then
     export NOW_BUILDING=NULL
-    pyi-makespec --additional-hooks-dir $hooks/hooks $hidden_imports --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
+    pyinstaller --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onefile ./bin/pycbc_condition_strain
+    pyi-makespec --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
 else
     # find hidden imports (pycbc CPU modules)
     hidden_imports=`find $PREFIX/lib/python2.7/site-packages/pycbc/ -name '*_cpu.py' | sed 's%.*/site-packages/%%;s%\.py$%%;s%/%.%g;s%^% --hidden-import=%' | tr -d '\012'`
@@ -987,10 +988,6 @@ else
         cp "$libgomp" .
     fi
 fi
-
-# create (empty) "Tcl/Tk data directories"
-# I really don't know why the application needs to crash without these
-mkdir -p tcl tk
 
 # OSX doesn't have a GNU error C extension, so drop an "error.h" header
 # with a fake 'error' function somewhere for scipy wave to pick it up
