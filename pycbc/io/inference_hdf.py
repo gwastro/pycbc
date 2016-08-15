@@ -319,7 +319,7 @@ class InferenceFile(h5py.File):
             List of names of parameters.
         data : numpy.array
             Data to be saved with shape (niterations,nwalkers,ndim). if data is
-            None then create an array fo zeros for each walker with
+            None then create an array of zeros for each walker with
             length niterations.
         start : int
             If given then begin inserting this data at this index.
@@ -453,3 +453,63 @@ class InferenceFile(h5py.File):
             The ACL.
         """
         self.attrs["acl"] = acl
+
+    def write_lnpost(self, data=None, start=None, end=None,
+                      nwalkers=0, niterations=0):
+        """ Writes log likelihood to the file. To write to a subsample of the array
+        use start and end. To initialize an empty array of length niterations
+        for each walker use nwalkers and niterations.
+
+        Parameters
+        -----------
+        data : numpy.array
+            Data to be saved with shape (niterations,nwalkers). if data is
+            None then create an array of zeros for each walker with
+            length niterations.
+        start : int
+            If given then begin inserting this data at this index.
+        end : int
+            If given then stop inserting data at this index.
+        nwalkers : int
+            Number of walkers should be given if data is None.
+        niterations : int
+            Number of iterations should be given if data is None.
+        """
+
+        # transpose past likelihoods to get an (nwalkers,niteration) array
+        if data is not None:
+            lnlikelihood = numpy.transpose(data)
+            nwalkers, niterations = lnlikelihood.shape 
+
+        # sanity check options
+        elif nwalkers == 0 and niterations != 0:
+            raise ValueError("If nwalkers is 0 then niterations must be 0")
+
+        # if no data is given then initialize to array of numpy.NAN
+        # with shape (nwalkers,niterations)
+        else:
+            shape = (nwalkers, niterations)
+            lnlikelihood = numpy.zeros(shape)
+
+        # create a group in the output file for the ln(likelihood)
+        if "ln_likelihood" not in self.keys():
+            group_name = self.create_group("ln_likelihood")
+
+        # loop over number of walkers
+        for i in range(nwalkers):
+
+            # create dataset with shape (nwalkers, niterations)
+            dataset_name = "walker%d" %i
+            if dataset_name not in self["ln_likelihood"].keys():
+                lnlikelihood_subset = numpy.zeros(niterations)
+                if data is not None:
+                    lnlikelihood_subset[start:end] = lnlikelihood[i,start:end]
+                group_name.create_dataset(dataset_name,
+                                         data=lnlikelihood_subset)
+
+            # write all samples in range from walker
+            else:
+                if end > len(lnlikelihood[i,:]):
+                    end = None
+                lnlikelihood_subset = lnlikelihood[i,start:end]
+                self["ln_likelihood/" + dataset_name][start:end] = lnlikelihood_subset
