@@ -173,9 +173,11 @@ class TemplateBank(object):
     ----------
     filename : string
         The name of the file to load. Must end in '.xml[.gz]' or '.hdf'. If an
-        hdf file, it must have a 'parameters' in its `attrs` which gives a list
-        of the names of fields to load from the file. If an xml file, it must
-        have a `SnglInspiral` table.
+        hdf file, it should have a 'parameters' in its `attrs` which gives a
+        list of the names of fields to load from the file. If no 'parameters'
+        are found, all of the top-level groups in the file will assumed to be
+        parameters (a warning will be printed to stdout in this case). If an
+        xml file, it must have a `SnglInspiral` table.
     approximant : {None, (list of) string(s)}
         Specify the approximant(s) for each template in the bank. If None
         provided, will try to load the approximant from the file. The
@@ -193,7 +195,9 @@ class TemplateBank(object):
         If a derived parameter is specified, only the parameters needed to
         compute that parameter will be loaded from the file. For example, if
         `parameters='mchirp'`, then only `mass1, mass2` will be loaded from
-        the file.
+        the file. Note that derived parameters can only be used if the
+        needed parameters are in the file; e.g., you cannot use `chi_eff` if
+        `spin1z`, `spin2z`, `mass1`, and `mass2` are in the input file.
     load_compressed : {True, bool}
         If compressed waveforms are present in the file, load them. Only works
         for hdf files.
@@ -249,7 +253,14 @@ class TemplateBank(object):
             self.indoc = None
             f = h5py.File(filename, 'r')
             self.filehandler = f
-            fileparams = f.attrs['parameters']
+            try:
+                fileparams = map(str, f.attrs['parameters'])
+            except KeyError:
+                # just assume all of the top-level groups are the parameters
+                fileparams = map(str, f.keys())
+                logging.info("WARNING: no parameters attribute found. "
+                    "Assuming that %s " %(', '.join(fileparams)) +
+                    "are the parameters.")
             # use WaveformArray's syntax parser to figure out what fields
             # need to be loaded
             if parameters is None:
