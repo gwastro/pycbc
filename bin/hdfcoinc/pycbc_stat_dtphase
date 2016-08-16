@@ -108,8 +108,8 @@ def generate_samples(size):
    
     r = uniform(args.min_detector_ratio, 1, size=len(dist))
     sp1 = numpy.resize(fp1 * ip, len(dist)) / dist * r
-    sp2 = numpy.resize(fp2 * ip, len(dist)) / dist * r
-    sc1 = numpy.resize(fc1 * ic, len(dist)) / dist
+    sc1 = numpy.resize(fc1 * ic, len(dist)) / dist * r
+    sp2 = numpy.resize(fp2 * ip, len(dist)) / dist
     sc2 = numpy.resize(fc2 * ic, len(dist)) / dist 
     td = numpy.resize(td, fsize)
 
