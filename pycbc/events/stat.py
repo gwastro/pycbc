@@ -194,6 +194,13 @@ class PhaseTDStatistic(NewSNRStatistic):
         td = s1[:,2] - s2[:,2] - slide * step
         pd = (s1[:,1] - s2[:,1]) % (numpy.pi * 2)
         rd = s1[:, 3] / s2[:, 3]
+        sn1 = s1[:,4]
+        sn2 = s2[:,4]
+ 
+        snr1 = sn1 * 1
+        snr2 = sn2 * 1
+        snr1[rd > 1] = sn2[rd > 1]
+        snr2[rd > 1] = sn1[rd > 1]
         rd[rd > 1] = 1.0 / rd[rd > 1]
 
         # These are the bin boundaries stored in the hdf file
@@ -205,9 +212,9 @@ class PhaseTDStatistic(NewSNRStatistic):
         # Find which bin each coinc falls into
         tv = numpy.searchsorted(tbins, td) - 1
         pv = numpy.searchsorted(pbins, pd) - 1
-        s1v = numpy.searchsorted(sbins, s1[:,4]) - 1
-        s2v = numpy.searchsorted(sbins, s2[:,4]) - 1
-        rv = numpy.searchsorted(rbins, rd) - 1
+        s1v = numpy.searchsorted(sbins, snr1) - 1
+        s2v = numpy.searchsorted(sbins, snr2) - 1    
+        rv = numpy.searchsorted(rbins, rd) - 1  
 
         # The following just enforces that the point fits into
         # the bin boundaries. If a point lies outside the boundaries it is
