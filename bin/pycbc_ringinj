@@ -49,10 +49,10 @@ parser.add_argument('--amp', type=float,
                     help='Amplitude for single mode approximants.')
 parser.add_argument('--phi', type=float,
                     help='Phase for single mode approximants.')
-parser.add_argument('--Mfinal', type=float,
+parser.add_argument('--mtotal_f', type=float,
                     help='Mass of the final black hole for '
                          'multi-mode approximants.')
-parser.add_argument('--Sfinal', type=float,
+parser.add_argument('--s_f', type=float,
                     help='Spin of the final black hole for ' 
                          'multi-mode approximants.')
 parser.add_argument('--lmns', nargs='+',
@@ -137,8 +137,8 @@ if opts.approximant=='FdQNMmultiModes' or opts.approximant=='TdQNMmultiModes':
         except:
             raise ValueError('Amplitude or phase for one of the modes is missing')
     # Create datasets for each argument
-    injection.create_dataset('Mfinal', data=opts.Mfinal)
-    injection.create_dataset('Sfinal', data=opts.Sfinal)
+    injection.create_dataset('mtotal_f', data=opts.mtotal_f)
+    injection.create_dataset('s_f', data=opts.s_f)
     injection.create_dataset('lmns', data=opts.lmns)
     for mode in all_modes:
         injection.create_dataset('amp%s' %mode, data=float(amps[mode]))
