@@ -49,10 +49,10 @@ parser.add_argument('--amp', type=float,
                     help='Amplitude for single mode approximants.')
 parser.add_argument('--phi', type=float,
                     help='Phase for single mode approximants.')
-parser.add_argument('--final_mass', type=float,
+parser.add_argument('--final-mass', type=float,
                     help='Mass of the final black hole for '
                          'multi-mode approximants.')
-parser.add_argument('--final_spin', type=float,
+parser.add_argument('--final-spin', type=float,
                     help='Spin of the final black hole for ' 
                          'multi-mode approximants.')
 parser.add_argument('--lmns', nargs='+',
