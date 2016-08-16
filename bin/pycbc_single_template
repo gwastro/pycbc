@@ -197,7 +197,7 @@ if not opt.use_params_of_closest_injection:
             spin1y=opt.spin1y,
             spin1z=opt.spin1z,
             spin2x=opt.spin2x,
-            spin2y=opts.spin2y,
+            spin2y=opt.spin2y,
             spin2z=opt.spin2z)
 
 with ctx:
