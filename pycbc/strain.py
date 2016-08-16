@@ -861,7 +861,7 @@ class StrainSegments(object):
         trig_end_idx = (trigger_end - int(strain.start_time)) * strain.sample_rate
 
         if filter_inj_only and hasattr(strain, 'injections'):
-            end_times = strain.injections.end_time()   
+            end_times = strain.injections.end_times()   
             end_times = [time for time in end_times if float(time) < trigger_end and float(time) > trigger_start]
             inj_idx = [(float(time) - float(strain.start_time)) * strain.sample_rate for time in end_times]
 
