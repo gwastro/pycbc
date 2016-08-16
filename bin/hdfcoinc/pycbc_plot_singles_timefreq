@@ -60,11 +60,11 @@ parser.add_argument('--detector', type=str, required=True)
 parser.add_argument('--center-time', type=float,
                     help='Center plot on the given GPS time')
 # add the approximant argument
-pycbc.waveform.bank.add_approximant_arg(parser,
+pycbc.waveform.bank.add_approximant_arg(parser, default='TaylorF2',
                     help='Waveform model used for computing inspiral tracks.'
                          ' Python expressions can be used to specify a '
                          'parameter-dependent approximant as done in '
-                         'pycbc_inspiral.')
+                         'pycbc_inspiral. Default is "TaylorF2".')
 pycbc.strain.insert_strain_option_group(parser)
 opts = parser.parse_args()
 

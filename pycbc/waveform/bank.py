@@ -107,13 +107,15 @@ def boolargs_from_apprxstr(approximant_strs):
     return [tuple(arg.split(':')) for arg in approximant_strs]
 
 
-def add_approximant_arg(parser, help=None):
+def add_approximant_arg(parser, default=None, help=None):
     """Adds an approximant argument to the given parser.
 
     Parameters
     ----------
     parser : ArgumentParser
         The argument parser to add the argument to.
+    default : {None, str}
+        Specify a default for the approximant argument. Defaults to None.
     help : {None, str}
         Provide a custom help message. If None, will use a descriptive message
         on how to specify the approximant.
@@ -139,7 +141,7 @@ def add_approximant_arg(parser, help=None):
              "conditionals to, see WaveformArray.default_fields(). Math "
              "operations may also be used on parameters; syntax is python, "
              "with any operation recognized by numpy.")
-    parser.add_argument("--approximant", nargs='+', type=str, default=None,
+    parser.add_argument("--approximant", nargs='+', type=str, default=default,
                         metavar='APPRX[:COND]',
                         help=help)
 
