@@ -51,7 +51,7 @@ def parse_parameters(parameters):
                              "see help")
         outnames.append(outname)
         columns.append(column)
-    return outname, column
+    return outnames, columns
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -61,7 +61,7 @@ parser.add_argument('--bank-file', required=True,
                          "and must contain a SnglInspiral table.")
 parser.add_argument('--output-file', required=True,
                     help="The ouput file name. Must end in '.hdf'.")
-parser.add_argument("--paramters", metavar="parameter[:xml_column]", nargs="+",
+parser.add_argument("--parameters", metavar="parameter[:xml_column]", nargs="+",
                     default=default_parameters,
                     help="The parameters to load from the xml file and to "
                          "write to the hdf file. The given name will be the "
@@ -105,5 +105,5 @@ for ii,p in enumerate(params):
 bankf.table.dtype.names = tuple(params)
 
 # write to output
-logging.infog("Writing to %s" %(args.output_file))
+logging.info("Writing to %s" %(args.output_file))
 bankf.write_to_hdf(args.output_file, force=args.force)
