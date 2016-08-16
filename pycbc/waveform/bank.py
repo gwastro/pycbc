@@ -289,7 +289,8 @@ class TemplateBank(object):
         else:
             raise ValueError("Unsupported template bank file extension %s" % ext)
 
-        if not hasattr(self.table, 'template_duration'):
+        if (parameters is None or 'template_duration' in parameters) \
+                and not hasattr(self.table, 'template_duration'):
             self.table = self.table.add_fields(numpy.zeros(len(self.table),
                                      dtype=numpy.float32), 'template_duration') 
         # if approximant is specified, override whatever was in the file
