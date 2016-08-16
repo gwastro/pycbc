@@ -962,7 +962,9 @@ if python -c "import dbhash, shelve" 2>/dev/null; then
 fi
 if $use_pycbc_pyinstaller_hooks; then
     export NOW_BUILDING=NULL
-    pyinstaller --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onefile ./bin/pycbc_condition_strain
+    if test ".`uname -s`" = ".Linux"; then
+        pyinstaller --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onefile ./bin/pycbc_condition_strain
+    fi
     pyi-makespec --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
 else
     # find hidden imports (pycbc CPU modules)
