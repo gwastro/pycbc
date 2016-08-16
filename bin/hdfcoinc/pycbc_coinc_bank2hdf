@@ -69,7 +69,8 @@ parser.add_argument("--paramters", metavar="parameter[:xml_column]", nargs="+",
                          "different than the column name in the xml file, "
                          "provide the column name after a colon, e.g., "
                          "'inclination:alpha3'. Otherwise, the given name "
-                         "will assumed to be the same as the column name.")
+                         "will assumed to be the same as the column name. "
+                         "Default is '%s'." %(' '.join(default_parameters)))
 # add the ability to specify the approximant to use
 bank.add_approximant_arg(parser,
                          help="Specify the approximant to use with each "
