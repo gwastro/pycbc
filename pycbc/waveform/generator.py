@@ -171,7 +171,7 @@ class FDomainMultiModeRingdownGenerator(BaseGenerator):
     --------
     Initialize a generator:
     >>> generator = waveform.FDomainMultiModeRingdownGenerator(
-            variable_args=['Mfinal', 'Sfinal', 'lmns','amp220','amp210','phi220','phi210'],
+            variable_args=['final_mass', 'final_spin', 'lmns','amp220','amp210','phi220','phi210'],
             delta_f=1./32, f_lower=30., f_final=500)
 
     Create a ringdown with the variable arguments:

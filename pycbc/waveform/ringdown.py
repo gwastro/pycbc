@@ -32,8 +32,8 @@ from pycbc.waveform.waveform import get_obj_attrs
 
 default_qnm_args = {'t_0':0}
 qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
-lm_required_args = ['Mfinal','Sfinal','l','m','nmodes']
-lm_allmodes_required_args = ['Mfinal','Sfinal', 'lmns']
+lm_required_args = ['final_mass','final_spin','l','m','nmodes']
+lm_allmodes_required_args = ['final_mass','final_spin', 'lmns']
 
 max_freq = 16384.
 min_dt = 1. / (2 * max_freq)
@@ -385,9 +385,9 @@ def get_td_lm(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
-    Mfinal : float
+    final_mass : float
         Mass of the final black hole.
-    Sfinal : float
+    final_spin : float
         Spin of the final black hole.
     l : int
         l mode (lm modes available: 22, 21, 33, 44, 55).
@@ -419,8 +419,8 @@ def get_td_lm(template=None, **kwargs):
 
     # Get required args
     amps, phis = lm_amps_phases(**input_params)
-    Mfinal = input_params.pop('Mfinal')
-    Sfinal = input_params.pop('Sfinal')
+    final_mass = input_params.pop('final_mass')
+    final_spin = input_params.pop('final_spin')
     l, m = input_params.pop('l'), input_params.pop('m')
     nmodes = input_params.pop('nmodes')
     # The following may not be in input_params
@@ -428,15 +428,15 @@ def get_td_lm(template=None, **kwargs):
     t_final = input_params.pop('t_final', None)
 
     if delta_t is None:
-        delta_t = lm_deltat(Mfinal, Sfinal, ['%d%d%d' %(l,m,nmodes)]) 
+        delta_t = lm_deltat(final_mass, final_spin, ['%d%d%d' %(l,m,nmodes)]) 
     if t_final is None:
-        t_final = lm_tfinal(Mfinal, Sfinal, ['%d%d%d' %(l, m, nmodes)])
+        t_final = lm_tfinal(final_mass, final_spin, ['%d%d%d' %(l, m, nmodes)])
     kmax = int(t_final / delta_t) + 1
 
     outplus = TimeSeries(zeros(kmax, dtype=complex128), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=complex128), delta_t=delta_t)
 
-    f_0, tau = get_lm_f0tau(Mfinal, Sfinal, l, m, nmodes)
+    f_0, tau = get_lm_f0tau(final_mass, final_spin, l, m, nmodes)
     for n in range(nmodes):
         hplus, hcross = get_td_qnm(template=None, f_0=f_0[n], tau=tau[n],
                             phi=phis['%d%d%d' %(l,m,n)], amp=amps['%d%d%d' %(l,m,n)],
@@ -453,9 +453,9 @@ def get_fd_lm(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
-    Mfinal : float
+    final_mass : float
         Mass of the final black hole.
-    Sfinal : float
+    final_spin : float
         Spin of the final black hole.
     l : int
         l mode (lm modes available: 22, 21, 33, 44, 55).
@@ -490,8 +490,8 @@ def get_fd_lm(template=None, **kwargs):
 
     # Get required args
     amps, phis = lm_amps_phases(**input_params)
-    Mfinal = input_params.pop('Mfinal')
-    Sfinal = input_params.pop('Sfinal')
+    final_mass = input_params.pop('final_mass')
+    final_spin = input_params.pop('final_spin')
     l, m = input_params.pop('l'), input_params.pop('m')
     nmodes = input_params.pop('nmodes')
     # The following may not be in input_params
@@ -500,15 +500,15 @@ def get_fd_lm(template=None, **kwargs):
     f_final = input_params.pop('f_final', None)
 
     if delta_f is None:
-        delta_f = lm_deltaf(Mfinal, Sfinal, ['%d%d%d' %(l,m,nmodes)])
+        delta_f = lm_deltaf(final_mass, final_spin, ['%d%d%d' %(l,m,nmodes)])
     if f_final is None:
-        f_final = lm_ffinal(Mfinal, Sfinal, ['%d%d%d' %(l, m, nmodes)])
+        f_final = lm_ffinal(final_mass, final_spin, ['%d%d%d' %(l, m, nmodes)])
     kmax = int(f_final / delta_f) + 1
 
     outplus = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
     outcross = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
 
-    f_0, tau = get_lm_f0tau(Mfinal, Sfinal, l, m, nmodes)
+    f_0, tau = get_lm_f0tau(final_mass, final_spin, l, m, nmodes)
     for n in range(nmodes):
         hplus, hcross = get_fd_qnm(template=None, f_0=f_0[n], tau=tau[n], 
                             phi=phis['%d%d%d' %(l,m,n)], amp=amps['%d%d%d' %(l,m,n)], delta_f=delta_f, 
@@ -525,9 +525,9 @@ def get_td_lm_allmodes(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
-    Mfinal : float
+    final_mass : float
         Mass of the final black hole.
-    Sfinal : float
+    final_spin : float
         Spin of the final black hole.
     lmns : list
         Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
@@ -559,17 +559,17 @@ def get_td_lm_allmodes(template=None, **kwargs):
     input_params = props(template, lm_allmodes_required_args, **kwargs)
 
     # Get required args
-    Mfinal = input_params['Mfinal']
-    Sfinal = input_params['Sfinal']
+    final_mass = input_params['final_mass']
+    final_spin = input_params['final_spin']
     lmns = input_params['lmns']
     # The following may not be in input_params
     delta_t = input_params.pop('delta_t', None)
     t_final = input_params.pop('t_final', None)
 
     if delta_t is None:
-        delta_t = lm_deltat(Mfinal, Sfinal, lmns)
+        delta_t = lm_deltat(final_mass, final_spin, lmns)
     if t_final is None:
-        t_final = lm_tfinal(Mfinal, Sfinal, lmns)
+        t_final = lm_tfinal(final_mass, final_spin, lmns)
     kmax = int(t_final / delta_t) + 1
 
     outplus = TimeSeries(zeros(kmax, dtype=complex128), delta_t=delta_t)
@@ -590,9 +590,9 @@ def get_fd_lm_allmodes(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
-    Mfinal : float
+    final_mass : float
         Mass of the final black hole.
-    Sfinal : float
+    final_spin : float
         Spin of the final black hole.
     lmns : list
         Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
@@ -627,8 +627,8 @@ def get_fd_lm_allmodes(template=None, **kwargs):
     input_params = props(template, lm_allmodes_required_args, **kwargs)
 
     # Get required args
-    Mfinal = input_params['Mfinal']
-    Sfinal = input_params['Sfinal']
+    final_mass = input_params['final_mass']
+    final_spin = input_params['final_spin']
     lmns = input_params['lmns']
     # The following may not be in input_params
     delta_f = input_params.pop('delta_f', None)
@@ -636,9 +636,9 @@ def get_fd_lm_allmodes(template=None, **kwargs):
     f_final = input_params.pop('f_final', None)
 
     if delta_f is None:
-        delta_f = lm_deltaf(Mfinal, Sfinal, lmns)
+        delta_f = lm_deltaf(final_mass, final_spin, lmns)
     if f_final is None:
-        f_final = lm_ffinal(Mfinal, Sfinal, lmns)
+        f_final = lm_ffinal(final_mass, final_spin, lmns)
     if f_lower is None:
         f_lower = delta_f
     kmax = int(f_final / delta_f) + 1
