@@ -234,7 +234,8 @@ class TemplateBank(object):
         Any extra keyword arguments that were provided on initialization.
     """
     def __init__(self, filename, approximant=None, parameters=None,
-            load_compressed=True, load_compressed_now=False, **kwds):
+            load_compressed=True, load_compressed_now=False,
+            **kwds):
         ext = os.path.basename(filename)
         self.compressed_waveforms = None
         if ext.endswith('.xml') or ext.endswith('.xml.gz'):
@@ -289,12 +290,9 @@ class TemplateBank(object):
                         pycbc.waveform.compress.CompressedWaveform.from_hdf(f,
                             tmplt_hash, load_now=load_compressed_now)
         else:
-            raise ValueError("Unsupported template bank file extension %s" % ext)
+            raise ValueError("Unsupported template bank file extension %s" %(
+                ext))
 
-        if (parameters is None or 'template_duration' in parameters) \
-                and not hasattr(self.table, 'template_duration'):
-            self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                     dtype=numpy.float32), 'template_duration') 
         # if approximant is specified, override whatever was in the file
         # (if anything was in the file)
         if approximant is not None:
@@ -311,7 +309,7 @@ class TemplateBank(object):
     def parameters(self):
         return self.table.fieldnames
 
-    def write_to_hdf(self, filename, force=False):
+    def write_to_hdf(self, filename, force=False, skip_fields=None):
         """Writes self to the given hdf file.
         
         Parameters
@@ -321,15 +319,23 @@ class TemplateBank(object):
         force : {False, bool}
             If the file already exists, it will be overwritten if True.
             Otherwise, an OSError is raised if the file exists.
+        skip_fields : {None, (list of) strings}
+            Do not write the given fields to the hdf file. Default is None,
+            in which case all fields in self.table.fieldnames are written.
         """
         if not filename.endswith('.hdf'):
             raise ValueError("Unrecoginized file extension")
         if os.path.exists(filename) and not force:
             raise IOError("File %s already exists" %(filename))
         f = h5py.File(filename, 'w')
+        parameters = self.parameters
+        if skip_fields is not None:
+            if not isinstance(skip_fields, list):
+                skip_fields = [skip_fields]
+            parameters = [p for p in parameters if p not in skip_fields]
         # save the parameters
-        f.attrs['parameters'] = self.parameters
-        for p in self.parameters:
+        f.attrs['parameters'] = parameters
+        for p in parameters:
             f[p] = self.table[p]
         if self.compressed_waveforms is not None:
             for tmplt_hash, compwf in self.compressed_waveforms.items():
@@ -399,6 +405,10 @@ class LiveFilterBank(TemplateBank):
         super(LiveFilterBank, self).__init__(filename, approximant=approximant,
                 parameters=parameters, load_compressed=load_compressed,
                 load_compressed_now=load_compressed_now, **kwds)
+
+        if not hasattr(self.table, 'template_duration'):
+            self.table = self.table.add_fields(numpy.zeros(len(self.table),
+                                     dtype=numpy.float32), 'template_duration') 
 
         from pycbc.pnutils import mass1_mass2_to_mchirp_eta
         self.table = sorted(self.table, key=lambda t: mass1_mass2_to_mchirp_eta(t.mass1, t.mass2)[0])
@@ -528,6 +538,15 @@ class FilterBank(TemplateBank):
             parameters=parameters, load_compressed=load_compressed,
             load_compressed_now=load_compressed_now,
             **kwds)
+        # add a template duration field if it already doesn't exist
+        if not hasattr(self.table, 'template_duration'):
+            if dtype == numpy.complex64 or dtype == numpy.float32:
+                rdtype = numpy.float32
+            else:
+                rdtype = numpy.float64
+            self.table = self.table.add_fields(numpy.zeros(len(self.table),
+                                     dtype=rdtype),
+                                     'template_duration')
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
@@ -626,6 +645,16 @@ class FilterBankSkyMax(TemplateBank):
         super(FilterBankSkyMax, self).__init__(filename, parameters=parameters,
             load_compressed=True, load_compressed_now=False,
             **kwds)
+
+        # add a template duration field if it already doesn't exist
+        if not hasattr(self.table, 'template_duration'):
+            if dtype == numpy.complex64 or dtype == numpy.float32:
+                rdtype = numpy.float32
+            else:
+                rdtype = numpy.float64
+            self.table = self.table.add_fields(numpy.zeros(len(self.table),
+                                     dtype=rdtype),
+                                     'template_duration') 
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
