@@ -260,7 +260,7 @@ class InferenceFile(h5py.File):
         # create an array to store the results
         arr = numpy.array(numpy.zeros(arrsize))
         # populate
-        for ii, walker in enumerate(walker):
+        for ii, walker in enumerate(walkers):
             arr[ii*n_per_walker:(ii+1)*n_per_walker] = self['ln_likelihood'] \
                 ['walker%i' %walker][thin_start:thin_end:thin_interval]
 
