@@ -878,7 +878,14 @@ fi
 if test ".`uname -s`" = ".Linux"; then
     python setup.py install --prefix="$PREFIX" --record installed-files.txt
     export NOW_BUILDING=NULL
-    ( cd "$ENVIRONMENT" && pyinstaller --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onefile ./bin/pycbc_condition_strain )
+    ( cd "$ENVIRONMENT" &&
+	pyinstaller \
+	    --additional-hooks-dir $hooks/hooks \
+	    --runtime-hook $hooks/runtime-tkinter.py \
+	    --runtime-hook $hooks/runtime-scipy.py \
+	    --hidden-import=pkg_resources $hidden_imports \
+	    --onefile ./bin/pycbc_condition_strain
+    )
     xargs rm -f < installed-files.txt
     rm installed-files.txt
 fi
