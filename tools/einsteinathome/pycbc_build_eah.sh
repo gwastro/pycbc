@@ -804,65 +804,6 @@ python setup.py install --prefix="$PREFIX"
 cd ..
 $cleanup && rm -rf ligo-cbc-mpld3-25aee65
 
-# PyInstaller
-if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9]$' > /dev/null; then
-    # regular release version, get source tarbal from pypi
-    p=PyInstaller-$pyinstaller_version
-    echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz || wget $wget_opts "https://pypi.python.org/packages/source/P/PyInstaller/$p.tar.gz"
-    rm -rf $p
-    tar -xzf $p.tar.gz
-    cd $p
-    if $build_dlls; then
-        # patch PyInstaller to find the Python library on Cygwin
-	sed -i~ "s|'libpython%d%d.dll'|'libpython%d.%d.dll'|" `find PyInstaller -name bindepend.py`
-	cd bootloader
-        # build bootloader for Windows
-	if $pyinstaller_version | grep '3\.' > /dev/null; then
-	    python ./waf distclean all
-	else
-	    python ./waf configure build install
-	fi
-	cd ..
-    fi
-    python setup.py install --prefix="$PREFIX"
-    cd ..
-    $cleanup && rm -rf $p
-else
-    p=pyinstaller
-    echo -e "\\n\\n>> [`date`] building $p"
-    if test -d pyinstaller/.git; then
-	cd $p
-    else
-	git clone git://github.com/$p/$p.git
-	cd $p
-	if test "$pyinstaller_version" = "v3.0"; then
-	    git checkout 3.0
-	elif test "$pyinstaller_version" = "9d0e0ad4"; then
-	    git checkout $pyinstaller_version
-            # patch PyInstaller bootloader to not fork a second process
-	    sed -i~ 's/ pid *= *fork()/ pid = 0/' bootloader/common/pyi_utils.c
-	else
-	    git checkout $pyinstaller_version
-	fi
-	if $build_dlls; then
-            # patch PyInstaller to find the Python library on Cygwin
-	    sed -i~ "s|'libpython%d%d.dll'|'libpython%d.%d.dll'|" `find PyInstaller -name bindepend.py`
-	fi
-    fi
-
-    # build bootloader (in any case: for Cygwin it wasn't precompiled, for Linux it was patched)
-    cd bootloader
-    if echo "$pyinstaller_version" | grep '3\.' > /dev/null; then
-	python ./waf distclean all
-    else
-	python ./waf configure $pyinstaller_lsb build install
-    fi
-    cd ..
-    python setup.py install --prefix="$PREFIX"
-    cd ..
-fi
-
 # PyCBC
 echo -e "\\n\\n>> [`date`] building pycbc"
 if $scratch_pycbc || ! test -d pycbc/.git ; then
@@ -897,9 +838,74 @@ hooks="$PWD/tools/static"
 cd ..
 test -r "$PREFIX/etc/pycbc-user-env.sh" && source "$PREFIX/etc/pycbc-user-env.sh"
 
+
 # clean dist directory
 rm -rf "$ENVIRONMENT/dist"
 mkdir -p "$ENVIRONMENT/dist"
+
+# if the build machine has dbhash & shelve, scipy weave will use bsddb, so make sure these get added to the bundle(s)
+if python -c "import dbhash, shelve" 2>/dev/null; then
+    hidden_imports="$hidden_imports --hidden-import=dbhash --hidden-import=shelve"
+fi
+
+# PyInstaller
+if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9]$' > /dev/null; then
+    # regular release version, get source tarbal from pypi
+    p=PyInstaller-$pyinstaller_version
+    echo -e "\\n\\n>> [`date`] building $p"
+    test -r $p.tar.gz || wget $wget_opts "https://pypi.python.org/packages/source/P/PyInstaller/$p.tar.gz"
+    rm -rf $p
+    tar -xzf $p.tar.gz
+    cd $p
+else
+    p=pyinstaller
+    echo -e "\\n\\n>> [`date`] building $p"
+    if test -d pyinstaller/.git; then
+        cd $p
+        git reset --hard HEAD
+    else
+        git clone git://github.com/$p/$p.git
+        cd $p
+        if test "$pyinstaller_version" = "v3.0"; then
+            git checkout 3.0
+        else
+            git checkout $pyinstaller_version
+        fi
+    fi
+fi
+
+# build pycbc_condition_strain bundle with standard (unpatched) bootloader
+if test ".`uname -s`" = ".Linux"; then
+    python setup.py install --prefix="$PREFIX" --record installed-files.txt
+    export NOW_BUILDING=NULL
+    ( cd "$ENVIRONMENT" && pyinstaller --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onefile ./bin/pycbc_condition_strain )
+    xargs rm -f < installed-files.txt
+    rm installed-files.txt
+fi
+
+# patch PyInstaller to find the Python library on Cygwin
+if $build_dlls; then
+    sed -i~ "s|'libpython%d%d.dll'|'libpython%d.%d.dll'|" `find PyInstaller -name bindepend.py`
+fi
+
+# patch PyInstaller bootloader to not fork a second process
+if test "$pyinstaller_version" = "9d0e0ad4"; then
+    git checkout $pyinstaller_version
+    sed -i~ 's/ pid *= *fork()/ pid = 0/' bootloader/common/pyi_utils.c
+fi
+
+# build bootloader (in any case: for Cygwin it wasn't precompiled, for Linux it was patched)
+cd bootloader
+if echo "$pyinstaller_version" | grep '3\.' > /dev/null; then
+    python ./waf distclean all
+else
+    python ./waf configure $pyinstaller_lsb build install
+fi
+cd ..
+python setup.py install --prefix="$PREFIX"
+cd ..
+test "$p" = "PyInstaller-$pyinstaller_version" && cleanup && rm -rf "$p"
+
 
 # on Windows, rebase DLLs
 # from https://cygwin.com/ml/cygwin/2009-12/msg00168.html:
@@ -956,15 +962,8 @@ cd $PREFIX
 # BUNDLE DIR
 echo -e "\\n\\n>> [`date`] building pyinstaller spec"
 # create spec file
-# if the build machine has dbhash & shelve, scipy weave will use bsddb, so make sure these get added
-if python -c "import dbhash, shelve" 2>/dev/null; then
-    hidden_imports="$hidden_imports --hidden-import=dbhash --hidden-import=shelve"
-fi
 if $use_pycbc_pyinstaller_hooks; then
     export NOW_BUILDING=NULL
-    if test ".`uname -s`" = ".Linux"; then
-        pyinstaller --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onefile ./bin/pycbc_condition_strain
-    fi
     pyi-makespec --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
 else
     # find hidden imports (pycbc CPU modules)
