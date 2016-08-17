@@ -215,9 +215,9 @@ class InferenceFile(h5py.File):
         -----------
         walkers : {None, (list of) int}
             The walker index (or a list of indices) to retrieve. If None,
-            samples from all walkers will be obtained.
+            ln(likelihood) from all walkers will be obtained.
         thin_start : int
-            Index of the sample to begin returning samples. Default is to read
+            Index of the sample to begin returning ln(likelihood). Default is to read
             samples after burn in. To start from the beginning set thin_start
             to 0.
         thin_interval : int
