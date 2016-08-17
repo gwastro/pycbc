@@ -61,8 +61,8 @@ parser.add_argument('--bank-file', required=True,
                          "and must contain a SnglInspiral table.")
 parser.add_argument('--output-file', required=True,
                     help="The ouput file name. Must end in '.hdf'.")
-parser.add_argument("--parameters", metavar="parameter[:xml_column]", nargs="+",
-                    default=default_parameters,
+parser.add_argument("--parameters", metavar="parameter[:xml_column]",
+                    nargs="+", default=default_parameters,
                     help="The parameters to load from the xml file and to "
                          "write to the hdf file. The given name will be the "
                          "dataset's name in the hdf file. If this is "
