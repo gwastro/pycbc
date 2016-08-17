@@ -207,6 +207,65 @@ class InferenceFile(h5py.File):
                          ['walker%i'%walker][thin_start:thin_end:thin_interval]
         return arr
 
+    def read_lnpost(self, walkers=None, thin_start=None,
+                    thin_interval=None, thin_end=None):
+        """Reads ln(likelihood) from the specified walker(s).
+
+        Parameters
+        -----------
+        walkers : {None, (list of) int}
+            The walker index (or a list of indices) to retrieve. If None,
+            ln(likelihood) from all walkers will be obtained.
+        thin_start : int
+            Index of the sample to begin returning ln(likelihood). Default is to read
+            samples after burn in. To start from the beginning set thin_start
+            to 0.
+        thin_interval : int
+            Interval to accept every i-th sample. Default is to use the
+            self.acl attribute. If self.acl is not set, then use all samples
+            (set thin_interval to 1).
+        thin_end : int
+            Index of the last sample to read. If not given then
+            self.niterations is used.
+
+        Returns
+        -------
+        Array
+            ln(likelihood) for the specified walkers
+        """
+        if walkers is None:
+            walkers = range(self.nwalkers)
+        if isinstance(walkers, int):
+            walkers = [walkers]
+
+        # default is to skip burn in samples
+        thin_start = self.attrs["burn_in_iterations"] if thin_start is None \
+            else thin_start
+
+        # default is to use stored ACL and accept every i-th sample
+        if "acl" in self.attrs.keys():
+            thin_interval = int(numpy.ceil(self.acl)) if thin_interval is None \
+                else thin_interval
+        else:
+            thin_interval = 1 if thin_interval is None else thin_interval
+
+        # default is to read only as far as niterations
+        thin_end = self.niterations if thin_end is None else thin_end
+
+        # figure out the size of the output array to create
+        n_per_walker = self[self.variable_args[0]]['walker0'] \
+                                       [thin_start:thin_end:thin_interval].size
+        arrsize = len(walkers) * n_per_walker
+
+        # create an array to store the results
+        arr = numpy.array(numpy.zeros(arrsize))
+        # populate
+        for ii, walker in enumerate(walkers):
+            arr[ii*n_per_walker:(ii+1)*n_per_walker] = self['ln_likelihood'] \
+                ['walker%i' %walker][thin_start:thin_end:thin_interval]
+
+        return arr 
+
     def read_acceptance_fraction(self, thin_start=None, thin_interval=None):
         """ Returns a numpy.array of the fraction of samples acceptanced at
         each iteration in the sampler..
