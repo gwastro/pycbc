@@ -17,10 +17,10 @@
 This modules contains functions reading, generating, and segmenting strain data
 """
 import copy
-import logging, math, numpy, lal
+import logging, numpy, lal
 import pycbc.noise
 import pycbc.types
-from pycbc.types import float32, TimeSeries, zeros
+from pycbc.types import TimeSeries, zeros
 from pycbc.types import Array, FrequencySeries, complex_same_precision_as
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
