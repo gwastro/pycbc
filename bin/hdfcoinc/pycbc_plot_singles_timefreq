@@ -37,6 +37,7 @@ import pycbc.pnutils
 import pycbc.strain
 import pycbc.results
 import pycbc.version
+import pycbc.waveform
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--version", action="version",
@@ -58,11 +59,13 @@ parser.add_argument('--interesting-trig', type=int,
 parser.add_argument('--detector', type=str, required=True)
 parser.add_argument('--center-time', type=float,
                     help='Center plot on the given GPS time')
-parser.add_argument('--approximant', type=str, default='TaylorF2',
+# add the approximant argument
+pycbc.waveform.bank.add_approximant_arg(parser,
                     help='Waveform model used for computing inspiral tracks.'
                          ' Python expressions can be used to specify a '
                          'parameter-dependent approximant as done in '
-                         'pycbc_inspiral.')
+                         'pycbc_inspiral. Default is to use the approximant '
+                         'specified in the bank file.')
 pycbc.strain.insert_strain_option_group(parser)
 opts = parser.parse_args()
 
@@ -140,15 +143,18 @@ if mask.any():
         max_rank = None
 
     logging.info('Loading bank')
-    bank = h5py.File(opts.bank_file, 'r')
-    mass1s, mass2s = np.array(bank['mass1']), np.array(bank['mass2'])
-    spin1s, spin2s = np.array(bank['spin1z']), np.array(bank['spin2z'])
+    bank = pycbc.waveform.bank.TemplateBank(opts.bank_file,
+            approximant=opts.approximant,
+            parameters=['mass1', 'mass2', 'spin1z', 'spin2z', 'approximant'],
+            load_compressed=False)
+    tmplts = bank.table
 
     logging.info('Plotting %d trigs', len(sorted_end_time))
     for tc, rho, tid in zip(sorted_end_time, sorted_rank, sorted_template_ids):
         track_t, track_f = pycbc.pnutils.get_inspiral_tf(
-                tc - center_time, mass1s[tid], mass2s[tid], spin1s[tid],
-                spin2s[tid], opts.f_low, approximant=opts.approximant)
+                tc - center_time, tmplts.mass1[tid], tmplts.mass2[tid],
+                tmplts.spin1z[tid], tmplts.spin2z[tid],
+                opts.f_low, approximant=bank.approximant(tid))
         if max_rank and rho == max_rank:
             ax.plot(track_t, track_f, '-', color='#ff0000', zorder=3, lw=2)
         else:
@@ -161,8 +167,9 @@ if mask.any():
         interesting_trig_rank = rho
         tid = template_ids[interesting_id]
         track_t, track_f = pycbc.pnutils.get_inspiral_tf(
-            tc - center_time, mass1s[tid], mass2s[tid], spin1s[tid],
-            spin2s[tid], opts.f_low, approximant=opts.approximant)
+            tc - center_time, tmplts.mass1[tid], tmplts.mass2[tid],
+            tmplts.spin1z[tid], tmplts.spin2z[tid],
+            opts.f_low, approximant=bank.approximant(tid))
         ax.plot(track_t, track_f, '-', color='#00ff00', zorder=3, lw=2)
     else:
         interesting_trig_rank = None

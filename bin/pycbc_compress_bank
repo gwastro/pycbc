@@ -47,10 +47,8 @@ parser.add_argument("--output", type=str,
 parser.add_argument("--low-frequency-cutoff", type=float, required=True,
                 help="The low frequency cutoff to use for generating "
                      "the waveforms (Hz)")
-parser.add_argument("--approximant", type=str,
-                help="The approximant to generate the waveforms with. If "
-                     "none provided, will attempt to retrieve the approximant "
-                     "from the bank file.")
+# add approximant arg
+pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument("--sample-rate", type=int, required=True,
                 help="Half this value sets the maximum frequency of the "
                      "compressed waveforms.")

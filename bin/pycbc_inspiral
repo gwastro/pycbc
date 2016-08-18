@@ -47,14 +47,8 @@ parser.add_argument("--max-template-length", type=float,
                   help="The maximum length of a template is seconds. The "
                        "starting frequency of the template is modified to "
                        "ensure the proper length")
-parser.add_argument("--approximant", type=str,
-                  help="The name of the approximant to use for filtering. "
-                       "One may choose a single approximant by simple assignment. "
-                       "Choose multiple approximants to use in different mass "
-                       "regions by using math functions and the params keys as "
-                       " follows : \"'SPAtmplt' if (params.mass1 + params.mass2) < 10 "
-                       "  else 'SEOBNRv2_ROM_DoubleSpin'\". Approximant names should "
-                       "be single quoted with the entire expression in double quotes." )
+# add approximant arg
+pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument("--order", type=int,
                   help="The integer half-PN order at which to generate"
                        " the approximant. Default is -1 which indicates to use"

@@ -928,6 +928,41 @@ class FieldArray(numpy.recarray):
         return obj
 
     @classmethod
+    def from_kwargs(cls, **kwargs):
+        """Creates a new instance of self from the given keyword arguments.
+        Each argument will correspond to a field in the returned array, with
+        the name of the field given by the keyword, and the value(s) whatever
+        the keyword was set to. Each keyword may be set to a single value or
+        a list of values. The number of values that each argument is set to
+        must be the same; this will be the size of the returned array.
+
+        Examples
+        --------
+        Create an array with fields 'mass1' and 'mass2':
+        >>> a = FieldArray.from_kwargs(mass1=[1.1, 3.], mass2=[2., 3.])
+        >>> a.fieldnames
+        ('mass1', 'mass2')
+        >>> a.mass1, a.mass2
+        (array([ 1.1,  3. ]), array([ 2.,  3.]))
+
+        Create an array with only a single element in it:
+        >>> a = FieldArray.from_kwargs(mass1=1.1, mass2=2.)
+        >>> a.mass1, a.mass2
+        (array([ 1.1]), array([ 2.]))
+        """
+        arrays = []
+        names = []
+        for p,vals in kwargs.items():
+            if not isinstance(vals, numpy.ndarray):
+                if not isinstance(vals, list):
+                    vals = [vals]
+                vals = numpy.array(vals)
+            arrays.append(vals)
+            names.append(p)
+        return cls.from_arrays(arrays, names=names)
+
+
+    @classmethod
     def from_ligolw_table(cls, table, columns=None, cast_to_dtypes=None):
         """Converts the given ligolw table into an FieldArray. The `tableName`
         attribute is copied to the array's `name`.
@@ -989,16 +1024,20 @@ class FieldArray(numpy.recarray):
         return self.dtype.names
 
     @property
-    def virutalfields(self):
+    def virtualfields(self):
         """Returns a tuple listing the names of virtual fields in self.
         """
-        return tuple(self._virtualfields)
+        if self._virtualfields is None:
+            vfs = tuple()
+        else:
+            vfs = tuple(self._virtualfields)
+        return vfs
 
     @property
     def fields(self):
         """Returns a tuple listing the names of fields and virtual fields in
         self."""
-        return tuple(list(self.fieldnames) + self._virtualfields)
+        return tuple(list(self.fieldnames) + list(self.virtualfields))
 
     @property
     def aliases(self):
@@ -1046,6 +1085,122 @@ class FieldArray(numpy.recarray):
         newself = add_fields(self, arrays, names=names, assubarray=assubarray)
         self.__copy_attributes__(newself)
         return newself
+
+    def parse_boolargs(self, args):
+        """Returns an array populated by given values, with the indices of
+        those values dependent on given boolen tests on self.
+        
+        The given `args` should be a list of tuples, with the first element the
+        return value and the second argument a string that evaluates to either
+        True or False for each element in self.
+
+        Each boolean argument is evaluated on elements for which every prior
+        boolean argument was False. For example, if array `foo` has a field
+        `bar`, and `args = [(1, 'bar < 10'), (2, 'bar < 20'), (3, 'bar < 30')]`,
+        then the returned array will have `1`s at the indices for
+        which `foo.bar < 10`, `2`s where `foo.bar < 20 and not foo.bar < 10`,
+        and `3`s where `foo.bar < 30 and not (foo.bar < 10 or foo.bar < 20)`.
+        
+        The last argument in the list may have "else", an empty string, None,
+        or simply list a return value. In any of these cases, any element not
+        yet populated will be assigned the last return value.
+        
+        Parameters
+        ----------
+        args : {(list of) tuples, value}
+            One or more return values and boolean argument determining where
+            they should go.
+
+        Returns
+        -------
+        return_values : array
+            An array with length equal to self, with values populated with the
+            return values.
+        leftover_indices : array
+            An array of indices that evaluated to False for all arguments.
+            These indices will not have been popluated with any value,
+            defaulting to whatever numpy uses for a zero for the return
+            values' dtype. If there are no leftovers, an empty array is
+            returned.
+
+        Examples
+        --------
+        Given the following array:
+        >>> arr = FieldArray(5, dtype=[('mtotal', float)])
+        >>> arr['mtotal'] = numpy.array([3., 5., 2., 1., 4.])
+
+        Return `"TaylorF2"` for all elements with `mtotal < 4` (note that the
+        elements 1 and 4 are leftover):
+        >>> arr.parse_boolargs(('TaylorF2', 'mtotal<4'))
+        (array(['TaylorF2', '', 'TaylorF2', 'TaylorF2', ''], 
+              dtype='|S8'),
+        array([1, 4]))
+
+        Return `"TaylorF2"` for all elements with `mtotal < 4`,
+        `"SEOBNR_ROM_DoubleSpin"` otherwise:
+        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', 'else')])
+        (array(['TaylorF2', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
+               'SEOBNRv2_ROM_DoubleSpin'], 
+              dtype='|S23'),
+         array([], dtype=int64))
+        
+        The following will also return the same:
+        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin',)])
+
+        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', '')])
+        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), 'SEOBNRv2_ROM_DoubleSpin'])
+
+        Return `"TaylorF2"` for all elements with `mtotal < 3`, `"IMRPhenomD"`
+        for all elements with `3 <= mtotal < 4`, `"SEOBNRv2_ROM_DoubleSpin"`
+        otherwise:
+
+        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<3'), ('IMRPhenomD', 'mtotal<4'), 'SEOBNRv2_ROM_DoubleSpin'])
+        (array(['IMRPhenomD', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
+               'SEOBNRv2_ROM_DoubleSpin'], 
+              dtype='|S23'),
+         array([], dtype=int64))
+
+        Just return `"TaylorF2"` for all elements:
+        >>> arr.parse_boolargs('TaylorF2')
+        (array(['TaylorF2', 'TaylorF2', 'TaylorF2', 'TaylorF2', 'TaylorF2'], 
+              dtype='|S8'),
+         array([], dtype=int64))
+        """
+        if not isinstance(args, list):
+            args = [args]
+        # format the arguments
+        return_vals = []
+        bool_args = []
+        for arg in args:
+            if not isinstance(arg, tuple):
+                return_val = arg
+                bool_arg = None
+            elif len(arg) == 1:
+                return_val = arg[0]
+                bool_arg = None
+            elif len(arg) == 2:
+                return_val, bool_arg = arg
+            else:
+                raise ValueError("argument not formatted correctly")
+            return_vals.append(return_val)
+            bool_args.append(bool_arg)
+        # get the output dtype
+        outdtype = numpy.array(return_vals).dtype
+        out = numpy.zeros(self.size, dtype=outdtype)
+        mask = numpy.zeros(self.size, dtype=bool)
+        leftovers = numpy.ones(self.size, dtype=bool)
+        for ii,(boolarg,val) in enumerate(zip(bool_args, return_vals)):
+            if boolarg is None or boolarg == '' or boolarg.lower() == 'else': 
+                if ii+1 != len(bool_args):
+                    raise ValueError("only the last item may not provide "
+                        "any boolean arguments")
+                mask = leftovers
+            else:
+                mask = leftovers & self[boolarg] 
+            out[mask] = val
+            leftovers &= ~mask
+        return out, numpy.where(leftovers)[0]
+
 
 def aliases_from_fields(fields):
     """Given a dictionary of fields, will return a dictionary mapping the
@@ -1168,7 +1323,11 @@ class _FieldArrayWithDefaults(FieldArray):
             # no names are specified in the following initialization, this
             # block of code is skipped)
             arr = cls(1, field_kwargs=field_kwargs)
-            names = get_needed_fieldnames(arr, names)
+            # try to perserve order
+            sortdict = dict([[nm, ii] for ii,nm in enumerate(names)])
+            names = list(get_needed_fieldnames(arr, names))
+            names.sort(key=lambda x: sortdict[x] if x in sortdict
+                else len(names))
             # add the fields as the dtype argument for initializing 
             kwargs['dtype'] = [(fld, default_fields[fld]) for fld in names]
         if 'dtype' not in kwargs:
@@ -1205,7 +1364,11 @@ class _FieldArrayWithDefaults(FieldArray):
         default_fields = self.default_fields(include_virtual=False, **kwargs)
         # parse out any virtual fields
         arr = self.__class__(1, field_kwargs=kwargs)
-        names = get_needed_fieldnames(arr, names)
+        # try to perserve order
+        sortdict = dict([[nm, ii] for ii,nm in enumerate(names)])
+        names = list(get_needed_fieldnames(arr, names))
+        names.sort(key=lambda x: sortdict[x] if x in sortdict
+            else len(names))
         fields = [(name, default_fields[name]) for name in names]
         arrays = []
         names = []

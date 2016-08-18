@@ -27,6 +27,7 @@ This module provides classes that describe banks of waveforms
 """
 import types, numpy, logging, os.path, math, h5py
 import pycbc.waveform
+import pycbc.waveform.compress
 from pycbc.types import zeros
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from pycbc.filter import sigmasq
@@ -80,54 +81,268 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
 lsctables.use_in(LIGOLWContentHandler)
 
-class TemplateBank(object): 
-    """ Class to provide some basic helper functions and information
-    about elements of an xml template bank.
+# helper function for parsing approximant strings
+def boolargs_from_apprxstr(approximant_strs):
+    """Parses a list of strings specifying an approximant and where that
+    approximant should be used into a list that can be understood by
+    FieldArray.parse_boolargs.
+
+    Parameters
+    ----------
+    apprxstr : (list of) string(s)
+        The strings to parse. Each string should be formatted `APPRX:COND`,
+        where `APPRX` is the approximant and `COND` is a string specifying
+        where it should be applied (see `FieldArgs.parse_boolargs` for examples
+        of conditional strings). The last string in the list may exclude a
+        conditional argument, which is the same as specifying ':else'.
+
+    Returns
+    -------
+    boolargs : list
+        A list of tuples giving the approximant and where to apply them. This
+        can be passed directly to `FieldArray.parse_boolargs`.
     """
-    def __init__(self, filename, approximant=None, **kwds):
+    if not isinstance(approximant_strs, list):
+        approximant_strs = [approximant_strs]
+    return [tuple(arg.split(':')) for arg in approximant_strs]
+
+
+def add_approximant_arg(parser, default=None, help=None):
+    """Adds an approximant argument to the given parser.
+
+    Parameters
+    ----------
+    parser : ArgumentParser
+        The argument parser to add the argument to.
+    default : {None, str}
+        Specify a default for the approximant argument. Defaults to None.
+    help : {None, str}
+        Provide a custom help message. If None, will use a descriptive message
+        on how to specify the approximant.
+    """
+    if help is None:
+        help=str("The approximant(s) to use. Multiple approximants to use "
+             "in different regions may be provided. If multiple "
+             "approximants are provided, every one but the last must be "
+             "be followed by a conditional statement defining where that "
+             "approximant should be used. Conditionals can be any boolean "
+             "test understood by numpy. For example, 'Apprx:(mtotal > 4) & "
+             "(mchirp <= 5)' would use approximant 'Apprx' where total mass "
+             "is > 4 and chirp mass is <= 5. "
+             "Conditionals are applied in order, with each successive one "
+             "only applied to regions not covered by previous arguments. "
+             "For example, `'TaylorF2:mtotal < 4' 'IMRPhenomD:mchirp < 3'` "
+             "would result in IMRPhenomD being used where chirp mass is < 3 "
+             "and total mass is >= 4. The last approximant given may use "
+             "'else' as the conditional or include no conditional. In either "
+             "case, this will cause the last approximant to be used in any "
+             "remaning regions after all the previous conditionals have been "
+             "applied. For the full list of possible parameters to apply "
+             "conditionals to, see WaveformArray.default_fields(). Math "
+             "operations may also be used on parameters; syntax is python, "
+             "with any operation recognized by numpy.")
+    parser.add_argument("--approximant", nargs='+', type=str, default=default,
+                        metavar='APPRX[:COND]',
+                        help=help)
+
+def parse_approximant_arg(approximant_arg, warray):
+    """Given an approximant arg (see add_approximant_arg) and a field
+    array, figures out what approximant to use for each template in the array.
+
+    Parameters
+    ----------
+    approximant_arg : list
+        The approximant argument to parse. Should be the thing returned by
+        ArgumentParser when parsing the argument added by add_approximant_arg.
+    warray : FieldArray
+        The array to parse. Must be an instance of a FieldArray, or a class
+        that inherits from FieldArray.
+
+    Returns
+    -------
+    array
+        A numpy array listing the approximants to use for each element in
+        the warray.
+    """
+    return warray.parse_boolargs(boolargs_from_apprxstr(approximant_arg))[0]
+        
+                       
+class TemplateBank(object):
+    """Class to provide some basic helper functions and information
+    about elements of a template bank.
+
+    Parameters
+    ----------
+    filename : string
+        The name of the file to load. Must end in '.xml[.gz]' or '.hdf'. If an
+        hdf file, it should have a 'parameters' in its `attrs` which gives a
+        list of the names of fields to load from the file. If no 'parameters'
+        are found, all of the top-level groups in the file will assumed to be
+        parameters (a warning will be printed to stdout in this case). If an
+        xml file, it must have a `SnglInspiral` table.
+    approximant : {None, (list of) string(s)}
+        Specify the approximant(s) for each template in the bank. If None
+        provided, will try to load the approximant from the file. The
+        approximant may either be a single string (in which case the same
+        approximant will be used for all templates) or a list of strings and
+        conditionals specifying where to use the approximant. See
+        `boolargs_from_apprxstr` for syntax.
+    parameters : {None, (list of) sting(s)}
+        Specify what parameters to load from the file. If None, all of the
+        parameters in the file (if an xml file, this is all of the columns in
+        the SnglInspiral table, if an hdf file, this is given by the
+        parameters attribute in the file). The list may include parameters that
+        are derived from the file's parameters, or functions thereof. For a
+        full list of possible parameters, see `WaveformArray.default_fields`.
+        If a derived parameter is specified, only the parameters needed to
+        compute that parameter will be loaded from the file. For example, if
+        `parameters='mchirp'`, then only `mass1, mass2` will be loaded from
+        the file. Note that derived parameters can only be used if the
+        needed parameters are in the file; e.g., you cannot use `chi_eff` if
+        `spin1z`, `spin2z`, `mass1`, and `mass2` are in the input file.
+    load_compressed : {True, bool}
+        If compressed waveforms are present in the file, load them. Only works
+        for hdf files.
+    load_compressed_now : {False, bool}
+        If compressed waveforms are present in the file, load all of them into
+        memory now. Otherwise, they will be loaded into memory on their first
+        use. Note: if not `load_compressed_now`, the filehandler to the hdf
+        file must be kept open.
+    \**kwds :
+        Any additional keyword arguments are stored to the `extra_args`
+        attribute.
+
+
+    Attributes
+    ----------
+    table : WaveformArray
+        An instance of a WaveformArray containing all of the information about
+        the parameters of the bank.
+    compressed_waveforms : {None, dict}
+        If compressed waveforms are present in the (hdf) file, a dictionary
+        of those waveforms. Keys are the template hashes, values are
+        `CompressedWaveform` instances.
+    parameters : tuple
+        The parameters loaded from the input file. Same as `table.fieldnames`.
+    indoc : {None, xmldoc}
+        If an xml file was provided, an in-memory representation of the xml.
+        Otherwise, None.
+    filehandler : {None, h5py.File}
+        If an hdf file was provided, the file handler pointing to the hdf file
+        (left open after initialization). Otherwise, None.
+    extra_args : {None, dict}
+        Any extra keyword arguments that were provided on initialization.
+    """
+    def __init__(self, filename, approximant=None, parameters=None,
+            load_compressed=True, load_compressed_now=False,
+            **kwds):
         ext = os.path.basename(filename)
-        if 'xml' in ext:
+        self.compressed_waveforms = None
+        if ext.endswith('.xml') or ext.endswith('.xml.gz'):
+            self.filehandler = None
             self.indoc = ligolw_utils.load_filename(
                 filename, False, contenthandler=LIGOLWContentHandler)
             self.table = table.get_table(
                 self.indoc, lsctables.SnglInspiralTable.tableName)
-            self.table = pycbc.io.FieldArray.from_ligolw_table(self.table)
+            self.table = pycbc.io.WaveformArray.from_ligolw_table(self.table,
+                columns=parameters)
 
             # inclination stored in xml alpha3 column
             names = list(self.table.dtype.names)
             names = tuple([n if n != 'alpha3' else 'inclination' for n in names]) 
-            self.table.dtype.names = names    
+            self.table.dtype.names = names
 
-        elif 'hdf' in ext:
+        elif ext.endswith('hdf'):
+            self.indoc = None
             f = h5py.File(filename, 'r')
+            self.filehandler = f
+            try:
+                fileparams = map(str, f.attrs['parameters'])
+            except KeyError:
+                # just assume all of the top-level groups are the parameters
+                fileparams = map(str, f.keys())
+                logging.info("WARNING: no parameters attribute found. "
+                    "Assuming that %s " %(', '.join(fileparams)) +
+                    "are the parameters.")
+            # use WaveformArray's syntax parser to figure out what fields
+            # need to be loaded
+            if parameters is None:
+                parameters = fileparams
+            common_fields = list(pycbc.io.WaveformArray(1,
+                names=parameters).fieldnames)
+            add_fields = list(set(parameters) & 
+                (set(fileparams) - set(common_fields)))
+            # load
             dtype = []
             data = {}
-            for key in f.keys():
-                try:
-                    data[str(key)] = f[key][:]
-                    dtype.append((str(key), data[key].dtype))
-                except:
-                    pass
-
-            num = len(data[data.keys()[0]])
-            self.table = pycbc.io.FieldArray(num, dtype=dtype)
+            for key in common_fields+add_fields:
+                data[str(key)] = f[key][:]
+                dtype.append((str(key), data[key].dtype))
+            num = f[fileparams[0]].size
+            self.table = pycbc.io.WaveformArray(num, dtype=dtype)
             for key in data:
                 self.table[key] = data[key]
+            # add the compressed waveforms, if they exist
+            if load_compressed and 'compressed_waveforms' in f:
+                self.compressed_waveforms = {}
+                for tmplt_hash in self.table['template_hash']:
+                    self.compressed_waveforms[tmplt_hash] = \
+                        pycbc.waveform.compress.CompressedWaveform.from_hdf(f,
+                            tmplt_hash, load_now=load_compressed_now)
         else:
-            raise ValueError("Unsupported template bank file extension %s" % ext)
+            raise ValueError("Unsupported template bank file extension %s" %(
+                ext))
 
-        if not hasattr(self.table, 'template_duration'):
-            self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                     dtype=numpy.float32), 'template_duration') 
-        self.extra_args = kwds  
-        self.approximant_str = approximant
+        # if approximant is specified, override whatever was in the file
+        # (if anything was in the file)
+        if approximant is not None:
+            # get the approximant for each template
+            apprxs = self.parse_approximant(approximant)
+            if 'approximant' not in self.table.fieldnames:
+                self.table = self.table.add_fields(apprxs, 'approximant')
+            else:
+                self.table['approximant'] = apprxs
+        self.extra_args = kwds
 
-    @staticmethod
-    def parse_option(row, arg):
-        safe_dict = {}
-        safe_dict.update(row.__dict__)
-        safe_dict.update(math.__dict__)
-        return eval(arg, {"__builtins__":None}, safe_dict)
+
+    @property
+    def parameters(self):
+        return self.table.fieldnames
+
+    def write_to_hdf(self, filename, force=False, skip_fields=None):
+        """Writes self to the given hdf file.
+        
+        Parameters
+        ----------
+        filename : str
+            The name of the file to write to. Must end in '.hdf'.
+        force : {False, bool}
+            If the file already exists, it will be overwritten if True.
+            Otherwise, an OSError is raised if the file exists.
+        skip_fields : {None, (list of) strings}
+            Do not write the given fields to the hdf file. Default is None,
+            in which case all fields in self.table.fieldnames are written.
+        """
+        if not filename.endswith('.hdf'):
+            raise ValueError("Unrecoginized file extension")
+        if os.path.exists(filename) and not force:
+            raise IOError("File %s already exists" %(filename))
+        f = h5py.File(filename, 'w')
+        parameters = self.parameters
+        if skip_fields is not None:
+            if not isinstance(skip_fields, list):
+                skip_fields = [skip_fields]
+            parameters = [p for p in parameters if p not in skip_fields]
+        # save the parameters
+        f.attrs['parameters'] = parameters
+        for p in parameters:
+            f[p] = self.table[p]
+        if self.compressed_waveforms is not None:
+            for tmplt_hash, compwf in self.compressed_waveforms.items():
+                compwf.write_to_hdf(f, tmplt_hash) 
+        f.close()
+
+        return None
 
     def end_frequency(self, index):
         """ Return the end frequency of the waveform at the given index value
@@ -138,19 +353,20 @@ class TemplateBank(object):
                               approximant=self.approximant(index),
                               **self.extra_args)      
 
+    def parse_approximant(self, approximant):
+        """Parses the given approximant argument, returning the approximant to
+        use for each template in self. This is done by calling
+        `parse_approximant_arg` using self's table as the array; see that
+        function for more details."""
+        return parse_approximant_arg(approximant, self.table)
+
     def approximant(self, index):
         """ Return the name of the approximant ot use at the given index
         """
-        if self.approximant_str is not None:
-            if 'params' in self.approximant_str:
-                t = type('t', (object,), {'params' : self.table[index]})
-                approximant = str(self.parse_option(t, self.approximant_str)) 
-            else:
-                approximant = self.approximant_str
-        else:
-            raise ValueError("Reading approximant from template bank not yet supported")
-
-        return approximant
+        if 'approximant' not in self.table.fieldnames:
+            raise ValueError("approximant not found in input file and no "
+                "approximant was specified on initialization")
+        return self.table["approximant"][index]
 
     def __len__(self):
         return len(self.table)
@@ -176,7 +392,8 @@ class TemplateBank(object):
 
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
-                       approximant=None, increment=8,
+                       approximant=None, increment=8, parameters=None,
+                       load_compressed=True, load_compressed_now=False, 
                        **kwds):
 
         self.increment = increment
@@ -185,7 +402,13 @@ class LiveFilterBank(TemplateBank):
         self.sample_rate = sample_rate
         self.minimum_buffer = minimum_buffer
 
-        super(LiveFilterBank, self).__init__(filename, approximant=approximant, **kwds)
+        super(LiveFilterBank, self).__init__(filename, approximant=approximant,
+                parameters=parameters, load_compressed=load_compressed,
+                load_compressed_now=load_compressed_now, **kwds)
+
+        if not hasattr(self.table, 'template_duration'):
+            self.table = self.table.add_fields(numpy.zeros(len(self.table),
+                                     dtype=numpy.float32), 'template_duration') 
 
         from pycbc.pnutils import mass1_mass2_to_mchirp_eta
         self.table = sorted(self.table, key=lambda t: mass1_mass2_to_mchirp_eta(t.mass1, t.mass2)[0])
@@ -297,7 +520,8 @@ class LiveFilterBank(TemplateBank):
 class FilterBank(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, f_lower, dtype,
                  out=None, max_template_length=None,
-                 approximant=None,
+                 approximant=None, parameters=None,
+                 load_compressed=True, load_compressed_now=False, 
                  **kwds):
         self.out = out
         self.dtype = dtype
@@ -310,7 +534,19 @@ class FilterBank(TemplateBank):
         self.kmin = int(f_lower / delta_f)
         self.max_template_length = max_template_length
 
-        super(FilterBank, self).__init__(filename, approximant=approximant, **kwds)
+        super(FilterBank, self).__init__(filename, approximant=approximant,
+            parameters=parameters, load_compressed=load_compressed,
+            load_compressed_now=load_compressed_now,
+            **kwds)
+        # add a template duration field if it already doesn't exist
+        if not hasattr(self.table, 'template_duration'):
+            if dtype == numpy.complex64 or dtype == numpy.float32:
+                rdtype = numpy.float32
+            else:
+                rdtype = numpy.float64
+            self.table = self.table.add_fields(numpy.zeros(len(self.table),
+                                     dtype=rdtype),
+                                     'template_duration')
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
@@ -391,7 +627,9 @@ def find_variable_start_frequency(approximant, parameters, f_start, max_length,
 class FilterBankSkyMax(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, f_lower,
                  dtype, out_plus=None, out_cross=None,
-                 max_template_length=None, **kwds):
+                 max_template_length=None, parameters=None,
+                 load_compressed=True, load_compressed_now=False, 
+                 **kwds):
         self.out_plus = out_plus
         self.out_cross = out_cross
         self.dtype = dtype
@@ -404,7 +642,19 @@ class FilterBankSkyMax(TemplateBank):
         self.kmin = int(f_lower / delta_f)
         self.max_template_length = max_template_length
 
-        super(FilterBankSkyMax, self).__init__(filename, **kwds)
+        super(FilterBankSkyMax, self).__init__(filename, parameters=parameters,
+            load_compressed=True, load_compressed_now=False,
+            **kwds)
+
+        # add a template duration field if it already doesn't exist
+        if not hasattr(self.table, 'template_duration'):
+            if dtype == numpy.complex64 or dtype == numpy.float32:
+                rdtype = numpy.float32
+            else:
+                rdtype = numpy.float64
+            self.table = self.table.add_fields(numpy.zeros(len(self.table),
+                                     dtype=rdtype),
+                                     'template_duration') 
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
