@@ -80,9 +80,9 @@ class InjectionSet(object):
     table
     """
     def __init__(self, sim_file, **kwds):
-        indoc = ligolw_utils.load_filename(
+        self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
-        self.table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+        self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
         self.extra_args = kwds
 
     def getswigrow(self, glue_row):
