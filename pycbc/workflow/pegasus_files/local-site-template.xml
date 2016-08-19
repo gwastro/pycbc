@@ -1,6 +1,6 @@
   <site handle="local" arch="x86_64" os="LINUX">
     <directory  path="$LOCAL_SITE_PATH/local-site-scratch" type="shared-scratch" free-size="null" total-size="null">
-        <file-server  operation="all" url="$LOCAL_SITE_URL/local-site-scratch">
+        <file-server  operation="all" url="${REMOTE_STAGING_URL}/local-site-scratch">
         </file-server>
     </directory>
     <directory  path="$LOCAL_SITE_PATH" type="shared-storage" free-size="null" total-size="null">
