@@ -27,7 +27,7 @@ packages for parameter estimation.
 """
 
 class _BaseSampler(object):
-    """ Base container class for running the inference sampler that will
+    """Base container class for running the inference sampler that will
     generate the posterior distributions.
 
     Parameters
@@ -42,37 +42,37 @@ class _BaseSampler(object):
 
     @property
     def acceptance_fraction(self):
-        """ This function should return the fraction of walkers that accepted
+        """This function should return the fraction of walkers that accepted
         each step as an array.
         """
-        return ValueError("acceptance_fraction function not set.")
+        return NotImplementedError("acceptance_fraction function not set.")
 
     @property
     def lnpost(self):
-        """ This function should return the natural logarithm of the likelihood
+        """This function should return the natural logarithm of the likelihood
         as an niterations x nwalker array.
         """
-        return ValueError("lnpost function not set.")
+        return NotImplementedError("lnpost function not set.")
 
     @property
     def chain(self):
-        """ This function should return the past samples as a
+        """This function should return the past samples as a
         niterations x nwalker x ndim array.
         """
-        return ValueError("chain function not set.")
+        return NotImplementedError("chain function not set.")
 
     def burn_in(self, initial_values):
-        """ This function should burn in the sampler.
+        """This function should burn in the sampler.
         """
-        raise ValueError("This sampler has no burn_in function.")
+        raise NotImplementedError("This sampler has no burn_in function.")
 
     def run(self, niterations):
-        """ This function should run the sampler.
+        """This function should run the sampler.
         """
-        raise ValueError("run function not set.")
+        raise NotImplementedError("run function not set.")
 
 class _BaseMCMCSampler(_BaseSampler):
-    """ This class is used to construct the MCMC sampler from the kombine-like
+    """This class is used to construct the MCMC sampler from the kombine-like
     packages.
 
     Parameters
@@ -91,19 +91,13 @@ class _BaseMCMCSampler(_BaseSampler):
 
     @property
     def acceptance_fraction(self):
-        """ Get the fraction of walkers that accepted each step as an arary.
+        """Get the fraction of walkers that accepted each step as an arary.
         """
         return self._sampler.acceptance_fraction
 
-    @property
-    def chain(self):
-        """ Get all past samples as an niterations x nwalker x ndim array.
-        """
-        return self._sampler.chain
-
 
 class KombineSampler(_BaseMCMCSampler):
-    """ This class is used to construct the MCMC sampler from the kombine
+    """This class is used to construct the MCMC sampler from the kombine
     package.
 
     Parameters
@@ -142,7 +136,7 @@ class KombineSampler(_BaseMCMCSampler):
         super(KombineSampler, self).__init__(sampler, likelihood_evaluator)
 
     def run(self, niterations, **kwargs):
-        """ Advance the sampler for a number of samples.
+        """Advance the sampler for a number of samples.
 
         Parameters
         ----------
@@ -168,6 +162,11 @@ class KombineSampler(_BaseMCMCSampler):
         niterations x nwalkers array.
         """
         return self._sampler.lnpost
+
+    @property
+    def chain(self):
+        """Get all past samples as an niterations x nwalker x ndim array."""
+        return self._sampler.chain
 
     def burn_in(self, initial_values):
         """ Evolve an ensemble until the acceptance rate becomes roughly
@@ -252,8 +251,14 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         """
         return self._sampler.lnprobability
 
+    @property
+    def chain(self):
+        """Get all past samples as an niterations x nwalker x ndim array."""
+        # emcee returns the chain as nwalker x niterations x ndim, so need to transpose
+        return self._sampler.chain.transpose((1,0,2))
+
     def run(self, niterations, **kwargs):
-        """ Advance the sampler for a number of samples.
+        """Advance the sampler for a number of samples.
 
         Parameters
         ----------
