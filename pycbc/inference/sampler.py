@@ -64,14 +64,45 @@ class _BaseSampler(object):
     def burn_in(self, initial_values):
         """ This function should burn in the sampler.
         """
-        raise ValueError("burn_in function not set.")
+        raise ValueError("This sampler has no burn_in function.")
 
     def run(self, niterations):
         """ This function should run the sampler.
         """
         raise ValueError("run function not set.")
 
-class KombineSampler(_BaseSampler):
+class _BaseMCMCSampler(_BaseSampler):
+    """ This class is used to construct the MCMC sampler from the kombine-like
+    packages.
+
+    Parameters
+    ----------
+    likelihood_evaluator : likelihood class
+        An instance of the likelihood class from the
+        pycbc.inference.likelihood module.
+    sampler : sampler instance
+        An instance of an MCMC sampler similar to kombine or emcee.
+    """
+    def __init__(self, sampler, likelihood_evaluator):
+
+        self._sampler = sampler 
+        # initialize
+        super(_BaseMCMCSampler, self).__init__(likelihood_evaluator)
+
+    @property
+    def acceptance_fraction(self):
+        """ Get the fraction of walkers that accepted each step as an arary.
+        """
+        return self._sampler.acceptance_fraction
+
+    @property
+    def chain(self):
+        """ Get all past samples as an niterations x nwalker x ndim array.
+        """
+        return self._sampler.chain
+
+
+class KombineSampler(_BaseMCMCSampler):
     """ This class is used to construct the MCMC sampler from the kombine
     package.
 
@@ -104,17 +135,32 @@ class KombineSampler(_BaseSampler):
             raise ImportError("kombine is not installed.")
 
         # construct sampler for use in KombineSampler
-        self._sampler = kombine.Sampler(nwalkers, ndim, likelihood_evaluator,
+        sampler = kombine.Sampler(nwalkers, ndim, likelihood_evaluator,
                                           transd=transd, processes=processes)
 
         # initialize
-        super(KombineSampler, self).__init__(likelihood_evaluator)
+        super(KombineSampler, self).__init__(sampler, likelihood_evaluator)
 
-    @property
-    def acceptance_fraction(self):
-        """ Get the fraction of walkers that accepted each step as an arary.
+    def run(self, niterations, **kwargs):
+        """ Advance the sampler for a number of samples.
+
+        Parameters
+        ----------
+        niterations : int
+            Number of samples to get from sampler.
+
+        Returns
+        -------
+        p : numpy.array
+            An array of current walker positions with shape (nwalkers, ndim).
+        lnpost : numpy.array
+            The list of log posterior probabilities for the walkers at
+            positions p, with shape (nwalkers, ndim).
+        lnprop : numpy.array
+            The list of log proposal densities for the walkers at positions p,
+            with shape (nwalkers, ndim).
         """
-        return self._sampler.acceptance_fraction
+        return self._sampler.run_mcmc(niterations, **kwargs)
 
     @property
     def lnpost(self):
@@ -122,12 +168,6 @@ class KombineSampler(_BaseSampler):
         niterations x nwalkers array.
         """
         return self._sampler.lnpost
-
-    @property
-    def chain(self):
-        """ Get all past samples as an niterations x nwalker x ndim array.
-        """
-        return self._sampler.chain
 
     def burn_in(self, initial_values):
         """ Evolve an ensemble until the acceptance rate becomes roughly
@@ -162,6 +202,56 @@ class KombineSampler(_BaseSampler):
             raise ValueError("Burn in has already been performed")
         return p, post, q
 
+
+class EmceeEnsembleSampler(_BaseMCMCSampler):
+    """This class is used to construct an MCMC sampler from the emcee
+    package's EnsembleSampler.
+
+    Parameters
+    ----------
+    likelihood_evaluator : likelihood class
+        An instance of the likelihood class from the
+        pycbc.inference.likelihood module.
+    nwalkers : int
+        Number of walkers to use in sampler.
+    ndim : int
+        Number of dimensions in the parameter space. If transd is True this is
+        the number of unique dimensions across the parameter spaces.
+    processes : {None, int}
+        Number of processes to use with multiprocessing. If None, all available
+        cores are used.
+    """
+
+    def __init__(self, likelihood_evaluator, nwalkers=0, ndim=0,
+                        processes=None):
+
+        try:
+            import emcee
+        except ImportError:
+            raise ImportError("emcee is not installed.")
+
+        # initialize the pool to use
+        if processes == 1:
+            pool = None
+        else:
+            pool = emcee.interruptible_pool.InterruptiblePool(
+                processes=processes)
+
+        # construct the sampler
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_evaluator,
+            pool=pool)
+
+        # initialize
+        super(EmceeEnsembleSampler, self).__init__(sampler,
+            likelihood_evaluator)
+
+    @property
+    def lnpost(self):
+        """Get the natural logarithm of the likelihood as an 
+        niterations x nwalkers array.
+        """
+        return self._sampler.lnprobability
+
     def run(self, niterations, **kwargs):
         """ Advance the sampler for a number of samples.
 
@@ -181,8 +271,14 @@ class KombineSampler(_BaseSampler):
             The list of log proposal densities for the walkers at positions p,
             with shape (nwalkers, ndim).
         """
-        return self._sampler.run_mcmc(niterations, **kwargs)
+        try:
+            p0 = kwargs.pop('p0')
+        except KeyError:
+            raise ValueError("must provide a p0 in the keyword arguments")
+        return self._sampler.run_mcmc(p0, niterations, **kwargs)
+
 
 samplers = {
     "kombine" : KombineSampler,
+    "emcee" : EmceeEnsembleSampler,
 }
