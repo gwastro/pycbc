@@ -17,10 +17,10 @@
 This modules contains functions reading, generating, and segmenting strain data
 """
 import copy
-import logging, math, numpy, lal
+import logging, numpy, lal
 import pycbc.noise
 import pycbc.types
-from pycbc.types import float32, TimeSeries, zeros
+from pycbc.types import TimeSeries, zeros
 from pycbc.types import Array, FrequencySeries, complex_same_precision_as
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
@@ -39,7 +39,7 @@ import pycbc.filter
 from scipy.signal import kaiserord
  
 
-next_power_of_2 = lambda n: 2 ** (math.ceil(math.log(n, 2)) + 1)
+next_power_of_2 = lambda n: 1<<(n).bit_length()
 
 def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
                          psd_avg_method='median', low_freq_cutoff=30.,
@@ -82,7 +82,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     """
 
     logging.info('Autogating: tapering strain')
-    taper_length = corrupt_time * strain.sample_rate
+    taper_length = int(corrupt_time * strain.sample_rate)
     w = numpy.arange(taper_length) / float(taper_length)
     strain[0:taper_length] *= pycbc.types.Array(w, dtype=strain.dtype)
     strain[(len(strain)-taper_length):] *= pycbc.types.Array(w[::-1],
