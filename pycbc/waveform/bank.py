@@ -322,6 +322,11 @@ class TemplateBank(object):
         skip_fields : {None, (list of) strings}
             Do not write the given fields to the hdf file. Default is None,
             in which case all fields in self.table.fieldnames are written.
+
+        Returns
+        -------
+        h5py.File
+            The file handler to the output hdf file (left open).
         """
         if not filename.endswith('.hdf'):
             raise ValueError("Unrecoginized file extension")
@@ -340,9 +345,7 @@ class TemplateBank(object):
         if self.compressed_waveforms is not None:
             for tmplt_hash, compwf in self.compressed_waveforms.items():
                 compwf.write_to_hdf(f, tmplt_hash) 
-        f.close()
-
-        return None
+        return f
 
     def end_frequency(self, index):
         """ Return the end frequency of the waveform at the given index value
