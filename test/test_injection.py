@@ -38,7 +38,7 @@ parse_args_cpu_only("Injections")
 class MyInjection(object):
     def fill_sim_inspiral_row(self, row):
         # using dummy values for many fields, should work for our purposes
-        row.waveform = 'TaylorT4'
+        row.waveform = 'TaylorT4threePointFivePN'
         row.distance = self.distance
         total_mass = self.mass1 + self.mass2
         row.mass1 = self.mass1
@@ -140,7 +140,7 @@ class TestInjection(unittest.TestCase):
                 # FIXME could test amplitude and time more precisely
                 self.assertTrue(max_amp > 0 and max_amp < 1e-10)
                 time_error = ts.sample_times.numpy()[max_loc] - inj.end_time
-                self.assertTrue(abs(time_error) < 1.5 * self.earth_time)
+                self.assertTrue(abs(time_error) < 2 * self.earth_time)
 
     def test_injection_absence(self):
         """Verify absence of signals outside known injection times"""

@@ -33,14 +33,14 @@ test $? -ne 0 && RESULT=1
 #python test/test_fft_unthreaded.py
 #test $? -ne 0 && RESULT=1
 
-#python test/test_frame.py
-#test $? -ne 0 && RESULT=1
+python test/test_frame.py
+test $? -ne 0 && RESULT=1
 
 python test/test_frequencyseries.py
 test $? -ne 0 && RESULT=1
 
-#python test/test_injection.py
-#test $? -ne 0 && RESULT=1
+python test/test_injection.py
+test $? -ne 0 && RESULT=1
 
 python test/test_matchedfilter.py
 test $? -ne 0 && RESULT=1

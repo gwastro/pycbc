@@ -28,12 +28,10 @@ These are the unittests for the pycbc frame/cache reading functions
 
 import pycbc
 import unittest
-from pycbc.types import *
-from pycbc.scheme import *
 import pycbc.frame
 import numpy
 import lal
-#from pylal import Fr
+from pycbc.types import TimeSeries
 from utils import parse_args_cpu_only, simple_exit
 
 # Frame tests only need to happen on the CPU
