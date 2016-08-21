@@ -286,6 +286,7 @@ with ctx:
                 if param in idist.params:
                     p0[i][j] = idist.rvs(size=1, param=param)[0][0]
                     break
+    sampler.set_p0(p0)
 
     # setup checkpointing
     if opts.checkpoint_interval:
@@ -310,8 +311,7 @@ with ctx:
     # position after burn in
     if not opts.skip_burn_in:
         logging.info("Burn in")
-        sampler.burn_in(p0)
-        p0 = None
+        sampler.burn_in()
         n_burnin = sampler.burn_in_iterations
         logging.info("Used %i burn in samples" % n_burnin)
     else:
@@ -360,8 +360,7 @@ with ctx:
         # picks up from where it left off next call
         logging.info("Running sampler for %i to %i out of %i iterations"%(
             start-n_burnin,end-n_burnin,opts.niterations))
-        sampler.run(end-start, p0=p0)
-        p0 = None
+        sampler.run(end-start)
 
         # write new samples
         with InferenceFile(opts.output_file, "a") as fp:

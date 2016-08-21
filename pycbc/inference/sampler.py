@@ -82,12 +82,48 @@ class _BaseMCMCSampler(_BaseSampler):
         pycbc.inference.likelihood module.
     sampler : sampler instance
         An instance of an MCMC sampler similar to kombine or emcee.
+
+    Attributes
+    ----------
+    sampler :
+        The MCMC sampler instance used.
+    p0 : nwalkers x ndim array
+        The initial position of the walkers. Set by using set_p0. If not set yet, a
+        ValueError is raised when the attribute is accessed.
+    pos : {None, array}
+        An array of the current walker positions.
     """
     def __init__(self, sampler, likelihood_evaluator):
-
         self._sampler = sampler 
+        self._pos = None
+        self._p0 = None
+
         # initialize
         super(_BaseMCMCSampler, self).__init__(likelihood_evaluator)
+
+    @property
+    def sampler(self):
+        return self._sampler
+
+    @property
+    def pos(self):
+        return self._pos
+
+    def set_p0(self, p0):
+        """Sets the initial position of the walkers.
+
+        Parameters
+        ----------
+        p0 : numpy.array
+            An nwalkers x ndim array of initial values for walkers.
+        """
+        self._p0 = p0
+
+    @property
+    def p0(self):
+        if self._p0 is None:
+            raise ValueError("initial positions not set; run set_p0")
+        return self._p0
 
     @property
     def acceptance_fraction(self):
@@ -154,7 +190,15 @@ class KombineSampler(_BaseMCMCSampler):
             The list of log proposal densities for the walkers at positions p,
             with shape (nwalkers, ndim).
         """
-        return self._sampler.run_mcmc(niterations, **kwargs)
+        if self.burn_in_iterations == 0:
+            # no burn in, use the initial positions
+            p0 = self.p0
+        else:
+            p0 = None
+        p, lnpost, lnprop = self._sampler.run_mcmc(niterations, p0=p0, **kwargs)
+        # update the positions
+        self._pos = p
+        return p, lnpost, lnprop
 
     @property
     def lnpost(self):
@@ -168,16 +212,12 @@ class KombineSampler(_BaseMCMCSampler):
         """Get all past samples as an niterations x nwalker x ndim array."""
         return self._sampler.chain
 
-    def burn_in(self, initial_values):
-        """ Evolve an ensemble until the acceptance rate becomes roughly
+    def burn_in(self):
+        """Evolve an ensemble until the acceptance rate becomes roughly
         constant. This is done by splitting acceptances in half and checking
         for statistical consistency. This isn't guaranteed to return a fully
-        burned-in ensemble, but usually does.
-
-        Parameters
-        ----------
-        initial_values : numpy.array
-            An nwalkers x ndim array of initial values for walkers.
+        burned-in ensemble, but usually does. The initial positions (p0) must be
+        set prior to running.
 
         Returns
         -------
@@ -191,7 +231,7 @@ class KombineSampler(_BaseMCMCSampler):
             with shape (nwalkers, ndim).
         """
         if self.burn_in_iterations == 0:
-            res = self._sampler.burnin(initial_values)
+            res = self._sampler.burnin(self.p0)
             if len(res) == 4:
                 p, post, q, _ = res
             else:
@@ -199,6 +239,8 @@ class KombineSampler(_BaseMCMCSampler):
             self.burn_in_iterations = self.chain.shape[0]
         else:
             raise ValueError("Burn in has already been performed")
+        # update position
+        self._pos = p
         return p, post, q
 
 
@@ -276,11 +318,13 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
             The list of log proposal densities for the walkers at positions p,
             with shape (nwalkers, ndim).
         """
-        try:
-            p0 = kwargs.pop('p0')
-        except KeyError:
-            raise ValueError("must provide a p0 in the keyword arguments")
-        return self._sampler.run_mcmc(p0, niterations, **kwargs)
+        pos = self._pos
+        if pos is None:
+            pos = self.p0
+        p, lnpost, lnprop = self._sampler.run_mcmc(pos, niterations, **kwargs)
+        # update the positions
+        self._pos = p
+        return p, lnpost, lnprop
 
 
 samplers = {
