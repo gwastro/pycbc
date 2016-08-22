@@ -491,7 +491,8 @@ As with the sbank workflow generator the main bulk of the configuration is the
 configuration file, which is provided on the command line. This configuration
 file contains options for all 3 stages of the workflow, and so is a little more
 involved than the sbank example given above. Here we provide a particularly
-detailed potential configuration for generating an uberbank on O1-like data.
+detailed configuration for generating a bank equivalent to the uberbank on
+O1-like data.
 
 .. literalinclude:: resources/uberbank_example1.ini
    :language: ini
