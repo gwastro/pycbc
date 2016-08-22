@@ -134,8 +134,13 @@ def generate_anstar_3d_lattice(maxv1, minv1, maxv2, minv2, maxv3, minv3, \
     a.data[0,0] = 1
     a.data[1,1] = 1
     a.data[2,2] = 1
-    lalpulsar.SetTilingLatticeAndMetric(tiling, lalpulsar.TILING_LATTICE_ANSTAR,
-                                        a, mindist)
+    try:
+        # old versions of lalpulsar used an enumeration
+        lattice = lalpulsar.TILING_LATTICE_ANSTAR
+    except AttributeError:
+        # newer versions of lalpulsar use a string
+        lattice = 'An-star'
+    lalpulsar.SetTilingLatticeAndMetric(tiling, lattice, a, mindist)
     try:
         iterator = lalpulsar.CreateLatticeTilingIterator(tiling, 3)
     except TypeError:
