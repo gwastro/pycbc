@@ -286,6 +286,7 @@ with ctx:
                 if param in idist.params:
                     p0[i][j] = idist.rvs(size=1, param=param)[0][0]
                     break
+    sampler.set_p0(p0)
 
     # setup checkpointing
     if opts.checkpoint_interval:
@@ -310,8 +311,7 @@ with ctx:
     # position after burn in
     if not opts.skip_burn_in:
         logging.info("Burn in")
-        sampler.burn_in(p0)
-        p0 = None
+        sampler.burn_in()
         n_burnin = sampler.burn_in_iterations
         logging.info("Used %i burn in samples" % n_burnin)
     else:
@@ -322,14 +322,26 @@ with ctx:
         fp.write_samples(variable_args, nwalkers=opts.nwalkers,
                          niterations=opts.niterations+n_burnin,
                          labels=labels)
-        fp.write_acceptance_fraction(niterations=opts.niterations+n_burnin)
+        # FIXME: kombine defines the acceptance fraction as the fraction of walkers
+        # that accepted each step, while emcee defines the acceptance fraction as
+        # the fraction of steps accepted by each walker; this means they have different
+        # lengths. For now, I'm just catching this here, but should come up with a more
+        # robust solution eventually
+        if opts.sampler == "kombine":
+            fp.write_acceptance_fraction(niterations=opts.niterations+n_burnin)
+        else:
+            fp.write_acceptance_fraction(niterations=opts.nwalkers)
         fp.write_lnpost(nwalkers=opts.nwalkers,
                         niterations=opts.niterations+n_burnin)
         # write the burn in
         if not opts.skip_burn_in:
             fp.write_samples_from_sampler(sampler, start=0, end=n_burnin)
-            fp.write_acceptance_fraction(data=sampler.acceptance_fraction,
-                                         start=0, end=n_burnin)
+            # FIXME: differenct definitions of acceptance fraction; see above
+            if opts.sampler == "kombine":
+                fp.write_acceptance_fraction(data=sampler.acceptance_fraction,
+                                             start=0, end=n_burnin)
+            else:
+                fp.write_acceptance_fraction(data=sampler.acceptance_fraction)
             fp.write_lnpost(data=sampler.lnpost, start=0, end=n_burnin)
 
     # write sampler attributes to file
@@ -348,14 +360,17 @@ with ctx:
         # picks up from where it left off next call
         logging.info("Running sampler for %i to %i out of %i iterations"%(
             start-n_burnin,end-n_burnin,opts.niterations))
-        sampler.run(end-start, p0=p0)
-        p0 = None
+        sampler.run(end-start)
 
         # write new samples
         with InferenceFile(opts.output_file, "a") as fp:
             fp.write_samples_from_sampler(sampler, start=start, end=end)
-            fp.write_acceptance_fraction(data=sampler.acceptance_fraction,
-                                         start=start, end=end)
+            # FIXME: differenct definitions of acceptance fraction; see above
+            if opts.sampler == "kombine":
+                fp.write_acceptance_fraction(data=sampler.acceptance_fraction,
+                                             start=start, end=end)
+            else:
+                fp.write_acceptance_fraction(data=sampler.acceptance_fraction)
             fp.write_lnpost(data=sampler.lnpost, start=start, end=end)
 
 # calculate ACL for each series of samples for each parameter for each walker
