@@ -250,8 +250,11 @@ fi
 export LOCAL_SITE_URL
 
 # add the local site
+# Set remote staging url to local
 if [ -z $SITE_LIST ] ; then
   SITE_LIST="local"
+  REMOTE_STAGING_URL=${LOCAL_SITE_URL}
+
 else
   SITE_LIST="local,${SITE_LIST}"
 fi
@@ -261,10 +264,13 @@ if [ -z ${PEGASUS_SITE_CATALOG_PATH} ] ; then
 fi
 
 # Create the site catalog
-if [ -z $REMOTE_STAGING_SERVER ] ; then
-  REMOTE_STAGING_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
-else
-  REMOTE_STAGING_URL="gsiftp://${REMOTE_STAGING_SERVER}${LOCAL_SITE_PATH}"
+# Don't overwrite remote staging URL if site list is local
+if [ ${SITE_LIST} != "local" ] ; then
+  if [ -z $REMOTE_STAGING_SERVER ] ; then
+    REMOTE_STAGING_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
+  else
+    REMOTE_STAGING_URL="gsiftp://${REMOTE_STAGING_SERVER}${LOCAL_SITE_PATH}"
+  fi
 fi
 export REMOTE_STAGING_URL
 
