@@ -24,9 +24,7 @@
 """ This modules contains functions for calculating and manipulating
 coincident triggers.
 """
-import numpy, logging, h5py, pycbc.pnutils
-from itertools import izip
-from scipy.interpolate import interp1d
+import numpy, logging, pycbc.pnutils
 
 def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
@@ -51,9 +49,9 @@ def background_bin_from_string(background_bins, data):
         name, bin_type, boundary = tuple(mbin.split(':'))
 
         if boundary[0:2] == 'lt':
-            member_func = lambda vals: vals < float(boundary[2:])
+            member_func = lambda vals, bd=boundary : vals < float(bd[2:])
         elif boundary[0:2] == 'gt':
-            member_func = lambda vals: vals > float(boundary[2:])
+            member_func = lambda vals, bd=boundary : vals > float(bd[2:])
         else:
             raise RuntimeError("Can't parse boundary condition! Must begin "
                                "with 'lt' or 'gt'")
