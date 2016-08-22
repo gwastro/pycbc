@@ -552,10 +552,10 @@ Libs: -L${libdir} -lhdf5' |
         sed -i~ '/^CXXSTD[A-Z]*FLAGS=/d' ./libraries/ldastoolsal/ldastoolsal*.pc
         make
         make -k install || true
-        # cd ..
-        # $cleanup && rm -rf $p
+        cd ..
+        $cleanup && rm -rf $p
 
-    else # build_framecpp
+    fi # else # build_framecpp
 
         # LIBFRAME / FrameL
         p=libframe-8.30
@@ -580,11 +580,10 @@ Libs: -L${libdir} -lhdf5' |
         make install
         mkdir -p "$PREFIX/lib/pkgconfig"
         sed "s%^prefix=.*%prefix=$PREFIX%" src/libframe.pc > $PREFIX/lib/pkgconfig/libframe.pc
+        cd ..
+        $cleanup && rm -rf $p
 
-    fi # build_framecpp
-
-    cd ..
-    $cleanup && rm -rf $p
+    # fi # build_framecpp
 
     # METAIO
     p=metaio-8.3.0
