@@ -997,7 +997,7 @@ class FieldArray(numpy.recarray):
             new_columns = {}
             for col in columns:
                 new_columns[col] = table.validcolumns[col]
-        columns = new_columns
+            columns = new_columns
         if cast_to_dtypes is not None:
             dtype = [cast_to_dtypes[col] for col in columns]
         else:
