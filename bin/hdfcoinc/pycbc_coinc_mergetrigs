@@ -86,12 +86,17 @@ for gk, gv in gating.items():
     f[ifo + '/gating/' + gk] = gv
 
 logging.info('set up sorting of triggers and template ids')
+# For fast lookup we need the templates in hash order
 hashes = h5py.File(args.bank_file, 'r')['template_hash'][:]
+bank_tids = hashes.argsort()
+hashes = hashes[bank_tids]
+
 trigger_hashes = collect('%s/template_hash' % ifo, args.trigger_files)
 trigger_sort = trigger_hashes.argsort()
 trigger_hashes = trigger_hashes[trigger_sort]
 template_boundaries = changes(trigger_hashes)
-template_ids = numpy.searchsorted(hashes, trigger_hashes[template_boundaries[:-1]])
+
+template_ids = bank_tids[numpy.searchsorted(hashes, trigger_hashes[template_boundaries[:-1]])]
 
 full_boundaries = numpy.searchsorted(trigger_hashes, hashes)
 full_boundaries = numpy.concatenate([full_boundaries, [len(trigger_hashes)]])
