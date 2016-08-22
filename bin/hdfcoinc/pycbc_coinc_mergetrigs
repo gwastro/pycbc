@@ -89,7 +89,7 @@ logging.info('set up sorting of triggers and template ids')
 # For fast lookup we need the templates in hash order
 hashes = h5py.File(args.bank_file, 'r')['template_hash'][:]
 bank_tids = hashes.argsort()
-hashes = hashes[hash_sort]
+hashes = hashes[bank_tids]
 
 trigger_hashes = collect('%s/template_hash' % ifo, args.trigger_files)
 trigger_sort = trigger_hashes.argsort()
