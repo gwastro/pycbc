@@ -18,7 +18,6 @@ import sys, h5py
 import argparse, logging
 
 import numpy as np
-from sklearn import neighbors
 
 from pycbc import pnutils
 import pycbc.version
@@ -62,10 +61,10 @@ parser.add_argument("--min-duration", type=float, default=0.,
                          " before fitting. Units seconds.")
 parser.add_argument("--log-param", action='store_true',
                     help="Take the log of the fit param before smoothing.")
-parser.add_argument("--regression-method", required=True, choices=["nn"],
+parser.add_argument("--regression-method", required=True, 
+                    choices=["nn", "tricube"],
                     help="Method of smoothing over the chosen fit param. "
-                         "Required. Currently nn (nearest-neighbor) is the "
-                         "only choice.")
+                         "Required.")
 parser.add_argument("--num-neighbors", type=int, default=-1,
                     help="Number of neighbors used in nn method. Try 2500, or "
                          "1/10th the total number of templates if that is "
@@ -135,6 +134,8 @@ else:
 # do nearest-neighbours regression
 # use Gaussian weight over fitting parameter
 if args.regression_method == 'nn':
+    # only import scikit-learn if and when needed
+    from sklearn import neighbors
     weights = lambda d:np.exp(-0.5 * (d/args.smoothing_width)**2)
     knn = neighbors.KNeighborsRegressor(args.num_neighbors, weights=weights)
 
@@ -154,6 +155,27 @@ if args.regression_method == 'nn':
     del invalphan_knn
     # divide out by smoothed trig count
     invalpha_smoothed = np.array(invalphan_smoothed) / np.array(nabove_smoothed)
+elif args.regression_method == 'tricube':
+    # do Nadaraya-Watson kernel regression
+    # i.e. weighted average with parameter-dependent weights
+    invalphan = invalpha * nabove
+    invalpha_smoothed = []
+    nabove_smoothed = []
+    logging.info('Evaluating smoothed invalpha and n_above')
+    for i, p in enumerate(parvals):
+        if not i % 100:
+            logging.info('Smoothing template %i', i)
+        # find parameter values that go into average
+        par_diff = parvals - p
+        in_kernel = abs(par_diff) < args.smoothing_width
+        # tri-cube kernel
+        weights = (1 - abs(par_diff[in_kernel])**3)**3
+        norm = sum(weights)
+        # weighted average
+        n_sm = sum(nabove[in_kernel] * weights) / norm
+        invalphan_smoothed = sum(invalphan[in_kernel] * weights) / norm
+        invalpha_smoothed.append(invalphan_smoothed / n_sm)
+        nabove_smoothed.append(n_sm)
 
 # store template-dependent fit output
 outfile = h5py.File(args.output, 'w')
