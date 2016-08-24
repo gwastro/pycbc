@@ -1,0 +1,97 @@
+# Copyright (C) 2016 Miriam Cabero Mueller
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+import argparse
+import logging
+import numpy
+#import matplotlib
+#matplotlib.use('agg')
+#from matplotlib import pyplot
+import pycbc.results
+from pycbc.io.inference_hdf import InferenceFile
+from pycbc.results.scatter_histograms import scatter_histogram
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--input-file", type=str, required=True,
+                    help="Results file path.")
+parser.add_argument("--vmin", type=float,
+                    help="Minimum value for the colorbar.")
+parser.add_argument("--vmax", type=float,
+                    help="Maximum value for the colorbar.")
+parser.add_argument("--movie-plots", type=int,
+                    help="Number of plots for the movie.")
+parser.add_argument("--output-file", type=str, required=True,
+                    help="Output plot path without extension.")
+parser.add_argument('--verbose', action='store_true')
+
+opts = parser.parse_args()
+pycbc.init_logging(opts.verbose)
+
+# Get parameters
+logging.info('Loading samples.')
+with InferenceFile(opts.input_file, 'r') as fp:
+    nwalkers = fp.nwalkers
+    if opts.movie_plots is None:
+        njumps = fp.niterations
+    else:
+        njumps = opts.movie_plots
+    thinint = fp.niterations / njumps
+    x = fp.read_samples(fp.variable_args, walkers=0, thin_start=0, 
+                        thin_interval=thinint)
+    varargs = fp._arraycls((x.size, nwalkers))
+    lnl = numpy.zeros((x.size, nwalkers))
+    for walker in range(nwalkers):
+        varargs[:,walker] = fp.read_samples(fp.variable_args, walkers=walker, 
+                                        thin_start=0, thin_interval=thinint)
+        lnl[:,walker] = fp.read_lnpost(walkers=walker, thin_start=0, 
+                                        thin_interval=thinint)
+    parameters = fp.variable_args
+
+logging.info('Choosing common characteristics for all figures.')
+# Set common min and max for axis
+mins = {p:varargs[p].min() for p in parameters}
+maxs = {p:varargs[p].max() for p in parameters}
+# Set common min and max for colorbar
+if opts.vmin is None:
+    vmin = lnl.min()
+else:
+    vmin = opts.vmin
+if opts.vmax is None:
+    vmax = lnl.max()
+else:
+    vmax = opts.vmax
+
+# Make each figure
+logging.info('Creating figures.')
+for jump in range(njumps):
+    plotargs = varargs[jump,:]
+    z = lnl[jump,:]
+    output = opts.output_file + '%d.png' %jump
+
+    scatter_histogram(parameters, plotargs, z, output, mins=mins, maxs=maxs,
+                        vmin=vmin, vmax=vmax) 
+
+logging.info('Done.')
