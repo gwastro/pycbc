@@ -25,8 +25,9 @@ from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.fft.fftw, pycbc.version
 import pycbc.opt
 import pycbc.weave
+import time
 
-
+tstart = time.time()
 
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
@@ -143,6 +144,8 @@ parser.add_argument("--threshold-template-filtering", type= float)
 
 
 
+
+
 # Add options groups
 psd.insert_psd_option_group(parser)
 strain.insert_strain_option_group(parser)
@@ -203,6 +206,8 @@ with ctx:
         'bank_chisq_dof' : None,
         'cont_chisq'     : None
                }
+
+
     names = sorted(out_vals.keys())
 
     if len(strain_segments.segment_slices) == 0:
@@ -227,6 +232,12 @@ with ctx:
         use_cluster = False
     else:
         use_cluster = True
+
+    if hasattr(ctx, "num_threads"):
+            ncores = ctx.num_threads
+    else:
+            ncores = 1
+
 
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
                                    opt.snr_threshold, tlen, delta_f, complex64,
@@ -267,6 +278,8 @@ with ctx:
                                             opt.threshold_template_filtering)
         logging.info("Template Bank Size After Cut: %s", len(bank))
       
+    ntemplates = len(bank)
+
     # Note: in the class-based approach used now, 'template' is not explicitly used
     # within the loop.  Rather, the iteration simply fills the memory specifed in
     # the 'template_mem' argument to MatchedFilterControl with the next template
@@ -344,6 +357,10 @@ if opt.maximization_interval:
     window = int(opt.maximization_interval * gwstrain.sample_rate / 1000)
     event_mgr.maximize_over_bank("time_index", "snr", window)
     logging.info("%d remaining triggers" % len(event_mgr.events))
+
+tstop = time.time()
+run_time = tstop - tstart
+event_mgr.save_performance(run_time=run_time, ncores=ncores, ntemplates=ntemplates)
 
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
