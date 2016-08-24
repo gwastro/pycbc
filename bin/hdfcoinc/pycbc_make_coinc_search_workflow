@@ -361,6 +361,10 @@ wf.make_segments_plot(workflow, [sci_ok_seg_file],
 wf.make_gating_plot(workflow, full_insps, rdir['analysis_time/gating'],
                     tags=['full_data'])
 
+if workflow.cp.has_option_tags('workflow-matchedfilter',
+                                   'plot-throughput', tags=[tag]):
+    wf.make_throughput_plot(workflow, full_insps, rdir['workflow/throughput'],
+                            tags=['full_data'])
 
 # make segment table and plot for summary page
 curr_files = [science_seg_file, sci_ok_seg_file, analyzable_file,
@@ -478,7 +482,13 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                      insps,  hdfbank[0], insp_files_seg_file,
                                      data_analysed_name, trig_generated_name,
                                      'daxes', currdir, tags=[tag])
-        
+
+    # If option given, make throughput plots
+    if workflow.cp.has_option_tags('workflow-matchedfilter',
+                                   'plot-throughput', tags=[tag]):
+        wf.make_throughput_plot(workflow, insps, rdir['workflow/throughput'],
+                                tags=[tag])
+
 # Make combined injection plots
 inj_summ = []
 if len(files_for_combined_injfind) > 0:
