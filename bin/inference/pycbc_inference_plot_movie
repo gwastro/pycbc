@@ -59,7 +59,6 @@ pycbc.init_logging(opts.verbose)
 logging.info('Loading samples.')
 fp, parameters, labels, _ = option_utils.results_from_cli(opts,
                             load_samples=False)
-#with InferenceFile(opts.input_file, 'r') as fp:
 nwalkers = fp.nwalkers
 njumps = opts.movie_plots
 thinint = fp.niterations / njumps
@@ -72,8 +71,7 @@ for walker in range(nwalkers):
                                         thin_start=0, thin_interval=thinint)
     lnl[:,walker] = fp.read_lnpost(walkers=walker, thin_start=0, 
                                         thin_interval=thinint)
-#    parameters = fp.variable_args if opts.parameters is None \
-#                 else opts.parameters
+fp.close()
 
 logging.info('Choosing common characteristics for all figures.')
 # Set common min and max for axis

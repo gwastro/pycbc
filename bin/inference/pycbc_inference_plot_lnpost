@@ -48,6 +48,7 @@ opts = parser.parse_args()
 fp, parameters, labels, varargs = option_utils.results_from_cli(opts)
 lnl = fp.read_lnpost(thin_start=opts.thin_start, 
                     thin_interval=opts.thin_interval, thin_end=opts.thin_end)
+fp.close()
 
 fig = scatter_histogram(parameters, varargs, lnl, labels=labels,  
                     vmin=opts.vmin, vmax=opts.vmax)

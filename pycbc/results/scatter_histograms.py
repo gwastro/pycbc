@@ -59,7 +59,7 @@ def scatter_histogram(parameters, args, data, labels=None,
         If None, it will use the maximum of the corresponding variable in args.
     """
 
-    if len(parameters) ==1:
+    if len(parameters) == 1:
         raise ValueError('You need at least two parameters.')
     if labels is None:
         labels = parameters
