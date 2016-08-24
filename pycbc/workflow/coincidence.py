@@ -32,8 +32,9 @@ from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node, F
 from glue import segments
 
 class PyCBCBank2HDFExecutable(Executable):
-    """ This converts xml tmpltbank to an hdf format
-    """
+
+    """Converts xml tmpltbank to hdf format"""
+
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, bank_file):
         node = Node(self)
@@ -42,8 +43,9 @@ class PyCBCBank2HDFExecutable(Executable):
         return node
 
 class PyCBCTrig2HDFExecutable(Executable):
-    """ This converts xml triggers to an hdf format, grouped by template hash
-    """
+
+    """Converts xml triggers to hdf format, grouped by template hash"""
+
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, trig_files, bank_file):
         node = Node(self)
@@ -54,9 +56,9 @@ class PyCBCTrig2HDFExecutable(Executable):
         return node
 
 class PyCBCFitByTemplateExecutable(Executable):
-    """ Calculates values that describe the background distribution template
-        by template.
-    """
+
+    """Calculates values that describe the background distribution template by template"""
+
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, trig_file, bank_file, veto_file, veto_name):
         node = Node(self)
@@ -70,9 +72,9 @@ class PyCBCFitByTemplateExecutable(Executable):
         return node
 
 class PyCBCFitOverParamExecutable(Executable):
-    """ Smooths the background distribution parameters over a continuous
-        parameter
-    """
+
+    """Smooths the background distribution parameters over a continuous parameter"""
+
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, raw_fit_file, bank_file):
         node = Node(self)
@@ -82,8 +84,7 @@ class PyCBCFitOverParamExecutable(Executable):
         return node
 
 class PyCBCFindCoincExecutable(Executable):
-    """ Find coinc triggers using a folded interval method
-    """
+    """Find coinc triggers using a folded interval method"""
     current_retention_level = Executable.ALL_TRIGGERS
     def create_node(self, trig_files, bank_file, stat_files, veto_file,
                     veto_name, template_str, tags=None):
@@ -104,8 +105,7 @@ class PyCBCFindCoincExecutable(Executable):
         return node
 
 class PyCBCStatMapExecutable(Executable):
-    """ Calculate FAP, IFAR, etc
-    """
+    """Calculate FAP, IFAR, etc"""
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, coinc_files, tags=None):
         if tags is None:
@@ -120,8 +120,7 @@ class PyCBCStatMapExecutable(Executable):
         return node
         
 class PyCBCStatMapInjExecutable(Executable):
-    """ Calculate FAP, IFAR, etc
-    """
+    """Calculate FAP, IFAR, etc"""
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, zerolag, full_data, injfull, fullinj, tags=None):
         if tags is None:
@@ -139,8 +138,7 @@ class PyCBCStatMapInjExecutable(Executable):
         return node
         
 class PyCBCHDFInjFindExecutable(Executable):
-    """ Find injections in the hdf files output
-    """
+    """Find injections in the hdf files output"""
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, inj_coinc_file, inj_xml_file, veto_file, veto_name, tags=None):
         if tags is None:
@@ -156,7 +154,7 @@ class PyCBCHDFInjFindExecutable(Executable):
         return node
 
 class PyCBCDistributeBackgroundBins(Executable):
-    """ Distribute coinc files amoung different background bins """
+    """Distribute coinc files amoung different background bins"""
     current_retention_level = Executable.ALL_TRIGGERS
     def create_node(self, coinc_files, bank_file, background_bins, tags=None):
         if tags is None:
@@ -258,8 +256,7 @@ def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file,
     return node.output_files[0]     
 
 def convert_bank_to_hdf(workflow, xmlbank, out_dir, tags=None):
-    """Return the template bank in hdf format
-    """
+    """Return the template bank in hdf format"""
     if tags is None:
         tags = []
     #FIXME, make me not needed
@@ -276,8 +273,7 @@ def convert_bank_to_hdf(workflow, xmlbank, out_dir, tags=None):
     return bank2hdf_node.output_files
 
 def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None):
-    """Return the list of hdf5 trigger files outpus
-    """
+    """Return the list of hdf5 trigger files outputs"""
     if tags is None:
         tags = []
     #FIXME, make me not needed
@@ -400,7 +396,8 @@ def setup_background_bins_inj(workflow, coinc_files, background_file, bank_file,
 def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
               stat_files, background_file, veto_file, veto_name, out_dir, tags=None):
     """
-    This function sets up exact match coincidence and background estimation
+    This function sets up exact match coincidence and background estimation 
+
     using a folded interval technique.
     """
     if tags is None:
@@ -454,6 +451,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                          veto_files, veto_names, out_dir, tags=None):
     """
     This function sets up exact match coincidence and background estimation
+
     using a folded interval technique.
     """
     if tags is None:
