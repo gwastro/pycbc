@@ -61,7 +61,7 @@ parser.add_argument("--template-fraction-range", default="0/1",
 parser.add_argument("--veto-file", nargs='*',
                     help="File(s) in .xml format with veto segments to apply "
                     "to triggers before fitting")
-parser.add_argument("--veto-segment-name", nargs='*', default=None,
+parser.add_argument("--veto-segment-name", default=None,
                     help="Name(s) of veto segments to apply. Optional, if not "
                     "given all segments for a given ifo will be used")
 parser.add_argument("--output", required=True,
