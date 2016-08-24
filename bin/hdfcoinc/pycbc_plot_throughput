@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+
+import argparse
+import logging
+import h5py
+import numpy as np
+import matplotlib
+import pylab as pl
+from pycbc.results.color import ifo_color
+import pycbc.version
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--input-file', nargs='+', required=True,
+                    help='Single-detector inspiral HDF5 files to get templates per core.')
+parser.add_argument('--output-file', required=True,
+                    help='Destination file for the plot.')
+args = parser.parse_args()
+
+fig, ax = pl.subplots(1,1,figsize=(10,5))
+
+for pa in args.input_file:
+    f = h5py.File(pa, 'r')
+    ifo = f.keys()[0]
+    if  'templates_per_core' in  f['%s/search' %ifo].keys():
+        tpc = f['%s/search/templates_per_core' % ifo][:]
+        ax.hist(tpc, 100, color=ifo_color(ifo), alpha = 0.65, label = str(ifo))
+        ax.set_title('Templates per Core')
+        ax.set_xlabel('Templates per Core')
+        ax.legend(loc = 'upper right')
+        ax.grid(True)
+
+fig.savefig(str(args.output_file))
+

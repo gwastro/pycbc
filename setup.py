@@ -445,6 +445,7 @@ setup (
                'bin/hdfcoinc/pycbc_stat_dtphase',
                'bin/hdfcoinc/pycbc_plot_singles_vs_params',
                'bin/hdfcoinc/pycbc_plot_singles_timefreq',
+               'bin/hdfcoinc/pycbc_plot_throughput',
                'bin/mvsc/pycbc_mvsc_get_features',
                'bin/pycbc_coinc_time',
                'bin/hdfcoinc/pycbc_plot_background_coincs',
