@@ -118,7 +118,8 @@ def make_gating_plot(workflow, insp_files, out_dir, tags=None):
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
 
-def make_throughput_plot(workflow, insp_files, out_dir, tags=[]):
+def make_throughput_plot(workflow, insp_files, out_dir, tags=None):
+    tags = [] if tags is None else tags
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_throughput', ifos=workflow.ifos,
                           out_dir=out_dir, tags=tags).create_node()
