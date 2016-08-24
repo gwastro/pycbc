@@ -109,7 +109,8 @@ for ifo, segments in analyzable_segs.items():
             all_broken_segments.append(s)
             start_time = end_time
 
-            if len(partial_broken_segments) >= max_segs_per_job:
+            if (len(partial_broken_segments) >= max_segs_per_job) \
+                    or (start_time + psd_job_length + pad_data > seg[1]):
                 # save this batch of broken segments to file
                 tag = 'PART%.4d' % job_index
                 name = 'ANALYZABLE_BROKEN_' + tag
