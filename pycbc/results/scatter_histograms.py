@@ -30,9 +30,10 @@ import itertools
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot
+from pycbc.results import str_utils
 
-def scatter_histogram(parameters, args, data, output, mins=None, maxs=None, 
-                        vmin=None, vmax=None):
+def scatter_histogram(parameters, args, data, labels=None, 
+                        vmin=None, vmax=None, mins=None, maxs=None):
     """Generate a figure with several scatter plots and histograms.
 
     Parameters
@@ -44,24 +45,33 @@ def scatter_histogram(parameters, args, data, output, mins=None, maxs=None,
         and y-axes for all variables in parameters.
     data: array
         Data to be plotted on the z-axis (color for the scatter plots).
-    output: string
-        Output path for saving figure.
+    labels: {None, list}, optional
+        A list of names for the parameters.
+    vmin: {None, float}, optional
+        Minimum value for the colorbar. If None, will use the minimum of data.
+    vmax: {None, float}, optional
+        Maximum value for the colorbar. If None, will use the maxmimum of data.
     mins: {None, dict}, optional
         Minimum value for the axis of each variable in parameters.
         If None, it will use the minimum of the corresponding variable in args.
     maxs: {None, dict}, optional
         Maximum value for the axis of each variable in parameters.
         If None, it will use the maximum of the corresponding variable in args.
-    vmin: {None, float}, optional
-        Minimum value for the colorbar. If None, will use the minimum of data.
-    vmax: {None, float}, optional
-        Maximum value for the colorbar. If None, will use the maxmimum of data.
     """
+
+    if len(parameters) ==1:
+        raise ValueError('You need at least two parameters.')
+    if labels is None:
+        labels = parameters
 
     # Create figure with adequate size for number of parameters.
     ndim = len(parameters)
+    if ndim < 3:
+        fsize = (8, 7)
+    else:
+        fsize = (ndim*3 - 1, ndim*3 - 2)
     fig, axes = pyplot.subplots(ndim, ndim, sharex='col',
-                                figsize=(ndim*3-1, ndim*3-2))
+                                figsize=fsize)
 
     # Select possible combinations of plots and establish rows and columns.
     combos = list(itertools.combinations(parameters,2))
@@ -85,15 +95,21 @@ def scatter_histogram(parameters, args, data, output, mins=None, maxs=None,
         values = args[parameters[nrow]]
         ax.hist(values, bins=50, color='navy', histtype='step')
         # 90th percentile
-        ax.axvline(x=numpy.percentile(values,5), ls='dashed')
-        ax.axvline(x=numpy.percentile(values,95), ls='dashed')
+        values5 = numpy.percentile(values,5)
+        values95 = numpy.percentile(values,95)
+        ax.axvline(x=values5, ls='dashed')
+        ax.axvline(x=values95, ls='dashed')
         # Median value
-        ax.axvline(x=numpy.median(values), ls='dashed')
-        ax.set_title('{} = {}'.format(parameters[nrow], numpy.median(values)))
+        valuesM = numpy.median(values)
+        ax.axvline(x=valuesM, ls='dashed')
+        negerror = valuesM - values5
+        poserror = values95 - valuesM
+        fmt = '$' + str_utils.format_value(valuesM, negerror, plus_error=poserror, ndecs=2) + '$'
+        ax.set_title('{} = {}'.format(labels[nrow], fmt))
         # Remove y-ticks
         pyplot.setp(ax.get_yticklabels(), visible=False)
     # Add x-label in last histogram
-    ax.set_xlabel(parameters[-1])
+    ax.set_xlabel('{}'.format(labels[-1]))
 
     # Arguments for scatter plots
     if mins is None:
@@ -116,11 +132,11 @@ def scatter_histogram(parameters, args, data, output, mins=None, maxs=None,
                 ax.set_ylim(mins[prow], maxs[prow])
                 # Labels only on bottom and left plots
                 if ncolumn == 0:
-                    ax.set_ylabel(prow)
+                    ax.set_ylabel('{}'.format(labels[nrow]))
                 else:
                     pyplot.setp(ax.get_yticklabels(), visible=False)
                 if nrow + 1 == len(rows):
-                    ax.set_xlabel(pcolumn)
+                    ax.set_xlabel('{}'.format(labels[ncolumn]))
             # Make empty plots white
             else:
                 ax = axes[nrow, ncolumn]
@@ -133,5 +149,4 @@ def scatter_histogram(parameters, args, data, output, mins=None, maxs=None,
     cbar_ax = fig.add_axes([0.9, 0.1, 0.03, 0.8])
     fig.colorbar(plt, cax=cbar_ax)
 
-    fig.savefig(output)
-    pyplot.close()
+    return fig

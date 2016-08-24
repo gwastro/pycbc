@@ -26,7 +26,11 @@
 import argparse
 import logging
 import numpy
+import matplotlib
+matplotlib.use('agg')
+from matplotlib import pyplot
 import pycbc.results
+from pycbc.inference import option_utils
 from pycbc.io.inference_hdf import InferenceFile
 from pycbc.results.scatter_histograms import scatter_histogram
 
@@ -38,34 +42,38 @@ parser.add_argument("--vmin", type=float,
                     help="Minimum value for the colorbar.")
 parser.add_argument("--vmax", type=float,
                     help="Maximum value for the colorbar.")
-parser.add_argument("--movie-plots", type=int,
+parser.add_argument("--movie-plots", type=int, required=True,
                     help="Number of plots for the movie.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output plot path without extension.")
+parser.add_argument("--parameters", type=str, nargs="+",
+                    metavar="PARAM[:LABEL]",
+                    help="Name of parameters to plot in same format "
+                         "as for pycbc_inference_plot_posterior.")
 parser.add_argument('--verbose', action='store_true')
 
 opts = parser.parse_args()
 pycbc.init_logging(opts.verbose)
 
-# Get parameters
+# Get data
 logging.info('Loading samples.')
-with InferenceFile(opts.input_file, 'r') as fp:
-    nwalkers = fp.nwalkers
-    if opts.movie_plots is None:
-        njumps = fp.niterations
-    else:
-        njumps = opts.movie_plots
-    thinint = fp.niterations / njumps
-    x = fp.read_samples(fp.variable_args, walkers=0, thin_start=0, 
+fp, parameters, labels, _ = option_utils.results_from_cli(opts,
+                            load_samples=False)
+#with InferenceFile(opts.input_file, 'r') as fp:
+nwalkers = fp.nwalkers
+njumps = opts.movie_plots
+thinint = fp.niterations / njumps
+x = fp.read_samples(fp.variable_args, walkers=0, thin_start=0, 
                         thin_interval=thinint)
-    varargs = fp._arraycls((x.size, nwalkers))
-    lnl = numpy.zeros((x.size, nwalkers))
-    for walker in range(nwalkers):
-        varargs[:,walker] = fp.read_samples(fp.variable_args, walkers=walker, 
+varargs = fp._arraycls((x.size, nwalkers))
+lnl = numpy.zeros((x.size, nwalkers))
+for walker in range(nwalkers):
+    varargs[:,walker] = fp.read_samples(fp.variable_args, walkers=walker, 
                                         thin_start=0, thin_interval=thinint)
-        lnl[:,walker] = fp.read_lnpost(walkers=walker, thin_start=0, 
+    lnl[:,walker] = fp.read_lnpost(walkers=walker, thin_start=0, 
                                         thin_interval=thinint)
-    parameters = fp.variable_args
+#    parameters = fp.variable_args if opts.parameters is None \
+#                 else opts.parameters
 
 logging.info('Choosing common characteristics for all figures.')
 # Set common min and max for axis
@@ -88,7 +96,11 @@ for jump in range(njumps):
     z = lnl[jump,:]
     output = opts.output_file + '%d.png' %jump
 
-    scatter_histogram(parameters, plotargs, z, output, mins=mins, maxs=maxs,
-                        vmin=vmin, vmax=vmax) 
+    fig = scatter_histogram(parameters, plotargs, z, labels=labels,
+                            vmin=vmin, vmax=vmax, mins=mins, maxs=maxs)
+
+    pyplot.annotate('Sample %d' %(jump*thinint+1), xy=(0.8,0.95), xycoords='figure fraction')
+    fig.savefig(output)
+    pyplot.close()
 
 logging.info('Done.')
