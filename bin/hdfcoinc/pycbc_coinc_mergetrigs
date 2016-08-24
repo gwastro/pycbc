@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+#previous path was usr/bin/python
 """ This program adds single detector hdf trigger files together.
 """
 import numpy, argparse, h5py, logging
@@ -65,12 +66,17 @@ for col in trigger_columns:
 logging.info('reading the metadata from the files')
 start = numpy.array([], dtype=numpy.float64)
 end = numpy.array([], dtype=numpy.float64)
+tpc = numpy.array([], dtype=numpy.float64)
 gating = {}
 for filename in args.trigger_files:
     data = h5py.File(filename, 'r')
     ifo_data = data[ifo]
     s, e = ifo_data['search/start_time'][:], ifo_data['search/end_time'][:]
     start, end = numpy.append(start, s), numpy.append(end, e)
+
+    if 'templates_per_core' in ifo_data['search'].keys():
+        tpc = numpy.append(tpc, ifo_data['search/templates_per_core'][:])
+
     if 'gating' in ifo_data:
         gating_keys = []
         ifo_data['gating'].visit(gating_keys.append)
@@ -81,7 +87,11 @@ for filename in args.trigger_files:
                     gating[gk] = numpy.array([], dtype=numpy.float64)
                 gating[gk] = numpy.append(gating[gk], gk_data[:])
     data.close()    
-f['%s/search/start_time' % ifo], f['%s/search/end_time' % ifo] = start, end   
+f['%s/search/start_time' % ifo], f['%s/search/end_time' % ifo] = start, end
+
+if len(tpc) > 0:
+    f['%s/search/templates_per_core' % ifo] = tpc
+
 for gk, gv in gating.items():
     f[ifo + '/gating/' + gk] = gv
 
