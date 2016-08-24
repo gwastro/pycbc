@@ -90,7 +90,7 @@ datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
 
 psd_job_length = int(workflow.cp.get('workflow-matchedfilter', 'analysis-length'))
 pad_data = int(workflow.cp.get('calculate_psd', 'pad-data'))
-max_segs_per_job = 100
+max_segs_per_job = int(workflow.cp.get('workflow-matchedfilter', 'max-segments-per-job'))
 
 # calculate noise PSDs over analyzable segments
 psd_files = {}

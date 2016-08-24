@@ -23,8 +23,9 @@ similarly to search workflows. An example for ER8 data, broken by sections, is
 given here.
 
 The sections below control which data are being used and they are basically the
-same as found in a coincidence workflow. In this example, ER8 data are used and
-the analyzable time is broken into 2048 s segments for PSD estimation.::
+same as found in a coincidence workflow. In this example, ER8 data are used,
+the analyzable time is broken into 2048 s segments for PSD estimation and each
+PSD estimation job processes up to 100 segments.::
 
     [workflow]
     start-time = 1123858817
@@ -61,6 +62,7 @@ the analyzable time is broken into 2048 s segments for PSD estimation.::
     [workflow-matchedfilter]
     matchedfilter-method = WORKFLOW_INDEPENDENT_IFOS
     analysis-length = 2048
+    max-segments-per-job = 100
     min-analysis-segments = 15
     max-analysis-segments = 15
     output-type = hdf
