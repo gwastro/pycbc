@@ -39,7 +39,19 @@ import pycbc.filter
 from scipy.signal import kaiserord
  
 
-next_power_of_2 = lambda n: 1<<(n).bit_length()
+def next_power_of_2(n):
+    """Return the smallest integer power of 2 larger than the argument.
+    Parameters
+    ----------
+    n : int
+        A positive integer.
+    Returns
+    -------
+    m : int
+        Smallest integer power of 2 larger than n.
+    """
+    # TODO use 1 << n.bit_length() after Python 2.6 is gone
+    return 1 << (len(bin(n)) - 2)
 
 def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
                          psd_avg_method='median', low_freq_cutoff=30.,

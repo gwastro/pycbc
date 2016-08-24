@@ -823,6 +823,32 @@ class FieldArray(numpy.recarray):
         """Returns True if the given field name is in self's fields."""
         return field in self.fields
 
+    def sort(self, axis=-1, kind='quicksort', order=None):
+        """Sort an array, in-place. 
+
+        This function extends the standard numpy record array in-place sort
+        to allow the basic use of Field array virtual fields. Only a single
+        field is currently supported when referencing a virtual field.
+
+        Parameters
+        ----------
+        axis : int, optional
+            Axis along which to sort. Default is -1, which means sort along the
+            last axis.
+        kind : {'quicksort', 'mergesort', 'heapsort'}, optional
+            Sorting algorithm. Default is 'quicksort'.
+        order : list, optional
+            When `a` is an array with fields defined, this argument specifies
+            which fields to compare first, second, etc.  Not all fields need be
+            specified.
+        """
+        try:
+            numpy.recarray.sort(self, axis=axis, kind=kind, order=order)
+        except ValueError:
+            if isinstance(order, list):
+                raise ValueError("Cannot process more than one order field")
+            self[:] = self[numpy.argsort(self[order])]
+
     def addattr(self, attrname, value=None, persistent=True):
         """Adds an attribute to self. If persistent is True, the attribute will
         be made a persistent attribute. Persistent attributes are copied
