@@ -132,7 +132,7 @@ def scatter_histogram(parameters, args, data, labels=None,
                 ax.set_ylim(mins[prow], maxs[prow])
                 # Labels only on bottom and left plots
                 if ncolumn == 0:
-                    ax.set_ylabel('{}'.format(labels[nrow]))
+                    ax.set_ylabel('{}'.format(labels[nrow+1]))
                 else:
                     pyplot.setp(ax.get_yticklabels(), visible=False)
                 if nrow + 1 == len(rows):
