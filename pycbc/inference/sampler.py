@@ -288,7 +288,7 @@ class _BaseMCMCSampler(_BaseSampler):
                         out[:niterations] = samples[i,j,:]
                         fp[dataset_name] = out
                     else:
-                        fp[dataset_name] = sample[i,j,:]
+                        fp[dataset_name] = samples[i,j,:]
 
     def write_lnpost(self, fp, max_iterations=None):
         """Writes the `lnpost`s to the given file. Results are written to:
