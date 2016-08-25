@@ -81,6 +81,7 @@ the executable, wherever that happens to be at the time of running
     plot_segments = ${which:pycbc_page_segments}
     calculate_psd = ${which:pycbc_calculate_psd}
     average_psd = ${which:pycbc_average_psd}
+    merge_psds = ${which:pycbc_merge_psds}
     plot_spectrum = ${which:pycbc_plot_psd_file}
     plot_range = ${which:pycbc_plot_range}
     page_segtable = ${which:pycbc_page_segtable}
@@ -116,6 +117,9 @@ see for instance the `FindChirp paper <http://arxiv.org/abs/gr-qc/0509116>`_.::
     [pegasus_profile-calculate_psd]
     condor|request_cpus = 4
 
+The next section is related to ``pycbc_merge_psds`` which has no options.::
+
+    [merge_psds]
 
 The section below controls how the averaging of the PSDs over time and detector
 is done, i.e. it contains options for the ``pycbc_average_psd`` program.
