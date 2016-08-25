@@ -47,7 +47,8 @@ def get_slice(fp, thin_start=None, thin_interval=None, thin_end=None):
         be obtained from the file's attributes.
     thin_start : {None, int}
         The starting index to use. If None, will try to retrieve the
-        `burn_in_iterations` from the given file. If no `burn_in_iterations`            exists, will default to the start of the array.
+        `burn_in_iterations` from the given file. If no `burn_in_iterations`
+        exists, will default to the start of the array.
     thin_interval : {None, int}
         The interval to use. If None, will try to retrieve the acl from the
         given file. If no acl attribute exists, will default to 1.
@@ -447,6 +448,9 @@ class _BaseMCMCSampler(_BaseSampler):
         if iteration is not None:
             get_index = iteration
         else:
+            if thin_end is None:
+                # use the number of current iterations
+                thin_end = fp.niterations
             get_index = get_slice(fp, thin_start=thin_start, thin_end=thin_end,
                 thin_interval=thin_interval)
 
@@ -673,7 +677,11 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
             A file handler to an open inference file.
         """
         dataset_name = "acceptance_fraction"
-        fp[dataset_name] = self.acceptance_fraction
+        try:
+            fp[dataset_name][:] = self.acceptance_fraction
+        except KeyError:
+            # dataset doesn't exist yet, create it
+            fp[dataset_name] = self.acceptance_fraction
 
     def write_results(self, fp, max_iterations=None):
         """Writes metadata, samples, lnpost, and acceptance fraction to the
