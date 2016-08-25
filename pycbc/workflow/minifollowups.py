@@ -284,6 +284,10 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     workflow._adag.addDependency(dep)
     logging.info('Leaving injection minifollowups module')
 
+class SingleTemplateExecutable(PlotExecutable):
+    file_input_options = ['--gating-file']
+    
+
 def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
                                   params, out_dir, inj_file=None, exclude=None,
                                   require=None, tags=None, params_str=None,
@@ -297,8 +301,9 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
     for tag in secs:
         for ifo in workflow.ifos:
             # Reanalyze the time around the trigger in each detector
-            node = PlotExecutable(workflow.cp, 'single_template', ifos=[ifo],
-                              out_dir=out_dir, tags=[tag] + tags).create_node()
+            node = SingleTemplateExecutable(workflow.cp, 'single_template',
+                                            ifos=[ifo], out_dir=out_dir,
+                                            tags=[tag] + tags).create_node()
             if use_exact_inj_params:
                 node.add_opt('--use-params-of-closest-injection')
             else:
