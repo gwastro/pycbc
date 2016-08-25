@@ -16,7 +16,8 @@ def segments_to_start_end(segs):
             numpy.array([s[1] for s in segs]))
 
 def start_end_from_segments(segment_file):
-    """ Return the start and end time arrays from a segment file.
+    """
+    Return the start and end time arrays from a segment file.
     
     Parameters
     ----------
@@ -38,8 +39,8 @@ def start_end_from_segments(segment_file):
 
 
 def indices_within_times(times, start, end):
-    """ Return the an index array into times that give the values within the 
-    durations defined by the start and end arrays
+    """
+    Return an index array into times that lie within the durations defined by start end arrays
     
     Parameters
     ----------
@@ -69,8 +70,8 @@ def indices_within_times(times, start, end):
     return tsort[numpy.hstack(numpy.r_[s:e] for s, e in zip(left, right))]
 
 def indices_outside_times(times, start, end):
-    """ Return the an index array into times that give the values outside the 
-    durations defined by the start and end arrays
+    """
+    Return an index array into times that like outside the durations defined by start end arrays
     
     Parameters
     ----------
@@ -138,18 +139,18 @@ def select_segments_by_definer(segment_file, segment_name=None, ifo=None):
 
 def indices_within_segments(times, segment_files, ifo=None, segment_name=None):
     """ Return the list of indices that should be vetoed by the segments in the
-    lsit of veto_files.
+    list of veto_files.
     
     Parameters
     ----------
     times: numpy.ndarray of integer type
-        This contains the arry of gps start times
+        Array of gps start times
     segment_files: string or list of strings
         A string or list of strings that contain the path to xml files that
         contain a segment table
     ifo: string, optional
         The ifo to retrieve segments for from the segment files
-    segment_name: : str, optional
+    segment_name: str, optional
         name of segment       
     Returns
     -------
@@ -178,13 +179,13 @@ def indices_outside_segments(times, segment_files, ifo=None, segment_name=None):
     Parameters
     ----------
     times: numpy.ndarray of integer type
-        This contains the arry of gps start times
+        Array of gps start times
     segment_files: string or list of strings
         A string or list of strings that contain the path to xml files that
         contain a segment table
     ifo: string, optional
         The ifo to retrieve segments for from the segment files
-    segment_name: : str, optional
+    segment_name: str, optional
         name of segment               
     Returns
     --------
@@ -199,8 +200,7 @@ def indices_outside_segments(times, segment_files, ifo=None, segment_name=None):
     return numpy.delete(indices, exclude), segs
 
 def get_segment_definer_comments(xml_file, include_version=True):
-    """ Returns a dict with the comment column as the value for each segment.
-    """
+    """Returns a dict with the comment column as the value for each segment"""
 
     from glue.ligolw.ligolw import LIGOLWContentHandler as h
     lsctables.use_in(h)

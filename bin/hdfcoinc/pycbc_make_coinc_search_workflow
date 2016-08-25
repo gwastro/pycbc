@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" 
+"""
 Program for running multi-detector workflow analysis through coincidence and
 then generate post-processing and plots.
 """
@@ -46,7 +46,7 @@ def symlink_result(f, rdir_path):
     symlink_path(f, rdir[rdir_path])
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument('--version', action='version', version=__version__) 
+parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument('--workflow-name', default='my_unamed_run')
 parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
@@ -78,7 +78,7 @@ wf_log_file = wf.File(workflow.ifos, 'workflow-log', workflow.analysis_time,
                       extension='.txt',
                       directory=rdir['workflow'])
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     filename=wf_log_file.storage_path,
                     level=logging.INFO,
                     filemode='w')
@@ -101,7 +101,7 @@ time_str += 'Interval duration = %.3f days.</b></p></center>'\
 time_file = wf.File(workflow.ifos, 'time', workflow.analysis_time,
                                            extension='.html',
                                            directory=rdir.base)
-kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)', 
+kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)',
         'caption' : "Wall clock start and end times for this invocation of "
                     "the workflow. The command line button shows the "
                     "arguments used to invoke the workflow creation script.",
@@ -118,19 +118,19 @@ nonscience_veto_names = [primary_veto_name, secondary_vetoes_name]
 science_seg_file, sci_segs, sci_seg_name = wf.get_science_segments(workflow,
                                             rdir['analysis_time/segment_data'])
 
-runtime_names=[science_veto_name] 
+runtime_names=[science_veto_name]
 in_workflow_names = nonscience_veto_names
 veto_cat_files = wf.get_files_for_vetoes(workflow,
                                          rdir['analysis_time/segment_data'],
                                          runtime_names=runtime_names,
                                          in_workflow_names=in_workflow_names)
-                      
+
 sci_ok_seg_file, sci_ok_segs, sci_ok_seg_name = wf.get_analyzable_segments(\
                                             workflow, sci_segs, veto_cat_files,
                                             rdir['analysis_time/segment_data'])
 
 datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
-                                           wf.setup_datafind_workflow(workflow, 
+                                           wf.setup_datafind_workflow(workflow,
                                                      sci_ok_segs, "datafind",
                                                      seg_file=science_seg_file)
 
@@ -140,8 +140,8 @@ cum_veto_files, veto_names, ind_cats = wf.get_cumulative_veto_group_files(\
                                             rdir['analysis_time/segment_data'],
                                             execute_now=False)
 
-final_veto_file, final_veto_name, ind_cats =\
-                                   wf.get_cumulative_veto_group_files(workflow, 
+final_veto_file, final_veto_name, ind_cats = \
+                                   wf.get_cumulative_veto_group_files(workflow,
                                             'segments-final-veto-group',
                                             veto_cat_files,
                                             rdir['analysis_time/segment_data'],
@@ -152,18 +152,18 @@ precalc_psd_files = wf.setup_psd_workflow(workflow, analyzable_segs,
                                             datafind_files, "psdfiles")
 
 # Template bank stuff
-bank_files = wf.setup_tmpltbank_workflow(workflow, analyzable_segs, 
-                                            datafind_files, 
+bank_files = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
+                                            datafind_files,
                                             "bank",
                                             psd_files=precalc_psd_files)
 hdfbank = wf.convert_bank_to_hdf(workflow, bank_files, "bank")
-splitbank_files = wf.setup_splittable_workflow(workflow, bank_files, "bank") 
+splitbank_files = wf.setup_splittable_workflow(workflow, bank_files, "bank")
 
 bank_plot = [(wf.make_template_plot(workflow, hdfbank[0],
               rdir['coincident_triggers']),)]
 
 # setup the injection files
-inj_files, inj_tags = wf.setup_injection_workflow(workflow, 
+inj_files, inj_tags = wf.setup_injection_workflow(workflow,
                                                      output_dir="inj_files")
 
 # setup gating files if provided
@@ -174,54 +174,60 @@ gate_files = wf.setup_gating_workflow(workflow, analyzable_segs,
 tag = output_dir = "full_data"
 ctags = [tag, 'full']
 
-# setup the matchedfilter jobs                                                     
-ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs, 
-                                   datafind_files, splitbank_files, 
+# setup the matchedfilter jobs
+ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
+                                   datafind_files, splitbank_files,
                                    output_dir, gate_files=gate_files,
                                    tags = [tag])
 
-insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
+insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],
                                            insps, output_dir, tags=[tag])
+
+# setup sngl trigger distribution fitting jobs
+# 'statfiles' is list of files used in calculating coinc statistic
+statfiles = []
+statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
+                                      final_veto_file, final_veto_name)
 
 # setup coinc for the filtering jobs
 full_insps = insps
-bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, 
-                               cum_veto_files, veto_names, 
-                               output_dir, tags=ctags)  
-final_bg_files =  wf.setup_interval_coinc(workflow, hdfbank, insps, 
+bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, statfiles,
+                               cum_veto_files, veto_names,
+                               output_dir, tags=ctags)
+final_bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, statfiles,
                                final_veto_file, final_veto_name,
                                output_dir, tags=ctags)
-final_bg_file = final_bg_files[0][0]                   
+final_bg_file = final_bg_files[0][0]
 bin_files = final_bg_files[0][1]
-     
-censored_veto = wf.make_foreground_censored_veto(workflow, 
+
+censored_veto = wf.make_foreground_censored_veto(workflow,
                        final_bg_file, final_veto_file[0], final_veto_name[0],
-                       'closed_box', 'segments')      
-              
+                       'closed_box', 'segments')
+
 closed_snrifar = []
 all_snrifar = []
 for bg_file, bg_bins in (bg_files + final_bg_files):
     for bg_bin in bg_bins:
         snrifar = wf.make_snrifar_plot(workflow, bg_bin,
-                        rdir['coincident_triggers'], 
+                         rdir['coincident_triggers'],
                          closed_box=True, tags=bg_bin.tags + ['closed'])
         all_snrifar.append(snrifar)
         if bg_file == final_bg_file:
             closed_snrifar.append(snrifar)
-    
-results_page = []        
+
+results_page = []
 results_aux_page = []
 closed_box_ifars = []
 for bin_file in bin_files:
     snrifar = wf.make_snrifar_plot(workflow, bin_file,
                     rdir['open_box_result'], tags=bin_file.tags)
-    ratehist = wf.make_snrratehist_plot(workflow, bin_file, 
+    ratehist = wf.make_snrratehist_plot(workflow, bin_file,
                     rdir['open_box_result'], tags=bin_file.tags)
 
     results_page += [(snrifar, ratehist)]
-    
+
     snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
-                    rdir['open_box_result/significance'], 
+                    rdir['open_box_result/significance'],
                     cumulative=False, tags=bin_file.tags + ['ifar'])
     ifar_ob = wf.make_ifar_plot(workflow, bin_file,
                     rdir['open_box_result/significance'],
@@ -231,7 +237,7 @@ for bin_file in bin_files:
                     rdir['coincident_triggers'],
                     tags=bin_file.tags + ['closed_box'])
     closed_box_ifars.append(ifar_cb)
-                    
+
     symlink_result(snrifar, 'open_box_result/significance')
     symlink_result(ratehist, 'open_box_result/significance')
     results_aux_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
@@ -242,15 +248,15 @@ layout.group_layout(rdir['coincident_triggers'],
 wf.make_ifar_plot(workflow, final_bg_file, rdir['open_box_result'],
                   tags=['open_box'])
 
-table = wf.make_foreground_table(workflow, final_bg_file, 
+table = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['open_box_result'], singles=insps,
                     extension='.html', tags=["html"])
-                    
+
 results_page += [(table,)]
-results_aux_page += [(table,)] 
-symlink_result(table, 'open_box_result/significance')               
+results_aux_page += [(table,)]
+symlink_result(table, 'open_box_result/significance')
 layout.two_column_layout(rdir['open_box_result'], results_page)
-layout.two_column_layout(rdir['open_box_result/significance'], results_aux_page) 
+layout.two_column_layout(rdir['open_box_result/significance'], results_aux_page)
 
 fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['open_box_result'], singles=insps,
@@ -259,19 +265,19 @@ fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['open_box_result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
 
-snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto, 
+snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto,
                     'closed_box', rdir['single_triggers'], tags=[tag])
 layout.group_layout(rdir['single_triggers'], snrchi)
 
 hist_summ = []
 for insp in full_insps:
-    wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto, 
+    wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto,
            'closed_box', rdir['single_triggers/%s_binned_triggers' % insp.ifo], tags=[tag])
-    wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
-           rdir['single_triggers/%s_trigger_histograms' % insp.ifo], 
+    wf.make_single_hist(workflow, insp, censored_veto, 'closed_box',
+           rdir['single_triggers/%s_trigger_histograms' % insp.ifo],
            bank_file=hdfbank[0], exclude='summ', tags=[tag])
-    hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', 
-           rdir['single_triggers/%s_trigger_histograms' % insp.ifo], 
+    hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box',
+           rdir['single_triggers/%s_trigger_histograms' % insp.ifo],
            require='summ', tags=[tag])
     hist_summ += list(layout.grouper(hists, 2))
 
@@ -320,15 +326,15 @@ r2 = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'],
 
 det_summ = [(s, r[0] if len(r) != 0 else None)]
 layout.two_column_layout(rdir['detector_sensitivity'],
-                         det_summ + list(layout.grouper(r2, 2)))    
+                         det_summ + list(layout.grouper(r2, 2)))
 
-# run minifollowups on the output of the loudest events 
+# run minifollowups on the output of the loudest events
 wf.setup_foreground_minifollowups(workflow, final_bg_file,
                               full_insps,  hdfbank[0], insp_files_seg_file,
                               data_analysed_name, trig_generated_name, 'daxes',
                               rdir['open_box_result/loudest_event_followup'],
                               tags=final_bg_file.tags)
-    
+
 for bin_file in bin_files:
     if hasattr(bin_file, 'bin_name'):
         currdir = rdir['open_box_result/loudest_in_%s_bin' % bin_file.bin_name]
@@ -348,10 +354,10 @@ for insp_file in full_insps:
                                   veto_segment_name='closed_box',
                                   tags=insp_file.tags)
 
-################## Setup segment / veto related plots #########################    
+################## Setup segment / veto related plots #########################
 # do plotting of segments / veto times
 for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
-    wf.make_segments_plot(workflow, files, rdir['analysis_time/segments'], 
+    wf.make_segments_plot(workflow, files, rdir['analysis_time/segments'],
                           tags=['%s_VETO_SEGMENTS' % ifo])
 
 wf.make_segments_plot(workflow, [insp_files_seg_file],
@@ -385,7 +391,7 @@ curr_files = [insp_files_seg_file] + final_veto_file + cum_veto_files
 curr_names = [trig_generated_name + '&' + veto_name\
                    for veto_name in veto_names+final_veto_name]
 veto_summ_table = wf.make_seg_table(workflow, curr_files, curr_names,
-                      rdir['analysis_time/segments'], ['VETO_SUMMARY'], 
+                      rdir['analysis_time/segments'], ['VETO_SUMMARY'],
                       title_text='Time removed by vetoes',
                       description='This shows the time removed from the '
                                   'output time by the vetoes applied to the '
@@ -395,7 +401,8 @@ veto_summ_table = wf.make_seg_table(workflow, curr_files, curr_names,
 vetodef_table = wf.make_veto_table(workflow, rdir['analysis_time/veto_definer'])
 layout.single_layout(rdir['analysis_time/veto_definer'], ([vetodef_table]))
 
-############################## Setup the injection runs #######################                                                                   
+############################## Setup the injection runs #######################
+
 inj_coincs = wf.FileList()
 files_for_combined_injfind = []
 for inj_file, tag in zip(inj_files, inj_tags):
@@ -426,55 +433,55 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
     files_for_combined_injfind.append(file_for_injfind)
 
-    # setup the matchedfilter jobs                                                     
-    insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs, 
-                                     datafind_files, splitbank_files, 
+    # setup the matchedfilter jobs
+    insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
+                                     datafind_files, splitbank_files,
                                      output_dir, injection_file=small_inj_file,
                                      gate_files=gate_files,
                                      tags = [tag])
-   
-    insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0], 
+
+    insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],
                                                insps, output_dir, tags=[tag])
-                                               
+
     inj_coinc = wf.setup_interval_coinc_inj(workflow, hdfbank,
-                                    full_insps, insps, bin_files, 
+                                    full_insps, insps, statfiles, bin_files,
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, tags = ctags)
     found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
-                                    wf.FileList([file_for_injfind]), final_veto_file[0], 
-                                    final_veto_name[0],
+                                    wf.FileList([file_for_injfind]),
+                                    final_veto_file[0], final_veto_name[0],
                                     output_dir, tags=ctags)
-    inj_coincs += [inj_coinc]  
-    
+    inj_coincs += [inj_coinc]
+
     #foundmissed/sensitivity plots that go in the subsection wells
-    s = wf.make_sensitivity_plot(workflow, found_inj, 
-                   rdir['search_sensitivity/%s' % tag], 
+    s = wf.make_sensitivity_plot(workflow, found_inj,
+                   rdir['search_sensitivity/%s' % tag],
                    exclude=['all', 'summ'], require='sub', tags=ctags)
-    f = wf.make_foundmissed_plot(workflow, found_inj, 
+    f = wf.make_foundmissed_plot(workflow, found_inj,
                    rdir['injections/%s' % tag],
-                   exclude=['all', 'summ'], require='sub', tags=[tag])                 
-    
-    # Extra foundmissed/sensitivity plots                    
-    wf.make_sensitivity_plot(workflow, found_inj, 
-                   rdir['search_sensitivity/%s' % tag], 
+                   exclude=['all', 'summ'], require='sub', tags=[tag])
+
+    # Extra foundmissed/sensitivity plots
+    wf.make_sensitivity_plot(workflow, found_inj,
+                   rdir['search_sensitivity/%s' % tag],
                    exclude=['all', 'summ', 'sub'], tags=ctags)
-    wf.make_foundmissed_plot(workflow, found_inj, 
+    wf.make_foundmissed_plot(workflow, found_inj,
                    rdir['injections/%s' % tag],
                    exclude=['all', 'summ', 'sub'], tags=[tag])
-                   
-    found_table = wf.make_inj_table(workflow, found_inj,  
+
+    found_table = wf.make_inj_table(workflow, found_inj,
                   rdir['injections/%s' % tag], singles=insps, tags=[tag + 'found'])
-    missed_table = wf.make_inj_table(workflow, found_inj, 
+    missed_table = wf.make_inj_table(workflow, found_inj,
                   rdir['injections/%s' % tag], missed=True, tags=[tag + 'missed'])
-                         
+
     for inj_insp, trig_insp in zip(insps, full_insps):
-        f += wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp, 
+        f += wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp,
                                   final_bg_file, trig_insp,
                                   rdir['injections/%s' % tag], tags=[tag])
 
     inj_layout = list(layout.grouper(f, 2)) + [(found_table,), (missed_table,)]
-    if len(s) > 0: layout.group_layout(rdir['search_sensitivity/%s' % tag], s)        
-    if len(f) > 0: layout.two_column_layout(rdir['injections/%s' % tag], inj_layout)  
+    if len(s) > 0: layout.group_layout(rdir['search_sensitivity/%s' % tag], s)
+    if len(f) > 0: layout.two_column_layout(rdir['injections/%s' % tag], inj_layout)
 
     # run minifollowups on nearest missed injections
     currdir = rdir['injections/followup_of_missed_%s' % tag]
@@ -502,10 +509,10 @@ if len(files_for_combined_injfind) > 0:
                             require='all', tags=['ALLINJ'])
     layout.group_layout(rdir['injections'], inj)
 
-    # Make summary page foundmissed and sensitivity plot    
-    sen = wf.make_sensitivity_plot(workflow, found_inj, 
+    # Make summary page foundmissed and sensitivity plot
+    sen = wf.make_sensitivity_plot(workflow, found_inj,
                 rdir['search_sensitivity'], require='summ', tags=['ALLINJ'])
-    inj = wf.make_foundmissed_plot(workflow, found_inj, 
+    inj = wf.make_foundmissed_plot(workflow, found_inj,
                 rdir['injections'], require='summ', tags=['ALLINJ'])
     inj_summ = list(layout.grouper(inj + sen, 2))
 
@@ -521,7 +528,7 @@ summ = ([(time_file,)] + [(seg_summ_plot,)] +
         bank_plot + list(layout.grouper(closed_snrifar, 2)) + inj_summ)
 for row in summ:
     for f in row:
-        symlink_path(f, rdir.base)     
+        symlink_path(f, rdir.base)
 layout.two_column_layout(rdir.base, summ)
 
 # save global config file to results directory
@@ -547,9 +554,9 @@ dashboard_file = wf.File(workflow.ifos, 'DASHBOARD', workflow.analysis_time,
                                            extension='.html',
                                            directory=rdir['workflow'])
 dashboard_str = """<center><p style="font-size:20px"><b><a href="PEGASUS_DASHBOARD_URL" target="_blank">Pegasus Dashboard Page</a></b></p></center>"""
-kwds = { 'title' : 'Pegasus Dashboard', 
-        'caption' : "Link to Pegasus Dashboard",
-        'cmd' : "PYCBC_SUBMIT_DAX_ARGV", }
+kwds = { 'title' : 'Pegasus Dashboard',
+         'caption' : "Link to Pegasus Dashboard",
+         'cmd' : "PYCBC_SUBMIT_DAX_ARGV", }
 save_fig_with_metadata(dashboard_str, dashboard_file.storage_path, **kwds)
 
 # Create pages for the submission script to write data
@@ -585,8 +592,8 @@ log_str = """
 <p>Workflow generation script run on host: %s</p>
 <pre>%s</pre>
 """ % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
-kwds = { 'title' : 'Workflow Generation Log', 
-        'caption' : "Log of the workflow script %s" % sys.argv[0],
-        'cmd' :' '.join(sys.argv), }
+kwds = { 'title' : 'Workflow Generation Log',
+         'caption' : "Log of the workflow script %s" % sys.argv[0],
+         'cmd' :' '.join(sys.argv), }
 save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
 layout.single_layout(rdir['workflow'], ([dashboard_file,log_file_html]))

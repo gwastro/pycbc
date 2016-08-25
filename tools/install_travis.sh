@@ -79,6 +79,9 @@ source ${INST}/etc/lal-user-env.sh
 # Install needed version of numpy
 pip install 'numpy==1.9.3' --upgrade 
 
+# Scipy would be required to build scikit-learn but that does not work with travis currently
+#pip install 'scipy==0.16.0' --upgrade
+
 # Install Pegasus
 pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
 
