@@ -63,7 +63,7 @@ while true; do
 
   if [[ $OSG_PYTHON == "yes" ]] ; then
     if [ ! -e /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash ] ; then
-      echo "Error: Could not find sctipt to set up OSG modules."
+      echo "Error: Could not find script to set up OSG modules."
       echo "Check that /cvmfs/oasis.opensciencegrid.org is mounted on this machine."
       exit 1
     fi
@@ -138,7 +138,21 @@ while true ; do
 
     if [[ -d $NAME ]] ; then
        echo "ERROR: the directory $NAME already exists."
-       echo "If you want to use this path, remove the directory and try again."
+       echo "Do you want to remove the previous directory and overwrite the existing location?"
+       echo
+       read -p "Enter yes or no: " DEL_EXISTING_VIRTENV
+       echo
+
+       if [[ $DEL_EXISTING_VIRTENV == "yes" ]] ; then
+         echo "Deleting previous virtual environment directory with the same name"
+         rm -rf $NAME
+         break
+       elif [[ $DEL_EXISTING_VIRTENV == "no" ]] ; then
+          echo "You have to enter a new location for your virtual environment."
+       else
+          echo "Please enter yes or no."
+       fi    
+
     else
       break
     fi
@@ -505,6 +519,7 @@ if [[ $dev_or_rel -eq 1 ]] ; then
   #Installing a released version of pyCBC
   curl https://raw.githubusercontent.com/ligo-cbc/pycbc/${reltag}/requirements.txt > ${VIRTUAL_ENV}/requirements.txt
   sed -i 's/https:\/\/github.com\/duncan-brown\/dqsegdb.git/git+https:\/\/github.com\/duncan-brown\/dqsegdb.git/g' ${VIRTUAL_ENV}/requirements.txt
+  sed -i '/MySQL-python\|psycopg2/d' ${VIRTUAL_ENV}/requirements.txt
   perl -pi.bak -e 's/pegasus-wms==4.5.2/pegasus-wms==4.6.1/g' ${VIRTUAL_ENV}/requirements.txt  
   pylal_version=`grep pycbc-pylal ${VIRTUAL_ENV}/requirements.txt`
   glue_version=`grep pycbc-glue ${VIRTUAL_ENV}/requirements.txt`
@@ -539,6 +554,8 @@ git config --global http.cookiefile /tmp/ecpcookie.u`id -u`
 
 #Get Copy of LalSuite Repository
 LALSUITE_BUILD_DIR=`mktemp --tmpdir -d -t lalsuite-XXXXXXXXXX`
+echo " LALSUITE_BUILD_DIR= "
+echo "${LALSUITE_BUILD_DIR}"
 ln -sf ${LALSUITE_BUILD_DIR} $VIRTUAL_ENV/src/lalsuite
 cd $VIRTUAL_ENV/src/lalsuite
 git clone https://versions.ligo.org/git/lalsuite.git
@@ -774,6 +791,9 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
   echo "Making bundled executables."
   echo 
 
+  echo "Virtual env directory is:"
+  echo "  ${VIRTUAL_ENV}"
+  read -rp "Ready to continue? If yes hit [Enter] " ready
   #Make the dag that makes the bundles
   cd ${VIRTUAL_ENV}/src/pycbc/tools/static
   mkdir dist
@@ -798,7 +818,7 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
   export PYINSTALLER_CONFIG_DIR=`mktemp --tmpdir -d -t pyinstaller-XXXXXXXXXX`
   pushd ${VIRTUAL_ENV}/bin
   for prog in ligolw_add ligolw_combine_segments ligolw_segments_from_cats_dqsegdb ligolw_segment_query_dqsegdb
-  do pyinstaller ${prog} --strip --onefile
+  do pyinstaller ${prog} --strip --onefile --hidden-import M2Crypto --hidden-import cjson --hidden-import Cookie
   done
   popd
   rm -rf ${PYINSTALLER_CONFIG_DIR}
