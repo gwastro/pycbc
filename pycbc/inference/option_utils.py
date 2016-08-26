@@ -44,7 +44,7 @@ def add_inference_results_option_group(parser):
         metavar="PARAM[:LABEL]",
         help="Name of parameters to plot. If none provided will load all of "
              "the variable args in the input-file. If provided, the "
-             "parameters can be any of the variable args in "
+             "parameters can be any of the variable args or posteriors in "
              "the input file, derived parameters from them, or any function "
              "of them. Syntax for functions is python; any math functions in "
              "the numpy libary may be used. Can optionally also specify a "
@@ -65,6 +65,10 @@ def add_inference_results_option_group(parser):
     results_reading_group.add_argument("--thin-end", type=int, default=None,
         help="Sample number to stop collecting samples to plot. If none "
              "provided, will stop at the last sample from the sampler.")
+    results_reading_group.add_argument("--iteration", type=int, default=None,
+        help="Only retrieve the given iteration. To load the last n-th sampe "
+             "use -n, e.g., -1 will load the last iteration. This overrides "
+             "the thin-start/interval/end options.")
 
     return results_reading_group
 
@@ -113,7 +117,7 @@ def results_from_cli(opts, load_samples=True, walkers=None):
         logging.info("Loading samples")
         samples = fp.read_samples(parameters, walkers=walkers,
             thin_start=opts.thin_start, thin_interval=opts.thin_interval,
-            thin_end=opts.thin_end)
+            thin_end=opts.thin_end, iteration=opts.iteration)
     else:
         samples = None
     return fp, parameters, labels, samples

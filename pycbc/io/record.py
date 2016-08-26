@@ -1403,6 +1403,35 @@ class _FieldArrayWithDefaults(FieldArray):
             names.append(name)
         return self.add_fields(arrays, names)
 
+    @classmethod
+    def parse_parameters(cls, parameters, possible_fields=None):
+        """Parses a list of parameters to get the list of fields needed in
+        order to evaluate those parameters.
+
+        Parameters
+        ----------
+        parameters : (list of) strings
+            The list of desired parameters. These can be (functions of) fields
+            or virtual fields.
+        possible_fields : {None, dict}
+            Specify the list of possible fields. Must be a dictionary given
+            the names, and dtype of each possible field. If None, will use this
+            class's `_staticfields`.
+
+        Returns
+        -------
+        list :
+            The list of names of the fields that are needed in order to
+            evaluate the given parameters.
+        """
+        if possible_fields is not None:
+            # make sure field names are strings and not unicode
+            possible_fields = dict([[f, dt]
+                for f,dt in possible_fields.items()])
+            class ModifiedArray(cls):
+                _staticfields = possible_fields
+            cls = ModifiedArray
+        return cls(1, names=parameters).fieldnames
 
 #
 # =============================================================================
