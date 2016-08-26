@@ -166,10 +166,6 @@ bank_plot = [(wf.make_template_plot(workflow, hdfbank[0],
 inj_files, inj_tags = wf.setup_injection_workflow(workflow,
                                                      output_dir="inj_files")
 
-# setup gating files if provided
-gate_files = wf.setup_gating_workflow(workflow, analyzable_segs,
-                                            datafind_files, "gating")
-
 ######################## Setup the FULL DATA run ##############################
 tag = output_dir = "full_data"
 ctags = [tag, 'full']
@@ -177,8 +173,7 @@ ctags = [tag, 'full']
 # setup the matchedfilter jobs
 ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
                                    datafind_files, splitbank_files,
-                                   output_dir, gate_files=gate_files,
-                                   tags = [tag])
+                                   output_dir, tags = [tag])
 
 insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],
                                            insps, output_dir, tags=[tag])
@@ -310,8 +305,7 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
 
     psd_files += [wf.setup_psd_calculate(workflow,
                   datafind_files.find_output_with_ifo(ifo), ifo,
-                  data_analysed_segs[ifo], data_analysed_name, 'psds',
-                  gate_files=gate_files)]
+                  data_analysed_segs[ifo], data_analysed_name, 'psds')]
 
 insp_files_seg_file = wf.SegFile.from_segment_list_dict('INSP_SEGMENTS',
                  insp_files_seg_dict, valid_segment=workflow.analysis_time,
@@ -437,7 +431,6 @@ for inj_file, tag in zip(inj_files, inj_tags):
     insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
                                      datafind_files, splitbank_files,
                                      output_dir, injection_file=small_inj_file,
-                                     gate_files=gate_files,
                                      tags = [tag])
 
     insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],

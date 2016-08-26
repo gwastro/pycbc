@@ -38,7 +38,7 @@ from pycbc.workflow.jobsetup import (select_matchedfilter_class,
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                tmplt_banks, output_dir=None,
-                               injection_file=None, gate_files=None, tags=None):
+                               injection_file=None, tags=None):
     '''
     This function aims to be the gateway for setting up a set of matched-filter
     jobs in a workflow. This function is intended to support multiple
@@ -119,7 +119,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
         inspiral_outs = setup_matchedfltr_dax_generated(workflow, science_segs, 
                                       datafind_outs, tmplt_banks, output_dir,
                                       injection_file=injection_file, 
-                                      gate_files=gate_files, tags=tags,
+                                      tags=tags,
                                       link_to_tmpltbank=linkToTmpltbank,
                                       compatibility_mode=compatibility_mode)
     elif mfltrMethod == "WORKFLOW_MULTIPLE_IFOS":
@@ -127,7 +127,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
         inspiral_outs = setup_matchedfltr_dax_generated_multi(workflow,
                                       science_segs, datafind_outs, tmplt_banks,
                                       output_dir, injection_file=injection_file,
-                                      gate_files=gate_files, tags=tags)
+                                      tags=tags)
     else:
         errMsg = "Matched filter method not recognized. Must be one of "
         errMsg += "WORKFLOW_INDEPENDENT_IFOS (currently only one option)."
@@ -138,7 +138,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
 
 def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
                                     tmplt_banks, output_dir,
-                                    injection_file=None, gate_files=None,
+                                    injection_file=None,
                                     tags=None, link_to_tmpltbank=False,
                                     compatibility_mode=False):
     '''
@@ -220,7 +220,6 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifo, 
                                                out_dir=output_dir, 
                                                injection_file=injection_file, 
-                                               gate_files=gate_files,
                                                tags=tags)
         if link_exe_instance:
             link_job_instance = link_exe_instance(cp, 'tmpltbank', ifo=ifo,
@@ -237,7 +236,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
 
 def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                                           tmplt_banks, output_dir,
-                                          injection_file=None, gate_files=None,
+                                          injection_file=None,
                                           tags=None, link_to_tmpltbank=False,
                                           compatibility_mode=False):
     '''
@@ -309,7 +308,7 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
                                  out_dir=output_dir,
                                  injection_file=injection_file, 
-                                 gate_files=gate_files, tags=tags)
+                                 tags=tags)
         multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
                                      science_segs, datafind_outs, output_dir,
                                      parents=tmplt_banks)
@@ -317,7 +316,7 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
                                  out_dir=output_dir,
                                  injection_file=injection_file,
-                                 gate_files=gate_files, tags=tags)
+                                 tags=tags)
         multi_ifo_job_setup(workflow, inspiral_outs, job_instance,
                             science_segs, datafind_outs, output_dir,
                             parents=tmplt_banks)

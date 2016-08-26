@@ -23,6 +23,7 @@ from glue.segments import segmentlist
 
 class CalcPSDExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS
+    file_input_options = ['--gating-file']
 
 class MergePSDFiles(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS
@@ -47,8 +48,7 @@ def merge_psds(workflow, files, ifo, out_dir, tags=None):
     return node.output_files[0]        
 
 def setup_psd_calculate(workflow, frame_files, ifo, segments,
-                        segment_name, out_dir,
-                        gate_files=None, tags=None):
+                        segment_name, out_dir, tags=None):
     make_analysis_dir(out_dir)
     tags = [] if not tags else tags
     if workflow.cp.has_option_tags('workflow-psd', 'parallelization-factor', tags=tags):
@@ -72,7 +72,6 @@ def setup_psd_calculate(workflow, frame_files, ifo, segments,
 
         psd_files += [make_psd_file(workflow, frame_files, seg_file,
                                     segment_name, out_dir, 
-                                    gate_files=gate_files, 
                                     tags=tags + ['PART%s' % i])]
     
     if num_parts > 1:
@@ -81,7 +80,7 @@ def setup_psd_calculate(workflow, frame_files, ifo, segments,
         return psd_files[0]
     
 def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir,
-                  gate_files=None, tags=None):
+                  tags=None):
     make_analysis_dir(out_dir)
     tags = [] if not tags else tags
     exe = CalcPSDExecutable(workflow.cp, 'calculate_psd',
@@ -90,15 +89,6 @@ def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir,
     node = exe.create_node()
     node.add_input_opt('--analysis-segment-file', segment_file)
     node.add_opt('--segment-name', segment_name)
-    
-    if gate_files is not None:
-        ifo_gate = None
-        for gate_file in gate_files:
-            if gate_file.ifo == segment_file.ifo:
-                ifo_gate = gate_file
-        
-        if ifo_gate is not None:
-            node.add_input_opt('--gating-file', ifo_gate)
     
     if not exe.has_opt('frame-type'):
         node.add_input_list_opt('--frame-files', frame_files)
