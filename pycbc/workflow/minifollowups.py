@@ -285,6 +285,10 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     logging.info('Leaving injection minifollowups module')
 
 class SingleTemplateExecutable(PlotExecutable):
+    """Class to be used for to create workflow.Executable instances for the
+    pycbc_single_template executable. Basically inherits directly from
+    PlotExecutable but adds the file_input_options.
+    """
     file_input_options = ['--gating-file']
     
 
@@ -292,6 +296,59 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
                                   params, out_dir, inj_file=None, exclude=None,
                                   require=None, tags=None, params_str=None,
                                   use_exact_inj_params=False):
+    """Function for creating jobs to run the pycbc_single_template code and
+    to run the associated plotting code pycbc_single_template_plots and add
+    these jobs to the workflow.
+
+    Parameters
+    -----------
+    workflow : workflow.Workflow instance
+        The pycbc.workflow.Workflow instance to add these jobs to.
+    segs : workflow.File instance
+        The pycbc.workflow.File instance that points to the XML file containing
+        the segment lists of data read in and data analyzed.
+    data_read_name : str
+        The name of the segmentlist containing the data read in by each
+        inspiral job in the segs file.
+    analyzed_name : str
+        The name of the segmentlist containing the data analyzed by each
+        inspiral job in the segs file.
+    params : dictionary
+        A dictionary containing the parameters of the template to be used.
+        params[ifo+'end_time'] is required for all ifos in workflow.ifos.
+        If use_exact_inj_params is False then also need to supply values for
+        ['mass1','mass2','spin1z','spin2x']. For precessing templates one also
+        needs to supply ['spin1y', 'spin1x', 'spin2x', 'spin2y', 'inclination']
+        additionally for precession one must supply 'u_vals' or
+        'u_vals_'+ifo for all ifos. u_vals is the ratio between h_+ and h_x to
+        use when constructing h(t). h(t) = (h_+ * u_vals) + h_x.
+    out_dir : str
+        Directory in which to store the output files.
+    inj_file : workflow.File (optional, default=None)
+        If given send this injection file to the job so that injections are
+        made into the data.
+    exclude : list (optional, default=None)
+        If given, then when considering which subsections in the ini file to
+        parse for options to add to single_template_plot, only use subsections
+        that *do not* match strings in this list.
+    require : list (optional, default=None)
+        If given, then when considering which subsections in the ini file to
+        parse for options to add to single_template_plot, only use subsections
+        matching strings in this list.
+    tags : list (optional, default=None)
+        Add this list of tags to all jobs.
+    params_str : str (optional, default=None)
+        If given add this string to plot title and caption to describe the
+        template that was used.
+    use_exact_inj_params : boolean (optional, default=False)
+        If True do not use masses and spins listed in the params dictionary
+        but instead use the injection closest to the filter time as a template.
+
+    Returns
+    --------
+    output_files : workflow.FileList
+        The list of workflow.Files created in this function.
+    """
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'single_template_plot'
