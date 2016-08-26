@@ -93,17 +93,6 @@ class InferenceFile(h5py.File):
         return self.attrs["variable_args"]
 
     @property
-    def nwalkers(self):
-        """Returns number of walkers used.
-
-        Returns
-        -------
-        nwalkesr : int
-            Number of walkers used.
-        """
-        return self.attrs["nwalkers"]
-
-    @property
     def niterations(self):
         """Returns number of iterations performed.
 
@@ -119,6 +108,22 @@ class InferenceFile(h5py.File):
         """Returns number of iterations in the burn in.
         """
         return self.attrs["burn_in_iterations"]
+
+    @property
+    def nwalkers(self):
+        """Returns number of walkers used.
+
+        Returns
+        -------
+        nwalkesr : int
+            Number of walkers used.
+        """
+        return self.attrs["nwalkers"]
+
+    @property
+    def ntemps(self):
+        """Returns number of temperatures used."""
+        return self.attrs["ntemps"]
 
     @property
     def acl(self):
@@ -156,15 +161,30 @@ class InferenceFile(h5py.File):
         sclass = pycbc.inference.sampler.samplers[self.sampler_name]
         return sclass.read_samples(self, parameters, **kwargs)
 
-    def read_acceptance_fraction(self):
+    def read_acceptance_fraction(self, **kwargs):
         """Returns the acceptance fraction that was written to the file.
 
+        Parameters
+        ----------
+        \**kwargs :
+            All keyword arguments are passed to the sampler's
+            `read_acceptance_fraction` function.
         Returns
         -------
         numpy.array
             The acceptance fraction.
         """
-        return self["acceptance_fraction"][:]
+        # get the appropriate sampler class
+        sclass = pycbc.inference.sampler.samplers[self.sampler_name]
+        return sclass.read_acceptance_fraction(self, **kwargs)
+
+    def read_acls(self):
+        """Returns all of the individual chains' acls. See the `read_acls`
+        function of this file's sampler for more details.
+        """
+        # get the appropriate sampler class
+        sclass = pycbc.inference.sampler.samplers[self.sampler_name]
+        return sclass.read_acls(self)
 
     def read_label(self, parameter, error_on_none=False):
         """Returns the label for the parameter.
@@ -219,13 +239,3 @@ class InferenceFile(h5py.File):
             psd_dim = self.create_dataset(key+"/psds/0",
                                           data=psds[key])
             psd_dim.attrs["delta_f"] = psds[key].delta_f
-
-    def write_acl(self, acl):
-        """ Writes the autocorrelation length (ACL) to file.
-
-        Parameters
-        ----------
-        acl : float
-            The ACL.
-        """
-        self.attrs["acl"] = acl

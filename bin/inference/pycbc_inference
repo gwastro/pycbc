@@ -23,10 +23,10 @@ import pycbc.opt
 import pycbc.weave
 import random
 from pycbc import DYN_RANGE_FAC, fft, inference, psd, scheme, strain, waveform
-from pycbc.filter import autocorrelation
 from pycbc.io.inference_hdf import InferenceFile, read_label_from_config
 from pycbc.types import FrequencySeries, MultiDetOptionAction
 from pycbc.workflow import WorkflowConfigParser
+from pycbc.inference import option_utils
 
 def select_waveform_generator(approximant):
     """ Returns the generator for the approximant.
@@ -44,22 +44,6 @@ def select_waveform_generator(approximant):
         raise ValueError("Time domain ringdowns not supported")
     else:
         raise ValueError("%s is not a valid approximant."%approximant)
-
-def read_distributions_from_config(cp, section):
-    """ Returns a list of PyCBC distribution instances for a section in the
-    configuration file.
-    """
-    dists = []
-    variable_args = []
-    for subsection in cp.get_subsections(section):
-        name = cp.get_opt_tag(section, "name", subsection)
-        dist = inference.priors[name].from_config(cp, section, subsection)
-        if set(dist.params).isdisjoint(variable_args):
-            dists.append(dist)
-            variable_args += dist.params
-        else:
-            raise ValueError("Same parameter in more than one distribution.")
-    return dists
 
 def convert_liststring_to_list(lstring):
     """ Checks if an argument of the configuration file is a string of a list
@@ -88,23 +72,14 @@ parser.add_argument("--psd-end-time", type=float, default=None,
     help="End time to use for PSD estimation if different from analysis.")
 
 # add inference options
-parser.add_argument("--sampler", required=True,
-    choices=inference.samplers.keys(),
-    help="Sampler class to use for finding posterior.")
 parser.add_argument("--likelihood-evaluator", required=True,
     choices=inference.likelihood_evaluators.keys(),
     help="Evaluator class to use to calculate the likelihood.")
-parser.add_argument("--nwalkers", type=int, required=True,
-    help="Number of walkers to use in sampler.")
-parser.add_argument("--niterations", type=int, required=True,
-    help="Number of iterations to perform after burn in.")
-parser.add_argument("--nprocesses", type=int, default=None,
-    help="Number of processes to use. If not given then use maximum.")
-parser.add_argument("--skip-burn-in", action="store_true", default=False,
-    help="Do not burn in with sampler.")
 parser.add_argument("--seed", type=int, default=0,
     help="Seed to use for the random number generator that initially "
          "distributes the walkers. Default is 0.")
+# add sampler options
+option_utils.add_sampler_option_group(parser)
 
 # add config options
 parser.add_argument("--config-files", type=str, nargs="+", required=True,
@@ -237,7 +212,7 @@ with ctx:
 
     # get prior distribution for each variable parameter
     logging.info("Setting up priors for each parameter")
-    distributions = read_distributions_from_config(cp, "prior")
+    distributions = inference.read_distributions_from_config(cp, "prior")
 
     # construct class that will return the prior
     prior = inference.PriorEvaluator(variable_args, *distributions)
@@ -255,15 +230,12 @@ with ctx:
                         delta_f=delta_f_dict.values()[0], **static_args)
 
     # construct class that will return the natural logarithm of likelihood
-    likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](generator,
-                        stilde_dict, opts.low_frequency_cutoff,
+    likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](
+                        generator, stilde_dict, opts.low_frequency_cutoff,
                         psds=psd_dict, prior=prior)
 
     # create sampler that will run
-    ndim = len(variable_args)
-    sampler = inference.samplers[opts.sampler](likelihood, ndim=ndim,
-                                               nwalkers=opts.nwalkers,
-                                               processes=opts.nprocesses)
+    sampler = option_utils.sampler_from_cli(opts, likelihood)
 
     # get distribution to draw from for each walker initial position
     logging.info("Setting walkers initial conditions for varying parameters")
@@ -271,22 +243,14 @@ with ctx:
     # check if user wants to use different distributions than prior for setting
     # walkers initial positions
     if len(cp.get_subsections("initial")):
-        initial_distributions = read_distributions_from_config(cp, "initial")
+        initial_distributions = inference.read_distributions_from_config(cp,
+            section="initial")
     else:
-        initial_distributions = read_distributions_from_config(cp, "prior")
+        initial_distributions = inference.read_distributions_from_config(cp,
+            section="prior")
 
-    # set initial values for variable parameters for each walker
-    # loop over all walkers and then parameters
-    # find the distribution that has that parameter in it and draw a
-    # random value from the distribution
-    p0 = numpy.ones(shape=(opts.nwalkers, ndim))
-    for i,_ in enumerate(p0):
-        for j,param in enumerate(variable_args):
-            for idist in initial_distributions:
-                if param in idist.params:
-                    p0[i][j] = idist.rvs(size=1, param=param)[0][0]
-                    break
-    sampler.set_p0(p0)
+    # set the initial positions
+    sampler.set_p0(initial_distributions)
 
     # setup checkpointing
     if opts.checkpoint_interval:
@@ -335,27 +299,10 @@ with ctx:
 
         # write new samples
         with InferenceFile(opts.output_file, "a") as fp:
+            logging.info("Dumping results to file")
             sampler.write_results(fp, max_iterations=opts.niterations+n_burnin)
-
-# calculate ACL for each series of samples for each parameter for each walker
-logging.info("Calculating maximum ACL")
-acls = []
-with InferenceFile(opts.output_file, "r") as fp:
-    for i in range(opts.nwalkers):
-        for param in fp.variable_args:
-            acls.append( autocorrelation.calculate_acl(
-                fp.read_samples(param, walkers=i)[param], dtype=int) )
-
-# get max ACL to save to file
-# if ACL is infinity then set it to the length of the chain of samples
-max_acl = numpy.array(acls).max()
-if max_acl == numpy.inf:
-    max_acl = opts.niterations
-
-# write ACL as an int rounding up
-logging.info("Writing ACL of %f samples to file"%max_acl)
-with InferenceFile(opts.output_file, "a") as fp:
-    fp.write_acl(max_acl)
+            # compute the acls and write
+            sampler.write_acls(fp, sampler.compute_acls(fp))
 
 # exit
 logging.info("Done")

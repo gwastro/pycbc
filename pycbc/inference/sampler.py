@@ -28,6 +28,7 @@ packages for parameter estimation.
 
 import numpy
 from pycbc.io import WaveformArray
+from pycbc.filter import autocorrelation
 
 #
 # =============================================================================
@@ -89,14 +90,32 @@ class _BaseSampler(object):
 
     Parameters
     ----------
-    sampler : sampler class
-        An instance of the sampler class from its package.
+    likelihood_evaluator : LikelihoodEvaluator
+        An instance of a pycbc.inference.likelihood evaluator.
     """
     name = None
 
     def __init__(self, likelihood_evaluator):
         self.likelihood_evaluator = likelihood_evaluator
-        self.burn_in_iterations = 0
+
+    @classmethod
+    def from_cli(cls, opts, likelihood_evaluator):
+        """Create an instance of this sampler from the given command-line
+        options.
+
+        Parameters
+        ----------
+        opts : ArgumentParser options
+            The options to parse.
+        likelihood_evaluator : LikelihoodEvaluator
+            The likelihood evaluator to use with the sampler.
+
+        Returns
+        -------
+        cls
+            A sampler initialized based on the given arguments.
+        """
+        raise NotImplementedError("from_cli function not set")
 
     @property
     def ifos(self):
@@ -110,9 +129,19 @@ class _BaseSampler(object):
         return self.likelihood_evaluator.waveform_generator.variable_args
 
     @property
+    def chain(self):
+        """This function should return the past samples as a
+        [additional dimensions x] niterations x ndim array, where ndim are the
+        number of variable args, niterations the number of iterations, and
+        additional dimeionions are any additional dimensions used by the
+        sampler (e.g, walkers, temperatures).
+        """
+        return NotImplementedError("chain function not set.")
+
+    @property
     def niterations(self):
         """Get the current number of iterations."""
-        return self.chain.shape[0]
+        return self.chain.shape[-2]
 
     @property
     def acceptance_fraction(self):
@@ -124,16 +153,10 @@ class _BaseSampler(object):
     @property
     def lnpost(self):
         """This function should return the natural logarithm of the likelihood
-        as an niterations x nwalker array.
+        function used by the sampler as an
+        [additional dimensions] x niterations array.
         """
         return NotImplementedError("lnpost function not set.")
-
-    @property
-    def chain(self):
-        """This function should return the past samples as a
-        niterations x nwalker x ndim array.
-        """
-        return NotImplementedError("chain function not set.")
 
     def burn_in(self, initial_values):
         """This function should burn in the sampler.
@@ -156,9 +179,17 @@ class _BaseSampler(object):
             A file handler to an open inference file.
         """
         fp.attrs['sampler'] = self.name
+        fp.attrs['likelihood_evaluator'] = self.likelihood_evaluator.name
         fp.attrs['ifos'] = self.ifos
         fp.attrs['variable_args'] = self.variable_args
         fp.attrs["niterations"] = self.niterations
+        sargs = self.likelihood_evaluator.waveform_generator.static_args
+        for arg,val in sargs.items():
+            try:
+                fp.attrs['static_args/{arg}'.format(arg=arg)] = val
+            except KeyError:
+                fp.attrs['static_args'] = {}
+                fp.attrs['static_args/{arg}'.format(arg=arg)] = val
 
 
 class _BaseMCMCSampler(_BaseSampler):
@@ -167,11 +198,14 @@ class _BaseMCMCSampler(_BaseSampler):
 
     Parameters
     ----------
+    sampler : sampler instance
+        An instance of an MCMC sampler similar to kombine or emcee.
     likelihood_evaluator : likelihood class
         An instance of the likelihood class from the
         pycbc.inference.likelihood module.
-    sampler : sampler instance
-        An instance of an MCMC sampler similar to kombine or emcee.
+    min_burn_in : {None, int}
+        Set the minimum number of burn in iterations to use. If None,
+        `burn_in_iterations` will be initialized to `0`.
 
     Attributes
     ----------
@@ -184,11 +218,13 @@ class _BaseMCMCSampler(_BaseSampler):
         An array of the current walker positions.
     """
     name = None
-    def __init__(self, sampler, likelihood_evaluator):
+    def __init__(self, sampler, likelihood_evaluator, min_burn_in=None):
         self._sampler = sampler 
         self._pos = None
         self._p0 = None
-        self.burn_in_iterations = 0
+        if min_burn_in is None:
+            min_burn_in = 0
+        self.burn_in_iterations = min_burn_in
         # initialize
         super(_BaseMCMCSampler, self).__init__(likelihood_evaluator)
 
@@ -200,15 +236,33 @@ class _BaseMCMCSampler(_BaseSampler):
     def pos(self):
         return self._pos
 
-    def set_p0(self, p0):
+    def set_p0(self, prior_distributions):
         """Sets the initial position of the walkers.
 
         Parameters
         ----------
-        p0 : numpy.array
-            An nwalkers x ndim array of initial values for walkers.
+        prior_distributions : list 
+            A list of priors to retrieve random values from (the sort of
+            thing returned by `prior.read_distributions_from_config`).
+
+        Returns
+        -------
+        p0 : array
+            An nwalkers x ndim array of the initial positions that were set.
         """
+        # loop over all walkers and then parameters
+        # find the distribution that has that parameter in it and draw a
+        # random value from the distribution
+        nwalkers = self.nwalkers
+        ndim = len(self.variable_args)
+        pmap = dict([[param,k] for k,param in enumerate(self.variable_args)])
+        p0 = numpy.ones((nwalkers, ndim))
+        for dist in prior_distributions:
+            ps = dist.rvs(size=nwalkers)
+            for param in dist.params:
+                p0[:,pmap[param]] = ps[param]
         self._p0 = p0
+        return p0
 
     @property
     def p0(self):
@@ -219,11 +273,11 @@ class _BaseMCMCSampler(_BaseSampler):
     @property
     def nwalkers(self):
         """Get the number of walkers."""
-        return self.chain.shape[1]
+        return self.chain.shape[-3]
 
     @property
     def acceptance_fraction(self):
-        """Get the fraction of walkers that accepted each step as an arary.
+        """Get the fraction of walkers that accepted each step as an array.
         """
         return self._sampler.acceptance_fraction
 
@@ -260,11 +314,11 @@ class _BaseMCMCSampler(_BaseSampler):
             that the array in the file will be large enough to accomodate
             future data.
         """
-        # transpose samples to get an (ndim,nwalkers,niteration) array
-        samples = numpy.transpose(self.chain)
-        _, nwalkers, niterations = samples.shape
+        # chain is nwalkers x niterations x ndim
+        samples = self.chain
+        nwalkers, niterations, _ = samples.shape
 
-        group = fp.samples_group + '/{name}/walker{wnum}'
+        group = fp.samples_group + '/{name}/walker{wi}'
 
         # create an empty array if desired, in case this is the first time
         # writing
@@ -275,20 +329,21 @@ class _BaseMCMCSampler(_BaseSampler):
             out = numpy.zeros(max_iterations, dtype=samples.dtype)
 
         # loop over number of dimensions
-        for i,dim_name in enumerate(self.variable_args):
+        widx = numpy.arange(nwalkers)
+        for pi,param in enumerate(self.variable_args):
             # loop over number of walkers
-            for j in range(nwalkers):
-                dataset_name = group.format(name=dim_name, wnum=j)
+            for wi in widx:
+                dataset_name = group.format(name=param, wi=wi)
                 try:
-                    fp[dataset_name][:niterations] = samples[i,j,:]
+                    fp[dataset_name][:niterations] = samples[wi,:,pi]
                 except KeyError:
                     # dataset doesn't exist yet, see if a larger array is
                     # desired
                     if max_iterations is not None:
-                        out[:niterations] = samples[i,j,:]
+                        out[:niterations] = samples[wi,:,pi]
                         fp[dataset_name] = out
                     else:
-                        fp[dataset_name] = samples[i,j,:]
+                        fp[dataset_name] = samples[wi,:,pi]
 
     def write_lnpost(self, fp, max_iterations=None):
         """Writes the `lnpost`s to the given file. Results are written to:
@@ -307,11 +362,11 @@ class _BaseMCMCSampler(_BaseSampler):
             that the array in the file will be large enough to accomodate
             future data.
         """
-        # lnposts are an (niterations,nwalkers) array
+        # lnposts are an nwalkers x niterations array
         lnposts = self.lnpost
-        niterations, nwalkers = lnposts.shape
+        nwalkers, niterations = lnposts.shape
 
-        group = fp.samples_group + '/lnpost/walker{wnum}'
+        group = fp.samples_group + '/lnpost/walker{wi}'
 
         # create an empty array if desired, in case this is the first time
         # writing
@@ -322,18 +377,18 @@ class _BaseMCMCSampler(_BaseSampler):
             out = numpy.zeros(max_iterations, dtype=lnposts.dtype)
 
         # loop over number of walkers
-        for j in range(nwalkers):
-            dataset_name = group.format(wnum=j)
+        for wi in range(nwalkers):
+            dataset_name = group.format(wi=wi)
             try:
-                fp[dataset_name][:niterations] = lnposts[:,j]
+                fp[dataset_name][:niterations] = lnposts[wi,:]
             except KeyError:
                 # dataset doesn't exist yet, see if a larger array is
                 # desired
                 if max_iterations is not None:
-                    out[:niterations] = lnposts[:,j]
+                    out[:niterations] = lnposts[wi,:]
                     fp[dataset_name] = out
                 else:
-                    fp[dataset_name] = lnposts[:,j]
+                    fp[dataset_name] = lnposts[wi,:]
 
     def write_acceptance_fraction(self, fp, max_iterations=None):
         """Write acceptance_fraction data to file. Results are written to
@@ -367,7 +422,8 @@ class _BaseMCMCSampler(_BaseSampler):
 
     def write_results(self, fp, max_iterations=None):
         """Writes metadata, samples, lnpost, and acceptance fraction to the
-        given file. See the write function for each of those for details.
+        given file. Also computes and writes the autocorrleation lengths of the
+        chains. See the various write function for details.
 
         Parameters
         -----------
@@ -423,8 +479,8 @@ class _BaseMCMCSampler(_BaseSampler):
         flatten : {True, bool}
             The returned array will be one dimensional, with all desired
             samples from all desired walkers concatenated together. If False,
-            the returned array will have dimension requested iterations x
-            requested walkers.
+            the returned array will have dimension requested walkers
+            x requested iterations.
 
         Returns
         -------
@@ -456,15 +512,165 @@ class _BaseMCMCSampler(_BaseSampler):
 
         # load
         arrays = {}
-        group = fp.samples_group + '/{name}/walker{wnum}'
+        group = fp.samples_group + '/{name}/walker{wi}'
         for name in loadfields:
             these_arrays = [
-                    fp[group.format(name=name, wnum=ii)][get_index]
-                    for ii in walkers]
+                    fp[group.format(name=name, wi=wi)][get_index]
+                    for wi in walkers]
             if flatten:
                 arrays[name] = numpy.hstack(these_arrays)
             else:
-                arrays[name] = numpy.vstack(these_arrays).transpose()
+                arrays[name] = numpy.vstack(these_arrays)
+        return WaveformArray.from_kwargs(**arrays)
+
+    @staticmethod
+    def read_acceptance_fraction(fp,
+            thin_start=None, thin_interval=None, thin_end=None,
+            iteration=None):
+        """Reads the acceptance fraction from the given file.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            An open file handler to read the samples from.
+        walkers : {None, (list of) int}
+            The walker index (or a list of indices) to retrieve. If None,
+            samples from all walkers will be obtained.
+        thin_start : int
+            Index of the sample to begin returning samples. Default is to read
+            samples after burn in. To start from the beginning set thin_start
+            to 0.
+        thin_interval : int
+            Interval to accept every i-th sample. Default is to use the
+            `fp.acl`. If `fp.acl` is not set, then use all samples
+            (set thin_interval to 1).
+        thin_end : int
+            Index of the last sample to read. If not given then
+            `fp.niterations` is used.
+        iteration : int
+            Get a single iteration. If provided, will override the
+            `thin_{start/interval/end}` arguments.
+
+        Returns
+        -------
+        array
+            Array of acceptance fractions with shape (requested iterations,).
+        """
+        # get the slice to use
+        if iteration is not None:
+            get_index = iteration
+        else:
+            if thin_end is None:
+                # use the number of current iterations
+                thin_end = fp.niterations
+            get_index = get_slice(fp, thin_start=thin_start, thin_end=thin_end,
+                thin_interval=thin_interval)
+        acfs = fp['acceptance_fraction'][get_index]
+        if iteration is not None:
+            acfs = numpy.array([acfs])
+        return acfs
+
+    @classmethod
+    def compute_acls(cls, fp, start_index=None, end_index=None):
+        """Computes the autocorrleation length for all variable args and all
+        walkers in the given file. If the returned acl is inf, will default
+        to the number of requested iterations.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            An open file handler to read the samples from.
+        start_index : {None, int}
+            The start index to compute the acl from. If None, will try to use
+            the number of burn-in iterations in the file; otherwise, will start
+            at the first sample.
+        end_index : {None, int}
+            The end index to compute the acl to. If None, will go to the end
+            of the current iteration.
+
+        Returns
+        -------
+        WaveformArray
+            An nwalkers-long `WaveformArray` containing the acl for each walker
+            and each variable argument, with the variable arguments as fields.
+        """
+        acls = {}
+        if end_index is None:
+            end_index = fp.niterations
+        widx = numpy.arange(fp.nwalkers)
+        for param in fp.variable_args:
+            these_acls = []
+            for wi in widx:
+                samples = cls.read_samples(fp, param,
+                        thin_start=start_index, thin_interval=1,
+                        thin_end=end_index,
+                        walkers=wi)[param]
+                acl = autocorrelation.calculate_acl(samples)
+                these_acls.append(min(acl, samples.size))
+            acls[param] = numpy.array(these_acls, dtype=int)
+        return WaveformArray.from_kwargs(**acls)
+
+    @staticmethod
+    def write_acls(fp, acls):
+        """Writes the given autocorrelation lengths to the given file. The acl
+        of each walker and each parameter is saved to
+        `fp[fp.samples_group/{param}/walker{i}].attrs['acl']`; the maximum
+        over all the walkers for a given param is saved to
+        `fp[fp.samples_group/{param}].attrs['acl']`; the maximum over all the
+        parameters and all of the walkers is saved to the file's 'acl'
+        attribute.
+
+        Parameters
+        ----------
+        fp : InferenceFile
+            An open file handler to write the samples to.
+        acls : WaveformArray
+            An array of autocorrelation lengths (the sort of thing returned by
+            `compute_acls`).
+
+        Returns
+        -------
+        acl
+            The maximum of the acls that was written to the file.
+        """
+        # write the individual acls
+        pgroup = fp.samples_group + '/{param}'
+        group = pgroup + '/walker{wi}'
+        max_acls = []
+        for param in acls.fieldnames:
+            max_acl = 0
+            for wi,acl in enumerate(acls[param]): 
+                fp[group.format(param=param, wi=wi)].attrs['acl'] = acl
+                max_acl = max(max_acl, acl)
+            max_acls.append(max_acl)
+            # write the maximum over the params
+            fp[pgroup.format(param=param)].attrs['acl'] = max_acl
+        # write the maximum over all params
+        fp.attrs['acl'] = max(max_acls)
+        return fp.attrs['acl']
+
+    @staticmethod
+    def read_acls(fp):
+        """Reads the acls of all the walker chains saved in the given file.
+
+        Parameters
+        ----------
+        fp : InferenceFile
+            An open file handler to read the acls from.
+
+        Returns
+        -------
+        WaveformArray
+            An nwalkers-long `WaveformArray` containing the acl for each walker
+            and each variable argument, with the variable arguments as fields.
+        """
+        group = fp.samples_group + '/{param}/walker{wi}'
+        widx = numpy.arange(fp.nwalkers)
+        arrays = {}
+        for param in fp.variable_args:
+            arrays[param] = numpy.array([
+                fp[group.format(param=param, wi=wi)].attrs['acl']
+                for wi in widx])
         return WaveformArray.from_kwargs(**arrays)
 
 
@@ -479,9 +685,6 @@ class KombineSampler(_BaseMCMCSampler):
         pycbc.inference.likelihood module.
     nwalkers : int
         Number of walkers to use in sampler.
-    ndim : int
-        Number of dimensions in the parameter space. If transd is True this is
-        the number of unique dimensions across the parameter spaces.
     transd : bool
         If True, the sampler will operate across parameter spaces using a
         kombine.clustered_kde.TransdimensionalKDE proposal distribution. In
@@ -490,21 +693,46 @@ class KombineSampler(_BaseMCMCSampler):
     processes : {None, int}
         Number of processes to use with multiprocessing. If None, all available
         cores are used.
+    min_burn_in : {None, int}
+        Set the minimum number of burn in iterations to use. If None,
+        `burn_in_iterations` will be initialized to `0`.
     """
     name = "kombine"
 
-    def __init__(self, likelihood_evaluator, nwalkers=0, ndim=0,
-                        transd=False, processes=None):
+    def __init__(self, likelihood_evaluator, nwalkers, transd=False,
+            processes=None, min_burn_in=None):
         try:
             import kombine
         except ImportError:
             raise ImportError("kombine is not installed.")
 
         # construct sampler for use in KombineSampler
+        ndim = len(likelihood_evaluator.waveform_generator.variable_args)
         sampler = kombine.Sampler(nwalkers, ndim, likelihood_evaluator,
                                           transd=transd, processes=processes)
         # initialize
-        super(KombineSampler, self).__init__(sampler, likelihood_evaluator)
+        super(KombineSampler, self).__init__(sampler, likelihood_evaluator,
+            min_burn_in=min_burn_in)
+
+    @classmethod
+    def from_cli(cls, opts, likelihood_evaluator):
+        """Create an instance of this sampler from the given command-line
+        options.
+
+        Parameters
+        ----------
+        opts : ArgumentParser options
+            The options to parse.
+        likelihood_evaluator : LikelihoodEvaluator
+            The likelihood evaluator to use with the sampler.
+
+        Returns
+        -------
+        KombineSampler
+            A kombine sampler initialized based on the given arguments.
+        """
+        return cls(likelihood_evaluator, opts.nwalkers,
+                   processes=opts.nprocesses, min_burn_in=opts.min_burn_in)
 
     def run(self, niterations, **kwargs):
         """Advance the sampler for a number of samples.
@@ -539,21 +767,25 @@ class KombineSampler(_BaseMCMCSampler):
     @property
     def lnpost(self):
         """ Get the natural logarithm of the likelihood as an 
-        niterations x nwalkers array.
+        nwalkers x niterations array.
         """
-        return self._sampler.lnpost
+        # kombine returns niterations x nwaklers
+        return self._sampler.lnpost.transpose()
 
     @property
     def chain(self):
-        """Get all past samples as an niterations x nwalker x ndim array."""
-        return self._sampler.chain
+        """Get all past samples as an nwalker x niterations x ndim array."""
+        # kombine returns niterations x nwalkers x ndim
+        return self._sampler.chain.transpose((1,0,2))
 
     def burn_in(self):
-        """Evolve an ensemble until the acceptance rate becomes roughly
-        constant. This is done by splitting acceptances in half and checking
-        for statistical consistency. This isn't guaranteed to return a fully
-        burned-in ensemble, but usually does. The initial positions (p0) must
-        be set prior to running.
+        """Use kombine's `burnin` routine to advance the sampler.
+        
+        If a minimum number of burn-in iterations was specified, this will run
+        the burn-in until it has advanced at least as many steps as desired.
+        The initial positions (p0) must be set prior to running.
+
+        For more details, see `kombine.sampler.burnin`.
 
         Returns
         -------
@@ -566,17 +798,21 @@ class KombineSampler(_BaseMCMCSampler):
             The list of log proposal densities for the walkers at positions p,
             with shape (nwalkers, ndim).
         """
-        if self.burn_in_iterations == 0:
-            res = self._sampler.burnin(self.p0)
-            if len(res) == 4:
-                p, post, q, _ = res
-            else:
-                p, post, q = res
-            self.burn_in_iterations = self.chain.shape[0]
-        else:
-            raise ValueError("Burn in has already been performed")
-        # update position
-        self._pos = p
+        # check that we haven't already burned in
+        if self.pos is not None:
+            raise ValueError("burn-in already run")
+        # run once
+        p0 = self.p0
+        res = self._sampler.burnin(self.p0)
+        p, post, q = res[0], res[1], res[2]
+        # continue running until minimum burn in is satistfied
+        while self.niterations < self.burn_in_iterations:
+            p0 = p
+            res = self._sampler.burnin(p0)
+            p, post, q = res[0], res[1], res[2]
+            # update position
+            self._pos = p
+        self.burn_in_iterations = self.niterations
         return p, post, q
 
 
@@ -591,18 +827,17 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         pycbc.inference.likelihood module.
     nwalkers : int
         Number of walkers to use in sampler.
-    ndim : int
-        Number of dimensions in the parameter space. If transd is True this is
-        the number of unique dimensions across the parameter spaces.
     processes : {None, int}
         Number of processes to use with multiprocessing. If None, all available
         cores are used.
+    burn_in_iterations : {None, int}
+        Set the number of burn in iterations to use. If None,
+        `burn_in_ieterations` will be initialized to 0.
     """
-
     name = "emcee"
 
-    def __init__(self, likelihood_evaluator, nwalkers=0, ndim=0,
-                        processes=None):
+    def __init__(self, likelihood_evaluator, nwalkers, processes=None,
+                 burn_in_iterations=None):
 
         try:
             import emcee
@@ -617,29 +852,57 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
                 processes=processes)
 
         # construct the sampler
+        ndim = len(likelihood_evaluator.waveform_generator.variable_args)
         sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_evaluator,
             pool=pool)
 
         # initialize
         super(EmceeEnsembleSampler, self).__init__(sampler,
-            likelihood_evaluator)
+            likelihood_evaluator, min_burn_in=burn_in_iterations)
+
+    @classmethod
+    def from_cli(cls, opts, likelihood_evaluator):
+        """Create an instance of this sampler from the given command-line
+        options.
+
+        Parameters
+        ----------
+        opts : ArgumentParser options
+            The options to parse.
+        likelihood_evaluator : LikelihoodEvaluator
+            The likelihood evaluator to use with the sampler.
+
+        Returns
+        -------
+        EmceeEnsembleSampler
+            An emcee sampler initialized based on the given arguments.
+        """
+        # check that if not skipping burn in, more than one burn in iteration
+        # has been specified
+        if not opts.skip_burn_in and (
+                opts.min_burn_in is None or opts.min_burn_in == 0):
+            raise ValueError("%s requires that you provide a non-zero "%(
+                cls.name) + "--min-burn-in if not skipping burn-in")
+        return cls(likelihood_evaluator, opts.nwalkers,
+                   processes=opts.nprocesses,
+                   burn_in_iterations=opts.min_burn_in)
 
     @property
     def lnpost(self):
         """Get the natural logarithm of the likelihood as an 
-        niterations x nwalkers array.
+        nwalkers x niterations array.
         """
+        # emcee returns nwalkers x niterations
         return self._sampler.lnprobability
 
     @property
     def chain(self):
-        """Get all past samples as an niterations x nwalker x ndim array."""
-        # emcee returns the chain as nwalker x niterations x ndim, so need to
-        # transpose
-        return self._sampler.chain.transpose((1,0,2))
+        """Get all past samples as an nwalker x niterations x ndim array."""
+        # emcee returns the chain as nwalker x niterations x ndim
+        return self._sampler.chain
 
     def run(self, niterations, **kwargs):
-        """Advance the sampler for a number of samples.
+        """Advance the ensemble for a number of samples.
 
         Parameters
         ----------
@@ -653,17 +916,35 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         lnpost : numpy.array
             The list of log posterior probabilities for the walkers at
             positions p, with shape (nwalkers, ndim).
-        lnprop : numpy.array
-            The list of log proposal densities for the walkers at positions p,
-            with shape (nwalkers, ndim).
+        rstate : 
+            The current state of the random number generator.
         """
         pos = self._pos
         if pos is None:
             pos = self.p0
-        p, lnpost, lnprop = self._sampler.run_mcmc(pos, niterations, **kwargs)
+        p, lnpost, rstate = self._sampler.run_mcmc(pos, niterations, **kwargs)
         # update the positions
         self._pos = p
-        return p, lnpost, lnprop
+        return p, lnpost, rstate
+
+    def burn_in(self, **kwargs):
+        """Advance the ensemble by the number of the sampler's
+        `burn_in_iterations`.
+
+        Returns
+        -------
+        p : numpy.array
+            An array of current walker positions with shape (nwalkers, ndim).
+        lnpost : {None, numpy.array}
+            The list of log posterior probabilities for the walkers at
+            positions p, with shape (nwalkers, ndim).
+        rstate : 
+            The current state of the random number generator.
+        """
+        if self.burn_in_iterations == 0:
+            raise ValueError("must specify a non-zero number of iterations "
+                             "to burn in")
+        return self.run(self.burn_in_iterations, **kwargs)
 
     # Emcee defines acceptance fraction differently, so have to override
     # write functions
@@ -682,6 +963,31 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         except KeyError:
             # dataset doesn't exist yet, create it
             fp[dataset_name] = self.acceptance_fraction
+
+    @staticmethod
+    def read_acceptance_fraction(fp, walkers=None):
+        """Reads the acceptance fraction from the given file.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            An open file handler to read the samples from.
+        walkers : {None, (list of) int}
+            The walker index (or a list of indices) to retrieve. If None,
+            samples from all walkers will be obtained.
+
+        Returns
+        -------
+        array
+            Array of acceptance fractions with shape (requested walkers,).
+        """
+        group = 'acceptance_fraction'
+        if walkers is None:
+            wmask = numpy.ones(fp.nwalkers, dtype=bool)
+        else:
+            wmask = numpy.zeros(fp.nwalkers, dtype=bool)
+            wmask[walkers] = True
+        return fp[group][wmask]
 
     def write_results(self, fp, max_iterations=None):
         """Writes metadata, samples, lnpost, and acceptance fraction to the
@@ -703,7 +1009,6 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         self.write_chain(fp, max_iterations=max_iterations)
         self.write_lnpost(fp, max_iterations=max_iterations)
         self.write_acceptance_fraction(fp)
-
 
 samplers = {
     KombineSampler.name : KombineSampler,

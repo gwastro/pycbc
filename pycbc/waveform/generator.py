@@ -87,6 +87,11 @@ class BaseGenerator(object):
         # generation
         self.current_params = frozen_params.copy()
 
+    @property
+    def static_args(self):
+        """Returns a dictionary of the static arguments."""
+        return self.frozen_params
+
     def generate(self, *args):
         """Generates a waveform. The list of arguments must be in the same
         order as self's variable_args attribute.
@@ -266,6 +271,7 @@ class FDomainDetFrameGenerator(object):
             variable_args=(), **frozen_params):
         # initialize frozen & current parameters:
         self.current_params = frozen_params.copy()
+        self._static_args = frozen_params.copy()
         # we'll separate out frozen location parameters from the frozen
         # parameters that are sent to the rframe generator
         self.frozen_location_args = {}
@@ -300,6 +306,11 @@ class FDomainDetFrameGenerator(object):
     def set_epoch(self, epoch):
         """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
         self._epoch = float(epoch)
+
+    @property
+    def static_args(self):
+        """Returns a dictionary of the static arguments."""
+        return self._static_args
 
     @property
     def epoch(self):
