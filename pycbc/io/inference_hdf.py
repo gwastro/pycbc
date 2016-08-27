@@ -141,6 +141,11 @@ class InferenceFile(h5py.File):
         return self.attrs["nwalkers"]
 
     @property
+    def ntemps(self):
+        """Returns number of temperatures used."""
+        return self.attrs["ntemps"]
+
+    @property
     def acl(self):
         """ Returns the saved autocorelation length (ACL).
 
