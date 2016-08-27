@@ -73,6 +73,7 @@ class InferenceFile(h5py.File):
         The mode to open the file, eg. "w" for write and "r" for read.
     """
     samples_group = 'samples'
+    stats_group = 'likelihood_stats'
 
     def __init__(self, path, mode=None, **kwargs):
         super(InferenceFile, self).__init__(path, mode, **kwargs)
@@ -175,25 +176,25 @@ class InferenceFile(h5py.File):
         sclass = pycbc.inference.sampler.samplers[self.sampler_name]
         return sclass.read_samples(self, parameters, **kwargs)
 
-    def read_likelihood_metadata(self, **kwargs):
-        """Reads likelihood metadata from self.
+    def read_likelihood_stats(self, **kwargs):
+        """Reads likelihood stats from self.
 
         Parameters
         -----------
         \**kwargs :
-            The keyword args are passed to the sampler's `read_samples` method.
+            The keyword args are passed to the sampler's `read_likelihood_stats`
+            method.
 
         Returns
         -------
-        metadata : {FieldArray, None}
-            Metadata in the file, as a FieldArray. The fields of the array are
-            the names of the metadata fields, which are retrieved from the
-            `metadata_fields` attribute of the likelihood evaluator class that
-            was used.
+        stats : {FieldArray, None}
+            Likelihood stats in the file, as a FieldArray. The fields of the
+            array are the names of the stats that are in the `likelihood_stats`
+            group.
         """
-        fields = pycbc.inference.likelihood.likelihood_evaluators[
-                    self.likelihood_eval_name].metadata_fields
-        return self.read_samples(fields, **kwargs)
+        # get the appropriate sampler class
+        sclass = pycbc.inference.sampler.samplers[self.sampler_name]
+        return sclass.read_likelihood_stats(self, **kwargs)
 
     def read_acceptance_fraction(self, **kwargs):
         """Returns the acceptance fraction that was written to the file.
