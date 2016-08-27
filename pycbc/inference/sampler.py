@@ -27,7 +27,7 @@ packages for parameter estimation.
 """
 
 import numpy
-from pycbc.io import WaveformArray
+from pycbc.io import WaveformArray, FieldArray
 from pycbc.filter import autocorrelation
 
 #
@@ -158,6 +158,14 @@ class _BaseSampler(object):
         """
         return NotImplementedError("lnpost function not set.")
 
+    @property
+    def likelihood_metadata(self):
+        """This function should return any meta data that was returned by
+        the likelihood function as an [additional dimensions] x niterations
+        array. If no meta data is returned, it should return None.
+        """
+        return NotImplementedError("likelihood meta not set")
+
     def burn_in(self, initial_values):
         """This function should burn in the sampler.
         """
@@ -183,11 +191,11 @@ class _BaseSampler(object):
         fp.attrs['ifos'] = self.ifos
         fp.attrs['variable_args'] = self.variable_args
         fp.attrs["niterations"] = self.niterations
+        fp.attrs["lognl"] = self.likelihood_evaluator.lognl
         sargs = self.likelihood_evaluator.waveform_generator.static_args
         fp.attrs["static_args"] = sargs.keys()
         for arg,val in sargs.items():
             fp.attrs[arg] = val
-
 
 class _BaseMCMCSampler(_BaseSampler):
     """This class is used to construct the MCMC sampler from the kombine-like
@@ -277,6 +285,20 @@ class _BaseMCMCSampler(_BaseSampler):
         """Get the fraction of walkers that accepted each step as an array.
         """
         return self._sampler.acceptance_fraction
+
+    @property
+    def likelihood_metadata(self):
+        """Returns the likelihood metadata as a FieldArray, with field names
+        corresponding to the type of data returned by the likelihood evaluator.
+        The returned array has shape nwalkers x niterations.
+        """
+        metadata = numpy.array(self._sampler.blobs)
+        if metadata.size == 0:
+            return None
+        arrays = dict([[field, metadata[:,:,fi]]
+                    for fi,field in
+                        enumerate(self.likelihood_evaluator.metadata_fields)])
+        return FieldArray.from_kwargs(**arrays).transpose()
 
     # write and read functions
     def write_metadata(self, fp):
@@ -387,6 +409,62 @@ class _BaseMCMCSampler(_BaseSampler):
                 else:
                     fp[dataset_name] = lnposts[wi,:]
 
+    def write_likelihood_metadata(self, fp, max_iterations=None):
+        """Writes the `likelihood_metadata` to the given file.  Results are
+        written to: `fp[fp.samples_group/{field}/walker{i}]`, where `{i}` is
+        the index of a walker and `{field}` is the name of each field returned
+        by the metadata. If there is no metadata, this does nothing.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            A file handler to an open inference file.
+        max_iterations : {None, int}
+            If the metadata have not previously been written to the file, a new
+            dataset will be created. By default, the size of this dataset will
+            be whatever the length of the sampler's chain is at this point. If
+            you intend to run more iterations, set this value to that size so
+            that the array in the file will be large enough to accomodate
+            future data.
+
+        Returns
+        -------
+        metdata : {FieldArray, None}
+            The metadata that was written, as a FieldArray. If there was no
+            metadata, returns None.
+        """
+        # metadata is an nwalkers x niterations array
+        metadata = self.likelihood_metadata
+        if metadata is None:
+            return None
+        nwalkers, niterations = metadata.shape
+        fields = metadata.fieldnames
+
+        group = fp.samples_group + '/{param}/walker{wi}'
+
+        if max_iterations is not None and max_iterations < niterations:
+            raise IndexError("The provided max size is less than the "
+                "number of iterations")
+
+        for param in fields:
+            # create an empty array if desired, in case this is the first time
+            # writing
+            out = numpy.zeros(max_iterations, dtype=metadata.dtype[param])
+            # loop over number of walkers
+            for wi in range(nwalkers):
+                dataset_name = group.format(param=param, wi=wi)
+                try:
+                    fp[dataset_name][:niterations] = metadata[param][wi,:]
+                except KeyError:
+                    # dataset doesn't exist yet, see if a larger array is
+                    # desired
+                    if max_iterations is not None:
+                        out[:niterations] = metadata[param][wi,:]
+                        fp[dataset_name] = out
+                    else:
+                        fp[dataset_name] = metadata[param][wi,:]
+        return metadata
+
     def write_acceptance_fraction(self, fp, max_iterations=None):
         """Write acceptance_fraction data to file. Results are written to
         `fp[acceptance_fraction]`.
@@ -436,7 +514,7 @@ class _BaseMCMCSampler(_BaseSampler):
         """
         self.write_metadata(fp)
         self.write_chain(fp, max_iterations=max_iterations)
-        self.write_lnpost(fp, max_iterations=max_iterations)
+        self.write_likelihood_metadata(fp, max_iterations=max_iterations)
         self.write_acceptance_fraction(fp, max_iterations=max_iterations)
 
     @staticmethod
@@ -755,8 +833,8 @@ class KombineSampler(_BaseMCMCSampler):
             p0 = self.p0
         else:
             p0 = None
-        p, lnpost, lnprop = self._sampler.run_mcmc(niterations, p0=p0,
-            **kwargs)
+        res = self._sampler.run_mcmc(niterations, p0=p0, **kwargs)
+        p, lnpost, lnprop = res[0], res[1], res[2] 
         # update the positions
         self._pos = p
         return p, lnpost, lnprop
@@ -919,7 +997,8 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         pos = self._pos
         if pos is None:
             pos = self.p0
-        p, lnpost, rstate = self._sampler.run_mcmc(pos, niterations, **kwargs)
+        res = self._sampler.run_mcmc(pos, niterations, **kwargs)
+        p, lnpost, rstate = res[0], res[1], res[2] 
         # update the positions
         self._pos = p
         return p, lnpost, rstate
@@ -1004,7 +1083,7 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         """
         self.write_metadata(fp)
         self.write_chain(fp, max_iterations=max_iterations)
-        self.write_lnpost(fp, max_iterations=max_iterations)
+        self.write_likelihood_metadata(fp, max_iterations=max_iterations)
         self.write_acceptance_fraction(fp)
 
 samplers = {

@@ -29,6 +29,7 @@ import h5py
 from pycbc import pnutils
 from pycbc.waveform import parameters as wfparams
 import pycbc.inference.sampler
+import pycbc.inference.likelihood
 
 def read_label_from_config(cp, variable_arg, section="labels"):
     """ Returns the label for the variable_arg.
@@ -82,6 +83,11 @@ class InferenceFile(h5py.File):
         return self.attrs["sampler"]
 
     @property
+    def likelihood_eval_name(self):
+        """Returns the name of the likelihood evaluator that was used."""
+        return self.attrs["likelihood_evaluator"]
+
+    @property
     def variable_args(self):
         """Returns list of variable_args.
 
@@ -99,6 +105,11 @@ class InferenceFile(h5py.File):
         """
         return dict([[arg, self.attrs[arg]]
             for arg in self.attrs["static_args"]])
+
+    @property
+    def lognl(self):
+        """Returns the log noise likelihood."""
+        return self.attrs["lognl"]
 
     @property
     def niterations(self):
@@ -163,6 +174,26 @@ class InferenceFile(h5py.File):
         # get the appropriate sampler class
         sclass = pycbc.inference.sampler.samplers[self.sampler_name]
         return sclass.read_samples(self, parameters, **kwargs)
+
+    def read_likelihood_metadata(self, **kwargs):
+        """Reads likelihood metadata from self.
+
+        Parameters
+        -----------
+        \**kwargs :
+            The keyword args are passed to the sampler's `read_samples` method.
+
+        Returns
+        -------
+        metadata : {FieldArray, None}
+            Metadata in the file, as a FieldArray. The fields of the array are
+            the names of the metadata fields, which are retrieved from the
+            `metadata_fields` attribute of the likelihood evaluator class that
+            was used.
+        """
+        fields = pycbc.inference.likelihood.likelihood_evaluators[
+                    self.likelihood_eval_name].metadata_fields
+        return self.read_samples(fields, **kwargs)
 
     def read_acceptance_fraction(self, **kwargs):
         """Returns the acceptance fraction that was written to the file.
