@@ -184,12 +184,9 @@ class _BaseSampler(object):
         fp.attrs['variable_args'] = self.variable_args
         fp.attrs["niterations"] = self.niterations
         sargs = self.likelihood_evaluator.waveform_generator.static_args
+        fp.attrs["static_args"] = sargs.keys()
         for arg,val in sargs.items():
-            try:
-                fp.attrs['static_args/{arg}'.format(arg=arg)] = val
-            except KeyError:
-                fp.attrs['static_args'] = {}
-                fp.attrs['static_args/{arg}'.format(arg=arg)] = val
+            fp.attrs[arg] = val
 
 
 class _BaseMCMCSampler(_BaseSampler):

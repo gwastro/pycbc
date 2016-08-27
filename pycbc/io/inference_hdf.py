@@ -93,6 +93,14 @@ class InferenceFile(h5py.File):
         return self.attrs["variable_args"]
 
     @property
+    def static_args(self):
+        """Returns a dictionary of the static_args. The keys are the argument
+        names, values are the value they were set to.
+        """
+        return dict([[arg, self.attrs[arg]]
+            for arg in self.attrs["static_args"]])
+
+    @property
     def niterations(self):
         """Returns number of iterations performed.
 
@@ -119,11 +127,6 @@ class InferenceFile(h5py.File):
             Number of walkers used.
         """
         return self.attrs["nwalkers"]
-
-    @property
-    def ntemps(self):
-        """Returns number of temperatures used."""
-        return self.attrs["ntemps"]
 
     @property
     def acl(self):
