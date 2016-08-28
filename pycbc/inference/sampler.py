@@ -1583,6 +1583,8 @@ class EmceePTSampler(_BaseMCMCSampler):
 
         # temperatures to load
         if temps is None:
+            temps = 0
+        if temps == 'all':
             temps = range(fp.ntemps)
         if isinstance(temps, int):
             temps = [temps]
@@ -1613,7 +1615,7 @@ class EmceePTSampler(_BaseMCMCSampler):
     @classmethod
     def read_samples(cls, fp, parameters,
             thin_start=None, thin_interval=None, thin_end=None, iteration=None,
-            temps=None, walkers=None, flatten=True, samples_group=None,
+            temps=0, walkers=None, flatten=True, samples_group=None,
             array_class=None):
         """Reads samples for the given parameter(s).
 
@@ -1644,9 +1646,11 @@ class EmceePTSampler(_BaseMCMCSampler):
         walkers : {None, (list of) int}
             The walker index (or a list of indices) to retrieve. If None,
             samples from all walkers will be obtained.
-        temps : {None, (list of) int}
+        temps : {None, (list of) int, 'all'}
             The temperature index (or list of indices) to retrieve. If None,
-            samples from all temperatures will be obtained.
+            only samples from the coldest (= 0) temperature chain will be
+            retrieved. To retrieve all temperates pass 'all', or a list of
+            all of the temperatures.
         flatten : {True, bool}
             The returned array will be one dimensional, with all desired
             samples from all desired walkers concatenated together. If False,
@@ -1707,9 +1711,11 @@ class EmceePTSampler(_BaseMCMCSampler):
         iteration : int
             Get a single iteration. If provided, will override the
             `thin_{start/interval/end}` arguments.
-        temps : {None, (list of) int}
+        temps : {None, (list of) int, 'all'}
             The temperature index (or list of indices) to retrieve. If None,
-            samples from all temperatures will be obtained.
+            only samples from the coldest (= 0) temperature chain will be
+            retrieved. To retrieve all temperates pass 'all', or a list of
+            all of the temperatures.
         walkers : {None, (list of) int}
             The walker index (or a list of indices) to retrieve. If None,
             stats from all walkers will be obtained.
@@ -1897,7 +1903,8 @@ class EmceePTSampler(_BaseMCMCSampler):
             raise ImportError("emcee is not installed.")
 
         logstats = cls.read_likelihood_stats(fp, thin_start=thin_start,
-            thin_end=thin_end, thin_interval=thin_interval, flatten=False)
+            thin_end=thin_end, thin_interval=thin_interval,
+            temps='all', flatten=False)
         # get the likelihoods
         logls = logstats['loglr'] + fp.lognl
         # we need the betas that were used
