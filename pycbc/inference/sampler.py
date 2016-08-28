@@ -177,6 +177,15 @@ class _BaseSampler(object):
         """
         raise NotImplementedError("run function not set.")
 
+    @classmethod
+    def calculate_logevidence(cls, fp):
+        """This function should calculate the log evidence and its error using
+        the results in the given file. If the sampler does not support evidence
+        calculation, then this will raise a NotImplementedError.
+        """
+        raise NotImplementedError("this sampler does not support evidence "
+            "calculation")
+
     # write and read functions
     def write_metadata(self, fp):
         """Writes metadata about this sampler to the given file. Metadata is
@@ -197,6 +206,24 @@ class _BaseSampler(object):
         fp.attrs["static_args"] = sargs.keys()
         for arg,val in sargs.items():
             fp.attrs[arg] = val
+
+    @staticmethod
+    def write_logevidence(fp, lnz, dlnz):
+        """Writes the given log evidence and its error to the given file.
+        Results are saved to the file's 'log_evidence' and 'dlog_evidence'
+        attributes.
+
+        Parameters
+        ----------
+        fp : InferenceFile
+            A file handler to an open inference file.
+        lnz : float
+            The log of the evidence.
+        dlnz : float
+            The error in the estimate of the log evidence.
+        """
+        fp.attrs['log_evidence'] = lnz
+        fp.attrs['dlog_evidence'] = dlnz
 
 class _BaseMCMCSampler(_BaseSampler):
     """This class is used to construct the MCMC sampler from the kombine-like
@@ -228,6 +255,7 @@ class _BaseMCMCSampler(_BaseSampler):
         self._sampler = sampler 
         self._pos = None
         self._p0 = None
+        self._nwalkers = None
         if min_burn_in is None:
             min_burn_in = 0
         self.burn_in_iterations = min_burn_in
@@ -279,7 +307,7 @@ class _BaseMCMCSampler(_BaseSampler):
     @property
     def nwalkers(self):
         """Get the number of walkers."""
-        return self.chain.shape[-3]
+        return self._nwalkers
 
     @property
     def acceptance_fraction(self):
@@ -847,6 +875,7 @@ class KombineSampler(_BaseMCMCSampler):
         # initialize
         super(KombineSampler, self).__init__(sampler, likelihood_evaluator,
             min_burn_in=min_burn_in)
+        self._nwalkers = nwalkers
 
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator):
@@ -989,10 +1018,10 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         ndim = len(likelihood_evaluator.waveform_generator.variable_args)
         sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_evaluator,
             pool=pool)
-
         # initialize
         super(EmceeEnsembleSampler, self).__init__(sampler,
             likelihood_evaluator, min_burn_in=burn_in_iterations)
+        self._nwalkers = nwalkers
 
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator):
@@ -1177,6 +1206,10 @@ class EmceePTSampler(_BaseMCMCSampler):
         except ImportError:
             raise ImportError("emcee is not installed.")
 
+        # construct the sampler: PTSampler needs the likelihood and prior
+        # functions separately
+        likelihood_evaluator.set_callfunc('loglikelihood')
+
         # initialize the pool to use
         if processes == 1:
             pool = None
@@ -1184,16 +1217,15 @@ class EmceePTSampler(_BaseMCMCSampler):
             pool = emcee.interruptible_pool.InterruptiblePool(
                 processes=processes)
 
-        # construct the sampler: PTSampler needs the likelihood and prior
-        # functions separately
         ndim = len(likelihood_evaluator.waveform_generator.variable_args)
         sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-            likelihood_evaluator.loglikelihood, likelihood_evaluator._prior,
+            likelihood_evaluator, likelihood_evaluator._prior,
             pool=pool)
-
         # initialize
         super(EmceePTSampler, self).__init__(sampler,
             likelihood_evaluator, min_burn_in=burn_in_iterations)
+        self._nwalkers = nwalkers
+        self._ntemps = ntemps
 
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator):
@@ -1224,7 +1256,7 @@ class EmceePTSampler(_BaseMCMCSampler):
 
     @property
     def ntemps(self):
-        return self.chain.shape[-4]
+        return self._ntemps
 
     @property
     def chain(self):
@@ -1333,7 +1365,7 @@ class EmceePTSampler(_BaseMCMCSampler):
 
     # read/write functions
 
-    # add ntemps to metadata
+    # add ntemps and betas to metadata
     def write_metadata(self, fp):
         """Writes metadata about this sampler to the given file. Metadata is
         written to the file's `attrs`.
@@ -1345,6 +1377,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         """
         super(EmceePTSampler, self).write_metadata(fp)
         fp.attrs["ntemps"] = self.ntemps
+        fp.attrs["betas"] = self._sampler.betas
 
     def write_acceptance_fraction(self, fp):
         """Write acceptance_fraction data to file. Results are written to
@@ -1455,7 +1488,7 @@ class EmceePTSampler(_BaseMCMCSampler):
 
     def write_likelihood_stats(self, fp, max_iterations=None):
         """Writes the given likelihood array to the given file. Results are
-        written to: `fp[fp.samples_group/{field}/temp{k}/walker{i}]`, where
+        written to: `fp[fp.stats_group/{field}/temp{k}/walker{i}]`, where
         `{field}` is the name of stat (`loglr`, `prior`), `{k}` is a
         temperature index (smaller = colder) and `{i}` is the index of a
         walker.
@@ -1468,17 +1501,13 @@ class EmceePTSampler(_BaseMCMCSampler):
             See `write_chain` for details.
         """
         lls = self.likelihood_stats
-        ntemps, nwalkers, niterations = arr.shape
+        ntemps, nwalkers, niterations = lls.shape
 
-        group = fp.samples_group + '/{field}/temp{tk}/walker{wi}'
+        group = fp.stats_group + '/{field}/temp{tk}/walker{wi}'
 
-        # create an empty array if desired, in case this is the first time
-        # writing
-        if max_iterations is not None:
-            if max_iterations < niterations:
-                raise IndexError("The provided max size is less than the "
-                    "number of iterations")
-            out = numpy.zeros(max_iterations, dtype=arr.dtype)
+        if max_iterations is not None and max_iterations < niterations:
+            raise IndexError("The provided max size is less than the "
+                "number of iterations")
 
         # create indices for faster sub-looping
         widx = numpy.arange(nwalkers)
@@ -1487,6 +1516,10 @@ class EmceePTSampler(_BaseMCMCSampler):
         # loop over stats
         for stat in lls.fieldnames:
             arr = lls[stat]
+            # create an empty array if desired, in case this is the first time
+            # writing
+            if max_iterations is not None:
+                out = numpy.zeros(max_iterations, dtype=arr.dtype)
             # loop over temps
             for tk in tidx:
                 # loop over number of walkers
@@ -1523,7 +1556,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         self.write_metadata(fp)
         self.write_chain(fp, max_iterations=max_iterations)
         self.write_likelihood_stats(fp, max_iterations=max_iterations)
-        self.write_acceptance_fraction(fp, max_iterations=max_iterations)
+        self.write_acceptance_fraction(fp)
 
     @classmethod
     def _read_fields(cls, fp, fields_group, fields, array_class,
@@ -1797,7 +1830,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         """
         # write the individual acls
         pgroup = fp.samples_group + '/{param}'
-        tgroup = pgroup + '/temp{k}'
+        tgroup = pgroup + '/temp{tk}'
         group = tgroup + '/walker{wi}'
         tidx = numpy.arange(fp.ntemps)
         overall_max = 0
@@ -1847,7 +1880,7 @@ class EmceePTSampler(_BaseMCMCSampler):
                     for wi in widx]
                  for tk in tidx])
         return WaveformArray.from_kwargs(**arrays)
-    
+
     @classmethod
     def calculate_logevidence(cls, fp, thin_start=None, thin_end=None,
             thin_interval=None):
@@ -1877,11 +1910,28 @@ class EmceePTSampler(_BaseMCMCSampler):
         dlnZ : float
             The error on the estimate.
         """
+        try:
+            import emcee
+        except ImportError:
+            raise ImportError("emcee is not installed.")
+
         logstats = cls.read_likelihood_stats(fp, thin_start=thin_start,
             thin_end=thin_end, thin_interval=thin_interval, flatten=False)
         # get the likelihoods
-        logls = logstats['loglr'] + fp.lognl + logstats['prior']
-        return emcee.PTSampler(logls=logls, fburnin=0.)
+        logls = logstats['loglr'] + fp.lognl
+        # we need the betas that were used
+        betas = fp.attrs['betas']
+        # annoyingly, theromdynaimc integration in PTSampler is an instance
+        # method, so we'll implement a dummy one
+        ntemps = fp.ntemps
+        nwalkers = fp.nwalkers
+        ndim = len(fp.variable_args)
+        dummyfunc = lambda x: x
+        dummy_sampler = emcee.PTSampler(ntemps, nwalkers, ndim, dummyfunc,
+            dummyfunc, betas=betas)
+        return dummy_sampler.thermodynamic_integration_log_evidence(
+                    logls=logls, fburnin=0.)
+
 
 samplers = {
     KombineSampler.name : KombineSampler,

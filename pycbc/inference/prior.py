@@ -1121,7 +1121,7 @@ class PriorEvaluator(object):
             raise ValueError("variable_args %s " %(','.join(extra_params)) +
                 "are not in any of the provided distributions")
 
-    def __call__(self, *params):
+    def __call__(self, params):
         """ Evalualate prior for parameters.
         """
         params = dict(zip(self.variable_args, params))
