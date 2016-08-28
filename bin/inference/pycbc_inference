@@ -306,8 +306,8 @@ with ctx:
             sampler.write_acls(fp, sampler.compute_acls(fp))
             # compute evidence, if supported
             try:
-                logging.info("Computing evidence")
                 lnz, dlnz = sampler.calculate_logevidence(fp)
+                logging.info("Saving evidence")
                 sampler.write_logevidence(fp, lnz, dlnz)
             except NotImplementedError:
                 pass
