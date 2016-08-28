@@ -100,20 +100,8 @@ class _BaseSampler(object):
 
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator):
-        """Create an instance of this sampler from the given command-line
-        options.
-
-        Parameters
-        ----------
-        opts : ArgumentParser options
-            The options to parse.
-        likelihood_evaluator : LikelihoodEvaluator
-            The likelihood evaluator to use with the sampler.
-
-        Returns
-        -------
-        cls
-            A sampler initialized based on the given arguments.
+        """This function create an instance of this sampler from the given
+        command-line options.
         """
         raise NotImplementedError("from_cli function not set")
 
@@ -504,8 +492,8 @@ class _BaseMCMCSampler(_BaseSampler):
         self.write_likelihood_stats(fp, max_iterations=max_iterations)
         self.write_acceptance_fraction(fp, max_iterations=max_iterations)
 
-    @classmethod
-    def _read_fields(cls, fp, fields_group, fields, array_class,
+    @staticmethod
+    def _read_fields(fp, fields_group, fields, array_class,
             thin_start=None, thin_interval=None, thin_end=None, iteration=None,
             walkers=None, flatten=True):
         """Base function for reading samples and likelihood stats. See
@@ -1044,8 +1032,9 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         # has been specified
         if not opts.skip_burn_in and (
                 opts.min_burn_in is None or opts.min_burn_in == 0):
-            raise ValueError("%s requires that you provide a non-zero "%(
-                cls.name) + "--min-burn-in if not skipping burn-in")
+            raise ValueError("{name} requires that you provide a ".format(
+                name=cls.name) + " non-zero --min-burn-in if not skipping "
+                "burn-in")
         return cls(likelihood_evaluator, opts.nwalkers,
                    processes=opts.nprocesses,
                    burn_in_iterations=opts.min_burn_in)
@@ -1558,8 +1547,8 @@ class EmceePTSampler(_BaseMCMCSampler):
         self.write_likelihood_stats(fp, max_iterations=max_iterations)
         self.write_acceptance_fraction(fp)
 
-    @classmethod
-    def _read_fields(cls, fp, fields_group, fields, array_class,
+    @staticmethod
+    def _read_fields(fp, fields_group, fields, array_class,
             thin_start=None, thin_interval=None, thin_end=None, iteration=None,
             temps=None, walkers=None, flatten=True):
         """Base function for reading samples and likelihood stats. See
@@ -1620,14 +1609,6 @@ class EmceePTSampler(_BaseMCMCSampler):
                 these_arrays = these_arrays.flatten()
             arrays[name] = these_arrays
         return array_class.from_kwargs(**arrays)
-
-        # load
-        arrays = {}
-        group = fields_group + '/{name}/walker{wi}'
-        for name in fields:
-            these_arrays = [
-                    fp[group.format(name=name, wi=wi)][get_index]
-                    for wi in walkers]
 
     @classmethod
     def read_samples(cls, fp, parameters,
@@ -1926,9 +1907,8 @@ class EmceePTSampler(_BaseMCMCSampler):
         ntemps = fp.ntemps
         nwalkers = fp.nwalkers
         ndim = len(fp.variable_args)
-        dummyfunc = lambda x: x
-        dummy_sampler = emcee.PTSampler(ntemps, nwalkers, ndim, dummyfunc,
-            dummyfunc, betas=betas)
+        dummy_sampler = emcee.PTSampler(ntemps, nwalkers, ndim, None,
+            None, betas=betas)
         return dummy_sampler.thermodynamic_integration_log_evidence(
                     logls=logls, fburnin=0.)
 
