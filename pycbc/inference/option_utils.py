@@ -20,6 +20,65 @@ This module contains standard options used for inference-related programs.
 
 import logging
 from pycbc.io import InferenceFile
+import pycbc.inference.sampler
+
+def add_sampler_option_group(parser):
+    """
+    Adds the options needed to set up an inference sampler.
+
+    Parameters
+    ----------
+    parser : object
+        ArgumentParser instance.
+    """
+    sampler_group = parser.add_argument_group("arguments for setting up "
+        "a sampler")
+
+    # required options
+    sampler_group.add_argument("--sampler", required=True,
+        choices=pycbc.inference.sampler.samplers.keys(),
+        help="Sampler class to use for finding posterior.")
+    sampler_group.add_argument("--niterations", type=int, required=True,
+        help="Number of iterations to perform after burn in.")
+    sampler_group.add_argument("--nprocesses", type=int, default=None,
+        help="Number of processes to use. If not given then use maximum.")
+    # sampler-specific options
+    sampler_group.add_argument("--nwalkers", type=int, default=None,
+        help="Number of walkers to use in sampler. Required for MCMC "
+             "samplers.")
+    sampler_group.add_argument("--min-burn-in", type=int, default=None,
+        help="Force the burn-in to be at least the given number of "
+             "iterations. If a sampler has an internal algorithm for "
+             "determining the burn-in size (e.g., kombine), and it returns "
+             "a value < this, the burn-in will be repeated until the "
+             "number of iterations is at least this value.")
+    sampler_group.add_argument("--skip-burn-in", action="store_true",
+        default=False,
+        help="Do not burn in with sampler. An error will be raised if "
+             "min-burn-in is also provided.")
+
+    return sampler_group
+
+def sampler_from_cli(opts, likelihood_evaluator):
+    """Parses the given command-line options to set up a sampler.
+
+    Parameters
+    ----------
+    opts : object
+        ArgumentParser options.
+    likelihood_evaluator : LikelihoodEvaluator
+        The likelihood evaluator to use with the sampler.
+
+    Returns
+    -------
+    pycbc.inference.sampler
+        A sampler initialized based on the given arguments.
+    """
+    sclass = pycbc.inference.sampler.samplers[opts.sampler]
+    # check for consistency
+    if opts.skip_burn_in and opts.min_burn_in is not None:
+        raise ValueError("both skip-burn-in and min-burn-in specified")
+    return sclass.from_cli(opts, likelihood_evaluator)
 
 def add_inference_results_option_group(parser):
     """

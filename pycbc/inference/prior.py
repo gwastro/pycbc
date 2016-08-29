@@ -1127,3 +1127,31 @@ class PriorEvaluator(object):
         params = dict(zip(self.variable_args, params))
         return sum([d(**params) for d in self.distributions])
 
+
+def read_distributions_from_config(cp, section="prior"):
+    """Returns a list of PyCBC distribution instances for a section in the
+    given configuration file.
+
+    Parameters
+    ----------
+    cp : WorflowConfigParser
+        An open config file to read.
+    section : {"prior", string}
+        Prefix on section names from which to retrieve the priors.
+
+    Returns
+    -------
+    list
+        A list of the parsed distributions.
+    """
+    dists = []
+    variable_args = []
+    for subsection in cp.get_subsections(section):
+        name = cp.get_opt_tag(section, "name", subsection)
+        dist = priors[name].from_config(cp, section, subsection)
+        if set(dist.params).isdisjoint(variable_args):
+            dists.append(dist)
+            variable_args += dist.params
+        else:
+            raise ValueError("Same parameter in more than one distribution.")
+    return dists

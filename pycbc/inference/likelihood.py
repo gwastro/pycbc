@@ -132,6 +132,7 @@ class _BaseLikelihoodEvaluator(object):
         ratio. If the log likelihood ratio is < 0, will return an imaginary
         number.
     """
+    name = None
 
     def __init__(self, waveform_generator, data, prior=None):
         self._waveform_generator = waveform_generator
@@ -349,6 +350,8 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     >>> likelihood_eval.logplr([tsig]), likelihood_eval.logposterior([tsig])
     (ArrayWithAligned(278.84574353071264), ArrayWithAligned(0.9162907318741418))
     """
+    name = 'gaussian'
+
     def __init__(self, waveform_generator, data, f_lower, psds=None,
             f_upper=None, norm=None, prior=None):
         # set up the boiler-plate attributes; note: we'll compute the
@@ -477,7 +480,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         return self.logplr(params)
 
 
-likelihood_evaluators = {'gaussian': GaussianLikelihood}
+likelihood_evaluators = {GaussianLikelihood.name: GaussianLikelihood}
 
 __all__ = ['_BaseLikelihoodEvaluator', 'GaussianLikelihood',
            'likelihood_evaluators']
