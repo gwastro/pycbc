@@ -33,8 +33,8 @@ from pycbc.results import save_fig_with_metadata, two_column_layout
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--workflow-name', default='my_unamed_run')
-parser.add_argument("-d", "--output-dir", default=None,
+parser.add_argument('--workflow-name', required=True)
+parser.add_argument("-d", "--output-dir", required=True,
                     help="Path to output directory.")
 pycbc.workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
@@ -90,49 +90,53 @@ datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
 
 psd_job_length = int(workflow.cp.get('workflow-matchedfilter', 'analysis-length'))
 pad_data = int(workflow.cp.get('calculate_psd', 'pad-data'))
-max_segs_per_job = 100
+max_segs_per_job = int(workflow.cp.get('workflow-matchedfilter', 'max-segments-per-job'))
 
 # calculate noise PSDs over analyzable segments
 psd_files = {}
 for ifo, segments in analyzable_segs.items():
-    # break up long segments into short ones to use in pycbc_calculate_psd
+    # split long segments into short ones to use in pycbc_calculate_psd
+    # and group short segments in batches of max_segs_per_job
     # FIXME use the same algorithm already in place for inspiral jobs
-    partial_broken_segments = []
-    all_broken_segments = []
-    job_index = 0
+    batch = []
+    batches = []
     for seg in segments:
         start_time = seg[0] + pad_data
         while start_time + psd_job_length + pad_data <= seg[1]:
             end_time = start_time + psd_job_length
             s = glue.segments.segment(start_time, end_time)
-            partial_broken_segments.append(s)
-            all_broken_segments.append(s)
+            batch.append(s)
             start_time = end_time
 
-            if len(partial_broken_segments) >= max_segs_per_job:
-                # save this batch of broken segments to file
-                tag = 'PART%.4d' % job_index
-                name = 'ANALYZABLE_BROKEN_' + tag
-                broken_segments_file = pycbc.workflow.SegFile.from_segment_list(
-                    name, partial_broken_segments, name, ifo,
-                    valid_segment=workflow.analysis_time, extension='xml',
-                    directory=seg_dir)
+            if len(batch) >= max_segs_per_job:
+                batches.append(batch)
+                batch = []
 
-                # create pycbc_calculate_psd job
-                ifo_psd_file = pycbc.workflow.make_psd_file(
-                    workflow, datafind_files.find_output_with_ifo(ifo),
-                    broken_segments_file, name, 'psds', tags=[tag])
+    # final partial batch
+    if len(batch) > 0:
+        batches.append(batch)
 
-                if ifo not in psd_files:
-                    psd_files[ifo] = []
-                psd_files[ifo].append(ifo_psd_file)
+    # each batch goes into a PSD estimation job
+    for job_index, job_segs in enumerate(batches):
+        tag = 'PART%.4d' % job_index
+        name = 'ANALYZABLE_SPLIT_' + tag
+        job_segs_file = pycbc.workflow.SegFile.from_segment_list(
+                name, job_segs, name, ifo,
+                valid_segment=workflow.analysis_time, extension='xml',
+                directory=seg_dir)
 
-                job_index += 1
-                partial_broken_segments = []
+        ifo_psd_file = pycbc.workflow.make_psd_file(
+                workflow, datafind_files.find_output_with_ifo(ifo),
+                job_segs_file, name, 'psds', tags=[tag])
 
-    all_broken_segments = glue.segments.segmentlist(all_broken_segments)
-    logging.info('%.1f s of analyzable data reduced to %.1f s after segmentation',
-                 abs(segments), abs(all_broken_segments))
+        if ifo not in psd_files:
+            psd_files[ifo] = []
+        psd_files[ifo].append(ifo_psd_file)
+
+    flat_split_segments = glue.segments.segmentlist(
+            [s for batch in batches for s in batch])
+    logging.info('%.1f s of analyzable %s data reduced to %.1f s after '
+                 'segmentation', abs(segments), ifo, abs(flat_split_segments))
 
 # merge all PSDs for each detector
 merged_psd_files = []
