@@ -46,6 +46,8 @@ class _BaseLikelihoodEvaluator(object):
 
      * the *likelihood function*: :math:`p(d|\Theta)`
 
+     * the *noise likelihood*: :math:`p(d|n)`
+
      * the *likelihood ratio*: :math:`\mathcal{L}(\Theta) = \frac{p(d|\Theta)}{p(d|n)}`
 
      * the *prior*: :math:`p(\Theta)`
@@ -109,6 +111,11 @@ class _BaseLikelihoodEvaluator(object):
         The waveform generator that the class was initialized with.
     data : dict
         The data that the class was initialized with.
+    lognl : {None, float}
+        The log of the noise likelihood summed over the number of detectors.
+    return_meta : {True, bool}
+        If True, `logposterior` and `logplr` will return the value of the
+        prior and the loglikelihood ratio, along with the posterior/plr.
 
     Methods
     -------
@@ -134,7 +141,8 @@ class _BaseLikelihoodEvaluator(object):
     """
     name = None
 
-    def __init__(self, waveform_generator, data, prior=None):
+    def __init__(self, waveform_generator, data, prior=None,
+                 return_meta=True):
         self._waveform_generator = waveform_generator
         # we'll store a copy of the data which we'll later whiten in place
         self._data = dict([[ifo, 1*data[ifo]] for ifo in data])
@@ -163,6 +171,9 @@ class _BaseLikelihoodEvaluator(object):
                 raise ValueError("variable args of prior and waveform "
                     "generator do not match")
             self._prior = prior
+        # initialize the log nl to 0
+        self._lognl = None
+        self.return_meta = return_meta
 
     @property
     def waveform_generator(self):
@@ -173,6 +184,15 @@ class _BaseLikelihoodEvaluator(object):
     def data(self):
         """Returns the data that was set."""
         return self._data
+
+    @property
+    def lognl(self):
+        """Returns the log of the noise likelihood."""
+        return self._lognl
+
+    def set_lognl(self, lognl):
+        """Set the value of the log noise likelihood."""
+        self._lognl = lognl
 
     def prior(self, params):
         """This function should return the prior of the given params.
@@ -189,14 +209,46 @@ class _BaseLikelihoodEvaluator(object):
         """
         raise NotImplementedError("Likelihood ratio function not set.")
 
+
+    # the names and order of data returned by _formatreturn when
+    # return_metadata is True
+    metadata_fields = ["prior", "loglr"]
+
+    def _formatreturn(self, val, prior=None, loglr=None):
+        """Adds the prior to the return value if return_meta is True.
+        Otherwise, just returns the value.
+
+        Parameters
+        ----------
+        val : float
+            The value to return.
+        prior : {None, float}
+            The value of the prior.
+        loglr : {None, float}
+            The value of the log likelihood-ratio.
+
+        Returns
+        -------
+        val : float
+            The given value to return.
+        *If return_meta is True:*
+        metadata : (prior, loglr)
+            A tuple of the prior and log likelihood ratio.
+        """
+        if self.return_meta:
+            return val, (prior, loglr)
+        else:
+            return val
+
     def logplr(self, params):
         """Returns the log of the prior-weighted likelihood ratio.
         """
         # if the prior returns -inf, just return
         logp = self._prior(*params)
         if logp == -numpy.inf:
-            return logp
-        return self.loglr(params) + logp
+            return self._formatreturn(logp, prior=logp)
+        llr = self.loglr(params)
+        return self._formatreturn(llr + logp, prior=logp, loglr=llr)
 
     def logposterior(self, params):
         """Returns the log of the posterior of the given params.
@@ -204,8 +256,9 @@ class _BaseLikelihoodEvaluator(object):
         # if the prior returns -inf, just return
         logp = self._prior(*params)
         if logp == -numpy.inf:
-            return logp
-        return self.loglikelihood(params) + logp
+            return self._formatreturn(logp, prior=logp)
+        ll = self.loglikelihood(params)
+        return self._formatreturn(ll + logp, prior=logp, loglr=ll-self._lognl)
 
     def snr(self, params):
         """Returns the "SNR" of the given params. This will return
@@ -299,6 +352,9 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         will be used.
     prior : callable
         A callable class or function that computes the prior.
+    return_meta : {True, bool}
+        If True, `logposterior` and `logplr` will return the value of the
+        prior and the loglikelihood ratio, along with the posterior/plr.
 
     Examples
     --------
@@ -353,11 +409,11 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     name = 'gaussian'
 
     def __init__(self, waveform_generator, data, f_lower, psds=None,
-            f_upper=None, norm=None, prior=None):
+            f_upper=None, norm=None, prior=None, return_meta=True):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
         super(GaussianLikelihood, self).__init__(waveform_generator, data,
-            prior=prior)
+            prior=prior, return_meta=return_meta)
         # we'll use the first data set for setting values
         d = data.values()[0]
         N = len(d)
@@ -385,15 +441,9 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         for det in self._data:
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
         # compute the log likelihood function of the noise and save it
-        # FIXME: use the following when we've switched to 2.7
-        #self._lognl = {det:
-        #    d[kmin:kmax].inner(d[kmin:kmax]).real
-        #    for det,d in self._data.items()}
-        self._lognl = dict([(det,
-            d[kmin:kmax].inner(d[kmin:kmax]).real/2.)
-            for det,d in self._data.items()])
-        # speed up: we'll sum things up now for faster calling later
-        self._summedlognl = sum(self._lognl.values())
+        self.set_lognl(sum([
+            d[kmin:kmax].inner(d[kmin:kmax]).real/2.
+            for d in self._data.values()]))
 
     @property
     def lognl(self):
@@ -452,28 +502,36 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         # since the loglr has fewer terms, we'll call that, then just add
         # back the noise term that canceled in the log likelihood ratio
         logp = self.loglr(params)
-        return logp - self._summedlognl
+        return logp - self._lognl
 
 
     def logposterior(self, params):
         """Computes the log-posterior probability at the given point in
         parameter space.
 
-        parameters
+        Parameters
         ----------
         params: array-like
-            an array of numerical values to pass to the waveform generator.
+            An array of numerical values to pass to the waveform generator.
 
-        returns
+        Returns
         -------
         float
-            the value of the log-posterior evaluated at the given point in
+            The value of the log-posterior evaluated at the given point in
             parameter space.
+        metadata : tuple
+            If `return_meta`, the prior and likelihood ratio as a tuple.
+            Otherwise, just returns the log-posterior.
         """
         # since the logplr has fewer terms, we'll call that, then just add
         # back the noise term that canceled in the log likelihood ratio
         logp = self.logplr(params)
-        return logp - self._summedlognl
+        kwargs = {}
+        if self.return_meta:
+            logp, (pr, lr) = logp
+        else:
+            pr = lr = None
+        return self._formatreturn(logp - self._lognl, prior=pr, loglr=lr)
 
     # set the default call to be the logplr
     def __call__(self, params):

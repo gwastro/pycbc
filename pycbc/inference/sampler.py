@@ -27,7 +27,7 @@ packages for parameter estimation.
 """
 
 import numpy
-from pycbc.io import WaveformArray
+from pycbc.io import WaveformArray, FieldArray
 from pycbc.filter import autocorrelation
 
 #
@@ -158,6 +158,15 @@ class _BaseSampler(object):
         """
         return NotImplementedError("lnpost function not set.")
 
+    @property
+    def likelihood_stats(self):
+        """This function should return the prior and likelihood ratio of
+        samples as an [additional dimensions] x niterations
+        array. If the likelihood evaluator did not return that info to the
+        sampler, it should return None.
+        """
+        return NotImplementedError("likelihood stats not set")
+
     def burn_in(self, initial_values):
         """This function should burn in the sampler.
         """
@@ -183,11 +192,11 @@ class _BaseSampler(object):
         fp.attrs['ifos'] = self.ifos
         fp.attrs['variable_args'] = self.variable_args
         fp.attrs["niterations"] = self.niterations
+        fp.attrs["lognl"] = self.likelihood_evaluator.lognl
         sargs = self.likelihood_evaluator.waveform_generator.static_args
         fp.attrs["static_args"] = sargs.keys()
         for arg,val in sargs.items():
             fp.attrs[arg] = val
-
 
 class _BaseMCMCSampler(_BaseSampler):
     """This class is used to construct the MCMC sampler from the kombine-like
@@ -278,6 +287,22 @@ class _BaseMCMCSampler(_BaseSampler):
         """
         return self._sampler.acceptance_fraction
 
+    @property
+    def likelihood_stats(self):
+        """Returns the likelihood stats as a FieldArray, with field names
+        corresponding to the type of data returned by the likelihood evaluator.
+        The returned array has shape nwalkers x niterations. If no additional
+        stats were returned to the sampler by the likelihood evaluator, returns
+        None.
+        """
+        stats = numpy.array(self._sampler.blobs)
+        if stats.size == 0:
+            return None
+        arrays = dict([[field, stats[:,:,fi]]
+                    for fi,field in
+                        enumerate(self.likelihood_evaluator.metadata_fields)])
+        return FieldArray.from_kwargs(**arrays).transpose()
+
     # write and read functions
     def write_metadata(self, fp):
         """Writes metadata about this sampler to the given file. Metadata is
@@ -344,7 +369,7 @@ class _BaseMCMCSampler(_BaseSampler):
 
     def write_lnpost(self, fp, max_iterations=None):
         """Writes the `lnpost`s to the given file. Results are written to:
-        `fp[fp.samples_group/lnpost/walker{i}]`, where `{i}` is the index of
+        `fp[fp.stats_group/lnpost/walker{i}]`, where `{i}` is the index of
         a walker.
 
         Parameters
@@ -363,7 +388,7 @@ class _BaseMCMCSampler(_BaseSampler):
         lnposts = self.lnpost
         nwalkers, niterations = lnposts.shape
 
-        group = fp.samples_group + '/lnpost/walker{wi}'
+        group = fp.stats_group + '/lnpost/walker{wi}'
 
         # create an empty array if desired, in case this is the first time
         # writing
@@ -386,6 +411,63 @@ class _BaseMCMCSampler(_BaseSampler):
                     fp[dataset_name] = out
                 else:
                     fp[dataset_name] = lnposts[wi,:]
+
+    def write_likelihood_stats(self, fp, max_iterations=None):
+        """Writes the `likelihood_stats` to the given file.  Results are
+        written to: `fp[fp.stats_group/{field}/walker{i}]`, where `{i}` is
+        the index of a walker and `{field}` is the name of each field returned
+        by `likelihood_stats`. If nothing is returned by `likelihood_stats`,
+        this does nothing.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            A file handler to an open inference file.
+        max_iterations : {None, int}
+            If the stats have not previously been written to the file, a new
+            dataset will be created. By default, the size of this dataset will
+            be whatever the length of the sampler's chain is at this point. If
+            you intend to run more iterations, set this value to that size so
+            that the array in the file will be large enough to accomodate
+            future data.
+
+        Returns
+        -------
+        stats : {FieldArray, None}
+            The stats that were written, as a FieldArray. If there were no
+            stats, returns None.
+        """
+        # stats is an nwalkers x niterations array
+        stats = self.likelihood_stats
+        if stats is None:
+            return None
+        nwalkers, niterations = stats.shape
+        fields = stats.fieldnames
+
+        group = fp.stats_group + '/{param}/walker{wi}'
+
+        if max_iterations is not None and max_iterations < niterations:
+            raise IndexError("The provided max size is less than the "
+                "number of iterations")
+
+        for param in fields:
+            # create an empty array if desired, in case this is the first time
+            # writing
+            out = numpy.zeros(max_iterations, dtype=stats.dtype[param])
+            # loop over number of walkers
+            for wi in range(nwalkers):
+                dataset_name = group.format(param=param, wi=wi)
+                try:
+                    fp[dataset_name][:niterations] = stats[param][wi,:]
+                except KeyError:
+                    # dataset doesn't exist yet, see if a larger array is
+                    # desired
+                    if max_iterations is not None:
+                        out[:niterations] = stats[param][wi,:]
+                        fp[dataset_name] = out
+                    else:
+                        fp[dataset_name] = stats[param][wi,:]
+        return stats
 
     def write_acceptance_fraction(self, fp, max_iterations=None):
         """Write acceptance_fraction data to file. Results are written to
@@ -418,9 +500,9 @@ class _BaseMCMCSampler(_BaseSampler):
             fp[dataset_name] = out
 
     def write_results(self, fp, max_iterations=None):
-        """Writes metadata, samples, lnpost, and acceptance fraction to the
-        given file. Also computes and writes the autocorrleation lengths of the
-        chains. See the various write function for details.
+        """Writes metadata, samples, likelihood stats, and acceptance fraction
+        to the given file. Also computes and writes the autocorrleation lengths
+        of the chains. See the various write function for details.
 
         Parameters
         -----------
@@ -436,14 +518,71 @@ class _BaseMCMCSampler(_BaseSampler):
         """
         self.write_metadata(fp)
         self.write_chain(fp, max_iterations=max_iterations)
-        self.write_lnpost(fp, max_iterations=max_iterations)
+        self.write_likelihood_stats(fp, max_iterations=max_iterations)
         self.write_acceptance_fraction(fp, max_iterations=max_iterations)
 
-    @staticmethod
-    def read_samples(fp, parameters,
-             thin_start=None, thin_interval=None, thin_end=None,
-             iteration=None,
-             walkers=None, flatten=True):
+    @classmethod
+    def _read_fields(cls, fp, fields_group, fields, array_class,
+            thin_start=None, thin_interval=None, thin_end=None, iteration=None,
+            walkers=None, flatten=True):
+        """Base function for reading samples and likelihood stats. See
+        `read_samples` and `read_likelihood_stats` for details.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            An open file handler to read the samples from.
+        fields_group : str
+            The name of the group to retrieve the desired fields.
+        fields : list
+            The list of field names to retrieve. Must be names of groups in
+            `fp[fields_group/]`.
+        array_class : FieldArray or similar
+            The type of array to return. Must have a `from_kwargs` attribute.
+
+        For other details on keyword arguments, see `read_samples` and
+        `read_likelihood_stats`.
+
+        Returns
+        -------
+        array_class
+            An instance of the given array class populated with values
+            retrieved from the fields.
+        """
+        # walkers to load
+        if walkers is None:
+            walkers = range(fp.nwalkers)
+        if isinstance(walkers, int):
+            walkers = [walkers]
+
+        # get the slice to use
+        if iteration is not None:
+            get_index = iteration
+        else:
+            if thin_end is None:
+                # use the number of current iterations
+                thin_end = fp.niterations
+            get_index = get_slice(fp, thin_start=thin_start, thin_end=thin_end,
+                thin_interval=thin_interval)
+
+        # load
+        arrays = {}
+        group = fields_group + '/{name}/walker{wi}'
+        for name in fields:
+            these_arrays = [
+                    fp[group.format(name=name, wi=wi)][get_index]
+                    for wi in walkers]
+            if flatten:
+                arrays[name] = numpy.hstack(these_arrays)
+            else:
+                arrays[name] = numpy.vstack(these_arrays)
+        return array_class.from_kwargs(**arrays)
+
+    @classmethod
+    def read_samples(cls, fp, parameters,
+            thin_start=None, thin_interval=None, thin_end=None, iteration=None,
+            walkers=None, flatten=True, samples_group=None,
+            array_class=None):
         """Reads samples for the given parameter(s).
 
         Parameters
@@ -478,47 +617,90 @@ class _BaseMCMCSampler(_BaseSampler):
             samples from all desired walkers concatenated together. If False,
             the returned array will have dimension requested walkers
             x requested iterations.
+        samples_group : {None, str}
+            The group in `fp` from which to retrieve the parameter fields. If
+            None, searches in `fp.samples_group`.
+        array_class : {None, array class}
+            The type of array to return. The class must have a `from_kwargs`
+            class method and a `parse_parameters` method. If None, will return
+            a WaveformArray.
 
         Returns
         -------
-        WaveformArray
-            Samples for the given parameters, as an instance of a
-            WaveformArray.
+        array_class
+            Samples for the given parameters, as an instance of a the given
+            `array_class` (`WaveformArray` if `array_class` is None).
         """
+        # get the group to load from
+        if samples_group is None:
+            samples_group = fp.samples_group
+        # get the type of array class to use
+        if array_class is None:
+            array_class = WaveformArray
         # get the names of fields needed for the given parameters
         possible_fields = dict([[str(name), float]
             for name in fp[fp.samples_group].keys()])
-        loadfields = WaveformArray.parse_parameters(parameters,
+        loadfields = array_class.parse_parameters(parameters,
             possible_fields=possible_fields)
+        return cls._read_fields(fp, samples_group, loadfields, array_class,
+                thin_start=thin_start, thin_interval=thin_interval,
+                thin_end=thin_end, iteration=iteration, walkers=walkers,
+                flatten=flatten)
 
-        # walkers to load
-        if walkers is None:
-            walkers = range(fp.nwalkers)
-        if isinstance(walkers, int):
-            walkers = [walkers]
+    @classmethod
+    def read_likelihood_stats(cls, fp,
+            thin_start=None, thin_interval=None, thin_end=None, iteration=None,
+            walkers=None, flatten=True, stats_group=None, array_class=None):
+        """Reads the likelihood stats from the given file.
 
-        # get the slice to use
-        if iteration is not None:
-            get_index = iteration
-        else:
-            if thin_end is None:
-                # use the number of current iterations
-                thin_end = fp.niterations
-            get_index = get_slice(fp, thin_start=thin_start, thin_end=thin_end,
-                thin_interval=thin_interval)
+        Parameters
+        -----------
+        fp : InferenceFile
+            An open file handler to read the stats from.
+        thin_start : int
+            Index of the sample to begin returning stats. Default is to read
+            stats after burn in. To start from the beginning set thin_start
+            to 0.
+        thin_interval : int
+            Interval to accept every i-th sample. Default is to use the
+            `fp.acl`. If `fp.acl` is not set, then use all stats
+            (set thin_interval to 1).
+        thin_end : int
+            Index of the last sample to read. If not given then
+            `fp.niterations` is used.
+        iteration : int
+            Get a single iteration. If provided, will override the
+            `thin_{start/interval/end}` arguments.
+        walkers : {None, (list of) int}
+            The walker index (or a list of indices) to retrieve. If None,
+            stats from all walkers will be obtained.
+        flatten : {True, bool}
+            The returned array will be one dimensional, with all desired
+            stats from all desired walkers concatenated together. If False,
+            the returned array will have dimension requested walkers
+            x requested iterations.
+        stats_group : {None, str}
+            The group in `fp` from which to retrieve the stats. If
+            None, searches in `fp.stats_group`.
+        array_class : {None, array class}
+            The type of array to return. The class must have a `from_kwargs`
+            class method. If None, will return a FieldArray.
 
-        # load
-        arrays = {}
-        group = fp.samples_group + '/{name}/walker{wi}'
-        for name in loadfields:
-            these_arrays = [
-                    fp[group.format(name=name, wi=wi)][get_index]
-                    for wi in walkers]
-            if flatten:
-                arrays[name] = numpy.hstack(these_arrays)
-            else:
-                arrays[name] = numpy.vstack(these_arrays)
-        return WaveformArray.from_kwargs(**arrays)
+        Returns
+        -------
+        array_class
+            The likelihood stats, as an instance of a the given
+            `array_class` (`FieldArray` if `array_class` is None).
+        """
+        if stats_group is None:
+            stats_group = fp.stats_group
+        if array_class is None:
+            array_class = FieldArray
+        fields = fp[stats_group].keys()
+        return cls._read_fields(fp, stats_group, fields, array_class,
+                thin_start=thin_start, thin_interval=thin_interval,
+                thin_end=thin_end, iteration=iteration, walkers=walkers,
+                flatten=flatten)
 
     @staticmethod
     def read_acceptance_fraction(fp,
@@ -755,8 +937,8 @@ class KombineSampler(_BaseMCMCSampler):
             p0 = self.p0
         else:
             p0 = None
-        p, lnpost, lnprop = self._sampler.run_mcmc(niterations, p0=p0,
-            **kwargs)
+        res = self._sampler.run_mcmc(niterations, p0=p0, **kwargs)
+        p, lnpost, lnprop = res[0], res[1], res[2] 
         # update the positions
         self._pos = p
         return p, lnpost, lnprop
@@ -919,7 +1101,8 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         pos = self._pos
         if pos is None:
             pos = self.p0
-        p, lnpost, rstate = self._sampler.run_mcmc(pos, niterations, **kwargs)
+        res = self._sampler.run_mcmc(pos, niterations, **kwargs)
+        p, lnpost, rstate = res[0], res[1], res[2] 
         # update the positions
         self._pos = p
         return p, lnpost, rstate
@@ -987,8 +1170,9 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         return fp[group][wmask]
 
     def write_results(self, fp, max_iterations=None):
-        """Writes metadata, samples, lnpost, and acceptance fraction to the
-        given file. See the write function for each of those for details.
+        """Writes metadata, samples, likelihood stats, and acceptance fraction
+        to the given file. See the write function for each of those for
+        details.
 
         Parameters
         -----------
@@ -1004,7 +1188,7 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         """
         self.write_metadata(fp)
         self.write_chain(fp, max_iterations=max_iterations)
-        self.write_lnpost(fp, max_iterations=max_iterations)
+        self.write_likelihood_stats(fp, max_iterations=max_iterations)
         self.write_acceptance_fraction(fp)
 
 samplers = {
