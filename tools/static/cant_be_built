@@ -6,4 +6,7 @@ pycbc_inspinjfind
 pycbc_get_loudest_params
 pycbc_randomize_inj_dist_by_optsnr
 pycbc_coinc_time
-
+pycbc_inference_plot_prior
+pycbc_inference_plot_posterior
+pycbc_fit_sngls_over_param
+pycbc_multi_inspiral
