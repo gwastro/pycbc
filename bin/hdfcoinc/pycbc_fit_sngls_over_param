@@ -170,10 +170,10 @@ elif args.regression_method == 'tricube':
         in_kernel = abs(par_diff) < args.smoothing_width
         # tri-cube kernel
         weights = (1 - abs(par_diff[in_kernel])**3)**3
-        norm = sum(weights)
+        norm = weights.sum()
         # weighted average
-        n_sm = sum(nabove[in_kernel] * weights) / norm
-        invalphan_smoothed = sum(invalphan[in_kernel] * weights) / norm
+        n_sm = (nabove[in_kernel] * weights).sum() / norm
+        invalphan_smoothed = (invalphan[in_kernel] * weights).sum() / norm
         invalpha_smoothed.append(invalphan_smoothed / n_sm)
         nabove_smoothed.append(n_sm)
 
