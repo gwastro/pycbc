@@ -57,6 +57,11 @@ parser.add_argument('--inspiral-data-analyzed-name',
                          "analyzed by each analysis job.")
 parser.add_argument('--ranking-statistic',
                 help="How to rank triggers when determining loudest triggers.")
+parser.add_argument('--non-coinc-time-only', default=False,
+                    action='store_true',
+                    help="If given remove (veto) single-detector triggers "
+                         "that occur during a time when at least one other "
+                         "instrument is taking science data.")
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
@@ -89,6 +94,22 @@ num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
 trigs = hdf.SingleDetTriggers(args.single_detector_file, args.bank_file,
                               args.veto_file, args.veto_segment_name,
                               None, args.instrument)
+
+if args.non_coinc_time_only:
+    from glue.ligolw.ligolw import LIGOLWContentHandler as h
+    lsctables.use_in(h)
+    segs_doc = ligolw_utils.load_filename(args.inspiral_segments,
+                                          contenthandler=h)
+    seg_def_table = table.get_table(segs_doc, 'segment_definer')
+    def_ifos = seg_def_table.getColumnByName('ifos')
+    ifo_list = list(set(def_ifos)).remove(args.instrument)
+    print ifo_lists
+    raise NeedsTestingIssue
+    for ifo in ifo_list:
+        curr_veto_mask, segs = events.veto.indices_inside_segments(
+            self.trigs['end_time'][:], [args.inspiral_segments],
+            ifo=detector, segment_name=segment_name)
+        trigs.mask = trigs.mask[curr_veto_mask]
 
 trigs.mask_to_n_loudest_clustered_events(n_loudest=num_events,
                                       ranking_statistic=args.ranking_statistic)
