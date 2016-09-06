@@ -904,11 +904,19 @@ class KombineSampler(_BaseMCMCSampler):
             The list of log proposal densities for the walkers at positions p,
             with shape (nwalkers, ndim).
         """
+        blob0 = None
         if self.burn_in_iterations == 0:
             # no burn in, use the initial positions
             p0 = self.p0
+            if self.likelihood_evaluator.return_meta:
+                blob0 = [self.likelihood_evaluator(p0[wi,:])[1]
+                    for wi in range(self.nwalkers)]
         else:
             p0 = None
+            # kombine requires blob data to be specified
+            if self.likelihood_evaluator.return_meta:
+                blob0 = self._sampler.blobs[-1]
+        kwargs['blob0'] = blob0
         res = self._sampler.run_mcmc(niterations, p0=p0, **kwargs)
         p, lnpost, lnprop = res[0], res[1], res[2] 
         # update the positions
@@ -954,7 +962,12 @@ class KombineSampler(_BaseMCMCSampler):
             raise ValueError("burn-in already run")
         # run once
         p0 = self.p0
-        res = self._sampler.burnin(self.p0)
+        if self.likelihood_evaluator.return_meta:
+            blob0 = [self.likelihood_evaluator(p0[wi,:])[1]
+                for wi in range(self.nwalkers)]
+        else:
+            blob0 = None
+        res = self._sampler.burnin(self.p0, blob0=blob0)
         p, post, q = res[0], res[1], res[2]
         # continue running until minimum burn in is satistfied
         while self.niterations < self.burn_in_iterations:
