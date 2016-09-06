@@ -141,6 +141,11 @@ class InferenceFile(h5py.File):
         return self.attrs["nwalkers"]
 
     @property
+    def ntemps(self):
+        """Returns number of temperatures used."""
+        return self.attrs["ntemps"]
+
+    @property
     def acl(self):
         """ Returns the saved autocorelation length (ACL).
 
@@ -150,6 +155,13 @@ class InferenceFile(h5py.File):
             The ACL.
         """
         return self.attrs["acl"]
+
+    @property
+    def log_evidence(self):
+        """Returns the log of the evidence and its error, if they exist in the
+        file. Raises a KeyError otherwise.
+        """
+        return self.attrs["log_evidence"], self.attrs["dlog_evidence"]
 
     def read_samples(self, parameters, **kwargs):
         """Reads samples from the file.

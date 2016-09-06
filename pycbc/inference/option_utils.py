@@ -46,6 +46,9 @@ def add_sampler_option_group(parser):
     sampler_group.add_argument("--nwalkers", type=int, default=None,
         help="Number of walkers to use in sampler. Required for MCMC "
              "samplers.")
+    sampler_group.add_argument("--ntemps", type=int, default=None,
+        help="Number of temperatures to use in sampler. Required for parallel "
+             "tempered MCMC samplers.")
     sampler_group.add_argument("--min-burn-in", type=int, default=None,
         help="Force the burn-in to be at least the given number of "
              "iterations. If a sampler has an internal algorithm for "

@@ -30,11 +30,37 @@ from pycbc import filter
 from pycbc.types import Array
 import numpy
 
-def _noprior(*params):
+def _noprior(params):
     """Dummy function to just return 0 if no prior is provided in a
     likelihood generator.
     """
     return 0.
+
+def snr_from_loglr(loglr):
+    """Returns SNR computed from the given log likelihood ratio(s). This is
+    defined as `sqrt(2*loglr)`.If the log likelihood ratio is < 0, returns 0.
+
+    Parameters
+    ----------
+    loglr : array or float
+        The log likelihood ratio(s) to evaluate.
+
+    Returns
+    -------
+    array or float
+        The SNRs computed from the log likelihood ratios.
+    """
+    singleval = isinstance(loglr, float)
+    if singleval:
+        loglr = numpy.array([loglr])
+    # temporarily quiet sqrt(-1) warnings
+    numpysettings = numpy.seterr(invalid='ignore')
+    snrs = numpy.sqrt(2*loglr)
+    numpy.seterr(**numpysettings)
+    snrs[numpy.isnan(snrs)] = 0.
+    if singleval:
+        snrs = snrs[0]
+    return snrs
 
 class _BaseLikelihoodEvaluator(object):
     r"""Base container class for generating waveforms, storing the data, and
@@ -85,7 +111,7 @@ class _BaseLikelihoodEvaluator(object):
 
     Instances of this class can be called like a function. The default is for
     this class to call its `logposterior` function, but this can be changed by
-    setting the `__call__` method.
+    with the `set_callfunc` method.
 
     Parameters
     ----------
@@ -136,8 +162,9 @@ class _BaseLikelihoodEvaluator(object):
         of a given list of parameters.
     snr :
         A function that returns the square root of twice the log likelihood
-        ratio. If the log likelihood ratio is < 0, will return an imaginary
-        number.
+        ratio. If the log likelihood ratio is < 0, will return 0.
+    set_callfunc :
+        Set the function to use when the class is called as a function.
     """
     name = None
 
@@ -244,7 +271,7 @@ class _BaseLikelihoodEvaluator(object):
         """Returns the log of the prior-weighted likelihood ratio.
         """
         # if the prior returns -inf, just return
-        logp = self._prior(*params)
+        logp = self._prior(params)
         if logp == -numpy.inf:
             return self._formatreturn(logp, prior=logp)
         llr = self.loglr(params)
@@ -254,7 +281,7 @@ class _BaseLikelihoodEvaluator(object):
         """Returns the log of the posterior of the given params.
         """
         # if the prior returns -inf, just return
-        logp = self._prior(*params)
+        logp = self._prior(params)
         if logp == -numpy.inf:
             return self._formatreturn(logp, prior=logp)
         ll = self.loglikelihood(params)
@@ -264,10 +291,24 @@ class _BaseLikelihoodEvaluator(object):
         """Returns the "SNR" of the given params. This will return
         imaginary values if the log likelihood ratio is < 0.
         """
-        return numpy.lib.scimath.sqrt(2*self.loglr(params))
+        return snr_from_loglr(self.loglr(params))
+
+    _callfunc = logposterior
+
+    @classmethod
+    def set_callfunc(cls, funcname):
+        """Sets the function used when the class is called as a function.
+
+        Parameters
+        ----------
+        funcname : str
+            The name of the function to use; must be the name of an instance
+            method.
+        """
+        cls._callfunc = getattr(cls, funcname)
 
     def __call__(self, params):
-        return self.logposterior(params)
+        return self._callfunc(params)
 
 
 
@@ -302,8 +343,8 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         \log \hat{\mathcal{L}} = \log p(\Theta) + \sum_i \left\[\left<h_i(\Theta)|d_i\right> - \frac{1}{2} \left<h_i(\Theta)|h_i(\Theta)\right>\right]
 
     For this reason, by default this class returns `logplr` when called as a
-    function instead of `logposterior`. This can be changed by setting the
-    `__call__` method to the desired function after initialization.
+    function instead of `logposterior`. This can be changed via the
+    `set_callfunc` method.
 
     Upon initialization, the data is whitened using the given PSDs. If no PSDs
     are given the data and waveforms returned by the waveform generator are
@@ -368,14 +409,14 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     >>> signal = generator.generate(tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
-    >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, fmin, psds=psds)
+    >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, fmin, psds=psds, return_meta=False)
 
     Now compute the log likelihood ratio and prior-weighted likelihood ratio;
     since we have not provided a prior, these should be equal to each other:
     >>> likelihood_eval.loglr([tsig]), likelihood_eval.logplr([tsig])
     (ArrayWithAligned(277.92945279883855), ArrayWithAligned(277.92945279883855))
 
-    Compute the log likelihood ratio and log posterior; since we have not
+    Compute the log likelihood and log posterior; since we have not
     provided a prior, these should both be equal to zero:
     >>> likelihood_eval.loglikelihood([tsig]), likelihood_eval.logposterior([tsig])
     (ArrayWithAligned(0.0), ArrayWithAligned(0.0))
@@ -402,7 +443,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     >>> from pycbc.inference import prior
     >>> uniform_prior = prior.Uniform(tc=(tsig-0.2,tsig+0.2))
     >>> prior_eval = prior.PriorEvaluator(['tc'], uniform_prior)
-    >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, 20., psds=psds, prior=prior_eval)
+    >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, 20., psds=psds, prior=prior_eval, return_meta=False)
     >>> likelihood_eval.logplr([tsig]), likelihood_eval.logposterior([tsig])
     (ArrayWithAligned(278.84574353071264), ArrayWithAligned(0.9162907318741418))
     """
@@ -432,18 +473,20 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
             self._weight = dict([(det, w) for det in data])
         else:
             # temporarily suppress numpy divide by 0 warning
-            numpy.seterr(divide='ignore')
+            numpysettings = numpy.seterr(divide='ignore')
             # FIXME: use the following when we've switched to 2.7
             #self._weight = {det: Array(numpy.sqrt(norm/psds[det])) for det in data}
             self._weight = dict([(det, Array(numpy.sqrt(norm/psds[det]))) for det in data])
-            numpy.seterr(divide='warn')
+            numpy.seterr(**numpysettings)
         # whiten the data
         for det in self._data:
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
         # compute the log likelihood function of the noise and save it
-        self.set_lognl(sum([
-            d[kmin:kmax].inner(d[kmin:kmax]).real/2.
+        self.set_lognl(-0.5*sum([
+            d[kmin:kmax].inner(d[kmin:kmax]).real
             for d in self._data.values()]))
+        # set default call function to logplor
+        self.set_callfunc('logplr')
 
     @property
     def lognl(self):
@@ -454,7 +497,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         
         .. math::
             
-            \log \mathcal{L}(\Theta) = \sum_i \left<h_i(\Theta)|d_i\right> - \left<h_i(\Theta)|h_i(\Theta)\right>,
+            \log \mathcal{L}(\Theta) = \sum_i \left<h_i(\Theta)|d_i\right> - \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
 
         at the given point in parameter space :math:`\Theta`.
 
@@ -501,8 +544,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         """
         # since the loglr has fewer terms, we'll call that, then just add
         # back the noise term that canceled in the log likelihood ratio
-        logp = self.loglr(params)
-        return logp - self._lognl
+        return self.loglr(params) + self._lognl
 
 
     def logposterior(self, params):
@@ -525,18 +567,12 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         """
         # since the logplr has fewer terms, we'll call that, then just add
         # back the noise term that canceled in the log likelihood ratio
-        logp = self.logplr(params)
-        kwargs = {}
+        logplr = self.logplr(params)
         if self.return_meta:
-            logp, (pr, lr) = logp
+            logplr, (pr, lr) = logplr
         else:
             pr = lr = None
-        return self._formatreturn(logp - self._lognl, prior=pr, loglr=lr)
-
-    # set the default call to be the logplr
-    def __call__(self, params):
-        return self.logplr(params)
-
+        return self._formatreturn(logplr + self._lognl, prior=pr, loglr=lr)
 
 likelihood_evaluators = {GaussianLikelihood.name: GaussianLikelihood}
 
