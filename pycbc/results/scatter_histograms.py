@@ -32,31 +32,37 @@ matplotlib.use('agg')
 from matplotlib import pyplot
 from pycbc.results import str_utils
 
-def scatter_histogram(parameters, args, data, labels=None, 
-                        vmin=None, vmax=None, mins=None, maxs=None):
+def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
+                      vmin=None, vmax=None, mins=None, maxs=None,
+                      cmap=None):
     """Generate a figure with several scatter plots and histograms.
 
     Parameters
     ----------
     parameters: list
         Names of the variables to be plotted.
-    args: recarray or dict
+    data: recarray or dict
         Record array or dictionary containing the data to be plotted in the x-
         and y-axes for all variables in parameters.
-    data: array
+    zvals: array
         Data to be plotted on the z-axis (color for the scatter plots).
     labels: {None, list}, optional
         A list of names for the parameters.
+    cbar_label : {None, str}
+        Specify a label to add to the colorbar.
     vmin: {None, float}, optional
-        Minimum value for the colorbar. If None, will use the minimum of data.
+        Minimum value for the colorbar. If None, will use the minimum of zvals.
     vmax: {None, float}, optional
-        Maximum value for the colorbar. If None, will use the maxmimum of data.
+        Maximum value for the colorbar. If None, will use the maxmimum of zvals.
     mins: {None, dict}, optional
         Minimum value for the axis of each variable in parameters.
-        If None, it will use the minimum of the corresponding variable in args.
+        If None, it will use the minimum of the corresponding variable in data.
     maxs: {None, dict}, optional
         Maximum value for the axis of each variable in parameters.
-        If None, it will use the maximum of the corresponding variable in args.
+        If None, it will use the maximum of the corresponding variable in data.
+    cmap : {None, pyplot.cmap}
+        The color map to use for color points. If None, will use the
+        matplotlib default.
     """
 
     if len(parameters) == 1:
@@ -84,15 +90,15 @@ def scatter_histogram(parameters, args, data, labels=None,
         if combos[ii][0] == columns[0]:
             rows.append(combos[ii][1])
 
-    # Sort data to get higher values on top in scatter plots
-    sort_indices = data.argsort()
+    # Sort zvals to get higher values on top in scatter plots
+    sort_indices = zvals.argsort()
+    zvals = zvals[sort_indices]
     data = data[sort_indices]
-    args = args[sort_indices]
 
     # Plot histograms in diagonal
     for nrow in range(len(rows)+1):
         ax = axes[nrow, nrow]
-        values = args[parameters[nrow]]
+        values = data[parameters[nrow]]
         ax.hist(values, bins=50, color='navy', histtype='step')
         # 90th percentile
         values5 = numpy.percentile(values,5)
@@ -113,21 +119,17 @@ def scatter_histogram(parameters, args, data, labels=None,
 
     # Arguments for scatter plots
     if mins is None:
-        mins = {p:args[p].min() for p in parameters}
+        mins = {p:data[p].min() for p in parameters}
     if maxs is None:
-        maxs = {p:args[p].max() for p in parameters}
-    if vmin is None:
-        vmin = data.min()
-    if vmax is None:
-        vmax = data.max()
+        maxs = {p:data[p].max() for p in parameters}
 
     # Fill figure with scatter plots
     for nrow, prow in enumerate(rows):
         for ncolumn, pcolumn in enumerate(columns):
             if (pcolumn, prow) in combos:
                 ax = axes[nrow+1, ncolumn]
-                plt = ax.scatter(x=args[pcolumn], y=args[prow], c=data, s=1, 
-                            vmin=vmin, vmax=vmax)
+                plt = ax.scatter(x=data[pcolumn], y=data[prow], c=zvals, s=1, 
+                            vmin=vmin, vmax=vmax, cmap=cmap)
                 ax.set_xlim(mins[pcolumn], maxs[pcolumn])
                 ax.set_ylim(mins[prow], maxs[prow])
                 # Labels only on bottom and left plots
@@ -147,6 +149,8 @@ def scatter_histogram(parameters, args, data, labels=None,
 
     fig.subplots_adjust(right=0.85, wspace=0.03)
     cbar_ax = fig.add_axes([0.9, 0.1, 0.03, 0.8])
-    fig.colorbar(plt, cax=cbar_ax)
+    cb = fig.colorbar(plt, cax=cbar_ax)
+    if cbar_label is not None:
+        cb.set_label(cbar_label)
 
     return fig

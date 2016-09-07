@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 # Copyright (C) 2016 Miriam Cabero Mueller
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -24,11 +26,13 @@
 #
 
 import argparse
+import logging
 import numpy
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot
-from pycbc.inference import option_utils
+import pycbc
+from pycbc.inference import option_utils, likelihood
 from pycbc.io.inference_hdf import InferenceFile
 from pycbc.results.scatter_histograms import scatter_histogram
 
@@ -36,22 +40,52 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output plot path.")
+parser.add_argument('--z-arg', type=str, required=True,
+                    choices=['loglr', 'snr', 'logplr', 'logposterior'],
+                    help='What to color the points by.')
 parser.add_argument("--vmin", type=float,
                     help="Minimum value for the colorbar.")
 parser.add_argument("--vmax", type=float,
                     help="Maximum value for the colorbar.")
+parser.add_argument("--cmap", type=str, default=None,
+                    help="Specify the colormap to use for the points.")
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="Be verbose")
 option_utils.add_inference_results_option_group(parser)
 
 opts = parser.parse_args()
 
+pycbc.init_logging(opts.verbose)
+
 # Get parameters
+logging.info("Loading parameters")
 fp, parameters, labels, varargs = option_utils.results_from_cli(opts)
-lnl = fp.read_lnpost(thin_start=opts.thin_start, 
-                    thin_interval=opts.thin_interval, thin_end=opts.thin_end)
+logging.info("Plotting {i} samples".format(i=varargs.size))
+logging.info("Getting likelihood stats")
+likelihood_stats = fp.read_likelihood_stats(thin_start=opts.thin_start,
+        thin_end=opts.thin_end, thin_interval=opts.thin_interval,
+        iteration=opts.iteration)
+
+# get the value to plot on the z-axis
+if opts.z_arg == 'loglr':
+    zvals = likelihood_stats.loglr
+    zlbl = r'$\log\mathcal{L}(\vec{\Theta})$'
+elif opts.z_arg == 'snr':
+    zvals = likelihood.snr_from_loglr(likelihood_stats.loglr) 
+    zlbl = r'$\rho(\vec{\Theta})$'
+elif opts.z_arg == 'logplr':
+    zvals = likelihood.loglr + likelihood.prior
+    zlbl = r'$\log[\mathcal{L}(\vec{\Theta})p(\vec{\Theta})]$'
+elif opts.z_arg == 'logposterior':
+    zvals = likelihood.loglr + likelihood.prior + fp.lognl
+    zlbl = r'$\log[p(d|\vec{\Theta})p(\vec{\Theta})]$'
 fp.close()
 
-fig = scatter_histogram(parameters, varargs, lnl, labels=labels,  
-                    vmin=opts.vmin, vmax=opts.vmax)
+logging.info("Plotting")
+fig = scatter_histogram(parameters, varargs, zvals, labels=labels,  
+                    cbar_label=zlbl, vmin=opts.vmin, vmax=opts.vmax,
+                    cmap=opts.cmap)
 
 fig.savefig(opts.output_file)
 pyplot.close()
+logging.info("Done")
