@@ -38,6 +38,11 @@ import lal as _lal
 #
 
 # utility functions/class
+def _default_pregenerate(*args):
+    pass
+
+def _default_postgenerate(res):
+    return res
 
 class BaseGenerator(object):
     """A wrapper class to call a waveform generator with a set of frozen
@@ -120,6 +125,14 @@ class BaseGenerator(object):
         """
         return res
 
+    @classmethod
+    def set_pregenerate_func(cls, funcname):
+        cls._pregenerate = getattr(cls, funcname)
+
+    @classmethod
+    def set_postgenerate_func(cls, funcname):
+        cls._postgenerate = getattr(cls, funcname)
+
     def _gdecorator(generate_func):
         """A decorator that allows for seemless pre/post manipulation of
         the waveform generator function.
@@ -146,13 +159,13 @@ class BaseCBCGenerator(BaseGenerator):
             variable_args=variable_args, **frozen_params)
         # if m1 and m2 are not parameters, decorate the generator function
         # to convert the used mass parameters to m1, m2
-        all_args = self.frozen_params.keys()+list(self.variable_args)
+        all_args = self.frozen_params.keys() + list(self.variable_args)
         if 'mass1' not in all_args or 'mass2' not in all_args:
             # set the decorator to the appropriate converter
             if 'mchirp' in all_args and 'eta' in all_args:
-                self._pregenerate = self.mchirp_eta_to_mass1_mass2
+                self.set_pregenerate_func('mchirp_eta_to_mass1_mass2')
             elif 'mtotal' in all_args and 'eta' in all_args:
-                self._pregenerate = self.mtotal_eta_to_mass1_mass2
+                self.set_pregenerate_func('mtotal_eta_to_mass1_mass2')
             else:
                 raise ValueError("if not specifying mass1, mass2, must either use "
                     "(mchirp, eta) or (mtotal, eta)")
