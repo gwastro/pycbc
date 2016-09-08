@@ -70,7 +70,7 @@ def lm_amps_phases(**kwargs):
     l, m = kwargs['l'], kwargs['m']
     amps, phis = {}, {}
     # amp220 is always required, because the amplitudes of subdominant modes 
-    # are given as fractions of amp220. The props function qill therefore
+    # are given as fractions of amp220. The props function will therefore
     # already complain if it is not given and we do not need to check here.
     amps['220'] = kwargs['amp220']
 
