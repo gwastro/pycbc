@@ -238,7 +238,7 @@ class TemplateBank(object):
             **kwds):
         ext = os.path.basename(filename)
         self.compressed_waveforms = None
-        if ext.endswith('.xml') or ext.endswith('.xml.gz'):
+        if ext.endswith('.xml') or ext.endswith('.xml.gz') or ext.endswith('.xmlgz'):
             self.filehandler = None
             self.indoc = ligolw_utils.load_filename(
                 filename, False, contenthandler=LIGOLWContentHandler)
