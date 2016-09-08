@@ -144,30 +144,36 @@ class BaseCBCGenerator(BaseGenerator):
     def __init__(self, generator, variable_args=(), **frozen_params):
         super(BaseCBCGenerator, self).__init__(generator,
             variable_args=variable_args, **frozen_params)
-        # if mchirp, eta are parameters, decorate the generator function
-        # to convert them to m1, m2; we'll just check for mchirp, if eta
-        # isn't specified, it'll get caught by convert_params
-        if 'mchirp' in self.frozen_params or 'mchirp' in self.variable_args:
-            self._pregenerate = self.convert_params
+        # if m1 and m2 are not parameters, decorate the generator function
+        # to convert the used mass parameters to m1, m2
+        all_args = self.frozen_params.keys()+list(self.variable_args)
+        if 'mass1' not in all_args or 'mass2' not in all_args:
+            # set the decorator to the appropriate converter
+            if 'mchirp' in all_args and 'eta' in all_args:
+                self._pregenerate = self.mchirp_eta_to_mass1_mass2
+            elif 'mtotal' in all_args and 'eta' in all_args:
+                self._pregenerate = self.mtotal_eta_to_mass1_mass2
+            else:
+                raise ValueError("if not specifying mass1, mass2, must either use "
+                    "(mchirp, eta) or (mtotal, eta)")
 
-    def convert_params(self):
-        """Converts parameters in current params into parameters that are
-        understood by the waveform generator.
+    def mchirp_eta_to_mass1_mass2(self):
+        """Converts mchirp and eta in `current_params`, to mass1 and mass2.
         """
-        try:
-            mchirp = self.current_params['mchirp']
-            try:
-                eta = self.current_params['eta']
-                m1, m2 = pnutils.mchirp_eta_to_mass1_mass2(mchirp, eta)
-                self.current_params['mass1'] = m1
-                self.current_params['mass2'] = m2
-            except KeyError:
-                raise ValueError("mchirp requires eta to be specified")
-        except KeyError:
-            # make sure eta isn't specified
-            if 'eta' in self.current_params:
-                raise ValueError("eta requires mchirp to be specified")
-            pass
+        mchirp = self.current_params['mchirp']
+        eta = self.current_params['eta']
+        m1, m2 = pnutils.mchirp_eta_to_mass1_mass2(mchirp, eta)
+        self.current_params['mass1'] = m1
+        self.current_params['mass2'] = m2
+
+    def mtotal_eta_to_mass1_mass2(self):
+        """Converts mtotal and eta in `current_params`, to mass1 and mass2.
+        """
+        mtotal = self.current_params['mtotal']
+        eta = self.current_params['eta']
+        m1, m2 = pnutils.mtotal_eta_to_mass1_mass2(mtotal, eta)
+        self.current_params['mass1'] = m1
+        self.current_params['mass2'] = m2
 
 
 class FDomainCBCGenerator(BaseCBCGenerator):
