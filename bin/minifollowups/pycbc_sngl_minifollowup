@@ -16,12 +16,15 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Followup foreground events
 """
-import os, argparse, logging, h5py
+import os, sys, argparse, logging, h5py
+from glue.ligolw import lsctables, table
+from glue.ligolw import utils as ligolw_utils
 from pycbc.results import layout
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
 import pycbc.workflow as wf
+import pycbc.events
 from pycbc.io import hdf
 
 def to_file(path, ifo=None):
@@ -102,14 +105,21 @@ if args.non_coinc_time_only:
                                           contenthandler=h)
     seg_def_table = table.get_table(segs_doc, 'segment_definer')
     def_ifos = seg_def_table.getColumnByName('ifos')
-    ifo_list = list(set(def_ifos)).remove(args.instrument)
-    print ifo_lists
-    raise NeedsTestingIssue
+    def_ifos = [str(ifo) for ifo in def_ifos]
+    ifo_list = list(set(def_ifos))
+    ifo_list.remove(args.instrument)
     for ifo in ifo_list:
-        curr_veto_mask, segs = events.veto.indices_inside_segments(
-            self.trigs['end_time'][:], [args.inspiral_segments],
-            ifo=detector, segment_name=segment_name)
+        curr_veto_mask, segs = pycbc.events.veto.indices_outside_segments(
+            trigs.trigs['end_time'][:], [args.inspiral_segments],
+            ifo=args.instrument, segment_name=args.inspiral_data_analyzed_name)
         trigs.mask = trigs.mask[curr_veto_mask]
+
+if len(trigs.snr) == 0:
+    # There are no triggers, make no-op job and exit
+    noop_node = mini.create_noop_node()
+    workflow += noop_node
+    workflow.save(filename=args.output_file, output_map=args.output_map)
+    sys.exit(0)
 
 trigs.mask_to_n_loudest_clustered_events(n_loudest=num_events,
                                       ranking_statistic=args.ranking_statistic)

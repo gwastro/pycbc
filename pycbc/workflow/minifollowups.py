@@ -15,6 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging, os.path
+import urlparse
+import distutils.spawn
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 from itertools import izip_longest
@@ -163,7 +165,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     config_file.PFN(config_path, 'local')
 
     exe = Executable(workflow.cp, 'singles_minifollowup',
-                     ifos=curr_ifo, out_dir=dax_output)
+                     ifos=curr_ifo, out_dir=dax_output, tags=tags)
 
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
@@ -550,3 +552,18 @@ def make_singles_timefreq(workflow, single, bank_file, start, end, out_dir,
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files
+
+def create_noop_node():
+    """
+    Creates a noop node that can be added to a DAX doing nothing. The reason
+    for using this is if a minifollowups dax contains no triggers currently
+    the dax will contain no jobs and be invalid. By adding a noop node we
+    ensure that such daxes will actually run if one adds one such noop node.
+    Adding such a noop node into a workflow *more than once* will cause a
+    failure.
+    """
+    exe = wdax.Executable('NOOP')
+    pfn = distutils.spawn.find_executable('true')
+    exe.add_pfn(pfn)
+    node = wdax.Node(exe)
+    return node
