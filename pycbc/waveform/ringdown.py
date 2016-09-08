@@ -32,8 +32,8 @@ from pycbc.waveform.waveform import get_obj_attrs
 
 default_qnm_args = {'t_0':0}
 qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
-lm_required_args = ['final_mass','final_spin','l','m','nmodes', 'amp220']
-lm_allmodes_required_args = ['final_mass','final_spin', 'lmns', 'amp220']
+lm_required_args = ['final_mass','final_spin','l','m','nmodes']
+lm_allmodes_required_args = ['final_mass','final_spin', 'lmns']
 
 max_freq = 16384.
 min_dt = 1. / (2 * max_freq)
@@ -70,9 +70,11 @@ def lm_amps_phases(**kwargs):
     l, m = kwargs['l'], kwargs['m']
     amps, phis = {}, {}
     # amp220 is always required, because the amplitudes of subdominant modes 
-    # are given as fractions of amp220. The props function will therefore
-    # already complain if it is not given and we do not need to check here.
-    amps['220'] = kwargs['amp220']
+    # are given as fractions of amp220.
+    try:
+        amps['220'] = kwargs['amp220']
+    except KeyError:
+        raise ValueError('amp220 is always required')
 
     # Get amplitudes of subdominant modes and all phases
     for n in range(kwargs['nmodes']):
