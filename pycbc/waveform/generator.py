@@ -180,7 +180,7 @@ class FDomainMultiModeRingdownGenerator(BaseGenerator):
             delta_f=1./32, f_lower=30., f_final=500)
 
     Create a ringdown with the variable arguments:
-    >>> generator.generate(65., 0.7, ['221','211'], 1e-21, 0.1e-21, 0., 0.)
+    >>> generator.generate(65., 0.7, ['221','211'], 1e-21, 1./10, 0., 0.)
     (<pycbc.types.frequencyseries.FrequencySeries at 0x51614d0>,
     <pycbc.types.frequencyseries.FrequencySeries at 0x5161550>)
     """
