@@ -110,8 +110,8 @@ if args.non_coinc_time_only:
     ifo_list.remove(args.instrument)
     for ifo in ifo_list:
         curr_veto_mask, segs = pycbc.events.veto.indices_outside_segments(
-            trigs.trigs['end_time'][:], [args.inspiral_segments],
-            ifo=args.instrument, segment_name=args.inspiral_data_analyzed_name)
+            trigs.end_time, [args.inspiral_segments],
+            ifo=ifo, segment_name=args.inspiral_data_analyzed_name)
         trigs.mask = trigs.mask[curr_veto_mask]
 
 if len(trigs.snr) == 0:
