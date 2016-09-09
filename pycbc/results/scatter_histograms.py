@@ -31,6 +31,7 @@ import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot
 from pycbc.results import str_utils
+#pyplot.rcParams.update({'text.usetex': True})
 
 def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
                       vmin=None, vmax=None, mins=None, maxs=None,
@@ -128,8 +129,8 @@ def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
         for ncolumn, pcolumn in enumerate(columns):
             if (pcolumn, prow) in combos:
                 ax = axes[nrow+1, ncolumn]
-                plt = ax.scatter(x=data[pcolumn], y=data[prow], c=zvals, s=1, 
-                            vmin=vmin, vmax=vmax, cmap=cmap)
+                plt = ax.scatter(x=data[pcolumn], y=data[prow], c=zvals, s=5, 
+                            edgecolors='none', vmin=vmin, vmax=vmax, cmap=cmap)
                 ax.set_xlim(mins[pcolumn], maxs[pcolumn])
                 ax.set_ylim(mins[prow], maxs[prow])
                 # Labels only on bottom and left plots
@@ -147,10 +148,14 @@ def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
             ax = axes[nrow, len(columns)]
             ax.axis('off')
 
+    # compute font size based on fig size
+    scale_fac = (fsize[0]*fsize[1]/(8*7.))**0.5
+    
     fig.subplots_adjust(right=0.85, wspace=0.03)
     cbar_ax = fig.add_axes([0.9, 0.1, 0.03, 0.8])
     cb = fig.colorbar(plt, cax=cbar_ax)
     if cbar_label is not None:
-        cb.set_label(cbar_label)
+        cb.set_label(cbar_label, fontsize=12*scale_fac)
+    cb.ax.tick_params(labelsize=8*scale_fac)
 
     return fig
