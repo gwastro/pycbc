@@ -41,7 +41,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output plot path.")
 parser.add_argument('--z-arg', type=str, required=True,
-                    choices=['loglr', 'snr', 'logplr', 'logposterior'],
+                    choices=['loglr', 'snr', 'logplr', 'logposterior', 'prior'],
                     help='What to color the points by.')
 parser.add_argument("--vmin", type=float,
                     help="Minimum value for the colorbar.")
@@ -74,11 +74,14 @@ elif opts.z_arg == 'snr':
     zvals = likelihood.snr_from_loglr(likelihood_stats.loglr) 
     zlbl = r'$\rho(\vec{\Theta})$'
 elif opts.z_arg == 'logplr':
-    zvals = likelihood.loglr + likelihood.prior
+    zvals = likelihood_stats.loglr + likelihood_stats.prior
     zlbl = r'$\log[\mathcal{L}(\vec{\Theta})p(\vec{\Theta})]$'
 elif opts.z_arg == 'logposterior':
-    zvals = likelihood.loglr + likelihood.prior + fp.lognl
+    zvals = likelihood_stats.loglr + likelihood_stats.prior + fp.lognl
     zlbl = r'$\log[p(d|\vec{\Theta})p(\vec{\Theta})]$'
+elif opts.z_arg == 'prior':
+    zvals = likelihood_stats.prior
+    zlbl = r'$\log p(\vec{\Theta})$'
 fp.close()
 
 logging.info("Plotting")
@@ -86,6 +89,6 @@ fig = scatter_histogram(parameters, varargs, zvals, labels=labels,
                     cbar_label=zlbl, vmin=opts.vmin, vmax=opts.vmax,
                     cmap=opts.cmap)
 
-fig.savefig(opts.output_file)
+fig.savefig(opts.output_file, bbox_inches='tight')
 pyplot.close()
 logging.info("Done")
