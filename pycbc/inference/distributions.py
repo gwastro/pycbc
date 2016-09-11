@@ -63,11 +63,11 @@ def get_param_bounds_from_config(cp, section, tag, param):
         as floats. Otherwise, None.
     """
     try:
-        minbnd = cp.get_opt_tag(section, 'min-%s'%param, tag)
+        minbnd = cp.get_opt_tag(section, 'min-'+param, tag)
     except Error:
         minbnd = None
     try:
-        maxbnd = cp.get_opt_tag(section, 'max-%s'%param, tag)
+        maxbnd = cp.get_opt_tag(section, 'max-'+param, tag)
     except Error:
         maxbnd = None
     if minbnd is None and maxbnd is None:
