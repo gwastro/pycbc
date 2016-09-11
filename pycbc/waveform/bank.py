@@ -309,6 +309,18 @@ class TemplateBank(object):
     def parameters(self):
         return self.table.fieldnames
 
+    def ensure_hash(self):
+        """Ensure that there is a correctly populated template_hash 
+        if it doesnt not already exist.
+        """
+        fields = bank.table.fieldnames
+        if 'template_hash' in fields:
+             return
+
+        template_hash = numpy.array([hash(v) for v in zip(*[self.table[p]
+                         for p in fields])]) 
+        self.table = self.table.add_fields(template_hash, 'template_hash')
+
     def write_to_hdf(self, filename, force=False, skip_fields=None):
         """Writes self to the given hdf file.
         

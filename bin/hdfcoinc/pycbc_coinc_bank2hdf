@@ -107,9 +107,7 @@ bankf.table.dtype.names = tuple(params)
 
 # compute the hash
 logging.info("Getting template hashes")
-template_hash = numpy.array([hash(v) for v in zip(*[bankf.table[p]
-                         for p in bankf.table.fieldnames])])
-bankf.table = bankf.table.add_fields(template_hash, 'template_hash')
+bankf.ensure_hash()
 
 # write to output
 logging.info("Writing to %s" %(args.output_file))
