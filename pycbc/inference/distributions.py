@@ -136,7 +136,7 @@ def _bounded_from_config(cls, cp, section, variable_args,
         val = cp.get_opt_tag("prior", key, tag)
         try:
             val = float(val)
-        except:
+        except ValueError:
             pass
         # add option
         dist_args.update({key:val})
@@ -1058,14 +1058,14 @@ class Gaussian(Uniform):
             val = cp.get_opt_tag("prior", key, tag)
             try:
                 val = float(val)
-            except:
+            except ValueError:
                 pass
             dist_args.update({key:val})
 
         # construction distribution and add to list
         return cls(variable_args, low, high, mean, var, **dist_args)
 
-distributions = {
+distribs = {
     Uniform.name : Uniform,
     UniformAngle.name : UniformAngle,
     CosAngle.name : CosAngle,
@@ -1095,7 +1095,7 @@ def read_distributions_from_config(cp, section="prior"):
     variable_args = []
     for subsection in cp.get_subsections(section):
         name = cp.get_opt_tag(section, "name", subsection)
-        dist = distributions[name].from_config(cp, section, subsection)
+        dist = distribs[name].from_config(cp, section, subsection)
         if set(dist.params).isdisjoint(variable_args):
             dists.append(dist)
             variable_args += dist.params
