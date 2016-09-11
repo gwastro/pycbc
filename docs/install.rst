@@ -24,7 +24,7 @@ These instructions walk you through the process of
         * `Installing source from GitHub for development`_.
     * Optional additional installation steps
         * `Building and Installing Documentation`_.
-        * `Modifying pycbc-glue and pycbc-pylal`_.
+        * `Modifying pycbc-glue`_.
         * `Use of Intel MKL Optimized FFT libraries`_.
         * `Graphics Processing Unit support with CUDA`_
 
