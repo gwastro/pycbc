@@ -28,17 +28,11 @@ from argparse import ArgumentParser
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from glue import markup, segments
-from pylal import antenna, git_version
 from lal.gpstime import gps_to_utc, LIGOTimeGPS
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
 from matplotlib.ticker import ScalarFormatter
 from pycbc.results.color import ifo_color
-
-__author__  = "Andrew Williamson <andrew.williamson@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__    = git_version.date
-
 
 def initialize_page(title, style, script, header=None):
     """
@@ -129,6 +123,7 @@ def write_summary(page, args, ifos, skyError=None, ipn=False, ipnError=False):
     """
         Write summary of information to markup.page object page
     """
+    from pylal import antenna
 
     gps = args.start_time
     grbdate = gps_to_utc(LIGOTimeGPS(gps))\
@@ -199,6 +194,7 @@ def write_antenna(page, args, seg_plot=None, grid=False, ipn=False):
     Write antenna factors to merkup.page object page and generate John's
     detector response plot.
     """
+    from pylal import antenna
 
     page.h3()
     page.add('Antenna factors and sky locations')
