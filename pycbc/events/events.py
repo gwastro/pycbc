@@ -407,7 +407,7 @@ class EventManager(object):
                                       shuffle=True)
 
         self.events.sort(order='template_id')
-        th = numpy.zeros([p['tmplt'].template_hash for p in self.template_params], dtype=int)
+        th = numpy.array([p['tmplt'].template_hash for p in self.template_params])
         tid = self.events['template_id']
         f = fw(outname, self.opt.channel_name[0:2])
 
