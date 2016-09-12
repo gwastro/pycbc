@@ -27,7 +27,7 @@
 
 import numpy, lal
 import lalsimulation as lalsim
-from pycbc.types import TimeSeries, FrequencySeries, complex128, zeros
+from pycbc.types import TimeSeries, FrequencySeries, float64, complex128, zeros
 from pycbc.waveform.waveform import get_obj_attrs
 
 default_qnm_args = {'t_0':0}
@@ -433,8 +433,8 @@ def get_td_lm(template=None, **kwargs):
         t_final = lm_tfinal(final_mass, final_spin, ['%d%d%d' %(l, m, nmodes)])
     kmax = int(t_final / delta_t) + 1
 
-    outplus = TimeSeries(zeros(kmax, dtype=complex128), delta_t=delta_t)
-    outcross = TimeSeries(zeros(kmax, dtype=complex128), delta_t=delta_t)
+    outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
+    outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
 
     f_0, tau = get_lm_f0tau(final_mass, final_spin, l, m, nmodes)
     for n in range(nmodes):
@@ -572,8 +572,8 @@ def get_td_lm_allmodes(template=None, **kwargs):
         t_final = lm_tfinal(final_mass, final_spin, lmns)
     kmax = int(t_final / delta_t) + 1
 
-    outplus = TimeSeries(zeros(kmax, dtype=complex128), delta_t=delta_t)
-    outcross = TimeSeries(zeros(kmax, dtype=complex128), delta_t=delta_t)
+    outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
+    outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     for lmn in lmns:
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
         hplus, hcross = get_td_lm(l=l, m=m, nmodes=nmodes, delta_t=delta_t,
