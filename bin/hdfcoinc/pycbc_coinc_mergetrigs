@@ -128,6 +128,6 @@ for col in trigger_columns:
     dset = f.create_dataset(key, data=data, compression='gzip',
                                  compression_opts=9, shuffle=True)
     del data
-    region(f, key, full_boundaries, bank_tids) 
+    region(f, key, full_boundaries, unsort) 
 f.close()
 logging.info('done')
