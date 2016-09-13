@@ -279,8 +279,8 @@ def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
         raise ValueError("Must specify a tapering method (function was called"
                          "with tapermethod=None)")
     if tapermethod not in taper_map.keys():
-        raise ValueError("Tapering method %s is not known! Valid methods: "
-                         + taper_map.keys() % (tapermethod))
+        raise ValueError("Unknown tapering method %s, valid methods are %s" % \
+                         (tapermethod, ", ".join(taper_map.keys())))
     if not tsdata.dtype in (float32, float64):
         raise TypeError("Strain dtype must be float32 or float64, not "
                     + str(tsdata.dtype))
