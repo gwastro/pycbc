@@ -770,8 +770,8 @@ class CompressedWaveform(object):
         amp = fp[group]['amplitude']
         phase = fp[group]['phase']
         if load_now:
-            amplitude_freq = amplitude_freq_points[:]
-            phase_freq = phase_freq_points[:]
+            amplitude_freq = amplitude_freq[:]
+            phase_freq = phase_freq[:]
             amp = amp[:]
             phase = phase[:]
         return cls(amplitude_freq, phase_freq, amp, phase,
