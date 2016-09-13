@@ -24,6 +24,16 @@ from pycbc import events
 from pycbc.filter import resample_to_delta_t
 from pycbc.types import zeros, float32, complex64, TimeSeries, FrequencySeries
 from pycbc.types import complex_same_precision_as
+import pycbc.waveform.utils
+
+def subtract_template(stilde, template, snr, trigger_time, flow)
+    idx = int((trigger_time - snr.start_time) / snr.delta_t)
+    if idx >= 0 and idx < len(snr):                
+        sig = filter.sigma(template, psd=stilde.psd, low_frequency_cutoff=flow) 
+        inverse = template * snr[idx] / sig
+        dt = trigger_time - snr.start_time
+        stilde -= pycbc.waveform.utils.apply_fseries_time_shift(inverse, dt)
+    return stilde
 
 def select_segments(fname, anal_name, data_name, ifo, time):
     anal_segs = events.select_segments_by_definer(fname, anal_name, ifo)
@@ -77,6 +87,7 @@ parser = argparse.ArgumentParser(usage='',
 parser.add_argument('--version', action='version', 
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--output-file')
+parser.add_argument('--subtract-template', action='store_true')
 parser.add_argument("-V", "--verbose", action="store_true", 
                   help="print extra debugging information", default=False )
 parser.add_argument("--low-frequency-cutoff", type=float,
@@ -261,7 +272,8 @@ with ctx:
                                     inclination=opt.inclination,
                                     taper=opt.taper_template, 
                                     f_lower=flow, delta_f=delta_f,
-                                    delta_t=gwstrain.delta_t)
+                                    delta_t=gwstrain.delta_t,
+                                    distance = 1.0/pycbc.DYN_RANGE_FAC)
         else:
             tp, tc = waveform.get_two_pol_waveform_filter(
                                     zeros(flen, dtype=complex64),
@@ -317,7 +329,15 @@ with ctx:
         snr, corr, norm = filter.matched_filter_core(template, stilde, 
                                     psd=stilde.psd,
                                     low_frequency_cutoff=flow)
-        snr *= norm
+        snr *= norm 
+                                    
+        if opt.subtract_template:
+            stilde = subtract_template(stilde, template,
+                                snr, opt.trigger_time, opt.low_frequency_cutoff)
+            snr, corr, norm = filter.matched_filter_core(template, stilde, 
+                                psd=stilde.psd,
+                                low_frequency_cutoff=flow)
+        
         logging.info("calculating chisq")
         chisq, raw_bin = vetoes.power_chisq(template, stilde, chisq_bins, stilde.psd, 
                                     low_frequency_cutoff=flow, 
@@ -359,3 +379,4 @@ with ctx:
     f.attrs['ifo'] = ifo
     
 logging.info("Finished")
+
