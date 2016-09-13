@@ -79,8 +79,9 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0" || lsb_release -a 2>/d
     shared="--enable-shared"
     build_dlls=false
     build_ssl=true
-    build_gcc=true
-    build_python=true
+    link_gcc=true
+    build_gcc=false
+    build_python=false
     build_lapack=true
     pyssl_from="tarball" # "pip-install"
     numpy_from="pip-install" # "tarball"
@@ -115,6 +116,7 @@ elif test "`uname -s`" = "Darwin" ; then
     shared="--enable-shared"
     build_dlls=false
     build_ssl=false
+    link_gcc=false
     build_gcc=false
     build_python=false
     build_lapack=true
@@ -143,6 +145,7 @@ else
     shared="--enable-shared"
     build_dlls=true
     build_ssl=false
+    link_gcc=false
     build_gcc=false
     build_python=false
     build_lapack=true
@@ -314,6 +317,17 @@ else # if pycbc-preinst.tgz
 
     cd "$SOURCE"
 
+    if $link_gcc; then
+        mkdir -p $PYTHON_PREFIX/bin
+        ( cd $PYTHON_PREFIX/bin &&
+            for i in gcc g++ gfortran; do
+                rm -f $i &&
+                    test -x /usr/local/bin/$i-4.8.5 &&
+                    ln -s /usr/local/bin/$i-4.8.5 $i;
+            done
+        )
+    fi
+
     # OpenSSL
     if $build_ssl; then
     # p=openssl-1.0.2e # compile error on pyOpenSSL 0.13:
@@ -340,6 +354,7 @@ else # if pycbc-preinst.tgz
             $gnu/mpfr/mpfr-2.4.2.tar.gz
             $gnu/binutils/binutils-2.24.tar.gz
             $gnu/gcc/gcc-$GCC/gcc-$GCC.tar.bz2
+            http://www.multiprecision.org/mpc/download/mpc-0.9.tar.gz
             "` ; do
             test -r `echo $url | sed 's%.*/%%'` ||
             wget --no-check-certificate --passive-ftp "$url" || exit
