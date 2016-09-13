@@ -604,8 +604,8 @@ class CompressedWaveform(object):
         Writes the compressed waveform to an open hdf file.
     clear_cache :
         Clears the in-memory cache used to hold the
-        `sample_points`/`amplitude`/`phase`; only relevant if `load_to_memory`
-        is True.
+        `amplitude_freq_points`/`phase_freq_points`/`amplitude`/`phase`; 
+        only relevant if `load_to_memory` is True.
 
     Class Methods
     -------------
