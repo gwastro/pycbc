@@ -272,7 +272,8 @@ with ctx:
                     taper=opt.taper_template, approximant=opt.approximant,
                     out=template_mem, max_template_length=opt.max_template_length)
 
-    if opt.threshold_template_filtering is not None:
+    if opt.injection_file is not None and \
+            opt.threshold_template_filtering is not None:
         logging.info("Template Bank Size Before Cut: %s", len(bank))
         bank.table = bank.template_thinning(gwstrain.injections.table,
                                             opt.threshold_template_filtering)
