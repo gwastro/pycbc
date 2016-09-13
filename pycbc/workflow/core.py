@@ -1537,7 +1537,8 @@ class SegFile(File):
             ifo_list = list(ifo_set)
             ifo_list.sort()
         if valid_segment is None:
-            if seg_summ_dict:
+            if seg_summ_dict and \
+                    numpy.any([len(v) for k, v in seg_summ_dict.items()]):
                 # Only come here if seg_summ_dict is supplied and it is
                 # not empty.
                 valid_segment = seg_summ_dict.extent_all()
