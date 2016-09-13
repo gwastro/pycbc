@@ -68,6 +68,7 @@ while true ; do
                #If curl fails but the file exists, write to cache, else exit
                if [ $? != 0 ]; then
                    if [ -f $URL ]; then
+                       echo "$URL cache file found. Appending..."
                        cat $URL >> _reuse.cache
                    else
                        echo "$URL not found!"
