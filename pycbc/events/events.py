@@ -407,24 +407,7 @@ class EventManager(object):
                                       shuffle=True)
 
         self.events.sort(order='template_id')
-
-        # Template id hack
-        m1 = numpy.array([p['tmplt'].mass1 for p in self.template_params], dtype=numpy.float32)
-        m2 = numpy.array([p['tmplt'].mass2 for p in self.template_params], dtype=numpy.float32)
-        s1 = numpy.array([p['tmplt'].spin1z for p in self.template_params], dtype=numpy.float32)
-        s2 = numpy.array([p['tmplt'].spin2z for p in self.template_params], dtype=numpy.float32)
-    
-        # How to not store these in the case of not precession?
-        s1x = numpy.array([p['tmplt'].spin1x for p in self.template_params], dtype=numpy.float32)
-        s1y = numpy.array([p['tmplt'].spin1y for p in self.template_params], dtype=numpy.float32)
-        s2x = numpy.array([p['tmplt'].spin2x for p in self.template_params], dtype=numpy.float32)
-        s2y = numpy.array([p['tmplt'].spin2y for p in self.template_params], dtype=numpy.float32)
-        incl = numpy.array([p['tmplt'].inclination for p in self.template_params], dtype=numpy.float32)
-
-        th = numpy.zeros(len(m1), dtype=int)
-        for j, v in enumerate(zip(m1, m2, s1, s2, s1x, s1y, s2x, s2y, incl)):
-            th[j] = hash(v)
-
+        th = numpy.array([p['tmplt'].template_hash for p in self.template_params])
         tid = self.events['template_id']
         f = fw(outname, self.opt.channel_name[0:2])
 

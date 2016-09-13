@@ -20,11 +20,11 @@ def collect(key, files):
         fin.close()
     return numpy.concatenate(data)
 
-def region(f, key, boundaries):
+def region(f, key, boundaries, ids):
     dset = f[key]
     refs = []
     for j in range(len(boundaries) - 1):
-        l, r = boundaries[j], boundaries[j+1]
+        l, r = boundaries[ids[j]], boundaries[ids[j]+1]
         refs.append(dset.regionref[l:r]) 
     f.create_dataset(key+'_template', data=refs,
                      dtype=h5py.special_dtype(ref=h5py.RegionReference))
@@ -99,6 +99,7 @@ logging.info('set up sorting of triggers and template ids')
 # For fast lookup we need the templates in hash order
 hashes = h5py.File(args.bank_file, 'r')['template_hash'][:]
 bank_tids = hashes.argsort()
+unsort = bank_tids.argsort()
 hashes = hashes[bank_tids]
 
 trigger_hashes = collect('%s/template_hash' % ifo, args.trigger_files)
@@ -110,12 +111,13 @@ template_ids = bank_tids[numpy.searchsorted(hashes, trigger_hashes[template_boun
 
 full_boundaries = numpy.searchsorted(trigger_hashes, hashes)
 full_boundaries = numpy.concatenate([full_boundaries, [len(trigger_hashes)]])
+# get the full boundaries in hash order 
 del trigger_hashes
 
 idlen = (template_boundaries[1:] - template_boundaries[:-1])
 f.create_dataset('%s/template_id' % ifo, data=numpy.repeat(template_ids, idlen), 
                  compression='gzip', shuffle=True, compression_opts=9)
-f['%s/template_boundaries' % ifo] = full_boundaries 
+f['%s/template_boundaries' % ifo] = full_boundaries[unsort]
 
 logging.info('reading the trigger columns from the input files')
 for col in trigger_columns:
@@ -126,6 +128,6 @@ for col in trigger_columns:
     dset = f.create_dataset(key, data=data, compression='gzip',
                                  compression_opts=9, shuffle=True)
     del data
-    region(f, key, full_boundaries) 
+    region(f, key, full_boundaries, unsort) 
 f.close()
 logging.info('done')

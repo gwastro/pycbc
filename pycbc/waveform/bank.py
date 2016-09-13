@@ -303,11 +303,29 @@ class TemplateBank(object):
             else:
                 self.table['approximant'] = apprxs
         self.extra_args = kwds
-
+        self.ensure_hash()
 
     @property
     def parameters(self):
         return self.table.fieldnames
+
+    def ensure_hash(self):
+        """Ensure that there is a correctly populated template_hash 
+        if it doesnt not already exist.
+        """
+        fields = self.table.fieldnames
+        if 'template_hash' in fields:
+             return
+
+        # The fields to use in making a template hash
+        hash_fields = ['mass1', 'mass2', 'inclination',
+                       'spin1x', 'spin1y', 'spin1z',
+                       'spin2x', 'spin2y', 'spin2z',]
+
+        fields = [f for f in hash_fields if f in fields]
+        template_hash = numpy.array([hash(v) for v in zip(*[self.table[p]
+                         for p in fields])]) 
+        self.table = self.table.add_fields(template_hash, 'template_hash')
 
     def write_to_hdf(self, filename, force=False, skip_fields=None):
         """Writes self to the given hdf file.
