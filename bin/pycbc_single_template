@@ -26,7 +26,7 @@ from pycbc.types import zeros, float32, complex64, TimeSeries, FrequencySeries
 from pycbc.types import complex_same_precision_as
 import pycbc.waveform.utils
 
-def subtract_template(stilde, template, snr, trigger_time, flow)
+def subtract_template(stilde, template, snr, trigger_time, flow):
     idx = int((trigger_time - snr.start_time) / snr.delta_t)
     if idx >= 0 and idx < len(snr):                
         sig = filter.sigma(template, psd=stilde.psd, low_frequency_cutoff=flow) 
