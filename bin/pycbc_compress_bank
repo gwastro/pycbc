@@ -72,11 +72,17 @@ parser.add_argument("--tolerance", type=float, default=0.001,
                      "added to the compressed waveform until its "
                      "interpolation has a mismatch <= this value. Default is "
                      "0.001.")
-parser.add_argument("--interpolation", type=str, default="linear",
+parser.add_argument("--interpolation", type=str, 
+                default="linear_same_freq_points",
                 help="The interpolation to use for decompressing the "
-                     "waveforms for checking tolerance. Options are 'linear', "
-                     "or any interpolation recognized by scipy's interp1d "
-                     "kind argument. Default is linear.")
+                     "waveforms for checking tolerance. Options are "
+                     "'linear_same_freq_points', which assumes that the "
+                     "frequency samples of the amplitude and phase "
+                     "interpolants are the same, or any interpolation "
+                     "recognized by scipy's interp1d kind argument, which "
+                     "allows the frequency interpolant samples to be "
+                     "different for the amplitude and phase. "
+                     "Default is linear_same_freq_points.")
 parser.add_argument("--precision", type=str, choices=["double", "single"],
                 default="double",
                 help="What precision to generate and store the waveforms with;"
@@ -160,8 +166,8 @@ for ii in range(imin, imax):
             args.compression_algorithm))
             
     # compress
-    hcompressed = compress.compress_waveform(
-        htilde, sample_points, args.tolerance, args.interpolation,
+    hcompressed = compress.compress_waveform( htilde, sample_points, 
+        args.tolerance, args.interpolation,
         decomp_scratch=decomp_scratch)
 
     # save results
