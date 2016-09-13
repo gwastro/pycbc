@@ -386,6 +386,9 @@ class SingleDetTriggers(object):
         # If this becomes memory intensive we can optimize
         if ranking_statistic == "newsnr":
             stat = self.newsnr
+            # newsnr doesn't return an array if len(stat) == 1
+            if len(self.snr) == 1:
+                stat = np.array([stat])
             self.stat_name = "Reweighted SNR"
         elif ranking_statistic == "snr":
             stat = self.snr
