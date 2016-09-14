@@ -32,9 +32,94 @@ import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot
 import pycbc
+import scipy.stats
 from pycbc.inference import option_utils, likelihood
 from pycbc.io.inference_hdf import InferenceFile
 from pycbc.results.scatter_histograms import scatter_histogram
+
+def field_array_to_array(field_array, fields=None):
+    """Converts the given field array to a numpy array.
+    """
+    if fields is None:
+        fields = field_array.fieldnames
+    # convert samples to 2D array
+    arr = numpy.zeros((field_array.size, len(fields)), dtype=float)
+    for ii,p in enumerate(fields):
+        arr[:,ii] = field_array[p]
+    return arr
+
+def construct_kde(samples_array, use_kombine=False):
+    """Constructs a KDE from the given samples.
+    """
+    if use_kombine:
+        try:
+            import kombine
+        except ImportError:
+            raise ImportError("kombine is not installed.")
+    # construct the kde
+    if use_kombine:
+        kde = kombine.KDE(samples_array)
+    else:
+        kde = scipy.stats.gaussian_kde(samples_array.transpose())
+    return kde
+
+def plot_density(parameters, samples, plot_density=True, plot_contours=True,
+        percentiles=None,
+        xmin=None, xmax=None, ymin=None, ymax=None, fig=None, ax=None,
+        use_kombine=False):
+    """Computes and plots confidence intervals using the given samples.
+    """
+    if len(parameters) != 2:
+        raise ValueError("number of parameters must == 2")
+    if percentiles is None:
+        percentiles = numpy.array([50., 90.])
+    percentiles = sorted(100. - percentiles)
+
+    if fig is None or ax is None:
+        fig = pyplot.figure()
+    if ax is None:
+        ax = fig.add_subplot(111)
+
+    # convert samples to array and construct kde
+    arr = field_array_to_array(samples, fields=parameters)
+    kde = construct_kde(arr, use_kombine=use_kombine)
+    # construct grid to evaluate on
+    if xmin is None:
+        xmin = samples[parameters[0]].min()
+    if xmax is None:
+        xmax = samples[parameters[0]].max()
+    if ymin is None:
+        ymin = samples[parameters[1]].min()
+    if ymax is None:
+        ymax = samples[parameters[1]].max()
+    npts = 100
+    x = numpy.linspace(xmin, xmax, num=npts)
+    y = numpy.linspace(ymin, ymax, num=npts)
+    X, Y = numpy.meshgrid(x, y)
+    if use_kombine:
+        Z = kde(
+            numpy.array(zip(X.flatten(), Y.flatten()))).reshape(X.shape)
+        Z = numpy.exp(Z)
+        draw = kde.draw
+    else:
+        Z = kde(numpy.array(
+            zip(X.flatten(), Y.flatten())).transpose()).reshape(
+            X.transpose().shape).transpose()
+        draw = kde.resample
+    if plot_density:
+        im = ax.imshow(numpy.rot90(Z),
+            extent=(x.min(), x.max(), y.min(), y.max()),
+            cmap='viridis', zorder=1)
+    if plot_contours:
+        # compute the percentile values
+        resamps = kde(draw(int(npts**2)))
+        if use_kombine:
+            resamps = numpy.exp(resamps)
+        s = numpy.percentile(resamps, percentiles)
+        ct = ax.contour(X, Y, Z.transpose(), s, colors='k', zorder=5)
+    return fig
+
+
 
 parser = argparse.ArgumentParser()
 
@@ -49,6 +134,8 @@ parser.add_argument("--vmax", type=float,
                     help="Maximum value for the colorbar.")
 parser.add_argument("--cmap", type=str, default=None,
                     help="Specify the colormap to use for the points.")
+parser.add_argument("--plot-contours", default=False, action="store_true",
+                    help="Plot the confidence intervals.")
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Be verbose")
 option_utils.add_inference_results_option_group(parser)
@@ -59,8 +146,8 @@ pycbc.init_logging(opts.verbose)
 
 # Get parameters
 logging.info("Loading parameters")
-fp, parameters, labels, varargs = option_utils.results_from_cli(opts)
-logging.info("Plotting {i} samples".format(i=varargs.size))
+fp, parameters, labels, samples = option_utils.results_from_cli(opts)
+logging.info("Plotting {i} samples".format(i=samples.size))
 logging.info("Getting likelihood stats")
 likelihood_stats = fp.read_likelihood_stats(thin_start=opts.thin_start,
         thin_end=opts.thin_end, thin_interval=opts.thin_interval,
@@ -85,10 +172,19 @@ elif opts.z_arg == 'prior':
 fp.close()
 
 logging.info("Plotting")
-fig, _ = scatter_histogram(parameters, varargs, zvals, labels=labels,  
+fig, axis_dict = scatter_histogram(parameters, samples, zvals, labels=labels,  
                     cbar_label=zlbl, vmin=opts.vmin, vmax=opts.vmax,
                     cmap=opts.cmap)
-
+if opts.plot_contours:
+    logging.info("Plotting contours")
+    for px,py in axis_dict:
+        if px == py:
+            continue
+        logging.info("{x}, {y}".format(x=px, y=py))
+        ax, _, _ = axis_dict[px, py]
+        plot_density([px, py], samples, plot_density=False, plot_contours=True,
+            percentiles=None, ax=ax, use_kombine=False)
+        
 fig.savefig(opts.output_file, bbox_inches='tight')
 pyplot.close()
 logging.info("Done")
