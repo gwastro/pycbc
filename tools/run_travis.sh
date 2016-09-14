@@ -69,6 +69,9 @@ test $? -ne 0 && RESULT=1
 python test/test_spatmplt.py
 test $? -ne 0 && RESULT=1
 
+python test/test_inference.py
+test $? -ne 0 && RESULT=1
+
 # check for trivial failures of important executables
 
 function test_exec_help {
