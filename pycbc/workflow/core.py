@@ -26,7 +26,7 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import sys, os, stat, subprocess, logging, math, string, urllib2, urlparse
+import sys, os, stat, subprocess, logging, math, string, urlparse
 import ConfigParser, copy, time
 import numpy, cPickle, random
 from itertools import combinations, groupby, permutations

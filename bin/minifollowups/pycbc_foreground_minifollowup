@@ -16,7 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Followup foreground events
 """
-import os, argparse, logging, h5py, pycbc.workflow as wf
+import os, sys, argparse, logging, h5py, pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
 import pycbc.workflow.minifollowups as mini
@@ -81,6 +81,13 @@ f = h5py.File(args.statmap_file, 'r')
 stat = f['foreground/stat'][:]
 
 sorting = stat.argsort()[::-1]
+
+if len(stat) == 0:
+    # There are no triggers, make no-op job and exit
+    noop_node = mini.create_noop_node()
+    workflow += noop_node
+    workflow.save(filename=args.output_file, output_map=args.output_map)
+    sys.exit(0)
 
 if len(stat) < num_events:
     num_events = len(stat)

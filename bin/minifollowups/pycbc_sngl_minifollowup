@@ -16,12 +16,15 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Followup foreground events
 """
-import os, argparse, logging, h5py
+import os, sys, argparse, logging, h5py
+from glue.ligolw import lsctables, table
+from glue.ligolw import utils as ligolw_utils
 from pycbc.results import layout
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
 import pycbc.workflow as wf
+import pycbc.events
 from pycbc.io import hdf
 
 def to_file(path, ifo=None):
@@ -57,6 +60,11 @@ parser.add_argument('--inspiral-data-analyzed-name',
                          "analyzed by each analysis job.")
 parser.add_argument('--ranking-statistic',
                 help="How to rank triggers when determining loudest triggers.")
+parser.add_argument('--non-coinc-time-only', default=False,
+                    action='store_true',
+                    help="If given remove (veto) single-detector triggers "
+                         "that occur during a time when at least one other "
+                         "instrument is taking science data.")
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
@@ -90,6 +98,29 @@ trigs = hdf.SingleDetTriggers(args.single_detector_file, args.bank_file,
                               args.veto_file, args.veto_segment_name,
                               None, args.instrument)
 
+if args.non_coinc_time_only:
+    from glue.ligolw.ligolw import LIGOLWContentHandler as h
+    lsctables.use_in(h)
+    segs_doc = ligolw_utils.load_filename(args.inspiral_segments,
+                                          contenthandler=h)
+    seg_def_table = table.get_table(segs_doc, 'segment_definer')
+    def_ifos = seg_def_table.getColumnByName('ifos')
+    def_ifos = [str(ifo) for ifo in def_ifos]
+    ifo_list = list(set(def_ifos))
+    ifo_list.remove(args.instrument)
+    for ifo in ifo_list:
+        curr_veto_mask, segs = pycbc.events.veto.indices_outside_segments(
+            trigs.end_time, [args.inspiral_segments],
+            ifo=ifo, segment_name=args.inspiral_data_analyzed_name)
+        trigs.mask = trigs.mask[curr_veto_mask]
+
+if len(trigs.snr) == 0:
+    # There are no triggers, make no-op job and exit
+    noop_node = mini.create_noop_node()
+    workflow += noop_node
+    workflow.save(filename=args.output_file, output_map=args.output_map)
+    sys.exit(0)
+
 trigs.mask_to_n_loudest_clustered_events(n_loudest=num_events,
                                       ranking_statistic=args.ranking_statistic)
 
@@ -108,10 +139,9 @@ for num_event in range(num_events):
     ifo_tid = '%s:%s' %(args.instrument, str(tid))
     
     layouts += (mini.make_sngl_ifo(workflow, sngl_file, tmpltbank_file,
-                              num_event, args.output_dir, args.instrument,
-                              tags = args.tags + [str(num_event)],
-                              veto_file=veto_file,
-                              veto_segment_name=args.veto_segment_name),)
+                                   tid, args.output_dir, args.instrument,
+                                   tags=args.tags + [str(num_event)],
+                                   rank=num_event),)
     files += mini.make_trigger_timeseries(workflow, [sngl_file],
                               ifo_time, args.output_dir, special_tids=ifo_tid,
                               tags=args.tags + [str(num_event)])
@@ -136,12 +166,6 @@ for num_event in range(num_events):
     except:
         pass
 
-    files += mini.make_plot_waveform_plot(workflow, curr_params,
-                                        args.output_dir, [args.instrument],
-                                        tags=args.tags + [str(num_event)])
-    files += mini.make_trigger_timeseries(workflow, [sngl_file],
-                              ifo_time, args.output_dir, special_tids=ifo_tid,
-                              tags=args.tags + [str(num_event)])
     files += mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_data_read_name,
                             args.inspiral_data_analyzed_name, curr_params,
@@ -151,7 +175,11 @@ for num_event in range(num_events):
     files += mini.make_singles_timefreq(workflow, sngl_file, tmpltbank_file, 
                             time - 10, time + 10, args.output_dir,
                             tags=args.tags + [str(num_event)])                 
-    
+
+    files += mini.make_plot_waveform_plot(workflow, curr_params,
+                                        args.output_dir, [args.instrument],
+                                        tags=args.tags + [str(num_event)])
+
     layouts += list(layout.grouper(files, 2))
     num_event += 1
 

@@ -15,6 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging, os.path
+import urlparse
+import distutils.spawn
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 from itertools import izip_longest
@@ -163,7 +165,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     config_file.PFN(config_path, 'local')
 
     exe = Executable(workflow.cp, 'singles_minifollowup',
-                     ifos=curr_ifo, out_dir=dax_output)
+                     ifos=curr_ifo, out_dir=dax_output, tags=tags)
 
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
@@ -483,8 +485,8 @@ def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, tags=None):
     files += node.output_files
     return files
 
-def make_sngl_ifo(workflow, sngl_file, bank_file, num, out_dir, ifo,
-                  veto_file=None, veto_segment_name=None, tags=None):
+def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
+                  tags=None, rank=None):
     """Setup a job to create sngl detector sngl ifo html summary snippet.
     """
     tags = [] if tags is None else tags
@@ -495,11 +497,9 @@ def make_sngl_ifo(workflow, sngl_file, bank_file, num, out_dir, ifo,
                               out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--single-trigger-file', sngl_file)
     node.add_input_opt('--bank-file', bank_file)
-    if veto_file is not None:
-        assert(veto_segment_name is not None)
-        node.add_input_opt('--veto-file', veto_file)
-        node.add_opt('--veto-segment-name', veto_segment_name)
-    node.add_opt('--n-loudest', str(num))
+    node.add_opt('--trigger-id', str(trigger_id))
+    if rank is not None:
+        node.add_opt('--n-loudest', str(rank))
     node.add_opt('--instrument', ifo)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
@@ -550,3 +550,18 @@ def make_singles_timefreq(workflow, single, bank_file, start, end, out_dir,
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files
+
+def create_noop_node():
+    """
+    Creates a noop node that can be added to a DAX doing nothing. The reason
+    for using this is if a minifollowups dax contains no triggers currently
+    the dax will contain no jobs and be invalid. By adding a noop node we
+    ensure that such daxes will actually run if one adds one such noop node.
+    Adding such a noop node into a workflow *more than once* will cause a
+    failure.
+    """
+    exe = wdax.Executable('NOOP')
+    pfn = distutils.spawn.find_executable('true')
+    exe.add_pfn(pfn)
+    node = wdax.Node(exe)
+    return node
