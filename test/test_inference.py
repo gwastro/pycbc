@@ -51,20 +51,20 @@ class TestInference(unittest.TestCase):
         m1, m2, s1z, s2z, tsig = 38.6, 29.3, 0., 0., 3.1
         ra, dec, pol, dist = 1.37, -1.26, 2.76, 3*500.
         generator = waveform.FDomainDetFrameGenerator(
-                        waveform.FDomainCBCGenerator, 0., variable_args=['tc'],
-                        detectors=['H1', 'L1'], delta_f=1./seglen,
-                        f_lower=fmin, approximant='SEOBNRv2_ROM_DoubleSpin',
+                        waveform.FDomainCBCGenerator, 0., variable_args=["tc"],
+                        detectors=["H1", "L1"], delta_f=1./seglen,
+                        f_lower=fmin, approximant="SEOBNRv2",
                         mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra,
                         dec=dec, polarization=pol, distance=dist)
         signal = generator.generate(tsig)
 
         # get PSDs
         psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
-        psds = {'H1': psd, 'L1': psd}
+        psds = {"H1": psd, "L1": psd}
 
         # get a prior evaluator
         uniform_prior = inference.distributions.Uniform(tc=(tsig-0.2,tsig+0.2))
-        prior_eval = inference.prior.PriorEvaluator(['tc'], uniform_prior)
+        prior_eval = inference.prior.PriorEvaluator(["tc"], uniform_prior)
 
         # setup likelihood evaluator
         likelihood_eval = inference.GaussianLikelihood(generator, signal, fmin,
@@ -73,6 +73,6 @@ class TestInference(unittest.TestCase):
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestInference))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)
