@@ -85,7 +85,7 @@ elif opts.z_arg == 'prior':
 fp.close()
 
 logging.info("Plotting")
-fig = scatter_histogram(parameters, varargs, zvals, labels=labels,  
+fig, _ = scatter_histogram(parameters, varargs, zvals, labels=labels,  
                     cbar_label=zlbl, vmin=opts.vmin, vmax=opts.vmax,
                     cmap=opts.cmap)
 

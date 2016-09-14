@@ -33,6 +33,72 @@ from matplotlib import pyplot
 from pycbc.results import str_utils
 #pyplot.rcParams.update({'text.usetex': True})
 
+def create_corner_axes(parameters, labels=None):
+    """Given a list of parameters, creates a figure with an axis for
+    every possible combination of the parameters.
+
+    Parameters
+    ----------
+    parameters : list
+        Names of the variables to be plotted.
+    labels : {None, list}, optional
+        A list of names for the parameters.
+
+    Returns
+    -------
+    fig : pyplot.figure
+        The figure that was created.
+    axes : array
+        A 2D array of the axes that were created.
+    axis_dict : dict
+        A dictionary mapping the parameter combinations to the axis and their
+        location in the subplots grid; i.e., the key, values are:
+        `{('param1', 'param2'): (pyplot.axes, row index, column index)}`
+    """
+    if labels is None:
+        labels = parameters
+    elif len(labels) != len(parameters):
+        raise ValueError("labels and parameters must be same length")
+    # Create figure with adequate size for number of parameters.
+    ndim = len(parameters)
+    if ndim < 3:
+        fsize = (8, 7)
+    else:
+        fsize = (ndim*3 - 1, ndim*3 - 2)
+    fig, axes = pyplot.subplots(ndim, ndim, sharex='col',
+                                figsize=fsize)
+
+    # Select possible combinations of plots and establish rows and columns.
+    combos =  list(itertools.combinations(range(ndim),2))
+    # add the diagonals
+    combos += [(ii, ii) for ii in range(ndim)]
+
+    # create the mapping between parameter combos and axes
+    axis_dict = {}
+    # cycle over all the axes, setting thing as needed
+    for nrow in range(ndim):
+        for ncolumn in range(ndim):
+            ax = axes[nrow, ncolumn]
+            # map to a parameter index
+            px = ncolumn
+            py = nrow
+            if (px, py) in combos:
+                axis_dict[parameters[px], parameters[py]] = (ax, nrow, ncolumn)
+                # x labels only on bottom
+                if nrow + 1 == ndim:
+                    ax.set_xlabel('{}'.format(labels[px]))
+                else:
+                    pyplot.setp(ax.get_yticklabels(), visible=False)
+                # y labels only on left and non-diagonal
+                if ncolumn == 0 and nrow != 0:
+                    ax.set_ylabel('{}'.format(labels[py]))
+                else:
+                    pyplot.setp(ax.get_yticklabels(), visible=False)
+            else:
+                # make non-used axes invisible
+                ax.axis('off')
+    return fig, axes, axis_dict
+
 def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
                       vmin=None, vmax=None, mins=None, maxs=None,
                       cmap=None):
@@ -71,35 +137,18 @@ def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
     if labels is None:
         labels = parameters
 
-    # Create figure with adequate size for number of parameters.
-    ndim = len(parameters)
-    if ndim < 3:
-        fsize = (8, 7)
-    else:
-        fsize = (ndim*3 - 1, ndim*3 - 2)
-    fig, axes = pyplot.subplots(ndim, ndim, sharex='col',
-                                figsize=fsize)
-
-    # Select possible combinations of plots and establish rows and columns.
-    combos = list(itertools.combinations(parameters,2))
-    columns = [combos[0][0]]
-    for ii in range(1,len(combos)):
-        if combos[ii][0] != combos[ii-1][0]:
-            columns.append(combos[ii][0])
-    rows = []
-    for ii in range(len(combos)):
-        if combos[ii][0] == columns[0]:
-            rows.append(combos[ii][1])
-
     # Sort zvals to get higher values on top in scatter plots
     sort_indices = zvals.argsort()
     zvals = zvals[sort_indices]
     data = data[sort_indices]
 
+    # set up the figure with the corner axes
+    fig, axes, axis_dict = create_corner_axes(parameters, labels=labels)
+
     # Plot histograms in diagonal
-    for nrow in range(len(rows)+1):
-        ax = axes[nrow, nrow]
-        values = data[parameters[nrow]]
+    for param in parameters:
+        ax, nrow, ncol = axis_dict[param, param]
+        values = data[param]
         ax.hist(values, bins=50, color='navy', histtype='step')
         # 90th percentile
         values5 = numpy.percentile(values,5)
@@ -111,12 +160,11 @@ def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
         ax.axvline(x=valuesM, ls='dashed')
         negerror = valuesM - values5
         poserror = values95 - valuesM
-        fmt = '$' + str_utils.format_value(valuesM, negerror, plus_error=poserror, ndecs=2) + '$'
+        fmt = '$' + str_utils.format_value(valuesM, negerror,
+              plus_error=poserror, ndecs=2) + '$'
         ax.set_title('{} = {}'.format(labels[nrow], fmt))
         # Remove y-ticks
-        pyplot.setp(ax.get_yticklabels(), visible=False)
-    # Add x-label in last histogram
-    ax.set_xlabel('{}'.format(labels[-1]))
+        ax.set_yticks([])
 
     # Arguments for scatter plots
     if mins is None:
@@ -125,30 +173,17 @@ def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
         maxs = {p:data[p].max() for p in parameters}
 
     # Fill figure with scatter plots
-    for nrow, prow in enumerate(rows):
-        for ncolumn, pcolumn in enumerate(columns):
-            if (pcolumn, prow) in combos:
-                ax = axes[nrow+1, ncolumn]
-                plt = ax.scatter(x=data[pcolumn], y=data[prow], c=zvals, s=5, 
-                            edgecolors='none', vmin=vmin, vmax=vmax, cmap=cmap)
-                ax.set_xlim(mins[pcolumn], maxs[pcolumn])
-                ax.set_ylim(mins[prow], maxs[prow])
-                # Labels only on bottom and left plots
-                if ncolumn == 0:
-                    ax.set_ylabel('{}'.format(labels[nrow+1]))
-                else:
-                    pyplot.setp(ax.get_yticklabels(), visible=False)
-                if nrow + 1 == len(rows):
-                    ax.set_xlabel('{}'.format(labels[ncolumn]))
-            # Make empty plots white
-            else:
-                ax = axes[nrow, ncolumn]
-                ax.axis('off')
-            # Including plots in last column
-            ax = axes[nrow, len(columns)]
-            ax.axis('off')
+    for px, py in axis_dict:
+        if px == py:
+            continue
+        ax, _, _ = axis_dict[px, py]
+        plt = ax.scatter(x=data[px], y=data[py], c=zvals, s=5, 
+                    edgecolors='none', vmin=vmin, vmax=vmax, cmap=cmap)
+        ax.set_xlim(mins[px], maxs[px])
+        ax.set_ylim(mins[py], maxs[py])
 
     # compute font size based on fig size
+    fsize = fig.get_size_inches()
     scale_fac = (fsize[0]*fsize[1]/(8*7.))**0.5
     
     fig.subplots_adjust(right=0.85, wspace=0.03)
@@ -158,4 +193,4 @@ def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
         cb.set_label(cbar_label, fontsize=12*scale_fac)
     cb.ax.tick_params(labelsize=8*scale_fac)
 
-    return fig
+    return fig, axis_dict
