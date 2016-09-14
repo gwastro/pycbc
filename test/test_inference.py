@@ -53,7 +53,7 @@ class TestInference(unittest.TestCase):
         generator = waveform.FDomainDetFrameGenerator(
                         waveform.FDomainCBCGenerator, 0., variable_args=["tc"],
                         detectors=["H1", "L1"], delta_f=1./seglen,
-                        f_lower=fmin, approximant="SEOBNRv2",
+                        f_lower=fmin, approximant="TaylorF2",
                         mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra,
                         dec=dec, polarization=pol, distance=dist)
         signal = generator.generate(tsig)
