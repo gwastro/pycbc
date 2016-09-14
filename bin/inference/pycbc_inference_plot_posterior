@@ -1,4 +1,4 @@
-#!/home/cbiwer/opt/pycbc-test/bin/python
+#! /usr/bin/env python
 
 # Copyright (C) 2016 Christopher M. Biwer
 #
