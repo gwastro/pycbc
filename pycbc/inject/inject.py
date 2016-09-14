@@ -98,7 +98,7 @@ class InjectionSet(object):
         return swigrow
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
-              simulation_ids=None):
+              simulation_ids=None, inj_filter_rejector=None):
         """Add injections (as seen by a particular detector) to a time series.
 
         Parameters
@@ -115,6 +115,10 @@ class InjectionSet(object):
             no scaling. 
         simulation_ids: iterable, optional
             If given, only inject signals with the given simulation IDs.
+        inj_filter_rejector: InjFilterRejector instance; optional, default=None
+            If given send each injected waveform to the InjFilterRejector
+            instance so that it can store a reduced representation of that
+            injection if necessary.
 
         Returns
         -------
@@ -143,7 +147,7 @@ class InjectionSet(object):
             injections = [inj for inj in injections \
                           if inj.simulation_id in simulation_ids]
         l= 0
-        injection_parameters= []             
+        injection_parameters = []
         for inj in injections:
             if f_lower is None:
                 f_l = inj.f_lower
@@ -169,12 +173,17 @@ class InjectionSet(object):
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
             injection_parameters.append(inj)                            
-            
+            if inj_filter_rejector is not None:
+                sid = inj.simulation_id
+                inj_filter_rejector.generate_short_inj_from_inj(signal, sid)
+
         strain.data[:] = lalstrain.data.data[:]
 
         injected = copy.copy(self)
         injected.table = lsctables.SimInspiralTable()
         injected.table += injection_parameters
+        if inj_filter_rejector is not None:
+            inj_filter_rejector.injection_params = injected
         return injected
        
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
