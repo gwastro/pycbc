@@ -140,11 +140,6 @@ parser.add_argument("--keep-loudest-interval", type=float,
 parser.add_argument("--keep-loudest-num", type=int,
                     help="Number of triggers to keep from each maximization interval")
 parser.add_argument("--gpu-callback-method", default='none')
-parser.add_argument("--threshold-template-filtering", type= float)
-
-
-
-
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -272,33 +267,47 @@ with ctx:
                     taper=opt.taper_template, approximant=opt.approximant,
                     out=template_mem, max_template_length=opt.max_template_length)
 
-    if opt.injection_file is not None and \
-            opt.threshold_template_filtering is not None:
-        logging.info("Template Bank Size Before Cut: %s", len(bank))
-        bank.table = bank.template_thinning(gwstrain.injections.table,
-                                            opt.threshold_template_filtering)
-        logging.info("Template Bank Size After Cut: %s", len(bank))
-      
     ntemplates = len(bank)
+    nfilters = 0
+
+    logging.info("Full template bank size: %s", ntemplates)
+    bank.template_thinning(gwstrain)
+    if not len(bank) == ntemplates:
+        logging.info("Template bank size after thinning: %s", len(bank))
+
     tsetup = time.time() - tstart
 
     # Note: in the class-based approach used now, 'template' is not explicitly used
     # within the loop.  Rather, the iteration simply fills the memory specifed in
     # the 'template_mem' argument to MatchedFilterControl with the next template
     # from the bank.
-    for t_num, template in enumerate(bank):
-        event_mgr.new_template(tmplt=template.params, sigmasq=template.sigmasq(segments[0].psd))
-
-        if opt.cluster_method == "window":
-            cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
-        if opt.cluster_method == "template":
-            cluster_window = int(template.chirp_length * gwstrain.sample_rate)
-
+    for t_num in xrange(len(bank)):
+        tmplt_generated = False
 
         for s_num, stilde in enumerate(segments):
+            # Filter check checks the 'injcutter' options to determine whether
+            # to filter this template/segment if injections are present.
+            filter_check = bank.template_segment_checker(t_num,
+                gwstrain, stilde, opt.gps_start_time)
+            if filter_check is False:
+                continue
+            if not tmplt_generated:
+                template = bank[t_num]
+                event_mgr.new_template(tmplt=template.params,
+                    sigmasq=template.sigmasq(segments[0].psd))
+                tmplt_generated = True
+
+            if opt.cluster_method == "window":
+                cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
+            if opt.cluster_method == "template":
+                cluster_window = \
+                    int(template.chirp_length * gwstrain.sample_rate)
+
+
             logging.info("Filtering template %d/%d segment %d/%d" %
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
+            nfilters = nfilters + 1
             snr, norm, corr, idx, snrv = \
                matched_filter.matched_filter_and_cluster(s_num, template.sigmasq(stilde.psd), cluster_window)
 
@@ -362,7 +371,7 @@ if opt.maximization_interval:
 
 tstop = time.time()
 run_time = tstop - tstart
-event_mgr.save_performance(ncores, ntemplates, run_time, tsetup)
+event_mgr.save_performance(ncores, nfilters, ntemplates, run_time, tsetup)
 
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
