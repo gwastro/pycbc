@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/home/cbiwer/opt/pycbc-test/bin/python
 
 # Copyright (C) 2016 Christopher M. Biwer
 #
@@ -30,17 +30,28 @@ from pycbc.inference import option_utils
 # command line usage
 parser = argparse.ArgumentParser(
     description="Plots corner plot of posteriors from inference sampler.")
+
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
     help="Print logging info.")
-# output plot options
+
+# output 1-D histogram options
 parser.add_argument("--output-file", type=str, required=True,
     help="Path to output plot.")
 parser.add_argument("--quantiles", type=float, nargs="+",
     default=[0.16, 0.5, 0.84],
     help="Quantiles to plot on 1-D histograms.")
-parser.add_argument("--show-titles", action="store_true", default=True,
+parser.add_argument("--hide-titles", action="store_false", default=True,
     help="Display median and lower and maximal quantiles as error bounds.")
+
+# output 2-D histogram options
+parser.add_argument("--hide-data-points", action="store_false", default=True,
+    help="Display data points on 2-D histograms.")
+parser.add_argument("--hide-density", action="store_false", default=True,
+    help="Display density color map on 2-D histograms.")
+parser.add_argument("--hide-contours", action="store_false", default=True,
+    help="Display contours on 2-D histograms.")
+
 # add results group
 option_utils.add_inference_results_option_group(parser)
 
@@ -65,8 +76,13 @@ for ii,p in enumerate(parameters):
 
 # plot posterior
 logging.info("Plot posteriors")
-fig = corner.corner(x, labels=labels, quantiles=opts.quantiles, color='navy',
-                   show_titles=opts.show_titles)
+hist2d_kwargs = {
+    "plot_datapoints" : opts.hide_data_points,
+    "plot_density" : opts.hide_density,
+    "plot_contours" : opts.hide_contours,
+}
+fig = corner.corner(x, labels=labels, quantiles=opts.quantiles, color="navy",
+                   show_titles=opts.hide_titles, **hist2d_kwargs)
 
 # if there is only one histogram then change some formatting
 if len(parameters) == 1:
