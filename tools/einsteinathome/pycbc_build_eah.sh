@@ -182,9 +182,11 @@ export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/
 export LIBS="$LIBS -lgfortran"
 
 # log environment
-echo -e "\\n\\n>> [`date`] ENVIRONMENT ..."
-env
-echo -e "... ENVIRONMENT"
+if [ ".$1" == ".--print-env" ]; then
+    echo -e "\\n\\n>> [`date`] ENVIRONMENT ..."
+    env
+    echo -e "... ENVIRONMENT"
+fi
 
 # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
 # WORKSPACE='/Users/jenkins/workspace/workspace/EAH_PyCBC_Master/label/OSX107'
@@ -224,10 +226,27 @@ echo "$$" > "$PYCBC/lock"
 # make sure the sources directory exixts
 mkdir -p "$SOURCE"
 
+# usage message
+usage="
+    --print-env       : dump environment at beginning, must be first option in command-line
+    --help            : print this messge and exit
+    --clean           : perform a clean build (takes quite some time); delete ~/.cache and
+                        tarballs containing precompiled libraries (lalsuite, scipy etc.)
+    --clean-lalsuite  : clean lalsuite before building, checkout and build it from scratch
+    --clean-sundays   : perform a clean build on sundays
+    --clean-pycbc     : check out pycbc git repo from scratch
+    --lalsuite-commit=<commit> : specify a commit (tag or branch) of lalsuite to build from
+    --no-pycbc-update : don't update local pycbc repo from remote branch $pycbc_branch
+    --bema-testing    : use einsteinathome_testing branch of bema-ligo pycbc repo
+    --no-cleanup      : keep build directories after successful build for later inspection
+    --verbose-python  : run PyInstalled Python in verbose mode, showing imports
+"
+
 # handle command-line arguments, possibly overriding above settings
 for i in $*; do
     case $i in
         --no-pycbc-update) pycbc_branch="HEAD";;
+        --print-env) ;;
         --bema-testing)
             pycbc_branch=einsteinathome_testing
             pycbc_remote=bema-ligo;;
@@ -251,18 +270,8 @@ for i in $*; do
                     echo $now > "$SOURCE/last_sunday_build"
                 fi
             fi ;;
-        *) echo "unknown option '$i', valid are:
-
-    --clean           : perform a clean build (takes quite some time); delete ~/.cache and
-                        tarballs containing precompiled libraries (lalsuite, scipy etc.)
-    --clean-lalsuite  : clean lalsuite before building, checkout and build it from scratch
-    --clean-sundays   : perform a clean build on sundays
-    --clean-pycbc     : check out pycbc git repo from scratch
-    --lalsuite-commit=<commit> : specify a commit (tag or branch) of lalsuite to build from
-    --no-pycbc-update : don't update local pycbc repo from remote branch $pycbc_branch
-    --bema-testing    : use einsteinathome_testing branch of bema-ligo pycbc repo
-    --no-cleanup      : keep build directories after successful build for later inspection
-    --verbose-python  : run PyInstalled Python in verbose mode, showing imports">&2; exit 1;;
+        --help) echo -e "Options:\n$usage">&2; exit 0;;
+        *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
     esac
 done
 
