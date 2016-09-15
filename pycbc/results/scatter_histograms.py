@@ -65,7 +65,7 @@ def create_corner_axes(parameters, labels=None):
         fsize = (8, 7)
     else:
         fsize = (ndim*3 - 1, ndim*3 - 2)
-    fig, axes = pyplot.subplots(ndim, ndim, sharex='col',
+    fig, axes = pyplot.subplots(ndim, ndim,# sharex='col',
                                 figsize=fsize)
 
     # Select possible combinations of plots and establish rows and columns.
@@ -84,11 +84,34 @@ def create_corner_axes(parameters, labels=None):
             py = nrow
             if (px, py) in combos:
                 axis_dict[parameters[px], parameters[py]] = (ax, nrow, ncolumn)
+                # keep number of ticks < 4 for ndim > 3
+                if False:#ndim > 3:
+                    ticks = ax.get_xticks()
+                    if len(ticks) > 3:
+                        if len(ticks) % 2 == 0:
+                            keepticks = numpy.array([len(ticks)/4, len(ticks)/2,
+                                    3*len(ticks)/4]) - 1
+                            ticks = ticks[keepticks]
+                        else:
+                            ticks = numpy.array([ticks.min(), numpy.median(ticks),
+                                ticks.max()])
+                        ax.set_xticks(ticks)
+                    ticks = ax.get_yticks()
+                    if len(ticks) > 3:
+                        if len(ticks) % 2 == 0:
+                            keepticks = numpy.array([len(ticks)/4, len(ticks)/2,
+                                    3*len(ticks)/4]) - 1
+                            ticks = ticks[keepticks]
+                        else:
+                            ticks = numpy.array([ticks.min(), numpy.median(ticks),
+                                ticks.max()])
+                        ax.set_yticks(ticks)
+
                 # x labels only on bottom
                 if nrow + 1 == ndim:
                     ax.set_xlabel('{}'.format(labels[px]))
                 else:
-                    pyplot.setp(ax.get_yticklabels(), visible=False)
+                    pyplot.setp(ax.get_xticklabels(), visible=False)
                 # y labels only on left and non-diagonal
                 if ncolumn == 0 and nrow != 0:
                     ax.set_ylabel('{}'.format(labels[py]))
@@ -98,6 +121,14 @@ def create_corner_axes(parameters, labels=None):
                 # make non-used axes invisible
                 ax.axis('off')
     return fig, axes, axis_dict
+
+def get_scale_fac(fig, fiducial_width=8, fiducial_height=7):
+    """Gets a factor to scale fonts by for the given figure. The scale
+    factor is relative to a figure with dimensions
+    (`fiducial_width`, `fiducial_height`).
+    """
+    width, height = fig.get_size_inches()
+    return (width*height/(fiducial_width*fiducial_height))**0.5
 
 def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
                       vmin=None, vmax=None, mins=None, maxs=None,
@@ -183,8 +214,7 @@ def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
         ax.set_ylim(mins[py], maxs[py])
 
     # compute font size based on fig size
-    fsize = fig.get_size_inches()
-    scale_fac = (fsize[0]*fsize[1]/(8*7.))**0.5
+    scale_fac = get_scale_fac(fig)
     
     fig.subplots_adjust(right=0.85, wspace=0.03)
     cbar_ax = fig.add_axes([0.9, 0.1, 0.03, 0.8])

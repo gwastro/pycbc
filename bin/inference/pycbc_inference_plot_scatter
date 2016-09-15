@@ -35,7 +35,7 @@ import pycbc
 import scipy.stats
 from pycbc.inference import option_utils, likelihood
 from pycbc.io.inference_hdf import InferenceFile
-from pycbc.results.scatter_histograms import scatter_histogram
+from pycbc.results.scatter_histograms import scatter_histogram, get_scale_fac
 
 def field_array_to_array(field_array, fields=None):
     """Converts the given field array to a numpy array.
@@ -64,7 +64,7 @@ def construct_kde(samples_array, use_kombine=False):
     return kde
 
 def plot_density(parameters, samples, plot_density=True, plot_contours=True,
-        percentiles=None,
+        percentiles=None, cmap='viridis', contour_color='k',
         xmin=None, xmax=None, ymin=None, ymax=None, fig=None, ax=None,
         use_kombine=False):
     """Computes and plots confidence intervals using the given samples.
@@ -73,9 +73,10 @@ def plot_density(parameters, samples, plot_density=True, plot_contours=True,
         raise ValueError("number of parameters must == 2")
     if percentiles is None:
         percentiles = numpy.array([50., 90.])
-    percentiles = sorted(100. - percentiles)
+    percentiles = 100. - percentiles
+    percentiles.sort()
 
-    if fig is None or ax is None:
+    if ax is None and fig is None:
         fig = pyplot.figure()
     if ax is None:
         ax = fig.add_subplot(111)
@@ -93,30 +94,43 @@ def plot_density(parameters, samples, plot_density=True, plot_contours=True,
     if ymax is None:
         ymax = samples[parameters[1]].max()
     npts = 100
-    x = numpy.linspace(xmin, xmax, num=npts)
-    y = numpy.linspace(ymin, ymax, num=npts)
-    X, Y = numpy.meshgrid(x, y)
+    X, Y = numpy.mgrid[xmin:xmax:complex(0,npts), ymin:ymax:complex(0,npts)]
+    pos = numpy.vstack([X.ravel(), Y.ravel()])
     if use_kombine:
-        Z = kde(
-            numpy.array(zip(X.flatten(), Y.flatten()))).reshape(X.shape)
-        Z = numpy.exp(Z)
+        Z = numpy.exp(kde(pos).reshape(X.shape).T)
         draw = kde.draw
     else:
-        Z = kde(numpy.array(
-            zip(X.flatten(), Y.flatten())).transpose()).reshape(
-            X.transpose().shape).transpose()
+        Z = numpy.reshape(kde(pos).T, X.shape)
         draw = kde.resample
+    # Exclude out-of-bound regions
+    # this is a bit kludgy; should probably figure out a better solution
+    # eventually for more than just m_p m_s
+    bnds_mask = None
+    if parameters[0] == 'm_p' and parameters[1] == 'm_s':
+        bnds_mask = Y > X
+    elif parameters[0] == 'm_s' and parameters[1] == 'm_p':
+        bnds_mask = X > Y
+    Z[bnds_mask] = 0.
     if plot_density:
-        im = ax.imshow(numpy.rot90(Z),
-            extent=(x.min(), x.max(), y.min(), y.max()),
-            cmap='viridis', zorder=1)
+        im = ax.imshow(numpy.rot90(Z), extent=[xmin, xmax, ymin, ymax],
+            aspect='auto', cmap=cmap, zorder=1)
     if plot_contours:
         # compute the percentile values
         resamps = kde(draw(int(npts**2)))
         if use_kombine:
             resamps = numpy.exp(resamps)
         s = numpy.percentile(resamps, percentiles)
-        ct = ax.contour(X, Y, Z.transpose(), s, colors='k', zorder=5)
+        ct = ax.contour(X, Y, Z, s, colors=contour_color, zorder=5)
+        # label contours
+        lbls = ['{p}%'.format(p=int(p)) for p in (100. - percentiles)]
+        fmt = dict(zip(ct.levels, lbls))
+        fs = 8
+        if fig is not None:
+            # scale appropriately
+            scale_fac = get_scale_fac(fig)
+            fs *= scale_fac
+        ax.clabel(ct, ct.levels, inline=True, fmt=fmt, fontsize=fs)
+
     return fig
 
 
@@ -136,6 +150,11 @@ parser.add_argument("--cmap", type=str, default=None,
                     help="Specify the colormap to use for the points.")
 parser.add_argument("--plot-contours", default=False, action="store_true",
                     help="Plot the confidence intervals.")
+parser.add_argument("--contour-color", default='k',
+                    help='What to color the contours.')
+parser.add_argument('--use-kombine-kde', default=False, action="store_true",
+                    help="Use kombine's KDE for determining contours. Default "
+                         "is to use scipy's gaussian_kde.")
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Be verbose")
 option_utils.add_inference_results_option_group(parser)
@@ -156,19 +175,19 @@ likelihood_stats = fp.read_likelihood_stats(thin_start=opts.thin_start,
 # get the value to plot on the z-axis
 if opts.z_arg == 'loglr':
     zvals = likelihood_stats.loglr
-    zlbl = r'$\log\mathcal{L}(\vec{\Theta})$'
+    zlbl = r'$\log\mathcal{L}(\vec{\vartheta})$'
 elif opts.z_arg == 'snr':
     zvals = likelihood.snr_from_loglr(likelihood_stats.loglr) 
-    zlbl = r'$\rho(\vec{\Theta})$'
+    zlbl = r'$\rho(\vec{\vartheta})$'
 elif opts.z_arg == 'logplr':
     zvals = likelihood_stats.loglr + likelihood_stats.prior
-    zlbl = r'$\log[\mathcal{L}(\vec{\Theta})p(\vec{\Theta})]$'
+    zlbl = r'$\log[\mathcal{L}(\vec{\vartheta})p(\vec{\vartheta})]$'
 elif opts.z_arg == 'logposterior':
     zvals = likelihood_stats.loglr + likelihood_stats.prior + fp.lognl
-    zlbl = r'$\log[p(d|\vec{\Theta})p(\vec{\Theta})]$'
+    zlbl = r'$\log[p(d|\vec{\vartheta})p(\vec{\vartheta})]$'
 elif opts.z_arg == 'prior':
     zvals = likelihood_stats.prior
-    zlbl = r'$\log p(\vec{\Theta})$'
+    zlbl = r'$\log p(\vec{\vartheta})$'
 fp.close()
 
 logging.info("Plotting")
@@ -183,8 +202,8 @@ if opts.plot_contours:
         logging.info("{x}, {y}".format(x=px, y=py))
         ax, _, _ = axis_dict[px, py]
         plot_density([px, py], samples, plot_density=False, plot_contours=True,
-            percentiles=None, ax=ax, use_kombine=False)
+            percentiles=None, contour_color=opts.contour_color, ax=ax,
+            use_kombine=opts.use_kombine_kde)
         
-fig.savefig(opts.output_file, bbox_inches='tight')
-pyplot.close()
+fig.savefig(opts.output_file, bbox_inches='tight', dpi=200)
 logging.info("Done")
