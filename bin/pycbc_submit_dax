@@ -62,9 +62,21 @@ while true ; do
         "") shift 2 ;;
         *) CACHE_FILE=1
            export IFS=","
+           set +e
            for URL in $2; do
                curl --fail "$URL" >> _reuse.cache
+               #If curl fails but the file exists, write to cache, else exit
+               if [ $? != 0 ]; then
+                   if [ -f $URL ]; then
+                       echo "$URL cache file found. Appending..."
+                       cat $URL >> _reuse.cache
+                   else
+                       echo "$URL not found!"
+                       exit
+                   fi
+               fi
            done
+           set -e
            shift 2 ;;
       esac ;;
     -g|--local-gsiftp-server)
