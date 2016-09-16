@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright (C) 2012 Alex Nitz, Tito Dal Canton
+# Copyright (C) 2012-2016 Alex Nitz, Tito Dal Canton, Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -18,20 +18,20 @@
 """
 
 from pycbc.types import FrequencySeries, zeros
+import lal
 import lalsimulation
 import numpy
 
 # build a list of usable PSD functions from lalsimulation
 _name_prefix = 'SimNoisePSD'
+_name_suffix = 'Ptr'
+_name_blacklist = ('FromFile', 'MirrorTherm', 'Quantum', 'Seismic', 'Shot', 'SuspTherm')
 _psd_list = []
 for _name in lalsimulation.__dict__:
-    if _name.startswith(_name_prefix) and _name != _name_prefix:
-        try:
-            eval('lalsimulation.' + _name + '(100.)')
-        except TypeError:
-            # ignore fancy PSDs taking extra args
-            continue
-        _psd_list.append(_name[len(_name_prefix):])
+    if _name != _name_prefix and _name.startswith(_name_prefix) and not _name.endswith(_name_suffix):
+        _name = _name[len(_name_prefix):]
+        if _name not in _name_blacklist:
+            _psd_list.append(_name)
 _psd_list = sorted(_psd_list)
 
 # add functions wrapping lalsimulation PSDs
@@ -40,37 +40,13 @@ for _name in _psd_list:
 def %s(length, delta_f, low_freq_cutoff):
     \"\"\"Return a FrequencySeries containing the %s PSD from LALSimulation.
     \"\"\"
-    return from_lalsimulation(lalsimulation.%s, length, delta_f, low_freq_cutoff)
-""" % (_name, _name, _name_prefix + _name))
+    return from_string("%s", length, delta_f, low_freq_cutoff)
+""" % (_name, _name, _name))
 
 def get_lalsim_psd_list():
     """Return a list of available reference PSD functions.
     """
     return _psd_list
-
-def from_lalsimulation(func, length, delta_f, low_freq_cutoff):
-    """Generate a frequency series containing the specified LALSimulation PSD.
-
-    Parameters
-    ----------
-    func : function
-        LALSimulation PSD function.
-    length : int
-        Length of the frequency series in samples.
-    delta_f : float
-        Frequency resolution of the frequency series.
-    low_freq_cutoff : float
-        Frequencies below this value are set to zero.
-
-    Returns
-    -------
-    psd : FrequencySeries
-        The generated frequency series.
-    """
-    psd = FrequencySeries(zeros(length), delta_f=delta_f)
-    kmin = int(low_freq_cutoff / delta_f)
-    psd.data[kmin:] = map(func, numpy.arange(length)[kmin:] * delta_f)
-    return psd
 
 def from_string(psd_name, length, delta_f, low_freq_cutoff):
     """Generate a frequency series containing a LALSimulation PSD specified by name.
@@ -85,15 +61,24 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff):
         Frequency resolution of the frequency series.
     low_freq_cutoff : float
         Frequencies below this value are set to zero.
-    
+
     Returns
     -------
     psd : FrequencySeries
         The generated frequency series.
     """
-    try:
-        func = lalsimulation.__dict__[_name_prefix + psd_name]
-    except KeyError:
+    if psd_name not in _psd_list:
         raise ValueError(psd_name + ' not found among LALSimulation PSD functions.')
-    return from_lalsimulation(func, length, delta_f, low_freq_cutoff)
-
+    kmin = int(low_freq_cutoff / delta_f)
+    lalseries = lal.CreateREAL8FrequencySeries(
+        '', lal.LIGOTimeGPS(0), 0, delta_f, lal.DimensionlessUnit, length)
+    try:
+        func = lalsimulation.__dict__[_name_prefix + psd_name + _name_suffix]
+    except KeyError:
+        func = lalsimulation.__dict__[_name_prefix + psd_name]
+        func(lalseries, low_freq_cutoff)
+    else:
+        lalsimulation.SimNoisePSD(lalseries, 0, func)
+    psd = FrequencySeries(lalseries.data.data, delta_f=delta_f)
+    psd.data[:kmin] = 0
+    return psd
