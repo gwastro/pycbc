@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# Copyright (C) 2016 Miriam Cabero Mueller
+# Copyright (C) 2016 Miriam Cabero Mueller, Collin Capano
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -68,7 +68,7 @@ scatter_group.add_argument("--vmax", type=float,
                     help="Maximum value for the colorbar.")
 scatter_group.add_argument("--scatter-cmap", type=str, default='viridis',
                     help="Specify the colormap to use for points. Default is "
-                         "plasma_r.")
+                         "viridis.")
 # Density configuration
 density_group = parser.add_argument_group("Options for configuring the "
                                           "contours and density color map")
