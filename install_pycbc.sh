@@ -574,7 +574,7 @@ pip --no-cache install ${glue_version} ${pylal_version}
 #ROM Data Download
 if [[ ${install_rom} == "no" ]] ; then
   if [[ ${rom_download} == "yes" ]] ; then
-    pushd ${LAL_DATA_PATH}
+    pushd ${VIRTUAL_ENV}/src
     echo "--- Downloading ROM DATA ---------------------------------"
     svn co -r 7 https://svn.ligo.caltech.edu/svn/lalsuite-extra/
     pushd lalsuite-extra
@@ -583,7 +583,6 @@ if [[ ${install_rom} == "no" ]] ; then
     make install
     popd
     popd
-    echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >> ${VIRTUAL_ENV}/bin/activate
   fi
 fi
 
