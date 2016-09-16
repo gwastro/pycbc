@@ -544,7 +544,7 @@ source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc
 
 #Build a static lalapps_inspinj and install it
 cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps
-./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic
+LIBS=-lz ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic
 cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/lalapps
 make -j $nproc
 cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/inspiral
