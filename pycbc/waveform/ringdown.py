@@ -69,11 +69,21 @@ def lm_amps_phases(**kwargs):
     """
     l, m = kwargs['l'], kwargs['m']
     amps, phis = {}, {}
+    # amp220 is always required, because the amplitudes of subdominant modes 
+    # are given as fractions of amp220.
+    try:
+        amps['220'] = kwargs['amp220']
+    except KeyError:
+        raise ValueError('amp220 is always required')
+
+    # Get amplitudes of subdominant modes and all phases
     for n in range(kwargs['nmodes']):
-        try:
-            amps['%d%d%d' %(l,m,n)] = kwargs['amp%d%d%d' %(l,m,n)]
-        except KeyError:
-            raise ValueError('amp%d%d%d is required' %(l,m,n))
+        # If it is the 22 mode, skip 220
+        if (l, m, n) != (2, 2, 0):
+            try:
+                amps['%d%d%d' %(l,m,n)] = kwargs['amp%d%d%d' %(l,m,n)] * amps['220']
+            except KeyError:
+                raise ValueError('amp%d%d%d is required' %(l,m,n))
         try:
             phis['%d%d%d' %(l,m,n)] = kwargs['phi%d%d%d' %(l,m,n)]
         except KeyError:
@@ -395,8 +405,11 @@ def get_td_lm(template=None, **kwargs):
         m mode (lm modes available: 22, 21, 33, 44, 55).
     nmodes: int
         Number of overtones desired (maximum n=8)
+    amp220 : float
+        Amplitude of the fundamental 220 mode, needed for any lm.
     amplmn : float
-        Amplitude of the lmn overtone, as many as the number of nmodes.
+        Fraction of the amplitude of the lmn overtone relative to the 
+        fundamental mode, as many as the number of subdominant modes.
     philmn : float
         Phase of the lmn overtone, as many as the number of nmodes.
     delta_t : {None, float}, optional
@@ -534,8 +547,11 @@ def get_td_lm_allmodes(template=None, **kwargs):
         The n specifies the number of overtones desired for the corresponding
         lm pair (maximum n=8).
         Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
+    amp220 : float
+        Amplitude of the fundamental 220 mode.
     amplmn : float
-        Amplitude of the lmn overtone, as many as the number of modes.
+        Fraction of the amplitude of the lmn overtone relative to the 
+        fundamental mode, as many as the number of subdominant modes.
     philmn : float
         Phase of the lmn overtone, as many as the number of modes.
     delta_t : {None, float}, optional
@@ -599,8 +615,11 @@ def get_fd_lm_allmodes(template=None, **kwargs):
         The n specifies the number of overtones desired for the corresponding
         lm pair (maximum n=8).
         Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
+    amp220 : float
+        Amplitude of the fundamental 220 mode.
     amplmn : float
-        Amplitude of the lmn overtone, as many as the number of modes.
+        Fraction of the amplitude of the lmn overtone relative to the 
+        fundamental mode, as many as the number of subdominant modes.
     philmn : float
         Phase of the lmn overtone, as many as the number of modes.
     delta_f : {None, float}, optional

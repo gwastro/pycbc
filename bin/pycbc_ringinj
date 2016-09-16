@@ -62,7 +62,10 @@ parser.add_argument('--lmns', nargs='+',
 parser.add_argument('--amps-phis', nargs='+',
                     help='Amplitudes and phases for each mode. '
                          'Use format mode:amplitude:phase. '
-                         'Example: 220:1e-21:0 221:0.1e-21:3.14 330:0.05e-21:3.14')
+                         'Always give amplitude and phase for 220 mode, even if '
+                         'not included in lmns, and specifiy amplitudes of '
+                         'subdominant modes as fraction of 220 amplitude. '
+                         'Example: 220:1e-21:0 221:0.1:3.14 330:0.05:3.14')
 parser.add_argument('--t-final', type=float,
                     help='Ending time of the output time series '
                          'for time domain approximants.')
@@ -143,5 +146,11 @@ if opts.approximant=='FdQNMmultiModes' or opts.approximant=='TdQNMmultiModes':
     for mode in all_modes:
         injection.create_dataset('amp%s' %mode, data=float(amps[mode]))
         injection.create_dataset('phi%s' %mode, data=float(phis[mode]))
+    # Amplitude of 220 mode is always required, even if 22 not included
+    if 220 not in all_modes:
+        try:
+            injection.create_dataset('amp220', data=float(amps['220']))
+        except:
+            raise ValueError('Please provide information of 220 mode')
 
 injection.close()
