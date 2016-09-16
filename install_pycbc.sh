@@ -569,7 +569,12 @@ pip install git+https://github.com/ligo-cbc/dqsegdb.git@pypi_release#egg=dqsegdb
 pip install ligo-gracedb
 
 #Install pycbc and glue from non-cached versions to get the rpaths correct
-pip --no-cache install ${glue_version} ${pylal_version}
+if [[ $dev_or_rel -eq 1 ]] ; then
+  pip --no-cache install ${glue_version} ${pylal_version}
+else
+  pip --no-cache install git+https://github.com/ligo-cbc/pycbc-glue.git
+  pip --no-cache install git+https://github.com/ligo-cbc/pycbc-pylal.git
+fi
 
 #ROM Data Download
 if [[ ${install_rom} == "no" ]] ; then
