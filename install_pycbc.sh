@@ -494,16 +494,6 @@ echo "All files are in ${LAL_DATA_PATH}."
 echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >>  ${VIRTUAL_ENV}/bin/activate
 fi
 
-#Install HDF5
-echo "--- installing HDF5 libraries -----------------------------------"
-cd $VIRTUAL_ENV/src
-curl https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
-tar -zxvf hdf5-1.8.12.tar.gz
-rm hdf5-1.8.12.tar.gz
-cd hdf5-1.8.12
-./configure --prefix=$VIRTUAL_ENV
-make -j $nproc install
-
 #Set up the software for the virtual environment
 echo "--- installing required packages --------------------------------"
 
