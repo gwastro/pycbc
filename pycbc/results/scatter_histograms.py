@@ -30,6 +30,7 @@ import itertools
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot
+import matplotlib.gridspec as gridspec
 from pycbc.results import str_utils
 #pyplot.rcParams.update({'text.usetex': True})
 
@@ -65,8 +66,10 @@ def create_corner_axes(parameters, labels=None):
         fsize = (8, 7)
     else:
         fsize = (ndim*3 - 1, ndim*3 - 2)
-    fig, axes = pyplot.subplots(ndim, ndim,# sharex='col',
-                                figsize=fsize)
+    fig = pyplot.figure(figsize=fsize)
+    gs = gridspec.GridSpec(ndim, ndim)
+    # create grid of axis numbers to easily create axes in the right locations
+    axes = numpy.arange(ndim**2).reshape((ndim, ndim))
 
     # Select possible combinations of plots and establish rows and columns.
     combos =  list(itertools.combinations(range(ndim),2))
@@ -78,35 +81,12 @@ def create_corner_axes(parameters, labels=None):
     # cycle over all the axes, setting thing as needed
     for nrow in range(ndim):
         for ncolumn in range(ndim):
-            ax = axes[nrow, ncolumn]
+            ax = pyplot.subplot(gs[axes[nrow, ncolumn]])
             # map to a parameter index
             px = ncolumn
             py = nrow
             if (px, py) in combos:
                 axis_dict[parameters[px], parameters[py]] = (ax, nrow, ncolumn)
-                # keep number of ticks < 4 for ndim > 3
-                if False:#ndim > 3:
-                    ticks = ax.get_xticks()
-                    if len(ticks) > 3:
-                        if len(ticks) % 2 == 0:
-                            keepticks = numpy.array([len(ticks)/4, len(ticks)/2,
-                                    3*len(ticks)/4]) - 1
-                            ticks = ticks[keepticks]
-                        else:
-                            ticks = numpy.array([ticks.min(), numpy.median(ticks),
-                                ticks.max()])
-                        ax.set_xticks(ticks)
-                    ticks = ax.get_yticks()
-                    if len(ticks) > 3:
-                        if len(ticks) % 2 == 0:
-                            keepticks = numpy.array([len(ticks)/4, len(ticks)/2,
-                                    3*len(ticks)/4]) - 1
-                            ticks = ticks[keepticks]
-                        else:
-                            ticks = numpy.array([ticks.min(), numpy.median(ticks),
-                                ticks.max()])
-                        ax.set_yticks(ticks)
-
                 # x labels only on bottom
                 if nrow + 1 == ndim:
                     ax.set_xlabel('{}'.format(labels[px]))
@@ -120,7 +100,7 @@ def create_corner_axes(parameters, labels=None):
             else:
                 # make non-used axes invisible
                 ax.axis('off')
-    return fig, axes, axis_dict
+    return fig, axis_dict
 
 def get_scale_fac(fig, fiducial_width=8, fiducial_height=7):
     """Gets a factor to scale fonts by for the given figure. The scale
@@ -174,7 +154,7 @@ def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
     data = data[sort_indices]
 
     # set up the figure with the corner axes
-    fig, axes, axis_dict = create_corner_axes(parameters, labels=labels)
+    fig, axis_dict = create_corner_axes(parameters, labels=labels)
 
     # Plot histograms in diagonal
     for param in parameters:
@@ -213,6 +193,14 @@ def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
         ax.set_xlim(mins[px], maxs[px])
         ax.set_ylim(mins[py], maxs[py])
 
+    # adjust tick number
+    for px, py in axis_dict:
+        ax, _, _ = axis_dict[px, py]
+        # keep number of ticks <= 3 for ndim > 3
+        if len(parameters) > 3:
+            ax.set_xticks(reduce_ticks(ax, 'x', maxticks=3))
+            ax.set_yticks(reduce_ticks(ax, 'y', maxticks=3))
+
     # compute font size based on fig size
     scale_fac = get_scale_fac(fig)
     
@@ -224,3 +212,36 @@ def scatter_histogram(parameters, data, zvals, labels=None, cbar_label=None,
     cb.ax.tick_params(labelsize=8*scale_fac)
 
     return fig, axis_dict
+
+def reduce_ticks(ax, which, maxticks=3):
+    """Given a pyplot axis, resamples its `which`-axis ticks such that are at most
+    `maxticks` left.
+
+    Parameters
+    ----------
+    ax : axis
+        The axis to adjust.
+    which : {'x' | 'y'}
+        Which axis to adjust.
+    maxticks : {3, int}
+        Maximum number of ticks to use.
+
+    Returns
+    -------
+    array
+        An array of the selected ticks.
+    """
+    ticks = getattr(ax, 'get_{}ticks'.format(which))()
+    if len(ticks) > maxticks:
+        # make sure the left/right value is not at the edge
+        minax, maxax = getattr(ax, 'get_{}lim'.format(which))()
+        dw = abs(maxax-minax)/10.
+        start_idx, end_idx = 0, len(ticks)
+        if ticks[0] < minax + dw:
+            start_idx += 1
+        if ticks[-1] > maxax - dw:
+            end_idx -= 1
+        # get reduction factor
+        fac = int(len(ticks) / maxticks)
+        ticks = ticks[start_idx:end_idx:fac]
+    return ticks
