@@ -363,7 +363,7 @@ elif [[ ${install_rom} == "no" ]] ; then
         mkdir -p ${rom_store}
        fi
     
-    LAL_DATA_PATH="${rom_store}"
+    LAL_DATA_PATH="${rom_store}/share/lalsimulation"
     echo 
     break
      fi
@@ -403,7 +403,7 @@ if [[ ${check_rom} == "yes" ]] ; then
   fi
 
   if [[ ${install_rom} == "no" ]] ; then
-    echo "ROM data will be install in ${LAL_DATA_PATH}"
+    echo "ROM data will be installed in ${LAL_DATA_PATH}"
   fi
 else
   echo "Not installing ROM data."
@@ -468,36 +468,31 @@ set -e
 mkdir -p $VIRTUAL_ENV/src
 
 #ROM Data Validation
-#if [[ ${check_rom} == "yes" ]] ; then
-#echo "--- checking rom data -------------------------------------------"
-#rom_hash=('f82ddc5dc0b6fdc75122e767bd5e78c8' '62afa5351d6b775ac33cb4d898f0016b' 'a6829fa05437cc0aad81e3f8dae839cc' '98ea14b01e729d15ff666caa25afaed6' 'b41f0f7fbaf8be1d1848de7ee702bc67' '20ee260c870109766a6f048e20c7e10f' '96c384617edd8375ceaa03f9b7456467' '67d4f206fe19104fbc98b923b37318bb' 'd0bf97b4e17b5c9a7cfd222aaaafd742' 'c2ea5d296fee01abe16c0dd9e5f71f04' '412953726ca4bc72a810b27b810831c7' '4d5378935a7fba5e96f671581bce99fb' '31f48cb651a60837a3e99ee050aa9bc2' '727d31f6dc678aba8539817c8d0ae930' 'd0e1601c7cf4bd727d03e6cf7d2f722b' 'e6c243f76609cada55612cfe53f82e41' '08186a21682d2e73cb00a3ef35aa5c9c' '1ef7953a977a1fb551f59585c5d63d7a' 'b5923860bf021e6a2a23d743e5724bee' '2947032d0ad7ffde9704e24bf9e676f5')
-#
-#if [[ ${install_rom} == "yes" ]] ; then
-#md5sum_hash=$( echo -n 'test' | md5sum ${LAL_DATA_PATH}/SEOBNRv2ROM*.dat | cut -d' ' -f1)
-#fi
-#
-#if [[ ${install_rom} == "no" ]] ; then
-#md5sum_hash=$( echo -n 'test' | md5sum ${LAL_DATA_PATH}/share/lalsimulation/SEOBNRv2ROM*.dat | cut -d' ' -f1)
-#fi
-#
-#for j in "${rom_hash[@]}" ; do
-#  if [[ ${rom_hash[*]} == ${md5sum_hash[*]} ]] ; then
-#    echo "All files are in ${LAL_DATA_PATH}." 
-#    if [[ ${install_rom} == "yes" ]] ; then
-#        echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >>  ${VIRTUAL_ENV}/bin/activate
-#    elif [[ ${install_rom} == "no" ]] ; then
-#        echo "export LAL_DATA_PATH=${LAL_DATA_PATH}/share/lalsimulation" >>  ${VIRTUAL_ENV}/bin/activate
-#    fi
-#    break
-#  fi
-#
-#  if [[ ${rom_hash[*]} != ${md5sum_hash[*]} ]] ; then
-#    echo "The files are not the same."
-#    echo
-#    exit 1
-#  fi
-#done
-#fi
+if [[ ${check_rom} == "yes" ]] ; then
+echo "--- checking rom data -------------------------------------------"
+
+rom_files=('SEOBNRv1ROM_DS_Amp_ciall.dat' 'SEOBNRv1ROM_DS_AmpPrefac_ci.dat' 'SEOBNRv1ROM_DS_Bamp_bin.dat' 'SEOBNRv1ROM_DS_Bphase_bin.dat' 'SEOBNRv1ROM_DS_Phase_ciall.dat' 'SEOBNRv1ROM_SS_Amp_ciall.dat' 'SEOBNRv1ROM_SS_AmpPrefac_ci.dat' 'SEOBNRv1ROM_SS_Bamp_bin.dat' 'SEOBNRv1ROM_SS_Bphase_bin.dat' 'SEOBNRv1ROM_SS_Phase_ciall.dat' 'SEOBNRv2ChirpTimeSS.dat' 'SEOBNRv2ROM_DS_HI_v1.0.hdf5' 'SEOBNRv2ROM_DS_sub1_Amp_ciall.dat' 'SEOBNRv2ROM_DS_sub1_AmpPrefac_ci.dat' 'SEOBNRv2ROM_DS_sub1_Bamp_bin.dat' 'SEOBNRv2ROM_DS_sub1_Bphase_bin.dat' 'SEOBNRv2ROM_DS_sub1_Phase_ciall.dat' 'SEOBNRv2ROM_DS_sub2_Amp_ciall.dat' 'SEOBNRv2ROM_DS_sub2_AmpPrefac_ci.dat' 'SEOBNRv2ROM_DS_sub2_Bamp_bin.dat' 'SEOBNRv2ROM_DS_sub2_Bphase_bin.dat' 'SEOBNRv2ROM_DS_sub2_Phase_ciall.dat' 'SEOBNRv2ROM_DS_sub3_Amp_ciall.dat' 'SEOBNRv2ROM_DS_sub3_AmpPrefac_ci.dat' 'SEOBNRv2ROM_DS_sub3_Bamp_bin.dat' 'SEOBNRv2ROM_DS_sub3_Bphase_bin.dat' 'SEOBNRv2ROM_DS_sub3_Phase_ciall.dat' 'SEOBNRv2ROM_SS_Amp_ciall.dat' 'SEOBNRv2ROM_SS_AmpPrefac_ci.dat' 'SEOBNRv2ROM_SS_Bamp_bin.dat' 'SEOBNRv2ROM_SS_Bphase_bin.dat' 'SEOBNRv2ROM_SS_Phase_ciall.dat')
+
+rom_hash=('0cc069d487b72ab8ebf0df690c01d4ba' '9b4f4eacd9151a20acfb0a08e30ac49f' 'db884a753b6f0a7516af12915472cb15' '9faae84c8c9d376681baac029955c47a' '2261539962b88cd32f383c67ff6f1893' 'ecebe37ead05afa211b0a5619c4d1d1c' '97ab150b8e558d2cd9a0d0123584eec5' 'f8249222f0ac0b9878e0a96516633cff' 'fea200dc979f2dd50dfc84feb57a433d' 'b8651dde261001c0600e066a3aa9dadf' '7b7dbadacc3f565fb2c8e6971df2ab74' 'b22c167bd665c6de1debd05038251a72' 'f82ddc5dc0b6fdc75122e767bd5e78c8' '62afa5351d6b775ac33cb4d898f0016b' 'a6829fa05437cc0aad81e3f8dae839cc' '98ea14b01e729d15ff666caa25afaed6' 'b41f0f7fbaf8be1d1848de7ee702bc67' '20ee260c870109766a6f048e20c7e10f' '96c384617edd8375ceaa03f9b7456467' '67d4f206fe19104fbc98b923b37318bb' 'd0bf97b4e17b5c9a7cfd222aaaafd742' 'c2ea5d296fee01abe16c0dd9e5f71f04' '412953726ca4bc72a810b27b810831c7' '4d5378935a7fba5e96f671581bce99fb' '31f48cb651a60837a3e99ee050aa9bc2' '727d31f6dc678aba8539817c8d0ae930' 'd0e1601c7cf4bd727d03e6cf7d2f722b' 'e6c243f76609cada55612cfe53f82e41' '08186a21682d2e73cb00a3ef35aa5c9c' '1ef7953a977a1fb551f59585c5d63d7a' 'b5923860bf021e6a2a23d743e5724bee' '2947032d0ad7ffde9704e24bf9e676f5')
+
+md5sum_hash=()
+
+for rom_dat_file in "${rom_files[@]}" ; do
+  hash=$( echo -n 'test' | md5sum ${LAL_DATA_PATH}/${rom_dat_file} | cut -d' ' -f1)
+  md5sum_hash+=(${hash})
+done
+
+for((j=0;j<${#rom_files[@]};j++)) ; do
+  if [[ ${rom_hash[j]} == ${md5sum_hash[j]} ]] ; then
+    echo "ROM file ${rom_files[j]} is OK."
+  else
+    echo "Error: ROM checksum for ${rom_files[j]} is bad or file is missing."
+    exit 1
+  fi
+done
+echo "All files are in ${LAL_DATA_PATH}."
+echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >>  ${VIRTUAL_ENV}/bin/activate
+fi
 
 #Install HDF5
 echo "--- installing HDF5 libraries -----------------------------------"
@@ -619,14 +614,14 @@ if [[ ${install_rom} == "no" ]] ; then
   if [[ ${rom_download} == "yes" ]] ; then
     pushd ${LAL_DATA_PATH}
     echo "--- Downloading ROM DATA ---------------------------------"
-    svn co https://svn.ligo.caltech.edu/svn/lalsuite-extra/
+    svn co -r 7 https://svn.ligo.caltech.edu/svn/lalsuite-extra/
     pushd lalsuite-extra
     ./00boot
-    ./configure --prefix=${LAL_DATA_PATH}
+    ./configure --prefix=${rom_store}
     make install
     popd
     popd
-    #echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >> ${VIRTUAL_ENV}/bin/activate
+    echo "export LAL_DATA_PATH=${LAL_DATA_PATH}" >> ${VIRTUAL_ENV}/bin/activate
   fi
 fi
 
