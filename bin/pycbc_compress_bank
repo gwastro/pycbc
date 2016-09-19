@@ -73,7 +73,7 @@ parser.add_argument("--tolerance", type=float, default=0.001,
                      "interpolation has a mismatch <= this value. Default is "
                      "0.001.")
 parser.add_argument("--interpolation", type=str, 
-                default="linear_same_freq_points",
+                default="linear",
                 help="The interpolation to use for decompressing the "
                      "waveforms for checking tolerance. Options are "
                      "'linear_same_freq_points', which assumes that the "
