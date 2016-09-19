@@ -432,7 +432,9 @@ class File(DataStorage, dax.File):
     @classmethod
     def from_path(cls, path):
         """Takes a path and returns a File object with the path as the PFN."""
-        path = os.path.abspath(path)
+        if os.path.isabs(path):
+            path = os.path.abspath(path)
+
         fil = File(os.path.basename(path))
         fil.PFN(path, "local")
         return fil

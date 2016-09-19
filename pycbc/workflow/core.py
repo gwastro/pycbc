@@ -279,7 +279,13 @@ class Executable(pegasus_workflow.Executable):
                 # This now expects the option to be a file
                 # Get LFN and PFN
                 curr_lfn = os.path.basename(value)
-                curr_pfn = os.path.abspath(value)
+
+                # If the file exists make sure to use. 
+                if os.path.isfile(value):
+                    curr_pfn = os.path.abspath(value)
+                else:
+                    curr_pfn = value
+
                 if curr_lfn in file_input_from_config_dict.keys():
                     file_pfn = file_input_from_config_dict[curr_lfn][0]
                     assert(file_pfn == curr_pfn)
