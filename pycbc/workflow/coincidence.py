@@ -97,7 +97,8 @@ class PyCBCFindCoincExecutable(Executable):
         node.set_memory(10000)
         node.add_input_opt('--template-bank', bank_file)
         node.add_input_list_opt('--trigger-files', trig_files)
-        node.add_input_list_opt('--statistic-files', stat_files)
+        if len(stat_files) > 0:
+            node.add_input_list_opt('--statistic-files', stat_files)
         if veto_file is not None:
             node.add_input_opt('--veto-files', veto_file)
             node.add_opt('--segment-name', veto_name)
