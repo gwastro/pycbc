@@ -479,7 +479,7 @@ def fd_decompress(amp, phase, amp_freq, phase_freq, out=None, df=None,
     if out is None:
         if df is None:
             raise ValueError("Either provide output memory or a df")
-        f_max = numpy.array([amp_freq.max(),phase_freq.max()]).min()
+        f_max = min([amp_freq.max(),phase_freq.max()])
         hlen = int(numpy.ceil(f_max/df+1))
         out = FrequencySeries(numpy.zeros(hlen,
             dtype=_complex_dtypes[precision]), copy=False,
@@ -492,14 +492,14 @@ def fd_decompress(amp, phase, amp_freq, phase_freq, out=None, df=None,
         hlen = len(out)
     if f_lower is None:
         imin = 0
-        f_lower = numpy.array([amp_freq.min(), phase_freq.min()]).max()
+        f_lower = max([amp_freq.min(), phase_freq.min()])
     else:
-        if f_lower >= numpy.array([amp_freq.max(), phase_freq.max()]).min():
+        if f_lower >= f_max:
             raise ValueError("f_lower is greater than the maximum "
                              "sample frequency of the interpolants")
     start_index = int(numpy.floor(f_lower/df))
     # interpolate the amplitude and the phase
-    if interpolation == "linear_same_freq_points":
+    if interpolation == "linear":
         if len(amp_freq) != len(phase_freq):
             raise ValueError("amp_freq and phase_freq must be the same "
                      "length to use inline_linear_single_freq decompression")
