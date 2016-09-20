@@ -373,11 +373,12 @@ class EventManager(object):
             if not os.path.exists(path) and path is not None:
                 os.makedirs(path)
 
-    def save_performance(self, ncores, ntemplates, run_time):
+    def save_performance(self, ncores, ntemplates, run_time, setup_time):
         """
         Calls variables from pycbc_inspiral to be used in a timing calculation
         """
         self.run_time = run_time
+        self.setup_time = setup_time
         self.ncores = ncores
         self.ntemplates = ntemplates
         self.write_performance = True
@@ -480,6 +481,7 @@ class EventManager(object):
             time_ratio = numpy.array([float(self.analysis_time) / float(self.run_time)])
             temps_per_core = float(self.ntemplates) / float(self.ncores)
             f['search/templates_per_core'] = numpy.array([float(temps_per_core) * float(time_ratio)])
+            f['search/setup_time_fraction'] = numpy.array([float(self.setup_time) / float(self.run_time)])
 
 
         if 'gating_info' in self.global_params:
