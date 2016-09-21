@@ -276,9 +276,9 @@ for ifo in opt.ifos:
     logging.info("Parameter range of triggers: %f - %f" %
                                                   (min(parvals), max(parvals)))
     if opt.bin_spacing == "irregular":
-        logging.info("Removing triggers outside bin range %f - %f" % 
+        logging.info("Removing triggers outside bin range %f - %f" %
                                       (min(opt.bin_edges), max(opt.bin_edges)))
-        in_range = np.logical_and(parvals >= min(opt.bin_edges), 
+        in_range = np.logical_and(parvals >= min(opt.bin_edges),
                                   parvals <= max(opt.bin_edges))
         statv = statv[in_range]
         parvals = parvals[in_range]
@@ -288,7 +288,7 @@ for ifo in opt.ifos:
     binind = [pbins[c] for c in pbins.centres()]
     logging.info("Assigning trigger param values to bins")
     # FIXME: This is slow!! either find a better way of using pylal.rate
-    # or write faster binning routime 
+    # or write faster binning routine
     pind = np.array([pbins[par] for par in parvals])
 
     logging.info("Getting max counts in bins")
