@@ -64,7 +64,7 @@ while true ; do
            export IFS=","
            set +e
            for URL in $2; do
-               curl --fail "$URL" >> _reuse.cache
+               curl --fail "$URL" >> _reuse.cache 2>/dev/null
                #If curl fails but the file exists, write to cache, else exit
                if [ $? != 0 ]; then
                    if [ -f $URL ]; then
