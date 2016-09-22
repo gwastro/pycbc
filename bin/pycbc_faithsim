@@ -27,17 +27,14 @@ from numpy import loadtxt,complex64,float32
 from optparse import OptionParser
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import table, lsctables, ligolw
-from math import pow
-
-from scipy.interpolate import interp1d
 
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
-from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
+from pycbc.waveform import td_approximants, fd_approximants
+from pycbc.waveform import get_two_pol_waveform_filter
 from pycbc import DYN_RANGE_FAC
-from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
+from pycbc.types import FrequencySeries, zeros
 from pycbc.filter import match, overlap, sigma
 from pycbc.scheme import CPUScheme, CUDAScheme
-from pycbc.fft import fft
 import pycbc.psd 
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
@@ -50,61 +47,23 @@ def update_progress(progress):
         print "Done"
     sys.stdout.flush()
 
-## Remove the need for these functions ########################################
-def make_padded_frequency_series(vec,filter_N=None):
-    """Pad a TimeSeries with a length of zeros greater than its length, such
-    that the total length is the closest power of 2. This prevents the effects 
-    of wraparound.
-    """
-    if filter_N is None:
-        power = ceil(log(len(vec),2))+1
-        N = 2 ** power
-    else:
-        N = filter_N
-    n = N/2+1    
-    
-   
-    if isinstance(vec,FrequencySeries):
-        vectilde = FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)),
-                                   delta_f=1.0,copy=False)
-	if len(vectilde) < len(vec):
-	    cplen = len(vectilde)
-        else:
-            cplen = len(vec)
-        vectilde[0:cplen] = vec[0:cplen]  
-        delta_f = vec.delta_f
-    
-        
-    if isinstance(vec,TimeSeries):  
-        vec_pad = TimeSeries(zeros(N),delta_t=vec.delta_t,
-                         dtype=real_same_precision_as(vec))
-        vec_pad[0:len(vec)] = vec   
-        delta_f = 1.0/(vec.delta_t*N)
-        vectilde = FrequencySeries(zeros(n),delta_f=1.0, 
-                               dtype=complex_same_precision_as(vec))
-        fft(vec_pad,vectilde)
-        
-    vectilde = FrequencySeries(vectilde * DYN_RANGE_FAC,delta_f=delta_f,dtype=complex64)
-    return vectilde
 
 def get_waveform(approximant, phase_order, amplitude_order, spin_order, template_params, start_frequency, sample_rate, length):
 
-    if approximant in td_approximants():
-        hplus,hcross = get_td_waveform(template_params, approximant=approximant, spin_order=spin_order,
-                                   phase_order=phase_order, delta_t=1.0 / sample_rate,
-                                   f_lower=start_frequency, amplitude_order=amplitude_order) 
+    delta_f = sample_rate / length
+    vecplus = FrequencySeries(zeros(filter_n), delta_f=delta_f,
+                              dtype=complex64)
+    veccross = FrequencySeries(zeros(filter_n), delta_f=delta_f,
+                              dtype=complex64)
 
-    elif approximant in fd_approximants():
-        delta_f = sample_rate / length
-        hplus, hcross = get_fd_waveform(template_params, approximant=approximant, spin_order=spin_order,
-                               phase_order=phase_order, delta_f=delta_f,
-                               f_lower=start_frequency, amplitude_order=amplitude_order)     
+    # NOTE: for now only hplus is used! For precessing faithsims one would want
+    #       to also specify a polarization phase, or "u_val".
+    hplus, hcross = get_two_pol_waveform_filter(vecplus, veccross,
+        template_params, approximant=approximant, spin_order=spin_order,
+        phase_order=phase_order, delta_t=1.0 / sample_rate, delta_f=delta_f,
+        f_lower=start_frequency, amplitude_order=amplitude_order)
 
-    hvec = hplus
-
-    htilde = make_padded_frequency_series(hvec,filter_N)
-
-    return htilde
+    return hplus*DYN_RANGE_FAC
 
 ###############################################################################
 
@@ -188,6 +147,7 @@ else:
 
 matches = []
 overlaps = []
+time_offsets = []
 s1s = []
 s2s = []
 print("Calculating Overlaps")
@@ -230,18 +190,20 @@ with ctx:
                         low_frequency_cutoff=options.filter_low_frequency_cutoff, high_frequency_cutoff=options.filter_high_frequency_cutoff)   
             matches.append(m)
             overlaps.append(o)
+            if i > filter_n:
+               i = i - filter_N
+            time_offsets.append(i * 1./options.filter_sample_rate)
             s1s.append(s1)
             s2s.append(s2)
         except:
             print "Unable to generate waveforms"
             matches.append(-1)
             overlaps.append(-1)
+            time_offsets.append(-1)
             s1s.append(-1)
             s2s.append(-1)
 
 #Output the overlaps to  a file
-for m, o, s1, s2 in zip(matches, overlaps, s1s, s2s):
-    match_str= "%5.5f %5.5f %5.5f %5.5f\n" % (m, o, s1, s2)
+for m, o, i, s1, s2 in zip(matches, overlaps, time_offsets, s1s, s2s):
+    match_str= "%5.5f %5.5f %5.5f %5.5f %5.5f\n" % (m, o, i, s1, s2)
     fout.write(match_str)
-
-
