@@ -28,7 +28,6 @@ between quantities.
 """
 from __future__ import division
 import lal, lalsimulation
-from numpy import log
 import numpy
 from scipy.optimize import bisect
 
@@ -483,10 +482,14 @@ named_frequency_cutoffs = {
                                               p["s1z"], p["s2z"]),
     "SEOBNRv1Peak": lambda p: get_freq("fSEOBNRv1Peak", p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
-    "SEOBNRv2RD"  : lambda p: get_freq("fSEOBNRv2RD", p["m1"], p["m2"],
-                                              p["s1z"], p["s2z"]),
+    "SEOBNRv2RD": lambda p: get_freq("fSEOBNRv2RD", p["m1"], p["m2"],
+                                     p["s1z"], p["s2z"]),
     "SEOBNRv2Peak": lambda p: get_freq("fSEOBNRv2Peak", p["m1"], p["m2"],
-                                              p["s1z"], p["s2z"])
+                                       p["s1z"], p["s2z"]),
+    "SEOBNRv4RD": lambda p: get_freq("fSEOBNRv4RD", p["m1"], p["m2"],
+                                     p["s1z"], p["s2z"]),
+    "SEOBNRv4Peak": lambda p: get_freq("fSEOBNRv4Peak", p["m1"], p["m2"],
+                                       p["s1z"], p["s2z"])
     }
 
 def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
@@ -522,7 +525,7 @@ def _get_seobnrrom_duration(m1, m2, s1z, s2z, f_low):
     chi = lalsimulation.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
     time_length = lalsimulation.SimIMRSEOBNRv2ChirpTimeSingleSpin(
                                 m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, f_low)
-    # FIXME The function seobnrrom_length_in_time() in waveform.py adds an
+    # FIXME The function seobnrv2_length_in_time() in waveform.py adds an
     # extra factor of 1.1 for 'safety'.  For consistency with that code we do
     # that here.  THIS IS FRAGILE AND HACKY
     return time_length * 1.1
@@ -559,7 +562,8 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
                                  n_points)
         track_t = numpy.array([findchirp_chirptime(float(mass1), float(mass2), 
                                         float(f), pn_2order) for f in track_f])
-    elif approximant == 'SEOBNRv2_ROM_DoubleSpin':
+    elif approximant in ['SEOBNRv2', 'SEOBNRv2_ROM_DoubleSpin',
+                         'SEOBNRv2_ROM_DoubleSpin_HI']:
         f_high = get_final_freq('SEOBNRv2', mass1, mass2, spin1, spin2)
         track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
                                  n_points)
@@ -567,6 +571,14 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
                 lalsimulation.SimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency(f,
                     solar_mass_to_kg(mass1), solar_mass_to_kg(mass2),
                     float(spin1), float(spin2)) for f in track_f])
+    elif approximant in ['SEOBNRv4', 'SEOBNRv4_ROM']:
+        f_high = get_final_freq('SEOBNRv4', mass1, mass2, spin1, spin2)
+        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
+                                 n_points)
+        track_t = numpy.array([
+                lalsimulation.SimIMRSEOBNRv4ROMDoubleSpinTimeOfFrequency(
+                        f, solar_mass_to_kg(mass1), solar_mass_to_kg(mass2),
+                        float(spin1), float(spin2)) for f in track_f])
     else:
         raise ValueError('Approximant ' + approximant + ' not supported')
     return (tc - track_t, track_f)
@@ -666,11 +678,14 @@ def _dtdv_cutoff_velocity(m1, m2, chi1, chi2):
     dtdv0, dtdv2, dtdv3, dtdv4, dtdv5, dtdv6, dtdv6log, dtdv7 = _dtdv_coeffs(m1, m2, chi1, chi2)
 
     def dtdv_func(v):
-        return 1. + v * v * (dtdv2 + v * (dtdv3 \
-                + v * (dtdv4
-                + v * (dtdv5
-                + v * ((dtdv6 + dtdv6log*3.*log(v))
-                + v * dtdv7)))))
+        x = dtdv7
+        x = v * x + dtdv6 + dtdv6log * 3. * numpy.log(v)
+        x = v * x + dtdv5
+        x = v * x + dtdv4
+        x = v * x + dtdv3
+        x = v * x + dtdv2
+        return v * v * x + 1.
+
     if dtdv_func(1.0) < 0.:
         return bisect(dtdv_func, 0.05, 1.0)
     else:
