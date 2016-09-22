@@ -32,15 +32,14 @@ import numpy
 
 import lal, lalsimulation
 import pycbc
-from pycbc.types import *
-from pycbc.filter import *
-from pycbc.waveform import *
+from pycbc.filter import match, overlap, sigma, make_frequency_series
+from pycbc.waveform import td_approximants, fd_approximants, \
+        get_td_waveform, get_fd_waveform
 
 import optparse
-from optparse import OptionParser
 from utils import simple_exit, _check_scheme_cpu
 
-parser = OptionParser()
+parser = optparse.OptionParser()
 parser.add_option('--scheme','-s', action='callback', type = 'choice',
                    choices = ('cpu','cuda'),
                    default = 'cpu', dest = 'scheme', callback = _check_scheme_cpu,
