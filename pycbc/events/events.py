@@ -480,9 +480,10 @@ class EventManager(object):
             self.analysis_time = search_end_time - search_start_time
             time_ratio = numpy.array([float(self.analysis_time) / float(self.run_time)])
             temps_per_core = float(self.ntemplates) / float(self.ncores)
-            f['search/templates_per_core'] = numpy.array([float(temps_per_core) * float(time_ratio)])
-            f['search/setup_time_fraction'] = numpy.array([float(self.setup_time) / float(self.run_time)])
-
+            f['search/templates_per_core'] = \
+                numpy.array([float(temps_per_core) * float(time_ratio)])
+            f['search/setup_time_fraction'] = \
+                numpy.array([float(self.setup_time) / float(self.run_time)])
 
         if 'gating_info' in self.global_params:
             gating_info = self.global_params['gating_info']
