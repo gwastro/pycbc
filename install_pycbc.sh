@@ -825,8 +825,11 @@ if [[ $IS_BUNDLE_ENV == "yes" ]] ; then
   #Copy the existing static files into the dist directory
   cp -v ${VIRTUAL_ENV}/bin/lalapps_inspinj dist/
   cp -v ${VIRTUAL_ENV}/bin/lalapps_coh_PTF_inspiral dist/
-  for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank lalapps_cbc_sbank_sim ligolw_add ligolw_combine_segments ligolw_segments_from_cats_dqsegdb ligolw_segment_query_dqsegdb
+  for prog in lalapps_cbc_sbank_choose_mchirp_boundaries lalapps_cbc_sbank_merge_sims lalapps_cbc_sbank_pipe lalapps_cbc_sbank lalapps_cbc_sbank_sim 
     do cp -v ${VIRTUAL_ENV}/bin/$prog dist/
+  done
+  for prog in ligolw_add ligolw_combine_segments ligolw_segments_from_cats_dqsegdb ligolw_segment_query_dqsegdb
+    do cp -v ${VIRTUAL_ENV}/bin/dist/$prog dist/
   done
 
   #Copy the completed build
