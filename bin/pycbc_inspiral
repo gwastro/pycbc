@@ -272,13 +272,15 @@ with ctx:
                     taper=opt.taper_template, approximant=opt.approximant,
                     out=template_mem, max_template_length=opt.max_template_length)
 
-    if opt.threshold_template_filtering is not None:
+    if opt.injection_file is not None and \
+            opt.threshold_template_filtering is not None:
         logging.info("Template Bank Size Before Cut: %s", len(bank))
         bank.table = bank.template_thinning(gwstrain.injections.table,
                                             opt.threshold_template_filtering)
         logging.info("Template Bank Size After Cut: %s", len(bank))
       
     ntemplates = len(bank)
+    tsetup = time.time() - tstart
 
     # Note: in the class-based approach used now, 'template' is not explicitly used
     # within the loop.  Rather, the iteration simply fills the memory specifed in
@@ -360,7 +362,7 @@ if opt.maximization_interval:
 
 tstop = time.time()
 run_time = tstop - tstart
-event_mgr.save_performance(run_time=run_time, ncores=ncores, ntemplates=ntemplates)
+event_mgr.save_performance(ncores, ntemplates, run_time, tsetup)
 
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)

@@ -25,7 +25,8 @@ for pa in args.input_file:
     ifo = f.keys()[0]
     if  'templates_per_core' in  f['%s/search' %ifo].keys():
         tpc = f['%s/search/templates_per_core' % ifo][:]
-        ax.hist(tpc, 100, color=ifo_color(ifo), alpha = 0.65, label = str(ifo))
+        label = str(ifo) + ': Mean average - ' + str(tpc.mean())
+        ax.hist(tpc, 100, color=ifo_color(ifo), alpha = 0.65, label = label)
         ax.set_title('Templates per Core')
         ax.set_xlabel('Templates per Core')
         ax.legend(loc = 'upper right')

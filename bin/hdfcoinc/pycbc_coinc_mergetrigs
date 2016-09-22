@@ -67,6 +67,7 @@ logging.info('reading the metadata from the files')
 start = numpy.array([], dtype=numpy.float64)
 end = numpy.array([], dtype=numpy.float64)
 tpc = numpy.array([], dtype=numpy.float64)
+stf = numpy.array([], dtype=numpy.float64)
 gating = {}
 for filename in args.trigger_files:
     data = h5py.File(filename, 'r')
@@ -76,6 +77,8 @@ for filename in args.trigger_files:
 
     if 'templates_per_core' in ifo_data['search'].keys():
         tpc = numpy.append(tpc, ifo_data['search/templates_per_core'][:])
+    if 'setup_time_fraction' in ifo_data['search'].keys():
+        stf = numpy.append(stf, ifo_data['search/setup_time_fraction'][:])
 
     if 'gating' in ifo_data:
         gating_keys = []
@@ -91,6 +94,8 @@ f['%s/search/start_time' % ifo], f['%s/search/end_time' % ifo] = start, end
 
 if len(tpc) > 0:
     f['%s/search/templates_per_core' % ifo] = tpc
+if len(stf) > 0:
+    f['%s/search/setup_time_fraction' % ifo] = stf
 
 for gk, gv in gating.items():
     f[ifo + '/gating/' + gk] = gv
