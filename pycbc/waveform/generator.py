@@ -30,7 +30,6 @@ import waveform
 import ringdown
 from pycbc.waveform.utils import apply_fd_time_shift
 from pycbc.detector import Detector
-from pycbc import pnutils
 import lal as _lal
 
 #
@@ -99,95 +98,21 @@ class BaseGenerator(object):
         """
         if len(args) != len(self.variable_args):
             raise ValueError("variable argument length mismatch")
-        return self.generate_from_kwargs(**dict(zip(self.variable_args, args)))
+        self.current_params.update(dict(zip(self.variable_args, args)))
+        return self.generator(**self.current_params)
 
     def generate_from_kwargs(self, **kwargs):
         """Generates a waveform from the keyword args. The current params
         are updated with the given kwargs, then the generator is called.
         """
         self.current_params.update(kwargs)
-        return self._generate_from_current()
-
-    def _pregenerate(self):
-        """Allows the current parameters to be manipulated before calling
-        the waveform generator.
-        """
-        pass
-
-    def _postgenerate(self, res):
-        """Allows the waveform returned by the generator function to be
-        manipulated before returning.
-        """
-        return res
-
-    def _gdecorator(generate_func):
-        """A decorator that allows for seemless pre/post manipulation of
-        the waveform generator function.
-        """
-        def dostuff(self):
-            self._pregenerate()
-            res = generate_func(self)
-            return self._postgenerate(res)
-        return dostuff
-
-    @_gdecorator
-    def _generate_from_current(self):
-        """Generates a waveform from the current parameters.
-        """
         return self.generator(**self.current_params)
 
 
-class BaseCBCGenerator(BaseGenerator):
-    """Adds ability to convert from various derived parameters to parameters
-    needed by the waveform generators.
-    """
-    def __init__(self, generator, variable_args=(), **frozen_params):
-        super(BaseCBCGenerator, self).__init__(generator,
-            variable_args=variable_args, **frozen_params)
-        # if m1 and m2 are not parameters, decorate the generator function
-        # to convert the used mass parameters to m1, m2
-        all_args = self.frozen_params.keys()+list(self.variable_args)
-        if 'mass1' not in all_args or 'mass2' not in all_args:
-            # set the decorator to the appropriate converter
-            if 'mchirp' in all_args and 'eta' in all_args:
-                self._pregenerate = self.mchirp_eta_to_mass1_mass2
-            elif 'mtotal' in all_args and 'eta' in all_args:
-                self._pregenerate = self.mtotal_eta_to_mass1_mass2
-            else:
-                raise ValueError("if not specifying mass1, mass2, must either use "
-                    "(mchirp, eta) or (mtotal, eta)")
-
-    def mchirp_eta_to_mass1_mass2(self):
-        """Converts mchirp and eta in `current_params`, to mass1 and mass2.
-        """
-        mchirp = self.current_params['mchirp']
-        eta = self.current_params['eta']
-        m1, m2 = pnutils.mchirp_eta_to_mass1_mass2(mchirp, eta)
-        self.current_params['mass1'] = m1
-        self.current_params['mass2'] = m2
-
-    def mtotal_eta_to_mass1_mass2(self):
-        """Converts mtotal and eta in `current_params`, to mass1 and mass2.
-        """
-        mtotal = self.current_params['mtotal']
-        eta = self.current_params['eta']
-        m1, m2 = pnutils.mtotal_eta_to_mass1_mass2(mtotal, eta)
-        self.current_params['mass1'] = m1
-        self.current_params['mass2'] = m2
-
-
-class FDomainCBCGenerator(BaseCBCGenerator):
-
-    """Uses `waveform.get_fd_waveform` as a generator function to create
-    frequency- domain CBC waveforms in the radiation frame; i.e., with no
-    detector response function applied. For more details, see `BaseGenerator`.
-
-    Derived parameters not understood by `get_fd_waveform` may be used as
-    variable args and/or frozen parameters, as long as they can be converted
-    into parameters that `get_fd_waveform` can use. For example, `mchirp` and
-    `eta` (currently, the only supported derived parameters) may be used as
-    variable/frozen params; these are converted to `mass1` and `mass2` prior to
-    calling the waveform generator function.
+class FDomainCBCGenerator(BaseGenerator):
+    """Uses waveform.get_fd_waveform as a generator function to create frequency-
+    domain CBC waveforms in the radiation frame; i.e., with no detector response
+    function applied. For more details, see BaseGenerator.
 
     Examples
     --------
@@ -198,58 +123,25 @@ class FDomainCBCGenerator(BaseCBCGenerator):
     >>> generator.generate(1.4, 1.4)
     (<pycbc.types.frequencyseries.FrequencySeries at 0x1110c1450>,
      <pycbc.types.frequencyseries.FrequencySeries at 0x1110c1510>)
-
-    Initialize a generator using mchirp, eta as the variable args, and generate
-    a waveform:
-    >>> generator = waveform.FDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
-    >>> generator.generate(1.5, 0.25)
-    (<pycbc.types.frequencyseries.FrequencySeries at 0x109a104d0>,
-     <pycbc.types.frequencyseries.FrequencySeries at 0x109a10b50>)
-
-    Note that the `current_params` contains the mchirp and eta values, along
-    with the mass1 and mass2 they were converted to:
-    >>> generator.current_params
-    {'approximant': 'TaylorF2',
-     'delta_f': 0.03125,
-     'eta': 0.25,
-     'f_lower': 30.0,
-     'mass1': 1.7230475324955525,
-     'mass2': 1.7230475324955525,
-     'mchirp': 1.5}
     """
     def __init__(self, variable_args=(), **frozen_params):
         super(FDomainCBCGenerator, self).__init__(waveform.get_fd_waveform,
             variable_args=variable_args, **frozen_params)
 
-
-class TDomainCBCGenerator(BaseCBCGenerator):
+class TDomainCBCGenerator(BaseGenerator):
     """Uses waveform.get_td_waveform as a generator function to create time-
-    domain CBC waveforms in the radiation frame; i.e., with no detector
-    response function applied. For more details, see `BaseGenerator`.
-
-    Derived parameters not understood by `get_td_waveform` may be used as
-    variable args and/or frozen parameters, as long as they can be converted
-    into parameters that `get_td_waveform` can use. For example, `mchirp` and
-    `eta` (currently, the only supported derived parameters) may be used as
-    variable/frozen params; these are converted to `mass1` and `mass2` prior to
-    calling the waveform generator function.
+    domain CBC waveforms in the radiation frame; i.e., with no detector response
+    function applied. For more details, see BaseGenerator.
 
     Examples
     --------
     Initialize a generator:
     >>> generator = waveform.TDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
 
-    Create a waveform with the variable arguments (in this case, mass1, mass2):
+    Create a waveform with the variable arguments (in this casee, mass1, mass2):
     >>> generator.generate(2., 1.3)
     (<pycbc.types.timeseries.TimeSeries at 0x10e546710>,
      <pycbc.types.timeseries.TimeSeries at 0x115f37690>)
-
-    Initialize a generator using mchirp, eta as the variable args, and generate
-    a waveform:
-    >>> generator = waveform.TDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
-    >>> generator.generate(1.75, 0.2)
-    (<pycbc.types.timeseries.TimeSeries at 0x116ac6050>,
-     <pycbc.types.timeseries.TimeSeries at 0x116ac6950>)
     """
     def __init__(self, variable_args=(), **frozen_params):
         super(TDomainCBCGenerator, self).__init__(waveform.get_td_waveform,
