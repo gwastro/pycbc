@@ -31,36 +31,6 @@ from pycbc.waveform import parameters as wfparams
 import pycbc.inference.sampler
 import pycbc.inference.likelihood
 
-def read_label_from_config(cp, variable_arg, section="labels"):
-    """ Returns the label for the variable_arg.
-
-    Parameters
-    ----------
-    cp : WorkflowConfigParser
-        A WorkflowConfigParser instance with [labels] section
-    variable_arg : str
-        The parameter to get label.
-    section : str
-        Name of section in configuration file to get label.
-
-    Returns
-    -------
-    label : str
-        The label for the parameter.
-    """
-
-    # get label from configuration file if it exists
-    if cp.has_option(section, variable_arg):
-        label = cp.get(section, variable_arg)
-    else:
-        # try looking in pycbc.waveform.parameters
-        try:
-            label = getattr(wfparams, variable_arg).label
-        except AttributeError:
-            # just use the parameter name
-            label = variable_arg
-    return label
-
 class InferenceFile(h5py.File):
     """ A subclass of the h5py.File object that has extra functions for
     handling reading and writing the samples from the samplers.

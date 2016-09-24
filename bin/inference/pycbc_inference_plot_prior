@@ -25,7 +25,6 @@ import matplotlib.pyplot as plt
 import numpy
 import sys
 from pycbc import inference, results
-from pycbc.io.inference_hdf import read_label_from_config
 from pycbc.workflow import WorkflowConfigParser
 
 def cartesian(arrays):
@@ -114,9 +113,6 @@ for pt in pts:
     pdf.append( sum([dist.pdf(**pt_dict) for dist in distributions]) )
 pdf = numpy.array(pdf)
 
-# get label for each variable parameter
-labels = [read_label_from_config(cp, param) for param in variable_args]
-
 # check if only one parameter to plot PDF
 logging.info("Plotting") 
 if len(variable_args) == 1:
@@ -128,13 +124,13 @@ if len(variable_args) == 1:
     plt.plot(x, pdf, "k", label="Prior")
     plt.xlim(xmin-pad, xmax+pad)
     plt.ylabel("Probability Density Function")
-    plt.xlabel(labels[0])
+    plt.xlabel(variable_args[0])
     plt.legend()
 
 # else make corner plot of all PDF
 else:
-    fig = corner.corner(pts, weights=pdf, labels=labels, plot_contours=False,
-                        plot_datapoints=False)
+    fig = corner.corner(pts, weights=pdf, labels=variable_args,
+                       plot_contours=False, plot_datapoints=False)
 
     # remove the 1-D histograms
     delaxs = fig.axes[::ndim+1]
@@ -149,8 +145,7 @@ else:
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join([read_label_from_config(cp, param)
-        for param in variable_args])
+    "parameters" : ", ".join([param for param in variable_args])
 }
 caption = """This plot shows the probability density function (PDF) from the 
 prior distributions."""
