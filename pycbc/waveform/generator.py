@@ -34,6 +34,29 @@ from pycbc import pnutils
 import lal as _lal
 
 #
+#   Pregenerator functions for generator
+#
+
+def generator_mchirp_eta_to_mass1_mass2(generator):
+    """Converts mchirp and eta in `current_params`, to mass1 and mass2.
+    """
+    mchirp = generator.current_params['mchirp']
+    eta = generator.current_params['eta']
+    m1, m2 = pnutils.mchirp_eta_to_mass1_mass2(mchirp, eta)
+    generator.current_params['mass1'] = m1
+    generator.current_params['mass2'] = m2
+
+def generator_mtotal_eta_to_mass1_mass2(generator):
+    """Converts mtotal and eta in `current_params`, to mass1 and mass2.
+    """
+    mtotal = generator.current_params['mtotal']
+    eta = generator.current_params['eta']
+    m1, m2 = pnutils.mtotal_eta_to_mass1_mass2(mtotal, eta)
+    generator.current_params['mass1'] = m1
+    generator.current_params['mass2'] = m2
+
+
+#
 #   Generator for CBC waveforms
 #
 
@@ -125,7 +148,7 @@ class BaseGenerator(object):
         the waveform generator function.
         """
         def dostuff(self):
-            self._pregenerate()
+            self._pregenerate(self)
             res = generate_func(self)
             return self._postgenerate(res)
         return dostuff
@@ -150,30 +173,12 @@ class BaseCBCGenerator(BaseGenerator):
         if 'mass1' not in all_args or 'mass2' not in all_args:
             # set the decorator to the appropriate converter
             if 'mchirp' in all_args and 'eta' in all_args:
-                self._pregenerate = self.mchirp_eta_to_mass1_mass2
+                self._pregenerate = generator_mchirp_eta_to_mass1_mass2
             elif 'mtotal' in all_args and 'eta' in all_args:
-                self._pregenerate = self.mtotal_eta_to_mass1_mass2
+                self._pregenerate = generator_mtotal_eta_to_mass1_mass2
             else:
                 raise ValueError("if not specifying mass1, mass2, must either use "
                     "(mchirp, eta) or (mtotal, eta)")
-
-    def mchirp_eta_to_mass1_mass2(self):
-        """Converts mchirp and eta in `current_params`, to mass1 and mass2.
-        """
-        mchirp = self.current_params['mchirp']
-        eta = self.current_params['eta']
-        m1, m2 = pnutils.mchirp_eta_to_mass1_mass2(mchirp, eta)
-        self.current_params['mass1'] = m1
-        self.current_params['mass2'] = m2
-
-    def mtotal_eta_to_mass1_mass2(self):
-        """Converts mtotal and eta in `current_params`, to mass1 and mass2.
-        """
-        mtotal = self.current_params['mtotal']
-        eta = self.current_params['eta']
-        m1, m2 = pnutils.mtotal_eta_to_mass1_mass2(mtotal, eta)
-        self.current_params['mass1'] = m1
-        self.current_params['mass2'] = m2
 
 
 class FDomainCBCGenerator(BaseCBCGenerator):
