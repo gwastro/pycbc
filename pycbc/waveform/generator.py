@@ -146,7 +146,7 @@ class BaseCBCGenerator(BaseGenerator):
             variable_args=variable_args, **frozen_params)
         # if m1 and m2 are not parameters, decorate the generator function
         # to convert the used mass parameters to m1, m2
-        all_args = self.frozen_params.keys()+list(self.variable_args)
+        all_args = self.frozen_params.keys() + list(self.variable_args)
         if 'mass1' not in all_args or 'mass2' not in all_args:
             # set the decorator to the appropriate converter
             if 'mchirp' in all_args and 'eta' in all_args:
