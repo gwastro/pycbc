@@ -131,7 +131,7 @@ class BaseGenerator(object):
         self.current_params.update(kwargs)
         return self._generate_from_current()
 
-    def _pregenerate(self):
+    def _pregenerate(self, option):
         """Allows the current parameters to be manipulated before calling
         the waveform generator.
         """
