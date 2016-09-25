@@ -877,6 +877,7 @@ class Gaussian(Uniform):
     >> dist = Gaussian(mass1=(1.3,1.5,1.4,0.01)
     """
     name = "gaussian"
+
     def __init__(self, **params):
 
         # save distribution parameters as dict
