@@ -99,6 +99,20 @@ def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False):
     else:
         return roots[roots.argmax()]
 
+
+def mchirp_q_to_mass1_mass2(mchirp, q):
+    """ This function takes a value of mchirp and the mass ratio
+    mass1/mass2 and returns the two component masses.
+
+    The map from q to eta is
+
+        eta = (mass1*mass2)/(mass1+mass2)**2 = (q)/(1+q)**2
+
+    Then we can map from (mchirp,eta) to (mass1,mass2).
+    """
+    eta = q / (1+q)**2
+    return mchirp_eta_to_mass1_mass2(mchirp, eta)
+
 def A0(f_lower):
     """used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437
        appendix 1, also lalinspiral/python/sbank/tau0tau3.py
