@@ -862,25 +862,22 @@ class Gaussian(Uniform):
 
     Parameters
     ----------
-    variable_args : {list, str}
-        A list of str for each parameter name. Other parameters are list types
-        and the index for a particular param is used as a map.
-    low : {list, float}
-        A list of lower bounds as float.
-    high : {list, float}
-        A list of higher bounds as float.
-    mean : {list, float}
-        A list of means as float.
-    var : {list, float}
-        A list of variances as float.
+    \**params :
+        The keyword arguments should provide the names of parameters and their
+        corresponding bounds, mean, and variance, as tuples,
+        eg. parameter=(low,high,mean,var).
 
     Class Attributes
     ----------------
     name : 'guassian'
         The name of this distribution.
+
+    Example
+    -------
+    >> dist = Gaussian(mass1=(1.3,1.5,1.4,0.01)
     """
     name = "gaussian"
-    def __init__(self, variable_args, low, high, mean, var, **kwargs):
+    def __init__(self, **params):
 
         # save distribution parameters as dict
         # calculate the norm and exponential norm ahead of time
@@ -891,17 +888,17 @@ class Gaussian(Uniform):
         self._norm = {}
         self._lognorm = {}
         self._expnorm = {}
-        for i,param in enumerate(variable_args):
-            self._bounds[param] = (low[i],high[i])
-            self._mean[param] = mean[i]
-            self._var[param] = var[i]
+        for param in params.keys():
+            self._bounds[param] = (params[param][0], params[param][1])
+            self._mean[param] = params[param][2]
+            self._var[param] = params[param][3]
             norm = numpy.sqrt( 2 * self._var[param] * numpy.pi )
             self._norm[param] = 1.0 / norm
             self._lognorm[param] = numpy.log(norm)
             self._expnorm[param] = 2 * self._var[param]
 
         # save variable parameters
-        self._params = sorted(variable_args)
+        self._params = sorted(params.keys())
 
     @property
     def params(self):
@@ -1036,15 +1033,17 @@ class Gaussian(Uniform):
                                 + ["var-%s"%param for param in variable_args]
 
         # get input kwargs
-        low = []
-        high = []
-        mean = []
-        var = []
+        params = {}
         for param in variable_args:
-            low.append( float(cp.get_opt_tag(section, "min-%s"%param, tag)) )
-            high.append( float(cp.get_opt_tag(section, "max-%s"%param, tag)) )
-            mean.append( float(cp.get_opt_tag(section, "mean-%s"%param, tag)) )
-            var.append( float(cp.get_opt_tag(section, "var-%s"%param, tag)) )
+            params[param] = (None, None, None, None)
+            params[param][0] = float(cp.get_opt_tag(section,
+                                                   "min-%s"%param, tag))
+            params[param][1] = float(cp.get_opt_tag(section,
+                                                   "max-%s"%param, tag))
+            params[param][2] = float(cp.get_opt_tag(section,
+                                                   "mean-%s"%param, tag))
+            params[param][3] = float(cp.get_opt_tag(section,
+                                                   "var-%s"%param, tag))
 
         # add any additional options that user put in that section
         dist_args = {}
@@ -1063,7 +1062,7 @@ class Gaussian(Uniform):
             dist_args.update({key:val})
 
         # construction distribution and add to list
-        return cls(variable_args, low, high, mean, var, **dist_args)
+        return cls(**params)
 
 distribs = {
     Uniform.name : Uniform,
