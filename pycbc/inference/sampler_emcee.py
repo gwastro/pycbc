@@ -114,7 +114,7 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
 
     @property
     def lnpost(self):
-        """Get the natural logarithm of the likelihood as an 
+        """Get the natural logarithm of the likelihood as an
         nwalkers x niterations array.
         """
         # emcee returns nwalkers x niterations
@@ -141,14 +141,14 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         lnpost : numpy.array
             The list of log posterior probabilities for the walkers at
             positions p, with shape (nwalkers, ndim).
-        rstate : 
+        rstate :
             The current state of the random number generator.
         """
         pos = self._pos
         if pos is None:
             pos = self.p0
         res = self._sampler.run_mcmc(pos, niterations, **kwargs)
-        p, lnpost, rstate = res[0], res[1], res[2] 
+        p, lnpost, rstate = res[0], res[1], res[2]
         # update the positions
         self._pos = p
         return p, lnpost, rstate
@@ -164,7 +164,7 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         lnpost : {None, numpy.array}
             The list of log posterior probabilities for the walkers at
             positions p, with shape (nwalkers, ndim).
-        rstate : 
+        rstate :
             The current state of the random number generator.
         """
         if self.burn_in_iterations == 0:
