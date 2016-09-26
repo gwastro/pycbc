@@ -796,7 +796,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         flatten : {True, bool}
             The returned array will be one dimensional, with all desired
             stats from all desired walkers concatenated together. If False,
-            the returned array will have dimension requested temps x requested 
+            the returned array will have dimension requested temps x requested
             walkers x requested iterations.
         stats_group : {None, str}
             The group in `fp` from which to retrieve the stats. If
