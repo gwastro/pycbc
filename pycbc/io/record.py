@@ -1238,7 +1238,7 @@ class FieldArray(numpy.recarray):
 
         .. note::
             Increasing the length of strings only works for fields, not
-            sub-fields. 
+            sub-fields.
 
         Parameters
         ----------
@@ -1246,7 +1246,7 @@ class FieldArray(numpy.recarray):
             The array to append values from. It must have the same fields and
             dtype as this array, modulo the length of strings. If the other
             array does not have the same dtype, a TypeError is raised.
-        
+
         Returns
         -------
         array
@@ -1260,23 +1260,26 @@ class FieldArray(numpy.recarray):
             # see if the dtype error was due to string fields having different
             # lengths; if so, we'll make the joint field the larger of the
             # two
-            str_fields = [name for name in self.fieldnames 
-                               if _isstring(self.dtype[name])]
+            str_fields = [name for name in self.fieldnames
+                          if _isstring(self.dtype[name])]
             # get the larger of the two
-            new_strlens = dict([[name,
-                max(self.dtype[name].itemsize, other.dtype[name].itemsize)]
-                for name in str_fields])
+            new_strlens = dict(
+                [[name,
+                  max(self.dtype[name].itemsize, other.dtype[name].itemsize)]
+                 for name in str_fields]
+            )
             # cast both to the new string lengths
             new_dt = []
             for dt in self.dtype.descr:
                 name = dt[0]
                 if name in new_strlens:
-                    dt = (name, self.dtype[name].type,
-                                  new_strlens[name])
-                new_dt.append(dt) 
+                    dt = (name, self.dtype[name].type, new_strlens[name])
+                new_dt.append(dt)
             new_dt = numpy.dtype(new_dt)
             return numpy.append(self.astype(new_dt),
-                other.astype(new_dt)).view(type=self.__class__)
+                                other.astype(new_dt)
+                               ).view(type=self.__class__)
+
 
 def _isstring(dtype):
     """Given a numpy dtype, determines whether it is a string. Returns True
