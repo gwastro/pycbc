@@ -26,7 +26,6 @@ This modules provides classes and functions for using different sampler
 packages for parameter estimation.
 """
 
-import numpy
 from pycbc.inference.sampler import _BaseMCMCSampler
 from pycbc.io import WaveformArray, FieldArray
 from pycbc.filter import autocorrelation
