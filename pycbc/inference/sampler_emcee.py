@@ -282,7 +282,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         ndim = len(likelihood_evaluator.waveform_generator.variable_args)
         sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
                                   likelihood_evaluator,
-				  likelihood_evaluator._prior,
+                                  likelihood_evaluator._prior,
                                   pool=pool)
         # initialize
         super(EmceePTSampler, self).__init__(sampler,
@@ -395,7 +395,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         lnpost : numpy.array
             The list of log posterior probabilities for the walkers at
             positions p, with shape (nwalkers, ndim).
-        rstate : 
+        rstate :
             The current state of the random number generator.
         """
         pos = self._pos
@@ -418,7 +418,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         lnpost : {None, numpy.array}
             The list of log posterior probabilities for the walkers at
             positions p, with shape (nwalkers, ndim).
-        rstate : 
+        rstate :
             The current state of the random number generator.
         """
         if self.burn_in_iterations == 0:
@@ -532,7 +532,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         tidx = numpy.arange(ntemps)
 
         # loop over number of dimensions
-        for pi,param in enumerate(self.variable_args):
+        for pi, param in enumerate(self.variable_args):
             # loop over number of temps
             for tk in tidx:
                 # loop over number of walkers
@@ -570,7 +570,7 @@ class EmceePTSampler(_BaseMCMCSampler):
 
         if max_iterations is not None and max_iterations < niterations:
             raise IndexError("The provided max size is less than the "
-                "number of iterations")
+                             "number of iterations")
 
         # create indices for faster sub-looping
         widx = numpy.arange(nwalkers)
@@ -623,8 +623,8 @@ class EmceePTSampler(_BaseMCMCSampler):
 
     @staticmethod
     def _read_fields(fp, fields_group, fields, array_class,
-            thin_start=None, thin_interval=None, thin_end=None, iteration=None,
-            temps=None, walkers=None, flatten=True):
+                     thin_start=None, thin_interval=None, thin_end=None,
+                     iteration=None, temps=None, walkers=None, flatten=True):
         """Base function for reading samples and likelihood stats. See
         `read_samples` and `read_likelihood_stats` for details.
 
@@ -679,8 +679,8 @@ class EmceePTSampler(_BaseMCMCSampler):
         for name in fields:
             these_arrays = numpy.array([
                 [fp[group.format(name=name, wi=wi, tk=tk)][get_index]
-                for wi in walkers]
-                for tk in temps])
+                 for wi in walkers]
+                 for tk in temps])
             if flatten:
                 these_arrays = these_arrays.flatten()
             arrays[name] = these_arrays
@@ -728,7 +728,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         flatten : {True, bool}
             The returned array will be one dimensional, with all desired
             samples from all desired walkers concatenated together. If False,
-            the returned array will have dimension requested temps x requested 
+            the returned array will have dimension requested temps x requested
             walkers x requested iterations.
         samples_group : {None, str}
             The group in `fp` from which to retrieve the parameter fields. If
@@ -752,7 +752,7 @@ class EmceePTSampler(_BaseMCMCSampler):
             array_class = WaveformArray
         # get the names of fields needed for the given parameters
         possible_fields = dict([[str(name), float]
-            for name in fp[fp.samples_group].keys()])
+                               for name in fp[fp.samples_group].keys()])
         loadfields = array_class.parse_parameters(parameters,
             possible_fields=possible_fields)
         return cls._read_fields(fp, samples_group, loadfields, array_class,
