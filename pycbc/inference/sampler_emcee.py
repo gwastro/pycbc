@@ -80,8 +80,8 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_evaluator,
                                         pool=pool)
         # initialize
-        super(EmceeEnsembleSampler, self).__init__(sampler,
-              likelihood_evaluator, min_burn_in=burn_in_iterations)
+        super(EmceeEnsembleSampler, self).__init__(
+              sampler, likelihood_evaluator, min_burn_in=burn_in_iterations)
         self._nwalkers = nwalkers
 
     @classmethod
@@ -285,8 +285,8 @@ class EmceePTSampler(_BaseMCMCSampler):
                                   likelihood_evaluator._prior,
                                   pool=pool)
         # initialize
-        super(EmceePTSampler, self).__init__(sampler,
-              likelihood_evaluator, min_burn_in=burn_in_iterations)
+        super(EmceePTSampler, self).__init__(
+              sampler, likelihood_evaluator, min_burn_in=burn_in_iterations)
         self._nwalkers = nwalkers
         self._ntemps = ntemps
 
@@ -344,7 +344,7 @@ class EmceePTSampler(_BaseMCMCSampler):
 
     @property
     def lnpost(self):
-        """Get the natural logarithm of the likelihood + the prior as an 
+        """Get the natural logarithm of the likelihood + the prior as an
         ntemps x nwalkers x niterations array.
         """
         # emcee returns ntemps x nwalkers x niterations
@@ -355,7 +355,7 @@ class EmceePTSampler(_BaseMCMCSampler):
 
         Parameters
         ----------
-        prior_distributions : list 
+        prior_distributions : list
             A list of priors to retrieve random values from (the sort of
             thing returned by `prior.read_distributions_from_config`).
 
@@ -402,7 +402,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         if pos is None:
             pos = self.p0
         res = self._sampler.run_mcmc(pos, niterations, **kwargs)
-        p, lnpost, rstate = res[0], res[1], res[2] 
+        p, lnpost, rstate = res[0], res[1], res[2]
         # update the positions
         self._pos = p
         return p, lnpost, rstate
@@ -688,9 +688,9 @@ class EmceePTSampler(_BaseMCMCSampler):
 
     @classmethod
     def read_samples(cls, fp, parameters,
-            thin_start=None, thin_interval=None, thin_end=None, iteration=None,
-            temps=0, walkers=None, flatten=True, samples_group=None,
-            array_class=None):
+                     thin_start=None, thin_interval=None, thin_end=None,
+                     iteration=None, temps=0, walkers=None, flatten=True,
+                     samples_group=None, array_class=None):
         """Reads samples for the given parameter(s).
 
         Parameters
@@ -753,9 +753,10 @@ class EmceePTSampler(_BaseMCMCSampler):
         # get the names of fields needed for the given parameters
         possible_fields = dict([[str(name), float]
                                for name in fp[fp.samples_group].keys()])
-        loadfields = array_class.parse_parameters(parameters,
-            possible_fields=possible_fields)
-        return cls._read_fields(fp, samples_group, loadfields, array_class,
+        loadfields = array_class.parse_parameters(
+            parameters, possible_fields=possible_fields)
+        return cls._read_fields(
+                fp, samples_group, loadfields, array_class,
                 thin_start=thin_start, thin_interval=thin_interval,
                 thin_end=thin_end, iteration=iteration, temps=temps,
                 walkers=walkers, flatten=flatten)
