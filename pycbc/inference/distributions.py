@@ -1038,13 +1038,13 @@ class Gaussian(Uniform):
         for param in variable_args:
             params[param] = (None, None, None, None)
             params[param][0] = float(cp.get_opt_tag(section,
-                                                   "min-%s"%param, tag))
+                                                   "min-%s" % param, tag))
             params[param][1] = float(cp.get_opt_tag(section,
-                                                   "max-%s"%param, tag))
+                                                   "max-%s" % param, tag))
             params[param][2] = float(cp.get_opt_tag(section,
-                                                   "mean-%s"%param, tag))
+                                                   "mean-%s" % param, tag))
             params[param][3] = float(cp.get_opt_tag(section,
-                                                   "var-%s"%param, tag))
+                                                   "var-%s" % param, tag))
 
         # add any additional options that user put in that section
         dist_args = {}
