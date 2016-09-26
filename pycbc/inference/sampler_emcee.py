@@ -456,10 +456,10 @@ class EmceePTSampler(_BaseMCMCSampler):
         acf = self.acceptance_fraction
         for tk in range(fp.ntemps):
             try:
-                fp[group.format(tk=tk)][:] = acf[tk,:]
+                fp[group.format(tk=tk)][:] = acf[tk, :]
             except KeyError:
                 # dataset doesn't exist yet, create it
-                fp[group.format(tk=tk)] = acf[tk,:]
+                fp[group.format(tk=tk)] = acf[tk, :]
 
     @staticmethod
     def read_acceptance_fraction(fp, temps=None, walkers=None):
@@ -539,15 +539,15 @@ class EmceePTSampler(_BaseMCMCSampler):
                 for wi in widx:
                     dataset_name = group.format(name=param, tk=tk, wi=wi)
                     try:
-                        fp[dataset_name][:niterations] = samples[tk,wi,:,pi]
+                        fp[dataset_name][:niterations] = samples[tk, wi, :, pi]
                     except KeyError:
                         # dataset doesn't exist yet, see if a larger array is
                         # desired
                         if max_iterations is not None:
-                            out[:niterations] = samples[tk,wi,:,pi]
+                            out[:niterations] = samples[tk, wi, :, pi]
                             fp[dataset_name] = out
                         else:
-                            fp[dataset_name] = samples[tk,wi,:,pi]
+                            fp[dataset_name] = samples[tk, wi, :, pi]
 
     def write_likelihood_stats(self, fp, max_iterations=None):
         """Writes the given likelihood array to the given file. Results are
