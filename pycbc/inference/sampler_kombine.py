@@ -75,7 +75,7 @@ class KombineSampler(_BaseMCMCSampler):
                                           transd=transd, processes=processes)
         # initialize
         super(KombineSampler, self).__init__(sampler, likelihood_evaluator,
-            min_burn_in=min_burn_in)
+                                             min_burn_in=min_burn_in)
         self._nwalkers = nwalkers
 
     @classmethod
@@ -131,7 +131,7 @@ class KombineSampler(_BaseMCMCSampler):
                 blob0 = self._sampler.blobs[-1]
         kwargs['blob0'] = blob0
         res = self._sampler.run_mcmc(niterations, p0=p0, **kwargs)
-        p, lnpost, lnprop = res[0], res[1], res[2] 
+        p, lnpost, lnprop = res[0], res[1], res[2]
         # update the positions
         self._pos = p
         return p, lnpost, lnprop
@@ -177,7 +177,7 @@ class KombineSampler(_BaseMCMCSampler):
         p0 = self.p0
         if self.likelihood_evaluator.return_meta:
             blob0 = [self.likelihood_evaluator(p0[wi, :])[1]
-                for wi in range(self.nwalkers)]
+                     for wi in range(self.nwalkers)]
         else:
             blob0 = None
         res = self._sampler.burnin(self.p0, blob0=blob0)
