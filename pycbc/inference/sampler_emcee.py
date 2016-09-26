@@ -817,9 +817,10 @@ class EmceePTSampler(_BaseMCMCSampler):
             array_class = FieldArray
         fields = fp[stats_group].keys()
         return cls._read_fields(fp, stats_group, fields, array_class,
-                thin_start=thin_start, thin_interval=thin_interval,
-                thin_end=thin_end, iteration=iteration, temps=temps,
-                walkers=walkers, flatten=flatten)
+                                thin_start=thin_start,
+				thin_interval=thin_interval,
+                                thin_end=thin_end, iteration=iteration,
+				temps=temps, walkers=walkers, flatten=flatten)
 
     @classmethod
     def compute_acls(cls, fp, start_index=None, end_index=None):
