@@ -943,7 +943,7 @@ class EmceePTSampler(_BaseMCMCSampler):
             arrays[param] = numpy.array([
                 [fp[group.format(param=param, tk=tk, wi=wi)].attrs['acl']
                     for wi in widx]
-                    for tk in tidx])
+                 for tk in tidx])
         return WaveformArray.from_kwargs(**arrays)
 
     @classmethod
