@@ -23,7 +23,7 @@ import pycbc.opt
 import pycbc.weave
 import random
 from pycbc import DYN_RANGE_FAC, fft, inference, psd, scheme, strain, waveform
-from pycbc.io.inference_hdf import InferenceFile, read_label_from_config
+from pycbc.io.inference_hdf import InferenceFile
 from pycbc.types import FrequencySeries, MultiDetOptionAction
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import option_utils
@@ -206,9 +206,6 @@ with ctx:
             static_args[key] = convert_liststring_to_list(val) 
         except:
             pass
-
-    # get labels for each parameter from configuration file
-    labels = [read_label_from_config(cp, param) for param in variable_args]
 
     # get prior distribution for each variable parameter
     logging.info("Setting up priors for each parameter")
