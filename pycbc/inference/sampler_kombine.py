@@ -27,7 +27,6 @@ packages for parameter estimation.
 """
 
 from pycbc.inference.sampler import _BaseMCMCSampler
-from pycbc.filter import autocorrelation
 
 #
 # =============================================================================
@@ -36,6 +35,7 @@ from pycbc.filter import autocorrelation
 #
 # =============================================================================
 #
+
 
 class KombineSampler(_BaseMCMCSampler):
     """This class is used to construct the MCMC sampler from the kombine
@@ -63,7 +63,7 @@ class KombineSampler(_BaseMCMCSampler):
     name = "kombine"
 
     def __init__(self, likelihood_evaluator, nwalkers, transd=False,
-            processes=None, min_burn_in=None):
+                 processes=None, min_burn_in=None):
         try:
             import kombine
         except ImportError:
@@ -72,7 +72,7 @@ class KombineSampler(_BaseMCMCSampler):
         # construct sampler for use in KombineSampler
         ndim = len(likelihood_evaluator.waveform_generator.variable_args)
         sampler = kombine.Sampler(nwalkers, ndim, likelihood_evaluator,
-                                          transd=transd, processes=processes)
+                                  transd=transd, processes=processes)
         # initialize
         super(KombineSampler, self).__init__(sampler, likelihood_evaluator,
                                              min_burn_in=min_burn_in)
@@ -122,7 +122,7 @@ class KombineSampler(_BaseMCMCSampler):
             # no burn in, use the initial positions
             p0 = self.p0
             if self.likelihood_evaluator.return_meta:
-                blob0 = [self.likelihood_evaluator(p0[wi,:])[1]
+                blob0 = [self.likelihood_evaluator(p0[wi, :])[1]
                          for wi in range(self.nwalkers)]
         else:
             p0 = None
@@ -138,7 +138,7 @@ class KombineSampler(_BaseMCMCSampler):
 
     @property
     def lnpost(self):
-        """ Get the natural logarithm of the likelihood as an 
+        """ Get the natural logarithm of the likelihood as an
         nwalkers x niterations array.
         """
         # kombine returns niterations x nwaklers
