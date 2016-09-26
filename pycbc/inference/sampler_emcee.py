@@ -589,15 +589,15 @@ class EmceePTSampler(_BaseMCMCSampler):
                 for wi in widx:
                     dataset_name = group.format(field=stat, tk=tk, wi=wi)
                     try:
-                        fp[dataset_name][:niterations] = arr[tk,wi,:]
+                        fp[dataset_name][:niterations] = arr[tk, wi, :]
                     except KeyError:
                         # dataset doesn't exist yet, see if a larger array is
                         # desired
                         if max_iterations is not None:
-                            out[:niterations] = arr[tk,wi,:]
+                            out[:niterations] = arr[tk, wi, :]
                             fp[dataset_name] = out
                         else:
-                            fp[dataset_name] = arr[tk,wi,:]
+                            fp[dataset_name] = arr[tk, wi, :]
 
     def write_results(self, fp, max_iterations=None):
         """Writes metadata, samples, lnpost, lnprior,  and acceptance fraction
