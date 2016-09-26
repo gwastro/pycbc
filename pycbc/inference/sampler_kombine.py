@@ -176,7 +176,7 @@ class KombineSampler(_BaseMCMCSampler):
         # run once
         p0 = self.p0
         if self.likelihood_evaluator.return_meta:
-            blob0 = [self.likelihood_evaluator(p0[wi,:])[1]
+            blob0 = [self.likelihood_evaluator(p0[wi, :])[1]
                 for wi in range(self.nwalkers)]
         else:
             blob0 = None
