@@ -148,7 +148,7 @@ class KombineSampler(_BaseMCMCSampler):
     def chain(self):
         """Get all past samples as an nwalker x niterations x ndim array."""
         # kombine returns niterations x nwalkers x ndim
-        return self._sampler.chain.transpose((1,0,2))
+        return self._sampler.chain.transpose((1, 0, 2))
 
     def burn_in(self):
         """Use kombine's `burnin` routine to advance the sampler.
