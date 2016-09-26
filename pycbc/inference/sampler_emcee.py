@@ -679,8 +679,8 @@ class EmceePTSampler(_BaseMCMCSampler):
         for name in fields:
             these_arrays = numpy.array(
                 [[fp[group.format(name=name, wi=wi, tk=tk)][get_index]
-                for wi in walkers]
-                for tk in temps])
+                 for wi in walkers]
+                 for tk in temps])
             if flatten:
                 these_arrays = these_arrays.flatten()
             arrays[name] = these_arrays
@@ -762,7 +762,8 @@ class EmceePTSampler(_BaseMCMCSampler):
                 walkers=walkers, flatten=flatten)
 
     @classmethod
-    def read_likelihood_stats(cls, fp,
+    def read_likelihood_stats(
+            cls, fp,
             thin_start=None, thin_interval=None, thin_end=None, iteration=None,
             temps=None, walkers=None, flatten=True, stats_group=None,
             array_class=None):
@@ -863,7 +864,7 @@ class EmceePTSampler(_BaseMCMCSampler):
                             thin_end=end_index,
                             walkers=wi, temps=tk)[param]
                     acl = autocorrelation.calculate_acl(samples)
-                    these_acls[tk,wi] = int(min(acl, samples.size))
+                    these_acls[tk, wi] = int(min(acl, samples.size))
             acls[param] = these_acls
         return WaveformArray.from_kwargs(**acls)
 
