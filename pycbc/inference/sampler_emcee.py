@@ -78,7 +78,7 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         # construct the sampler
         ndim = len(likelihood_evaluator.waveform_generator.variable_args)
         sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_evaluator,
-            pool=pool)
+                                        pool=pool)
         # initialize
         super(EmceeEnsembleSampler, self).__init__(sampler,
             likelihood_evaluator, min_burn_in=burn_in_iterations)
