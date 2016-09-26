@@ -191,4 +191,3 @@ class KombineSampler(_BaseMCMCSampler):
             self._pos = p
         self.burn_in_iterations = self.niterations
         return p, post, q
-
