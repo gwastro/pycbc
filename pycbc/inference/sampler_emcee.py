@@ -281,11 +281,12 @@ class EmceePTSampler(_BaseMCMCSampler):
 
         ndim = len(likelihood_evaluator.waveform_generator.variable_args)
         sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-            likelihood_evaluator, likelihood_evaluator._prior,
-            pool=pool)
+                                  likelihood_evaluator,
+				  likelihood_evaluator._prior,
+                                  pool=pool)
         # initialize
         super(EmceePTSampler, self).__init__(sampler,
-            likelihood_evaluator, min_burn_in=burn_in_iterations)
+              likelihood_evaluator, min_burn_in=burn_in_iterations)
         self._nwalkers = nwalkers
         self._ntemps = ntemps
 
