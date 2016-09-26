@@ -143,8 +143,8 @@ for ii in range(imin, imax):
     # scratch space
     decomp_scratch = FrequencySeries(numpy.zeros(N, dtype=dtype), delta_f=df)
     # generate the waveform
-    htilde = bank[ii]
-    tmplt = bank.table[ii]
+    htilde = bank[ii-imin]
+    tmplt = bank.table[ii-imin]
     kmax = htilde.end_idx
     
     # get the compressed sample points
