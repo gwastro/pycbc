@@ -671,7 +671,7 @@ class EmceePTSampler(_BaseMCMCSampler):
                 # use the number of current iterations
                 thin_end = fp.niterations
             get_index = get_slice(fp, thin_start=thin_start, thin_end=thin_end,
-                thin_interval=thin_interval)
+                                  thin_interval=thin_interval)
 
         # load
         arrays = {}
