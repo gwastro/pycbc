@@ -61,9 +61,9 @@ def generator_mtotal_eta_to_mass1_mass2(generator):
 def generator_mchirp_q_to_mass1_mass2(generator):
     """Converts mtotal and eta in `current_params`, to mass1 and mass2.
     """
-    mchirp = generator.current_params['mtotal']
+    mchirp = generator.current_params['mchirp']
     q = generator.current_params['q']
-    m1, m2 = pnutils.mchirp_q_to_mass1_mass2(mtotal, q)
+    m1, m2 = pnutils.mchirp_q_to_mass1_mass2(mchirp, q)
     generator.current_params['mass1'] = m1
     generator.current_params['mass2'] = m2
 
