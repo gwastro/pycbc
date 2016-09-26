@@ -311,7 +311,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         # has been specified
         if not opts.skip_burn_in and (
                 opts.min_burn_in is None or opts.min_burn_in == 0):
-            raise ValueError("%s requires that you provide a non-zero "%(
+            raise ValueError("%s requires that you provide a non-zero " % (
                 cls.name) + "--min-burn-in if not skipping burn-in")
         return cls(likelihood_evaluator, opts.ntemps, opts.nwalkers,
                    processes=opts.nprocesses,
@@ -371,12 +371,12 @@ class EmceePTSampler(_BaseMCMCSampler):
         ntemps = self.ntemps
         nwalkers = self.nwalkers
         ndim = len(self.variable_args)
-        pmap = dict([[param,k] for k,param in enumerate(self.variable_args)])
+        pmap = dict([[param, k] for k, param in enumerate(self.variable_args)])
         p0 = numpy.ones((ntemps, nwalkers, ndim))
         for dist in prior_distributions:
             ps = dist.rvs(size=ntemps*nwalkers).reshape(ntemps, nwalkers)
             for param in dist.params:
-                p0[:,:,pmap[param]] = ps[param]
+                p0[:, :, pmap[param]] = ps[param]
         self._p0 = p0
         return p0
 
