@@ -37,6 +37,8 @@ from pycbc.filter import autocorrelation
 #
 # =============================================================================
 #
+
+
 def get_slice(fp, thin_start=None, thin_interval=None, thin_end=None):
     """Formats a slice using the given arguments that can be used to retrieve
     a thinned array from an InferenceFile.
@@ -172,7 +174,7 @@ class _BaseSampler(object):
         calculation, then this will raise a NotImplementedError.
         """
         raise NotImplementedError("this sampler does not support evidence "
-            "calculation")
+                                  "calculation")
 
     # write and read functions
     def write_metadata(self, fp):
@@ -192,7 +194,7 @@ class _BaseSampler(object):
         fp.attrs["lognl"] = self.likelihood_evaluator.lognl
         sargs = self.likelihood_evaluator.waveform_generator.static_args
         fp.attrs["static_args"] = sargs.keys()
-        for arg,val in sargs.items():
+        for arg, val in sargs.items():
             fp.attrs[arg] = val
 
     @staticmethod
@@ -212,6 +214,7 @@ class _BaseSampler(object):
         """
         fp.attrs['log_evidence'] = lnz
         fp.attrs['dlog_evidence'] = dlnz
+
 
 class BaseMCMCSampler(_BaseSampler):
     """This class is used to construct the MCMC sampler from the kombine-like
@@ -239,8 +242,9 @@ class BaseMCMCSampler(_BaseSampler):
         An array of the current walker positions.
     """
     name = None
+
     def __init__(self, sampler, likelihood_evaluator, min_burn_in=None):
-        self._sampler = sampler 
+        self._sampler = sampler
         self._pos = None
         self._p0 = None
         self._nwalkers = None
@@ -263,7 +267,7 @@ class BaseMCMCSampler(_BaseSampler):
 
         Parameters
         ----------
-        prior_distributions : list 
+        prior_distributions : list
             A list of priors to retrieve random values from (the sort of
             thing returned by `prior.read_distributions_from_config`).
 
@@ -277,12 +281,12 @@ class BaseMCMCSampler(_BaseSampler):
         # random value from the distribution
         nwalkers = self.nwalkers
         ndim = len(self.variable_args)
-        pmap = dict([[param,k] for k,param in enumerate(self.variable_args)])
+        pmap = dict([[param, k] for k, param in enumerate(self.variable_args)])
         p0 = numpy.ones((nwalkers, ndim))
         for dist in prior_distributions:
             ps = dist.rvs(size=nwalkers)
             for param in dist.params:
-                p0[:,pmap[param]] = ps[param]
+                p0[:, pmap[param]] = ps[param]
         self._p0 = p0
         return p0
 
@@ -314,9 +318,9 @@ class BaseMCMCSampler(_BaseSampler):
         stats = numpy.array(self._sampler.blobs)
         if stats.size == 0:
             return None
-        arrays = dict([[field, stats[:,:,fi]]
-                    for fi,field in
-                        enumerate(self.likelihood_evaluator.metadata_fields)])
+        arrays = dict([[field, stats[:, :, fi]]
+                        for fi,field in
+                      enumerate(self.likelihood_evaluator.metadata_fields)])
         return FieldArray.from_kwargs(**arrays).transpose()
 
     # write and read functions
@@ -363,25 +367,25 @@ class BaseMCMCSampler(_BaseSampler):
         if max_iterations is not None:
             if max_iterations < niterations:
                 raise IndexError("The provided max size is less than the "
-                    "number of iterations")
+                                 "number of iterations")
             out = numpy.zeros(max_iterations, dtype=samples.dtype)
 
         # loop over number of dimensions
         widx = numpy.arange(nwalkers)
-        for pi,param in enumerate(self.variable_args):
+        for pi, param in enumerate(self.variable_args):
             # loop over number of walkers
             for wi in widx:
                 dataset_name = group.format(name=param, wi=wi)
                 try:
-                    fp[dataset_name][:niterations] = samples[wi,:,pi]
+                    fp[dataset_name][:niterations] = samples[wi, :, pi]
                 except KeyError:
                     # dataset doesn't exist yet, see if a larger array is
                     # desired
                     if max_iterations is not None:
-                        out[:niterations] = samples[wi,:,pi]
+                        out[:niterations] = samples[wi, :, pi]
                         fp[dataset_name] = out
                     else:
-                        fp[dataset_name] = samples[wi,:,pi]
+                        fp[dataset_name] = samples[wi, :, pi]
 
     def write_likelihood_stats(self, fp, max_iterations=None):
         """Writes the `likelihood_stats` to the given file.  Results are
@@ -419,7 +423,7 @@ class BaseMCMCSampler(_BaseSampler):
 
         if max_iterations is not None and max_iterations < niterations:
             raise IndexError("The provided max size is less than the "
-                "number of iterations")
+                             "number of iterations")
 
         for param in fields:
             # create an empty array if desired, in case this is the first time
@@ -429,15 +433,15 @@ class BaseMCMCSampler(_BaseSampler):
             for wi in range(nwalkers):
                 dataset_name = group.format(param=param, wi=wi)
                 try:
-                    fp[dataset_name][:niterations] = stats[param][wi,:]
+                    fp[dataset_name][:niterations] = stats[param][wi, :]
                 except KeyError:
                     # dataset doesn't exist yet, see if a larger array is
                     # desired
                     if max_iterations is not None:
-                        out[:niterations] = stats[param][wi,:]
+                        out[:niterations] = stats[param][wi, :]
                         fp[dataset_name] = out
                     else:
-                        fp[dataset_name] = stats[param][wi,:]
+                        fp[dataset_name] = stats[param][wi, :]
         return stats
 
     def write_acceptance_fraction(self, fp, max_iterations=None):
@@ -494,8 +498,8 @@ class BaseMCMCSampler(_BaseSampler):
 
     @staticmethod
     def _read_fields(fp, fields_group, fields, array_class,
-            thin_start=None, thin_interval=None, thin_end=None, iteration=None,
-            walkers=None, flatten=True):
+                     thin_start=None, thin_interval=None, thin_end=None,
+                     iteration=None, walkers=None, flatten=True):
         """Base function for reading samples and likelihood stats. See
         `read_samples` and `read_likelihood_stats` for details.
 
@@ -534,7 +538,7 @@ class BaseMCMCSampler(_BaseSampler):
                 # use the number of current iterations
                 thin_end = fp.niterations
             get_index = get_slice(fp, thin_start=thin_start, thin_end=thin_end,
-                thin_interval=thin_interval)
+                                  thin_interval=thin_interval)
 
         # load
         arrays = {}
@@ -551,9 +555,9 @@ class BaseMCMCSampler(_BaseSampler):
 
     @classmethod
     def read_samples(cls, fp, parameters,
-            thin_start=None, thin_interval=None, thin_end=None, iteration=None,
-            walkers=None, flatten=True, samples_group=None,
-            array_class=None):
+                     thin_start=None, thin_interval=None, thin_end=None,
+                     iteration=None, walkers=None, flatten=True,
+                     samples_group=None, array_class=None):
         """Reads samples for the given parameter(s).
 
         Parameters
@@ -610,18 +614,20 @@ class BaseMCMCSampler(_BaseSampler):
             array_class = WaveformArray
         # get the names of fields needed for the given parameters
         possible_fields = dict([[str(name), float]
-            for name in fp[fp.samples_group].keys()])
-        loadfields = array_class.parse_parameters(parameters,
-            possible_fields=possible_fields)
+                               for name in fp[fp.samples_group].keys()])
+        loadfields = array_class.parse_parameters(
+            parameters, possible_fields=possible_fields)
         return cls._read_fields(fp, samples_group, loadfields, array_class,
-                thin_start=thin_start, thin_interval=thin_interval,
-                thin_end=thin_end, iteration=iteration, walkers=walkers,
-                flatten=flatten)
+                                thin_start=thin_start,
+                                thin_interval=thin_interval, thin_end=thin_end,
+                                iteration=iteration, walkers=walkers,
+                                flatten=flatten)
 
     @classmethod
-    def read_likelihood_stats(cls, fp,
-            thin_start=None, thin_interval=None, thin_end=None, iteration=None,
-            walkers=None, flatten=True, stats_group=None, array_class=None):
+    def read_likelihood_stats(cls, fp, thin_start=None, thin_interval=None,
+                              thin_end=None, iteration=None, walkers=None,
+                              flatten=True, stats_group=None,
+                              array_class=None):
         """Reads the likelihood stats from the given file.
 
         Parameters
@@ -669,9 +675,10 @@ class BaseMCMCSampler(_BaseSampler):
             array_class = FieldArray
         fields = fp[stats_group].keys()
         return cls._read_fields(fp, stats_group, fields, array_class,
-                thin_start=thin_start, thin_interval=thin_interval,
-                thin_end=thin_end, iteration=iteration, walkers=walkers,
-                flatten=flatten)
+                                thin_start=thin_start,
+                                thin_interval=thin_interval,
+                                thin_end=thin_end, iteration=iteration,
+                                walkers=walkers, flatten=flatten)
 
     @staticmethod
     def read_acceptance_fraction(fp,
@@ -714,7 +721,7 @@ class BaseMCMCSampler(_BaseSampler):
                 # use the number of current iterations
                 thin_end = fp.niterations
             get_index = get_slice(fp, thin_start=thin_start, thin_end=thin_end,
-                thin_interval=thin_interval)
+                                  thin_interval=thin_interval)
         acfs = fp['acceptance_fraction'][get_index]
         if iteration is not None:
             acfs = numpy.array([acfs])
@@ -752,9 +759,9 @@ class BaseMCMCSampler(_BaseSampler):
             these_acls = []
             for wi in widx:
                 samples = cls.read_samples(fp, param,
-                        thin_start=start_index, thin_interval=1,
-                        thin_end=end_index,
-                        walkers=wi)[param]
+                                           thin_start=start_index,
+                                           thin_interval=1, thin_end=end_index,
+                                           walkers=wi)[param]
                 acl = autocorrelation.calculate_acl(samples)
                 these_acls.append(min(acl, samples.size))
             acls[param] = numpy.array(these_acls, dtype=int)
@@ -789,7 +796,7 @@ class BaseMCMCSampler(_BaseSampler):
         max_acls = []
         for param in acls.fieldnames:
             max_acl = 0
-            for wi,acl in enumerate(acls[param]): 
+            for wi, acl in enumerate(acls[param]): 
                 fp[group.format(param=param, wi=wi)].attrs['acl'] = acl
                 max_acl = max(max_acl, acl)
             max_acls.append(max_acl)
