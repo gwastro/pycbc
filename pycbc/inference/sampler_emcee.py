@@ -900,7 +900,7 @@ class EmceePTSampler(_BaseMCMCSampler):
             max_acls = []
             for tk in tidx:
                 max_acl = 0
-                for wi,acl in enumerate(acls[param][tk,:]): 
+                for wi, acl in enumerate(acls[param][tk, :]): 
                     fp[group.format(param=param, tk=tk,
                                     wi=wi)].attrs['acl'] = acl
                     max_acl = max(max_acl, acl)
@@ -940,12 +940,12 @@ class EmceePTSampler(_BaseMCMCSampler):
             arrays[param] = numpy.array([
                 [fp[group.format(param=param, tk=tk, wi=wi)].attrs['acl']
                     for wi in widx]
-                 for tk in tidx])
+                    for tk in tidx])
         return WaveformArray.from_kwargs(**arrays)
 
     @classmethod
     def calculate_logevidence(cls, fp, thin_start=None, thin_end=None,
-            thin_interval=None):
+                              thin_interval=None):
         """Calculates the log evidence from the given file using emcee's
         thermodynamic integration.
 
@@ -964,7 +964,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         thin_end : int
             Index of the last sample to read. If not given then
             `fp.niterations` is used.
-        
+
         Returns
         -------
         lnZ : float
@@ -978,8 +978,9 @@ class EmceePTSampler(_BaseMCMCSampler):
             raise ImportError("emcee is not installed.")
 
         logstats = cls.read_likelihood_stats(fp, thin_start=thin_start,
-            thin_end=thin_end, thin_interval=thin_interval,
-            temps='all', flatten=False)
+                                             thin_end=thin_end,
+                                             thin_interval=thin_interval,
+                                             temps='all', flatten=False)
         # get the likelihoods
         logls = logstats['loglr'] + fp.lognl
         # we need the betas that were used
@@ -992,5 +993,5 @@ class EmceePTSampler(_BaseMCMCSampler):
         dummy_sampler = emcee.PTSampler(ntemps, nwalkers, ndim, None,
                                         None, betas=betas)
         return dummy_sampler.thermodynamic_integration_log_evidence(
-                    logls=logls, fburnin=0.)
+            logls=logls, fburnin=0.)
 
