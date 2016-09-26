@@ -319,7 +319,7 @@ class BaseMCMCSampler(_BaseSampler):
         if stats.size == 0:
             return None
         arrays = dict([[field, stats[:, :, fi]]
-                        for fi,field in
+                       for fi, field in
                       enumerate(self.likelihood_evaluator.metadata_fields)])
         return FieldArray.from_kwargs(**arrays).transpose()
 
@@ -681,9 +681,8 @@ class BaseMCMCSampler(_BaseSampler):
                                 walkers=walkers, flatten=flatten)
 
     @staticmethod
-    def read_acceptance_fraction(fp,
-            thin_start=None, thin_interval=None, thin_end=None,
-            iteration=None):
+    def read_acceptance_fraction(fp, thin_start=None, thin_interval=None,
+                                 thin_end=None, iteration=None):
         """Reads the acceptance fraction from the given file.
 
         Parameters
@@ -796,7 +795,7 @@ class BaseMCMCSampler(_BaseSampler):
         max_acls = []
         for param in acls.fieldnames:
             max_acl = 0
-            for wi, acl in enumerate(acls[param]): 
+            for wi, acl in enumerate(acls[param]):
                 fp[group.format(param=param, wi=wi)].attrs['acl'] = acl
                 max_acl = max(max_acl, acl)
             max_acls.append(max_acl)
