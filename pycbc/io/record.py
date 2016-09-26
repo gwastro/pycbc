@@ -1276,9 +1276,10 @@ class FieldArray(numpy.recarray):
                     dt = (name, self.dtype[name].type, new_strlens[name])
                 new_dt.append(dt)
             new_dt = numpy.dtype(new_dt)
-            return numpy.append(self.astype(new_dt),
-                                other.astype(new_dt)
-                               ).view(type=self.__class__)
+            return numpy.append(
+                self.astype(new_dt),
+                other.astype(new_dt)
+                ).view(type=self.__class__)
 
 
 def _isstring(dtype):
