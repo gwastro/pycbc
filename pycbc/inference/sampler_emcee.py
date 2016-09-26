@@ -22,12 +22,12 @@
 # =============================================================================
 #
 """
-This modules provides classes and functions for using different sampler
+This modules provides classes and functions for using the emcee sampler
 packages for parameter estimation.
 """
 
 import numpy
-from pycbc.inference.sampler import _BaseMCMCSampler, get_slice
+from pycbc.inference.sampler_base import BaseMCMCSampler, get_slice
 from pycbc.io import WaveformArray, FieldArray
 from pycbc.filter import autocorrelation
 
@@ -40,7 +40,7 @@ from pycbc.filter import autocorrelation
 #
 
 
-class EmceeEnsembleSampler(_BaseMCMCSampler):
+class EmceeEnsembleSampler(BaseMCMCSampler):
     """This class is used to construct an MCMC sampler from the emcee
     package's EnsembleSampler.
 
@@ -238,7 +238,7 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
         self.write_acceptance_fraction(fp)
 
 
-class EmceePTSampler(_BaseMCMCSampler):
+class EmceePTSampler(BaseMCMCSampler):
     """This class is used to construct a parallel-tempered MCMC sampler from
     the emcee package's PTSampler.
 

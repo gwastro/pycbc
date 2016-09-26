@@ -22,11 +22,11 @@
 # =============================================================================
 #
 """
-This modules provides classes and functions for using different sampler
+This modules provides classes and functions for using the kombine sampler
 packages for parameter estimation.
 """
 
-from pycbc.inference.sampler import _BaseMCMCSampler
+from pycbc.inference.sampler_base import BaseMCMCSampler
 
 #
 # =============================================================================
@@ -37,7 +37,7 @@ from pycbc.inference.sampler import _BaseMCMCSampler
 #
 
 
-class KombineSampler(_BaseMCMCSampler):
+class KombineSampler(BaseMCMCSampler):
     """This class is used to construct the MCMC sampler from the kombine
     package.
 
