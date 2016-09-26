@@ -28,6 +28,8 @@ packages for parameter estimation.
 
 import numpy
 from pycbc.io import WaveformArray, FieldArray
+from pycbc.inference.sampler_kombine import KombineSampler
+from pycbc.inference.sampler_emcee import EmceeEnsembleSampler, EmceePTSampler
 from pycbc.filter import autocorrelation
 
 #
@@ -823,8 +825,6 @@ class _BaseMCMCSampler(_BaseSampler):
                 for wi in widx])
         return WaveformArray.from_kwargs(**arrays)
 
-from pycbc.inference.sampler_kombine import KombineSampler
-from pycbc.inference.sampler_emcee import EmceeEnsembleSampler, EmceePTSampler
 samplers = {
     KombineSampler.name : KombineSampler,
     EmceeEnsembleSampler.name : EmceeEnsembleSampler,

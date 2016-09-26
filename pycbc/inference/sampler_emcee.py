@@ -39,6 +39,7 @@ from pycbc.filter import autocorrelation
 # =============================================================================
 #
 
+
 class EmceeEnsembleSampler(_BaseMCMCSampler):
     """This class is used to construct an MCMC sampler from the emcee
     package's EnsembleSampler.
