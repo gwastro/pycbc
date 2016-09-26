@@ -989,7 +989,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         nwalkers = fp.nwalkers
         ndim = len(fp.variable_args)
         dummy_sampler = emcee.PTSampler(ntemps, nwalkers, ndim, None,
-            None, betas=betas)
+                                        None, betas=betas)
         return dummy_sampler.thermodynamic_integration_log_evidence(
                     logls=logls, fburnin=0.)
 
