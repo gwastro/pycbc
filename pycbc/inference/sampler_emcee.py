@@ -677,10 +677,10 @@ class EmceePTSampler(_BaseMCMCSampler):
         arrays = {}
         group = fields_group + '/{name}/temp{tk}/walker{wi}'
         for name in fields:
-            these_arrays = numpy.array([
-                [fp[group.format(name=name, wi=wi, tk=tk)][get_index]
-                 for wi in walkers]
-                 for tk in temps])
+            these_arrays = numpy.array(
+                [[fp[group.format(name=name, wi=wi, tk=tk)][get_index]
+                for wi in walkers]
+                for tk in temps])
             if flatten:
                 these_arrays = these_arrays.flatten()
             arrays[name] = these_arrays
@@ -819,9 +819,9 @@ class EmceePTSampler(_BaseMCMCSampler):
         fields = fp[stats_group].keys()
         return cls._read_fields(fp, stats_group, fields, array_class,
                                 thin_start=thin_start,
-				thin_interval=thin_interval,
+                                thin_interval=thin_interval,
                                 thin_end=thin_end, iteration=iteration,
-				temps=temps, walkers=walkers, flatten=flatten)
+                                temps=temps, walkers=walkers, flatten=flatten)
 
     @classmethod
     def compute_acls(cls, fp, start_index=None, end_index=None):
@@ -857,7 +857,8 @@ class EmceePTSampler(_BaseMCMCSampler):
             these_acls = numpy.zeros((fp.ntemps, fp.nwalkers), dtype=int)
             for tk in tidx:
                 for wi in widx:
-                    samples = cls.read_samples(fp, param,
+                    samples = cls.read_samples(
+                            fp, param,
                             thin_start=start_index, thin_interval=1,
                             thin_end=end_index,
                             walkers=wi, temps=tk)[param]
@@ -901,7 +902,7 @@ class EmceePTSampler(_BaseMCMCSampler):
             max_acls = []
             for tk in tidx:
                 max_acl = 0
-                for wi, acl in enumerate(acls[param][tk, :]): 
+                for wi, acl in enumerate(acls[param][tk, :]):
                     fp[group.format(param=param, tk=tk,
                                     wi=wi)].attrs['acl'] = acl
                     max_acl = max(max_acl, acl)
@@ -995,4 +996,3 @@ class EmceePTSampler(_BaseMCMCSampler):
                                         None, betas=betas)
         return dummy_sampler.thermodynamic_integration_log_evidence(
             logls=logls, fburnin=0.)
-
