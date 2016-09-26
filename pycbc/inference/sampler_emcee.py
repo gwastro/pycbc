@@ -81,7 +81,7 @@ class EmceeEnsembleSampler(_BaseMCMCSampler):
                                         pool=pool)
         # initialize
         super(EmceeEnsembleSampler, self).__init__(sampler,
-            likelihood_evaluator, min_burn_in=burn_in_iterations)
+              likelihood_evaluator, min_burn_in=burn_in_iterations)
         self._nwalkers = nwalkers
 
     @classmethod
