@@ -152,7 +152,7 @@ class KombineSampler(_BaseMCMCSampler):
 
     def burn_in(self):
         """Use kombine's `burnin` routine to advance the sampler.
-        
+
         If a minimum number of burn-in iterations was specified, this will run
         the burn-in until it has advanced at least as many steps as desired.
         The initial positions (p0) must be set prior to running.
