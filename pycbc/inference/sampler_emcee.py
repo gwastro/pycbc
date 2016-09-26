@@ -27,7 +27,7 @@ packages for parameter estimation.
 """
 
 import numpy
-from pycbc.inference.sampler import _BaseMCMCSampler
+from pycbc.inference.sampler import _BaseMCMCSampler, get_slice
 from pycbc.io import WaveformArray, FieldArray
 from pycbc.filter import autocorrelation
 
@@ -524,7 +524,7 @@ class EmceePTSampler(_BaseMCMCSampler):
         if max_iterations is not None:
             if max_iterations < niterations:
                 raise IndexError("The provided max size is less than the "
-                    "number of iterations")
+                                 "number of iterations")
             out = numpy.zeros(max_iterations, dtype=samples.dtype)
 
         # create indices for faster sub-looping
