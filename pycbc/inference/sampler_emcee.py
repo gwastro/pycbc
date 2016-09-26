@@ -676,8 +676,8 @@ class EmceePTSampler(_BaseMCMCSampler):
         group = fields_group + '/{name}/temp{tk}/walker{wi}'
         for name in fields:
             these_arrays = numpy.array([
-                    [fp[group.format(name=name, wi=wi, tk=tk)][get_index]
-                    for wi in walkers]
+                [fp[group.format(name=name, wi=wi, tk=tk)][get_index]
+                for wi in walkers]
                 for tk in temps])
             if flatten:
                 these_arrays = these_arrays.flatten()
