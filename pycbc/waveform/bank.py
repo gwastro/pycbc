@@ -521,12 +521,12 @@ class TemplateBank(object):
 
         # Get times covered by segment analyze
         seg_start_time = \
-            segment.cumulative_index / float(gwstrain.sample_rate) \
-            + start_time
+            segment.cumulative_index / float(gwstrain.sample_rate) + \
+            start_time
         seg_end_time = \
-            (segment.cumulative_index
-             + (segment.analyze.stop - segment.analyze.start)) \
-            / float(gwstrain.sample_rate) + start_time
+            (segment.cumulative_index +
+             (segment.analyze.stop - segment.analyze.start)) / \
+            float(gwstrain.sample_rate) + start_time
         # And add buffer
         seg_start_time = seg_start_time - seg_buffer
         seg_end_time = seg_end_time + seg_buffer
