@@ -33,11 +33,13 @@ import pycbc.scheme as _scheme
 import inspect
 from pycbc.fft import fft
 from pycbc import pnutils
-from pycbc import psd
 from pycbc.waveform import utils as wfutils
 from pycbc.waveform import parameters
 from pycbc.filter import interpolate_complex_frequency
 import pycbc
+from spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
+                      spa_tmplt_precondition, spa_amplitude_factor, \
+                      spa_length_in_time
 
 default_args = (parameters.fd_waveform_params.default_dict() + \
     parameters.td_waveform_params).default_dict()
@@ -514,7 +516,6 @@ def get_sgburst_waveform(template=None, **kwargs):
 _inspiral_fd_filters = {}
 _cuda_fd_filters = {}
 
-from spa_tmplt import spa_tmplt
 _cuda_fd_filters['SPAtmplt'] = spa_tmplt
 _inspiral_fd_filters['SPAtmplt'] = spa_tmplt
 
@@ -530,31 +531,45 @@ _filter_preconditions = {}
 _template_amplitude_norms = {}
 _filter_time_lengths = {}
 
-from spa_tmplt import spa_tmplt_norm, spa_tmplt_end, spa_tmplt_precondition, spa_amplitude_factor, spa_length_in_time
-
 def seobnrrom_final_frequency(**kwds):
     from pycbc.pnutils import get_final_freq
     return get_final_freq("SEOBNRv2", kwds['mass1'], kwds['mass2'],
                    kwds['spin1z'], kwds['spin2z'])
 
-def seobnrrom_length_in_time(**kwds):
+
+def seobnrv2_length_in_time(**kwds):
+    """Stub for holding the calculation of ROM waveform duration.
     """
-    This is a stub for holding the calculation for getting length of the ROM
-    waveforms.
-    """
-    mass1 = kwds['mass1']
-    mass2 = kwds['mass2']
-    spin1z = kwds['spin1z']
-    spin2z = kwds['spin2z']
-    fmin = kwds['f_lower']
-    chi = lalsimulation.SimIMRPhenomBComputeChi(float(mass1), float(mass2), float(spin1z), float(spin2z))
+    mass1 = float(kwds['mass1'])
+    mass2 = float(kwds['mass2'])
+    spin1z = float(kwds['spin1z'])
+    spin2z = float(kwds['spin2z'])
+    fmin = float(kwds['f_lower'])
+    chi = lalsimulation.SimIMRPhenomBComputeChi(mass1, mass2,
+                                                spin1z, spin2z)
     time_length = lalsimulation.SimIMRSEOBNRv2ChirpTimeSingleSpin(
-                               float(mass1)*lal.MSUN_SI, float(mass2)*lal.MSUN_SI, chi, float(fmin))
+            mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI, chi, fmin)
     # FIXME: This is still approximate so add a 10% error margin
     time_length = time_length * 1.1
     return time_length
 
+
+def seobnrv4_length_in_time(**kwds):
+    """Stub for holding the calculation of SEOBNRv4* waveform duration.
+    """
+    m1 = float(kwds['mass1'])
+    m2 = float(kwds['mass2'])
+    s1 = float(kwds['spin1z'])
+    s2 = float(kwds['spin2z'])
+    fmin = float(kwds['f_lower'])
+    t = lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency(
+            fmin, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1, s2)
+    # Allow a 10% margin of error
+    return t * 1.1
+
 def imrphenomd_length_in_time(**kwds):
+    """Stub for holding the calculation of IMRPhenomD waveform duration.
+    """
     mass1 = float(kwds['mass1'])
     mass2 = float(kwds['mass2'])
     spin1z = float(kwds['spin1z'])
@@ -564,7 +579,7 @@ def imrphenomd_length_in_time(**kwds):
                                                        mass2 * lal.MSUN_SI,
                                                        spin1z, spin2z, fmin)
     # FIXME add a 10% error margin for consistency
-    # with seobnrrom_length_in_time()
+    # with seobnrv2_length_in_time()
     return time_length * 1.1
 
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
@@ -584,12 +599,13 @@ _filter_ends["TaylorF2"] = spa_tmplt_end
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
 _filter_time_lengths["TaylorF2"] = spa_length_in_time
-_filter_time_lengths["SEOBNRv1_ROM_EffectiveSpin"] = seobnrrom_length_in_time
-_filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrrom_length_in_time
-_filter_time_lengths["SEOBNRv2_ROM_EffectiveSpin"] = seobnrrom_length_in_time
-_filter_time_lengths["SEOBNRv2_ROM_DoubleSpin"] = seobnrrom_length_in_time
-_filter_time_lengths["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_length_in_time
-_filter_time_lengths["IMRPhenomC"] = seobnrrom_length_in_time
+_filter_time_lengths["SEOBNRv1_ROM_EffectiveSpin"] = seobnrv2_length_in_time
+_filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrv2_length_in_time
+_filter_time_lengths["SEOBNRv2_ROM_EffectiveSpin"] = seobnrv2_length_in_time
+_filter_time_lengths["SEOBNRv2_ROM_DoubleSpin"] = seobnrv2_length_in_time
+_filter_time_lengths["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrv2_length_in_time
+_filter_time_lengths["SEOBNRv4_ROM"] = seobnrv4_length_in_time
+_filter_time_lengths["IMRPhenomC"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomD"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2"] = imrphenomd_length_in_time
 _filter_time_lengths["SpinTaylorF2"] = spa_length_in_time

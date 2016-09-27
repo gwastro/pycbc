@@ -25,14 +25,16 @@
 """
 This module provides classes that describe banks of waveforms
 """
-import types, numpy, logging, os.path, math, h5py
+import types
+import numpy
+import logging
+import os.path
+import h5py
 import pycbc.waveform
 import pycbc.waveform.compress
 from pycbc.types import zeros
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
-from pycbc.filter import sigmasq
 from pycbc import DYN_RANGE_FAC
-from pycbc.pnutils import nearest_larger_binary_number
 import pycbc.io
 from copy import copy
 import numpy as np
