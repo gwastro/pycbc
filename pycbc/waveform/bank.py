@@ -34,11 +34,11 @@ from copy import copy
 import numpy as np
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 import pycbc.waveform
+import pycbc.pnutils
 import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import zeros
-from pycbc.filter import sigmasq, match
-from pycbc.pnutils import mass1_mass2_to_tau0_tau3
+from pycbc.filter import match
 from pycbc.types import FrequencySeries
 import pycbc.io
 
@@ -414,8 +414,8 @@ class TemplateBank(object):
         m1= self.table['mass1']
         m2= self.table['mass2']
         thinning_bank = []
-        tau0_temp, tau3_temp= pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2,
-                                                                     fref)
+        tau0_temp, tau3_temp = pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2,
+                                                                      fref)
         indices = []
             
         for inj in injection_parameters:
@@ -433,11 +433,11 @@ class TemplateBank(object):
         """ Test if injections in segment are worth filtering with template.
 
         Using the current template, current segment, and injections within that
-        segment. Test if the injections and sufficiently "similar" to any of the
-        injections to justify actually performing a matched-filter call. There
-        are two parts to this test: First we check if the chirp time of the
-        template is within a provided window of any of the injections. If not
-        then stop here, it is not worth filtering this template, segment
+        segment. Test if the injections and sufficiently "similar" to any of
+        the injections to justify actually performing a matched-filter call.
+        Ther are two parts to this test: First we check if the chirp time of
+        the template is within a provided window of any of the injections. If
+        not then stop here, it is not worth filtering this template, segment
         combination for this injection set. If this check passes we compute a
         match between a coarse representation of the template and a coarse
         representation of each of the injections. If that match is above a
@@ -508,12 +508,12 @@ class TemplateBank(object):
             # WARNING: This is f-domain only! T-domain *may* work, but many
             #          waveforms will refuse to generate.
             if not t_num == self._tsc_short_template_id:
-                htilde = pycbc.waveform.get_waveform_filter(\
+                htilde = pycbc.waveform.get_waveform_filter(
                     self._tsc_short_template_mem, self.table[t_num],
                     approximant=approximant, f_lower=f_ref,
                     f_final=trunc_f_max,
-                    delta_f=trunc_delta_f, distance=1./ DYN_RANGE_FAC,
-                    delta_t = 1./(2 * trunc_f_max))
+                    delta_f=trunc_delta_f, distance=1./DYN_RANGE_FAC,
+                    delta_t=1./(2 * trunc_f_max))
                 self._tsc_short_template_id = t_num
                 self._tsc_short_template_wav = htilde
             else:
@@ -523,8 +523,9 @@ class TemplateBank(object):
         seg_start_time = \
             segment.cumulative_index / float(gwstrain.sample_rate) \
             + start_time
-        seg_end_time = (segment.cumulative_index \
-            + (segment.analyze.stop - segment.analyze.start)) \
+        seg_end_time = \
+            (segment.cumulative_index
+             + (segment.analyze.stop - segment.analyze.start)) \
             / float(gwstrain.sample_rate) + start_time
         # And add buffer
         seg_start_time = seg_start_time - seg_buffer
@@ -544,12 +545,12 @@ class TemplateBank(object):
             if (not chirp_test) or \
                     tau_diff <= ic_params['chirp_time_threshold']:
                 if not match_test:
-                    filter_segment=True
+                    filter_segment = True
                     break
                 o, i = match(htilde, injections.short_truncated_injs[inj_idx],
                              psd=red_psd, low_frequency_cutoff=f_ref)
                 if o > ic_params['match_threshold']:
-                    filter_segment=True
+                    filter_segment = True
                     break
 
         return filter_segment
@@ -574,7 +575,6 @@ class LiveFilterBank(TemplateBank):
             self.table = self.table.add_fields(numpy.zeros(len(self.table),
                                      dtype=numpy.float32), 'template_duration') 
 
-        from pycbc.pnutils import mass1_mass2_to_mchirp_eta
         self.table = sorted(self.table, key=lambda t: mass1_mass2_to_mchirp_eta(t.mass1, t.mass2)[0])
 
         self.hash_lookup = {}

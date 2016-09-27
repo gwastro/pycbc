@@ -177,7 +177,6 @@ class InjectionSet(object):
                 # If doing injcutter, store a coarse representation of each
                 # injection.
                 ic_params = strain.injcutter
-                f_ref = ic_params['f_lower']
                 trunc_f_max = ic_params['coarsematch_fmax']
                 trunc_delta_f = ic_params['coarsematch_deltaf']
                 inj_length = len(signal)

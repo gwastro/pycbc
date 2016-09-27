@@ -381,7 +381,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
                              pd_taper_window) )
         gate_data(strain, gate_params)
 
-
     strain.injcutter = injcutter
     if opt.injection_file:
         strain.injections = injections
@@ -791,57 +790,58 @@ def gate_data(data, gate_params):
 
     return data
 
-_enable_cutter_help=("If given 'injcutter' will be enabled. This means "
-                     "that if injections are present in this run, we "
-                     "will perform a pre-check between injections in the "
-                     "data being filtered and the current search template "
-                     "to determine if the template has any chance of "
-                     "actually detecting the injection. The parameters "
-                     "of this test are given by the various injcutter "
-                     "options below. The --injcutter-chirp-time-threshold "
-                     "and --injcutter-match-threshold options need to be "
-                     "provided if those tests are desired. Other options "
-                     "will take default values unless overriden. More "
-                     "details on these options follow.")
-_injcutter_cthresh_help=("If this value is not None and injcutter is enabled "
-                         "we will calculate the difference in chirp time "
-                         "(tau_0) between the template and each injection in "
-                         "the analysis segment. If the difference is greater "
-                         "than this threshold for all injections then "
-                         "filtering is not performed. By default this will "
-                         "be None.")
-_injcutter_mthresh_help=("If this value is not None and injcutter is enabled "
-                         "we will calculate a 'coarse match' between the "
-                         "template and each injection in the analysis "
-                         "segment. If the match is less than this threshold "
-                         "for all injections filtering is not performed. "
-                         "Parameters for the 'coarse match' follow. By "
-                         "default this value will be None.")
-_injcutter_deltaf_help=("If injcutter is enabled and "
+_enable_cutter_help = ("If given 'injcutter' will be enabled. This means "
+                       "that if injections are present in this run, we "
+                       "will perform a pre-check between injections in the "
+                       "data being filtered and the current search template "
+                       "to determine if the template has any chance of "
+                       "actually detecting the injection. The parameters "
+                       "of this test are given by the various injcutter "
+                       "options below. The --injcutter-chirp-time-threshold "
+                       "and --injcutter-match-threshold options need to be "
+                       "provided if those tests are desired. Other options "
+                       "will take default values unless overriden. More "
+                       "details on these options follow.")
+_injcutter_cthresh_help = ("If this value is not None and injcutter is "
+                           "enabled then we will calculate the difference in "
+                           "chirp time (tau_0) between the template and each "
+                           "injection in the analysis segment. If the "
+                           "difference is greate than this threshold for all "
+                           "injections then filtering is not performed. By "
+                           "default this will be None.")
+_injcutter_mthresh_help = ("If this value is not None and injcutter is "
+                           "enabled then we will calculate a 'coarse match' "
+                           "between the template and each injection in the "
+                           "analysis segment. If the match is less than this "
+                           "threshold for all injections filtering is not "
+                           "performed. Parameters for the 'coarse match' "
+                           "follow. By default this value will be None.")
+_injcutter_deltaf_help = ("If injcutter is enabled and "
+                          "injcutter-match-threshold is not None, this option "
+                          "specifies the frequency spacing that will be used "
+                          "for injections, templates and PSD when computing "
+                          "the 'coarse match'. Templates will be generated "
+                          "directly with this spacing. The PSD and injections "
+                          "will be resampled.")
+_injcutter_fmax_help = ("If injcutter is enabled and "
                         "injcutter-match-threshold is not None, this option "
-                        "specifies the frequency spacing that will be used "
+                        "specifies the maximum frequency that will be used "
                         "for injections, templates and PSD when computing "
                         "the 'coarse match'. Templates will be generated "
-                        "directly with this spacing. The PSD and injections "
-                        "will be resampled.")
-_injcutter_fmax_help=("If injcutter is enabled and "
-                      "injcutter-match-threshold is not None, this option "
-                      "specifies the maximum frequency that will be used "
-                      "for injections, templates and PSD when computing "
-                      "the 'coarse match'. Templates will be generated "
-                      "directly with this max frequency. The PSD and "
-                      "injections frequency series will be truncated.")
-_injcutter_buffer_help=("If injcutter is enabled, the injcutter tests "
-                        "will determine if injections are 'in' the specified "
-                        "analysis chunk by using the end times. If this "
-                        "value is non-zero the analysis chunk is extended "
-                        "on both sides by this amount before determing if "
-                        "injections are within the given window.")
-_injcutter_flower_help=("If injcutter is enabled, the injcutter tests "
-                        "need a lower frequency for determine chirp times or "
-                        "for doing matches. If this value is None the "
-                        "lower frequency used for the full matched-filter is "
-                        "used. Otherwise this value is used instead.")
+                        "directly with this max frequency. The PSD and "
+                        "injections frequency series will be truncated.")
+_injcutter_buffer_help = ("If injcutter is enabled, the injcutter tests "
+                          "will determine if injections are 'in' the "
+                          "specified analysis chunk by using the end times. "
+                          "If this value is non-zero the analysis chunk is "
+                          "extended on both sides by this amount before "
+                          "determining if injections are within the given "
+                          "window.")
+_injcutter_flower_help = ("If injcutter is enabled, the injcutter tests "
+                          "need a lower frequency for determine chirp times "
+                          "or for doing matches. If this value is None the "
+                          "lower frequency used for the full matched-filter "
+                          "if used. Otherwise this value is used instead.")
 class StrainSegments(object):
     """ Class for managing manipulation of strain data for the purpose of
         matched filtering. This includes methods for segmenting and
@@ -1054,8 +1054,8 @@ class StrainSegments(object):
                           help="The time in seconds to ignore at the "
                                "end of each segment in seconds.")
         segment_group.add_argument("--allow-zero-padding", action='store_true',
-                          help="Allow for zero padding of data to analyze "
-                          "requested times, if needed.")
+                                   help="Allow for zero padding of data to "
+                                        "analyze requested times, if needed.")
         # Injection optimization options
         segment_group.add_argument("--filter-inj-only", action='store_true',
                           help="Analyze only segments that contain an injection.")
@@ -1140,8 +1140,10 @@ class StrainSegments(object):
                           help="Allow for zero padding of data to analyze "
                           "requested times, if needed.")
         segment_group.add_argument("--filter-inj-only", action='store_true',
-                    help="Analyze only segments that contain an injection.")
-        segment_group.add_argument("--enable-injcutter", action="store_true",                                      default=False, help=_enable_cutter_help)
+                                   help="Analyze only segments that contain "
+                                        "an injection.")
+        segment_group.add_argument("--enable-injcutter", action="store_true",
+                                   default=False, help=_enable_cutter_help)
         segment_group.add_argument("--injcutter-chirp-time-threshold",
                                    type=float, default=None,
                                    help=_injcutter_cthresh_help)
