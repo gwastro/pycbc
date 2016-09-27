@@ -58,6 +58,16 @@ def generator_mtotal_eta_to_mass1_mass2(generator):
     generator.current_params['mass2'] = m2
 
 
+def generator_mchirp_q_to_mass1_mass2(generator):
+    """Converts mchirp and q in `current_params`, to mass1 and mass2.
+    """
+    mchirp = generator.current_params['mchirp']
+    q = generator.current_params['q']
+    m1, m2 = pnutils.mchirp_q_to_mass1_mass2(mchirp, q)
+    generator.current_params['mass1'] = m1
+    generator.current_params['mass2'] = m2
+
+
 #
 #   Generator for CBC waveforms
 #
