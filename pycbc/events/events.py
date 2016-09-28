@@ -218,9 +218,11 @@ class EventManager(object):
             self.event_dtype.append( (column, coltype) )
 
         self.events = numpy.array([], dtype=self.event_dtype)
+        self.snr_series = None
         self.template_params = []
         self.template_index = -1
         self.template_events = numpy.array([], dtype=self.event_dtype)
+        self.template_snr_series = None
         self.write_performance = False
 
     @classmethod
@@ -244,6 +246,7 @@ class EventManager(object):
             if xi > value:
                 remove.append(i)
         self.events = numpy.delete(self.events, remove)
+        self.snr_series = numpy.delete(self.snr_series, remove, axis=0)
 
     def newsnr_threshold(self, threshold):
         """ Remove events with newsnr smaller than given threshold
@@ -254,6 +257,7 @@ class EventManager(object):
         remove = [i for i, e in enumerate(self.events) if \
             newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof']) < threshold]
         self.events = numpy.delete(self.events, remove)
+        self.snr_series = numpy.delete(self.snr_series, remove, axis=0)
         
     def keep_near_injection(self, window, injections):
         from pycbc.events.veto import indices_within_times
@@ -265,6 +269,7 @@ class EventManager(object):
         gpstime = gpstime / self.opt.sample_rate + self.opt.gps_start_time
         i = indices_within_times(gpstime, inj_time - window, inj_time + window)
         self.events = self.events[i]
+        self.snr_series = numpy.take(self.snr_series, i, axis=0)
 
     def keep_loudest_in_interval(self, window, num_keep):
         if len(self.events) == 0:
@@ -284,6 +289,7 @@ class EventManager(object):
             keep.append(bloc[bloudest])
         keep = numpy.concatenate(keep)
         self.events = e[keep]
+        self.snr_series = numpy.take(self.snr_series, keep, axis=0)
 
     def maximize_over_bank(self, tcolumn, column, window):
         if len(self.events) == 0:
@@ -327,8 +333,9 @@ class EventManager(object):
                 indices.append(i)
 
         self.events = numpy.take(self.events, indices)
+        self.snr_series = numpy.take(self.snr_series, indices, axis=0)
 
-    def add_template_events(self, columns, vectors):
+    def add_template_events(self, columns, vectors, snr_series=None):
         """ Add a vector indexed """
         # initialize with zeros - since vectors can be None, look for the
         # first one that isn't
@@ -338,7 +345,8 @@ class EventManager(object):
                 new_events = numpy.zeros(len(v), dtype=self.event_dtype)
                 break
         # they shouldn't all be None
-        assert new_events is not None
+        if new_events is None:
+            raise ValueError('All vectors are None')
         new_events['template_id'] = self.template_index
         for c, v in zip(columns, vectors):
             if v is not None:
@@ -347,6 +355,10 @@ class EventManager(object):
                 else:
                     new_events[c] = v
         self.template_events = numpy.append(self.template_events, new_events)
+        if self.template_snr_series is None:
+            self.template_snr_series = snr_series.copy()
+        else:
+            self.template_snr_series = numpy.vstack([self.template_snr_series, snr_series])
 
     def cluster_template_events(self, tcolumn, column, window_size):
         """ Cluster the internal events over the named column
@@ -355,6 +367,7 @@ class EventManager(object):
         tvec = self.template_events[tcolumn]
         indices = findchirp_cluster_over_window(tvec, cvec, window_size)
         self.template_events = numpy.take(self.template_events, indices)
+        self.template_snr_series = numpy.take(self.template_snr_series, indices, axis=0)
 
     def new_template(self, **kwds):
         self.template_params.append(kwds)
@@ -366,6 +379,11 @@ class EventManager(object):
     def finalize_template_events(self):
         self.events = numpy.append(self.events, self.template_events)
         self.template_events = numpy.array([], dtype=self.event_dtype)
+        if self.snr_series is not None:
+            self.snr_series = numpy.vstack([self.snr_series, self.template_snr_series])
+        else:
+            self.snr_series = self.template_snr_series.copy()
+        self.template_snr_series = None
 
     def make_output_dir(self, outname):
         path = os.path.dirname(outname)
@@ -460,6 +478,14 @@ class EventManager(object):
                 f['chisq_dof'] = self.events['chisq_dof'] / 2 + 1
             else:
                 f['chisq_dof'] = numpy.zeros(len(self.events))
+
+            # save SNR time series around triggers, with relative sample times
+            # as an attribute
+            f['snr_series'] = self.snr_series
+            snr_series_len = self.snr_series.shape[1]
+            f.f[f.prefix + '/snr_series'].attrs['sample_times'] = \
+                    (numpy.arange(snr_series_len) - 0.5 * snr_series_len) / \
+                    self.opt.sample_rate
 
             f['template_hash'] = th[tid]
 

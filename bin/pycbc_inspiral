@@ -228,15 +228,9 @@ with ctx:
     template_mem = zeros(tlen, dtype = complex64)
     cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
 
-    if opt.cluster_window == 0.0:
-        use_cluster = False
-    else:
-        use_cluster = True
+    use_cluster = opt.cluster_window != 0.0
 
-    if hasattr(ctx, "num_threads"):
-            ncores = ctx.num_threads
-    else:
-            ncores = 1
+    ncores = ctx.num_threads if hasattr(ctx, "num_threads") else 1
 
 
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
@@ -278,7 +272,13 @@ with ctx:
         bank.table = bank.template_thinning(gwstrain.injections.table,
                                             opt.threshold_template_filtering)
         logging.info("Template Bank Size After Cut: %s", len(bank))
-      
+
+    # (half-)length of SNR chunk to save around each trigger, determined by
+    # maximum possible light travel from the Earth center (~21 ms) plus a fixed
+    # time accounting for timing uncertainty (5 ms). Forced to an even number
+    # as per Leo's request
+    snr_series_len = int(0.026 * gwstrain.sample_rate) // 2 * 2
+
     ntemplates = len(bank)
     tsetup = time.time() - tstart
 
@@ -305,60 +305,68 @@ with ctx:
             if not len(idx):
                 continue
 
+            idx2 = idx + stilde.analyze.start
+
             out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
                   bank_chisq.values(template, stilde.psd, stilde, snrv, norm,
-                                    idx+stilde.analyze.start)
+                                    idx2)
 
             out_vals['chisq'], out_vals['chisq_dof'] = \
-                  power_chisq.values(corr, snrv, norm, stilde.psd,
-                                     idx+stilde.analyze.start, template)
+                  power_chisq.values(corr, snrv, norm, stilde.psd, idx2,
+                                     template)
 
             out_vals['cont_chisq'] = \
-                  autochisq.values(snr, idx+stilde.analyze.start, template,
-                                   stilde.psd, norm, stilde=stilde,
-                                   low_frequency_cutoff=flow)
+                  autochisq.values(snr, idx2, template, stilde.psd, norm,
+                                   stilde=stilde, low_frequency_cutoff=flow)
+
+            snr_series = numpy.array(
+                    [snr[(i-snr_series_len):(i+snr_series_len+1)]
+                     for i in idx2]) * norm
 
             idx += stilde.cumulative_index
 
             out_vals['time_index'] = idx
             out_vals['snr'] = snrv * norm
 
-            event_mgr.add_template_events(names, [out_vals[n] for n in names])
+            event_mgr.add_template_events(names, [out_vals[n] for n in names],
+                                          snr_series=snr_series)
 
         event_mgr.cluster_template_events("time_index", "snr", cluster_window)
         event_mgr.finalize_template_events()
 
-logging.info("Found %s triggers" % str(len(event_mgr.events)))
+logging.info("Found %d triggers", len(event_mgr.events))
 
 if opt.chisq_threshold and opt.chisq_bins:
     logging.info("Removing triggers with poor chisq")
     event_mgr.chisq_threshold(opt.chisq_threshold, opt.chisq_bins,
                               opt.chisq_delta)
-    logging.info("%d remaining triggers" % len(event_mgr.events))
+    logging.info("%d remaining triggers", len(event_mgr.events))
 
 if opt.newsnr_threshold and opt.chisq_bins:
     logging.info("Removing triggers with NewSNR below threshold")
     event_mgr.newsnr_threshold(opt.newsnr_threshold)
-    logging.info("%d remaining triggers" % len(event_mgr.events))
+    logging.info("%d remaining triggers", len(event_mgr.events))
 
 if opt.keep_loudest_interval:
     logging.info("Removing triggers that are not within the top %s loudest"
-                 " of a %s second interval" % (opt.keep_loudest_num,
-                                               opt.keep_loudest_interval))
+                 " of a %s second interval", opt.keep_loudest_num,
+                 opt.keep_loudest_interval)
     event_mgr.keep_loudest_in_interval(opt.keep_loudest_interval * opt.sample_rate,
                                        opt.keep_loudest_num)
-    logging.info("%d remaining triggers" % len(event_mgr.events))
+    logging.info("%d remaining triggers", len(event_mgr.events))
 
 if opt.injection_window and hasattr(gwstrain, 'injections'):
-    logging.info("Keeping triggers within %s seconds of injection" % opt.injection_window)
+    logging.info("Keeping triggers within %s seconds of injection",
+                 opt.injection_window)
     event_mgr.keep_near_injection(opt.injection_window, gwstrain.injections)
-    logging.info("%d remaining triggers" % len(event_mgr.events))
+    logging.info("%d remaining triggers", len(event_mgr.events))
 
 if opt.maximization_interval:
-    logging.info("Maximizing triggers over %s ms window" % opt.maximization_interval)
+    logging.info("Maximizing triggers over %s ms window",
+                 opt.maximization_interval)
     window = int(opt.maximization_interval * gwstrain.sample_rate / 1000)
     event_mgr.maximize_over_bank("time_index", "snr", window)
-    logging.info("%d remaining triggers" % len(event_mgr.events))
+    logging.info("%d remaining triggers", len(event_mgr.events))
 
 tstop = time.time()
 run_time = tstop - tstart
