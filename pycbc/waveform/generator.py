@@ -188,6 +188,8 @@ class BaseCBCGenerator(BaseGenerator):
                 self._pregenerate = generator_mchirp_eta_to_mass1_mass2
             elif 'mtotal' in all_args and 'eta' in all_args:
                 self._pregenerate = generator_mtotal_eta_to_mass1_mass2
+            elif 'mchirp' in all_args and 'q' in all_args:
+                self._pregenerate = generator_mchirp_q_to_mass1_mass2
             else:
                 raise ValueError("if not specifying mass1, mass2, must either use "
                     "(mchirp, eta) or (mtotal, eta)")
