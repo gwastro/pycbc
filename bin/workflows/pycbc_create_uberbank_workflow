@@ -147,7 +147,7 @@ parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("--workflow-name", type=str, default='sbank_workflow',
                     help="Descriptive name of the analysis.")
-parser.add_argument("-d", "--output-dir", default=None,
+parser.add_argument("-d", "--output-dir", default='./',
                     help="Path to output directory.")
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
