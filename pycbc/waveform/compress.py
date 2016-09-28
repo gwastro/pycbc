@@ -595,6 +595,19 @@ class CompressedWaveform(object):
         self._phase = phase
         self._cache = {}
         self.load_to_memory = load_to_memory
+        # if sample points, amplitude, and/or phase are hdf datasets,
+        # save their filenames
+        self._filenames = {}
+        self._groupnames = {}
+        for arrname in ['sample_points', 'amplitude', 'phase']:
+            try:
+                fname = getattr(self, '_{}'.format(arrname)).file.filename
+                gname = getattr(self, '_{}'.format(arrname)).name
+            except AttributeError:
+                fname = None
+                gname = None
+            self._filenames[arrname] = fname
+            self._groupnames[arrname] = gname
         # metadata
         self.interpolation = interpolation
         self.tolerance = tolerance
@@ -606,7 +619,14 @@ class CompressedWaveform(object):
             try:
                 val = self._cache[param]
             except KeyError:
-                val = val[:]
+                try:
+                    val = val[:]
+                except ValueError:
+                    # this can happen if the file is closed; if so, open it
+                    # and get the data
+                    fp = h5py.File(self._filenames[param], 'r')
+                    val = fp[self._groupnames[param]][:]
+                    fp.close()
                 if self.load_to_memory:
                     self._cache[param] = val
         return val
