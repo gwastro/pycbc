@@ -1694,7 +1694,7 @@ class WaveformArray(_FieldArrayWithDefaults):
         out, _, _ = coordinates.cartesian_to_spherical(self.spin1x,
                                                        self.spin1y,
                                                        self.spin1z)
-        return a / self.mass1**2
+        return out / self.mass1**2
 
 
     @property
@@ -1721,7 +1721,7 @@ class WaveformArray(_FieldArrayWithDefaults):
         out, _, _ = coordinates.cartesian_to_spherical(self.spin2x,
                                                        self.spin2y,
                                                        self.spin2z)
-        return a / self.mass2**2
+        return out / self.mass2**2
 
 
     @property
