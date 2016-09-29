@@ -19,6 +19,69 @@
 import numpy
 
 
+def cartesian_to_spherical_rho(x, y, z):
+    """ Calculates the magnitude in spherical coordinates from Cartesian
+    coordinates.
+
+    Parameters
+    ----------
+    x : {numpy.array, float}
+        X-coordinate.
+    y : {numpy.array, float}
+        Y-coordinate.
+    z : {numpy.array, float}
+        Z-coordinate.
+
+    Returns
+    -------
+    rho : {numpy.array, float}
+        The radial amplitude.
+    """
+    return numpy.sqrt(x**2 + y**2 + z**2)
+
+
+def cartesian_to_spherical_azimuthal(x, y):
+    """ Calculates the azimuthal angle in spherical coordinates from Cartesian
+    coordinates. The azimuthal angle is in [0,2*pi].
+
+    Parameters
+    ----------
+    x : {numpy.array, float}
+        X-coordinate.
+    y : {numpy.array, float}
+        Y-coordinate.
+
+    Returns
+    -------
+    phi : {numpy.array, float}
+        The azimuthal angle.
+    """
+    if type(y) is int:
+        y = float(y)
+    return numpy.arctan(y / x)
+
+
+def cartesian_to_spherical_polar(x, y, z):
+    """ Calculates the polar angle in spherical coordinates from Cartesian
+    coordinates. The polar angle is in [0,pi].
+
+    Parameters
+    ----------
+    x : {numpy.array, float}
+        X-coordinate.
+    y : {numpy.array, float}
+        Y-coordinate.
+    z : {numpy.array, float}
+        Z-coordinate.
+
+    Returns
+    -------
+    theta : {numpy.array, float}
+        The polar angle.
+    """
+    return numpy.arccos(z / cartesian_to_spherical_rho(x, y, z))
+
+
 def cartesian_to_spherical(x, y, z):
     """ Maps cartesian coordinates (x,y,z) to spherical coordinates
     (rho,phi,theta) where phi is in [0,2*pi] and theta is in [0,pi].
@@ -39,12 +102,11 @@ def cartesian_to_spherical(x, y, z):
     phi : {numpy.array, float}
         The azimuthal angle.
     theta : {numpy.array, float}
+        The polar angle.
     """
-    if type(y) is int:
-        y = float(y)
-    rho = numpy.sqrt(x**2 + y**2 + z**2)
-    phi = numpy.arctan(y / x)
-    theta = numpy.arccos(z / rho)
+    rho = cartesian_to_spherical_rho(x, y, z)
+    phi = cartesian_to_spherical_azimuthal(x, y)
+    theta = cartesian_to_spherical_polar(x, y, z)
     return rho, phi, theta
 
 
@@ -59,6 +121,7 @@ def spherical_to_cartesian(rho, phi, theta):
     phi : {numpy.array, float}
         The azimuthal angle.
     theta : {numpy.array, float}
+        The polar angle.
 
     Returns
     -------

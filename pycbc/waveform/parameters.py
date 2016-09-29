@@ -195,7 +195,7 @@ lambda2 = Parameter("lambda2",
                 dtype=float, default=0., label=r"$\lambda_2$",
                 description="The tidal deformability parameter of object 2.")
 
-# common derived parameters (these are not used for waveform generation)
+# derived parameters (these are not used for waveform generation) for masses
 mchirp = Parameter("mchirp",
                 dtype=float, label=r"$\mathcal{M}~(\mathrm{M}_\odot)$",
                 description="The chirp mass of the binary (in solar masses).")
@@ -214,6 +214,8 @@ m_p = Parameter("m_p",
 m_s = Parameter("m_s",
                 dtype=float, label=r"$m_{\mathrm{sc}}$",
                 description="Mass of the secondary object (in solar masses).")
+
+# derived parameters for component spins
 chi_eff = Parameter("chi_eff",
                 dtype=float, label=r"$\chi_\mathrm{eff}$",
                 description="Effective spin of the binary.")
@@ -241,6 +243,31 @@ spin_sz = Parameter("spin_sz",
                 dtype=float, label=r"$\chi_{\mathrm{sc}\,z}$",
                 description="The z component of the dimensionless spin of the "
                             "secondary object.")
+
+# derived parameters for component spin magnitude and angles
+spin1_a = Parameter("spin1_a",
+                    dtype=float, label=r"$\a_{1}$",
+                    description="The dimensionless spin magnitude "
+                                "$|\vec{s}/m_{1}^2|$.")
+spin2_a = Parameter("spin2_a",
+                    dtype=float, label=r"$\a_{2}$",
+                    description="The dimensionless spin magnitude "
+                                "$|\vec{s}/m_{2}^2|$.")
+spin1_azimuthal = Parameter(
+                      "spin1_azimuthal",
+                      dtype=float, label=r"$\theta_1^\mathrm{azimuthal}$",
+                      description="The azimuthal spin angle for mass 1.")
+spin2_azimuthal = Parameter(
+                      "spin2_azimuthal",
+                      dtype=float, label=r"$\theta_2^\mathrm{azimuthal}$",
+                      description="The azimuthal spin angle for mass 2.")
+spin1_polar = Parameter("spin1_polar",
+                        dtype=float, label=r"$\theta_1^\mathrm{polar}$",
+                        description="The polar spin angle for mass 1.")
+spin2_polar = Parameter("spin2_polar",
+                        dtype=float, label=r"$\theta_2^\mathrm{polar}$",
+                        description="The polar spin angle for mass 2.")
+
 
 #
 #   Parameters needed for CBC waveform generation
