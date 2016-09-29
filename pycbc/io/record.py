@@ -1690,55 +1690,45 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin1a(self):
         """Returns the dimensionless spin magnitude of mass 1."""
-        out, _, _ = coordinates.cartesian_to_spherical(self.spin1x,
-                                                       self.spin1y,
-                                                       self.spin1z)
+        out = coordinates.spherical_rho(self.spin1x, self.spin1y, self.spin1z)
         return out / self.mass1**2
 
 
     @property
     def spin1phi(self):
         """Returns the azmuthal spin angle of mass 1."""
-        _, out, _ = coordinates.cartesian_to_spherical(self.spin1x,
-                                                       self.spin1y,
-                                                       self.spin1z)
-        return out
+        # do not need to normalize by mass because it cancels
+        return coordinates.spherical_phi(self.spin1x, self.spin1y)
 
 
     @property
     def spin1theta(self):
         """Returns the polar spin angle of mass 1."""
-        _, _, out = coordinates.cartesian_to_spherical(self.spin1x,
-                                                       self.spin1y,
-                                                       self.spin1z)
-        return out
+        # do not need to normalize by mass because it cancels
+        return coordinates.spherical_theta(self.spin1x, self.spin1y,
+                                           self.spin1z)
 
 
     @property
     def spin2a(self):
         """Returns the dimensionless spin magnitude of mass 2."""
-        out, _, _ = coordinates.cartesian_to_spherical(self.spin2x,
-                                                       self.spin2y,
-                                                       self.spin2z)
+        out = coordinates.spherical_rho(self.spin1x, self.spin1y, self.spin1z)
         return out / self.mass2**2
 
 
     @property
     def spin2phi(self):
         """Returns the azmuthal spin angle of mass 2."""
-        _, out, _ = coordinates.cartesian_to_spherical(self.spin2x,
-                                                       self.spin2y,
-                                                       self.spin2z)
-        return out
+        # do not need to normalize by mass because it cancels
+        return coordinates.spherical_phi(self.spin2x, self.spin2y)
 
 
     @property
     def spin2theta(self):
         """Returns the polar spin angle of mass 2."""
-        _, _, out = coordinates.cartesian_to_spherical(self.spin2x,
-                                                       self.spin2y,
-                                                       self.spin2z)
-        return out
+        # do not need to normalize by mass because it cancels
+        return coordinates.spherical_theta(self.spin2x, self.spin2y,
+                                           self.spin2z)
 
 
     def det_tc(self, detector):
