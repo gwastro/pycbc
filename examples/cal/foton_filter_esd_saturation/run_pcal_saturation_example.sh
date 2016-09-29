@@ -33,8 +33,8 @@ HTMLDIR=/home/${USER}/public_html/hwinj_check/doc/
 mkdir -p ${HTMLDIR}
 
 # checkout the calibration SVN to get foton filter files
-#svn co --username=christopher.biwer https://daqsvn.ligo-la.caltech.edu/svn/h1_filter_files/h1_archive
-#svn co --username=christopher.biwer https://daqsvn.ligo-la.caltech.edu/svn/l1_filter_files/l1_archive
+svn co --username=christopher.biwer https://daqsvn.ligo-la.caltech.edu/svn/h1_filter_files/h1_archive
+svn co --username=christopher.biwer https://daqsvn.ligo-la.caltech.edu/svn/l1_filter_files/l1_archive
 
 # foton filter files
 CALEX_FILTER_FILE=${IFO,,}_archive/${IFO}CALEX.txt
