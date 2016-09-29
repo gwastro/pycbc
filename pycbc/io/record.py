@@ -1582,9 +1582,8 @@ class WaveformArray(_FieldArrayWithDefaults):
         parameters.q, parameters.m_p, parameters.m_s, parameters.chi_eff,
         parameters.spin_px, parameters.spin_py, parameters.spin_pz,
         parameters.spin_sx, parameters.spin_sy, parameters.spin_sz,
-        parameters.spin1_a, parameters.spin1_phi, parameters.spin1_theta,
-        parameters.spin2_a, parameters.spin2_phi, parameters.spin2_theta]
-
+        parameters.spin1a, parameters.spin1phi, parameters.spin1theta,
+        parameters.spin2a, parameters.spin2phi, parameters.spin2theta]
 
     @property
     def m_p(self):
@@ -1689,16 +1688,13 @@ class WaveformArray(_FieldArrayWithDefaults):
 
 
     @property
-    def spin1_a(self):
+    def spin1a(self):
         """Returns the dimensionless spin magnitude of mass 1."""
-        out, _, _ = coordinates.cartesian_to_spherical(self.spin1x,
-                                                       self.spin1y,
-                                                       self.spin1z)
         return out / self.mass1**2
 
 
     @property
-    def spin1_phi(self):
+    def spin1phi(self):
         """Returns the azmuthal spin angle of mass 1."""
         _, out, _ = coordinates.cartesian_to_spherical(self.spin1x,
                                                        self.spin1y,
@@ -1707,7 +1703,7 @@ class WaveformArray(_FieldArrayWithDefaults):
 
 
     @property
-    def spin1_theta(self):
+    def spin1theta(self):
         """Returns the polar spin angle of mass 1."""
         _, _, out = coordinates.cartesian_to_spherical(self.spin1x,
                                                        self.spin1y,
@@ -1716,7 +1712,7 @@ class WaveformArray(_FieldArrayWithDefaults):
 
 
     @property
-    def spin2_a(self):
+    def spin2a(self):
         """Returns the dimensionless spin magnitude of mass 2."""
         out, _, _ = coordinates.cartesian_to_spherical(self.spin2x,
                                                        self.spin2y,
@@ -1725,7 +1721,7 @@ class WaveformArray(_FieldArrayWithDefaults):
 
 
     @property
-    def spin2_phi(self):
+    def spin2phi(self):
         """Returns the azmuthal spin angle of mass 2."""
         _, out, _ = coordinates.cartesian_to_spherical(self.spin2x,
                                                        self.spin2y,
@@ -1734,7 +1730,7 @@ class WaveformArray(_FieldArrayWithDefaults):
 
 
     @property
-    def spin2_theta(self):
+    def spin2theta(self):
         """Returns the polar spin angle of mass 2."""
         _, _, out = coordinates.cartesian_to_spherical(self.spin2x,
                                                        self.spin2y,
