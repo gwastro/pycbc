@@ -172,7 +172,7 @@ class InjectionSet(object):
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
             injection_parameters.append(inj)                            
-            if strain.injcutter is not None and \
+            if hasattr(strain, "injcutter") and strain.injcutter is not None and \
                     strain.injcutter['match_threshold'] is not None:
                 # If doing injcutter, store a coarse representation of each
                 # injection.

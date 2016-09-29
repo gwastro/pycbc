@@ -4,7 +4,7 @@ import argparse
 import logging
 import h5py
 import numpy as np
-import matplotlib
+import matplotlib; matplotlib.use('Agg')
 import pylab as pl
 from pycbc.results.color import ifo_color
 import pycbc.version
