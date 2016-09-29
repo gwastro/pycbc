@@ -40,9 +40,9 @@ def cartesian_to_spherical_rho(x, y, z):
     return numpy.sqrt(x**2 + y**2 + z**2)
 
 
-def cartesian_to_spherical_azmuthal(x, y):
-    """ Calculates the azmuthal angle in spherical coordinates from Cartesian
-    coordinates. The azmuthal angle is in [0,2*pi].
+def cartesian_to_spherical_azimuthal(x, y):
+    """ Calculates the azimuthal angle in spherical coordinates from Cartesian
+    coordinates. The azimuthal angle is in [0,2*pi].
 
     Parameters
     ----------
@@ -54,7 +54,7 @@ def cartesian_to_spherical_azmuthal(x, y):
     Returns
     -------
     phi : {numpy.array, float}
-        The azmuthal angle.
+        The azimuthal angle.
     """
     if type(y) is int:
         y = float(y)
@@ -105,7 +105,7 @@ def cartesian_to_spherical(x, y, z):
         The polar angle.
     """
     rho = cartesian_to_spherical_rho(x, y, z)
-    phi = cartesian_to_spherical_azmuthal(x, y)
+    phi = cartesian_to_spherical_azimuthal(x, y)
     theta = cartesian_to_spherical_polar(x, y, z)
     return rho, phi, theta
 

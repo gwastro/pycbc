@@ -1583,8 +1583,8 @@ class WaveformArray(_FieldArrayWithDefaults):
         parameters.q, parameters.m_p, parameters.m_s, parameters.chi_eff,
         parameters.spin_px, parameters.spin_py, parameters.spin_pz,
         parameters.spin_sx, parameters.spin_sy, parameters.spin_sz,
-        parameters.spin1_a, parameters.spin1_azmuthal, parameters.spin1_polar,
-        parameters.spin2_a, parameters.spin2_azmuthal, parameters.spin2_polar]
+        parameters.spin1_a, parameters.spin1_azimuthal, parameters.spin1_polar,
+        parameters.spin2_a, parameters.spin2_azimuthal, parameters.spin2_polar]
 
     @property
     def m_p(self):
@@ -1695,10 +1695,10 @@ class WaveformArray(_FieldArrayWithDefaults):
         return out / self.mass1**2
 
     @property
-    def spin1_azmuthal(self):
-        """Returns the azmuthal spin angle of mass 1."""
+    def spin1_azimuthal(self):
+        """Returns the azimuthal spin angle of mass 1."""
         # do not need to normalize by mass because it cancels
-        return coordinates.cartesian_to_spherical_azmuthal(
+        return coordinates.cartesian_to_spherical_azimuthal(
                                      self.spin1x, self.spin1y)
 
     @property
@@ -1716,10 +1716,10 @@ class WaveformArray(_FieldArrayWithDefaults):
         return out / self.mass2**2
 
     @property
-    def spin2_azmuthal(self):
-        """Returns the azmuthal spin angle of mass 2."""
+    def spin2_azimuthal(self):
+        """Returns the azimuthal spin angle of mass 2."""
         # do not need to normalize by mass because it cancels
-        return coordinates.cartesian_to_spherical_azmuthal(
+        return coordinates.cartesian_to_spherical_azimuthal(
                                      self.spin2x, self.spin2y)
 
     @property
