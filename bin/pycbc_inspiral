@@ -275,9 +275,8 @@ with ctx:
 
     # (half-)length of SNR chunk to save around each trigger, determined by
     # maximum possible light travel from the Earth center (~21 ms) plus a fixed
-    # time accounting for timing uncertainty (5 ms). Forced to an even number
-    # as per Leo's request
-    snr_series_len = int(0.026 * gwstrain.sample_rate) // 2 * 2
+    # time accounting for timing uncertainty (5 ms)
+    snr_series_len = int(0.026 * gwstrain.sample_rate)
 
     ntemplates = len(bank)
     tsetup = time.time() - tstart
@@ -296,8 +295,8 @@ with ctx:
 
 
         for s_num, stilde in enumerate(segments):
-            logging.info("Filtering template %d/%d segment %d/%d" %
-                         (t_num + 1, len(bank), s_num + 1, len(segments)))
+            logging.info("Filtering template %d/%d segment %d/%d",
+                         t_num + 1, len(bank), s_num + 1, len(segments))
 
             snr, norm, corr, idx, snrv = \
                matched_filter.matched_filter_and_cluster(s_num, template.sigmasq(stilde.psd), cluster_window)

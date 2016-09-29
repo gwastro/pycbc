@@ -358,7 +358,8 @@ class EventManager(object):
         if self.template_snr_series is None:
             self.template_snr_series = snr_series.copy()
         else:
-            self.template_snr_series = numpy.vstack([self.template_snr_series, snr_series])
+            self.template_snr_series = numpy.vstack([self.template_snr_series,
+                                                     snr_series])
 
     def cluster_template_events(self, tcolumn, column, window_size):
         """ Cluster the internal events over the named column
@@ -367,7 +368,8 @@ class EventManager(object):
         tvec = self.template_events[tcolumn]
         indices = findchirp_cluster_over_window(tvec, cvec, window_size)
         self.template_events = numpy.take(self.template_events, indices)
-        self.template_snr_series = numpy.take(self.template_snr_series, indices, axis=0)
+        self.template_snr_series = numpy.take(self.template_snr_series,
+                                              indices, axis=0)
 
     def new_template(self, **kwds):
         self.template_params.append(kwds)
@@ -380,7 +382,8 @@ class EventManager(object):
         self.events = numpy.append(self.events, self.template_events)
         self.template_events = numpy.array([], dtype=self.event_dtype)
         if self.snr_series is not None:
-            self.snr_series = numpy.vstack([self.snr_series, self.template_snr_series])
+            self.snr_series = numpy.vstack([self.snr_series,
+                                            self.template_snr_series])
         else:
             self.snr_series = self.template_snr_series.copy()
         self.template_snr_series = None
@@ -482,10 +485,10 @@ class EventManager(object):
             # save SNR time series around triggers, with relative sample times
             # as an attribute
             f['snr_series'] = self.snr_series
-            snr_series_len = self.snr_series.shape[1]
-            f.f[f.prefix + '/snr_series'].attrs['sample_times'] = \
-                    (numpy.arange(snr_series_len) - 0.5 * snr_series_len) / \
-                    self.opt.sample_rate
+            ss_len = self.snr_series.shape[1]
+            ss_times = (numpy.arange(ss_len) - 0.5 * ss_len + 0.5) / \
+                self.opt.sample_rate
+            f.f[f.prefix + '/snr_series'].attrs['sample_times'] = ss_times
 
             f['template_hash'] = th[tid]
 
