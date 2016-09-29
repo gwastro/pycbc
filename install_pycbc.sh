@@ -539,8 +539,8 @@ make -j $nproc
 make install
 
 #Add to virtualenv activate script
-echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc' >> ${VIRTUAL_ENV}/bin/activate
-source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc
+echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh' >> ${VIRTUAL_ENV}/bin/activate
+source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh
 
 #Build a static lalapps_inspinj and install it
 cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps

@@ -61,17 +61,17 @@ From the top-level lalsuite directory, you can use the master configure script t
     make
     make install
 
-The install process creates a shell script called ``lalsuiterc`` that sources all of the ``$NAME/opt/lalsuite/etc/lal*-user-env.sh`` scripts that set up the environment for lalsuite. You can add this to your virtualenv ``activate`` script so that it gets set up when you enter your virtual environment. To do this, run the commands
+The install process creates a shell script called ``lalsuite-user-env.sh`` that sources all of the ``$NAME/opt/lalsuite/etc/lal*-user-env.sh`` scripts that set up the environment for lalsuite. You can add this to your virtualenv ``activate`` script so that it gets set up when you enter your virtual environment. To do this, run the commands
 
 .. code-block:: bash
 
-    echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc' >> $NAME/bin/activate
+    echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh' >> $NAME/bin/activate
     deactivate
     source $NAME/bin/activate
 
 .. note::
 
-    If you want to manage multiple versions of lalsuite, it is not reccommended to source the lalsuiterc script from your activate script.  You should just source it when you enter your virtual environment with the command ``source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuiterc``
+    If you want to manage multiple versions of lalsuite, it is not reccommended to source the ``lalsuite-user-env.sh`` script from your activate script.  You should just source it when you enter your virtual environment with the command ``source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh``
 
 lalsuite is now installed in your virtual environment. You can check this with the command
 
