@@ -39,6 +39,7 @@ def cartesian_to_spherical(x, y, z):
     phi : {numpy.array, float}
         The azimuthal angle.
     theta : {numpy.array, float}
+        The polar angle.
     """
     if type(y) is int:
         y = float(y)
@@ -59,6 +60,7 @@ def spherical_to_cartesian(rho, phi, theta):
     phi : {numpy.array, float}
         The azimuthal angle.
     theta : {numpy.array, float}
+        The polar angle.
 
     Returns
     -------
