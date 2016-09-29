@@ -30,6 +30,7 @@ waves.
 
 import os, sys, types, re, copy, numpy, inspect
 from glue.ligolw import types as ligolw_types
+from pycbc import coordinates
 from pycbc.detector import Detector
 from pycbc.waveform import parameters
 
@@ -1580,7 +1581,9 @@ class WaveformArray(_FieldArrayWithDefaults):
     _virtualfields = [parameters.mchirp, parameters.eta, parameters.mtotal,
         parameters.q, parameters.m_p, parameters.m_s, parameters.chi_eff,
         parameters.spin_px, parameters.spin_py, parameters.spin_pz,
-        parameters.spin_sx, parameters.spin_sy, parameters.spin_sz]
+        parameters.spin_sx, parameters.spin_sy, parameters.spin_sz,
+        parameters.spin1_a, parameters.spin1_phi, parameters.spin1_theta,
+        parameters.spin2_a, parameters.spin2_phi, parameters.spin2_theta]
 
 
     @property
@@ -1683,6 +1686,61 @@ class WaveformArray(_FieldArrayWithDefaults):
         mask = self.mass1 < self.mass2
         out[mask] = self.spin1z[mask]
         return out
+
+
+    @property
+    def spin1_a(self):
+        """Returns the dimensionless spin magnitude of mass 1."""
+        out, _, _ = coordinates.cartesian_to_spherical(self.spin1x,
+                                                       self.spin1y,
+                                                       self.spin1z)
+        return a / self.mass1**2
+
+
+    @property
+    def spin1_phi(self):
+        """Returns the azmuthal spin angle of mass 1."""
+        _, out, _ = coordinates.cartesian_to_spherical(self.spin1x,
+                                                       self.spin1y,
+                                                       self.spin1z)
+        return out
+
+
+    @property
+    def spin1_theta(self):
+        """Returns the polar spin angle of mass 1."""
+        _, _, out = coordinates.cartesian_to_spherical(self.spin1x,
+                                                       self.spin1y,
+                                                       self.spin1z)
+        return out
+
+
+    @property
+    def spin2_a(self):
+        """Returns the dimensionless spin magnitude of mass 2."""
+        out, _, _ = coordinates.cartesian_to_spherical(self.spin2x,
+                                                       self.spin2y,
+                                                       self.spin2z)
+        return a / self.mass2**2
+
+
+    @property
+    def spin2_phi(self):
+        """Returns the azmuthal spin angle of mass 2."""
+        _, out, _ = coordinates.cartesian_to_spherical(self.spin2x,
+                                                       self.spin2y,
+                                                       self.spin2z)
+        return out
+
+
+    @property
+    def spin2_theta(self):
+        """Returns the polar spin angle of mass 2."""
+        _, _, out = coordinates.cartesian_to_spherical(self.spin2x,
+                                                       self.spin2y,
+                                                       self.spin2z)
+        return out
+
 
     def det_tc(self, detector):
         """Returns the coalesence time in the given detector."""
