@@ -1,16 +1,89 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 
-"""
-Simple script to plot a txt file created by a TimeSeries.
+# Copyright (C) 2015 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Plots a single-column ASCII file data.
 """
 
+import argparse
+import logging
+import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
+import numpy
 import sys
 
-import numpy
+# command line usage
+parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
+                                 description=__doc__)
 
-timeseries = numpy.loadtxt(sys.argv[1])
+# I/O options
+parser.add_argument("--input-file", required=True,
+                    help="Path to single column ASCII file.")
+parser.add_argument("--output-file", required=True,
+                    help="Path to output plot.")
+
+# plotting options
+parser.add_argument("--x-min", type=float, default=None,
+                    help="Minimum x-value to plot.")
+parser.add_argument("--x-max", type=float, default=None,
+                    help="Maximum x-value to plot.")
+parser.add_argument("--y-min", type=float, default=None,
+                    help="Minimum y-value to plot.")
+parser.add_argument("--y-max", type=float, default=None,
+                    help="Maximum y-value to plot.")
+parser.add_argument("--x-label", default="Samples",
+                    help="Label for x-axis.")
+parser.add_argument("--y-label", default="Counts",
+                    help="Label for y-axis.")
+parser.add_argument("--title", default="",
+                    help="Title shown above plot.")
+
+# verbose option
+parser.add_argument("--verbose", action="store_true",
+                    help="Display log messages while executing.")
+
+# parse command line
+opts = parser.parse_args()
+
+# setup log
+if opts.verbose:
+    logging_level = logging.DEBUG
+else:
+    logging_level = logging.WARN
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+
+# read data
+logging.info("Reading data")
+timeseries = numpy.loadtxt(opts.input_file)
 samples = range(len(timeseries))
 
+# plot data
+logging.info("Plotting data")
 plt.plot(samples, timeseries)
-plt.show()
+
+# format plot
+plt.xlim(opts.x_min, opts.x_max)
+plt.ylim(opts.y_min, opts.y_max)
+plt.xlabel(opts.x_label)
+plt.ylabel(opts.y_label)
+plt.grid()
+
+# save plot
+logging.info("Saving plot")
+plt.savefig(opts.output_file)
+
+# done
+logging.info("Done")
