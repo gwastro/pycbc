@@ -40,8 +40,8 @@ def cartesian_to_spherical(x, y, z):
         The azimuthal angle.
     theta : {numpy.array, float}
     """
-    if type(x) is int or type(y) is int or type(z) is int:
-        x, y, z = map(float, [x, y, z])
+    if type(y) is int:
+       y = float(y)
     rho = numpy.sqrt(x**2 + y**2 + z**2)
     phi = numpy.arctan(y / x)
     theta = numpy.arccos(z / rho)
@@ -69,8 +69,6 @@ def spherical_to_cartesian(rho, phi, theta):
     z : {numpy.array, float}
         Z-coordinate.
     """
-    if type(rho) is int or type(phi) is int or type(theta) is int:
-        rho, phi, theta = map(float, [rho, phi, theta])
     x = rho * numpy.cos(phi) * numpy.sin(theta)
     y = rho * numpy.sin(phi) * numpy.sin(theta)
     z = rho * numpy.cos(theta)
