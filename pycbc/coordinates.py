@@ -41,10 +41,10 @@ def cartesian_to_spherical(x, y, z):
     theta : {numpy.array, float}
     """
     if type(x) is int or type(y) is int or type(z) is int:
-        x, y , z  = map(float, [x, y, z])
+        x, y, z = map(float, [x, y, z])
     rho = numpy.sqrt(x**2 + y**2 + z**2)
-    phi = numpy.arctan( y / x)
-    theta = numpy.arccos( z / rho )
+    phi = numpy.arctan(y / x)
+    theta = numpy.arccos(z / rho)
     return rho, phi, theta
 
 
