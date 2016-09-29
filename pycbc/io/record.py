@@ -1690,6 +1690,9 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin1a(self):
         """Returns the dimensionless spin magnitude of mass 1."""
+        out, _, _ = coordinates.cartesian_to_spherical(self.spin1x,
+                                                       self.spin1y,
+                                                       self.spin1z)
         return out / self.mass1**2
 
 

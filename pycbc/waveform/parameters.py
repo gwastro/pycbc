@@ -249,7 +249,7 @@ spin1a = Parameter("spin1a",
                     dtype=float, label=r"$\a_{1}$",
                     description="The dimensionless spin magnitude "
                                 "$|\vec{s}/m_{1}^2|$.")
-spin2a = Parameter("spin1a",
+spin2a = Parameter("spin2a",
                     dtype=float, label=r"$\a_{2}$",
                     description="The dimensionless spin magnitude "
                                 "$|\vec{s}/m_{2}^2|$.")
