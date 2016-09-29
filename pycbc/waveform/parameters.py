@@ -246,25 +246,25 @@ spin_sz = Parameter("spin_sz",
 
 # derived parameters for component spin magnitude and angles
 spin1a = Parameter("spin1a",
-                    dtype=float, label=r"$\a_{1}$",
-                    description="The dimensionless spin magnitude "
-                                "$|\vec{s}/m_{1}^2|$.")
+                   dtype=float, label=r"$\a_{1}$",
+                   description="The dimensionless spin magnitude "
+                               "$|\vec{s}/m_{1}^2|$.")
 spin2a = Parameter("spin2a",
-                    dtype=float, label=r"$\a_{2}$",
-                    description="The dimensionless spin magnitude "
-                                "$|\vec{s}/m_{2}^2|$.")
+                   dtype=float, label=r"$\a_{2}$",
+                   description="The dimensionless spin magnitude "
+                               "$|\vec{s}/m_{2}^2|$.")
 spin1phi = Parameter("spin1phi",
-                      dtype=float, label=r"$\phi_{\mathrm{spin},1}$",
-                      description="The azmuthal spin angle for mass 1.")
+                     dtype=float, label=r"$\phi_{\mathrm{spin},1}$",
+                     description="The azmuthal spin angle for mass 1.")
 spin2phi = Parameter("spin2phi",
-                      dtype=float, label=r"$\phi_{\mathrm{spin},2}$",
-                      description="The azmuthal spin angle for mass 2.")
+                     dtype=float, label=r"$\phi_{\mathrm{spin},2}$",
+                     description="The azmuthal spin angle for mass 2.")
 spin1theta = Parameter("spin1theta",
-                        dtype=float, label=r"$\theta_{\mathrm{spin},1}$",
-                        description="The polar spin angle for mass 1.")
+                       dtype=float, label=r"$\theta_{\mathrm{spin},1}$",
+                       description="The polar spin angle for mass 1.")
 spin2theta = Parameter("spin2theta",
-                        dtype=float, label=r"$\theta_{\mathrm{spin},2}$",
-                        description="The polar spin angle for mass 2.")
+                       dtype=float, label=r"$\theta_{\mathrm{spin},2}$",
+                       description="The polar spin angle for mass 2.")
 
 
 #

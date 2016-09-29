@@ -1578,7 +1578,8 @@ class WaveformArray(_FieldArrayWithDefaults):
     _staticfields = (parameters.cbc_intrinsic_params +
                      parameters.extrinsic_params).dtype_dict
 
-    _virtualfields = [parameters.mchirp, parameters.eta, parameters.mtotal,
+    _virtualfields = [
+        parameters.mchirp, parameters.eta, parameters.mtotal,
         parameters.q, parameters.m_p, parameters.m_s, parameters.chi_eff,
         parameters.spin_px, parameters.spin_py, parameters.spin_pz,
         parameters.spin_sx, parameters.spin_sy, parameters.spin_sz,
@@ -1686,20 +1687,17 @@ class WaveformArray(_FieldArrayWithDefaults):
         out[mask] = self.spin1z[mask]
         return out
 
-
     @property
     def spin1a(self):
         """Returns the dimensionless spin magnitude of mass 1."""
         out = coordinates.spherical_rho(self.spin1x, self.spin1y, self.spin1z)
         return out / self.mass1**2
 
-
     @property
     def spin1phi(self):
         """Returns the azmuthal spin angle of mass 1."""
         # do not need to normalize by mass because it cancels
         return coordinates.spherical_phi(self.spin1x, self.spin1y)
-
 
     @property
     def spin1theta(self):
@@ -1708,13 +1706,11 @@ class WaveformArray(_FieldArrayWithDefaults):
         return coordinates.spherical_theta(self.spin1x, self.spin1y,
                                            self.spin1z)
 
-
     @property
     def spin2a(self):
         """Returns the dimensionless spin magnitude of mass 2."""
         out = coordinates.spherical_rho(self.spin1x, self.spin1y, self.spin1z)
         return out / self.mass2**2
-
 
     @property
     def spin2phi(self):
@@ -1722,14 +1718,12 @@ class WaveformArray(_FieldArrayWithDefaults):
         # do not need to normalize by mass because it cancels
         return coordinates.spherical_phi(self.spin2x, self.spin2y)
 
-
     @property
     def spin2theta(self):
         """Returns the polar spin angle of mass 2."""
         # do not need to normalize by mass because it cancels
         return coordinates.spherical_theta(self.spin2x, self.spin2y,
                                            self.spin2z)
-
 
     def det_tc(self, detector):
         """Returns the coalesence time in the given detector."""
