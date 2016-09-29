@@ -63,7 +63,7 @@ if opts.verbose:
     logging_level = logging.DEBUG
 else:
     logging_level = logging.WARN
-logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+logging.basicConfig(format="%(asctime)s : %(message)s", level=logging_level)
 
 # read data
 logging.info("Reading data")
