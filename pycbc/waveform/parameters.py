@@ -248,11 +248,11 @@ spin_sz = Parameter("spin_sz",
 spin1_a = Parameter("spin1_a",
                     dtype=float, label=r"$\a_{1}$",
                     description="The dimensionless spin magnitude "
-                                "$|\vec{s}/m_{1^2}|$.")
+                                "$|\vec{s}/m_{1}^2|$.")
 spin2_a = Parameter("spin1_a",
                     dtype=float, label=r"$\a_{2}$",
                     description="The dimensionless spin magnitude "
-                                "$|\vec{s}/m_{2^2}|$.")
+                                "$|\vec{s}/m_{2}^2|$.")
 spin1_phi = Parameter("spin1_phi",
                       dtype=float, label=r"$\phi_{\mathrm{spin},1}$",
                       description="The azmuthal spin angle for mass 1.")
