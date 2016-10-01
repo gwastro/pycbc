@@ -1074,11 +1074,13 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                        autogating_window=0.5,
                        autogating_pad=0.25,
                        state_channel=None,
+                       data_quality_channel=None,
                        dyn_range_fac=pycbc.DYN_RANGE_FAC,
                        psd_abort_difference=None,
                        psd_recalculate_difference=None,
                        force_update_cache=True,
                        increment_update_cache=None,
+                       analyze_flags=None,
                  ):
         """ Class to produce overwhitened strain incrementally
         
@@ -1123,6 +1125,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Seconds to pad either side of the gating window.
         state_channel: {str, None}, Optional
             Channel to use for state information about the strain
+        data_quality_channel: {str, None}, Optional
+            Channel to use for data quality information about the strain
         dyn_range_fac: {float, pycbc.DYN_RANGE_FAC}, Optional
             Scale factor to apply to strain
         psd_abort_difference: {float, None}, Optional
@@ -1134,6 +1138,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         force_update_cache: {boolean, True}, Optional
             Re-check the filesystem for frame files on every attempt to 
         read more data.
+        analyze_flags: list of strs
+            The flags that must be on to mark the current data as valid for
+        *any* use.
         increment_update_cache: {str, None}, Optional
             Pattern to look for frame files in a GPS dependent directory. This
         is an alternate to the forced updated of the frame cache, and attempts
@@ -1146,15 +1153,20 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         self.low_frequency_cutoff = low_frequency_cutoff
 
-        # We could similarly add a dq vector here when that becomes available.
+        ####### Set the state channel buffer
         self.state_channel = state_channel
+        self.data_quality_channel = data_quality_channel
+        self.analyze_flags = analyze_flags
+        self.state = None
         if 'None' not in self.state_channel:
+            valid_mask = 0
+            for flag in self.analyze_flags:
+                valid_mask = valid_mask | getattr(pycbc.frame, flag) 
             self.state = pycbc.frame.StatusBuffer(frame_src, state_channel, start_time,
                                            max_buffer=max_buffer,
+                                           valid_mask=valid_mask,
                                            force_update_cache=force_update_cache,
                                            increment_update_cache=increment_update_cache)
-        else:
-            self.state = None
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction
@@ -1354,6 +1366,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Returns True if this block is analyzable.         
         """
         ts = super(StrainBuffer, self).attempt_advance(blocksize, timeout=timeout)
+        self.blocksize = blocksize
 
         # We have given up so there is no time series
         if ts is None:
@@ -1367,6 +1380,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.wait_duration -= blocksize
 
         # If the data we got was invalid, reset the counter on how much to collect
+        # This behavior corresponds to how we handle CAT1 vetoes
         if self.state and self.state.advance(blocksize) is False:
             self.add_hard_count()
             self.null_advance_strain(blocksize)
@@ -1374,7 +1388,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             return False
 
         self.segments = {}
-        self.blocksize = blocksize
 
         # only condition with the needed raw data so we can continuously add
         # to the existing result
@@ -1393,20 +1406,25 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         strain = pycbc.filter.resample_to_delta_t(strain, 
                                            1.0/self.sample_rate, method='ldas')
 
-        # remove corruption at begginning 
+        # remove corruption at beginning 
         strain = strain[self.corruption:]
         
-        # taper begginning if needed
+        # taper beginning if needed
         if self.taper_immediate_strain:
             logging.info("tapering start of strain block")
             strain = gate_data(strain, [(strain.start_time, 0., self.autogating_pad)])
             self.taper_immediate_strain = False
 
-
         ###### Stitch into continuous stream
         self.strain.roll(-sample_step)
         self.strain[len(self.strain) - csize + self.corruption:] = strain[:]
         self.strain.start_time += blocksize
+
+        # apply gating if need be: NOT YET IMPLEMENTED
+        
+        #IF DQ vector says the new bit of strain is has some invalid part
+        #return false so it is not analyzed (but may be used for PSD). 
+        #This behavior is equivelant to how we handle CAT2 vetoes.
 
         if self.psd is None and self.wait_duration <=0:
             self.recalculate_psd()
