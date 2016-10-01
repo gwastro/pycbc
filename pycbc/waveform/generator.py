@@ -28,6 +28,7 @@ This modules provides classes for generating waveforms.
 import functools
 import waveform
 import ringdown
+from pycbc.waveform import parameters
 from pycbc.waveform.utils import apply_fd_time_shift
 from pycbc.detector import Detector
 from pycbc import pnutils
@@ -38,6 +39,26 @@ import lal as _lal
 #
 
 
+def add_attrs(**func_attrs):
+    """ Decorator for adding attributes to a function.
+    """
+    def add_attr_decorator(fn):
+        # wraps is a decorator for updating the attributes of the
+        # wrapping function to those of the original function
+        # ie. __name__, __doc__, and __module__ will point to the
+        # original function instead of the wrapped function
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            return fn(*args, **kwargs)
+        # update with attributes
+        for attr, value in func_attrs.iteritems():
+            setattr(wrapper, attr, value)
+        return wrapper
+    return add_attr_decorator
+
+
+@add_attrs(input_params=[parameters.mchirp, parameters.eta],
+           output_params=[parameters.mass1, parameters.mass2])
 def generator_mchirp_eta_to_mass1_mass2(generator):
     """Converts mchirp and eta in `current_params`, to mass1 and mass2.
     """
@@ -48,6 +69,8 @@ def generator_mchirp_eta_to_mass1_mass2(generator):
     generator.current_params['mass2'] = m2
 
 
+@add_attrs(input_params=[parameters.mtotal, parameters.eta],
+           output_params=[parameters.mass1, parameters.mass2])
 def generator_mtotal_eta_to_mass1_mass2(generator):
     """Converts mtotal and eta in `current_params`, to mass1 and mass2.
     """
@@ -58,6 +81,8 @@ def generator_mtotal_eta_to_mass1_mass2(generator):
     generator.current_params['mass2'] = m2
 
 
+@add_attrs(input_params=[parameters.mchirp, parameters.q],
+           output_params=[parameters.mass1, parameters.mass2])
 def generator_mchirp_q_to_mass1_mass2(generator):
     """Converts mchirp and q in `current_params`, to mass1 and mass2.
     """
