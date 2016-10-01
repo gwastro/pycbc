@@ -402,7 +402,8 @@ class DataBuffer(object):
                        start_time,
                        max_buffer=2048, 
                        force_update_cache=True,
-                       increment_update_cache=None):
+                       increment_update_cache=None,
+                       dtype=numpy.float64):
         """ Create a rolling buffer of frame data
 
         Parameters
@@ -427,7 +428,7 @@ class DataBuffer(object):
         self.channel_type, self.raw_sample_rate = self._retrieve_metadata(self.stream, self.channel_name)
 
         raw_size = self.raw_sample_rate * max_buffer
-        self.raw_buffer = TimeSeries(zeros(raw_size, dtype=numpy.float64),
+        self.raw_buffer = TimeSeries(zeros(raw_size, dtype=dtype),
                                      copy=False,
                                      epoch=start_time - max_buffer,
                                      delta_t=1.0/self.raw_sample_rate)
@@ -625,6 +626,7 @@ KAPPA_TST_OK = 2048
 KAPPA_C_OK = 4096
 FCC_OK = 8192
 NO_GAP = 16384    
+NO_HWINJ = NO_STOCH_HW_INJ | NO_CBC_HW_INJ | NO_BURST_HW_INJ | NO_DETCHAR_HW_INJ
                
 class StatusBuffer(DataBuffer):
 
@@ -656,28 +658,34 @@ class StatusBuffer(DataBuffer):
         DataBuffer.__init__(self, frame_src, channel_name, start_time,
                                  max_buffer=max_buffer,
                                  force_update_cache=force_update_cache,
-                                 increment_update_cache=increment_update_cache) 
+                                 increment_update_cache=increment_update_cache,
+                                 dtype=numpy.int32) 
         self.valid_mask = valid_mask
 
-    def check_valid(self, values):
+    def check_valid(self, values, flag=None):
         """Check if the data contains any non-valid status information
         
         Parameters
         ----------
         values: pycbc.types.Array
             Array of status information
+        flag: str, optional
+            Override the default valid mask with a user defined mask.
 
         Returns
         -------
         status: boolean
             Returns True if all of the status information if valid, False if any is not.
         """ 
-        if numpy.any(numpy.bitwise_and(values.numpy(), self.valid_mask) != self.valid_mask):
+        if flag is None:
+            flag = self.valid_mask        
+
+        if numpy.any(numpy.bitwise_and(values.numpy(), flag) != flag):
             return False
         else:
             return True
         
-    def is_extent_valid(self, start_time, duration):
+    def is_extent_valid(self, start_time, duration, flag=None):
         """Check if the duration contains any non-valid frames
 
         Parameters
@@ -686,16 +694,19 @@ class StatusBuffer(DataBuffer):
             Begging of the duration to check in gps seconds
         duration: int
             Number of seconds after the start_time to check
+        flag: str, optional
+            Override the default valid mask with a user defined mask.
 
         Returns
         -------
         status: boolean
             Returns True if all of the status information if valid, False if any is not.        
         """
-        s = self.raw_buffer.start_time - start_time
-        e = s + duration
-        values = self.raw_buffer[s * self.raw_sample_rate: e * self.raw_sample_rate]
-        return self.check_valid(values)
+        sr = self.raw_buffer.sample_rate
+        s = int((start_time - self.raw_buffer.start_time) * sr)
+        e = s + int(duration * sr)
+        data = self.raw_buffer[s:e]
+        return self.check_valid(data, flag=flag)
 
     def advance(self, blocksize):
         """ Add blocksize seconds more to the buffer, push blocksize seconds
