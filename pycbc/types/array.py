@@ -46,7 +46,7 @@ from pycbc.types.aligned import ArrayWithAligned
 # we should restrict any functions that do not allow an
 # array of uint32 integers
 _ALLOWED_DTYPES = [_numpy.float32, _numpy.float64, _numpy.complex64,
-                   _numpy.complex128, _numpy.uint32]
+                   _numpy.complex128, _numpy.uint32, _numpy.int32, _numpy.int]
 _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
 
 def _convert_to_scheme(ary):
@@ -676,6 +676,11 @@ class Array(object):
 
     @_convert
     @schemed(BACKEND_PREFIX)
+    def abs_arg_max(self):
+        """ Return location of the maximum argument max """
+
+    @_convert
+    @schemed(BACKEND_PREFIX)
     def abs_max_loc(self):
         """Return the maximum elementwise norm in the array along with the index location"""
 
@@ -808,8 +813,10 @@ class Array(object):
     def kind(self):
         if self.dtype == float32 or self.dtype == float64:
             return 'real'
+        elif self.dtype == complex64 or self.dtype == complex128:
+            return 'complex'
         else:
-            return 'complex'    
+            return 'unknown'   
 
     @property
     @_convert
