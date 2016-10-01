@@ -29,6 +29,7 @@ from .simd_correlate import default_segsize, corr_parallel_code, corr_support
 from .matchedfilter import _BaseCorrelator
 
 batch_correlator_code = """
+    #pragma omp parallel for
     for (int i=0; i<num_vectors; i++){
         std::complex<float>* xp = (std::complex<float>*) x[i];
         std::complex<float>* zp = (std::complex<float>*) z[i];
