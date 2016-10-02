@@ -1163,10 +1163,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             for flag in self.analyze_flags:
                 valid_mask = valid_mask | getattr(pycbc.frame, flag)
             self.state = pycbc.frame.StatusBuffer(frame_src, state_channel, start_time,
-                max_buffer=max_buffer,
-                valid_mask=valid_mask,
-                force_update_cache=force_update_cache,
-                increment_update_cache=increment_update_cache)
+                                                  max_buffer=max_buffer,
+                                                  valid_mask=valid_mask,
+                                                  force_update_cache=force_update_cache,
+                                                  increment_update_cache=increment_update_cache)
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction
