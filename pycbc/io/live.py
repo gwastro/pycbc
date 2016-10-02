@@ -9,6 +9,7 @@ from pycbc.tmpltbank import return_empty_sngl
 import logging
 import pycbc
 
+
 class SingleCoincForGraceDB(object):
     """Create xml files and submit them to gracedb from PyCBC Live"""
     def __init__(self, ifos, coinc_results):
@@ -20,7 +21,8 @@ class SingleCoincForGraceDB(object):
         ifos: list of strs
             A list of the ifos pariticipating in this trigger
         coinc_results: dict of values
-            A dictionary of values. The format is define in pycbc/events/coinc.py
+            A dictionary of values. The format is define
+            in pycbc/events/coinc.py
         and matches the on disk representation in the hdf file for this time.
         """
         # remember if this should be marked as HWINJ
@@ -36,7 +38,7 @@ class SingleCoincForGraceDB(object):
                  {}, ifos=ifos, comment='', version=pycbc_version.git_hash,
                  cvs_repository='pycbc/'+pycbc_version.git_branch,
                  cvs_entry_time=pycbc_version.date).process_id
-    
+
         # Set up coinc_definer table
         coinc_def_table = lsctables.New(lsctables.CoincDefTable)
         coinc_def_id = lsctables.CoincDefID(0)
@@ -68,7 +70,8 @@ class SingleCoincForGraceDB(object):
 
         sngl_id = 0
         for ifo in ifos:
-            names = [n.split('/')[-1] for n in coinc_results if 'foreground/%s' % ifo in n]
+            names = [n.split('/')[-1] for n in coinc_results \
+                     if 'foreground/%s' % ifo in n]
             sngl_id += 1
             sngl = return_empty_sngl()
             sngl.event_id = lsctables.SnglInspiralID(sngl_id)
@@ -116,8 +119,6 @@ class SingleCoincForGraceDB(object):
         coinc_inspiral_row.combined_far = far
         coinc_inspiral_table.append(coinc_inspiral_row)
         outdoc.childNodes[0].appendChild(coinc_inspiral_table)
-
-
         self.outdoc = outdoc
 
     def save(self, filename):
@@ -154,7 +155,7 @@ class SingleCoincForGraceDB(object):
             group = 'Test'
         else:
             group = 'CBC'
- 
+
         gracedb = GraceDb()
         r = gracedb.createEvent(group, "pycbc", fname, "AllSky").json()
         logging.info("Uploaded event %s.", r["graceid"])    
@@ -164,7 +165,7 @@ class SingleCoincForGraceDB(object):
             logging.info("Tagging event %s as an injection", r["graceid"])
 
         # Convert our psds to the xml psd format.
-        #FIXME: we should not use lal.series!!!
+        # FIXME: we should not use lal.series!!!
         psds_lal = {}
         for ifo in psds:
             psd = psds[ifo]
@@ -174,11 +175,11 @@ class SingleCoincForGraceDB(object):
                 lal.StrainUnit**2 / lal.HertzUnit, len(psd) - kmin)
             fseries.data.data = psd.numpy()[kmin:] / pycbc.DYN_RANGE_FAC ** 2.0
             psds_lal[ifo] = fseries
-        
+
         psd_xmldoc = lal.series.make_psd_xmldoc(psds_lal)
         ligolw_utils.write_filename(psd_xmldoc, "tmp_psd.xml.gz", gz=True)
         gracedb.writeLog(r["graceid"],
-                 "PyCBC PSD estimate from the time of event",
-                 "psd.xml.gz", open("tmp_psd.xml.gz", "rb").read(),
-                 "psd").json()
+                         "PyCBC PSD estimate from the time of event",
+                         "psd.xml.gz", open("tmp_psd.xml.gz", "rb").read(),
+                         "psd").json()
         logging.info("Uploaded file psd.xml.gz to event %s.", r["graceid"])
