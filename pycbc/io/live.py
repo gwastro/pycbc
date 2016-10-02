@@ -83,11 +83,11 @@ class SingleCoincForGraceDB(object):
                 else:
                     try:
                         setattr(sngl, name, val)
-                    except:
+                    except AttributeError:
                         pass
             sngl.mtotal, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(
                     sngl.mass1, sngl.mass2)
-            sngl.mchirp, junk = pnutils.mass1_mass2_to_mchirp_eta(
+            sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
                     sngl.mass1, sngl.mass2)
             sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
             sngl_inspiral_table.append(sngl)
@@ -123,7 +123,7 @@ class SingleCoincForGraceDB(object):
 
     def save(self, filename):
         """Write this trigger to gracedb compatible xml format
-        
+
         Parameters
         ----------
         filename: str
@@ -132,7 +132,7 @@ class SingleCoincForGraceDB(object):
         ligolw_utils.write_filename(self.outdoc, filename)
 
     def upload(self, fname, psds, low_frequency_cutoff, testing=True):
-        """Upload this trigger to gracedb 
+        """Upload this trigger to gracedb
         
         Parameters
         ----------
@@ -158,7 +158,7 @@ class SingleCoincForGraceDB(object):
 
         gracedb = GraceDb()
         r = gracedb.createEvent(group, "pycbc", fname, "AllSky").json()
-        logging.info("Uploaded event %s.", r["graceid"])    
+        logging.info("Uploaded event %s.", r["graceid"])
 
         if self.is_hardware_injection:
             gracedb.writeLabel(r['graceid'], 'INJ')
