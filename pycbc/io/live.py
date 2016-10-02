@@ -34,10 +34,11 @@ class SingleCoincForGraceDB(object):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
-        proc_id = ligolw_process.register_to_xmldoc(outdoc, 'pycbc',
-                  {}, ifos=ifos, comment='', version=pycbc_version.git_hash,
-                  cvs_repository='pycbc/'+pycbc_version.git_branch,
-                  cvs_entry_time=pycbc_version.date).process_id
+        proc_id = ligolw_process.register_to_xmldoc(
+            outdoc, 'pycbc',
+            {}, ifos=ifos, comment='', version=pycbc_version.git_hash,
+            cvs_repository='pycbc/'+pycbc_version.git_branch,
+            cvs_entry_time=pycbc_version.date).process_id
 
         # Set up coinc_definer table
         coinc_def_table = lsctables.New(lsctables.CoincDefTable)
