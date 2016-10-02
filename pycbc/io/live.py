@@ -35,16 +35,16 @@ class SingleCoincForGraceDB(object):
         outdoc.appendChild(ligolw.LIGO_LW())
 
         proc_id = ligolw_process.register_to_xmldoc(outdoc, 'pycbc',
-                 {}, ifos=ifos, comment='', version=pycbc_version.git_hash,
-                 cvs_repository='pycbc/'+pycbc_version.git_branch,
-                 cvs_entry_time=pycbc_version.date).process_id
+                  {}, ifos=ifos, comment='', version=pycbc_version.git_hash,
+                  cvs_repository='pycbc/'+pycbc_version.git_branch,
+                  cvs_entry_time=pycbc_version.date).process_id
 
         # Set up coinc_definer table
         coinc_def_table = lsctables.New(lsctables.CoincDefTable)
         coinc_def_id = lsctables.CoincDefID(0)
         coinc_def_row = lsctables.CoincDef()
         coinc_def_row.search = "inspiral"
-        coinc_def_row.description = "sngl_inspiral<-->sngl_inspiral coincidences"
+        coinc_def_row.description = "sngl_inspiral<-->sngl_inspiral coincs"
         coinc_def_row.coinc_def_id = coinc_def_id
         coinc_def_row.search_coinc_type = 0
         coinc_def_table.append(coinc_def_row)
@@ -70,7 +70,7 @@ class SingleCoincForGraceDB(object):
 
         sngl_id = 0
         for ifo in ifos:
-            names = [n.split('/')[-1] for n in coinc_results \
+            names = [n.split('/')[-1] for n in coinc_results
                      if 'foreground/%s' % ifo in n]
             sngl_id += 1
             sngl = return_empty_sngl()
@@ -133,7 +133,7 @@ class SingleCoincForGraceDB(object):
 
     def upload(self, fname, psds, low_frequency_cutoff, testing=True):
         """Upload this trigger to gracedb
-        
+
         Parameters
         ----------
         fname: str
@@ -148,7 +148,8 @@ class SingleCoincForGraceDB(object):
         test trigger (True) or a production trigger (False)
         """
         from ligo.gracedb.rest import GraceDb
-        import lal.series, lal
+        import lal
+        import lal.series
 
         self.save(fname)
         if testing:
