@@ -22,15 +22,18 @@ args = parser.parse_args()
 
 
 while 1:
+    everything_ok = True
     status = {}
     status['author'] = "Alexander Harvey Nitz"
     status['email'] = "alex.nitz@ligo.org"
     status['created_gps'] = int(lal.GPSTimeNow())
-    tdiff = time.time() - os.path.getmtime(args.log_file)
-    everything_ok = True
 
-    # Check that the pycbc live logfile has been updated recently.
-    if tdiff >= 60: everything_ok = False
+    try:
+        tdiff = time.time() - os.path.getmtime(args.log_file)
+        # Check that the pycbc live logfile has been updated recently.
+        if tdiff >= 60: everything_ok = False
+    except:   
+        everything_ok = False 
 
     if everything_ok:
         status['status_intervals'] = \
