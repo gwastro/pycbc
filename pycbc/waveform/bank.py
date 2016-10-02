@@ -403,14 +403,14 @@ class TemplateBank(object):
     def __len__(self):
         return len(self.table)
 
-    def template_thinning(self, gwstrain):
-        if gwstrain.injcutter is None or \
-                gwstrain.injcutter['chirp_time_threshold'] is None:
+    def template_thinning(self, injcutter, injections):
+        if not injcutter.enabled or injcutter.chirp_time_threshold is None:
+            # Do nothing!
             return
 
-        injection_parameters = gwstrain.injections.table
-        fref = gwstrain.injcutter['f_lower']
-        threshold = gwstrain.injcutter['chirp_time_threshold']
+        injection_parameters = injections.table
+        fref = injcutter.f_lower
+        threshold = injcutter.chirp_time_threshold
         m1= self.table['mass1']
         m2= self.table['mass2']
         thinning_bank = []

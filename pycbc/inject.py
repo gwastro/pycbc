@@ -35,9 +35,7 @@ from pycbc.waveform import get_td_waveform, utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import ligolw, table, lsctables
-from pycbc import DYN_RANGE_FAC
 from pycbc.types import float64, float32, TimeSeries, FrequencySeries
-from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.detector import Detector
 
 injection_func_map = {
@@ -100,7 +98,7 @@ class InjectionSet(object):
         return swigrow
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
-              simulation_ids=None):
+              simulation_ids=None, injcutter=None):
         """Add injections (as seen by a particular detector) to a time series.
 
         Parameters
@@ -117,6 +115,10 @@ class InjectionSet(object):
             no scaling. 
         simulation_ids: iterable, optional
             If given, only inject signals with the given simulation IDs.
+        injcutter: InjCutter instance; optional, default=None
+            If given send each injected waveform to the injcutter instance so
+            that it can store a reduced representation of that injection if
+            necessary.
 
         Returns
         -------
@@ -172,36 +174,9 @@ class InjectionSet(object):
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
             injection_parameters.append(inj)                            
-            if hasattr(strain, "injcutter") and strain.injcutter is not None and \
-                    strain.injcutter['match_threshold'] is not None:
-                # If doing injcutter, store a coarse representation of each
-                # injection.
-                ic_params = strain.injcutter
-                trunc_f_max = ic_params['coarsematch_fmax']
-                trunc_delta_f = ic_params['coarsematch_deltaf']
-                inj_length = len(signal)
-                new_length = nearest_larger_binary_number(inj_length)
-                # Don't want length less than 1/delta_f
-                while new_length * signal.delta_t < 1./trunc_delta_f:
-                    new_length = new_length * 2
-                new_length = int(new_length)
-                signal.resize(new_length)
-                inj_tilde = signal.to_frequencyseries()
-                # Dynamic range is important here!
-                inj_tilde_np = inj_tilde.numpy() * DYN_RANGE_FAC
-                delta_f = inj_tilde.get_delta_f()
-                new_freq_len = int(trunc_f_max / delta_f + 1)
-                # This shouldn't be a problem if injections are generated at
-                # 16384 Hz ... It is only a problem of injection sample rate
-                # gives a lower Nyquist than the trunc_f_max. If this error is
-                # ever raised one could consider zero-padding the injection.
-                assert(new_freq_len <= len(inj_tilde))
-                df_ratio = int(trunc_delta_f/delta_f)
-                inj_tilde_np = inj_tilde_np[:new_freq_len:df_ratio]
-                new_inj = FrequencySeries(inj_tilde_np,
-                                          delta_f=trunc_delta_f,
-                                          dtype=np.complex64)
-                injection_stis.append(new_inj)
+            if injcutter is not None:
+                injcutter.generate_short_inj_from_inj(signal,
+                                                      inj.simulation_id)
 
         strain.data[:] = lalstrain.data.data[:]
 
