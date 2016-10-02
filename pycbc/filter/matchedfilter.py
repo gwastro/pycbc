@@ -1452,7 +1452,7 @@ class LiveBatchMatchedFilter(object):
             if s < self.snr_threshold:
                 continue    
 
-            time[i] += float(l) / self.data.sample_rate            
+            time[i] += float(l - valid_start) / self.data.sample_rate            
 
             # We have an SNR so high that we will drop the entire analysis 
             # of this chunk of time!
