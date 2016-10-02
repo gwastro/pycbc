@@ -1059,28 +1059,28 @@ class StrainSegments(object):
 
 class StrainBuffer(pycbc.frame.DataBuffer):
     def __init__(self, frame_src, channel_name, start_time,
-                       max_buffer=512,
-                       sample_rate=4096,
-                       low_frequency_cutoff=20,
-                       highpass_frequency=15.0,
-                       highpass_reduction=200.0,
-                       highpass_bandwidth=5.0,
-                       psd_samples=30,
-                       psd_segment_length=4,
-                       psd_inverse_length=3.5,
-                       trim_padding=0.25,
-                       autogating_threshold=100,
-                       autogating_cluster=0.25,
-                       autogating_window=0.5,
-                       autogating_pad=0.25,
-                       state_channel=None,
-                       data_quality_channel=None,
-                       dyn_range_fac=pycbc.DYN_RANGE_FAC,
-                       psd_abort_difference=None,
-                       psd_recalculate_difference=None,
-                       force_update_cache=True,
-                       increment_update_cache=None,
-                       analyze_flags=None,
+                 max_buffer=512,
+                 sample_rate=4096,
+                 low_frequency_cutoff=20,
+                 highpass_frequency=15.0,
+                 highpass_reduction=200.0,
+                 highpass_bandwidth=5.0,
+                 psd_samples=30,
+                 psd_segment_length=4,
+                 psd_inverse_length=3.5,
+                 trim_padding=0.25,
+                 autogating_threshold=100,
+                 autogating_cluster=0.25,
+                 autogating_window=0.5,
+                 autogating_pad=0.25,
+                 state_channel=None,
+                 data_quality_channel=None,
+                 dyn_range_fac=pycbc.DYN_RANGE_FAC,
+                 psd_abort_difference=None,
+                 psd_recalculate_difference=None,
+                 force_update_cache=True,
+                 increment_update_cache=None,
+                 analyze_flags=None,
                  ):
         """ Class to produce overwhitened strain incrementally
         
@@ -1153,7 +1153,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         self.low_frequency_cutoff = low_frequency_cutoff
 
-        ####### Set the state channel buffer
+        # Set the state channel buffer
         self.state_channel = state_channel
         self.data_quality_channel = data_quality_channel
         self.analyze_flags = analyze_flags
@@ -1161,12 +1161,12 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if 'None' not in self.state_channel:
             valid_mask = 0
             for flag in self.analyze_flags:
-                valid_mask = valid_mask | getattr(pycbc.frame, flag) 
+                valid_mask = valid_mask | getattr(pycbc.frame, flag)
             self.state = pycbc.frame.StatusBuffer(frame_src, state_channel, start_time,
-                                           max_buffer=max_buffer,
-                                           valid_mask=valid_mask,
-                                           force_update_cache=force_update_cache,
-                                           increment_update_cache=increment_update_cache)
+                max_buffer=max_buffer,
+                valid_mask=valid_mask,
+                force_update_cache=force_update_cache,
+                increment_update_cache=increment_update_cache)
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction
@@ -1193,9 +1193,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                                  delta_t=1.0/self.sample_rate, 
                                  epoch=start_time-max_buffer)
 
-        # Determine the total number of corrupted samples for highpass 
+        # Determine the total number of corrupted samples for highpass
         # and PSD over whitening
-        highpass_samples, self.beta = kaiserord(self.highpass_reduction, 
+        highpass_samples, self.beta = kaiserord(self.highpass_reduction,
           self.highpass_bandwidth / self.raw_buffer.sample_rate * 2 * numpy.pi)
         self.highpass_samples =  int(highpass_samples / 2)
         resample_corruption = 10 # If using the ldas method
@@ -1303,14 +1303,14 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 psdt._delta_f = fseries.delta_f
 
                 psd = pycbc.psd.interpolate(self.psd, delta_f)
-                psd = pycbc.psd.inverse_spectrum_truncation(psd, 
+                psd = pycbc.psd.inverse_spectrum_truncation(psd,
                                        int(self.sample_rate * self.psd_inverse_length),
                                        low_frequency_cutoff=self.low_frequency_cutoff)
 
                 psd.psdt = psdt
                 self.psds[delta_f] = psd
 
-            psd = self.psds[delta_f]                
+            psd = self.psds[delta_f]
             fseries /= psd.psdt
 
             # trim ends of strain
@@ -1319,7 +1319,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                                              delta_t=self.strain.delta_t)
                 pycbc.fft.ifft(fseries, overwhite)
                 overwhite2 = overwhite[self.reduced_pad:len(overwhite)-self.reduced_pad]
-                taper_window = self.trim_padding / 2.0 / overwhite.sample_rate         
+                taper_window = self.trim_padding / 2.0 / overwhite.sample_rate
                 gate_params = [(overwhite2.start_time, 0., taper_window),
                                (overwhite2.end_time, 0., taper_window)]
                 gate_data(overwhite2, gate_params)
@@ -1392,7 +1392,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         # only condition with the needed raw data so we can continuously add
         # to the existing result
 
-        ###### Precondition
+        # Precondition
         sample_step = int(blocksize * self.sample_rate)
         csize = sample_step + self.corruption * 2
         start = len(self.raw_buffer) - csize * self.factor
@@ -1406,7 +1406,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         strain = pycbc.filter.resample_to_delta_t(strain, 
                                            1.0/self.sample_rate, method='ldas')
 
-        # remove corruption at beginning 
+        # remove corruption at beginning
         strain = strain[self.corruption:]
         
         # taper beginning if needed
@@ -1415,16 +1415,15 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             strain = gate_data(strain, [(strain.start_time, 0., self.autogating_pad)])
             self.taper_immediate_strain = False
 
-        ###### Stitch into continuous stream
+        # Stitch into continuous stream
         self.strain.roll(-sample_step)
         self.strain[len(self.strain) - csize + self.corruption:] = strain[:]
         self.strain.start_time += blocksize
 
         # apply gating if need be: NOT YET IMPLEMENTED
-        
-        #IF DQ vector says the new bit of strain is has some invalid part
-        #return false so it is not analyzed (but may be used for PSD). 
-        #This behavior is equivelant to how we handle CAT2 vetoes.
+        # if DQ vector says the new bit of strain is has some invalid part
+        # return false so it is not analyzed (but may be used for PSD).
+        # This behavior is equivelant to how we handle CAT2 vetoes.
 
         if self.psd is None and self.wait_duration <=0:
             self.recalculate_psd()
