@@ -59,16 +59,19 @@ for (int i=0; i<N; i++){
 }
 loc[0] = l;
 """
+code_flags = [WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags
+
 
 def abs_arg_max(self):
     if self.kind == 'real':
         return _np.argmax(self.data)
     else:
-        data = _np.array(self._data, copy=False).view(real_same_precision_as(self))
+        data = _np.array(self._data,
+                         copy=False).view(real_same_precision_as(self))
         loc = _np.array([0])
         N = len(self)
         inline(code_abs_arg_max, ['data', 'loc', 'N'], libraries=omp_libs,
-                extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags)
+               extra_compile_args=code_flags)
         return loc[0]
 
 def abs_max_loc(self):
@@ -77,7 +80,7 @@ def abs_max_loc(self):
         ind = _np.argmax(tmp)
         return tmp[ind], ind
     else:
-        tmp = self.data.real ** 2.0 
+        tmp = self.data.real ** 2.0
         tmp += self.data.imag ** 2.0
         ind = _np.argmax(tmp)
         return tmp[ind] ** 0.5, ind
@@ -121,13 +124,14 @@ for (int i=0; i<N; i++){
 total[0] = value;
 """
 
+
 def inner_inline_real(self, other):
     x = _np.array(self._data, copy=False)
     y = _np.array(other, copy=False)
     total = _np.array([0])
     N = len(self)
     inline(inner_code, ['x', 'y', 'total', 'N'], libraries=omp_libs,
-           extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags)
+           extra_compile_args=code_flags)
     return total[0]
 
 def inner(self, other):

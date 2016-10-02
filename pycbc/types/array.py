@@ -816,7 +816,7 @@ class Array(object):
         elif self.dtype == complex64 or self.dtype == complex128:
             return 'complex'
         else:
-            return 'unknown'   
+            return 'unknown'
 
     @property
     @_convert
