@@ -400,7 +400,7 @@ class DataBuffer(object):
     def __init__(self, frame_src, 
                  channel_name,
                  start_time,
-                 max_buffer=2048, 
+                 max_buffer=2048,
                  force_update_cache=True,
                  increment_update_cache=None,
                  dtype=numpy.float64):
@@ -573,7 +573,7 @@ class DataBuffer(object):
         stream = lalframe.FrStreamCacheOpen(cache)
         self.stream = stream
         self.channel_type, self.raw_sample_rate = \
-                        self._retrieve_metadata(self.stream, self.channel_name)
+            self._retrieve_metadata(self.stream, self.channel_name)
 
     def attempt_advance(self, blocksize, timeout=10):
         """ Attempt to advance the frame buffer. Retry upon failure, except
@@ -726,7 +726,7 @@ class StatusBuffer(DataBuffer):
         Returns
         -------
         status: boolean
-            Returns True if all of the status information if valid, 
+            Returns True if all of the status information if valid,
             False if any is not.
         """
         if self.increment_update_cache:
