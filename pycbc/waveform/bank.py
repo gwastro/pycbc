@@ -43,8 +43,11 @@ def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
     """
     key = id(psd)
-    if key not in self._sigmasq or not hasattr(psd, '_sigma_cached_key'):
-        psd._sigma_cached_key = True
+    if not hasattr(psd, '_sigma_cached_key'):
+        psd._sigma_cached_key = {}
+
+    if key not in self._sigmasq or id(self) not in psd._sigma_cached_key:
+        psd._sigma_cached_key[id(self)] = True
         # If possible, we precalculate the sigmasq vector for all possible waveforms
         if pycbc.waveform.waveform_norm_exists(self.approximant):
             if not hasattr(psd, 'sigmasq_vec'):
@@ -434,7 +437,7 @@ class LiveFilterBank(TemplateBank):
                                      dtype=numpy.float32), 'template_duration') 
 
         from pycbc.pnutils import mass1_mass2_to_mchirp_eta
-        self.table = sorted(self.table, key=lambda t: mass1_mass2_to_mchirp_eta(t.mass1, t.mass2)[0])
+        self.table.sort(order='mchirp')
 
         self.hash_lookup = {}
         for i, p in enumerate(self.table):
@@ -492,8 +495,10 @@ class LiveFilterBank(TemplateBank):
         min_buffer = .5 + self.minimum_buffer
     
         from pycbc.waveform.waveform import props
+        p = props(self.table[index])
+        p.pop('approximant')
         buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, f_lower=self.f_lower, 
-                                                                      **props(self.table[index]))
+                                                                      **p)
         tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
         flen = tlen / 2 + 1
 
