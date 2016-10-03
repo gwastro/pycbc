@@ -32,32 +32,39 @@ class HFile(h5py.File):
         ----------
         fcn : a function
             A function that accepts the same number of argument as keys given
-        and returns a boolean array of the same length.
+            and returns a boolean array of the same length.
 
-        args: strings
+        args : strings
             A variable number of strings that are keys into the hdf5. These must
-        refer to arrays of equal length.
+            refer to arrays of equal length.
 
-        chunksize: {1e6, int}, optional
+        chunksize : {1e6, int}, optional
             Number of elements to read and process at a time.
+
+        return_indices : bool, optional
+            If True, also return the indices of elements passing the function.
 
         Returns
         -------
         values : np.ndarrays
-            A variable number of arrays depending on the number of keys into the
-        hdf5 file that are given.
+            A variable number of arrays depending on the number of keys into
+            the hdf5 file that are given. If return_indices is True, the first
+            element is an array of indices of elements passing the function.
 
         >>> f = HFile(filename)
         >>> snr = f.select(lambda snr: snr > 6, 'H1/snr')
         """
 
         # get references to each array
-        refs = {}        
+        refs = {}
         data = {}
         for arg in args:
             refs[arg] = self[arg]
             data[arg] = []
-        
+
+        return_indices = kwds.get('return_indices', False)
+        indices = np.array([], dtype=np.uint64)
+
         # To conserve memory read the array in chunks
         chunksize = kwds.get('chunksize', int(1e6))
         size = len(refs[arg])
@@ -65,10 +72,12 @@ class HFile(h5py.File):
         i = 0
         while i < size:
             r = i + chunksize if i + chunksize < size else size
-         
+
             #Read each chunks worth of data and find where it passes the function
             partial = [refs[arg][i:r] for arg in args]
             keep = fcn(*partial)
+            if return_indices:
+                indices = np.concatenate([indices, np.flatnonzero(keep) + i])
 
             #store only the results that pass the function
             for arg, part in zip(args, partial):
@@ -78,9 +87,17 @@ class HFile(h5py.File):
 
         # Combine the partial results into full arrays
         if len(args) == 1:
-            return np.concatenate(data[args[0]])
+            res = np.concatenate(data[args[0]])
+            if return_indices:
+                return indices, res
+            else:
+                return res
         else:
-            return tuple(np.concatenate(data[arg]) for arg in args)
+            res = tuple(np.concatenate(data[arg]) for arg in args)
+            if return_indices:
+                return (indices,) + res
+            else:
+                return res
 
 
 class DictArray(object):

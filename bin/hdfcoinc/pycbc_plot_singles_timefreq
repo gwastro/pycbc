@@ -31,13 +31,14 @@ import pylab as pl
 import matplotlib.mlab as mlab
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
-import h5py
+from pycbc.io import HFile
 import pycbc.events
 import pycbc.pnutils
 import pycbc.strain
 import pycbc.results
 import pycbc.version
 import pycbc.waveform
+
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--version", action="version",
@@ -85,55 +86,59 @@ ax = fig.gca()
 logging.info('Plotting strain spectrogram')
 Pxx, freq, t = mlab.specgram(strain, NFFT=1024, noverlap=1000,
                              Fs=opts.sample_rate, mode='psd')
+del strain
 median_psd = np.median(Pxx, axis=1)
 median_psd_tile = np.tile(np.array([median_psd]).T, (1, len(t)))
+del median_psd
 Pxx /= median_psd_tile
+del median_psd_tile
 norm = LogNorm()
 pc = ax.pcolormesh(t + opts.gps_start_time - center_time, freq, Pxx,
                    vmin=1, vmax=1000, norm=norm, cmap='afmhot_r')
+del freq, Pxx
 
 logging.info('Loading trigs')
-trig_f = h5py.File(opts.trig_file, 'r')
+trig_f = HFile(opts.trig_file, 'r')
 trigs = trig_f[opts.detector]
 
-snr = np.array(trigs['snr'])
-rchisq = trigs['chisq'][:] / (trigs['chisq_dof'][:] * 2 - 2)
-end_time = trigs['end_time'][:]
-template_ids = trigs['template_id'][:]
-indices = np.arange(len(end_time))
-template_duration = trigs['template_duration'][:]
+def rough_filter(snr, chisq, chisq_dof, end_time, tmp_id, tmp_dur):
+    return np.logical_and(end_time > opts.gps_start_time,
+                          end_time < opts.gps_end_time + tmp_dur)
 
-if opts.veto_file:
-    logging.info('Loading veto segments')
-    locs, segs = pycbc.events.veto.indices_outside_segments(
-        end_time, [opts.veto_file], ifo=opts.detector)
-    end_time = end_time[locs]
-    snr = snr[locs]
-    rchisq = rchisq[locs]
-    template_ids = template_ids[locs]
-    template_duration = template_duration[locs]
-    indices = indices[locs]
+indices, snr, chisq, chisq_dof, end_time, template_ids, template_duration = \
+        trig_f.select(rough_filter, opts.detector + '/snr',
+                      opts.detector + '/chisq', opts.detector + '/chisq_dof',
+                      opts.detector + '/end_time',
+                      opts.detector + '/template_id',
+                      opts.detector + '/template_duration',
+                      return_indices=True)
 
-mask = np.logical_and(end_time > opts.gps_start_time,
-                      end_time < opts.gps_end_time + template_duration)
-end_time = end_time[mask]
-snr = snr[mask]
-rchisq = rchisq[mask]
-template_ids = template_ids[mask]
-indices = indices[mask]
+if len(indices) > 0:
+    if opts.veto_file:
+        logging.info('Loading veto segments')
+        locs, _ = pycbc.events.veto.indices_outside_segments(
+            end_time, [opts.veto_file], ifo=opts.detector)
+        end_time = end_time[locs]
+        snr = snr[locs]
+        chisq = chisq[locs]
+        chisq_dof = chisq_dof[locs]
+        template_ids = template_ids[locs]
+        indices = indices[locs]
+        del locs
 
-if mask.any():
     if opts.rank == 'snr':
         rank = snr
     elif opts.rank == 'newsnr':
+        rchisq = chisq / (chisq_dof * 2 - 2)
         rank = pycbc.events.newsnr(snr, rchisq)
         if type(rank) in [np.float32, np.float64]:
             rank = np.array([rank])
+        del rchisq
+    del snr, chisq, chisq_dof
 
     sorter = np.argsort(rank)[::-1][:opts.num_loudest]
     sorted_end_time = end_time[sorter]
     sorted_rank = rank[sorter]
-    sorted_rchisq = rchisq[sorter]
     sorted_template_ids = template_ids[sorter]
 
     try:
