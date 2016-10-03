@@ -576,7 +576,7 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
         track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
                                  n_points)
         track_t = numpy.array([
-                lalsimulation.SimIMRSEOBNRv4ROMDoubleSpinTimeOfFrequency(
+                lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency(
                         f, solar_mass_to_kg(mass1), solar_mass_to_kg(mass2),
                         float(spin1), float(spin2)) for f in track_f])
     else:
