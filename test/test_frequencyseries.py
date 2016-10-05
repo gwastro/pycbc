@@ -200,23 +200,14 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
             self.assertEqual(out5[0],1)
             self.assertEqual(out5[1],2)
             self.assertEqual(out5[2],3)
-            self.assertTrue(out5.dtype==numpy.float64)
             self.assertEqual(out5.delta_f,0.1)
             self.assertEqual(out5._epoch, self.epoch)
-
-            # We shouldn't be able to copy it though
-            self.assertRaises(TypeError,FrequencySeries,in5, 0.1, copy=False)
 
             # Finally, just checking a few things specific to FrequencySeries
             inbad = numpy.array([],dtype=float64)
             self.assertRaises(ValueError, FrequencySeries, in1, -1)
             self.assertRaises(ValueError, FrequencySeries, inbad, .1)
             self.assertRaises(TypeError, FrequencySeries, in1, .1, epoch=(5,1))
-
-        if self.scheme != 'cpu':
-            self.assertRaises(TypeError, FrequencySeries, in4, 0.1, copy=False)
-        self.assertRaises(TypeError, FrequencySeries, in5,0.1, copy=False)
-
 
     def test_array_init(self):
         # this array is made outside the context so we can check that an error is raised when copy = false in a GPU scheme
@@ -300,8 +291,6 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
             self.assertEqual(out4.delta_f, 0.1)
             self.assertEqual(out4._epoch, self.epoch)
 
-            self.assertRaises(TypeError, FrequencySeries,in1,0.1, dtype=numpy.int32)
-
             # Check for copy=false
             in3 = Array([5,3,1],dtype=self.dtype)
             out5 = FrequencySeries(in3,0.1,copy=False, epoch=self.epoch)
@@ -378,10 +367,9 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
 
             else:
                 self.assertRaises(TypeError, FrequencySeries,[5+0j, 3+0j, 1+0j], 0.1, dtype=self.dtype)
-            self.assertRaises(TypeError, FrequencySeries,[1,2,3],0.1, dtype=numpy.int32)
 
             #Also, when it is unspecified
-            out3 = FrequencySeries([5,3,1],0.1,epoch=self.epoch)
+            out3 = FrequencySeries([5.0,3,1],0.1,epoch=self.epoch)
 
             self.assertTrue(type(out3._scheme) == type(self.context))
             self.assertTrue(type(out3._data) is SchemeArray)
@@ -392,7 +380,7 @@ class TestFrequencySeriesBase(array_base,unittest.TestCase):
             self.assertEqual(out3.delta_f, 0.1)
             self.assertEqual(out3._epoch, self.epoch)
 
-            out4 = FrequencySeries([5+0j,3+0j,1+0j],0.1,epoch = self.epoch)
+            out4 = FrequencySeries([5.0+0j,3+0j,1+0j],0.1,epoch = self.epoch)
 
             self.assertTrue(type(out4._scheme) == type(self.context))
             self.assertTrue(type(out4._data) is SchemeArray)

@@ -1420,6 +1420,8 @@ class LiveBatchMatchedFilter(object):
         self.corr[self.block_id].execute(stilde)
         self.ifts[mid].execute()
 
+        self.block_id += 1
+
         snr = numpy.zeros(len(tgroup), dtype=numpy.complex64)
         time = numpy.zeros(len(tgroup), dtype=numpy.float64)
         templates = numpy.zeros(len(tgroup), dtype=numpy.uint64)
@@ -1437,27 +1439,28 @@ class LiveBatchMatchedFilter(object):
         # Find the peaks in our SNR times series from the various templates
         i = 0
         for htilde in tgroup:
-            m, l = htilde.out[seg].abs_max_loc()
+            l = htilde.out[seg].abs_arg_max()
 
             sgm = htilde.sigmasq(psd)
             norm = 4.0 * htilde.delta_f / (sgm ** 0.5)
 
+            l += valid_start
+            snrv = numpy.array([htilde.out[l]])
+
             # If nothing is above threshold we can exit this template
-            s = m * norm
+            s = abs(snrv[0]) * norm
             if s < self.snr_threshold:
                 continue    
 
-            time[i] += float(l) / self.data.sample_rate            
-            l += valid_start
+            time[i] += float(l - valid_start) / self.data.sample_rate            
 
             # We have an SNR so high that we will drop the entire analysis 
             # of this chunk of time!
             if self.snr_abort_threshold is not None and s > self.snr_abort_threshold:
                 logging.info("We are seeing some *really* high SNRs, lets"
-                             "assume they aren't signals and just give up")
+                             " assume they aren't signals and just give up")
                 return False, []
      
-            snrv = numpy.array([htilde.out[l]])
             veto_info.append((snrv, norm, l, htilde, stilde))
      
             snr[i] = snrv[0] * norm
@@ -1481,7 +1484,6 @@ class LiveBatchMatchedFilter(object):
         for key in tkeys:
             result[key] = numpy.array(result[key])
 
-        self.block_id += 1
         return result, veto_info  
 
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
