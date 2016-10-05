@@ -200,21 +200,12 @@ class ArrayTestBase(array_base,unittest.TestCase):
             self.assertEqual(out5[0],1)
             self.assertEqual(out5[1],2)
             self.assertEqual(out5[2],3)
-            self.assertTrue(out5.dtype==numpy.float64)
-
-            # We shouldn't be able to copy it though
-            self.assertRaises(TypeError,Array,in5, copy=False)
 
             # Just checking that we can make an empty array correctly
             empty = numpy.array([])
             out6 = Array(empty)
             self.assertTrue(out6.dtype==numpy.float64)
             self.assertRaises(IndexError, out6.__getitem__,0)
-
-        if self.scheme != 'cpu':
-            self.assertRaises(TypeError, Array, in4, copy=False)
-        self.assertRaises(TypeError, Array, in5, copy=False)
-
 
     def test_array_init(self):
         # this array is made outside the context so we can check that an error is raised when copy = false in a GPU scheme
@@ -289,8 +280,6 @@ class ArrayTestBase(array_base,unittest.TestCase):
             self.assertEqual(out4[1],2)
             self.assertEqual(out4[2],3)
             self.assertTrue(out4.dtype==self.dtype)
-
-            self.assertRaises(TypeError, Array,in1, dtype=numpy.int32)
 
             # Check for copy=false
             in3 = Array([5,3,1],dtype=self.dtype)
@@ -411,10 +400,9 @@ class ArrayTestBase(array_base,unittest.TestCase):
 
             else:
                 self.assertRaises(TypeError, Array,[5+0j, 3+0j, 1+0j],dtype=self.dtype)
-            self.assertRaises(TypeError, Array,[1,2,3], dtype=numpy.int32)
-
+                
             #Also, when it is unspecified
-            out3 = Array([5,3,1])
+            out3 = Array([5.0,3,1])
 
             self.assertTrue(type(out3._scheme) == type(self.context))
             self.assertTrue(type(out3._data) is SchemeArray)
