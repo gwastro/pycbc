@@ -403,6 +403,29 @@ class TemplateBank(object):
     def __len__(self):
         return len(self.table)
 
+    def generate_custom_size_waveform(self, t_num, max_freq, delta_f,
+                                      low_freq_cutoff=None, cached_mem=None):
+        """ Generate the template with index t_num using custom length.
+        """
+        approximant = self.approximant(t_num)
+        # Don't want to use INTERP waveforms in here
+        if approximant.endswith('_INTERP'):
+            approximant = approximant.replace('_INTERP', '')
+        # Using SPAtmplt here is bad as the stored cbrt and logv get
+        # recalculated as we change delta_f values. Fall back to TaylorF2
+        # in lalsimulation.
+        if approximant == 'SPAtmplt':
+            approximant = 'TaylorF2'
+        if cached_mem is None:
+            wav_len = int(max_freq / delta_f) + 1
+            cached_mem = zeros(wav_len, dtype=numpy.complex64)
+        htilde = pycbc.waveform.get_waveform_filter(
+            cached_mem, self.table[t_num], approximant=approximant,
+            f_lower=low_freq_cutoff, f_final=max_freq, delta_f=delta_f,
+            distance=1./DYN_RANGE_FAC, delta_t=1./(2.*max_freq))
+        return htilde
+        
+
     def template_thinning(self, injcutter, injections):
         if not injcutter.enabled or injcutter.chirp_time_threshold is None:
             # Do nothing!
@@ -428,132 +451,6 @@ class TemplateBank(object):
 
         indices_unique= np.unique(indices_combined)
         self.table = self.table[indices_unique]
-
-    def template_segment_checker(self, t_num, gwstrain, segment, start_time):
-        """ Test if injections in segment are worth filtering with template.
-
-        Using the current template, current segment, and injections within that
-        segment. Test if the injections and sufficiently "similar" to any of
-        the injections to justify actually performing a matched-filter call.
-        Ther are two parts to this test: First we check if the chirp time of
-        the template is within a provided window of any of the injections. If
-        not then stop here, it is not worth filtering this template, segment
-        combination for this injection set. If this check passes we compute a
-        match between a coarse representation of the template and a coarse
-        representation of each of the injections. If that match is above a
-        user-provided value for any of the injections then filtering can
-        proceed. This is currently only available if using frequency-domain
-        templates.
-
-        Parameters
-        -----------
-
-        Returns
-        --------
-        """
-        if gwstrain.injcutter is None:
-            return True
-
-        ic_params = gwstrain.injcutter
-        match_test = ic_params['match_threshold'] is not None
-        chirp_test = ic_params['chirp_time_threshold'] is not None
-        f_ref = ic_params['f_lower']
-        trunc_f_max = ic_params['coarsematch_fmax']
-        trunc_delta_f = ic_params['coarsematch_deltaf']
-        seg_buffer = ic_params['seg_buffer']
-        injections = gwstrain.injections
-
-        if chirp_test:
-            # Get chirp times for template
-            m1 = self.table[t_num]['mass1']
-            m2 = self.table[t_num]['mass2']
-            tau0_temp, tau3_temp = \
-                pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, f_ref)
-
-        if match_test and self._tsc_short_template_mem is None:
-            wav_len = int(trunc_f_max / trunc_delta_f) + 1
-            self._tsc_short_template_mem = zeros(wav_len,
-                                                 dtype=numpy.complex64)
-
-        if match_test:
-            # Don't want to use INTERP waveforms in here
-            approximant = self.approximant(t_num)
-            if approximant.endswith('_INTERP'):
-                approximant = approximant.replace('_INTERP', '')
-            # Using SPAtmplt here is bad as the stored cbrt and logv get
-            # recalculated as we change delta_f values. Fall back to TaylorF2
-            # in lalsimulation.
-            if approximant == 'SPAtmplt':
-                approximant = 'TaylorF2'
-
-            if not hasattr(injections, 'short_truncated_injs'):
-                err_msg = 'To use a match threshold using coarse ' + \
-                          'waveforms to decide whether to compute ' + \
-                          'full matched filter, one must have stored ' + \
-                          'the injection waveforms.'
-                raise ValueError(err_msg)
-
-            try:
-                red_psd = self._tsc_short_psd_storage[id(segment.psd)]
-            except KeyError:
-                curr_psd = segment.psd.numpy()
-                step_size = int(trunc_delta_f/segment.psd.delta_f)
-                max_idx = int(trunc_f_max/segment.psd.delta_f)+1
-                red_psd_data = curr_psd[:max_idx:step_size]
-                red_psd = FrequencySeries(red_psd_data, delta_f=trunc_delta_f,
-                                          copy=False)
-                self._tsc_short_psd_storage[id(curr_psd)] = red_psd
-
-            # Generate short template
-            # WARNING: This is f-domain only! T-domain *may* work, but many
-            #          waveforms will refuse to generate.
-            if not t_num == self._tsc_short_template_id:
-                htilde = pycbc.waveform.get_waveform_filter(
-                    self._tsc_short_template_mem, self.table[t_num],
-                    approximant=approximant, f_lower=f_ref,
-                    f_final=trunc_f_max,
-                    delta_f=trunc_delta_f, distance=1./DYN_RANGE_FAC,
-                    delta_t=1./(2 * trunc_f_max))
-                self._tsc_short_template_id = t_num
-                self._tsc_short_template_wav = htilde
-            else:
-                htilde = self._tsc_short_template_wav
-
-        # Get times covered by segment analyze
-        seg_start_time = \
-            segment.cumulative_index / float(gwstrain.sample_rate) + \
-            start_time
-        seg_end_time = \
-            (segment.cumulative_index +
-             (segment.analyze.stop - segment.analyze.start)) / \
-            float(gwstrain.sample_rate) + start_time
-        # And add buffer
-        seg_start_time = seg_start_time - seg_buffer
-        seg_end_time = seg_end_time + seg_buffer
-
-        # Then loop over injections
-        filter_segment = False
-        for inj_idx, inj in enumerate(injections.table):
-            end_time = inj.geocent_end_time + 1E-9 * inj.geocent_end_time_ns
-            if end_time > seg_end_time or end_time < seg_start_time:
-                continue
-            if chirp_test:
-                tau0_inj, tau3_inj = \
-                    pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1,
-                                                           inj.mass2, f_ref)
-                tau_diff = abs(tau0_temp - tau0_inj)
-            if (not chirp_test) or \
-                    tau_diff <= ic_params['chirp_time_threshold']:
-                if not match_test:
-                    filter_segment = True
-                    break
-                o, i = match(htilde, injections.short_truncated_injs[inj_idx],
-                             psd=red_psd, low_frequency_cutoff=f_ref)
-                if o > ic_params['match_threshold']:
-                    filter_segment = True
-                    break
-
-        return filter_segment
 
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
