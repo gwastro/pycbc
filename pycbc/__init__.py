@@ -132,7 +132,7 @@ if os.environ.get("NO_TMPDIR", None):
 else:
     try: os.makedirs(_cache_dir_path)
     except OSError: pass
-    print >>sys.stderr, "__init__: Setting weave cache to %s" % _cache_dir_path
+    logging.info("__init__: Setting weave cache to %s" % _cache_dir_path)
 os.environ['PYTHONCOMPILED'] = _cache_dir_path
 
 # Check for MKL capability
