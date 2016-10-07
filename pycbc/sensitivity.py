@@ -1,6 +1,58 @@
 """ This module contains utilities for calculating search sensitivity
 """
 import numpy
+from . import bin_utils
+
+
+def compute_search_efficiency_in_bins(found, total, ndbins, sim_to_bins_function = lambda sim: (sim.distance,)):
+    """
+    This program creates the search efficiency in the provided ndbins.  The
+    first dimension of ndbins must be the distance.  You also must provide a
+    function that maps a sim inspiral row to the correct tuple to index the ndbins.
+    """
+    input = rate.BinnedRatios(ndbins)
+
+    # increment the numerator with the missed injections
+    [input.incnumerator(sim_to_bins_function(sim)) for sim in found]
+
+    # increment the denominator with the total injections
+    [input.incdenominator(sim_to_bins_function(sim)) for sim in total]
+
+    # regularize by setting denoms to 1 to avoid nans
+    input.regularize()
+
+    # pull out the efficiency array, it is the ratio
+    eff = rate.BinnedArray(rate.NDBins(ndbins), array = input.ratio())
+
+    # compute binomial uncertainties in each bin
+    err_arr = numpy.sqrt(eff.array * (1-eff.array)/input.denominator.array)
+    err = rate.BinnedArray(rate.NDBins(ndbins), array = err_arr)
+
+    return eff, err
+
+def compute_search_volume_in_bins(found, total, ndbins, sim_to_bins_function):
+    """
+    Calculates the search volume in the provided ndbins.  The
+    first dimension of ndbins must be the distance over which to integrate.  You
+    also must provide a function that maps a sim inspiral row to the correct tuple
+    to index the ndbins.
+    """
+
+    eff, err = compute_search_efficiency_in_bins(found, total, ndbins, sim_to_bins_function)
+    dx = ndbins[0].upper() - ndbins[0].lower()
+    r = ndbins[0].centres()
+
+    # we have one less dimension on the output
+    vol = rate.BinnedArray(rate.NDBins(ndbins[1:]))
+    errors = rate.BinnedArray(rate.NDBins(ndbins[1:]))
+
+    # integrate efficiency to obtain volume
+    vol.array = numpy.trapz(eff.array.T * 4. * numpy.pi * r**2, r, dx)
+
+    # propagate errors in eff to errors in V
+    errors.array = numpy.sqrt(( (4*numpy.pi *r**2 *err.array.T *dx)**2 ).sum(-1))
+
+    return vol, errors
 
 def volume_to_distance_with_errors(vol, vol_err):
     """ Return the distance and standard deviation upper and lower bounds
@@ -173,9 +225,9 @@ def volume_binned_pylal(f_dist, m_dist, bins=15):
     
     Parameters
     -----------
-    found_distance: numpy.ndarray
+    f_dist: numpy.ndarray
         The distances of found injections
-    missed_distance: numpy.ndarray
+    m_dist: numpy.ndarray
         The distances of missed injections
         
     Returns
@@ -201,9 +253,9 @@ def volume_shell(f_dist, m_dist):
     
     Parameters
     -----------
-    found_distance: numpy.ndarray
+    f_dist: numpy.ndarray
         The distances of found injections
-    missed_dsistance: numpy.ndarray
+    m_dist: numpy.ndarray
         The distances of missed injections
         
     Returns
