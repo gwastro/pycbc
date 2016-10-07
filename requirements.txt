@@ -32,8 +32,8 @@ Pillow==2.9.0
 pip==7.1.2
 psycopg2==2.6
 pyRXP==2.1.0
-pycbc-glue==0.9.8
-pycbc-pylal==0.9.6
+pycbc-glue==1.0.1
+pycbc-pylal==1.0.1
 Pygments==2.0.2
 pyOpenSSL==0.13
 pyparsing==2.0.3

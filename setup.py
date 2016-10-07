@@ -64,7 +64,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'jinja2',
                       'mpld3>=0.3git',
                       'pyRXP>=2.1.0',
-                      'pycbc-glue>=0.9.8',
+                      'pycbc-glue>=1.0.1',
                       'kombine',
                       'emcee>=2.2.0',
                       #'scikit-learn>=0.17.0',  # travis does not like scikit-learn
