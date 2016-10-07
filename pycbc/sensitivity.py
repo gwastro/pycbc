@@ -4,70 +4,69 @@ import numpy
 from . import bin_utils
 
 
-def compute_search_efficiency_in_bins(found, total, ndbins, sim_to_bins_function = lambda sim: (sim.distance,)):
+def compute_search_efficiency_in_bins(found, total, ndbins, sim_to_bins_function=lambda sim: (sim.distance,)):
     """
-    This program creates the search efficiency in the provided ndbins.  The
-    first dimension of ndbins must be the distance.  You also must provide a
-    function that maps a sim inspiral row to the correct tuple to index the ndbins.
-    """
-    input = rate.BinnedRatios(ndbins)
+    Calculate search efficiency in the given ndbins.
 
-    # increment the numerator with the missed injections
+    The first dimension of ndbins must be bins over injected distance.  
+    sim_to_bins_function must map an object to a tuple indexing the ndbins.
+    """
+    input = bin_utils.BinnedRatios(ndbins)
+
+    # increment the numerator and denominator with found / found+missed injections
     [input.incnumerator(sim_to_bins_function(sim)) for sim in found]
-
-    # increment the denominator with the total injections
     [input.incdenominator(sim_to_bins_function(sim)) for sim in total]
 
     # regularize by setting denoms to 1 to avoid nans
     input.regularize()
 
-    # pull out the efficiency array, it is the ratio
-    eff = rate.BinnedArray(rate.NDBins(ndbins), array = input.ratio())
+    # efficiency array is the ratio
+    eff = bin_utils.BinnedArray(bin_utils.NDBins(ndbins), array=input.ratio())
 
     # compute binomial uncertainties in each bin
     err_arr = numpy.sqrt(eff.array * (1-eff.array)/input.denominator.array)
-    err = rate.BinnedArray(rate.NDBins(ndbins), array = err_arr)
+    err = bin_utils.BinnedArray(bin_utils.NDBins(ndbins), array=err_arr)
 
     return eff, err
 
 def compute_search_volume_in_bins(found, total, ndbins, sim_to_bins_function):
     """
-    Calculates the search volume in the provided ndbins.  The
-    first dimension of ndbins must be the distance over which to integrate.  You
-    also must provide a function that maps a sim inspiral row to the correct tuple
-    to index the ndbins.
-    """
+    Calculate search sensitive volume by integrating efficiency in distance bins
 
+    No cosmological corrections are applied: flat space is assumed.
+    The first dimension of ndbins must be bins over injected distance.  
+    sim_to_bins_function must maps an object to a tuple indexing the ndbins.
+    """
     eff, err = compute_search_efficiency_in_bins(found, total, ndbins, sim_to_bins_function)
     dx = ndbins[0].upper() - ndbins[0].lower()
     r = ndbins[0].centres()
 
-    # we have one less dimension on the output
-    vol = rate.BinnedArray(rate.NDBins(ndbins[1:]))
-    errors = rate.BinnedArray(rate.NDBins(ndbins[1:]))
+    # volume and errors have one fewer dimension than the input NDBins
+    vol = bin_utils.BinnedArray(bin_utils.NDBins(ndbins[1:]))
+    errors = bin_utils.BinnedArray(bin_utils.NDBins(ndbins[1:]))
 
     # integrate efficiency to obtain volume
     vol.array = numpy.trapz(eff.array.T * 4. * numpy.pi * r**2, r, dx)
 
     # propagate errors in eff to errors in V
-    errors.array = numpy.sqrt(( (4*numpy.pi *r**2 *err.array.T *dx)**2 ).sum(-1))
+    errors.array = numpy.sqrt(((4 * numpy.pi * r**2 * err.array.T * dx)**2).sum(axis=-1))
 
     return vol, errors
 
 def volume_to_distance_with_errors(vol, vol_err):
     """ Return the distance and standard deviation upper and lower bounds
-    
+
     Parameters
     ----------
-    volume: float
-    volume_dev: float
-    
+    vol: float
+    vol_err: float
+
     Returns
     -------
-    distance: float
-    err_upper: float
-    err_lower: float
-    
+    dist: float
+    ehigh: float
+    elow: float
+
     """
     dist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
     ehigh = ((vol + vol_err) * 3.0/4.0/numpy.pi) ** (1.0/3.0) - dist
@@ -77,7 +76,7 @@ def volume_to_distance_with_errors(vol, vol_err):
 
 def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
                       distribution_param, distribution, limits_param,
-                      max_param=None, min_param=None):
+                      min_param=None, max_param=None):
     """
     Compute sensitive volume and standard error using a direct Monte Carlo integral
 
@@ -109,13 +108,13 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     limits_param: string
         Parameter Dlim specifying limits inside which injections were made
         may be 'distance', 'chirp distance'
-    max_param: float
-        maximum value of Dlim out to which injections were made; if None
-        the maximum actually injected value will be used
     min_param: float
         minimum value of Dlim at which injections were made; only used for
         log distribution, then if None the minimum actually injected value
         will be used
+    max_param: float
+        maximum value of Dlim out to which injections were made; if None
+        the maximum actually injected value will be used
 
     Returns
     --------
@@ -139,22 +138,23 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
 
     # establish maximum physical distance: first in case of chirp distance distribution
     if limits_param == 'chirp_distance':
-        mchirp_standard_bns = 1.4 * (2. ** (-1. / 5.))
+        mchirp_standard_bns = 1.4 * 2.**(-1. / 5.)
         all_mchirp = numpy.concatenate((found_mchirp, missed_mchirp))
         max_mchirp = all_mchirp.max()
         if max_param is not None:
             # use largest actually injected mchirp for conversion
-            max_distance = max_param * (max_mchirp / mchirp_standard_bns) ** (5. / 6.)
-    elif limits_param == 'distance' and max_param is not None:
-        max_distance = max_param
-    else: raise NotImplementedError("%s is not a recognized parameter" % limits_param)
-
-    # if no max distance param given, use maximum physical distance actually injected
-    if max_param is None:
-        max_distance = max(found_d.max(), missed_d.max())
+            max_distance = max_param * (max_mchirp / mchirp_standard_bns)**(5. / 6.)
+    elif limits_param == 'distance':
+        if max_param is not None:
+            max_distance = max_param
+        else:
+            # if no max distance given, use max distance actually injected
+            max_distance = max(found_d.max(), missed_d.max())
+    else: raise NotImplementedError("%s is not a recognized parameter" 
+                                                                % limits_param)
 
     # volume of sphere
-    montecarlo_vtot = (4. / 3.) * numpy.pi * max_distance ** 3.
+    montecarlo_vtot = (4. / 3.) * numpy.pi * max_distance**3.
 
     # arrays of weights for the MC integral
     if distribution_param == 'distance':
@@ -169,7 +169,7 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
                          missed_mchirp ** mchirp_power
     else:
         raise NotImplementedError("%s is not a recognized distance parameter"
-                                                              % distribution_param)
+                                                          % distribution_param)
 
     all_weights = numpy.concatenate((found_weights, missed_weights))
 
@@ -220,16 +220,15 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     return vol, vol_err
 
 def volume_binned_pylal(f_dist, m_dist, bins=15):
-    """ Compute the sensitive volume using a distanced 
-    binned efficiency estimate
-    
+    """ Compute the sensitive volume using a distance binned efficiency estimate
+
     Parameters
     -----------
     f_dist: numpy.ndarray
         The distances of found injections
     m_dist: numpy.ndarray
         The distances of missed injections
-        
+
     Returns
     --------
     volume: float
@@ -240,24 +239,21 @@ def volume_binned_pylal(f_dist, m_dist, bins=15):
     def sims_to_bin(sim):
         return (sim, 0)
 
-    from pylal import rate
-    from pylal.imr_utils import compute_search_volume_in_bins, compute_search_efficiency_in_bins
-    found = f_dist
     total = numpy.concatenate([f_dist, m_dist])
-    ndbins = rate.NDBins([rate.LinearBins(min(total), max(total), bins), rate.LinearBins(0., 1, 1)]) 
-    vol, verr = compute_search_volume_in_bins(found, total, ndbins, sims_to_bin)
+    ndbins = bin_utils.NDBins([bin_utils.LinearBins(min(total), max(total), bins), bin_utils.LinearBins(0., 1, 1)]) 
+    vol, verr = compute_search_volume_in_bins(f_dist, total, ndbins, sims_to_bin)
     return vol.array[0], verr.array[0]
 
 def volume_shell(f_dist, m_dist):
     """ Compute the sensitive volume using sum over spherical shells.
-    
+
     Parameters
     -----------
     f_dist: numpy.ndarray
         The distances of found injections
     m_dist: numpy.ndarray
         The distances of missed injections
-        
+
     Returns
     --------
     volume: float

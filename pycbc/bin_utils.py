@@ -1,9 +1,17 @@
+from bisect import bisect_right
+try:
+    from fpconst import PosInf, NegInf
+except ImportError:
+    # fpconst is not part of the standard library and might not be available
+    PosInf = float("+inf")
+    NegInf = float("-inf")
 import numpy
+import math
 
 
 class Bins(object):
     """
-    Parent class for 1-dimensional binnings. 
+    Parent class for 1-dimensional binnings.
 
     Not intended to be used directly, but to be subclassed for use in real
     bins classes.
@@ -30,16 +38,6 @@ class Bins(object):
 
     def __len__(self):
         return self.n
-
-    def __cmp__(self, other):
-        """
-        Two binnings are the same if they are instances of the same
-        class, have the same lower and upper bounds, and the same
-        count of bins.
-        """
-        if not isinstance(other, type(self)):
-            return -1
-        return cmp((type(self), self.min, self.max, len(self)), (type(other), other.min, other.max, len(other)))
 
     def __getitem__(self, x):
         """
@@ -136,15 +134,6 @@ class IrregularBins(Bins):
         self.min = boundaries[0]
         self.max = boundaries[-1]
 
-    def __cmp__(self, other):
-        """
-        Two binnings are the same if they are instances of the same
-        class, and have the same boundaries.
-        """
-        if not isinstance(other, type(self)):
-            return -1
-        return cmp(self.boundaries, other.boundaries)
-
     def __getitem__(self, x):
         if isinstance(x, slice):
             return super(IrregularBins, self).__getitem__(x)
@@ -229,11 +218,11 @@ class LinearBins(Bins):
 
 class LinearPlusOverflowBins(Bins):
     """
-    Linearly-spaced bins with overflow at the edges. 
+    Linearly-spaced bins with overflow at the edges.
 
     There are n-2 bins of equal size.  The bin 1 starts on the lower bound and
-    bin n-2 ends on the upper bound.  Bins 0 and n-1 are overflow going from 
-    -infinity to the lower bound and from the upper bound to +infinity 
+    bin n-2 ends on the upper bound.  Bins 0 and n-1 are overflow going from
+    -infinity to the lower bound and from the upper bound to +infinity
     respectively.  Must have n >= 3.
 
     Example:
@@ -297,7 +286,7 @@ class LinearPlusOverflowBins(Bins):
 
 class LogarithmicBins(Bins):
     """
-    Logarithmically-spaced bins.  
+    Logarithmically-spaced bins.
 
     There are n bins, each of whose upper and lower bounds differ by the same
     factor.  The first bin starts on the lower bound, and the last bin ends on
@@ -399,93 +388,286 @@ class LogarithmicPlusOverflowBins(Bins):
 
 
 class NDBins(tuple):
-	"""
-	Multi-dimensional co-ordinate binning.  An instance of this object
-	is used to convert a tuple of co-ordinates into a tuple of bin
-	indices.  This can be used to allow the contents of an array object
-	to be accessed with real-valued coordinates.
+    """
+    Multi-dimensional co-ordinate binning.  An instance of this object
+    is used to convert a tuple of co-ordinates into a tuple of bin
+    indices.  This can be used to allow the contents of an array object
+    to be accessed with real-valued coordinates.
 
-	NDBins is a subclass of the tuple builtin, and is initialized with
-	an iterable of instances of subclasses of Bins.  Each Bins subclass
-	instance describes the binning to apply in the corresponding
-	co-ordinate direction, and the number of them sets the dimensions
-	of the binning.
+    NDBins is a subclass of the tuple builtin, and is initialized with
+    an iterable of instances of subclasses of Bins.  Each Bins subclass
+    instance describes the binning to apply in the corresponding
+    co-ordinate direction, and the number of them sets the dimensions
+    of the binning.
 
-	Example:
+    Example:
 
-	>>> x = NDBins((LinearBins(1, 25, 3), LogarithmicBins(1, 25, 3)))
-	>>> x[1, 1]
-	(0, 0)
-	>>> x[1.5, 1]
-	(0, 0)
-	>>> x[10, 1]
-	(1, 0)
-	>>> x[1, 5]
-	(0, 1)
-	>>> x[1, 1:5]
-	(0, slice(0, 2, None))
-	>>> x.centres()
-	(array([  5.,  13.,  21.]), array([  1.70997595,   5.        ,  14.62008869]))
+    >>> x = NDBins((LinearBins(1, 25, 3), LogarithmicBins(1, 25, 3)))
+    >>> x[1, 1]
+    (0, 0)
+    >>> x[1.5, 1]
+    (0, 0)
+    >>> x[10, 1]
+    (1, 0)
+    >>> x[1, 5]
+    (0, 1)
+    >>> x[1, 1:5]
+    (0, slice(0, 2, None))
+    >>> x.centres()
+    (array([  5.,  13.,  21.]), array([  1.70997595,   5.        ,  14.62008869]))
 
-	Note that the co-ordinates to be converted must be a tuple, even if
-	it is only a 1-dimensional co-ordinate.
-	"""
-	def __new__(cls, *args):
-		new = tuple.__new__(cls, *args)
-		new.min = tuple(b.min for b in new)
-		new.max = tuple(b.max for b in new)
-		new.shape = tuple(len(b) for b in new)
-		return new
+    Note that the co-ordinates to be converted must be a tuple, even if
+    it is only a 1-dimensional co-ordinate.
+    """
+    def __new__(cls, *args):
+        new = tuple.__new__(cls, *args)
+        new.min = tuple(b.min for b in new)
+        new.max = tuple(b.max for b in new)
+        new.shape = tuple(len(b) for b in new)
+        return new
 
-	def __getitem__(self, coords):
-		"""
-		When coords is a tuple, it is interpreted as an
-		N-dimensional co-ordinate which is converted to an N-tuple
-		of bin indices by the Bins instances in this object.
-		Otherwise coords is interpeted as an index into the tuple,
-		and the corresponding Bins instance is returned.
+    def __getitem__(self, coords):
+        """
+        When coords is a tuple, it is interpreted as an
+        N-dimensional co-ordinate which is converted to an N-tuple
+        of bin indices by the Bins instances in this object.
+        Otherwise coords is interpeted as an index into the tuple,
+        and the corresponding Bins instance is returned.
 
-		Example:
+        Example:
 
-		>>> x = NDBins((LinearBins(1, 25, 3), LogarithmicBins(1, 25, 3)))
-		>>> x[1, 1]
-		(0, 0)
-		>>> type(x[1])
-		<class 'pylal.rate.LogarithmicBins'>
+        >>> x = NDBins((LinearBins(1, 25, 3), LogarithmicBins(1, 25, 3)))
+        >>> x[1, 1]
+        (0, 0)
+        >>> type(x[1])
+        <class 'pylal.rate.LogarithmicBins'>
 
-		When used to convert co-ordinates to bin indices, each
-		co-ordinate can be anything the corresponding Bins instance
-		will accept.  Note that the co-ordinates to be converted
-		must be a tuple, even if it is only a 1-dimensional
-		co-ordinate.
-		"""
-		if isinstance(coords, tuple):
-			if len(coords) != len(self):
-				raise ValueError("dimension mismatch")
-			return tuple(map(lambda b, c: b[c], self, coords))
-		else:
-			return tuple.__getitem__(self, coords)
+        When used to convert co-ordinates to bin indices, each
+        co-ordinate can be anything the corresponding Bins instance
+        will accept.  Note that the co-ordinates to be converted
+        must be a tuple, even if it is only a 1-dimensional
+        co-ordinate.
+        """
+        if isinstance(coords, tuple):
+            if len(coords) != len(self):
+                raise ValueError("dimension mismatch")
+            return tuple(map(lambda b, c: b[c], self, coords))
+        else:
+            return tuple.__getitem__(self, coords)
 
-	def lower(self):
-		"""
-		Return a tuple of arrays, where each array contains the
-		locations of the lower boundaries of the bins in the
-		corresponding dimension.
-		"""
-		return tuple(b.lower() for b in self)
+    def lower(self):
+        """
+        Return a tuple of arrays, where each array contains the
+        locations of the lower boundaries of the bins in the
+        corresponding dimension.
+        """
+        return tuple(b.lower() for b in self)
 
-	def centres(self):
-		"""
-		Return a tuple of arrays, where each array contains the
-		locations of the bin centres for the corresponding
-		dimension.
-		"""
-		return tuple(b.centres() for b in self)
+    def centres(self):
+        """
+        Return a tuple of arrays, where each array contains the
+        locations of the bin centres for the corresponding
+        dimension.
+        """
+        return tuple(b.centres() for b in self)
 
-	def upper(self):
-		"""
-		Return a tuple of arrays, where each array contains the
-		locations of the upper boundaries of the bins in the
-		corresponding dimension.
-		"""
-		return tuple(b.upper() for b in self)
+    def upper(self):
+        """
+        Return a tuple of arrays, where each array contains the
+        locations of the upper boundaries of the bins in the
+        corresponding dimension.
+        """
+        return tuple(b.upper() for b in self)
+
+
+class BinnedArray(object):
+    """
+    A convenience wrapper, using the NDBins class to provide access to
+    the elements of an array object.  Technical reasons preclude
+    providing a subclass of the array object, so the array data is made
+    available as the "array" attribute of this class.
+
+    Examples:
+
+    Note that even for 1 dimensional arrays the index must be a tuple.
+
+    >>> x = BinnedArray(NDBins((LinearBins(0, 10, 5),)))
+    >>> x.array
+    array([ 0.,  0.,  0.,  0.,  0.])
+    >>> x[0,] += 1
+    >>> x[0.5,] += 1
+    >>> x.array
+    array([ 2.,  0.,  0.,  0.,  0.])
+    >>> x.argmax()
+    (1.0,)
+
+    Note the relationship between the binning limits, the bin centres,
+    and the co-ordinates of the BinnedArray
+
+    >>> x = BinnedArray(NDBins((LinearBins(-0.5, 1.5, 2), LinearBins(-0.5, 1.5, 2))))
+    >>> x.bins.centres()
+    (array([ 0.,  1.]), array([ 0.,  1.]))
+    >>> x[0, 0] = 0
+    >>> x[0, 1] = 1
+    >>> x[1, 0] = 2
+    >>> x[1, 1] = 4
+    >>> x.array
+    array([[ 0.,  1.],
+           [ 2.,  4.]])
+    >>> x[0, 0]
+    0.0
+    >>> x[0, 1]
+    1.0
+    >>> x[1, 0]
+    2.0
+    >>> x[1, 1]
+    4.0
+    >>> x.argmin()
+    (0.0, 0.0)
+    >>> x.argmax()
+    (1.0, 1.0)
+    """
+    def __init__(self, bins, array = None, dtype = "double"):
+        self.bins = bins
+        if array is None:
+            self.array = numpy.zeros(bins.shape, dtype = dtype)
+        else:
+            if array.shape != bins.shape:
+                raise ValueError("input array and input bins must have the same shape")
+            self.array = array
+
+    def __getitem__(self, coords):
+        return self.array[self.bins[coords]]
+
+    def __setitem__(self, coords, val):
+        self.array[self.bins[coords]] = val
+
+    def __len__(self):
+        return len(self.array)
+
+    def copy(self):
+        """
+        Return a copy of the BinnedArray.  The .bins attribute is
+        shared with the original.
+        """
+        return type(self)(self.bins, self.array.copy())
+
+    def centres(self):
+        """
+        Return a tuple of arrays containing the bin centres for
+        each dimension.
+        """
+        return self.bins.centres()
+
+    def argmin(self):
+        """
+        Return the co-ordinates of the bin centre containing the
+        minimum value.  Same as numpy.argmin(), converting the
+        indexes to bin co-ordinates.
+        """
+        return tuple(centres[index] for centres, index in zip(self.centres(), numpy.unravel_index(self.array.argmin(), self.array.shape)))
+
+    def argmax(self):
+        """
+        Return the co-ordinates of the bin centre containing the
+        maximum value.  Same as numpy.argmax(), converting the
+        indexes to bin co-ordinates.
+        """
+        return tuple(centres[index] for centres, index in zip(self.centres(), numpy.unravel_index(self.array.argmax(), self.array.shape)))
+
+    def to_density(self):
+        """
+        Divide each bin's value by the volume of the bin.
+        """
+        self.array /= self.bins.volumes()
+
+    def to_pdf(self):
+        """
+        Convert into a probability density.
+        """
+        self.array /= self.array.sum()  # make sum = 1
+        self.to_density()    # make integral = 1
+
+    def logregularize(self, epsilon = 2**-1074):
+        """
+        Find bins <= 0, and set them to epsilon, This has the
+        effect of allowing the logarithm of the array to be
+        evaluated without error.
+        """
+        self.array[self.array <= 0] = epsilon
+        return self
+
+
+class BinnedRatios(object):
+    """
+    Like BinnedArray, but provides a numerator array and a denominator
+    array.  The incnumerator() method increments a bin in the numerator
+    by the given weight, and the incdenominator() method increments a
+    bin in the denominator by the given weight.  There are no methods
+    provided for setting or decrementing either, but the they are
+    accessible as the numerator and denominator attributes, which are
+    both BinnedArray objects.
+    """
+    def __init__(self, bins, dtype = "double"):
+        self.numerator = BinnedArray(bins, dtype = dtype)
+        self.denominator = BinnedArray(bins, dtype = dtype)
+
+    def __getitem__(self, coords):
+        return self.numerator[coords] / self.denominator[coords]
+
+    def bins(self):
+        return self.numerator.bins
+
+    def incnumerator(self, coords, weight = 1):
+        """
+        Add weight to the numerator bin at coords.
+        """
+        self.numerator[coords] += weight
+
+    def incdenominator(self, coords, weight = 1):
+        """
+        Add weight to the denominator bin at coords.
+        """
+        self.denominator[coords] += weight
+
+    def ratio(self):
+        """
+        Compute and return the array of ratios.
+        """
+        return self.numerator.array / self.denominator.array
+
+    def regularize(self):
+        """
+        Find bins in the denominator that are 0, and set them to 1.
+        Presumably the corresponding bin in the numerator is also
+        0, so this has the effect of allowing the ratio array to be
+        evaluated without error, returning zeros in those bins that
+        have had no weight added to them.
+        """
+        self.denominator.array[self.denominator.array == 0] = 1
+        return self
+
+    def logregularize(self, epsilon = 2**-1074):
+        """
+        Find bins in the denominator that are 0, and set them to 1,
+        while setting the corresponding bin in the numerator to
+        float epsilon.  This has the effect of allowing the
+        logarithm of the ratio array to be evaluated without error.
+        """
+        self.numerator.array[self.denominator.array == 0] = epsilon
+        self.denominator.array[self.denominator.array == 0] = 1
+        return self
+
+    def centres(self):
+        """
+        Return a tuple of arrays containing the bin centres for
+        each dimension.
+        """
+        return self.numerator.bins.centres()
+
+    def to_pdf(self):
+        """
+        Convert the numerator and denominator into a pdf.
+        """
+        self.numerator.to_pdf()
+

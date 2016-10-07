@@ -257,19 +257,16 @@ def compute_volume_vs_mass(found, missed, mass_bins, bin_type, dbins=None, plote
     in space.
     """
     # mean and std estimate for luminosity (in L10s)
-    volArray = rate.BinnedArray(mass_bins)
-    vol2Array = rate.BinnedArray(mass_bins)
+    volArray = bin_utils.BinnedArray(mass_bins)
+    vol2Array = bin_utils.BinnedArray(mass_bins)
 
     # found/missed stats
-    foundArray = rate.BinnedArray(mass_bins)
-    missedArray = rate.BinnedArray(mass_bins)
+    foundArray = bin_utils.BinnedArray(mass_bins)
+    missedArray = bin_utils.BinnedArray(mass_bins)
 
-    #
     # compute the mean luminosity in each mass bin
-    #
     effvmass = []
     errvmass = []
-
     if bin_type == "Mass1_Mass2": # two-d case first
         for j,mc1 in enumerate(mass_bins.centres()[0]):
             for k,mc2 in enumerate(mass_bins.centres()[1]):
@@ -287,7 +284,6 @@ def compute_volume_vs_mass(found, missed, mass_bins, bin_type, dbins=None, plote
                 vol2Array[(mc1,mc2)] = volerr
 
         return volArray, vol2Array, foundArray, missedArray, effvmass, errvmass
-
 
     for j,mc in enumerate(mass_bins.centres()[0]):
 
