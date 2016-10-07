@@ -59,7 +59,7 @@ for (int i=0; i<N; i++){
 }
 loc[0] = l;
 """
-code_flags = [WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags
+code_flags = [WEAVE_FLAGS] + omp_flags
 
 
 def abs_arg_max(self):
