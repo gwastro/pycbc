@@ -27,13 +27,13 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
                       distribution_param, distribution, limits_param,
                       max_param=None, min_param=None):
     """
-    TODO : Replace this function by Collin's formula given in Usman et al .. ? 
-    OR get that coded as a new function? 
+    Compute sensitive volume and standard error using a direct Monte Carlo integral
 
-    Compute the sensitive volume and standard error using a direct Monte Carlo
-    integral.  For the result to be useful injections should be made over a
-    range of distances D such that sensitive volume due to signals closer than
-    D_min is negligible, and efficiency at distances above D_max is negligible
+    Injections should be made over a range of distances such that sensitive
+    volume due to signals closer than D_min is negligible, and efficiency at 
+    distances above D_max is negligible
+    TODO : Replace this function by Collin's formula given in Usman et al .. ?
+    OR get that coded as a new function?
 
     Parameters
     -----------
@@ -175,7 +175,7 @@ def volume_binned_pylal(f_dist, m_dist, bins=15):
     -----------
     found_distance: numpy.ndarray
         The distances of found injections
-    missed_dsistance: numpy.ndarray
+    missed_distance: numpy.ndarray
         The distances of missed injections
         
     Returns
@@ -183,7 +183,7 @@ def volume_binned_pylal(f_dist, m_dist, bins=15):
     volume: float
         Volume estimate
     volume_error: float
-        The standared error in the volume
+        The standard error in the volume
     """
     def sims_to_bin(sim):
         return (sim, 0)
@@ -211,7 +211,7 @@ def volume_shell(f_dist, m_dist):
     volume: float
         Volume estimate
     volume_error: float
-        The standared error in the volume
+        The standard error in the volume
     """
     f_dist.sort()
     m_dist.sort()
