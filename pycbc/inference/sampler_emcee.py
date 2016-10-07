@@ -27,7 +27,7 @@ packages for parameter estimation.
 """
 
 import numpy
-from pycbc.inference.sampler_base import BaseMCMCSampler, get_slice
+from pycbc.inference.sampler_base import BaseMCMCSampler
 from pycbc.io import WaveformArray, FieldArray
 from pycbc.filter import autocorrelation
 
@@ -670,8 +670,8 @@ class EmceePTSampler(BaseMCMCSampler):
             if thin_end is None:
                 # use the number of current iterations
                 thin_end = fp.niterations
-            get_index = get_slice(fp, thin_start=thin_start, thin_end=thin_end,
-                                  thin_interval=thin_interval)
+            get_index = fp.get_slice(thin_start=thin_start, thin_end=thin_end,
+                                     thin_interval=thin_interval)
 
         # load
         arrays = {}
