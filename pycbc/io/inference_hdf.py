@@ -26,6 +26,7 @@ inference samplers generate.
 """
 
 import h5py
+import numpy
 from pycbc import pnutils
 from pycbc.waveform import parameters as wfparams
 import pycbc.inference.sampler
@@ -294,4 +295,3 @@ def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
         except KeyError:
             pass
     return slice(thin_start, thin_end, thin_interval)
-
