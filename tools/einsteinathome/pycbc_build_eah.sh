@@ -67,6 +67,7 @@ verbose_pyinstalled_python=false
 pycbc_branch=master
 pycbc_remote=ligo-cbc
 scratch_pycbc=false
+libgfortran=libgfortran.so
 
 # automatically detect a Debian 4.0 (Etch) installation.
 # if not found, use Cygwin settings.
@@ -113,6 +114,7 @@ elif test "`uname -s`" = "Darwin" ; then
     export LDFLAGS="$LDFLAGS -m64"
 #    libframe_debug_level=3
 #    lal_cppflags="-DDONT_RESOLVE_LALCACHE_PATH"
+    libgfortran=libgfortran.dylib
     shared="--enable-shared"
     build_dlls=false
     build_ssl=false
@@ -184,8 +186,8 @@ if [ ".$link_gcc_version" != "." ]; then
         done
     )
 fi
-libgfortran="`$FC -print-file-name=libgfortran.so|sed 's%/[^/]*$%%'`"
-export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran:/usr/local/lib:$LD_LIBRARY_PATH"
+libgfortran_dir="`$FC -print-file-name=$libgfortran|sed 's%/[^/]*$%%'`"
+export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran_dir:/usr/local/lib:$LD_LIBRARY_PATH"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LIBS="$LIBS -lgfortran"
 
