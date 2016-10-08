@@ -79,7 +79,7 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0" || lsb_release -a 2>/d
     shared="--enable-shared"
     build_dlls=false
     build_ssl=true
-    link_gcc=true
+    link_gcc_version=4.8.5
     build_gcc=false
     build_python=false
     build_lapack=true
@@ -116,7 +116,6 @@ elif test "`uname -s`" = "Darwin" ; then
     shared="--enable-shared"
     build_dlls=false
     build_ssl=false
-    link_gcc=false
     build_gcc=false
     build_python=false
     build_lapack=true
@@ -145,7 +144,6 @@ else
     shared="--enable-shared"
     build_dlls=true
     build_ssl=false
-    link_gcc=false
     build_gcc=false
     build_python=false
     build_lapack=true
@@ -176,6 +174,16 @@ PYTHON_PREFIX="$PYCBC"
 ENVIRONMENT="$PYCBC/environment"
 PREFIX="$ENVIRONMENT"
 PATH="$PREFIX/bin:$PYTHON_PREFIX/bin:$PATH:/opt/local/Library/Frameworks/Python.framework/Versions/2.7/bin"
+if [ ".$link_gcc_version" != "." ]; then
+    mkdir -p $PYTHON_PREFIX/bin
+    ( cd $PYTHON_PREFIX/bin &&
+        for i in gcc g++ gfortran; do
+            rm -f $i &&
+                test -x "/usr/local/bin/$i-$link_gcc_version" &&
+                ln -s "/usr/local/bin/$i-$link_gcc_version" $i;
+        done
+    )
+fi
 libgfortran="`$FC -print-file-name=libgfortran.so|sed 's%/[^/]*$%%'`"
 export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran:/usr/local/lib:$LD_LIBRARY_PATH"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
@@ -325,17 +333,6 @@ if test -r "$SOURCE/pycbc-preinst.tgz" -o -r "$SOURCE/pycbc-preinst-lalsuite.tgz
 else # if pycbc-preinst.tgz
 
     cd "$SOURCE"
-
-    if $link_gcc; then
-        mkdir -p $PYTHON_PREFIX/bin
-        ( cd $PYTHON_PREFIX/bin &&
-            for i in gcc g++ gfortran; do
-                rm -f $i &&
-                    test -x /usr/local/bin/$i-4.8.5 &&
-                    ln -s /usr/local/bin/$i-4.8.5 $i;
-            done
-        )
-    fi
 
     # OpenSSL
     if $build_ssl; then
