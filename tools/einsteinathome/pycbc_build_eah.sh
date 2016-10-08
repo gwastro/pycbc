@@ -170,7 +170,8 @@ else
 fi
 
 # compilation environment
-PYCBC="$PWD/pycbc"
+BUILDDIRNAME="pycbc"
+PYCBC="$PWD/$BUILDDIRNAME"
 SOURCE="$PWD/pycbc-sources"
 PYTHON_PREFIX="$PYCBC"
 ENVIRONMENT="$PYCBC/environment"
@@ -212,7 +213,7 @@ if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     # run it remotely
     ssh "-p$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST" bash -l `basename $0` "$@"
     # fetch the artifacts to local workspace
-    dist="pycbc/environment/dist"
+    dist="$BUILDDIRNAME/environment/dist"
     rm -rf "$dist"
     mkdir -p "$dist"
     scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.exe" "$dist"
@@ -262,8 +263,8 @@ for i in $*; do
             pycbc_remote=bema-ligo;;
         --no-cleanup) cleanup=false;;
         --verbose-python) verbose_pyinstalled_python=true;;
-        --clean) rm -rf "$HOME/.cache" "$SOURCE/pycbc-preinst.tgz" "$SOURCE/pycbc-preinst-lalsuite.tgz" "$PYCBC";;
-        --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/pycbc-preinst-lalsuite.tgz";;
+        --clean) rm -rf "$HOME/.cache" "$SOURCE/$BUILDDIRNAME-preinst.tgz" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$PYCBC";;
+        --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz";;
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
         --clean-pycbc) scratch_pycbc=true;;
         --clean-sundays)
@@ -276,7 +277,7 @@ for i in $*; do
                 now=`date +%s`
                 d2_ago=`expr $now - 172800` # two days ago
                 if [  $last_build -le $d2_ago ]; then # last 'clean-sundays' build was two days ago or older
-                    rm -rf "$HOME/.cache" "$SOURCE/pycbc-preinst-lalsuite.tgz"
+                    rm -rf "$HOME/.cache" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"
                     echo $now > "$SOURCE/last_sunday_build"
                 fi
             fi ;;
@@ -310,15 +311,15 @@ wget_opts="-c --passive-ftp --no-check-certificate"
 export PIP_TRUSTED_HOST="pypi.python.org github.com"
 
 # use previously compiled scipy, lalsuite etc. if available
-if test -r "$SOURCE/pycbc-preinst.tgz" -o -r "$SOURCE/pycbc-preinst-lalsuite.tgz"; then
+if test -r "$SOURCE/$BUILDDIRNAME-preinst.tgz" -o -r "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"; then
 
-    rm -rf pycbc
-    if test -r "$SOURCE/pycbc-preinst-lalsuite.tgz"; then
-	echo -e "\\n\\n>> [`date`] using pycbc-preinst-lalsuite.tgz"
-	tar -xzf "$SOURCE/pycbc-preinst-lalsuite.tgz"
+    rm -rf "$PYCBC"
+    if test -r "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"; then
+        echo -e "\\n\\n>> [`date`] using $BUILDDIRNAME-preinst-lalsuite.tgz"
+        tar -xzf "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"
     else
-	echo -e "\\n\\n>> [`date`] using pycbc-preinst.tgz"
-	tar -xzf "$SOURCE/pycbc-preinst.tgz"
+        echo -e "\\n\\n>> [`date`] using $BUILDDIRNAME-preinst.tgz"
+        tar -xzf "$SOURCE/$BUILDDIRNAME-preinst.tgz"
     fi
     # set up virtual environment
     unset PYTHONPATH
@@ -327,12 +328,12 @@ if test -r "$SOURCE/pycbc-preinst.tgz" -o -r "$SOURCE/pycbc-preinst-lalsuite.tgz
     export PYTHONPATH="$PREFIX/lib/python2.7/site-packages:$PYTHONPATH"
     cd "$SOURCE"
     if ls $PREFIX/etc/*-user-env.sh >/dev/null 2>&1; then
-	for i in $PREFIX/etc/*-user-env.sh; do
-	    source "$i"
-	done
+        for i in $PREFIX/etc/*-user-env.sh; do
+            source "$i"
+        done
     fi
 
-else # if pycbc-preinst.tgz
+else # if $BUILDDIRNAME-preinst.tgz
 
     cd "$SOURCE"
 
@@ -709,14 +710,14 @@ Libs: -L${libdir} -lhdf5' |
     fi
 
     if $build_preinst_before_lalsuite; then
-	pushd $PYCBC/..
-	tar -czf "$SOURCE/pycbc-preinst.tgz" pycbc
+        pushd $PYCBC/..
+        tar -czf "$SOURCE/$BUILDDIRNAME-preinst.tgz" "$BUILDDIRNAME"
         popd
     fi
 
-fi # if pycbc-preinst.tgz
+fi # if $BUILDDIRNAME-preinst.tgz
 
-if test -r "$SOURCE/pycbc-preinst-lalsuite.tgz"; then
+if test -r "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"; then
     :
 else
 
@@ -776,16 +777,16 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
     make
     make install
     for i in $PREFIX/etc/*-user-env.sh; do
-	source "$i"
+        source "$i"
     done
     cd ..
     $cleanup && rm -rf lalsuite-build
 
     pushd $PYCBC/..
-    tar -czf "$SOURCE/pycbc-preinst-lalsuite.tgz" pycbc
+    tar -czf "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$BUILDDIRNAME"
     popd
 
-fi # if pycbc-preinst.tgz
+fi # if $BUILDDIRNAME-preinst.tgz
 
 # PyCBC-GLUE
 if [ "$glue_from" = "pip-install" ] ; then
