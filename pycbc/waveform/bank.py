@@ -38,8 +38,6 @@ import pycbc.pnutils
 import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import zeros
-from pycbc.filter import match
-from pycbc.types import FrequencySeries
 import pycbc.io
 
 def sigma_cached(self, psd):
@@ -418,7 +416,6 @@ class TemplateBank(object):
             f_lower=low_freq_cutoff, f_final=max_freq, delta_f=delta_f,
             distance=1./DYN_RANGE_FAC, delta_t=1./(2.*max_freq))
         return htilde
-        
 
     def template_thinning(self, injcutter, injections):
         if not injcutter.enabled or injcutter.chirp_time_threshold is None:

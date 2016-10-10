@@ -28,6 +28,7 @@ import numpy as np
 from pycbc import DYN_RANGE_FAC
 from pycbc.filter import match
 from pycbc.pnutils import nearest_larger_binary_number
+from pycbc.pnutils import mass1_mass2_to_tau0_tau3
 from pycbc.types import FrequencySeries, zeros
 
 _injcutter_group_help = ("Options that, if injections are present in this "
@@ -244,19 +245,18 @@ class InjCutter(object):
         if self.chirp_time_threshold is not None:
             m1 = bank.table[t_num]['mass1']
             m2 = bank.table[t_num]['mass2']
-            tau0_temp, tau3_temp = \
-                pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, self.f_lower)
+            tau0_temp, tau3_temp = mass1_mass2_to_tau0_tau3(m1, m2,
+                                                            self.f_lower)
             for inj_idx, inj in enumerate(gwstrain.injections.table):
                 end_time = inj.geocent_end_time + \
                     1E-9 * inj.geocent_end_time_ns
                 if end_time > seg_end_time or end_time < seg_start_time:
                     continue
                 tau0_inj, tau3_inj = \
-                    pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1,
-                                                           inj.mass2,
-                                                           self.f_lower)
+                    mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
+                                             self.f_lower)
                 tau_diff = abs(tau0_temp - tau0_inj)
-                if tau_diff <= ic_params['chirp_time_threshold']:
+                if tau_diff <= self.chirp_time_threshold:
                     break
             else:
                 # Get's here if all injections are outside chirp-time window
@@ -290,7 +290,7 @@ class InjCutter(object):
                     wav_len = 1 + int(self.coarsematch_fmax / \
                                       self.coarsematch_deltaf)
                     self._short_template_mem = zeros(wav_len,
-                                                     dtype=numpy.complex64)
+                                                     dtype=np.complex64)
                 # Generate short waveform
                 htilde = bank.generate_custom_size_waveform(
                     t_num, self.coarsematch_fmax, self.coarsematch_deltaf,
