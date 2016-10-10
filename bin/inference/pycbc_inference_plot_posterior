@@ -59,7 +59,11 @@ scatter_group.add_argument('--z-arg', type=str, default=None,
                     choices=['loglr', 'snr', 'logplr', 'logposterior',
                              'prior'],
                     help='What to color the scatter points by. If not set, '
-                         'all points will be the same color.')
+                         'all points will be the same color. Choices are: '
+                         'loglr: the log likelihood ratio; snr: SNR; '
+                         'logplr: loglr + log of the prior; '
+                         'logposterior: log likelihood function + log prior; '
+                         'prior: the log of the prior.')
 scatter_group.add_argument('--no-colorbar', action='store_true', default=False,
                     help='Do not show the color bar for the scatter plot. ')
 scatter_group.add_argument("--vmin", type=float,
