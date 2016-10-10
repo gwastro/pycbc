@@ -851,9 +851,8 @@ class UniformSky(UniformSolidAngle):
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
-        
 
-class Gaussian(Uniform):
+class Gaussian(_BoundedDist):
     """
     A gaussian distribution on the given parameters. The parameters are
     independent of each other. Instances of this class can be called like
@@ -874,7 +873,7 @@ class Gaussian(Uniform):
 
     Example
     -------
-    >> dist = Gaussian(mass1=(1.3,1.5,1.4,0.01)
+    >> dist = Gaussian(mass1=(1.3,1.5,1.4,0.01))
     """
     name = "gaussian"
 
@@ -900,14 +899,6 @@ class Gaussian(Uniform):
 
         # save variable parameters
         self._params = sorted(params.keys())
-
-    @property
-    def params(self):
-        return self._params
-
-    @property
-    def bounds(self):
-        return self._bounds
 
     @property
     def mean(self):
@@ -1036,7 +1027,7 @@ class Gaussian(Uniform):
         # get input kwargs
         params = {}
         for param in variable_args:
-            params[param] = (None, None, None, None)
+            params[param] = [None, None, None, None]
             params[param][0] = float(cp.get_opt_tag(section,
                                                     "min-%s" % param, tag))
             params[param][1] = float(cp.get_opt_tag(section,
