@@ -150,7 +150,7 @@ scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 pycbc.opt.insert_optimization_option_group(parser)
 pycbc.weave.insert_weave_option_group(parser)
-pycbc.injcuter.insert_injcutter_option_group(parser)
+pycbc.injcutter.insert_injcutter_option_group(parser)
 
 opt = parser.parse_args()
 
@@ -165,7 +165,7 @@ pycbc.weave.verify_weave_options(opt, parser)
 
 pycbc.init_logging(opt.verbose)
 
-injcutter = pycbc.injcutter.from_cli(opt)
+injcutter = pycbc.injcutter.InjCutter.from_cli(opt)
 ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
                            injcutter=injcutter)
@@ -294,10 +294,6 @@ with ctx:
             if not injcutter.template_segment_checker(bank, t_num, gwstrain,
                                                       stilde, 
                                                       opt.gps_start_time):
-                continue
-            filter_check = bank.template_segment_checker(t_num,
-                gwstrain, stilde, opt.gps_start_time)
-            if filter_check is False:
                 continue
             if not tmplt_generated:
                 template = bank[t_num]

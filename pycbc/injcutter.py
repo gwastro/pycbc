@@ -24,9 +24,11 @@ testing the "similarity" of templates and injections.
  * A coarse match threshold rejects templates if a coarse overlap is small
 """
 
+import numpy as np
 from pycbc import DYN_RANGE_FAC
+from pycbc.filter import match
 from pycbc.pnutils import nearest_larger_binary_number
-from pycbc.types import zeros
+from pycbc.types import FrequencySeries, zeros
 
 _injcutter_group_help = ("Options that, if injections are present in this "
                          "run, are responsible for performing pre-checks "
@@ -110,7 +112,7 @@ class InjCutter(object):
     """
     def __init__(self, injection_file, chirp_time_threshold,
                  match_threshold, f_lower, coarsematch_deltaf=1.,
-                 seg_buffer=10):
+                 coarsematch_fmax=256, seg_buffer=10):
         """ Initialise injcutter instance.
         """
         # Determine if injcutter is to be enabled
@@ -135,9 +137,10 @@ class InjCutter(object):
         self.short_injections = {}
         self._short_template_mem = None
         self._short_psd_storage = {}
+        self._short_template_id = None
 
     @classmethod
-    def from_cli(self, opt):
+    def from_cli(cls, opt):
         """
         Initialize an InjCutter instance from command-line options.
         """
@@ -157,6 +160,7 @@ class InjCutter(object):
             f_lower = opt.low_frequency_cutoff
         return cls(injection_file, chirp_time_threshold, match_threshold,
                    f_lower, coarsematch_deltaf=coarsematch_deltaf,
+                   coarsematch_fmax=coarsematch_fmax,
                    seg_buffer=seg_buffer)
 
     def generate_short_inj_from_inj(self, inj_waveform, simulation_id):
@@ -174,7 +178,7 @@ class InjCutter(object):
             err_msg += "duplicate simulation_ids. This is not allowed."
             raise ValueError(err_msg)
         curr_length = len(inj_waveform)
-        new_length = int(nearest_larger_binary_number(inj_length))
+        new_length = int(nearest_larger_binary_number(curr_length))
         # Don't want length less than 1/delta_f
         while new_length * inj_waveform.delta_t < 1./self.coarsematch_deltaf:
             new_length = new_length * 2
@@ -183,7 +187,7 @@ class InjCutter(object):
         # Dynamic range is important here!
         inj_tilde_np = inj_tilde.numpy() * DYN_RANGE_FAC
         delta_f = inj_tilde.get_delta_f()
-        new_freq_len = int(self.coarsematch_deltaf / delta_f + 1)
+        new_freq_len = int(self.coarsematch_fmax / delta_f + 1)
         # This shouldn't be a problem if injections are generated at
         # 16384 Hz ... It is only a problem of injection sample rate
         # gives a lower Nyquist than the trunc_f_max. If this error is
@@ -264,8 +268,7 @@ class InjCutter(object):
                 # Set the memory for the short templates
                 wav_len = 1 + int(self.coarsematch_fmax / \
                                   self.coarsematch_deltaf)
-                self._short_template_mem = zeros(wav_len,
-                                                 dtype=numpy.complex64)
+                self._short_template_mem = zeros(wav_len, dtype=np.complex64)
 
             # Set the current short PSD to red_psd
             try:
