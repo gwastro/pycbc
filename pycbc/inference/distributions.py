@@ -851,7 +851,6 @@ class UniformSky(UniformSolidAngle):
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
-        
 
 class Gaussian(_BoundedDist):
     """
