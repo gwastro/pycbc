@@ -216,7 +216,7 @@ class BaseCBCGenerator(BaseGenerator):
         super(BaseCBCGenerator, self).__init__(generator,
             variable_args=variable_args, **frozen_params)
         # decorate the generator function with a list of functions that convert
-	# parameters to those used by the waveform generation interface
+        # parameters to those used by the waveform generation interface
         all_args = set(self.frozen_params.keys() + list(self.variable_args))
         # compare a set of all args of the generator to the input parameters
         # of the functions that do conversions and adds to list of pregenerate
