@@ -95,20 +95,20 @@ def generator_mchirp_q_to_mass1_mass2(generator):
 
 
 @add_attrs(input_params=[parameters.spin1_a, parameters.spin2_a,
-	                 parameters.spin1_azimuthal,
-			 parameters.spin2_azimuthal,
-			 parameters.spin1_polar, parameters.spin2_polar],
+                         parameters.spin1_azimuthal,
+                         parameters.spin2_azimuthal,
+                         parameters.spin1_polar, parameters.spin2_polar],
            output_params=[parameters.spin1x, parameters.spin2x,
-		          parameters.spin1y, parameters.spin2y,
-			  parameters.spin1z, parameters.spin2z])
+                          parameters.spin1y, parameters.spin2y,
+                          parameters.spin1z, parameters.spin2z])
 def generator_spin_spherical_to_spin_cartesian(generator):
     """Converts spherical spin magnitude and angles in `current_params`,
     to cartesian component spins.
     """
     x, y, z = coordinates.spherical_to_cartesian(
-		                   generator.current_params["spin1_a"] \
-			           * generator.current_params["mass1"]**2,
-		                   generator.current_params["spin1_azimuthal"],
+                                   generator.current_params["spin1_a"] \
+                                   * generator.current_params["mass1"]**2,
+                                   generator.current_params["spin1_azimuthal"],
                                    generator.current_params["spin1_polar"])
     generator.current_params["spin1x"] = x
     generator.current_params["spin1y"] = y
