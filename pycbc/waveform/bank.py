@@ -310,12 +310,6 @@ class TemplateBank(object):
         self.extra_args = kwds
         self.ensure_hash()
 
-        # Variables for the injection-segment filter checker
-        self._tsc_short_template_id = None
-        self._tsc_short_template_mem = None
-        self._tsc_short_template_wav = None
-        self._tsc_short_psd_storage = {}
-
     @property
     def parameters(self):
         return self.table.fieldnames
