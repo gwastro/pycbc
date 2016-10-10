@@ -106,16 +106,16 @@ def generator_spin_spherical_to_spin_cartesian(generator):
     to cartesian component spins.
     """
     x, y, z = coordinates.spherical_to_cartesian(
-                                   generator.current_params["spin1_a"]
-                                   * generator.current_params["mass1"]**2,
+                                   generator.current_params["spin1_a"] *
+                                   generator.current_params["mass1"]**2,
                                    generator.current_params["spin1_azimuthal"],
                                    generator.current_params["spin1_polar"])
     generator.current_params["spin1x"] = x
     generator.current_params["spin1y"] = y
     generator.current_params["spin1z"] = z
     x, y, z = coordinates.spherical_to_cartesian(
-                                   generator.current_params["spin2_a"]
-                                   * generator.current_params["mass2"]**2,
+                                   generator.current_params["spin2_a"] *
+                                   generator.current_params["mass2"]**2,
                                    generator.current_params["spin2_azimuthal"],
                                    generator.current_params["spin2_polar"])
     generator.current_params["spin2x"] = x
