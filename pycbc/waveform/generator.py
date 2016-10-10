@@ -177,12 +177,11 @@ class BaseGenerator(object):
         self.current_params.update(kwargs)
         return self._generate_from_current()
 
-
     def _add_pregenerate(self, func):
-	""" Adds a function that will be called by the generator function
-	before waveform generation.
-	"""
-	self._pregenerate_functions.append(func)
+        """ Adds a function that will be called by the generator function
+        before waveform generation.
+        """
+        self._pregenerate_functions.append(func)
 
 
     def _postgenerate(self, res):
@@ -196,7 +195,7 @@ class BaseGenerator(object):
         the waveform generator function.
         """
         def dostuff(self):
-	    for func in self._pregenerate_functions:
+            for func in self._pregenerate_functions:
                 func(self)
             res = generate_func(self)
             return self._postgenerate(res)
@@ -218,10 +217,10 @@ class BaseCBCGenerator(BaseGenerator):
             variable_args=variable_args, **frozen_params)
         # decorate the generator function with a list of functions that convert
 	# parameters to those used by the waveform generation interface
-	all_args = set(self.frozen_params.keys() + list(self.variable_args))
+        all_args = set(self.frozen_params.keys() + list(self.variable_args))
         # compare a set of all args of the generator to the input parameters
-	# of the functions that do conversions and adds to list of pregenerate
-	# functions if it is needed
+        # of the functions that do conversions and adds to list of pregenerate
+        # functions if it is needed
         for func in generator_functions:
             if set(func.input_params).issubset(all_args):
                 self._add_pregenerate(func)
