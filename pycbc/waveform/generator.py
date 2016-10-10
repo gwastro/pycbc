@@ -93,11 +93,40 @@ def generator_mchirp_q_to_mass1_mass2(generator):
     generator.current_params['mass2'] = m2
 
 
+@add_attrs(input_params=[parmeters.spin1_a, parmeters.spin2_a,
+	                 parmeters.spin1_azimuthal, parmeters.spin2_azimuthal,
+			 parmeters.spin1_polar, parmeters.spin2_polar],
+           output_params=[parameters.spin1x, parameters.spin2x,
+		          parameters.spin1y, parameters.spin2y,
+			  parameters.spin1z, parameters.spin2z])
+def generator_spin_spherical_to_spin_cartesian(generator):
+    """Converts spherical spin magnitude and angles in `current_params`,
+    to cartesian component spins.
+    """
+    x, y, z = coordinates.spherical_to_cartesian(
+		                   generator.current_params["spin1_a"] \
+			           * generator.current_params["mass1"]**2,
+		                   generator.current_params["spin1_azimuthal"],
+                                   generator.current_params["spin1_polar"])
+    self.current_params["spin1x"] = x
+    self.current_params["spin1y"] = y
+    self.current_params["spin1z"] = z
+    x, y, z = coordinates.spherical_to_cartesian(
+                                   generator.current_params["spin2_a"] \
+                                   * generator.current_params["mass2"]**2,
+                                   generator.current_params["spin2_azimuthal"],
+                                   generator.current_params["spin2_polar"])
+    self.current_params["spin2x"] = x
+    self.current_params["spin2y"] = y
+    self.current_params["spin2z"] = z
+
+
 # a list of all generator functions
 generator_functions = [
     generator_mchirp_eta_to_mass1_mass2,
     generator_mtotal_eta_to_mass1_mass2,
     generator_mchirp_q_to_mass1_mass2,
+    generator_spin_spherical_to_spin_cartesian,
 ]
 
 #
