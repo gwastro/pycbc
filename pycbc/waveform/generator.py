@@ -28,6 +28,7 @@ This modules provides classes for generating waveforms.
 import functools
 import waveform
 import ringdown
+from pycbc import coordinates
 from pycbc.waveform import parameters
 from pycbc.waveform.utils import apply_fd_time_shift
 from pycbc.detector import Detector
@@ -93,6 +94,43 @@ def generator_mchirp_q_to_mass1_mass2(generator):
     generator.current_params['mass2'] = m2
 
 
+@add_attrs(input_params=[parameters.spin1_a, parameters.spin2_a,
+                         parameters.spin1_azimuthal,
+                         parameters.spin2_azimuthal,
+                         parameters.spin1_polar, parameters.spin2_polar],
+           output_params=[parameters.spin1x, parameters.spin2x,
+                          parameters.spin1y, parameters.spin2y,
+                          parameters.spin1z, parameters.spin2z])
+def generator_spin_spherical_to_spin_cartesian(generator):
+    """Converts spherical spin magnitude and angles in `current_params`,
+    to cartesian component spins.
+    """
+    x, y, z = coordinates.spherical_to_cartesian(
+                                   generator.current_params["spin1_a"] *
+                                   generator.current_params["mass1"]**2,
+                                   generator.current_params["spin1_azimuthal"],
+                                   generator.current_params["spin1_polar"])
+    generator.current_params["spin1x"] = x
+    generator.current_params["spin1y"] = y
+    generator.current_params["spin1z"] = z
+    x, y, z = coordinates.spherical_to_cartesian(
+                                   generator.current_params["spin2_a"] *
+                                   generator.current_params["mass2"]**2,
+                                   generator.current_params["spin2_azimuthal"],
+                                   generator.current_params["spin2_polar"])
+    generator.current_params["spin2x"] = x
+    generator.current_params["spin2y"] = y
+    generator.current_params["spin2z"] = z
+
+
+# a list of all generator functions
+generator_functions = [
+    generator_mchirp_eta_to_mass1_mass2,
+    generator_mtotal_eta_to_mass1_mass2,
+    generator_mchirp_q_to_mass1_mass2,
+    generator_spin_spherical_to_spin_cartesian,
+]
+
 #
 #   Generator for CBC waveforms
 #
@@ -147,6 +185,8 @@ class BaseGenerator(object):
         # we'll keep a dictionary of the current parameters for fast
         # generation
         self.current_params = frozen_params.copy()
+        # keep a list of functions to call before waveform generation
+        self._pregenerate_functions = []
 
     @property
     def static_args(self):
@@ -168,11 +208,12 @@ class BaseGenerator(object):
         self.current_params.update(kwargs)
         return self._generate_from_current()
 
-    def _pregenerate(self, option):
-        """Allows the current parameters to be manipulated before calling
-        the waveform generator.
+    def _add_pregenerate(self, func):
+        """ Adds a function that will be called by the generator function
+        before waveform generation.
         """
-        pass
+        self._pregenerate_functions.append(func)
+
 
     def _postgenerate(self, res):
         """Allows the waveform returned by the generator function to be
@@ -185,7 +226,8 @@ class BaseGenerator(object):
         the waveform generator function.
         """
         def dostuff(self):
-            self._pregenerate(self)
+            for func in self._pregenerate_functions:
+                func(self)
             res = generate_func(self)
             return self._postgenerate(res)
         return dostuff
@@ -204,20 +246,15 @@ class BaseCBCGenerator(BaseGenerator):
     def __init__(self, generator, variable_args=(), **frozen_params):
         super(BaseCBCGenerator, self).__init__(generator,
             variable_args=variable_args, **frozen_params)
-        # if m1 and m2 are not parameters, decorate the generator function
-        # to convert the used mass parameters to m1, m2
-        all_args = self.frozen_params.keys() + list(self.variable_args)
-        if 'mass1' not in all_args or 'mass2' not in all_args:
-            # set the decorator to the appropriate converter
-            if 'mchirp' in all_args and 'eta' in all_args:
-                self._pregenerate = generator_mchirp_eta_to_mass1_mass2
-            elif 'mtotal' in all_args and 'eta' in all_args:
-                self._pregenerate = generator_mtotal_eta_to_mass1_mass2
-            elif 'mchirp' in all_args and 'q' in all_args:
-                self._pregenerate = generator_mchirp_q_to_mass1_mass2
-            else:
-                raise ValueError("if not specifying mass1, mass2, must either use "
-                    "(mchirp, eta) or (mtotal, eta)")
+        # decorate the generator function with a list of functions that convert
+        # parameters to those used by the waveform generation interface
+        all_args = set(self.frozen_params.keys() + list(self.variable_args))
+        # compare a set of all args of the generator to the input parameters
+        # of the functions that do conversions and adds to list of pregenerate
+        # functions if it is needed
+        for func in generator_functions:
+            if set(func.input_params).issubset(all_args):
+                self._add_pregenerate(func)
 
 
 class FDomainCBCGenerator(BaseCBCGenerator):
