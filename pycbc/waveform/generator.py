@@ -154,6 +154,7 @@ class BaseGenerator(object):
         # we'll keep a dictionary of the current parameters for fast
         # generation
         self.current_params = frozen_params.copy()
+        # keep a list of functions to call before waveform generation
         self._pregenerate_functions = []
 
     @property
@@ -178,7 +179,8 @@ class BaseGenerator(object):
 
 
     def _add_pregenerate(self, func):
-	""" Adds a function that will be called with _pregenerate.
+	""" Adds a function that will be called by the generator function
+	before waveform generation.
 	"""
 	self._pregenerate_functions.append(func)
 
