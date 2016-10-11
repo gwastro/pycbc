@@ -259,39 +259,39 @@ class InferenceFile(h5py.File):
             psd_dim.attrs["delta_f"] = psds[key].delta_f
 
 
-def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
-    """Formats a slice using the given arguments that can be used to retrieve
-    a thinned array from an InferenceFile.
+    def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
+        """Formats a slice using the given arguments that can be used to retrieve
+        a thinned array from an InferenceFile.
 
-    Parameters
-    ----------
-    thin_start : {None, int}
-        The starting index to use. If None, will try to retrieve the
-        `burn_in_iterations` from the given file. If no `burn_in_iterations`
-        exists, will default to the start of the array.
-    thin_interval : {None, int}
-        The interval to use. If None, will try to retrieve the acl from the
-        given file. If no acl attribute exists, will default to 1.
-    thin_end : {None, int}
-        The end index to use. If None, will retrieve to the end of the array.
+        Parameters
+        ----------
+        thin_start : {None, int}
+            The starting index to use. If None, will try to retrieve the
+            `burn_in_iterations` from the given file. If no `burn_in_iterations`
+            exists, will default to the start of the array.
+        thin_interval : {None, int}
+            The interval to use. If None, will try to retrieve the acl from the
+            given file. If no acl attribute exists, will default to 1.
+        thin_end : {None, int}
+            The end index to use. If None, will retrieve to the end of the array.
 
-    Returns
-    -------
-    slice :
-        The slice needed.
-    """
+        Returns
+        -------
+        slice :
+            The slice needed.
+        """
 
-    # default is to skip burn in samples
-    if thin_start is None:
-        try:
-            thin_start = self.burn_in_iterations
-        except KeyError:
-            pass
+        # default is to skip burn in samples
+        if thin_start is None:
+            try:
+                thin_start = self.burn_in_iterations
+            except KeyError:
+                pass
 
-    # default is to use stored ACL and accept every i-th sample
-    if thin_interval is None:
-        try:
-            thin_interval = int(numpy.ceil(self.acl))
-        except KeyError:
-            pass
-    return slice(thin_start, thin_end, thin_interval)
+        # default is to use stored ACL and accept every i-th sample
+        if thin_interval is None:
+            try:
+                thin_interval = int(numpy.ceil(self.acl))
+            except KeyError:
+                pass
+        return slice(thin_start, thin_end, thin_interval)
