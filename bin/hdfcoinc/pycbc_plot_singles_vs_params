@@ -105,15 +105,14 @@ if opts.z_var == 'density':
     norm = LogNorm()
     hb = ax.hexbin(x, y, norm=norm, vmin=1, **hexbin_style)
     fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
-elif opts.z_var == 'max(snr)':
-    norm = LogNorm()
-    hb = ax.hexbin(x, y, C=trigs.snr, norm=norm, reduce_C_function=max,
-                   **hexbin_style)
-    fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
-elif opts.z_var == 'max(newsnr)':
-    hb = ax.hexbin(x, y, C=trigs.newsnr, reduce_C_function=max,
-                   **hexbin_style)
-    fig.colorbar(hb)
+elif opts.z_var in ['max(snr)', 'max(newsnr)']:
+    cb_style = {}
+    z = trigs.snr if opts.z_var == 'max(snr)' else trigs.newsnr
+    if z.max() / z.min() > 10:
+        hexbin_style['norm'] = LogNorm()
+        cb_style['ticks'] = LogLocator(subs=range(10))
+    hb = ax.hexbin(x, y, C=z, reduce_C_function=max, **hexbin_style)
+    fig.colorbar(hb, **cb_style)
 
 ax.set_xlabel(opts.x_var)
 ax.set_ylabel(opts.y_var)
