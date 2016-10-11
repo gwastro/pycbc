@@ -258,7 +258,6 @@ class InferenceFile(h5py.File):
                                           data=psds[key])
             psd_dim.attrs["delta_f"] = psds[key].delta_f
 
-
     def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
         """Formats a slice using the given arguments that can be used to
         retrieve a thinned array from an InferenceFile.
