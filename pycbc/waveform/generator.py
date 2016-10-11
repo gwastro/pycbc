@@ -263,8 +263,8 @@ class BaseCBCGenerator(BaseGenerator):
         unused_args = all_args.difference(params_used) \
                               .difference(all_waveform_input_args)
         if len(unused_args):
-            raise ValueError("The following args are not being used: %s"
-                             % unused_args)
+            raise ValueError("The following args are not being used: "
+                             "{opts}".format(opts=unused_args))
 
 
 class FDomainCBCGenerator(BaseCBCGenerator):
