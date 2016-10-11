@@ -865,7 +865,7 @@ def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
 
     return h_E
 
-def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1, qm2):
+def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1=None, qm2=None):
     """Return the velocity of the hybrid MECO
 
     Parameters
@@ -878,16 +878,23 @@ def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1, qm2):
         Dimensionless spin of the primary object.
     chi2: float
         Dimensionless spin of the secondary object.
-    qm1: float
+    qm1: {None, float}, optional
         Quadrupole-monopole term of the primary object (1 for black holes).
-    qm2: float
+        If None, will be set to qm1 = 1.
+    qm2: {None, float}, optional
         Quadrupole-monopole term of the secondary object (1 for black holes).
+        If None, will be set to qm2 = 1.
 
     Returns
     -------
     v: float
         The velocity (dimensionless) of the hybrid MECO
     """
+
+    if qm1 is None:
+        qm1 = 1
+    if qm2 is None:
+        qm2 = 1
 
     # The velocity can only go from 0 to 1.
     # Set bounds at 0.1 to skip v=0 and
@@ -896,7 +903,7 @@ def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1, qm2):
     return minimize(hybridEnergy, 0.2, args=(m1, m2, chi1, chi2, qm1, qm2), 
                     bounds=[(0.1,0.9)]).x.item()
 
-def hybrid_meco_frequency(m1, m2, chi1, chi2, qm1, qm2):
+def hybrid_meco_frequency(m1, m2, chi1, chi2, qm1=None, qm2=None):
     """Return the frequency of the hybrid MECO
 
     Parameters
@@ -909,15 +916,22 @@ def hybrid_meco_frequency(m1, m2, chi1, chi2, qm1, qm2):
         Dimensionless spin of the primary object.
     chi2: float
         Dimensionless spin of the secondary object.
-    qm1: float
+    qm1: {None, float}, optional
         Quadrupole-monopole term of the primary object (1 for black holes).
-    qm2: float
+        If None, will be set to qm1 = 1.
+    qm2: {None, float}, optional
         Quadrupole-monopole term of the secondary object (1 for black holes).
+        If None, will be set to qm2 = 1.
 
     Returns
     -------
     f: float
         The frequency (in Hz) of the hybrid MECO
     """
+
+    if qm1 is None:
+        qm1 = 1
+    if qm2 is None:
+        qm2 = 1
 
     return velocity_to_frequency(hybrid_meco_velocity(m1, m2, chi1, chi2, qm1, qm2), m1 + m2)
