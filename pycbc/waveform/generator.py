@@ -252,9 +252,19 @@ class BaseCBCGenerator(BaseGenerator):
         # compare a set of all args of the generator to the input parameters
         # of the functions that do conversions and adds to list of pregenerate
         # functions if it is needed
+        params_used = set([])
         for func in generator_functions:
             if set(func.input_params).issubset(all_args):
                 self._add_pregenerate(func)
+                params_used.update(func.input_params)
+        # check that there are no unused parameters
+        all_waveform_input_args = set(parameters.td_waveform_params +
+                                      parameters.fd_waveform_params)
+        unused_args = all_args.difference(params_used) \
+                              .difference(all_waveform_input_args)
+        if len(unused_args):
+            raise ValueError("The following args are not used: %s"
+                             % unused_args)
 
 
 class FDomainCBCGenerator(BaseCBCGenerator):
