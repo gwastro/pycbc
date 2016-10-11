@@ -29,7 +29,7 @@ between quantities.
 from __future__ import division
 import lal, lalsimulation
 import numpy
-from scipy.optimize import bisect
+from scipy.optimize import bisect, minimize
 
 def nearest_larger_binary_number(input_len):
     """ Return the nearest binary number larger than input_len.
@@ -797,3 +797,127 @@ def t2_cutoff_frequency(m1, m2, chi1, chi2):
 
 t4_cutoff_velocity = meco_velocity
 t4_cutoff_frequency = meco_frequency
+
+########################## This equation comes from Miriam (Mathematica) #######
+
+# Hybrid MECO in arXiv:1602.03134
+# To obtain the MECO, find minimum in v of eq. (6)
+
+def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
+    """Return the hybrid energy [eq. (6)] whose minimum defines the hybrid MECO
+    up to 3.5PN (including the 3PN spin-spin)
+
+    Parameters
+    ----------
+    m1 : float
+        Mass of the primary object in solar masses.
+    m2 : float
+        Mass of the secondary object in solar masses.
+    chi1: float
+        Dimensionless spin of the primary object.
+    chi2: float
+        Dimensionless spin of the secondary object.
+    qm1: float
+        Quadrupole-monopole term of the primary object (1 for black holes).
+    qm2: float
+        Quadrupole-monopole term of the secondary object (1 for black holes).
+
+    Returns
+    -------
+    h_E: float
+        The hybrid energy as a function of v
+    """
+
+    pi = numpy.pi
+
+    h_E = ((1 - 2 * v**2 * (1 - chi1 * v**3)**(1./3)) / numpy.sqrt((1 - chi1 * v**3) * \
+            (1 + chi1 * v**3 - 3 * v**2 * (1 - chi1 * v**3)**(1./3)))) - 1 \
+        + (m2 * v**4 / (10368 * (m1 + m2)**6)) * \
+        ( \
+        - 9 * m1**5 * (-48 + 1368 * v**2 + 34445 * v**4 - 1230 * pi**2 * v**4 + \
+            144 * chi2 * v * (8 + 12 * v**2 + 27 * v**4) + 32 * chi1**2 * (36 * qm1 * v**2 + \
+            5 * (-2 + 57 * qm1) * v**4) - 64 * chi1 * v * (30 + 148 * v**2 + 900 * v**4 + \
+            3 * chi2 * v * (6 + 5 * v**2))) \
+        - 18 * m1**4 * m2 * (-96 + 2724 * v**2 + 68425 * v**4 - 2460 * pi**2 * v**4 + \
+            96 * chi2 * v * (32 + 50 * v**2 + 45 * v**4) + \
+            16 * chi1**2 * (162 * qm1 * v**2 + 5 * (-34 + 231 * qm1) * v**4) - \
+            144 * chi2**2 * (2 * qm2 * v**2 + 5 * (-2 + qm2) * v**4) - \
+            32 * chi1 * v * (144 + 632 * v**2 + 3234 * v**4 + chi2 * v * (72 + 65 * v**2))) \
+        + m1**3 * m2**2 * (2592 - 73440 * v**2 - 1843255 * v**4 + 66420 * pi**2 * v**4 - \
+            576 * chi2 * v * (204 + 359 * v**2 + 171 * v**4) - \
+            288 * chi1**2 * (288 * qm1 * v**2 + 5 * (-94 + 375 * qm1) * v**4) + \
+            864 * chi2**2 * (24 * qm2 * v**2 + 5 * (-22 + 15 * qm2) * v**4) + \
+            576 * chi1 * v * (276 + 1081 * v**2 + 4689 * v**4 + 4 * chi2 * v * (27 + 25 * v**2))) \
+        - 18 * m1**2 * m2**3 * (-96 + 2724 * v**2 + 68425 * v**4 - 2460 * pi**2 * v**4 + \
+            32 * chi2 * v * (216 + 448 * v**2 + 411 * v**4) - 32 * chi1 * v * (264 + \
+            72 * chi2 * v + 930 * v**2 + 65 * chi2 * v**3 + 3510 * v**4) + \
+            96 * chi1**2 * (42 * qm1 * v**2 + 85 * (-1 + 3 * qm1) * v**4) - \
+            32 * chi2**2 * (54 * qm2 * v**2 + 5 * (-43 + 42 * qm2) * v**4)) \
+        - 9 * m1 * m2**4 * (-48 + 1368 * v**2 + 34445 * v**4 - 1230 * pi**2 * v**4 + \
+            128 * chi2 * v * (57 + 142 * v**2 + 279 * v**4) + \
+            192 * chi1**2 * (18 * qm1 * v**2 + 5 * (-8 + 21 * qm1) * v**4) - \
+            32 * chi2**2 * (72 * qm2 * v**2 + 115 * (-2 + 3 * qm2) * v**4) - \
+            48 * chi1 * v * (4 * chi2 * v * (6 + 5 * v**2) + 3 * (56 + 180 * v**2 + 621 * v**4))) \
+        - 288 * m2**5 * v * (-6 * (chi1 - chi2) * (8 + 24 * v**2 + 81 * v**4) + \
+            chi1**2 * (18 * qm1 * v + 5 * (-8 + 21 * qm1) * v**3) + \
+            chi2**2 * (-18 * qm2 * v + 5 * (8 - 21 * qm2) * v**3)) \
+        )
+
+    return h_E
+
+def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1, qm2):
+    """Return the velocity of the hybrid MECO
+
+    Parameters
+    ----------
+    m1 : float
+        Mass of the primary object in solar masses.
+    m2 : float
+        Mass of the secondary object in solar masses.
+    chi1: float
+        Dimensionless spin of the primary object.
+    chi2: float
+        Dimensionless spin of the secondary object.
+    qm1: float
+        Quadrupole-monopole term of the primary object (1 for black holes).
+    qm2: float
+        Quadrupole-monopole term of the secondary object (1 for black holes).
+
+    Returns
+    -------
+    v: float
+        The velocity (dimensionless) of the hybrid MECO
+    """
+
+    # The velocity can only go from 0 to 1.
+    # Set bounds at 0.1 to skip v=0 and
+    # at 0.9 because there is a singularity at v=1, chi1=1
+
+    return minimize(hybridEnergy, 0.2, args=(m1, m2, chi1, chi2, qm1, qm2), 
+                    bounds=[(0.1,0.9)]).x.item()
+
+def hybrid_meco_frequency(m1, m2, chi1, chi2, qm1, qm2):
+    """Return the frequency of the hybrid MECO
+
+    Parameters
+    ----------
+    m1 : float
+        Mass of the primary object in solar masses.
+    m2 : float
+        Mass of the secondary object in solar masses.
+    chi1: float
+        Dimensionless spin of the primary object.
+    chi2: float
+        Dimensionless spin of the secondary object.
+    qm1: float
+        Quadrupole-monopole term of the primary object (1 for black holes).
+    qm2: float
+        Quadrupole-monopole term of the secondary object (1 for black holes).
+
+    Returns
+    -------
+    f: float
+        The frequency (in Hz) of the hybrid MECO
+    """
+
+    return velocity_to_frequency(hybrid_meco_velocity(m1, m2, chi1, chi2, qm1, qm2), m1 + m2)
