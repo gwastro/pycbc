@@ -517,6 +517,11 @@ class SingleDetTriggers(object):
                                 self.spin1z, self.spin2z)
 
     @property
+    def f_seobnrv4_peak(self):
+        return pnutils.get_freq('fSEOBNRv4Peak', self.mass1, self.mass2,
+                                self.spin1z, self.spin2z)
+
+    @property
     def end_time(self):
         return np.array(self.trigs['end_time'])[self.mask]
 

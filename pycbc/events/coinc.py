@@ -70,6 +70,10 @@ def background_bin_from_string(background_bins, data):
         elif bin_type == 'SEOBNRv2Peak':
             vals = pycbc.pnutils.get_freq('fSEOBNRv2Peak',
                   data['mass1'], data['mass2'], data['spin1z'], data['spin2z'])
+        elif bin_type == 'SEOBNRv4Peak':
+            vals = pycbc.pnutils.get_freq('fSEOBNRv4Peak', data['mass1'],
+                                          data['mass2'], data['spin1z'],
+                                          data['spin2z'])
         elif bin_type == 'duration':
             # pnutils vectorized function shadowing pycbc.waveform
             vals = pycbc.pnutils.get_seobnrrom_duration(data['mass1'],
