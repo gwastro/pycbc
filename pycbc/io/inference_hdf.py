@@ -260,20 +260,22 @@ class InferenceFile(h5py.File):
 
 
     def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
-        """Formats a slice using the given arguments that can be used to retrieve
-        a thinned array from an InferenceFile.
+        """Formats a slice using the given arguments that can be used to
+        retrieve a thinned array from an InferenceFile.
 
         Parameters
         ----------
         thin_start : {None, int}
             The starting index to use. If None, will try to retrieve the
-            `burn_in_iterations` from the given file. If no `burn_in_iterations`
-            exists, will default to the start of the array.
+            `burn_in_iterations` from the given file. If no
+            `burn_in_iterations` exists, will default to the start of the
+            array.
         thin_interval : {None, int}
             The interval to use. If None, will try to retrieve the acl from the
             given file. If no acl attribute exists, will default to 1.
         thin_end : {None, int}
-            The end index to use. If None, will retrieve to the end of the array.
+            The end index to use. If None, will retrieve to the end of the
+            array.
 
         Returns
         -------
