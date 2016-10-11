@@ -101,9 +101,9 @@ for ii in range(num_files):
     elif args.output_prefix:
         outname = h5py.File(args.output_prefix + str(ii) + '.hdf', 'w')
     else:
-        errMsg = "Cannot resolve the process of assigning names to
+        errMsg = """Cannot resolve the process of assigning names to
                 output files. output-filenames or an output-prefix
-                should be taken as input."
+                should be taken as input."""
 
     # Copy the contents of the keys for the templates in the ii'th
     # output template bank from the corressponding templates in the
