@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2016  Soumi De
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+The code reads in a compressed template bank and splits it up into
+smaller banks where the number of smaller banks is a user input
+"""
+
+import argparse
+import h5py
+import logging
+import pycbc, pycbc.version
+__author__  = "Soumi De <soumi.de@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_hdf5_splitbank"
+
+
+parser = argparse.ArgumentParser(description=__doc__[1:])
+parser.add_argument("--bank-file", type=str,
+                    help="Bank hdf file to load.")
+parser.add_argument('--templates-per-bank',
+                    help='number of templates in the output banks', type=int)
+parser.add_argument("--number-of-banks", type=int,
+                    help="Number of banks")
+parser.add_argument("--output-filenames", nargs='*', default=None,
+                    action="store",
+                    help="""Directly specify the names of the output
+                    files. The number of files specified here will
+                    dictate how to split the bank. It will be split
+                    equally between all specified files.""")
+parser.add_argument("--output-prefix", default=None,
+                    help="""Prefix to add to the output template bank names,
+                    for example 'sub-bank'. The output file names would
+                    become args.output_prefix#.hdf""")
+parser.add_argument("--verbose", action="store_true", default=False)
+
+
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+logging.info("loading bank")
+
+bank = h5py.File(args.bank_file,'r')
+
+if args.output_filenames and args.output_prefix:
+    errMsg="""Either supply specific filenames for all output files via
+    args.output_filenames or supply a common prefix for all output files
+    via args.output_prefix. Cannot supply both"""
+    parser.error(errMsg)
+
+# If an array of filenames
+if args.output_filenames:
+    args.number_of_banks = len(args.output_filenames)
+
+# Split the templates in the bank taken as input into the smaller banks
+
+# If the number of output banks is taken as input calculate the number
+# of templates to be stored per bank
+if args.number_of_banks:
+    num_files = args.number_of_banks
+    num_per_file = int((len(bank['mass1'][:]))/num_files)
+
+# If the number of templates per bank is taken as input calculate the
+# number of output banks
+elif args.templates_per_bank:
+    num_per_file = args.templates_per_bank
+    num_files = int((len(bank['mass1'][:])) / num_per_file)
+
+
+for ii in range(num_files):
+    start_idx = ii * num_per_file
+    # The output banks are assigned a fixed length equal to the number
+    # of templates per bank requested by the user or calculated earlier
+    # in the code except for the last bank in which the remaining
+    # templates, if any, are put.
+    if ( ii == (num_files-1)):
+        end_idx = len(bank['mass1'][:])
+    else:
+        end_idx = (ii + 1) * num_per_file
+
+    # Create the h5py output file to store the ii'th smaller bank
+    if args.output_filenames:
+        outname = h5py.File(output_filenames[ii], 'w')
+    elif args.output_prefix:
+        outname = h5py.File(args.output_prefix + str(ii) + '.hdf', 'w')
+    else:
+        errMsg = """Cannot resolve the process of assigning names to
+                output files. output-filenames or an output-prefix
+                should be taken as input."""
+
+    # Copy the contents of the keys for the templates in the ii'th
+    # output template bank from the corressponding templates in the
+    # input template bank
+    for keys in bank.keys():
+        if ( keys == 'compressed_waveforms' ):
+            hashes = bank['template_hash'][start_idx:end_idx]
+            for hsh in hashes:
+                if not 'compressed_waveforms' in outname:
+                    outname.create_group('compressed_waveforms')
+                bank.copy('compressed_waveforms/' + str(hsh), outname['compressed_waveforms'])
+        else :
+            outname[keys] = bank[keys][start_idx:end_idx]
+
+    outname.close()
+
