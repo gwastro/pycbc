@@ -458,7 +458,30 @@ class TemplateBank(object):
             indices_combined = np.concatenate(indices)
 
         indices_unique= np.unique(indices_combined)
-        self.table = self.table[indices_unique]
+        self.table = self.table[indices_unique]   
+
+
+    def ensure_standard_filter_columns(self, low_frequency_cutoff=None):
+        """ Initialize FilterBank common fields
+        
+        Parameters
+        ---------
+        low_frequency_cutoff: {float, None}, Optional
+            A low frequency cutoff which overrides any given within the
+            template bank file.
+        """
+        
+        # Make sure we have a template duration field
+        if not hasattr(self.table, 'template_duration'):
+            self.table = self.table.add_fields(numpy.zeros(len(self.table),
+                                     dtype=numpy.float32), 'template_duration') 
+
+        # Make sure we have a f_lower field
+        if low_frequency_cutoff is not None:
+            if not hasattr(self.table, 'f_lower'):
+                vec = numpy.zeros(len(self.table), dtype=numpy.float32)
+                self.table = self.table.add_fields(vec, 'f_lower')
+            self.table['f_lower'][:] = low_frequency_cutoff        
 
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, sample_rate, minimum_buffer,
@@ -468,7 +491,6 @@ class LiveFilterBank(TemplateBank):
                        **kwds):
 
         self.increment = increment
-        self.f_lower = low_frequency_cutoff
         self.filename = filename
         self.sample_rate = sample_rate
         self.minimum_buffer = minimum_buffer
@@ -476,21 +498,8 @@ class LiveFilterBank(TemplateBank):
         super(LiveFilterBank, self).__init__(filename, approximant=approximant,
                 parameters=parameters, load_compressed=load_compressed,
                 load_compressed_now=load_compressed_now, **kwds)
-
-        if not hasattr(self.table, 'template_duration'):
-            self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                               dtype=numpy.float32),
-                                               'template_duration')
-
-        if low_frequency_cutoff is not None:
-            if not hasattr(self.table, 'f_lower'):
-                self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                    dtype=numpy.float32), 'f_lower')
-            self.table['f_lower'][:] = low_frequency_cutoff        
-
-        from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+        self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
         self.table.sort(order='mchirp')
-
         self.hash_lookup = {}
         for i, p in enumerate(self.table):
             hash_value =  hash((p.mass1, p.mass2, p.spin1z, p.spin2z))
@@ -583,10 +592,8 @@ class LiveFilterBank(TemplateBank):
 
         htilde = htilde.astype(numpy.complex64)
         htilde.f_lower = flow
-        htilde.end_frequency = f_end
-        htilde.end_idx = int(htilde.end_frequency / htilde.delta_f)
+        htilde.end_idx = int(htilde.f_end / htilde.delta_f)
         htilde.params = self.table[index]
-        htilde.approximant = approximant
         htilde.chirp_length = template_duration
         htilde.length_in_time = ttotal
 
@@ -601,14 +608,16 @@ class LiveFilterBank(TemplateBank):
         return htilde
 
 class FilterBank(TemplateBank):
-    def __init__(self, filename, filter_length, delta_f, f_lower, dtype,
+    def __init__(self, filename, filter_length, delta_f, dtype,
                  out=None, max_template_length=None,
                  approximant=None, parameters=None,
-                 load_compressed=True, load_compressed_now=False,
+                 load_compressed=True,
+                 load_compressed_now=False,
+                 low_frequency_cutoff=None,
                  **kwds):
         self.out = out
         self.dtype = dtype
-        self.f_lower = f_lower
+        self.f_lower = low_frequency_cutoff
         self.filename = filename
         self.delta_f = delta_f
         self.N = (filter_length - 1 ) * 2
@@ -621,15 +630,7 @@ class FilterBank(TemplateBank):
             parameters=parameters, load_compressed=load_compressed,
             load_compressed_now=load_compressed_now,
             **kwds)
-        # add a template duration field if it already doesn't exist
-        if not hasattr(self.table, 'template_duration'):
-            if dtype == numpy.complex64 or dtype == numpy.float32:
-                rdtype = numpy.float32
-            else:
-                rdtype = numpy.float64
-            self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                     dtype=rdtype),
-                                     'template_duration')
+        self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
@@ -649,6 +650,8 @@ class FilterBank(TemplateBank):
                                                   self.table[index],
                                                   self.f_lower,
                                                   self.max_template_length)
+        elif self.f_lower is None:
+            f_low = self.table[index].f_lower
         else:
             f_low = self.f_lower
 
@@ -679,10 +682,8 @@ class FilterBank(TemplateBank):
 
         htilde = htilde.astype(self.dtype)
         htilde.f_lower = self.f_lower
-        htilde.end_frequency = f_end
-        htilde.end_idx = int(htilde.end_frequency / htilde.delta_f)
+        htilde.end_idx = int(f_end / htilde.delta_f)
         htilde.params = self.table[index]
-        htilde.approximant = approximant
         htilde.chirp_length = template_duration
         htilde.length_in_time = ttotal
 
@@ -691,8 +692,7 @@ class FilterBank(TemplateBank):
         htilde._sigmasq = {}
         return htilde
 
-
-def find_variable_start_frequency(approximant, parameters, f_start, max_length,
+def find_variable_start_frequency(approximant, parameters, f_start, max_length, 
                                   delta_f = 1):
     """ Find a frequency value above the starting frequency that results in a
     waveform shorter than max_length.
