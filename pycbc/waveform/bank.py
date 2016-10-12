@@ -30,14 +30,15 @@ import numpy
 import logging
 import os.path
 import h5py
-import pycbc.waveform
-import pycbc.waveform.compress
-from pycbc.types import zeros
-from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
-from pycbc import DYN_RANGE_FAC
-import pycbc.io
 from copy import copy
 import numpy as np
+from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+import pycbc.waveform
+import pycbc.pnutils
+import pycbc.waveform.compress
+from pycbc import DYN_RANGE_FAC
+from pycbc.types import zeros
+import pycbc.io
 
 def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
@@ -397,24 +398,54 @@ class TemplateBank(object):
     def __len__(self):
         return len(self.table)
 
-    def template_thinning(self, injection_parameters, threshold):
-        from pycbc.pnutils import mass1_mass2_to_tau0_tau3
+    def generate_with_delta_f_and_max_freq(self, t_num, max_freq, delta_f,
+                                           low_frequency_cutoff=None,
+                                           cached_mem=None):
+        """Generate the template with index t_num using custom length."""
+        approximant = self.approximant(t_num)
+        # Don't want to use INTERP waveforms in here
+        if approximant.endswith('_INTERP'):
+            approximant = approximant.replace('_INTERP', '')
+        # Using SPAtmplt here is bad as the stored cbrt and logv get
+        # recalculated as we change delta_f values. Fall back to TaylorF2
+        # in lalsimulation.
+        if approximant == 'SPAtmplt':
+            approximant = 'TaylorF2'
+        if cached_mem is None:
+            wav_len = int(max_freq / delta_f) + 1
+            cached_mem = zeros(wav_len, dtype=numpy.complex64)
+        htilde = pycbc.waveform.get_waveform_filter(
+            cached_mem, self.table[t_num], approximant=approximant,
+            f_lower=low_frequency_cutoff, f_final=max_freq, delta_f=delta_f,
+            distance=1./DYN_RANGE_FAC, delta_t=1./(2.*max_freq))
+        return htilde
+
+    def template_thinning(self, inj_filter_rejector):
+        """Remove templates from bank that are far from all injections."""
+        if not inj_filter_rejector.enabled or \
+                inj_filter_rejector.chirp_time_window is None:
+            # Do nothing!
+            return
+
+        injection_parameters = inj_filter_rejector.injection_params.table
+        fref = inj_filter_rejector.f_lower
+        threshold = inj_filter_rejector.chirp_time_window
         m1= self.table['mass1']
         m2= self.table['mass2']
         thinning_bank = []
-        fref = 30
-        tau0_temp, tau3_temp= pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, fref)
+        tau0_temp, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, fref)
         indices = []
             
         for inj in injection_parameters:
-            tau0_inj, tau3_inj= pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2, fref)    
+            tau0_inj, _ = \
+                pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
+                                                       fref)
             inj_indices = np.where(abs(tau0_temp - tau0_inj) <= threshold)[0]
             indices.append(inj_indices)
             indices_combined = np.concatenate(indices)
 
         indices_unique= np.unique(indices_combined)
-        restricted= self.table[indices_unique]
-        return restricted 
+        self.table = self.table[indices_unique]
 
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, f_lower, sample_rate, minimum_buffer,

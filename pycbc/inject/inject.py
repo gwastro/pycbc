@@ -23,8 +23,7 @@
 #
 # =============================================================================
 #
-"""This module provides utilities for injecting signals into data
-"""
+"""This module provides utilities for injecting signals into data"""
 
 import numpy as np
 import lal
@@ -50,7 +49,7 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 lsctables.use_in(LIGOLWContentHandler)
 
 def legacy_approximant_name(apx):
-    """ Convert the old style xml approximant name to a name
+    """Convert the old style xml approximant name to a name
     and phase_order. Alex: I hate this function. Please delet this when we
     use Collin's new tables.
     """
@@ -65,6 +64,7 @@ def legacy_approximant_name(apx):
     
 
 class InjectionSet(object):
+
     """Manages sets of injections: reads injections from LIGOLW XML files
     and injects them into time series.
 
@@ -79,6 +79,7 @@ class InjectionSet(object):
     indoc
     table
     """
+
     def __init__(self, sim_file, **kwds):
         self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
@@ -98,7 +99,7 @@ class InjectionSet(object):
         return swigrow
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
-              simulation_ids=None):
+              simulation_ids=None, inj_filter_rejector=None):
         """Add injections (as seen by a particular detector) to a time series.
 
         Parameters
@@ -115,6 +116,10 @@ class InjectionSet(object):
             no scaling. 
         simulation_ids: iterable, optional
             If given, only inject signals with the given simulation IDs.
+        inj_filter_rejector: InjFilterRejector instance; optional, default=None
+            If given send each injected waveform to the InjFilterRejector
+            instance so that it can store a reduced representation of that
+            injection if necessary.
 
         Returns
         -------
@@ -125,8 +130,7 @@ class InjectionSet(object):
         TypeError
             For invalid types of `strain`.
         """
-
-        if not strain.dtype in (float32, float64):
+        if strain.dtype not in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
 
@@ -142,8 +146,7 @@ class InjectionSet(object):
         if simulation_ids:
             injections = [inj for inj in injections \
                           if inj.simulation_id in simulation_ids]
-        l= 0
-        injection_parameters= []             
+        injection_parameters = []
         for inj in injections:
             if f_lower is None:
                 f_l = inj.f_lower
@@ -163,18 +166,23 @@ class InjectionSet(object):
             signal = self.make_strain_from_inj_object(inj, strain.delta_t,
                      detector_name, f_lower=f_l, distance_scale=distance_scale)
             if float(signal.start_time) > t1:
-               continue
+                continue
             
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
             injection_parameters.append(inj)                            
-            
+            if inj_filter_rejector is not None:
+                sid = inj.simulation_id
+                inj_filter_rejector.generate_short_inj_from_inj(signal, sid)
+
         strain.data[:] = lalstrain.data.data[:]
 
         injected = copy.copy(self)
         injected.table = lsctables.SimInspiralTable()
         injected.table += injection_parameters
+        if inj_filter_rejector is not None:
+            inj_filter_rejector.injection_params = injected
         return injected
        
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
@@ -234,11 +242,11 @@ class InjectionSet(object):
         
         
     def end_times(self):
-        """ Return the end times of all injections
-        """
+        """Return the end times of all injections"""
         return [inj.get_time_geocent() for inj in self.table]      
     
 class SGBurstInjectionSet(object):
+
     """Manages sets of sine-Gaussian burst injections: reads injections
     from LIGOLW XML files and injects them into time series.
 
@@ -298,8 +306,7 @@ class SGBurstInjectionSet(object):
         TypeError
             For invalid types of `strain`.
         """
-
-        if not strain.dtype in (float32, float64):
+        if strain.dtype not in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
 
@@ -321,7 +328,7 @@ class SGBurstInjectionSet(object):
             polarization = 0.0
             start_time = end_time - 2 * inj_length
             if end_time < t0 or start_time > t1:
-               continue
+                continue
 
             # compute the waveform time series
             hp, hc = sim.SimBurstSineGaussian(float(inj.q),
@@ -332,7 +339,7 @@ class SGBurstInjectionSet(object):
             hp._epoch += float(end_time)
             hc._epoch += float(end_time)
             if float(hp.start_time) > t1:
-               continue
+                continue
 
             # compute the detector response, taper it if requested
             # and add it to the strain
@@ -343,6 +350,7 @@ class SGBurstInjectionSet(object):
         strain.data[:] = lalstrain.data.data[:]
 
 class RingdownInjectionSet(object):
+
     """Manages a ringdown injection: reads injection from hdf file
     and injects it into time series.
 
@@ -383,7 +391,6 @@ class RingdownInjectionSet(object):
         TypeError
             For invalid types of `strain`.
         """
-
         if strain.dtype not in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
