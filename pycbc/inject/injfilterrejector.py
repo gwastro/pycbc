@@ -84,8 +84,7 @@ _injfilterer_flower_help = \
 
 
 def insert_injfilterrejector_option_group(parser):
-    """ Add options for injfilterrejector to executable.
-    """
+    """Add options for injfilterrejector to executable."""
     injfilterrejector_group = \
         parser.add_argument_group(_injfilterrejector_group_help)
     curr_arg = "--injection-filter-rejector-chirp-time-window"
@@ -109,14 +108,18 @@ def insert_injfilterrejector_option_group(parser):
 
 
 class InjFilterRejector(object):
+
+    """Class for holding parameters for using injection/template pre-filtering.
+
+    This class is responsible for identifying where a matched-filter operation
+    between templates and data is unncessary because the injections contained
+    in the data will not match well with the given template.
     """
-    Class for holding parameters for using injection/template pre-filtering.
-    """
+
     def __init__(self, injection_file, chirp_time_window,
                  match_threshold, f_lower, coarsematch_deltaf=1.,
                  coarsematch_fmax=256, seg_buffer=10):
-        """ Initialise InjFilterRejector instance.
-        """
+        """Initialise InjFilterRejector instance."""
         # Determine if InjFilterRejector is to be enabled
         if injection_file is None or injection_file == 'False' or\
                 (chirp_time_window is None and match_threshold is None):
@@ -143,9 +146,7 @@ class InjFilterRejector(object):
 
     @classmethod
     def from_cli(cls, opt):
-        """
-        Initialize an InjFilterRejector instance from command-line options.
-        """
+        """Create an InjFilterRejector instance from command-line options."""
         injection_file = opt.injection_file
         chirp_time_window = \
             opt.injection_filter_rejector_chirp_time_window
@@ -167,9 +168,7 @@ class InjFilterRejector(object):
                    seg_buffer=seg_buffer)
 
     def generate_short_inj_from_inj(self, inj_waveform, simulation_id):
-        """
-        Generate and a store a truncated representation of inj_waveform.
-        """
+        """Generate and a store a truncated representation of inj_waveform."""
         if not self.enabled:
             # Do nothing!
             return
@@ -203,7 +202,7 @@ class InjFilterRejector(object):
         self.short_injections[simulation_id] = new_inj
 
     def template_segment_checker(self, bank, t_num, segment, start_time):
-        """ Test if injections in segment are worth filtering with template.
+        """Test if injections in segment are worth filtering with template.
 
         Using the current template, current segment, and injections within that
         segment. Test if the injections and sufficiently "similar" to any of
@@ -303,7 +302,7 @@ class InjFilterRejector(object):
             for inj_idx, inj in enumerate(self.injection_params.table):
                 end_time = inj.geocent_end_time + \
                     1E-9 * inj.geocent_end_time_ns
-                if end_time > seg_end_time or end_time < seg_start_time:
+                if not(seg_start_time < end_time < seg_end_time):
                     continue
                 curr_inj = self.short_injections[inj.simulation_id]
                 o, i = match(htilde, curr_inj, psd=red_psd,

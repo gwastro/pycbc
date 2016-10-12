@@ -401,8 +401,7 @@ class TemplateBank(object):
     def generate_with_delta_f_and_max_freq(self, t_num, max_freq, delta_f,
                                            low_frequency_cutoff=None,
                                            cached_mem=None):
-        """ Generate the template with index t_num using custom length.
-        """
+        """ Generate the template with index t_num using custom length."""
         approximant = self.approximant(t_num)
         # Don't want to use INTERP waveforms in here
         if approximant.endswith('_INTERP'):
@@ -422,6 +421,7 @@ class TemplateBank(object):
         return htilde
 
     def template_thinning(self, inj_filter_rejector):
+        """ Remove templates from bank that are far from all injections."""
         if not inj_filter_rejector.enabled or \
                 inj_filter_rejector.chirp_time_window is None:
             # Do nothing!
@@ -433,12 +433,11 @@ class TemplateBank(object):
         m1= self.table['mass1']
         m2= self.table['mass2']
         thinning_bank = []
-        tau0_temp, tau3_temp = pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2,
-                                                                      fref)
+        tau0_temp, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, fref)
         indices = []
             
         for inj in injection_parameters:
-            tau0_inj, tau3_inj = \
+            tau0_inj, _ = \
                 pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
                                                        fref)
             inj_indices = np.where(abs(tau0_temp - tau0_inj) <= threshold)[0]

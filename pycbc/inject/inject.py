@@ -23,8 +23,7 @@
 #
 # =============================================================================
 #
-"""This module provides utilities for injecting signals into data
-"""
+"""This module provides utilities for injecting signals into data"""
 
 import numpy as np
 import lal
@@ -50,7 +49,7 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 lsctables.use_in(LIGOLWContentHandler)
 
 def legacy_approximant_name(apx):
-    """ Convert the old style xml approximant name to a name
+    """Convert the old style xml approximant name to a name
     and phase_order. Alex: I hate this function. Please delet this when we
     use Collin's new tables.
     """
@@ -65,6 +64,7 @@ def legacy_approximant_name(apx):
     
 
 class InjectionSet(object):
+
     """Manages sets of injections: reads injections from LIGOLW XML files
     and injects them into time series.
 
@@ -79,6 +79,7 @@ class InjectionSet(object):
     indoc
     table
     """
+
     def __init__(self, sim_file, **kwds):
         self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
@@ -129,7 +130,6 @@ class InjectionSet(object):
         TypeError
             For invalid types of `strain`.
         """
-
         if not strain.dtype in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
@@ -146,7 +146,6 @@ class InjectionSet(object):
         if simulation_ids:
             injections = [inj for inj in injections \
                           if inj.simulation_id in simulation_ids]
-        l= 0
         injection_parameters = []
         for inj in injections:
             if f_lower is None:
@@ -243,11 +242,11 @@ class InjectionSet(object):
         
         
     def end_times(self):
-        """ Return the end times of all injections
-        """
+        """Return the end times of all injections"""
         return [inj.get_time_geocent() for inj in self.table]      
     
 class SGBurstInjectionSet(object):
+
     """Manages sets of sine-Gaussian burst injections: reads injections
     from LIGOLW XML files and injects them into time series.
 
@@ -307,7 +306,6 @@ class SGBurstInjectionSet(object):
         TypeError
             For invalid types of `strain`.
         """
-
         if not strain.dtype in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
@@ -352,6 +350,7 @@ class SGBurstInjectionSet(object):
         strain.data[:] = lalstrain.data.data[:]
 
 class RingdownInjectionSet(object):
+
     """Manages a ringdown injection: reads injection from hdf file
     and injects it into time series.
 
@@ -392,7 +391,6 @@ class RingdownInjectionSet(object):
         TypeError
             For invalid types of `strain`.
         """
-
         if strain.dtype not in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))

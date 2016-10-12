@@ -335,7 +335,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
             injections = \
-                injector.apply(strain, opt.channel_name[0:2],        
+                injector.apply(strain, opt.channel_name[0:2],
                                distance_scale=opt.injection_scale_factor,
                                inj_filter_rejector=inj_filter_rejector)
 
