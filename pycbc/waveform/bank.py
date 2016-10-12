@@ -255,8 +255,10 @@ class TemplateBank(object):
 
             # inclination stored in xml alpha3 column
             names = list(self.table.dtype.names)
-            names = tuple([n if n != 'alpha3'
-                          else 'inclination' for n in names])
+            names = tuple([n if n != 'alpha3' else 'inclination' for n in names]) 
+
+            # low frequency cutoff in xml alpha6 column
+            names = tuple([n if n!= 'alpha6' else 'f_lower' for n in names])
             self.table.dtype.names = names
 
         elif ext.endswith('hdf'):
@@ -459,13 +461,14 @@ class TemplateBank(object):
         self.table = self.table[indices_unique]
 
 class LiveFilterBank(TemplateBank):
-    def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
-                 approximant=None, increment=8, parameters=None,
-                 load_compressed=True, load_compressed_now=False,
-                 **kwds):
+    def __init__(self, filename, sample_rate, minimum_buffer,
+                       approximant=None, increment=8, parameters=None,
+                       load_compressed=True, load_compressed_now=False, 
+                       low_frequency_cutoff=None,
+                       **kwds):
 
         self.increment = increment
-        self.f_lower = f_lower
+        self.f_lower = low_frequency_cutoff
         self.filename = filename
         self.sample_rate = sample_rate
         self.minimum_buffer = minimum_buffer
@@ -478,6 +481,12 @@ class LiveFilterBank(TemplateBank):
             self.table = self.table.add_fields(numpy.zeros(len(self.table),
                                                dtype=numpy.float32),
                                                'template_duration')
+
+        if low_frequency_cutoff is not None:
+            if not hasattr(self.table, 'f_lower'):
+                self.table = self.table.add_fields(numpy.zeros(len(self.table),
+                                    dtype=numpy.float32), 'f_lower')
+            self.table['f_lower'][:] = low_frequency_cutoff        
 
         from pycbc.pnutils import mass1_mass2_to_mchirp_eta
         self.table.sort(order='mchirp')
@@ -532,6 +541,7 @@ class LiveFilterBank(TemplateBank):
 
         approximant = self.approximant(index)
         f_end = self.end_frequency(index)
+        flow = self.table[index].f_lower        
 
         # Determine the length of time of the filter, rounded up to
         # nearest power of two
@@ -540,9 +550,8 @@ class LiveFilterBank(TemplateBank):
         from pycbc.waveform.waveform import props
         p = props(self.table[index])
         p.pop('approximant')
-        buff_size = pycbc.waveform.get_waveform_filter_length_in_time(
-                                    approximant, f_lower=self.f_lower,
-                                    **p)
+        buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, **p)
+        
         tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
         flen = tlen / 2 + 1
 
@@ -557,7 +566,7 @@ class LiveFilterBank(TemplateBank):
         distance = 1.0 / DYN_RANGE_FAC
         htilde = pycbc.waveform.get_waveform_filter(
             zeros(flen, dtype=numpy.complex64), self.table[index],
-            approximant=approximant, f_lower=self.f_lower, f_final=f_end,
+            approximant=approximant, f_lower=flow, f_final=f_end,
             delta_f=delta_f, delta_t=1.0/self.sample_rate, distance=distance,
             **self.extra_args)
 
@@ -573,7 +582,7 @@ class LiveFilterBank(TemplateBank):
         self.table[index].template_duration = template_duration
 
         htilde = htilde.astype(numpy.complex64)
-        htilde.f_lower = self.f_lower
+        htilde.f_lower = flow
         htilde.end_frequency = f_end
         htilde.end_idx = int(htilde.end_frequency / htilde.delta_f)
         htilde.params = self.table[index]
