@@ -130,7 +130,7 @@ class InjectionSet(object):
         TypeError
             For invalid types of `strain`.
         """
-        if not strain.dtype in (float32, float64):
+        if strain.dtype not in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
 
@@ -166,7 +166,7 @@ class InjectionSet(object):
             signal = self.make_strain_from_inj_object(inj, strain.delta_t,
                      detector_name, f_lower=f_l, distance_scale=distance_scale)
             if float(signal.start_time) > t1:
-               continue
+                continue
             
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
@@ -306,7 +306,7 @@ class SGBurstInjectionSet(object):
         TypeError
             For invalid types of `strain`.
         """
-        if not strain.dtype in (float32, float64):
+        if strain.dtype not in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
 
@@ -328,7 +328,7 @@ class SGBurstInjectionSet(object):
             polarization = 0.0
             start_time = end_time - 2 * inj_length
             if end_time < t0 or start_time > t1:
-               continue
+                continue
 
             # compute the waveform time series
             hp, hc = sim.SimBurstSineGaussian(float(inj.q),
@@ -339,7 +339,7 @@ class SGBurstInjectionSet(object):
             hp._epoch += float(end_time)
             hc._epoch += float(end_time)
             if float(hp.start_time) > t1:
-               continue
+                continue
 
             # compute the detector response, taper it if requested
             # and add it to the strain

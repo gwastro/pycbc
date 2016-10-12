@@ -401,7 +401,7 @@ class TemplateBank(object):
     def generate_with_delta_f_and_max_freq(self, t_num, max_freq, delta_f,
                                            low_frequency_cutoff=None,
                                            cached_mem=None):
-        """ Generate the template with index t_num using custom length."""
+        """Generate the template with index t_num using custom length."""
         approximant = self.approximant(t_num)
         # Don't want to use INTERP waveforms in here
         if approximant.endswith('_INTERP'):
@@ -421,7 +421,7 @@ class TemplateBank(object):
         return htilde
 
     def template_thinning(self, inj_filter_rejector):
-        """ Remove templates from bank that are far from all injections."""
+        """Remove templates from bank that are far from all injections."""
         if not inj_filter_rejector.enabled or \
                 inj_filter_rejector.chirp_time_window is None:
             # Do nothing!

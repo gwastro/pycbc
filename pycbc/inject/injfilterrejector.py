@@ -243,14 +243,13 @@ class InjFilterRejector(object):
         if self.chirp_time_window is not None:
             m1 = bank.table[t_num]['mass1']
             m2 = bank.table[t_num]['mass2']
-            tau0_temp, tau3_temp = mass1_mass2_to_tau0_tau3(m1, m2,
-                                                            self.f_lower)
-            for inj_idx, inj in enumerate(self.injection_params.table):
+            tau0_temp, _ = mass1_mass2_to_tau0_tau3(m1, m2, self.f_lower)
+            for inj in self.injection_params.table:
                 end_time = inj.geocent_end_time + \
                     1E-9 * inj.geocent_end_time_ns
                 if not(seg_start_time <= end_time <= seg_end_time):
                     continue
-                tau0_inj, tau3_inj = \
+                tau0_inj, _ = \
                     mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
                                              self.f_lower)
                 tau_diff = abs(tau0_temp - tau0_inj)
@@ -305,7 +304,7 @@ class InjFilterRejector(object):
                 if not(seg_start_time < end_time < seg_end_time):
                     continue
                 curr_inj = self.short_injections[inj.simulation_id]
-                o, i = match(htilde, curr_inj, psd=red_psd,
+                o, _ = match(htilde, curr_inj, psd=red_psd,
                              low_frequency_cutoff=self.f_lower)
                 if o > self.match_threshold:
                     break

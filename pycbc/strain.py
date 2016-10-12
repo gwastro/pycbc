@@ -205,7 +205,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     strain : TimeSeries
         The time series containing the conditioned strain data.
     """
-
     gating_info = {}
 
     if opt.frame_cache or opt.frame_files or opt.frame_type:
