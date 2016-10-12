@@ -243,9 +243,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         if opt.injection_file:
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
-            injections = injector.apply(strain, opt.channel_name[0:2],
-                distance_scale=opt.injection_scale_factor,
-                inj_filter_rejector=inj_filter_rejector)
+            injections = \
+                injector.apply(strain, opt.channel_name[0:2],
+                               distance_scale=opt.injection_scale_factor,
+                               inj_filter_rejector=inj_filter_rejector)
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
@@ -333,9 +334,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         if opt.injection_file:
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
-            injections = injector.apply(strain, opt.channel_name[0:2],        
-                distance_scale=opt.injection_scale_factor,
-                inj_filter_rejector=inj_filter_rejector)
+            injections = \
+                injector.apply(strain, opt.channel_name[0:2],        
+                               distance_scale=opt.injection_scale_factor,
+                               inj_filter_rejector=inj_filter_rejector)
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")

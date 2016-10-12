@@ -54,8 +54,8 @@ _injfilterer_mthresh_help = \
      "injection file is provided then we will calculate a 'coarse match' "
      "between the template and each injection in the analysis segment. If the "
      "match is less than this threshold for all injections then filtering is "
-     "not performed. Parameters for the 'coarse match' follow. By default this "
-     "value will be None.")
+     "not performed. Parameters for the 'coarse match' follow. By default "
+     "this value will be None.")
 _injfilterer_deltaf_help = \
     ("If injections are present and a match threshold is "
      "provided, this option specifies the frequency spacing that will be used "
@@ -71,10 +71,10 @@ _injfilterer_fmax_help = \
 _injfilterer_buffer_help = \
     ("If injections are present and either a match "
      "threshold or a chirp-time window is given, we will determine if "
-     "injections are 'in' the specified analysis chunk by using the end times. "
-     "If this value is non-zero the analysis chunk is extended on both sides "
-     "by this amount before determining if injections are within the given "
-     "window.")
+     "injections are 'in' the specified analysis chunk by using the end "
+     "times. If this value is non-zero the analysis chunk is extended on both "
+     "sides by this amount before determining if injections are within the "
+     "given window.")
 _injfilterer_flower_help = \
     ("If injections are present and either a match "
      "threshold or a chirp-time window is given, this value is used to set "
