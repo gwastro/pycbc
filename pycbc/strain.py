@@ -181,7 +181,9 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
              for idx in indices[cluster_idx]]
     return times
 
-def from_cli(opt, dyn_range_fac=1, precision='single'):  
+
+def from_cli(opt, dyn_range_fac=1, precision='single',
+             inj_filter_rejector=None):
     """Parses the CLI options related to strain data reading and conditioning.
     Parameters
     ----------
@@ -193,13 +195,18 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
 
     dyn_range_fac: {float, 1}, optional
         A large constant to reduce the dynamic range of the strain.
+    inj_filter_rejector: InjFilterRejector instance; optional, default=None
+        If given send the InjFilterRejector instance to the inject module so
+        that it can store a reduced representation of injections if
+        necessary.
+
     Returns
     -------
     strain : TimeSeries
         The time series containing the conditioned strain data.
     """
-
     gating_info = {}
+
     if opt.frame_cache or opt.frame_files or opt.frame_type:
         if opt.frame_cache:
             frame_source = opt.frame_cache
@@ -235,8 +242,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if opt.injection_file:
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
-            injections = injector.apply(strain, opt.channel_name[0:2],        
-                             distance_scale=opt.injection_scale_factor)
+            injections = \
+                injector.apply(strain, opt.channel_name[0:2],
+                               distance_scale=opt.injection_scale_factor,
+                               inj_filter_rejector=inj_filter_rejector)
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
@@ -324,8 +333,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
         if opt.injection_file:
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
-            injections = injector.apply(strain, opt.channel_name[0:2],        
-                             distance_scale=opt.injection_scale_factor)
+            injections = \
+                injector.apply(strain, opt.channel_name[0:2],
+                               distance_scale=opt.injection_scale_factor,
+                               inj_filter_rejector=inj_filter_rejector)
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
@@ -342,9 +353,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
             logging.info("Converting to float32")
             strain = (dyn_range_fac * strain).astype(pycbc.types.float32)
 
-    if opt.injection_file:
-        strain.injections = injections
-
     if opt.taper_data:
         logging.info("Tapering data")
         # Use auto-gating stuff for this, a one-sided gate is a taper
@@ -354,8 +362,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single'):
                              pd_taper_window) )
         gate_data(strain, gate_params)
 
-
+    if opt.injection_file:
+        strain.injections = injections
     strain.gating_info = gating_info
+
     return strain  
 
 def from_cli_single_ifo(opt, ifo, **kwargs):
@@ -971,6 +981,10 @@ class StrainSegments(object):
         segment_group.add_argument("--segment-end-pad", type=int,
                           help="The time in seconds to ignore at the "
                                "end of each segment in seconds.")
+        segment_group.add_argument("--allow-zero-padding", action='store_true',
+                                   help="Allow for zero padding of data to "
+                                        "analyze requested times, if needed.")
+        # Injection optimization options
         segment_group.add_argument("--filter-inj-only", action='store_true',
                           help="Analyze only segments that contain an injection.")
         segment_group.add_argument("--injection-window", default=None,
@@ -982,9 +996,6 @@ class StrainSegments(object):
                           filter at full rate where needed. NOTE: Reverts to
                           full analysis if two injections are in the same
                           segment.""")
-        segment_group.add_argument("--allow-zero-padding", action='store_true',
-                          help="Allow for zero padding of data to analyze "
-                          "requested times, if needed.")
 
 
     @classmethod
@@ -1037,11 +1048,12 @@ class StrainSegments(object):
                     nargs='+', action=MultiDetOptionAction, metavar='IFO:TIME',
                     help="The time in seconds to ignore at the "
                          "end of each segment in seconds.")
-        segment_group.add_argument("--filter-inj-only", action='store_true',
-                    help="Analyze only segments that contain an injection.")
         segment_group.add_argument("--allow-zero-padding", action='store_true',
                           help="Allow for zero padding of data to analyze "
                           "requested times, if needed.")
+        segment_group.add_argument("--filter-inj-only", action='store_true',
+                                   help="Analyze only segments that contain "
+                                        "an injection.")
 
     required_opts_list = ['--segment-length',
                    '--segment-start-pad',
