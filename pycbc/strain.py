@@ -181,6 +181,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
              for idx in indices[cluster_idx]]
     return times
 
+
 def from_cli(opt, dyn_range_fac=1, precision='single',
              inj_filter_rejector=None):
     """Parses the CLI options related to strain data reading and conditioning.
@@ -243,8 +244,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
             injections = injector.apply(strain, opt.channel_name[0:2],
-                             distance_scale=opt.injection_scale_factor,
-                             inj_filter_rejector=inj_filter_rejector)
+                distance_scale=opt.injection_scale_factor,
+                inj_filter_rejector=inj_filter_rejector)
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
@@ -333,8 +334,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
             injections = injector.apply(strain, opt.channel_name[0:2],        
-                             distance_scale=opt.injection_scale_factor,
-                             inj_filter_rejector=inj_filter_rejector)
+                distance_scale=opt.injection_scale_factor,
+                inj_filter_rejector=inj_filter_rejector)
 
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")

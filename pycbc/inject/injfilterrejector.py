@@ -31,55 +31,61 @@ from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.pnutils import mass1_mass2_to_tau0_tau3
 from pycbc.types import FrequencySeries, zeros
 
-_injfilterrejector_group_help = ("Options that, if injections are present in "
-    "this run, are responsible for performing pre-checks between injections "
-    "in the data being filtered and the current search template to determine "
-    "if the template has any chance of actually detecting the injection. "
-    "The parameters of this test are given by the various options below. "
-    "The --injection-filter-rejector-chirp-time-window and "
-    "--injection-filter-rejector-match-threshold options need to be provided "
-    "if those tests are desired. Other options will take default values "
-    "unless overriden. More details on these options follow.")
+_injfilterrejector_group_help = \
+    ("Options that, if injections are present in "
+     "this run, are responsible for performing pre-checks between injections "
+     "in the data being filtered and the current search template to determine "
+     "if the template has any chance of actually detecting the injection. "
+     "The parameters of this test are given by the various options below. "
+     "The --injection-filter-rejector-chirp-time-window and "
+     "--injection-filter-rejector-match-threshold options need to be provided "
+     "if those tests are desired. Other options will take default values "
+     "unless overriden. More details on these options follow.")
 
-_injfilterer_cthresh_help = ("If this value is not None and an "
-    "injection file is given then we will calculate the difference in "
-    "chirp time (tau_0) between the template and each injection in the "
-    "analysis segment. If the difference is greate than this threshold for "
-    "all injections then filtering is not performed. By default this will "
-    "be None.")
-_injfilterer_mthresh_help = ("If this value is not None and an "
-    "injection file is provided then we will calculate a 'coarse match' "
-    "between the template and each injection in the analysis segment. If the "
-    "match is less than this threshold for all injections then filtering is "
-    "not performed. Parameters for the 'coarse match' follow. By default this "
-    "value will be None.")
-_injfilterer_deltaf_help = ("If injections are present "
-    "and a match threshold is "
-    "provided, this option specifies the frequency spacing that will be used "
-    "for injections, templates and PSD when computing the 'coarse match'. "
-    "Templates will be generated directly with this spacing. The PSD and "
-    "injections will be resampled.")
-_injfilterer_fmax_help = ("If injections are present and "
-    "a match threshold is "
-    "provided, this option specifies the maximum frequency that will be used "
-    "for injections, templates and PSD when computing the 'coarse match'. "
-    "Templates will be generated directly with this max frequency. The PSD "
-    "and injections' frequency series will be truncated.")
-_injfilterer_buffer_help = ("If injections are present and "
-    "either a match "
-    "threshold or a chirp-time window is given, we will determine if "
-    "injections are 'in' the specified analysis chunk by using the end times. "
-    "If this value is non-zero the analysis chunk is extended on both sides "
-    "by this amount before determining if injections are within the given "
-    "window.")
-_injfilterer_flower_help = ("If injections are present and "
-    "either a match "
-    "threshold or a chirp-time window is given, this value is used to set "
-    "the lower frequency for determine chirp times or for calculating "
-    "matches. If this value is None the lower frequency used for the full "
-    "matched-filter is used. Otherwise this value is used.")
+_injfilterer_cthresh_help = \
+    ("If this value is not None and an "
+     "injection file is given then we will calculate the difference in "
+     "chirp time (tau_0) between the template and each injection in the "
+     "analysis segment. If the difference is greate than this threshold for "
+     "all injections then filtering is not performed. By default this will "
+     "be None.")
+_injfilterer_mthresh_help = \
+    ("If this value is not None and an "
+     "injection file is provided then we will calculate a 'coarse match' "
+     "between the template and each injection in the analysis segment. If the "
+     "match is less than this threshold for all injections then filtering is "
+     "not performed. Parameters for the 'coarse match' follow. By default this "
+     "value will be None.")
+_injfilterer_deltaf_help = \
+    ("If injections are present and a match threshold is "
+     "provided, this option specifies the frequency spacing that will be used "
+     "for injections, templates and PSD when computing the 'coarse match'. "
+     "Templates will be generated directly with this spacing. The PSD and "
+     "injections will be resampled.")
+_injfilterer_fmax_help = \
+    ("If injections are present and a match threshold is "
+     "provided, this option specifies the maximum frequency that will be used "
+     "for injections, templates and PSD when computing the 'coarse match'. "
+     "Templates will be generated directly with this max frequency. The PSD "
+     "and injections' frequency series will be truncated.")
+_injfilterer_buffer_help = \
+    ("If injections are present and either a match "
+     "threshold or a chirp-time window is given, we will determine if "
+     "injections are 'in' the specified analysis chunk by using the end times. "
+     "If this value is non-zero the analysis chunk is extended on both sides "
+     "by this amount before determining if injections are within the given "
+     "window.")
+_injfilterer_flower_help = \
+    ("If injections are present and either a match "
+     "threshold or a chirp-time window is given, this value is used to set "
+     "the lower frequency for determine chirp times or for calculating "
+     "matches. If this value is None the lower frequency used for the full "
+     "matched-filter is used. Otherwise this value is used.")
+
 
 def insert_injfilterrejector_option_group(parser):
+    """ Add options for injfilterrejector to executable.
+    """
     injfilterrejector_group = \
         parser.add_argument_group(_injfilterrejector_group_help)
     curr_arg = "--injection-filter-rejector-chirp-time-window"
@@ -113,7 +119,7 @@ class InjFilterRejector(object):
         """
         # Determine if InjFilterRejector is to be enabled
         if injection_file is None or injection_file == 'False' or\
-            (chirp_time_window is None and match_threshold is None):
+                (chirp_time_window is None and match_threshold is None):
             self.enabled = False
             return
         else:
@@ -167,7 +173,7 @@ class InjFilterRejector(object):
         if not self.enabled:
             # Do nothing!
             return
-        if self.short_injections.has_key(simulation_id):
+        if simulation_id in self.short_injections:
             err_msg = "An injection with simulation id "
             err_msg += str(simulation_id)
             err_msg += " has already been added. This suggests "
@@ -243,7 +249,7 @@ class InjFilterRejector(object):
             for inj_idx, inj in enumerate(self.injection_params.table):
                 end_time = inj.geocent_end_time + \
                     1E-9 * inj.geocent_end_time_ns
-                if end_time > seg_end_time or end_time < seg_start_time:
+                if not(seg_start_time <= end_time <= seg_end_time):
                     continue
                 tau0_inj, tau3_inj = \
                     mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
@@ -259,7 +265,7 @@ class InjFilterRejector(object):
         if self.match_threshold:
             if self._short_template_mem is None:
                 # Set the memory for the short templates
-                wav_len = 1 + int(self.coarsematch_fmax / \
+                wav_len = 1 + int(self.coarsematch_fmax /
                                   self.coarsematch_deltaf)
                 self._short_template_mem = zeros(wav_len, dtype=np.complex64)
 
@@ -280,7 +286,7 @@ class InjFilterRejector(object):
             if not t_num == self._short_template_id:
                 # Set the memory for the short templates if unset
                 if self._short_template_mem is None:
-                    wav_len = 1 + int(self.coarsematch_fmax / \
+                    wav_len = 1 + int(self.coarsematch_fmax /
                                       self.coarsematch_deltaf)
                     self._short_template_mem = zeros(wav_len,
                                                      dtype=np.complex64)
