@@ -341,10 +341,10 @@ class TemplateBank(object):
         ----------
         filename : str
             The name of the file to write to. Must end in '.hdf'.
-        start_index : If a specific slice of the template bank is to be 
+        start_index : If a specific slice of the template bank is to be
             written to the hdf file, this would specify the index of the
             first template in the slice
-        stop_index : If a specific slice of the template bank is to be 
+        stop_index : If a specific slice of the template bank is to be
             written to the hdf file, this would specify the index of the
             last template in the slice
         force : {False, bool}
