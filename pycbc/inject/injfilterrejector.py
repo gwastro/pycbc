@@ -298,7 +298,7 @@ class InjFilterRejector(object):
             else:
                 htilde = self._short_template_wav
 
-            for inj_idx, inj in enumerate(self.injection_params.table):
+            for inj in self.injection_params.table:
                 end_time = inj.geocent_end_time + \
                     1E-9 * inj.geocent_end_time_ns
                 if not(seg_start_time < end_time < seg_end_time):
