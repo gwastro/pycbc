@@ -596,6 +596,8 @@ class LiveFilterBank(TemplateBank):
         htilde.params = self.table[index]
         htilde.chirp_length = template_duration
         htilde.length_in_time = ttotal
+        htilde.approximant = approximant
+        htilde.end_frequency = f_end
 
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
@@ -623,7 +625,6 @@ class FilterBank(TemplateBank):
         self.N = (filter_length - 1 ) * 2
         self.delta_t = 1.0 / (self.N * self.delta_f)
         self.filter_length = filter_length
-        self.kmin = int(f_lower / delta_f)
         self.max_template_length = max_template_length
 
         super(FilterBank, self).__init__(filename, approximant=approximant,
@@ -645,13 +646,13 @@ class FilterBank(TemplateBank):
             f_end = (self.filter_length-1) * self.delta_f
 
         # Find the start frequency, if variable
-        if self.max_template_length is not None:
+        if self.f_lower is None:
+            f_low = self.table[index].f_lower
+        elif self.max_template_length is not None:
             f_low = find_variable_start_frequency(approximant,
                                                   self.table[index],
                                                   self.f_lower,
                                                   self.max_template_length)
-        elif self.f_lower is None:
-            f_low = self.table[index].f_lower
         else:
             f_low = self.f_lower
 
@@ -686,6 +687,8 @@ class FilterBank(TemplateBank):
         htilde.params = self.table[index]
         htilde.chirp_length = template_duration
         htilde.length_in_time = ttotal
+        htilde.approximant = approximant
+        htilde.end_frequency = f_end
 
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
@@ -721,7 +724,6 @@ class FilterBankSkyMax(TemplateBank):
         self.N = (filter_length - 1 ) * 2
         self.delta_t = 1.0 / (self.N * self.delta_f)
         self.filter_length = filter_length
-        self.kmin = int(f_lower / delta_f)
         self.max_template_length = max_template_length
 
         super(FilterBankSkyMax, self).__init__(filename, parameters=parameters,

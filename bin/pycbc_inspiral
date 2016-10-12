@@ -270,10 +270,10 @@ with ctx:
   
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
-                    low_frequency_cutoff=flow,
-                    dtype=complex64, phase_order=opt.order,
-                    taper=opt.taper_template, approximant=opt.approximant,
-                    out=template_mem, max_template_length=opt.max_template_length)
+        low_frequency_cutoff=None if opt.enable_bank_start_frequency else flow,
+        dtype=complex64, phase_order=opt.order,
+        taper=opt.taper_template, approximant=opt.approximant,
+        out=template_mem, max_template_length=opt.max_template_length)
 
     ntemplates = len(bank)
     nfilters = 0
