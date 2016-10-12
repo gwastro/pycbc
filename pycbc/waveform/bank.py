@@ -333,13 +333,20 @@ class TemplateBank(object):
                          for p in fields])])
         self.table = self.table.add_fields(template_hash, 'template_hash')
 
-    def write_to_hdf(self, filename, start_index, stop_index, force=False, skip_fields=None):
+    def write_to_hdf(self, filename, start_index=None, stop_index=None,
+                     force=False, skip_fields=None):
         """Writes self to the given hdf file.
 
         Parameters
         ----------
         filename : str
             The name of the file to write to. Must end in '.hdf'.
+        start_index : If a specific slice of the template bank is to be 
+            written to the hdf file, this would specify the index of the
+            first template in the slice
+        stop_index : If a specific slice of the template bank is to be 
+            written to the hdf file, this would specify the index of the
+            last template in the slice
         force : {False, bool}
             If the file already exists, it will be overwritten if True.
             Otherwise, an OSError is raised if the file exists.

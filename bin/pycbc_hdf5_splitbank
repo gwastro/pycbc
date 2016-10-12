@@ -35,20 +35,27 @@ __program__ = "pycbc_hdf5_splitbank"
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument("--bank-file", type=str,
                     help="Bank hdf file to load.")
-parser.add_argument('--templates-per-bank',
-                    help='number of templates in the output banks', type=int)
+parser.add_argument('--templates-per-bank', type = int,
+                    help="This specifies the number of templates in "
+                    "each of the output sub-banks. Either specify this "
+                    "or --number-of-banks, as one of them is used to "
+                    "calculate the other in the code. Do not supply "
+                    "both.")
 parser.add_argument("--number-of-banks", type=int,
-                    help="Number of banks")
+                    help="This specifies the number of output sub-banks."
+                    "Either specify this or --templates-per-bank, as one"
+                    "of them is used to calculate the other in the code." 
+                    "Do not supply both.")
 parser.add_argument("--output-filenames", nargs='*', default=None,
                     action="store",
-                    help="""Directly specify the names of the output
-                    files. The number of files specified here will
-                    dictate how to split the bank. It will be split
-                    equally between all specified files.""")
+                    help="Directly specify the names of the output files."
+                    "The number of files specified here will dictate "
+                    "how to split the bank. It will be split equally "
+                    "between all specified files.")
 parser.add_argument("--output-prefix", default=None,
-                    help="""Prefix to add to the output template bank names,
-                    for example 'sub-bank'. The output file names would
-                    become args.output_prefix#.hdf""")
+                    help="Prefix to add to the output template bank names,"
+                    "for example 'sub-bank'. The output file names would"
+                    "become args.output_prefix.hdf")
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
                          "Otherwise, an error is raised.")
@@ -68,7 +75,14 @@ templates = tmplt_bank.table
 if args.output_filenames and args.output_prefix:
     errMsg="""Either supply specific filenames for all output files via
     args.output_filenames or supply a common prefix for all output files
-    via args.output_prefix. Cannot supply both"""
+    via args.output_prefix. Cannot supply both."""
+    parser.error(errMsg)
+
+if args.templates_per_bank and args.number_of_banks:
+    errMsg="""Either request a --templates-per-bank which would be used 
+    to calculate the number of sub-banks to be generated or request
+    --number-of-banks which would be used to calculate the number of 
+    templates to be put in each sub-bank. Cannot supply both. """
     parser.error(errMsg)
 
 # If an array of filenames
@@ -89,6 +103,14 @@ elif args.templates_per_bank:
     num_per_file = args.templates_per_bank
     num_files = int(templates[:].size / num_per_file)
 
+else:
+    errMsg = """Either one of the options --templates-per-bank or 
+    --number-of-banks should be requested to generate the output 
+    sub-banks."""
+    parser.error(errMsg)
+
+# Generate sub-banks
+logging.info("Generating the output sub-banks")
 for ii in range(num_files):
     start_idx = ii * num_per_file
     # The output banks are assigned a fixed length equal to the number
@@ -107,11 +129,16 @@ for ii in range(num_files):
         outname = args.output_prefix + str(ii) + '.hdf'
     else:
         errMsg = """Cannot resolve the process of assigning names to
-                output files. output-filenames or an output-prefix
+                output files. --output-filenames or --output-prefix
                 should be taken as input."""
+        raise ValueError(errMsg)
 
     # Generate the hdf5 output file for the ii'th sub-bank, which would
     # be a slice of the input template bank having a start index and
     # end index as calculated above
     output = tmplt_bank.write_to_hdf(outname, start_idx, end_idx,
-                                     force=args.force, skip_fields='template_duration')
+                                     force=args.force, 
+                                     skip_fields='template_duration')
+    output.close()
+
+logging.info("finished")
