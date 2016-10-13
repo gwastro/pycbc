@@ -81,6 +81,26 @@ class NewSNRStatistic(Stat):
 
     """ Calculate the NewSNR coincident detection statistic """
 
+    def get_newsnr(self, trigs):
+        """
+        Calculate newsnr ('reweighted SNR') for a trigs object
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+            Dictionary holding single detector trigger information.
+        'chisq_dof', 'snr', and 'chisq' are required keys
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of newsnr values
+        """
+
+        dof = 2 * trigs['chisq_dof'] - 2
+        newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / dof)
+        return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
+
     def single(self, trigs):
         """Calculate the single detector statistic, here equal to newsnr
 
@@ -93,7 +113,7 @@ class NewSNRStatistic(Stat):
         numpy.ndarray
             The array of single detector values
         """
-        return get_newsnr(trigs)
+        return self.get_newsnr(self, trigs)
 
     def coinc(self, s1, s2, slide, step):
         """Calculate the coincident detection statistic.
@@ -114,7 +134,6 @@ class NewSNRStatistic(Stat):
         """
         return (s1**2.0 + s2**2.0) ** 0.5
 
-
 class NewSNRCutStatistic(NewSNRStatistic):
 
     """Same as the NewSNR statistic, but demonstrates a cut of the triggers"""
@@ -133,8 +152,7 @@ class NewSNRCutStatistic(NewSNRStatistic):
         newsnr: numpy.ndarray
             Array of single detector values
         """
-        newsnr = get_newsnr(trigs)
-        rchisq = trigs['chisq'] / (2. * trigs['chisq_dof'] - 2.)
+        newsnr = self.get_newsnr(self, trigs)
         newsnr[numpy.logical_and(newsnr < 10, rchisq > 2)] = -1
         return newsnr
 
@@ -276,10 +294,8 @@ class PhaseTDStatistic(NewSNRStatistic):
 
 class ExpFitStatistic(NewSNRStatistic):
 
-    """Detection statistic using an exponential falloff noise model.
-
-    Statistic approximates the negative log noise coinc rate density per
-    template over single-ifo newsnr values.
+    """Detection statistic that approximates the negative log noise coinc rate
+       density per template over single-ifo newsnr values
     """
 
     def __init__(self, files):
@@ -325,7 +341,7 @@ class ExpFitStatistic(NewSNRStatistic):
         and rescale by the fitted coefficients alpha and lambda
         """
         alphai, lambdai, thresh = self.find_fits(trigs)
-        newsnr = get_newsnr(trigs)
+        newsnr = self.get_newsnr(self, trigs)
         # alphai is constant of proportionality between single-ifo newsnr and
         #  negative log noise likelihood in given template
         # lambdai is rate of trigs in given template compared to average
@@ -346,34 +362,32 @@ class ExpFitStatistic(NewSNRStatistic):
         # notionally, log likelihood ratio \propto rho_c^2 / 2
         return (2 * loglr) ** 0.5
 
-
-class ExpFitCombinedSNR(ExpFitStatistic):
-
-    """Reworking of ExpFitStatistic designed to resemble network SNR
-
-    Use a monotonic function of the negative log noise rate density which
-    approximates combined (new)snr for coincs with similar newsnr in each ifo
-    """
+class ExpFitStatAlan(ExpFitStatistic):
 
     def __init__(self, files):
         ExpFitStatistic.__init__(self, files)
-        # for low-mass templates the exponential slope alpha \approx 6
+        # normalize statistic to be similar to combined newsnr for low-mass
+        # templates where alpha is approx. 6
         self.alpharef = 6.
+        self._sqrt2 = 2. ** 0.5
 
     def single(self, trigs):
         alphai, lambdai, thresh = self.find_fits(trigs)
-        newsnr = get_newsnr(trigs)
-        # noise rate density shifted by log of reference slope alpha
-        lognoiserate = - alphai * (newsnr - thresh) + \
-                       numpy.log(alphai / self.alpharef) + \
-                       numpy.log(lambdai)
-        # add threshold and rescale by reference slope
-        stat = thresh - (lognoiserate / self.alpharef)
+        newsnr = self.get_newsnr(trigs)
+        # shift noise likelihood by log of reference alpha value
+        lognoisel = - alphai * (newsnr - thresh) + \
+                    numpy.log(alphai / self.alpharef) + \
+                    numpy.log(lambdai)
+        # rescale negative log likelihood to resemble half of combined newsnr
+        stat = thresh / self._sqrt2 - 1. / (self.alpharef * self._sqrt2) * \
+               lognoisel
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
     def coinc(self, s0, s1, slide, step):
-        # rescale by 1/sqrt(2) to resemble network SNR
-        return (s0 + s1) / (2.**0.5)
+        return s0 + s1
+
+# thing I wrote on chat
+# (rhothreshH+rhothreshL) / sqrt(2) + (1/6*sqrt(2)) [ alphaH*(rhohatH - rhothreshH) - ln (alphaH/6) - ln (muH/mubar) + H->L ]
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
@@ -405,7 +419,7 @@ statistic_dict = {
     'newsnr_cut': NewSNRCutStatistic,
     'phasetd_newsnr': PhaseTDStatistic,
     'exp_fit_stat': ExpFitStatistic,
-    'exp_fit_csnr': ExpFitCombinedSNR,
+    'exp_fit_alanstat': ExpFitStatAlan,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
 }
 
