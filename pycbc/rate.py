@@ -165,7 +165,10 @@ def hpd_credible_interval(mu_in, post, alpha=0.9, tolerance=1e-3):
 
     return mu_low, mu_high
 
-# Following functions are for the old pylal volume vs mass calculation #
+
+# Following functions are for the old pylal volume vs mass calculations
+# These were replaced by 'imr_utils' functions now contained in sensitivity.py
+# and bin_utils.py
 
 
 def integrate_efficiency(dbins, eff, err=0, logbins=False):
@@ -194,7 +197,7 @@ def compute_efficiency(f_dist, m_dist, dbins):
     '''
     Compute the efficiency as a function of distance for the given sets of found
     and missed injection distances.
-    Note that injections that do not fit into any dbin get lost :(.
+    Note that injections that do not fit into any dbin get lost :(
     '''
     efficiency = numpy.zeros(len(dbins) - 1)
     error = numpy.zeros(len(dbins) - 1)
@@ -275,8 +278,7 @@ def filter_injections_by_mass(injs, mbins, bin_num, bin_type, bin_num2=None):
     return newinjs
 
 
-def compute_volume_vs_mass(found, missed, mass_bins, bin_type, dbins=None,
-                           ploteff=False):
+def compute_volume_vs_mass(found, missed, mass_bins, bin_type, dbins=None):
     """
     Compute the average luminosity an experiment was sensitive to
 
