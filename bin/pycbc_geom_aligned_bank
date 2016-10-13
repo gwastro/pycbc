@@ -509,6 +509,8 @@ if opts.random_seed:
 
 # alignedcat
 cp.add_section('alignedbankcat')
+if opts.f_low_column is not None:
+    cp.set('alignedbankcat', 'f-low-column', opts.f_low_column)
 
 # dumptochis
 cp.add_section('dumptochis')
