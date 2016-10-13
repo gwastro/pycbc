@@ -13,20 +13,20 @@ def compute_search_efficiency_in_bins(
     The first dimension of ndbins must be bins over injected distance.
     sim_to_bins_function must map an object to a tuple indexing the ndbins.
     """
-    input = bin_utils.BinnedRatios(ndbins)
+    bins = bin_utils.BinnedRatios(ndbins)
 
     # increment the numerator and denominator with found / found+missed injs
-    [input.incnumerator(sim_to_bins_function(sim)) for sim in found]
-    [input.incdenominator(sim_to_bins_function(sim)) for sim in total]
+    [bins.incnumerator(sim_to_bins_function(sim)) for sim in found]
+    [bins.incdenominator(sim_to_bins_function(sim)) for sim in total]
 
     # regularize by setting denoms to 1 to avoid nans
-    input.regularize()
+    bins.regularize()
 
     # efficiency array is the ratio
-    eff = bin_utils.BinnedArray(bin_utils.NDBins(ndbins), array=input.ratio())
+    eff = bin_utils.BinnedArray(bin_utils.NDBins(ndbins), array=bins.ratio())
 
     # compute binomial uncertainties in each bin
-    err_arr = numpy.sqrt(eff.array * (1-eff.array)/input.denominator.array)
+    err_arr = numpy.sqrt(eff.array * (1-eff.array)/bins.denominator.array)
     err = bin_utils.BinnedArray(bin_utils.NDBins(ndbins), array=err_arr)
 
     return eff, err
