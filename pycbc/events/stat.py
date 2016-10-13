@@ -237,13 +237,13 @@ class PhaseTDStatistic(NewSNRStatistic):
 
 class ExpFitStatistic(NewSNRStatistic):
     def __init__(self, files):
-        NewSNRStatistic.__init__(self, files)
         if not len(files):
             raise RuntimeError("Can't find any statistic files !")
+        NewSNRStatistic.__init__(self, files)
         # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
-        self.ifos = [f.split('-')[0] for f in self.statfiles.keys() if \
+        self.ifos = [f.split('-')[0] for f in self.files.keys() if
                      f.split('-')[1] == 'fit_coeffs']
-        if (not len(files)) or (not len(self.ifos)):
+        if not len(self.ifos):
             raise RuntimeError("None of the statistic files has the required "
                                "attribute called {ifo}-fit_coeffs !")
         self.fits_by_tid = {}
@@ -251,7 +251,7 @@ class ExpFitStatistic(NewSNRStatistic):
            self.fits_by_tid[i] = self.assign_fits(i)
 
     def assign_fits(self, ifo):
-        coeff_file = self.statfiles[ifo+'-fit_coeffs']
+        coeff_file = self.files[ifo+'-fit_coeffs']
         template_id = coeff_file['template_id'][:]
         alphas = coeff_file['fit_coeff'][:]
         lambdas = coeff_file['count_above_thresh'][:]
@@ -267,8 +267,8 @@ class ExpFitStatistic(NewSNRStatistic):
         tnum = trigs.template_num
         # fits_by_template is a dictionary of dictionaries of arrays
         # indexed by ifo / coefficient name / template_id
-        alphai = self.fits_by_tid[ifo]['alpha'][tnum][0]
-        lambdai = self.fits_by_tid[ifo]['lambda'][tnum][0]
+        alphai = self.fits_by_tid[ifo]['alpha'][tnum]
+        lambdai = self.fits_by_tid[ifo]['lambda'][tnum]
         thresh = self.fits_by_tid[ifo]['thresh']
         return alphai, lambdai, thresh
 

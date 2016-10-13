@@ -238,7 +238,7 @@ else:
         pylab.ylabel('Combined False Alarm Rate (yr$^{-1}$)')
     ax2.set_ylabel('False Alarm Probability')
 
-pylab.xlabel(r'Network Re-weighted SNR, $\hat{\rho}_c$')
+pylab.xlabel(r'Coincident Ranking Statistic')
 pylab.yscale('log')
 pylab.ylim(plot_ymin, plot_ymax)
 pylab.xlim(plot_xmin, plot_xmax)

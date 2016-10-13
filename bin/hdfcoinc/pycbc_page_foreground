@@ -55,7 +55,7 @@ if args.output_file.endswith('.html'):
     columns = [ifar_exc, ifar, fap_exc, fap, stat,  time1,
                (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z]
     names = ['Exc. IFAR (YR)', 'Inc. IFAR (YR)', 'Exc. FAP.', 'Inc. FAP',
-             'Combined NewSNR', 'End Time', 'Time Diff. (ms)', 'mchirp', 'm1',
+             'Ranking Statistic', 'End Time', 'Time Diff. (ms)', 'mchirp', 'm1',
              'm2', 's1z', 's2z']
     format_strings = ['#.###E0', '#.###E0', '#.##E0', '#.##E0', '##.###',
                       None, '##.##', '##.##', '##.##',
