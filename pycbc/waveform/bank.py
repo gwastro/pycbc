@@ -255,7 +255,7 @@ class TemplateBank(object):
 
             # inclination stored in xml alpha3 column
             names = list(self.table.dtype.names)
-            names = tuple([n if n != 'alpha3' 
+            names = tuple([n if n != 'alpha3'
                           else 'inclination' for n in names])
             self.table.dtype.names = names
 
@@ -387,7 +387,7 @@ class TemplateBank(object):
         from pycbc.waveform.waveform import props
 
         return pycbc.waveform.get_waveform_end_frequency(
-                                self.table[index], 
+                                self.table[index],
                                 approximant=self.approximant(index),
                                 **self.extra_args)
 
@@ -585,7 +585,7 @@ class LiveFilterBank(TemplateBank):
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
         htilde._sigmasq = {}
 
-        htilde.id = self.id_from_hash(hash((htilde.params.mass1, 
+        htilde.id = self.id_from_hash(hash((htilde.params.mass1,
                                       htilde.params.mass2,
                                       htilde.params.spin1z,
                                       htilde.params.spin2z)))
