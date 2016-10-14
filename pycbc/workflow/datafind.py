@@ -181,17 +181,15 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
     if checkSegmentGaps in ['warn','update_times','raise_error']:
         logging.info("Checking science segments against datafind output....")
         newScienceSegs = get_science_segs_from_datafind_outs(datafindcaches)
-        logging.info("Datafind segments calculated.....")
+        logging.info("New segments calculated from data find output.....")
         missingData = False
-        msg = "Any errors directly following this message refer to times that"
-        msg += " the segment server says are science, but datafind cannot find"
-        msg += " frames for:"
-        logging.info(msg)
         for ifo in scienceSegs.keys():
             # If no science segments in input then do nothing
             if not scienceSegs[ifo]:
-                msg = "No input science segments for ifo %s, " %(ifo)
-                msg += "therefore no data was found. Was this expected?"
+                msg = "No science segments are present for ifo %s, " %(ifo)
+                msg += "the segment metadata indicates there is no analyzable"
+                msg += " strain data between the selected GPS start and end "
+                msg += "times."
                 logging.warning(msg)
                 continue
             if not newScienceSegs.has_key(ifo):
