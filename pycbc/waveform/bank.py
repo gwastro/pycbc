@@ -255,7 +255,8 @@ class TemplateBank(object):
 
             # inclination stored in xml alpha3 column
             names = list(self.table.dtype.names)
-            names = tuple([n if n != 'alpha3' else 'inclination' for n in names])
+            names = tuple([n if n != 'alpha3' 
+                          else 'inclination' for n in names])
             self.table.dtype.names = names
 
         elif ext.endswith('hdf'):
@@ -330,7 +331,7 @@ class TemplateBank(object):
 
         fields = [f for f in hash_fields if f in fields]
         template_hash = numpy.array([hash(v) for v in zip(*[self.table[p]
-                         for p in fields])])
+                                    for p in fields])])
         self.table = self.table.add_fields(template_hash, 'template_hash')
 
     def write_to_hdf(self, filename, start_index=None, stop_index=None,
@@ -376,7 +377,8 @@ class TemplateBank(object):
             f[p] = write_tbl[p]
         if self.compressed_waveforms is not None:
             for tmplt_hash in write_tbl.template_hash:
-                self.compressed_waveforms[tmplt_hash].write_to_hdf(f, tmplt_hash)
+                self.compressed_waveforms[tmplt_hash].write_to_hdf(
+                                                        f, tmplt_hash)
         return f
 
     def end_frequency(self, index):
@@ -384,9 +386,10 @@ class TemplateBank(object):
         """
         from pycbc.waveform.waveform import props
 
-        return pycbc.waveform.get_waveform_end_frequency(self.table[index],
-                              approximant=self.approximant(index),
-                              **self.extra_args)
+        return pycbc.waveform.get_waveform_end_frequency(
+                                self.table[index], 
+                                approximant=self.approximant(index),
+                                **self.extra_args)
 
     def parse_approximant(self, approximant):
         """Parses the given approximant argument, returning the approximant to
@@ -457,9 +460,9 @@ class TemplateBank(object):
 
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
-                       approximant=None, increment=8, parameters=None,
-                       load_compressed=True, load_compressed_now=False,
-                       **kwds):
+                 approximant=None, increment=8, parameters=None,
+                 load_compressed=True, load_compressed_now=False,
+                 **kwds):
 
         self.increment = increment
         self.f_lower = f_lower
@@ -473,7 +476,8 @@ class LiveFilterBank(TemplateBank):
 
         if not hasattr(self.table, 'template_duration'):
             self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                     dtype=numpy.float32), 'template_duration')
+                                               dtype=numpy.float32),
+                                               'template_duration')
 
         from pycbc.pnutils import mass1_mass2_to_mchirp_eta
         self.table.sort(order='mchirp')
@@ -536,8 +540,9 @@ class LiveFilterBank(TemplateBank):
         from pycbc.waveform.waveform import props
         p = props(self.table[index])
         p.pop('approximant')
-        buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, f_lower=self.f_lower,
-                                                                      **p)
+        buff_size = pycbc.waveform.get_waveform_filter_length_in_time(
+                                    approximant, f_lower=self.f_lower,
+                                    **p)
         tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
         flen = tlen / 2 + 1
 
@@ -580,8 +585,10 @@ class LiveFilterBank(TemplateBank):
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
         htilde._sigmasq = {}
 
-        htilde.id = self.id_from_hash(hash((htilde.params.mass1, htilde.params.mass2,
-                          htilde.params.spin1z, htilde.params.spin2z)))
+        htilde.id = self.id_from_hash(hash((htilde.params.mass1, 
+                                      htilde.params.mass2,
+                                      htilde.params.spin1z,
+                                      htilde.params.spin2z)))
         return htilde
 
 class FilterBank(TemplateBank):
@@ -675,8 +682,6 @@ class FilterBank(TemplateBank):
         htilde._sigmasq = {}
         return htilde
 
-
-
 def find_variable_start_frequency(approximant, parameters, f_start, max_length,
                                   delta_f = 1):
     """ Find a frequency value above the starting frequency that results in a
@@ -720,8 +725,8 @@ class FilterBankSkyMax(TemplateBank):
             else:
                 rdtype = numpy.float64
             self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                     dtype=rdtype),
-                                     'template_duration')
+                                               dtype=rdtype),
+                                               'template_duration')
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
