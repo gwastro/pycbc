@@ -682,6 +682,7 @@ class FilterBank(TemplateBank):
         htilde._sigmasq = {}
         return htilde
 
+
 def find_variable_start_frequency(approximant, parameters, f_start, max_length,
                                   delta_f = 1):
     """ Find a frequency value above the starting frequency that results in a
