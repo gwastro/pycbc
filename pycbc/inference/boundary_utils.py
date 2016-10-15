@@ -308,7 +308,7 @@ class Bounds(object):
         except KeyError:
             raise ValueError("unrecognized btype_max {}".format(btype_max))
         # store cyclic conditions
-        self.cyclic = cyclic
+        self._cyclic = cyclic
         if cyclic:
             self._constrain = self._apply_cyclic
         else:
@@ -331,6 +331,10 @@ class Bounds(object):
     @property
     def max(self):
         return self._max
+
+    @property
+    def cyclic(self):
+        return self._cyclic
 
     def __getitem__(self, ii):
         if ii == 0:
