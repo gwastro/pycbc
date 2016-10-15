@@ -524,7 +524,7 @@ class UniformAngle(Uniform):
                 bnds = boundary_utils.Bounds(
                     bnds[0]*numpy.pi, bnds[1]*numpy.pi)
             # check that the bounds are in the domain
-            if bnds.min not in self._domain or bnds.max not in self._domain:
+            if bnds.min < self._domain.min or bnds.max > self._domain.max:
                 raise ValueError("bounds must be in [{x},{y}); "
                     "got [{a},{b})".format(x=self._domain.min/numpy.pi,
                     y=self._domain.max/numpy.pi, a=bnds.min/numpy.pi,
@@ -553,7 +553,7 @@ class UniformAngle(Uniform):
         kwargs = dict([[p, self._domain.apply_conditions(val)]
                       for p,val in kwargs.items()])
         # now apply additional conditions
-        return super(UniformAngle.apply_boundary_conditions, self)(**kwargs)
+        return super(UniformAngle, self).apply_boundary_conditions(**kwargs)
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
@@ -656,7 +656,7 @@ class SinAngle(UniformAngle):
                       for p,val in kwargs.items()])
         # since _domain has been overridden, calling UniformAngle's apply
         # boundary condtions will cause the reflection off of pi to occur
-        return super(SinAngle.apply_boundary_conditions, self)(**kwargs)
+        return super(SinAngle, self).apply_boundary_conditions(**kwargs)
 
 
     def _pdf(self, **kwargs):
