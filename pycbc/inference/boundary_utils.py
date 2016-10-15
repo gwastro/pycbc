@@ -332,6 +332,14 @@ class Bounds(object):
     def max(self):
         return self._max
 
+    def __getitem__(self, ii):
+        if ii == 0:
+            return self._min
+        elif ii == 1:
+            return self._max
+        else:
+            raise IndexError("index {} out of range".format(ii))
+
     def __contains__(self, value):
         return self._min.smaller(value) & self._max.larger(value)
 
