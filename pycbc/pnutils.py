@@ -29,7 +29,7 @@ between quantities.
 from __future__ import division
 import lal, lalsimulation
 import numpy
-from scipy.optimize import bisect, minimize
+from scipy.optimize import bisect, brentq, minimize
 
 def nearest_larger_binary_number(input_len):
     """ Return the nearest binary number larger than input_len.
@@ -465,6 +465,8 @@ named_frequency_cutoffs = {
     # functions depending on 2 component masses and aligned spins
     "MECO"       : lambda p: meco_frequency(p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
+    "HybridMECO" : lambda p: hybrid_meco_frequency(p["m1"], p["m2"],
+                                p["s1z"], p["s2z"], qm1=None, qm2=None),
     "IMRPhenomBFinal": lambda p: get_freq("fIMRPhenomBFinal",
                                               p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
@@ -798,10 +800,24 @@ def t2_cutoff_frequency(m1, m2, chi1, chi2):
 t4_cutoff_velocity = meco_velocity
 t4_cutoff_frequency = meco_frequency
 
-########################## This equation comes from Miriam (Mathematica) #######
-
 # Hybrid MECO in arXiv:1602.03134
 # To obtain the MECO, find minimum in v of eq. (6)
+
+def kerr_lightring(v, chi):
+    """Return the function whose first root defines the Kerr light ring"""
+
+    return 1 + chi * v**3 - 3 * v**2 * (1 - chi * v**3)**(1./3)
+
+
+def kerr_lightring_velocity(chi):
+    """Return the velocity at the Kerr light ring"""
+
+    # If chi > 0.9996, the algorithm cannot solve the function
+    if chi >= 0.9996:
+        return brentq(kerr_lightring, 0, 0.8, args=(0.9996))
+    else:
+        return brentq(kerr_lightring, 0, 0.8, args=(chi))
+
 
 def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
     """Return the hybrid energy [eq. (6)] whose minimum defines the hybrid MECO
@@ -828,42 +844,53 @@ def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
         The hybrid energy as a function of v
     """
 
-    pi = numpy.pi
+    pi, pi_sq = numpy.pi, numpy.pi**2
+    v2, v3, v4, v5, v6, v7 = v**2, v**3, v**4, v**5, v**6, v**7
+    chi1_sq, chi2_sq = chi1**2, chi2**2
+    m1, m2 = float(m1), float(m2)
+    M = float(m1 + m2)
+    M_2, M_4 = M**2, M**4
+    eta = m1 * m2 / M_2
+    eta2, eta3, eta4 = eta**2, eta**3, eta**4
+    m1_2, m1_3, m1_4 = m1**2, m1**3, m1**4
+    m2_2, m2_3, m2_4 = m2**2, m2**3, m2**4
 
-    h_E = ((1 - 2 * v**2 * (1 - chi1 * v**3)**(1./3)) / numpy.sqrt((1 - chi1 * v**3) * \
-            (1 + chi1 * v**3 - 3 * v**2 * (1 - chi1 * v**3)**(1./3)))) - 1 \
-        + (m2 * v**4 / (10368 * (m1 + m2)**6)) * \
-        ( \
-        - 9 * m1**5 * (-48 + 1368 * v**2 + 34445 * v**4 - 1230 * pi**2 * v**4 + \
-            144 * chi2 * v * (8 + 12 * v**2 + 27 * v**4) + 32 * chi1**2 * (36 * qm1 * v**2 + \
-            5 * (-2 + 57 * qm1) * v**4) - 64 * chi1 * v * (30 + 148 * v**2 + 900 * v**4 + \
-            3 * chi2 * v * (6 + 5 * v**2))) \
-        - 18 * m1**4 * m2 * (-96 + 2724 * v**2 + 68425 * v**4 - 2460 * pi**2 * v**4 + \
-            96 * chi2 * v * (32 + 50 * v**2 + 45 * v**4) + \
-            16 * chi1**2 * (162 * qm1 * v**2 + 5 * (-34 + 231 * qm1) * v**4) - \
-            144 * chi2**2 * (2 * qm2 * v**2 + 5 * (-2 + qm2) * v**4) - \
-            32 * chi1 * v * (144 + 632 * v**2 + 3234 * v**4 + chi2 * v * (72 + 65 * v**2))) \
-        + m1**3 * m2**2 * (2592 - 73440 * v**2 - 1843255 * v**4 + 66420 * pi**2 * v**4 - \
-            576 * chi2 * v * (204 + 359 * v**2 + 171 * v**4) - \
-            288 * chi1**2 * (288 * qm1 * v**2 + 5 * (-94 + 375 * qm1) * v**4) + \
-            864 * chi2**2 * (24 * qm2 * v**2 + 5 * (-22 + 15 * qm2) * v**4) + \
-            576 * chi1 * v * (276 + 1081 * v**2 + 4689 * v**4 + 4 * chi2 * v * (27 + 25 * v**2))) \
-        - 18 * m1**2 * m2**3 * (-96 + 2724 * v**2 + 68425 * v**4 - 2460 * pi**2 * v**4 + \
-            32 * chi2 * v * (216 + 448 * v**2 + 411 * v**4) - 32 * chi1 * v * (264 + \
-            72 * chi2 * v + 930 * v**2 + 65 * chi2 * v**3 + 3510 * v**4) + \
-            96 * chi1**2 * (42 * qm1 * v**2 + 85 * (-1 + 3 * qm1) * v**4) - \
-            32 * chi2**2 * (54 * qm2 * v**2 + 5 * (-43 + 42 * qm2) * v**4)) \
-        - 9 * m1 * m2**4 * (-48 + 1368 * v**2 + 34445 * v**4 - 1230 * pi**2 * v**4 + \
-            128 * chi2 * v * (57 + 142 * v**2 + 279 * v**4) + \
-            192 * chi1**2 * (18 * qm1 * v**2 + 5 * (-8 + 21 * qm1) * v**4) - \
-            32 * chi2**2 * (72 * qm2 * v**2 + 115 * (-2 + 3 * qm2) * v**4) - \
-            48 * chi1 * v * (4 * chi2 * v * (6 + 5 * v**2) + 3 * (56 + 180 * v**2 + 621 * v**4))) \
-        - 288 * m2**5 * v * (-6 * (chi1 - chi2) * (8 + 24 * v**2 + 81 * v**4) + \
-            chi1**2 * (18 * qm1 * v + 5 * (-8 + 21 * qm1) * v**3) + \
-            chi2**2 * (-18 * qm2 * v + 5 * (8 - 21 * qm2) * v**3)) \
+    Kerr1 = -1. + (1. - 2. * v2 * (1. - chi1 * v3)**(1./3.)) / \
+        numpy.sqrt((1. - chi1 * v3) * (1. + chi1 * v3 - \
+                    3. * v2 * (1 - chi1 * v3)**(1./3.)))
+    Kerr2 = -1. + (1 - 2. * v2 * (1. - chi2 * v3)**(1./3.)) / \
+        numpy.sqrt((1. - chi2 * v3) * (1. + chi2 * v3 - \
+                    3. * v2 * (1 - chi2 * v3)**(1./3.)))
+
+    h_E = (m1 / M) * Kerr1 + (m2 / M) * Kerr2 - \
+        (v2 / 2.) * \
+        (
+        - eta * v2 / 12. - 2. * (chi1 + chi2) * eta * v3 / 3. \
+        + (19. * eta / 8. - eta2 / 24. + \
+            chi1_sq * m1 / M + chi2_sq * m2 / M - \
+            2. * chi1 * chi2 * eta - chi1_sq * m1_2 * qm1 / M_2 - \
+            chi2_sq * m2_2 * qm2 / M_2) * v4 \
+        - 1. / 9 * ( 120. * (chi1 + chi2) * eta2 + \
+            (76. * chi1 + 45. * chi2) * m1_2 * eta / M_2 + \
+            (45. * chi1 + 76. * chi2) * m2_2 * eta / M_2) * v5 \
+        + (34445. * eta / 576. - 205. * pi_sq * eta / 96. - \
+            155. * eta2 / 96. - 35. * eta3 / 5184. + \
+            65. * (chi1_sq * m1 + chi2_sq * m2) / (18. * M) + \
+            5. / 18. * (chi1_sq * (8. - 21. * qm1) * m1_4 / M_4 + \
+            chi2_sq * (8. - 21. * qm2) * m2_4 / M_4 + \
+            3. * (chi1_sq * (10. - 9. * qm1) - 2. * chi1 * chi2) * eta * m1_2 / M_2 + \
+            3. * (chi2_sq * (10. - 9. * qm2) - 2. * chi1 * chi2) * eta * m2_2 / M_2 + \
+            (9. * (2. - qm1) * chi1_sq - 14. * chi1 * chi2 + \
+            9. * (2. - qm2) * chi2_sq) * eta2)) * v6 \
+        - eta / 12. * (3. * (292. * chi1 + 81. * chi2) * m1_4 / M_4 + \
+            3. * (81. * chi1 + 292. * chi2) * m2_4 / M_4 + \
+            4. * (673. * chi1 + 360. * chi2) * eta * m1_2 / M_2 + \
+            4. * (360. * chi1 + 673. * chi2) * eta * m2_2 / M_2 + \
+            3012. * eta2 * (chi1 + chi2)) * v7 \
         )
 
     return h_E
+
 
 def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1=None, qm2=None):
     """Return the velocity of the hybrid MECO
@@ -897,11 +924,16 @@ def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1=None, qm2=None):
         qm2 = 1
 
     # The velocity can only go from 0 to 1.
-    # Set bounds at 0.1 to skip v=0 and
-    # at 0.9 because there is a singularity at v=1, chi1=1
+    # Set bounds at 0.1 to skip v=0 and at the lightring velocity
+
+    if chi1 == chi2:
+        vmax = kerr_lightring_velocity(chi1) - 0.01
+    else:
+        vmax = min(kerr_lightring_velocity(chi1), kerr_lightring_velocity(chi2)) - 0.01
 
     return minimize(hybridEnergy, 0.2, args=(m1, m2, chi1, chi2, qm1, qm2), 
-                    bounds=[(0.1,0.9)]).x.item()
+                    bounds=[(0.1, vmax)]).x.item()
+
 
 def hybrid_meco_frequency(m1, m2, chi1, chi2, qm1=None, qm2=None):
     """Return the frequency of the hybrid MECO
