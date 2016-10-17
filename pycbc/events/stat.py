@@ -28,6 +28,7 @@ statistic values
 import numpy
 from . import events
 
+
 class Stat(object):
 
     """ Base class which should be extended to provide a coincident statistic"""
@@ -49,6 +50,7 @@ class Stat(object):
             f = h5py.File(filename, 'r')
             stat = f.attrs['stat']
             self.files[stat] = f
+
 
 class NewSNRStatistic(Stat):
 
@@ -107,6 +109,7 @@ class NewSNRStatistic(Stat):
         """
         return (s1**2.0 + s2**2.0) ** 0.5
 
+
 class NewSNRCutStatistic(NewSNRStatistic):
 
     """Same as the NewSNR statistic, but demonstrates a cut of the triggers"""
@@ -150,6 +153,7 @@ class NewSNRCutStatistic(NewSNRStatistic):
         cstat[s1==-1] = 0
         cstat[s2==-1] = 0
         return cstat
+
 
 class PhaseTDStatistic(NewSNRStatistic):
 
@@ -251,6 +255,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         cstat[cstat < 0] = 0
         return cstat ** 0.5
 
+
 class ExpFitStatistic(NewSNRStatistic):
 
     """Detection statistic that approximates the negative log noise coinc rate
@@ -321,32 +326,33 @@ class ExpFitStatistic(NewSNRStatistic):
         # notionally, log likelihood ratio \propto rho_c^2 / 2
         return (2 * loglr) ** 0.5
 
-class ExpFitStatAlan(ExpFitStatistic):
+
+class ExpFitCombinedSNR(ExpFitStatistic):
+
+    """Monotonic function of ExpFitStatistic designed to resemble network SNR
+    for coincs with similar newsnr in each ifo
+    """
 
     def __init__(self, files):
         ExpFitStatistic.__init__(self, files)
-        # normalize statistic to be similar to combined newsnr for low-mass
-        # templates where alpha is approx. 6
+        # for low-mass templates the exponential slope alpha \approx 6
         self.alpharef = 6.
-        self._sqrt2 = 2. ** 0.5
 
     def single(self, trigs):
         alphai, lambdai, thresh = self.find_fits(trigs)
         newsnr = self.get_newsnr(trigs)
-        # shift noise likelihood by log of reference alpha value
-        lognoisel = - alphai * (newsnr - thresh) + \
-                    numpy.log(alphai / self.alpharef) + \
-                    numpy.log(lambdai)
-        # rescale negative log likelihood to resemble half of combined newsnr
-        stat = thresh / self._sqrt2 - 1. / (self.alpharef * self._sqrt2) * \
-               lognoisel
-        return numpy.array(stat, ndmin=1, dtype=numpy.float32)
+        # noise rate density shifted by log of reference slope alpha
+        lognoiserate = - alphai * (newsnr - thresh) + \
+                       numpy.log(alphai / self.alpharef) + \
+                       numpy.log(lambdai)
+        # add threshold and rescale by reference slope
+        stat = thresh - (lognoiserate / self.alpharef)
+        # rescale by 1/sqrt(2) to resemble network SNR
+        return numpy.array(stat / (2.**0.5), ndmin=1, dtype=numpy.float32)
 
     def coinc(self, s0, s1, slide, step):
         return s0 + s1
 
-# thing I wrote on chat
-# (rhothreshH+rhothreshL) / sqrt(2) + (1/6*sqrt(2)) [ alphaH*(rhohatH - rhothreshH) - ln (alphaH/6) - ln (muH/mubar) + H->L ]
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
@@ -380,7 +386,7 @@ statistic_dict = {
     'newsnr_cut': NewSNRCutStatistic,
     'phasetd_newsnr': PhaseTDStatistic,
     'exp_fit_stat': ExpFitStatistic,
-    'exp_fit_alanstat': ExpFitStatAlan,
+    'exp_fit_csnr': ExpFitCombinedSNR,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
 }
 
