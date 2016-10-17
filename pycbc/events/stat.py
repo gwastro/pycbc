@@ -28,6 +28,27 @@ statistic values
 import numpy
 from . import events
 
+
+def get_newsnr(trigs):
+    """
+    Calculate newsnr ('reweighted SNR') for a trigs object
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays
+        Dictionary holding single detector trigger information.
+    'chisq_dof', 'snr', and 'chisq' are required keys
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of newsnr values
+    """
+    dof = 2. * trigs['chisq_dof'] - 2.
+    newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / dof)
+    return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
+
+
 class Stat(object):
 
     """ Base class which should be extended to provide a coincident statistic"""
@@ -50,29 +71,10 @@ class Stat(object):
             stat = f.attrs['stat']
             self.files[stat] = f
 
+
 class NewSNRStatistic(Stat):
 
     """ Calculate the NewSNR coincident detection statistic """
-
-    def get_newsnr(self, trigs):
-        """
-        Calculate newsnr ('reweighted SNR') for a trigs object
-
-        Parameters
-        ----------
-        trigs: dict of numpy.ndarrays
-            Dictionary holding single detector trigger information.
-        'chisq_dof', 'snr', and 'chisq' are required keys
-
-        Returns
-        -------
-        numpy.ndarray
-            Array of newsnr values
-        """
-
-        dof = 2 * trigs['chisq_dof'] - 2
-        newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / dof)
-        return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
 
     def single(self, trigs):
         """Calculate the single detector statistic, here equal to newsnr
@@ -86,7 +88,7 @@ class NewSNRStatistic(Stat):
         numpy.ndarray
             The array of single detector values
         """
-        return self.get_newsnr(self, trigs)
+        return get_newsnr(trigs)
 
     def coinc(self, s1, s2, slide, step):
         """Calculate the coincident detection statistic.
@@ -107,6 +109,7 @@ class NewSNRStatistic(Stat):
         """
         return (s1**2.0 + s2**2.0) ** 0.5
 
+
 class NewSNRCutStatistic(NewSNRStatistic):
 
     """Same as the NewSNR statistic, but demonstrates a cut of the triggers"""
@@ -125,7 +128,8 @@ class NewSNRCutStatistic(NewSNRStatistic):
         newsnr: numpy.ndarray
             Array of single detector values
         """
-        newsnr = self.get_newsnr(self, trigs)
+        newsnr = get_newsnr(trigs)
+        rchisq = trigs['chisq'] / (2. * trigs['chisq_dof'] - 2.)
         newsnr[numpy.logical_and(newsnr < 10, rchisq > 2)] = -1
         return newsnr
 
@@ -150,6 +154,7 @@ class NewSNRCutStatistic(NewSNRStatistic):
         cstat[s1==-1] = 0
         cstat[s2==-1] = 0
         return cstat
+
 
 class PhaseTDStatistic(NewSNRStatistic):
 
@@ -182,7 +187,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         numpy.ndarray
             Array of single detector parameter values
         """
-        newsnr = self.get_newsnr(self, trigs)
+        newsnr = get_newsnr(trigs)
         return numpy.array((newsnr, trigs['coa_phase'], trigs['end_time'],
                             trigs['sigmasq']**0.5, trigs['snr'])).transpose()
 
@@ -219,7 +224,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         snr2[rd > 1] = sn1[rd > 1]
         rd[rd > 1] = 1.0 / rd[rd > 1]
 
-        # These are the bin boundaries stored in the hdf file
+        # Bin boundaries are stored in the hdf file
         tbins = self.files['phasetd_newsnr']['tbins'][:]
         pbins = self.files['phasetd_newsnr']['pbins'][:]
         sbins = self.files['phasetd_newsnr']['sbins'][:]
@@ -232,9 +237,8 @@ class PhaseTDStatistic(NewSNRStatistic):
         s2v = numpy.searchsorted(sbins, snr2) - 1    
         rv = numpy.searchsorted(rbins, rd) - 1  
 
-        # The following just enforces that the point fits into
-        # the bin boundaries. If a point lies outside the boundaries it is
-        # pushed back to the nearest bin.
+        # Enforce that points fits into the bin boundaries: if a point lies
+        # outside the boundaries it is pushed back to the nearest bin.
         tv[tv < 0] = 0
         tv[tv >= len(tbins) - 1] = len(tbins) - 2
         pv[pv < 0] = 0
@@ -251,10 +255,13 @@ class PhaseTDStatistic(NewSNRStatistic):
         cstat[cstat < 0] = 0
         return cstat ** 0.5
 
+
 class ExpFitStatistic(NewSNRStatistic):
 
-    """Detection statistic that approximates the negative log noise coinc rate
-       density per template over single-ifo newsnr values
+    """Detection statistic using an exponential falloff noise model.
+
+    Statistic approximates the negative log noise coinc rate density per
+    template over single-ifo newsnr values.
     """
 
     def __init__(self, files):
@@ -300,7 +307,7 @@ class ExpFitStatistic(NewSNRStatistic):
         and rescale by the fitted coefficients alpha and lambda
         """
         alphai, lambdai, thresh = self.find_fits(trigs)
-        newsnr = self.get_newsnr(self, trigs)
+        newsnr = get_newsnr(trigs)
         # alphai is constant of proportionality between single-ifo newsnr and
         #  negative log noise likelihood in given template
         # lambdai is rate of trigs in given template compared to average
@@ -321,32 +328,35 @@ class ExpFitStatistic(NewSNRStatistic):
         # notionally, log likelihood ratio \propto rho_c^2 / 2
         return (2 * loglr) ** 0.5
 
-class ExpFitStatAlan(ExpFitStatistic):
+
+class ExpFitCombinedSNR(ExpFitStatistic):
+
+    """Reworking of ExpFitStatistic designed to resemble network SNR
+
+    Use a monotonic function of the negative log noise rate density which
+    approximates combined (new)snr for coincs with similar newsnr in each ifo
+    """
 
     def __init__(self, files):
         ExpFitStatistic.__init__(self, files)
-        # normalize statistic to be similar to combined newsnr for low-mass
-        # templates where alpha is approx. 6
+        # for low-mass templates the exponential slope alpha \approx 6
         self.alpharef = 6.
-        self._sqrt2 = 2. ** 0.5
 
     def single(self, trigs):
         alphai, lambdai, thresh = self.find_fits(trigs)
-        newsnr = self.get_newsnr(trigs)
-        # shift noise likelihood by log of reference alpha value
-        lognoisel = - alphai * (newsnr - thresh) + \
-                    numpy.log(alphai / self.alpharef) + \
-                    numpy.log(lambdai)
-        # rescale negative log likelihood to resemble half of combined newsnr
-        stat = thresh / self._sqrt2 - 1. / (self.alpharef * self._sqrt2) * \
-               lognoisel
+        newsnr = get_newsnr(trigs)
+        # noise rate density shifted by log of reference slope alpha
+        lognoiserate = - alphai * (newsnr - thresh) + \
+                       numpy.log(alphai / self.alpharef) + \
+                       numpy.log(lambdai)
+        # add threshold and rescale by reference slope
+        stat = thresh - (lognoiserate / self.alpharef)
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
     def coinc(self, s0, s1, slide, step):
-        return s0 + s1
+        # rescale by 1/sqrt(2) to resemble network SNR
+        return (s0 + s1) / (2.**0.5)
 
-# thing I wrote on chat
-# (rhothreshH+rhothreshL) / sqrt(2) + (1/6*sqrt(2)) [ alphaH*(rhohatH - rhothreshH) - ln (alphaH/6) - ln (muH/mubar) + H->L ]
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
@@ -367,20 +377,18 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
         stat: numpy.ndarray
             The array of single detector values
         """
-        chisq_dof = 2 * trigs['chisq_dof'] - 2
-        chisq_newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / chisq_dof)
-        autochisq_dof = trigs['cont_chisq_dof']
-        autochisq_newsnr = events.newsnr(trigs['snr'],
-                                         trigs['cont_chisq'] / autochisq_dof)
+        chisq_newsnr = get_newsnr(trigs)
+        rautochisq = trigs['cont_chisq'] / trigs['cont_chisq_dof']
+        autochisq_newsnr = events.newsnr(trigs['snr'], rautochisq)
         return numpy.array(numpy.minimum(chisq_newsnr, autochisq_newsnr,
-                             dtype=numpy.float32), ndmin=1, copy=False)
+                           dtype=numpy.float32), ndmin=1, copy=False)
 
 statistic_dict = {
     'newsnr': NewSNRStatistic,
     'newsnr_cut': NewSNRCutStatistic,
     'phasetd_newsnr': PhaseTDStatistic,
     'exp_fit_stat': ExpFitStatistic,
-    'exp_fit_alanstat': ExpFitStatAlan,
+    'exp_fit_csnr': ExpFitCombinedSNR,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
 }
 
