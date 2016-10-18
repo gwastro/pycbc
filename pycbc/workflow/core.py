@@ -256,7 +256,7 @@ class Executable(pegasus_workflow.Executable):
 
             value = string.strip(cp.get(sec, opt))
             key = opt.split('|')[1]
-            self.add_profile(namespace, key, value)
+            self.add_profile(namespace, key, value, force=True)
 
             # Remove if Pegasus can apply this hint in the TC
             if namespace == 'hints' and key == 'execution.site':
