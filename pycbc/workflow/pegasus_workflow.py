@@ -91,14 +91,18 @@ class Executable(ProfileShortcuts):
     def insert_into_dax(self, dax):
         dax.addExecutable(self._dax_executable)
         
-    def add_profile(self, namespace, key, value):
+    def add_profile(self, namespace, key, value, force=False):
         """ Add profile information to this executable
         """
         try:
             entry = dax.Profile(namespace, key, value)
             self._dax_executable.addProfile(entry)  
         except dax.DuplicateError:
-            pass
+            if force:
+                # Replace with the new key
+                self._dax_executable.removeProfile(entry)
+                self._dax_executable.addProfile(entry)
+        
  
 class Node(ProfileShortcuts):    
     def __init__(self, executable):
@@ -209,14 +213,17 @@ class Node(ProfileShortcuts):
         return fil
 
     # functions to describe properties of this node
-    def add_profile(self, namespace, key, value):
+    def add_profile(self, namespace, key, value, force=False):
         """ Add profile information to this node at the DAX level
         """
         try:
             entry = dax.Profile(namespace, key, value)
             self._dax_node.addProfile(entry)
         except dax.DuplicateError:
-            pass    
+            if force:
+                # Replace with the new key
+                self._dax_node.removeProfile(entry)
+                self._dax_node.addProfile(entry)
         
     def _finalize(self):
         args = self._args + self._options
