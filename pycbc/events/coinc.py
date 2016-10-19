@@ -368,7 +368,7 @@ class MultiRingBuffer(object):
         oldsize = self.pad_count
         if size < oldsize:
             raise ValueError("The new size must be larger than the old one")
-           
+
         self.pad_count = size
         self.buffer.resize(size)
         self.buffer_expire.resize(size)
@@ -895,7 +895,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         ----------
         results: dict of arrays
             Dictionary of dictionaries indexed by ifo and keys such as 'snr',
-            'chisq', etc. The specific format it determined by the 
+            'chisq', etc. The specific format it determined by the
             LiveBatchMatchedFilter class.
         data_reader: dict of StrainBuffers
             A dict of StrainBuffer instances, indexed by ifos.
