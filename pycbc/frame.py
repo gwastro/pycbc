@@ -732,8 +732,8 @@ class StatusBuffer(DataBuffer):
         if self.increment_update_cache:
             self.update_cache_by_increment(blocksize)
 
-        ts = DataBuffer.advance(self, blocksize)
-        if ts is not None:
+        try:
+            ts = DataBuffer.advance(self, blocksize)
             return self.check_valid(ts)
-        else:
+        except RuntimeError:
             return False
