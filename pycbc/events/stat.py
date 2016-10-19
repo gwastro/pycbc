@@ -170,7 +170,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         #normalize so that peak has no effect on newsnr
         self.hist = self.hist / top
         self.hist = numpy.log(self.hist)
-        self.single_dtype = [('newsnr', numpy.float32), 
+        self.single_dtype = [('newsnr', numpy.float32),
                     ('coa_phase', numpy.float32),
                     ('end_time', numpy.float64),
                     ('sigmasq', numpy.float32),
