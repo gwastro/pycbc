@@ -24,9 +24,7 @@
 """ This modules contains functions for calculating and manipulating
 coincident triggers.
 """
-import numpy, logging, h5py, pycbc.pnutils, copy, lal
-from itertools import izip
-from scipy.interpolate import interp1d
+import numpy, logging, pycbc.pnutils, copy, lal
 
 def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
@@ -347,7 +345,7 @@ class MultiRingBuffer(object):
             The type of each element in the ring buffer.
         """
         self.max_length = max_length
-        
+
         # Set initial size of buffers
         self.pad_count = 64
         self.buffer = numpy.zeros((num_rings, self.pad_count), dtype=dtype)
@@ -390,7 +388,7 @@ class MultiRingBuffer(object):
         """
         count = self.index - self.start
         count[self.index < self.start] += self.pad_count
-        return count   
+        return count
 
     def num_elements(self):
         """ Return the total number of non-null elements in all the buffers"""
@@ -455,7 +453,7 @@ class MultiRingBuffer(object):
             return numpy.concatenate([buffer_part[start:], buffer_part[:end]])
 
 class CoincExpireBuffer(object):
-    """ Unordered dynamic sized buffer that handles 
+    """ Unordered dynamic sized buffer that handles
     multiple expiration vectors.
     """
 
@@ -539,7 +537,7 @@ class CoincExpireBuffer(object):
         """ Return the number of elements larger than 'value'"""
         return (self.buffer[:self.index] > value).sum()
         
-    @property    
+    @property
     def data(self):
         """ Return the array of elements """
         return self.buffer[:self.index]
@@ -556,7 +554,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                  coinc_threshold=0.002,
                  return_background=False,
                  save_background_on_interrupt=False):
-        """ 
+        """
         Parameters
         ----------
         num_templates: int
@@ -586,7 +584,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             If true, background triggers will also be included in the file
             output.
         save_background_on_interrupt: boolean
-            If true, an interrupt can be given to save a pickled version of 
+            If true, an interrupt can be given to save a pickled version of
             the background instance for later restoration. !NOT IMPLEMENTED!
         """
         from pycbc import detector
@@ -681,20 +679,20 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         ----------
         results: dict of arrays
             Dictionary of dictionaries indexed by ifo and keys such as 'snr',
-            'chisq', etc. The specific format it determined by the 
+            'chisq', etc. The specific format it determined by the
             LiveBatchMatchedFilter class.
             
         Returns
         -------
         updated_singles: dict of numpy.ndarrays
             Array of indices that have been just updated in the internal
-            buffers of single detector triggers.                    
+            buffers of single detector triggers.
         """
         if len(self.singles.keys()) == 0:
             self.set_singles_buffer(results)
 
-        # convert to single detector trigger values 
-        # FIXME Currently configured to use pycbc live output 
+        # convert to single detector trigger values
+        # FIXME Currently configured to use pycbc live output
         # where chisq is the reduced chisq and chisq_dof is the actual DOF
         logging.info("adding singles to the background estimate...")
         updated_indices = {}
@@ -733,7 +731,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         Returns
         -------
         coinc_results: dict of arrays
-            A dictionary of arrays containing the coincident results.            
+            A dictionary of arrays containing the coincident results.
         """
         # for each single detector trigger find the allowed coincidences
         # Record which template and the index of the single trigger
@@ -770,14 +768,14 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 cstat.append(c)
                 ctimes[oifo].append(times[i1])
                 ctimes[ifo].append(numpy.zeros(len(c), dtype=numpy.float64))
-                ctimes[ifo][-1].fill(trig_time)        
+                ctimes[ifo][-1].fill(trig_time)
 
                 single_expire[oifo].append(self.singles[oifo].expire_vector(template)[i1])
                 single_expire[ifo].append(numpy.zeros(len(c),
                                           dtype=numpy.float64))
                 single_expire[ifo][-1].fill(self.singles[ifo].expire - 1)
 
-                # save the template and trigger ids to keep association 
+                # save the template and trigger ids to keep association
                 # to singles. The trigger was just added so it must be in
                 # the last position we mark this with -1 so the
                 # slicing picks the right point
