@@ -419,7 +419,7 @@ class MultiRingBuffer(object):
         """
         if self.ring_sizes.max() > self.pad_count * .9:
             self.increase_buffer_size(self.pad_count * 1.5)
-    
+
         index = self.index[indices]
 
         self.buffer[indices, index] = values
