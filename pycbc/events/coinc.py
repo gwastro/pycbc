@@ -362,7 +362,7 @@ class MultiRingBuffer(object):
     def __len__(self):
         """ Return the number of elements in the ring buffer, including nulls"""
         return self.size
-        
+
     def increase_buffer_size(self, size):
         """ Increase the internal buffer size up to 'size'"""
         oldsize = self.pad_count
@@ -725,7 +725,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         ----------
         results: dict of arrays
             Dictionary of dictionaries indexed by ifo and keys such as 'snr',
-            'chisq', etc. The specific format it determined by the 
+            'chisq', etc. The specific format it determined by the
             LiveBatchMatchedFilter class.
             
         Returns
