@@ -347,8 +347,10 @@ class MultiRingBuffer(object):
 
         # Set initial size of buffers
         self.pad_count = 64
+        self.num_rings = num_rings
         self.buffer = numpy.zeros((num_rings, self.pad_count), dtype=dtype)
-        self.buffer_expire = numpy.zeros((num_rings, self.pad_count), dtype=numpy.int32)
+        self.buffer_expire = numpy.zeros((num_rings, self.pad_count), dtype=numpy.int32) 
+
         self.buffer_expire -= self.max_length * 2
 
         self.start = numpy.zeros(num_rings, dtype=numpy.uint32)
@@ -361,6 +363,15 @@ class MultiRingBuffer(object):
     def __len__(self):
         """ Return the number of elements in the ring buffer, including nulls"""
         return self.size
+        
+    def increase_buffer_size(self, size):
+        oldsize = self.pad_count
+        if size < oldsize:
+            raise ValueError("The new size must be larger than the old one")
+           
+        self.pad_count = size
+        self.buffer.resize((self.num_rings, size))
+        self.buffer_expire.resize((self.num_rings, size))
 
     def increase_buffer_size(self, size):
         """ Increase the internal buffer size up to 'size'"""
@@ -382,15 +393,11 @@ class MultiRingBuffer(object):
         return self.buffer[0][self.index[0]]['end_time']
 
     def ring_sizes(self):
-        """Return an array containing the number of non-null elements in each
-        ring buffer.
-        """
         count = self.index - self.start
-        count[self.index < self.start] += self.pad_count
-        return count
+        count[self.index < self.start] += self.pad_count 
+        return count   
 
     def num_elements(self):
-        """Return the total number of non-null elements in all the buffers"""
         total = self.ring_sizes().sum()
         return total
 
@@ -416,8 +423,8 @@ class MultiRingBuffer(object):
     def add(self, indices, values):
         """Add triggers in 'values' to the buffers indicated by the indices
         """
-        if self.ring_sizes.max() > self.pad_count * .9:
-            self.increase_buffer_size(self.pad_count * 1.5)
+        if self.ring_sizes().max() > self.pad_count * .9:
+            self.increase_buffer_size(int(self.pad_count * 1.5))
 
         index = self.index[indices]
 
