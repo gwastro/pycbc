@@ -446,7 +446,7 @@ class MultiRingBuffer(object):
         buffer_part = self.buffer[buffer_index]
         start = self.start[buffer_index]
         end = self.index[buffer_index]
-        
+
         if start <= end:
             return buffer_part[start:end]
         else:
@@ -494,7 +494,7 @@ class CoincExpireBuffer(object):
     
     def add(self, values, times, ifos):
         """ Add values to the internal buffer
-        
+
         Parameters
         ----------
         values: numpy.ndarray
@@ -642,7 +642,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     def set_singles_buffer(self, results):
         """Create the singles buffer
-    
+
         This creates the singles buffer for each ifo. The dtype is determined
         by a representative sample of the single triggers in the results.
 
@@ -720,7 +720,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     def _find_coincs(self, results):
         """ Look for coincs within the set of single triggers
-        
+
         Parameters
         ----------
         results: dict of arrays
@@ -854,7 +854,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     def backout_last(self, updated_singles, num_coincs):
         """ Remove the recently added singles and coincs
-        
+
         Parameters
         ----------
         updated_singles: dict of numpy.ndarrays
@@ -899,7 +899,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             LiveBatchMatchedFilter class.
         data_reader: dict of StrainBuffers
             A dict of StrainBuffer instances, indexed by ifos.
-        
+
         Returns
         -------
         coinc_results: dict of arrays
