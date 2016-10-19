@@ -350,7 +350,6 @@ class MultiRingBuffer(object):
         self.num_rings = num_rings
         self.buffer = numpy.zeros((num_rings, self.pad_count), dtype=dtype)
         self.buffer_expire = numpy.zeros((num_rings, self.pad_count), dtype=numpy.int32)
-
         self.buffer_expire -= self.max_length * 2
 
         self.start = numpy.zeros(num_rings, dtype=numpy.uint32)
