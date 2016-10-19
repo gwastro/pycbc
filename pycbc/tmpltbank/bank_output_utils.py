@@ -358,6 +358,12 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
                     ethincaParams.cutoff,
                     sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z)
 
+    # set per-template low-frequency cutoff
+    if 'f_low_column' in optDict and 'f_low' in optDict and \
+            optDict['f_low_column'] is not None:
+        for sngl in sngl_inspiral_table:
+            setattr(sngl, optDict['f_low_column'], optDict['f_low'])
+
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
     # get times to put in search summary table

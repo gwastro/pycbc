@@ -129,6 +129,9 @@ def insert_base_bank_options(parser):
     parser.add_argument(
             '-O', '--output-file', required=True,
             help="Output file name. Required.")
+    parser.add_argument('--f-low-column', type=str, metavar='NAME',
+                        help='If given, store the lower frequency cutoff into '
+                             'column NAME of the single-inspiral table.')
 
 def insert_metric_calculation_options(parser):
     """

@@ -58,6 +58,9 @@ parser.add_argument("-i", "--input-glob",
 parser.add_argument("-I", "--input-files", nargs='+',
                     help="Explicit list of input files.")
 parser.add_argument("-o", "--output-file",  help="Output file name")
+parser.add_argument('--f-low-column', type=str, metavar='NAME',
+                    help='If given, store the lower frequency cutoff into '
+                         'column NAME of the single-inspiral table.')
 parser.add_argument("-m", "--metadata-file", metavar="METADATA_FILE",
                   help="XML file containing the process and process_params "
                   "tables that the aligned_bank code was run with.")
