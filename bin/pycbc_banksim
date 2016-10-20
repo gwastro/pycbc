@@ -272,8 +272,14 @@ if options.psd_estimation:
 else:
     strain = None
 
-template_sample_rate = options.template_sample_rate or options.filter_sample_rate
-signal_sample_rate = options.signal_sample_rate or options.filter_sample_rate
+if options.template_sample_rate is not None:
+    template_sample_rate = options.template_sample_rate
+else:
+    template_sample_rate = options.filter_sample_rate
+if options.signal_sample_rate is not None:
+    signal_sample_rate = options.signal_sample_rate
+else:
+    signal_sample_rate = options.filter_sample_rate
 
 ctx = pycbc.scheme.from_cli(options)
 
