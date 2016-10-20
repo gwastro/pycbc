@@ -355,10 +355,9 @@ with ctx:
         h_norm = htilde = None
         for stilde, s_norm, matches, signal_params, signal_high_freq_cutoff in signals:
             # Check if we need to look at this
-            if stilde is None:
+            if stilde is None or \
+                    outside_mchirp_window(template_params, signal_params):
                 matches.append(0)
-                continue
-            if outside_mchirp_window(template_params, signal_params):
                 continue
 
             # Generate htilde if we haven't already done so
