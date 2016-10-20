@@ -69,6 +69,10 @@ class Stat(object):
             f = h5py.File(filename, 'r')
             stat = f.attrs['stat']
             self.files[stat] = f
+            
+        # We provide the dtype of output of the single detector method
+        # This is used by background estimation codes that need to maintain
+        # a buffer of such values.
         self.single_dtype = numpy.float32
 
 
