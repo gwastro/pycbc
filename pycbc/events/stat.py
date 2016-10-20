@@ -192,7 +192,6 @@ class PhaseTDStatistic(NewSNRStatistic):
         numpy.ndarray
             Array of single detector parameter values
         """
-
         newsnr = get_newsnr(trigs)
         singles = numpy.zeros(len(newsnr), dtype=self.single_dtype)
         singles['newsnr'] = newsnr
@@ -202,27 +201,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         singles['snr'] = trigs['snr']
         return numpy.array(singles, ndmin=1)
 
-    def coinc(self, s1, s2, slide, step):
-        """
-        Calculate the coincident detection statistic.
-
-        Parameters
-        ----------
-        s1: numpy.ndarray
-            Single detector ranking statistic for the first detector.
-        s2: numpy.ndarray
-            Single detector ranking statistic for the second detector.
-        slide: numpy.ndarray
-            Array of ints. These represent the multiple of the timeslide
-        interval to bring a pair of single detector triggers into coincidence.
-        step: float
-            The timeslide interval in seconds.
-
-        Returns
-        -------
-        coinc_stat: numpy.ndarray
-            An array of the coincident ranking statitic values
-        """
+    def signal_likelihood(self, s1, s2, slide, step):
         td = numpy.array(s1['end_time'] - s2['end_time'] - slide * step, ndmin=1)
         pd = numpy.array((s1['coa_phase'] - s2['coa_phase']) % (numpy.pi * 2), ndmin=1)
         rd = numpy.array((s1['sigmasq'] / s2['sigmasq']) ** 0.5, ndmin=1)
@@ -261,9 +240,32 @@ class PhaseTDStatistic(NewSNRStatistic):
         s2v[s2v >= len(sbins) - 1] = len(sbins) - 2
         rv[rv < 0] = 0
         rv[rv >= len(rbins) - 1] = len(rbins) - 2
+        
+        return self.hist[tv, pv, s1v, s2v, rv]
 
+    def coinc(self, s1, s2, slide, step):
+        """
+        Calculate the coincident detection statistic.
+
+        Parameters
+        ----------
+        s1: numpy.ndarray
+            Single detector ranking statistic for the first detector.
+        s2: numpy.ndarray
+            Single detector ranking statistic for the second detector.
+        slide: numpy.ndarray
+            Array of ints. These represent the multiple of the timeslide
+        interval to bring a pair of single detector triggers into coincidence.
+        step: float
+            The timeslide interval in seconds.
+
+        Returns
+        -------
+        coinc_stat: numpy.ndarray
+            An array of the coincident ranking statitic values
+        """
         rstat = s1['newsnr']**2.0 + s2['newsnr']**2.0
-        cstat = rstat + 2.0 * self.hist[tv, pv, s1v, s2v, rv]
+        cstat = rstat + 2.0 * self.signal_likelihood(s1, s2, slide, step)
         cstat[cstat < 0] = 0
         return cstat ** 0.5
 
@@ -370,6 +372,27 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         return (s0 + s1) / (2.**0.5)
 
 
+class PhaseTDExpFitCombinedSNR(PhaseTDStatistic, ExpFitCombinedSNR):
+    def __init__(self, files):
+        ExpFitCombinedSNR.__init__(self, files)
+        PhaseTDStatistic.__init__(self, files)
+        
+    def single(self, trigs):
+        expsnr = ExpFitCombinedSNR.single(self, trigs)
+        singles = numpy.zeros(len(expsnr), dtype=self.single_dtype)
+        singles['expsnr'] = expsnr
+        singles['coa_phase'] = trigs['coa_phase']
+        singles['end_time'] = trigs['end_time']
+        singles['sigmasq'] = trigs['sigmasq']
+        singles['snr'] = trigs['snr']
+        return numpy.array(singles, ndmin=1)
+
+    def coinc(self, s1, s2, slide, step):
+        rstat = (s1['expsnr'] + s2['expsnr']) ** 2.0
+        cstat = rstat + 2.0 * self.signal_likelihood(s1, s2, slide, step)
+        cstat[cstat < 0] = 0
+        return cstat ** 0.5
+
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
     """Combination of NewSNR with the power chisq and auto chisq"""
@@ -402,6 +425,7 @@ statistic_dict = {
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
+    'phasetd_exp_fit_csnr':PhaseTDExpFitCombinedSNR,
 }
 
 def get_statistic(stat):
