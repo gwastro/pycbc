@@ -563,6 +563,11 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         """
         # Loop over the sections in the ini file
         for section in self.sections():
+            # [pegasus_profile] specially is allowed to be overriden by
+            # sub-sections
+            if section == 'pegasus_profile':
+                continue
+
             # Loop over the sections again
             for section2 in self.sections():
                 # Check if any are subsections of section
