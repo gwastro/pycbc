@@ -329,8 +329,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
     return time_sorting[indices]
 
 class MultiRingBuffer(object):
-    """ Dynamic size n-dimensional ring buffer that can expire elements.
-    """
+    """Dynamic size n-dimensional ring buffer that can expire elements."""
 
     def __init__(self, num_rings, max_length, dtype=numpy.float32):
         """
@@ -383,7 +382,7 @@ class MultiRingBuffer(object):
         return self.buffer[0][self.index[0]]['end_time']
 
     def ring_sizes(self):
-        """ Return an array containing the number of non-null elements in each
+        """Return an array containing the number of non-null elements in each
         ring buffer.
         """
         count = self.index - self.start
@@ -391,19 +390,19 @@ class MultiRingBuffer(object):
         return count
 
     def num_elements(self):
-        """ Return the total number of non-null elements in all the buffers"""
+        """Return the total number of non-null elements in all the buffers"""
         total = self.ring_sizes().sum()
         return total
 
     def discard_last(self, indices):
-        """ Discard the triggers added in the latest update"""
+        """Discard the triggers added in the latest update"""
         index = self.index[indices]
         index -= 1
         index[index < 0] = self.pad_count
         self.index[indices] = index
 
     def advance_time(self):
-        """ Advance the internal time inrement by 1, expiring any triggers that
+        """Advance the internal time inrement by 1, expiring any triggers that
         are now too old.
         """
         if self.size < self.max_length:
@@ -415,7 +414,7 @@ class MultiRingBuffer(object):
         self.start[self.start == self.pad_count] = 0
 
     def add(self, indices, values):
-        """ Add triggers in 'values' to the buffers indicated by the indices
+        """Add triggers in 'values' to the buffers indicated by the indices
         """
         if self.ring_sizes.max() > self.pad_count * .9:
             self.increase_buffer_size(self.pad_count * 1.5)
@@ -431,7 +430,7 @@ class MultiRingBuffer(object):
         self.advance_time()
 
     def expire_vector(self, buffer_index):
-        """ Return the expiration bector of a given ring buffer """
+        """Return the expiration bector of a given ring buffer """
         buffer_part = self.buffer_expire[buffer_index]
         start = self.start[buffer_index]
         end = self.index[buffer_index]
@@ -442,7 +441,7 @@ class MultiRingBuffer(object):
             return numpy.concatenate([buffer_part[start:], buffer_part[:end]])
 
     def data(self, buffer_index):
-        """ Return the data vector for a given ring buffer"""
+        """Return the data vector for a given ring buffer"""
         buffer_part = self.buffer[buffer_index]
         start = self.start[buffer_index]
         end = self.index[buffer_index]
@@ -453,7 +452,7 @@ class MultiRingBuffer(object):
             return numpy.concatenate([buffer_part[start:], buffer_part[:end]])
 
 class CoincExpireBuffer(object):
-    """ Unordered dynamic sized buffer that handles
+    """Unordered dynamic sized buffer that handles
     multiple expiration vectors.
     """
 
@@ -485,15 +484,15 @@ class CoincExpireBuffer(object):
             self.timer[ifo] = numpy.zeros(initial_size, dtype=numpy.int32)
 
     def increment(self, ifos):
-        """ Increment without adding triggers"""
+        """Increment without adding triggers"""
         self.add([], [], ifos)
 
     def remove(self, num):
-        """ Remove the the last 'num' elements from the buffer"""
+        """Remove the the last 'num' elements from the buffer"""
         self.index -= num
     
     def add(self, values, times, ifos):
-        """ Add values to the internal buffer
+        """Add values to the internal buffer
 
         Parameters
         ----------
@@ -534,17 +533,16 @@ class CoincExpireBuffer(object):
         self.index = keep.sum()
 
     def num_greater(self, value):
-        """ Return the number of elements larger than 'value'"""
+        """Return the number of elements larger than 'value'"""
         return (self.buffer[:self.index] > value).sum()
         
     @property
     def data(self):
-        """ Return the array of elements """
+        """Return the array of elements"""
         return self.buffer[:self.index]
 
 class LiveCoincTimeslideBackgroundEstimator(object):
-    """ Rolling buffer background estimation.
-    """
+    """Rolling buffer background estimation."""
 
     def __init__(self, num_templates, analysis_block, background_statistic,
                  stat_files, ifos,
@@ -609,11 +607,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         self.singles = {}
 
-        if save_background_on_interrupt:
-            import signal
-            def sig_handler(signum, frame):
-                pass
-            signal.signal(signal.SIGINT, sig_handler)
+        #if save_background_on_interrupt:
+        #    import signal
+        #    def sig_handler(signum, frame):
+        #        pass
+        #    signal.signal(signal.SIGINT, sig_handler)
 
     @property
     def background_time(self):
@@ -632,7 +630,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
     def restore_state(filename):
         """Restore state of the background buffers from a file"""
         import cPickle
-        return cPickle.load(filname)
+        return cPickle.load(filename)
 
     def ifar(self, coinc_stat):
         """Return the far that would be associated with the coincident given.
@@ -673,7 +671,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                                             dtype=self.singles_dtype)
 
     def _add_singles_to_buffer(self, results):
-        """ Add single detector triggers to the internal buffer
+        """Add single detector triggers to the internal buffer
 
         Parameters
         ----------
@@ -719,7 +717,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         return updated_indices
 
     def _find_coincs(self, results):
-        """ Look for coincs within the set of single triggers
+        """Look for coincs within the set of single triggers
 
         Parameters
         ----------
@@ -853,7 +851,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         return num_background, coinc_results
 
     def backout_last(self, updated_singles, num_coincs):
-        """ Remove the recently added singles and coincs
+        """Remove the recently added singles and coincs
 
         Parameters
         ----------
@@ -868,14 +866,12 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             self.singles[ifo].discard_last(updated_singles[ifo])
         self.coincs.remove(num_coincs)
 
-    def check_for_hwinj(self, coinc_results, data_reader, valid_ifos):
-        """ Check that the current set of triggers could be influenced by
+    def check_for_hwinj(self, data_reader, valid_ifos):
+        """Check that the current set of triggers could be influenced by
         a hardware injection.
         
         Parameters
         ----------
-        coinc_results: dict of arrays
-            A dictionary of arrays containing the coincident results.
         data_reader: dict of StrainBuffers
             A dict of StrainBuffer instances, indexed by ifos.
         """
@@ -889,7 +885,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         return False
 
     def add_singles(self, results, data_reader):
-        """ Add singles to the bacckground estimate and find candidates
+        """Add singles to the bacckground estimate and find candidates
         
         Parameters
         ----------
@@ -906,7 +902,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             A dictionary of arrays containing the coincident results.
         """
         # If there are no results just return
-        valid_ifos = [k for k in results.keys() if results[k] != False]
+        valid_ifos = [k for k in results.keys() if results[k]]
         if len(valid_ifos) == 0: return {}
 
         # Apply CAT2 data quality here
@@ -920,7 +916,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         # If there is a hardware injection anywhere near here dump these
         # results and mark the result group as possibly being influenced
-        if self.check_for_hwinj(coinc_results, data_reader, valid_ifos):
+        if self.check_for_hwinj(data_reader, valid_ifos):
             self.backout_last(updated_indices, num_background)
             coinc_results['HWINJ'] = True
         return coinc_results
