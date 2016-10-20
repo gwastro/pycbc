@@ -856,33 +856,27 @@ def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
     m1_2, m1_4 = m1**2, m1**4
     m2_2, m2_4 = m2**2, m2**4
 
-    Kerr1 = -1. + (1. - 2. * v2 * (1. - chi1 * v3)**(1./3.)) / \
-        numpy.sqrt((1. - chi1 * v3) * (1. + chi1 * v3 -
-                    3. * v2 * (1 - chi1 * v3)**(1./3.)))
-    Kerr2 = -1. + (1 - 2. * v2 * (1. - chi2 * v3)**(1./3.)) / \
-        numpy.sqrt((1. - chi2 * v3) * (1. + chi2 * v3 -
-                    3. * v2 * (1 - chi2 * v3)**(1./3.)))
+    chi = (chi1 * m1 + chi2 * m2) / M
+    Kerr = -1. + (1. - 2. * v2 * (1. - chi * v3)**(1./3.)) / \
+        numpy.sqrt((1. - chi * v3) * (1. + chi * v3 - 3. * v2 * (1 - chi * v3)**(1./3.)))
 
-    h_E = (m1 / M) * Kerr1 + (m2 / M) * Kerr2 - \
+    h_E = Kerr - \
         (v2 / 2.) * \
         (
-        - eta * v2 / 12. - 2. * (chi1 + chi2) * eta * v3 / 3.
-        + (19. * eta / 8. - eta2 / 24. +
-            chi1_sq * m1 / M + chi2_sq * m2 / M -
-            2. * chi1 * chi2 * eta - chi1_sq * m1_2 * qm1 / M_2 -
-            chi2_sq * m2_2 * qm2 / M_2) * v4
-        - 1. / 9 * (120. * (chi1 + chi2) * eta2 +
+        - eta * v2 / 12. - 2 * (chi1 + chi2) * eta * v3 / 3. +
+        (19. * eta / 8. - eta2 / 24. + chi1_sq * m1_2 * (1 - qm1) / M_2 +
+            chi2_sq * m2_2 * (1 - qm2) / M_2) * v4
+        - 1. / 9. * (120. * (chi1 + chi2) * eta2 +
             (76. * chi1 + 45. * chi2) * m1_2 * eta / M_2 +
             (45. * chi1 + 76. * chi2) * m2_2 * eta / M_2) * v5
-        + (34445. * eta / 576. - 205. * pi_sq * eta / 96. -
-            155. * eta2 / 96. - 35. * eta3 / 5184. +
-            65. * (chi1_sq * m1 + chi2_sq * m2) / (18. * M) +
-            5. / 18. * (chi1_sq * (8. - 21. * qm1) * m1_4 / M_4 +
-            chi2_sq * (8. - 21. * qm2) * m2_4 / M_4 +
-            3. * (chi1_sq * (10. - 9. * qm1) - 2. * chi1 * chi2) * eta * m1_2 / M_2 +
-            3. * (chi2_sq * (10. - 9. * qm2) - 2. * chi1 * chi2) * eta * m2_2 / M_2 +
-            (9. * (2. - qm1) * chi1_sq - 14. * chi1 * chi2 +
-            9. * (2. - qm2) * chi2_sq) * eta2)) * v6
+        + (34445. * eta / 576. - 205. * pi_sq * eta / 96. - 155. * eta2 / 96. -
+            35. * eta3 / 5184. +
+            5. / 18. * (21. * chi1_sq * (1. - qm1) * m1_4 / M_4 +
+            21. * chi2_sq * (1. - qm2) * m2_4 / M_4 +
+            (chi1_sq * (56. - 27. * qm1) + 20. * chi1 * chi2) * eta * m1_2 / M_2 +
+            (chi2_sq * (56. - 27. * qm2) + 20. * chi1 * chi2) * eta * m2_2 / M_2 +
+            (chi1_sq * (31. - 9. * qm1) + 38. * chi1 * chi2 +
+            chi2_sq * (31. - 9. * qm2)) * eta2)) * v6
         - eta / 12. * (3. * (292. * chi1 + 81. * chi2) * m1_4 / M_4 +
             3. * (81. * chi1 + 292. * chi2) * m2_4 / M_4 +
             4. * (673. * chi1 + 360. * chi2) * eta * m1_2 / M_2 +
@@ -926,11 +920,8 @@ def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1=None, qm2=None):
 
     # The velocity can only go from 0 to 1.
     # Set bounds at 0.1 to skip v=0 and at the lightring velocity
-
-    if chi1 == chi2:
-        vmax = kerr_lightring_velocity(chi1) - 0.01
-    else:
-        vmax = min(kerr_lightring_velocity(chi1), kerr_lightring_velocity(chi2)) - 0.01
+    chi = (chi1 * m1 + chi2 * m2) / (m1 + m2)
+    vmax = kerr_lightring_velocity(chi) - 0.01
 
     return minimize(hybridEnergy, 0.2, args=(m1, m2, chi1, chi2, qm1, qm2), 
                     bounds=[(0.1, vmax)]).x.item()
