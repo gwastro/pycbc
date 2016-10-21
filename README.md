@@ -20,4 +20,4 @@ To download and install PyCBC follow the instructions at
 
 
 TESTING!
-this change has been made to test git communicaiont (161021:6:00p)
+this change has been made to test git communication (161021:6:00p)
