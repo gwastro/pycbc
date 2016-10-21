@@ -85,6 +85,14 @@ should read the documentation at:
 
    waveform
 
+Users who are interested in using PyCBC for creating populations of binaries
+with different parameters should see documentation at:
+
+.. toctree::
+   :maxdepth: 2
+
+   distributions
+
 =============================
 Documentation for Developers
 =============================
