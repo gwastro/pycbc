@@ -10,12 +10,6 @@ mass1_distribution = distributions.Uniform(mass1=(0.5, 1.5))
 # Take 100000 random variable samples from this uniform mass distribution.
 mass1_samples = mass1_distribution.rvs(size=1000000)
 
-# Prints a record array of the samples with mass 1 as a tuple
-# for each sample.
-#print mass1_samples
-# Prins a numpy array of all of the mass 1 objects as floats.
-#print mass1_samples['mass1']
-
 # Create another mass distribution object that is Gaussian between
 # 0.5 and 1.5 solar masses with a mean of 1.2 solar masses and a 
 # standard deviation of 0.15 solar masses. Gaussian takes the variance
