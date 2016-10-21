@@ -73,4 +73,4 @@ plt.savefig("/home/steven.reyes/public_html/ER10/distributionExamples/spinDistr.
 fig = plt.figure(figsize=(20,20))
 ax = fig.add_subplot(111, projection='3d')
 ax.scatter(spinx, spiny, spinz, s=1)
-plt.savefig("/home/steven.reyes/public_html/ER10/distributionExamples/spinSpatialDistr.png")
+plt.show()
