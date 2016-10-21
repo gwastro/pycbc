@@ -444,46 +444,46 @@ def get_final_freq(approx, m1, m2, s1z, s2z):
     return _vec_get_final_freq(lalsim_approx, m1, m2, s1z, s2z)
 
 # Dictionary of functions with uniform API taking a 
-# parameter dict indexed on m1, m2, s1z, s2z
+# parameter dict indexed on mass1, mass2, spin1z, spin2z
 named_frequency_cutoffs = {
     # functions depending on the total mass alone
-    "SchwarzISCO": lambda p: f_SchwarzISCO(p["m1"]+p["m2"]),
-    "LightRing"  : lambda p: f_LightRing(p["m1"]+p["m2"]),
-    "ERD"        : lambda p: f_ERD(p["m1"]+p["m2"]),
+    "SchwarzISCO": lambda p: f_SchwarzISCO(p["mass1"]+p["mass2"]),
+    "LightRing"  : lambda p: f_LightRing(p["mass1"]+p["mass2"]),
+    "ERD"        : lambda p: f_ERD(p["mass1"]+p["mass2"]),
     # functions depending on the 2 component masses
-    "BKLISCO"    : lambda p: f_BKLISCO(p["m1"], p["m2"]),
-    "FRD"        : lambda p: f_FRD(p["m1"], p["m2"]),
-    "LRD"        : lambda p: f_LRD(p["m1"], p["m2"]),
+    "BKLISCO"    : lambda p: f_BKLISCO(p["mass1"], p["mass2"]),
+    "FRD"        : lambda p: f_FRD(p["mass1"], p["mass2"]),
+    "LRD"        : lambda p: f_LRD(p["mass1"], p["mass2"]),
     # functions depending on 2 component masses and aligned spins
-    "MECO"       : lambda p: meco_frequency(p["m1"], p["m2"],
-                                              p["s1z"], p["s2z"]),
-    "HybridMECO" : lambda p: hybrid_meco_frequency(p["m1"], p["m2"],
-                                p["s1z"], p["s2z"], qm1=None, qm2=None),
+    "MECO"       : lambda p: meco_frequency(p["mass1"], p["mass2"],
+                                              p["spin1z"], p["spin2z"]),
+    "HybridMECO" : lambda p: hybrid_meco_frequency(
+        p["mass1"], p["mass2"], p["spin1z"], p["spin2z"], qm1=None, qm2=None),
     "IMRPhenomBFinal": lambda p: get_freq("fIMRPhenomBFinal",
-                                              p["m1"], p["m2"],
-                                              p["s1z"], p["s2z"]),
+                                              p["mass1"], p["mass2"],
+                                              p["spin1z"], p["spin2z"]),
     "IMRPhenomCFinal": lambda p: get_freq("fIMRPhenomCFinal",
-                                              p["m1"], p["m2"],
-                                              p["s1z"], p["s2z"]),
+                                              p["mass1"], p["mass2"],
+                                              p["spin1z"], p["spin2z"]),
     "IMRPhenomDPeak": lambda p: get_freq("fIMRPhenomDPeak",
-                                              p["m1"], p["m2"],
-                                              p["s1z"], p["s2z"]),
-    "EOBNRv2RD"   : lambda p: get_freq("fEOBNRv2RD", p["m1"], p["m2"],
-                                              p["s1z"], p["s2z"]),
-    "EOBNRv2HMRD" : lambda p: get_freq("fEOBNRv2HMRD", p["m1"], p["m2"],
-                                              p["s1z"], p["s2z"]),
-    "SEOBNRv1RD"  : lambda p: get_freq("fSEOBNRv1RD",  p["m1"], p["m2"],
-                                              p["s1z"], p["s2z"]),
-    "SEOBNRv1Peak": lambda p: get_freq("fSEOBNRv1Peak", p["m1"], p["m2"],
-                                              p["s1z"], p["s2z"]),
-    "SEOBNRv2RD": lambda p: get_freq("fSEOBNRv2RD", p["m1"], p["m2"],
-                                     p["s1z"], p["s2z"]),
-    "SEOBNRv2Peak": lambda p: get_freq("fSEOBNRv2Peak", p["m1"], p["m2"],
-                                       p["s1z"], p["s2z"]),
-    "SEOBNRv4RD": lambda p: get_freq("fSEOBNRv4RD", p["m1"], p["m2"],
-                                     p["s1z"], p["s2z"]),
-    "SEOBNRv4Peak": lambda p: get_freq("fSEOBNRv4Peak", p["m1"], p["m2"],
-                                       p["s1z"], p["s2z"])
+                                              p["mass1"], p["mass2"],
+                                              p["spin1z"], p["spin2z"]),
+    "EOBNRv2RD"   : lambda p: get_freq("fEOBNRv2RD", p["mass1"], p["mass2"],
+                                              p["spin1z"], p["spin2z"]),
+    "EOBNRv2HMRD" : lambda p: get_freq("fEOBNRv2HMRD", p["mass1"], p["mass2"],
+                                              p["spin1z"], p["spin2z"]),
+    "SEOBNRv1RD"  : lambda p: get_freq("fSEOBNRv1RD",  p["mass1"], p["mass2"],
+                                              p["spin1z"], p["spin2z"]),
+    "SEOBNRv1Peak": lambda p: get_freq("fSEOBNRv1Peak", p["mass1"], p["mass2"],
+                                              p["spin1z"], p["spin2z"]),
+    "SEOBNRv2RD": lambda p: get_freq("fSEOBNRv2RD", p["mass1"], p["mass2"],
+                                     p["spin1z"], p["spin2z"]),
+    "SEOBNRv2Peak": lambda p: get_freq("fSEOBNRv2Peak", p["mass1"], p["mass2"],
+                                       p["spin1z"], p["spin2z"]),
+    "SEOBNRv4RD": lambda p: get_freq("fSEOBNRv4RD", p["mass1"], p["mass2"],
+                                     p["spin1z"], p["spin2z"]),
+    "SEOBNRv4Peak": lambda p: get_freq("fSEOBNRv4Peak", p["mass1"], p["mass2"],
+                                       p["spin1z"], p["spin2z"])
     }
 
 def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
@@ -920,7 +920,6 @@ def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1=None, qm2=None):
     if qm2 is None:
         qm2 = 1
 
-    # The velocity can only go from 0 to 1.
     # Set bounds at 0.1 to skip v=0 and at the lightring velocity
     chi = (chi1 * m1 + chi2 * m2) / (m1 + m2)
     vmax = kerr_lightring_velocity(chi) - 0.01

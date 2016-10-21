@@ -534,6 +534,9 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         for det,h in self._waveform_generator.generate(*params).items():
             # the kmax of the waveforms may be different than internal kmax
             kmax = min(len(h), self._kmax)
+            if kmax <= self._kmin:
+                kmax = self._kmin + 2
+                h.resize(kmax)
             # whiten the waveform
             h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
             lr += (
