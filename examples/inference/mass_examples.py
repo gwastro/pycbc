@@ -1,5 +1,4 @@
 import matplotlib as mpl
-mpl.use('Agg')
 import matplotlib.pyplot as plt
 from pycbc.inference import distributions
 import numpy as np

@@ -47,7 +47,7 @@ spinx, spiny, spinz = co.spherical_to_cartesian(spin_mag,
 # Choose 20 mass bins for the histograms.
 n_bins = 20
 
-plt.figure(figsize=(20,20))
+plt.figure(figsize=(10,10))
 plt.subplot(2, 2, 1)
 plt.hist(spinx, bins = n_bins)
 plt.title('Spin x samples')
