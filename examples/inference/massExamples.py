@@ -23,7 +23,7 @@ for i in range(0,1000000):
     samples[i] = mass2_samples[i][0]
 # We can make pairs of distributions together, instead of apart.
 two_mass_distributions = distributions.Uniform(mass1=(1.6, 3.0),
-                                              mass2=(1.6, 3.0))
+                                               mass2=(1.6, 3.0))
 two_mass_samples = two_mass_distributions.rvs(size=1000000)
 
 # Let's plot what we've made so far with histograms.

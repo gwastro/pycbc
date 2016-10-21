@@ -24,8 +24,8 @@ phi_high = 2.
 # to a theta_upper_bound), and then phi = azimuthal_
 # bound(phi_lower_bound to a phi_upper_bound).
 uniform_solid_angle_distribution = distributions.UniformSolidAngle(
-                                   polar_bounds=(theta_low,theta_high),
-                                       azimuthal_bounds=(phi_low,phi_high))
+                                          polar_bounds=(theta_low,theta_high),
+                                          azimuthal_bounds=(phi_low,phi_high))
 
 # Now we can take a random variable sample from that
 # distribution. In this case we want 50000 samples.
