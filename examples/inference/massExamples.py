@@ -45,4 +45,4 @@ ax2.set_title('Mass 3 samples')
 ax3.set_title('Mass 4 samples')
 
 plt.tight_layout()
-plt.savefig("/home/steven.reyes/public_html/ER10/distributionExamples/massDistr.png")
+plt.show()
