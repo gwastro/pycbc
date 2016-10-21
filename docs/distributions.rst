@@ -14,8 +14,10 @@ Making Mass Distributions in M1 and M2
 ========================================================
 Sky Location Distribution as Spin Distribution Example 
 ========================================================
-
+Here we can make a distribution of spins of unit length with equal distribution in x, y, and z to sample the surface of a unit sphere.
 .. literalinclude:: ../examples/inference/spinExamples.py
 .. command-output:: python ../examples/inference/spinExamples.py
+
+Using much of the same code we can also show how this sampling accurately covers the surface of a unit sphere.
 .. literalinclude:: ../examples/inferences/spinSpatialDistrExample.py
 .. command-output:: python ../examples/inference/spinSpatialExample.py
