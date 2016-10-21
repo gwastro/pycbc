@@ -17,4 +17,5 @@ Sky Location Distribution as Spin Distribution Example
 
 .. literalinclude:: ../examples/inference/spinExamples.py
 .. command-output:: python ../examples/inference/spinExamples.py
-
+.. literalinclude:: ../examples/inferences/spinSpatialDistrExample.py
+.. command-output:: python ../examples/inference/spinSpatialExample.py
