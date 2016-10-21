@@ -27,14 +27,14 @@ uniform_solid_angle_distribution = distributions.UniformSolidAngle(
 
 # Now we can take a random variable sample from that
 # distribution. In this case we want 50000 samples.
-solid_angle_samples = uniform_solid_angle_distribution.rvs(size=50000)
+solid_angle_samples = uniform_solid_angle_distribution.rvs(size=10000)
 
 # Make a spin 1 magnitude since solid angle is only
 # 2 dimensions and we need a 3rd dimension for a 3D
 # plot that we make later on
-spin_mag = np.ndarray(shape=(50000), dtype=float)
+spin_mag = np.ndarray(shape=(10000), dtype=float)
 
-for i in range(0,50000):
+for i in range(0,10000):
     spin_mag[i] = 1.
 
 # Use the pycbc.coordinates as co
@@ -48,7 +48,11 @@ spinx, spiny, spinz = co.spherical_to_cartesian(spin_mag,
 # to make sure that we distributed properly across
 # the surface of a sphere.
 
-fig = plt.figure(figsize=(20,20))
+fig = plt.figure(figsize=(10,10))
 ax = fig.add_subplot(111, projection='3d')
 ax.scatter(spinx, spiny, spinz, s=1)
+
+ax.set_xlabel('Spin X Axis')
+ax.set_ylabel('Spin Y Axis')
+ax.set_zlabel('Spin Z Axis')
 plt.show()
