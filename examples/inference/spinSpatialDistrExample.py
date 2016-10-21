@@ -2,6 +2,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from pycbc.inference import distributions
 import pycbc.coordinates as co
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
 # We can choose any bounds between 0 and pi
@@ -43,22 +44,11 @@ spinx, spiny, spinz = co.spherical_to_cartesian(spin_mag,
                                                 solid_angle_samples['phi'],
                                                 solid_angle_samples['theta'])
 
-# Let's plot what we've made so far with histograms.
-# Choose 20 mass bins for the histograms.
-n_bins = 20
+# Let's plot the spherical distribution of spins
+# to make sure that we distributed properly across
+# the surface of a sphere.
 
-plt.figure(figsize=(20,20))
-plt.subplot(2, 2, 1)
-plt.hist(spinx, bins = n_bins)
-plt.title('Spin x samples')
-
-plt.subplot(2, 2, 2)
-plt.hist(spiny, bins = n_bins)
-plt.title('Spin y samples')
-
-plt.subplot(2, 2, 3)
-plt.hist(spinz, bins = n_bins)
-plt.title('Spin z samples')
-
-plt.tight_layout()
+fig = plt.figure(figsize=(20,20))
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(spinx, spiny, spinz, s=1)
 plt.show()

@@ -11,7 +11,7 @@ mass1_distribution = distributions.Uniform(mass1=(0.5, 1.5))
 mass1_samples = mass1_distribution.rvs(size=1000000)
 
 # Create another mass distribution object that is Gaussian between
-# 0.5 and 1.5 solar masses with a mean of 1.2 solar masses and a 
+# 0.5 and 1.5 solar masses with a mean of 1.2 solar masses and a
 # standard deviation of 0.15 solar masses. Gaussian takes the variance
 # as an output so square the standard deviation.
 mass2_distribution = distributions.Gaussian(mass2=(0.5, 1.5, 1.2, 0.15*0.15))
