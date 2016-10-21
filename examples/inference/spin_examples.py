@@ -1,4 +1,3 @@
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 from pycbc.inference import distributions
 import pycbc.coordinates as co
