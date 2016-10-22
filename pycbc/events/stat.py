@@ -76,7 +76,6 @@ class Stat(object):
         self.single_dtype = numpy.float32
 
 
-
 class NewSNRStatistic(Stat):
 
     """ Calculate the NewSNR coincident detection statistic """
