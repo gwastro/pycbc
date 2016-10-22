@@ -1,21 +1,79 @@
 """ This module contains utilities for calculating search sensitivity
 """
 import numpy
+from . import bin_utils
+
+
+def compute_search_efficiency_in_bins(
+         found, total, ndbins,
+         sim_to_bins_function=lambda sim: (sim.distance,)):
+    """
+    Calculate search efficiency in the given ndbins.
+
+    The first dimension of ndbins must be bins over injected distance.
+    sim_to_bins_function must map an object to a tuple indexing the ndbins.
+    """
+    bins = bin_utils.BinnedRatios(ndbins)
+
+    # increment the numerator and denominator with found / found+missed injs
+    [bins.incnumerator(sim_to_bins_function(sim)) for sim in found]
+    [bins.incdenominator(sim_to_bins_function(sim)) for sim in total]
+
+    # regularize by setting denoms to 1 to avoid nans
+    bins.regularize()
+
+    # efficiency array is the ratio
+    eff = bin_utils.BinnedArray(bin_utils.NDBins(ndbins), array=bins.ratio())
+
+    # compute binomial uncertainties in each bin
+    err_arr = numpy.sqrt(eff.array * (1-eff.array)/bins.denominator.array)
+    err = bin_utils.BinnedArray(bin_utils.NDBins(ndbins), array=err_arr)
+
+    return eff, err
+
+
+def compute_search_volume_in_bins(found, total, ndbins, sim_to_bins_function):
+    """
+    Calculate search sensitive volume by integrating efficiency in distance bins
+
+    No cosmological corrections are applied: flat space is assumed.
+    The first dimension of ndbins must be bins over injected distance.
+    sim_to_bins_function must maps an object to a tuple indexing the ndbins.
+    """
+    eff, err = compute_search_efficiency_in_bins(
+                                    found, total, ndbins, sim_to_bins_function)
+    dx = ndbins[0].upper() - ndbins[0].lower()
+    r = ndbins[0].centres()
+
+    # volume and errors have one fewer dimension than the input NDBins
+    vol = bin_utils.BinnedArray(bin_utils.NDBins(ndbins[1:]))
+    errors = bin_utils.BinnedArray(bin_utils.NDBins(ndbins[1:]))
+
+    # integrate efficiency to obtain volume
+    vol.array = numpy.trapz(eff.array.T * 4. * numpy.pi * r**2, r, dx)
+
+    # propagate errors in eff to errors in V
+    errors.array = numpy.sqrt(
+        ((4 * numpy.pi * r**2 * err.array.T * dx)**2).sum(axis=-1)
+    )
+
+    return vol, errors
+
 
 def volume_to_distance_with_errors(vol, vol_err):
     """ Return the distance and standard deviation upper and lower bounds
-    
+
     Parameters
     ----------
-    volume: float
-    volume_dev: float
-    
+    vol: float
+    vol_err: float
+
     Returns
     -------
-    distance: float
-    err_upper: float
-    err_lower: float
-    
+    dist: float
+    ehigh: float
+    elow: float
+
     """
     dist = (vol * 3.0/4.0/numpy.pi) ** (1.0/3.0)
     ehigh = ((vol + vol_err) * 3.0/4.0/numpy.pi) ** (1.0/3.0) - dist
@@ -23,17 +81,18 @@ def volume_to_distance_with_errors(vol, vol_err):
     elow = dist - (delta * 3.0/4.0/numpy.pi) ** (1.0/3.0)
     return dist, ehigh, elow
 
+
 def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
                       distribution_param, distribution, limits_param,
-                      max_param=None, min_param=None):
+                      min_param=None, max_param=None):
     """
-    TODO : Replace this function by Collin's formula given in Usman et al .. ? 
-    OR get that coded as a new function? 
+    Compute sensitive volume and standard error via direct Monte Carlo integral
 
-    Compute the sensitive volume and standard error using a direct Monte Carlo
-    integral.  For the result to be useful injections should be made over a
-    range of distances D such that sensitive volume due to signals closer than
-    D_min is negligible, and efficiency at distances above D_max is negligible
+    Injections should be made over a range of distances such that sensitive
+    volume due to signals closer than D_min is negligible, and efficiency at
+    distances above D_max is negligible
+    TODO : Replace this function by Collin's formula given in Usman et al .. ?
+    OR get that coded as a new function?
 
     Parameters
     -----------
@@ -47,9 +106,9 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
         Chirp mass of missed injections
     distribution_param: string
         Parameter D of the injections used to generate a distribution over
-        distance, may be 'distance', 'chirp_distance".
+        distance, may be 'distance', 'chirp_distance'.
     distribution: string
-        form of the distribution over the parameter, may be 
+        form of the distribution over the parameter, may be
         'log' (uniform in log D)
         'uniform' (uniform in D)
         'distancesquared' (uniform in D**2)
@@ -57,13 +116,13 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     limits_param: string
         Parameter Dlim specifying limits inside which injections were made
         may be 'distance', 'chirp distance'
-    max_param: float
-        maximum value of Dlim out to which injections were made; if None
-        the maximum actually injected value will be used
     min_param: float
         minimum value of Dlim at which injections were made; only used for
         log distribution, then if None the minimum actually injected value
         will be used
+    max_param: float
+        maximum value of Dlim out to which injections were made; if None
+        the maximum actually injected value will be used
 
     Returns
     --------
@@ -85,24 +144,27 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
             'volume'          : 15. / 6.
     }[distribution]
 
-    # establish maximum physical distance: first in case of chirp distance distribution
+    # establish maximum physical distance: first for chirp distance distribution
     if limits_param == 'chirp_distance':
-        mchirp_standard_bns = 1.4 * (2. ** (-1. / 5.))
+        mchirp_standard_bns = 1.4 * 2.**(-1. / 5.)
         all_mchirp = numpy.concatenate((found_mchirp, missed_mchirp))
         max_mchirp = all_mchirp.max()
         if max_param is not None:
             # use largest actually injected mchirp for conversion
-            max_distance = max_param * (max_mchirp / mchirp_standard_bns) ** (5. / 6.)
-    elif limits_param == 'distance' and max_param is not None:
-        max_distance = max_param
-    else: raise NotImplementedError("%s is not a recognized parameter" % limits_param)
-
-    # if no max distance param given, use maximum physical distance actually injected
-    if max_param is None:
-        max_distance = max(found_d.max(), missed_d.max())
+            max_distance = max_param * \
+                                  (max_mchirp / mchirp_standard_bns)**(5. / 6.)
+    elif limits_param == 'distance':
+        if max_param is not None:
+            max_distance = max_param
+        else:
+            # if no max distance given, use max distance actually injected
+            max_distance = max(found_d.max(), missed_d.max())
+    else:
+        raise NotImplementedError("%s is not a recognized parameter"
+                                  % limits_param)
 
     # volume of sphere
-    montecarlo_vtot = (4. / 3.) * numpy.pi * max_distance ** 3.
+    montecarlo_vtot = (4. / 3.) * numpy.pi * max_distance**3.
 
     # arrays of weights for the MC integral
     if distribution_param == 'distance':
@@ -117,7 +179,7 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
                          missed_mchirp ** mchirp_power
     else:
         raise NotImplementedError("%s is not a recognized distance parameter"
-                                                              % distribution_param)
+                                  % distribution_param)
 
     all_weights = numpy.concatenate((found_weights, missed_weights))
 
@@ -167,51 +229,50 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     vol_err = mc_prefactor * (Ninj * mc_sample_variance) ** 0.5
     return vol, vol_err
 
+
 def volume_binned_pylal(f_dist, m_dist, bins=15):
-    """ Compute the sensitive volume using a distanced 
-    binned efficiency estimate
-    
+    """ Compute the sensitive volume using a distance binned efficiency estimate
+
     Parameters
     -----------
-    found_distance: numpy.ndarray
+    f_dist: numpy.ndarray
         The distances of found injections
-    missed_dsistance: numpy.ndarray
+    m_dist: numpy.ndarray
         The distances of missed injections
-        
+
     Returns
     --------
     volume: float
         Volume estimate
     volume_error: float
-        The standared error in the volume
+        The standard error in the volume
     """
     def sims_to_bin(sim):
         return (sim, 0)
 
-    from pylal import rate
-    from pylal.imr_utils import compute_search_volume_in_bins, compute_search_efficiency_in_bins
-    found = f_dist
     total = numpy.concatenate([f_dist, m_dist])
-    ndbins = rate.NDBins([rate.LinearBins(min(total), max(total), bins), rate.LinearBins(0., 1, 1)]) 
-    vol, verr = compute_search_volume_in_bins(found, total, ndbins, sims_to_bin)
+    ndbins = bin_utils.NDBins([bin_utils.LinearBins(min(total), max(total), bins),
+                               bin_utils.LinearBins(0., 1, 1)])
+    vol, verr = compute_search_volume_in_bins(f_dist, total, ndbins, sims_to_bin)
     return vol.array[0], verr.array[0]
+
 
 def volume_shell(f_dist, m_dist):
     """ Compute the sensitive volume using sum over spherical shells.
-    
+
     Parameters
     -----------
-    found_distance: numpy.ndarray
+    f_dist: numpy.ndarray
         The distances of found injections
-    missed_dsistance: numpy.ndarray
+    m_dist: numpy.ndarray
         The distances of missed injections
-        
+
     Returns
     --------
     volume: float
         Volume estimate
     volume_error: float
-        The standared error in the volume
+        The standard error in the volume
     """
     f_dist.sort()
     m_dist.sort()
@@ -224,14 +285,14 @@ def volume_shell(f_dist, m_dist):
     for i in range(len(distances)):
         if i == len(distances) - 1:
             break
-    
+
         high = (distances[i+1] + distances[i]) / 2
         bin_width = high - low
-        
+
         if dist_sorting[i] < len(f_dist):
             vol += 4 * numpy.pi * distances[i]**2.0 * bin_width
             vol_err += (4 * numpy.pi * distances[i]**2.0 * bin_width)**2.0
-            
+
         low = high
     vol_err = vol_err ** 0.5
     return vol, vol_err

@@ -23,9 +23,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 from scipy.stats import kstest
 
-from pylal import SnglInspiralUtils as sniuls, trigger_fits as trstats, rate
-
-from pycbc import io, events
+from pycbc import io, events, bin_utils
+from pycbc.events import trstats
 import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
@@ -47,11 +46,11 @@ def get_stat(statchoice, snr, rchisq, fac):
 
 def get_bins(opt, pmin, pmax):
     if opt.bin_spacing == "linear":
-        return rate.LinearBins(pmin, pmax, opt.num_bins)
+        return bin_utils.LinearBins(pmin, pmax, opt.num_bins)
     elif opt.bin_spacing == "log":
-        return rate.LogarithmicBins(pmin, pmax, opt.num_bins)
+        return bin_utils.LogarithmicBins(pmin, pmax, opt.num_bins)
     elif opt.bin_spacing == "irregular":
-        return rate.IrregularBins(opt.bin_edges)
+        return bin_utils.IrregularBins(opt.bin_edges)
 
 #### MAIN ####
 
@@ -217,6 +216,7 @@ for ifo in opt.ifos:
             "snr>"+str(opt.snr_threshold)])
         sngls.retrieve_rows()
     elif trigformat == "xml":
+        from pylal import SnglInspiralUtils as sniuls
         sngls = sniuls.ReadSnglInspiralFromFiles(opt.inputs,
             filterFunc=lambda s: s.snr>opt.snr_threshold,
             verbose=opt.verbose)
