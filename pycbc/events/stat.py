@@ -52,7 +52,6 @@ def get_newsnr(trigs):
 class Stat(object):
 
     """ Base class which should be extended to provide a coincident statistic"""
-
     def __init__(self, files):
         """Create a statistic class instance
 
@@ -70,6 +69,12 @@ class Stat(object):
             f = h5py.File(filename, 'r')
             stat = f.attrs['stat']
             self.files[stat] = f
+            
+        # We provide the dtype of output of the single detector method
+        # This is used by background estimation codes that need to maintain
+        # a buffer of such values.
+        self.single_dtype = numpy.float32
+
 
 
 class NewSNRStatistic(Stat):
@@ -161,7 +166,6 @@ class PhaseTDStatistic(NewSNRStatistic):
     """Detection statistic that re-weights the network SNR based on the
     PDF of time delays, phase difference, and amplitude ratios.
     """
-
     def __init__(self, files):
         NewSNRStatistic.__init__(self, files)
         self.hist = self.files['phasetd_newsnr']['map'][:]
@@ -170,6 +174,11 @@ class PhaseTDStatistic(NewSNRStatistic):
         #normalize so that peak has no effect on newsnr
         self.hist = self.hist / top
         self.hist = numpy.log(self.hist)
+        self.single_dtype = [('newsnr', numpy.float32),
+                    ('coa_phase', numpy.float32),
+                    ('end_time', numpy.float64),
+                    ('sigmasq', numpy.float32),
+                    ('snr', numpy.float32)]
 
     def single(self, trigs):
         """
@@ -188,38 +197,24 @@ class PhaseTDStatistic(NewSNRStatistic):
             Array of single detector parameter values
         """
         newsnr = get_newsnr(trigs)
-        return numpy.array((newsnr, trigs['coa_phase'], trigs['end_time'],
-                            trigs['sigmasq']**0.5, trigs['snr'])).transpose()
+        singles = numpy.zeros(len(newsnr), dtype=self.single_dtype)
+        singles['newsnr'] = newsnr
+        singles['coa_phase'] = trigs['coa_phase']
+        singles['end_time'] = trigs['end_time']
+        singles['sigmasq'] = trigs['sigmasq']
+        singles['snr'] = trigs['snr']
+        return numpy.array(singles, ndmin=1)
 
-    def coinc(self, s1, s2, slide, step):
-        """
-        Calculate the coincident detection statistic.
-
-        Parameters
-        ----------
-        s1: numpy.ndarray
-            Single detector ranking statistic for the first detector.
-        s2: numpy.ndarray
-            Single detector ranking statistic for the second detector.
-        slide: numpy.ndarray
-            Array of ints. These represent the multiple of the timeslide
-        interval to bring a pair of single detector triggers into coincidence.
-        step: float
-            The timeslide interval in seconds.
-
-        Returns
-        -------
-        coinc_stat: numpy.ndarray
-            An array of the coincident ranking statitic values
-        """
-        td = s1[:,2] - s2[:,2] - slide * step
-        pd = (s1[:,1] - s2[:,1]) % (numpy.pi * 2)
-        rd = s1[:, 3] / s2[:, 3]
-        sn1 = s1[:,4]
-        sn2 = s2[:,4]
+    def signal_likelihood(self, s1, s2, slide, step):
+        td = numpy.array(s1['end_time'] - s2['end_time'] - slide * step, ndmin=1)
+        pd = numpy.array((s1['coa_phase'] - s2['coa_phase']) % (numpy.pi * 2), ndmin=1)
+        rd = numpy.array((s1['sigmasq'] / s2['sigmasq']) ** 0.5, ndmin=1)
+        sn1 = numpy.array(s1['snr'], ndmin=1)
+        sn2 = numpy.array(s2['snr'], ndmin=1)
  
         snr1 = sn1 * 1
         snr2 = sn2 * 1
+
         snr1[rd > 1] = sn2[rd > 1]
         snr2[rd > 1] = sn1[rd > 1]
         rd[rd > 1] = 1.0 / rd[rd > 1]
@@ -249,9 +244,32 @@ class PhaseTDStatistic(NewSNRStatistic):
         s2v[s2v >= len(sbins) - 1] = len(sbins) - 2
         rv[rv < 0] = 0
         rv[rv >= len(rbins) - 1] = len(rbins) - 2
+        
+        return self.hist[tv, pv, s1v, s2v, rv]
 
-        rstat = s1[:,0]**2.0 + s2[:,0]**2.0
-        cstat = rstat + 2.0 * self.hist[tv, pv, s1v, s2v, rv]
+    def coinc(self, s1, s2, slide, step):
+        """
+        Calculate the coincident detection statistic.
+
+        Parameters
+        ----------
+        s1: numpy.ndarray
+            Single detector ranking statistic for the first detector.
+        s2: numpy.ndarray
+            Single detector ranking statistic for the second detector.
+        slide: numpy.ndarray
+            Array of ints. These represent the multiple of the timeslide
+        interval to bring a pair of single detector triggers into coincidence.
+        step: float
+            The timeslide interval in seconds.
+
+        Returns
+        -------
+        coinc_stat: numpy.ndarray
+            An array of the coincident ranking statitic values
+        """
+        rstat = s1['newsnr']**2.0 + s2['newsnr']**2.0
+        cstat = rstat + 2.0 * self.signal_likelihood(s1, s2, slide, step)
         cstat[cstat < 0] = 0
         return cstat ** 0.5
 
@@ -356,7 +374,6 @@ class ExpFitCombinedSNR(ExpFitStatistic):
     def coinc(self, s0, s1, slide, step):
         # rescale by 1/sqrt(2) to resemble network SNR
         return (s0 + s1) / (2.**0.5)
-
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
