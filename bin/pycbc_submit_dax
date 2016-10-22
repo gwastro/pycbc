@@ -363,9 +363,9 @@ fi
 
 
 if [ $CACHE_FILE == 0 ]; then
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --cluster label $SUBMIT_DAX 
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster label $SUBMIT_DAX
 else
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-submit-dir work --cluster label $SUBMIT_DAX
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster label $SUBMIT_DAX
 fi
 
 echo
