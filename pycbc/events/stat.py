@@ -368,20 +368,17 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         self.alpharef = 6.
 
     def single(self, trigs):
-        alphai, lambdai, thresh = self.find_fits(trigs)
-        newsnr = get_newsnr(trigs)
-        # noise rate density shifted by log of reference slope alpha
-        lognoiserate = - alphai * (newsnr - thresh) + \
-                       numpy.log(alphai / self.alpharef) + \
-                       numpy.log(lambdai)
+        logr_n = self.lognoiserate(trigs)
+        _, _, thresh = self.find_fits(trigs)
+        # shift by log of reference slope alpha
+        logr_n += -1. * numpy.log(self.alpharef)
         # add threshold and rescale by reference slope
-        stat = thresh - (lognoiserate / self.alpharef)
+        stat = thresh - (logr_n / self.alpharef)
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
     def coinc(self, s0, s1, slide, step):
-        # rescale by 1/sqrt(2) to resemble network SNR
+        # scale by 1/sqrt(2) to resemble network SNR
         return (s0 + s1) / (2.**0.5)
-
 
 
 class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
@@ -448,6 +445,7 @@ statistic_dict = {
     'phasetd_newsnr': PhaseTDStatistic,
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
+    'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
 }
 
