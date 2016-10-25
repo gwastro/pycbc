@@ -806,13 +806,11 @@ t4_cutoff_frequency = meco_frequency
 
 def kerr_lightring(v, chi):
     """Return the function whose first root defines the Kerr light ring"""
-
     return 1 + chi * v**3 - 3 * v**2 * (1 - chi * v**3)**(1./3)
 
 
 def kerr_lightring_velocity(chi):
     """Return the velocity at the Kerr light ring"""
-
     # If chi > 0.9996, the algorithm cannot solve the function
     if chi >= 0.9996:
         return brentq(kerr_lightring, 0, 0.8, args=(0.9996))
@@ -821,7 +819,9 @@ def kerr_lightring_velocity(chi):
 
 
 def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
-    """Return the hybrid energy [eq. (6)] whose minimum defines the hybrid MECO
+    """Return hybrid MECO energy.
+    
+    Return the hybrid energy [eq. (6)] whose minimum defines the hybrid MECO
     up to 3.5PN (including the 3PN spin-spin)
 
     Parameters
@@ -844,7 +844,6 @@ def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
     h_E: float
         The hybrid energy as a function of v
     """
-
     pi_sq = numpy.pi**2
     v2, v3, v4, v5, v6, v7 = v**2, v**3, v**4, v**5, v**6, v**7
     chi1_sq, chi2_sq = chi1**2, chi2**2
@@ -952,7 +951,6 @@ def hybrid_meco_frequency(m1, m2, chi1, chi2, qm1=None, qm2=None):
     f: float
         The frequency (in Hz) of the hybrid MECO
     """
-
     if qm1 is None:
         qm1 = 1
     if qm2 is None:
