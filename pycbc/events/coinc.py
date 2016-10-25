@@ -349,7 +349,7 @@ class MultiRingBuffer(object):
         self.pad_count = 64
         self.num_rings = num_rings
         self.buffer = numpy.zeros((num_rings, self.pad_count), dtype=dtype)
-        self.buffer_expire = numpy.zeros((num_rings, self.pad_count), dtype=numpy.int32) 
+        self.buffer_expire = numpy.zeros((num_rings, self.pad_count), dtype=numpy.int32)
 
         self.buffer_expire -= self.max_length * 2
 
@@ -363,15 +363,6 @@ class MultiRingBuffer(object):
     def __len__(self):
         """ Return the number of elements in the ring buffer, including nulls"""
         return self.size
-        
-    def increase_buffer_size(self, size):
-        oldsize = self.pad_count
-        if size < oldsize:
-            raise ValueError("The new size must be larger than the old one")
-           
-        self.pad_count = size
-        self.buffer.resize((self.num_rings, size))
-        self.buffer_expire.resize((self.num_rings, size))
 
     def increase_buffer_size(self, size):
         """ Increase the internal buffer size up to 'size'"""
@@ -380,9 +371,8 @@ class MultiRingBuffer(object):
             raise ValueError("The new size must be larger than the old one")
 
         self.pad_count = size
-        self.buffer.resize(size)
-        self.buffer_expire.resize(size)
-        self.buffer_expire[oldsize:] = -self.max_length * 2
+        self.buffer.resize((self.num_rings, size))
+        self.buffer_expire.resize((self.num_rings, size))
 
     @property
     def start_time(self):
@@ -394,8 +384,8 @@ class MultiRingBuffer(object):
 
     def ring_sizes(self):
         count = self.index - self.start
-        count[self.index < self.start] += self.pad_count 
-        return count   
+        count[self.index < self.start] += self.pad_count
+        return count
 
     def num_elements(self):
         total = self.ring_sizes().sum()
@@ -478,7 +468,7 @@ class CoincExpireBuffer(object):
         dtype: numpy.dtype
             The dtype of each element of the buffer.
         """
-            
+
         self.expiration = expiration
         self.buffer = numpy.zeros(initial_size, dtype=dtype)
         self.index = 0
@@ -510,7 +500,7 @@ class CoincExpireBuffer(object):
         ifos: list of strs
             The set of timers to be incremented.
         """
-        
+
         for ifo in ifos:
             self.time[ifo] += 1
 
