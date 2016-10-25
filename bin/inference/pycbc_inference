@@ -190,7 +190,11 @@ with ctx:
 
     # read configuration file
     logging.info("Reading configuration file")
-    cp = WorkflowConfigParser(opts.config_files, opts.config_overrides)
+    if opts.config_overrides is not None:
+        overrides = [override.split(":") for override in opts.config_overrides]
+    else:
+        overrides = None
+    cp = WorkflowConfigParser(opts.config_files, overrides)
 
     # sanity check that each parameter in [variable_args] has a priors section
     variable_args = cp.options("variable_args")
