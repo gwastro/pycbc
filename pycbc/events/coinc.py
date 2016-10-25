@@ -532,7 +532,7 @@ class CoincExpireBuffer(object):
     def num_greater(self, value):
         """Return the number of elements larger than 'value'"""
         return (self.buffer[:self.index] > value).sum()
-        
+
     @property
     def data(self):
         """Return the array of elements"""
