@@ -653,7 +653,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             if ifo in results and results[ifo] is not False:
                 data = results[ifo]
                 break
-       
+
         if data is False:
             return
 
@@ -676,7 +676,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             Dictionary of dictionaries indexed by ifo and keys such as 'snr',
             'chisq', etc. The specific format it determined by the
             LiveBatchMatchedFilter class.
-            
+
         Returns
         -------
         updated_singles: dict of numpy.ndarrays
@@ -722,7 +722,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             Dictionary of dictionaries indexed by ifo and keys such as 'snr',
             'chisq', etc. The specific format it determined by the
             LiveBatchMatchedFilter class.
-            
+
         Returns
         -------
         coinc_results: dict of arrays
@@ -750,7 +750,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 oifo = self.ifos[1] if self.ifos[0] == ifo else self.ifos[0]
                 times = self.singles[oifo].data(template)['end_time']
                 stats = self.singles[oifo].data(template)['stat']
-         
+
                 i1, _, slide = time_coincidence(times,
                                  numpy.array(trig_time, ndmin=1,
                                  dtype=numpy.float64),
@@ -793,7 +793,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             offsets = numpy.concatenate(offsets)
             ctime0 = numpy.concatenate(ctimes[self.ifos[0]]).astype(numpy.float64)
             ctime1 = numpy.concatenate(ctimes[self.ifos[1]]).astype(numpy.float64)
-            
+
             cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
                                       self.timeslide_interval,
                                       self.analysis_block)
@@ -841,7 +841,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             coinc_results['background/%s/end_time' % ifo] = \
                 self.singles[ifo].end_time
         coinc_results['background/count'] = len(self.coincs.data)
-   
+
         # Save all the background triggers
         if self.return_background:
             coinc_results['background/stat'] = self.coincs.data
@@ -866,7 +866,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
     def check_for_hwinj(self, data_reader, valid_ifos):
         """Check that the current set of triggers could be influenced by
         a hardware injection.
-        
+
         Parameters
         ----------
         data_reader: dict of StrainBuffers
@@ -883,7 +883,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     def add_singles(self, results, data_reader):
         """Add singles to the bacckground estimate and find candidates
-        
+
         Parameters
         ----------
         results: dict of arrays
