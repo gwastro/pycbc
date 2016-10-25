@@ -487,7 +487,7 @@ class CoincExpireBuffer(object):
     def remove(self, num):
         """Remove the the last 'num' elements from the buffer"""
         self.index -= num
-    
+
     def add(self, values, times, ifos):
         """Add values to the internal buffer
 
