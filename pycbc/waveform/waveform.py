@@ -440,20 +440,22 @@ def get_fd_waveform(template=None, **kwargs):
 
     try:
         ffunc = input_params.pop('f_final_func')
-        # convert the frequency function to a value
-        input_params['f_final'] = pnutils.named_frequency_cutoffs[ffunc](
-            input_params)
-        # if the f_final is < f_lower, just return zeros
-        if input_params['f_final'] < input_params['f_lower']:
-            kmax = int(2**(numpy.ceil(numpy.log2(
-                input_params['f_lower']/input_params['delta_f'])))+1)
-            hp = FrequencySeries(zeros(kmax, dtype=complex),
-                                 delta_f=input_params['delta_f'])
-            hc = FrequencySeries(zeros(kmax, dtype=complex),
-                                 delta_f=input_params['delta_f'])
-            return hp, hc
+        if ffunc != '':
+            # convert the frequency function to a value
+            input_params['f_final'] = pnutils.named_frequency_cutoffs[ffunc](
+                input_params)
     except KeyError:
         pass
+
+    # if the f_final is < f_lower, just return zeros
+    if input_params['f_final'] < input_params['f_lower']:
+        kmax = int(2**(numpy.ceil(numpy.log2(
+            input_params['f_lower']/input_params['delta_f'])))+1)
+        hp = FrequencySeries(zeros(kmax, dtype=complex),
+                             delta_f=input_params['delta_f'])
+        hc = FrequencySeries(zeros(kmax, dtype=complex),
+                             delta_f=input_params['delta_f'])
+        return hp, hc
 
     return wav_gen[input_params['approximant']](**input_params)
 
