@@ -922,7 +922,7 @@ def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1=None, qm2=None):
     chi = (chi1 * m1 + chi2 * m2) / (m1 + m2)
     vmax = kerr_lightring_velocity(chi) - 0.01
 
-    return minimize(hybridEnergy, 0.2, args=(m1, m2, chi1, chi2, qm1, qm2), 
+    return minimize(hybridEnergy, 0.2, args=(m1, m2, chi1, chi2, qm1, qm2),
                     bounds=[(0.1, vmax)]).x.item()
 
 
