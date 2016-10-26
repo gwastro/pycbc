@@ -61,6 +61,9 @@ test ".$LANG" = "." && export LANG="en_US.UTF-8"
 test ".$LC_ALL" = "." && export LC_ALL="$LANG"
 export FC=gfortran
 
+# compilation environment
+BUILDDIRNAME="pycbc"
+
 # defaults, possibly overwritten by command-line arguments
 cleanup=true # usually, build directories are removed after a successful build
 verbose_pyinstalled_python=false
@@ -69,11 +72,29 @@ pycbc_remote=ligo-cbc
 scratch_pycbc=false
 libgfortran=libgfortran.so
 
-# automatically detect a Debian 4.0 (Etch) installation.
-# if not found, use Cygwin settings.
-# "build" or "compile" here means "from source", opposed to
-# expect it to be installed on the system or "pip install" it.
-if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0" || lsb_release -a 2>/dev/null | grep 'Ubuntu 6.06' >/dev/null; then
+if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
+    # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
+    # example: WORKSPACE='/Users/jenkins/workspace/workspace/EAH_PyCBC_Master/label/OSX107'
+    test ".$CYGWIN_HOST" = "."      && CYGWIN_HOST=moss-cygwin64
+    test ".$CYGWIN_HOST_USER" = "." && CYGWIN_HOST_USER=jenkins
+    test ".$CYGWIN_HOST_PORT" = "." && CYGWIN_HOST_PORT=2222
+    echo -e "\\n\\n>> [`date`] running remotely at $CYGWIN_HOST_USER@$CYGWIN_HOST:$CYGWIN_HOST_PORT"
+    echo "WORKSPACE='$WORKSPACE'" # for Jenkins jobs
+    unset WORKSPACE # avoid endless recoursion
+    # copy the script
+    scp "-P$CYGWIN_HOST_PORT" "$0" "$CYGWIN_HOST_USER@$CYGWIN_HOST:."
+    # run it remotely
+    ssh "-p$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST" bash -l `basename $0` "$@"
+    # fetch the artifacts to local workspace
+    dist="$BUILDDIRNAME/environment/dist"
+    rm -rf "$dist"
+    mkdir -p "$dist"
+    scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.exe" "$dist"
+    scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.zip" "$dist"
+    exit 0
+elif test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0" ||
+  lsb_release -a 2>/dev/null | grep 'Ubuntu 6.06' >/dev/null; then
+    # detected a Debian 4.0 (Etch) or Ubuntu 6.06 installation, expect a prepared build system
     echo -e "\\n\\n>> [`date`] Using Debian 4.0 (etch) settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
     fftw_flags=--enable-avx
@@ -103,7 +124,7 @@ if test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0" || lsb_release -a 2>/d
     use_pycbc_pyinstaller_hooks=true
     build_wrapper=false
     appendix="_Linux64"
-elif test "`uname -s`" = "Darwin" ; then
+elif test "`uname -s`" = "Darwin" ; then # OSX
     echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
     export FC=gfortran-mp-4.8
     export CC=gcc-mp-4.8
@@ -139,7 +160,7 @@ elif test "`uname -s`" = "Darwin" ; then
     use_pycbc_pyinstaller_hooks=true
     build_wrapper=false
     appendix="_OSX64"
-else
+elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     echo -e "\\n\\n>> [`date`] Using Cygwin settings"
     fftw_flags=--enable-avx
     lal_cppflags="-D_WIN32"
@@ -167,10 +188,12 @@ else
     use_pycbc_pyinstaller_hooks=true
     build_wrapper=false
     appendix="_Windows64"
+else
+    echo ERROR: unknown OS, exiting
+    exit 1
 fi
 
 # compilation environment
-BUILDDIRNAME="pycbc"
 PYCBC="$PWD/$BUILDDIRNAME"
 SOURCE="$PWD/pycbc-sources"
 PYTHON_PREFIX="$PYCBC"
@@ -197,28 +220,6 @@ if [ ".$1" == ".--print-env" ]; then
     echo -e "\\n\\n>> [`date`] ENVIRONMENT ..."
     env
     echo -e "... ENVIRONMENT"
-fi
-
-# hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
-# WORKSPACE='/Users/jenkins/workspace/workspace/EAH_PyCBC_Master/label/OSX107'
-if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
-    test ".$CYGWIN_HOST" = "."      && CYGWIN_HOST=moss-cygwin64
-    test ".$CYGWIN_HOST_USER" = "." && CYGWIN_HOST_USER=jenkins
-    test ".$CYGWIN_HOST_PORT" = "." && CYGWIN_HOST_PORT=2222
-    echo -e "\\n\\n>> [`date`] running remotely at $CYGWIN_HOST_USER@$CYGWIN_HOST:$CYGWIN_HOST_PORT"
-    echo "WORKSPACE='$WORKSPACE'" # for Jenkins jobs
-    unset WORKSPACE # avoid endless recoursion
-    # copy the script
-    scp "-P$CYGWIN_HOST_PORT" "$0" "$CYGWIN_HOST_USER@$CYGWIN_HOST:."
-    # run it remotely
-    ssh "-p$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST" bash -l `basename $0` "$@"
-    # fetch the artifacts to local workspace
-    dist="$BUILDDIRNAME/environment/dist"
-    rm -rf "$dist"
-    mkdir -p "$dist"
-    scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.exe" "$dist"
-    scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.zip" "$dist"
-    exit 0
 fi
 
 # locking
