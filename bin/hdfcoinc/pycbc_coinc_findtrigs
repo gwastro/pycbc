@@ -18,8 +18,6 @@ parser.add_argument("--trigger-files", nargs=2,
                     help="File containing the single-detector triggers")
 parser.add_argument("--template-bank",
                     help="Template bank file in HDF format")
-parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
-                    help="The ranking statistic to use", default='newsnr')
 parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
 parser.add_argument("--timeslide-interval", type=float, default=0,
@@ -36,9 +34,16 @@ parser.add_argument("--template-fraction-range", help="Optional, format string t
 parser.add_argument("--cluster-window", help="Optional, window size in seconds to "
                     "cluster coincidences over the bank", type=float)
 parser.add_argument("--output-file", help="File to store the coincident triggers")
+
+# produces a list of lists to allow multiple invocations and multiple args
 parser.add_argument("--statistic-files", help="Statistic mapping files",
                      nargs='*', action='append', default=[])
+parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
+                    help="The ranking statistic to use", default='newsnr')
 args = parser.parse_args()
+
+# flatten the list of lists of filenames to just a list of filenames (or empty)
+args.statistic_files = sum(args.statistic_files, [])
 
 if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
@@ -165,7 +170,6 @@ if args.strict_coinc_time:
     trigs1.valid = veto.segments_to_start_end(trigs1.segs)
 
 # initialize a Stat class instance to calculate the coinc ranking statistic
-args.statistic_files = sum(args.statistic_files, [])
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
 time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
