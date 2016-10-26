@@ -115,7 +115,6 @@ class SchemeTestBase(unittest.TestCase):
             # Now check that nothing about a2 has changed, since it wasn't involved
             # in the computation
             self.assertTrue(isinstance(a2._data, CPUArray))
-            print a2._scheme, type(DefaultScheme)
             self.assertTrue(isinstance(a2._scheme, DefaultScheme))
             self.assertEqual(a2,self.a)
 
