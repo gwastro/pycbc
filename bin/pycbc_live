@@ -195,8 +195,8 @@ parser.add_argument('--max-psd-abort-distance', type=float, default=numpy.inf)
 parser.add_argument('--min-psd-abort-distance', type=float, default=-numpy.inf)
 parser.add_argument('--max-triggers-in-batch', type=int)
 
-parser.add_argument('--enable-profiling', action='store_true', 
-                    help="Dump out profiling information from MPI process 1 at"
+parser.add_argument('--enable-profiling', type=int, 
+                    help="Dump out profiling information from an MPI process at"
                          " the end of program executrion")
 
 parser.add_argument('--enable-background-estimation', default=False, action='store_true')
@@ -291,7 +291,7 @@ with ctx:
 
     logging.info('%s: Starting... ', evnt.rank)
 
-    if args.enable_profiling:
+    if args.enable_profiling is not None and evnt.rank == args.enable_profiling:
         pr = cProfile.Profile()
         pr.enable()
 
@@ -362,5 +362,5 @@ if args.fftw_output_float_wisdom_file:
 if args.fftw_output_double_wisdom_file:
     fft.fftw.export_double_wisdom_to_filename(args.fftw_output_double_wisdom_file)
 
-if evnt.rank == 1 and args.enable_profiling:
+if args.enable_profiling is not None and args.enable_profiling == evnt.rank:
     pr.dump_stats('log')
