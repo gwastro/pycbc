@@ -38,10 +38,6 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--input-file", type=str, required=True,
                     help="Results file path.")
-parser.add_argument("--vmin", type=float,
-                    help="Minimum value for the colorbar.")
-parser.add_argument("--vmax", type=float,
-                    help="Maximum value for the colorbar.")
 parser.add_argument("--movie-plots", type=int, required=True,
                     help="Number of plots for the movie.")
 parser.add_argument("--output-file", type=str, required=True,
@@ -51,12 +47,15 @@ parser.add_argument("--parameters", type=str, nargs="+",
                     help="Name of parameters to plot in same format "
                          "as for pycbc_inference_plot_posterior.")
 parser.add_argument('--verbose', action='store_true')
+# add scatter and density configuration options
+option_utils.add_scatter_option_group(parser) 
+option_utils.add_density_option_group(parser)
 
 opts = parser.parse_args()
 pycbc.init_logging(opts.verbose)
 
 # Get data
-logging.info('Loading samples.')
+logging.info('Loading parameters.')
 fp, parameters, labels, _ = option_utils.results_from_cli(opts,
                             load_samples=False)
 nwalkers = fp.nwalkers
@@ -64,13 +63,19 @@ njumps = opts.movie_plots
 thinint = fp.niterations / njumps
 x = fp.read_samples(fp.variable_args, walkers=0, thin_start=0, 
                         thin_interval=thinint)
-varargs = fp._arraycls((x.size, nwalkers))
-lnl = numpy.zeros((x.size, nwalkers))
+samples = fp._arraycls((x.size, nwalkers))
+zvals = numpy.zeros((x.size, nwalkers))
 for walker in range(nwalkers):
-    varargs[:,walker] = fp.read_samples(fp.variable_args, walkers=walker, 
+    samples[:,walker] = fp.read_samples(fp.variable_args, walkers=walker, 
                                         thin_start=0, thin_interval=thinint)
-    lnl[:,walker] = fp.read_lnpost(walkers=walker, thin_start=0, 
-                                        thin_interval=thinint)
+    if opts.z_arg is not None:
+        logging.info("Getting likelihood stats")
+        likelihood_stats = fp.read_likelihood_stats(thin_start=0,
+                thin_interval=thinint,walkers=walker)
+        zvals[:,walker], zlbl = get_zvalues(fp, opts.z_arg, likelihood_stats)
+    else:
+        zvals = None
+        zlbl = None
 fp.close()
 
 logging.info('Choosing common characteristics for all figures.')
@@ -79,26 +84,38 @@ mins = {p:varargs[p].min() for p in parameters}
 maxs = {p:varargs[p].max() for p in parameters}
 # Set common min and max for colorbar
 if opts.vmin is None:
-    vmin = lnl.min()
+    vmin = zvals.min()
 else:
     vmin = opts.vmin
 if opts.vmax is None:
-    vmax = lnl.max()
+    vmax = zvals.max()
 else:
     vmax = opts.vmax
 
 # Make each figure
-logging.info('Creating figures.')
+logging.info('Plotting.')
 for jump in range(njumps):
-    plotargs = varargs[jump,:]
-    z = lnl[jump,:]
+    plotargs = samples[jump,:]
+    z = zvals[jump,:]
     output = opts.output_file + '%d.png' %jump
 
-    fig = scatter_histogram(parameters, plotargs, z, labels=labels,
-                            vmin=vmin, vmax=vmax, mins=mins, maxs=maxs)
+    fig, axis_dict = create_multidim_plot(parameters, plotargs, labels=labels,
+                        plot_marginal=opts.plot_marginal,
+                        plot_scatter=opts.plot_scatter,
+                            zvals=z, show_colorbar=not opts.no_colorbar,
+                            cbar_label=zlbl, vmin=opts.vmin, vmax=opts.vmax,
+                            scatter_cmap=opts.scatter_cmap,
+                        plot_density=opts.plot_density,
+                        plot_contours=opts.plot_contours,
+                            density_cmap=opts.density_cmap,
+                            contour_color=opts.contour_color,
+                            use_kombine=opts.use_kombine_kde)
+#    fig = scatter_histogram(parameters, plotargs, z, labels=labels,
+#                            vmin=vmin, vmax=vmax, mins=mins, maxs=maxs)
 
     pyplot.annotate('Sample %d' %(jump*thinint+1), xy=(0.8,0.95), xycoords='figure fraction')
-    fig.savefig(output)
+
+    fig.savefig(output, bbox_inches='tight', dpi=200)
     pyplot.close()
 
 logging.info('Done.')
