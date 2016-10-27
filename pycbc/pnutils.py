@@ -29,7 +29,7 @@ between quantities.
 from __future__ import division
 import lal, lalsimulation
 import numpy
-from scipy.optimize import bisect
+from scipy.optimize import bisect, brentq, minimize
 
 def nearest_larger_binary_number(input_len):
     """ Return the nearest binary number larger than input_len.
@@ -465,6 +465,8 @@ named_frequency_cutoffs = {
     # functions depending on 2 component masses and aligned spins
     "MECO"       : lambda p: meco_frequency(p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
+    "HybridMECO" : lambda p: hybrid_meco_frequency(p["m1"], p["m2"],
+                                p["s1z"], p["s2z"], qm1=None, qm2=None),
     "IMRPhenomBFinal": lambda p: get_freq("fIMRPhenomBFinal",
                                               p["m1"], p["m2"],
                                               p["s1z"], p["s2z"]),
@@ -797,3 +799,161 @@ def t2_cutoff_frequency(m1, m2, chi1, chi2):
 
 t4_cutoff_velocity = meco_velocity
 t4_cutoff_frequency = meco_frequency
+
+# Hybrid MECO in arXiv:1602.03134
+# To obtain the MECO, find minimum in v of eq. (6)
+
+
+def kerr_lightring(v, chi):
+    """Return the function whose first root defines the Kerr light ring"""
+    return 1 + chi * v**3 - 3 * v**2 * (1 - chi * v**3)**(1./3)
+
+
+def kerr_lightring_velocity(chi):
+    """Return the velocity at the Kerr light ring"""
+    # If chi > 0.9996, the algorithm cannot solve the function
+    if chi >= 0.9996:
+        return brentq(kerr_lightring, 0, 0.8, args=(0.9996))
+    else:
+        return brentq(kerr_lightring, 0, 0.8, args=(chi))
+
+
+def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
+    """Return hybrid MECO energy.
+    
+    Return the hybrid energy [eq. (6)] whose minimum defines the hybrid MECO
+    up to 3.5PN (including the 3PN spin-spin)
+
+    Parameters
+    ----------
+    m1 : float
+        Mass of the primary object in solar masses.
+    m2 : float
+        Mass of the secondary object in solar masses.
+    chi1: float
+        Dimensionless spin of the primary object.
+    chi2: float
+        Dimensionless spin of the secondary object.
+    qm1: float
+        Quadrupole-monopole term of the primary object (1 for black holes).
+    qm2: float
+        Quadrupole-monopole term of the secondary object (1 for black holes).
+
+    Returns
+    -------
+    h_E: float
+        The hybrid energy as a function of v
+    """
+    pi_sq = numpy.pi**2
+    v2, v3, v4, v5, v6, v7 = v**2, v**3, v**4, v**5, v**6, v**7
+    chi1_sq, chi2_sq = chi1**2, chi2**2
+    m1, m2 = float(m1), float(m2)
+    M = float(m1 + m2)
+    M_2, M_4 = M**2, M**4
+    eta = m1 * m2 / M_2
+    eta2, eta3 = eta**2, eta**3
+    m1_2, m1_4 = m1**2, m1**4
+    m2_2, m2_4 = m2**2, m2**4
+
+    chi = (chi1 * m1 + chi2 * m2) / M
+    Kerr = -1. + (1. - 2. * v2 * (1. - chi * v3)**(1./3.)) / \
+        numpy.sqrt((1. - chi * v3) * (1. + chi * v3 - 3. * v2 * (1 - chi * v3)**(1./3.)))
+
+    h_E = Kerr - \
+        (v2 / 2.) * \
+        (
+        - eta * v2 / 12. - 2 * (chi1 + chi2) * eta * v3 / 3. +
+        (19. * eta / 8. - eta2 / 24. + chi1_sq * m1_2 * (1 - qm1) / M_2 +
+            chi2_sq * m2_2 * (1 - qm2) / M_2) * v4
+        - 1. / 9. * (120. * (chi1 + chi2) * eta2 +
+            (76. * chi1 + 45. * chi2) * m1_2 * eta / M_2 +
+            (45. * chi1 + 76. * chi2) * m2_2 * eta / M_2) * v5
+        + (34445. * eta / 576. - 205. * pi_sq * eta / 96. - 155. * eta2 / 96. -
+            35. * eta3 / 5184. +
+            5. / 18. * (21. * chi1_sq * (1. - qm1) * m1_4 / M_4 +
+            21. * chi2_sq * (1. - qm2) * m2_4 / M_4 +
+            (chi1_sq * (56. - 27. * qm1) + 20. * chi1 * chi2) * eta * m1_2 / M_2 +
+            (chi2_sq * (56. - 27. * qm2) + 20. * chi1 * chi2) * eta * m2_2 / M_2 +
+            (chi1_sq * (31. - 9. * qm1) + 38. * chi1 * chi2 +
+            chi2_sq * (31. - 9. * qm2)) * eta2)) * v6
+        - eta / 12. * (3. * (292. * chi1 + 81. * chi2) * m1_4 / M_4 +
+            3. * (81. * chi1 + 292. * chi2) * m2_4 / M_4 +
+            4. * (673. * chi1 + 360. * chi2) * eta * m1_2 / M_2 +
+            4. * (360. * chi1 + 673. * chi2) * eta * m2_2 / M_2 +
+            3012. * eta2 * (chi1 + chi2)) * v7
+        )
+
+    return h_E
+
+
+def hybrid_meco_velocity(m1, m2, chi1, chi2, qm1=None, qm2=None):
+    """Return the velocity of the hybrid MECO
+
+    Parameters
+    ----------
+    m1 : float
+        Mass of the primary object in solar masses.
+    m2 : float
+        Mass of the secondary object in solar masses.
+    chi1: float
+        Dimensionless spin of the primary object.
+    chi2: float
+        Dimensionless spin of the secondary object.
+    qm1: {None, float}, optional
+        Quadrupole-monopole term of the primary object (1 for black holes).
+        If None, will be set to qm1 = 1.
+    qm2: {None, float}, optional
+        Quadrupole-monopole term of the secondary object (1 for black holes).
+        If None, will be set to qm2 = 1.
+
+    Returns
+    -------
+    v: float
+        The velocity (dimensionless) of the hybrid MECO
+    """
+
+    if qm1 is None:
+        qm1 = 1
+    if qm2 is None:
+        qm2 = 1
+
+    # The velocity can only go from 0 to 1.
+    # Set bounds at 0.1 to skip v=0 and at the lightring velocity
+    chi = (chi1 * m1 + chi2 * m2) / (m1 + m2)
+    vmax = kerr_lightring_velocity(chi) - 0.01
+
+    return minimize(hybridEnergy, 0.2, args=(m1, m2, chi1, chi2, qm1, qm2),
+                    bounds=[(0.1, vmax)]).x.item()
+
+
+def hybrid_meco_frequency(m1, m2, chi1, chi2, qm1=None, qm2=None):
+    """Return the frequency of the hybrid MECO
+
+    Parameters
+    ----------
+    m1 : float
+        Mass of the primary object in solar masses.
+    m2 : float
+        Mass of the secondary object in solar masses.
+    chi1: float
+        Dimensionless spin of the primary object.
+    chi2: float
+        Dimensionless spin of the secondary object.
+    qm1: {None, float}, optional
+        Quadrupole-monopole term of the primary object (1 for black holes).
+        If None, will be set to qm1 = 1.
+    qm2: {None, float}, optional
+        Quadrupole-monopole term of the secondary object (1 for black holes).
+        If None, will be set to qm2 = 1.
+
+    Returns
+    -------
+    f: float
+        The frequency (in Hz) of the hybrid MECO
+    """
+    if qm1 is None:
+        qm1 = 1
+    if qm2 is None:
+        qm2 = 1
+
+    return velocity_to_frequency(hybrid_meco_velocity(m1, m2, chi1, chi2, qm1, qm2), m1 + m2)
