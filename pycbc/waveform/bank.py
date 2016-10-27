@@ -72,7 +72,9 @@ def sigma_cached(self, psd):
             if not hasattr(self, 'sigma_view'):
                 from pycbc.filter.matchedfilter import get_cutoff_indices
                 N = (len(self) -1) * 2
-                kmin, kmax = get_cutoff_indices(self.f_lower, self.end_frequency, self.delta_f, N)
+                kmin, kmax = get_cutoff_indices(
+                        self.min_f_lower or self.f_lower, self.end_frequency,
+                        self.delta_f, N)
                 self.sslice = slice(kmin, kmax)
                 self.sigma_view = self[self.sslice].squared_norm() * 4.0 * self.delta_f
 
@@ -633,6 +635,10 @@ class FilterBank(TemplateBank):
             **kwds)
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
 
+        self.min_f_lower = min(self.table['f_lower'])
+        if self.f_lower is None and self.min_f_lower == 0.:
+            raise ValueError('Invalid low-frequency cutoff settings')
+
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
         if self.out is None:
@@ -682,7 +688,8 @@ class FilterBank(TemplateBank):
         self.table[index].template_duration = template_duration
 
         htilde = htilde.astype(self.dtype)
-        htilde.f_lower = self.f_lower
+        htilde.f_lower = f_low
+        htilde.min_f_lower = self.min_f_lower
         htilde.end_idx = int(f_end / htilde.delta_f)
         htilde.params = self.table[index]
         htilde.chirp_length = template_duration
