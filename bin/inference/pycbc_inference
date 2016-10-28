@@ -318,12 +318,16 @@ with ctx:
 
         # write new samples
         with InferenceFile(opts.output_file, "a") as fp:
+
             logging.info("Writing results to file")
             sampler.write_results(fp, max_iterations=opts.niterations+n_burnin)
+
             if not opts.checkpoint_fast or end == opts.niterations:
+
                 # compute the acls and write
                 logging.info("Computing acls")
                 sampler.write_acls(fp, sampler.compute_acls(fp))
+
                 # compute evidence, if supported
                 try:
                     lnz, dlnz = sampler.calculate_logevidence(fp)
