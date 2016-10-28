@@ -271,7 +271,7 @@ class PhaseTDStatistic(NewSNRStatistic):
             An array of the coincident ranking statistic values
         """
         rstat = s0['snglstat']**2. + s1['snglstat']**2.
-        cstat = rstat + 2. * self.signal_likelihood(s0, s1, slide, step)
+        cstat = rstat + 2. * self.logsignalrate(s0, s1, slide, step)
         cstat[cstat < 0] = 0
         return cstat ** 0.5
 
