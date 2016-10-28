@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Runs an sampler to find the posterior distributions.
+""" Runs a sampler to find the posterior distributions.
 """
 
 import argparse
@@ -63,7 +63,7 @@ def convert_liststring_to_list(lstring):
     return lvalue
 
 # command line usage
-parser = argparse.ArgumentParser(usage=__name__ + " [--options]",
+parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
                                  description=__doc__)
 
 # add data options
