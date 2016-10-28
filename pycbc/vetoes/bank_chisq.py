@@ -183,8 +183,8 @@ class SingleDetBankVeto(object):
             logging.info("Read in bank veto template bank")
             bank_veto_bank = FilterBank(bank_file,
                     self.seg_len_freq,
-                    self.delta_f, f_low,
-                    dtype=self.cdtype,
+                    self.delta_f, self.cdtype,
+                    low_frequency_cutoff=f_low,
                     approximant=approximant, **kwds)
 
             self.filters = list(bank_veto_bank)
