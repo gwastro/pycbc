@@ -130,7 +130,7 @@ def construct_kde(samples_array, use_kombine=False):
 
 def create_density_plot(xparam, yparam, samples, plot_density=True,
         plot_contours=True, percentiles=None, cmap='viridis',
-        contour_color='k', xmin=None, xmax=None, ymin=None, ymax=None,
+        contour_color=None, xmin=None, xmax=None, ymin=None, ymax=None,
         fig=None, ax=None, use_kombine=False):
     """Computes and plots posterior density and confidence intervals using the
     given samples.
@@ -152,8 +152,9 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
         and 90th percentiles.
     cmap : {'viridis', string}
         The name of the colormap to use for the density plot.
-    contour_color : {'k', string}
-        What color to make the contours. Default is 'k'.
+    contour_color : {None, string}
+        What color to make the contours. Default is white for density 
+        plots and black for other plots.
     xmin : {None, float}
         Minimum value to plot on x-axis.
     xmax : {None, float}
@@ -226,6 +227,8 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
     if plot_density:
         im = ax.imshow(numpy.rot90(Z), extent=[xmin, xmax, ymin, ymax],
             aspect='auto', cmap=cmap, zorder=1)
+        if contour_color is None:
+            contour_color = 'w'
 
     if plot_contours:
         # compute the percentile values
@@ -233,6 +236,8 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
         if use_kombine:
             resamps = numpy.exp(resamps)
         s = numpy.percentile(resamps, percentiles)
+        if contour_color is None:
+            contour_color = 'k'
         ct = ax.contour(X, Y, Z, s, colors=contour_color, zorder=3)
         # label contours
         lbls = ['{p}%'.format(p=int(p)) for p in (100. - percentiles)]
@@ -309,7 +314,7 @@ def create_multidim_plot(
                     zvals=None, show_colorbar=True, cbar_label=None,
                     vmin=None, vmax=None, scatter_cmap='plasma_r',
                 plot_density=False, plot_contours=True,
-                    density_cmap='viridis', contour_color='k',
+                    density_cmap='viridis', contour_color=None,
                     use_kombine=False):
     """Generate a figure with several plots and histograms.
 
@@ -355,8 +360,9 @@ def create_multidim_plot(
         Draw contours showing the 50th and 90th percentile confidence regions.
     density_cmap : {'viridis', string}
         The color map to use for the density plot.
-    contour_color : {'k', string}
-        The color to use for the contour lines.
+    contour_color : {None, string}
+        The color to use for the contour lines. Defaults to white for 
+        density plots and black for other plots.
     use_kombine : {False, bool}
         Use kombine's KDE to calculate density. Otherwise, will use
         `scipy.stats.gaussian_kde.` Default is False.
