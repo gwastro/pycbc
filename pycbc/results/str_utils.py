@@ -129,7 +129,7 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
         If include_error, the error will be formatted as a percentage of the
         the value.
     ndecs: {None, int}
-        Number of values after the decimal point. If not provided, 
+        Number of values after the decimal point. If not provided,
         it will default to the number of values in the error.
 
     Returns

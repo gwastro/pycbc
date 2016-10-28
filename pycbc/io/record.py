@@ -1048,7 +1048,7 @@ class FieldArray(numpy.recarray):
     def to_array(self, fields=None, axis=0):
         """Returns an `numpy.ndarray` of self in which the fields are included
         as an extra dimension.
-        
+
         Parameters
         ----------
         fields : {None, (list of) strings}

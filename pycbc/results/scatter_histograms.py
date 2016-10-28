@@ -1,4 +1,4 @@
-# Copyright (C) 2016 Miriam Cabero Mueller
+# Copyright (C) 2016 Miriam Cabero Mueller, Collin Capano
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -153,7 +153,7 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
     cmap : {'viridis', string}
         The name of the colormap to use for the density plot.
     contour_color : {None, string}
-        What color to make the contours. Default is white for density 
+        What color to make the contours. Default is white for density
         plots and black for other plots.
     xmin : {None, float}
         Minimum value to plot on x-axis.
@@ -253,7 +253,7 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
 
 
 def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
-        color='navy', filled=False, linecolor='b', title=True): 
+        color='navy', filled=False, linecolor='b', title=True):
     """Plots a 1D marginalized histogram of the given param from the given
     samples.
 
@@ -279,7 +279,7 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
         What color to use for the percentile lines.
     title : {True, bool}
         Add a title with the median value +/- uncertainty, with the
-        max(min) `percentile` used for the +(-) uncertainty. 
+        max(min) `percentile` used for the +(-) uncertainty.
     """
     if label is None:
         label = param
@@ -307,8 +307,8 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
     ax.set_yticks([])
 
 
-def create_multidim_plot(
-                parameters, samples, labels=None, mins=None, maxs=None,
+def create_multidim_plot(parameters, samples, labels=None,
+                mins=None, maxs=None,
                 plot_marginal=True,
                 plot_scatter=True,
                     zvals=None, show_colorbar=True, cbar_label=None,
@@ -361,7 +361,7 @@ def create_multidim_plot(
     density_cmap : {'viridis', string}
         The color map to use for the density plot.
     contour_color : {None, string}
-        The color to use for the contour lines. Defaults to white for 
+        The color to use for the contour lines. Defaults to white for
         density plots and black for other plots.
     use_kombine : {False, bool}
         Use kombine's KDE to calculate density. Otherwise, will use
@@ -421,7 +421,7 @@ def create_multidim_plot(
                 alpha = 0.3
             else:
                 alpha = 1.
-            plt = ax.scatter(x=samples[px], y=samples[py], c=zvals, s=5, 
+            plt = ax.scatter(x=samples[px], y=samples[py], c=zvals, s=5,
                         edgecolors='none', vmin=vmin, vmax=vmax,
                         cmap=scatter_cmap, alpha=alpha, zorder=2)
 
