@@ -108,7 +108,7 @@ parser.add_argument("--output-file", type=str, required=True,
 parser.add_argument("--checkpoint-interval", type=int, default=None,
                     help="Number of iterations to take before saving new "
                          "samples to file.")
-parser.add_argument("--checkpoint-fast", type=int, default=None,
+parser.add_argument("--checkpoint-fast", action="store_true",
                     help="Do not calculate derived data (eg. ACL or evidence) "
                          "after each checkpoint. Calculate them at the end.")
 
@@ -275,13 +275,14 @@ with ctx:
     if opts.checkpoint_interval:
 
         # determine intervals to run sampler until we save the new samples 
-        intervals = [i for i in range(0, opts.niterations, opts.checkpoint_interval)] \
-                    + [opts.niterations]
+        intervals = [i for i in range(0, opts.niterations, opts.checkpoint_interval)]
 
         # determine if there is a small bit at the end
         remainder = opts.niterations % opts.checkpoint_interval
         if remainder:
             intervals += [intervals[-1]+remainder]
+        else:
+            intervals += [opts.niterations]
 
     # if not checkpointing then set intervals to run sampler in one call
     else:
