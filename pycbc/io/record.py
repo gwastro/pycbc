@@ -1067,7 +1067,7 @@ class FieldArray(numpy.recarray):
             The desired fields as a numpy array.
         """
         if fields is None:
-            fields = field_array.fieldnames
+            fields = self.fieldnames
         if isinstance(fields, str) or isinstance(fields, unicode):
             fields = [fields]
         return numpy.stack([self[f] for f in fields], axis=axis)

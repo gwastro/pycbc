@@ -186,8 +186,7 @@ def results_from_cli(opts, load_samples=True, walkers=None):
     return fp, parameters, labels, samples
 
 def get_zvalues(fp, arg, likelihood_stats):
-    """Reads the data for the z-value (colour) of the plots
-    from the inference file
+    """Reads the data for the z-value of the plots from the inference file.
 
     """
     if arg == 'loglr':

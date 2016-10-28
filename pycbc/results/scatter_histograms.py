@@ -22,7 +22,8 @@
 #
 # =============================================================================
 #
-"""Module to generate figures with scatter plots and histograms.
+"""
+Module to generate figures with scatter plots and histograms.
 """
 
 import numpy
@@ -225,7 +226,7 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
         Z[bnds_mask] = 0.
 
     if plot_density:
-        im = ax.imshow(numpy.rot90(Z), extent=[xmin, xmax, ymin, ymax],
+        ax.imshow(numpy.rot90(Z), extent=[xmin, xmax, ymin, ymax],
             aspect='auto', cmap=cmap, zorder=1)
         if contour_color is None:
             contour_color = 'w'
@@ -288,7 +289,7 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
     else:
         htype = 'step'
     values = samples[param]
-    hp = ax.hist(values, bins=50, color=color, histtype=htype)
+    ax.hist(values, bins=50, color=color, histtype=htype)
     if percentiles is None:
         percentiles = [5., 50., 95.]
     values = numpy.percentile(values, percentiles)
@@ -376,7 +377,6 @@ def create_multidim_plot(parameters, samples, labels=None,
         location in the subplots grid; i.e., the key, values are:
         `{('param1', 'param2'): (pyplot.axes, row index, column index)}`
     """
-
     if labels is None:
         labels = parameters
 
@@ -394,7 +394,7 @@ def create_multidim_plot(parameters, samples, labels=None,
 
     # Diagonals...
     for param in parameters:
-        ax, nrow, ncol = axis_dict[param, param]
+        ax, _, _ = axis_dict[param, param]
         # plot marginal...
         if plot_marginal:
             create_marginalized_hist(ax, param, samples, label=labels[param],
