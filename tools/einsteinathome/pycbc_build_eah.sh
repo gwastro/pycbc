@@ -596,7 +596,8 @@ Cflags: -I${includedir}' |
     if $build_hdf5; then
 	p=hdf5-1.8.12
 	echo -e "\\n\\n>> [`date`] building $p"
-	test -r $p.tar.gz || wget $wget_opts http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/$p.tar.gz
+	test -r $p.tar.gz || wget $wget_opts $atlas/tarballs/$p.tar.gz
+        # origin: http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
