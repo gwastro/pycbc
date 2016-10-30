@@ -120,9 +120,11 @@ elif test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0" ||
     build_pegasus_source=true
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
+    patch_pyinstaller_bootloader=true
     pyinstaller_lsb="--no-lsb"
     use_pycbc_pyinstaller_hooks=true
     build_wrapper=false
+    build_gating_tool=true
     appendix="_Linux64"
 elif test "`uname -s`" = "Darwin" ; then # OSX
     echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
@@ -157,8 +159,10 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     build_pegasus_source=false
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
+    patch_pyinstaller_bootloader=true
     use_pycbc_pyinstaller_hooks=true
     build_wrapper=false
+    build_gating_tool=false
     appendix="_OSX64"
 elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     echo -e "\\n\\n>> [`date`] Using Cygwin settings"
@@ -185,8 +189,10 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     build_pegasus_source=false
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
+    patch_pyinstaller_bootloader=false
     use_pycbc_pyinstaller_hooks=true
     build_wrapper=false
+    build_gating_tool=false
     appendix="_Windows64"
 else
     echo ERROR: unknown OS, exiting
@@ -938,8 +944,8 @@ if python -c "import dbhash, shelve" 2>/dev/null; then
 fi
 
 # PyInstaller
-if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9]$' > /dev/null; then
-    # regular release version, get source tarbal from pypi
+if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9][0-9]*$' > /dev/null; then
+    # regular release version, get source tarball from pypi
     p=PyInstaller-$pyinstaller_version
     echo -e "\\n\\n>> [`date`] building $p"
     test -r $p.tar.gz || wget $wget_opts "https://pypi.python.org/packages/source/P/PyInstaller/$p.tar.gz"
@@ -955,26 +961,20 @@ else
     else
         git clone git://github.com/$p/$p.git
         cd $p
-        if test "$pyinstaller_version" = "v3.0"; then
-            git checkout 3.0
-        else
-            git checkout $pyinstaller_version
-        fi
+    fi
+    if test "$pyinstaller_version" = "v3.0"; then
+        git checkout 3.0 # workaround for misnamed tag
+    else
+        git checkout $pyinstaller_version
     fi
 fi
 
-# build pycbc_condition_strain bundle with standard (unpatched) bootloader
-if test ".`uname -s`" = ".Linux"; then
+# if we are to patch pyinstaller, save an unpatched version for later use
+if $patch_pyinstaller_bootloader && $build_gating_tool; then
     python setup.py install --prefix="$PREFIX" --record installed-files.txt
-    export NOW_BUILDING=NULL
-    ( cd "$ENVIRONMENT" &&
-	pyinstaller \
-	    --additional-hooks-dir $hooks/hooks \
-	    --runtime-hook $hooks/runtime-tkinter.py \
-	    --runtime-hook $hooks/runtime-scipy.py \
-	    --hidden-import=pkg_resources $hidden_imports \
-	    --onefile ./bin/pycbc_condition_strain
-    )
+    rm -f ../pyinstaller-clean-installed.tar ../pyinstaller-clean-installed.tar.gz
+    xargs tar -rPf ../pyinstaller-clean-installed.tar < installed-files.txt
+    gzip  ../pyinstaller-clean-installed.tar
     xargs rm -f < installed-files.txt
     rm installed-files.txt
 fi
@@ -984,21 +984,19 @@ if $build_dlls; then
     sed -i~ "s|'libpython%d%d.dll'|'libpython%d.%d.dll'|" `find PyInstaller -name bindepend.py`
 fi
 
-# patch PyInstaller bootloader to not fork a second process
-if test "$pyinstaller_version" = "9d0e0ad4"; then
-    git checkout $pyinstaller_version
-    sed -i~ 's/ pid *= *fork()/ pid = 0/' bootloader/common/pyi_utils.c
-fi
-
 # build bootloader (in any case: for Cygwin it wasn't precompiled, for Linux it was patched)
 cd bootloader
+# patch PyInstaller bootloader to not fork a second process
+if $patch_pyinstaller_bootloader; then
+    sed -i~ 's/ pid *= *fork()/ pid = 0/' common/pyi_utils.c
+fi
 if echo "$pyinstaller_version" | grep '3\.' > /dev/null; then
     python ./waf distclean all
 else
     python ./waf configure $pyinstaller_lsb build install
 fi
 cd ..
-python setup.py install --prefix="$PREFIX"
+python setup.py install --prefix="$PREFIX" --record installed-files.txt
 cd ..
 test "$p" = "PyInstaller-$pyinstaller_version" && cleanup && rm -rf "$p"
 
@@ -1203,6 +1201,27 @@ echo -e "\\n\\n>> [`date`] zipping weave cache"
 cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
 rm -f "$cache"
 zip -r "$cache" pycbc_inspiral SEOBNRv2ChirpTimeSS.dat
+
+# build additional PyInstaller "onefile" bundles (with unpatched PyInstaller bootloader)
+if $build_gating_tool; then
+    # restore unpatched pyinstaller version
+    if $patch_pyinstaller_bootloader; then
+        cd $SOURCE/pyinstaller
+        xargs rm -f < installed-files.txt
+        tar -xPzf ../pyinstaller-clean-installed.tar.gz
+    fi
+
+    export NOW_BUILDING=NULL
+    cd "$ENVIRONMENT"
+
+    # build pycbc_condition_strain bundle
+    pyinstaller \
+        --additional-hooks-dir $hooks/hooks \
+        --runtime-hook $hooks/runtime-tkinter.py \
+        --runtime-hook $hooks/runtime-scipy.py \
+        --hidden-import=pkg_resources $hidden_imports \
+        --onefile ./bin/pycbc_condition_strain
+fi
 
 # remove lock
 rm -f "$PYCBC/lock"
