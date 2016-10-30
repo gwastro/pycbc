@@ -1217,13 +1217,35 @@ if $build_gating_tool; then
     export NOW_BUILDING=NULL
     cd "$ENVIRONMENT"
 
-    # build pycbc_condition_strain bundle
+    echo -e "\\n\\n>> [`date`] build pycbc_condition_strain bundle"
     pyinstaller \
         --additional-hooks-dir $hooks/hooks \
         --runtime-hook $hooks/runtime-tkinter.py \
         --runtime-hook $hooks/runtime-scipy.py \
         --hidden-import=pkg_resources $hidden_imports \
         --onefile ./bin/pycbc_condition_strain
+
+    echo -e "\\n\\n>> [`date`] building pycbc_inspiral pyinstaller onefile spec"
+    pyi-makespec \
+        --additional-hooks-dir $hooks/hooks \
+        --runtime-hook $hooks/runtime-tkinter.py \
+        --hidden-import=pkg_resources $hidden_imports \
+        --onefile ./bin/pycbc_inspiral
+
+    echo -e "\\n\\n>> [`date`] patching pyinstaller onefile spec"
+    mv pycbc_inspiral.spec pycbc_inspiral.spec3
+    awk '/exe = EXE/{exit};{print}' pycbc_inspiral.spec3 > pycbc_inspiral.spec1
+    ls $SOURCE/test/pycbc_inspiral/ |
+        sed "s%.*%a.datas += [('&','$SOURCE/test/pycbc_inspiral/&','DATA')]%" > pycbc_inspiral.spec2
+    if test ".$libgomp" != "." -a "$libgomp" != "libgomp.so.1"; then
+        echo 'a.datas += [("libgomp.so.1", "'"$libgomp"'", "DATA")]' >> pycbc_inspiral.spec2
+    fi
+    awk '/^exe = EXE/{p=1};(p==1){print}' pycbc_inspiral.spec3 |
+        cat pycbc_inspiral.spec1 pycbc_inspiral.spec2 - > pycbc_inspiral.spec
+
+    echo -e "\\n\\n>> [`date`] running pyinstaller"
+    rm -rf dist/pycbc_inspiral
+    pyinstaller pycbc_inspiral.spec
 fi
 
 # remove lock
