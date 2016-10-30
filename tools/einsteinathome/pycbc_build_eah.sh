@@ -92,7 +92,8 @@ if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.exe" "$dist"
     scp "-P$CYGWIN_HOST_PORT" "$CYGWIN_HOST_USER@$CYGWIN_HOST:$dist/*.zip" "$dist"
     exit 0
-elif test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0" ||
+elif test ".$1" = ".--force-debian4" ||
+  test "v`cat /etc/debian_version 2>/dev/null`" = "v4.0" ||
   lsb_release -a 2>/dev/null | grep 'Ubuntu 6.06' >/dev/null; then
     # detected a Debian 4.0 (Etch) or Ubuntu 6.06 installation, expect a prepared build system
     echo -e "\\n\\n>> [`date`] Using Debian 4.0 (etch) settings"
@@ -246,6 +247,7 @@ mkdir -p "$SOURCE"
 
 # usage message
 usage="
+    --force-debian4   : force Debian 4.0 build, must be first option in command-line
     --print-env       : dump environment at beginning, must be first option in command-line
     --help            : print this messge and exit
     --clean           : perform a clean build (takes quite some time); delete ~/.cache and
@@ -263,8 +265,9 @@ usage="
 # handle command-line arguments, possibly overriding above settings
 for i in $*; do
     case $i in
-        --no-pycbc-update) pycbc_branch="HEAD";;
+        --force-debian4) ;;
         --print-env) ;;
+        --no-pycbc-update) pycbc_branch="HEAD";;
         --bema-testing)
             pycbc_branch=einsteinathome_testing
             pycbc_remote=bema-ligo;;
