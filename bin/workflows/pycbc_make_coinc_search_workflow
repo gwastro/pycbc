@@ -275,6 +275,9 @@ for insp in full_insps:
     wf.make_single_hist(workflow, insp, censored_veto, 'closed_box',
            rdir['single_triggers/%s_trigger_histograms' % insp.ifo],
            bank_file=hdfbank[0], exclude='summ', tags=[tag])
+    wf.make_binned_hist(workflow, insp, final_veto_file[0], final_veto_name[0],
+           rdir['single_triggers/%s_binned_histograms' % insp.ifo],
+           hdfbank[0], exclude='summ', tags=[tag])
     hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box',
            rdir['single_triggers/%s_trigger_histograms' % insp.ifo],
            require='summ', tags=[tag])
