@@ -449,7 +449,7 @@ set +e
 until [ $DB_TRY -ge 5 ]
 do 
   /bin/echo -n "Querying... "
-  WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD 2>&1 >> pegasus_db.log`
+  WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD 2>> pegasus_db.log`
   if [ $? -eq 0 ] && [ ! -z $WORKFLOW_ID_STRING ] ; then
     /bin/echo "Done."
     DB_QUERY_SUCCESS=0
