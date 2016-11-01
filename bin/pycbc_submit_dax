@@ -442,23 +442,33 @@ WORKFLOW_ID_STRING=""
 WORKFLOW_DB_CMD="sqlite3 -csv ${HOME}/.pegasus/workflow.db \"select submit_hostname,wf_id,wf_uuid from master_workflow where submit_dir = '${SUBMIT_DIR}/work';\""
 DB_TRY=0
 /bin/echo -n "Querying Pegasus database for job:"
+rm -f pegasus_db.log
+touch pegasus_db.log
 # querying the database sometimes fails, so allow retries
 set +e
-until [ $DB_TRY -ge 10 ]
+until [ $DB_TRY -ge 5 ]
 do 
-  /bin/echo -n "Querying..."
-  WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD`
+  /bin/echo -n "Querying... "
+  WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD 2>&1 >> pegasus_db.log`
   if [ $? -eq 0 ] && [ ! -z $WORKFLOW_ID_STRING ] ; then
     /bin/echo "Done."
+    DB_QUERY_SUCCESS=0
     break
   else
-    /bin/echo "Query failed: ${WORKFLOW_DB_CMD}"
-    /bin/echo "Sleeping for ${DB_TRY} seconds and retrying..."
+    DB_QUERY_SUCCESS=1
+    /bin/echo -n "Database busy. Sleeping for ${DB_TRY} seconds and retrying... "
   fi
   sleep $DB_TRY
   DB_TRY=$(( $DB_TRY + 1 ))
 done
 set -e
+
+if [ ${DB_QUERY_SUCCESS} -eq 1 ] ; then
+  /bin/echo "Query failed: ${WORKFLOW_DB_CMD}"
+  cat pegasus_db.log
+else
+  rm -f pegasus_db.log
+fi
 
 if [ -z $WORKFLOW_ID_STRING ] ; then
   echo "WARNING: Could not find the workflow in the Pegasus dashboard database."
