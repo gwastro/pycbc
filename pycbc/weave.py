@@ -125,12 +125,12 @@ def verify_weave_options(opt, parser):
 
     # Check whether to use a fixed directory for scipy.weave
     if opt.fixed_weave_cache:
-        cache_dir = os.path.join(os.getcwd(),"pycbc_inspiral")
-        # if running a 'frozen' onefile PyInstaller bundle,
-        # point PYTHONCOMPILED to the bundle directory
-        if getattr(sys, 'frozen', False):
-            if sys._MEIPASS.startswith("/tmp/"):
-                cache_dir = sys._MEIPASS
+        if os.environ.get("FIXED_WEAVE_CACHE", None):
+            cache_dir = os.environ["FIXED_WEAVE_CACHE"]
+        elif getattr(sys, 'frozen', False):
+            cache_dir = sys._MEIPASS
+        else:
+            os.path.join(os.getcwd(),"pycbc_inspiral")
         os.environ['PYTHONCOMPILED'] = cache_dir
         logging.debug("fixed_weave_cache: Setting weave cache to %s", cache_dir)
         sys.path = [cache_dir] + sys.path
