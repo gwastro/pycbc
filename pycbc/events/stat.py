@@ -174,7 +174,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         #normalize so that peak has no effect on newsnr
         self.hist = self.hist / float(self.hist.max())
         self.hist = numpy.log(self.hist)
-        
+
         # Bin boundaries are stored in the hdf file
         self.tbins = self.files['phasetd_newsnr']['tbins'][:]
         self.pbins = self.files['phasetd_newsnr']['pbins'][:]
@@ -232,8 +232,8 @@ class PhaseTDStatistic(NewSNRStatistic):
         tv = numpy.searchsorted(self.tbins, td) - 1
         pv = numpy.searchsorted(self.pbins, pd) - 1
         s0v = numpy.searchsorted(self.sbins, snr0) - 1
-        s1v = numpy.searchsorted(self.sbins, snr1) - 1    
-        rv = numpy.searchsorted(self.rbins, rd) - 1  
+        s1v = numpy.searchsorted(self.sbins, snr1) - 1
+        rv = numpy.searchsorted(self.rbins, rd) - 1
 
         # Enforce that points fits into the bin boundaries: if a point lies
         # outside the boundaries it is pushed back to the nearest bin.
