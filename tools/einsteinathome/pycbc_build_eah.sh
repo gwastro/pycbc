@@ -1162,6 +1162,7 @@ LAL_DATA_PATH="." \
   INITIAL_LOG_LEVEL=10 \
   LEVEL2_CACHE_SIZE=8192 \
   WEAVE_FLAGS='-O3 -march=core2 -w' \
+  FIXED_WEAVE_CACHE="$PWD/pycbc_inspiral" \
   "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" \
   --fixed-weave-cache \
   --segment-end-pad 16 \
