@@ -174,6 +174,13 @@ class PhaseTDStatistic(NewSNRStatistic):
         #normalize so that peak has no effect on newsnr
         self.hist = self.hist / float(self.hist.max())
         self.hist = numpy.log(self.hist)
+
+        # Bin boundaries are stored in the hdf file
+        self.tbins = self.files['phasetd_newsnr']['tbins'][:]
+        self.pbins = self.files['phasetd_newsnr']['pbins'][:]
+        self.sbins = self.files['phasetd_newsnr']['sbins'][:]
+        self.rbins = self.files['phasetd_newsnr']['rbins'][:]
+
         self.single_dtype = [('snglstat', numpy.float32),
                     ('coa_phase', numpy.float32),
                     ('end_time', numpy.float64),
@@ -221,32 +228,26 @@ class PhaseTDStatistic(NewSNRStatistic):
         snr1[rd > 1] = sn0[rd > 1]
         rd[rd > 1] = 1. / rd[rd > 1]
 
-        # Bin boundaries are stored in the hdf file
-        tbins = self.files['phasetd_newsnr']['tbins'][:]
-        pbins = self.files['phasetd_newsnr']['pbins'][:]
-        sbins = self.files['phasetd_newsnr']['sbins'][:]
-        rbins = self.files['phasetd_newsnr']['rbins'][:]
-
         # Find which bin each coinc falls into
-        tv = numpy.searchsorted(tbins, td) - 1
-        pv = numpy.searchsorted(pbins, pd) - 1
-        s0v = numpy.searchsorted(sbins, snr0) - 1
-        s1v = numpy.searchsorted(sbins, snr1) - 1
-        rv = numpy.searchsorted(rbins, rd) - 1
+        tv = numpy.searchsorted(self.tbins, td) - 1
+        pv = numpy.searchsorted(self.pbins, pd) - 1
+        s0v = numpy.searchsorted(self.sbins, snr0) - 1
+        s1v = numpy.searchsorted(self.sbins, snr1) - 1
+        rv = numpy.searchsorted(self.rbins, rd) - 1
 
         # Enforce that points fits into the bin boundaries: if a point lies
         # outside the boundaries it is pushed back to the nearest bin.
         tv[tv < 0] = 0
-        tv[tv >= len(tbins) - 1] = len(tbins) - 2
+        tv[tv >= len(self.tbins) - 1] = len(self.tbins) - 2
         pv[pv < 0] = 0
-        pv[pv >= len(pbins) - 1] = len(pbins) - 2
+        pv[pv >= len(self.pbins) - 1] = len(self.pbins) - 2
         s0v[s0v < 0] = 0
-        s0v[s0v >= len(sbins) - 1] = len(sbins) - 2
+        s0v[s0v >= len(self.sbins) - 1] = len(self.sbins) - 2
         s1v[s1v < 0] = 0
-        s1v[s1v >= len(sbins) - 1] = len(sbins) - 2
+        s1v[s1v >= len(self.sbins) - 1] = len(self.sbins) - 2
         rv[rv < 0] = 0
-        rv[rv >= len(rbins) - 1] = len(rbins) - 2
-
+        rv[rv >= len(self.rbins) - 1] = len(self.rbins) - 2
+        
         return self.hist[tv, pv, s0v, s1v, rv]
 
     def coinc(self, s0, s1, slide, step):
