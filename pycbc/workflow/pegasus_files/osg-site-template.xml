@@ -15,6 +15,7 @@
     <profile namespace="condor" key="should_transfer_files">YES</profile>
     <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
     <profile namespace="condor" key="+OpenScienceGrid">True</profile>
+    <profile namespace="env" key="NO_TMPDIR">1</profile>
     <profile namespace="env" key="PATH">/cvmfs/oasis.opensciencegrid.org/osg/modules/lua/bin:/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.3/current/el6-x86_64/usr/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin</profile>
     <profile namespace="env" key="LD_LIBRARY_PATH">/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.3/current/el6-x86_64/usr/lib64</profile>
     <profile namespace="env" key="X509_CERT_DIR">/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/certificates</profile>
