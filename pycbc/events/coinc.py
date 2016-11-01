@@ -352,9 +352,9 @@ class MultiRingBuffer(object):
         self.buffer_expire = numpy.zeros((num_rings, self.pad_count), dtype=numpy.int32)
         self.buffer_expire -= self.max_length * 2
 
-        self.start = numpy.zeros(num_rings, dtype=numpy.uint32)
-        self.index = numpy.zeros(num_rings, dtype=numpy.uint32)
-        self.ladder = numpy.arange(0, num_rings, dtype=numpy.uint32)
+        self.start = numpy.zeros(num_rings, dtype=numpy.int32)
+        self.index = numpy.zeros(num_rings, dtype=numpy.int32)
+        self.ladder = numpy.arange(0, num_rings, dtype=numpy.int32)
 
         self.size = 0
         self.expire = 0
@@ -756,7 +756,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                                  self.time_window,
                                  self.timeslide_interval)
                 trig_stat = numpy.resize(trig_stat, len(i1))
-                c = self.stat_calculator.coinc(trig_stat, stats[i1],
+                c = self.stat_calculator.coinc(stats[i1], trig_stat,
                                                slide, self.timeslide_interval)
                 offsets.append(slide)
                 cstat.append(c)
