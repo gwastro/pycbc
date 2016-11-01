@@ -61,20 +61,27 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) CACHE_FILE=1
-           export IFS=","
+           OLD_IFS=${IFS}
+           IFS=","
            set +e
            for URL in $2; do
-               curl --fail "$URL" >> _reuse.cache 2>/dev/null
-               #If curl fails but the file exists, write to cache, else exit
-               if [ $? != 0 ]; then
-                   if [ -f $URL ]; then
-                       echo "$URL cache file found. Appending..."
-                       cat $URL >> _reuse.cache
-                   else
-                       echo "$URL not found!"
-                       exit
-                   fi
-               fi
+              FOUND_URL=1
+              # strip of any leading file:// URI and see if the file exists
+              FILE_URL=${URL##file://}
+              echo ${FILE_URL}
+              if [ -f ${FILE_URL} ] ; then
+                 cat ${FILE_URL} >> _reuse.cache
+                 FOUND_URL=0
+              else
+                 # otherwise try and get the file using curl
+                 curl --fail ${URL} >> _reuse.cache
+                 FOUND_URL=${?}
+              fi
+              if [ ${FOUND_URL} -ne 0 ] ; then
+                 echo "$URL not found!"
+                 exit
+              fi
+              IFS=${OLD_IFS}
            done
            set -e
            shift 2 ;;
@@ -264,7 +271,6 @@ export LOCAL_SITE_URL
 if [ -z $SITE_LIST ] ; then
   SITE_LIST="local"
   REMOTE_STAGING_URL=${LOCAL_SITE_URL}
-
 else
   SITE_LIST="local,${SITE_LIST}"
 fi
