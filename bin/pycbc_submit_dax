@@ -68,7 +68,6 @@ while true ; do
               FOUND_URL=1
               # strip of any leading file:// URI and see if the file exists
               FILE_URL=${URL##file://}
-              echo ${FILE_URL}
               if [ -f ${FILE_URL} ] ; then
                  cat ${FILE_URL} >> _reuse.cache
                  FOUND_URL=0
