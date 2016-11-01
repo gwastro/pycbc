@@ -61,20 +61,26 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) CACHE_FILE=1
-           export IFS=","
+           OLD_IFS=${IFS}
+           IFS=","
            set +e
            for URL in $2; do
-               curl --fail "$URL" >> _reuse.cache 2>/dev/null
-               #If curl fails but the file exists, write to cache, else exit
-               if [ $? != 0 ]; then
-                   if [ -f $URL ]; then
-                       echo "$URL cache file found. Appending..."
-                       cat $URL >> _reuse.cache
-                   else
-                       echo "$URL not found!"
-                       exit
-                   fi
-               fi
+              FOUND_URL=1
+              # strip of any leading file:// URI and see if the file exists
+              FILE_URL=${URL##file://}
+              if [ -f ${FILE_URL} ] ; then
+                 cat ${FILE_URL} >> _reuse.cache
+                 FOUND_URL=0
+              else
+                 # otherwise try and get the file using curl
+                 curl --fail ${URL} >> _reuse.cache
+                 FOUND_URL=${?}
+              fi
+              if [ ${FOUND_URL} -ne 0 ] ; then
+                 echo "$URL not found!"
+                 exit
+              fi
+              IFS=${OLD_IFS}
            done
            set -e
            shift 2 ;;
@@ -264,7 +270,6 @@ export LOCAL_SITE_URL
 if [ -z $SITE_LIST ] ; then
   SITE_LIST="local"
   REMOTE_STAGING_URL=${LOCAL_SITE_URL}
-
 else
   SITE_LIST="local,${SITE_LIST}"
 fi
@@ -437,23 +442,33 @@ WORKFLOW_ID_STRING=""
 WORKFLOW_DB_CMD="sqlite3 -csv ${HOME}/.pegasus/workflow.db \"select submit_hostname,wf_id,wf_uuid from master_workflow where submit_dir = '${SUBMIT_DIR}/work';\""
 DB_TRY=0
 /bin/echo -n "Querying Pegasus database for job:"
+rm -f pegasus_db.log
+touch pegasus_db.log
 # querying the database sometimes fails, so allow retries
 set +e
-until [ $DB_TRY -ge 10 ]
+until [ $DB_TRY -ge 5 ]
 do 
-  /bin/echo -n "Querying..."
-  WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD`
+  /bin/echo -n "Querying... "
+  WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD 2>> pegasus_db.log`
   if [ $? -eq 0 ] && [ ! -z $WORKFLOW_ID_STRING ] ; then
     /bin/echo "Done."
+    DB_QUERY_SUCCESS=0
     break
   else
-    /bin/echo "Query failed: ${WORKFLOW_DB_CMD}"
-    /bin/echo "Sleeping for ${DB_TRY} seconds and retrying..."
+    DB_QUERY_SUCCESS=1
+    /bin/echo -n "Database busy. Sleeping for ${DB_TRY} seconds and retrying... "
   fi
   sleep $DB_TRY
   DB_TRY=$(( $DB_TRY + 1 ))
 done
 set -e
+
+if [ ${DB_QUERY_SUCCESS} -eq 1 ] ; then
+  /bin/echo "Query failed: ${WORKFLOW_DB_CMD}"
+  cat pegasus_db.log
+else
+  rm -f pegasus_db.log
+fi
 
 if [ -z $WORKFLOW_ID_STRING ] ; then
   echo "WARNING: Could not find the workflow in the Pegasus dashboard database."

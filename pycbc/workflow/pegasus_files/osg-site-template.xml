@@ -10,20 +10,18 @@
   <site handle="osg" arch="x86_64" os="LINUX">
     <profile namespace="env" key="GLOBUS_LOCATION">/usr</profile>
     <profile namespace="pegasus" key="style">condor</profile>
-    <profile namespace="condor" key="+DESIRED_XSEDE_Sites">&quot;Stampede,Comet&quot;</profile>
     <profile namespace="condor" key="getenv">True</profile>
     <profile namespace="condor" key="accounting_group">$ACCOUNTING_GROUP</profile>
     <profile namespace="condor" key="should_transfer_files">YES</profile>
     <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
-    <profile namespace="condor" key="Requirements">(GLIDEIN_Site isnt undefined)</profile>
-    <profile namespace="env" key="PATH">/cvmfs/oasis.opensciencegrid.org/osg/modules/gcc/4.9.3/bin:/cvmfs/oasis.opensciencegrid.org/osg/modules/python-2.7.7/bin:/cvmfs/oasis.opensciencegrid.org/osg/modules/lua/bin:/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.2/current/el6-x86_64/usr/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin</profile>
-    <profile namespace="env" key="LD_LIBRARY_PATH">/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.2/current/el6-x86_64/usr/lib64:/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.2/current/el6-x86_64/usr/lib:/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.2/current/el6-x86_64/usr/lib64/dcap:/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.2/current/el6-x86_64/usr/lib64/lcgdm:/cvmfs/oasis.opensciencegrid.org/osg/modules/gmp/6.0.0/lib:/cvmfs/oasis.opensciencegrid.org/osg/modules/mpfr/3.1.3/lib:/cvmfs/oasis.opensciencegrid.org/osg/modules/mpc/1.0.3/lib:/cvmfs/oasis.opensciencegrid.org/osg/modules/gcc/4.9.3/lib64:/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.2/current/el6-x86_64/usr/lib64:/cvmfs/oasis.opensciencegrid.org/osg/modules/python-2.7.7/lib</profile>
-    <profile namespace="env" key="LIBRARY_PATH">/cvmfs/oasis.opensciencegrid.org/osg/modules/python-2.7.7/lib</profile>
-    <profile namespace="env" key="X509_CERT_DIR">/cvmfs/oasis.opensciencegrid.org/mis/certificates/</profile>
-    <profile namespace="env" key="CPATH">/cvmfs/oasis.opensciencegrid.org/osg/modules/python-2.7.7/include</profile>
-    <profile namespace="env" key="LAL_DATA_PATH">/cvmfs/oasis.opensciencegrid.org/ligo/pycbc/ROM/lal-data/lalsimulation</profile>
-    <profile namespace="env" key="GFAL_CONFIG_DIR">/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.2/current/el6-x86_64/etc/gfal2.d/</profile>
-    <profile namespace="env" key="GFAL_PLUGIN_DIR">/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.2/current/el6-x86_64/usr/lib64/gfal2-plugins/</profile>
-    <profile namespace="env" key="PYTHONPATH">/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.2/current/el6-x86_64/usr/lib/python2.6/site-packages:/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.2/current/el6-x86_64/usr/lib64/python2.6/site-packages:/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.2/current/el6-x86_64/usr/lib/python2.6/site-packages/</profile>
-    <profile namespace="env" key="PERL5LIB">/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.2/current/el6-x86_64/usr/share/perl5/vendor_perl:/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.2/current/el6-x86_64/usr/share/perl5:/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.2/current/el6-x86_64/usr/lib64/perl5/vendor_perl:/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.2/current/el6-x86_64/usr/lib64/perl5</profile>
+    <profile namespace="condor" key="+OpenScienceGrid">True</profile>
+    <profile namespace="env" key="NO_TMPDIR">1</profile>
+    <profile namespace="env" key="PATH">/cvmfs/oasis.opensciencegrid.org/osg/modules/lua/bin:/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.3/current/el6-x86_64/usr/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin</profile>
+    <profile namespace="env" key="LD_LIBRARY_PATH">/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.3/current/el6-x86_64/usr/lib64</profile>
+    <profile namespace="env" key="X509_CERT_DIR">/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/certificates</profile>
+    <profile namespace="env" key="LAL_DATA_PATH">/cvmfs/oasis.opensciencegrid.org/ligo/pipeline/pycbc/pycbc/ROM/lal-data/lalsimulation</profile>
+    <profile namespace="env" key="GFAL_CONFIG_DIR">/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.3/current/el6-x86_64/etc/gfal2.d/</profile>
+    <profile namespace="env" key="GFAL_PLUGIN_DIR">/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.3/current/el6-x86_64/usr/lib64/gfal2-plugins/</profile>
+    <profile namespace="env" key="PYTHONPATH">/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.3/current/el6-x86_64/usr/lib/python2.6/site-packages/:/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/3.3/current/el6-x86_64/usr/lib64/python2.6/site-packages/</profile>
+    <profile namespace="env" key="PERL5LIB">/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.3/current/el6-x86_64/usr/share/perl5/vendor_perl:/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.3/current/el6-x86_64/usr/share/perl5:/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/3.3/current/el6-x86_64/usr/lib64/perl5</profile>
 
