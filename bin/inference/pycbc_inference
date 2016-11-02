@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Runs a sampler to find the posterior distributions.
+"""
 
 import argparse
 import logging
@@ -22,9 +24,15 @@ import numpy
 import pycbc.opt
 import pycbc.weave
 import random
-from pycbc import DYN_RANGE_FAC, fft, inference, psd, scheme, strain, waveform
+import pycbc
+from pycbc import fft
+from pycbc import inference
+from pycbc import psd
+from pycbc import scheme
+from pycbc import strain
+from pycbc import types
+from pycbc import waveform
 from pycbc.io.inference_hdf import InferenceFile
-from pycbc.types import FrequencySeries, MultiDetOptionAction
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import option_utils
 
@@ -55,29 +63,32 @@ def convert_liststring_to_list(lstring):
     return lvalue
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_inference [--options]",
-                  description="Runs an sampler to find the posterior.")
+parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
+                                 description=__doc__)
 
 # add data options
 parser.add_argument("--instruments", type=str, nargs="+", required=True,
-    help="IFOs, eg. H1 L1.")
+                    help="IFOs, eg. H1 L1.")
 parser.add_argument("--frame-type", type=str, nargs="+",
-    action=MultiDetOptionAction, metavar="IFO:FRAME_TYPE",
-    help="Frame type for each IFO.")
+                    action=types.MultiDetOptionAction,
+                    metavar="IFO:FRAME_TYPE",
+                    help="Frame type for each IFO.")
 parser.add_argument("--low-frequency-cutoff", type=float, required=True,
-    help="Low frequency cutoff for each IFO.")
+                    help="Low frequency cutoff for each IFO.")
 parser.add_argument("--psd-start-time", type=float, default=None,
-    help="Start time to use for PSD estimation if different from analysis.")
+                    help="Start time to use for PSD estimation if different "
+                         "from analysis.")
 parser.add_argument("--psd-end-time", type=float, default=None,
-    help="End time to use for PSD estimation if different from analysis.")
+                    help="End time to use for PSD estimation if different "
+                         "from analysis.")
 
 # add inference options
 parser.add_argument("--likelihood-evaluator", required=True,
-    choices=inference.likelihood_evaluators.keys(),
-    help="Evaluator class to use to calculate the likelihood.")
+                    choices=inference.likelihood_evaluators.keys(),
+                    help="Evaluator class to use to calculate the likelihood.")
 parser.add_argument("--seed", type=int, default=0,
-    help="Seed to use for the random number generator that initially "
-         "distributes the walkers. Default is 0.")
+                    help="Seed to use for the random number generator that "
+                         "initially distributes the walkers. Default is 0.")
 
 # add sampler options
 option_utils.add_sampler_option_group(parser)
@@ -93,13 +104,17 @@ parser.add_argument("--config-overrides", type=str, nargs="+", default=None,
 
 # output options
 parser.add_argument("--output-file", type=str, required=True,
-    help="Output file path.")
+                    help="Output file path.")
 parser.add_argument("--checkpoint-interval", type=int, default=None,
-    help="Number of iterations to take before saving new samples to file.")
+                    help="Number of iterations to take before saving new "
+                         "samples to file.")
+parser.add_argument("--checkpoint-fast", action="store_true",
+                    help="Do not calculate derived data (eg. ACL or evidence) "
+                         "after each checkpoint. Calculate them at the end.")
 
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
-    help="")
+                    help="Print logging messages.")
 
 # add module pre-defined options
 fft.insert_fft_option_group(parser)
@@ -121,11 +136,7 @@ scheme.verify_processing_options(opts, parser)
 pycbc.weave.verify_weave_options(opts, parser)
 
 # setup log
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+pycbc.init_logging(opts.verbose)
 
 # set the seed
 numpy.random.seed(opts.seed)
@@ -180,8 +191,9 @@ with ctx:
     logging.info("Saving PSDs")
     psd_dyn_dict = {}
     for key,val in psd_dict.iteritems():
-         psd_dyn_dict[key] = FrequencySeries(psd_dict[key]*DYN_RANGE_FAC**2,
-                                             delta_f=psd_dict[key].delta_f)
+         psd_dyn_dict[key] = types.FrequencySeries(
+                                        psd_dict[key] * pycbc.DYN_RANGE_FAC**2,
+                                        delta_f=psd_dict[key].delta_f)
 
     # save PSD
     with InferenceFile(opts.output_file, "w") as fp:
@@ -263,13 +275,14 @@ with ctx:
     if opts.checkpoint_interval:
 
         # determine intervals to run sampler until we save the new samples 
-        intervals = [i for i in range(0, opts.niterations, opts.checkpoint_interval)] \
-                    + [opts.niterations]
+        intervals = [i for i in range(0, opts.niterations, opts.checkpoint_interval)]
 
         # determine if there is a small bit at the end
         remainder = opts.niterations % opts.checkpoint_interval
         if remainder:
             intervals += [intervals[-1]+remainder]
+        else:
+            intervals += [opts.niterations]
 
     # if not checkpointing then set intervals to run sampler in one call
     else:
@@ -306,18 +319,23 @@ with ctx:
 
         # write new samples
         with InferenceFile(opts.output_file, "a") as fp:
+
             logging.info("Writing results to file")
             sampler.write_results(fp, max_iterations=opts.niterations+n_burnin)
-            # compute the acls and write
-            logging.info("Computing acls")
-            sampler.write_acls(fp, sampler.compute_acls(fp))
-            # compute evidence, if supported
-            try:
-                lnz, dlnz = sampler.calculate_logevidence(fp)
-                logging.info("Saving evidence")
-                sampler.write_logevidence(fp, lnz, dlnz)
-            except NotImplementedError:
-                pass
+
+            if not opts.checkpoint_fast or end == opts.niterations:
+
+                # compute the acls and write
+                logging.info("Computing acls")
+                sampler.write_acls(fp, sampler.compute_acls(fp))
+
+                # compute evidence, if supported
+                try:
+                    lnz, dlnz = sampler.calculate_logevidence(fp)
+                    logging.info("Saving evidence")
+                    sampler.write_logevidence(fp, lnz, dlnz)
+                except NotImplementedError:
+                    pass
 
 # exit
 logging.info("Done")
