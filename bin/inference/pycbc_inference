@@ -78,12 +78,18 @@ parser.add_argument("--likelihood-evaluator", required=True,
 parser.add_argument("--seed", type=int, default=0,
     help="Seed to use for the random number generator that initially "
          "distributes the walkers. Default is 0.")
+
 # add sampler options
 option_utils.add_sampler_option_group(parser)
 
 # add config options
 parser.add_argument("--config-files", type=str, nargs="+", required=True,
-    help="A file parsable by pycbc.workflow.WorkflowConfigParser.")
+                    help="A file parsable by "
+                         "pycbc.workflow.WorkflowConfigParser.")
+parser.add_argument("--config-overrides", type=str, nargs="+", default=None,
+                    metavar="SECTION:OPTION:VALUE",
+                    help="List of section:option:value combinations to add "
+                         "into the configuration file.")
 
 # output options
 parser.add_argument("--output-file", type=str, required=True,
@@ -184,7 +190,11 @@ with ctx:
 
     # read configuration file
     logging.info("Reading configuration file")
-    cp = WorkflowConfigParser(opts.config_files)
+    if opts.config_overrides is not None:
+        overrides = [override.split(":") for override in opts.config_overrides]
+    else:
+        overrides = None
+    cp = WorkflowConfigParser(opts.config_files, overrides)
 
     # sanity check that each parameter in [variable_args] has a priors section
     variable_args = cp.options("variable_args")
