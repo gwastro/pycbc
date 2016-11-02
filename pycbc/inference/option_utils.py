@@ -254,9 +254,10 @@ def add_density_option_group(parser):
     density_group.add_argument("--density-cmap", type=str, default='viridis',
                     help="Specify the colormap to use for the density. "
                          "Default is viridis.")
-    density_group.add_argument("--contour-color", type=str, default='k',
+    density_group.add_argument("--contour-color", type=str,
                     help="Specify the color to use for the contour lines. "
-                         "Default is black (k).")
+                         "Default is white for density plots and black "
+                         "for scatter plots.")
     density_group.add_argument('--use-kombine-kde', default=False,
                     action="store_true",
                     help="Use kombine's KDE for determining contours. Default "
