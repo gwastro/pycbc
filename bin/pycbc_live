@@ -206,6 +206,7 @@ parser.add_argument('--store-background', action='store_true')
 parser.add_argument('--analyze-flags', nargs='+', default=['HOFT_OK', 'SCIENCE_INTENT'], 
                     help='The flags that must be in the "good" state to analzye data')
 parser.add_argument('--background-ifar-limit', type=float, default=100.0)
+parser.add_argument('--timeslide-interval', type=float, default=0.1)
 parser.add_argument('--ifar-remove-threshold', type=float, default=100.0)
 parser.add_argument('--ifar-upload-threshold', type=float)
 parser.add_argument('--enable-gracedb-upload', action='store_true', default=False)
@@ -289,6 +290,7 @@ with ctx:
                                     args.background_statistic_files, 
                                     return_background=args.store_background,
                                     ifar_limit=args.background_ifar_limit,
+                                    timeslide_interval=args.timeslide_interval,
                                     ifar_remove_threshold=args.ifar_remove_threshold,
                                     ifos=ifos)
 
