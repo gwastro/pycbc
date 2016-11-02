@@ -210,6 +210,7 @@ parser.add_argument('--timeslide-interval', type=float, default=0.1)
 parser.add_argument('--ifar-remove-threshold', type=float, default=100.0)
 parser.add_argument('--ifar-upload-threshold', type=float)
 parser.add_argument('--enable-gracedb-upload', action='store_true', default=False)
+parser.add_argument('--file-prefix', default='Live')
 parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False)
 
 scheme.insert_processing_option_group(parser)
@@ -349,7 +350,7 @@ with ctx:
                 coinc_results = estimator.add_singles(results, data_reader)
                 evnt.dump_xml(results.keys(), coinc_results, psds, args.low_frequency_cutoff)
 
-            prefix = '%s-Live-%s-%s' % (''.join(ifos), data_end() - args.analysis_chunk, valid_pad)
+            prefix = '%s-%s-%s-%s' % (''.join(ifos), args.file_prefix, data_end() - args.analysis_chunk, valid_pad)
             evnt.dump(results, prefix, time_index=data_end(),
                       store_psd=False if args.store_psd is False else psds,
                       store_loudest_index=args.store_loudest_index,
