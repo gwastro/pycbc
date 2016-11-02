@@ -13,46 +13,6 @@ check_md5() {
     test ".$2" != ".$md5s"
 }
 
-compile_tar_gz() {
-    echo "==== `date` compiling $1"
-    pkg="$1"
-    shift
-    tar -xzvf "$pkg".tar.gz
-    cd "$pkg"
-    ./configure "$@" "--prefix=$PYTHON_PREFIX"
-    make
-    make install
-    cd ..
-    rm -r "$pkg"
-    hash -r
-}
-
-compile_gcc() {
-    echo "==== `date` compiling gcc-$1"
-    vers="$1"
-    shift
-    tar -xjvf gcc-${vers}.tar.bz2
-    mkdir -p gcc-${vers}/build
-    cd gcc-${vers}/build
-    ../configure "$@" \
-        "--prefix=$PYTHON_PREFIX/gcc-$vers" \
-        "--with-local-prefix=$PYTHON_PREFIX/gcc-$vers" \
-        "--program-suffix=-$vers" \
-        --enable-languages=c,c++,objc,fortran \
-        --disable-symvers --enable-shared
-    make
-    make install
-    cd ../..
-    rm -r gcc-${vers}
-
-    ( cd "$PREFIX/bin" &&
-        rm -f gcc-${vers} gfortran-${vers} g++-${vers} &&
-        ln -s ../gcc-${vers}/bin/gcc-${vers} &&
-        ln -s ../gcc-${vers}/bin/gfortran-${vers} &&
-        ln -s ../gcc-${vers}/bin/g++-${vers} )
-
-}
-
 trap 'rm -f "$PYCBC/lock"; exit 1' ERR
 
 echo -e ">> [`date`] Start $0 $*"
@@ -362,30 +322,6 @@ else # if $BUILDDIRNAME-preinst.tgz
 	make install
 	cd ..
 	$cleanup && rm -rf $p
-    fi
-
-    # gcc
-    if $build_gcc; then
-        GCC=4.8.5
-        gnu=ftp://ftp.fu-berlin.de/unix/gnu
-        for url in `echo "
-            $gnu/gmp/gmp-4.3.2.tar.gz
-            $gnu/mpfr/mpfr-2.4.2.tar.gz
-            $gnu/binutils/binutils-2.24.tar.gz
-            $gnu/gcc/gcc-$GCC/gcc-$GCC.tar.bz2
-            http://www.multiprecision.org/mpc/download/mpc-0.9.tar.gz
-            "` ; do
-            test -r `echo $url | sed 's%.*/%%'` ||
-            wget --no-check-certificate --passive-ftp "$url" || exit
-        done
-        compile_tar_gz gmp-4.3.2 "--build=`gcc -dumpmachine`"
-        compile_tar_gz mpfr-2.4.2 "--with-gmp=$PYTHON_PREFIX"
-        compile_tar_gz mpc-0.9 "--with-gmp=$PYTHON_PREFIX" "--with-mpfr=$PYTHON_PREFIX"
-        compile_tar_gz binutils-2.24
-        compile_gcc $GCC "--with-gmp=$PYTHON_PREFIX" "--with-mpfr=$PYTHON_PREFIX" "--with-mpc=$PYTHON_PREFIX" --disable-multilib
-        # "--target=`gcc -dumpmachine`" --disable-multilib --with-multilib-list=m64
-        ( cd $PYTHON_PREFIX/bin && for i in gcc g++ gfortran; do rm -f $i && ln -s $i-$GCC $i; done )
-        hash -r
     fi
 
     # PYTHON
@@ -1227,21 +1163,21 @@ if $build_gating_tool; then
         --hidden-import=pkg_resources $hidden_imports \
         --onefile ./bin/pycbc_condition_strain
 
-    echo -e "\\n\\n>> [`date`] building pycbc_inspiral pyinstaller onefile spec"
+    echo -e "\\n\\n>> [`date`] building pycbc_inspiral_osg pyinstaller onefile spec"
     pyi-makespec \
         --additional-hooks-dir $hooks/hooks \
         --runtime-hook $hooks/runtime-tkinter.py \
         --hidden-import=pkg_resources $hidden_imports \
-        --onefile ./bin/pycbc_inspiral -n pycbc_inspiral_osg
+        --onefile ./bin/pycbc_inspiral --name pycbc_inspiral_osg
 
-    echo -e "\\n\\n>> [`date`] patching pyinstaller onefile spec"
+    echo -e "\\n\\n>> [`date`] patching pyinstaller spec"
     mv pycbc_inspiral_osg.spec pycbc_inspiral_osg.spec1
     ls $SOURCE/test/pycbc_inspiral/ |
         sed "s%.*%a.datas += [('&','$SOURCE/test/pycbc_inspiral/&','DATA')]%" > pycbc_inspiral_osg.spec2
     if test ".$libgomp" != "." -a "$libgomp" != "libgomp.so.1"; then
         echo 'a.datas += [("libgomp.so.1", "'"$libgomp"'", "DATA")]' >> pycbc_inspiral_osg.spec2
     fi
-    awk '/exe = EXE/ {while (getline l < "pycbc_inspiral_osg.spec2") {print l};};{print}' \
+    awk '/exe = EXE/ { while (getline l < "pycbc_inspiral_osg.spec2") {print l} }; {print}' \
         pycbc_inspiral_osg.spec1 > pycbc_inspiral_osg.spec
 
     echo -e "\\n\\n>> [`date`] running pyinstaller"
