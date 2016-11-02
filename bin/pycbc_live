@@ -241,7 +241,10 @@ evnt = LiveEventManager(args.output_path,
 
 # I'm not the root, so do some actually filtering.
 with ctx:
-    fft.from_cli(args)
+    try:
+        fft.from_cli(args)
+    except:
+        pass
     maxlen = args.psd_segment_length * (args.psd_samples / 2 + 1)
     if evnt.rank > 0:
         waveforms = list(bank[evnt.rank-1::evnt.size-1])
