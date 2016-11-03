@@ -1108,7 +1108,6 @@ LAL_DATA_PATH="." \
   --low-frequency-cutoff 30 \
   --pad-data 8 \
   --cluster-window 1 \
-  --sample-rate 4096 \
   --injection-window 4.5 \
   --segment-start-pad 112 \
   --psd-segment-stride 8 \
