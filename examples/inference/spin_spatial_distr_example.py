@@ -37,7 +37,7 @@ for i in range(0,10000):
     spin_mag[i] = 1.
 
 # Use the pycbc.coordinates as co
-# spherical_to_cartesian function to convert from 
+# spherical_to_cartesian function to convert from
 # spherical polar coordinates to cartesian coordinates
 spinx, spiny, spinz = co.spherical_to_cartesian(spin_mag,
                                                 solid_angle_samples['phi'],
