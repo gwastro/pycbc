@@ -64,6 +64,7 @@ elif test ".$1" = ".--force-debian4" ||
     build_ssl=true
     link_gcc_version=4.8.5
     build_gcc=false
+    gcc_path="/usr/local/bin"
     build_python=false
     build_lapack=true
     pyssl_from="tarball" # "pip-install"
@@ -77,8 +78,37 @@ elif test ".$1" = ".--force-debian4" ||
     build_framecpp=false
     h5py_from="git"
     glue_from="pip-install" # "git-patched"
-    psycopg26_from=fake-psycopg255 # "pip-install" "system"
-    build_pegasus_source=true
+    build_preinst_before_lalsuite=true
+    pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
+    patch_pyinstaller_bootloader=true
+    pyinstaller_lsb="--no-lsb"
+    use_pycbc_pyinstaller_hooks=true
+    build_wrapper=false
+    build_gating_tool=true
+    appendix="_Linux64"
+elif [[ v`cat /etc/redhat-release` == v"Scientific Linux release 6.8 (Carbon)" ]] ; then # SL6
+    echo -e "\\n\\n>> [`date`] Using Scientific Linux release 6.8 (Carbon) settings"
+    test ".$LC_ALL" = "." && export LC_ALL="$LANG"
+    fftw_flags=--enable-avx
+    shared="--enable-shared"
+    build_dlls=false
+    build_ssl=true
+    link_gcc_version=4.4.7
+    build_gcc=false
+    gcc_path="/usr/bin"
+    build_python=true
+    build_lapack=true
+    pyssl_from="tarball" # "pip-install"
+    numpy_from="pip-install" # "tarball"
+    scipy_from="pip-install" # "git" # "git-patched"
+    build_hdf5=true
+    build_freetype=true
+    build_libpq=false
+    build_gsl=true
+    build_swig=true
+    build_framecpp=false
+    h5py_from="git"
+    glue_from="pip-install" # "git-patched"
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
     patch_pyinstaller_bootloader=true
@@ -103,6 +133,7 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     build_dlls=false
     build_ssl=false
     build_gcc=false
+    gcc_path="/usr/local/bin"
     build_python=false
     build_lapack=true
     pyssl_from="tarball" # "pip-install"
@@ -116,8 +147,6 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     build_framecpp=true
     h5py_from="pip-install" # "git"
     glue_from="pip-install" # "git-patched"
-    psycopg26_from=system
-    build_pegasus_source=false
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
     patch_pyinstaller_bootloader=true
@@ -133,6 +162,7 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     build_dlls=true
     build_ssl=false
     build_gcc=false
+    gcc_path="/usr/local/bin"
     build_python=false
     build_lapack=true
     pyssl_from="tarball" # "pip-install"
@@ -146,8 +176,6 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     build_framecpp=false
     glue_from="git-patched" # "pip-install"
     h5py_from="pip-install"
-    psycopg26_from=fake-psycopg255 # "pip-install" "system"
-    build_pegasus_source=false
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
     patch_pyinstaller_bootloader=false
@@ -172,8 +200,8 @@ if [ ".$link_gcc_version" != "." ]; then
     ( cd $PYTHON_PREFIX/bin &&
         for i in gcc g++ gfortran; do
             rm -f $i &&
-                test -x "/usr/local/bin/$i-$link_gcc_version" &&
-                ln -s "/usr/local/bin/$i-$link_gcc_version" $i;
+                test -x "${gcc_path}/$i" &&
+                ln -s "${gcc_path}/$i-$link_gcc_version" $i;
         done
     )
 fi
@@ -775,58 +803,17 @@ else
     cd ..
 fi
 
-# This is a pretty dirty hack faking psycopg2-2.5.5 to be v2.6
-# pegasus-wms is pinned to 2.6 but I couldn't get 2.6 to compile
-# see https://github.com/psycopg/psycopg2/issues/305
-# psycopgmodule.c _IS_ compiled with -fPIC, but still doesn't link
-# tried with newer gcc-4.4.4 and newer binutils to no avail
-if [ "$psycopg26_from" = "fake-psycopg255" ]; then
-    p=psycopg2-2.5.5
-    echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz || wget $wget_opts "$pypi/p/psycopg2/$p.tar.gz"
-    rm -rf $p
-    tar -xzf $p.tar.gz
-    cd $p
-    sed -i~ 's/2\.5\.5/2.6/' setup.py PKG-INFO
-    cd ..
-    rm -rf psycopg2-2.6
-    mv psycopg2-2.5.5 psycopg2-2.6
-    tar -czf psycopg2-2.6f.tar.gz psycopg2-2.6
-    cd psycopg2-2.6
-# LDFLAGS="-L$PREFIX/lib -fPIC" CPPFLAGS="-I$PREFIX/include" python setup.py build
-    python setup.py install --prefix="$PREFIX"
-    cd ..
-    $cleanup && rm -rf psycopg2-2.6
-elif [ "$psycopg26_from" = "pip-install" ]; then
-    echo -e "\\n\\n>> [`date`] pip install psycopg2==2.6"
-    pip install psycopg2==2.6
-fi
-
 # Pegasus
-v=4.5.2
-p=pegasus-source-$v
-if test -r $p-lib-pegasus-python.tgz; then
-    :
-elif $build_pegasus_source; then
-    echo -e "\\n\\n>> [`date`] building $p-lib-pegasus-python.tgz"
-    test -r $p.tar.gz || wget $wget_opts "http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz"
-    rm -rf $p
-    tar -xzf $p.tar.gz
-    if $fake_psycopg26; then
-	cp psycopg2-2.6f.tar.gz $p/src/externals/psycopg2-2.6.tar.gz
-    fi
-    cd $p
-    ant dist-python-source
-    cd ..
-    tar -czf $p-lib-pegasus-python.tgz $p/lib/pegasus/python $p/release-tools $p/build.properties
-    $cleanup && rm -rf $p
-else
-    wget $wget_opts "$aei/$p-lib-pegasus-python.tgz"
-fi
+v=4.7.0
+p=pegasus-python-source-$v
 echo -e "\\n\\n>> [`date`] building $p"
-tar -xzf $p-lib-pegasus-python.tgz
-pip install $p/lib/pegasus/python
-$cleanup && rm -rf $p
+if [ -f $p ] ; then
+    :
+else
+    wget $wget_opts "http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz"
+fi
+pip install --no-deps $p.tar.gz
+$cleanup && rm -rf $p.tar.gz
 
 # MPLD
 p=mpld3-0.3git
@@ -1088,6 +1075,19 @@ if check_md5 "$p" "$md5"; then
     fi
 fi
 
+p="lal-data-r7.tar.gz"
+md5="8e72ced90c82691f16e1c1ac33be18d7"
+if check_md5 "$p" "$md5"; then
+    rm -f "$p"
+    # FIXME should host this file on $albert
+    wget $wget_opts -O $p "https://www.dropbox.com/s/5ueoulogwx9p8oo/${p}?dl=1"
+    if check_md5 "$p" "$md5"; then
+        echo "can't download $p - md5 mismatch"
+        exit 1
+    fi
+fi
+tar -zxvf $p
+
 if $build_framecpp; then
     export LAL_FRAME_LIBRARY=FrameC
 else
@@ -1102,6 +1102,7 @@ LAL_DATA_PATH="." \
   FIXED_WEAVE_CACHE="$PWD/pycbc_inspiral" \
   "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" \
   --fixed-weave-cache \
+  --sample-rate 2048 \
   --segment-end-pad 16 \
   --cluster-method window \
   --low-frequency-cutoff 30 \
@@ -1111,7 +1112,7 @@ LAL_DATA_PATH="." \
   --injection-window 4.5 \
   --segment-start-pad 112 \
   --psd-segment-stride 8 \
-  --approximant IMRPhenomD \
+  --approximant 'SPAtmplt:mtotal<4' 'SEOBNRv2_ROM_DoubleSpin:else' \
   --psd-inverse-length 16 \
   --filter-inj-only \
   --psd-segment-length 16 \
