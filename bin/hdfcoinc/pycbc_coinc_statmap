@@ -119,9 +119,6 @@ back_cnum, fnlouder = coinc.calculate_n_louder(back_stat, fore_stat,
 back_cnum_exc, fnlouder_exc = coinc.calculate_n_louder(e.stat, fore_stat, 
                                                e.decimation_factor)         
 
-print fnlouder
-print fnlouder_exc
-
 f['background/ifar'] = sec_to_year(background_time / (back_cnum + 1))  
 f['background_exc/ifar'] = sec_to_year(background_time_exc / (back_cnum_exc + 1))
 
@@ -150,43 +147,5 @@ else:
 
 if 'name' in d.attrs:
     f.attrs['name'] = d.attrs['name']
-
-# Incorporate hierarchical removal for any other loud triggers
-logging.info("Instantiating hierarchical removal.")
-
-#Pseudo-Code First
-# Step 1: Check to see if the trigger with the largest FAR is
-#         louder than all of the background.
-
-# fnlouder is the number of background events that are louder than
-# the foreground trigger. So if a trigger is louder than all of
-# the background, fnlouder = 0.
-
-#if fnlouder == 0:
-#   hier_remove_again = True
-#else : hier_remove_again = False
-
-# Step 2 : Loop until we don't have to hierarchically remove
-#          anymore.
-#while hier_remove_again:
-
-#    loudest_trig = arrayOfTriggers[indexofLoudest] 
-
-# Step 3: Remove that trigger from the list of zerolag triggers
-#         with some clustering window.
-#    new_trigs = intial_trigs(t around time_of_trigger)
-
-# Step 4: Re cluster the triggers and calculate the far/ifar/fap
-#         inclusive and exclusive.
-#    new_trigs = new_trigs.cluster()
-#    ifarDict recalculate
-#    fapDict recalculate
-#    reassign fnlouder
-
-# Step 5: Check Step 1-3 again, until we don't have any triggers
-#         that are louder than the background.
-#    if fnlouder == 0:
-#        hier_remove_again = True
-#    else : hier_remove_again = False
 
 logging.info("Done") 
