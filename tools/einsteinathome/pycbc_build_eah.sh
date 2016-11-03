@@ -866,8 +866,9 @@ else
     git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
 echo -e ">> [`date`] downgrade setuptools"
-pip install --upgrade `grep -w ^setuptools requirements.txt`
 echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
+pycbc_tag="`git describe --tags --exact-match HEAD||true`"
+pip install --upgrade `grep -w ^setuptools requirements.txt`
 pip install .
 hooks="$PWD/tools/static"
 cd ..
@@ -1182,6 +1183,10 @@ if $build_gating_tool; then
 
     echo -e "\\n\\n>> [`date`] running pyinstaller"
     pyinstaller pycbc_inspiral_osg.spec
+
+    if echo ".$pycbc_tag" | egrep '^\.v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
+        mv dist/pycbc_inspiral_osg "dist/pycbc_inspiral_osg_$pycbc_tag"
+    fi
 fi
 
 # remove lock
