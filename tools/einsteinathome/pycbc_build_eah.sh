@@ -1068,6 +1068,7 @@ md5="8e72ced90c82691f16e1c1ac33be18d7"
 if check_md5 "$p" "$md5"; then
     rm -f "$p"
     # FIXME should host this file on $albert
+    #wget $wget_opts "$albert/$p"
     wget $wget_opts -O $p "https://www.dropbox.com/s/5ueoulogwx9p8oo/${p}?dl=1"
     if check_md5 "$p" "$md5"; then
         echo "can't download $p - md5 mismatch"
@@ -1078,10 +1079,12 @@ tar -zxvf $p
 
 #fb5ec108c69f9e424813de104731370c  H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz
 p="H1L1-SBANK_FOR_GW150914.xml.gz"
-md5="401324352d30888a5df2e5cc65035b17"
+md5="c24f5513d3066b4f637daffb6aa20fec"
 if check_md5 "$p" "$md5"; then
     rm -f "$p"
-    wget $wget_opts "$albert/$p"
+    # FIXME should host this file on $albert
+    #wget $wget_opts "$albert/$p"
+    wget $wget_opts -O $p "https://www.dropbox.com/s/zs8rp6zc9i2hjap/${p}?dl=1"
     if check_md5 "$p" "$md5"; then
         echo "can't download $p - md5 mismatch"
         exit 1
@@ -1108,6 +1111,7 @@ LAL_DATA_PATH="." \
   --low-frequency-cutoff 30 \
   --pad-data 8 \
   --cluster-window 1 \
+  --cluster-function symmetric \
   --injection-window 4.5 \
   --segment-start-pad 112 \
   --psd-segment-stride 8 \
