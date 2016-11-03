@@ -1063,18 +1063,6 @@ if check_md5 "$p" "$md5"; then
     fi
 fi
 
-#fb5ec108c69f9e424813de104731370c  H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz
-p="H1L1-SBANK_FOR_GW150914.xml.gz"
-md5="401324352d30888a5df2e5cc65035b17"
-if check_md5 "$p" "$md5"; then
-    rm -f "$p"
-    wget $wget_opts "$albert/$p"
-    if check_md5 "$p" "$md5"; then
-        echo "can't download $p - md5 mismatch"
-        exit 1
-    fi
-fi
-
 p="lal-data-r7.tar.gz"
 md5="8e72ced90c82691f16e1c1ac33be18d7"
 if check_md5 "$p" "$md5"; then
@@ -1087,6 +1075,18 @@ if check_md5 "$p" "$md5"; then
     fi
 fi
 tar -zxvf $p
+
+#fb5ec108c69f9e424813de104731370c  H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz
+p="H1L1-SBANK_FOR_GW150914.xml.gz"
+md5="401324352d30888a5df2e5cc65035b17"
+if check_md5 "$p" "$md5"; then
+    rm -f "$p"
+    wget $wget_opts "$albert/$p"
+    if check_md5 "$p" "$md5"; then
+        echo "can't download $p - md5 mismatch"
+        exit 1
+    fi
+fi
 
 if $build_framecpp; then
     export LAL_FRAME_LIBRARY=FrameC
