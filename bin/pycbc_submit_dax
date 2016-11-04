@@ -253,6 +253,9 @@ fi
 grid-proxy-info -exists
 RESULT=$?
 if [ ${RESULT} -eq 0 ] ; then
+  cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
+  grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+  rm -f /tmp/x509up_u`id -u`.orig
   grid-proxy-info
 else
   echo "Error: Could not find a valid grid proxy to submit workflow."
@@ -423,6 +426,9 @@ fi
 grid-proxy-info -exists
 RESULT=$?
 if [ ${RESULT} -eq 0 ] ; then
+  cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
+  grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+  rm -f /tmp/x509up_u`id -u`.orig
   grid-proxy-info
 else
   echo "Error: Could not find a valid grid proxy to submit workflow."
