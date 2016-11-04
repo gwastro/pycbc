@@ -721,13 +721,6 @@ follwing lines to your ``executables.ini`` file::
 Running the workflow
 --------------------
 
-Before running the workflow, a proxy compatible with Xrootd needs to be generated. To generate this proxy run the commands
-::
-
-    ligo-proxy-init albert.einstein
-    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
-    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
-
 Add the following arguments to ``pycbc_submit_dax``::
 
     --no-create-proxy \
