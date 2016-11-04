@@ -197,7 +197,7 @@ class Executable(pegasus_workflow.Executable):
 
         if exe_url.scheme in ['', 'file']:
             if os.path.isfile(exe_url.path):
-                self.add_pfn(exe_path,site='local')
+                self.add_pfn(exe_path, site='local')
 
                 logging.debug("Using %s executable "
                               "at %s" % (name, exe_url.path))
@@ -209,8 +209,7 @@ class Executable(pegasus_workflow.Executable):
             logging.debug("Using %s executable "
                           "at %s" % (name, exe_path))
             try:
-                value = string.strip(
-                    cp.get('pegasus_profile-%s' % name, 'pycbc|site') )
+                value = cp.get('pegasus_profile-%s' % name, 'pycbc|site')
                 for s in value.split(','):
                     self.add_pfn(exe_path, site=s.strip())
             except:
