@@ -200,7 +200,7 @@ if [ ".$link_gcc_version" != "." ]; then
     ( cd $PYTHON_PREFIX/bin &&
         for i in gcc g++ gfortran; do
             rm -f $i &&
-                test -x "${gcc_path}/$i" &&
+                test -x "${gcc_path}/$i-$link_gcc_version" &&
                 ln -s "${gcc_path}/$i-$link_gcc_version" $i;
         done
     )
