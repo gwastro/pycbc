@@ -18,6 +18,3 @@ To download and install PyCBC follow the instructions at
 [![Build Status](https://travis-ci.org/ligo-cbc/pycbc.svg?branch=master)](https://travis-ci.org/ligo-cbc/pycbc)
 [![Code Health](https://landscape.io/github/ligo-cbc/pycbc/master/landscape.svg?style=flat)](https://landscape.io/github/ligo-cbc/pycbc/master)
 
-
-TESTING!
-this change has been made to test git communication (161021:6:00p)
