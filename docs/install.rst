@@ -40,7 +40,7 @@ Make sure that you have at least version 13.1.1 of virtualenv. To do this, you c
 
     virtualenv --version
     
-If this returns ``virtualenv: command not found`` or the command returns a lower version than ``13.1.1`` (as is the case with LIGO Data Grid Scientific Linux 6 systems) then follow the instructions for setting virtualenv at:
+If this returns ``virtualenv: command not found`` or the command returns a lower version than ``13.1.1`` (as is the case with Scientific Linux 6 systems) then follow the instructions for setting virtualenv at:
 
 .. toctree::
     :maxdepth: 1
@@ -69,31 +69,25 @@ Next, you need to choose a directory name where you'd like to make your virtual 
 
     It is very important that your ``virtualenv`` version is at least 13.1.1 before continuing. Read the preceding instructions if you are not sure how to check this, or need to upgrade virtualenv.
 
-You first set up a new virtual environment. A virtual environment is defined by a directory path that will hold the contents of the virtual environment. We will reference this directory path a lot in the instructions below, so we first set a shell variable called ``NAME`` to the value of the path of the new virtual environment. Run with the command:
-
-.. code-block:: bash
-
-    NAME=${HOME}/pycbc-dev
-    
-Now you can initialize the virtual environment. This creates a new directory named by value of the variable ``$NAME`` containing your new virtual environment. To do this, run the command:
+You first set up a new virtual environment. A virtual environment is defined by a directory path that will hold the contents of the virtual environment. In this example, we chose ``~/src/pycbc`` although you can change this to whatever you like by changing the command below. Initialize the virtual environment by running the command:
 
 .. code-block:: bash
     
-    virtualenv $NAME
+    virtualenv ~/src/pycbc
 
-You can create as many different virtual environments as you like, as long as they all have different paths (i.e. different values of ``$NAME``).
+You can create as many different virtual environments as you like, as long as they all have different paths.
 
 .. note::
 
-    Do not run ``virtualenv`` twice with the same value of ``$NAME`` as it will overwrite the existing virtual environment with a new one, destroying the environment.
+    Do not run ``virtualenv`` twice with the same path as it will overwrite the existing virtual environment with a new one, destroying the environment.
 
-To enter your virtual environment run the command
+To enter your virtual environment run the command (replacing the string ``~/src/pycbc/`` if you chose a different path)
 
 .. code-block:: bash
     
-    source $NAME/bin/activate
+    source ~/src/pycbc/bin/activate
     
-You will now be in your virtual environment, and so you can install packages, etc, without conflicting with either the system build, or other builds that you may have sitting around. You may install other programs and libraries, such as lalsuite (:ref:`lalsuite_install`), into this virtual environment.
+You will now be in your virtual environment, and so you can install packages, etc, without conflicting with either the system build, or other builds that you may have sitting around. You may install other programs and libraries, such as lalsuite (:ref:`lalsuite_install`), into this virtual environment. The ``activate`` script also sets the environment variable ``${VIRTUAL_ENV}`` to the full path to your virtual environment.
 
 To leave this virtual environment type
 
@@ -113,13 +107,13 @@ Enter the virtual environment that you wish to use for PyCBC development by sour
 
 .. code-block:: bash
 
-    source $NAME/bin/activate
+    source ~/src/pycbc/bin/activate
 
 .. note::
 
    CentOS 6 provides a buggy version of the HDF5 library, so you will need to install a newer version into your virtual environment. If you are using a CentOS 6 cluster, you must install HDF5. If you are using another cluster, then this step is optional.  
 
-If you need to install the HDF5 library (i.e. you are on a CentOS 6 cluster), run the commands: 
+If you are running on a Scientific Linux 6 cluster, you need to install the HDF5 library. To do this, run the commands:
 
 .. code-block:: bash
 
@@ -160,7 +154,7 @@ Enter the virtual environment that you wish to use for PyCBC development by sour
 
 .. code-block:: bash
 
-    source $NAME/bin/activate
+    source ~/src/pycbc/bin/activate
 
 Next install the Pegasus WMS python libraries needed to build the workflows with the command:
 
@@ -215,13 +209,13 @@ Install the PyCBC source code from the GitHub URL using the command:
 
     pip install -e git+git@github.com:your-username-here/pycbc.git#egg=pycbc --process-dependency-links
 
-This will fetch the PyCBC source and will also install all the listed dependencies. The ``-e`` option to pip creates a directory called ``$NAME/src/pycbc`` with a git checkout which is fully editable. To prevent pip from removing this source directory run the command
+This will fetch the PyCBC source and will also install all the listed dependencies. The ``-e`` option to pip creates a directory called ``${VIRTUAL_ENV}/src/pycbc`` with a git checkout which is fully editable. To prevent pip from removing this source directory run the command
 
 .. code-block:: bash
 
-    rm -f $NAME/src/pip-delete-this-directory.txt
+    rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
 
-You can then make changes to your PyCBC source code in the directory ``$NAME/src/pycbc``
+You can then make changes to your PyCBC source code in the directory ``${VIRTUAL_ENV}/src/pycbc``
 
 You can also use the repository created by pip as your working repository, creating branches, commits, and `pull requests <https://help.github.com/articles/creating-a-pull-request/>`_ as you need to. To keep your repository in sync with the ligo-cbc/pycbc repository, you can read the GitHub instructions that explain how to `sync a fork of a repository to keep it up-to-date with the upstream repository. <https://help.github.com/articles/syncing-a-fork/>`_.
 
@@ -241,7 +235,7 @@ To build and install any changes that you make to the source code in your virtua
 
     python setup.py install
     
-from the PyCBC source directory in ``$NAME/src/pycbc``
+from the PyCBC source directory in ``${VIRTUAL_ENV}/src/pycbc``
 
 =====================================
 Building and Installing Documentation
@@ -292,7 +286,7 @@ You can obtain these repositories in the standard way using git, replacing ``lig
 
 .. code-block:: bash
 
-    cd $NAME/src
+    cd ${VIRTUAL_ENV}/src
     git clone git@github.com:ligo-cbc/pycbc-glue.git
     git clone git@github.com:ligo-cbc/pycbc-pylal.git
 
@@ -312,7 +306,7 @@ PyCBC has the ability to use optimized FFT libraries such as FFTW and MKL. If MK
 
 .. code-block:: bash
 
-    echo 'source /opt/intel/bin/compilervars.sh intel64' >> $NAME/bin/activate
+    echo 'source /opt/intel/bin/compilervars.sh intel64' >> ${VIRTUAL_ENV}/bin/activate
 
 changing the path to the ``compilervars.sh`` script appropriately for your cluster. 
 
