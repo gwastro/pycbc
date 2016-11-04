@@ -153,11 +153,15 @@ precalc_psd_files = wf.setup_psd_workflow(workflow, analyzable_segs,
 
 # Template bank stuff
 bank_files = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
-                                            datafind_files,
-                                            "bank",
-                                            psd_files=precalc_psd_files)
+                                         datafind_files, output_dir="bank",
+                                         psd_files=precalc_psd_files)
 hdfbank = wf.convert_bank_to_hdf(workflow, bank_files, "bank")
-splitbank_files = wf.setup_splittable_workflow(workflow, bank_files, "bank")
+splitbank_files_fd = wf.setup_splittable_workflow(workflow, bank_files,
+                                                  out_dir="bank",
+                                                  tags=['full_data'])
+splitbank_files_inj = wf.setup_splittable_workflow(workflow, bank_files,
+                                                   out_dir="bank",
+                                                   tags=['injections'])
 
 bank_plot = [(wf.make_template_plot(workflow, hdfbank[0],
               rdir['coincident_triggers']),)]
@@ -172,7 +176,7 @@ ctags = [tag, 'full']
 
 # setup the matchedfilter jobs
 ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
-                                   datafind_files, splitbank_files,
+                                   datafind_files, splitbank_files_fd,
                                    output_dir, tags = [tag])
 
 insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],
@@ -436,7 +440,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
     # setup the matchedfilter jobs
     insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
-                                     datafind_files, splitbank_files,
+                                     datafind_files, splitbank_files_inj,
                                      output_dir, injection_file=small_inj_file,
                                      tags = [tag])
 
