@@ -290,9 +290,9 @@ To maintain the documentation under GitHub project pages, see
     build_gh_pages
 
 
-====================================
-Modifying pycbc-glue and pycbc-pylal
-====================================
+====================
+Modifying pycbc-glue
+====================
 
 PyCBC depends on the packages pycbc-glue and pycbc-pylal which are forks of the lalsuite development of these packages. The correct versions are automatically installed by pip as part of the main PyCBC install. If you are developing code in these packages, then you can clone them from GitHib into your virtual environment's source directory and build and install them from there.
 
