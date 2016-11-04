@@ -65,8 +65,9 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'mpld3>=0.3git',
                       'pyRXP>=2.1.0',
                       'pycbc-glue>=0.9.8',
-                      'kombine',
+                      'kombine>=0.8.0',
                       'emcee>=2.2.0',
+                      'corner>=2.0.1',
                       #'scikit-learn>=0.17.0',  # travis does not like scikit-learn
                       ]
 links = ['https://github.com/ligo-cbc/mpld3/tarball/master#egg=mpld3-0.3git']
