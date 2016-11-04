@@ -60,7 +60,14 @@ From the top-level lalsuite directory, you can use the master configure script t
 .. code-block:: bash
 
     ./00boot 
-    ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar
+    ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalapps --with-hdf5=no
+
+Next make the software and install it. If you are on a multicore machine, you
+can speed this up by running ``make -j N`` where ``N`` is the number of
+processors you want to use for the build (e.g. 16).
+
+.. code-block:: bash
+
     make
     make install
 
