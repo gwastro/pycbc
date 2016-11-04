@@ -684,17 +684,17 @@ Configuring the workflow
 ------------------------
 
 In order for ``pycbc_inspiral`` to be sent to worker nodes it must be available
-via a remote protocol, either http or gridFTP.  The easiest way to ensure this
-is to include the ``osg_executables.ini``. This file can be downloaded from::
+via a remote protocol, either http or gsiftp. The LDG head nodes run a gridftp
+server that should be able to serve this, or code can obtain the code from the
+web server on ``code.pycbc.phy.syr.edu``. Edit your ``executables.ini`` to 
+specify this path or give the path when you run
+``pycbc_make_coinc_search_workflow``, for example, with the option::
 
-    https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/tree/master
-
-When downloading the ``osg_executables.ini`` make sure that you are obtaining the correct version. The URL/location for the ``osg_executables.ini`` should be added to the list of config files::
-
-    [URL/location for osg_executables.ini] \
+    --config-overrides 'executables:inspiral:gsiftp://server.name/path/to/pycbc_inspiral'
 
 Add the following to the list of ``--config-overrides`` when running ``pycbc_make_coinc_search_workflow``::
      
+    'pegasus_profile-inspiral:pycbc|site:osg' \
     'pegasus_profile-inspiral:hints|execution.site:osg' \
     'pegasus_profile-inspiral:condor|request_memory:1920M' \
     'workflow-main:staging-site:osg=local' \
@@ -720,13 +720,6 @@ follwing lines to your ``executables.ini`` file::
 --------------------
 Running the workflow
 --------------------
-
-Before running the workflow, a proxy compatible with Xrootd needs to be generated. To generate this proxy run the commands
-::
-
-    ligo-proxy-init albert.einstein
-    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
-    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
 
 Add the following arguments to ``pycbc_submit_dax``::
 

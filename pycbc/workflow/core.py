@@ -197,7 +197,7 @@ class Executable(pegasus_workflow.Executable):
 
         if exe_url.scheme in ['', 'file']:
             if os.path.isfile(exe_url.path):
-                self.add_pfn(exe_path)
+                self.add_pfn(exe_path, site='local')
 
                 logging.debug("Using %s executable "
                               "at %s" % (name, exe_url.path))
@@ -205,10 +205,17 @@ class Executable(pegasus_workflow.Executable):
                 raise TypeError("Failed to find %s executable " 
                             "at %s" % (name, exe_path))
         else:
-            # Could be http, gsiftp, etc.  Let Pegasus handle it.
+            # Could be http, gsiftp, etc.
             logging.debug("Using %s executable "
                           "at %s" % (name, exe_path))
-            self.add_pfn(exe_path, site='nonlocal')
+            try:
+                value = cp.get('pegasus_profile-%s' % name, 'pycbc|site')
+                for s in value.split(','):
+                    self.add_pfn(exe_path, site=s.strip())
+            except:
+               # take a guess on the site and see if pegasus can figure it out
+               self.add_pfn(exe_path, site='nonlocal')
+
             self.needs_fetching = True
 
         # Determine the condor universe if we aren't given one 
