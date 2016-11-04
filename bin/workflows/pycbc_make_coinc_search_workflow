@@ -158,10 +158,10 @@ bank_files = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
 hdfbank = wf.convert_bank_to_hdf(workflow, bank_files, "bank")
 splitbank_files_fd = wf.setup_splittable_workflow(workflow, bank_files,
                                                   out_dir="bank",
-                                                  tags='full_data')
+                                                  tags=['full_data'])
 splitbank_files_inj = wf.setup_splittable_workflow(workflow, bank_files,
                                                    out_dir="bank",
-                                                   tags='injections')
+                                                   tags=['injections'])
 
 bank_plot = [(wf.make_template_plot(workflow, hdfbank[0],
               rdir['coincident_triggers']),)]
