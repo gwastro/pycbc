@@ -127,11 +127,21 @@ If you are running on a Scientific Linux 6 cluster, you need to install the HDF5
     make install
     HDF5_DIR=$VIRTUAL_ENV/opt/hdf5-1.8.12 pip install h5py
 
+
+.. note::
+
+    On a Scientific Linux 6 or Scientific Linux 7 system, if you do not upgrade the version of setuptools that is in your virtual environment, then the PyCBC install will fail to process the required dependencies.
+
+Make sure your versions of ``pip`` and ``setuptools`` are up to date by running the command:
+
+.. code-block:: bash
+    pip install --upgrade pip setuptools
+
 Install unittest2, python-cjson, and numpy with the command:
 
 .. code-block:: bash
 
-    pip install "numpy>=1.6.4" unittest2 python-cjson Cython
+    pip install "numpy>=1.6.4" unittest2 python-cjson Cython decorator
 
 To authenticate with LIGO Data Grid services, you need M2Crypto which you should install with 
 
@@ -249,6 +259,7 @@ To build the documentation from your virtual environment, first make sure that y
     pip install numpydoc
     pip install sphinx-rtd-theme
     pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git@pypi_release#egg=sphinxcontrib-programoutput
+    pip install git+https://github.com/matplotlib/sampledoc.git@pypi_release#egg=sampledoc
     
 To generate the documentation, from the top level of the PyCBC source tree run
 
