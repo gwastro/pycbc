@@ -247,6 +247,13 @@ To build and install any changes that you make to the source code in your virtua
     
 from the PyCBC source directory in ``${VIRTUAL_ENV}/src/pycbc``
 
+.. note::
+
+    PyCBC no longer requires an installation of the ``pycbc-pylal`` package.
+    If you are running a workflow that needs code from this package, you will
+    need to manually install it with ``pip install pycbc-pylal``.
+
+
 =====================================
 Building and Installing Documentation
 =====================================
