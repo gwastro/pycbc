@@ -43,31 +43,34 @@ Building and installing into your virtual environment
 
 .. note::
 
-    The install instructions below install lalsuite into a directory called ``opt/lalsuite`` under your virtual environment. You can remove lalsuite by removing this directory with ``rm -rf $NAME/opt/lalsuite``. If you want to install multiple versions of lalsuite in your virtual environment, you can chose different directories by specifying a different ``--prefix`` to configure below.
+    The install instructions below install lalsuite into a directory called ``opt/lalsuite`` under your virtual environment. You can remove lalsuite by removing this directory with ``rm -rf ${VIRTUAL_ENV}/opt/lalsuite`` from inside your virtual environment. If you want to install multiple versions of lalsuite in your virtual environment, you can chose different directories by specifying a different ``--prefix`` to configure below.
 
-Set the shell variable ``NAME`` to the path to your the virtual environment that you created for PyCBC and activate your environment, for example
+First make sure you are in your virtual environment by activiating it. If you
+are not already in your virtual environment run the command
 
 .. code-block:: bash
 
-    NAME=${HOME}/pycbc-dev
-    source $NAME/bin/activate
+    source ~/src/pycbc/bin/activate
+
+changing the string ``~/src/pycbc`` appropriately to point to your
+environment. 
 
 From the top-level lalsuite directory, you can use the master configure script to build and install all of the components that you need with the commands 
 
 .. code-block:: bash
 
     ./00boot 
-    ./configure --prefix=$NAME/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar
+    ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar
     make
     make install
 
-The install process creates a shell script called ``lalsuite-user-env.sh`` that sources all of the ``$NAME/opt/lalsuite/etc/lal*-user-env.sh`` scripts that set up the environment for lalsuite. You can add this to your virtualenv ``activate`` script so that it gets set up when you enter your virtual environment. To do this, run the commands
+The install process creates a shell script called ``lalsuite-user-env.sh`` that sources all of the ``${VIRTUAL_ENV}/opt/lalsuite/etc/lal*-user-env.sh`` scripts that set up the environment for lalsuite. You can add this to your virtualenv ``activate`` script so that it gets set up when you enter your virtual environment. To do this, run the commands
 
 .. code-block:: bash
 
-    echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh' >> $NAME/bin/activate
+    echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh' >> ${VIRTUAL_ENV}/bin/activate
     deactivate
-    source $NAME/bin/activate
+    source ${VIRTUAL_ENV}/bin/activate
 
 .. note::
 
