@@ -1069,7 +1069,7 @@ if check_md5 "$p" "$md5"; then
     rm -f "$p"
     # FIXME should host this file on $albert
     #wget $wget_opts "$albert/$p"
-    wget $wget_opts -O $p "https://www.dropbox.com/s/5ueoulogwx9p8oo/${p}?dl=1"
+    wget $wget_opts "$albert/$p"
     if check_md5 "$p" "$md5"; then
         echo "can't download $p - md5 mismatch"
         exit 1
@@ -1078,13 +1078,13 @@ fi
 tar -zxvf $p
 
 #fb5ec108c69f9e424813de104731370c  H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz
-p="H1L1-SBANK_FOR_GW150914.xml.gz"
+p="H1L1-SBANK_FOR_GW150914ER10.xml.gz"
 md5="c24f5513d3066b4f637daffb6aa20fec"
 if check_md5 "$p" "$md5"; then
     rm -f "$p"
     # FIXME should host this file on $albert
     #wget $wget_opts "$albert/$p"
-    wget $wget_opts -O $p "https://www.dropbox.com/s/zs8rp6zc9i2hjap/${p}?dl=1"
+    wget $wget_opts "$albert/$p"
     if check_md5 "$p" "$md5"; then
         echo "can't download $p - md5 mismatch"
         exit 1
