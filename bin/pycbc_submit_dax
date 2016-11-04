@@ -408,7 +408,7 @@ chmod 755 debug
 echo pegasus-remove $SUBMIT_DIR/work > stop
 chmod 755 stop
 
-echo > start << EOF
+cat << EOF > start
 #!/bin/bash
 
 if [ -f /tmp/x509up_u`id -u` ] ; then
