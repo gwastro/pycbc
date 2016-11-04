@@ -70,7 +70,11 @@ def create_axes_grid(parameters, labels=None):
     else:
         fsize = (ndim*3 - 1, ndim*3 - 2)
     fig = pyplot.figure(figsize=fsize)
-    gs = gridspec.GridSpec(ndim, ndim, wspace=0.05, hspace=0.05)
+    if ndim == 2:
+        gs = gridspec.GridSpec(ndim, ndim, width_ratios=[3,1], height_ratios=[1,3],
+            wspace=0.05, hspace=0.05)
+    else:
+        gs = gridspec.GridSpec(ndim, ndim, wspace=0.05, hspace=0.05)
     # create grid of axis numbers to easily create axes in the right locations
     axes = numpy.arange(ndim**2).reshape((ndim, ndim))
 
@@ -91,13 +95,13 @@ def create_axes_grid(parameters, labels=None):
             if (px, py) in combos:
                 axis_dict[parameters[px], parameters[py]] = (ax, nrow, ncolumn)
                 # x labels only on bottom
-                if nrow + 1 == ndim:
-                    ax.set_xlabel('{}'.format(labels[px]))
+                if nrow + 1 == ndim and ncolumn != ndim-1:
+                    ax.set_xlabel('{}'.format(labels[px]), fontsize=20)
                 else:
                     pyplot.setp(ax.get_xticklabels(), visible=False)
                 # y labels only on left and non-diagonal
                 if ncolumn == 0 and nrow != 0:
-                    ax.set_ylabel('{}'.format(labels[py]))
+                    ax.set_ylabel('{}'.format(labels[py]), fontsize=20)
                 else:
                     pyplot.setp(ax.get_yticklabels(), visible=False)
             else:
@@ -248,13 +252,14 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
             # scale appropriately
             scale_fac = get_scale_fac(fig)
             fs *= scale_fac
-        ax.clabel(ct, ct.levels, inline=True, fmt=fmt, fontsize=fs)
+        ax.clabel(ct, ct.levels, inline=True, fmt=fmt, fontsize=14)#fs)
 
     return fig, ax
 
 
 def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
-        color='navy', filled=False, linecolor='b', title=True):
+        color='navy', filled=False, linecolor='b', title=True, rotated=False,
+        plot_min=None, plot_max=None):
     """Plots a 1D marginalized histogram of the given param from the given
     samples.
 
@@ -289,12 +294,20 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
     else:
         htype = 'step'
     values = samples[param]
-    ax.hist(values, bins=50, color=color, histtype=htype)
+    if rotated:
+        orientation = 'horizontal'
+    else:
+        orientation = 'vertical'
+    ax.hist(values, bins=50, color=color, histtype=htype,
+        orientation=orientation)
     if percentiles is None:
         percentiles = [5., 50., 95.]
     values = numpy.percentile(values, percentiles)
     for val in values:
-        ax.axvline(x=val, ls='dashed', color=linecolor)
+        if rotated:
+            ax.axhline(y=val, ls='dashed', color=linecolor)
+        else:
+            ax.axvline(x=val, ls='dashed', color=linecolor)
     if title:
         values_med = numpy.median(values)
         values_min = values.min()
@@ -303,9 +316,29 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
         poserror = values_max - values_med
         fmt = '$' + str_utils.format_value(values_med, negerror,
               plus_error=poserror, ndecs=2) + '$'
-        ax.set_title('{} = {}'.format(label, fmt))
-    # Remove y-ticks
-    ax.set_yticks([])
+        if rotated:
+            ax.yaxis.set_label_position("right")
+            ax.set_ylabel('{} = {}'.format(label, fmt), rotation=-90, labelpad=26, fontsize=20)
+            # Remove x-ticks
+            ax.set_xticks([])
+            # set limits
+            ymin, ymax = ax.get_ylim()
+            if plot_min is not None:
+                ymin = plot_min
+            if plot_max is not None:
+                ymax = plot_max
+            ax.set_ylim(ymin, ymax)
+        else:
+            ax.set_title('{} = {}'.format(label, fmt), fontsize=20, y=1.04)
+            # Remove y-ticks
+            ax.set_yticks([])
+            # set limits
+            xmin, xmax = ax.get_xlim()
+            if plot_min is not None:
+                xmin = plot_min
+            if plot_max is not None:
+                xmax = plot_max
+            ax.set_xlim(xmin, xmax)
 
 
 def create_multidim_plot(parameters, samples, labels=None,
@@ -393,12 +426,14 @@ def create_multidim_plot(parameters, samples, labels=None,
         maxs = {p:samples[p].max() for p in parameters}
 
     # Diagonals...
-    for param in parameters:
+    for pi,param in enumerate(parameters):
         ax, _, _ = axis_dict[param, param]
         # plot marginal...
         if plot_marginal:
+            rotated = len(parameters) == 2 and pi == len(parameters)-1
             create_marginalized_hist(ax, param, samples, label=labels[param],
-                    color='navy', filled=False, linecolor='b', title=True)
+                    color='navy', filled=False, linecolor='b', title=True,
+                    rotated=rotated, plot_min=mins[param], plot_max=maxs[param])
         # ... or turn off
         else:
             ax.axis('off')

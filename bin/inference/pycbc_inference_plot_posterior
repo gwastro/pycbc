@@ -58,6 +58,9 @@ option_utils.add_scatter_option_group(parser)
 option_utils.add_density_option_group(parser)
 # add standard option utils
 option_utils.add_inference_results_option_group(parser)
+# add mins, maxs options
+parser.add_argument('--mins', nargs='+', metavar='PARAM:VAL', default=[])
+parser.add_argument('--maxs', nargs='+', metavar='PARAM:VAL', default=[])
 
 opts = parser.parse_args()
 
@@ -78,6 +81,21 @@ else:
     zlbl = None
 fp.close()
 
+def strfloat(x):
+    return x.split(':')[0], float(x.split(':')[1])
+
+mins = dict(map(strfloat, opts.mins))
+# add any missing parameters
+for p in parameters:
+    if p not in mins:
+        mins[p] = samples[p].min()
+
+maxs = dict(map(strfloat, opts.maxs))
+# add any missing parameters
+for p in parameters:
+    if p not in maxs:
+        maxs[p] = samples[p].max()
+
 logging.info("Plotting")
 fig, axis_dict = create_multidim_plot(
                 parameters, samples, labels=labels,
@@ -90,7 +108,8 @@ fig, axis_dict = create_multidim_plot(
                 plot_contours=opts.plot_contours,
                     density_cmap=opts.density_cmap,
                     contour_color=opts.contour_color,
-                    use_kombine=opts.use_kombine_kde)
+                    use_kombine=opts.use_kombine_kde,
+                mins=mins, maxs=maxs)
 
 # save
 fig.savefig(opts.output_file, bbox_inches='tight', dpi=200)
