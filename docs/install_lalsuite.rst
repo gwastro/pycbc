@@ -16,7 +16,7 @@ The following page describes how to build lalsuite from source for use with PyCB
 Obtaining the source code and checking out a version
 ====================================================
 
-Clone the lalsuite repository by following the `instructions on the DASWG pages <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/advanced-lalsuite-git.html#clone>`_. 
+Clone the lalsuite repository into the directory ``${VIRTUAL_ENV}/src/lalsuite`` by following the `instructions on the DASWG pages <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/advanced-lalsuite-git.html#clone>`_. 
 
 .. note::
 
@@ -26,7 +26,7 @@ Once you have the repository cloned, you should change your working directory to
 
 .. code-block:: bash
 
-    cd /path/to/your/lalsuite
+    cd ${VIRTUAL_ENV}/src/lalsuite
 
 Now determine which version of the code you want to install. To run the latest (possibly unstable) version of the code, use the ``master`` branch by running the command:
 
@@ -77,7 +77,14 @@ The install process creates a shell script called ``lalsuite-user-env.sh`` that 
 
     echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh' >> ${VIRTUAL_ENV}/bin/activate
     deactivate
-    source ${VIRTUAL_ENV}/bin/activate
+
+You can reenter your virtual environment with the usual command
+
+.. code-block:: bash
+
+    source ~/pycbc/src/bin/activate
+
+changing ``~/pycbc/src`` as appropriate for your virtual environment path.
 
 .. note::
 
@@ -95,14 +102,14 @@ If you are running a pipeline that uses the old LALApps programs ``lalapps_inspi
 
 .. code-block:: bash
 
-    cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps
+    cd $VIRTUAL_ENV/src/lalsuite/lalapps
     LIBS=-lz ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic
-    cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/lalapps
-    make -j $nproc
-    cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/inspiral
+    cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
+    make
+    cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
     make lalapps_inspinj
     cp lalapps_inspinj $VIRTUAL_ENV/bin
-    cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/ring
+    cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/ring
     make lalapps_coh_PTF_inspiral
     cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
 
