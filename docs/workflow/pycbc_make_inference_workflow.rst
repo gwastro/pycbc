@@ -171,7 +171,7 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
 
 A simple configuration file for parameter estimation on the ringdown is::
 
-    [variable-args]
+    [variable_args]
     ; parameters to vary in inference sampler
     tc =
     f_0 =
@@ -284,6 +284,8 @@ Else you can run from a specific GPS end time with the ``--gps-end-time`` option
                            inference:psd-end-time:$((${GPS_END_TIME}+1748))
 
 Where ``${GPS_END_TIME}`` is the GPS end time of the trigger.
+
+For the CBC example above add the environment variable ``GPS_END_TIME=1126259462`` and include ``--output-map output.map`` as an argument for ``pycbc_make_inference_workflow``. 
 
 =============================
 Plan and execute the workflow
