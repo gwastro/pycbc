@@ -294,11 +294,11 @@ To maintain the documentation under GitHub project pages, see
 Modifying pycbc-glue
 ====================
 
-PyCBC depends on the packages pycbc-glue and pycbc-pylal which are forks of the lalsuite development of these packages. The correct versions are automatically installed by pip as part of the main PyCBC install. If you are developing code in these packages, then you can clone them from GitHib into your virtual environment's source directory and build and install them from there.
+PyCBC depends on the package pycbc-glue which is a fork of the lalsuite packages. The correct version is automatically installed by pip as part of the main PyCBC install. If you are developing code in pycbc-glue, then you can clone them from GitHib into your virtual environment's source directory and build and install them from there.
 
 .. note::
 
-    If you want to develop pycbc-glue and pycbc-pylal, you should follow the instructions to `fork a repository <https://help.github.com/articles/fork-a-repo/>`_ to fork the `ligo-cbc/pycbc-glue <https://github.com/ligo-cbc/pycbc-glue>`_ and `ligo-cbc/pycbc-pylal <https://github.com/ligo-cbc/pycbc-pylal>`_ repositories into your own account.
+    If you want to develop pycbc-glue, you should follow the instructions to `fork a repository <https://help.github.com/articles/fork-a-repo/>`_ to fork the `ligo-cbc/pycbc-glue <https://github.com/ligo-cbc/pycbc-glue>`_ repository into your own account.
 
 You can obtain these repositories in the standard way using git, replacing ``ligo-cbc`` with your GitHub user account name
 
@@ -306,7 +306,6 @@ You can obtain these repositories in the standard way using git, replacing ``lig
 
     cd ${VIRTUAL_ENV}/src
     git clone git@github.com:ligo-cbc/pycbc-glue.git
-    git clone git@github.com:ligo-cbc/pycbc-pylal.git
 
 Once you have the source code cloned, you can run 
 
@@ -314,7 +313,7 @@ Once you have the source code cloned, you can run
 
     python setup.py install
 
-to install each of them into your virtual environment.
+to install pycbc-glue into your virtual environment.
 
 ========================================
 Use of Intel MKL Optimized FFT libraries
