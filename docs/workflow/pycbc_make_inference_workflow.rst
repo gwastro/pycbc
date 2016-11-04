@@ -285,7 +285,7 @@ Else you can run from a specific GPS end time with the ``--gps-end-time`` option
 
 Where ``${GPS_END_TIME}`` is the GPS end time of the trigger.
 
-For the CBC example above add the environment variable ``GPS_END_TIME=1126259462`` and include ``--output-map output.map`` as an argument for ``pycbc_make_inference_workflow``. 
+For the CBC example above define the environment variables ``GPS_END_TIME=1126259462`` and ``OUTPUT_MAP_PATH=output.map``. 
 
 =============================
 Plan and execute the workflow
