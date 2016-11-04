@@ -91,4 +91,23 @@ lalsuite is now installed in your virtual environment. You can check this with t
 
 which should return the path to the installation under your virtual environment.
 
+If you are running a pipeline that uses the old LALApps programs ``lalapps_inspinj`` or ``lalapps_coh_PTF_inspiral`` then you can optionally build and install these by running the commands
+
+.. code-block:: bash
+
+    cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps
+    LIBS=-lz ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic
+    cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/lalapps
+    make -j $nproc
+    cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/inspiral
+    make lalapps_inspinj
+    cp lalapps_inspinj $VIRTUAL_ENV/bin
+    cd $VIRTUAL_ENV/src/lalsuite/lalsuite/lalapps/src/ring
+    make lalapps_coh_PTF_inspiral
+    cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
+
+.. note::
+
+    The LALApps build above builds static binaries, so you will need static libraries for fftw, glibc, etc. installed on your system to do this. These libraries are present by default in a LIGO Data Grid environment. If you do not wish to build static LALApps programs, the omit the ``--enable-static-binaries`` option to the configure script.
+
 
