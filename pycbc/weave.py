@@ -130,7 +130,7 @@ def verify_weave_options(opt, parser):
         elif getattr(sys, 'frozen', False):
             cache_dir = sys._MEIPASS
         else:
-            os.path.join(os.getcwd(),"pycbc_inspiral")
+            cache_dir = os.path.join(os.getcwd(),"pycbc_inspiral")
         os.environ['PYTHONCOMPILED'] = cache_dir
         logging.debug("fixed_weave_cache: Setting weave cache to %s", cache_dir)
         sys.path = [cache_dir] + sys.path
