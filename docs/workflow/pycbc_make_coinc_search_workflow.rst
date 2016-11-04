@@ -669,13 +669,15 @@ Prerequisites
 
 There are a number of requirements on the machine on which the workflow will be started:
 
-- Pegasus version 4.6.1 or later.
+- Pegasus version 4.7.1 or later.
 
 - The bundled executables available on the submit machine
 
 - A gridftp server running on the submit machine
 
-- Condor configuration (beyond the scope of this document)
+- Condor configured on the head node to connect to OSG as documented at::
+
+    https://its-condor-blog.syr.edu/dokuwiki/doku.php?id=researchgroups:physics:sl7_cluster_setup
 
 ------------------------
 Configuring the workflow
@@ -695,8 +697,25 @@ Add the following to the list of ``--config-overrides`` when running ``pycbc_mak
      
     'pegasus_profile-inspiral:hints|execution.site:osg' \
     'pegasus_profile-inspiral:condor|request_memory:1920M' \
-    'workflow-main:staging-site:osg=osg-scratch' \
+    'workflow-main:staging-site:osg=local' \
+
+Optionally, you can add a configuration that will check that your grid proxy
+is valid locally before submitting the job. This means that if your grid proxy
+expires before the workflow is complete, the failure will be on the local site
+before the job is actually submitted, and not on the remote site once the job
+has been scheduled and matched::
+
     'pegasus_profile-inspiral:dagman|pre:/usr/bin/grid-proxy-info' \
+
+Another useful enhancement for OSG running is to add profiles to your inspiral
+job that will tell Condor to put it on hold if it has been running for more
+that 48 hours and terminate it after 5 failed attempts. To do this, add the
+follwing lines to your ``executables.ini`` file::
+
+    [pegasus_profile-inspiral]
+    condor|periodic_hold = (JobStatus == 2) && ((CurrentTime - EnteredCurrentStatus) > (2 * 86400))
+    condor|period_release = (JobStatus == 5) && ( HoldReasonCode == 3 ) && ( NumJobStarts < 5 ) && ((CurrentTime - EnteredCurrentStatus) > (300))
+    condor|period_remove = ( NumJobStarts >= 5 )
 
 --------------------
 Running the workflow
@@ -721,13 +740,4 @@ Add the following arguments to ``pycbc_submit_dax``::
    Cache files for the C02 frames can be obtained from https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/tree/master/O1/osg-cache-frame-files. The cache file contains the location of the frame files on Sugar, XSede, and xroot.
 
 ``hostname -f`` will give the correct value if there is a gsiftp server running on the submit machine.  If not, change this as needed. The remote-staging-site is the intermediary computer than can pass files between the submitting computer and the computers doing the work.  ``hostname -f`` returns the full name of the computer. The full name of the computer that ``hostname -f`` has to be one that is accessible to both the submit machine and the workers. 
-
-If you are in the run directory of your workflow use ``cd output/submitdir/work/main_ID0000001``. If you are not in the run directory. Go to ``https://sugar-dev2.phy.syr.edu/pegasus/u/[username]`` and find the submit directory of the run most recently submitted. To prevent unnessary copying of files run these commands after ``submitdir/work/main_ID0000001`` exists.::
-
-     cd [submit directory]
-     cd main_ID0000001
-     perl -pi.bak -e 's+file:///home+symlink:///home+g' stage_inter_local_hdf_trigger_merge-*in
-     perl -pi.bak2 -e 's+gsiftp://sugar-dev2.phy.syr.edu/home+file:///home+g' stage_inter_local_hdf_trigger_merge-*in
-     perl -pi.bak -e 's+gsiftp://sugar-dev2.phy.syr.edu/home+file:///home+g' stage_out_local_osg-scratch_*in
-
 
