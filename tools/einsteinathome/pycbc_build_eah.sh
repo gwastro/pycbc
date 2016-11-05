@@ -807,24 +807,17 @@ fi
 v=4.7.0
 p=pegasus-python-source-$v
 echo -e "\\n\\n>> [`date`] building $p"
-if [ -f $p ] ; then
-    :
-else
+test -r $p ||
     wget $wget_opts "http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz"
-fi
 pip install --no-deps $p.tar.gz
-$cleanup && rm -rf $p.tar.gz
 
 # MPLD
 p=mpld3-0.3git
 # pip install "https://github.com/ligo-cbc/mpld3/tarball/master#egg=$p"
 echo -e "\\n\\n>> [`date`] building $p"
-test -r $p.tar.gz || wget $wget_opts -O $p.tar.gz "https://github.com/ligo-cbc/mpld3/tarball/master#egg=$p"
-tar -xzf $p.tar.gz
-cd ligo-cbc-mpld3-25aee65/
-python setup.py install --prefix="$PREFIX"
-cd ..
-$cleanup && rm -rf ligo-cbc-mpld3-25aee65
+test -r $p.tar.gz ||
+   wget $wget_opts -O $p.tar.gz "https://github.com/ligo-cbc/mpld3/tarball/master#egg=$p"
+pip install $p.tar.gz
 
 # PyCBC
 echo -e "\\n\\n>> [`date`] building pycbc"
