@@ -714,8 +714,8 @@ follwing lines to your ``executables.ini`` file::
 
     [pegasus_profile-inspiral]
     condor|periodic_hold = (JobStatus == 2) && ((CurrentTime - EnteredCurrentStatus) > (2 * 86400))
-    condor|period_release = (JobStatus == 5) && ( HoldReasonCode == 3 ) && ( NumJobStarts < 5 ) && ((CurrentTime - EnteredCurrentStatus) > (300))
-    condor|period_remove = ( NumJobStarts >= 5 )
+    condor|periodic_release = (JobStatus == 5) && (HoldReasonCode == 3) && (NumJobStarts < 5) && ((CurrentTime - EnteredCurrentStatus) > (300))
+    condor|periodic_remove = (NumJobStarts >= 5)
 
 --------------------
 Running the workflow
