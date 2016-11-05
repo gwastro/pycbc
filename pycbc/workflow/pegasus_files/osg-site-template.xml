@@ -16,5 +16,5 @@
     <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
     <profile namespace="condor" key="+OpenScienceGrid">True</profile>
     <profile namespace="env" key="NO_TMPDIR">1</profile>
-    <profile namespace="env" key="LAL_DATA_PATH">/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation:/cvmfs/oasis.opensciencegrid.org/ligo/pipeline/pycbc/pycbc/ROM/lal-data/lalsimulation</profile>
+    <profile namespace="env" key="LAL_DATA_PATH">/cvmfs/oasis.opensciencegrid.org/ligo/pipeline/pycbc/pycbc/ROM/lal-data/lalsimulation</profile>
     <profile namespace="env" key="PEGASUS_HOME" >/usr</profile>
