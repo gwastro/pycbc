@@ -22,7 +22,7 @@ test ".$LC_ALL" = "." && export LC_ALL="$LANG"
 export FC=gfortran
 
 # compilation environment
-BUILDDIRNAME="pycbc"
+BUILDDIRNAME="pycbc-build"
 
 # defaults, possibly overwritten by command-line arguments
 cleanup=true # usually, build directories are removed after a successful build
