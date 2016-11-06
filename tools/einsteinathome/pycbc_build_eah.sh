@@ -69,10 +69,9 @@ elif test ".$1" = ".--force-debian4" ||
     build_lapack=true
     pyssl_from="tarball" # "pip-install"
     numpy_from="pip-install" # "tarball"
-    scipy_from="pip-install" # "git" # "git-patched"
+    scipy_from="pip-install" # "git"
     build_hdf5=true
     build_freetype=true
-    build_libpq=false
     build_gsl=true
     build_swig=true
     build_framecpp=false
@@ -86,7 +85,7 @@ elif test ".$1" = ".--force-debian4" ||
     build_wrapper=false
     build_gating_tool=true
     appendix="_Linux64"
-elif [[ v`cat /etc/redhat-release` == v"Scientific Linux release 6.8 (Carbon)" ]] ; then # SL6
+elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8 (Carbon)" ]] ; then # SL6
     echo -e "\\n\\n>> [`date`] Using Scientific Linux release 6.8 (Carbon) settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
     fftw_flags=--enable-avx
@@ -100,10 +99,9 @@ elif [[ v`cat /etc/redhat-release` == v"Scientific Linux release 6.8 (Carbon)" ]
     build_lapack=true
     pyssl_from="tarball" # "pip-install"
     numpy_from="pip-install" # "tarball"
-    scipy_from="pip-install" # "git" # "git-patched"
+    scipy_from="pip-install" # "git"
     build_hdf5=true
     build_freetype=true
-    build_libpq=false
     build_gsl=true
     build_swig=true
     build_framecpp=false
@@ -138,10 +136,9 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     build_lapack=true
     pyssl_from="tarball" # "pip-install"
     numpy_from="pip-install" # "tarball"
-    scipy_from="pip-install" # "git" "git-patched" "pip-install"
+    scipy_from="pip-install" # "git"
     build_hdf5=true
     build_freetype=true
-    build_libpq=false
     build_gsl=true
     build_swig=true
     build_framecpp=true
@@ -167,10 +164,9 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     build_lapack=true
     pyssl_from="tarball" # "pip-install"
     numpy_from="tarball" # "pip-install"
-    scipy_from="git" # "git-patched" "pip-install"
+    scipy_from="git" # "pip-install"
     build_hdf5=false
     build_freetype=false
-    build_libpq=false
     build_gsl=false
     build_swig=false
     build_framecpp=false
@@ -456,11 +452,6 @@ else # if $BUILDDIRNAME-preinst.tgz
 	    git config user.name "Dummy"
 	    git config user.email "dummy@dummy.net"
 	    git cherry-pick 832baa20f0b5d521bcdf4784dda13695b44bb89f
-	    if [ "$scipy_from" = "git-patched" ] ; then
-		wget $wget_opts $atlas/PyCBC_Inspiral/0001-E-H-hack-always-use-dumb-shelve.patch
-		wget $wget_opts $atlas/PyCBC_Inspiral/0006-E-H-hack-_dumbdb-open-files-in-binary-mode.patch
-		git am 000*.patch
-	    fi
 	fi
 	python setup.py build --fcompiler=$FC
 	python setup.py install --prefix=$PREFIX
@@ -471,35 +462,6 @@ else # if $BUILDDIRNAME-preinst.tgz
     echo -e "\\n\\n>> [`date`] Testing: python -c 'from scipy.io.wavfile import write as write_wav'"
     python -c 'from scipy.io.wavfile import write as write_wav'
     # python -c 'import scipy; scipy.test(verbose=2);'
-
-    # LIBPQ
-    # tried different versions, ended up with 9.2.0
-    if $build_libpq; then
-	v=9.2.0 # 8.4.22 # 9.3.10
-	p=postgresql-$v
-	echo -e "\\n\\n>> [`date`] building $p"
-	test -r $p.tar.gz || wget $wget_opts "https://ftp.postgresql.org/pub/source/v$v/$p.tar.gz"
-	rm -rf $p
-	tar -xzf $p.tar.gz
-	cd $p
-	./configure --without-readline --prefix="$PREFIX"
-	cd src/interfaces/libpq
-	make
-	make install
-	mkdir -p "$PREFIX/lib/pkgconfig"
-	echo 'prefix=
-exec_prefix=${prefix}
-includedir=${prefix}/include
-libdir=${exec_prefix}/lib
-Name: libpq
-Description: Postgres client lib
-Version: 8.4.22
-Cflags: -I${includedir}
-Libs: -L${libdir} -lpq' |
-	sed "s%^prefix=.*%prefix=$PREFIX%;s/^Version: .*/Version: $v/" > "$PREFIX/lib/pkgconfig/libpq.pc"
-	cd ../../../..
-	$cleanup && rm -rf $p
-    fi
 
     # GSL
     if $build_gsl; then
