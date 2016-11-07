@@ -240,8 +240,10 @@ usage="
     --clean-sundays   : perform a clean build on sundays
     --clean-pycbc     : check out pycbc git repo from scratch
     --lalsuite-commit=<commit> : specify a commit (tag or branch) of lalsuite to build from
-    --no-pycbc-update : don't update local pycbc repo from remote branch $pycbc_branch
-    --bema-testing    : use einsteinathome_testing branch of bema-ligo pycbc repo
+    --pycbc-commit=<commit> : specify a commit or tag of pycbc to build from (specifying a
+                        branch will only work reliably in conjunction with --clean-pycbc)
+    --no-pycbc-update : don't update local pycbc repo
+    --bema-testing    : use einsteinathome_testing branch of bema-ligo/pycbc repo
     --no-cleanup      : keep build directories after successful build for later inspection
     --verbose-python  : run PyInstalled Python in verbose mode, showing imports
 "
@@ -260,6 +262,7 @@ for i in $*; do
         --clean) rm -rf "$HOME/.cache" "$SOURCE/$BUILDDIRNAME-preinst.tgz" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$PYCBC";;
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz";;
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
+        --pycbc-commit=*) pycbc_commit="`echo $i|sed 's/^--pycbc-commit=//'`";;
         --clean-pycbc) scratch_pycbc=true;;
         --clean-sundays)
             if [ `date +%u` -eq 7 ]; then
@@ -800,6 +803,8 @@ if test ".$pycbc_branch" = ".HEAD"; then
 elif test ".$pycbc_branch" = ".master"; then
     git checkout master
     git pull
+    test ".$pycbc_commit" != "." &&
+        git checkout $pycbc_commit
 else
     # checkout branch from scratch, master must and should exist
     git checkout master
