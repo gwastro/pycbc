@@ -569,8 +569,9 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
         f_high = get_final_freq('SEOBNRv2', mass1, mass2, spin1, spin2)
         track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
                                  n_points)
+        # use HI function as it has wider freq range validity
         track_t = numpy.array([
-                lalsimulation.SimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency(f,
+                lalsimulation.SimIMRSEOBNRv2ROMDoubleSpinHITimeOfFrequency(f,
                     solar_mass_to_kg(mass1), solar_mass_to_kg(mass2),
                     float(spin1), float(spin2)) for f in track_f])
     elif approximant in ['SEOBNRv4', 'SEOBNRv4_ROM']:
