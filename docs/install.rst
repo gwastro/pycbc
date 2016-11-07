@@ -198,7 +198,7 @@ To install a release of the code, determine the tag of the release that you want
 
 .. code-block:: bash
 
-    pip install git+https://github.com/ligo-cbc/pycbc@v1.1.0#egg=pycbc
+    pip install git+https://github.com/ligo-cbc/pycbc@v1.1.0#egg=pycbc --process-dependency-links
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Installing source from GitHub for development
@@ -217,7 +217,7 @@ Install the PyCBC source code from the GitHub URL using the command:
 
 .. code-block:: bash
 
-    pip install -e git+git@github.com:your-username-here/pycbc.git#egg=pycbc
+    pip install -e git+git@github.com:your-username-here/pycbc.git#egg=pycbc --process-dependency-links
 
 This will fetch the PyCBC source and will also install all the listed dependencies. The ``-e`` option to pip creates a directory called ``${VIRTUAL_ENV}/src/pycbc`` with a git checkout which is fully editable. To prevent pip from removing this source directory run the command
 
