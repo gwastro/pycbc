@@ -493,29 +493,34 @@ fi
 WORKFLOW_ID_STRING=""
 WORKFLOW_DB_CMD="sqlite3 -csv ${HOME}/.pegasus/workflow.db \"select submit_hostname,wf_id,wf_uuid from master_workflow where submit_dir = '${SUBMIT_DIR}/work';\""
 DB_TRY=0
-/bin/echo -n "Querying Pegasus database for job:"
+/bin/echo "Querying Pegasus database for workflow stored in ${SUBMIT_DIR}/work"
+/bin/echo -n "This may take up to 120 seconds. Please wait..."
 rm -f pegasus_db.log
 touch pegasus_db.log
 # querying the database sometimes fails, so allow retries
 set +e
-until [ $DB_TRY -ge 5 ]
+until [ $DB_TRY -ge 15 ]
 do 
-  /bin/echo -n "Querying... "
+  /bin/echo -n "."
   WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD 2>> pegasus_db.log`
   if [ $? -eq 0 ] && [ ! -z $WORKFLOW_ID_STRING ] ; then
-    /bin/echo "Done."
+    /bin/echo " Done."
     DB_QUERY_SUCCESS=0
     break
   else
     DB_QUERY_SUCCESS=1
-    /bin/echo -n "Database busy. Sleeping for ${DB_TRY} seconds and retrying... "
   fi
-  sleep $DB_TRY
   DB_TRY=$(( $DB_TRY + 1 ))
+  for s in `seq ${DB_TRY}`
+  do
+    /bin/echo -n "."
+    sleep 1
+  done
 done
 set -e
 
 if [ ${DB_QUERY_SUCCESS} -eq 1 ] ; then
+  echo; echo
   /bin/echo "Query failed: ${WORKFLOW_DB_CMD}"
   cat pegasus_db.log
 else
