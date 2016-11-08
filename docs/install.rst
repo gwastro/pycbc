@@ -135,6 +135,7 @@ If you are running on a Scientific Linux 6 cluster, you need to install the HDF5
 Make sure your versions of ``pip`` and ``setuptools`` are up to date by running the command:
 
 .. code-block:: bash
+
     pip install --upgrade pip setuptools
 
 Install unittest2, python-cjson, and numpy with the command:

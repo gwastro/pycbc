@@ -62,7 +62,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'pillow',
                       'h5py>=2.5',
                       'jinja2',
-                      'mpld3>=0.3git',
+                      'pycbc-mpld3>=0.3.dev0',
                       'pyRXP>=2.1.0',
                       'pycbc-glue>=0.9.8',
                       'kombine',
@@ -70,7 +70,6 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'corner>=2.0.1',
                       #'scikit-learn>=0.17.0',  # travis does not like scikit-learn
                       ]
-links = ['https://github.com/ligo-cbc/mpld3/tarball/master#egg=mpld3-0.3git']
 
 #FIXME Remove me when we bump to h5py > 2.5
 try:
@@ -354,7 +353,6 @@ setup (
     setup_requires = setup_requires,
     extras_require = extras_require,
     install_requires = install_requires,
-    dependency_links = links,
     scripts  = [
                'bin/minifollowups/pycbc_injection_minifollowup',
                'bin/minifollowups/pycbc_foreground_minifollowup',
