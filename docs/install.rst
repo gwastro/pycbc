@@ -144,12 +144,6 @@ Install unittest2, python-cjson, and numpy with the command:
 
     pip install "numpy>=1.6.4" unittest2 python-cjson Cython decorator
 
-Install the PyCBC fork of ``mpld3`` with
-
-.. code-block:: bash
-
-    pip install https://github.com/ligo-cbc/mpld3/tarball/master#egg=mpld3-0.3git
-
 To authenticate with LIGO Data Grid services, you need M2Crypto which you should install with 
 
 .. code-block:: bash
