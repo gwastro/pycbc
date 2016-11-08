@@ -353,7 +353,6 @@ setup (
     setup_requires = setup_requires,
     extras_require = extras_require,
     install_requires = install_requires,
-    dependency_links = links,
     scripts  = [
                'bin/minifollowups/pycbc_injection_minifollowup',
                'bin/minifollowups/pycbc_foreground_minifollowup',
