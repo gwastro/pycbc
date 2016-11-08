@@ -553,8 +553,8 @@ if [ -e ${DASHBOARD_PATH} ] ; then
     cp ${DASHBOARD_PATH} ${DASHBOARD_COPY}
   fi
 
-  perl -pi.bak -e "s+PYCBC_SUBMIT_DAX_ARGV+${COMMAND_LINE}+g" ${DASHBOARD_PATH}
-  perl -pi.bak -e "s+PEGASUS_DASHBOARD_URL+${DASHBOARD_URL}+g" ${DASHBOARD_PATH}
+  perl -pi.bak -e "s#PYCBC_SUBMIT_DAX_ARGV#${COMMAND_LINE}#g" ${DASHBOARD_PATH}
+  perl -pi.bak -e "s#PEGASUS_DASHBOARD_URL#${DASHBOARD_URL}#g" ${DASHBOARD_PATH}
 fi
 shopt -u nullglob
 
