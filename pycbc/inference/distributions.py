@@ -592,10 +592,10 @@ class SinAngle(UniformAngle):
     parameter.
 
     The domain of this distribution is `[0, pi]`. This is accomplished by
-    first constraining values to be in `[0, 2pi)` using cyclic conditions,
-    then reflecting left off of `pi`. For example, if `pdf` or `logpdf` are
-    evaluated at `3.25 pi`, the value is mapped to `0.75 pi`
-    (`3.25 pi -> 1.25 pi -> 0.75 pi`) before being evaluated.
+    reflecting a value between `0` and `pi` until it falls between `[0, pi]`.
+    For example, if `pdf` or `logpdf` are evaluated at `3.25 pi`, the value is
+    mapped to `0.75 pi` (`3.25 pi -> -1.25 pi -> 0.75 pi`) before being
+    evaluated.
 
     Bounds may be provided to limit the range for which the pdf has support.
     As with `UniformAngle`, these are initizliaed as multiples of pi, while
@@ -626,37 +626,9 @@ class SinAngle(UniformAngle):
     _func = numpy.cos
     _dfunc = numpy.sin
     _arcfunc = numpy.arccos
-    # _superdomain applies the initial constraint of [0, 2pi)
-    _superdomain = boundary_utils.Bounds(0, 2*numpy.pi, cyclic=True)
-    # _domain applies the reflection off of pi
+    # _domain applies the reflection off of 0, pi
     _domain = boundary_utils.Bounds(0, numpy.pi,
         btype_min='reflected', btype_max='reflected', cyclic=False)
-
-
-    def apply_boundary_conditions(self, **kwargs):
-        """Maps values to be in [0, pi] (the domain) first, before applying
-        any additional boundary conditions. This is accomplished by applying
-        cyclic conditions between [0, 2pi) to the values, then reflecting
-        left off of pi.
-
-        Parameters
-        ----------
-        \**kwargs :
-            The keyword args should be the name of a parameter and value to
-            apply its boundary conditions to. The arguments need not include
-            all of the parameters in self.
-
-        Returns
-        -------
-        dict
-            A dictionary of the parameter names and the conditioned values.
-        """
-        # map values to be within the _superdomain of [0, 2pi)
-        kwargs = dict([[p, self._superdomain.apply_conditions(val)]
-                      for p,val in kwargs.items()])
-        # since _domain has been overridden, calling UniformAngle's apply
-        # boundary condtions will cause the reflection off of pi to occur
-        return super(SinAngle, self).apply_boundary_conditions(**kwargs)
 
 
     def _pdf(self, **kwargs):
@@ -744,7 +716,6 @@ class CosAngle(SinAngle):
     _func = numpy.sin
     _dfunc = numpy.cos
     _arcfunc = numpy.arcsin
-    _superdomain = boundary_utils.Bounds(-numpy.pi, numpy.pi, cyclic=True)
     _domain = boundary_utils.Bounds(-numpy.pi/2., numpy.pi/2.,
         btype_min='reflected', btype_max='reflected', cyclic=False)
 
@@ -825,14 +796,6 @@ class UniformSolidAngle(_BoundedDist):
         """Maps the given values to be within the domain of the azimuthal and
         polar angles, before applying any other boundary conditions.
         
-        Values are mapped to be within the domain of the solid angle in three
-        steps. First, the polar angle is constrained to be in [0, 2pi) using
-        cyclic conditions. If the result is between [pi, 2pi), then an offset
-        of pi is added to the azimuthal angle. Next, the polar angle is
-        reflected left off of pi. Finally, the azimuthal angle is contrained
-        to be in [0, 2pi) using cyclic conditions. This ensures continuity in
-        the pdf as values are mapped into the distribution's domain.
-
         Parameters
         ----------
         \**kwargs :
@@ -848,16 +811,10 @@ class UniformSolidAngle(_BoundedDist):
         """
         polarval = kwargs[self._polar_angle]
         azval = kwargs[self._azimuthal_angle]
-        # map the polar angle into its _superdomain [0, 2pi)
-        polarval = self._polardist._superdomain.apply_conditions(polarval)
-        # if the polar angle is outside of its domain, it means we've rotated
-        # the azimuthal angle to the other side
-        if polarval not in self._polardist._domain:
-            azval += numpy.pi
-        # now constrain each angle to its domain
+        # constrain each angle to its domain
         polarval = self._polardist._domain.apply_conditions(polarval)
         azval = self._azimuthaldist._domain.apply_conditions(azval)
-        # finally, apply any other boundary conditions
+        # apply any other boundary conditions
         polarval = self._bounds[self._polar_angle].apply_conditions(polarval)
         azval = self._bounds[self._azimuthal_angle].apply_conditions(azval)
         return {self._polar_angle: polarval, self._azimuthal_angle: azval}
