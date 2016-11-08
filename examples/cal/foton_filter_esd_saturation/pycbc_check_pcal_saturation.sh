@@ -111,4 +111,16 @@ MODEL_NAME=CAL
 FILTERBANK_NAME=PINJX_TRANSIENT
 #DATA_FILE=`ls /home/cbiwer/src/pycbc_foton_dev/examples/cal/foton_filter_INJ_BLIND/hwinj/${IFO}-HWINJ_CBC-*-*.txt`
 OUTPUT_FILE=${IFO}-FILTER_${FILTERBANK_NAME}-${GPS_START_TIME}.txt
-python ${EXE_DIR}/pycbc_foton_filter --filterbank-ignore-off --model-name ${MODEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --filterbank-name ${FILTERBANK_NAME} --data-file ${DATA_FILE} --filter-file ${CALEX_FILTER_FILE} --output-file ${OUTPUT_FILE} --sample-rate ${SAMPLE_RATE} --frame-type ${FRAME_TYPE} --ifo ${IFO}
+python ${EXE_DIR}/pycbc_foton_filter \
+   --model-name ${MODEL_NAME} \
+   --gps-start-time ${GPS_START_TIME} \
+   --gps-end-time ${GPS_END_TIME} \
+   --filterbank-name ${FILTERBANK_NAME} \
+   --filterbank-ignore-off \
+   --filterbank-gain 1.0 \
+   --data-file ${DATA_FILE} \
+   --filter-file ${CALEX_FILTER_FILE} \
+   --output-file ${OUTPUT_FILE} \
+   --sample-rate ${SAMPLE_RATE} \
+   --frame-type ${FRAME_TYPE} \
+   --ifo ${IFO}
