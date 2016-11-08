@@ -209,7 +209,8 @@ class _BoundedDist(object):
     ----------
     \**params :
         The keyword arguments should provide the names of parameters and their
-        corresponding bounds, as tuples.
+        corresponding bounds, as either tuples or a `boundary_utils.Bounds` 
+        instance.
 
     Attributes
     ----------
@@ -340,7 +341,8 @@ class Uniform(_BoundedDist):
     ----------
     \**params :
         The keyword arguments should provide the names of parameters and their
-        corresponding bounds, as tuples.
+        corresponding bounds, as either tuples or a `boundary_utils.Bounds`
+        instance.
 
     Class Attributes
     ----------------
@@ -377,6 +379,20 @@ class Uniform(_BoundedDist):
            (39.109058546060346, 13.36220145743631),
            (34.49594465315212, 47.531953033719454)], 
           dtype=[('mass1', '<f8'), ('mass2', '<f8')])
+    
+    Initialize a uniform distribution using a boundary_utils.Bounds instance,
+    with a reflected upper bound:
+    >>> dist = distributions.Uniform(mass1=Bounds(10, 50, btype_max='reflected'))
+    
+    Apply boundary conditions to a value: 
+    >>> dist.apply_boundary_conditions(mass1=60.)
+    {'mass1': array(40.0)}
+    
+    The boundary conditions are applied to the value before evaluating the pdf;
+    note that the following returns a non-zero pdf. If the upper bound were
+    not reflected, the following would return 0:
+    >>> dist.pdf(mass1=60.)
+    0.025
     """
     name = 'uniform'
     def __init__(self, **params):
