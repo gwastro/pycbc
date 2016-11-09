@@ -346,7 +346,7 @@ class MultiRingBuffer(object):
         self.max_length = max_length
 
         # Set initial size of buffers
-        self.pad_count = 64
+        self.pad_count = 4
         self.num_rings = num_rings
         self.buffer = numpy.zeros((num_rings, self.pad_count), dtype=dtype)
         self.buffer_expire = numpy.zeros((num_rings, self.pad_count), dtype=numpy.int32)

@@ -132,7 +132,7 @@ class SingleCoincForGraceDB(object):
         """
         ligolw_utils.write_filename(self.outdoc, filename)
 
-    def upload(self, fname, psds, low_frequency_cutoff, testing=True):
+    def upload(self, fname, psds, low_frequency_cutoff, testing=True, extra_strings=None):
         """Upload this trigger to gracedb
 
         Parameters
@@ -153,6 +153,7 @@ class SingleCoincForGraceDB(object):
         import lal.series
 
         self.save(fname)
+        extra_strings = [] if extra_strings is None
         if testing:
             group = 'Test'
         else:
@@ -184,4 +185,8 @@ class SingleCoincForGraceDB(object):
                          "PyCBC PSD estimate from the time of event",
                          "psd.xml.gz", open("tmp_psd.xml.gz", "rb").read(),
                          "psd").json()
+        gracedb.writeLog(r["graceid"],
+            "using pycbc code hash %s" % pycbc_version.git_hash).json()
+        for text in extra_strings:
+            gracedb.writeLog(r["graceid"], text).json()
         logging.info("Uploaded file psd.xml.gz to event %s.", r["graceid"])
