@@ -153,7 +153,7 @@ class SingleCoincForGraceDB(object):
         import lal.series
 
         self.save(fname)
-        extra_strings = [] if extra_strings is None
+        extra_strings = [] if extra_strings is None else extra_strings
         if testing:
             group = 'Test'
         else:

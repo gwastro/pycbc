@@ -363,15 +363,26 @@ class MultiRingBuffer(object):
         """ Return the number of elements in the ring buffer, including nulls"""
         return self.size
 
+    def straighten(self):
+        locs = numpy.where(self.index < self.start)[0]:
+        for l in locs:
+            self.buffer[l].roll(self.pad_count - self.index)
+        self.index[locs] = self.start[locs] + self.pad_count - self.index[locs]
+        self.start[locs] = 0
+
     def increase_buffer_size(self, size):
         """ Increase the internal buffer size up to 'size'"""
         oldsize = self.pad_count
         if size < oldsize:
             raise ValueError("The new size must be larger than the old one")
-
+        self.straighten()
         self.pad_count = size
         self.buffer.resize((self.num_rings, size))
         self.buffer_expire.resize((self.num_rings, size))
+
+        # realign segments that have wrapped around
+        padd = self.pad_count - oldsize
+        l = self.index 
 
     @property
     def start_time(self):
@@ -412,7 +423,7 @@ class MultiRingBuffer(object):
     def add(self, indices, values):
         """Add triggers in 'values' to the buffers indicated by the indices
         """
-        if self.ring_sizes().max() > self.pad_count * .9:
+        if self.ring_sizes().max() + 2 > self.pad_count * .9:
             self.increase_buffer_size(int(self.pad_count * 1.5))
 
         index = self.index[indices]
@@ -812,7 +823,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         ####################################Collect coinc results for saving
         coinc_results = {}
-
+        print results
         # Save information about zerolag triggers
         if num_zerolag > 0:
             zerolag_results = {}
@@ -823,6 +834,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             template = template_ids[idx]
             for ifo in self.ifos:
                 trig_id = trigger_ids[ifo][idx]
+                print "TRIG ID", trig_id, template, idx, ifo
+                print self.singles[ifo].data(template)
+                print results
                 single_data = self.singles[ifo].data(template)[trig_id]
                 for key in single_data.dtype.names:
                     path = 'foreground/%s/%s' % (ifo, key)
