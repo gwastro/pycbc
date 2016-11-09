@@ -282,7 +282,45 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
 
 def partial_compress_rom(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
                          fHigh, interpolation):
+    """Retrieves the amplitude and phase interpolants, and amplitude and
+    phase frequency sample points from the SEOBNRv2_ROM LAL code, and
+    and calls fd_decompress to perform the interpolation in frequency
+    space using various interpolation methods offered by scipy, to get
+    the decompressed waveform. A mismatch is computed by finding
+    1-overlap between `htilde` and the decompressed waveform;
+    no maximimization over phase/time is done, nor is any PSD used.
+
+    Parameters
+    ----------
+    htilde : FrequencySeries
+        The waveform to compress.
+    mass1 : float
+        Mass of companion 1 in solar masses
+    mass2 : float
+        Mass of companion 2 in solar masses
+    chi1 : float
+        Dimensionless aligned component spin 1
+    chi2 : float
+        Dimensionaless aligned component spin 2
+    deltaF : float
+        Sampling frequency (Hz)
+    fLow : float
+        Starting frequency of the compressed waveform to be generated (Hz)
+    fHigh : float
+        Ending frequency of the compressed waveform to be generated (Hz)
+    interpolation : str
+        The interpolation to use for decompressing the waveform when
+        computing overlaps.
+
+    Returns
+    -------
+    CompressedWaveform
+        The compressed waveform data; see `CompressedWaveform` for details.
+    """
+
+    # Orbital phase at reference frequency
     phiRef = 0
+    # Reference frequency
     fRef = 0
     # a suitable value for distance is provided for now
     distance = float((1.0e6 * lal.PC_SI)/DYN_RANGE_FAC)
@@ -340,8 +378,8 @@ def partial_compress_rom(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
     mismatch = 1. - filter.overlap(abs(hdecomp), abs(htilde),
                                    low_frequency_cutoff=fLow,
                                    high_frequency_cutoff=high_frequency_cutoff)
-    logging.info("""mismatch: %.10f, for low_frequency_cutoff = %.1f and
-                 high_frequency_cutoff = %.1f"""%(mismatch, fLow,
+    logging.info("mismatch: %.10f, for low_frequency_cutoff = %.1f and
+                 high_frequency_cutoff = %.1f"%(mismatch, fLow,
                  high_frequency_cutoff))
     return CompressedWaveform(amp_interp_points, phase_interp_points,
                               phase_freq_points, amp_freq_points,
@@ -540,7 +578,7 @@ def fd_decompress(amp, phase, sample_frequencies,
         FrequencySeries with the decompressed waveform.
     """
     precision = _precision_map[sample_frequencies.dtype.name]
-    if amp_sample_frequencies == None:
+    if amp_sample_frequencies is None:
     	if _precision_map[amp.dtype.name] != precision or \
     		_precision_map[phase.dtype.name] != precision:
             raise ValueError("amp, phase, and sample_frequencies must"
@@ -581,11 +619,11 @@ def fd_decompress(amp, phase, sample_frequencies,
     start_index = int(numpy.floor(f_lower/df))
     # interpolate the amplitude and the phase
     if interpolation == "inline_linear":
-        if amp_sample_frequencies != None:
-           raise ValueError("for inline_linear decompression"
-                            "amp_sample_frequencies should be set to"
-                            "None as it should be the same as"
-                            "sample_frequencies")
+        if amp_sample_frequencies is not None:
+            raise ValueError("for inline_linear decompression"
+                             "amp_sample_frequencies should be set to"
+                             "None as it should be the same as"
+                             "sample_frequencies")
         imin = int(numpy.searchsorted(sample_frequencies, f_lower))
         if precision == 'single':
             code = _linear_decompress_code32
@@ -600,8 +638,8 @@ def fd_decompress(amp, phase, sample_frequencies,
                extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] +\
                omp_flags, libraries=omp_libs)
     else:
-        if amp_sample_frequencies == None:
-                amp_sample_frequencies = sample_frequencies
+        if amp_sample_frequencies is None:
+            amp_sample_frequencies = sample_frequencies
         # use scipy for fancier interpolation
         outfreq = out.sample_frequencies.numpy()
         amp_interp = interpolate.interp1d(
