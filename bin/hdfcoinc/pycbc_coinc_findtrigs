@@ -177,6 +177,11 @@ if args.strict_coinc_time:
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
 time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
+
+if time_window >= args.timeslide_interval:
+    raise parser.error("The maximum time delay between detectors is larger "
+                       "than the timeslide interval.")
+
 logging.info('The coincidence window is %3.1f ms' % (time_window * 1000))
 
 data = {'stat':[], 'decimation_factor':[], 'time1':[], 'time2':[],
