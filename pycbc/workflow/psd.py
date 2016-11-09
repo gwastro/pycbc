@@ -106,8 +106,10 @@ def make_average_psd(workflow, psd_files, out_dir, tags=None,
     node = AvgPSDExecutable(workflow.cp, 'average_psd', ifos=workflow.ifos,
                             out_dir=out_dir, tags=tags).create_node()
     node.add_input_list_opt('--input-files', psd_files)
-    node.new_output_file_opt(workflow.analysis_time, output_fmt,
-                             '--detector-avg-file')
+
+    if len(workflow.ifos) > 1:
+        node.new_output_file_opt(workflow.analysis_time, output_fmt,
+                                 '--detector-avg-file')
 
     node.new_multiifo_output_list_opt('--time-avg-file', workflow.ifos,
                                  workflow.analysis_time, output_fmt, tags=tags)
