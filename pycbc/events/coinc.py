@@ -823,7 +823,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         ####################################Collect coinc results for saving
         coinc_results = {}
-        print results
         # Save information about zerolag triggers
         if num_zerolag > 0:
             zerolag_results = {}
@@ -834,9 +833,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             template = template_ids[idx]
             for ifo in self.ifos:
                 trig_id = trigger_ids[ifo][idx]
-                print "TRIG ID", trig_id, template, idx, ifo
-                print self.singles[ifo].data(template)
-                print results
                 single_data = self.singles[ifo].data(template)[trig_id]
                 for key in single_data.dtype.names:
                     path = 'foreground/%s/%s' % (ifo, key)
