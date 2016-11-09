@@ -263,7 +263,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         comp_phase = phase.take(sample_index)
         # update the vecdiffs and mismatch
         hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
-                                out=decomp_scratch, df=outdf, 
+                                out=decomp_scratch, df=outdf,
                                 f_lower=fmin, interpolation=interpolation)
         new_vecdiffs = numpy.zeros(vecdiffs.size+1)
         new_vecdiffs[:minpt] = vecdiffs[:minpt]
@@ -509,9 +509,9 @@ def fd_decompress(amp, phase, sample_frequencies,
         This is set to None by default. But if specified, is used for
         the frequency (in Hz) of the waveform for the amplitude.
     sample_frequencies : array
-        This is used used for frequency (in Hz) of the waveform for both 
+        This is used used for frequency (in Hz) of the waveform for both
         amplitude and phase. But if amp_sample_frequencies is specified,
-        this is used only for frequency of the waveform for phase. 
+        this is used only for frequency of the waveform for phase.
     out : {None, FrequencySeries}
         The output array to save the decompressed waveform to. If this contains
         slots for frequencies > the maximum frequency in the interpolant
@@ -598,7 +598,7 @@ def fd_decompress(amp, phase, sample_frequencies,
         inline(code, ['h', 'hlen', 'sflen', 'delta_f', 'sample_frequencies',
                       'amp', 'phase', 'start_index', 'imin'],
                extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] +\
-               omp_flags, libraries=omp_libs) 
+               omp_flags, libraries=omp_libs)
     else:
         if amp_sample_frequencies == None:
                 amp_sample_frequencies = sample_frequencies
