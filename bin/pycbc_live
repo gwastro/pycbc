@@ -6,6 +6,7 @@ from pycbc.filter import LiveBatchMatchedFilter
 from time import time
 import os.path
 from mpi4py import MPI as mpi
+from pycbc.events import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator
 from pycbc.io.live import SingleCoincForGraceDB
 import pycbc.waveform.bank
@@ -115,10 +116,10 @@ class LiveEventManager(object):
         if store_loudest_index:
             for ifo in results:
                 if 'snr' in results[ifo]:
-                    f[ifo]['loudest'] = numpy.argsort(results[ifo]['snr'])[::-1][0:store_loudest_index]
+                    nsnr = newsnr(results[ifo]['snr'], results[ifo]['chisq'])
+                    f[ifo]['loudest'] = numpy.argsort(nsnr)[::-1][0:store_loudest_index]
 
         f.close()
-
         if store_psd:
             for ifo in store_psd:
                 if store_psd[ifo] is not None:
