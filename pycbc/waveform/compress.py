@@ -317,7 +317,6 @@ def partial_compress_rom(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
     CompressedWaveform
         The compressed waveform data; see `CompressedWaveform` for details.
     """
-
     # Orbital phase at reference frequency
     phiRef = 0
     # Reference frequency
@@ -378,9 +377,8 @@ def partial_compress_rom(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
     mismatch = 1. - filter.overlap(abs(hdecomp), abs(htilde),
                                    low_frequency_cutoff=fLow,
                                    high_frequency_cutoff=high_frequency_cutoff)
-    logging.info("mismatch: %.10f, for low_frequency_cutoff = %.1f and
-                 high_frequency_cutoff = %.1f"%(mismatch, fLow,
-                 high_frequency_cutoff))
+    logging.info("mismatch: %.10f, for low_frequency_cutoff = %.1f and high_frequency_cutoff = %.1f" % \
+                 (mismatch, fLow, high_frequency_cutoff))
     return CompressedWaveform(amp_interp_points, phase_interp_points,
                               phase_freq_points, amp_freq_points,
                               interpolation=interpolation,
