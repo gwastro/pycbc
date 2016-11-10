@@ -27,7 +27,7 @@ def get_library_version_info():
     analysis run."""
     library_list = []
     import lal, lalframe, lalmetaio, lalinspiral, lalsimulation
-    import glue.git_version, pylal.git_version, pycbc.version
+    import glue.git_version, pycbc.version
 
     lalinfo = {}
     lalinfo['Name'] = 'LAL'
@@ -101,21 +101,6 @@ def get_library_version_info():
     glueinfo['Committer'] = glue.git_version.committer
     glueinfo['Date'] = glue.git_version.date
     library_list.append(glueinfo)
-
-    # NOTE: We hope to remove pylal dependance in the future, but it will be
-    # used in O1.
-    pylalinfo = {}
-    pylalinfo['Name'] = 'Pylal'
-    pylalinfo['ID'] = pylal.git_version.id
-    pylalinfo['Status'] = pylal.git_version.status
-    pylalinfo['Version'] = pylal.git_version.version
-    pylalinfo['Tag'] = pylal.git_version.tag
-    pylalinfo['Author'] = pylal.git_version.author
-    pylalinfo['Builder'] = pylal.git_version.builder
-    pylalinfo['Branch'] = pylal.git_version.branch
-    pylalinfo['Committer'] = pylal.git_version.committer
-    pylalinfo['Date'] = pylal.git_version.date
-    library_list.append(pylalinfo)
 
     pycbcinfo = {}
     pycbcinfo['Name'] = 'PyCBC'
