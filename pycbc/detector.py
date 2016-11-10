@@ -40,6 +40,8 @@ class Detector(object):
         self.frDetector =  lalsimulation.DetectorPrefixToLALDetector(self.name)
         self.response = self.frDetector.response
         self.location = self.frDetector.location
+        self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
+        self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
 
     def light_travel_time_to_detector(self, det):
         """ Return the light travel time from this detector
@@ -80,6 +82,13 @@ class Detector(object):
                 h_lal.data.data, delta_t=h_lal.deltaT, epoch=h_lal.epoch,
                 dtype=np.float64, copy=False)
 
+    def optimal_orientation(self, t_gps):
+        """Return the optimal orientation in right ascension and declination
+           for a given GPS time.
+        """
+        ra = self.longitude + (lal.GreenwichMeanSiderealTime(t_gps) % (2*np.pi))
+        dec = self.latitude
+        return ra, dec
 
 def overhead_antenna_pattern(right_ascension, declination, polarization):
     """Return the detector response where (0, 0) indicates an overhead source. 
