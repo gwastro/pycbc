@@ -83,7 +83,7 @@ class Detector(object):
                 dtype=np.float64, copy=False)
 
     def optimal_orientation(self, t_gps):
-        """Return the optimal orientation in right ascension and declination 
+        """Return the optimal orientation in right ascension and declination
            for a given GPS time.
         """
         ra = self.longitude + (lal.GreenwichMeanSiderealTime(t_gps) % (2*np.pi))
