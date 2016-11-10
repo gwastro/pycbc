@@ -966,7 +966,7 @@ class Gaussian(_BoundedDist):
     __call__ = logpdf
 
     def rvs(self, size=1, param=None):
-        """Gives a set of random values drawn from this distribution.
+        """ Gives a set of random values drawn from this distribution.
 
         Parameters
         ----------
