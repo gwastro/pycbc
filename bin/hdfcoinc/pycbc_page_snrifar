@@ -179,12 +179,15 @@ if not args.closed_box:
                 pylab.fill_between(cstat_back, low, high,
                                    linewidth=0, color=pylab.cm.Blues(sigmas[i] / 5.0), zorder=-1)
 
-                left = cstat_back[high < top].min()
-                
-                if sigmas[i] == end:
-                    pylab.text(left, top*1.05, r"\textbf{%1.1f $\sigma$}"  % sigmas[i], fontsize=8)
-                else:
-                    pylab.text(left, top*1.05, r"\textbf{%1.0f $\sigma$}"  % sigmas[i], fontsize=8) 
+                try:
+                    left = cstat_back[high < top].min()
+                    
+                    if sigmas[i] == end:
+                        pylab.text(left, top*1.05, r"\textbf{%1.1f $\sigma$}"  % sigmas[i], fontsize=8)
+                    else:
+                        pylab.text(left, top*1.05, r"\textbf{%1.0f $\sigma$}"  % sigmas[i], fontsize=8) 
+                except ValueError:
+                    logging.warn(" Can't find a place for the sigma labels ")
 
         if args.not_cumulative:
             # add arrows to any points > the loudest background
