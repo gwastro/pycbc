@@ -984,7 +984,6 @@ class Gaussian(_BoundedDist):
             corresponding to the given parameter. Otherwise, the array will
             have an element for each parameter in self's params.
         """
-
         # make record array
         if param is not None:
             dtype = [(param, float)]
