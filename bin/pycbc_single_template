@@ -94,6 +94,8 @@ parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
 parser.add_argument("--chisq-bins", default="0", type=str, help=
                     "Number of frequency bins to use for power chisq.")
+parser.add_argument("--default-chisq-bins", default="0", type=int, help=
+                    "If the chisq bin formula fails, default to this number.")
 parser.add_argument("--trigger-time", type=float, default=0,
                   help="The central time of the trigger to use.")
 parser.add_argument("--use-params-of-closest-injection", action="store_true",
@@ -296,12 +298,15 @@ with ctx:
 
     try:
         chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(parse_row,
-           opt.chisq_bins))
+            opt.chisq_bins))
     except ValueError:
-        warnings.warn(
-            "Unable to compute chisq bins: defaulting to three bins",
-            RuntimeWarning )
-        chisq_bins = 3
+        if ops.default_chisq_bins:
+            chisq_bins = ops.default_chisq_bins
+            warnings.warn(
+                "Unable to compute chisq bins: defaulting to %d bins" % 
+                chisq_bins, RuntimeWarning)
+        else:
+            raise ValueError("invalid number of chisq bins")
 
     f['template'] = template.numpy()                  
     snrs, chisqs = [], []  
