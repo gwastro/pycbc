@@ -994,7 +994,7 @@ class Gaussian(_BoundedDist):
 
         # draw samples
         params = [param] if param is not None else self._params
-        for i,param in enumerate(params):
+        for param in params:
             sigma = numpy.sqrt(self._var[param])
             vals[param] = scipy.stats.truncnorm.rvs(
                               (self._bounds[param][0]-self._mean[param])/sigma,
