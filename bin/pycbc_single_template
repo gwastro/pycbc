@@ -17,7 +17,7 @@
 """ Calculate the SNR and CHISQ timeseries for either a chosen template, or 
 a specific Nth loudest coincident event.
 """
-import sys, logging, argparse, numpy, itertools, pycbc, h5py
+import sys, logging, argparse, numpy, itertools, pycbc, h5py, warnings
 from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter
 from pycbc.io import WaveformArray
 from pycbc import events
@@ -293,8 +293,15 @@ with ctx:
     parse_row.params = t()
     for param in row.fieldnames:
         setattr(parse_row.params, param, row[param][0])
-    chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(parse_row,
-                                                               opt.chisq_bins))
+
+    try:
+        chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(parse_row,
+           opt.chisq_bins))
+    except ValueError:
+        warnings.warn(
+            "Unable to compute chisq bins: defaulting to three bins",
+            RuntimeWarning )
+        chisq_bins = 3
 
     f['template'] = template.numpy()                  
     snrs, chisqs = [], []  
