@@ -984,14 +984,23 @@ class Gaussian(_BoundedDist):
             corresponding to the given parameter. Otherwise, the array will
             have an element for each parameter in self's params.
         """
+
+        # make record array
+        if param is not None:
+            dtype = [(param, float)]
+        else:
+            dtype = [(p, float) for p in self.params]
+        vals = numpy.zeros(size, dtype=dtype)
+
+        # draw samples
         params = [param] if param is not None else self._params
-        vals = numpy.zeros(shape=(size,len(params)))
         for i,param in enumerate(params):
             sigma = numpy.sqrt(self._var[param])
-            vals[:,i] = scipy.stats.truncnorm.rvs(
+            vals[param] = scipy.stats.truncnorm.rvs(
                               (self._bounds[param][0]-self._mean[param])/sigma,
                               (self._bounds[param][1]-self._mean[param])/sigma,
                               loc=self._mean[param], scale=sigma, size=size)
+
         return vals
 
     @classmethod
