@@ -40,8 +40,8 @@ class Detector(object):
         self.frDetector =  lalsimulation.DetectorPrefixToLALDetector(self.name)
         self.response = self.frDetector.response
         self.location = self.frDetector.location
-        self.latitude = self.frDetector.vertexLatitudeRadians
-        self.longitude = self.frDetector.vertexLongitudeRadians
+        self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
+        self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
 
     def light_travel_time_to_detector(self, det):
         """ Return the light travel time from this detector
