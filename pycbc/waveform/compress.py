@@ -30,7 +30,7 @@ from pycbc import WEAVE_FLAGS, DYN_RANGE_FAC
 from scipy.weave import inline
 from scipy import interpolate
 from scipy.interpolate import splrep
-from pycbc.types import FrequencySeries, zeros, complex_same_precision_as, real_same_precision_as
+from pycbc.types import FrequencySeries, zeros, real_same_precision_as
 from pycbc.waveform import utils
 
 def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
@@ -282,7 +282,9 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
 
 def partial_compress_rom(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
                          fHigh, interpolation):
-    """Retrieves the amplitude and phase interpolants, and amplitude and
+    """
+
+    Retrieves the amplitude and phase interpolants, and amplitude and
     phase frequency sample points from the SEOBNRv2_ROM LAL code, and
     and calls fd_decompress to perform the interpolation in frequency
     space using various interpolation methods offered by scipy, to get
@@ -350,11 +352,10 @@ def partial_compress_rom(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
     amp_freq_points = amp_freq_points/Mtot_sec
     phase_freq_points = phase_freq_points/Mtot_sec
     fmin_interp = max(amp_freq_points.min(), phase_freq_points.min())
-    fmax_interp = min(amp_freq_points.max(), phase_freq_points.max())
     # Decompress the waveform in frequency space
     hdecomp = fd_decompress(amp_interp_points, phase_interp_points,
-			    phase_freq_points, amp_freq_points, out=None,
-			    df=deltaF, f_lower=fmin_interp,
+                            phase_freq_points, amp_freq_points, out=None,
+                            df=deltaF, f_lower=fmin_interp,
                             interpolation=interpolation)
     # Calculate the highest frequency point in the frequency series for
     # the full decompresssed SEOBNRv2_ROM waveform (htilde) and the the
@@ -377,8 +378,8 @@ def partial_compress_rom(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
     mismatch = 1. - filter.overlap(abs(hdecomp), abs(htilde),
                                    low_frequency_cutoff=fLow,
                                    high_frequency_cutoff=high_frequency_cutoff)
-    logging.info("mismatch: %.10f, for low_frequency_cutoff = %.1f and high_frequency_cutoff = %.1f" % \
-                 (mismatch, fLow, high_frequency_cutoff))
+    logging.info("mismatch: %.10f, for low_frequency_cutoff = %.1f and high_frequency_cutoff = %.1f", \
+                 mismatch, fLow, high_frequency_cutoff)
     return CompressedWaveform(amp_interp_points, phase_interp_points,
                               phase_freq_points, amp_freq_points,
                               interpolation=interpolation,
@@ -532,8 +533,10 @@ _real_dtypes = {
 def fd_decompress(amp, phase, sample_frequencies,
                   amp_sample_frequencies=None, out=None, df=None,
                   f_lower=None, interpolation='inline_linear'):
-    """Decompresses an FD waveform using the given amplitude, phase, and the
-    frequencies at which they are sampled at.
+    """Decompresses an FD waveform in frequency space.
+
+    The decompression of the waveform is done using the given amplitude,
+    phase, and the frequencies at which they are sampled at.
 
     Parameters
     ----------
@@ -541,13 +544,13 @@ def fd_decompress(amp, phase, sample_frequencies,
         The amplitude of the waveform at the sample frequencies.
     phase : array
         The phase of the waveform at the sample frequencies.
-    amp_sample_frequencies : array
-        This is set to None by default. But if specified, is used for
-        the frequency (in Hz) of the waveform for the amplitude.
     sample_frequencies : array
         This is used used for frequency (in Hz) of the waveform for both
         amplitude and phase. But if amp_sample_frequencies is specified,
         this is used only for frequency of the waveform for phase.
+    amp_sample_frequencies : array
+        This is set to None by default. But if specified, is used for
+        the frequency (in Hz) of the waveform for the amplitude.
     out : {None, FrequencySeries}
         The output array to save the decompressed waveform to. If this contains
         slots for frequencies > the maximum frequency in the interpolant
@@ -577,18 +580,18 @@ def fd_decompress(amp, phase, sample_frequencies,
     """
     precision = _precision_map[sample_frequencies.dtype.name]
     if amp_sample_frequencies is None:
-    	if _precision_map[amp.dtype.name] != precision or \
-    		_precision_map[phase.dtype.name] != precision:
+        if _precision_map[amp.dtype.name] != precision or \
+                _precision_map[phase.dtype.name] != precision:
             raise ValueError("amp, phase, and sample_frequencies must"
                             " all have the same precision")
         f_min = sample_frequencies.min()
         f_max = sample_frequencies.max()
 
     else:
-    	if _precision_map[amp.dtype.name] != precision or \
-       	     _precision_map[phase.dtype.name] != precision or \
+        if _precision_map[amp.dtype.name] != precision or \
+             _precision_map[phase.dtype.name] != precision or \
                 _precision_map[amp_sample_frequencies.dtype.name] != precision:
-    	    raise ValueError("amp, phase, amp_sample_frequencies, and"
+            raise ValueError("amp, phase, amp_sample_frequencies, and"
                              "sample_frequencies must all have the same"
                              "precision")
         f_min = max([amp_sample_frequencies.min(),sample_frequencies.min()])
@@ -609,9 +612,9 @@ def fd_decompress(amp, phase, sample_frequencies,
         hlen = len(out)
     if f_lower is None:
         imin = 0
-	f_lower = f_min
+        f_lower = f_min
     else:
-	if f_lower >= f_max:
+        if f_lower >= f_max:
             raise ValueError("f_lower is greater than the maximum "
                              "sample frequency of the interpolants")
     start_index = int(numpy.floor(f_lower/df))
