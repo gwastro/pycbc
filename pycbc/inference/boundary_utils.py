@@ -397,7 +397,13 @@ class Bounds(object):
         float
             The value after the conditions are applied; see above for details.
         """
-        return self._reflect(self._constrain(value))
+        retval = self._reflect(self._constrain(value))
+        if isinstance(retval, numpy.ndarray) and retval.size == 1:
+            try:
+                retval = retval[0]
+            except IndexError:
+                retval = float(retval)
+        return retval
 
     def contains_conditioned(self, value):
         """Runs `apply_conditions` on the given value before testing whether it

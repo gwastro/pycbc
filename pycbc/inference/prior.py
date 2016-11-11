@@ -90,8 +90,7 @@ class PriorEvaluator(object):
         """
         params = dict(zip(self.variable_args, params))
         for dist in self.distributions:
-            theseps = dict([[p, params[p]] for p in dist.params])
-            params.update(dist.apply_boundary_conditions(**theseps))
+            params.update(dist.apply_boundary_conditions(**params))
         return [params[p] for p in self.variable_args]
 
     def __call__(self, params):

@@ -99,11 +99,11 @@ def get_param_bounds_from_config(cp, section, tag, param):
         representing the bounds. Otherwise, `None`.
     """
     try:
-        minbnd = cp.get_opt_tag(section, 'min-'+param, tag)
+        minbnd = float(cp.get_opt_tag(section, 'min-'+param, tag))
     except Error:
         minbnd = None
     try:
-        maxbnd = cp.get_opt_tag(section, 'max-'+param, tag)
+        maxbnd = float(cp.get_opt_tag(section, 'max-'+param, tag))
     except Error:
         maxbnd = None
     if minbnd is None and maxbnd is None:
@@ -255,7 +255,8 @@ class _BoundedDist(object):
         \**kwargs :
             The keyword args should be the name of a parameter and value to
             apply its boundary conditions to. The arguments need not include
-            all of the parameters in self.
+            all of the parameters in self. Any unrecognized arguments are
+            ignored.
 
         Returns
         -------
@@ -263,7 +264,7 @@ class _BoundedDist(object):
             A dictionary of the parameter names and the conditioned values.
         """
         return dict([[p, self._bounds[p].apply_conditions(val)]
-                     for p,val in kwargs.items()])
+                     for p,val in kwargs.items() if p in self._bounds])
 
     def pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
