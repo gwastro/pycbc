@@ -34,11 +34,13 @@ class _NoPrior(object):
     """Dummy class to just return 0 if no prior is provided in a
     likelihood generator.
     """
-    def apply_boundary_conditions(self, params):
+    @staticmethod
+    def apply_boundary_conditions(params):
         return params
 
     def __call__(self, params):
         return 0.
+
 
 def snr_from_loglr(loglr):
     """Returns SNR computed from the given log likelihood ratio(s). This is

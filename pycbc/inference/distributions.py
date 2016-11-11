@@ -209,7 +209,7 @@ class _BoundedDist(object):
     ----------
     \**params :
         The keyword arguments should provide the names of parameters and their
-        corresponding bounds, as either tuples or a `boundary_utils.Bounds` 
+        corresponding bounds, as either tuples or a `boundary_utils.Bounds`
         instance.
 
     Attributes
@@ -384,7 +384,7 @@ class Uniform(_BoundedDist):
     with a reflected upper bound:
     >>> dist = distributions.Uniform(mass1=Bounds(10, 50, btype_max='reflected'))
     
-    Apply boundary conditions to a value: 
+    Apply boundary conditions to a value:
     >>> dist.apply_boundary_conditions(mass1=60.)
     {'mass1': array(40.0)}
     

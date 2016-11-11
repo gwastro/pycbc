@@ -129,7 +129,7 @@ def reflect_well(value, bounds):
     """Given some boundaries, reflects the value until it falls within both
     boundaries. This is done iteratively, reflecting left off of the
     `boundaries.max`, then right off of the `boundaries.min`, etc.
-    
+
     Parameters
     ----------
     value : float
@@ -365,9 +365,9 @@ class Bounds(object):
             * If `self.cyclic` is True then `value` is wrapped around to the
             minimum (maximum) bound if `value` is `>= self.max` (`< self.min`)
             bound. For example, if the minimum and maximum bounds are `0, 2*pi`
-            and `value = 5*pi`, then the returned value will be `pi`. 
+            and `value = 5*pi`, then the returned value will be `pi`.
 
-            * If `self.min` is a reflected boundary then `value` will be 
+            * If `self.min` is a reflected boundary then `value` will be
             reflected to the right if it is `< self.min`. For example, if
             `self.min = 10` and `value = 3`, then the returned value will be
             17.
