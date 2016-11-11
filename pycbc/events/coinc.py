@@ -366,7 +366,7 @@ class MultiRingBuffer(object):
     def straighten(self):
         locs = numpy.where(self.index < self.start)[0]
         for l in locs:
-            self.buffer[l].roll(self.pad_count - self.index)
+            numpy.roll(self.buffer[l], self.pad_count - self.index)
         self.index[locs] = self.start[locs] + self.pad_count - self.index[locs]
         self.start[locs] = 0
 
