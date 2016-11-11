@@ -112,7 +112,7 @@ def get_param_bounds_from_config(cp, section, tag, param):
         raise ValueError("if specifying bounds for %s, " %(param) +
             "you must provide both a minimum and a maximum")
     else:
-        bndargs = {'min-bound': minbnd, 'max-bnd': maxbnd}
+        bndargs = {'min_bound': minbnd, 'max_bound': maxbnd}
         # try to get  any other conditions, if provided
         try:
             minbtype = cp.get_opt_tag(section, 'btype-min-{}'.format(param),
@@ -124,7 +124,7 @@ def get_param_bounds_from_config(cp, section, tag, param):
                                       tag)
         except Error:
             maxbtype = 'open'
-        bndargs.update({'btype-min': minbtype, 'btype-max': maxbtype})
+        bndargs.update({'btype_min': minbtype, 'btype_max': maxbtype})
         cyclic = cp.has_option_tag(section, 'cyclic-{}'.format(param), tag)
         bndargs.update({'cyclic': cyclic})
         bnds = boundary_utils.Bounds(**bndargs)
@@ -1006,18 +1006,45 @@ class UniformSky(UniformSolidAngle):
 
 
 class Gaussian(_BoundedDist):
-    """
-    A gaussian distribution on the given parameters. The parameters are
-    independent of each other. Instances of this class can be called like
-    a function. By default, logpdf will be called, but this can be changed
-    by setting the class's __call__ method to its pdf method.
+    r"""A Gaussian distribution on the given parameters; the parameters are
+    independent of each other.
+    
+    Bounds can be provided on each parameter, in which case the distribution
+    will be a truncated Gaussian distribution.  The PDF of a truncated
+    Gaussian distribution is given by:
+
+    .. math::
+        p(x|a, b, \mu,\sigma) = \frac{1}{\sqrt{2 \pi \sigma^2}}\frac{e^{- \frac{\left( x - \mu \right)^2}{2 \sigma^2}}}{\Phi(b|\mu, \sigma) - \Phi(a|\mu, \sigma)},
+
+    where :math:`\mu` is the mean, :math:`\sigma^2` is the variance,
+    :math:`a,b` are the bounds, and :math:`\Phi` is the cumulative distribution
+    of an unbounded normal distribution, given by:
+
+    .. math::
+        \Phi(x|\mu, \sigma) = \frac{1}{2}\left[1 + \mathrm{erf}\left(\frac{x-\mu}{\sigma \sqrt{2}}\right)\right].
+
+    Note that if :math:`[a,b) = [-\infty, \infty)`, this reduces to a standard
+    Gaussian distribution.
+
+    
+    Instances of this class can be called like a function. By default, logpdf
+    will be called, but this can be changed by setting the class's __call__
+    method to its pdf method.
 
     Parameters
     ----------
     \**params :
-        The keyword arguments should provide the names of parameters and their
-        corresponding bounds, mean, and variance, as tuples,
-        eg. parameter=(low,high,mean,var).
+        The keyword arguments should provide the names of parameters and
+        (optionally) some bounds, as either a tuple or a
+        `boundary_utils.Bounds` instance. The mean and variance of each
+        parameter can be provided by additional keyword arguments that have
+        `_mean` and `_var` adding to the parameter name. For example,
+        `foo=(-2,10), foo_mean=3, foo_var=2` would create a truncated Gaussian
+        with mean 3 and variance 2, bounded between :math:`[-2, 10)`. If no
+        mean or variance is provided, the distribution will have 0 mean and
+        unit variance. If None is provided for the bounds, the distribution
+        will be a normal, unbounded Gaussian (equivalent to setting the bounds
+        to `[-inf, inf)`).
 
     Class Attributes
     ----------------
@@ -1026,7 +1053,16 @@ class Gaussian(_BoundedDist):
 
     Example
     -------
-    >> dist = Gaussian(mass1=(1.3,1.5,1.4,0.01))
+    Create an unbounded Gaussian distribution with zero mean and unit variance:
+    >>> dist = distributions.Gaussian(mass1=None)
+
+    Create a bounded Gaussian distribution on :math:`[1,10)` with a mean of 3
+    and a variance of 2:
+    >>> dist = distributions.Gaussian(mass1=(1,10), mass1_mean=3, mass1_var=2)
+   
+    Create a bounded Gaussian distribution with the same parameters, but with
+    reflected boundary conditions:
+    >>> dist = distributions.Gaussian(mass1=Bounds(1,10, btype_min='reflected', btype_max='reflected'), mass1_mean=3, mass1_var=2)
     """
     name = "gaussian"
 
@@ -1041,82 +1077,77 @@ class Gaussian(_BoundedDist):
         self._norm = {}
         self._lognorm = {}
         self._expnorm = {}
-        for param in params.keys():
-            self._bounds[param] = (params[param][0], params[param][1])
-            self._mean[param] = params[param][2]
-            self._var[param] = params[param][3]
-            norm = numpy.sqrt( 2 * self._var[param] * numpy.pi )
-            self._norm[param] = 1.0 / norm
-            self._lognorm[param] = numpy.log(norm)
-            self._expnorm[param] = 2 * self._var[param]
+        # pull out specified means, variance
+        mean_args = [p for p in params if p.endswith('_mean')]
+        var_args = [p for p in params if p.endswith('_var')]
+        self._mean = dict([[p[:-5], params.pop(p)] for p in mean_args])
+        self._var = dict([[p[:-4], params.pop(p)] for p in var_args])
+        # if any param is set to None, make its bounds -inf, inf
+        for param in params:
+            if params[param] is None:
+                # Bounds defaults to -inf, inf
+                params[param] = boundary_utils.Bounds()
+        # initialize the bounds
+        super(Gaussian, self).__init__(**params)
 
-        # save variable parameters
-        self._params = sorted(params.keys())
+        # check that there are no params in mean/var that are not in params
+        missing = set(self._mean.keys()) - set(params.keys())
+        if any(missing):
+            raise ValueError("means provided for unknow params {}".format(
+                ', '.join(missing)))
+        missing = set(self._var.keys()) - set(params.keys())
+        if any(missing):
+            raise ValueError("vars provided for unknow params {}".format(
+                ', '.join(missing)))
+        # set default mean/var for params not specified
+        self._mean.update(dict([[p, 0.]
+            for p in params if p not in self._mean]))
+        self._var.update(dict([[p, 1.]
+            for p in params if p not in self._var]))
+
+        # compute norms
+        for p,bnds in self._bounds.items():
+            sigmasq = self._var[p]
+            mu = self._mean[p]
+            a,b = bnds
+            invnorm = scipy.stats.norm.cdf(b, loc=mu, scale=sigmasq**0.5) \
+                    - scipy.stats.norm.cdf(a, loc=mu, scale=sigmasq**0.5)
+            invnorm *= numpy.sqrt(2*numpy.pi*sigmasq)
+            self._norm[p] = 1./invnorm
+            self._lognorm[p] = numpy.log(self._norm[p])
+            self._expnorm[p] = -1./(2*sigmasq)
+
 
     @property
     def mean(self):
         return self._mean
 
+
     @property
     def var(self):
         return self._var
 
-    def pdf(self, **kwargs):
-        """ Returns the probability density function (PDF) at the given values.
-        The keyword arguments must contain all of parameters in self's params.
-        Unrecognized arguments are ignored.
 
-        The PDF is calculated using
+    def _pdf(self, **kwargs):
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored.
+        """
+        return numpy.exp(self._logpdf(**kwargs))
 
-            p(x) = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp{- \frac{\left( x - \mu \right^2}{2 \sigma^2} }
 
-        Parameters
-        ----------
-        kwargs : **dict
-            An unpacked dict with variable parameter as key and parameter value as value.
-
-        Returns
-        -------
-        _pdf : float
-            The PDF.
+    def _logpdf(self, **kwargs):
+        """Returns the log of the pdf at the given values. The keyword
+        arguments must contain all of parameters in self's params. Unrecognized
+        arguments are ignored.
         """
         if kwargs in self:
-            _pdf = 1.0
-            for param in kwargs.keys():
-                if param in self._params:
-                    _pdf *= self._norm[param]
-                    _pdf *= numpy.exp( -1 * (kwargs[param] - self._mean[param])**2 / self._expnorm[param] )
-            return _pdf
-        else:
-            return 0.0
-
-    def logpdf(self, **kwargs):
-        """ Returns the natural logarithm of the probability density function
-        (PDF) at the given values. For PDF formula see self._pdf docstring.
-        The keyword arguments must contain all of parameters in self's params.
-        Unrecognized arguments are ignored.
-
-        Parameters
-        ----------
-        kwargs : **dict
-            An unpacked dict with variable parameter as key and parameter value as value.
-
-        Returns
-        -------
-        logpdf : float
-            The natural logarithm of the PDF.
-        """
-        if kwargs in self:
-            logpdf = 0.0
-            for param in kwargs.keys():
-                if param in self._params:
-                    logpdf += self._lognorm[param]
-                    logpdf -= (kwargs[param] - self._mean[param])**2 / self._expnorm[param]
-            return logpdf
+            return sum([self._lognorm[p] +
+                        self._expnorm[p]*(kwargs[p]-self._mean[p])**2.
+                        for p in self._params])
         else:
             return -numpy.inf
 
-    __call__ = logpdf
 
     def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from this distribution.
@@ -1131,25 +1162,47 @@ class Gaussian(_BoundedDist):
 
         Returns
         -------
-        vals : numpy array
-            The random values in a numpy.array with shape (niterations,ndim).
-            If a param was specified, the array will only have an element
-            corresponding to the given parameter. Otherwise, the array will
-            have an element for each parameter in self's params.
+        structured array
+            The random values in a numpy structured array. If a param was
+            specified, the array will only have an element corresponding to the
+            given parameter. Otherwise, the array will have an element for each
+            parameter in self's params.
         """
-        params = [param] if param is not None else self._params
-        vals = numpy.zeros(shape=(size,len(params)))
-        for i,param in enumerate(params):
-            sigma = numpy.sqrt(self._var[param])
-            vals[:,i] = scipy.stats.truncnorm.rvs(
-                              (self._bounds[param][0]-self._mean[param])/sigma,
-                              (self._bounds[param][1]-self._mean[param])/sigma,
-                              loc=self._mean[param], scale=sigma, size=size)
-        return vals
+        if param is not None:
+            dtype = [(param, float)]
+        else:
+            dtype = [(p, float) for p in self.params]
+        arr = numpy.zeros(size, dtype=dtype)
+        for (p,_) in dtype:
+            sigma = numpy.sqrt(self._var[p])
+            mu = self._mean[p]
+            a,b = self._bounds[p]
+            arr[p][:] = scipy.stats.truncnorm.rvs((a-mu)/sigma, (b-mu)/sigma,
+                loc=self._mean[p], scale=sigma, size=size)
+        return arr
+
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
-        """ Returns a distribution based on a configuration file.
+        """Returns a Gaussian distribution based on a configuration file. The
+        parameters for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
+
+        Boundary arguments should be provided in the same way as described in
+        `get_param_bounds_from_config`. In addition, the mean and variance of
+        each parameter can be specified by setting `{param}_mean` and
+        `{param}_var`, respectively, For example, the following would create a
+        truncated Gaussian distribution between 0.1 and 0.25 for a parameter
+        called `eta` with mean 0.25 and variance 0.1, and a reflected
+        upper-boundary:
+
+        .. code::
+            [{section}-{tag}]
+            min-eta = 0.1
+            max-eta = 0.25
+            eta_mean = 0.25
+            eta_var = 0.1
+            btype-max-eta = reflected
 
         Parameters
         ----------
@@ -1165,49 +1218,12 @@ class Gaussian(_BoundedDist):
 
         Returns
         -------
-        Gaussian
+        Gaussain
             A distribution instance from the pycbc.inference.prior module.
         """
-        tag = variable_args
-        variable_args = variable_args.split(VARARGS_DELIM)
+        return _bounded_from_config(cls, cp, section, variable_args,
+            bounds_required=False)
 
-        # list of args that are used to construct distribution
-        special_args = ["name"] + ["min-%s"%param for param in variable_args] \
-                                + ["max-%s"%param for param in variable_args] \
-                                + ["mean-%s"%param for param in variable_args] \
-                                + ["var-%s"%param for param in variable_args]
-
-        # get input kwargs
-        params = {}
-        for param in variable_args:
-            params[param] = [None, None, None, None]
-            params[param][0] = float(cp.get_opt_tag(section,
-                                                    "min-%s" % param, tag))
-            params[param][1] = float(cp.get_opt_tag(section,
-                                                    "max-%s" % param, tag))
-            params[param][2] = float(cp.get_opt_tag(section,
-                                                    "mean-%s" % param, tag))
-            params[param][3] = float(cp.get_opt_tag(section,
-                                                    "var-%s" % param, tag))
-
-        # add any additional options that user put in that section
-        dist_args = {}
-        for key in cp.options( "-".join([section,tag]) ):
-
-            # ignore options that are already included
-            if key in special_args:
-                continue
-
-            # check if option can be cast as a float then add option
-            val = cp.get_opt_tag("prior", key, tag)
-            try:
-                val = float(val)
-            except ValueError:
-                pass
-            dist_args.update({key:val})
-
-        # construction distribution and add to list
-        return cls(**params)
 
 distribs = {
     Uniform.name : Uniform,
