@@ -139,8 +139,8 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
     [prior-mass2]
     ; how to construct prior distribution
     name = uniform
-    min-mass1 = 10.
-    max-mass1 = 80.
+    min-mass2 = 10.
+    max-mass2 = 80.
 
     [prior-distance]
     ; how to construct prior distribution
