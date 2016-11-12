@@ -520,7 +520,7 @@ class EmceePTSampler(BaseMCMCSampler):
         # map sample values to the values that were actually passed to the
         # waveform generator and prior evaluator
         samples = numpy.array(
-            self.likelihood_evaulator._prior.apply_boundary_conditions(
+            self.likelihood_evaluator._prior.apply_boundary_conditions(
             samples.transpose(3,0,1,2))).transpose(1,2,3,0)
 
         group = fp.samples_group + '/{name}/temp{tk}/walker{wi}'
