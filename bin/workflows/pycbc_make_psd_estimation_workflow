@@ -43,8 +43,8 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
 container = pycbc.workflow.Workflow(args, args.workflow_name)
-workflow = pycbc.workflow.Workflow(args, 'main')
-finalize_workflow = pycbc.workflow.Workflow(args, 'finalization')
+workflow = pycbc.workflow.Workflow(args, args.workflow_name + '-main')
+finalize_workflow = pycbc.workflow.Workflow(args, args.workflow_name + '-finalization')
 
 pycbc.workflow.makedir(args.output_dir)
 os.chdir(args.output_dir)
