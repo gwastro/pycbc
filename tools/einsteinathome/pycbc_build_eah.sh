@@ -784,6 +784,14 @@ test -r $p.tar.gz ||
    wget $wget_opts -O $p.tar.gz "https://github.com/ligo-cbc/mpld3/tarball/master#egg=$p"
 pip install $p.tar.gz
 
+# on Windows, rebase DLLs
+# this _might_ fix a recurring problem with fork+git+pycbe
+if $build_dlls; then
+    echo -e "\\n\\n>> [`date`] Rebasing DLLs"
+    find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
+    rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
+fi
+
 # PyCBC
 echo -e "\\n\\n>> [`date`] building pycbc"
 if $scratch_pycbc || ! test -d pycbc/.git ; then
@@ -887,7 +895,6 @@ cd ..
 python setup.py install --prefix="$PREFIX" --record installed-files.txt
 cd ..
 test "$p" = "PyInstaller-$pyinstaller_version" && cleanup && rm -rf "$p"
-
 
 # on Windows, rebase DLLs
 # from https://cygwin.com/ml/cygwin/2009-12/msg00168.html:
