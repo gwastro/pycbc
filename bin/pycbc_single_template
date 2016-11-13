@@ -299,11 +299,13 @@ with ctx:
     try:
         chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(parse_row,
             opt.chisq_bins))
+        if chisq_bins < 2:
+            raise ValueError
     except ValueError:
         if opt.default_chisq_bins:
             chisq_bins = ops.default_chisq_bins
             logging.warning(
-                "Unable to compute chisq bins: defaulting to %d bins" % 
+                "Number of chisq bins is less than 2 or NaN: defaulting to %d bins" % 
                 chisq_bins )
         else:
             raise ValueError("invalid number of chisq bins")
