@@ -507,25 +507,25 @@ if opts.threed_lattice:
 if opts.random_seed:
     cp.set('aligned2dstack', 'random-seed', str(opts.random_seed))
 cp.add_section('pegasus_profile-aligned2dstack')
-cp.set('pegasus_profile-aligned2dstack', 'condor|request_memory=3000')
+cp.set('pegasus_profile-aligned2dstack', 'condor|request_memory', '3000')
 
 # alignedcat
 cp.add_section('alignedbankcat')
 if opts.f_low_column is not None:
     cp.set('alignedbankcat', 'f-low-column', opts.f_low_column)
 cp.add_section('pegasus_profile-alignedbankcat')
-cp.set('pegasus_profile-alignedbankcat', 'condor|request_memory=3000')
+cp.set('pegasus_profile-alignedbankcat', 'condor|request_memory', '3000')
 
 # dumptochis
 cp.add_section('dumptochis')
 cp.add_section('pegasus_profile-dumptochis')
-cp.set('pegasus_profile-dumptochis', 'condor|request_memory=3000')
+cp.set('pegasus_profile-dumptochis', 'condor|request_memory', '3000')
 
 # bank verification
 cp.add_section('bankverify')
 cp.set('bankverify', 'bin-spacing', str(1 - opts.min_match))
 cp.add_section('pegasus_profile-bankverify')
-cp.set('pegasus_profile-bankverify', 'condor|request_memory=3000')
+cp.set('pegasus_profile-bankverify', 'condor|request_memory', '3000')
 
 temp_fp = open('temp.ini', 'w')
 cp.write(temp_fp)
