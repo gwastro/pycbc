@@ -305,7 +305,8 @@ with ctx:
             logging.warning( "Number of chisq bins is less than minimum or is NaN."
                             + (" Using %d bins." % opt.minimum_chisq_bins) )
         else:
-            raise ValueError("Chisq bins is NaN and no default minimum set.")
+            raise ValueError(
+                "Chisq bins is NaN or negative and no minimum is set.")
     else:
         chisq_bins = int(chisq_bins_float)
 
