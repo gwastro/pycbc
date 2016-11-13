@@ -57,7 +57,7 @@ else
     git clone -q https://github.com/lscsoft/lalsuite.git
     cd lalsuite
     # see PR #1067 for the choice of commit
-    git checkout 6e7e82fb8e22f48f0ace16b7349b6a1461f3c0b9
+    git checkout ab5d37d296a7024fb7cdebd585c7b1c99e4b8d6c
 
     ./00boot
     ./configure -q --prefix=${INST} --enable-swig-python \
