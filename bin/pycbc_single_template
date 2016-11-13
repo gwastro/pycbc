@@ -94,6 +94,8 @@ parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
 parser.add_argument("--chisq-bins", default="0", type=str, help=
                     "Number of frequency bins to use for power chisq.")
+parser.add_argument("--minimum-chisq-bins", default=0, type=int, help=
+                    "If the chisq bin formula fails, default to this number.")
 parser.add_argument("--trigger-time", type=float, default=0,
                   help="The central time of the trigger to use.")
 parser.add_argument("--use-params-of-closest-injection", action="store_true",
@@ -293,8 +295,20 @@ with ctx:
     parse_row.params = t()
     for param in row.fieldnames:
         setattr(parse_row.params, param, row[param][0])
-    chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(parse_row,
-                                                               opt.chisq_bins))
+
+    chisq_bins_float = vetoes.SingleDetPowerChisq.parse_option(parse_row,
+        opt.chisq_bins)
+    if chisq_bins_float.isnan() or (int(chisq_bins_float) < 
+                                    opt.minimum_chisq_bins): 
+        if opt.minimum_chisq_bins:
+            chisq_bins = opt.minimum_chisq_bins
+            logging.warning( "Number of chisq bins is less than minimum or is NaN."
+                            + (" Using %d bins." % opt.minimum_chisq_bins) )
+        else:
+            raise ValueError(
+                "Chisq bins is NaN or negative and no minimum is set.")
+    else:
+        chisq_bins = int(chisq_bins_float)
 
     f['template'] = template.numpy()                  
     snrs, chisqs = [], []  
