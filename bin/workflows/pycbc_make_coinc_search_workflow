@@ -56,8 +56,8 @@ args = parser.parse_args()
 wf.makedir(args.output_dir)
 
 container = wf.Workflow(args, args.workflow_name)
-workflow = wf.Workflow(args, 'main')
-finalize_workflow = wf.Workflow(args, 'finalization')
+workflow = wf.Workflow(args, args.workflow_name + '-main')
+finalize_workflow = wf.Workflow(args, args.workflow_name + '-finalization')
 
 os.chdir(args.output_dir)
 
