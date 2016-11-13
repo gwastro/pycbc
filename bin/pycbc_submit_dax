@@ -129,11 +129,23 @@ while true ; do
     -k|--append-site-profile)
       case "$2" in
         "") shift 2 ;;
-        *) APPEND_SITE_PROFILE_ARRAY=(${2//:/ })
+        *) OIFS=${IFS}; IFS=":"
+          APPEND_SITE_PROFILE_ARRAY=`perl -e 'use HTML::Entities; print encode_entities(decode_entities(<STDIN>), "\'\"'\'\''<>()&+" );'` <<< "${2}"
+           read -ra APPEND_SITE_PROFILE_ARRAY <<< "${APPEND_SITE_PROFILE_ARRAY}"
+           IFS=${OIFS}
            APPEND_SITE=${APPEND_SITE_PROFILE_ARRAY[0]}
            APPEND_SITE_NS_KEY=(${APPEND_SITE_PROFILE_ARRAY[1]//\|/ })
-           APPEND_SITE_VALUE=${APPEND_SITE_PROFILE_ARRAY[2]}
-           echo "    <profile namespace=\"${APPEND_SITE_NS_KEY[0]}\" key=\"${APPEND_SITE_NS_KEY[1]}\">${APPEND_SITE_VALUE}</profile>" >> ${APPEND_SITE}-extra-site-properties.xml
+           APPEND_SITE_VALUE=("${APPEND_SITE_PROFILE_ARRAY[@]:2}")
+           /bin/echo -n "    <profile namespace=\"${APPEND_SITE_NS_KEY[0]}\" key=\"${APPEND_SITE_NS_KEY[1]}\">" >> ${APPEND_SITE}-extra-site-properties.xml
+           need_colon=0
+           for i in in "${APPEND_SITE_VALUE[@]}" ; do
+               if [ ${need_colon} -eq 1 ] ; then
+                   /bin/echo -n ":" >> ${APPEND_SITE}-extra-site-properties.xml
+               fi
+               /bin/echo -n "${i}" >> ${APPEND_SITE}-extra-site-properties.xml
+               need_colon=1
+           done
+           echo "</profile>" >> ${APPEND_SITE}-extra-site-properties.xml
         shift 2 ;;
       esac ;;
     -t|--transformation-catalog)
@@ -553,6 +565,7 @@ if [ -e ${DASHBOARD_PATH} ] ; then
     cp ${DASHBOARD_PATH} ${DASHBOARD_COPY}
   fi
 
+  COMMAND_LINE=`perl -e 'use HTML::Entities; print encode_entities(decode_entities(<STDIN>), "\'\"'\'\''<>()&+" );' <<< ${COMMAND_LINE}`
   perl -pi.bak -e "s+PYCBC_SUBMIT_DAX_ARGV+${COMMAND_LINE}+g" ${DASHBOARD_PATH}
   perl -pi.bak -e "s+PEGASUS_DASHBOARD_URL+${DASHBOARD_URL}+g" ${DASHBOARD_PATH}
 fi
