@@ -300,9 +300,12 @@ with ctx:
         opt.chisq_bins)
     if chisq_bins_float.isnan() or (int(chisq_bins_float) < 
                                     opt.minimum_chisq_bins): 
-        chisq_bins = opt.minimum_chisq_bins
-        logging.warning( "Number of chisq bins is less than minimum or is NaN."
-                         + (" Using %d bins." % opt.minimum_chisq_bins) )
+        if opt.minimum_chisq_bins:
+            chisq_bins = opt.minimum_chisq_bins
+            logging.warning( "Number of chisq bins is less than minimum or is NaN."
+                            + (" Using %d bins." % opt.minimum_chisq_bins) )
+        else:
+            raise ValueError("Chisq bins is NaN and no default minimum set.")
     else:
         chisq_bins = int(chisq_bins_float)
 
