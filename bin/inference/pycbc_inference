@@ -122,8 +122,9 @@ def apply_gates_to_td(strain_dict, gates):
         Dictionary of time-domain strain with the gates applied.
     """
     # copy data to new dictionary
-    outdict = dict(zip(strain_dict.items()))
+    outdict = dict(strain_dict.items())
     for ifo in gates:
+        logging.info("Gating {} strain".format(ifo))
         outdict[ifo] = strain.gate_data(outdict[ifo], gates[ifo])
     return outdict
 
@@ -150,11 +151,11 @@ def apply_gates_to_fd(stilde_dict, gates):
         Dictionary of frequency-domain strain with the gates applied.
     """
     # copy data to new dictionary
-    outdict = dict(zip(stilde_dict.items()))
+    outdict = dict(stilde_dict.items())
     # create a time-domin strain dictionary to apply the gates to
-    strain_dict = dict([outdict[ifo].to_timeseries() for ifo in gates])
+    strain_dict = dict([[ifo, outdict[ifo].to_timeseries()] for ifo in gates])
     # apply gates and fft back to the frequency domain
-    for ifo,d in apply_gates_to_td(strain_dict):
+    for ifo,d in apply_gates_to_td(strain_dict, gates).items():
         outdict[ifo] = d.to_frequencyseries()
     return outdict
 
@@ -289,6 +290,7 @@ strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
                                          precision="double")
 # apply gates if not waiting to overwhiten
 if not opts.gate_overwhitened:
+    logging.info("Applying gates to strain data")
     strain_dict = apply_gates_to_td(strain_dict, gates)
 
 # get strain time series to use for PSD estimation
@@ -301,6 +303,7 @@ if opts.psd_start_time and opts.psd_end_time:
     psd_strain_dict = strain.from_cli_multi_ifos(psd_opts, opts.instruments,
                                                 precision="double")
     # apply any gates
+    logging.info("Applying gates to PSD data")
     psd_strain_dict = apply_gates_to_td(psd_strain_dict, psd_gates)
 
 elif opts.psd_start_time or opts.psd_end_time:
@@ -330,13 +333,13 @@ with ctx:
 
     # apply any gates to overwhitened data, if desired
     if opts.gate_overwhitened and opts.gate is not None:
-        logging.info("Applying gates to overwhitend data")
+        logging.info("Applying gates to overwhitened data")
         # overwhiten the data
-        for ifo in stilde_dict:
+        for ifo in gates:
             stilde_dict[ifo] /= psd_dict[ifo]
         stilde_dict = apply_gates_to_fd(stilde_dict, gates)
         # unwhiten the data for the likelihood generator
-        for ifo in stilde_dict:
+        for ifo in gates:
             stilde_dict[ifo] *= psd_dict[ifo]
 
     # save PSD
