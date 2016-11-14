@@ -20,7 +20,17 @@ it is cited in the following way:
 ```
 These results were generating using the PyCBC software package
 \cite{Canton:2014ena,Usman:2015kfa,pycbc-software}
+```
 
+For the citation ``pycbc-software``,  please use a bibtex entry and DOI for the
+appropriate release of the PyCBC software (or the latest available release).
+Bibtex keys and DOIs for each release are avaliable from:
+
+[![DOI](https://zenodo.org/badge/31596861.svg)](https://zenodo.org/badge/latestdoi/31596861)
+
+Bibtex keys for the citations ``Canton:2014ena`` and ``Usman:2015kfa`` are
+
+```
 @article{Canton:2014ena,
       author         = "Dal Canton, Tito and others",
       title          = "{Implementing a search for aligned-spin neutron
@@ -54,41 +64,6 @@ These results were generating using the PyCBC software package
       primaryClass   = "gr-qc",
       reportNumber   = "LIGO-P1500086",
       SLACcitation   = "%%CITATION = ARXIV:1508.02357;%%"
-}
-
-@misc{pycbc-software,
-  author       = {Alex Nitz and
-                  Ian Harry and
-                  Christopher M. Biwer and
-                  Josh Willis and
-                  Duncan A. Brown and
-                  Larne Pekowsky and
-                  Tito Dal Canton and
-                  Thomas Dent and
-                  Andrew Williamson and
-                  Collin Capano and
-                  Prayush Kumar and
-                  Amber Lenon and
-                  Soumi De and
-                  Miriam Cabero and
-                  Stephen Fairhurst and
-                  Thomas Massinger and
-                  Alex Nielsen and
-                  shasvath and
-                  Stanislav Babak and
-                  Bernd Machenschalk and
-                  Leo Singer and
-                  Duncan Macleod and
-                  Steven Reyes and
-                  Peter Couvares and
-                  Brian Bockelman and
-                  Andrew Lundgren and
-                  Vaibhav Tewari and
-                  Frank Ohme and
-                  John Veitch},
-  title        = {PyCBC Software Package},
-  year         = 2016,
-  url          = {https://github.com/ligo-cbc/pycbc}
 }
 ```
 
