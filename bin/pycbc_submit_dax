@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -v
 # Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
 set -e
 
@@ -129,8 +129,9 @@ while true ; do
     -k|--append-site-profile)
       case "$2" in
         "") shift 2 ;;
-        *) OIFS=${IFS}; IFS=":"
-          APPEND_SITE_PROFILE_ARRAY=`perl -e 'use HTML::Entities; print encode_entities(decode_entities(<STDIN>), "\'\"'\'\''<>()&+" );'` <<< "${2}"
+        *) SITE_PROFILE=${2}
+           APPEND_SITE_PROFILE_ARRAY=`perl -e 'use HTML::Entities; print encode_entities(decode_entities(<STDIN>), "\'\"'\'\''<>()&+" );' <<< ${SITE_PROFILE}`
+           OIFS=${IFS}; IFS=":"
            read -ra APPEND_SITE_PROFILE_ARRAY <<< "${APPEND_SITE_PROFILE_ARRAY}"
            IFS=${OIFS}
            APPEND_SITE=${APPEND_SITE_PROFILE_ARRAY[0]}
@@ -138,7 +139,7 @@ while true ; do
            APPEND_SITE_VALUE=("${APPEND_SITE_PROFILE_ARRAY[@]:2}")
            /bin/echo -n "    <profile namespace=\"${APPEND_SITE_NS_KEY[0]}\" key=\"${APPEND_SITE_NS_KEY[1]}\">" >> ${APPEND_SITE}-extra-site-properties.xml
            need_colon=0
-           for i in in "${APPEND_SITE_VALUE[@]}" ; do
+           for i in "${APPEND_SITE_VALUE[@]}" ; do
                if [ ${need_colon} -eq 1 ] ; then
                    /bin/echo -n ":" >> ${APPEND_SITE}-extra-site-properties.xml
                fi
@@ -146,7 +147,7 @@ while true ; do
                need_colon=1
            done
            echo "</profile>" >> ${APPEND_SITE}-extra-site-properties.xml
-        shift 2 ;;
+           shift 2 ;;
       esac ;;
     -t|--transformation-catalog)
       case "$2" in
