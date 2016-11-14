@@ -346,7 +346,7 @@ class MultiRingBuffer(object):
         self.max_length = max_length
 
         # Set initial size of buffers
-        self.pad_count = 4
+        self.pad_count = 1
         self.num_rings = num_rings
         self.buffer = numpy.zeros((num_rings, self.pad_count), dtype=dtype)
         self.buffer_expire = numpy.zeros((num_rings, self.pad_count), dtype=numpy.int32)
@@ -366,7 +366,7 @@ class MultiRingBuffer(object):
     def straighten(self):
         locs = numpy.where(self.index < self.start)[0]
         for l in locs:
-            numpy.roll(self.buffer[l], self.pad_count - self.index)
+            self.buffer[l] = numpy.roll(self.buffer[l], self.pad_count - self.index[l])
         self.index[locs] = self.start[locs] + self.pad_count - self.index[locs]
         self.start[locs] = 0
 
@@ -379,10 +379,6 @@ class MultiRingBuffer(object):
         self.pad_count = size
         self.buffer.resize((self.num_rings, size))
         self.buffer_expire.resize((self.num_rings, size))
-
-        # realign segments that have wrapped around
-        padd = self.pad_count - oldsize
-        l = self.index 
 
     @property
     def start_time(self):
@@ -405,7 +401,7 @@ class MultiRingBuffer(object):
         """Discard the triggers added in the latest update"""
         index = self.index[indices]
         index -= 1
-        index[index < 0] = self.pad_count
+        index[index < 0] = self.pad_count - 1
         self.index[indices] = index
 
     def advance_time(self):
@@ -424,7 +420,7 @@ class MultiRingBuffer(object):
         """Add triggers in 'values' to the buffers indicated by the indices
         """
         if self.ring_sizes().max() + 2 > self.pad_count * .9:
-            self.increase_buffer_size(int(self.pad_count * 1.5))
+            self.increase_buffer_size(int(self.pad_count * 1.5 + 5))
 
         index = self.index[indices]
 
