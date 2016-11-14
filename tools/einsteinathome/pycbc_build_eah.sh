@@ -1042,7 +1042,7 @@ if check_md5 "$p" "$md5"; then
         exit 1
     fi
 fi
-tar -zxvf $p
+roms=`tar -zxvf $p`
 
 #fb5ec108c69f9e424813de104731370c  H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz
 p="H1L1-SBANK_FOR_GW150914ER10.xml.gz"
@@ -1113,6 +1113,9 @@ python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRA
 echo -e "\\n\\n>> [`date`] zipping weave cache"
 cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
 rm -f "$cache"
+# addin all ROM files to the cache would blow it up to >300MB, so for now add only the one
+# that is actually used in the GW150914 analysis. Use '$roms' instead of
+# 'SEOBNRv2ChirpTimeSS.dat' if you want all to be included, currently +280MB
 zip -r "$cache" pycbc_inspiral SEOBNRv2ChirpTimeSS.dat
 
 # build additional PyInstaller "onefile" bundles (with unpatched PyInstaller bootloader)
