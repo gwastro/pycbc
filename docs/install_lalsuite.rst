@@ -16,11 +16,29 @@ The following page describes how to build lalsuite from source for use with PyCB
 Obtaining the source code and checking out a version
 ====================================================
 
-Clone the lalsuite repository into the directory ``${VIRTUAL_ENV}/src/lalsuite`` by following the `instructions on the DASWG pages <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/advanced-lalsuite-git.html#clone>`_. 
+In your virtual environment, make a directory for the lalsuite source. Enter
+your virtual environment with the command
+
+.. code-block:: bash
+
+    source ~/src/pycbc/bin/activate
+
+changing the path to the activate script appropriately.  Clone the lalsuite repository into the directory ``${VIRTUAL_ENV}/src/lalsuite`` by running the commands
+
+.. code-block:: bash
+
+    mkdir -p ${VIRTUAL_ENV}/src
+    cd ${VIRTUAL_ENV}/src
+    git clone https://github.com/lscsoft/lalsuite.git
+
+Note that this checks out a read-only repository. If you want a git repository
+that you can edit, you can either fork this repository to your own GitHub
+account or, if you have ``LIGO.ORG`` credentials, you can follow the 
+`instructions on the DASWG pages for cloning lalsuite <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/advanced-lalsuite-git.html#clone>`_.
 
 .. note::
 
-    Since building lalsuite is very disk intensive, you may want to store the lalsuite git repository on a local disk rather than an NSF-mounted directory. 
+    Since building lalsuite is very disk intensive, you may want to store the lalsuite git repository on a local disk rather than an NSF-mounted directory. If this is the case, change the path in the ``mkdir`` and ``cd`` above to a directory on a non-NFS mounted filesystem. This ie not required, as lalsuite will build on an NFS disk, it is just slower.
 
 Once you have the repository cloned, you should change your working directory to the top-level of the repository with 
 
