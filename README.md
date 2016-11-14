@@ -24,7 +24,8 @@ These results were generating using the PyCBC software package
 
 For the citation ``pycbc-software``,  please use a bibtex entry and DOI for the
 appropriate release of the PyCBC software (or the latest available release).
-Bibtex keys and DOIs for each release are avaliable from:
+A bibtex key and DOI for each release is avaliable from [Zendo](http://zendo.org/).
+A key for the latest release is available at:
 
 [![DOI](https://zenodo.org/badge/31596861.svg)](https://zenodo.org/badge/latestdoi/31596861)
 

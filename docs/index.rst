@@ -29,7 +29,8 @@ it is cited in the following way:
 
 For the citation ``pycbc-software``,  please use a bibtex entry and DOI for the
 appropriate release of the PyCBC software (or the latest available release).
-Bibtex keys and DOIs for each release are avaliable from:
+A bibtex key and DOI for each release is avaliable from `Zendo <http://zendo.org/>`_.
+A key for the latest release is available at:
 
 .. image:: https://zenodo.org/badge/31596861.svg
    :target: https://zenodo.org/badge/latestdoi/31596861
