@@ -121,7 +121,7 @@ If you are running a pipeline that uses the old LALApps programs ``lalapps_inspi
 .. code-block:: bash
 
     cd $VIRTUAL_ENV/src/lalsuite/lalapps
-    LIBS=-lz ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic
+    LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic
     cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
     make
     cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
