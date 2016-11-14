@@ -55,6 +55,7 @@ def select_waveform_generator(approximant):
     else:
         raise ValueError("%s is not a valid approximant."%approximant)
 
+
 def convert_liststring_to_list(lstring):
     """ Checks if an argument of the configuration file is a string of a list
     and returns the corresponding list (of strings)
@@ -64,14 +65,15 @@ def convert_liststring_to_list(lstring):
                       for n in range(len(lstring[1:-1].split(',')))]
     return lvalue
 
-def gates_from_cli(opts):
-    """Parses the --gate option into something understandable by
+
+def _gates_from_cli(opts, gate_opt):
+    """Parses the given `gate_opt` into something understandable by
     `strain.gate_data`.
     """
     gates = {}
-    if opts.gate is None:
+    if getattr(opts, gate_opt) is None:
         return gates
-    for gate in opts.gate:
+    for gate in getattr(opts, gate_opt):
         try:
             ifo, central_time, half_dur, taper_dur = gate.split(':')
             central_time = float(central_time)
@@ -86,16 +88,76 @@ def gates_from_cli(opts):
             gates[ifo] = [(central_time, half_dur, taper_dur)]
     return gates
 
-def apply_gates(stilde_dict, gates):
+
+def gates_from_cli(opts):
+    """Parses the --gate option into something understandable by
+    `strain.gate_data`.
+    """
+    return _gates_from_cli(opts, 'gate')
+
+
+def psd_gates_from_cli(opts):
+    """Parses the --psd-gate option into something understandable by
+    `strain.gate_data`.
+    """
+    return _gates_from_cli(opts, 'psd_gate')
+
+
+def apply_gates_to_td(strain_dict, gates):
     """Applies the given dictionary of gates to the given dictionary of
     strain.
+
+    Parameters
+    ----------
+    strain_dict : dict
+        Dictionary of time-domain strain, keyed by the ifos.
+    gates : dict
+        Dictionary of gates. Keys should be the ifo to apply the data to,
+        values are a tuple giving the central time of the gate, the half
+        duration, and the taper duration.
+
+    Returns
+    -------
+    dict
+        Dictionary of time-domain strain with the gates applied.
     """
-    strain_dict = {}
+    # copy data to new dictionary
+    outdict = dict(zip(strain_dict.items()))
     for ifo in gates:
-        thisstrain = stilde_dict[ifo].to_timeseries()
-        strain_dict[ifo] = strain.gate_data(thisstrain, gates[ifo])
-        stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
-    return stilde_dict, strain_dict
+        outdict[ifo] = strain.gate_data(outdict[ifo], gates[ifo])
+    return outdict
+
+
+def apply_gates_to_fd(stilde_dict, gates):
+    """Applies the given dictionary of gates to the given dictionary of
+    strain in the frequency domain.
+
+    Gates are applied by IFFT-ing the strain data to the time domain, applying
+    the gate, then FFT-ing back to the frequency domain.
+
+    Parameters
+    ----------
+    stilde_dict : dict
+        Dictionary of frequency-domain strain, keyed by the ifos.
+    gates : dict
+        Dictionary of gates. Keys should be the ifo to apply the data to,
+        values are a tuple giving the central time of the gate, the half
+        duration, and the taper duration.
+
+    Returns
+    -------
+    dict
+        Dictionary of frequency-domain strain with the gates applied.
+    """
+    # copy data to new dictionary
+    outdict = dict(zip(stilde_dict.items()))
+    # create a time-domin strain dictionary to apply the gates to
+    strain_dict = dict([outdict[ifo].to_timeseries() for ifo in gates])
+    # apply gates and fft back to the frequency domain
+    for ifo,d in apply_gates_to_td(strain_dict):
+        outdict[ifo] = d.to_frequencyseries()
+    return outdict
+
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -120,6 +182,16 @@ parser.add_argument("--gate", nargs="+", type=str,
                     metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
                     help="Apply one or more gates to the data before "
                          "filtering.")
+parser.add_argument("--gate-overwhitened", action="store_true", default=False,
+                    help="Overwhiten data first, then apply the gates "
+                         "specified in --gate. Overwhitening allows for "
+                         "sharper tapers to be used, since lines are not "
+                         "blurred.")
+parser.add_argument("--psd-gate", nargs="+", type=str,
+                    metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
+                    help="Apply one or more gates to the data used for "
+                         "computing the PSD. Gates are applied prior to "
+                         "FFT-ing the data for PSD estimation.")
 
 # add inference options
 parser.add_argument("--likelihood-evaluator", required=True,
@@ -208,9 +280,17 @@ fft.fftw.set_measure_level(0)
 ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
 
+# get gates to apply
+gates = gates_from_cli(opts)
+psd_gates = psd_gates_from_cli(opts)
+
 # get strain time series
 strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
                                          precision="double")
+# apply gates if not waiting to overwhiten
+if not opts.gate_overwhitened:
+    strain_dict = apply_gates_to_td(strain_dict, gates)
+
 # get strain time series to use for PSD estimation
 # if user has not given the PSD time options then use same data as analysis
 if opts.psd_start_time and opts.psd_end_time:
@@ -221,7 +301,7 @@ if opts.psd_start_time and opts.psd_end_time:
     psd_strain_dict = strain.from_cli_multi_ifos(psd_opts, opts.instruments,
                                                 precision="double")
     # apply any gates
-    # psd_strain_dict = apply_gates(psd_strain_dict, gates)
+    psd_strain_dict = apply_gates_to_td(psd_strain_dict, psd_gates)
 
 elif opts.psd_start_time or opts.psd_end_time:
     raise ValueError("Must give --psd-start-time and --psd-end-time")
@@ -248,16 +328,13 @@ with ctx:
                                low_frequency_cutoff_dict, opts.instruments,
                                strain_dict=psd_strain_dict, precision="double")
 
-    # apply any gates
-    if opts.gate is not None: 
+    # apply any gates to overwhitened data, if desired
+    if opts.gate_overwhitened and opts.gate is not None:
         logging.info("Applying gates to overwhitend data")
         # overwhiten the data
         for ifo in stilde_dict:
             stilde_dict[ifo] /= psd_dict[ifo]
-        # apply the gates
-        gates = gates_from_cli(opts)
-        stilde_dict, whstrain_dict = apply_gates(stilde_dict, gates)
-        strain_dict.update(whstrain_dict)
+        stilde_dict = apply_gates_to_fd(stilde_dict, gates)
         # unwhiten the data for the likelihood generator
         for ifo in stilde_dict:
             stilde_dict[ifo] *= psd_dict[ifo]
