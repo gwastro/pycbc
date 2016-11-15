@@ -298,7 +298,7 @@ with ctx:
 
     chisq_bins_float = vetoes.SingleDetPowerChisq.parse_option(parse_row,
         opt.chisq_bins)
-    if chisq_bins_float.isnan() or (int(chisq_bins_float) < 
+    if numpy.isnan(chisq_bins_float) or (int(chisq_bins_float) < 
                                     opt.minimum_chisq_bins): 
         if opt.minimum_chisq_bins:
             chisq_bins = opt.minimum_chisq_bins
