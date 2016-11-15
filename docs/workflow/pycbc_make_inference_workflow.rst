@@ -69,6 +69,7 @@ A simple workflow configuration file::
     likelihood-evaluator = gaussian
     nwalkers = 500
     niterations = 100000
+    save-psd =
 
     [pegasus_profile-inference]
     ; pegasus profile for inference nodes
