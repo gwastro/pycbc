@@ -29,6 +29,7 @@ for parameter estimation.
 import numpy
 import scipy.stats
 from ConfigParser import Error
+import warnings
 from pycbc.inference import boundary_utils
 
 VARARGS_DELIM = '+'
@@ -63,15 +64,6 @@ def get_param_bounds_from_config(cp, section, tag, param):
         max-foo = 1
         cyclic-foo =
 
-    This would result in two reflected boundaries:
-
-    .. code::
-        [{section}-{tag}]
-        min-foo = -1
-        max-foo = 1
-        btype-min-foo = reflected
-        btype-max-foo = reflected
-    
     For more details on boundary types and their meaning, see
     `boundary_utils.Bounds`.
 
@@ -224,6 +216,13 @@ class _BoundedDist(object):
         for param,bnds in params.items():
             if not isinstance(bnds, boundary_utils.Bounds):
                 params[param] = boundary_utils.Bounds(bnds[0], bnds[1])
+            # warn the user about reflected boundaries
+            if isinstance(bnds, boundary_utils.Bounds) and (
+                    bnds.min.name == 'reflected' or
+                    bnds.max.name == 'reflected'):
+                warnings.warn("Param {} has one or more ".format(param) +
+                              "reflected boundaries. Reflected boundaries "
+                              "can cause issues when used in an MCMC.")
         self._bounds = params
         self._params = sorted(params.keys())
 
@@ -382,17 +381,17 @@ class Uniform(_BoundedDist):
           dtype=[('mass1', '<f8'), ('mass2', '<f8')])
     
     Initialize a uniform distribution using a boundary_utils.Bounds instance,
-    with a reflected upper bound:
-    >>> dist = distributions.Uniform(mass1=Bounds(10, 50, btype_max='reflected'))
+    with cyclic bounds:
+    >>> dist = distributions.Uniform(phi=Bounds(10, 50, cyclic=True))
     
     Apply boundary conditions to a value:
-    >>> dist.apply_boundary_conditions(mass1=60.)
-    {'mass1': array(40.0)}
+    >>> dist.apply_boundary_conditions(phi=60.)
+    {'mass1': array(20.0)}
     
     The boundary conditions are applied to the value before evaluating the pdf;
-    note that the following returns a non-zero pdf. If the upper bound were
-    not reflected, the following would return 0:
-    >>> dist.pdf(mass1=60.)
+    note that the following returns a non-zero pdf. If the bounds were not
+    cyclic, the following would return 0:
+    >>> dist.pdf(phi=60.)
     0.025
     """
     name = 'uniform'
@@ -609,14 +608,10 @@ class SinAngle(UniformAngle):
     parameter.
 
     The domain of this distribution is `[0, pi]`. This is accomplished by
-    reflecting a value between `0` and `pi` until it falls between `[0, pi]`.
-    For example, if `pdf` or `logpdf` are evaluated at `3.25 pi`, the value is
-    mapped to `0.75 pi` (`3.25 pi -> -1.25 pi -> 0.75 pi`) before being
-    evaluated.
-
-    Bounds may be provided to limit the range for which the pdf has support.
-    As with `UniformAngle`, these are initizliaed as multiples of pi, while
-    the stored bounds are in radians.
+    putting hard boundaries at `[0, pi]`. Bounds may be provided to further
+    limit the range for which the pdf has support.  As with `UniformAngle`,
+    these are initizliaed as multiples of pi, while the stored bounds are in
+    radians.
 
     Parameters
     ----------
@@ -645,7 +640,7 @@ class SinAngle(UniformAngle):
     _arcfunc = numpy.arccos
     # _domain applies the reflection off of 0, pi
     _domain = boundary_utils.Bounds(0, numpy.pi,
-        btype_min='reflected', btype_max='reflected', cyclic=False)
+        btype_min='closed', btype_max='closed', cyclic=False)
 
 
     def _pdf(self, **kwargs):
@@ -734,7 +729,7 @@ class CosAngle(SinAngle):
     _dfunc = numpy.cos
     _arcfunc = numpy.arcsin
     _domain = boundary_utils.Bounds(-numpy.pi/2., numpy.pi/2.,
-        btype_min='reflected', btype_max='reflected', cyclic=False)
+        btype_min='closed', btype_max='closed', cyclic=False)
 
 
 class UniformSolidAngle(_BoundedDist):
@@ -1062,8 +1057,8 @@ class Gaussian(_BoundedDist):
     >>> dist = distributions.Gaussian(mass1=(1,10), mass1_mean=3, mass1_var=2)
    
     Create a bounded Gaussian distribution with the same parameters, but with
-    reflected boundary conditions:
-    >>> dist = distributions.Gaussian(mass1=Bounds(1,10, btype_min='reflected', btype_max='reflected'), mass1_mean=3, mass1_var=2)
+    cyclic boundary conditions:
+    >>> dist = distributions.Gaussian(mass1=Bounds(1,10, cyclic=True), mass1_mean=3, mass1_var=2)
     """
     name = "gaussian"
 
@@ -1192,18 +1187,17 @@ class Gaussian(_BoundedDist):
         Boundary arguments should be provided in the same way as described in
         `get_param_bounds_from_config`. In addition, the mean and variance of
         each parameter can be specified by setting `{param}_mean` and
-        `{param}_var`, respectively, For example, the following would create a
-        truncated Gaussian distribution between 0.1 and 0.25 for a parameter
-        called `eta` with mean 0.25 and variance 0.1, and a reflected
-        upper-boundary:
+        `{param}_var`, respectively. For example, the following would create a
+        truncated Gaussian distribution between 0 and 6.28 for a parameter
+        called `phi` with mean 3.14 and variance 0.5 that is cyclic:
 
         .. code::
             [{section}-{tag}]
-            min-eta = 0.1
-            max-eta = 0.25
-            eta_mean = 0.25
-            eta_var = 0.1
-            btype-max-eta = reflected
+            min-phi = 0
+            max-phi = 6.28
+            phi_mean = 3.14
+            phi_var = 0.5
+            cyclic =
 
         Parameters
         ----------
