@@ -269,8 +269,8 @@ class InferenceFile(h5py.File):
             self[group.format(ifo=ifo)].attrs['delta_f'] = stilde.delta_f
             self[group.format(ifo=ifo)].attrs['epoch'] = float(stilde.epoch)
 
-    def write_psds(self, psds, low_frequency_cutoff):
-        """ Writes PSD for each IFO to file.
+    def write_psd(self, psds, low_frequency_cutoff):
+        """Writes PSD for each IFO to file.
 
         Parameters
         -----------

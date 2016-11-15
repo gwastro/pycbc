@@ -222,13 +222,14 @@ parser.add_argument("--force", action="store_true", default=False,
                          "Otherwise, an OSError is raised.")
 parser.add_argument("--save-strain", action="store_true", default=False,
                     help="Save the conditioned strain time series to the "
-                         "output file. This is done after all gates have "
-                         "been applied.")
+                         "output file. If gate-overwhitened, this is done "
+                         "before all gates have been applied.")
 parser.add_argument("--save-stilde", action="store_true", default=False,
                     help="Save the conditioned strain frequency series to "
-                         "the output file.")
-parser.add_argument("--save-psds", action="store_true", default=False,
-                    help="Save the psds to the output file.")
+                         "the output file. This is done after all gates have "
+                         "been applied.")
+parser.add_argument("--save-psd", action="store_true", default=False,
+                    help="Save the psd of each ifo to the output file.")
 parser.add_argument("--checkpoint-interval", type=int, default=None,
                     help="Number of iterations to take before saving new "
                          "samples to file.")
@@ -343,7 +344,7 @@ with ctx:
             stilde_dict[ifo] *= psd_dict[ifo]
 
     # save PSD
-    if opts.save_psds:
+    if opts.save_psd:
         # apply dynamic range factor for saving PSDs since
         # plotting code expects it
         logging.info("Saving PSDs")
@@ -353,7 +354,7 @@ with ctx:
                                         psd_dict[key] * pycbc.DYN_RANGE_FAC**2,
                                         delta_f=psd_dict[key].delta_f)
         with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_psds(psds=psd_dyn_dict,
+            fp.write_psd(psds=psd_dyn_dict,
                           low_frequency_cutoff=low_frequency_cutoff_dict)
 
     # save stilde
