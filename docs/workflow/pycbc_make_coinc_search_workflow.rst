@@ -697,7 +697,10 @@ Add the following to the list of ``--config-overrides`` when running ``pycbc_mak
     'pegasus_profile-inspiral:pycbc|site:osg' \
     'pegasus_profile-inspiral:hints|execution.site:osg' \
     'pegasus_profile-inspiral:condor|request_memory:1920M' \
-    'workflow-main:staging-site:osg=local' \
+
+You also need a ``--config-overrides`` to ``pycbc_make_coinc_search_workflow`` that sets the staging site for the main workflow to the local site. To do this, add the following argument, replacing ``${WORKFLOW_NAME}`` with the string that is given as the argument to the option ``--workflow-name ``::
+
+    'workflow-${WORKFLOW_NAME}-main:staging-site:osg=local' \
 
 Optionally, you can add a configuration that will check that your grid proxy
 is valid locally before submitting the job. This means that if your grid proxy
