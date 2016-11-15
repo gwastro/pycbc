@@ -1118,7 +1118,7 @@ cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
 rm -f "$cache"
 # Fetch any extra libraries specified on the command line
 if [ ! -z ${extra_libs} ] ; then
-  wget $wget_opts -O extra_libs.tar.gz ${extra_libs}
+  curl --ftp-pasv --insecure -o extra_libs.tar.gz ${extra_libs}
   echo -e "\\n\\n>> [`date`] adding extra libraries from ${extra_libs}"
   tar -C pycbc_inspiral/ -zxvf extra_libs.tar.gz
 fi
