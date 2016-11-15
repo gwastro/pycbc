@@ -1,4 +1,4 @@
-#!/bin/bash -v
+#!/bin/bash
 # Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
 set -e
 
