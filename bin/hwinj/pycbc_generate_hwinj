@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Copyright (C) 2015 Christopher M. Biwer
 #
@@ -186,14 +186,13 @@ parser.add_argument("--instruments", nargs="+", type=str, required=True,
 # add option groups
 fft.insert_fft_option_group(parser)
 _strain.insert_strain_option_group_multi_ifo(parser)
-_psd.insert_psd_option_group(parser)
+_psd.insert_psd_option_group_multi_ifo(parser)
 
 # parse command line
 opts = parser.parse_args()
 
 # verify options are sane
 _strain.verify_strain_options_multi_ifo(opts, parser, opts.instruments)
-_psd.verify_psd_options(opts, parser)
 
 # setup log
 logging_level = logging.DEBUG
@@ -307,15 +306,25 @@ h_cross = pad_timeseries_to_integer_length(h_cross, sample_rate)
 strain_dict = _strain.from_cli_multi_ifos(opts, opts.instruments,
                                          dyn_range_fac=DYN_RANGE_FAC)
 
-# get PSDs
-psd_dict = {}
+# organize options from multi-IFO PSD
+stilde_dict = {}
+length_dict = {}
+delta_f_dict = {}
+low_frequency_cutoff_dict = {}
 for ifo in opts.instruments:
-    logging.info('Generating PSD for %s', ifo)
-    N = len(h_plus)
-    n = N/2+1
-    delta_f = 1.0 / ( N * h_plus.delta_t )
-    psd_dict[ifo] = _psd.from_cli(opts, n, delta_f, opts.psd_low_frequency_cutoff,
-             strain=strain_dict[ifo], dyn_range_factor=DYN_RANGE_FAC, precision='double')
+    stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
+    length_dict[ifo] = len(stilde_dict[ifo])
+    delta_f_dict[ifo] = stilde_dict[ifo].delta_f
+    low_frequency_cutoff_dict[ifo] = opts.psd_low_frequency_cutoff
+
+# get PSD
+logging.info('Generating PSDs')
+psd_dict = _psd.from_cli_multi_ifos(
+                              opts, length_dict, delta_f_dict,
+                              low_frequency_cutoff_dict, opts.instruments,
+                              strain_dict=strain_dict,
+                              dyn_range_factor=DYN_RANGE_FAC,
+                              precision="double")
 
 # loop over IFOs to calculate sigma
 for ifo in opts.instruments:
