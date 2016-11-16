@@ -326,8 +326,8 @@ class SingleDetPowerChisq(object):
         if not hasattr(template, '_bin_cache'):
             template._bin_cache = {}
 
-        if key not in template._bin_cache or id(self) not in psd._chisq_cached_key:
-            psd._chisq_cached_key[id(self)] = True
+        if key not in template._bin_cache or id(template.params) not in psd._chisq_cached_key:
+            psd._chisq_cached_key[id(template.params)] = True
             num_bins = int(self.parse_option(template, self.num_bins))
 
             if hasattr(psd, 'sigmasq_vec') and template.approximant in psd.sigmasq_vec:
