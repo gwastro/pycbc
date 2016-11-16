@@ -121,7 +121,13 @@ class LiveEventManager(object):
                     s = numpy.array(results[ifo]['snr'], ndmin=1)
                     c = numpy.array(results[ifo]['chisq'], ndmin=1)
                     nsnr = numpy.array(newsnr(s, c), ndmin=1) if len(s) > 0 else []
-                    f[ifo]['loudest'] = numpy.argsort(nsnr)[::-1][0:store_loudest_index]
+                    
+                    # loudest by newsnr
+                    nloudest = nsnr.argsort()[::-1][0:store_loudest_index]
+
+                    # loudest by snr
+                    sloudest = s.argsort()[::-1][0:store_loudest_index]
+                    f[ifo]['loudest'] = numpy.union1d(nloudest, sloudest)
 
         f.close()
         if store_psd:
