@@ -193,7 +193,6 @@ opts = parser.parse_args()
 
 # verify options are sane
 _strain.verify_strain_options_multi_ifo(opts, parser, opts.instruments)
-#_psd.verify_psd_options(opts, parser)
 
 # setup log
 logging_level = logging.DEBUG
