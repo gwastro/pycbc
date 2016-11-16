@@ -72,7 +72,9 @@ def sigma_cached(self, psd):
             if not hasattr(self, 'sigma_view'):
                 from pycbc.filter.matchedfilter import get_cutoff_indices
                 N = (len(self) -1) * 2
-                kmin, kmax = get_cutoff_indices(self.f_lower, self.end_frequency, self.delta_f, N)
+                kmin, kmax = get_cutoff_indices(
+                        self.min_f_lower or self.f_lower, self.end_frequency,
+                        self.delta_f, N)
                 self.sslice = slice(kmin, kmax)
                 self.sigma_view = self[self.sslice].squared_norm() * 4.0 * self.delta_f
 
@@ -255,8 +257,10 @@ class TemplateBank(object):
 
             # inclination stored in xml alpha3 column
             names = list(self.table.dtype.names)
-            names = tuple([n if n != 'alpha3'
-                          else 'inclination' for n in names])
+            names = tuple([n if n != 'alpha3' else 'inclination' for n in names]) 
+
+            # low frequency cutoff in xml alpha6 column
+            names = tuple([n if n!= 'alpha6' else 'f_lower' for n in names])
             self.table.dtype.names = names
 
         elif ext.endswith('hdf'):
@@ -456,16 +460,39 @@ class TemplateBank(object):
             indices_combined = np.concatenate(indices)
 
         indices_unique= np.unique(indices_combined)
-        self.table = self.table[indices_unique]
+        self.table = self.table[indices_unique]   
+
+
+    def ensure_standard_filter_columns(self, low_frequency_cutoff=None):
+        """ Initialize FilterBank common fields
+        
+        Parameters
+        ---------
+        low_frequency_cutoff: {float, None}, Optional
+            A low frequency cutoff which overrides any given within the
+            template bank file.
+        """
+        
+        # Make sure we have a template duration field
+        if not hasattr(self.table, 'template_duration'):
+            self.table = self.table.add_fields(numpy.zeros(len(self.table),
+                                     dtype=numpy.float32), 'template_duration') 
+
+        # Make sure we have a f_lower field
+        if low_frequency_cutoff is not None:
+            if not hasattr(self.table, 'f_lower'):
+                vec = numpy.zeros(len(self.table), dtype=numpy.float32)
+                self.table = self.table.add_fields(vec, 'f_lower')
+            self.table['f_lower'][:] = low_frequency_cutoff        
 
 class LiveFilterBank(TemplateBank):
-    def __init__(self, filename, f_lower, sample_rate, minimum_buffer,
-                 approximant=None, increment=8, parameters=None,
-                 load_compressed=True, load_compressed_now=False,
-                 **kwds):
+    def __init__(self, filename, sample_rate, minimum_buffer,
+                       approximant=None, increment=8, parameters=None,
+                       load_compressed=True, load_compressed_now=False, 
+                       low_frequency_cutoff=None,
+                       **kwds):
 
         self.increment = increment
-        self.f_lower = f_lower
         self.filename = filename
         self.sample_rate = sample_rate
         self.minimum_buffer = minimum_buffer
@@ -473,15 +500,8 @@ class LiveFilterBank(TemplateBank):
         super(LiveFilterBank, self).__init__(filename, approximant=approximant,
                 parameters=parameters, load_compressed=load_compressed,
                 load_compressed_now=load_compressed_now, **kwds)
-
-        if not hasattr(self.table, 'template_duration'):
-            self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                               dtype=numpy.float32),
-                                               'template_duration')
-
-        from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+        self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
         self.table.sort(order='mchirp')
-
         self.hash_lookup = {}
         for i, p in enumerate(self.table):
             hash_value =  hash((p.mass1, p.mass2, p.spin1z, p.spin2z))
@@ -532,6 +552,7 @@ class LiveFilterBank(TemplateBank):
 
         approximant = self.approximant(index)
         f_end = self.end_frequency(index)
+        flow = self.table[index].f_lower        
 
         # Determine the length of time of the filter, rounded up to
         # nearest power of two
@@ -540,9 +561,8 @@ class LiveFilterBank(TemplateBank):
         from pycbc.waveform.waveform import props
         p = props(self.table[index])
         p.pop('approximant')
-        buff_size = pycbc.waveform.get_waveform_filter_length_in_time(
-                                    approximant, f_lower=self.f_lower,
-                                    **p)
+        buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, **p)
+        
         tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
         flen = tlen / 2 + 1
 
@@ -557,7 +577,7 @@ class LiveFilterBank(TemplateBank):
         distance = 1.0 / DYN_RANGE_FAC
         htilde = pycbc.waveform.get_waveform_filter(
             zeros(flen, dtype=numpy.complex64), self.table[index],
-            approximant=approximant, f_lower=self.f_lower, f_final=f_end,
+            approximant=approximant, f_lower=flow, f_final=f_end,
             delta_f=delta_f, delta_t=1.0/self.sample_rate, distance=distance,
             **self.extra_args)
 
@@ -573,13 +593,13 @@ class LiveFilterBank(TemplateBank):
         self.table[index].template_duration = template_duration
 
         htilde = htilde.astype(numpy.complex64)
-        htilde.f_lower = self.f_lower
-        htilde.end_frequency = f_end
-        htilde.end_idx = int(htilde.end_frequency / htilde.delta_f)
+        htilde.f_lower = flow
+        htilde.end_idx = int(htilde.f_end / htilde.delta_f)
         htilde.params = self.table[index]
-        htilde.approximant = approximant
         htilde.chirp_length = template_duration
         htilde.length_in_time = ttotal
+        htilde.approximant = approximant
+        htilde.end_frequency = f_end
 
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
@@ -592,35 +612,32 @@ class LiveFilterBank(TemplateBank):
         return htilde
 
 class FilterBank(TemplateBank):
-    def __init__(self, filename, filter_length, delta_f, f_lower, dtype,
+    def __init__(self, filename, filter_length, delta_f, dtype,
                  out=None, max_template_length=None,
                  approximant=None, parameters=None,
-                 load_compressed=True, load_compressed_now=False,
+                 load_compressed=True,
+                 load_compressed_now=False,
+                 low_frequency_cutoff=None,
                  **kwds):
         self.out = out
         self.dtype = dtype
-        self.f_lower = f_lower
+        self.f_lower = low_frequency_cutoff
         self.filename = filename
         self.delta_f = delta_f
         self.N = (filter_length - 1 ) * 2
         self.delta_t = 1.0 / (self.N * self.delta_f)
         self.filter_length = filter_length
-        self.kmin = int(f_lower / delta_f)
         self.max_template_length = max_template_length
 
         super(FilterBank, self).__init__(filename, approximant=approximant,
             parameters=parameters, load_compressed=load_compressed,
             load_compressed_now=load_compressed_now,
             **kwds)
-        # add a template duration field if it already doesn't exist
-        if not hasattr(self.table, 'template_duration'):
-            if dtype == numpy.complex64 or dtype == numpy.float32:
-                rdtype = numpy.float32
-            else:
-                rdtype = numpy.float64
-            self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                     dtype=rdtype),
-                                     'template_duration')
+        self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
+
+        self.min_f_lower = min(self.table['f_lower'])
+        if self.f_lower is None and self.min_f_lower == 0.:
+            raise ValueError('Invalid low-frequency cutoff settings')
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
@@ -635,7 +652,9 @@ class FilterBank(TemplateBank):
             f_end = (self.filter_length-1) * self.delta_f
 
         # Find the start frequency, if variable
-        if self.max_template_length is not None:
+        if self.f_lower is None:
+            f_low = self.table[index].f_lower
+        elif self.max_template_length is not None:
             f_low = find_variable_start_frequency(approximant,
                                                   self.table[index],
                                                   self.f_lower,
@@ -669,19 +688,19 @@ class FilterBank(TemplateBank):
         self.table[index].template_duration = template_duration
 
         htilde = htilde.astype(self.dtype)
-        htilde.f_lower = self.f_lower
-        htilde.end_frequency = f_end
-        htilde.end_idx = int(htilde.end_frequency / htilde.delta_f)
+        htilde.f_lower = f_low
+        htilde.min_f_lower = self.min_f_lower
+        htilde.end_idx = int(f_end / htilde.delta_f)
         htilde.params = self.table[index]
-        htilde.approximant = approximant
         htilde.chirp_length = template_duration
         htilde.length_in_time = ttotal
+        htilde.approximant = approximant
+        htilde.end_frequency = f_end
 
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
         htilde._sigmasq = {}
         return htilde
-
 
 def find_variable_start_frequency(approximant, parameters, f_start, max_length,
                                   delta_f = 1):
@@ -712,7 +731,6 @@ class FilterBankSkyMax(TemplateBank):
         self.N = (filter_length - 1 ) * 2
         self.delta_t = 1.0 / (self.N * self.delta_f)
         self.filter_length = filter_length
-        self.kmin = int(f_lower / delta_f)
         self.max_template_length = max_template_length
 
         super(FilterBankSkyMax, self).__init__(filename, parameters=parameters,
