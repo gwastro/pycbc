@@ -200,7 +200,8 @@ _psd.insert_psd_option_group_multi_ifo(parser)
 opts = parser.parse_args()
 
 # verify options are sane
-_strain.verify_strain_options_multi_ifo(opts, parser, opts.instruments)
+if not opts.psd_file and not opts.asd_file:
+    _strain.verify_strain_options_multi_ifo(opts, parser, opts.instruments)
 
 # setup log
 logging_level = logging.DEBUG
@@ -356,7 +357,8 @@ for ifo in opts.instruments:
 
     # get antenna pattern
     f_plus, f_cross = det.antenna_pattern(sim.longitude, sim.latitude,
-                        sim.polarization, sim.geocent_end_time)
+                                          sim.polarization,
+                                          sim.geocent_end_time)
 
     # calculate strain
     logging.info('Calculating strain for %s', ifo)
@@ -366,13 +368,15 @@ for ifo in opts.instruments:
     logging.info('Tapering strain for %s', ifo)
     strain = taper_timeseries(strain, tapermethod=sim.taper)
 
+    logging.info('strain.delta_t %f', strain.delta_t)
+
     # FFT strain
     logging.info('FFT strain for %s', ifo)
     strain_tilde = make_frequency_series(strain)
 
     # interpolate PSD to waveform delta_f
     if psd_dict[ifo].delta_f != strain_tilde.delta_f:
-        logging.info('Interpolating PSD for %s from %.2fHz to %.2fHz',
+        logging.info('Interpolating PSD for %s from %fHz to %fHz',
                      ifo, psd_dict[ifo].delta_f, strain_tilde.delta_f)
         psd_interpolated = _psd.interpolate(
                                     psd_dict[ifo], strain_tilde.delta_f)
@@ -421,12 +425,13 @@ for ifo in opts.instruments:
 
     # get time delay to detector from center of the Earth
     time_delay = det.time_delay_from_earth_center(sim.longitude, sim.latitude,
-                        sim.geocent_end_time)
+                                                  sim.geocent_end_time)
     end_time = sim.geocent_end_time + time_delay
 
     # get antenna pattern
     f_plus, f_cross = det.antenna_pattern(sim.longitude, sim.latitude,
-                        sim.polarization, sim.geocent_end_time)
+                                          sim.polarization,
+                                          sim.geocent_end_time)
 
     # calculate strain
     logging.info('Calculating strain for %s', ifo)
@@ -442,7 +447,7 @@ for ifo in opts.instruments:
 
     # interpolate PSD to waveform delta_f
     if psd_dict[ifo].delta_f != strain_tilde.delta_f:
-        logging.info('Interpolating PSD for %s from %.2fHz to %.2fHz',
+        logging.info('Interpolating PSD for %s from %fHz to %fHz',
                      ifo, psd_dict[ifo].delta_f, strain_tilde.delta_f)
         psd_interpolated = _psd.interpolate(
                                     psd_dict[ifo], strain_tilde.delta_f)
