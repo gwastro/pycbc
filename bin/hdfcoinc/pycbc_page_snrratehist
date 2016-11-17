@@ -77,12 +77,7 @@ else:
     minimum = bstat.min()
     maximum = bstat.max()
 
-# Set the number of bins and make sure we always have at least 2 bins.
-range_of_bins = maximum - minimum + args.bin_size
-
-num_bins = int(math.ceil((range_of_bins)/args.bin_size)) + 1
-
-bins = numpy.linspace(minimum, maximum + args.bin_size, num = num_bins)
+bins = numpy.arange(minimum, maximum + args.bin_size, args.bin_size)
 
 # Plot the exclusive background
 pylab.hist(bstat_exc, bins=bins, histtype='step', 
