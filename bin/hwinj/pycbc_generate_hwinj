@@ -81,7 +81,8 @@ def pad_timeseries_to_integer_length(timeseries, sample_rate):
     one more sample than the start zero padding.
     '''
 
-    # calculate how many sample points needed to pad to get integer second time series
+    # calculate how many sample points needed to pad to get
+    # integer second time series
     remainder = sample_rate - len(timeseries) % sample_rate
     start_pad = int(remainder / 2)
     end_pad = int(remainder - start_pad)
@@ -92,7 +93,8 @@ def pad_timeseries_to_integer_length(timeseries, sample_rate):
 
     # pad waveform with arrays of zeroes
     initial_array = numpy.concatenate([start_array,timeseries,end_array])
-    return TimeSeries(initial_array, delta_t=timeseries.delta_t, epoch=timeseries.start_time, dtype=timeseries.dtype)
+    return TimeSeries(initial_array, delta_t=timeseries.delta_t,
+                      epoch=timeseries.start_time, dtype=timeseries.dtype)
 
 # map order integer to a string that can be parsed by lalsimulation
 pn_orders = {
