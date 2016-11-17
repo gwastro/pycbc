@@ -246,7 +246,7 @@ if args.prune_param:
         ltime = timepruneall[loudest]
         m1, m2, s1z, s2z = get_masses(args, ltid)
         lbin = which_bin(get_param(args, m1, m2, s1z, s2z), minpar, maxpar,
-                         args.prune_bins, log=args.log_param)
+                         args.prune_bins, log=args.log_prune_param)
         # is the bin where the loudest trigger lives full already?
         if len(prunedtimes[lbin]) == args.prune_number:
             logging.info('%i - Bin %i full, not pruning event with stat %f at time '

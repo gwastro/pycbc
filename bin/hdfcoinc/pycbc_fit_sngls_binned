@@ -148,7 +148,8 @@ else:
     log_level = logging.WARN
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
-statname = args.sngl_stat.replace("_", " ")
+statname = "reweighted SNR" if args.sngl_stat == "new_snr" else \
+           args.sngl_stat.replace("_", " ").replace("snr", "SNR")
 paramname = args.bin_param.replace("_", " ")
 paramtag = args.bin_param.replace("_", "")
 if args.plot_dir:
@@ -408,11 +409,11 @@ for th in args.stat_threshold:
     plt.ylim(0.7, 2*maxcount)
     plt.xlim(0.9*minth, 1.1*max(plotrange))
     plt.grid()
-    plt.title(args.ifo + " " + statname + " distribution split by " + \
-              paramname)
     plt.xlabel(statname, size="large")
     plt.ylabel("Cumulative number", size="large")
     if args.plot_dir:
+        plt.title(args.ifo + " " + statname + " distribution split by " + \
+              paramname)
         dest = plotbase + "_" + args.sngl_stat + "_cdf_by_" + paramtag[0:3] + \
                                             " _fit_thresh_" + str(th) + ".png"
         logging.info("Saving cumhist to %s" % dest)
@@ -421,10 +422,11 @@ for th in args.stat_threshold:
         logging.info("Saving cumhist to %s" % args.output_file)
         results.save_fig_with_metadata(
             fig, args.output_file,
-            title = "%s: histogram of single detector %s values split over %s"
-                    % (args.ifo, statname, paramname),
-            caption = "Histograms of single detector triggers",
-            cmd = " ".join(sys.argv)
+            title="%s: %s histogram of single detector triggers" % (args.ifo,
+                  statname),
+            caption=("Histogram of single detector trigger %s values binned by"
+                     " %s" % (statname, paramname)),
+            cmd=" ".join(sys.argv)
         )
     plt.close()
 
@@ -464,8 +466,10 @@ plt.close()
 for th in args.stat_threshold:
     plt.plot(pbins.centres(), [ks_prob[th][i] for i in binind],
           '+--', label=args.ifo+' KS prob, thresh %.2f' % th)
-if args.bin_spacing == 'log': plt.loglog()
-else : plt.semilogy()
+if args.bin_spacing == 'log':
+    plt.loglog()
+else:
+    plt.semilogy()
 plt.xlim(0.03, 150)
 plt.grid()
 leg = plt.legend(loc='best', labelspacing=0.2)
