@@ -2,6 +2,7 @@
 """ Make table of the foreground coincident events
 """
 import argparse, h5py, numpy, logging, sys, lal
+import math
 import matplotlib
 matplotlib.use('Agg')
 import pylab, pycbc.results, pycbc.version
@@ -49,7 +50,6 @@ else:
     if len(fstat) == 0:
         fstat = None
 
-
 dec = f['background/decimation_factor'][:]
 bstat = f['background/stat'][:]
 fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
@@ -63,24 +63,22 @@ bstat_exc = f['background_exc/stat'][:]
 s = bstat_exc.argsort()
 dec_exc, bstat_exc = dec_exc[s], bstat_exc[s]
 
-
 logging.info('Found %s background (exclusive zerolag) triggers' % len(bstat_exc))
 
 fig = pylab.figure()
 
-if fstat is not None:
-    minimum = fstat.min()
-    maximum = max(fstat.max(), bstat.max())
-elif args.closed_box:
-    minimum = bstat_exc.min()
-    maximum = bstat_exc.max()
-else:
-    minimum = bstat.min()
-    maximum = bstat.max()
+# Set the range for the bins we want to make, make sure we always have
+# at least 2 bins (of size args.bin_size
+range_of_bins = bstat_exc.max() - bstat_exc.min() + 2 * args.bin_size
 
-bins = numpy.arange(minimum, maximum + args.bin_size, args.bin_size)   
+# We want an integer number of bins
+num_bins = int(math.ceil((range_of_bins)/args.bin_size)) + 1
 
-# plot background minus foreground
+bins = numpy.linspace(bstat_exc.min() - args.bin_size, \
+                      bstat_exc.max() + args.bin_size, \
+                      num = num_bins)
+
+# Plot the exclusive background
 pylab.hist(bstat_exc, bins=bins, histtype='step', 
                       linewidth=2,
                       color='grey', log=True,
@@ -89,6 +87,14 @@ pylab.hist(bstat_exc, bins=bins, histtype='step',
 
 # plot full background
 if not args.closed_box:
+    range_of_bins = bstat.max() - bstat.min() + 2 * args.bin_size
+
+    num_bins = int(math.ceil((range_of_bins)/args.bin_size)) + 1
+
+    bins = numpy.linspace(bstat.min() - args.bin_size, \
+                          bstat.max() + args.bin_size, \
+                          num = num_bins)
+
     pylab.hist(bstat, bins=bins, histtype='step',
                   linewidth=2,
                   color='black', log=True, 
@@ -96,6 +102,14 @@ if not args.closed_box:
                   weights=dec / f.attrs['background_time'] * lal.YRJUL_SI)
 
 if fstat is not None and not args.closed_box:
+    range_of_bins = fstat.max() - fstat.min() + 2 * args.bin_size
+
+    num_bins = int(math.ceil((range_of_bins)/args.bin_size)) + 1
+
+    bins = numpy.linspace(fstat.min() - args.bin_size, \
+                          fstat.max() + args.bin_size, \
+                          num = num_bins)
+
     le, re = bins[:-1], bins[1:]
     left = numpy.searchsorted(fstat, le)
     right = numpy.searchsorted(fstat, re)
@@ -152,5 +166,4 @@ ax2.set_ylabel('Number per Experiment')
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="%s bin, Count vs Rank" % f.attrs['name'] if 'name' in f.attrs else "Count vs Rank", 
      caption="Histogram of the FAR vs the ranking statistic in the search.",
-     cmd=' '.join(sys.argv))
-             
+     cmd=' '.join(sys.argv)) 
