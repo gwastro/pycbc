@@ -303,18 +303,28 @@ h_plus = pad_timeseries_to_integer_length(h_plus, sample_rate)
 h_cross = pad_timeseries_to_integer_length(h_cross, sample_rate)
 
 # get strain time series
-strain_dict = _strain.from_cli_multi_ifos(opts, opts.instruments,
-                                         dyn_range_fac=DYN_RANGE_FAC)
+# strain is used to estimate a PSD so if user supplies PSD then set to None
+if not opts.asd_file or not opts.psd_file:
+    strain_dict = _strain.from_cli_multi_ifos(opts, opts.instruments,
+                                              dyn_range_fac=DYN_RANGE_FAC)
+else:
+    strain_dict = dict([(ifo, None) for ifo in opts.instruments])
 
-# organize options from multi-IFO PSD
+# organize options for multi-IFO PSD
+# if not generating strain then set those related options to None
 stilde_dict = {}
 length_dict = {}
 delta_f_dict = {}
 low_frequency_cutoff_dict = {}
 for ifo in opts.instruments:
-    stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
-    length_dict[ifo] = len(stilde_dict[ifo])
-    delta_f_dict[ifo] = h_plus.delta_f
+    if strain_dict[ifo] != None:
+        stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
+        length_dict[ifo] = len(stilde_dict[ifo])
+        delta_f_dict[ifo] = stilde_dict[ifo].delta_f
+    else:
+        stilde_dict[ifo] = None
+        length_dict[ifo] = None
+        delta_f_dict[ifo] = None
     low_frequency_cutoff_dict[ifo] = opts.psd_low_frequency_cutoff
 
 # get PSD
