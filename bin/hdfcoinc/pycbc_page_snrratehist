@@ -79,7 +79,7 @@ else:
 
 bins = numpy.arange(minimum, maximum + args.bin_size, args.bin_size)
 
-# Plot the exclusive background
+# plot background minus foreground
 pylab.hist(bstat_exc, bins=bins, histtype='step', 
                       linewidth=2,
                       color='grey', log=True,
