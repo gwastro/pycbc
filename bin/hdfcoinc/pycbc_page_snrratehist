@@ -87,7 +87,6 @@ pylab.hist(bstat_exc, bins=bins, histtype='step',
 
 # plot full background
 if not args.closed_box:
-
     pylab.hist(bstat, bins=bins, histtype='step',
                   linewidth=2,
                   color='black', log=True, 
@@ -95,7 +94,6 @@ if not args.closed_box:
                   weights=dec / f.attrs['background_time'] * lal.YRJUL_SI)
 
 if fstat is not None and not args.closed_box:
-
     le, re = bins[:-1], bins[1:]
     left = numpy.searchsorted(fstat, le)
     right = numpy.searchsorted(fstat, re)
