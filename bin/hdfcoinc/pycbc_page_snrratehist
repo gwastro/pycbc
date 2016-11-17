@@ -2,7 +2,6 @@
 """ Make table of the foreground coincident events
 """
 import argparse, h5py, numpy, logging, sys, lal
-import math
 import matplotlib
 matplotlib.use('Agg')
 import pylab, pycbc.results, pycbc.version
