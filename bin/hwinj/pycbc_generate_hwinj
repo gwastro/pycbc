@@ -108,74 +108,80 @@ pn_orders = {
 }
 
 # command line usage
-parser = argparse.ArgumentParser(usage='pycbc_generate_hwinj [--options]',
-                  description="Generates a hardware injection waveform using \
-                  a time-domain waveform.")
+parser = argparse.ArgumentParser(
+                  usage=__name__ + ' [--options]',
+                  description="Generates a hardware injection waveform using "
+                              "a time-domain waveform.")
 
 # IFO network options
 parser.add_argument('--network-snr', type=float, required=True,
-                  help='The network SNR of the injection.')
+                    help='The network SNR of the injection.')
 
 # sky location options
 parser.add_argument('--ra', type=float, required=True,
-                  help='The right ascension of the injection in radians.')
+                    help='The right ascension of the injection in radians.')
 parser.add_argument('--dec', type=float, required=True,
-                  help='The declination of the injection in radians.')
+                    help='The declination of the injection in radians.')
 parser.add_argument('--polarization', type=float, required=True,
-                  help='The polarization of the injection in radians.')
+                    help='The polarization of the injection in radians.')
 
 # waveform parameter options
 parser.add_argument('--approximant', type=str, required=True,
-                  choices=td_approximants(),
-                  help='Approximant to use for generating waveform.')
+                    choices=td_approximants(),
+                    help='Approximant to use for generating waveform.')
 parser.add_argument("--order", type=str, default='default',
-                  choices = pn_orders.keys(),
-                  help='The integer half-PN order at which to generate \
-                  the approximant.')
+                    choices = pn_orders.keys(),
+                    help='The integer half-PN order at which to generate '
+                         'the approximant.')
 parser.add_argument('--mass1', type=float, required=True,
-                  help='First mass of the binary in solar masses.')
+                    help='First mass of the binary in solar masses.')
 parser.add_argument('--mass2', type=float, required=True,
-                  help='Second mass of the binary in solar masses.')
+                    help='Second mass of the binary in solar masses.')
 parser.add_argument('--inclination', type=float, required=True,
-                  help='Inclination of the binary in radians.')
+                    help='Inclination of the binary in radians.')
 parser.add_argument('--taper',  required=True,
-                    choices=['TAPER_NONE', 'TAPER_START', 'TAPER_END', 'TAPER_STARTEND'],
+                    choices=['TAPER_NONE', 'TAPER_START',
+                             'TAPER_END', 'TAPER_STARTEND'],
                     help='Taper the wavform before FFT.')
-parser.add_argument('--waveform-low-frequency-cutoff', type=float, required=True,
-                  help='Frequency to begin generating the waveform in Hz.')
+parser.add_argument('--waveform-low-frequency-cutoff', type=float,
+                    required=True,
+                    help='Frequency to begin generating the waveform in Hz.')
 
 # waveform spin parameter options
 parser.add_argument('--spin1z', type=float, default=0.0,
-                  help='(optional) Spin in z direction for mass1.')
+                    help='(optional) Spin in z direction for mass1.')
 parser.add_argument('--spin1y', type=float, default=0.0,
-                  help='(optional) Spin in y direction for mass1.')
+                    help='(optional) Spin in y direction for mass1.')
 parser.add_argument('--spin1x', type=float, default=0.0,
-                  help='(optional) Spin in x direction for mass1.')
+                    help='(optional) Spin in x direction for mass1.')
 parser.add_argument('--spin2z', type=float, default=0.0,
-                  help='(optional) Spin in z direction for mass2.')
+                    help='(optional) Spin in z direction for mass2.')
 parser.add_argument('--spin2y', type=float, default=0.0,
-                  help='(optional) Spin in y direction for mass2.')
+                    help='(optional) Spin in y direction for mass2.')
 parser.add_argument('--spin2x', type=float, default=0.0,
-                  help='(optional) Spin in x direction for mass2.')
+                    help='(optional) Spin in x direction for mass2.')
 
 # Use this for NR injections
 parser.add_argument('--numrel-data', type=str, default='',
-                  help="Location of NR data file if using NR injections.")
+                    help="Location of NR data file if using NR injections.")
 
 # end time options
 parser.add_argument('--geocentric-end-time', type=float, required=True,
-                  help='The geocentric GPS end time of the injection.')
+                    help='The geocentric GPS end time of the injection.')
 
 # data conditioning options
 parser.add_argument('--psd-low-frequency-cutoff', type=float, required=True,
-                  help='Frequency to begin generating the PSD in Hz. This is the start frequency of the SNR calculation.')
+                    help='Frequency to begin generating the PSD in Hz. This '
+                         'is the start frequency of the SNR calculation.')
 parser.add_argument('--psd-high-frequency-cutoff', type=float,
-                  help='(optional) Upper frequency to terminate the SNR calculation. Default will be Nyquist frequency, ie. int(sample_rate/2).')
+                    help='(optional) Upper frequency to terminate the SNR '
+                         'calculation. Default will be Nyquist frequency, '
+                         'ie. int(sample_rate/2).')
 parser.add_argument("--frame-type", type=str, nargs="+",
-                  action=MultiDetOptionAppendAction,
-                  metavar='IFO:FRAME_TYPE',
-                  help='(optional) Replaces frame-files. Use datafind '
-                       'to get the needed frame file(s) of this type.')
+                    action=MultiDetOptionAppendAction,
+                    metavar='IFO:FRAME_TYPE',
+                    help='(optional) Replaces frame-files. Use datafind '
+                         'to get the needed frame file(s) of this type.')
 
 # output options
 parser.add_argument("--tag", type=str, default='hwinjcbc',
@@ -284,7 +290,8 @@ outdoc.childNodes[0].appendChild(sngl_table)
 sngl = _empty_row(lsctables.SnglInspiral)
 sngl.mass1 = opts.mass1
 sngl.mass2 = opts.mass2
-sngl.mchirp, sngl.eta = pnutils.mass1_mass2_to_mchirp_eta(sngl.mass1, sngl.mass2)
+sngl.mchirp, sngl.eta = pnutils.mass1_mass2_to_mchirp_eta(sngl.mass1,
+                                                          sngl.mass2)
 sngl.mtotal = sngl.mass1 + sngl.mass2
 sngl.spin1z = opts.spin1z
 sngl.spin1y = opts.spin1y
@@ -294,9 +301,12 @@ sngl.spin2y = opts.spin2y
 sngl.spin2x = opts.spin2x
 
 # generate waveform
-logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
-h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order, f_lower=opts.psd_low_frequency_cutoff,
-                      delta_t=1.0/sample_rate)
+logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for '
+             'SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+h_plus, h_cross = get_td_waveform(sim, approximant=name,
+                                  phase_order=phase_order,
+                                  f_lower=opts.psd_low_frequency_cutoff,
+                                  delta_t=1.0 / sample_rate)
 
 # zero pad polarizations to get integer second time series
 h_plus = pad_timeseries_to_integer_length(h_plus, sample_rate)
@@ -375,7 +385,8 @@ for ifo in opts.instruments:
                         low_frequency_cutoff=opts.psd_low_frequency_cutoff,
                         high_frequency_cutoff=f_high)
     logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f',
-                        opts.psd_low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
+                 opts.psd_low_frequency_cutoff, f_high, ifo,
+                 numpy.sqrt(sigma_squared))
 
     # include sigma in network SNR calculation
     network_snr += sigma_squared
@@ -389,9 +400,12 @@ sim.distance = scale*sim.distance
 network_snr = 0.0
 
 # generate waveform
-logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
-h_plus, h_cross = get_td_waveform(sim, approximant=name, phase_order=phase_order, f_lower=opts.psd_low_frequency_cutoff,
-                      delta_t=1.0/sample_rate)
+logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for '
+             'SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+h_plus, h_cross = get_td_waveform(sim, approximant=name,
+                                  phase_order=phase_order,
+                                  f_lower=opts.psd_low_frequency_cutoff,
+                                  delta_t=1.0 / sample_rate)
 
 # zero pad polarizations to get integer second time series
 h_plus = pad_timeseries_to_integer_length(h_plus, sample_rate)
@@ -440,7 +454,8 @@ for ifo in opts.instruments:
                             low_frequency_cutoff=opts.psd_low_frequency_cutoff,
                             high_frequency_cutoff=f_high)
     logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f',
-                        opts.psd_low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
+                 opts.psd_low_frequency_cutoff, f_high, ifo,
+                 numpy.sqrt(sigma_squared))
 
     # populate IFO end time columns
     setattr(sim, ifo[0].lower()+'_end_time', int(end_time))
@@ -461,7 +476,8 @@ for ifo in opts.instruments:
 # sanity check network SNR
 network_snr = numpy.sqrt(network_snr)
 if not abs(opts.network_snr / network_snr) - 1 < 0.1:
-    logging.warn('Exiting because network SNR is %f but requested %s', network_snr, opts.network_snr)
+    logging.warn('Exiting because network SNR is %f but requested %s',
+                 network_snr, opts.network_snr)
     sys.exit()
 else:
     logging.info('Network SNR of injection is %.3f', network_snr)
@@ -487,7 +503,8 @@ prefix = opts.tag + '_' + str(start_time)
 logging.info('Writing XML file')
 xml_filename = prefix + '.xml.gz'
 if os.path.exists(xml_filename):
-    logging.warn('Filename %s already exists and will not be overwritten', xml_filename)
+    logging.warn('Filename %s already exists and will not be overwritten',
+                 xml_filename)
     sys.exit()
 else:
     utils.write_filename(outdoc, xml_filename, gz=xml_filename.endswith('gz'))
@@ -497,7 +514,8 @@ for ifo in opts.instruments:
 
     # create a time series of zeroes to inject waveform into
     initial_array = numpy.zeros(num_samples, dtype=strain.dtype)
-    output = TimeSeries(initial_array, delta_t=1.0/sample_rate, epoch=start_time, dtype=strain.dtype)
+    output = TimeSeries(initial_array, delta_t=1.0 / sample_rate,
+                        epoch=start_time, dtype=strain.dtype)
 
     # inject waveform
     logging.info('Injecting %s waveform into timeseries of zeroes', ifo)
@@ -509,7 +527,8 @@ for ifo in opts.instruments:
 
     # check if filename exists
     if os.path.exists(txt_filename):
-        logging.warn('Filename %s already exists and will not be overwritten', txt_filename)
+        logging.warn('Filename %s already exists and will not be overwritten',
+                     txt_filename)
         sys.exit()
 
     # save waveform as single-column ASCII for awgstream to use
