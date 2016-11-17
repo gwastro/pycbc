@@ -368,8 +368,6 @@ for ifo in opts.instruments:
     logging.info('Tapering strain for %s', ifo)
     strain = taper_timeseries(strain, tapermethod=sim.taper)
 
-    logging.info('strain.delta_t %f', strain.delta_t)
-
     # FFT strain
     logging.info('FFT strain for %s', ifo)
     strain_tilde = make_frequency_series(strain)
