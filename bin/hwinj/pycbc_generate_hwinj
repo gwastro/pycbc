@@ -314,7 +314,7 @@ low_frequency_cutoff_dict = {}
 for ifo in opts.instruments:
     stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
     length_dict[ifo] = len(stilde_dict[ifo])
-    delta_f_dict[ifo] = stilde_dict[ifo].delta_f
+    delta_f_dict[ifo] = h_plus.delta_f
     low_frequency_cutoff_dict[ifo] = opts.psd_low_frequency_cutoff
 
 # get PSD
@@ -348,10 +348,21 @@ for ifo in opts.instruments:
     logging.info('FFT strain for %s', ifo)
     strain_tilde = make_frequency_series(strain)
 
+    # interpolate PSD to waveform delta_f
+    if psd_dict[ifo].delta_f != strain_tilde.delta_f:
+        logging.info('Interpolating PSD for %s', ifo)
+        psd_interpolated = _psd.interpolate(
+                                    psd_dict[ifo], strain_tilde.delta_f)
+    else:
+        psd_interpolated = psd_dict[ifo]
+
     # calculate sigma-squared SNR
     logging.info('Calculating sigma for %s', ifo)
-    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde, psd=psd_dict[ifo],
-                        low_frequency_cutoff=opts.psd_low_frequency_cutoff, high_frequency_cutoff=f_high)
+    sigma_squared = sigmasq(
+                        DYN_RANGE_FAC * strain_tilde,
+                        psd=psd_interpolated,
+                        low_frequency_cutoff=opts.psd_low_frequency_cutoff,
+                        high_frequency_cutoff=f_high)
     logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f',
                         opts.psd_low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
 
@@ -402,10 +413,20 @@ for ifo in opts.instruments:
     logging.info('FFT strain for '+ifo+'...')
     strain_tilde = make_frequency_series(strain)
 
+    # interpolate PSD to waveform delta_f
+    if psd_dict[ifo].delta_f != strain_tilde.delta_f:
+        logging.info('Interpolating PSD for %s', ifo)
+        psd_interpolated = _psd.interpolate(
+                                    psd_dict[ifo], strain_tilde.delta_f)
+    else:
+        psd_interpolated = psd_dict[ifo]
+
     # calculate sigma-squared SNR
     logging.info('Calculating sigma for %s', ifo)
-    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde, psd=psd_dict[ifo],
-                        low_frequency_cutoff=opts.psd_low_frequency_cutoff, high_frequency_cutoff=f_high)
+    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde,
+                            psd=psd_interpolated,
+                            low_frequency_cutoff=opts.psd_low_frequency_cutoff,
+                            high_frequency_cutoff=f_high)
     logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f',
                         opts.psd_low_frequency_cutoff, f_high, ifo, numpy.sqrt(sigma_squared))
 
