@@ -360,7 +360,8 @@ for ifo in opts.instruments:
 
     # interpolate PSD to waveform delta_f
     if psd_dict[ifo].delta_f != strain_tilde.delta_f:
-        logging.info('Interpolating PSD for %s', ifo)
+        logging.info('Interpolating PSD for %s to %.2fHz',
+                     ifo, strain_tilde.delta_f)
         psd_interpolated = _psd.interpolate(
                                     psd_dict[ifo], strain_tilde.delta_f)
     else:
@@ -425,7 +426,8 @@ for ifo in opts.instruments:
 
     # interpolate PSD to waveform delta_f
     if psd_dict[ifo].delta_f != strain_tilde.delta_f:
-        logging.info('Interpolating PSD for %s', ifo)
+        logging.info('Interpolating PSD for %s to %.2fHz',
+                     ifo, strain_tilde.delta_f)
         psd_interpolated = _psd.interpolate(
                                     psd_dict[ifo], strain_tilde.delta_f)
     else:
