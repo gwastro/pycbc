@@ -240,8 +240,8 @@ outdoc.appendChild(ligolw.LIGO_LW())
 opts_dict = convert_to_process_params_dict(opts)
 
 # create process table
-proc_id = utils.process.register_to_xmldoc(outdoc,
-                    sys.argv[0], opts_dict,
+proc_id = utils.process.register_to_xmldoc(
+                    outdoc, sys.argv[0], opts_dict,
                     comment="", ifos=[''.join(opts.instruments)],
                     version=glue.git_version.id,
                     cvs_repository=glue.git_version.branch,
@@ -249,7 +249,7 @@ proc_id = utils.process.register_to_xmldoc(outdoc,
 
 # create sim_inspiral table
 sim_table = lsctables.New(lsctables.SimInspiralTable,
-                            columns=lsctables.SimInspiralTable.validcolumns)
+                          columns=lsctables.SimInspiralTable.validcolumns)
 outdoc.childNodes[0].appendChild(sim_table)
 
 # create sim_inspiral row for injection
@@ -284,7 +284,7 @@ name, phase_order = legacy_approximant_name(sim.waveform)
 
 # create sngl_inspiral table
 sngl_table = lsctables.New(lsctables.SnglInspiralTable,
-                            columns=lsctables.SnglInspiralTable.validcolumns)
+                           columns=lsctables.SnglInspiralTable.validcolumns)
 outdoc.childNodes[0].appendChild(sngl_table)
 
 # create sngl_inspiral row for injection
@@ -372,8 +372,8 @@ for ifo in opts.instruments:
 
     # interpolate PSD to waveform delta_f
     if psd_dict[ifo].delta_f != strain_tilde.delta_f:
-        logging.info('Interpolating PSD for %s to %.2fHz',
-                     ifo, strain_tilde.delta_f)
+        logging.info('Interpolating PSD for %s from %.2fHz to %.2fHz',
+                     ifo, psd_dict[ifo].delta_f, strain_tilde.delta_f)
         psd_interpolated = _psd.interpolate(
                                     psd_dict[ifo], strain_tilde.delta_f)
     else:
@@ -442,8 +442,8 @@ for ifo in opts.instruments:
 
     # interpolate PSD to waveform delta_f
     if psd_dict[ifo].delta_f != strain_tilde.delta_f:
-        logging.info('Interpolating PSD for %s to %.2fHz',
-                     ifo, strain_tilde.delta_f)
+        logging.info('Interpolating PSD for %s from %.2fHz to %.2fHz',
+                     ifo, psd_dict[ifo].delta_f, strain_tilde.delta_f)
         psd_interpolated = _psd.interpolate(
                                     psd_dict[ifo], strain_tilde.delta_f)
     else:
