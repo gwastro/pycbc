@@ -247,8 +247,8 @@ with ctx:
             s1s.append(s1)
             s2s.append(s2)
         except Exception as e:
-            logging.info("Unable to generate waveforms")
-            logging.info("Error: %s, %s", str(type(e)), str(e))
+            logging.warning("Unable to generate waveforms")
+            logging.warning("Error: %s, %s", str(type(e)), str(e))
             matches.append(-1)
             overlaps.append(-1)
             time_offsets.append(-1)
