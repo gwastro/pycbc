@@ -317,7 +317,7 @@ h_cross = pad_timeseries_to_integer_length(h_cross, sample_rate)
 
 # get strain time series
 # strain is used to estimate a PSD so if user supplies PSD then set to None
-if not opts.asd_file or not opts.psd_file:
+if not opts.psd_file and not opts.asd_file:
     strain_dict = _strain.from_cli_multi_ifos(opts, opts.instruments,
                                               dyn_range_fac=DYN_RANGE_FAC)
 else:
