@@ -154,7 +154,7 @@ On MacOS using homebrew to install openssl you may need to set the following ext
 
 .. code-block:: bash
 
-   CFLAGS="-I/usr/local/opt/openssl/include -L /usr/local/opt/openssl/lib" SWIG_FEATURES="-cpperraswarn -includeall -I/usr/local/opt/openssl/include/" pip install M2Crypto
+   CFLAGS="-I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib" SWIG_FEATURES="-cpperraswarn -includeall -I/usr/local/opt/openssl/include/" pip install M2Crypto
 
 Once you have these packages installed, you can now install lalsuite following the instructions at:
 
