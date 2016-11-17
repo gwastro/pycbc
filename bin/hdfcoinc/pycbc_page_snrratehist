@@ -67,15 +67,21 @@ logging.info('Found %s background (exclusive zerolag) triggers' % len(bstat_exc)
 
 fig = pylab.figure()
 
-# Set the range for the bins we want to make, make sure we always have
-# at least 2 bins (of size args.bin_size
-range_of_bins = bstat_exc.max() - bstat_exc.min() + 2 * args.bin_size
+if fstat is not None:
+    minimum = min(fstat.min(), bstat.min())
+    maximum = max(fstat.max(), bstat.max())
+elif args.closed_box:
+    minimum = bstat_exc.min()
+    maximum = bstat_exc.max()
+else:
+    minimum = bstat.min()
+    maximum = bstat.max()
 
-# We want an integer number of bins
+# Set the number of bins and make sure we always have at least 2 bins.
+range_of_bins = maximum - minimum + 2 * args.bin_size
 num_bins = int(math.ceil((range_of_bins)/args.bin_size)) + 1
-
-bins = numpy.linspace(bstat_exc.min() - args.bin_size, \
-                      bstat_exc.max() + args.bin_size, \
+bins = numpy.linspace(minimum - args.bin_size, \
+                      maximum + args.bin_size, \
                       num = num_bins)
 
 # Plot the exclusive background
@@ -87,13 +93,6 @@ pylab.hist(bstat_exc, bins=bins, histtype='step',
 
 # plot full background
 if not args.closed_box:
-    range_of_bins = bstat.max() - bstat.min() + 2 * args.bin_size
-
-    num_bins = int(math.ceil((range_of_bins)/args.bin_size)) + 1
-
-    bins = numpy.linspace(bstat.min() - args.bin_size, \
-                          bstat.max() + args.bin_size, \
-                          num = num_bins)
 
     pylab.hist(bstat, bins=bins, histtype='step',
                   linewidth=2,
@@ -102,13 +101,6 @@ if not args.closed_box:
                   weights=dec / f.attrs['background_time'] * lal.YRJUL_SI)
 
 if fstat is not None and not args.closed_box:
-    range_of_bins = fstat.max() - fstat.min() + 2 * args.bin_size
-
-    num_bins = int(math.ceil((range_of_bins)/args.bin_size)) + 1
-
-    bins = numpy.linspace(fstat.min() - args.bin_size, \
-                          fstat.max() + args.bin_size, \
-                          num = num_bins)
 
     le, re = bins[:-1], bins[1:]
     left = numpy.searchsorted(fstat, le)
