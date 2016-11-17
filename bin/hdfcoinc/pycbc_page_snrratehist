@@ -49,7 +49,6 @@ else:
     if len(fstat) == 0:
         fstat = None
 
-
 dec = f['background/decimation_factor'][:]
 bstat = f['background/stat'][:]
 fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
@@ -63,13 +62,12 @@ bstat_exc = f['background_exc/stat'][:]
 s = bstat_exc.argsort()
 dec_exc, bstat_exc = dec_exc[s], bstat_exc[s]
 
-
 logging.info('Found %s background (exclusive zerolag) triggers' % len(bstat_exc))
 
 fig = pylab.figure()
 
 if fstat is not None:
-    minimum = fstat.min()
+    minimum = min(fstat.min(), bstat.min())
     maximum = max(fstat.max(), bstat.max())
 elif args.closed_box:
     minimum = bstat_exc.min()
@@ -78,7 +76,7 @@ else:
     minimum = bstat.min()
     maximum = bstat.max()
 
-bins = numpy.arange(minimum, maximum + args.bin_size, args.bin_size)   
+bins = numpy.arange(minimum, maximum + args.bin_size, args.bin_size)
 
 # plot background minus foreground
 pylab.hist(bstat_exc, bins=bins, histtype='step', 
@@ -152,5 +150,4 @@ ax2.set_ylabel('Number per Experiment')
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="%s bin, Count vs Rank" % f.attrs['name'] if 'name' in f.attrs else "Count vs Rank", 
      caption="Histogram of the FAR vs the ranking statistic in the search.",
-     cmd=' '.join(sys.argv))
-             
+     cmd=' '.join(sys.argv)) 
