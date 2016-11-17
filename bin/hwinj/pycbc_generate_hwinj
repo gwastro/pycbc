@@ -141,7 +141,7 @@ parser.add_argument('--inclination', type=float, required=True,
 parser.add_argument('--taper',  required=True,
                     choices=['TAPER_NONE', 'TAPER_START', 'TAPER_END', 'TAPER_STARTEND'],
                     help='Taper the wavform before FFT.')
-parser.add_argument('--waveform-low-frequency-cutoff', type=float, required=True,
+parser.add_argument('--low-frequency-cutoff', type=float, required=True,
                   help='Frequency to begin generating the waveform in Hz.')
 
 # waveform spin parameter options
@@ -247,7 +247,7 @@ outdoc.childNodes[0].appendChild(sim_table)
 # create sim_inspiral row for injection
 # and populate non-IFO-specific columns in XML output file
 sim = _empty_row(lsctables.SimInspiral)
-sim.f_lower = opts.waveform_low_frequency_cutoff
+sim.f_lower = opts.low_frequency_cutoff
 sim.geocent_end_time = int(opts.geocentric_end_time)
 sim.geocent_end_time_ns = int(opts.geocentric_end_time % 1 * 1e9)
 sim.inclination = opts.inclination
