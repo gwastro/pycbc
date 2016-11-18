@@ -26,8 +26,9 @@ parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
                     help="The ranking statistic to use", default='newsnr')
 parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
-parser.add_argument("--timeslide-interval", type=float, default=None,
-                    help="Interval between timeslides in seconds.")
+parser.add_argument("--timeslide-interval", type=float,
+                    help="Interval between timeslides in seconds. Timeslides are "
+                         "disabled if the option is omitted.")
 parser.add_argument("--decimation-factor", type=int,
                     help="The factor to reduce the background trigger rate.")
 loudest = parser.add_mutually_exclusive_group()
