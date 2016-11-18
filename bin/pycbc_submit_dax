@@ -266,10 +266,15 @@ fi
 grid-proxy-info -exists
 RESULT=$?
 if [ ${RESULT} -eq 0 ] ; then
-  cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
-  grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
-  rm -f /tmp/x509up_u`id -u`.orig
-  grid-proxy-info
+  PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
+  if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
+    grid-proxy-info
+  else
+    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
+    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+    rm -f /tmp/x509up_u`id -u`.orig
+    grid-proxy-info
+  fi
 else
   echo "Error: Could not find a valid grid proxy to submit workflow."
   exit 1
@@ -439,10 +444,15 @@ fi
 grid-proxy-info -exists
 RESULT=$?
 if [ ${RESULT} -eq 0 ] ; then
-  cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
-  grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
-  rm -f /tmp/x509up_u`id -u`.orig
-  grid-proxy-info
+  PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
+  if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
+    grid-proxy-info
+  else
+    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
+    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+    rm -f /tmp/x509up_u`id -u`.orig
+    grid-proxy-info
+  fi
 else
   echo "Error: Could not find a valid grid proxy to submit workflow."
   exit 1
