@@ -271,14 +271,25 @@ layout.group_layout(rdir['single_triggers'], snrchi)
 hist_summ = []
 for insp in full_insps:
     wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto,
-           'closed_box', rdir['single_triggers/%s_binned_triggers' % insp.ifo], tags=[tag])
+           'closed_box', rdir['single_triggers/%s_binned_triggers' % insp.ifo],
+           tags=[tag])
+    # make non-summary hists using the bank file
+    # currently, none of these are made
     wf.make_single_hist(workflow, insp, censored_veto, 'closed_box',
            rdir['single_triggers/%s_trigger_histograms' % insp.ifo],
            bank_file=hdfbank[0], exclude='summ', tags=[tag])
-    hists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box',
+    # make summary hists for all templates together
+    # currently, 2 per ifo: snr and newsnr
+    allhists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box',
            rdir['single_triggers/%s_trigger_histograms' % insp.ifo],
            require='summ', tags=[tag])
-    hist_summ += list(layout.grouper(hists, 2))
+    # make hists of newsnr split up by parameter
+    # currently, 1 per ifo split by template duration
+    binhists = wf.make_binned_hist(workflow, insp, final_veto_file[0],
+           final_veto_name[0], rdir['single_triggers/%s_binned_histograms' %
+           insp.ifo], hdfbank[0], tags=[tag])
+    # put raw SNR and binned newsnr hist in summary
+    hist_summ += list(layout.grouper([allhists[0], binhists[0]], 2))
 
 # Calculate the inspiral psds and make plots
 psd_files = []
