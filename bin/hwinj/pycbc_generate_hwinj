@@ -389,68 +389,7 @@ for ifo in opts.instruments:
     logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f',
                  opts.psd_low_frequency_cutoff, f_high, ifo,
                  numpy.sqrt(sigma_squared))
-
-    # include sigma in network SNR calculation
-    network_snr += sigma_squared
-
-# distance scaling factor to get target snr
-network_snr = numpy.sqrt(network_snr)
-scale = network_snr / opts.network_snr
-sim.distance = scale*sim.distance
-
-# reset network SNR
-network_snr = 0.0
-
-# generate waveform
-logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for '
-             'SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
-h_plus, h_cross = get_td_waveform(sim, approximant=name,
-                                  phase_order=phase_order,
-                                  f_lower=opts.psd_low_frequency_cutoff,
-                                  delta_t=1.0 / sample_rate)
-
-# zero pad polarizations to get integer second time series
-h_plus = pad_timeseries_to_integer_length(h_plus, sample_rate)
-h_cross = pad_timeseries_to_integer_length(h_cross, sample_rate)
-
-# loop over IFOs to calculate sigma
-for ifo in opts.instruments:
-
-    # get Detector instance for IFO
-    det = Detector(ifo)
-
-    # get time delay to detector from center of the Earth
-    time_delay = det.time_delay_from_earth_center(sim.longitude, sim.latitude,
-                                                  sim.geocent_end_time)
-    end_time = sim.geocent_end_time + time_delay
-
-    # get antenna pattern
-    f_plus, f_cross = det.antenna_pattern(sim.longitude, sim.latitude,
-                                          sim.polarization,
-                                          sim.geocent_end_time)
-
-    # calculate strain
-    logging.info('Calculating strain for %s', ifo)
-    strain = f_plus * h_plus + f_cross * h_cross
-
-    # taper waveform
-    logging.info('Tapering strain for %s', ifo)
-    strain = taper_timeseries(strain, tapermethod=sim.taper)
-
-    # FFT strain
-    logging.info('FFT strain for '+ifo+'...')
-    strain_tilde = make_frequency_series(strain)
-
-    # calculate sigma-squared SNR
-    logging.info('Calculating sigma for %s', ifo)
-    sigma_squared = sigmasq(DYN_RANGE_FAC * strain_tilde,
-                            psd=psd_dict[ifo],
-                            low_frequency_cutoff=opts.psd_low_frequency_cutoff,
-                            high_frequency_cutoff=f_high)
-    logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f',
-                 opts.psd_low_frequency_cutoff, f_high, ifo,
-                 numpy.sqrt(sigma_squared))
-
+ 
     # populate IFO end time columns
     setattr(sim, ifo[0].lower()+'_end_time', int(end_time))
     setattr(sim, ifo[0].lower()+'_end_time_ns', int(end_time % 1 * 1e9))
@@ -467,14 +406,30 @@ for ifo in opts.instruments:
     # include sigma in network SNR calculation
     network_snr += sigma_squared
 
-# sanity check network SNR
+# distance scaling factor to get target snr
 network_snr = numpy.sqrt(network_snr)
-if not abs(opts.network_snr / network_snr) - 1 < 0.1:
-    logging.warn('Exiting because network SNR is %f but requested %s',
-                 network_snr, opts.network_snr)
-    sys.exit()
-else:
-    logging.info('Network SNR of injection is %.3f', network_snr)
+scale = network_snr / opts.network_snr
+sim.distance = scale*sim.distance
+for ifo in opt.instruments:
+    attrname='eff_dist_'+ifo[0].lower()
+    effdist=getattr(sim,attrname)
+    setattr(sim,attrname,effdist*scale)
+
+# reset network SNR
+network_snr = 0.0
+
+# generate waveform
+logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for '
+             'SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+h_plus, h_cross = get_td_waveform(sim, approximant=name,
+                                  phase_order=phase_order,
+                                  f_lower=opts.psd_low_frequency_cutoff,
+                                  delta_t=1.0 / sample_rate)
+
+# zero pad polarizations to get integer second time series
+h_plus = pad_timeseries_to_integer_length(h_plus, sample_rate)
+h_cross = pad_timeseries_to_integer_length(h_cross, sample_rate)
+
 
 # figure out length of time series to inject waveform into
 logging.info('Calculating number of sample points in output file')
