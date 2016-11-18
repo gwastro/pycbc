@@ -97,7 +97,7 @@ parser.add_argument("--prune-bins", type=int,
                     help="Number of bins to divide bank into when pruning")
 parser.add_argument("--prune-number", type=int,
                     help="Number of loudest events to prune in each bin")
-parser.add_argument("--log-param", action='store_true',
+parser.add_argument("--log-prune-param", action='store_true',
                     help="Bin in the log of prune-param")
 parser.add_argument("--f-lower", default=-1.,
                     help="Starting frequency for calculating template "
@@ -246,7 +246,7 @@ if args.prune_param:
         ltime = timepruneall[loudest]
         m1, m2, s1z, s2z = get_masses(args, ltid)
         lbin = which_bin(get_param(args, m1, m2, s1z, s2z), minpar, maxpar,
-                         args.prune_bins, log=args.log_param)
+                         args.prune_bins, log=args.log_prune_param)
         # is the bin where the loudest trigger lives full already?
         if len(prunedtimes[lbin]) == args.prune_number:
             logging.info('%i - Bin %i full, not pruning event with stat %f at time '
