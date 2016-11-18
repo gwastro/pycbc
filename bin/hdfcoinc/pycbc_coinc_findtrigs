@@ -26,8 +26,9 @@ parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
                     help="The ranking statistic to use", default='newsnr')
 parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
-parser.add_argument("--timeslide-interval", type=float, default=0,
-                    help="Interval between timeslides in seconds.")
+parser.add_argument("--timeslide-interval", type=float,
+                    help="Interval between timeslides in seconds. Timeslides are "
+                         "disabled if the option is omitted.")
 parser.add_argument("--decimation-factor", type=int,
                     help="The factor to reduce the background trigger rate.")
 loudest = parser.add_mutually_exclusive_group()
@@ -177,6 +178,15 @@ if args.strict_coinc_time:
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
 time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
+
+if time_window >= args.timeslide_interval and args.timeslide_interval is not None:
+    raise parser.error("The maximum time delay between detectors should be smaller "
+                       "than the timeslide interval.")
+                       
+# slide = 0 significes don't do timeslides
+if args.timeslide_interval is None:
+    args.timeslide_interval = 0
+
 logging.info('The coincidence window is %3.1f ms' % (time_window * 1000))
 
 data = {'stat':[], 'decimation_factor':[], 'time1':[], 'time2':[],
