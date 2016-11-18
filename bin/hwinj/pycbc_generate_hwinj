@@ -415,9 +415,6 @@ for ifo in opt.instruments:
     effdist=getattr(sim,attrname)
     setattr(sim,attrname,effdist*scale)
 
-# reset network SNR
-network_snr = 0.0
-
 # generate waveform
 logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for '
              'SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
