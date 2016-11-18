@@ -75,7 +75,8 @@ You first set up a new virtual environment. A virtual environment is defined by 
     
     virtualenv ~/src/pycbc
 
-You can create as many different virtual environments as you like, as long as they all have different paths.
+You can create as many different virtual environments as you like, as long as
+they all have different paths. 
 
 .. note::
 
@@ -86,8 +87,12 @@ To enter your virtual environment run the command (replacing the string ``~/src/
 .. code-block:: bash
     
     source ~/src/pycbc/bin/activate
-    
-You will now be in your virtual environment, and so you can install packages, etc, without conflicting with either the system build, or other builds that you may have sitting around. You may install other programs and libraries, such as lalsuite (:ref:`lalsuite_install`), into this virtual environment. The ``activate`` script also sets the environment variable ``${VIRTUAL_ENV}`` to the full path to your virtual environment.
+
+After running the ``activate`` script, you will now be in your virtual environment, and so you can install packages without conflicting with either the system build, or other builds that you may have sitting around. You may install other programs and libraries, such as lalsuite (:ref:`lalsuite_install`), into this virtual environment. The ``activate`` script also sets the environment variable ``${VIRTUAL_ENV}`` to the full path to your virtual environment.
+
+.. note::
+
+    Python implements a `per user site packages directory <https://www.python.org/dev/peps/pep-0370/>`_ to install packages in the user's home directory. By default this is ``~/.local`` but the location is controlled by the ``PYTHONUSERBASE`` environment variable. If you make use of the ``~/.local`` directory, you should add the line ``export PYTHONUSERBASE=${VIRTUAL_ENV}/.local`` to the end of your virtual environment's ``activate`` script to prevent conflicts. Similarly, pip caches data in the directory ``~/.caches/pip``. To prevent conflicts with this directory, you can add the line ``export XDG_CACHE_HOME=${VIRTUAL_ENV}/.cache`` to the virtual environment ``activate`` script so that pip uses a cache that is specific to the virtual environment.
 
 To leave this virtual environment type
 
