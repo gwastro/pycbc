@@ -737,10 +737,6 @@ Add the following arguments to ``pycbc_submit_dax``::
     --execution-sites osg \
     --append-pegasus-property 'pegasus.transfer.bypass.input.staging=true' \
     --remote-staging-server `hostname -f` \
-    --cache [URL/location of osg cache file] \
-
-.. note::
-   Cache files for the C02 frames can be obtained from https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/tree/master/O1/osg-cache-frame-files. The cache file contains the location of the frame files on Sugar, XSede, and xroot.
 
 ``hostname -f`` will give the correct value if there is a gsiftp server running on the submit machine.  If not, change this as needed. The remote-staging-site is the intermediary computer than can pass files between the submitting computer and the computers doing the work.  ``hostname -f`` returns the full name of the computer. The full name of the computer that ``hostname -f`` has to be one that is accessible to both the submit machine and the workers. 
 
