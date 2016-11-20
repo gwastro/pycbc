@@ -687,7 +687,6 @@ class Node(pegasus_workflow.Node):
         
         if hasattr(executable, 'execution_site'):
             self.add_profile('hints', 'execution.site', executable.execution_site)
-            self.add_profile('hints', 'executionPool', executable.execution_site)
             
         self._options += self.executable.common_options
         for inp in self.executable.common_input_files:
