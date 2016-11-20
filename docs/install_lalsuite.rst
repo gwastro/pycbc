@@ -133,6 +133,10 @@ If you are running a pipeline that uses the old LALApps programs ``lalapps_inspi
 
 .. note::
 
+    On the AEI atlas cluster, the HDF5 libraries are installed in a non-stardard location so you will need to add ``-L/usr/lib/x86_64-linux-gnu/hdf5/serial`` to the ``LIBS`` variable before configuring lalapps.
+
+.. note::
+
     The LALApps build above builds static binaries, so you will need static libraries for fftw, glibc, etc. installed on your system to do this. These libraries are present by default in a LIGO Data Grid environment. If you do not wish to build static LALApps programs, the omit the ``--enable-static-binaries`` option to the configure script.
 
 
