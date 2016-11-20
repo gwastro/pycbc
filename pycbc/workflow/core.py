@@ -195,28 +195,28 @@ class Executable(pegasus_workflow.Executable):
 
         exe_url = urlparse.urlparse(exe_path)
 
-        if exe_url.scheme in ['', 'file']:
-            if os.path.isfile(exe_url.path):
-                self.add_pfn(exe_path, site='local')
+        # See if the user specified a list of sites for the executable
+        try:
+            exe_site_list = cp.get('pegasus_profile-%s' % name, 'pycbc|site')
+        except:
+            exe_site_list = 'local'
 
-                logging.debug("Using %s executable "
-                              "at %s" % (name, exe_url.path))
+        for s in exe_site_list.split(','):
+            exe_site = s.strip()
+
+            if exe_url.scheme in ['', 'file']:
+                if exe_site is 'local':
+                # Check that executables at file urls on the local site exist
+                   if os.path.isfile(exe_url.path) is False:
+                       raise TypeError("Failed to find %s executable " 
+                                       "at %s" % (name, exe_path))
             else:
-                raise TypeError("Failed to find %s executable " 
-                            "at %s" % (name, exe_path))
-        else:
-            # Could be http, gsiftp, etc.
-            logging.debug("Using %s executable "
-                          "at %s" % (name, exe_path))
-            try:
-                value = cp.get('pegasus_profile-%s' % name, 'pycbc|site')
-                for s in value.split(','):
-                    self.add_pfn(exe_path, site=s.strip())
-            except:
-               # take a guess on the site and see if pegasus can figure it out
-               self.add_pfn(exe_path, site='nonlocal')
+                # Could be http, gsiftp, etc. so it needs fetching if run now
+                self.needs_fetching = True
 
-            self.needs_fetching = True
+            self.add_pfn(exe_path, site=exe_site)
+            logging.debug("Using %s executable "
+                          "at %s on site %s" % (name, exe_url.path, exe_site))
 
         # Determine the condor universe if we aren't given one 
         if self.universe is None:
