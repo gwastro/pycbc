@@ -209,7 +209,8 @@ class Executable(pegasus_workflow.Executable):
                 # Check that executables at file urls on the local site exist
                    if os.path.isfile(exe_url.path) is False:
                        raise TypeError("Failed to find %s executable " 
-                                       "at %s" % (name, exe_path))
+                                       "at %s on site %s" % (name, exe_path,
+                                       exe_site))
             else:
                 # Could be http, gsiftp, etc. so it needs fetching if run now
                 self.needs_fetching = True
