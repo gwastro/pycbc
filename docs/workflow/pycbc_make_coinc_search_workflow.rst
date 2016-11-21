@@ -698,12 +698,12 @@ a path to a gsiftp URL and tell Pegasus that the executable is not installed
 on the OSG with the two ``--config-overrides`` options::
 
     'executables:inspiral:gsiftp://server.hostname/path/to/pycbc_inspiral' \
-    'pegasus_profile-inspiral:pycbc|installed:False'
 
 Add the following to the list of ``--config-overrides`` when running ``pycbc_make_coinc_search_workflow`` to tell Pegasus to run the inspiral code on the OSG::
      
-    'pegasus_profile-inspiral:pycbc|site:osg' \
+    'pegasus_profile-inspiral:pycbc|site:osg'
     'pegasus_profile-inspiral:hints|execution.site:osg'
+    'pegasus_profile-inspiral:pycbc|installed:False'
 
 You also need a ``--config-overrides`` to ``pycbc_make_coinc_search_workflow`` that sets the staging site for the main workflow to the local site. To do this, add the following argument, replacing ``${WORKFLOW_NAME}`` with the string that is given as the argument to the option ``--workflow-name ``::
 
