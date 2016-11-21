@@ -510,6 +510,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             values = value.split(',')
             common_options = self.items('sharedoptions-%s' %(key))
             for section in values:
+                if not self.has_section(section):
+                    self.add_section(section)
                 for arg, val in common_options:
                     if arg in self.options(section):
                         raise ValueError('Option exists in both original ' + \
@@ -517,6 +519,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                                'sharedoptions section: %s %s' \
                                %(arg,'sharedoptions-%s' %(key)))
                     self.set(section, arg, val)
+            self.remove_section('sharedoptions-%s' %(key))
 
     def add_options_to_section(self ,section, items, overwrite_options=False):
         """
