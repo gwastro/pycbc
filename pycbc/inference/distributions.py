@@ -714,7 +714,7 @@ class CosAngle(SinAngle):
 
     Class Attributes
     ----------------
-    name : 'sin_angle'
+    name : 'cos_angle'
         The name of this distribution.
 
     Attributes
