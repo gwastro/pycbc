@@ -520,19 +520,28 @@ def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
     params = {"m1":m1, "m2":m2, "s1z":s1z, "s2z":s2z}
     return named_frequency_cutoffs[name](params)
 
-def _get_seobnrrom_duration(m1, m2, s1z, s2z, f_low):
+def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
     """Wrapper of lalsimulation template duration approximate formula"""
     m1, m2, s1z, s2z, f_low = float(m1), float(m2), float(s1z), float(s2z),\
                               float(f_low)
-    chi = lalsimulation.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
-    time_length = lalsimulation.SimIMRSEOBNRv2ChirpTimeSingleSpin(
+    if approximant == "SEOBNRv2":
+        chi = lalsimulation.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
+        time_length = lalsimulation.SimIMRSEOBNRv2ChirpTimeSingleSpin(
                                 m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, f_low)
-    # FIXME The function seobnrv2_length_in_time() in waveform.py adds an
-    # extra factor of 1.1 for 'safety'.  For consistency with that code we do
-    # that here.  THIS IS FRAGILE AND HACKY
+    elif approximant == "IMRPhenomD":
+        time_length = lalsimulation.SimIMRPhenomDChirpTime(
+                           m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z, f_low)
+    elif approximant == "SEOBNRv4":
+        # NB for no clear reason this function has f_low as first argument
+        time_length = lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency(
+                           f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
+    else:
+        raise RuntimeError("I can't calculate a duration for %s" % approximant)
+    # FIXME Add an extra factor of 1.1 for 'safety' since the duration
+    # functions are approximate
     return time_length * 1.1
 
-get_seobnrrom_duration = numpy.vectorize(_get_seobnrrom_duration)
+get_imr_duration = numpy.vectorize(_get_imr_duration)
 
 def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
         pn_2order=7, approximant='TaylorF2'):
