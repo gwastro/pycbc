@@ -31,6 +31,7 @@ pycbc_branch=master
 pycbc_remote=ligo-cbc
 scratch_pycbc=false
 libgfortran=libgfortran.so
+extra_libs=""
 
 if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
@@ -245,6 +246,7 @@ usage="
     --no-pycbc-update : don't update local pycbc repo
     --bema-testing    : use einsteinathome_testing branch of bema-ligo/pycbc repo
     --no-cleanup      : keep build directories after successful build for later inspection
+    --with-extra-libs=<url> : add extra files from a tar file at <url> to the bundles
     --verbose-python  : run PyInstalled Python in verbose mode, showing imports
 "
 
@@ -278,6 +280,7 @@ for i in $*; do
                     echo $now > "$SOURCE/last_sunday_build"
                 fi
             fi ;;
+        --with-extra-libs=*) extra_libs="`echo $i|sed 's/^--with-extra-libs=//'`";;
         --help) echo -e "Options:\n$usage">&2; exit 0;;
         *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
     esac
@@ -1113,6 +1116,12 @@ python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRA
 echo -e "\\n\\n>> [`date`] zipping weave cache"
 cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
 rm -f "$cache"
+# Fetch any extra libraries specified on the command line
+if [ ! -z ${extra_libs} ] ; then
+  curl --ftp-pasv --insecure -o extra_libs.tar.gz ${extra_libs}
+  echo -e "\\n\\n>> [`date`] adding extra libraries from ${extra_libs}"
+  tar -C pycbc_inspiral/ -zxvf extra_libs.tar.gz
+fi
 # addin all ROM files to the cache would blow it up to >300MB, so for now add only the one
 # that is actually used in the GW150914 analysis. Use '$roms' instead of
 # 'SEOBNRv2ChirpTimeSS.dat' if you want all to be included, currently +280MB
