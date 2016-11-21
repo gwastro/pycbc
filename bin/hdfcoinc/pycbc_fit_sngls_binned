@@ -84,12 +84,7 @@ parser.add_argument("--stat-threshold", nargs="+", type=float,
                     "threshold : can be a space-separated list, then a fit "
                     "will be done for each threshold.  Required.  Typical "
                     "values 6.25 6.5 6.75")
-parser.add_argument("--prune-param", # don't hardcode choices yet?
-                    #choices=[
-                    #    'mchirp',
-                    #    'mtotal',
-                    #    'template_duration'] \
-                    #+ pnutils.named_frequency_cutoffs.keys()
+parser.add_argument("--prune-param",
                     help="Parameter to define bins for 'pruning' loud triggers"
                     " to make the fit insensitive to signals and outliers. "
                     "Choose from mchirp, mtotal, template_duration or a named "
@@ -101,10 +96,11 @@ parser.add_argument("--prune-number", type=int,
                     help="Number of loudest events to prune in each bin")
 parser.add_argument("--log-prune-param", action='store_true',
                     help="Bin in the log of prune-param")
-parser.add_argument("--f-lower", default=-1.,
+parser.add_argument("--f-lower", type=float, default=0.,
                     help="Starting frequency for calculating template "
-                    "duration, required if this is the fit parameter")
-# FIXME : Would like to have choice of SEOBNRv2/v4 or PhenD duration formula
+                    "duration; if not given, duration will be read from "
+                    "single trigger files")
+# FIXME : allow choice of SEOBNRv2/v4 or PhenD duration formula ?
 parser.add_argument("--min-duration", default=0.,
                     help="Fudge factor for templates with tiny or negative "
                     "values of template_duration: add to duration values "
@@ -174,12 +170,21 @@ stat = get_stat(args.sngl_stat, snr, rchisq, args.stat_factor)
 del snr
 del rchisq
 
+# get the duration values if needed
+if args.bin_param == 'template_duration' and not args.f_lower:
+    logging.info('Using template duration from the trigger file')
+    trig_dur = True
+else:
+    trig_dur = False
+
 # do first thresholding operation to reduce trigger numbers
 minth = min(args.stat_threshold)
 abovethresh = stat >= minth
 stat = stat[abovethresh]
 tid = trigf[args.ifo+'/template_id'][:][abovethresh]
 time = trigf[args.ifo+'/end_time'][:][abovethresh]
+if trig_dur:
+    tdur = trigf[args.ifo+'/template_duration'][:][abovethresh]
 logging.info('%i trigs left after thresholding at %f' % (len(stat), minth))
 
 # now do vetoing
@@ -188,6 +193,8 @@ retain, junk = events.veto.indices_outside_segments(time, args.veto_file,
 stat = stat[retain]
 tid = tid[retain]
 time = time[retain]
+if trig_dur:
+    tdur = tdur[retain]
 logging.info('%i trigs left after vetoing with %s' %
                                                    (len(stat), args.veto_file))
 
@@ -208,10 +215,11 @@ def get_param(args, tag, m1, m2, s1z, s2z):
     elif paramarg == 'mtotal':
         parvals = m1 + m2
     elif paramarg == 'template_duration':
-        parvals = pnutils.get_seobnrrom_duration(m1, m2, s1z, s2z, f_low=args.f_lower)
+        # will default to SEOBNRv4 duration function
+        parvals = pnutils.get_imr_duration(m1, m2, s1z, s2z, args.f_lower)
         parvals += args.min_duration
     elif paramarg in pnutils.named_frequency_cutoffs.keys():
-        parvals = pnutils.frequency_cutoff_from_name(args.fit_param, m1, m2, s1z, s2z)
+        parvals = pnutils.frequency_cutoff_from_name(paramarg, m1, m2, s1z, s2z)
     else:
         # try asking for a LALSimulation frequency function
         parvals = pnutils.get_freq(paramarg, m1, m2, s1z, s2z)
@@ -300,6 +308,8 @@ if args.prune_param:
             logging.info('%i trigs remain' % len(stat))
             tid = tid[retain]
             time = time[retain]
+            if trig_dur:
+                tdur = tdur[retain]
             # also for the reference trig arrays
             retain = abs(timepruneall - ltime) > args.prune_window
             statpruneall = statpruneall[retain]
@@ -314,9 +324,12 @@ if args.prune_param:
     logging.info('%i trigs remain after pruning loop' % len(stat))
 
 # get binning params after tuning
-m1, m2, s1z, s2z = get_masses(args, tid)
-binpars = get_param(args, 'bin',
-                    m1, m2, s1z, s2z)
+if trig_dur:
+    binpars = tdur + args.min_duration
+else:
+    m1, m2, s1z, s2z = get_masses(args, tid)
+    binpars = get_param(args, 'bin',
+                        m1, m2, s1z, s2z)
 logging.info("Parameter range of triggers: %f - %f" %
                                                   (min(binpars), max(binpars)))
 # get the bins
