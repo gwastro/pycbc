@@ -705,6 +705,10 @@ Add the following to the list of ``--config-overrides`` when running ``pycbc_mak
     'pegasus_profile-inspiral:pycbc|site:osg' \
     'pegasus_profile-inspiral:hints|execution.site:osg'
 
+To prevent the bundles executable picking up a bad environment on OSG machines, you should also use the ``--config-overrides`` option::
+
+    'pegasus_profile-inspiral:condor|getenv:False'
+
 You also need a ``--config-overrides`` to ``pycbc_make_coinc_search_workflow`` that sets the staging site for the main workflow to the local site. To do this, add the following argument, replacing ``${WORKFLOW_NAME}`` with the string that is given as the argument to the option ``--workflow-name ``::
 
     'workflow-${WORKFLOW_NAME}-main:staging-site:osg=local'
