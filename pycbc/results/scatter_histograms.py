@@ -395,7 +395,7 @@ def create_multidim_plot(parameters, samples, labels=None,
     plot_marginal : {True, bool}
         Plot the marginalized distribution on the diagonals. If False, the
         diagonal axes will be turned off.
-    small_marginals : {False, bool}
+    small_marginal_plots : {False, bool}
         If True, make the marginal plots 1/3 the size of the density/scatter
         plots. In this case, the last marginal plot (the one furthest to the
         right) will be rotated such that distribution runs along the y-axis
@@ -446,7 +446,7 @@ def create_multidim_plot(parameters, samples, labels=None,
 
     # set up the figure with a grid of axes
     fig, axis_dict = create_axes_grid(parameters, labels=labels,
-        small_diagonals=small_marginals)
+        small_diagonals=small_marginal_plots)
 
     # turn labels into a dict for easier access
     labels = dict(zip(parameters, labels))
@@ -462,7 +462,7 @@ def create_multidim_plot(parameters, samples, labels=None,
         ax, _, _ = axis_dict[param, param]
         # plot marginal...
         if plot_marginal:
-            rotated = small_marginals and pi == len(parameters)-1
+            rotated = small_marginal_plots and pi == len(parameters)-1
             create_marginalized_hist(ax, param, samples, label=labels[param],
                     color='navy', filled=False, linecolor='b', title=True,
                     rotated=rotated, plot_min=mins[param], plot_max=maxs[param]

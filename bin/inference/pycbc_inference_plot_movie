@@ -58,16 +58,8 @@ parser.add_argument("--thin-end", type=int,
                     help="Sample number to stop collecting samples to plot. "
                          "If none provided, will stop at the last sample.")
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--plot-marginal', action='store_true', default=False,
-                    help="Plot 1D marginalized distributions on the diagonal "
-                         "axes.")
-parser.add_argument("--plot-scatter", action='store_true', default=False,
-                    help="Plot each sample point as a scatter plot.")
-parser.add_argument("--plot-density", action="store_true", default=False,
-                    help="Plot the posterior density as a color map.")
-parser.add_argument("--plot-contours", action="store_true", default=False,
-                    help="Draw contours showing the 50th and 90th percentile "
-                         "confidence regions.")
+# add options for what plots to create
+option_utils.add_plot_posterior_option_group(parser)
 # add scatter and density configuration options
 option_utils.add_scatter_option_group(parser) 
 option_utils.add_density_option_group(parser)
@@ -109,8 +101,14 @@ fp.close()
 
 logging.info('Choosing common characteristics for all figures')
 # Set common min and max for axis in all plots
-mins = {p:samples[p].min() for p in parameters}
-maxs = {p:samples[p].max() for p in parameters}
+mins, maxs = option_utils.plot_ranges_from_cli(opts)
+# add any missing parameters
+for p in parameters:
+    if p not in mins:
+        mins[p] = samples[p].min()
+for p in parameters:
+    if p not in maxs:
+        maxs[p] = samples[p].max()
 # Set common min and max for colorbar in all plots
 if opts.vmin is None:
     vmin = zvals.min()
@@ -131,6 +129,7 @@ for frame in range(nframes):
     fig, axis_dict = create_multidim_plot(parameters, plotargs, labels=labels,
                         mins=mins, maxs=maxs,
                         plot_marginal=opts.plot_marginal,
+                            small_marginal_plots=opts.small_marginal_plots,
                         plot_scatter=opts.plot_scatter,
                             zvals=z, show_colorbar=not opts.no_colorbar,
                             cbar_label=zlbl, vmin=vmin, vmax=vmax,

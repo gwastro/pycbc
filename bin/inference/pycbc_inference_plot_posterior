@@ -42,25 +42,14 @@ parser.add_argument("--output-file", type=str, required=True,
                     help="Output plot path.")
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Be verbose")
-parser.add_argument('--plot-marginal', action='store_true', default=False,
-                    help="Plot 1D marginalized distributions on the diagonal "
-                         "axes.")
-parser.add_argument("--plot-scatter", action='store_true', default=False,
-                    help="Plot each sample point as a scatter plot.")
-parser.add_argument("--plot-density", action="store_true", default=False,
-                    help="Plot the posterior density as a color map.")
-parser.add_argument("--plot-contours", action="store_true", default=False,
-                    help="Draw contours showing the 50th and 90th percentile "
-                         "confidence regions.")
+# add options for what plots to create
+option_utils.add_plot_posterior_option_group(parser)
 # Scatter configuration
 option_utils.add_scatter_option_group(parser)
 # Density configuration
 option_utils.add_density_option_group(parser)
 # add standard option utils
 option_utils.add_inference_results_option_group(parser)
-# add mins, maxs options
-parser.add_argument('--mins', nargs='+', metavar='PARAM:VAL', default=[])
-parser.add_argument('--maxs', nargs='+', metavar='PARAM:VAL', default=[])
 
 opts = parser.parse_args()
 
@@ -81,17 +70,11 @@ else:
     zlbl = None
 fp.close()
 
-def strfloat(x):
-    return x.split(':')[0], float(x.split(':')[1])
-
-mins = dict(map(strfloat, opts.mins))
+mins, maxs = option_utils.plot_ranges_from_cli(opts)
 # add any missing parameters
 for p in parameters:
     if p not in mins:
         mins[p] = samples[p].min()
-
-maxs = dict(map(strfloat, opts.maxs))
-# add any missing parameters
 for p in parameters:
     if p not in maxs:
         maxs[p] = samples[p].max()
@@ -100,6 +83,7 @@ logging.info("Plotting")
 fig, axis_dict = create_multidim_plot(
                 parameters, samples, labels=labels,
                 plot_marginal=opts.plot_marginal,
+                    small_marginal_plots=opts.small_marginal_plots,
                 plot_scatter=opts.plot_scatter,
                     zvals=zvals, show_colorbar=not opts.no_colorbar,
                     cbar_label=zlbl, vmin=opts.vmin, vmax=opts.vmax,
