@@ -30,7 +30,7 @@ import numpy
 import scipy.stats
 from ConfigParser import Error
 import warnings
-from pycbc.inference import boundary_utils
+from pycbc.inference import boundaries
 
 VARARGS_DELIM = '+'
 
@@ -65,7 +65,7 @@ def get_param_bounds_from_config(cp, section, tag, param):
         cyclic-foo =
 
     For more details on boundary types and their meaning, see
-    `boundary_utils.Bounds`.
+    `boundaries.Bounds`.
 
     If the parameter is not found in the section will just return None (in
     this case, all `btype` and `cyclic` arguments are ignored for that
@@ -87,7 +87,7 @@ def get_param_bounds_from_config(cp, section, tag, param):
     Returns
     -------
     bounds : {Bounds instance | None}
-        If bounds were provided, a `boundary_utils.Bounds` instance
+        If bounds were provided, a `boundaries.Bounds` instance
         representing the bounds. Otherwise, `None`.
     """
     try:
@@ -119,7 +119,7 @@ def get_param_bounds_from_config(cp, section, tag, param):
         bndargs.update({'btype_min': minbtype, 'btype_max': maxbtype})
         cyclic = cp.has_option_tag(section, 'cyclic-{}'.format(param), tag)
         bndargs.update({'cyclic': cyclic})
-        bnds = boundary_utils.Bounds(**bndargs)
+        bnds = boundaries.Bounds(**bndargs)
     return bnds
 
 
@@ -201,7 +201,7 @@ class _BoundedDist(object):
     ----------
     \**params :
         The keyword arguments should provide the names of parameters and their
-        corresponding bounds, as either tuples or a `boundary_utils.Bounds`
+        corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
 
     Attributes
@@ -214,10 +214,10 @@ class _BoundedDist(object):
     def __init__(self, **params):
         # convert input bounds to Bounds class, if necessary
         for param,bnds in params.items():
-            if not isinstance(bnds, boundary_utils.Bounds):
-                params[param] = boundary_utils.Bounds(bnds[0], bnds[1])
+            if not isinstance(bnds, boundaries.Bounds):
+                params[param] = boundaries.Bounds(bnds[0], bnds[1])
             # warn the user about reflected boundaries
-            if isinstance(bnds, boundary_utils.Bounds) and (
+            if isinstance(bnds, boundaries.Bounds) and (
                     bnds.min.name == 'reflected' or
                     bnds.max.name == 'reflected'):
                 warnings.warn("Param {} has one or more ".format(param) +
@@ -246,7 +246,7 @@ class _BoundedDist(object):
         """Applies any boundary conditions to the given values (e.g., applying
         cyclic conditions, and/or reflecting values off of boundaries). This
         is done by running `apply_conditions` of each bounds in self on the
-        corresponding value. See `boundary_utils.Bounds.apply_conditions` for
+        corresponding value. See `boundaries.Bounds.apply_conditions` for
         details.
 
         Parameters
@@ -341,7 +341,7 @@ class Uniform(_BoundedDist):
     ----------
     \**params :
         The keyword arguments should provide the names of parameters and their
-        corresponding bounds, as either tuples or a `boundary_utils.Bounds`
+        corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
 
     Class Attributes
@@ -380,7 +380,7 @@ class Uniform(_BoundedDist):
            (34.49594465315212, 47.531953033719454)], 
           dtype=[('mass1', '<f8'), ('mass2', '<f8')])
     
-    Initialize a uniform distribution using a boundary_utils.Bounds instance,
+    Initialize a uniform distribution using a boundaries.Bounds instance,
     with cyclic bounds:
     >>> dist = distributions.Uniform(phi=Bounds(10, 50, cyclic=True))
     
@@ -504,7 +504,7 @@ class UniformAngle(Uniform):
     \**params :
         The keyword arguments should provide the names of parameters and
         (optionally) their corresponding bounds, as either
-        `boundary_utils.Bounds` instances or tuples. The bounds must be
+        `boundaries.Bounds` instances or tuples. The bounds must be
         in [0,2). These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
 
@@ -525,19 +525,19 @@ class UniformAngle(Uniform):
     name = 'uniform_angle'
     # _domain is a bounds instance used apply the cyclic conditions; this is
     # applied first, before any bounds specified in the initialization are used
-    _domain = boundary_utils.Bounds(0., 2*numpy.pi, cyclic=True)
+    _domain = boundaries.Bounds(0., 2*numpy.pi, cyclic=True)
 
     def __init__(self, **params):
         for p,bnds in params.items():
             if bnds is None:
                 bnds = self._domain
-            elif isinstance(bnds, boundary_utils.Bounds):
+            elif isinstance(bnds, boundaries.Bounds):
                 # convert to radians
                 bnds._min *= numpy.pi
                 bnds._max *= numpy.pi
             else:
                 # create a Bounds instance from the given tuple
-                bnds = boundary_utils.Bounds(
+                bnds = boundaries.Bounds(
                     bnds[0]*numpy.pi, bnds[1]*numpy.pi)
             # check that the bounds are in the domain
             if bnds.min < self._domain.min or bnds.max > self._domain.max:
@@ -618,7 +618,7 @@ class SinAngle(UniformAngle):
     \**params :
         The keyword arguments should provide the names of parameters and
         (optionally) their corresponding bounds, as either
-        `boundary_utils.Bounds` instances or tuples. The bounds must be
+        `boundaries.Bounds` instances or tuples. The bounds must be
         in [0,1]. These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
 
@@ -639,7 +639,7 @@ class SinAngle(UniformAngle):
     _dfunc = numpy.sin
     _arcfunc = numpy.arccos
     # _domain applies the reflection off of 0, pi
-    _domain = boundary_utils.Bounds(0, numpy.pi,
+    _domain = boundaries.Bounds(0, numpy.pi,
         btype_min='closed', btype_max='closed', cyclic=False)
 
 
@@ -708,7 +708,7 @@ class CosAngle(SinAngle):
     \**params :
         The keyword arguments should provide the names of parameters and
         (optionally) their corresponding bounds, as either
-        `boundary_utils.Bounds` instances or tuples. The bounds must be
+        `boundaries.Bounds` instances or tuples. The bounds must be
         in [-0.5, 0.5]. These are converted to radians for storage.
         None may also be passed; in that case, the domain bounds will be used.
 
@@ -728,7 +728,7 @@ class CosAngle(SinAngle):
     _func = numpy.sin
     _dfunc = numpy.cos
     _arcfunc = numpy.arcsin
-    _domain = boundary_utils.Bounds(-numpy.pi/2., numpy.pi/2.,
+    _domain = boundaries.Bounds(-numpy.pi/2., numpy.pi/2.,
         btype_min='closed', btype_max='closed', cyclic=False)
 
 
@@ -1032,7 +1032,7 @@ class Gaussian(_BoundedDist):
     \**params :
         The keyword arguments should provide the names of parameters and
         (optionally) some bounds, as either a tuple or a
-        `boundary_utils.Bounds` instance. The mean and variance of each
+        `boundaries.Bounds` instance. The mean and variance of each
         parameter can be provided by additional keyword arguments that have
         `_mean` and `_var` adding to the parameter name. For example,
         `foo=(-2,10), foo_mean=3, foo_var=2` would create a truncated Gaussian
@@ -1082,7 +1082,7 @@ class Gaussian(_BoundedDist):
         for param in params:
             if params[param] is None:
                 # Bounds defaults to -inf, inf
-                params[param] = boundary_utils.Bounds()
+                params[param] = boundaries.Bounds()
         # initialize the bounds
         super(Gaussian, self).__init__(**params)
 
