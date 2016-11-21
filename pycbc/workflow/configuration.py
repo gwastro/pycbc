@@ -520,6 +520,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                                %(arg,'sharedoptions-%s' %(key)))
                     self.set(section, arg, val)
             self.remove_section('sharedoptions-%s' %(key))
+        self.remove_section('sharedoptions')
 
     def add_options_to_section(self ,section, items, overwrite_options=False):
         """
