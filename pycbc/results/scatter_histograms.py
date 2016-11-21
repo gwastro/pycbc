@@ -36,7 +36,7 @@ import matplotlib.gridspec as gridspec
 from pycbc.results import str_utils
 #pyplot.rcParams.update({'text.usetex': True})
 
-def create_axes_grid(parameters, labels=None):
+def create_axes_grid(parameters, labels=None, small_diagonals=False):
     """Given a list of parameters, creates a figure with an axis for
     every possible combination of the parameters.
 
@@ -46,9 +46,12 @@ def create_axes_grid(parameters, labels=None):
         Names of the variables to be plotted.
     labels : {None, list}, optional
         A list of names for the parameters.
-    fiducial_figsize : {None, tuple}, optional
-        Specify the default figure size to use. If the number of parameters
-        is > 3, this will be scaled up. If None, will use (8,7).
+    small_diagonals : {False, bool}
+        If True, the height of the diagonal axes in all but the last
+        column will be 1/3 the height of off-diagonals. For the last
+        column, the width will be 1/3 the width of the off-diagonals.
+        Otherwise, all of the axes will be the same size.
+
 
     Returns
     -------
@@ -70,11 +73,16 @@ def create_axes_grid(parameters, labels=None):
     else:
         fsize = (ndim*3 - 1, ndim*3 - 2)
     fig = pyplot.figure(figsize=fsize)
-    if ndim == 2:
-        gs = gridspec.GridSpec(ndim, ndim, width_ratios=[3,1], height_ratios=[1,3],
-            wspace=0.05, hspace=0.05)
+    if small_diagonals:
+        width_ratios = [3]*(ndim-1) + [1]
+        height_ratios = [1] + [3]*(ndim-1)
     else:
-        gs = gridspec.GridSpec(ndim, ndim, wspace=0.05, hspace=0.05)
+        width_ratios = height_ratios = None
+    # scale factor for font sizes
+    scale_fac = get_scale_fac(fig)
+    # create the axis grid
+    gs = gridspec.GridSpec(ndim, ndim, width_ratios=width_ratios,
+        height_ratios=height_ratios, wspace=0.05, hspace=0.05)
     # create grid of axis numbers to easily create axes in the right locations
     axes = numpy.arange(ndim**2).reshape((ndim, ndim))
 
@@ -96,18 +104,21 @@ def create_axes_grid(parameters, labels=None):
                 axis_dict[parameters[px], parameters[py]] = (ax, nrow, ncolumn)
                 # x labels only on bottom
                 if nrow + 1 == ndim and ncolumn != ndim-1:
-                    ax.set_xlabel('{}'.format(labels[px]), fontsize=20)
+                    ax.set_xlabel('{}'.format(labels[px]),
+                                              fontsize=20*scale_fac)
                 else:
                     pyplot.setp(ax.get_xticklabels(), visible=False)
                 # y labels only on left and non-diagonal
                 if ncolumn == 0 and nrow != 0:
-                    ax.set_ylabel('{}'.format(labels[py]), fontsize=20)
+                    ax.set_ylabel('{}'.format(labels[py]),
+                                  fontsize=20*scale_fac)
                 else:
                     pyplot.setp(ax.get_yticklabels(), visible=False)
             else:
                 # make non-used axes invisible
                 ax.axis('off')
     return fig, axis_dict
+
 
 def get_scale_fac(fig, fiducial_width=8, fiducial_height=7):
     """Gets a factor to scale fonts by for the given figure. The scale
@@ -247,19 +258,19 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
         # label contours
         lbls = ['{p}%'.format(p=int(p)) for p in (100. - percentiles)]
         fmt = dict(zip(ct.levels, lbls))
-        fs = 8
+        fs = 14
         if fig is not None:
             # scale appropriately
             scale_fac = get_scale_fac(fig)
             fs *= scale_fac
-        ax.clabel(ct, ct.levels, inline=True, fmt=fmt, fontsize=14)#fs)
+        ax.clabel(ct, ct.levels, inline=True, fmt=fmt, fontsize=fs)
 
     return fig, ax
 
 
 def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
         color='navy', filled=False, linecolor='b', title=True, rotated=False,
-        plot_min=None, plot_max=None):
+        plot_min=None, plot_max=None, scale_fac=1.):
     """Plots a 1D marginalized histogram of the given param from the given
     samples.
 
@@ -286,6 +297,16 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
     title : {True, bool}
         Add a title with the median value +/- uncertainty, with the
         max(min) `percentile` used for the +(-) uncertainty.
+    rotated : {False, bool}
+        Plot the histogram on the y-axis instead of the x. Default is False.
+    plot_min : {None, float}
+        The minimum value to plot. If None, will default to whatever `pyplot`
+        creates.
+    plot_max : {None, float}
+        The maximum value to plot. If None, will default to whatever `pyplot`
+        creates.
+    scalefac : {1., float}
+        Factor to scale the default font sizes by. Default is 1 (no scaling).
     """
     if label is None:
         label = param
@@ -318,7 +339,8 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
               plus_error=poserror, ndecs=2) + '$'
         if rotated:
             ax.yaxis.set_label_position("right")
-            ax.set_ylabel('{} = {}'.format(label, fmt), rotation=-90, labelpad=26, fontsize=20)
+            ax.set_ylabel('{} = {}'.format(label, fmt), rotation=-90,
+                labelpad=26, fontsize=20*scale_fac)
             # Remove x-ticks
             ax.set_xticks([])
             # set limits
@@ -329,7 +351,8 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
                 ymax = plot_max
             ax.set_ylim(ymin, ymax)
         else:
-            ax.set_title('{} = {}'.format(label, fmt), fontsize=20, y=1.04)
+            ax.set_title('{} = {}'.format(label, fmt), fontsize=20*scale_fac,
+                         y=1.04)
             # Remove y-ticks
             ax.set_yticks([])
             # set limits
@@ -344,6 +367,7 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
 def create_multidim_plot(parameters, samples, labels=None,
                 mins=None, maxs=None,
                 plot_marginal=True,
+                    small_marginals=False,
                 plot_scatter=True,
                     zvals=None, show_colorbar=True, cbar_label=None,
                     vmin=None, vmax=None, scatter_cmap='plasma_r',
@@ -371,6 +395,13 @@ def create_multidim_plot(parameters, samples, labels=None,
     plot_marginal : {True, bool}
         Plot the marginalized distribution on the diagonals. If False, the
         diagonal axes will be turned off.
+    small_marginals : {False, bool}
+        If True, make the marginal plots 1/3 the size of the density/scatter
+        plots. In this case, the last marginal plot (the one furthest to the
+        right) will be rotated such that distribution runs along the y-axis
+        instead of the x. This is useful if creating plots for publications or
+        slides, where space is a premium. Default is False, in which case the
+        marginal plots are the same size as the density/scatter plots.
     plot_scatter : {True, bool}
         Plot each sample point as a scatter plot.
     zvals : {None, array}
@@ -414,7 +445,8 @@ def create_multidim_plot(parameters, samples, labels=None,
         labels = parameters
 
     # set up the figure with a grid of axes
-    fig, axis_dict = create_axes_grid(parameters, labels=labels)
+    fig, axis_dict = create_axes_grid(parameters, labels=labels,
+        small_diagonals=small_marginals)
 
     # turn labels into a dict for easier access
     labels = dict(zip(parameters, labels))
@@ -430,10 +462,11 @@ def create_multidim_plot(parameters, samples, labels=None,
         ax, _, _ = axis_dict[param, param]
         # plot marginal...
         if plot_marginal:
-            rotated = len(parameters) == 2 and pi == len(parameters)-1
+            rotated = small_marginals and pi == len(parameters)-1
             create_marginalized_hist(ax, param, samples, label=labels[param],
                     color='navy', filled=False, linecolor='b', title=True,
-                    rotated=rotated, plot_min=mins[param], plot_max=maxs[param])
+                    rotated=rotated, plot_min=mins[param], plot_max=maxs[param]
+                    scale_fac=get_scale_fac(fig))
         # ... or turn off
         else:
             ax.axis('off')
