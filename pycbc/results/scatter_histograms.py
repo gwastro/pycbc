@@ -38,7 +38,7 @@ from pycbc.io import FieldArray
 #pyplot.rcParams.update({'text.usetex': True})
 
 def create_axes_grid(parameters, labels=None, height_ratios=None,
-        width_ratios=None):
+        width_ratios=None, no_diagonals=False):
     """Given a list of parameters, creates a figure with an axis for
     every possible combination of the parameters.
 
@@ -46,15 +46,16 @@ def create_axes_grid(parameters, labels=None, height_ratios=None,
     ----------
     parameters : list
         Names of the variables to be plotted.
-    labels : {None, list}, optional
-        A list of names for the parameters.
+    labels : {None, dict}, optional
+        A dictionary of parameters -> parameter labels.
     height_ratios : {None, list}, optional
         Set the height ratios of the axes; see `matplotlib.gridspec.GridSpec`
         for details.
     width_ratios : {None, list}, optional
         Set the width ratios of the axes; see `matplotlib.gridspec.GridSpec`
         for details.
-
+    no_diagonals : {False, bool}, optional
+        Do not produce axes for the same parameter on both axes.
 
     Returns
     -------
@@ -66,11 +67,13 @@ def create_axes_grid(parameters, labels=None, height_ratios=None,
         `{('param1', 'param2'): (pyplot.axes, row index, column index)}`
     """
     if labels is None:
-        labels = parameters
-    elif len(labels) != len(parameters):
-        raise ValueError("labels and parameters must be same length")
+        labels = {p: p for p in parameters}
+    elif any([p not in labels for p in parameters]):
+        raise ValueError("labels must be provided for all parameters")
     # Create figure with adequate size for number of parameters.
     ndim = len(parameters)
+    if no_diagonals:
+        ndim -= 1
     if ndim < 3:
         fsize = (8, 7)
     else:
@@ -83,9 +86,10 @@ def create_axes_grid(parameters, labels=None, height_ratios=None,
     axes = numpy.arange(ndim**2).reshape((ndim, ndim))
 
     # Select possible combinations of plots and establish rows and columns.
-    combos =  list(itertools.combinations(range(ndim),2))
+    combos =  list(itertools.combinations(parameters, 2))
     # add the diagonals
-    combos += [(ii, ii) for ii in range(ndim)]
+    if not no_diagonals:
+        combos += [(p, p) for p in parameters]
 
     # create the mapping between parameter combos and axes
     axis_dict = {}
@@ -94,10 +98,13 @@ def create_axes_grid(parameters, labels=None, height_ratios=None,
         for ncolumn in range(ndim):
             ax = pyplot.subplot(gs[axes[nrow, ncolumn]])
             # map to a parameter index
-            px = ncolumn
-            py = nrow
+            px = parameters[ncolumn]
+            if no_diagonals:
+                py = parameters[nrow+1]
+            else:
+                py = parameters[nrow]
             if (px, py) in combos:
-                axis_dict[parameters[px], parameters[py]] = (ax, nrow, ncolumn)
+                axis_dict[px, py] = (ax, nrow, ncolumn)
                 # x labels only on bottom
                 if nrow + 1 == ndim:
                     ax.set_xlabel('{}'.format(labels[px]), fontsize=18)
@@ -428,6 +435,8 @@ def create_multidim_plot(parameters, samples, labels=None,
     """
     if labels is None:
         labels = [p for p in parameters]
+    # turn labels into a dict for easier access
+    labels = dict(zip(parameters, labels))
 
     # set up the figure with a grid of axes
     # if only plotting 2 parameters, make the marginal plots smaller
@@ -444,9 +453,11 @@ def create_multidim_plot(parameters, samples, labels=None,
             sort_indices = zvals.argsort()
             zvals = zvals[sort_indices]
             samples = samples[sort_indices]
+        elif show_colorbar:
+            raise ValueError("must provide z values to create a colorbar")
         else:
-            # use the 0th part of the scatter cmap for the color
-            zvals = numpy.zeros(samples.size)
+            # just make all scatter points same color
+            zvals = 'k'
 
     # convert samples to a dictionary to avoid re-computing derived parameters
     # every time they are needed
@@ -468,32 +479,27 @@ def create_multidim_plot(parameters, samples, labels=None,
         values, offset = remove_common_offset(samples[param])
         if offset != 0:
             # we'll add the offset removed to the label
-            labels[pi] = '{} - {:d}'.format(labels[pi], offset)
+            labels[param] = '{} - {:d}'.format(labels[param], offset)
             samples[param] = values
             mins[param] -= float(offset)
             maxs[param] -= float(offset)
 
     # create the axis grid
     fig, axis_dict = create_axes_grid(parameters, labels=labels,
-        width_ratios=width_ratios, height_ratios=height_ratios)
+        width_ratios=width_ratios, height_ratios=height_ratios,
+        no_diagonals=not plot_marginal)
 
-    # turn labels into a dict for easier access
-    labels = dict(zip(parameters, labels))
 
     # Diagonals...
-    for pi,param in enumerate(parameters):
-        ax, _, _ = axis_dict[param, param]
-        # plot marginal...
-        if plot_marginal:
+    if plot_marginal:
+        for pi,param in enumerate(parameters):
+            ax, _, _ = axis_dict[param, param]
             # if only plotting 2 parameters and on the second parameter,
             # rotate the marginal plot
             rotated = nparams == 2 and pi == nparams-1
             create_marginalized_hist(ax, samples[param], label=labels[param],
                 color='navy', filled=False, linecolor='b', title=True,
                 rotated=rotated, plot_min=mins[param], plot_max=maxs[param])
-        # ... or turn off
-        else:
-            ax.axis('off')
 
     # Off-diagonals...
     for px, py in axis_dict:
