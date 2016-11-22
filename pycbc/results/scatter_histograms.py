@@ -457,7 +457,7 @@ def create_multidim_plot(parameters, samples, labels=None,
             raise ValueError("must provide z values to create a colorbar")
         else:
             # just make all scatter points same color
-            zvals = 'k'
+            zvals = 'gray'
 
     # convert samples to a dictionary to avoid re-computing derived parameters
     # every time they are needed

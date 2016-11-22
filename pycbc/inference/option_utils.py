@@ -323,9 +323,6 @@ def add_scatter_option_group(parser):
                          'logplr: loglr + log of the prior; '
                          'logposterior: log likelihood function + log prior; '
                          'prior: the log of the prior.')
-    scatter_group.add_argument('--no-colorbar', action='store_true',
-                    default=False,
-                    help='Do not show the color bar for the scatter plot. ')
     scatter_group.add_argument("--vmin", type=float,
                     help="Minimum value for the colorbar.")
     scatter_group.add_argument("--vmax", type=float,

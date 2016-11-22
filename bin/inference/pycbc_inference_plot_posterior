@@ -65,9 +65,11 @@ if opts.z_arg is not None:
             thin_end=opts.thin_end, thin_interval=opts.thin_interval,
             iteration=opts.iteration)
     zvals, zlbl = option_utils.get_zvalues(fp, opts.z_arg, likelihood_stats)
+    show_colorbar = True
 else:
     zvals = None
     zlbl = None
+    show_colorbar = False
 fp.close()
 
 mins, maxs = option_utils.plot_ranges_from_cli(opts)
@@ -84,7 +86,7 @@ fig, axis_dict = create_multidim_plot(
                 parameters, samples, labels=labels,
                 plot_marginal=opts.plot_marginal,
                 plot_scatter=opts.plot_scatter,
-                    zvals=zvals, show_colorbar=not opts.no_colorbar,
+                    zvals=zvals, show_colorbar=show_colorbar,
                     cbar_label=zlbl, vmin=opts.vmin, vmax=opts.vmax,
                     scatter_cmap=opts.scatter_cmap,
                 plot_density=opts.plot_density,

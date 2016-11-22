@@ -93,9 +93,11 @@ if opts.z_arg is not None:
     likelihood_stats = fp.read_likelihood_stats(thin_start=0,
                                     thin_interval=thinint, flatten=False)
     zvals, zlbl = option_utils.get_zvalues(fp, opts.z_arg, likelihood_stats)
+    show_colorbar = True
 else:
     zvals = None
     zlbl = None
+    show_colorbar = False
 
 fp.close()
 
@@ -130,7 +132,7 @@ for frame in range(nframes):
                         mins=mins, maxs=maxs,
                         plot_marginal=opts.plot_marginal,
                         plot_scatter=opts.plot_scatter,
-                            zvals=z, show_colorbar=not opts.no_colorbar,
+                            zvals=z, show_colorbar=show_colorbar,
                             cbar_label=zlbl, vmin=vmin, vmax=vmax,
                             scatter_cmap=opts.scatter_cmap,
                         plot_density=opts.plot_density,
