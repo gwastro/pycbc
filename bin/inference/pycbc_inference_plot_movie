@@ -129,7 +129,6 @@ for frame in range(nframes):
     fig, axis_dict = create_multidim_plot(parameters, plotargs, labels=labels,
                         mins=mins, maxs=maxs,
                         plot_marginal=opts.plot_marginal,
-                            small_marginal_plots=opts.small_marginal_plots,
                         plot_scatter=opts.plot_scatter,
                             zvals=z, show_colorbar=not opts.no_colorbar,
                             cbar_label=zlbl, vmin=vmin, vmax=vmax,

@@ -34,9 +34,11 @@ matplotlib.use('agg')
 from matplotlib import pyplot
 import matplotlib.gridspec as gridspec
 from pycbc.results import str_utils
+from pycbc.io import FieldArray
 #pyplot.rcParams.update({'text.usetex': True})
 
-def create_axes_grid(parameters, labels=None, small_diagonals=False):
+def create_axes_grid(parameters, labels=None, height_ratios=None,
+        width_ratios=None):
     """Given a list of parameters, creates a figure with an axis for
     every possible combination of the parameters.
 
@@ -46,11 +48,12 @@ def create_axes_grid(parameters, labels=None, small_diagonals=False):
         Names of the variables to be plotted.
     labels : {None, list}, optional
         A list of names for the parameters.
-    small_diagonals : {False, bool}
-        If True, the height of the diagonal axes in all but the last
-        column will be 1/3 the height of off-diagonals. For the last
-        column, the width will be 1/3 the width of the off-diagonals.
-        Otherwise, all of the axes will be the same size.
+    height_ratios : {None, list}, optional
+        Set the height ratios of the axes; see `matplotlib.gridspec.GridSpec`
+        for details.
+    width_ratios : {None, list}, optional
+        Set the width ratios of the axes; see `matplotlib.gridspec.GridSpec`
+        for details.
 
 
     Returns
@@ -73,13 +76,6 @@ def create_axes_grid(parameters, labels=None, small_diagonals=False):
     else:
         fsize = (ndim*3 - 1, ndim*3 - 2)
     fig = pyplot.figure(figsize=fsize)
-    if small_diagonals:
-        width_ratios = [3]*(ndim-1) + [1]
-        height_ratios = [1] + [3]*(ndim-1)
-    else:
-        width_ratios = height_ratios = None
-    # scale factor for font sizes
-    scale_fac = get_scale_fac(fig)
     # create the axis grid
     gs = gridspec.GridSpec(ndim, ndim, width_ratios=width_ratios,
         height_ratios=height_ratios, wspace=0.05, hspace=0.05)
@@ -103,15 +99,14 @@ def create_axes_grid(parameters, labels=None, small_diagonals=False):
             if (px, py) in combos:
                 axis_dict[parameters[px], parameters[py]] = (ax, nrow, ncolumn)
                 # x labels only on bottom
-                if nrow + 1 == ndim and ncolumn != ndim-1:
+                if nrow + 1 == ndim:
                     ax.set_xlabel('{}'.format(labels[px]),
-                                              fontsize=20*scale_fac)
+                                              fontsize=20)
                 else:
                     pyplot.setp(ax.get_xticklabels(), visible=False)
-                # y labels only on left and non-diagonal
-                if ncolumn == 0 and nrow != 0:
-                    ax.set_ylabel('{}'.format(labels[py]),
-                                  fontsize=20*scale_fac)
+                # y labels only on left
+                if ncolumn == 0:
+                    ax.set_ylabel('{}'.format(labels[py]), fontsize=20)
                 else:
                     pyplot.setp(ax.get_yticklabels(), visible=False)
             else:
@@ -127,6 +122,7 @@ def get_scale_fac(fig, fiducial_width=8, fiducial_height=7):
     """
     width, height = fig.get_size_inches()
     return (width*height/(fiducial_width*fiducial_height))**0.5
+
 
 def construct_kde(samples_array, use_kombine=False):
     """Constructs a KDE from the given samples.
@@ -147,7 +143,7 @@ def construct_kde(samples_array, use_kombine=False):
 def create_density_plot(xparam, yparam, samples, plot_density=True,
         plot_contours=True, percentiles=None, cmap='viridis',
         contour_color=None, xmin=None, xmax=None, ymin=None, ymax=None,
-        fig=None, ax=None, use_kombine=False):
+        exclude_region=None, fig=None, ax=None, use_kombine=False):
     """Computes and plots posterior density and confidence intervals using the
     given samples.
 
@@ -157,8 +153,8 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
         The parameter to plot on the x-axis.
     yparam : string
         The parameter to plot on the y-axis.
-    samples : FieldArray
-        A field array of the samples to plot.
+    samples : dict, numpy structured array, or FieldArray
+        The samples to plot.
     plot_density : {True, bool}
         Plot a color map of the density.
     plot_contours : {True, bool}
@@ -179,6 +175,13 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
         Minimum value to plot on y-axis.
     ymax : {None, float}
         Maximum value to plot on y-axis.
+    exclue_region : {None, str}
+        Exclude the specified region when plotting the density or contours.
+        Must be a string in terms of `xparam` and `yparam` that is
+        understandable by numpy's logical evaluation. For example, if
+        `xparam = m_1` and `yparam = m_2`, and you want to exclude the region
+        for which `m_2` is greater than `m_1`, then exclude region should be
+        `'m_2 > m_1'`.
     fig : {None, pyplot.figure}
         Add the plot to the given figure. If None and ax is None, will create
         a new figure.
@@ -207,18 +210,20 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
         ax = fig.add_subplot(111)
 
     # convert samples to array and construct kde
-    arr = samples.to_array(fields=[xparam, yparam], axis=-1)
+    xsamples = samples[xparam]
+    ysamples = samples[yparam]
+    arr = numpy.vstack((xsamples, ysamples)).T
     kde = construct_kde(arr, use_kombine=use_kombine)
 
     # construct grid to evaluate on
     if xmin is None:
-        xmin = samples[xparam].min()
+        xmin = xsamples.min()
     if xmax is None:
-        xmax = samples[xparam].max()
+        xmax = xsamples.max()
     if ymin is None:
-        ymin = samples[yparam].min()
+        ymin = ysamples.min()
     if ymax is None:
-        ymax = samples[yparam].max()
+        ymax = ysamples.max()
     npts = 100
     X, Y = numpy.mgrid[xmin:xmax:complex(0,npts), ymin:ymax:complex(0,npts)]
     pos = numpy.vstack([X.ravel(), Y.ravel()])
@@ -229,16 +234,11 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
         Z = kde(pos).T.reshape(X.shape)
         draw = kde.resample
 
-    # Exclude out-of-bound regions
-    # this is a bit kludgy; should probably figure out a better solution
-    # eventually for more than just m_p m_s
-    bnds_mask = None
-    if xparam == 'm_p' and yparam == 'm_s':
-        bnds_mask = Y > X
-    elif xparam == 'm_s' and yparam == 'm_p':
-        bnds_mask = X > Y
-    if bnds_mask is not None:
-        Z[bnds_mask] = 0.
+    if exclude_region is not None:
+        # convert X,Y to a single FieldArray so we can use it's ability to
+        # evaluate strings
+        farr = FieldArray.from_kwargs(**{xparam: X, yparam: Y})
+        Z[farr[exclude_region]] = 0.
 
     if plot_density:
         ax.imshow(numpy.rot90(Z), extent=[xmin, xmax, ymin, ymax],
@@ -268,9 +268,9 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
     return fig, ax
 
 
-def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
+def create_marginalized_hist(ax, values, label, percentiles=None,
         color='navy', filled=False, linecolor='b', title=True, rotated=False,
-        plot_min=None, plot_max=None, scale_fac=1.):
+        plot_min=None, plot_max=None):
     """Plots a 1D marginalized histogram of the given param from the given
     samples.
 
@@ -278,16 +278,14 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
     ----------
     ax : pyplot.Axes
         The axes on which to draw the plot.
-    param : string
-        The parameter to plot.
-    samples : FieldArray
-        A field array of the samples to plot.
+    values : array
+        The parameter values to plot.
+    label : str
+        A label to use for the title.
     percentiles : {None, float or array}
         What percentiles to draw lines at. If None, will draw lines at
         `[5, 50, 95]` (i.e., the bounds on the upper 90th percentile and the
         median).
-    label : {None, string}
-        A label for the parameter. If None, will use `param`.
     color : {'navy', string}
         What color to make the histogram; default is navy.
     filled : {False, bool}
@@ -308,13 +306,10 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
     scalefac : {1., float}
         Factor to scale the default font sizes by. Default is 1 (no scaling).
     """
-    if label is None:
-        label = param
     if filled:
         htype = 'stepfilled'
     else:
         htype = 'step'
-    values = samples[param]
     if rotated:
         orientation = 'horizontal'
     else:
@@ -340,9 +335,11 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
         if rotated:
             ax.yaxis.set_label_position("right")
             ax.set_ylabel('{} = {}'.format(label, fmt), rotation=-90,
-                labelpad=26, fontsize=20*scale_fac)
+                labelpad=26, fontsize=20)
             # Remove x-ticks
             ax.set_xticks([])
+            # turn off x-labels
+            ax.set_xlabel('')
             # set limits
             ymin, ymax = ax.get_ylim()
             if plot_min is not None:
@@ -351,10 +348,12 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
                 ymax = plot_max
             ax.set_ylim(ymin, ymax)
         else:
-            ax.set_title('{} = {}'.format(label, fmt), fontsize=20*scale_fac,
+            ax.set_title('{} = {}'.format(label, fmt), fontsize=20,
                          y=1.04)
             # Remove y-ticks
             ax.set_yticks([])
+            # turn off y-label
+            ax.set_ylabel('')
             # set limits
             xmin, xmax = ax.get_xlim()
             if plot_min is not None:
@@ -367,7 +366,6 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
 def create_multidim_plot(parameters, samples, labels=None,
                 mins=None, maxs=None,
                 plot_marginal=True,
-                    small_marginal_plots=False,
                 plot_scatter=True,
                     zvals=None, show_colorbar=True, cbar_label=None,
                     vmin=None, vmax=None, scatter_cmap='plasma_r',
@@ -395,13 +393,6 @@ def create_multidim_plot(parameters, samples, labels=None,
     plot_marginal : {True, bool}
         Plot the marginalized distribution on the diagonals. If False, the
         diagonal axes will be turned off.
-    small_marginal_plots : {False, bool}
-        If True, make the marginal plots 1/3 the size of the density/scatter
-        plots. In this case, the last marginal plot (the one furthest to the
-        right) will be rotated such that distribution runs along the y-axis
-        instead of the x. This is useful if creating plots for publications or
-        slides, where space is a premium. Default is False, in which case the
-        marginal plots are the same size as the density/scatter plots.
     plot_scatter : {True, bool}
         Plot each sample point as a scatter plot.
     zvals : {None, array}
@@ -442,31 +433,70 @@ def create_multidim_plot(parameters, samples, labels=None,
         `{('param1', 'param2'): (pyplot.axes, row index, column index)}`
     """
     if labels is None:
-        labels = parameters
+        labels = [p for p in parameters]
 
     # set up the figure with a grid of axes
-    fig, axis_dict = create_axes_grid(parameters, labels=labels,
-        small_diagonals=small_marginal_plots)
+    # if only plotting 2 parameters, make the marginal plots smaller
+    nparams = len(parameters)
+    if nparams == 2:
+        width_ratios = [3,1]
+        height_ratios = [1,3]
+    else:
+        width_ratios = height_ratios = None
 
-    # turn labels into a dict for easier access
-    labels = dict(zip(parameters, labels))
+    # Sort zvals to get higher values on top in scatter plots
+    if plot_scatter:
+        if zvals is not None:
+            sort_indices = zvals.argsort()
+            zvals = zvals[sort_indices]
+            samples = samples[sort_indices]
+        else:
+            # use the 0th part of the scatter cmap for the color
+            zvals = numpy.zeros(samples.size)
+
+    # convert samples to a dictionary to avoid re-computing derived parameters
+    # every time they are needed
+    samples = dict([[p, samples[p]] for p in parameters])
 
     # values for axis bounds
     if mins is None:
         mins = {p:samples[p].min() for p in parameters}
+    else:
+        # copy the dict
+        mins = {p:val for p,val in mins.items()}
     if maxs is None:
         maxs = {p:samples[p].max() for p in parameters}
+        # copy the dict
+        maxs = {p:val for p,val in maxs.items()}
+
+    # remove common offsets
+    for pi,param in enumerate(parameters):
+        values, offset = remove_common_offset(samples[param])
+        if offset != 0:
+            # we'll add the offset removed to the label
+            labels[pi] = '{} - {:d}'.format(labels[pi], offset)
+            samples[param] = values
+            mins[param] -= float(offset)
+            maxs[param] -= float(offset)
+
+    # create the axis grid
+    fig, axis_dict = create_axes_grid(parameters, labels=labels,
+        width_ratios=width_ratios, height_ratios=height_ratios)
+
+    # turn labels into a dict for easier access
+    labels = dict(zip(parameters, labels))
 
     # Diagonals...
     for pi,param in enumerate(parameters):
         ax, _, _ = axis_dict[param, param]
         # plot marginal...
         if plot_marginal:
-            rotated = small_marginal_plots and pi == len(parameters)-1
-            create_marginalized_hist(ax, param, samples, label=labels[param],
+            # if only plotting 2 parameters and on the second parameter,
+            # rotate the marginal plot
+            rotated = nparams == 2 and pi == nparams-1
+            create_marginalized_hist(ax, samples[param], label=labels[param],
                 color='navy', filled=False, linecolor='b', title=True,
-                rotated=rotated, plot_min=mins[param], plot_max=maxs[param],
-                scale_fac=get_scale_fac(fig))
+                rotated=rotated, plot_min=mins[param], plot_max=maxs[param])
         # ... or turn off
         else:
             ax.axis('off')
@@ -477,14 +507,6 @@ def create_multidim_plot(parameters, samples, labels=None,
             continue
         ax, _, _ = axis_dict[px, py]
         if plot_scatter:
-            # Sort zvals to get higher values on top in scatter plots
-            if zvals is not None:
-                sort_indices = zvals.argsort()
-                zvals = zvals[sort_indices]
-                samples = samples[sort_indices]
-            else:
-                # use the 0th part of the scatter cmap for the color
-                zvals = numpy.zeros(samples.size)
             if plot_density:
                 alpha = 0.3
             else:
@@ -494,10 +516,18 @@ def create_multidim_plot(parameters, samples, labels=None,
                         cmap=scatter_cmap, alpha=alpha, zorder=2)
 
         if plot_contours or plot_density:
+            # Exclude out-of-bound regions
+            # this is a bit kludgy; should probably figure out a better
+            # solution to eventually allow for more than just m_p m_s
+            if (px == 'm_p' and py == 'm_s') or (py == 'm_p' and px == 'm_s'):
+                exclude_region = 'm_s > m_p'
+            else:
+                exclude_region = None
             create_density_plot(px, py, samples, plot_density=plot_density,
                     plot_contours=plot_contours, cmap=density_cmap,
                     contour_color=contour_color, xmin=mins[px], xmax=maxs[px],
-                    ymin=mins[py], ymax=maxs[py], ax=ax,
+                    ymin=mins[py], ymax=maxs[py],
+                    exclude_region=exclude_region, ax=ax,
                     use_kombine=use_kombine)
 
         ax.set_xlim(mins[px], maxs[px])
@@ -521,6 +551,26 @@ def create_multidim_plot(parameters, samples, labels=None,
         cb.ax.tick_params(labelsize=8*scale_fac)
 
     return fig, axis_dict
+
+
+def remove_common_offset(arr):
+    """Given an array of data, removes a common offset > 1000, returning the
+    removed value.
+    """
+    offset = 0
+    isneg = (arr <= 0).all()
+    # make sure all values have the same sign
+    if isneg or (arr >= 0).all():
+        # only remove offset if the minimum and maximum values are the same
+        # order of magintude and > O(1000)
+        minpwr = numpy.log10(abs(arr).min())
+        maxpwr = numpy.log10(abs(arr).max())
+        if numpy.floor(minpwr) == numpy.floor(maxpwr) and minpwr > 3: 
+            offset = numpy.floor(10**minpwr)
+            if isneg:
+                offset *= -1
+            arr = arr - offset
+    return arr, int(offset)
 
 
 def reduce_ticks(ax, which, maxticks=3):

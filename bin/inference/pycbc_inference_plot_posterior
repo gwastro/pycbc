@@ -83,7 +83,6 @@ logging.info("Plotting")
 fig, axis_dict = create_multidim_plot(
                 parameters, samples, labels=labels,
                 plot_marginal=opts.plot_marginal,
-                    small_marginal_plots=opts.small_marginal_plots,
                 plot_scatter=opts.plot_scatter,
                     zvals=zvals, show_colorbar=not opts.no_colorbar,
                     cbar_label=zlbl, vmin=opts.vmin, vmax=opts.vmax,

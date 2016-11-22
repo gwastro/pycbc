@@ -244,17 +244,6 @@ def add_plot_posterior_option_group(parser):
     pgroup.add_argument('--plot-marginal', action='store_true', default=False,
                         help="Plot 1D marginalized distributions on the "
                              "diagonal axes.")
-    pgroup.add_argument('--small-marginal-plots', action="store_true",
-                        default=False,
-                        help="Make the marginal plots 1/3 the size of the "
-                             "density/scatter plots. In this case, the last "
-                             "marginal plot (the one furthest to the right) "
-                             "will be rotated such that distribution runs "
-                             "along the y-axis instead of the x. This is "
-                             "useful if creating plots for publications or "
-                             "slides, where space is at a premium. Otherwise, "
-                             "marginal plots are the same size as the "
-                             "density/scatter plots.")
     pgroup.add_argument("--plot-scatter", action='store_true', default=False,
                         help="Plot each sample point as a scatter plot.")
     pgroup.add_argument("--plot-density", action="store_true", default=False,
