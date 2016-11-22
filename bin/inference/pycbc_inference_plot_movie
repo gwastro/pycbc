@@ -34,7 +34,8 @@ from matplotlib import pyplot
 import pycbc.results
 from pycbc.inference import option_utils
 from pycbc.io.inference_hdf import InferenceFile
-from pycbc.results.scatter_histograms import create_multidim_plot
+from pycbc.results.scatter_histograms import create_multidim_plot, \
+    get_scale_fac
 
 parser = argparse.ArgumentParser()
 
@@ -94,9 +95,19 @@ if opts.z_arg is not None:
                                     thin_interval=thinint, flatten=False)
     zvals, zlbl = option_utils.get_zvalues(fp, opts.z_arg, likelihood_stats)
     show_colorbar = True
+    # Set common min and max for colorbar in all plots
+    if opts.vmin is None:
+        vmin = zvals.min()
+    else:
+        vmin = opts.vmin
+    if opts.vmax is None:
+        vmax = zvals.max()
+    else:
+        vmax = opts.vmax
 else:
     zvals = None
     zlbl = None
+    vmin = vmax = None
     show_colorbar = False
 
 fp.close()
@@ -111,22 +122,21 @@ for p in parameters:
 for p in parameters:
     if p not in maxs:
         maxs[p] = samples[p].max()
-# Set common min and max for colorbar in all plots
-if opts.vmin is None:
-    vmin = zvals.min()
-else:
-    vmin = opts.vmin
-if opts.vmax is None:
-    vmax = zvals.max()
-else:
-    vmax = opts.vmax
 
 # Make each figure
+# for sorting purposes, we will need to zero-pad the sample numer with the
+# appriopriate number of 0's
+max_sample_num = nframes * thinint
 for frame in range(nframes):
     logging.info('Plotting frame %i' %(frame+1))
     plotargs = samples[:,frame]
-    z = zvals[:,frame]
-    output = opts.output_file + '%d.png' %(frame+1)
+    if zvals is not None:
+        z = zvals[:,frame]
+    else:
+        z = None
+    sample_num = str(frame * thinint + 1)
+    sample_num = sample_num.zfill(len(str(max_sample_num)))
+    output = opts.output_file + '-{}.png'.format(sample_num)
 
     fig, axis_dict = create_multidim_plot(parameters, plotargs, labels=labels,
                         mins=mins, maxs=maxs,
@@ -142,7 +152,16 @@ for frame in range(nframes):
                             use_kombine=opts.use_kombine_kde)
 
     # Write sample number
-    pyplot.annotate('Sample %d' %(frame*thinint+1), xy=(0.8,0.95), xycoords='figure fraction')
+    if show_colorbar:
+        xtxt = 0.85
+    else:
+        xtxt = 0.9
+    ytxt = 0.95
+    scale_fac = get_scale_fac(fig)
+    fontsize = 8*scale_fac
+    pyplot.annotate('Sample {}'.format(sample_num), xy=(xtxt, ytxt),
+        xycoords='figure fraction', horizontalalignment='right',
+        verticalalignment='top', fontsize=fontsize)
 
     fig.savefig(output, bbox_inches='tight', dpi=200)
     pyplot.close()

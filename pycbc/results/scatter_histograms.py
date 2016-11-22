@@ -471,6 +471,7 @@ def create_multidim_plot(parameters, samples, labels=None,
         mins = {p:val for p,val in mins.items()}
     if maxs is None:
         maxs = {p:samples[p].max() for p in parameters}
+    else:
         # copy the dict
         maxs = {p:val for p,val in maxs.items()}
 
@@ -481,8 +482,8 @@ def create_multidim_plot(parameters, samples, labels=None,
             # we'll add the offset removed to the label
             labels[param] = '{} - {:d}'.format(labels[param], offset)
             samples[param] = values
-            mins[param] -= float(offset)
-            maxs[param] -= float(offset)
+            mins[param] = mins[param] - float(offset)
+            maxs[param] = maxs[param] - float(offset)
 
     # create the axis grid
     fig, axis_dict = create_axes_grid(parameters, labels=labels,
