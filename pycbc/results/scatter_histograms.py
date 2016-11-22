@@ -100,13 +100,12 @@ def create_axes_grid(parameters, labels=None, height_ratios=None,
                 axis_dict[parameters[px], parameters[py]] = (ax, nrow, ncolumn)
                 # x labels only on bottom
                 if nrow + 1 == ndim:
-                    ax.set_xlabel('{}'.format(labels[px]),
-                                              fontsize=20)
+                    ax.set_xlabel('{}'.format(labels[px]), fontsize=18)
                 else:
                     pyplot.setp(ax.get_xticklabels(), visible=False)
                 # y labels only on left
                 if ncolumn == 0:
-                    ax.set_ylabel('{}'.format(labels[py]), fontsize=20)
+                    ax.set_ylabel('{}'.format(labels[py]), fontsize=18)
                 else:
                     pyplot.setp(ax.get_yticklabels(), visible=False)
             else:
@@ -258,11 +257,7 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
         # label contours
         lbls = ['{p}%'.format(p=int(p)) for p in (100. - percentiles)]
         fmt = dict(zip(ct.levels, lbls))
-        fs = 14
-        if fig is not None:
-            # scale appropriately
-            scale_fac = get_scale_fac(fig)
-            fs *= scale_fac
+        fs = 12
         ax.clabel(ct, ct.levels, inline=True, fmt=fmt, fontsize=fs)
 
     return fig, ax
@@ -335,7 +330,7 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         if rotated:
             ax.yaxis.set_label_position("right")
             ax.set_ylabel('{} = {}'.format(label, fmt), rotation=-90,
-                labelpad=26, fontsize=20)
+                labelpad=26, fontsize=18)
             # Remove x-ticks
             ax.set_xticks([])
             # turn off x-labels
@@ -348,8 +343,7 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
                 ymax = plot_max
             ax.set_ylim(ymin, ymax)
         else:
-            ax.set_title('{} = {}'.format(label, fmt), fontsize=20,
-                         y=1.04)
+            ax.set_title('{} = {}'.format(label, fmt), fontsize=18, y=1.04)
             # Remove y-ticks
             ax.set_yticks([])
             # turn off y-label
