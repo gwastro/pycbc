@@ -367,7 +367,7 @@ def create_marginalized_hist(ax, param, samples, percentiles=None, label=None,
 def create_multidim_plot(parameters, samples, labels=None,
                 mins=None, maxs=None,
                 plot_marginal=True,
-                    small_marginals=False,
+                    small_marginal_plots=False,
                 plot_scatter=True,
                     zvals=None, show_colorbar=True, cbar_label=None,
                     vmin=None, vmax=None, scatter_cmap='plasma_r',
@@ -464,9 +464,9 @@ def create_multidim_plot(parameters, samples, labels=None,
         if plot_marginal:
             rotated = small_marginal_plots and pi == len(parameters)-1
             create_marginalized_hist(ax, param, samples, label=labels[param],
-                    color='navy', filled=False, linecolor='b', title=True,
-                    rotated=rotated, plot_min=mins[param], plot_max=maxs[param]
-                    scale_fac=get_scale_fac(fig))
+                color='navy', filled=False, linecolor='b', title=True,
+                rotated=rotated, plot_min=mins[param], plot_max=maxs[param],
+                scale_fac=get_scale_fac(fig))
         # ... or turn off
         else:
             ax.axis('off')
