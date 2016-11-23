@@ -419,7 +419,8 @@ def create_multidim_plot(parameters, samples, labels=None,
         The color map to use for the density plot.
     contour_color : {None, string}
         The color to use for the contour lines. Defaults to white for
-        density plots and black for other plots.
+        density plots, yellow for scatter plots without zvals, and black
+        otherwise.
     use_kombine : {False, bool}
         Use kombine's KDE to calculate density. Otherwise, will use
         `scipy.stats.gaussian_kde.` Default is False.
@@ -453,11 +454,15 @@ def create_multidim_plot(parameters, samples, labels=None,
             sort_indices = zvals.argsort()
             zvals = zvals[sort_indices]
             samples = samples[sort_indices]
+            if contour_color is None:
+                contour_color = 'k'
         elif show_colorbar:
             raise ValueError("must provide z values to create a colorbar")
         else:
             # just make all scatter points same color
-            zvals = 'gray'
+            zvals = 'navy'
+            if contour_color is None:
+                contour_color = 'yellow'
 
     # convert samples to a dictionary to avoid re-computing derived parameters
     # every time they are needed
