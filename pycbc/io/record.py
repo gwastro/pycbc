@@ -1618,7 +1618,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def m_p(self):
         """Returns the larger of self.mass1 and self.mass2 (p = primary)."""
-        out = numpy.zeros(self.size, dtype=self.mass1.dtype)
+        out = numpy.zeros(self.shape, dtype=self.mass1.dtype)
         out[:] = self.mass1
         mask = self.mass1 < self.mass2
         out[mask] = self.mass2[mask]
@@ -1627,7 +1627,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def m_s(self):
         """Returns the smaller of self.mass1 and self.mass2 (s = secondary)."""
-        out = numpy.zeros(self.size, dtype=self.mass2.dtype)
+        out = numpy.zeros(self.shape, dtype=self.mass2.dtype)
         out[:] = self.mass2
         mask = self.mass1 < self.mass2
         out[mask] = self.mass1[mask]
@@ -1665,7 +1665,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin_px(self):
         """Returns the x-component of the primary mass."""
-        out = numpy.zeros(self.size, dtype=self.spin1x.dtype)
+        out = numpy.zeros(self.shape, dtype=self.spin1x.dtype)
         out[:] = self.spin1x
         mask = self.mass1 < self.mass2
         out[mask] = self.spin2x[mask]
@@ -1674,7 +1674,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin_py(self):
         """Returns the y-component of the primary mass."""
-        out = numpy.zeros(self.size, dtype=self.spin1y.dtype)
+        out = numpy.zeros(self.shape, dtype=self.spin1y.dtype)
         out[:] = self.spin1y
         mask = self.mass1 < self.mass2
         out[mask] = self.spin2y[mask]
@@ -1683,7 +1683,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin_pz(self):
         """Returns the z-component of the secondary mass."""
-        out = numpy.zeros(self.size, dtype=self.spin1z.dtype)
+        out = numpy.zeros(self.shape, dtype=self.spin1z.dtype)
         out[:] = self.spin1z
         mask = self.mass1 < self.mass2
         out[mask] = self.spin2z[mask]
@@ -1692,7 +1692,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin_sx(self):
         """Returns the x-component of the secondary mass."""
-        out = numpy.zeros(self.size, dtype=self.spin2x.dtype)
+        out = numpy.zeros(self.shape, dtype=self.spin2x.dtype)
         out[:] = self.spin2x
         mask = self.mass1 < self.mass2
         out[mask] = self.spin1x[mask]
@@ -1701,7 +1701,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin_sy(self):
         """Returns the y-component of the secondary mass."""
-        out = numpy.zeros(self.size, dtype=self.spin2y.dtype)
+        out = numpy.zeros(self.shape, dtype=self.spin2y.dtype)
         out[:] = self.spin2y
         mask = self.mass1 < self.mass2
         out[mask] = self.spin1y[mask]
@@ -1710,7 +1710,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin_sz(self):
         """Returns the z-component of the secondary mass."""
-        out = numpy.zeros(self.size, dtype=self.spin2z.dtype)
+        out = numpy.zeros(self.shape, dtype=self.spin2z.dtype)
         out[:] = self.spin2z
         mask = self.mass1 < self.mass2
         out[mask] = self.spin1z[mask]
