@@ -68,7 +68,7 @@ def create_axes_grid(parameters, labels=None, height_ratios=None,
     """
     if labels is None:
         labels = {p: p for p in parameters}
-    elif any([p not in labels for p in parameters]):
+    elif any(p not in labels for p in parameters):
         raise ValueError("labels must be provided for all parameters")
     # Create figure with adequate size for number of parameters.
     ndim = len(parameters)
@@ -566,7 +566,7 @@ def remove_common_offset(arr):
         # order of magintude and > O(1000)
         minpwr = numpy.log10(abs(arr).min())
         maxpwr = numpy.log10(abs(arr).max())
-        if numpy.floor(minpwr) == numpy.floor(maxpwr) and minpwr > 3: 
+        if numpy.floor(minpwr) == numpy.floor(maxpwr) and minpwr > 3:
             offset = numpy.floor(10**minpwr)
             if isneg:
                 offset *= -1

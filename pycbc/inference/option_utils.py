@@ -281,7 +281,7 @@ def plot_ranges_from_cli(opts):
     -------
     mins : dict
         Dictionary of parameter name -> specified mins. Only parameters that
-        were specified in the --mins option will be included; if no parameters 
+        were specified in the --mins option will be included; if no parameters
         were provided, will return an empty dictionary.
     maxs : dict
         Dictionary of parameter name -> specified maxs. Only parameters that
