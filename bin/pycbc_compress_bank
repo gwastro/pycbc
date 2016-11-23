@@ -40,50 +40,74 @@ from pycbc import filter
 
 parser = argparse.ArgumentParser(description=__description__)
 parser.add_argument("--bank-file", type=str,
-                help="Bank hdf file to load.")
+                    help="Bank hdf file to load.")
 parser.add_argument("--output", type=str,
-                help="The hdf file to save the templates and compressed "
-                     "waveforms to.")
+                    help="The hdf file to save the templates and compressed "
+                    "waveforms to.")
 parser.add_argument("--low-frequency-cutoff", type=float, required=True,
-                help="The low frequency cutoff to use for generating "
-                     "the waveforms (Hz)")
+                    help="The low frequency cutoff to use for generating "
+                    "the waveforms (Hz)")
 # add approximant arg
 pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument("--sample-rate", type=int, required=True,
-                help="Half this value sets the maximum frequency of the "
-                     "compressed waveforms.")
+                    help="Half this value sets the maximum frequency of the "
+                    "compressed waveforms.")
 parser.add_argument("--tmplt-index", nargs=2, type=int, default=None,
-                help="Only generate compressed waveforms for the given "
-                     "indices in the bank file. Must provide both a start "
-                     "and a stop index. Default is to compress all of the "
-                     "templates in the bank file.")
+                    help="Only generate compressed waveforms for the given "
+                    "indices in the bank file. Must provide both a start "
+                    "and a stop index. Default is to compress all of the "
+                    "templates in the bank file.")
+parser.add_argument("--ROM-parameter-space-interpolation", type=str,
+                    choices=["linear_compression", "partial_ROM_compression"],
+                    default="linear_compression",
+                    help="The method used to get the amplitude and phase"
+                    "interpolants and the corressponding amplitude and"
+                    "phase frequency points for the SEOBNRv2_ROM waveforms"
+                    "in the template bank. Choices are 'linear_compression'"
+                    "which would calculate the interpolants and frequency"
+                    "points in the compress_waveform function in compress.py,"
+                    "OR 'partial_rom_compression' which would call the"
+                    "LAL code for SEOBNRv2_ROM from the partial_compress_rom"
+                    "function of compress.py to get the interpolants and"
+                    "the frequency points")
 parser.add_argument("--compression-algorithm", type=str, required=True,
-                choices=compress.compression_algorithms.keys(),
-                help="The compression algorithm to use for selecting "
-                     "frequency points.")
+                    choices=compress.compression_algorithms.keys(),
+                    help="The compression algorithm to use for selecting "
+                    "frequency points for all TaylorF2 templates and"
+                    "SEOBNRv2_ROM templates when"
+                    " --ROM-parameter-space-interpolation is "
+                    "'linear_compression'. This would select a common "
+                    "set of frequency points for both amplitude "
+                    "and phase interpolants")
 parser.add_argument("--t-pad", type=float, default=0.001,
-                help="The minimum duration used for t(f) in seconds. The "
-                     "inverse of this gives the maximum frequency step that "
-                     "will be used in the compressed waveforms. Default is "
-                     "0.001.")
+                    help="The minimum duration used for t(f) in seconds. The "
+                    "inverse of this gives the maximum frequency step that "
+                    "will be used in the compressed waveforms. Default is "
+                    "0.001.")
 parser.add_argument("--tolerance", type=float, default=0.001,
-                help="The maximum mismatch to allow between the interpolated "
-                     "waveform must and the full waveform. Points will be "
-                     "added to the compressed waveform until its "
-                     "interpolation has a mismatch <= this value. Default is "
-                     "0.001.")
-parser.add_argument("--interpolation", type=str, default="linear",
-                help="The interpolation to use for decompressing the "
-                     "waveforms for checking tolerance. Options are 'linear', "
-                     "or any interpolation recognized by scipy's interp1d "
-                     "kind argument. Default is linear.")
+                    help="The maximum mismatch to allow between the "
+                    "interpolated waveform and the full waveform. Points"
+                    "will be added to the compressed waveform until its "
+                    "interpolation has a mismatch <= this value."
+                    " Default is 0.001.")
+parser.add_argument("--interpolation", type=str,
+                    default="inline_linear",
+                    help="The interpolation to use for decompressing the "
+                    "waveforms for checking tolerance. Options are "
+                    "'inline_linear', which assumes that the "
+                    "frequency samples of the amplitude and phase "
+                    "interpolants are the same, or any interpolation "
+                    "recognized by scipy's interp1d kind argument, which "
+                    "allows the frequency interpolant samples to be "
+                    "different for the amplitude and phase. "
+                    "Default is inline_linear.")
 parser.add_argument("--precision", type=str, choices=["double", "single"],
-                default="double",
-                help="What precision to generate and store the waveforms with;"
-                     " default is double.")
+                    default="double",
+                    help="What precision to generate and store the"
+                    "waveforms with; default is double.")
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
-                         "Otherwise, an error is raised.")
+                    "Otherwise, an error is raised.")
 parser.add_argument("--verbose", action="store_true", default=False)
 
 
@@ -105,7 +129,7 @@ else:
     dtype = numpy.complex128
 # we'll just use dummy values for N, df for now
 bank = waveform.FilterBank(args.bank_file, 5, 0.25, fmin, dtype,
-    approximant=args.approximant)
+                           approximant=args.approximant)
 templates = bank.table
 if args.tmplt_index is not None:
     imin, imax = args.tmplt_index
@@ -128,7 +152,6 @@ output = bank.write_to_hdf(args.output, force=args.force,
 
 # get the compressed sample points for each template
 logging.info("getting compressed amplitude and phase")
-mismatches = numpy.zeros(imax-imin, dtype=float)
 for ii in range(imin, imax):
     # update the N, df to use based on this waveform
     N = int(args.sample_rate*seg_lens[ii-imin])
@@ -136,7 +159,7 @@ for ii in range(imin, imax):
     bank.delta_f = df
     bank.N = N
     bank.filter_length = N/2 + 1
-    # We'll budge the waveform starting frequency down by 1df to ensure 
+    # We'll budge the waveform starting frequency down by 1df to ensure
     # the first point is correct
     bank.f_lower = fmin-df
     bank.kmin = int(bank.f_lower / df)
@@ -146,23 +169,57 @@ for ii in range(imin, imax):
     htilde = bank[ii-imin]
     tmplt = bank.table[ii-imin]
     kmax = htilde.end_idx
-    
-    # get the compressed sample points
-    if args.compression_algorithm == 'mchirp':
-        sample_points = compress.mchirp_compression(tmplt.mass1, tmplt.mass2,
-            fmin, (kmax-1)*df, min_seglen=args.t_pad, df_multiple=df).astype(
-            real_same_precision_as(htilde))
-    elif args.compression_algorithm == 'spa':
-        sample_points = compress.spa_compression(htilde, fmin, (kmax-1)*df,
-            min_seglen=args.t_pad).astype(real_same_precision_as(htilde))
+
+    mtotal = tmplt.mass1 + tmplt.mass2
+    # Call the appropriate function in compress.py to get the compressed
+    # amplitude and phase frequency points and decompress them in
+    # frequency space :
+
+    # If template is SEOBNRv2_ROM perform linear_compression or
+    # partial_ROM_compression as per user input
+    if mtotal >= 4:
+        if args.ROM_parameter_space_interpolation == 'linear_compression':
+            if args.compression_algorithm == 'mchirp':
+                sample_points = compress.mchirp_compression(
+                    tmplt.mass1, tmplt.mass2, fmin, (kmax-1)*df,
+                    min_seglen=args.t_pad,
+                    df_multiple=df).astype(real_same_precision_as(htilde))
+            elif args.compression_algorithm == 'spa':
+                sample_points = compress.spa_compression(
+                    htilde, fmin, (kmax-1)*df, min_seglen=
+                    args.t_pad).astype(real_same_precision_as(htilde))
+            else:
+                raise ValueError("unrecognized compression algorithm %s" %(
+                             args.compression_algorithm))
+
+            hcompressed = compress.compress_waveform(
+                    htilde, sample_points, args.tolerance,
+                    args.interpolation, decomp_scratch=decomp_scratch)
+
+        elif args.ROM_parameter_space_interpolation == 'partial_ROM_compression':
+            hcompressed = compress.partial_compress_rom( htilde, tmplt.mass1,
+                tmplt.mass2, tmplt.spin1z, tmplt.spin2z, df, fmin,
+                (kmax-1)*df, args.interpolation)
+
+    # if template is a SPAtmplt waveform perform linear_compression
     else:
-        raise ValueError("unrecognized compression algorithm %s" %(
-            args.compression_algorithm))
-            
-    # compress
-    hcompressed = compress.compress_waveform(
-        htilde, sample_points, args.tolerance, args.interpolation,
-        decomp_scratch=decomp_scratch)
+        if args.compression_algorithm == 'mchirp':
+            sample_points = compress.mchirp_compression(
+                tmplt.mass1, tmplt.mass2, fmin, (kmax-1)*df,
+                min_seglen=args.t_pad,
+                df_multiple=df).astype(real_same_precision_as(htilde))
+        elif args.compression_algorithm == 'spa':
+            sample_points = compress.spa_compression(
+                htilde, fmin, (kmax-1)*df, min_seglen=
+                args.t_pad).astype(real_same_precision_as(htilde))
+        else:
+            raise ValueError("unrecognized compression algorithm %s" %(
+                             args.compression_algorithm))
+
+        hcompressed = compress.compress_waveform(
+                    htilde, sample_points, args.tolerance,
+                    args.interpolation, decomp_scratch=decomp_scratch)
+
 
     # save results
     hcompressed.write_to_hdf(output, tmplt.template_hash)
