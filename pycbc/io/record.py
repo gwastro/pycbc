@@ -894,6 +894,9 @@ class FieldArray(numpy.recarray):
         are properties that are assumed to operate on one or more of self's
         fields, thus returning an array of values.
         """
+        if isinstance(names, str) or isinstance(names, unicode):
+            names = [names]
+            methods = [methods]
         out = self.add_properties(names, methods)
         if out._virtualfields is None:
             out._virtualfields = []
