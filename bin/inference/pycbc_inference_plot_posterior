@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# Copyright (C) 2016 Christopher M. Biwer
+# Copyright (C) 2016 Miriam Cabero Mueller, Collin Capano
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -16,122 +16,82 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
 import argparse
-import h5py
 import logging
-import matplotlib as mpl; mpl.use("Agg")
-import matplotlib.pyplot as plt
 import numpy
-import sys
-import corner
-from pycbc import pnutils, results
-from pycbc.inference import option_utils
+import matplotlib
+matplotlib.use('agg')
+from matplotlib import pyplot
+import pycbc
+from pycbc.inference import option_utils, likelihood
+from pycbc.io.inference_hdf import InferenceFile
+from pycbc.results.scatter_histograms import create_multidim_plot
 
-# command line usage
-parser = argparse.ArgumentParser(
-    description="Plots corner plot of posteriors from inference sampler.")
+parser = argparse.ArgumentParser()
 
-# verbose option
-parser.add_argument("--verbose", action="store_true", default=False,
-    help="Print logging info.")
-
-# output 1-D histogram options
 parser.add_argument("--output-file", type=str, required=True,
-    help="Path to output plot.")
-parser.add_argument("--quantiles", type=float, nargs="+",
-    default=[0.16, 0.5, 0.84],
-    help="Quantiles to plot on 1-D histograms.")
-parser.add_argument("--hide-titles", action="store_false", default=True,
-    help="Display median and lower and maximal quantiles as error bounds.")
-
-# output 2-D histogram options
-parser.add_argument("--hide-data-points", action="store_false", default=True,
-    help="Display data points on 2-D histograms.")
-parser.add_argument("--hide-density", action="store_false", default=True,
-    help="Display density color map on 2-D histograms.")
-parser.add_argument("--hide-contours", action="store_false", default=True,
-    help="Display contours on 2-D histograms.")
-
-# add results group
+                    help="Output plot path.")
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="Be verbose")
+parser.add_argument('--plot-marginal', action='store_true', default=False,
+                    help="Plot 1D marginalized distributions on the diagonal "
+                         "axes.")
+parser.add_argument("--plot-scatter", action='store_true', default=False,
+                    help="Plot each sample point as a scatter plot.")
+parser.add_argument("--plot-density", action="store_true", default=False,
+                    help="Plot the posterior density as a color map.")
+parser.add_argument("--plot-contours", action="store_true", default=False,
+                    help="Draw contours showing the 50th and 90th percentile "
+                         "confidence regions.")
+# Scatter configuration
+option_utils.add_scatter_option_group(parser)
+# Density configuration
+option_utils.add_density_option_group(parser)
+# add standard option utils
 option_utils.add_inference_results_option_group(parser)
 
-# parse the command line
 opts = parser.parse_args()
 
-# setup log
-if opts.verbose:
-    log_level = logging.DEBUG
+pycbc.init_logging(opts.verbose)
+
+# Get parameters
+logging.info("Loading parameters")
+fp, parameters, labels, samples = option_utils.results_from_cli(opts)
+logging.info("Using {i} samples".format(i=samples.size))
+if opts.z_arg is not None:
+    logging.info("Getting likelihood stats")
+    likelihood_stats = fp.read_likelihood_stats(thin_start=opts.thin_start,
+            thin_end=opts.thin_end, thin_interval=opts.thin_interval,
+            iteration=opts.iteration)
+    zvals, zlbl = option_utils.get_zvalues(fp, opts.z_arg, likelihood_stats)
 else:
-    log_level = logging.WARN
-logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
-
-# load the results
-fp, parameters, labels, samples = option_utils.results_from_cli(opts,
-    load_samples=True, walkers=None)
-
-# convert the samples to a 2D array
-x = numpy.zeros((samples.size, len(parameters)))
-for ii,p in enumerate(parameters):
-    x[:,ii] = samples[p]
-
-# plot posterior
-logging.info("Plot posteriors")
-hist2d_kwargs = {
-    "plot_datapoints" : opts.hide_data_points,
-    "plot_density" : opts.hide_density,
-    "plot_contours" : opts.hide_contours,
-}
-fig = corner.corner(x, labels=labels, quantiles=opts.quantiles, color="navy",
-                   show_titles=opts.hide_titles, **hist2d_kwargs)
-
-# if there is only one histogram then change some formatting
-if len(parameters) == 1:
-
-    # make plot larger
-    fig.set_size_inches(8, 6)
-
-    # get max and min values in order to expand plot to show all values
-    xmin = x.min()
-    xmax = x.max()
-
-    # determine width of each bin the histogram
-    axs = fig.axes[0]
-    poly_xy = axs.patches[0].get_xy()
-    step = poly_xy[2][0] - poly_xy[0][0]
-
-    # remove whitespace that corner.corner creates
-    fig.subplots_adjust(left=0.125, bottom=0.2, right=0.9, top=0.9,
-                        wspace=0.2, hspace=0.2)
-    fig.axes[0].xaxis.set_label_coords(0.5, -0.2)
-
-    # set new x-axis limits
-    fig.axes[0].set_xlim(xmin - step, xmax + step)
-
-    # make 10 tick marks on the boundaries of bins from the histogram
-    fig.axes[0].set_xticks(numpy.arange(xmin - step, xmax+2*step, (xmax-xmin)/step/10*step))
-
-# save figure with meta-data
-caption_kwargs = {
-    "quantiles" : ", ".join(map(str, opts.quantiles)),
-    "thin_start" : opts.thin_start,
-    "thin_interval" : opts.thin_interval,
-    "niterations" : len(x[0]),
-}
-caption = """Posterior distributions for waveform parameters. The dashed
-vertical lines correspond to the {quantiles} quantiles. The thinning used to
-make this plot took samples beginning at the {thin_start} and then every
-{thin_interval}-th sample after that. Each chain of samples had {niterations}
-iterations.""".format(**caption_kwargs)
-if len(parameters) == 1:
-    title = "Posterior Distribution for %s" % labels[0]
-else:
-    title = "Posterior Distributions"
-results.save_fig_with_metadata(fig, opts.output_file,
-                               cmd=" ".join(sys.argv),
-                               title=title,
-                               caption=caption)
-plt.close()
-
-# exit
+    zvals = None
+    zlbl = None
 fp.close()
+
+logging.info("Plotting")
+fig, axis_dict = create_multidim_plot(
+                parameters, samples, labels=labels,
+                plot_marginal=opts.plot_marginal,
+                plot_scatter=opts.plot_scatter,
+                    zvals=zvals, show_colorbar=not opts.no_colorbar,
+                    cbar_label=zlbl, vmin=opts.vmin, vmax=opts.vmax,
+                    scatter_cmap=opts.scatter_cmap,
+                plot_density=opts.plot_density,
+                plot_contours=opts.plot_contours,
+                    density_cmap=opts.density_cmap,
+                    contour_color=opts.contour_color,
+                    use_kombine=opts.use_kombine_kde)
+
+# save
+fig.savefig(opts.output_file, bbox_inches='tight', dpi=200)
 logging.info("Done")

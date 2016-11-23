@@ -89,7 +89,7 @@ def get_signum(val, err, max_sig=numpy.inf):
         return drop_trailing_zeros(return_val)
 
 def format_value(value, error, plus_error=None, use_scientific_notation=3,
-        include_error=True, use_relative_error=False):
+        include_error=True, use_relative_error=False, ndecs=None):
     """Given a numerical value and some bound on it, formats the number into a
     string such that the value is rounded to the nearest significant figure,
     which is determined by the error = abs(value-bound).
@@ -128,6 +128,9 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
     use_relative_error : {False, bool}
         If include_error, the error will be formatted as a percentage of the
         the value.
+    ndecs: {None, int}
+        Number of values after the decimal point. If not provided,
+        it will default to the number of values in the error.
 
     Returns
     -------
@@ -186,8 +189,12 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
     else:
         powfactor = r'\times 10^{%i}' %(int(conversion_factor))
 
+    if ndecs is not None:
+        decs = value * 10**(-ndecs)
+    else:
+        decs = error
     # now round the the appropriate number of sig figs
-    valtxt = get_signum(value, error)
+    valtxt = get_signum(value, decs)
 
     if include_error:
         if plus_error is None:
@@ -205,8 +212,8 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
         else:
             plus_err = plus_err * 10**(-conversion_factor)
             minus_err = minus_err * 10**(-conversion_factor)
-            minus_err_txt = get_signum(minus_err, error)
-            plus_err_txt = get_signum(plus_err, error)
+            minus_err_txt = get_signum(minus_err, decs)
+            plus_err_txt = get_signum(plus_err, decs)
             if use_relative_error and float(valtxt) != 0.:
                 # same as above, but with plus and minus
                 rel_plus_err = get_signum(

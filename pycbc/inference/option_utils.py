@@ -21,6 +21,7 @@ This module contains standard options used for inference-related programs.
 import logging
 from pycbc.io import InferenceFile
 import pycbc.inference.sampler
+from pycbc.inference import likelihood
 
 def add_sampler_option_group(parser):
     """
@@ -183,3 +184,83 @@ def results_from_cli(opts, load_samples=True, walkers=None):
     else:
         samples = None
     return fp, parameters, labels, samples
+
+def get_zvalues(fp, arg, likelihood_stats):
+    """Reads the data for the z-value of the plots from the inference file.
+
+    """
+    if arg == 'loglr':
+        zvals = likelihood_stats.loglr
+        zlbl = r'$\log\mathcal{L}(\vec{\vartheta})$'
+    elif arg == 'snr':
+        zvals = likelihood.snr_from_loglr(likelihood_stats.loglr)
+        zlbl = r'$\rho(\vec{\vartheta})$'
+    elif arg == 'logplr':
+        zvals = likelihood_stats.loglr + likelihood_stats.prior
+        zlbl = r'$\log[\mathcal{L}(\vec{\vartheta})p(\vec{\vartheta})]$'
+    elif arg == 'logposterior':
+        zvals = likelihood_stats.loglr + likelihood_stats.prior + fp.lognl
+        zlbl = r'$\log[p(d|\vec{\vartheta})p(\vec{\vartheta})]$'
+    elif arg == 'prior':
+        zvals = likelihood_stats.prior
+        zlbl = r'$\log p(\vec{\vartheta})$'
+    return zvals, zlbl
+
+def add_scatter_option_group(parser):
+    """
+    Adds the options needed to configure scatter plots.
+
+    Parameters
+    ----------
+    parser : object
+        ArgumentParser instance.
+    """
+    scatter_group = parser.add_argument_group("Options for configuring the "
+                                              "scatter plot.")
+
+    scatter_group.add_argument('--z-arg', type=str, default=None,
+                    choices=['loglr', 'snr', 'logplr', 'logposterior',
+                             'prior'],
+                    help='What to color the scatter points by. If not set, '
+                         'all points will be the same color. Choices are: '
+                         'loglr: the log likelihood ratio; snr: SNR; '
+                         'logplr: loglr + log of the prior; '
+                         'logposterior: log likelihood function + log prior; '
+                         'prior: the log of the prior.')
+    scatter_group.add_argument('--no-colorbar', action='store_true', default=False,
+                    help='Do not show the color bar for the scatter plot. ')
+    scatter_group.add_argument("--vmin", type=float,
+                    help="Minimum value for the colorbar.")
+    scatter_group.add_argument("--vmax", type=float,
+                    help="Maximum value for the colorbar.")
+    scatter_group.add_argument("--scatter-cmap", type=str, default='viridis',
+                    help="Specify the colormap to use for points. Default is "
+                         "viridis.")
+
+    return scatter_group
+
+def add_density_option_group(parser):
+    """
+    Adds the options needed to configure contours and density colour map.
+
+    Parameters
+    ----------
+    parser : object
+        ArgumentParser instance.
+    """
+    density_group = parser.add_argument_group("Options for configuring the "
+                                          "contours and density color map")
+
+    density_group.add_argument("--density-cmap", type=str, default='viridis',
+                    help="Specify the colormap to use for the density. "
+                         "Default is viridis.")
+    density_group.add_argument("--contour-color", type=str,
+                    help="Specify the color to use for the contour lines. "
+                         "Default is white for density plots and black "
+                         "for scatter plots.")
+    density_group.add_argument('--use-kombine-kde', default=False,
+                    action="store_true",
+                    help="Use kombine's KDE for determining contours. Default "
+                         "is to use scipy's gaussian_kde.")
+
+    return density_group
