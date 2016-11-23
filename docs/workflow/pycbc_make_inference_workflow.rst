@@ -86,6 +86,9 @@ A simple workflow configuration file::
 
     [inference_posterior]
     ; command line options use --help for more information
+    plot-density =
+    plot-contours =
+    plot-marginal =
 
     [inference_prior]
     ; command line options use --help for more information
