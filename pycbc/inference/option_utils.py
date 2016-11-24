@@ -327,9 +327,9 @@ def add_scatter_option_group(parser):
                     help="Minimum value for the colorbar.")
     scatter_group.add_argument("--vmax", type=float,
                     help="Maximum value for the colorbar.")
-    scatter_group.add_argument("--scatter-cmap", type=str, default='viridis',
+    scatter_group.add_argument("--scatter-cmap", type=str, default='plasma',
                     help="Specify the colormap to use for points. Default is "
-                         "viridis.")
+                         "plasma.")
 
     return scatter_group
 

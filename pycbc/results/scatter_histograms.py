@@ -260,7 +260,13 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
         s = numpy.percentile(resamps, percentiles)
         if contour_color is None:
             contour_color = 'k'
-        ct = ax.contour(X, Y, Z, s, colors=contour_color, zorder=3)
+        # make linewidths thicker if not plotting density for clarity
+        if plot_density:
+            lw = 1
+        else:
+            lw = 2
+        ct = ax.contour(X, Y, Z, s, colors=contour_color, linewidths=lw,
+                        zorder=3)
         # label contours
         lbls = ['{p}%'.format(p=int(p)) for p in (100. - percentiles)]
         fmt = dict(zip(ct.levels, lbls))
@@ -271,8 +277,8 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
 
 
 def create_marginalized_hist(ax, values, label, percentiles=None,
-        color='navy', filled=False, linecolor='b', title=True, rotated=False,
-        plot_min=None, plot_max=None):
+        color='k', fillcolor='gray', linecolor='navy', title=True,
+        rotated=False, plot_min=None, plot_max=None):
     """Plots a 1D marginalized histogram of the given param from the given
     samples.
 
@@ -288,12 +294,13 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         What percentiles to draw lines at. If None, will draw lines at
         `[5, 50, 95]` (i.e., the bounds on the upper 90th percentile and the
         median).
-    color : {'navy', string}
-        What color to make the histogram; default is navy.
-    filled : {False, bool}
-        Whether to fill the histogram; default is False.
-    linecolor : {'b', string}
-        What color to use for the percentile lines.
+    color : {'k', string}
+        What color to make the histogram; default is black.
+    fillcolor : {'gray', string, or None}
+        What color to fill the histogram with. Set to None to not fill the
+        histogram. Default is 'gray'.
+    linecolor : {'navy', string}
+        What color to use for the percentile lines. Default is 'navy'.
     title : {True, bool}
         Add a title with the median value +/- uncertainty, with the
         max(min) `percentile` used for the +(-) uncertainty.
@@ -308,24 +315,24 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     scalefac : {1., float}
         Factor to scale the default font sizes by. Default is 1 (no scaling).
     """
-    if filled:
-        htype = 'stepfilled'
-    else:
+    if fillcolor is None:
         htype = 'step'
+    else:
+        htype = 'stepfilled'
     if rotated:
         orientation = 'horizontal'
     else:
         orientation = 'vertical'
-    ax.hist(values, bins=50, color=color, histtype=htype,
-        orientation=orientation)
+    ax.hist(values, bins=50, histtype=htype, orientation=orientation,
+            facecolor=fillcolor, edgecolor=color, lw=2)
     if percentiles is None:
         percentiles = [5., 50., 95.]
     values = numpy.percentile(values, percentiles)
     for val in values:
         if rotated:
-            ax.axhline(y=val, ls='dashed', color=linecolor)
+            ax.axhline(y=val, ls='dashed', color=linecolor, lw=2)
         else:
-            ax.axvline(x=val, ls='dashed', color=linecolor)
+            ax.axvline(x=val, ls='dashed', color=linecolor, lw=2)
     if title:
         values_med = numpy.median(values)
         values_min = values.min()
@@ -409,8 +416,8 @@ def create_multidim_plot(parameters, samples, labels=None,
     vmax: {None, float}, optional
         Maximum value for the colorbar. If None, will use the maxmimum of
         zvals.
-    scatter_cmap : {'plasma_r', string}
-        The color map to use for the scatter points. Default is 'plasma_r'.
+    scatter_cmap : {'plasma', string}
+        The color map to use for the scatter points. Default is 'plasma'.
     plot_density : {False, bool}
         Plot the density of points as a color map.
     plot_contours : {True, bool}
@@ -419,7 +426,7 @@ def create_multidim_plot(parameters, samples, labels=None,
         The color map to use for the density plot.
     contour_color : {None, string}
         The color to use for the contour lines. Defaults to white for
-        density plots, yellow for scatter plots without zvals, and black
+        density plots, navy for scatter plots without zvals, and black
         otherwise.
     use_kombine : {False, bool}
         Use kombine's KDE to calculate density. Otherwise, will use
@@ -460,9 +467,12 @@ def create_multidim_plot(parameters, samples, labels=None,
             raise ValueError("must provide z values to create a colorbar")
         else:
             # just make all scatter points same color
-            zvals = 'navy'
-            if contour_color is None:
-                contour_color = 'yellow'
+            if plot_contours:
+                zvals = 'gray'
+                if contour_color is None:
+                    contour_color = 'navy'
+            else:
+                zvals = 'k'
 
     # convert samples to a dictionary to avoid re-computing derived parameters
     # every time they are needed
@@ -504,7 +514,7 @@ def create_multidim_plot(parameters, samples, labels=None,
             # rotate the marginal plot
             rotated = nparams == 2 and pi == nparams-1
             create_marginalized_hist(ax, samples[param], label=labels[param],
-                color='navy', filled=False, linecolor='b', title=True,
+                color='k', fillcolor='gray', linecolor='navy', title=True,
                 rotated=rotated, plot_min=mins[param], plot_max=maxs[param])
 
     # Off-diagonals...
