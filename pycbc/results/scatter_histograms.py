@@ -376,7 +376,7 @@ def create_multidim_plot(parameters, samples, labels=None,
                 plot_marginal=True,
                 plot_scatter=True,
                     zvals=None, show_colorbar=True, cbar_label=None,
-                    vmin=None, vmax=None, scatter_cmap='plasma_r',
+                    vmin=None, vmax=None, scatter_cmap='plasma',
                 plot_density=False, plot_contours=True,
                     density_cmap='viridis', contour_color=None,
                     use_kombine=False):
@@ -467,12 +467,9 @@ def create_multidim_plot(parameters, samples, labels=None,
             raise ValueError("must provide z values to create a colorbar")
         else:
             # just make all scatter points same color
-            if plot_contours:
-                zvals = 'gray'
-                if contour_color is None:
-                    contour_color = 'navy'
-            else:
-                zvals = 'k'
+            zvals = 'gray'
+            if plot_contours and contour_color is None:
+                contour_color = 'navy'
 
     # convert samples to a dictionary to avoid re-computing derived parameters
     # every time they are needed
