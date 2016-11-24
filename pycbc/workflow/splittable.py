@@ -57,7 +57,7 @@ def select_splitfilejob_instance(curr_exe):
         and the job returned by this **must** contain
         * job.create_node()
     """
-    if curr_exe == 'pycbc_splitbank':
+    if curr_exe == 'pycbc_hdf5_splitbank':
         exe_class = PycbcSplitBankExecutable
     elif curr_exe == 'pycbc_split_inspinj':
         exe_class = PycbcSplitInspinjExecutable

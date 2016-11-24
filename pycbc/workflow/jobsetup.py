@@ -1699,7 +1699,7 @@ class PycbcSplitBankExecutable(Executable):
             curr_tags = bank.tags + [curr_tag] + tags
             job_tag = bank.description + "_" + self.name.upper()
             out_file = File(bank.ifo_list, job_tag, bank.segment,
-                               extension=".xml.gz", directory=self.out_dir,
+                               extension=".hdf", directory=self.out_dir,
                                tags=curr_tags, store_file=self.retain_files)
             out_files.append(out_file)
         node.add_output_list_opt('--output-filenames', out_files)

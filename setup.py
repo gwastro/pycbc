@@ -373,6 +373,7 @@ setup (
                'bin/pycbc_multi_inspiral',
                'bin/pycbc_make_banksim',
                'bin/pycbc_splitbank',
+               'bin/pycbc_hdf5_splitbank',
                'bin/pycbc_split_inspinj',
                'bin/pycbc_geom_aligned_2dstack',
                'bin/pycbc_geom_aligned_bank',
