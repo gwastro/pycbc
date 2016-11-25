@@ -67,7 +67,7 @@ lalapps_inspinj \
 
 echo "Running MCMC"
 echo "============================"
-pycbc_mcmc --verbose \
+pycbc_inference --verbose \
     --instruments ${IFOS} \
     --gps-start-time ${GPS_START_TIME} \
     --gps-end-time ${GPS_END_TIME} \
