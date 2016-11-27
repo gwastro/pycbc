@@ -61,7 +61,8 @@ parser.add_argument("--output-prefix", default=None,
 parser.add_argument("--random-sort", action="store_true", default=False,
                     help='Sort templates randomly before splitting')
 parser.add_argument("--random-seed", type=int,
-                    help='Random seed to use when sorting randomly')
+                    help="Random seed to use when sorting randomly the"
+                    "indices of array of templates")
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
                          "Otherwise, an error is raised.")
@@ -95,6 +96,9 @@ if args.templates_per_bank and args.number_of_banks:
 if args.output_filenames:
     args.number_of_banks = len(args.output_filenames)
 
+# The indices for the array of templates are shuffled and the shuffled
+# array of indices are used to rearrange the elements of the templates
+# array
 if args.random_sort:
     if args.random_seed is not None:
         random.seed(args.random_seed)
