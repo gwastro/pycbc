@@ -40,7 +40,7 @@ def select_splitfilejob_instance(curr_exe):
     """
     This function returns an instance of the class that is appropriate for
     splitting an output file up within workflow (for e.g. splitbank).
-    
+
     Parameters
     ----------
     curr_exe : string
@@ -112,7 +112,7 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=None):
         errMsg += "IN_WORKFLOW or NOOP."
         raise ValueError(errMsg)
 
-    logging.info("Leaving split output files module.")  
+    logging.info("Leaving split output files module.")
     return split_table_outs
 
 def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
@@ -134,7 +134,7 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
         The list of split up files as output from this job.
     '''
     cp = workflow.cp
-    
+
     # Get values from ini file
     try:
         num_splits = cp.get_opt_tags("workflow-splittable",

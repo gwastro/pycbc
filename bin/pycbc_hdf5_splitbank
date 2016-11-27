@@ -46,7 +46,7 @@ parser.add_argument('--templates-per-bank', type = int,
 parser.add_argument("--number-of-banks", type=int,
                     help="This specifies the number of output sub-banks."
                     "Either specify this or --templates-per-bank, as one"
-                    "of them is used to calculate the other in the code." 
+                    "of them is used to calculate the other in the code."
                     "Do not supply both.")
 parser.add_argument("--output-filenames", nargs='*', default=None,
                     action="store",
@@ -85,9 +85,9 @@ if args.output_filenames and args.output_prefix:
     parser.error(errMsg)
 
 if args.templates_per_bank and args.number_of_banks:
-    errMsg="""Either request a --templates-per-bank which would be used 
+    errMsg="""Either request a --templates-per-bank which would be used
     to calculate the number of sub-banks to be generated or request
-    --number-of-banks which would be used to calculate the number of 
+    --number-of-banks which would be used to calculate the number of
     templates to be put in each sub-bank. Cannot supply both. """
     parser.error(errMsg)
 
@@ -117,8 +117,8 @@ elif args.templates_per_bank:
     num_files = int(templates[:].size / num_per_file)
 
 else:
-    errMsg = """Either one of the options --templates-per-bank or 
-    --number-of-banks should be requested to generate the output 
+    errMsg = """Either one of the options --templates-per-bank or
+    --number-of-banks should be requested to generate the output
     sub-banks."""
     parser.error(errMsg)
 
@@ -150,7 +150,7 @@ for ii in range(num_files):
     # be a slice of the input template bank having a start index and
     # end index as calculated above
     output = tmplt_bank.write_to_hdf(outname, start_idx, end_idx,
-                                     force=args.force, 
+                                     force=args.force,
                                      skip_fields='template_duration')
     output.close()
 

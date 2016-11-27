@@ -538,8 +538,8 @@ for f in analysis_time_summ:
 layout.single_layout(rdir['analysis_time'], (analysis_time_summ))
 
 # make full summary
-summ = ([(time_file,)] + [(seg_summ_plot,)] + 
-        [(seg_summ_table, veto_summ_table)] + det_summ + hist_summ + 
+summ = ([(time_file,)] + [(seg_summ_plot,)] +
+        [(seg_summ_table, veto_summ_table)] + det_summ + hist_summ +
         bank_plot + list(layout.grouper(closed_snrifar, 2)) + inj_summ)
 for row in summ:
     for f in row:
