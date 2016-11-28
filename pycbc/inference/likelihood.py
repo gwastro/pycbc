@@ -30,11 +30,17 @@ from pycbc import filter
 from pycbc.types import Array
 import numpy
 
-def _noprior(params):
-    """Dummy function to just return 0 if no prior is provided in a
+class _NoPrior(object):
+    """Dummy class to just return 0 if no prior is provided in a
     likelihood generator.
     """
-    return 0.
+    @staticmethod
+    def apply_boundary_conditions(params):
+        return params
+
+    def __call__(self, params):
+        return 0.
+
 
 def snr_from_loglr(loglr):
     """Returns SNR computed from the given log likelihood ratio(s). This is
@@ -190,7 +196,7 @@ class _BaseLikelihoodEvaluator(object):
             raise ValueError("all data must be of the same length")
         # store prior
         if prior is None:
-            self._prior = _noprior 
+            self._prior = _NoPrior()
         else:
             # check that the variable args of the prior evaluator is the same
             # as the waveform generator
@@ -308,7 +314,9 @@ class _BaseLikelihoodEvaluator(object):
         cls._callfunc = getattr(cls, funcname)
 
     def __call__(self, params):
-        return self._callfunc(params)
+        # apply any boundary conditions to the parameters before
+        # generating/evaluating
+        return self._callfunc(self._prior.apply_boundary_conditions(params))
 
 
 
