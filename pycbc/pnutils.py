@@ -509,7 +509,7 @@ def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
     f : float or numpy.array
         Frequency in Hz
     """
-    params = {"m1":m1, "m2":m2, "s1z":s1z, "s2z":s2z}
+    params = {"mass1":m1, "mass2":m2, "spin1z":s1z, "spin2z":s2z}
     return named_frequency_cutoffs[name](params)
 
 def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
