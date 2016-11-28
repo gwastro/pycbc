@@ -41,6 +41,12 @@ from spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_tmplt_precondition, spa_amplitude_factor, \
                       spa_length_in_time
 
+class NoWaveformError(Exception):
+    """This should be raised if generating a waveform would just result in all
+    zeros being returned, e.g., if a requested `f_final` is <= `f_lower`.
+    """
+    pass
+
 default_args = (parameters.fd_waveform_params.default_dict() + \
     parameters.td_waveform_params).default_dict()
 
@@ -447,15 +453,10 @@ def get_fd_waveform(template=None, **kwargs):
     except KeyError:
         pass
 
-    # if the f_final is < f_lower, just return zeros
-    if input_params['f_final'] < input_params['f_lower']:
-        kmax = int(2**(numpy.ceil(numpy.log2(
-            input_params['f_lower']/input_params['delta_f'])))+1)
-        hp = FrequencySeries(zeros(kmax, dtype=complex),
-                             delta_f=input_params['delta_f'])
-        hc = FrequencySeries(zeros(kmax, dtype=complex),
-                             delta_f=input_params['delta_f'])
-        return hp, hc
+    # if the f_final is < f_lower, raise a NoWaveformError
+    if 'f_final' in input_params and (
+            input_params['f_lower'] >= input_params['f_final']):
+        raise NoWaveformError("cannot generate waveform: f_lower >= f_final")
 
     return wav_gen[input_params['approximant']](**input_params)
 
