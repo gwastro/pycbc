@@ -541,6 +541,10 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
             # the kmax of the waveforms may be different than internal kmax
             kmax = min(len(h), self._kmax)
             # whiten the waveform
+            if self._kmin >= kmax:
+                # if the waveform terminates before the filtering low frequency
+                # cutoff, there is nothing to filter, so just go onto the next
+                continue
             h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
             lr += (
                 # <h, d>
