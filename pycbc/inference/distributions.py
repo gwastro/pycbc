@@ -533,8 +533,8 @@ class UniformAngle(Uniform):
                 bnds = self._domain
             elif isinstance(bnds, boundaries.Bounds):
                 # convert to radians
-                bnds._min *= numpy.pi
-                bnds._max *= numpy.pi
+                bnds._min = bnds._min.__class__(bnds._min * numpy.pi)
+                bnds._max = bnds._max.__class__(bnds._max * numpy.pi)
             else:
                 # create a Bounds instance from the given tuple
                 bnds = boundaries.Bounds(
