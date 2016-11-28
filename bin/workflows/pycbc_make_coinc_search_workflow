@@ -156,10 +156,10 @@ bank_files = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
                                          datafind_files, output_dir="bank",
                                          psd_files=precalc_psd_files)
 hdfbank = wf.convert_bank_to_hdf(workflow, bank_files, "bank")
-splitbank_files_fd = wf.setup_splittable_workflow(workflow, bank_files,
+splitbank_files_fd = wf.setup_splittable_workflow(workflow, hdfbank,
                                                   out_dir="bank",
                                                   tags=['full_data'])
-splitbank_files_inj = wf.setup_splittable_workflow(workflow, bank_files,
+splitbank_files_inj = wf.setup_splittable_workflow(workflow, hdfbank,
                                                    out_dir="bank",
                                                    tags=['injections'])
 
@@ -538,8 +538,8 @@ for f in analysis_time_summ:
 layout.single_layout(rdir['analysis_time'], (analysis_time_summ))
 
 # make full summary
-summ = ([(time_file,)] + [(seg_summ_plot,)] + 
-        [(seg_summ_table, veto_summ_table)] + det_summ + hist_summ + 
+summ = ([(time_file,)] + [(seg_summ_plot,)] +
+        [(seg_summ_table, veto_summ_table)] + det_summ + hist_summ +
         bank_plot + list(layout.grouper(closed_snrifar, 2)) + inj_summ)
 for row in summ:
     for f in row:

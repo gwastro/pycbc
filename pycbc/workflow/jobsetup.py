@@ -36,7 +36,7 @@ import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
 from pycbc.workflow.legacy_ihope import (LegacyCohPTFInspiralExecutable,
         LegacyCohPTFTrigCombiner, LegacyCohPTFTrigCluster,
-        LegacyCohPTFInjfinder, LegacyCohPTFInjcombiner, 
+        LegacyCohPTFInjfinder, LegacyCohPTFInjcombiner,
         LegacyCohPTFSbvPlotter, LegacyCohPTFEfficiency, PyGRBMakeSummaryPage)
 
 
@@ -114,9 +114,9 @@ def select_matchedfilter_class(curr_exe):
 def select_generic_executable(workflow, exe_tag):
     """ Returns a class that is appropriate for setting up jobs to run executables
     having specific tags in the workflow config.
-    Executables should not be "specialized" jobs fitting into one of the 
+    Executables should not be "specialized" jobs fitting into one of the
     select_XXX_class functions above, i.e. not a matched filter or template
-    bank job, which require extra setup.  
+    bank job, which require extra setup.
 
     Parameters
     ----------
@@ -178,8 +178,8 @@ def select_generic_executable(workflow, exe_tag):
         raise NotImplementedError(
             "No job class exists for executable %s, exiting" % exe_name)
 
-def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs, 
-                       datafind_outs, parents=None, 
+def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
+                       datafind_outs, parents=None,
                        link_job_instance=None, allow_overlap=True,
                        compatibility_mode=True):
     """ This function sets up a set of single ifo jobs. A basic overview of how this
@@ -240,7 +240,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
     if compatibility_mode and not link_job_instance:
         errMsg = "Compability mode requires a link_job_instance."
         raise ValueError(errMsg)
-    
+
     ########### (1) ############
     # Get the times that can be analysed and needed data lengths
     data_length, valid_chunk, valid_length = identify_needed_data(curr_exe_job,
@@ -251,7 +251,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
         ########### (2) ############
         # Initialize the class that identifies how many jobs are needed and the
         # shift between them.
-        segmenter = JobSegmenter(data_length, valid_chunk, valid_length, 
+        segmenter = JobSegmenter(data_length, valid_chunk, valid_length,
                                  curr_seg, curr_exe_job,
                                  compatibility_mode=compatibility_mode)
 
@@ -264,7 +264,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
             ############## (4) #############
             # Get the data that this job should read in
             job_data_seg = segmenter.get_data_times_for_job(job_num)
-                
+
             ############# (5) ############
             # Identify parents/inputs to the job
             if parents:
@@ -272,7 +272,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                 curr_parent = parents.find_outputs_in_range(ifo, job_valid_seg,
                                                             useSplitLists=True)
                 if not curr_parent:
-                    err_string = ("No parent jobs found overlapping %d to %d." 
+                    err_string = ("No parent jobs found overlapping %d to %d."
                                   %(job_valid_seg[0], job_valid_seg[1]))
                     err_string += "\nThis is a bad error! Contact a developer."
                     raise ValueError(err_string)
@@ -281,7 +281,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
 
             if datafind_outs:
-                curr_dfouts = datafind_outs.find_all_output_in_range(ifo, 
+                curr_dfouts = datafind_outs.find_all_output_in_range(ifo,
                                               job_data_seg, useSplitLists=True)
                 if not curr_dfouts:
                     err_str = ("No datafind jobs found overlapping %d to %d."
@@ -303,11 +303,11 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                 else:
                     tag = []
                 # To ensure output file uniqueness I add a tag
-                # We should generate unique names automatically, but it is a 
-                # pain until we can set the output names for all Executables              
-                node = curr_exe_job.create_node(job_data_seg, job_valid_seg, 
+                # We should generate unique names automatically, but it is a
+                # pain until we can set the output names for all Executables
+                node = curr_exe_job.create_node(job_data_seg, job_valid_seg,
                                                 parent=parent,
-                                                dfParents=curr_dfouts, 
+                                                dfParents=curr_dfouts,
                                                 tags=tag)
                 workflow.add_node(node)
                 curr_out_files = node.output_files
@@ -343,7 +343,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
         frame_files = datafind_outs[:-1]
 
     split_bank_counter = 0
-    
+
     if curr_exe_job.injection_file is None:
         for split_bank in parents:
             tag = list(tags)
@@ -476,7 +476,7 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
     """ This function will identify the length of data that a specific executable
     needs to analyse and what part of that data is valid (ie. inspiral doesn't
     analyse the first or last 64+8s of data it reads in).
-    
+
     In addition you can supply a second job instance to "link" to, which will
     ensure that the two jobs will have a one-to-one correspondence (ie. one
     template bank per one matched-filter job) and the corresponding jobs will
@@ -523,7 +523,7 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
         if len(link_data_length) > 1 or len(valid_lengths) > 1:
             raise ValueError('Linking job instances for tiling is not supported'
                              ' between jobs that allow variable tile size')
-        
+
         # What data is lost at start of both jobs? Take the maximum.
         start_data_loss = max(valid_chunks[0][0], link_valid_chunk[0][0])
         # What data is lost at end of both jobs? Take the maximum.
@@ -543,7 +543,7 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
         # Which one is now longer? Use this is valid_length
         if link_valid_length < valid_lengths[0]:
             valid_lengths[0] = link_valid_length
-            
+
     return data_lengths, valid_chunks, valid_lengths
 
 
@@ -551,21 +551,21 @@ class JobSegmenter(object):
     """ This class is used when running sngl_ifo_job_setup to determine what times
     should be analysed be each job and what data is needed.
     """
-    
+
     def __init__(self, data_lengths, valid_chunks, valid_lengths, curr_seg,
                  curr_exe_class, compatibility_mode = False):
         """ Initialize class. """
         self.exe_class = curr_exe_class
         self.curr_seg = curr_seg
         self.curr_seg_length = float(abs(curr_seg))
-        
+
         self.data_length, self.valid_chunk, self.valid_length = \
                       self.pick_tile_size(self.curr_seg_length, data_lengths,
                                                   valid_chunks, valid_lengths)
-        
+
         self.data_chunk = segments.segment([0, self.data_length])
         self.data_loss = self.data_length - abs(self.valid_chunk)
-        
+
         if self.data_loss < 0:
             raise ValueError("pycbc.workflow.jobsetup needs fixing! Please contact a developer")
 
@@ -610,14 +610,14 @@ class JobSegmenter(object):
             for i, size in enumerate(valid_lengths):
                 if abs(size - target_size) < pick_diff:
                     pick, pick_diff  = i, abs(size - target_size)
-            return data_lengths[pick], valid_chunks[pick], valid_lengths[pick]      
+            return data_lengths[pick], valid_chunks[pick], valid_lengths[pick]
 
     def get_valid_times_for_job(self, num_job, allow_overlap=True):
         """ Get the times for which this job is valid. """
         if self.compatibility_mode:
             return self.get_valid_times_for_job_legacy(num_job)
         else:
-            return self.get_valid_times_for_job_workflow(num_job, 
+            return self.get_valid_times_for_job_workflow(num_job,
                                                    allow_overlap=allow_overlap)
 
     def get_valid_times_for_job_workflow(self, num_job, allow_overlap=True):
@@ -730,7 +730,7 @@ class PyCBCInspiralExecutable(Executable):
         self.cp = cp
         self.set_memory(2000)
         self.injection_file = injection_file
-        
+
         try:
             outtype = cp.get('workflow-matchedfilter', 'output-type')
         except:
@@ -743,7 +743,7 @@ class PyCBCInspiralExecutable(Executable):
         else:
             raise ValueError('Invalid output type for PyCBC Inspiral: %s' % outtype)
 
-        self.num_threads = 1  
+        self.num_threads = 1
         if self.get_opt('processing-scheme') is not None:
             stxt = self.get_opt('processing-scheme')
             if len(stxt.split(':')) > 1:
@@ -769,12 +769,12 @@ class PyCBCInspiralExecutable(Executable):
                      int_gps_time_to_str(data_seg[1] - pad_data))
         node.add_opt('--trig-start-time', int_gps_time_to_str(valid_seg[0]))
         node.add_opt('--trig-end-time', int_gps_time_to_str(valid_seg[1]))
-        node.add_profile('condor', 'request_cpus', self.num_threads)        
+        node.add_profile('condor', 'request_cpus', self.num_threads)
 
         if self.injection_file is not None:
             node.add_input_opt('--injection-file', self.injection_file)
 
-        # set the input and output files        
+        # set the input and output files
         fil = node.new_output_file_opt(valid_seg, self.ext, '--output', tags=tags,
                          store_file=self.retain_files, use_tmp_subdirs=True)
         fil.add_metadata('data_seg', data_seg)
@@ -784,7 +784,7 @@ class PyCBCInspiralExecutable(Executable):
         # FIXME: This hack is needed for pipedown compatibility. user-tag is
         #        no-op and is only needed for pipedown to know whether this is
         #        a "FULL_DATA" job or otherwise. Alex wants to burn this code
-        #        with fire. 
+        #        with fire.
         if node.output_files[0].storage_path is not None:
             outFile = os.path.basename(node.output_files[0].storage_path)
             userTag = outFile.split('-')[1]
@@ -804,7 +804,7 @@ class PyCBCInspiralExecutable(Executable):
     def get_valid_times(self):
         """ Determine possible dimensions of needed input and valid output
         """
-        
+
         if self.cp.has_option('workflow-matchedfilter',
                                                       'min-analysis-segments'):
             min_analysis_segs = int(self.cp.get('workflow-matchedfilter',
@@ -832,7 +832,7 @@ class PyCBCInspiralExecutable(Executable):
         else:
             # Choose a ridiculously large default value
             max_analysis_length = 100000
-        
+
         segment_length = int(self.get_opt('segment-length'))
         pad_data = 0
         if self.has_opt('pad-data'):
@@ -877,7 +877,7 @@ class PyCBCInspiralExecutable(Executable):
             if data_length < min_analysis_length: continue
             data_lengths += [data_length]
             valid_regions += [segments.segment(start, end)]
-            
+
         return data_lengths, valid_regions
 
     def zero_pad_data_extend(self, job_data_seg, curr_seg):
@@ -903,7 +903,7 @@ class PyCBCTmpltbankExecutable(Executable):
     """ The class used to create jobs for pycbc_geom_nonspin_bank Executable and
     any other Executables using the same command line option groups.
     """
-    
+
     current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, ifo=None, out_dir=None,
                  tags=None, write_psd=False, psd_files=None):
@@ -1002,7 +1002,7 @@ class LigoLWCombineSegsExecutable(Executable):
     """ This class is used to create nodes for the ligolw_combine_segments
     Executable
     """
-    
+
     # Always want to keep the segments
     current_retention_level = Executable.FINAL_RESULT
     def create_node(self, valid_seg, veto_files, segment_name):
@@ -1016,7 +1016,7 @@ class LigoLWCombineSegsExecutable(Executable):
 
 class LigolwAddExecutable(Executable):
     """ The class used to create nodes for the ligolw_add Executable. """
-    
+
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, *args, **kwargs):
         super(LigolwAddExecutable, self).__init__(*args, **kwargs)
@@ -1091,7 +1091,7 @@ class LigolwSSthincaExecutable(Executable):
 
 class PycbcSqliteSimplifyExecutable(Executable):
     """ The class responsible for making jobs for pycbc_sqlite_simplify. """
-    
+
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=None):
         if tags is None:
@@ -1127,7 +1127,7 @@ class PycbcSqliteSimplifyExecutable(Executable):
                 curr_node.add_input_arg(file)
                 if ( (not (i % 20)) and (i != 0) ) or ((i+1) == num_inputs):
                     count_tag = ['SPLIT%d' %(count)]
-                    curr_node.new_output_file_opt(job_segment, '.sqlite', 
+                    curr_node.new_output_file_opt(job_segment, '.sqlite',
                                     '--output-file',
                                      tags=self.tags+extra_tags+count_tag,
                                      store_file=curr_store_file)
@@ -1250,7 +1250,7 @@ class PycbcSplitInspinjExecutable(Executable):
         node = Node(self)
 
         node.add_input_opt('--input-file', parent)
-        
+
         if parent.name.endswith("gz"):
             ext = ".xml.gz"
         else:
@@ -1265,7 +1265,7 @@ class PycbcSplitInspinjExecutable(Executable):
                             extension=ext, directory=self.out_dir,
                             tags=curr_tags, store_file=self.retain_files)
             out_files.append(out_file)
-        
+
         node.add_output_list_opt('--output-files', out_files)
         return node
 
@@ -1533,7 +1533,7 @@ class LalappsInspinjExecutable(Executable):
             err_msg += "provided the corresponding ExtTrig or IPN file. "
             err_msg += "Please check your configuration files and try again."
             raise ValueError(err_msg)
-        
+
         if triggered:
             num_injs = int(self.cp.get_opt_tags('workflow-injections',
                                                 'num-injs', curr_tags))
@@ -1543,7 +1543,7 @@ class LalappsInspinjExecutable(Executable):
 
         node.new_output_file_opt(segment, ext, '--output',
                                  store_file=self.retain_files)
-        
+
         node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
         node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
         return node
@@ -1570,7 +1570,7 @@ class PycbcDarkVsBrightInjectionsExecutable(Executable):
         if not parent:
             raise ValueError("Must provide an input file.")
 
-        node = Node(self) 
+        node = Node(self)
         # Standard injection file produced by lalapps_inspinj
         # becomes the input here
         node.add_input_opt('-i', parent)
@@ -1604,20 +1604,20 @@ class LigolwCBCJitterSkylocExecutable(Executable):
         self.cp = cp
         self.out_dir = out_dir
         self.exe_name = exe_name
-            
+
     def create_node(self, parent, segment, tags=None):
         if tags is None:
             tags = []
         if not parent:
             raise ValueError("Must provide an input file.")
 
-        node = Node(self) 
+        node = Node(self)
         node.add_input_opt('--input-file', parent)
         output_file = File(parent.ifo_list, self.exe_name,
                            segment, extension='.xml', store_file=True,
                            directory=self.out_dir, tags=tags)
         node.add_output_opt('--output-file', output_file)
-        
+
         return node
 
 class LigolwCBCAlignTotalSpinExecutable(Executable):
@@ -1663,7 +1663,7 @@ class PycbcTimeslidesExecutable(Executable):
 
 class PycbcSplitBankExecutable(Executable):
     """ The class responsible for creating jobs for pycbc_splitbank. """
-    
+
     current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, num_banks,
                  ifo=None, out_dir=None, universe=None):
@@ -1677,7 +1677,7 @@ class PycbcSplitBankExecutable(Executable):
 
         Parameters
         ----------
-        bank : pycbc.workflow.core.File 
+        bank : pycbc.workflow.core.File
             The File containing the template bank to be split
 
         Returns
@@ -1699,7 +1699,7 @@ class PycbcSplitBankExecutable(Executable):
             curr_tags = bank.tags + [curr_tag] + tags
             job_tag = bank.description + "_" + self.name.upper()
             out_file = File(bank.ifo_list, job_tag, bank.segment,
-                               extension=".xml.gz", directory=self.out_dir,
+                               extension=".hdf", directory=self.out_dir,
                                tags=curr_tags, store_file=self.retain_files)
             out_files.append(out_file)
         node.add_output_list_opt('--output-filenames', out_files)

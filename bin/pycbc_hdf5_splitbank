@@ -22,10 +22,12 @@ smaller banks where the number of smaller banks is a user input
 """
 
 import argparse
+import numpy
 import h5py
 import logging
 import pycbc, pycbc.version
 from pycbc.waveform import bank
+from numpy import random
 __author__  = "Soumi De <soumi.de@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
@@ -44,7 +46,7 @@ parser.add_argument('--templates-per-bank', type = int,
 parser.add_argument("--number-of-banks", type=int,
                     help="This specifies the number of output sub-banks."
                     "Either specify this or --templates-per-bank, as one"
-                    "of them is used to calculate the other in the code." 
+                    "of them is used to calculate the other in the code."
                     "Do not supply both.")
 parser.add_argument("--output-filenames", nargs='*', default=None,
                     action="store",
@@ -56,6 +58,11 @@ parser.add_argument("--output-prefix", default=None,
                     help="Prefix to add to the output template bank names,"
                     "for example 'sub-bank'. The output file names would"
                     "become args.output_prefix.hdf")
+parser.add_argument("--random-sort", action="store_true", default=False,
+                    help='Sort templates randomly before splitting')
+parser.add_argument("--random-seed", type=int,
+                    help="Random seed to use when sorting randomly the"
+                    "indices of array of templates")
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
                          "Otherwise, an error is raised.")
@@ -79,15 +86,25 @@ if args.output_filenames and args.output_prefix:
     parser.error(errMsg)
 
 if args.templates_per_bank and args.number_of_banks:
-    errMsg="""Either request a --templates-per-bank which would be used 
+    errMsg="""Either request a --templates-per-bank which would be used
     to calculate the number of sub-banks to be generated or request
-    --number-of-banks which would be used to calculate the number of 
+    --number-of-banks which would be used to calculate the number of
     templates to be put in each sub-bank. Cannot supply both. """
     parser.error(errMsg)
 
 # If an array of filenames
 if args.output_filenames:
     args.number_of_banks = len(args.output_filenames)
+
+# The indices for the array of templates are shuffled and the shuffled
+# array of indices are used to rearrange the elements of the templates
+# array
+if args.random_sort:
+    if args.random_seed is not None:
+        random.seed(args.random_seed)
+    idx = numpy.arange(templates.size)
+    numpy.random.shuffle(idx)
+    templates = templates[idx]
 
 # Split the templates in the bank taken as input into the smaller banks
 
@@ -104,8 +121,8 @@ elif args.templates_per_bank:
     num_files = int(templates[:].size / num_per_file)
 
 else:
-    errMsg = """Either one of the options --templates-per-bank or 
-    --number-of-banks should be requested to generate the output 
+    errMsg = """Either one of the options --templates-per-bank or
+    --number-of-banks should be requested to generate the output
     sub-banks."""
     parser.error(errMsg)
 
@@ -124,7 +141,7 @@ for ii in range(num_files):
 
     # Assign a name to the h5py output file to store the ii'th smaller bank
     if args.output_filenames:
-        outname = output_filenames[ii]
+        outname = args.output_filenames[ii]
     elif args.output_prefix:
         outname = args.output_prefix + str(ii) + '.hdf'
     else:
@@ -137,7 +154,7 @@ for ii in range(num_files):
     # be a slice of the input template bank having a start index and
     # end index as calculated above
     output = tmplt_bank.write_to_hdf(outname, start_idx, end_idx,
-                                     force=args.force, 
+                                     force=args.force,
                                      skip_fields='template_duration')
     output.close()
 
