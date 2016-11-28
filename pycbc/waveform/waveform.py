@@ -886,4 +886,5 @@ __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "waveform_norm_exists", "get_template_amplitude_norm",
            "get_waveform_filter_length_in_time", "get_sgburst_waveform",
            "print_sgburst_approximants", "sgburst_approximants",
-           "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter"]
+           "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter",
+           "NoWaveformError"]
