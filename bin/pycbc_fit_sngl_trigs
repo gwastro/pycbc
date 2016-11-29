@@ -66,7 +66,7 @@ parser.add_argument("--inputs", nargs="+",
                     help="Input file or space-separated list of input files "
                     "containing single triggers.  Currently .xml(.gz), "
                     ".sqlite and .hdf supported.  Required")
-parser.add_argument("--template-file", default=None,
+parser.add_argument("--bank-file", default=None,
                     help="hdf file containing template parameters; required "
                     "if fitting over trigger masses and/or spins with hdf "
                     "format triggers")
@@ -222,10 +222,10 @@ for ifo in opt.ifos:
             verbose=opt.verbose)
         sngls.ifocut(ifo, inplace=True)
     elif trigformat == "hdf":
-        if opt.template_file:
+        if opt.bank_file:
             # io function can currently only handle 1 file
             sngls = io.hdf.SingleDetTriggers(opt.inputs[0], 
-                  opt.template_file, opt.veto_file, opt.veto_segment_name,
+                  opt.bank_file, opt.veto_file, opt.veto_segment_name,
                   filter_func, ifo)
             done_vetoing = True
         else:

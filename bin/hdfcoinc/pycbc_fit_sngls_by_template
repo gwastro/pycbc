@@ -53,7 +53,7 @@ parser.add_argument("-V", "--verbose", action="store_true",
 parser.add_argument("--trigger-file",
                     help="Input hdf5 file containing single triggers. "
                     "Required")
-parser.add_argument("--template-file", default=None,
+parser.add_argument("--bank-file", default=None,
                     help="hdf file containing template parameters. Required")
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. "
@@ -82,12 +82,10 @@ parser.add_argument("--stat-factor", type=float,
 parser.add_argument("--stat-threshold", type=float,
                     help="Only fit triggers with statistic value above this "
                     "threshold.  Required.  Typically 6-6.5")
-parser.add_argument("--prune-param", # don't hardcode choices yet?
-                    #choices=[
-                    #    'mchirp',
-                    #    'mtotal',
-                    #    'template_duration'] \
-                    #+ pnutils.named_frequency_cutoffs.keys()
+parser.add_argument("--save-trig-param",
+                    help="For each template, save a parameter value read from "
+                    "its trigger(s). Ex. template_duration")
+parser.add_argument("--prune-param",
                     help="Parameter to define bins for 'pruning' loud triggers"
                     " to make the fit insensitive to signals and outliers. "
                     "Choose from mchirp, mtotal, template_duration or a named "
@@ -101,12 +99,13 @@ parser.add_argument("--log-prune-param", action='store_true',
                     help="Bin in the log of prune-param")
 parser.add_argument("--f-lower", default=-1.,
                     help="Starting frequency for calculating template "
-                    "duration, required if this is the fit parameter")
-# FIXME : Would like to have choice of SEOBNRv2 or PhenD duration formula
+                    "duration, required if this is the prune parameter")
+# FIXME : support using the trigger file duration as prune parameter?
+# FIXME : have choice of SEOBNRv2 or PhenD duration formula ?
 parser.add_argument("--min-duration", default=0.,
                     help="Fudge factor for templates with tiny or negative "
                     "values of template_duration: add to duration values "
-                    "before fitting. Units seconds")
+                    "before pruning. Units seconds")
 
 args = parser.parse_args()
 
@@ -121,18 +120,12 @@ else:
     log_level = logging.WARN
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
-# initialize result storage
-tids = []
-counts = []
-counts_above = []
-fits = []
-
 logging.info('Fitting above threshold %f' % args.stat_threshold)
 
 logging.info('Opening trigger file: %s' % args.trigger_file)
 trigf = h5py.File(args.trigger_file, 'r')
-logging.info('Opening template file: %s' % args.template_file)
-templatef = h5py.File(args.template_file, 'r')
+logging.info('Opening template file: %s' % args.bank_file)
+templatef = h5py.File(args.bank_file, 'r')
 
 # get the stat values
 chisq = trigf[args.ifo+'/chisq'][:]
@@ -151,6 +144,8 @@ abovethresh = stat >= args.stat_threshold
 stat = stat[abovethresh]
 tid = trigf[args.ifo+'/template_id'][:][abovethresh]
 time = trigf[args.ifo+'/end_time'][:][abovethresh]
+if args.save_trig_param:
+    tparam = trigf[args.ifo+'/'+args.save_trig_param][:][abovethresh]
 logging.info('%i trigs left after thresholding' % len(stat))
 
 # now do vetoing
@@ -159,6 +154,8 @@ retain, junk = events.veto.indices_outside_segments(time, args.veto_file,
 stat = stat[retain]
 tid = tid[retain]
 time = time[retain]
+if args.save_trig_param:
+    tparam = tparam[retain]
 logging.info('%i trigs left after vetoing with %s' %
                                                    (len(stat), args.veto_file))
 
@@ -177,10 +174,12 @@ def get_param(args, m1, m2, s1z, s2z):
     elif args.prune_param == 'mtotal':
         parvals = m1 + m2
     elif args.prune_param == 'template_duration':
-        parvals = pnutils.get_seobnrrom_duration(m1, m2, s1z, s2z, f_low=args.f_lower)
+        # by default this will use SEOBNRv4 duration function
+        parvals = pnutils.get_imr_duration(m1, m2, s1z, s2z, f_low=args.f_lower)
         parvals += args.min_duration
     elif args.prune_param in pnutils.named_frequency_cutoffs.keys():
-        parvals = pnutils.frequency_cutoff_from_name(args.fit_param, m1, m2, s1z, s2z)
+        parvals = pnutils.frequency_cutoff_from_name(args.prune_param, m1, m2,
+                                                                      s1z, s2z)
     else:
         # try asking for a LALSimulation frequency function
         parvals = pnutils.get_freq(args.prune_param, m1, m2, s1z, s2z)
@@ -268,6 +267,8 @@ if args.prune_param:
             logging.info('%i trigs remain' % len(stat))
             tid = tid[retain]
             time = time[retain]
+            if args.save_trig_param:
+                tparam = tparam[retain]
             # also for the reference trig arrays
             retain = abs(timepruneall - ltime) > args.prune_window
             statpruneall = statpruneall[retain]
@@ -289,6 +290,13 @@ tmin = int(num_templates / float(pieces) * part)
 tmax = int(num_templates / float(pieces) * (part + 1))
 trange = range(tmin, tmax)
 
+# initialize result storage
+tids = []
+counts = []
+counts_above = []
+fits = []
+tpars = []
+
 for tnum in trange:
     stat_in_template = stat[tid == tnum]
     count_above = len(stat_in_template)
@@ -301,19 +309,28 @@ for tnum in trange:
     tids.append(tnum)
     counts_above.append(count_above)
     fits.append(alpha)
-    if (tnum % 100 == 0): logging.info('Fitted template %i / %i' % (tnum - tmin, tmax - tmin))
+    if args.save_trig_param:
+        # save the param value of the first trig in this template
+        param_in_template = tparam[tid == tnum]
+        tpars.append(param_in_template[0])
+    if (tnum % 100 == 0): logging.info('Fitted template %i / %i' %
+                                                     (tnum - tmin,tmax - tmin))
 
 outfile = h5py.File(args.output, 'w')
 # store template-dependent fit output
 outfile.create_dataset("template_id", data=trange)
 outfile.create_dataset("count_above_thresh", data=counts_above)
 outfile.create_dataset("fit_coeff", data=fits)
+if args.save_trig_param:
+    outfile.create_dataset("template_param", data=tpars)
 # add some metadata
 outfile.attrs.create("ifo", data=args.ifo)
 outfile.attrs.create("fit_function", data=args.fit_function)
 outfile.attrs.create("sngl_stat", data=args.sngl_stat)
 if args.stat_factor:
     outfile.attrs.create("stat_factor", data=args.stat_factor)
+if args.save_trig_param:
+    outfile.attrs.create("save_trig_param", data=args.save_trig_param)
 outfile.attrs.create("stat_threshold", data=args.stat_threshold)
 
 outfile.close()
