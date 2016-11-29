@@ -26,7 +26,7 @@
 waveforms.
 """
 
-import lal, lalsimulation, numpy, copy
+import lalsimulation, numpy, copy
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import real_same_precision_as, complex_same_precision_as
 import pycbc.scheme as _scheme
@@ -182,7 +182,7 @@ cuda_fd = dict(_lalsim_fd_approximants.items() + _cuda_fd_approximants.items())
 # List the various available approximants ####################################
 
 def print_td_approximants():
-    print("Lalsimulation Approximants")
+    print("LalSimulation Approximants")
     for approx in _lalsim_td_approximants.keys():
         print "  " + approx
     print("CUDA Approximants")
@@ -190,7 +190,7 @@ def print_td_approximants():
         print "  " + approx
 
 def print_fd_approximants():
-    print("Lalsimulation Approximants")
+    print("LalSimulation Approximants")
     for approx in _lalsim_fd_approximants.keys():
         print "  " + approx
     print("CUDA Approximants")
@@ -198,7 +198,7 @@ def print_fd_approximants():
         print "  " + approx
 
 def print_sgburst_approximants():
-    print("Lalsimulation Approximants")
+    print("LalSimulation Approximants")
     for approx in _lalsim_sgburst_approximants.keys():
         print "  " + approx
 
@@ -531,70 +531,49 @@ _filter_preconditions = {}
 _template_amplitude_norms = {}
 _filter_time_lengths = {}
 
-def seobnrrom_final_frequency(**kwds):
-    from pycbc.pnutils import get_final_freq
-    return get_final_freq("SEOBNRv2", kwds['mass1'], kwds['mass2'],
-                   kwds['spin1z'], kwds['spin2z'])
+def seobnrv2_final_frequency(**kwds):
+    return pnutils.get_final_freq("SEOBNRv2", kwds['mass1'], kwds['mass2'],
+                                  kwds['spin1z'], kwds['spin2z'])
 
+def get_imr_length(approx, **kwds):
+    """Call through to pnutils to obtain IMR waveform durations
+    """
+    m1 = float(kwds['mass1'])
+    m2 = float(kwds['mass2'])
+    s1z = float(kwds['spin1z'])
+    s2z = float(kwds['spin2z'])
+    f_low = float(kwds['f_lower'])
+    # 10% margin of error is incorporated in the pnutils function
+    return pnutils.get_imr_duration(m1, m2, s1z, s2z, f_low, approximant=approx)
 
 def seobnrv2_length_in_time(**kwds):
-    """Stub for holding the calculation of ROM waveform duration.
+    """Stub for holding the calculation of SEOBNRv2* waveform duration.
     """
-    mass1 = float(kwds['mass1'])
-    mass2 = float(kwds['mass2'])
-    spin1z = float(kwds['spin1z'])
-    spin2z = float(kwds['spin2z'])
-    fmin = float(kwds['f_lower'])
-    chi = lalsimulation.SimIMRPhenomBComputeChi(mass1, mass2,
-                                                spin1z, spin2z)
-    time_length = lalsimulation.SimIMRSEOBNRv2ChirpTimeSingleSpin(
-            mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI, chi, fmin)
-    # FIXME: This is still approximate so add a 10% error margin
-    time_length = time_length * 1.1
-    return time_length
-
+    return get_imr_length("SEOBNRv2", **kwds)
 
 def seobnrv4_length_in_time(**kwds):
     """Stub for holding the calculation of SEOBNRv4* waveform duration.
     """
-    m1 = float(kwds['mass1'])
-    m2 = float(kwds['mass2'])
-    s1 = float(kwds['spin1z'])
-    s2 = float(kwds['spin2z'])
-    fmin = float(kwds['f_lower'])
-    t = lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency(
-            fmin, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1, s2)
-    # Allow a 10% margin of error
-    return t * 1.1
+    return get_imr_length("SEOBNRv4", **kwds)
 
 def imrphenomd_length_in_time(**kwds):
     """Stub for holding the calculation of IMRPhenomD waveform duration.
     """
-    mass1 = float(kwds['mass1'])
-    mass2 = float(kwds['mass2'])
-    spin1z = float(kwds['spin1z'])
-    spin2z = float(kwds['spin2z'])
-    fmin = float(kwds['f_lower'])
-    time_length = lalsimulation.SimIMRPhenomDChirpTime(mass1 * lal.MSUN_SI,
-                                                       mass2 * lal.MSUN_SI,
-                                                       spin1z, spin2z, fmin)
-    # FIXME add a 10% error margin for consistency
-    # with seobnrv2_length_in_time()
-    return time_length * 1.1
+    return get_imr_length("IMRPhenomD", **kwds)
 
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
 _filter_ends["SPAtmplt"] = spa_tmplt_end
 _filter_ends["TaylorF2"] = spa_tmplt_end
-#_filter_ends["SEOBNRv1_ROM_EffectiveSpin"] = seobnrrom_final_frequency
-#_filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrrom_final_frequency
-#_filter_ends["SEOBNRv2_ROM_EffectiveSpin"] = seobnrrom_final_frequency
-#_filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrrom_final_frequency
-#_filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_final_frequency
+#_filter_ends["SEOBNRv1_ROM_EffectiveSpin"] = seobnrv2_final_frequency
+#_filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrv2_final_frequency
+#_filter_ends["SEOBNRv2_ROM_EffectiveSpin"] = seobnrv2_final_frequency
+#_filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrv2_final_frequency
+#_filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrv2_final_frequency
 # PhenomD returns higher frequencies than this, so commenting this out for now
-#_filter_ends["IMRPhenomC"] = seobnrrom_final_frequency
-#_filter_ends["IMRPhenomD"] = seobnrrom_final_frequency
+#_filter_ends["IMRPhenomC"] = seobnrv2_final_frequency
+#_filter_ends["IMRPhenomD"] = seobnrv2_final_frequency
 
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
@@ -788,7 +767,6 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
     else:
         raise ValueError("Approximant %s not available" %
                             (input_params['approximant']))
-
 
 def waveform_norm_exists(approximant):
     if approximant in _filter_norms:
