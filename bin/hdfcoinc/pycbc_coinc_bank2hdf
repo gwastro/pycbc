@@ -32,7 +32,8 @@ default_parameters = [
     "mass1", "mass2",
     "spin1x", "spin1y", "spin1z",
     "spin2x", "spin2y", "spin2z",
-    "inclination:alpha3"
+    "inclination:alpha3",
+    "f_lower:alpha6",
     ]
 
 def parse_parameters(parameters):
