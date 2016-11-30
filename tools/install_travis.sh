@@ -56,8 +56,8 @@ else
     cd ${SRC}
     git clone -q https://github.com/lscsoft/lalsuite.git
     cd lalsuite
-    # see PR #1067 for the choice of commit
-    git checkout ab5d37d296a7024fb7cdebd585c7b1c99e4b8d6c
+    # This sets the test release to https://versions.ligo.org/cgit/lalsuite/commit/?id=a2a5a476d33f169b8749e2840c306a48df63c936
+    git checkout a2a5a476d33f169b8749e2840c306a48df63c936
 
     ./00boot
     ./configure -q --prefix=${INST} --enable-swig-python \
