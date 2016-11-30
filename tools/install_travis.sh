@@ -15,6 +15,12 @@ export LD_LIBRARY_PATH=${INST}/lib:${INST}/lib64
 export PKG_CONFIG_PATH=${INST}/lib/pkgconfig
 export PATH=/usr/lib/ccache:${PATH}:${INST}/bin
 
+# Update setuptools
+pip install --upgrade pip setuptools
+
+# Install needed version of numpy
+pip install 'numpy==1.9.3' --upgrade 
+
 if [ -f ${INST}/dep_install.done ]
 then
     echo "Found cache of installed dependencies, using it"
@@ -77,14 +83,11 @@ fi
 
 source ${INST}/etc/lal-user-env.sh
 
-# Install needed version of numpy
-pip install 'numpy==1.9.3' --upgrade 
-
 # Scipy would be required to build scikit-learn but that does not work with travis currently
 #pip install 'scipy==0.16.0' --upgrade
 
 # Install Pegasus
-pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
+pip install http://download.pegasus.isi.edu/pegasus/4.7.2/pegasus-python-source-4.7.2.tar.gz
 
 # Needed by mock 
 pip install 'setuptools==18.2' --upgrade
