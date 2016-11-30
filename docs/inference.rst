@@ -65,7 +65,7 @@ software injection in fake data.
 
     # sampler parameters
     OUTPUT=cbc_example-n1e4.hdf
-    SEGLEN=2
+    SEGLEN=8
     PSD_INVERSE_LENGTH=4
     IFOS="H1 L1"
     STRAIN="H1:aLIGOZeroDetHighPower L1:aLIGOZeroDetHighPower"
