@@ -71,8 +71,8 @@ software injection in fake data.
     STRAIN="H1:aLIGOZeroDetHighPower L1:aLIGOZeroDetHighPower"
     SAMPLE_RATE=2048
     F_MIN=30.
-    N_WALKERS=500
-    N_ITERATIONS=100000
+    N_WALKERS=5000
+    N_ITERATIONS=1000
     N_CHECKPOINT=100
     PROCESSING_SCHEME=cpu
     NPROCS=12
@@ -114,7 +114,9 @@ software injection in fake data.
         --disable-spin
 
     # run sampler
-    OMP_NUM_THREADS=1 pycbc_inference --verbose \
+    # specifies the number of threads for OpenMP
+    OMP_NUM_THREADS=1 \
+    pycbc_inference --verbose \
         --instruments ${IFOS} \
         --gps-start-time ${GPS_START_TIME} \
         --gps-end-time ${GPS_END_TIME} \
