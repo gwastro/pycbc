@@ -42,16 +42,8 @@ parser.add_argument("--output-file", type=str, required=True,
                     help="Output plot path.")
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Be verbose")
-parser.add_argument('--plot-marginal', action='store_true', default=False,
-                    help="Plot 1D marginalized distributions on the diagonal "
-                         "axes.")
-parser.add_argument("--plot-scatter", action='store_true', default=False,
-                    help="Plot each sample point as a scatter plot.")
-parser.add_argument("--plot-density", action="store_true", default=False,
-                    help="Plot the posterior density as a color map.")
-parser.add_argument("--plot-contours", action="store_true", default=False,
-                    help="Draw contours showing the 50th and 90th percentile "
-                         "confidence regions.")
+# add options for what plots to create
+option_utils.add_plot_posterior_option_group(parser)
 # Scatter configuration
 option_utils.add_scatter_option_group(parser)
 # Density configuration
@@ -73,24 +65,36 @@ if opts.z_arg is not None:
             thin_end=opts.thin_end, thin_interval=opts.thin_interval,
             iteration=opts.iteration)
     zvals, zlbl = option_utils.get_zvalues(fp, opts.z_arg, likelihood_stats)
+    show_colorbar = True
 else:
     zvals = None
     zlbl = None
+    show_colorbar = False
 fp.close()
+
+mins, maxs = option_utils.plot_ranges_from_cli(opts)
+# add any missing parameters
+for p in parameters:
+    if p not in mins:
+        mins[p] = samples[p].min()
+for p in parameters:
+    if p not in maxs:
+        maxs[p] = samples[p].max()
 
 logging.info("Plotting")
 fig, axis_dict = create_multidim_plot(
                 parameters, samples, labels=labels,
                 plot_marginal=opts.plot_marginal,
                 plot_scatter=opts.plot_scatter,
-                    zvals=zvals, show_colorbar=not opts.no_colorbar,
+                    zvals=zvals, show_colorbar=show_colorbar,
                     cbar_label=zlbl, vmin=opts.vmin, vmax=opts.vmax,
                     scatter_cmap=opts.scatter_cmap,
                 plot_density=opts.plot_density,
                 plot_contours=opts.plot_contours,
                     density_cmap=opts.density_cmap,
                     contour_color=opts.contour_color,
-                    use_kombine=opts.use_kombine_kde)
+                    use_kombine=opts.use_kombine_kde,
+                mins=mins, maxs=maxs)
 
 # save
 fig.savefig(opts.output_file, bbox_inches='tight', dpi=200)
