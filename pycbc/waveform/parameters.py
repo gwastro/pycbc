@@ -188,12 +188,9 @@ spin2z = Parameter("spin2z",
                 dtype=float, default=0., label=r"$\chi_{2z}$",
                 description="The z component of the second binary component's "
                             "dimensionless spin.")
-lambda1 = Parameter("lambda1",
-                dtype=float, default=0., label=r"$\lambda_1$",
-                description="The tidal deformability parameter of object 1.")
-lambda2 = Parameter("lambda2",
-                dtype=float, default=0., label=r"$\lambda_2$",
-                description="The tidal deformability parameter of object 2.")
+eccentricity = Parameter("eccentricity",
+                dtype=float, default=0., label=r"$e$",
+                description="Eccentricity.")
 
 # derived parameters (these are not used for waveform generation) for masses
 mchirp = Parameter("mchirp",
@@ -243,6 +240,18 @@ spin_sz = Parameter("spin_sz",
                 dtype=float, label=r"$\chi_{\mathrm{sc}\,z}$",
                 description="The z component of the dimensionless spin of the "
                             "secondary object.")
+lambda1 = Parameter("lambda1",
+                dtype=float, default=0., label=r"$\lambda_1$",
+                description="The tidal deformability parameter of object 1.")
+lambda2 = Parameter("lambda2",
+                dtype=float, default=0., label=r"$\lambda_2$",
+                description="The tidal deformability parameter of object 2.")
+dquad_mon1 = Parameter("dquad_mon1",
+                dtype=float, default=0., label=r"$qm_1$",
+                description="Quadrupole-monopole parameter / m_1^5 -1.")
+dquad_mon2 = Parameter("dquad_mon2",
+                dtype=float, default=0., label=r"$qm_2$",
+                description="Quadrupole-monopole parameter / m_2^5 -1.")
 
 # derived parameters for component spin magnitude and angles
 spin1_a = Parameter("spin1_a",
@@ -317,6 +326,10 @@ amplitude_order = Parameter("amplitude_order",
                 dtype=int, default=-1, label=None,
                 description="The pN order of the amplitude. The default of -1 "
                             "indicates that all implemented orders are used.")
+eccentricity_order = Parameter("eccentricity_order",
+                dtype=int, default=-1, label=None,
+                description="The pN order of the eccentricity corrections."
+                        "The default of -1 indicates that all implemented orders are used.")
 numrel_data = Parameter("numrel_data",
                 dtype=str, default="", label=None,
                 description="Sets the NR flags; only needed for NR waveforms.")
@@ -335,6 +348,12 @@ inclination = Parameter("inclination",
                 description="Inclination (rad), defined as the angle between "
                             "the total angular momentum J and the "
                             "line-of-sight.")
+long_asc_nodes = Parameter("long_asc_nodes",
+                dtype=float, default=0., label=r"$\Omega$",
+                description="Longitude of ascending nodes axis (rad).")
+mean_per_ano = Parameter("mean_per_ano",
+                dtype=float, default=0., label=r"$\delta$",
+                description="Mean anomaly of the periastron (rad).")
 tc = Parameter("tc",
                 dtype=float, default=None, label=r"$t_c$ (s)",
                 description="Coalescence time (s).")
@@ -347,6 +366,19 @@ dec = Parameter("dec",
 polarization = Parameter("polarization",
                 dtype=float, default=None, label=r"$\psi$",
                 description="Polarization (rad).")
+
+#
+#   Non mandatory flags with default values
+#
+frame_axis = Parameter("frame_axis",
+                dtype=int, default=0,
+                description="Allow to choose among orbital_l, view and total_j")
+modes_choice = Parameter("modes_choice",
+                dtype=int, default=0,
+                description="Allow to turn on  among orbital_l, view and total_j")
+side_bands = Parameter("side_bands",
+                dtype=int, default=0,
+                description="Flag for generating sidebands")
 
 #
 # =============================================================================
@@ -366,7 +398,7 @@ location_params = ParameterList([tc, ra, dec, polarization])
 # parameters describing the orientation of a binary w.r.t. the radiation
 # frame. Note: we include distance here, as it is typically used for generating
 # waveforms.
-orientation_params = ParameterList([distance, coa_phase, inclination])
+orientation_params = ParameterList([distance, coa_phase, inclination, long_asc_nodes, mean_per_ano])
 
 # the extrinsic parameters of a waveform
 extrinsic_params = orientation_params + location_params 
@@ -374,7 +406,7 @@ extrinsic_params = orientation_params + location_params
 # intrinsic parameters of a CBC waveform
 cbc_intrinsic_params = ParameterList([
     mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-    lambda1, lambda2])
+    eccentricity, lambda1, lambda2, dquad_mon1, dquad_mon2])
 
 # the parameters of a cbc in the radiation frame
 cbc_rframe_params = cbc_intrinsic_params + orientation_params
@@ -382,12 +414,16 @@ cbc_rframe_params = cbc_intrinsic_params + orientation_params
 # common generation parameters are parameters needed to generate either
 # a TD, FD, or frequency sequence waveform
 common_generation_params = ParameterList([
-    approximant, f_ref, phase_order, spin_order, tidal_order, amplitude_order])
+    approximant, f_ref, phase_order, spin_order, tidal_order, amplitude_order, eccentricity_order])
+
+# Flags having discrete values, optional to generate either
+# a TD, FD, or frequency sequence waveform
+flags_generation_params = ParameterList([frame_axis, modes_choice, side_bands])
 
 # the following are parameters needed to generate an FD or TD waveform that
 # is equally sampled
 common_gen_equal_sampled_params = ParameterList([f_lower]) + \
-    common_generation_params
+    common_generation_params + flags_generation_params
 
 # the following are parameters needed to generate an FD waveform
 fd_waveform_params = cbc_rframe_params + ParameterList([delta_f]) + \
@@ -395,8 +431,10 @@ fd_waveform_params = cbc_rframe_params + ParameterList([delta_f]) + \
 
 # the following are parameters needed to generate a TD waveform
 td_waveform_params = cbc_rframe_params + ParameterList([delta_t]) + \
-    common_gen_equal_sampled_params + ParameterList([numrel_data])
+    common_gen_equal_sampled_params + ParameterList([numrel_data]) + \
+    flags_generation_params
 
 # the following are parameters needed to generate a frequency series waveform
 fd_waveform_sequence_params = cbc_rframe_params + \
-    ParameterList([sample_points]) + common_generation_params
+    ParameterList([sample_points]) + common_generation_params + \
+    flags_generation_params

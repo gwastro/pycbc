@@ -57,25 +57,47 @@ _lalsim_enum = {}
 _lalsim_sgburst_approximants = {}
 
 def _lalsim_td_waveform(**p):
-    flags = lalsimulation.SimInspiralCreateWaveformFlags()
-    lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
-    lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
-
+    lal_pars = lal.CreateDict()
+    if p['phase_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(lal_pars,int(p['phase_order']))
+    if p['amplitude_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNAmplitudeOrder(lal_pars,int(p['amplitude_order']))
+    if p['spin_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNSpinOrder(lal_pars,int(p['spin_order']))
+    if p['tidal_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidalOrder(lal_pars, p['tidal_order'])
+    if p['eccentricity_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNEccentricityOrder(lal_pars, p['eccentricity_order'])
+    if p['lambda1']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidalLambda1(lal_pars, p['lambda1'])
+    if p['lambda2']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidalLambda2(lal_pars, p['lambda2'])
+    if p['dquad_mon1']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidaldQuadMon1(lal_pars, p['dquad_mon1'])
+    if p['dquad_mon2']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidaldQuadMon2(lal_pars, p['dquad_mon2'])
     if p['numrel_data']:
-        lalsimulation.SimInspiralSetNumrelData(flags, str(p['numrel_data']))
-
-    hp1, hc1 = lalsimulation.SimInspiralChooseTDWaveform(float(p['coa_phase']),
-               float(p['delta_t']),
+        lalsimulation.SimInspiralSetNumrelData(lal_pars, str(p['numrel_data']))
+    if p['modes_choice']:
+        lalsimulation.SimInspiralWaveformParamsInsertModesChoice(lal_pars, p['modes_choice'])
+    if p['frame_axis']:
+        lalsimulation.SimInspiralWaveformParamsInsertFrameAxis(lal_pars, p['frame_axis'])
+    if p['side_bands']:
+        lalsimulation.SimInspiralWaveformParamsInsertSideband(lal_pars, p['side_bands'])
+    #nonGRparams can be straightforwardly added if needed, however they have to
+    # be invoked one by one
+    hp1, hc1 = lalsimulation.SimInspiralChooseTDWaveform(
                float(pnutils.solar_mass_to_kg(p['mass1'])),
                float(pnutils.solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
                float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
-               float(p['f_lower']), float(p['f_ref']),
                pnutils.megaparsecs_to_meters(float(p['distance'])),
-               float(p['inclination']),
-               float(p['lambda1']),  float(p['lambda2']), flags, None,
-               int(p['amplitude_order']), int(p['phase_order']),
+               float(p['inclination']), float(p['coa_phase']),
+               float(p['long_asc_nodes']), float(p['eccentricity']), float(p['mean_per_ano']),
+               float(p['delta_t']), float(p['f_lower']), float(p['f_ref']),
+               lal_pars,
                _lalsim_enum[p['approximant']])
+    #lal.DestroyDict(lal_pars)
 
     hp = TimeSeries(hp1.data.data[:], delta_t=hp1.deltaT, epoch=hp1.epoch)
     hc = TimeSeries(hc1.data.data[:], delta_t=hc1.deltaT, epoch=hc1.epoch)
@@ -102,21 +124,45 @@ def _spintaylor_aligned_prec_swapper(**p):
     return hp, hc
 
 def _lalsim_fd_waveform(**p):
-    flags = lalsimulation.SimInspiralCreateWaveformFlags()
-    lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
-    lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
-
-    hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(float(p['coa_phase']),
-               p['delta_f'],
+    lal_pars = lal.CreateDict()
+    if p['phase_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(lal_pars,int(p['phase_order']))
+    if p['amplitude_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNAmplitudeOrder(lal_pars,int(p['amplitude_order']))
+    if p['spin_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNSpinOrder(lal_pars,int(p['spin_order']))
+    if p['tidal_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidalOrder(lal_pars, p['tidal_order'])
+    if p['eccentricity_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNEccentricityOrder(lal_pars, p['eccentricity_order'])
+    if p['lambda1']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidalLambda1(lal_pars, p['lambda1'])
+    if p['lambda2']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidalLambda2(lal_pars, p['lambda2'])
+    if p['dquad_mon1']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidaldQuadMon1(lal_pars, p['dquad_mon1'])
+    if p['dquad_mon2']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidaldQuadMon2(lal_pars, p['dquad_mon2'])
+    if p['numrel_data']:
+        lalsimulation.SimInspiralSetNumrelData(lal_pars, str(p['numrel_data']))
+    if p['modes_choice']:
+        lalsimulation.SimInspiralWaveformParamsInsertModesChoice(lal_pars, p['modes_choice'])
+    if p['frame_axis']:
+        lalsimulation.SimInspiralWaveformParamsInsertFrameAxis(lal_pars, p['frame_axis'])
+    if p['side_bands']:
+        lalsimulation.SimInspiralWaveformParamsInsertSideband(lal_pars, p['side_bands'])
+    #nonGRparams can be straightforwardly added if needed, however they have to
+    # be invoked one by one
+    hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(
                float(pnutils.solar_mass_to_kg(p['mass1'])),
                float(pnutils.solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
                float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
-               float(p['f_lower']), float(p['f_final']), float(p['f_ref']),
                pnutils.megaparsecs_to_meters(float(p['distance'])),
-               float(p['inclination']),
-               float(p['lambda1']), float(p['lambda2']), flags, None,
-               int(p['amplitude_order']), int(p['phase_order']),
+               float(p['inclination']), float(p['coa_phase']),
+               float(p['long_asc_nodes']), float(p['eccentricity']), float(p['mean_per_ano']),
+               p['delta_f'], float(p['f_lower']), float(p['f_final']), float(p['f_ref']),
+               lal_pars,
                _lalsim_enum[p['approximant']])
 
     hp = FrequencySeries(hp1.data.data[:], delta_f=hp1.deltaF,
@@ -124,7 +170,7 @@ def _lalsim_fd_waveform(**p):
 
     hc = FrequencySeries(hc1.data.data[:], delta_f=hc1.deltaF,
                             epoch=hc1.epoch)                        
-
+    #lal.DestroyDict(lal_pars)
     return hp, hc
 
 def _lalsim_sgburst_waveform(**p):
