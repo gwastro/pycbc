@@ -28,6 +28,7 @@ for parameter estimation.
 
 import numpy
 import scipy.stats
+import h5py
 from ConfigParser import Error
 import warnings
 from pycbc.inference import boundaries
@@ -42,8 +43,8 @@ def get_param_bounds_from_config(cp, section, tag, param):
 
     Minimum and maximum values for bounds are specified by adding
     `min-{param}` and `max-{param}` options, where `{param}` is the name of
-    the paramter. The types of boundary (open, closed, or reflected) to create
-    may also be specified by adding options `bytime-min-{param}` and
+    the parameter. The types of boundary (open, closed, or reflected) to create
+    may also be specified by adding options `btype-min-{param}` and
     `btype-max-{param}`. Cyclic conditions can be adding option
     `cyclic-{param}`. If no `btype` arguments are provided, the
     left bound will be closed and the right open.
@@ -190,6 +191,36 @@ def _bounded_from_config(cls, cp, section, variable_args,
 
     # construction distribution and add to list
     return cls(**dist_args)
+
+
+def get_kde_from_file(params_file, params=None):
+    """Reads the values of one or more parameters from an hdf file and 
+    computes the kernel density estimate (kde).
+
+    Parameters
+    ----------
+    params_file : str
+        The hdf file that contains the values of the parameters.
+    params : {None, string}
+        If provided, will just use the values for the given parameter.
+        Otherwise, uses the values for each parameter in the file.
+    Returns
+    -------
+    values
+        Array with the values of the parameters.
+    kde
+        The kde from the parameters.
+    """
+    try:
+        f = h5py.File(params_file, 'r')
+    except:
+        raise KeyError('File not found.')
+    if params is None:
+        params = f.keys()
+    params_values = {p:f[p][:] for p in params}
+    f.close()
+    values = numpy.vstack((params_values[p] for p in params))
+    return values, scipy.stats.gaussian_kde(values)
 
 
 class _BoundedDist(object):
@@ -1219,6 +1250,45 @@ class Gaussian(_BoundedDist):
         return _bounded_from_config(cls, cp, section, variable_args,
             bounds_required=False)
 
+class FromFile(_BoundedDist):
+    """
+    Read the distribution from a file.
+
+    Parameters
+    ----------
+    \**params :
+        The keyword arguments should provide the file containing
+        values of the parameters for the distribution.
+
+    Attributes
+    ----------
+    params : list of strings
+        The list of parameter names.
+    file : string
+        The path to a file containing the prior distribution for params.
+    """
+    name = 'fromfile'
+    def __init__(self, file_name=None, **params):
+        if file_name is None:
+            raise ValueError('A file must be specified for this distribution.')
+        super(FromFile, self).__init__(**params)
+        self._filename = file_name
+        self._values, self._kde = get_kde_from_file(file_name, **params)
+
+    def _pdf(self):
+        """Returns the pdf at the given values.
+        """
+        return self._kde.pdf(self._values)
+
+    def _logpdf(self):
+        """Returns the log of the pdf at the given values.
+        """
+        return self._kde.logpdf(self._values)
+
+    def rvs(self, size=None):
+        """Gives a set of random values drawn from the kde.
+        """
+        return self._kde.resample(size)
 
 distribs = {
     Uniform.name : Uniform,
@@ -1228,6 +1298,7 @@ distribs = {
     UniformSolidAngle.name : UniformSolidAngle,
     UniformSky.name : UniformSky,
     Gaussian.name : Gaussian,
+    FromFile.name : FromFile,
 }
 
 def read_distributions_from_config(cp, section="prior"):

@@ -30,19 +30,19 @@ cyclic boundaries or reflected boundaries.
 import numpy
 
 class _Bound(float):
-    """Adds methods to float for bondary comparisons."""
+    """Adds methods to float for boundary comparisons."""
 
     name = None
 
     def larger(self, other):
-        """A function to determine whehter or not `other` is larger
+        """A function to determine whether or not `other` is larger
         than the bound. This raises a NotImplementedError; classes that
         inherit from this must define it.
         """
         raise NotImplementedError("larger function not set")
 
     def smaller(self, other):
-        """A function to determine whehter or not `other` is smaller
+        """A function to determine whether or not `other` is smaller
         than the bound. This raises a NotImplementedError; classes that
         inherit from this must define it.
         """
