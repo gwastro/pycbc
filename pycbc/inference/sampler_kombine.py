@@ -59,11 +59,14 @@ class KombineSampler(BaseMCMCSampler):
     min_burn_in : {None, int}
         Set the minimum number of burn in iterations to use. If None,
         `burn_in_iterations` will be initialized to `0`.
+    update_interval : {None, int}
+        Make the sampler update the proposal densities every `update_interval`
+        iterations.
     """
     name = "kombine"
 
     def __init__(self, likelihood_evaluator, nwalkers, transd=False,
-                 processes=None, min_burn_in=None):
+                 processes=None, min_burn_in=None, update_interval=None):
         try:
             import kombine
         except ImportError:
@@ -77,6 +80,7 @@ class KombineSampler(BaseMCMCSampler):
         super(KombineSampler, self).__init__(sampler, likelihood_evaluator,
                                              min_burn_in=min_burn_in)
         self._nwalkers = nwalkers
+        self.update_interval = update_interval
 
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator):
@@ -96,7 +100,8 @@ class KombineSampler(BaseMCMCSampler):
             A kombine sampler initialized based on the given arguments.
         """
         return cls(likelihood_evaluator, opts.nwalkers,
-                   processes=opts.nprocesses, min_burn_in=opts.min_burn_in)
+                   processes=opts.nprocesses, min_burn_in=opts.min_burn_in,
+                   update_interval=opts.update_interval)
 
     def run(self, niterations, **kwargs):
         """Advance the sampler for a number of samples.
@@ -130,6 +135,9 @@ class KombineSampler(BaseMCMCSampler):
             if self.likelihood_evaluator.return_meta:
                 blob0 = self._sampler.blobs[-1]
         kwargs['blob0'] = blob0
+        if 'update_interval' not in kwargs:
+            # use the internal update interval
+            kwargs['update_interval'] = self.update_interval
         res = self._sampler.run_mcmc(niterations, p0=p0, **kwargs)
         p, lnpost, lnprop = res[0], res[1], res[2]
         # update the positions

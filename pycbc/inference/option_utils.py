@@ -60,6 +60,9 @@ def add_sampler_option_group(parser):
         default=False,
         help="Do not burn in with sampler. An error will be raised if "
              "min-burn-in is also provided.")
+    sampler_group.add_argument("--update-interval", type=int, default=None,
+        help="If using kombine, specify the number of steps to take between "
+             " proposal updates.")
 
     return sampler_group
 
