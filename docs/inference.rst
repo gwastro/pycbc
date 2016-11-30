@@ -115,6 +115,9 @@ software injection in fake data.
 
     # run sampler
     # specifies the number of threads for OpenMP
+    # Running with OMP_NUM_THREADS=1 stops lalsimulation
+    # to spawn multiple jobs that would otherwise be used
+    # by pycbc_inference and cause a reduced runtime.
     OMP_NUM_THREADS=1 \
     pycbc_inference --verbose \
         --instruments ${IFOS} \
