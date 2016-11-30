@@ -28,7 +28,7 @@ Overview
 ---------------------
 
 The executable ``pycbc_inference`` is designed to sample the parameter space
-and save the samples in an HDF file. 
+and save the samples in an HDF file.
 
 ------------------------------
 BBH software injection example
@@ -66,6 +66,7 @@ software injection in fake data.
     # sampler parameters
     OUTPUT=cbc_example-n1e4.hdf
     SEGLEN=2
+    PSD_INVERSE_LENGTH=4
     IFOS="H1 L1"
     STRAIN="H1:aLIGOZeroDetHighPower L1:aLIGOZeroDetHighPower"
     SAMPLE_RATE=2048
@@ -113,11 +114,12 @@ software injection in fake data.
         --disable-spin
 
     # run sampler
-    pycbc_inference --verbose \
+    OMP_NUM_THREADS=1 pycbc_inference --verbose \
         --instruments ${IFOS} \
         --gps-start-time ${GPS_START_TIME} \
         --gps-end-time ${GPS_END_TIME} \
         --psd-model ${STRAIN} \
+        --psd-inverse-length ${PSD_INVERSE_LENGTH} \
         --fake-strain ${STRAIN} \
         --sample-rate ${SAMPLE_RATE} \
         --low-frequency-cutoff ${F_MIN} \
@@ -219,7 +221,6 @@ Some standard parameters that are derived from the variable arguments (listed vi
    samples = samples = fp.read_samples("mchirp")
    print samples.mchirp
 
-In this case, ``fp.read_samples`` will retrieve ``mass1`` and ``mass2`` (since they are needed to compute chirp mass); ``samples.mchirp`` then returns an array of the chirp mass computed from ``mass1`` and ``mass2``. 
+In this case, ``fp.read_samples`` will retrieve ``mass1`` and ``mass2`` (since they are needed to compute chirp mass); ``samples.mchirp`` then returns an array of the chirp mass computed from ``mass1`` and ``mass2``.
 
 For more information, including the list of predefined derived parameters, see the docstring of ``pycbc.io.InferenceFile``.
-
