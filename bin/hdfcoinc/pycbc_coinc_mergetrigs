@@ -72,6 +72,10 @@ stf = numpy.array([], dtype=numpy.float64)
 gating = {}
 for filename in args.trigger_files:
     data = h5py.File(filename, 'r')
+    try:
+       data = h5py.File(filename, 'r')
+    except IOError:
+       print 'Cannot open', filename
     ifo_data = data[ifo]
     s, e = ifo_data['search/start_time'][:], ifo_data['search/end_time'][:]
     start, end = numpy.append(start, s), numpy.append(end, e)
