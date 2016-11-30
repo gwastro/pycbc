@@ -71,7 +71,6 @@ frpc = numpy.array([], dtype=numpy.float64)
 stf = numpy.array([], dtype=numpy.float64)
 gating = {}
 for filename in args.trigger_files:
-    data = h5py.File(filename, 'r')
     try:
        data = h5py.File(filename, 'r')
     except IOError:
