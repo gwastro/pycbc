@@ -81,6 +81,12 @@ class _BaseSampler(object):
         return NotImplementedError("chain function not set.")
 
     @property
+    def clear_chain(self):
+        """This function should clear the current chain of samples from memory.
+        """
+        return NotImplementedError("clear chain function not set.")
+
+    @property
     def niterations(self):
         """Get the current number of iterations."""
         return self.chain.shape[-2]
@@ -203,6 +209,7 @@ class BaseMCMCSampler(_BaseSampler):
         if min_burn_in is None:
             min_burn_in = 0
         self.burn_in_iterations = min_burn_in
+        self._lastclear = 0
         # initialize
         super(BaseMCMCSampler, self).__init__(likelihood_evaluator)
 
@@ -317,10 +324,16 @@ class BaseMCMCSampler(_BaseSampler):
         samples = self.chain
         nwalkers, niterations, _ = samples.shape
 
-        aa = start_iteration
+        # due to clearing memory, there can be a difference between indices in
+        # memory and on disk
+        niterations += self._lastclear
+        fa = start_iteration # file start index
         if end_iteration is None:
             end_iteration = niterations
-        bb = end_iteration
+        fb = end_iteration # file end index
+        ma = fa - self._lastclear
+        mb = fb - self._lastclear
+
 
         # map sample values to the values that were actually passed to the
         # waveform generator and prior evaluator
@@ -349,12 +362,12 @@ class BaseMCMCSampler(_BaseSampler):
             for wi in widx:
                 dataset_name = group.format(name=param, wi=wi)
                 try:
-                    fp[dataset_name][aa:bb] = samples[wi, aa:bb, pi]
+                    fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
                 except KeyError:
                     # dataset doesn't exist yet, use scratch space for writing
                     if out is None:
                         out = numpy.zeros(max_iterations, dtype=samples.dtype)
-                    out[aa:bb] = samples[wi, aa:bb, pi]
+                    out[aa:bb] = samples[wi, ma:mb, pi]
                     fp[dataset_name] = out
 
 
@@ -395,10 +408,15 @@ class BaseMCMCSampler(_BaseSampler):
         nwalkers, niterations = stats.shape
         fields = stats.fieldnames
 
-        aa = start_iteration
+        # due to clearing memory, there can be a difference between indices in
+        # memory and on disk
+        niterations += self._lastclear
+        fa = start_iteration # file start index
         if end_iteration is None:
             end_iteration = niterations
-        bb = end_iteration
+        fb = end_iteration # file end index
+        ma = fa - self._lastclear
+        mb = fb - self._lastclear
 
         group = fp.stats_group + '/{param}/walker{wi}'
 
@@ -416,12 +434,12 @@ class BaseMCMCSampler(_BaseSampler):
             for wi in range(nwalkers):
                 dataset_name = group.format(param=param, wi=wi)
                 try:
-                    fp[dataset_name][aa:bb] = stats[param][wi, aa:bb]
+                    fp[dataset_name][fa:fb] = stats[param][wi, ma:mb]
                 except KeyError:
                     if out is None:
                         out = numpy.zeros(max_iterations,
                                           dtype=stats.dtype[param])
-                    out[aa:bb] = stats[param][wi, aa:bb]
+                    out[fa:fb] = stats[param][wi, ma:mb]
                     fp[dataset_name] = out
         return stats
 

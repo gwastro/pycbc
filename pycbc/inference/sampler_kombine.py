@@ -158,6 +158,20 @@ class KombineSampler(BaseMCMCSampler):
         # kombine returns niterations x nwalkers x ndim
         return self._sampler.chain.transpose((1, 0, 2))
 
+    def clear_chain(self):
+        """Clears the chain and blobs from memory, keeping only the last point.
+        """
+        # kombine stores its chain as niterations x nwalkers x ndim
+        current_chain = self._sampler._chain
+        shape = current_chain.shape
+        self._sampler._chain = current_chain[-1,:,:].reshape(1,
+            shape[1], shape[2])
+        self._sampler.stored_iterations = 1
+        # clear the blobs
+        if len(self._sampler._blobs) != 0:
+            self._sampler._blobs = [self._sampler._blobs[-1]]
+        self._lastclear = shape[0]
+
     def burn_in(self):
         """Use kombine's `burnin` routine to advance the sampler.
 
