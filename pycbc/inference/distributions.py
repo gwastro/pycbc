@@ -201,7 +201,7 @@ def get_kde_from_file(params_file, params=None):
     ----------
     params_file : str
         The hdf file that contains the values of the parameters.
-    params : {None, string}
+    params : {None, list}
         If provided, will just use the values for the given parameter.
         Otherwise, uses the values for each parameter in the file.
     Returns
@@ -214,13 +214,13 @@ def get_kde_from_file(params_file, params=None):
     try:
         f = h5py.File(params_file, 'r')
     except:
-        raise KeyError('File not found.')
+        raise ValueError('File not found.')
     if params is None:
         params = f.keys()
     params_values = {p:f[p][:] for p in params}
     f.close()
     values = numpy.vstack((params_values[p] for p in params))
-    return values, scipy.stats.gaussian_kde(values)
+    return params, scipy.stats.gaussian_kde(values)
 
 
 class _BoundedDist(object):
@@ -1251,39 +1251,64 @@ class Gaussian(_BoundedDist):
             bounds_required=False)
 
 class FromFile(_BoundedDist):
-    """
-    Read the distribution from a file.
+    """A distribution that reads the values of the parameter(s) from a file,
+    computes the kde to construct the pdf, and draws random variables from it.
 
     Parameters
     ----------
+    file_name : str
+        The path to a file containing the values of the parameters that want
+        to be used to construct the distribution.
     \**params :
-        The keyword arguments should provide the file containing
-        values of the parameters for the distribution.
+        The keyword arguments can provide the names of the parameters to be
+        read from the file (optionally).
 
     Attributes
     ----------
-    params : list of strings
-        The list of parameter names.
-    file : string
-        The path to a file containing the prior distribution for params.
+    name : 'fromfile'
+        The name of the distribution.
+    file_name : str
+        The path to the file containing values for the parameter(s).
+    params : list
+        Parameters read from file.
     """
     name = 'fromfile'
     def __init__(self, file_name=None, **params):
         if file_name is None:
             raise ValueError('A file must be specified for this distribution.')
         super(FromFile, self).__init__(**params)
+        if len(params) == 0:
+            params = None
         self._filename = file_name
-        self._values, self._kde = get_kde_from_file(file_name, **params)
+        self._params, self._kde = get_kde_from_file(file_name, params=params)
 
-    def _pdf(self):
-        """Returns the pdf at the given values.
-        """
-        return self._kde.pdf(self._values)
+    @property
+    def file_name(self):
+        return self._filename
 
-    def _logpdf(self):
-        """Returns the log of the pdf at the given values.
+    @property
+    def params(self):
+        return self._params
+
+    def _pdf(self, **kwargs):
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored.
         """
-        return self._kde.logpdf(self._values)
+        for p in self._params:
+            if p not in kwargs.keys():
+                raise ValueError('Missing parameter %s to construct pdf.' %p)
+        return self._kde.evaluate([kwargs[p] for p in self._params])
+
+    def _logpdf(self, **kwargs):
+        """Returns the log of the pdf at the given values. The keyword
+        arguments must contain all of parameters in self's params. 
+        Unrecognized arguments are ignored.
+        """
+        for p in self._params:
+            if p not in kwargs.keys():
+                raise ValueError('Missing parameter %s to construct pdf.' %p)
+        return self._kde.logpdf([kwargs[p] for p in self._params])
 
     def rvs(self, size=None):
         """Gives a set of random values drawn from the kde.
