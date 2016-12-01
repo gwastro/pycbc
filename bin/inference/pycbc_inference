@@ -105,7 +105,7 @@ parser.add_argument("--checkpoint-interval", type=int, default=None,
 parser.add_argument("--checkpoint-fast", action="store_true",
                     help="Do not calculate derived data (eg. ACL or evidence) "
                          "after each checkpoint. Calculate them at the end.")
- 
+
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Print logging messages.")
@@ -134,10 +134,6 @@ pycbc.weave.verify_weave_options(opts, parser)
 if os.path.exists(opts.output_file) and not opts.force:
     raise OSError("output-file already exists; use --force if you wish to "
                   "overwrite it.")
-
-# create the file for adding to
-fp = InferenceFile(opts.output_file, "w")
-fp.close()
 
 # setup log
 pycbc.init_logging(opts.verbose)
@@ -213,35 +209,6 @@ with ctx:
         for ifo in gates:
             stilde_dict[ifo] *= psd_dict[ifo]
 
-    # save command line
-    with InferenceFile(opts.output_file, "a") as fp:
-        fp.write_command_line()
-
-    # save PSD
-    if opts.save_psd:
-
-        # apply dynamic range factor for saving PSDs since
-        # plotting code expects it
-        logging.info("Saving PSDs")
-        psd_dyn_dict = {}
-        for key,val in psd_dict.iteritems():
-             psd_dyn_dict[key] = types.FrequencySeries(
-                                        psd_dict[key] * pycbc.DYN_RANGE_FAC**2,
-                                        delta_f=psd_dict[key].delta_f)
-        with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_psd(psds=psd_dyn_dict,
-                         low_frequency_cutoff=low_frequency_cutoff_dict)
-
-    # save stilde
-    if opts.save_stilde:
-        with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_stilde(stilde_dict)
-
-    # save strain if desired
-    if opts.save_strain:
-        with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_strain(strain_dict)
-
     # read configuration file
     logging.info("Reading configuration file")
     if opts.config_overrides is not None:
@@ -300,6 +267,34 @@ with ctx:
 
     # create sampler that will run
     sampler = option_utils.sampler_from_cli(opts, likelihood)
+
+    # save command line
+    with InferenceFile(opts.output_file, "a") as fp:
+        fp.write_command_line()
+
+    # save PSD
+    if opts.save_psd:
+        # apply dynamic range factor for saving PSDs since
+        # plotting code expects it
+        logging.info("Saving PSDs")
+        psd_dyn_dict = {}
+        for key,val in psd_dict.iteritems():
+             psd_dyn_dict[key] = types.FrequencySeries(
+                                        psd_dict[key] * pycbc.DYN_RANGE_FAC**2,
+                                        delta_f=psd_dict[key].delta_f)
+        with InferenceFile(opts.output_file, "a") as fp:
+            fp.write_psd(psds=psd_dyn_dict,
+                          low_frequency_cutoff=low_frequency_cutoff_dict)
+
+    # save stilde
+    if opts.save_stilde:
+        with InferenceFile(opts.output_file, "a") as fp:
+            fp.write_stilde(stilde_dict)
+
+    # save strain if desired
+    if opts.save_strain:
+        with InferenceFile(opts.output_file, "a") as fp:
+            fp.write_strain(strain_dict)
 
     # get distribution to draw from for each walker initial position
     logging.info("Setting walkers initial conditions for varying parameters")

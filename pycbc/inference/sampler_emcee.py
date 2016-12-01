@@ -39,7 +39,6 @@ from pycbc.filter import autocorrelation
 # =============================================================================
 #
 
-
 class EmceeEnsembleSampler(BaseMCMCSampler):
     """This class is used to construct an MCMC sampler from the emcee
     package's EnsembleSampler.
@@ -52,7 +51,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
     nwalkers : int
         Number of walkers to use in sampler.
     processes : {None, int}
-        Number of processes to use with multiprocessing. If None, all available
+        Numbfer of processes to use with multiprocessing. If None, all available
         cores are used.
     burn_in_iterations : {None, int}
         Set the number of burn in iterations to use. If None,
@@ -60,24 +59,20 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
     """
     name = "emcee"
 
-    def __init__(self, likelihood_evaluator, nwalkers, processes=None,
-                 burn_in_iterations=None):
-
+    def __init__(self, likelihood_evaluator, nwalkers, pool=None,
+                 burn_in_iterations=None,
+                 likelihood_call=None):
         try:
             import emcee
         except ImportError:
             raise ImportError("emcee is not installed.")
 
-        # initialize the pool to use
-        if processes == 1:
-            pool = None
-        else:
-            pool = emcee.interruptible_pool.InterruptiblePool(
-                processes=processes)
+        if likelihood_call is None:
+            likelihood_call = likelihood_evaluator
 
-        # construct the sampler
         ndim = len(likelihood_evaluator.waveform_generator.variable_args)
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, likelihood_evaluator,
+        sampler = emcee.EnsembleSampler(nwalkers, ndim,
+                                        likelihood_call,
                                         pool=pool)
         # initialize
         super(EmceeEnsembleSampler, self).__init__(
@@ -85,7 +80,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         self._nwalkers = nwalkers
 
     @classmethod
-    def from_cli(cls, opts, likelihood_evaluator):
+    def from_cli(cls, opts, likelihood_evaluator, pool=None, likelihood_call=None):
         """Create an instance of this sampler from the given command-line
         options.
 
@@ -109,7 +104,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
                 name=cls.name) + " non-zero --min-burn-in if not skipping "
                 "burn-in")
         return cls(likelihood_evaluator, opts.nwalkers,
-                   processes=opts.nprocesses,
+                   pool=pool, likelihood_call=likelihood_call,
                    burn_in_iterations=opts.min_burn_in)
 
     @property
@@ -278,7 +273,7 @@ class EmceePTSampler(BaseMCMCSampler):
     """
     name = "emcee_pt"
 
-    def __init__(self, likelihood_evaluator, ntemps, nwalkers, processes=None,
+    def __init__(self, likelihood_evaluator, ntemps, nwalkers, pool=None,
                  burn_in_iterations=None):
 
         try:
@@ -309,7 +304,7 @@ class EmceePTSampler(BaseMCMCSampler):
         self._ntemps = ntemps
 
     @classmethod
-    def from_cli(cls, opts, likelihood_evaluator):
+    def from_cli(cls, opts, likelihood_evaluator, pool=None, likelihood_call=None):
         """Create an instance of this sampler from the given command-line
         options.
 
@@ -332,8 +327,7 @@ class EmceePTSampler(BaseMCMCSampler):
             raise ValueError("%s requires that you provide a non-zero " % (
                 cls.name) + "--min-burn-in if not skipping burn-in")
         return cls(likelihood_evaluator, opts.ntemps, opts.nwalkers,
-                   processes=opts.nprocesses,
-                   burn_in_iterations=opts.min_burn_in)
+                   pool=pool, burn_in_iterations=opts.min_burn_in)
 
     @property
     def ntemps(self):
