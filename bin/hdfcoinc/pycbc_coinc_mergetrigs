@@ -74,7 +74,8 @@ for filename in args.trigger_files:
     try:
         data = h5py.File(filename, 'r')
     except IOError:
-        logging.warning('Cannot open %s', filename)
+        logging.error('Cannot open %s', filename)
+        raise IOError
     ifo_data = data[ifo]
     s, e = ifo_data['search/start_time'][:], ifo_data['search/end_time'][:]
     start, end = numpy.append(start, s), numpy.append(end, e)
