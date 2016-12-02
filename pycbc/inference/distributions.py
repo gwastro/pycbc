@@ -1266,8 +1266,8 @@ class FromFile(_BoundedDist):
         The path to a file containing the values of the parameters that want
         to be used to construct the distribution.
     \**params :
-        The keyword arguments can provide the names of the parameters to be
-        read from the file (optionally).
+        The keyword arguments should provide the names of the parameters to be
+        read from the file and their bounds.
 
     Attributes
     ----------
@@ -1277,16 +1277,33 @@ class FromFile(_BoundedDist):
         The path to the file containing values for the parameter(s).
     params : list
         Parameters read from file.
+    kde : 
+        The kde obtained from the values in the file.
     """
     name = 'fromfile'
     def __init__(self, file_name=None, **params):
         if file_name is None:
             raise ValueError('A file must be specified for this distribution.')
-        super(FromFile, self).__init__(**params)
-        if len(params) == 0:
-            params = None
         self._filename = file_name
-        self._params, self._kde = get_kde_from_file(file_name, params=params)
+        # Get the parameter names to pass to get_kde_from_file 
+        if len(params) == 0:
+            ps = None
+        else:
+            ps = params.keys()
+        pnames, self._kde = get_kde_from_file(file_name, params=ps)
+        # If no parameters where given, populate with pnames
+        for param in pnames:
+            try:
+                params[param]
+            except:
+                params[param] = boundaries.Bounds()
+        # Check that no item in params is None
+        for param in params:
+            if params[param] is None:
+                params[param] = boundaries.Bounds()
+        super(FromFile, self).__init__(**params)
+        # Make sure to store parameter names in same order as given by kde function
+        self._params = pnames
 
     @property
     def file_name(self):
@@ -1295,6 +1312,10 @@ class FromFile(_BoundedDist):
     @property
     def params(self):
         return self._params
+
+    @property
+    def kde(self):
+        return self._kde
 
     def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
@@ -1316,10 +1337,34 @@ class FromFile(_BoundedDist):
                 raise ValueError('Missing parameter %s to construct pdf.' %p)
         return self._kde.logpdf([kwargs[p] for p in self._params])
 
-    def rvs(self, size=None):
+    def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from the kde.
+
+        Parameters
+        ----------
+        size : {1, int}
+            The number of values to generate; default is 1.
+        param : {None, string}
+            If provided, will just return values for the given parameter.
+            Otherwise, returns random values for each parameter.
+
+        Returns
+        -------
+        structured array
+            The random values in a numpy structured array. If a param was
+            specified, the array will only have an element corresponding to the
+            given parameter. Otherwise, the array will have an element for each
+            parameter in self's params.
         """
-        return self._kde.resample(size)
+        if param is not None:
+            dtype = [(param, float)]
+        else:
+            dtype = [(p, float) for p in self.params]
+        arr = numpy.zeros(size, dtype=dtype)
+        randoms = self._kde.resample(size)
+        for order, param in enumerate(dtype):
+            arr[param[0]] = randoms[order]
+        return arr
 
 distribs = {
     Uniform.name : Uniform,
