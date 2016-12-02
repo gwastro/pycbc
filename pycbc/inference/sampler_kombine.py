@@ -170,7 +170,8 @@ class KombineSampler(BaseMCMCSampler):
         # clear the blobs
         if len(self._sampler._blobs) != 0:
             self._sampler._blobs = [self._sampler._blobs[-1]]
-        self._lastclear += shape[0]
+        # store the iteration that the clear happened on
+        self._lastclear = self._sampler.iterations
 
     def burn_in(self):
         """Use kombine's `burnin` routine to advance the sampler.

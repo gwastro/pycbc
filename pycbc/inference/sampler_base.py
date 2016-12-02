@@ -331,9 +331,13 @@ class BaseMCMCSampler(_BaseSampler):
         if end_iteration is None:
             end_iteration = niterations
         fb = end_iteration # file end index
-        ma = fa - self._lastclear
-        mb = fb - self._lastclear
-
+        if self._lastclear != 0:
+            # we add one to lastclear to skip the point from the previous clear
+            ma = fa - self._lastclear + 1
+            mb = fb - self._lastclear + 1
+        else:
+            ma = fa
+            mb = fb
 
         # map sample values to the values that were actually passed to the
         # waveform generator and prior evaluator
@@ -367,7 +371,7 @@ class BaseMCMCSampler(_BaseSampler):
                     # dataset doesn't exist yet, use scratch space for writing
                     if out is None:
                         out = numpy.zeros(max_iterations, dtype=samples.dtype)
-                    out[aa:bb] = samples[wi, ma:mb, pi]
+                    out[fa:fb] = samples[wi, ma:mb, pi]
                     fp[dataset_name] = out
 
 
@@ -415,8 +419,13 @@ class BaseMCMCSampler(_BaseSampler):
         if end_iteration is None:
             end_iteration = niterations
         fb = end_iteration # file end index
-        ma = fa - self._lastclear
-        mb = fb - self._lastclear
+        if self._lastclear != 0:
+            # we add one to lastclear to skip the point from the previous clear
+            ma = fa - self._lastclear + 1
+            mb = fb - self._lastclear + 1
+        else:
+            ma = fa
+            mb = fb
 
         group = fp.stats_group + '/{param}/walker{wi}'
 
@@ -466,7 +475,8 @@ class BaseMCMCSampler(_BaseSampler):
 
         aa = start_iteration
         if end_iteration is None:
-            bb = acf.size
+            end_iteration = acf.size
+        bb = end_iteration
 
         try:
             fp[dataset_name][aa:bb] = acf[aa:bb]
