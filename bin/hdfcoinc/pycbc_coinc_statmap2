@@ -14,6 +14,8 @@ import pycbc.version, pycbc.pnutils, pycbc.io
 def sec_to_year(sec):
     return sec / lal.YRJUL_SI
 
+def make_trigs_and_cluster(triggers, background_triggers)
+     
 class fw(object):
     def __init__(self, name):
         self.f = h5py.File(name, 'w')
@@ -26,14 +28,21 @@ class fw(object):
 parser = argparse.ArgumentParser()
 # General required options
 parser.add_argument('--version', action='version', 
-         version=pycbc.version.git_verbose_msg)
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--coinc-files', nargs='+', 
-         help='List of coincidence files used to calculate the FAP, FAR, etc.')
+                    help='List of coincidence files used to calculate the '
+                         'FAP, FAR, etc.')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--cluster-window', type=float, default=10,
-         help='Length of time window in seconds to cluster coinc events, [default=10s]')
+                    help='Length of time window in seconds to cluster coinc '
+                         'events, [default=10s]')
 parser.add_argument('--veto-window', type=float, default=.1,
-         help='Time around each zerolag trigger to window out, [default=.1s]')
+                    help='Time around each zerolag trigger to window out, '
+                         '[default=.1s]')
+parser.add_argument('--veto-window-hierarch', type=float, default=0.015,
+                    help='Time around each trigger to window out of a very '
+                         'louder trigger in the hierarchical removal '
+                         'procedure.')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -61,14 +70,10 @@ veto_end_time = ave_fore_time + args.veto_window
 veto_time = abs(veto.start_end_to_segments(veto_start_time,
                                            veto_end_time).coalesce())
 
-print "The veto_time variable is: ", veto_time, " seconds."
-
 # Veto indices from list of triggers for times in ifo 1 around the 
 # window times
 veto_indices1 = veto.indices_within_times(all_trigs.time1, veto_start_time,
                                           veto_end_time) 
-#print veto_indices1
-#print all_trigs.time1[veto_indices1[0]]
 
 # Remove any coincident trigger pairs from the data set that could be in
 # coincidence with other coincident triggers (by the light travel time +
@@ -96,6 +101,10 @@ logging.info("%s clustered foreground triggers" % fore_locs.sum())
 logging.info("Clustering coinc triggers (exclusive of zerolag)")
 non_coinc_trigs = non_coinc_trigs.cluster(args.cluster_window)
 
+# If a particular index of all_trigs.timeslide_id isn't 0, evaluate true.
+# So this returns an array of Booleans.
+back_locs = all_trigs.timeslide_id != 0
+
 logging.info("Dumping foreground triggers")
 f = fw(args.output_file)
 f.attrs['detector_1'] = all_trigs.attrs['detector_1']
@@ -119,10 +128,6 @@ else:
     for k in all_trigs.data:
         f['foreground/' + k] = numpy.array([], dtype=all_trigs.data[k].dtype)
 
-# If a particular index of all_trigs.timeslide_id isn't 0, evaluate true.
-# So this returns an array of Booleans.
-back_locs = all_trigs.timeslide_id != 0
-
 # If the sum of all Booleans in the array (1 = True, 0 = False) is False,
 # then there aren't any background triggers. So leave!
 if (back_locs.sum()) == 0:
@@ -140,9 +145,6 @@ for k in non_coinc_trigs.data:
 
 maxtime = max(all_trigs.attrs['foreground_time1'], all_trigs.attrs['foreground_time2'])
 mintime = min(all_trigs.attrs['foreground_time1'], all_trigs.attrs['foreground_time2'])
-
-print "The max time is: ", maxtime
-print "The min time is: ", mintime
 
 maxtime_exc = maxtime - veto_time
 mintime_exc = mintime - veto_time
@@ -162,7 +164,7 @@ fore_stat = all_trigs.stat[fore_locs]
 # Write the cumulative array of inclusive background triggers and the number
 # of inclusive background triggers above each foreground trigger.
 back_cnum, fnlouder = coinc.calculate_n_louder(back_stat, fore_stat, 
-                                               all_trigs.decimation_factor[back_locs])       
+                                               all_trigs.decimation_factor[back_locs])
 
 # Write the cumulative array of exclusive background triggers and the number
 # of exclusive background triggers above each foreground trigger.
@@ -202,10 +204,6 @@ if 'name' in all_trigs.attrs:
 # Incorporate hierarchical removal for any other loud triggers
 logging.info("Instantiating hierarchical removal.")
 
-# Write a new variable to store all of the original triggers
-test_all_trigs = all_trigs
-test_non_coinc_trigs = non_coinc_trigs
-
 #Pseudo-Code First
 # Step 1: Check to see if the trigger with the largest FAR is
 #         louder than all of the background.
@@ -215,65 +213,50 @@ test_non_coinc_trigs = non_coinc_trigs
 # the background, fnlouder = 0.
 
 loud_t_ind = []
-loud_t_ind_exc = []
+count_ind = -1
 for i in range(0, len(fnlouder)):
     if fnlouder[i] == 0:
         loud_t_ind.append(i)
-    if fnlouder_exc[i] == 0:
-        loud_t_ind_exc.append(i)
+        count_ind += 1
+        print "A loud trigger was found at foreground trigger index,", loud_t_ind[count_ind]
+        print "It's ranking statistic is ", fore_stat[loud_t_ind[count_ind]]
+        print "It's IFAR is ", ifar[loud_t_ind[count_ind]]
 
 print 'The size of the array of fnlouder is ', len(fnlouder)
-print 'The size of the array of fnlouder_exc is ', len(fnlouder_exc)
-
-print 'loudest trigger index inclusive background'
-print loud_t_ind
-print 'loudest trigger index exclusive background'
-print loud_t_ind_exc
-print
-
-print "The back_stat is this big ", len(back_stat)
-print "the fore_stat is this big ", len(fore_stat)
-
-# This is GW150914's newsnr
-print "The value of fore_stat [20] = ", fore_stat[20]
-# This is the newsnr for gw151226
-print "The value of fore_stat [2570] = ", fore_stat[2570]
 
 print "What is the length of the ifar array?", len(ifar)
-print "Exclusive Background IFAR of index 1"
-print ifar[loud_t_ind_exc[0]]
-print "Exclusive Background IFAR of index 2"
-print ifar[loud_t_ind_exc[1]]
-print
+
+print "The SNR of GW151226 is: ", fore_stat[2570]
+print "The IFAR of GW151226 is: ", ifar[2570]
 
 # Step 2 : Loop until we don't have to hierarchically remove
 #          anymore.
 iter = 1
-while len(loud_t_ind_exc) >= 1:
+while len(loud_t_ind) > 0:
     # find the loudest of these triggers, its index, its newsnr
     # and its ifar
     print 'iteration ', iter
     max_ifar = 0
     max_ifar_ind = 0
     max_rank_stat = 0
-    for i in range(0, len(loud_t_ind_exc)):
-         print 'index: ', loud_t_ind_exc[i]
-         print 'ifar: ', ifar[loud_t_ind_exc[i]]
-         print 'ranking statistic foreground: ', fore_stat[loud_t_ind_exc[i]]
+    for i in range(0, len(loud_t_ind)):
+         print 'index: ', loud_t_ind[i]
+         print 'ifar: ', ifar[loud_t_ind[i]]
+         print 'ranking statistic foreground: ', fore_stat[loud_t_ind[i]]
          # Check for the largest ifar
-         if ifar[loud_t_ind_exc[i]] >= max_ifar:
+         if ifar[loud_t_ind[i]] >= max_ifar:
            # Check to see if they have equal ifar, then check newsnr
-              if ifar[loud_t_ind_exc[i]] == max_ifar:
-                   if back_stat[loud_t_ind_exc[i]] >= \
-                      back_stat[loud_t_ind_exc[max_ifar_ind]] :
-                        max_ifar_ind = loud_t_ind_exc[i]
-                        max_rank_stat = back_stat[loud_t_ind_exc[i]]
+              if ifar[loud_t_ind[i]] == max_ifar:
+                   if back_stat[loud_t_ind[i]] >= \
+                      back_stat[loud_t_ind[max_ifar_ind]] :
+                        max_ifar_ind = loud_t_ind[i]
+                        max_rank_stat = back_stat[loud_t_ind[i]]
                    else :
                         max_rank_stat = back_stat[max_ifar_ind]
                         
               else :
-                   max_ifar = ifar[loud_t_ind_exc[i]]
-                   max_ifar_ind = loud_t_ind_exc[i]
+                   max_ifar = ifar[loud_t_ind[i]]
+                   max_ifar_ind = loud_t_ind[i]
 # Step 3: Remove that trigger from the list of zerolag triggers
 #         What is the best way to do this? If you remove it from
 #         the list, then you shift all of the values and you need
@@ -282,32 +265,155 @@ while len(loud_t_ind_exc) >= 1:
 #         both detectors? That'll preserve the indices of the arrays,
 #         but is that the best science to do?
     iter += 1
-    loud_t_ind_exc.remove(max_ifar_ind)
 
-    fore_stat = np.delete(fore_stat, max_ifar_ind)
+    print "The loud trigger index exclusive (?) is ", loud_t_ind
+    print "The max ifar index is ", max_ifar_ind
+ 
+    print "Look at all_trigs SNR at location [max_ifar_ind]", fore_stat[max_ifar_ind]
 
-    logging.info("Removing foreground trigger that is louder than the background.") 
+    array1_where_is_it = np.where(all_trigs.stat[:] == fore_stat[max_ifar_ind])
 
-#    How do I remove the trigger from the list of all triggers? In StatmapData
-#    in pycbc/io/hdf.py you have the options:
-#    'stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2', 
-#    'template_id', 'decimation_factor', 'timeslide_id'
-#    print test_all_trigs
-#    print test_all_trigs[0]
-#    print test_all_trigs[1]
-#    test_all_trigs = np.delete(test_all_trigs, max_ifar_ind)
-  
+    print "Print output of np.where", array1_where_is_it
+    print "What about the array index [0]?,", array1_where_is_it[0]
+
+    if len(array1_where_is_it[0]) > 1:
+         print "The author of this hierarchical removal is not a good ", \
+               "programmer. He is looking for a mapping from loudest ", \
+               "foreground trigger to the array of all triggers and ", \
+               "he assumes that there's only one matching SNR trigger ", \
+               "so this code's going to break."
+
+    print "Where is my loudest trigger?", array1_where_is_it[0][0]
+    my_loudest_ind = array1_where_is_it[0][0]
+
+    print "The time for IFO 1 for this really loud trigger is", all_trigs.time1[my_loudest_ind]
+    print "The time for IFO 2 for this really loud trigger is", all_trigs.time2[my_loudest_ind]
+
+    print "The proposed veto window for hierarchical removal is",  args.veto_window_hierarch, "s around this trigger."
+
+    logging.info("Removing foreground trigger that is louder than the background.")
+    loud_t_ind.remove(max_ifar_ind)
+
+# What are the indices associated with that loudest trigger in the list of all triggers?
+# Remove the foreground trigger AND all of the background triggers that are associated
+# with it via the timeslides.
+
+    ind_to_rm_ifo1 = veto.indices_within_times(all_trigs.time1, \
+                              [all_trigs.time1[my_loudest_ind] - args.veto_window_hierarch], \
+                              [all_trigs.time1[my_loudest_ind] + args.veto_window_hierarch])
+    ind_to_rm_ifo2 = veto.indices_within_times(all_trigs.time2, \
+                              [all_trigs.time2[my_loudest_ind] - args.veto_window_hierarch], \
+                              [all_trigs.time2[my_loudest_ind] + args.veto_window_hierarch])
+    indices_to_rm = np.concatenate([ind_to_rm_ifo1, ind_to_rm_ifo2])
+
+    all_trigs = all_trigs.remove(indices_to_rm)
+
+    logging.info("We have %s triggers after hierarchical removal." % len(all_trigs.stat))
+
+# Now we need to regenerate the non_coinc_trigs after this removal.
+# See above comments if this doesn't make any sense.    
+
+    fore_locs = all_trigs.timeslide_id == 0
+
+    fore_time1 = all_trigs.time1[fore_locs]
+    fore_time2 = all_trigs.time2[fore_locs]
+
+    ave_fore_time = (fore_time1 + fore_time2) / 2.0
+
+    veto_start_time = ave_fore_time - args.veto_window
+    veto_end_time = ave_fore_time + args.veto_window
+
+    veto_time = abs(veto.start_end_to_segments(veto_start_time,
+                                               veto_end_time).coalesce())
+
+    veto_indices1 = veto.indices_within_times(all_trigs.time1, veto_start_time,
+                                              veto_end_time)
+
+    non_coinc_trigs = all_trigs.remove(veto_indices1)
+
+    veto_indices2 = veto.indices_within_times(non_coinc_trigs.time2,
+                                              veto_start_time, veto_end_time)
+
+    non_coinc_trigs = non_coinc_trigs.remove(veto_indices2)
+
 # Step 4: Re cluster the triggers and calculate the far/ifar/fap
 #         inclusive and exclusive.
-#    logging.info("Clustering coinc triggers (inclusive of zerolag)")
-#    test_all_trigs = test_all_trigs.cluster(args.cluster_window)
-#    test_non_coinc_trigs = test_non_coinc_trigs.cluster(args.cluster_window)
 
+    logging.info("Clustering coinc triggers (inclusive of zerolag)")
+    all_trigs = all_trigs.cluster(args.cluster_window)
     
-#    new_trigs = new_trigs.cluster()
-#    ifarDict recalculate
-#    fapDict recalculate
-#    reassign fnlouder and loudest_trig_ind_exc
+    fore_locs = all_trigs.timeslide_id == 0
+
+    logging.info("%s clustered foreground triggers" % fore_locs.sum())
+
+    logging.info("Clustering coinc triggers (exclusive of zerolag)")
+    non_coinc_trigs = non_coinc_trigs.cluster(args.cluster_window)
+
+    back_locs = all_trigs.timeslide_id != 0 
+
+    maxtime = max(all_trigs.attrs['foreground_time1'], all_trigs.attrs['foreground_time2'])
+    mintime = min(all_trigs.attrs['foreground_time1'], all_trigs.attrs['foreground_time2'])
+
+    maxtime_exc = maxtime - veto_time
+    mintime_exc = mintime - veto_time
+
+    background_time = int(maxtime / all_trigs.attrs['timeslide_interval']) * mintime
+    coinc_time = float(all_trigs.attrs['coinc_time'])
+
+    background_time_exc = int(maxtime_exc / all_trigs.attrs['timeslide_interval']) * mintime_exc
+    coinc_time_exc = coinc_time - veto_time
+
+    logging.info("Making mapping from FAN to the combined statistic")
+
+    back_stat = all_trigs.stat[back_locs]
+    fore_stat = all_trigs.stat[fore_locs]
+
+    back_cnum, fnlouder = coinc.calculate_n_louder(back_stat, fore_stat, 
+                                                   all_trigs.decimation_factor[back_locs])
+
+    back_cnum_exc, fnlouder_exc = coinc.calculate_n_louder(non_coinc_trigs.stat,
+                                                           fore_stat,
+                                                           non_coinc_trigs.decimation_factor)
+#    f['background/ifar'] = sec_to_year(background_time / (back_cnum + 1))
+#    f['background_exc/ifar'] = sec_to_year(background_time_exc / (back_cnum_exc + 1))
+
+#    f.attrs['background_time'] = background_time
+#    f.attrs['foreground_time'] = coinc_time
+#    f.attrs['background_time_exc'] = background_time_exc
+#    f.attrs['foreground_time_exc'] = coinc_time_exc
+
+    logging.info("Calculating ifar/fap values")
+
+    if fore_locs.sum() > 0:
+        ifar = background_time / (fnlouder + 1)
+        fap = 1 - numpy.exp(- coinc_time / ifar)
+#        f['foreground/ifar'] = sec_to_year(ifar)
+#        f['foreground/fap'] = fap
+
+        ifar_exc = background_time_exc / (fnlouder_exc + 1)
+        fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
+ 
+    loud_t_ind = []
+    count_ind = -1
+    for i in range(0, len(fnlouder)):
+        if fnlouder[i] == 0:
+            loud_t_ind.append(i)
+            count_ind += 1
+            print "A loud trigger was found at foreground trigger index,", loud_t_ind[count_ind]
+            print "It's ranking statistic is ", fore_stat[loud_t_ind[count_ind]]
+            print "It's IFAR is ", ifar[loud_t_ind[count_ind]]
+#        f['foreground/ifar_exc'] = sec_to_year(ifar_exc)
+#        f['foreground/fap_exc'] = fap_exc
+#    else:
+#        f['foreground/ifar'] = numpy.array([])
+#        f['foreground/fap'] = numpy.array([])
+#        f['foreground/ifar_exc'] = numpy.array([])
+#        f['foreground/fap_exc'] = numpy.array([])
+
+
+ #   if 'name' in all_trigs.attrs:
+ #       f.attrs['name'] = all_trigs.attrs['name']
+
 
 # Step 5: Check Step 1-3 again, until we don't have any triggers
 #         that are louder than the background.
