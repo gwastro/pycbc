@@ -9,12 +9,17 @@ from itertools import cycle
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--bank-file', help='hdf format template bank file')
+parser.add_argument('--bank-file', help='hdf format template bank file',
+                    required=True)
 parser.add_argument('--background-bins', nargs='+', help='list of background bin format strings')
 parser.add_argument('--f-lower',
                     help="Lower frequency cutoff for evaluating template duration. Should"
                          " be equal to the lower cutoff used in inspiral jobs")
-parser.add_argument('--output-file', help='output file')
+parser.add_argument('--output-file', help='output file', required=True)
+parser.add_argument('--log-x', action='store_true',
+                    help='Make x-axis logarithmic')
+parser.add_argument('--log-y', action='store_true',
+                    help='Make y-axis logarithmic')
 args = parser.parse_args()
 
 fig = pylab.figure()
@@ -42,6 +47,10 @@ pylab.xlabel('Mass1 $M_\odot$')
 pylab.ylabel('Mass2 $M_\odot$')
 pylab.xlim(data['mass1'].min(), data['mass1'].max())
 pylab.ylim(data['mass2'].min(), data['mass2'].max())
+if args.log_x:
+    pylab.xscale('log')
+if args.log_y:
+    pylab.yscale('log')
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
     title="Template Bank and Bins Used to Compute Background",
