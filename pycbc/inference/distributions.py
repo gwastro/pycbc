@@ -215,7 +215,13 @@ def get_kde_from_file(params_file, params=None):
         f = h5py.File(params_file, 'r')
     except:
         raise ValueError('File not found.')
-    if params is None:
+    if params is not None:
+        if str(params)[0] != '[':
+            params = [params]
+        for p in params:
+            if p not in f.keys():
+                raise ValueError('Parameter %s is not in %s' %(p, params_file))
+    else:
         params = f.keys()
     params_values = {p:f[p][:] for p in params}
     f.close()
