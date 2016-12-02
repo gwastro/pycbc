@@ -44,7 +44,11 @@ f = h5py.File(args.output_file, 'w')
 logging.info("getting the list of columns from a representative file")
 trigger_columns = []
 for fname in args.trigger_files:
-    f2 = h5py.File(fname, 'r')
+    try:
+        f2 = h5py.File(fname, 'r')
+    except IOError:
+        logging.error("Cannot open %s" % filename)
+        raise IOError
     ifo = f2.keys()[0]
     if len(f2[ifo].keys()) > 0:
         k = f2[ifo].keys()
@@ -74,7 +78,7 @@ for filename in args.trigger_files:
     try:
         data = h5py.File(filename, 'r')
     except IOError:
-        logging.error('Cannot open %s', filename)
+        logging.error('Cannot open %s' % filename)
         raise IOError
     ifo_data = data[ifo]
     s, e = ifo_data['search/start_time'][:], ifo_data['search/end_time'][:]
