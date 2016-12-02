@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Alex Nitz, Collin Capano
+# Copyright (C) 2016  Alex Nitz, Collin Capano, Soumi De, Duncan Brown
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -66,7 +66,7 @@ def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
         (numpy.pi * msun * flow) **  (8.0 / 3.0)
 
     # fudge factoriness
-    return .022 if t < 0 else (t + fudge_min) * fudge_length 
+    return .022 if t < 0 else (t + fudge_min) * fudge_length
 
 def mchirp_compression(m1, m2, fmin, fmax, min_seglen=0.02, df_multiple=None):
     """Return the frequencies needed to compress a waveform with the given
@@ -184,7 +184,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     mismatch is computed by finding 1-overlap between `htilde` and the
     decompressed waveform; no maximimization over phase/time is done, nor is
     any PSD used.
-    
+
     .. note::
         The decompressed waveform is only garaunteed to have a true mismatch
         <= the tolerance for the given `interpolation` and for no PSD.
@@ -230,7 +230,10 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     else:
         outdf = None
     out = decomp_scratch
-    hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
+    amp_sample_points = None
+    phase_sample_points = sample_points
+    hdecomp = fd_decompress(comp_amp, comp_phase,
+        amp_sample_points, phase_sample_points,
         out=decomp_scratch, df=outdf, f_lower=fmin,
         interpolation=interpolation)
     mismatch = 1. - filter.overlap(hdecomp, htilde, low_frequency_cutoff=fmin)
@@ -241,7 +244,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     # We will find where in the frequency series the interpolated waveform
     # has the smallest overlap with the full waveform, add a sample point
     # there, and re-interpolate. We repeat this until the overall mismatch
-    # is > than the desired tolerance 
+    # is > than the desired tolerance
     added_points = []
     while mismatch > tolerance:
         minpt = vecdiffs.argmax()
@@ -259,7 +262,10 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         comp_amp = amp.take(sample_index)
         comp_phase = phase.take(sample_index)
         # update the vecdiffs and mismatch
-        hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
+        amp_sample_points = None
+        phase_sample_points = sample_points
+        hdecomp = fd_decompress(comp_amp, comp_phase,
+            amp_sample_points, phase_sample_points,
             out=decomp_scratch, df=outdf, f_lower=fmin,
             interpolation=interpolation)
         new_vecdiffs = numpy.zeros(vecdiffs.size+1)
@@ -273,8 +279,9 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         added_points.append(addidx)
     logging.info("mismatch: %f, N points: %i (%i added)" %(mismatch,
         len(comp_amp), len(added_points)))
-    
-    return CompressedWaveform(sample_points, comp_amp, comp_phase,
+
+    return CompressedWaveform(amp_sample_points, phase_sample_points,
+                comp_amp, comp_phase,
                 interpolation=interpolation, tolerance=tolerance,
                 mismatch=mismatch)
 
@@ -310,7 +317,7 @@ _linear_decompress_code = r"""
     double* outptr = (double*) h;
 
     // for keeping track of where in the output frequencies we are
-    int findex, next_sfindex, kmax; 
+    int findex, next_sfindex, kmax;
 
     // variables for computing the interpolation
     double df = (double) delta_f;
@@ -379,7 +386,7 @@ _linear_decompress_code = r"""
             // for the next update_interval steps, compute h by incrementing
             // the last h
             kmax = findex + update_interval;
-            if (kmax > next_sfindex) 
+            if (kmax > next_sfindex)
                 kmax = next_sfindex;
             while (findex < kmax){
                 incrh_re = h_re * dphi_re - h_im * dphi_im;
@@ -423,7 +430,7 @@ _real_dtypes = {
     'double': numpy.float64
 }
 
-def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
+def fd_decompress(amp, phase, amp_freq, phase_freq, out=None, df=None,
         f_lower=None, interpolation='linear'):
     """Decompresses an FD waveform using the given amplitude, phase, and the
     frequencies at which they are sampled at.
@@ -434,22 +441,30 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         The amplitude of the waveform at the sample frequencies.
     phase : array
         The phase of the waveform at the sample frequencies.
-    sample_frequencies : array
-        The frequency (in Hz) of the waveform at the sample frequencies.
+    amp_freq : array
+        The frequency (in Hz) of the waveform at the amplitude sample
+        frequencies.
+    phase_freq : array
+        The frequency (in Hz) of the waveform at the phase sample
+        frequencies.
     out : {None, FrequencySeries}
         The output array to save the decompressed waveform to. If this contains
-        slots for frequencies > the maximum frequency in sample_frequencies,
-        the rest of the values are zeroed. If not provided, must provide a df.
+        slots for frequencies > the maximum frequency in the interpolant
+        frequency arrays, the rest of the values are zeroed. If not provided,
+        must provide a df.
     df : {None, float}
         The frequency step to use for the decompressed waveform. Must be
         provided if out is None.
     f_lower : {None, float}
         The frequency to start the decompression at. If None, will use whatever
-        the lowest frequency is in sample_frequencies. All values at
-        frequencies less than this will be 0 in the decompressed waveform.
-    interpolation : {'linear', str}
+        the lowest frequency is of the interpolants in amplitude and phase.
+        All values at frequencies less than this will be 0 in the decompressed
+        waveform.
+    interpolation : {'linear_same_freq_points', str}
         The interpolation to use for the amplitude and phase. Default is
-        'linear'. If 'linear' a custom interpolater is used. Otherwise,
+        'linear_same_freq_points'. If 'linear_same_freq_points' a custom
+        interpolater is used that assumes that the the frequency samples of
+        the amplitude and phase interpolants are exactly the same. Otherwise,
         ``scipy.interpolate.interp1d`` is used; for other options, see
         possible values for that function's ``kind`` argument.
 
@@ -459,15 +474,35 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         If out was provided, writes to that array. Otherwise, a new
         FrequencySeries with the decompressed waveform.
     """
-    precision = _precision_map[sample_frequencies.dtype.name]
-    if _precision_map[amp.dtype.name] != precision or \
-            _precision_map[phase.dtype.name] != precision:
-        raise ValueError("amp, phase, and sample_points must all have the "
-            "same precision")
+    precision = _precision_map[phase_freq.dtype.name]
+    if interpolation == "linear":
+        if amp_freq != None:
+            raise ValueError("for inline_linear_single_freq decompression"
+                     "amp_freq should be set to None as it should be the"
+                     " same as phase_freq")
+        sample_frequencies = phase_freq
+        if _precision_map[amp.dtype.name] != precision or \
+               _precision_map[phase.dtype.name] != precision:
+           raise ValueError("amp, phase, and phase_freq must"
+                             " all have the same precision")
+        f_min = phase_freq.min()
+        f_max = phase_freq.max()
+
+
+    else:
+        if _precision_map[amp.dtype.name] != precision or \
+               _precision_map[phase.dtype.name] != precision or \
+               _precision_map[amp_freq.dtype.name] != precision:
+           raise ValueError("amp, phase, amp_freq, and phase_freq must"
+                             " all have the same precision")
+
+        f_min = max([amp_freq.min(),phase_freq.min()])
+        f_max = min([amp_freq.max(),phase_freq.max()])
+
     if out is None:
         if df is None:
             raise ValueError("Either provide output memory or a df")
-        hlen = int(numpy.ceil(sample_frequencies.max()/df+1))
+        hlen = int(numpy.ceil(f_max/df+1))
         out = FrequencySeries(numpy.zeros(hlen,
             dtype=_complex_dtypes[precision]), copy=False,
             delta_f=df)
@@ -479,14 +514,15 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         hlen = len(out)
     if f_lower is None:
         imin = 0
-        f_lower = sample_frequencies[0]
+        f_lower = f_min
     else:
-        if f_lower >= sample_frequencies.max():
-            raise ValueError("f_lower is > than the maximum sample frequency")
-        imin = int(numpy.searchsorted(sample_frequencies, f_lower))
+        if f_lower >= f_max:
+            raise ValueError("f_lower is greater than the maximum "
+                             "sample frequency of the interpolants")
     start_index = int(numpy.floor(f_lower/df))
     # interpolate the amplitude and the phase
     if interpolation == "linear":
+        imin = int(numpy.searchsorted(sample_frequencies, f_lower))
         if precision == 'single':
             code = _linear_decompress_code32
         else:
@@ -503,10 +539,10 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
     else:
         # use scipy for fancier interpolation
         outfreq = out.sample_frequencies.numpy()
-        amp_interp = interpolate.interp1d(sample_frequencies.numpy(),
+        amp_interp = interpolate.interp1d(amp_freq.numpy(),
             amp.numpy(), kind=interpolation, bounds_error=False, fill_value=0.,
             assume_sorted=True)
-        phase_interp = interpolate.interp1d(sample_frequencies.numpy(),
+        phase_interp = interpolate.interp1d(phase_freq.numpy(),
             phase.numpy(), kind=interpolation, bounds_error=False,
             fill_value=0., assume_sorted=True)
         A = amp_interp(outfreq)
@@ -517,11 +553,13 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
 
 class CompressedWaveform(object):
     """Class that stores information about a compressed waveform.
-    
+
     Parameters
     ----------
-    sample_points : {array, h5py.Dataset}
-        The frequency points at which the compressed waveform is sampled.
+    amplitude_freq_points : {array, h5py.Dataset}
+        The frequency points at which the amplitude of the compressed waveform is sampled.
+    phase_freq_points : {array, h5py.Dataset}
+        The frequency points at which the phase of the compressed waveform is sampled.
     amplitude : {array, h5py.Dataset}
         The amplitude of the waveform at the given `sample_points`.
     phase : {array, h5py.Dataset}
@@ -542,12 +580,18 @@ class CompressedWaveform(object):
 
     Attributes
     ----------
-    sample_points : array
-        The frequencies at which the compressed waveform is sampled. This is
-        always returned as an array, even if the stored `sample_points` is an
-        hdf dataset. If `load_to_memory` is True and the stored points are
-        an hdf dataset, the `sample_points` will cached in memory the first
-        time this attribute is accessed.
+    amplitude_freq_points : array
+        The frequencies at which the amplitude of the compressed waveform is
+        sampled. This is always returned as an array, even if the stored
+        `sample_points` is an hdf dataset. If `load_to_memory` is True and the
+        stored points are an hdf dataset, the `sample_points` will cached in
+        memory the first time this attribute is accessed.
+    phase_freq_points : array
+        The frequencies at which the phase of the compressed waveform is
+        sampled. This is always returned as an array, even if the stored
+        `sample_points` is an hdf dataset. If `load_to_memory` is True and the
+        stored points are an hdf dataset, the `sample_points` will cached in
+        memory the first time this attribute is accessed.
     amplitude : array
         The amplitude of the waveform at the `sample_points`. This is always
         returned as an array; the same logic as for `sample_points` is used
@@ -578,19 +622,21 @@ class CompressedWaveform(object):
         Writes the compressed waveform to an open hdf file.
     clear_cache :
         Clears the in-memory cache used to hold the
-        `sample_points`/`amplitude`/`phase`; only relevant if `load_to_memory`
-        is True.
+        `amplitude_freq_points`/`phase_freq_points`/`amplitude`/`phase`;
+        only relevant if `load_to_memory` is True.
 
     Class Methods
     -------------
     from_hdf :
         Loads a compressed waveform from the given open hdf file.
     """
-    
-    def __init__(self, sample_points, amplitude, phase,
+
+    def __init__(self,
+            amplitude_freq_points, phase_freq_points, amplitude, phase,
             interpolation=None, tolerance=None, mismatch=None,
             load_to_memory=True):
-        self._sample_points = sample_points
+        self._amplitude_freq_points = amplitude_freq_points
+        self._phase_freq_points = phase_freq_points
         self._amplitude = amplitude
         self._phase = phase
         self._cache = {}
@@ -640,16 +686,20 @@ class CompressedWaveform(object):
         return self._get('phase')
 
     @property
-    def sample_points(self):
-        return self._get('sample_points')
+    def amplitude_freq_points(self):
+        return self._get('amplitude_freq_points')
+
+    @property
+    def phase_freq_points(self):
+        return self._get('phase_freq_points')
 
     def clear_cache(self):
-        """Clear self's cache of amplitude, phase, and sample_points."""
+        """Clear self's cache of amplitude, phase, and sample points."""
         self._cache.clear()
 
     def decompress(self, out=None, df=None, f_lower=None, interpolation=None):
         """Decompress self.
-        
+
         Parameters
         ----------
         out : {None, FrequencySeries}
@@ -661,8 +711,9 @@ class CompressedWaveform(object):
             value. Either this or `out` must be provided.
         f_lower : {None, float}
             The starting frequency at which to decompress the waveform. Cannot
-            be less than the minimum frequency in `sample_points`. If `None`
-            provided, will default to the minimum frequency in `sample_points`.
+            be less than the minimum frequency of either
+            `amplitude_freq_points` or `phase_freq_points`. If `None`
+            provided, will default to the minimum frequency available.
         interpolation : {None, str}
             The interpolation to use for decompressing the waveform. If `None`
             provided, will default to `self.interpolation`.
@@ -673,11 +724,13 @@ class CompressedWaveform(object):
             The decompressed waveform.
         """
         if f_lower is None:
-            # use the minimum of the samlpe points
-            f_lower = self.sample_points.min()
+            # use the minimum of the sample points
+            f_lower = numpy.array([self.amplitude_freq_points.min(),
+                       self.phase_freq_points.min()]).max()
         if interpolation is None:
             interpolation = self.interpolation
-        return fd_decompress(self.amplitude, self.phase, self.sample_points,
+        return fd_decompress(self.amplitude, self.phase,
+            self.amplitude_freq_points, self.phase_freq_points,
             out=out, df=df, f_lower=f_lower, interpolation=interpolation)
 
     def write_to_hdf(self, fp, template_hash, root=None):
@@ -685,9 +738,9 @@ class CompressedWaveform(object):
 
         The waveform is written to:
         `fp['[{root}/]compressed_waveforms/{template_hash}/{param}']`,
-        where `param` is the `sample_points`, `amplitude`, and `phase`. The
-        `interpolation`, `tolerance`, and `mismatch` are saved to the group's
-        attributes.
+        where `param` is the `amplitude_freq_points`, `phase_freq_points`,
+        `amplitude`, and `phase`. The `interpolation`, `tolerance`, and
+        `mismatch` are saved to the group's attributes.
 
         Parameters
         ----------
@@ -705,8 +758,12 @@ class CompressedWaveform(object):
         else:
             root = '%s/'%(root)
         group = '%scompressed_waveforms/%s' %(root, str(template_hash))
-        for param in ['amplitude', 'phase', 'sample_points']:
-            fp['%s/%s' %(group, param)] = self._get(param)
+        if self.interpolation == "linear":
+           for param in ['amplitude', 'phase', 'phase_freq_points']:
+               fp['%s/%s' %(group, param)] = self._get(param)
+        else:
+           for param in ['amplitude', 'phase', 'amplitude_freq_ponts', 'phase_freq_points']:
+               fp['%s/%s' %(group, param)] = self._get(param)
         fp[group].attrs['mismatch'] = self.mismatch
         fp[group].attrs['interpolation'] = self.interpolation
         fp[group].attrs['tolerance'] = self.tolerance
@@ -718,7 +775,8 @@ class CompressedWaveform(object):
 
         The waveform is retrieved from:
         `fp['[{root}/]compressed_waveforms/{template_hash}/{param}']`,
-        where `param` is the `sample_points`, `amplitude`, and `phase`.
+        where `param` is the `amplitude_freq_points`, `phase_freq_points`,
+        `amplitude`, and `phase`.
 
         Parameters
         ----------
@@ -734,7 +792,8 @@ class CompressedWaveform(object):
             Set the `load_to_memory` attribute to the given value in the
             returned instance.
         load_now : {False, bool}
-            Immediately load the `sample_points`/`amplitude`/`phase` to memory.
+            Immediately load the `amplitude_freq_points`/`phase_freq_points`
+            /`amplitude`/`phase` to memory.
 
 
         Returns
@@ -747,14 +806,16 @@ class CompressedWaveform(object):
         else:
             root = '%s/'%(root)
         group = '%scompressed_waveforms/%s' %(root, str(template_hash))
-        sample_points = fp[group]['sample_points']
+        amplitude_freq = fp[group]['amplitude_freq_points']
+        phase_freq = fp[group]['phase_freq_points']
         amp = fp[group]['amplitude']
         phase = fp[group]['phase']
         if load_now:
-            sample_points = sample_points[:]
+            amplitude_freq = amplitude_freq[:]
+            phase_freq = phase_freq[:]
             amp = amp[:]
             phase = phase[:]
-        return cls(sample_points, amp, phase,
+        return cls(amplitude_freq, phase_freq, amp, phase,
             interpolation=fp[group].attrs['interpolation'],
             tolerance=fp[group].attrs['tolerance'],
             mismatch=fp[group].attrs['mismatch'],
