@@ -349,7 +349,8 @@ def partial_rom_compression(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
     fmin_interp = max(amp_freq_points.min(), phase_freq_points.min())
     fmax_interp = min(amp_freq_points.max(), phase_freq_points.max())
 
-    # Perform the frequency space interpolation to get the decompressed waveform                        hdecomp = fd_decompress(amp_interp_points, phase_interp_points,
+    # Perform the frequency space interpolation to get the decompressed waveform
+    hdecomp = fd_decompress(amp_interp_points, phase_interp_points,
                             phase_freq_points, amp_freq_points, out=None,
                             df=deltaF, f_lower=fmin_interp,
                             interpolation=interpolation)
@@ -965,6 +966,7 @@ class CompressedWaveform(object):
             if load_now:
                 sample_frequencies = sample_frequencies[:]
                 amp = amp[:]
+                phase = phase[:]
         return cls(amp, phase, sample_frequencies, amp_sample_frequencies,
                    interpolation=fp[group].attrs['interpolation'],
                    tolerance=tolerance,
