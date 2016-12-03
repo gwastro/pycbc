@@ -95,8 +95,8 @@ samples = fp.read_samples(parameters, thin_start=opts.start_sample,
 # Get z-values
 if opts.z_arg is not None:
     logging.info("Getting likelihood stats")
-    likelihood_stats = fp.read_likelihood_stats(thin_start=0,
-                                    thin_interval=thinint, flatten=False)
+    likelihood_stats = fp.read_likelihood_stats(thin_start=opts.start_sample,
+        thin_end=opts.end_sample, thin_interval=thinint, flatten=False)
     zvals, zlbl = option_utils.get_zvalues(fp, opts.z_arg, likelihood_stats)
     show_colorbar = True
     # Set common min and max for colorbar in all plots
