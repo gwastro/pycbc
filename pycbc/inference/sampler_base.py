@@ -355,9 +355,6 @@ class BaseMCMCSampler(_BaseSampler):
                                  "number of iterations")
         else:
             max_iterations = niterations
-        # we'll wait to create the scratch space until the first time
-        # we need it
-        out = None
 
         # loop over number of dimensions
         widx = numpy.arange(nwalkers)
@@ -366,13 +363,15 @@ class BaseMCMCSampler(_BaseSampler):
             for wi in widx:
                 dataset_name = group.format(name=param, wi=wi)
                 try:
+                    if fb > fp[dataset_name].size:
+                        # resize the dataset
+                        fp[dataset_name].resize(fb, axis=0)
                     fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
                 except KeyError:
-                    # dataset doesn't exist yet, use scratch space for writing
-                    if out is None:
-                        out = numpy.zeros(max_iterations, dtype=samples.dtype)
-                    out[fa:fb] = samples[wi, ma:mb, pi]
-                    fp[dataset_name] = out
+                    # dataset doesn't exist yet
+                    fp.create_dataset(dataset_name, (fb,),
+                                      maxshape=(max_iterations,))
+                    fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
 
 
     def write_likelihood_stats(self, fp, start_iteration=0, end_iteration=None,
@@ -443,13 +442,15 @@ class BaseMCMCSampler(_BaseSampler):
             for wi in range(nwalkers):
                 dataset_name = group.format(param=param, wi=wi)
                 try:
+                    if fb > fp[dataset_name].size:
+                        # resize the dataset
+                        fp[dataset_name].resize(fb, axis=0)
                     fp[dataset_name][fa:fb] = stats[param][wi, ma:mb]
                 except KeyError:
-                    if out is None:
-                        out = numpy.zeros(max_iterations,
-                                          dtype=stats.dtype[param])
-                    out[fa:fb] = stats[param][wi, ma:mb]
-                    fp[dataset_name] = out
+                    # dataset doesn't exist yet
+                    fp.create_dataset(dataset_name, (fb,),
+                                      maxshape=(max_iterations,))
+                    fp[dataset_name][fa:fb] = stats[param][wi, ma:mb]
         return stats
 
 
@@ -479,15 +480,15 @@ class BaseMCMCSampler(_BaseSampler):
         bb = end_iteration
 
         try:
+            if bb > fp[dataset_name].size:
+                # resize the dataset
+                fp[dataset_name].resize(bb, axis=0)
             fp[dataset_name][aa:bb] = acf[aa:bb]
         except KeyError:
-            # dataset doesn't exist yet, see if a larger array is
-            # desired
-            if max_iterations is None:
-                max_iterations = acf.size
-            out = numpy.zeros(max_iterations, dtype=acf.dtype)
-            out[aa:bb] = acf[aa:bb]
-            fp[dataset_name] = out
+            # dataset doesn't exist yet
+            fp.create_dataset(dataset_name, (bb,),
+                              maxshape=(max_iterations,))
+            fp[dataset_name][aa:bb] = acf[aa:bb]
 
 
     def write_results(self, fp, start_iteration=0, end_iteration=None,
