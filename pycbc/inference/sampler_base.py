@@ -51,6 +51,7 @@ class _BaseSampler(object):
 
     def __init__(self, likelihood_evaluator):
         self.likelihood_evaluator = likelihood_evaluator
+        self._lastclear = 0
 
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator):
@@ -89,7 +90,7 @@ class _BaseSampler(object):
     @property
     def niterations(self):
         """Get the current number of iterations."""
-        return self.chain.shape[-2]
+        return self.chain.shape[-2] + self._lastclear
 
     @property
     def acceptance_fraction(self):
