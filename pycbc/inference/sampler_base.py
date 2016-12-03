@@ -478,11 +478,11 @@ class BaseMCMCSampler(_BaseSampler):
             end_iteration = acf.size
         bb = end_iteration
 
-        if max_iterations is not None and max_iterations < niterations:
+        if max_iterations is not None and max_iterations < acf.size:
             raise IndexError("The provided max size is less than the "
                              "number of iterations")
         elif max_iterations is None:
-            max_iterations = niterations
+            max_iterations = acf.size
 
         try:
             if bb > fp[dataset_name].size:
