@@ -349,11 +349,10 @@ class BaseMCMCSampler(_BaseSampler):
 
         # if this is the first time writing, we'll need some scratch space to
         # copy results for writing to the output file
-        if max_iterations is not None:
-            if max_iterations < niterations:
-                raise IndexError("The provided max size is less than the "
-                                 "number of iterations")
-        else:
+        if max_iterations is not None and max_iterations < niterations:
+            raise IndexError("The provided max size is less than the "
+                             "number of iterations")
+        elif max_iterations is None:
             max_iterations = niterations
 
         # loop over number of dimensions
@@ -431,7 +430,7 @@ class BaseMCMCSampler(_BaseSampler):
         if max_iterations is not None and max_iterations < niterations:
             raise IndexError("The provided max size is less than the "
                              "number of iterations")
-        else:
+        elif max_iterations is None:
             max_iterations = niterations
 
         for param in fields:
@@ -478,6 +477,12 @@ class BaseMCMCSampler(_BaseSampler):
         if end_iteration is None:
             end_iteration = acf.size
         bb = end_iteration
+
+        if max_iterations is not None and max_iterations < niterations:
+            raise IndexError("The provided max size is less than the "
+                             "number of iterations")
+        elif max_iterations is None:
+            max_iterations = niterations
 
         try:
             if bb > fp[dataset_name].size:
