@@ -153,11 +153,6 @@ def spa_compression(htilde, fmin, fmax, min_seglen=0.02,
         sample_points.append(fmax)
     return numpy.array(sample_points)
 
-compression_algorithms = {
-        'mchirp': mchirp_compression,
-        'spa': spa_compression
-        }
-
 def _vecdiff(htilde, hinterp, fmin, fmax):
     return abs(filter.overlap_cplx(htilde, htilde,
                           low_frequency_cutoff=fmin,
@@ -280,8 +275,8 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
                               interpolation=interpolation,
                               mismatch=mismatch, tolerance=tolerance)
 
-def partial_compress_rom(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
-                         fHigh, interpolation):
+def partial_rom_compression(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
+                            fHigh, interpolation):
     """
 
     Retrieves the amplitude and phase interpolants, and amplitude and
@@ -336,13 +331,13 @@ def partial_compress_rom(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
             phiRef, deltaF, fLow, fHigh, fRef, distance, inclination,
             m1SI, m2SI, float(chi1), float(chi2) )
     amp_freq_points = numpy.asarray(amp_freq_points.data,
-                                    dtype=numpy.float32)
+                                    dtype=numpy.float64)
     phase_freq_points = numpy.asarray(phase_freq_points.data,
-                                      dtype=numpy.float32)
+                                      dtype=numpy.float64)
     amp_interp_points = numpy.asarray(amp_interp_points.data,
-                                      dtype=numpy.float32)
+                                      dtype=numpy.float64)
     phase_interp_points = numpy.asarray(phase_interp_points.data,
-                                        dtype=numpy.float32)
+                                        dtype=numpy.float64)
 
     Mtot = mass1+mass2
     Mtot_sec = float(Mtot*lal.MTSUN_SI)
@@ -352,32 +347,43 @@ def partial_compress_rom(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
     amp_freq_points = amp_freq_points/Mtot_sec
     phase_freq_points = phase_freq_points/Mtot_sec
     fmin_interp = max(amp_freq_points.min(), phase_freq_points.min())
-    # Decompress the waveform in frequency space
-    hdecomp = fd_decompress(amp_interp_points, phase_interp_points,
+    fmax_interp = min(amp_freq_points.max(), phase_freq_points.max())
+
+    # Perform the frequency space interpolation to get the decompressed waveform                        hdecomp = fd_decompress(amp_interp_points, phase_interp_points,
                             phase_freq_points, amp_freq_points, out=None,
                             df=deltaF, f_lower=fmin_interp,
                             interpolation=interpolation)
-    # Calculate the highest frequency point in the frequency series for
-    # the full decompresssed SEOBNRv2_ROM waveform (htilde) and the the
-    # highest frequency point in the frequency series partially
-    # decompressed SEOBNRv2_ROM waveform (hdecomp)
+
+    # Calculate the highest frequency point in the frequency
+    # series for the full decompresssed SEOBNRv2_ROM waveform (htilde)
+    # and the highest frequency point in the frequency series
+    # for the partially decompressed SEOBNRv2_ROM waveform (hdecomp)
     fmax_hdecomp = numpy.amax(hdecomp.sample_frequencies.numpy())
     fmax_htilde = numpy.amax(htilde.sample_frequencies.numpy())
+
     # Calculate the minimum of the highest frequency points for the two
     # waveforms which would be used as a high_frequency_cutoff while
     # calculating the mismatch between the two
     high_frequency_cutoff = min(fmax_hdecomp, fmax_htilde)
-    # Calculate the mismatch between the two waveforms :
-    # The low_frequency_cutoff is the lower frequency point taken as user
-    # input in 'pycbc_compress_bank' for generating 'htilde'. The lengths
-    # of hdecomp and htilde are not the same. Therefore a
-    # high_frequency_cutoff which lies in the range of freqencies for
-    # htilde and hdecomp is provided and is calculated as described above.
-    # The mismatch is calculated for the length of the waveforms between
-    # the low_frequency_cutoff and high_frequency_cutoff.
-    mismatch = 1. - filter.overlap(abs(hdecomp), abs(htilde),
-                                   low_frequency_cutoff=fLow,
-                                   high_frequency_cutoff=high_frequency_cutoff)
+
+    # Reduce htilde and hdecomp to a length that would have the lowest
+    # frequency as the one taken as input in `pycbc_compress_bank` and the
+    # the highest frequency to be the one which is smaller between the
+    # highest frequency taken as input in `pycbc_compress_bank` and the
+    # high_frequency_cutoff calculated above.
+    high_frequency_cutoff_idx = int(high_frequency_cutoff/deltaF)
+    kmin = int(fLow/deltaF)
+    kmax = int(fHigh/deltaF)
+    if high_frequency_cutoff_idx < kmax :
+        kmax = high_frequency_cutoff_idx
+    hdecomp_cut = hdecomp[kmin:kmax]
+    htilde_cut = htilde[kmin:kmax]
+
+    # Calculated the match and then the mismatch between htilde and
+    # hdecomp
+    match, _ = filter.match(hdecomp_cut, htilde_cut, low_frequency_cutoff=fLow, high_frequency_cutoff=high_frequency_cutoff)
+    logging.info("match=%.10f"%match)
+    mismatch = 1.0-match
     logging.info("mismatch: %.10f, for low_frequency_cutoff = %.1f and high_frequency_cutoff = %.1f", \
                  mismatch, fLow, high_frequency_cutoff)
     return CompressedWaveform(amp_interp_points, phase_interp_points,
@@ -385,6 +391,15 @@ def partial_compress_rom(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
                               interpolation=interpolation,
                               mismatch=mismatch)
 
+compression_algorithms = {
+        'mchirp': mchirp_compression,
+        'spa': spa_compression,
+        'partial_compress_rom:SEOBNRv2_ROM_DoubleSpin' : partial_rom_compression,
+        'spa:TaylorF2' : spa_compression,
+        'spa:SEOBNRv2_ROM_DoubleSpin' : spa_compression,
+        'mchirp:TaylorF2' : mchirp_compression,
+        'mchirp:SEOBNRv2_ROM_DoubleSpin' : mchirp_compression
+        }
 
 _linear_decompress_code = r"""
     #include <math.h>
@@ -597,6 +612,11 @@ def fd_decompress(amp, phase, sample_frequencies,
         f_min = max([amp_sample_frequencies.min(),sample_frequencies.min()])
         f_max = min([amp_sample_frequencies.max(),sample_frequencies.max()])
 
+
+    sample_frequencies = numpy.array(sample_frequencies)
+    amp = numpy.array(amp)
+    phase = numpy.array(phase)
+
     if out is None:
         if df is None:
             raise ValueError("Either provide output memory or a df")
@@ -641,6 +661,7 @@ def fd_decompress(amp, phase, sample_frequencies,
     else:
         if amp_sample_frequencies is None:
             amp_sample_frequencies = sample_frequencies
+            amp_sample_frequencies = numpy.array(amp_sample_frequencies)
         # use scipy for fancier interpolation
         outfreq = out.sample_frequencies.numpy()
         amp_interp = interpolate.interp1d(
@@ -944,7 +965,6 @@ class CompressedWaveform(object):
             if load_now:
                 sample_frequencies = sample_frequencies[:]
                 amp = amp[:]
-                phase = phase[:]
         return cls(amp, phase, sample_frequencies, amp_sample_frequencies,
                    interpolation=fp[group].attrs['interpolation'],
                    tolerance=tolerance,
