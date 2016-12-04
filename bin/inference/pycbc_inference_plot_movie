@@ -31,6 +31,7 @@ import numpy
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot
+from multiprocessing import Pool
 import pycbc.results
 from pycbc.inference import option_utils
 from pycbc.io.inference_hdf import InferenceFile
@@ -60,6 +61,9 @@ parser.add_argument("--parameters", type=str, nargs="+",
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--dpi', type=int, default=200,
                     help='Set the dpi for each frame; default is 200')
+parser.add_argument("--nprocesses", type=int, default=None,
+                    help="Number of processes to use. If not given then "
+                         "use maximum.")
 # add options for what plots to create
 option_utils.add_plot_posterior_option_group(parser)
 # add scatter and density configuration options
@@ -131,8 +135,10 @@ for p in parameters:
 # for sorting purposes, we will need to zero-pad the sample numer with the
 # appriopriate number of 0's
 max_sample_num = nframes * thinint
-for frame in range(nframes):
-    logging.info('Plotting frame %i' %(frame+1))
+
+def _make_frame(frame):
+    """Wrapper for making the plot in a pooled environment.
+    """
     plotargs = samples[:,frame]
     if zvals is not None:
         z = zvals[:,frame]
@@ -169,5 +175,18 @@ for frame in range(nframes):
 
     fig.savefig(output, bbox_inches='tight', dpi=opts.dpi)
     pyplot.close()
+
+# create the pool
+if opts.nprocesses is None or opts.nprocesses > 1:
+    global make_frame
+    make_frame = _make_frame
+    pool = Pool(opts.nprocesses)
+    mfunc = pool.map
+else:
+    make_frame = _make_frame
+    mfunc = map
+
+logging.info("Making frames")
+mfunc(make_frame, range(nframes))
 
 logging.info('Done')
