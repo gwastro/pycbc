@@ -32,7 +32,7 @@ from pycbc.types import TimeSeries, zeros, complex64
 
 parser = argparse.ArgumentParser(usage='',
     description="Plot a waveform in both time and frequency domain.")
-parser.add_argument('--version', action='version', 
+parser.add_argument('--version', action='version',
                     version=version.git_verbose_msg)
 parser.add_argument('--output-file', required=True)
 parser.add_argument("--low-frequency-cutoff", type=float,
@@ -92,7 +92,7 @@ tlen = int(opt.waveform_length * opt.sample_rate)
 flen = tlen / 2 + 1
 
 tmp_params = io.WaveformArray.from_kwargs(
-                    mass1=opt.mass1, 
+                    mass1=opt.mass1,
                     mass2=opt.mass2,
                     spin1x=opt.spin1x,
                     spin1y=opt.spin1y,
@@ -113,7 +113,7 @@ if approximant == 'SPAtmplt':
 hp, hc = waveform.get_two_pol_waveform_filter(zeros(flen, dtype=complex64),
                                     zeros(flen, dtype=complex64),
                                     tmp_params[0], approximant=approximant,
-                                    taper=opt.taper_template, 
+                                    taper=opt.taper_template,
                                     f_lower=opt.low_frequency_cutoff,
                                     delta_f=delta_f, delta_t=delta_t)
 
@@ -137,7 +137,7 @@ ax = plt.subplot(2,1,1)
 ax.plot(template_td.sample_times, template_td)
 ax.set_xlim([template_td.sample_times.max() - tmplt_length*1.1,
           template_td.sample_times.max()])
-ax.set_xlabel('Time')
+ax.set_xlabel('Time (s)')
 ax.set_ylabel('$h(t)$')
 
 if tmplt_length > 1.:
@@ -157,17 +157,20 @@ if tmplt_length > 1.:
 
 plt.subplot(2,1,2)
 plt.plot(template.sample_frequencies, abs(template))
-plt.xlabel('Frequency')
+plt.xlabel('Frequency (Hz)')
 plt.xlim([0,f_length*1.1])
-plt.ylabel('$\\tilde{h}(t)$')
+plt.ylabel('abs( $\\tilde{h}(f)$ )')
 
 
 if opt.plot_title is None:
     opt.plot_title = 'Waveform plot'
 if opt.plot_caption is None:
-    opt.plot_caption = ''
+    opt.plot_caption = ("The first plot represents the template waveform"
+                        "in the time domain with the inset showing a"
+                        "zoom-up at merger. The second plot represents"
+                        "the template waveform in the frequency domain.")
 
-results.save_fig_with_metadata(fig, opt.output_file, 
+results.save_fig_with_metadata(fig, opt.output_file,
                              cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
                              title=opt.plot_title,
                              caption=opt.plot_caption)
