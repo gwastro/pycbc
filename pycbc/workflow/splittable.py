@@ -34,7 +34,8 @@ from __future__ import division
 import os
 import logging
 from pycbc.workflow.core import FileList, make_analysis_dir
-from pycbc.workflow.jobsetup import PycbcSplitBankExecutable, PycbcSplitInspinjExecutable
+from pycbc.workflow.jobsetup import (PycbcSplitBankExecutable,
+        PycbcSplitBankXmlExecutable, PycbcSplitInspinjExecutable)
 
 def select_splitfilejob_instance(curr_exe):
     """
@@ -59,6 +60,8 @@ def select_splitfilejob_instance(curr_exe):
     """
     if curr_exe == 'pycbc_hdf5_splitbank':
         exe_class = PycbcSplitBankExecutable
+    elif curr_exe == 'pycbc_splitbank':
+        exe_class = PycbcSplitBankXmlExecutable
     elif curr_exe == 'pycbc_split_inspinj':
         exe_class = PycbcSplitInspinjExecutable
     else:
