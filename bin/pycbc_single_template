@@ -17,12 +17,12 @@
 """ Calculate the SNR and CHISQ timeseries for either a chosen template, or 
 a specific Nth loudest coincident event.
 """
-import sys, logging, argparse, numpy, itertools, pycbc, h5py
+import logging, argparse, numpy, pycbc, h5py
 from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter
 from pycbc.io import WaveformArray
 from pycbc import events
 from pycbc.filter import resample_to_delta_t
-from pycbc.types import zeros, float32, complex64, TimeSeries, FrequencySeries
+from pycbc.types import zeros, complex64
 from pycbc.types import complex_same_precision_as
 import pycbc.waveform.utils
 
@@ -35,7 +35,7 @@ def subtract_template(stilde, template, snr, trigger_time, flow):
         stilde -= pycbc.waveform.utils.apply_fseries_time_shift(inverse, dt)
     return stilde
 
-def select_segments(fname, anal_name, data_name, ifo, time):
+def select_segments(fname, anal_name, data_name, ifo, time, pad_data):
     anal_segs = events.select_segments_by_definer(fname, anal_name, ifo)
     data_segs = events.select_segments_by_definer(fname, data_name, ifo)
 
@@ -69,7 +69,7 @@ def select_segments(fname, anal_name, data_name, ifo, time):
         # largest overlap with anal_time
         overlap = None
         for start, end in zip(s2, e2):
-            if start > anal_time[0] or end < anal_time[1]:
+            if start + pad_data > anal_time[0] or end - pad_data < anal_time[1]:
                 # The analysis time must lie within the data time, otherwise
                 # this clearly is not the right data segment!
                 continue
@@ -86,7 +86,7 @@ parser = argparse.ArgumentParser(usage='',
     description="Single template gravitational-wave followup")
 parser.add_argument('--version', action='version', 
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--output-file')
+parser.add_argument('--output-file', required=True)
 parser.add_argument('--subtract-template', action='store_true')
 parser.add_argument("-V", "--verbose", action="store_true", 
                   help="print extra debugging information", default=False )
@@ -181,7 +181,7 @@ if opt.inspiral_segments:
     # trig start/end times
     anal_seg, data_seg = select_segments(opt.inspiral_segments,
                                     opt.data_analyzed_name, opt.data_read_name,
-                                    ifo, opt.trigger_time)
+                                    ifo, opt.trigger_time, opt.pad_data)
     opt.trig_start_time = anal_seg[0]
     opt.trig_end_time = anal_seg[1]
     opt.gps_start_time = data_seg[0] + opt.pad_data
