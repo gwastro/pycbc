@@ -206,7 +206,15 @@ Installing a released version of PyCBC
 
     Make sure you have run the commands in the section :ref:`installinglalsuite` above to install unittest2 before installing PyCBC.
 
-To install a release of the code, determine the tag of the release that you want to install from the `list of PyCBC tags <https://github.com/ligo-cbc/pycbc/tags>`_. This example installs the v1.1.0 release. If you want to install a different release, change the command below accordingly:
+Releases of PyCBC are available from the `PyPi PyCBC page <https://pypi.python.org/pypi/PyCBC/1.6.0>`_. To install the latest release run the command
+
+.. code-block:: bash
+
+    pip install PyCBC
+
+To install an older version, use the `pip version specifier <https://packaging.python.org/glossary/#term-version-specifier>`_.
+
+To install a release of the code from GitHub, determine the tag of the release that you want to install from the `list of PyCBC tags <https://github.com/ligo-cbc/pycbc/tags>`_. This example installs the v1.1.0 release. If you want to install a different release, change the command below accordingly:
 
 .. code-block:: bash
 
