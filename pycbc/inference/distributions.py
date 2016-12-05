@@ -220,7 +220,7 @@ def get_kde_from_file(params_file, params=None):
             params = [params]
         for p in params:
             if p not in f.keys():
-                raise ValueError('Parameter %s is not in %s' %(p, params_file))
+                raise ValueError('Parameter {} is not in {}'.format(p, params_file))
     else:
         params = f.keys()
     params_values = {p:f[p][:] for p in params}
@@ -1303,13 +1303,14 @@ class FromFile(_BoundedDist):
         lower_bounds = [self.bounds[p][0] for p in pnames]
         higher_bounds = [self.bounds[p][1] for p in pnames]
         # Avoid inf because of inconsistencies in integrate_box
-        for p in range(len(lower_bounds)):
-            if abs(lower_bounds[p]) == numpy.inf:
-                lower_bounds[p] = numpy.sign(lower_bounds[p]) * 2 ** 31
-            if abs(higher_bounds[p]) == numpy.inf:
-                higher_bounds[p] = numpy.sign(higher_bounds[p]) * 2 ** 31
+        for ii, bnd in enumerate(lower_bounds):
+            if abs(bnd) == numpy.inf:
+                lower_bounds[ii] = numpy.sign(bnd) * 2 ** 31
+        for ii, bnd in enumerate(higher_bounds):
+            if abs(bnd) == numpy.inf:
+                higher_bounds[ii] = numpy.sign(bnd) * 2 ** 31
         # Array of -inf for the lower limits in integrate_box
-        lower_limits = - 2**31 * numpy.ones(shape=len(lower_bounds))
+        lower_limits = - 2 ** 31 * numpy.ones(shape=len(lower_bounds))
         # CDF(-inf,b) - CDF(-inf, a)
         invnorm = self._kde.integrate_box(lower_limits, higher_bounds) - \
                     self._kde.integrate_box(lower_limits, lower_bounds)
@@ -1329,7 +1330,7 @@ class FromFile(_BoundedDist):
         return self._norm
 
     @property
-    def lognorm():
+    def lognorm(self):
         return self._lognorm
 
     @property
@@ -1345,7 +1346,7 @@ class FromFile(_BoundedDist):
             if p not in kwargs.keys():
                 raise ValueError('Missing parameter %s to construct pdf.' %p)
         if kwargs in self:
-            return self._norm * self._kde.evaluate([kwargs[p] 
+            return self._norm * self._kde.evaluate([kwargs[p]
                                                     for p in self._params])
         else:
             return 0.
@@ -1359,7 +1360,7 @@ class FromFile(_BoundedDist):
             if p not in kwargs.keys():
                 raise ValueError('Missing parameter %s to construct pdf.' %p)
         if kwargs in self:
-            return self._lognorm + self._kde.logpdf([kwargs[p] 
+            return self._lognorm + self._kde.logpdf([kwargs[p]
                                                      for p in self._params])
         else:
             return -numpy.inf
