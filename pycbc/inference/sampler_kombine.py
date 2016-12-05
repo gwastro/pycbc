@@ -123,8 +123,8 @@ class KombineSampler(BaseMCMCSampler):
             with shape (nwalkers, ndim).
         """
         blob0 = None
-        if self.burn_in_iterations == 0:
-            # no burn in, use the initial positions
+        if self.niterations == 0:
+            # first time running, use the initial positions
             p0 = self.p0
             if self.likelihood_evaluator.return_meta:
                 blob0 = [self.likelihood_evaluator(p0[wi, :])[1]
