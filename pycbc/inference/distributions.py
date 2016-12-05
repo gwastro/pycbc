@@ -1344,7 +1344,7 @@ class FromFile(_BoundedDist):
         """
         for p in self._params:
             if p not in kwargs.keys():
-                raise ValueError('Missing parameter %s to construct pdf.' %p)
+                raise ValueError('Missing parameter {} to construct pdf.'.format(p))
         if kwargs in self:
             return self._norm * self._kde.evaluate([kwargs[p]
                                                     for p in self._params])
@@ -1358,7 +1358,7 @@ class FromFile(_BoundedDist):
         """
         for p in self._params:
             if p not in kwargs.keys():
-                raise ValueError('Missing parameter %s to construct pdf.' %p)
+                raise ValueError('Missing parameter {} to construct pdf.'.format(p))
         if kwargs in self:
             return self._lognorm + self._kde.logpdf([kwargs[p]
                                                      for p in self._params])
@@ -1393,6 +1393,43 @@ class FromFile(_BoundedDist):
         for order, param in enumerate(dtype):
             arr[param[0]] = randoms[order]
         return arr
+
+    @classmethod
+    def from_config(cls, cp, section, variable_args):
+        """Returns a distribution based on a configuration file. The parameters
+        for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
+
+        The file to construct the distribution from must be provided by setting
+        `file_name`. Boundary arguments can be provided in the same way as
+        described in `get_param_bounds_from_config`.
+
+        .. code::
+            [{section}-{tag}]
+            name = fromfile
+            file_name = ra_prior.hdf
+            min-ra = 0
+            max-ra = 6.28
+
+        Parameters
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        variable_args : str
+            The names of the parameters for this distribution, separated by
+            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
+
+        Returns
+        -------
+        Uniform
+            A distribution instance from the pycbc.inference.prior module.
+        """
+        return super(FromFile, cls).from_config(cp, section, variable_args,
+                                                bounds_required=False)
 
 distribs = {
     Uniform.name : Uniform,
