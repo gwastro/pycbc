@@ -194,7 +194,7 @@ def _bounded_from_config(cls, cp, section, variable_args,
 
 
 def get_kde_from_file(params_file, params=None):
-    """Reads the values of one or more parameters from an hdf file and 
+    """Reads the values of one or more parameters from an hdf file and
     computes the kernel density estimate (kde).
 
     Parameters
@@ -251,7 +251,9 @@ class _BoundedDist(object):
     def __init__(self, **params):
         # convert input bounds to Bounds class, if necessary
         for param,bnds in params.items():
-            if not isinstance(bnds, boundaries.Bounds):
+            if bnds is None:
+                params[param] = boundaries.Bounds()
+            elif not isinstance(bnds, boundaries.Bounds):
                 params[param] = boundaries.Bounds(bnds[0], bnds[1])
             # warn the user about reflected boundaries
             if isinstance(bnds, boundaries.Bounds) and (
@@ -1115,11 +1117,6 @@ class Gaussian(_BoundedDist):
         var_args = [p for p in params if p.endswith('_var')]
         self._mean = dict([[p[:-5], params.pop(p)] for p in mean_args])
         self._var = dict([[p[:-4], params.pop(p)] for p in var_args])
-        # if any param is set to None, make its bounds -inf, inf
-        for param in params:
-            if params[param] is None:
-                # Bounds defaults to -inf, inf
-                params[param] = boundaries.Bounds()
         # initialize the bounds
         super(Gaussian, self).__init__(**params)
 
@@ -1277,7 +1274,11 @@ class FromFile(_BoundedDist):
         The path to the file containing values for the parameter(s).
     params : list
         Parameters read from file.
-    kde : 
+    norm : float
+        The normalization of the multi-dimensional pdf.
+    lognorm : float
+        The log of the normalization.
+    kde :
         The kde obtained from the values in the file.
     """
     name = 'fromfile'
@@ -1285,7 +1286,7 @@ class FromFile(_BoundedDist):
         if file_name is None:
             raise ValueError('A file must be specified for this distribution.')
         self._filename = file_name
-        # Get the parameter names to pass to get_kde_from_file 
+        # Get the parameter names to pass to get_kde_from_file
         if len(params) == 0:
             ps = None
         else:
@@ -1293,17 +1294,27 @@ class FromFile(_BoundedDist):
         pnames, self._kde = get_kde_from_file(file_name, params=ps)
         # If no parameters where given, populate with pnames
         for param in pnames:
-            try:
-                params[param]
-            except:
-                params[param] = boundaries.Bounds()
-        # Check that no item in params is None
-        for param in params:
-            if params[param] is None:
-                params[param] = boundaries.Bounds()
+            if param not in params:
+                params[param] = None
         super(FromFile, self).__init__(**params)
         # Make sure to store parameter names in same order as given by kde function
         self._params = pnames
+        # Compute the norm and save
+        lower_bounds = [self.bounds[p][0] for p in pnames]
+        higher_bounds = [self.bounds[p][1] for p in pnames]
+        # Avoid inf because of inconsistencies in integrate_box
+        for p in range(len(lower_bounds)):
+            if abs(lower_bounds[p]) == numpy.inf:
+                lower_bounds[p] = numpy.sign(lower_bounds[p]) * 2 ** 31
+            if abs(higher_bounds[p]) == numpy.inf:
+                higher_bounds[p] = numpy.sign(higher_bounds[p]) * 2 ** 31
+        # Array of -inf for the lower limits in integrate_box
+        lower_limits = - 2**31 * numpy.ones(shape=len(lower_bounds))
+        # CDF(-inf,b) - CDF(-inf, a)
+        invnorm = self._kde.integrate_box(lower_limits, higher_bounds) - \
+                    self._kde.integrate_box(lower_limits, lower_bounds)
+        self._norm = 1. / invnorm
+        self._lognorm = numpy.log(self._norm)
 
     @property
     def file_name(self):
@@ -1312,6 +1323,14 @@ class FromFile(_BoundedDist):
     @property
     def params(self):
         return self._params
+
+    @property
+    def norm(self):
+        return self._norm
+
+    @property
+    def lognorm():
+        return self._lognorm
 
     @property
     def kde(self):
@@ -1325,17 +1344,25 @@ class FromFile(_BoundedDist):
         for p in self._params:
             if p not in kwargs.keys():
                 raise ValueError('Missing parameter %s to construct pdf.' %p)
-        return self._kde.evaluate([kwargs[p] for p in self._params])
+        if kwargs in self:
+            return self._norm * self._kde.evaluate([kwargs[p] 
+                                                    for p in self._params])
+        else:
+            return 0.
 
     def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
-        arguments must contain all of parameters in self's params. 
+        arguments must contain all of parameters in self's params.
         Unrecognized arguments are ignored.
         """
         for p in self._params:
             if p not in kwargs.keys():
                 raise ValueError('Missing parameter %s to construct pdf.' %p)
-        return self._kde.logpdf([kwargs[p] for p in self._params])
+        if kwargs in self:
+            return self._lognorm + self._kde.logpdf([kwargs[p] 
+                                                     for p in self._params])
+        else:
+            return -numpy.inf
 
     def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from the kde.
