@@ -38,7 +38,7 @@ _scheme, _context = parse_args_all_schemes("FFT")
 
 # Get our list of backends:
 
-backends = pycbc.fft._all_backends_list
+backends = pycbc.fft.get_backend_names()
 
 FFTTestClasses = []
 for backend in backends:

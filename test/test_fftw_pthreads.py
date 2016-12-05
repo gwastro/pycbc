@@ -37,7 +37,7 @@ parse_args_cpu_only("FFTW pthreads backend")
 
 # See if we can get set the FFTW backend to 'pthreads'; if not, say so and exit.
 
-if 'fftw' in pycbc.fft._all_backends_list:
+if 'fftw' in pycbc.fft.get_backend_names():
     import pycbc.fft.fftw
     try:
         pycbc.fft.fftw.set_threads_backend('pthreads')
