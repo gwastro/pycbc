@@ -132,8 +132,7 @@ class KombineSampler(BaseMCMCSampler):
         else:
             p0 = None
             # kombine requires blob data to be specified
-            if self.likelihood_evaluator.return_meta:
-                blob0 = self._sampler.blobs[-1]
+            blob0 = self._currentblob
         kwargs['blob0'] = blob0
         if 'update_interval' not in kwargs:
             # use the internal update interval
@@ -142,6 +141,8 @@ class KombineSampler(BaseMCMCSampler):
         p, lnpost, lnprop = res[0], res[1], res[2]
         # update the positions
         self._pos = p
+        if self.likelihood_evalutor.return_meta:
+            self._currentblob = self._sapmler.blobs[-1]
         return p, lnpost, lnprop
 
     @property
@@ -159,19 +160,21 @@ class KombineSampler(BaseMCMCSampler):
         return self._sampler.chain.transpose((1, 0, 2))
 
     def clear_chain(self):
-        """Clears the chain and blobs from memory, keeping only the last point.
+        """Clears the chain and blobs from memory.
         """
+        # store the iteration that the clear is occuring on
+        self._lastclear = self.iterations
         # kombine stores its chain as niterations x nwalkers x ndim
-        current_chain = self._sampler._chain
-        shape = current_chain.shape
-        self._sampler._chain = current_chain[-1,:,:].reshape(1,
-            shape[1], shape[2])
-        self._sampler.stored_iterations = 1
+        current_shape = self._sampler._chain.shape
+        new_shape = (0, current_shape[1], current_shape[1])
+        if isinstance(self._sampler._chain, numpy.ma.MaskedArray):
+            self._sampler._chain = numpy.ma.resize(self._sampler._chain,
+                                                   new_shape)
+        else:
+            self._sampler._chain = self._sampler._chain.resize(new_shape)
+        self._sampler.stored_iterations = 0
         # clear the blobs
-        if len(self._sampler._blobs) != 0:
-            self._sampler._blobs = [self._sampler._blobs[-1]]
-        # store the iteration that the clear happened on
-        self._lastclear = self._sampler.iterations
+        self._sampler._blobs = []
 
     def burn_in(self):
         """Use kombine's `burnin` routine to advance the sampler.
@@ -212,5 +215,6 @@ class KombineSampler(BaseMCMCSampler):
             p, post, q = res[0], res[1], res[2]
             # update position
             self._pos = p
+            self._currentblob = self._sampler.blobs[-1]
         self.burn_in_iterations = self.niterations
         return p, post, q

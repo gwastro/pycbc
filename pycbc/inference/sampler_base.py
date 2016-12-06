@@ -206,6 +206,7 @@ class BaseMCMCSampler(_BaseSampler):
         self._sampler = sampler
         self._pos = None
         self._p0 = None
+        self._currentblob = None
         self._nwalkers = None
         if min_burn_in is None:
             min_burn_in = 0
@@ -332,13 +333,8 @@ class BaseMCMCSampler(_BaseSampler):
         if end_iteration is None:
             end_iteration = niterations
         fb = end_iteration # file end index
-        if self._lastclear != 0:
-            # we add one to lastclear to skip the point from the previous clear
-            ma = fa - self._lastclear + 1
-            mb = fb - self._lastclear + 1
-        else:
-            ma = fa
-            mb = fb
+        ma = fa - self._lastclear # memory start index
+        mb = fb - self._lastclear # memory end index
 
         # map sample values to the values that were actually passed to the
         # waveform generator and prior evaluator
@@ -418,13 +414,8 @@ class BaseMCMCSampler(_BaseSampler):
         if end_iteration is None:
             end_iteration = niterations
         fb = end_iteration # file end index
-        if self._lastclear != 0:
-            # we add one to lastclear to skip the point from the previous clear
-            ma = fa - self._lastclear + 1
-            mb = fb - self._lastclear + 1
-        else:
-            ma = fa
-            mb = fb
+        ma = fa - self._lastclear # memory start index
+        mb = fb - self._lastclear # memory end index
 
         group = fp.stats_group + '/{param}/walker{wi}'
 
