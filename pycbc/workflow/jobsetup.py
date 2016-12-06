@@ -863,7 +863,6 @@ class PyCBCInspiralExecutable(Executable):
         valid_regions = []
         for nsegs in seg_ranges:
             analysis_length = (segment_length - start_pad - end_pad) * nsegs
-            data_length = analysis_length + pad_data * 2
             if not self.zero_padding:
                 data_length = analysis_length + pad_data * 2 \
                               + start_pad + end_pad
@@ -877,6 +876,19 @@ class PyCBCInspiralExecutable(Executable):
             if data_length < min_analysis_length: continue
             data_lengths += [data_length]
             valid_regions += [segments.segment(start, end)]
+        # If min_analysis_length is given, ensure that it is added as an option
+        # for job analysis length.
+        if min_analysis_length:
+            data_length = min_analysis_length
+            if not self.zero_padding:
+                start = pad_data + start_pad
+                end = data_length - pad_data - end_pad
+            else:
+                start = pad_data
+                end = data_length - pad_data
+            if end > start:
+                data_lengths += [data_length]
+                valid_regions += [segments.segment(start, end)]
 
         return data_lengths, valid_regions
 
