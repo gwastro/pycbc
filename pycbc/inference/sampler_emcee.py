@@ -126,6 +126,15 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         # emcee returns the chain as nwalker x niterations x ndim
         return self._sampler.chain
 
+    def clear_chain(self):
+        """Clears the chain and blobs from memory.
+        """
+        # store the iteration that the clear is occuring on
+        self._lastclear = self.iterations
+        # now clear the chain
+        self._sampler.reset()
+        self._sampler.clear_blobs()
+
     def run(self, niterations, **kwargs):
         """Advance the ensemble for a number of samples.
 
