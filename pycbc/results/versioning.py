@@ -21,23 +21,26 @@ import os
 import subprocess
 from pycbc.results import save_fig_with_metadata, html_escape
 
+import lal, lalframe, lalmetaio, lalinspiral, lalsimulation
+import glue.git_version, pycbc.version
+
 def get_library_version_info():
     """This will return a list of dictionaries containing versioning
     information about the various LIGO libraries that PyCBC will use in an
     analysis run."""
     library_list = []
-    import lal, lalframe, lalmetaio, lalinspiral, lalsimulation
-    import glue.git_version, pycbc.version
 
-    def add_info_new_version(info_dct, curr_module):    
-        info_dct['ID'] = curr_module.VCSInfo.vcsId
-        info_dct['Status'] = curr_module.VCSInfo.vcsStatus
-        info_dct['Version'] =  curr_module.VCSInfo.version
-        info_dct['Tag'] = curr_module.VCSInfo.vcsTag
-        info_dct['Author'] = curr_module.VCSInfo.vcsAuthor
-        info_dct['Branch'] = curr_module.VCSInfo.vcsBranch
-        info_dct['Committer'] = curr_module.VCSInfo.vcsCommitter
-        info_dct['Date'] = curr_module.VCSInfo.vcsDate
+    def add_info_new_version(info_dct, curr_module, extra_str):
+        crm = curr_module
+        exs = extra_str
+        info_dct['ID'] = eval(crm + '.' + exs + 'VCSInfo.vcsId')
+        info_dct['Status'] = eval(crm + '.' + exs + 'VCSInfo.vcsStatus')
+        info_dct['Version'] = eval(crm + '.' + exs + 'VCSInfo.version')
+        info_dct['Tag'] = eval(crm + '.' + exs + 'VCSInfo.vcsTag')
+        info_dct['Author'] = eval(crm + '.' + exs + 'VCSInfo.vcsAuthor')
+        info_dct['Branch'] = eval(crm + '.' + exs + 'VCSInfo.vcsBranch')
+        info_dct['Committer'] = eval(crm + '.' + exs + 'VCSInfo.vcsCommitter')
+        info_dct['Date'] = eval(crm + '.' + exs + 'VCSInfo.vcsDate')
 
     lalinfo = {}
     lalinfo['Name'] = 'LAL'
@@ -51,7 +54,7 @@ def get_library_version_info():
         lalinfo['Committer'] = lal.VCSCommitter
         lalinfo['Date'] = lal.VCSDate
     except AttributeError:
-        add_info_new_version(lalinfo, lal)
+        add_info_new_version(lalinfo, 'lal', '')
     library_list.append(lalinfo)
 
     lalframeinfo = {}
@@ -66,7 +69,7 @@ def get_library_version_info():
         lalframeinfo['Committer'] = lalframe.FrameVCSCommitter
         lalframeinfo['Date'] = lalframe.FrameVCSDate
     except AttributeError:
-        add_info_new_version(lalframeinfo, lalframe)
+        add_info_new_version(lalframeinfo, 'lalframe', 'Frame')
     library_list.append(lalframeinfo)
 
     lalmetaioinfo = {}
@@ -81,7 +84,7 @@ def get_library_version_info():
         lalmetaioinfo['Committer'] = lalmetaio.MetaIOVCSCommitter
         lalmetaioinfo['Date'] = lalmetaio.MetaIOVCSDate
     except AttributeError:
-        add_info_new_version(lalmetaioinfo, lalmetaio)
+        add_info_new_version(lalmetaioinfo, 'lalmetaio', 'MetaIO')
     library_list.append(lalmetaioinfo)
 
     lalinspiralinfo = {}
@@ -96,7 +99,7 @@ def get_library_version_info():
         lalinspiralinfo['Committer'] = lalinspiral.InspiralVCSCommitter
         lalinspiralinfo['Date'] = lalinspiral.InspiralVCSDate
     except AttributeError:
-        add_info_new_version(lalinspiralinfo, lalinspiral)
+        add_info_new_version(lalinspiralinfo, 'lalinspiral', 'Inspiral')
     library_list.append(lalinspiralinfo)
 
     lalsimulationinfo = {}
@@ -111,7 +114,7 @@ def get_library_version_info():
         lalsimulationinfo['Committer'] = lalsimulation.SimulationVCSCommitter
         lalsimulationinfo['Date'] = lalsimulation.SimulationVCSDate
     except AttributeError:
-        add_info_new_version(lalsimulationinfo, lalsimulation)
+        add_info_new_version(lalsimulationinfo, 'lalsimulation', 'Simulation')
     library_list.append(lalsimulationinfo)
 
     glueinfo = {}
