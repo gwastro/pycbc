@@ -1674,7 +1674,7 @@ class PycbcTimeslidesExecutable(Executable):
         return node
 
 class PycbcSplitBankExecutable(Executable):
-    """ The class responsible for creating jobs for splitbank. """
+    """ The class responsible for creating jobs for pycbc_hdf5_splitbank. """
 
     extension = 'hdf'
     current_retention_level = Executable.ALL_TRIGGERS
@@ -1719,6 +1719,7 @@ class PycbcSplitBankExecutable(Executable):
         return node
 
 class PycbcSplitBankXmlExecutable(PycbcSplitBankExecutable):
+    """ Subclass resonsible for creating jobs for pycbc_splitbank. """
 
     extension='xml.gz'
 
