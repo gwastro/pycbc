@@ -140,3 +140,31 @@ If you are running a pipeline that uses the old LALApps programs ``lalapps_inspi
     The LALApps build above builds static binaries, so you will need static libraries for fftw, glibc, etc. installed on your system to do this. These libraries are present by default in a LIGO Data Grid environment. If you do not wish to build static LALApps programs, the omit the ``--enable-static-binaries`` option to the configure script.
 
 
+In addition to lalsuite, the generation of certain template waveforms (e.g.  the reduced order model implementations of SEOBNRv2 and SEOBNRv4) requires addition data files from the `lalsuite-extra repository <https://svn.ligo.caltech.edu/svn/lalsuite-extra/>`_. These data can either be obtained by downloading and installing lalsuite-extra into your virtual environment or using a copy of the data from the CERN virtual filesystem.
+
+To install the data into your virtual environment, run the commands
+
+.. code-block:: bash
+
+    cd ${VIRTUAL_ENV}/src
+    svn co https://svn.ligo.caltech.edu/svn/lalsuite-extra/
+    cd lalsuite-extra
+    ./00boot
+    ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite-extra
+    make install
+    echo 'export LAL_DATA_PATH=${VIRTUAL_ENV}/opt/lalsuite-extra/share/lalsimulation' >> ${VIRTUAL_ENV}/bin/activate
+
+Then deactivate and activate your virtual environment.
+
+Alternatively, follow the `instructions for installing CVMFS for OSG
+<https://twiki.grid.iu.edu/bin/view/Documentation/Release3/InstallCvmfs>`_ and
+run the command
+
+.. code-block:: bash
+
+    echo 'export LAL_DATA_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation' >> $VIRTUAL_ENV/bin/activate
+
+to add the appropriate path to your virtual environment's ``activate`` script.
+Then deactivate and activate your virtual environment.
+
+
