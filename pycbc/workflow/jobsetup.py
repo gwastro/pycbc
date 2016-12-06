@@ -1662,8 +1662,9 @@ class PycbcTimeslidesExecutable(Executable):
         return node
 
 class PycbcSplitBankExecutable(Executable):
-    """ The class responsible for creating jobs for pycbc_hdf5_splitbank. """
+    """ The class responsible for creating jobs for splitbank. """
 
+    extension = 'hdf'
     current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, num_banks,
                  ifo=None, out_dir=None, universe=None):
@@ -1673,7 +1674,7 @@ class PycbcSplitBankExecutable(Executable):
 
     def create_node(self, bank, tags=None):
         """
-        Set up a CondorDagmanNode class to run lalapps_splitbank code
+        Set up a CondorDagmanNode class to run splitbank code
 
         Parameters
         ----------
@@ -1699,53 +1700,13 @@ class PycbcSplitBankExecutable(Executable):
             curr_tags = bank.tags + [curr_tag] + tags
             job_tag = bank.description + "_" + self.name.upper()
             out_file = File(bank.ifo_list, job_tag, bank.segment,
-                               extension=".hdf", directory=self.out_dir,
-                               tags=curr_tags, store_file=self.retain_files)
+                            extension=self.extension, directory=self.out_dir,
+                            tags=curr_tags, store_file=self.retain_files)
             out_files.append(out_file)
         node.add_output_list_opt('--output-filenames', out_files)
         return node
 
-class PycbcSplitBankXmlExecutable(Executable):
-    """ The class responsible for creating jobs for pycbc_splitbank. """
+class PycbcSplitBankXmlExecutable(PycbcSplitBankExecutable):
 
-    current_retention_level = Executable.ALL_TRIGGERS
-    def __init__(self, cp, exe_name, num_banks,
-                 ifo=None, out_dir=None, universe=None):
-        super(PycbcSplitBankXmlExecutable, self).__init__(cp, exe_name, universe,
-                ifo, out_dir, tags=[])
-        self.num_banks = int(num_banks)
-
-    def create_node(self, bank, tags=None):
-        """
-        Set up a CondorDagmanNode class to run lalapps_splitbank code
-
-        Parameters
-        ----------
-        bank : pycbc.workflow.core.File
-            The File containing the template bank to be split
-
-        Returns
-        --------
-        node : pycbc.workflow.core.Node
-            The node to run the job
-        """
-        if tags is None:
-            tags = []
-        node = Node(self)
-        node.add_input_opt('--bank-file', bank)
-
-        # Get the output (taken from inspiral.py)
-        out_files = FileList([])
-        for i in range( 0, self.num_banks):
-            curr_tag = 'bank%d' %(i)
-            # FIXME: What should the tags actually be? The job.tags values are
-            #        currently ignored.
-            curr_tags = bank.tags + [curr_tag] + tags
-            job_tag = bank.description + "_" + self.name.upper()
-            out_file = File(bank.ifo_list, job_tag, bank.segment,
-                               extension=".xml.gz", directory=self.out_dir,
-                               tags=curr_tags, store_file=self.retain_files)
-            out_files.append(out_file)
-        node.add_output_list_opt('--output-filenames', out_files)
-        return node
+    extension='xml.gz'
 
