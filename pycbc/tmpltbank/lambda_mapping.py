@@ -16,6 +16,7 @@
 from __future__ import division
 import numpy
 from lal import MTSUN_SI, GAMMA
+from pycbc import pnutils
 
 # PLEASE ENSURE THESE ARE KEPT UP TO DATE WITH THE REST OF THIS FILE
 pycbcValidTmpltbankOrders = ['zeroPN','onePN','onePointFivePN','twoPN',\
@@ -153,7 +154,9 @@ def ethinca_order_from_string(order):
                            "calculation! Valid orders: "+
                            str(get_ethinca_orders().keys()))
 
-def get_chirp_params(totmass, eta, beta, sigma, gamma, chis, f0, order):
+#def _get_phasing_params(
+
+def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order):
     """
     Take a set of masses and spins and convert to the various lambda
     coordinates that describe the orbital phase. Accepted PN orders are: %s
@@ -188,6 +191,11 @@ def get_chirp_params(totmass, eta, beta, sigma, gamma, chis, f0, order):
     lambdas : list of floats or numpy.arrays
         The lambda coordinates for the input system(s)
     """ %(pycbcValidOrdersHelpDescriptions)
+
+    totmass = mass1 + mass2
+    eta = mass1 * mass2 / (totmass * totmass)
+    beta, sigma, gamma, chis = pnutils.get_beta_sigma_from_aligned_spins(\
+               eta, spin1z, spin2z)
 
     # Convert mass to seconds
     totmass = totmass * MTSUN_SI
