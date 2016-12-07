@@ -279,9 +279,12 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
                "he assumes that there's only one matching SNR trigger ", \
                "so this code's going to break."
 
+    # This is the foreground trigger index in the all_trigs array that we
+    # want to remove
     my_loudest_ind = where_is_fore_t[0][0]
 
     logging.info("Removing foreground trigger that is louder than the inclusive background.")
+    # Remove this foreground trigger from the list of loud foreground triggers
     loud_t_ind.remove(max_ifar_ind)
 
     # Remove the foreground trigger AND all of the inclusive background
