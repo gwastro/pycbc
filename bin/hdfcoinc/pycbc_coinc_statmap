@@ -232,11 +232,9 @@ logging.info("Instantiating hierarchical removal.")
 # the background, fnlouder = 0.
 
 loud_t_ind = []
-count_ind = -1
 for i in range(0, len(fnlouder)):
     if fnlouder[i] == 0:
         loud_t_ind.append(i)
-        count_ind += 1
 
 # Step 2 : Loop until we don't have to hierarchically remove
 #          anymore.
@@ -265,20 +263,19 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
                    max_ifar_ind = loud_t_ind[i]
     # Step 3: Remove that trigger from the list of zerolag triggers
 
-    # FIXME:If the trigger is really the loudest trigger in the bin, then it's
-    # ranking statistic is the largest and also unique (I think).
+    # Store where the loud foreground trigger that I want to remove next in the
+    # list of all of the triggers located is at.
     where_is_fore_t = np.where(all_trigs.stat[:] == fore_stat[max_ifar_ind])
 
+    # FIXME:
     # In the RARE case that there are two equally loud
     # louder-than-the-background foreground triggers give preference
     # to the one with the earliest GPS time, just for documenting purposes
     if len(where_is_fore_t[0]) > 1:
-         print "The author of this hierarchical removal is not a good ", \
-               "programmer. He is looking for a mapping from loudest ", \
-               "foreground trigger to the array of all triggers and ", \
-               "he assumes that there's only one matching SNR trigger ", \
-               "so this code's going to break."
-
+        # where_is_fore_t[0] = np.argsort(all_trigs.time1[where_is_fore_t[0][:]])
+        logging.info("WARNING: There is more than one foreground trigger "
+                     " that is louder than the background and have the same "
+                     "ranking statistic.")
     # This is the foreground trigger index in the all_trigs array that we
     # want to remove
     my_loudest_ind = where_is_fore_t[0][0]
@@ -370,11 +367,9 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
 
     # Repopulate the list of foreground indices for the loudest events 
     loud_t_ind = []
-    count_ind = -1
     for i in range(0, len(fnlouder)):
         if fnlouder[i] == 0:
             loud_t_ind.append(i)
-            count_ind += 1
 
     # We've done a hierarchical removal so add the iteration number to the
     # next one.
