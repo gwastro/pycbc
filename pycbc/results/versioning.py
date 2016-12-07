@@ -31,16 +31,15 @@ def get_library_version_info():
     library_list = []
 
     def add_info_new_version(info_dct, curr_module, extra_str):
-        crm = curr_module
-        exs = extra_str
-        info_dct['ID'] = eval(crm + '.' + exs + 'VCSInfo.vcsId')
-        info_dct['Status'] = eval(crm + '.' + exs + 'VCSInfo.vcsStatus')
-        info_dct['Version'] = eval(crm + '.' + exs + 'VCSInfo.version')
-        info_dct['Tag'] = eval(crm + '.' + exs + 'VCSInfo.vcsTag')
-        info_dct['Author'] = eval(crm + '.' + exs + 'VCSInfo.vcsAuthor')
-        info_dct['Branch'] = eval(crm + '.' + exs + 'VCSInfo.vcsBranch')
-        info_dct['Committer'] = eval(crm + '.' + exs + 'VCSInfo.vcsCommitter')
-        info_dct['Date'] = eval(crm + '.' + exs + 'VCSInfo.vcsDate')
+        vcs_object = getattr(curr_module, extra_str +'VCSInfo')
+        info_dct['ID'] =  vcs_object.vcsId
+        info_dct['Status'] = vcs_object.vcsStatus
+        info_dct['Version'] = vcs_object.version
+        info_dct['Tag'] = vcs_object.vcsTag
+        info_dct['Author'] = vcs_object.vcsAuthor
+        info_dct['Branch'] = vcs_object.vcsBranch
+        info_dct['Committer'] = vcs_object.vcsCommitter
+        info_dct['Date'] = vcs_object.vcsDate
 
     lalinfo = {}
     lalinfo['Name'] = 'LAL'
@@ -54,7 +53,7 @@ def get_library_version_info():
         lalinfo['Committer'] = lal.VCSCommitter
         lalinfo['Date'] = lal.VCSDate
     except AttributeError:
-        add_info_new_version(lalinfo, 'lal', '')
+        add_info_new_version(lalinfo, lal, '')
     library_list.append(lalinfo)
 
     lalframeinfo = {}
@@ -69,7 +68,7 @@ def get_library_version_info():
         lalframeinfo['Committer'] = lalframe.FrameVCSCommitter
         lalframeinfo['Date'] = lalframe.FrameVCSDate
     except AttributeError:
-        add_info_new_version(lalframeinfo, 'lalframe', 'Frame')
+        add_info_new_version(lalframeinfo, lalframe, 'Frame')
     library_list.append(lalframeinfo)
 
     lalmetaioinfo = {}
@@ -84,7 +83,7 @@ def get_library_version_info():
         lalmetaioinfo['Committer'] = lalmetaio.MetaIOVCSCommitter
         lalmetaioinfo['Date'] = lalmetaio.MetaIOVCSDate
     except AttributeError:
-        add_info_new_version(lalmetaioinfo, 'lalmetaio', 'MetaIO')
+        add_info_new_version(lalmetaioinfo, lalmetaio, 'MetaIO')
     library_list.append(lalmetaioinfo)
 
     lalinspiralinfo = {}
@@ -99,7 +98,7 @@ def get_library_version_info():
         lalinspiralinfo['Committer'] = lalinspiral.InspiralVCSCommitter
         lalinspiralinfo['Date'] = lalinspiral.InspiralVCSDate
     except AttributeError:
-        add_info_new_version(lalinspiralinfo, 'lalinspiral', 'Inspiral')
+        add_info_new_version(lalinspiralinfo, lalinspiral, 'Inspiral')
     library_list.append(lalinspiralinfo)
 
     lalsimulationinfo = {}
@@ -114,7 +113,7 @@ def get_library_version_info():
         lalsimulationinfo['Committer'] = lalsimulation.SimulationVCSCommitter
         lalsimulationinfo['Date'] = lalsimulation.SimulationVCSDate
     except AttributeError:
-        add_info_new_version(lalsimulationinfo, 'lalsimulation', 'Simulation')
+        add_info_new_version(lalsimulationinfo, lalsimulation, 'Simulation')
     library_list.append(lalsimulationinfo)
 
     glueinfo = {}
