@@ -37,7 +37,7 @@ class fw(object):
         return self.f.__getitem__(*args)
 
     def close(self):
-        return self.f.close()
+        self.f.close()
 
 parser = argparse.ArgumentParser()
 # General required options
