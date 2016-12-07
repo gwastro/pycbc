@@ -253,12 +253,12 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
            # Check to see if they have equal ifar, then check largest
            # ranking statistic
               if ifar[loud_t_ind[i]] == max_ifar:
-                   if back_stat[loud_t_ind[i]] >= \
-                      back_stat[loud_t_ind[max_ifar_ind]] :
+                   if fore_stat[loud_t_ind[i]] >= \
+                      fore_stat[loud_t_ind[max_ifar_ind]] :
                         max_ifar_ind = loud_t_ind[i]
-                        max_rank_stat = back_stat[loud_t_ind[i]]
+                        max_rank_stat = fore_stat[loud_t_ind[i]]
                    else :
-                        max_rank_stat = back_stat[max_ifar_ind]
+                        max_rank_stat = fore_stat[max_ifar_ind]
                         
               else :
                    max_ifar = ifar[loud_t_ind[i]]
@@ -269,6 +269,9 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
     # ranking statistic is the largest and also unique (I think).
     where_is_fore_t = np.where(all_trigs.stat[:] == fore_stat[max_ifar_ind])
 
+    # In the RARE case that there are two equally loud
+    # louder-than-the-background foreground triggers give preference
+    # to the one with the earliest GPS time, just for documenting purposes
     if len(where_is_fore_t[0]) > 1:
          print "The author of this hierarchical removal is not a good ", \
                "programmer. He is looking for a mapping from loudest ", \
@@ -296,10 +299,10 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
 
     logging.info("We have %s triggers after hierarchical removal." % len(all_trigs.stat))
 
-# Step 4: Re cluster the triggers and calculate the far/ifar/fap
-#         inclusive and exclusive.
-#         The following lines are uncommented because they are copy paste
-#         from above.
+    # Step 4: Re cluster the triggers and calculate the far/ifar/fap
+    #         inclusive and exclusive.
+    #         The following lines are uncommented because they are copy paste
+    #         from above.
     logging.info("Clustering coinc triggers (inclusive of zerolag)")
     all_trigs = all_trigs.cluster(args.cluster_window)
     
