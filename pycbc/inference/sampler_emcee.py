@@ -130,7 +130,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         """Clears the chain and blobs from memory.
         """
         # store the iteration that the clear is occuring on
-        self._lastclear = self.iterations
+        self._lastclear = self.niterations
         # now clear the chain
         self._sampler.reset()
         self._sampler.clear_blobs()

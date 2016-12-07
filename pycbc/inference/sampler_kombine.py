@@ -26,6 +26,7 @@ This modules provides classes and functions for using the kombine sampler
 packages for parameter estimation.
 """
 
+import numpy
 from pycbc.inference.sampler_base import BaseMCMCSampler
 
 #
@@ -141,8 +142,8 @@ class KombineSampler(BaseMCMCSampler):
         p, lnpost, lnprop = res[0], res[1], res[2]
         # update the positions
         self._pos = p
-        if self.likelihood_evalutor.return_meta:
-            self._currentblob = self._sapmler.blobs[-1]
+        if self.likelihood_evaluator.return_meta:
+            self._currentblob = self._sampler.blobs[-1]
         return p, lnpost, lnprop
 
     @property
@@ -163,15 +164,15 @@ class KombineSampler(BaseMCMCSampler):
         """Clears the chain and blobs from memory.
         """
         # store the iteration that the clear is occuring on
-        self._lastclear = self.iterations
+        self._lastclear = self.niterations
         # kombine stores its chain as niterations x nwalkers x ndim
         current_shape = self._sampler._chain.shape
-        new_shape = (0, current_shape[1], current_shape[1])
+        new_shape = (0, current_shape[1], current_shape[2])
         if isinstance(self._sampler._chain, numpy.ma.MaskedArray):
             self._sampler._chain = numpy.ma.resize(self._sampler._chain,
                                                    new_shape)
         else:
-            self._sampler._chain = self._sampler._chain.resize(new_shape)
+            self._sampler._chain.resize(new_shape)
         self._sampler.stored_iterations = 0
         # clear the blobs
         self._sampler._blobs = []
