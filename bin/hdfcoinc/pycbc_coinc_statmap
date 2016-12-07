@@ -53,8 +53,8 @@ parser.add_argument('--cluster-window', type=float, default=10,
 parser.add_argument('--veto-window', type=float, default=.1,
                     help='Time around each zerolag trigger to window out, '
                          '[default=.1s]')
-parser.add_argument('--veto-window-hierarch', type=float, default=0.015,
-                    help='Time around each trigger to window out of a very '
+parser.add_argument('--veto-window-hierarch', type=float, default=1.0,
+                    help='Time around each trigger to window out for a very '
                          'louder trigger in the hierarchical removal '
                          'procedure.')
 parser.add_argument('--max-hier-removal', type=int, default=0,
