@@ -504,7 +504,8 @@ class EmceePTSampler(BaseMCMCSampler):
             arrays.append(fp[group.format(tk=tk)][wmask])
         return numpy.vstack(arrays)
 
-    def write_chain(self, fp, max_iterations=None):
+    def write_chain(self, fp, start_iteration=0, end_iteration=None,
+                    max_iterations=None):
         """Writes the samples from the current chain to the given file. Results
         are written to: `fp[fp.samples_group/{vararg}/temp{k}/walker{i}]`,
         where `{vararg}` is the name of a variable arg, `{k}` is a temperature
@@ -514,6 +515,10 @@ class EmceePTSampler(BaseMCMCSampler):
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
+        start_iteration : {0, int}
+            Write results starting from the given iteration.
+        end_iteration : {None, int}
+            Write results up to the given iteration.
         max_iterations : {None, int}
             If samples have not previously been written to the file, a new
             dataset will be created. By default, the size of this dataset will
@@ -526,6 +531,22 @@ class EmceePTSampler(BaseMCMCSampler):
         samples = self.chain
         ntemps, nwalkers, niterations, _ = samples.shape
 
+        # due to clearing memory, there can be a difference between indices in
+        # memory and on disk
+        niterations += self._lastclear
+        fa = start_iteration # file start index
+        if end_iteration is None:
+            end_iteration = niterations
+        fb = end_iteration # file end index
+        ma = fa - self._lastclear # memory start index
+        mb = fb - self._lastclear # memory end index
+
+        if max_iterations is not None and max_iterations < niterations:
+            raise IndexError("The provided max size is less than the "
+                             "number of iterations")
+        elif max_iterations is None:
+            max_iterations = niterations
+
         # map sample values to the values that were actually passed to the
         # waveform generator and prior evaluator
         samples = numpy.array(
@@ -533,14 +554,6 @@ class EmceePTSampler(BaseMCMCSampler):
             samples.transpose(3,0,1,2))).transpose(1,2,3,0)
 
         group = fp.samples_group + '/{name}/temp{tk}/walker{wi}'
-
-        # create an empty array if desired, in case this is the first time
-        # writing
-        if max_iterations is not None:
-            if max_iterations < niterations:
-                raise IndexError("The provided max size is less than the "
-                                 "number of iterations")
-            out = numpy.zeros(max_iterations, dtype=samples.dtype)
 
         # create indices for faster sub-looping
         widx = numpy.arange(nwalkers)
@@ -554,15 +567,16 @@ class EmceePTSampler(BaseMCMCSampler):
                 for wi in widx:
                     dataset_name = group.format(name=param, tk=tk, wi=wi)
                     try:
-                        fp[dataset_name][:niterations] = samples[tk, wi, :, pi]
+                        if fb > fp[dataset_name].size:
+                            # resize the dataset
+                            fp[dataset_name].resize(fb, axis=0)
+                        fp[dataset_name][fa:fb] = samples[tk, wi, ma:mb, pi]
                     except KeyError:
-                        # dataset doesn't exist yet, see if a larger array is
-                        # desired
-                        if max_iterations is not None:
-                            out[:niterations] = samples[tk, wi, :, pi]
-                            fp[dataset_name] = out
-                        else:
-                            fp[dataset_name] = samples[tk, wi, :, pi]
+                        # dataset doesn't exist yet
+                        fp.create_dataset(dataset_name, (fb,),
+                                          maxshape=(max_iterations,))
+                        fp[dataset_name][fa:fb] = samples[tk, wi, ma:mb, pi]
+
 
     def write_likelihood_stats(self, fp, max_iterations=None):
         """Writes the given likelihood array to the given file. Results are
@@ -581,11 +595,23 @@ class EmceePTSampler(BaseMCMCSampler):
         lls = self.likelihood_stats
         ntemps, nwalkers, niterations = lls.shape
 
-        group = fp.stats_group + '/{field}/temp{tk}/walker{wi}'
+        # due to clearing memory, there can be a difference between indices in
+        # memory and on disk
+        niterations += self._lastclear
+        fa = start_iteration # file start index
+        if end_iteration is None:
+            end_iteration = niterations
+        fb = end_iteration # file end index
+        ma = fa - self._lastclear # memory start index
+        mb = fb - self._lastclear # memory end index
 
         if max_iterations is not None and max_iterations < niterations:
             raise IndexError("The provided max size is less than the "
                              "number of iterations")
+        elif max_iterations is None:
+            max_iterations = niterations
+
+        group = fp.stats_group + '/{field}/temp{tk}/walker{wi}'
 
         # create indices for faster sub-looping
         widx = numpy.arange(nwalkers)
@@ -604,15 +630,15 @@ class EmceePTSampler(BaseMCMCSampler):
                 for wi in widx:
                     dataset_name = group.format(field=stat, tk=tk, wi=wi)
                     try:
-                        fp[dataset_name][:niterations] = arr[tk, wi, :]
+                        if fb > fp[dataset_name].size:
+                            # resize the dataset
+                            fp[dataset_name].resize(fb, axis=0)
+                        fp[dataset_name][fa:fb] = arr[tk, wi, ma:mb]
                     except KeyError:
-                        # dataset doesn't exist yet, see if a larger array is
-                        # desired
-                        if max_iterations is not None:
-                            out[:niterations] = arr[tk, wi, :]
-                            fp[dataset_name] = out
-                        else:
-                            fp[dataset_name] = arr[tk, wi, :]
+                        # dataset doesn't exist yet
+                        fp.create_dataset(dataset_name, (fb,),
+                                          maxshape=(max_iterations,))
+                        fp[dataset_name][fa:fb] = arr[tk, wi, ma:mb, pi]
 
     def write_results(self, fp, max_iterations=None):
         """Writes metadata, samples, lnpost, lnprior,  and acceptance fraction
