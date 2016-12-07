@@ -309,10 +309,6 @@ class Bounds(object):
             raise ValueError("unrecognized btype_max {}".format(btype_max))
         # store cyclic conditions
         self._cyclic = cyclic
-        if cyclic:
-            self._constrain = self._apply_cyclic
-        else:
-            self._constrain = _pass
         # store reflection conditions; we'll vectorize them here so that they
         # can be used with arrays
         if self._min.name == 'reflected' and self._max.name == 'reflected':
@@ -397,7 +393,10 @@ class Bounds(object):
         float
             The value after the conditions are applied; see above for details.
         """
-        retval = self._reflect(self._constrain(value))
+        retval = value
+        if self._cyclic:
+            retval = apply_cyclic(value, self)
+        retval = self._reflect(retval)
         if isinstance(retval, numpy.ndarray) and retval.size == 1:
             try:
                 retval = retval[0]
