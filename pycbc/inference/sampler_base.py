@@ -336,6 +336,12 @@ class BaseMCMCSampler(_BaseSampler):
         ma = fa - self._lastclear # memory start index
         mb = fb - self._lastclear # memory end index
 
+        if max_iterations is not None and max_iterations < niterations:
+            raise IndexError("The provided max size is less than the "
+                             "number of iterations")
+        elif max_iterations is None:
+            max_iterations = niterations
+
         # map sample values to the values that were actually passed to the
         # waveform generator and prior evaluator
         samples = numpy.array(
@@ -343,14 +349,6 @@ class BaseMCMCSampler(_BaseSampler):
             samples.transpose(2,0,1))).transpose(1,2,0)
 
         group = fp.samples_group + '/{name}/walker{wi}'
-
-        # if this is the first time writing, we'll need some scratch space to
-        # copy results for writing to the output file
-        if max_iterations is not None and max_iterations < niterations:
-            raise IndexError("The provided max size is less than the "
-                             "number of iterations")
-        elif max_iterations is None:
-            max_iterations = niterations
 
         # loop over number of dimensions
         widx = numpy.arange(nwalkers)
@@ -426,9 +424,6 @@ class BaseMCMCSampler(_BaseSampler):
             max_iterations = niterations
 
         for param in fields:
-            # we'll wait to create the scratch space until the first time
-            # we need it
-            out = None
             # loop over number of walkers
             for wi in range(nwalkers):
                 dataset_name = group.format(param=param, wi=wi)
