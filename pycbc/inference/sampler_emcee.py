@@ -347,6 +347,14 @@ class EmceePTSampler(BaseMCMCSampler):
         # emcee returns the chain as ntemps x nwalker x niterations x ndim
         return self._sampler.chain
 
+    def clear_chain(self):
+        """Clears the chain and blobs from memory.
+        """
+        # store the iteration that the clear is occuring on
+        self._lastclear = self.niterations
+        # now clear the chain
+        self._sampler.reset()
+
     @property
     def likelihood_stats(self):
         """Returns the log likelihood ratio and log prior as a FieldArray.
@@ -588,7 +596,8 @@ class EmceePTSampler(BaseMCMCSampler):
                         fp[dataset_name][fa:fb] = samples[tk, wi, ma:mb, pi]
 
 
-    def write_likelihood_stats(self, fp, max_iterations=None):
+    def write_likelihood_stats(self, fp, start_iteration=0, end_iteration=None,
+                               max_iterations=None):
         """Writes the given likelihood array to the given file. Results are
         written to: `fp[fp.stats_group/{field}/temp{k}/walker{i}]`, where
         `{field}` is the name of stat (`loglr`, `prior`), `{k}` is a
@@ -599,6 +608,10 @@ class EmceePTSampler(BaseMCMCSampler):
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
+        start_iteration : {0, int}
+            Write results starting from the given iteration.
+        end_iteration : {None, int}
+            Write results up to the given iteration.
         max_iterations : {None, int}
             See `write_chain` for details.
         """
@@ -649,7 +662,7 @@ class EmceePTSampler(BaseMCMCSampler):
                         fp.create_dataset(dataset_name, (fb,),
                                           maxshape=(max_iterations,),
                                           dtype=arr.dtype)
-                        fp[dataset_name][fa:fb] = arr[tk, wi, ma:mb, pi]
+                        fp[dataset_name][fa:fb] = arr[tk, wi, ma:mb]
 
 
     def write_results(self, fp, start_iteration=0, end_iteration=None,
