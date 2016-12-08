@@ -364,7 +364,8 @@ class BaseMCMCSampler(_BaseSampler):
                 except KeyError:
                     # dataset doesn't exist yet
                     fp.create_dataset(dataset_name, (fb,),
-                                      maxshape=(max_iterations,))
+                                      maxshape=(max_iterations,),
+                                      dtype=samples.dtype)
                     fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
 
 
@@ -435,7 +436,8 @@ class BaseMCMCSampler(_BaseSampler):
                 except KeyError:
                     # dataset doesn't exist yet
                     fp.create_dataset(dataset_name, (fb,),
-                                      maxshape=(max_iterations,))
+                                      maxshape=(max_iterations,),
+                                      dtype=stats.dtype)
                     fp[dataset_name][fa:fb] = stats[param][wi, ma:mb]
         return stats
 
@@ -479,7 +481,8 @@ class BaseMCMCSampler(_BaseSampler):
         except KeyError:
             # dataset doesn't exist yet
             fp.create_dataset(dataset_name, (bb,),
-                              maxshape=(max_iterations,))
+                              maxshape=(max_iterations,),
+                              dtype=acf.dtype)
             fp[dataset_name][aa:bb] = acf[aa:bb]
 
 

@@ -583,7 +583,8 @@ class EmceePTSampler(BaseMCMCSampler):
                     except KeyError:
                         # dataset doesn't exist yet
                         fp.create_dataset(dataset_name, (fb,),
-                                          maxshape=(max_iterations,))
+                                          maxshape=(max_iterations,),
+                                          dtype=samples.dtype)
                         fp[dataset_name][fa:fb] = samples[tk, wi, ma:mb, pi]
 
 
@@ -646,7 +647,8 @@ class EmceePTSampler(BaseMCMCSampler):
                     except KeyError:
                         # dataset doesn't exist yet
                         fp.create_dataset(dataset_name, (fb,),
-                                          maxshape=(max_iterations,))
+                                          maxshape=(max_iterations,),
+                                          dtype=arr.dtype)
                         fp[dataset_name][fa:fb] = arr[tk, wi, ma:mb, pi]
 
 
