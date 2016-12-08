@@ -374,7 +374,7 @@ with ctx:
                                       template_sample_rate,
                                       filter_N, options.filter_sample_rate)
 
-            h_norm = sigmasq(htilde, psd=psd, low_frequency_cutoff=f_lower,
+                h_norm = sigmasq(htilde, psd=psd, low_frequency_cutoff=f_lower,
                              high_frequency_cutoff=signal_high_freq_cutoff)
 
             o, i = match(htilde, stilde, v1_norm=h_norm, v2_norm=s_norm,
