@@ -1,0 +1,148 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2016 Ian W. Harry, Y Ddraig Goch
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# in the knowledge that it will probably not be useful, and you'll moan at me,
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Workflow generator to create diagnosis plots and figures of merit for an input
+template bank.
+"""
+
+#imports
+from __future__ import division
+import os
+import argparse
+
+from glue import segments
+
+import pycbc.version
+import pycbc.workflow as wf
+import pycbc.workflow.pegasus_workflow as pwf
+from pycbc.workflow import LalappsInspinjExecutable
+from pycbc.workflow import setup_splittable_dax_generated
+
+# Boiler-plate stuff
+__author__  = "Ian Harry <ian.harry@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_create_bank_verifier_workflow"
+
+# Some new executable classes. These can be moved into modules if needed
+class BanksimExecutable(wf.Executable):
+    """Class for running pycbc_banksim
+    """
+    # This can be altered if you don't always want to store output files
+    current_retention_level = wf.Executable.FINAL_RESULT
+
+    file_input_options = ['--psd-file', '--asd-file']
+
+    def create_node(self, analysis_time, inj_file, bank_file, extra_tags=None):
+        if extra_tags is None:
+            extra_tags = []
+        node = wf.Executable.create_node(self)
+        node.add_input_opt('--signal-file', inj_file)
+        node.add_input_opt('--template-file', bank_file)
+        node.new_output_file_opt(analysis_time, '.dat', '--match-file',
+                                 tags=self.tags + extra_tags)
+        return node
+
+
+# Argument parsing and setup of workflow
+
+# Use the standard workflow command-line parsing routines. Things like a 
+# configuration file are specified within the "workflow command line group"
+# so run this with --help to see what options are added.
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(description=_desc)
+parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument("--workflow-name", type=str, default='bank_verifier',
+                    help="Descriptive name of the analysis.")
+parser.add_argument("-d", "--output-dir", default=None,
+                    help="Path to output directory.")
+wf.add_workflow_command_line_group(parser)
+args = parser.parse_args()
+
+# Create the workflow object
+workflow = wf.Workflow(args, args.workflow_name)
+
+wf.makedir(args.output_dir)
+os.chdir(args.output_dir)
+args.output_dir = '.'
+
+# Input bank file
+inp_bank = workflow.cp.get('workflow', 'input-bank')
+inp_bank = wf.File.from_path(inp_bank)
+inp_bank.tags = []
+inp_bank.description='TEMPLATEBANK'
+inp_bank.ifo_list=(['H1','L1','V1'])
+inp_bank.segment = workflow.analysis_time
+
+# Inspinj job
+inspinj_job = LalappsInspinjExecutable(workflow.cp, 'injection', out_dir='.',
+                                       ifos='HL', tags=[])
+
+curr_tags = ['shortinjbanksplit']
+split_banks = setup_splittable_dax_generated(workflow, [inp_bank],
+                                             'splitbankfiles', curr_tags)
+
+# Injection file running
+for file_tag, num_injs in workflow.cp.items('workflow-pointinjs'):
+    curr_tags = ['shortinjs', file_tag]
+    inspinj_job.update_current_tags(curr_tags)
+    node = inspinj_job.create_node(segments.segment([1000000000,
+                                                     1000000000+int(num_injs)]))
+    workflow += node
+    inj_file = node.output_file
+
+    split_injs = setup_splittable_dax_generated(workflow, [inj_file],
+                                                'splitinjfiles', curr_tags)
+    # Banksim job
+    banksim_job = BanksimExecutable(workflow.cp, 'banksim',
+                                    out_dir=file_tag+'match',
+                                    ifos='HL', tags=[file_tag])
+    banksim_files = wf.FileList([])
+    for inj_idx, split_inj in enumerate(split_injs):
+        inj_tag = 'INJ{}'.format(inj_idx)
+        currinj_banksim_files = wf.FileList([])
+        for bank_idx, split_bank in enumerate(split_banks):
+            bank_tag = 'BANK{}'.format(bank_idx)
+            inj_tag = 'INJ{}'.format(inj_idx)
+            node = banksim_job.create_node(workflow.analysis_time, split_inj,
+                                           split_bank,
+                                           extra_tags=[bank_tag,inj_tag])
+            workflow+=node
+            currinj_banksim_files.append(node.output_file)
+        # FIXME: Here add a job to cat all outputs together for given inj
+        #        This would probably use a large parallelization factor.
+    # FIXME: Here add a job to cat the whole thing together
+
+curr_tags = ['broadinjbanksplit']
+split_banks = setup_splittable_dax_generated(workflow, [inp_bank], 
+                                             'splitbankfiles', curr_tags)
+
+for file_tag, num_injs in workflow.cp.items('workflow-broadinjs'):
+    curr_tags = ['broadinjs', file_tag]
+    inspinj_job.update_current_tags(curr_tags)
+    node = inspinj_job.create_node(segments.segment([1000000000,
+                                                     1000000000+int(num_injs)]))
+    workflow += node
+    inj_file = node.output_files[0]
+
+    split_injs = setup_splittable_dax_generated(workflow, [inj_file], 
+                                                'splitinjfiles', curr_tags)
+
+workflow.save()
