@@ -456,7 +456,7 @@ to specific configuration files managed for an analysis. For example, to
 generate a workflow to search two weeks of S6D data and place the results in
 your ``public_html`` directory, run the command::
 
-    pycbc_make_hdf_coinc_workflow --workflow-name s6d_chunk3 --output-dir output \
+    pycbc_make_coinc_search_workflow --workflow-name s6d_chunk3 --output-dir output \
       --config-files https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/s6_run_pycbc_er8_pre_release.ini \
       https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/executables.ini \
       https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/injections.ini \
@@ -469,7 +469,7 @@ set the output web page location.
 
 .. note::
 
-   To use released exectutables for production analysis, you should specify
+   To use released executables for production analysis, you should specify
    the URL to an ``executables.ini`` file from the 
    `PyCBC Software repository <https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software>`_.
 
@@ -493,7 +493,7 @@ determine the correct tags. These can be applied by adding the following line
 to your submit invocation.
 
 For example, to plan and submit the workflow in the example above, change to the directory that you specified with the ``--output``
-command line option to ``pycbc_make_hdf_coinc_workflow`` and plan and submit
+command line option to ``pycbc_make_coinc_search_workflow`` and plan and submit
 the workflow::
 
     cd output
