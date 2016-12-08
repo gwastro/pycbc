@@ -224,7 +224,8 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
             wmask[walkers] = True
         return fp[group][wmask]
 
-    def write_results(self, fp, max_iterations=None):
+    def write_results(self, fp, start_iteration=0, end_iteration=None,
+                      max_iterations=None):
         """Writes metadata, samples, likelihood stats, and acceptance fraction
         to the given file. See the write function for each of those for
         details.
@@ -233,6 +234,10 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
+        start_iteration : {0, int}
+            Write results starting from the given iteration.
+        end_iteration : {None, int}
+            Write results up to the given iteration.
         max_iterations : {None, int}
             If results have not previously been written to the
             file, new datasets will be created. By default, the size of these
@@ -242,8 +247,12 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
             large enough to accomodate future data.
         """
         self.write_metadata(fp)
-        self.write_chain(fp, max_iterations=max_iterations)
-        self.write_likelihood_stats(fp, max_iterations=max_iterations)
+        self.write_chain(fp, start_iteration=start_iteration,
+                         end_iteration=end_iteration,
+                         max_iterations=max_iterations)
+        self.write_likelihood_stats(fp, start_iteration=start_iteration,
+                                    end_iteration=end_iteration,
+                                    max_iterations=max_iterations)
         self.write_acceptance_fraction(fp)
 
 
@@ -640,8 +649,10 @@ class EmceePTSampler(BaseMCMCSampler):
                                           maxshape=(max_iterations,))
                         fp[dataset_name][fa:fb] = arr[tk, wi, ma:mb, pi]
 
-    def write_results(self, fp, max_iterations=None):
-        """Writes metadata, samples, lnpost, lnprior,  and acceptance fraction
+
+    def write_results(self, fp, start_iteration=0, end_iteration=None,
+                      max_iterations=None):
+        """Writes metadata, samples, likelihood stats, and acceptance fraction
         to the given file. See the write function for each of those for
         details.
 
@@ -649,6 +660,10 @@ class EmceePTSampler(BaseMCMCSampler):
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
+        start_iteration : {0, int}
+            Write results starting from the given iteration.
+        end_iteration : {None, int}
+            Write results up to the given iteration.
         max_iterations : {None, int}
             If results have not previously been written to the
             file, new datasets will be created. By default, the size of these
@@ -658,9 +673,14 @@ class EmceePTSampler(BaseMCMCSampler):
             large enough to accomodate future data.
         """
         self.write_metadata(fp)
-        self.write_chain(fp, max_iterations=max_iterations)
-        self.write_likelihood_stats(fp, max_iterations=max_iterations)
+        self.write_chain(fp, start_iteration=start_iteration,
+                         end_iteration=end_iteration,
+                         max_iterations=max_iterations)
+        self.write_likelihood_stats(fp, start_iteration=start_iteration,
+                                    end_iteration=end_iteration,
+                                    max_iterations=max_iterations)
         self.write_acceptance_fraction(fp)
+
 
     @staticmethod
     def _read_fields(fp, fields_group, fields, array_class,
