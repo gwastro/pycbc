@@ -1347,7 +1347,7 @@ class FromFile(_BoundedDist):
                 raise ValueError('Missing parameter {} to construct pdf.'.format(p))
         if kwargs in self:
             # for scipy < 0.15.0, gaussian_kde.pdf = gaussian_kde.evaluate
-            this_pdf = self._norm * self._kde.evaluate([kwargs[p] 
+            this_pdf = self._norm * self._kde.evaluate([kwargs[p]
                                                         for p in self._params])
             if len(this_pdf) == 1:
                 return float(this_pdf)
