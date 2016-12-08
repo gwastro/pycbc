@@ -57,6 +57,11 @@ parser.add_argument('--veto-window-hierarch', type=float, default=1.0,
                     help='Time around each trigger to window out for a very '
                          'louder trigger in the hierarchical removal '
                          'procedure.')
+parser.add_argument('--cont-hier-removal', action='store_true',
+                    default='store_false', 
+                    help='Use this option to do continuous hierarchical '
+                         'removal without any cutoff number of hierarchical '
+                         'removals to stop at. [default=false]')
 parser.add_argument('--max-hier-removal', type=int, default=0,
                     help='Maximum amount of hierarchical removals to carry '
                          'out when hierarchical removal is desired. Choose '
@@ -66,9 +71,25 @@ parser.add_argument('--max-hier-removal', type=int, default=0,
                          'first: that there are no more hierarchical removals '
                          'to do or write the triggers for the max '
                          'hierarchical removal stage selected. [default=0] ')
+#parser.add_argument('--store-hier-removed-trigs', action='store_true',
+#                    default='store_true',
+#                    help='Store all hierarchically removed foreground '
+#                         'and append them to the end of the list of '
+#                         'foreground triggers with their IFAR (inc) and '
+#                         'FAP (inc).')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
+
+# Require that the user does not input negative number of iterations to
+# hierarchically remove foreground triggers. This is required for a later
+# hack in the while loop if the user wants to do continuous hierarchical
+# removal.
+if args.max_hier_removal < 0:
+   logging.warn('ERROR: Cannot hierarchically remove triggers %s '
+                'times.' % args.max_hier_removal)
+   logging.warn('Exiting.')
+   sys.exit()
 
 logging.info("Loading coinc triggers")    
 all_trigs = pycbc.io.StatmapData(files=args.coinc_files)
@@ -225,8 +246,9 @@ if 'name' in all_trigs.attrs:
 # Incorporate hierarchical removal for any other loud triggers
 logging.info("Instantiating hierarchical removal.")
 
-# Step 1: Check to see if the trigger with the largest FAR is
-#         louder than all of the background.
+# Step 1: Check to see if there are triggers that are louder
+#         then all of the inclusive background.
+
 # fnlouder is the number of background events that are louder than
 # the foreground trigger. So if a trigger is louder than all of
 # the background, fnlouder = 0.
@@ -238,8 +260,27 @@ for i in range(0, len(fnlouder)):
 
 # Step 2 : Loop until we don't have to hierarchically remove
 #          anymore.
-iter = 1
+
+# KLUDGE: if we want to do continuous hierarchical removals let the counter
+# of how many hierarchical removals we've done be less than 0. This will
+# tell the while loop ahead to only look at the case when len(loud_t_ind) > 0.
+# If you don't want to do continuous hierarchical removal then let the
+# iteration number be 1 and count how many hierarchical removals you're doing
+# until you get to the max preset.
+if args.cont_hier_removal :
+    iter = -2
+else :
+    iter = 1
 while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
+    # If the user wants to continuously hierarchically remove without any
+    # max limit hack it so that the second condition  above is alway true.
+    # This is a bit of a hack, but it should work. The iteration will go
+    # to -1 at the bottom of the loop. There is a condition in the code
+    # above to ensure that args.max_hier_removal is always 0 or greater.
+    # So -1 is always less than 0. KLUDGE
+    if args.cont_hier_removal : 
+        iter = -2
+
     # find the loudest of these triggers, its index, its newsnr
     # and its ifar
     max_ifar = 0
@@ -264,7 +305,7 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
     # Step 3: Remove that trigger from the list of zerolag triggers
 
     # Store where the loud foreground trigger that I want to remove next in the
-    # list of all of the triggers located is at.
+    # list of all of the triggers located is at
     where_is_fore_t = np.where(all_trigs.stat[:] == fore_stat[max_ifar_ind])
 
     # FIXME:
@@ -273,12 +314,28 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
     # to the one with the earliest GPS time, just for documenting purposes
     if len(where_is_fore_t[0]) > 1:
         # where_is_fore_t[0] = np.argsort(all_trigs.time1[where_is_fore_t[0][:]])
-        logging.info("WARNING: There is more than one foreground trigger "
+        logging.warn("WARNING: There is more than one foreground trigger "
                      " that is louder than the background and have the same "
-                     "ranking statistic.")
+                     "ranking statistic. This code may operate strangely in"
+                     "this condition.")
+
     # This is the foreground trigger index in the all_trigs array that we
     # want to remove
     my_loudest_ind = where_is_fore_t[0][0]
+
+#    # Store any foreground trigger's information that we want to
+#    # hierarchically remove. This option is set if
+#    # args.store_hier_removed_trigs is set to true. (This is by default set
+#    # to true).
+
+#    if args.store_hier_removed_trigs :
+#        save_ifar_fore_trig = ifar[max_ifar_ind]
+#        # The following equation should be safe bcause coinc_time
+#        # will only be reassigned after we remove this trigger for the
+#        # next quietest louder-than-the-inclusive-background foreground
+#        # trigger.
+#        save_fap_fore_trig = 1 - numpy.exp(- coinc_time / ifar)
+#        save_this_trig.append(all_trigs[where_is_fore_t[0][0])
 
     logging.info("Removing foreground trigger that is louder than the inclusive background.")
     # Remove this foreground trigger from the list of loud foreground triggers
