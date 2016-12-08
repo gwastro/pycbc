@@ -222,7 +222,7 @@ def get_kde_from_file(params_file, params=None):
             if p not in f.keys():
                 raise ValueError('Parameter {} is not in {}'.format(p, params_file))
     else:
-        params = f.keys()
+        params = [str(k) for k in f.keys()]
     params_values = {p:f[p][:] for p in params}
     f.close()
     values = numpy.vstack((params_values[p] for p in params))
@@ -1346,8 +1346,13 @@ class FromFile(_BoundedDist):
             if p not in kwargs.keys():
                 raise ValueError('Missing parameter {} to construct pdf.'.format(p))
         if kwargs in self:
-            return self._norm * self._kde.evaluate([kwargs[p]
-                                                    for p in self._params])
+            # for scipy < 0.15.0, gaussian_kde.pdf = gaussian_kde.evaluate
+            this_pdf = self._norm * self._kde.evaluate([kwargs[p] 
+                                                        for p in self._params])
+            if len(this_pdf) == 1:
+                return float(this_pdf)
+            else:
+                return this_pdf
         else:
             return 0.
 
@@ -1360,8 +1365,15 @@ class FromFile(_BoundedDist):
             if p not in kwargs.keys():
                 raise ValueError('Missing parameter {} to construct pdf.'.format(p))
         if kwargs in self:
-            return self._lognorm + self._kde.logpdf([kwargs[p]
-                                                     for p in self._params])
+            # for scipy < 0.15.0,
+            # gaussian_kde.logpdf = numpy.log(gaussian_kde.evaluate)
+            this_logpdf = self._lognorm + \
+                          numpy.log(self._kde.evaluate([kwargs[p]
+                                                     for p in self._params]))
+            if len(this_logpdf) == 1:
+                return float(this_logpdf)
+            else:
+                return this_logpdf
         else:
             return -numpy.inf
 
