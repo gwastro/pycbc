@@ -305,7 +305,7 @@ class Workflow(object):
         Parameters
         ----------
         node : Node
-            A node that should be exectuded as part of this workflow.
+            A node that should be executed as part of this workflow.
         """
         node._finalize()
         node.in_workflow = self

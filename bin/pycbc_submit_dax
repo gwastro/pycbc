@@ -207,7 +207,7 @@ while true ; do
       echo "  -l, --local-dir         Directory to put condor files under"
       echo
       echo "If the environment variable TMPDIR is set then this is prepended to the "
-      echo "path to the temporary workflow execte directory passed to pegasus-plan."
+      echo "path to the temporary workflow execute directory passed to pegasus-plan."
       echo "If the --local-dir option is not given."
       echo
       echo "If the environment variable PEGASUS_FILE_DIRECTORY is set then the"
