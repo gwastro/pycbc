@@ -2,6 +2,7 @@ import numpy
 import bisect
 from . import bin_utils
 
+import os
 import sys
 
 
