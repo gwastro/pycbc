@@ -320,7 +320,6 @@ while len(loud_t_ind) > 0 and iteration <= args.max_hier_removal :
     # This is the foreground trigger index in the all_trigs array that we
     # want to remove
     my_loudest_ind = where_is_fore_t[0][0]
-    print "The loudest index in the all_trigs list", my_loudest_ind
     # Store any foreground trigger's information that we want to
     # hierarchically remove. Below save the ifar.
 
