@@ -437,7 +437,7 @@ class BaseMCMCSampler(_BaseSampler):
                     # dataset doesn't exist yet
                     fp.create_dataset(dataset_name, (fb,),
                                       maxshape=(max_iterations,),
-                                      dtype=stats.dtype)
+                                      dtype=stats[param].dtype)
                     fp[dataset_name][fa:fb] = stats[param][wi, ma:mb]
         return stats
 
