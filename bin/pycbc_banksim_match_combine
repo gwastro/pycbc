@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2016 Ian W. Harry, Alex Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Program for concatenating output files from pycbc_banksim_combine_banks with
+a set of injection files. The *order* of the injection files *must* match the
+bank files, and the number of injections in each must correspond one-to-one.
+"""
+
+from os.path import isfile
+import argparse
+import numpy
+from glue.ligolw import utils, table
+import pycbc
+
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_banksim_match_combine"
+
+from glue.ligolw.ligolw import LIGOLWContentHandler
+from glue.ligolw import lsctables
+class mycontenthandler(LIGOLWContentHandler):
+    pass
+lsctables.use_in(mycontenthandler)
+
+# Read command line options
+usage = """usage: %prog [options]"""
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(description=_desc)
+
+parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="verbose output")
+parser.add_argument("--match-files", nargs='+',
+                    help="Explicit list of match files.")
+#parser.add_argument("--inj-files", nargs='+',
+#                    help="Explicit list of injection files. These must be in "
+#                         "the same order, and match one-to-one with the "
+#                         "match-files.")
+parser.add_argument("-o", "--output-file",  help="Output file name")
+options = parser.parse_args()
+dtypem={'names': ('match', 'bank', 'bank_i', 'sim', 'sim_i', 'sigmasq'),
+        'formats': ('f8', 'S256', 'i4', 'S256', 'i4', 'f8')}
+
+# Collect the results
+res = None
+for fil in options.match_files:
+    if res is not None:
+        res = append(res, loadtxt(fil, dtype=dtypem))
+    else:
+        res = loadtxt(fil, dtype=dtypem)
+
+btables = {}
+itables = {}     
+
+f = open(options.output_file, "w")
+for row in res: 
+    outstr = ""
+    if row['bank'] not in btables:
+        indoc = utils.load_filename(row['bank'], False, contenthandler=mycontenthandler)
+        btables[row['bank']] = table.get_table(indoc, "sngl_inspiral") 
+
+    if row['sim'] not in itables:
+        indoc = utils.load_filename(row['sim'], False, contenthandler=mycontenthandler)
+        itables[row['sim']] = table.get_table(indoc, "sim_inspiral") 
+    
+    bt = btables[row['bank']][row['bank_i']]     
+    it = itables[row['sim']][row['sim_i']]
+ 
+    outstr += str(row['match']) + " "
+    outstr += str(bt.mass1) + " "
+    outstr += str(bt.mass2) + " "
+    outstr += str(bt.spin1x) + " "
+    outstr += str(bt.spin1y) + " "
+    outstr += str(bt.spin1z) + " "
+    outstr += str(bt.spin2x) + " "
+    outstr += str(bt.spin2y) + " " 
+    outstr += str(bt.spin2z) + " "
+    
+    outstr += str(it.mass1) + " "
+    outstr += str(it.mass2) + " "
+    outstr += str(it.spin1x) + " "
+    outstr += str(it.spin1y) + " "
+    outstr += str(it.spin1z) + " "
+    outstr += str(it.spin2x) + " "
+
+    outstr += str(it.coa_phase) + " "
+    outstr += str(it.inclination) + " "
+    outstr += str(it.latitude) + " " 
+    outstr += str(it.longitude) + " "
+    outstr += str(it.polarization) + " "
+    
+    outstr += str(row['sigmasq']) + " "
+                
+    outstr += "\\n"
+    
+    f.write(outstr)
