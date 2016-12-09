@@ -10,6 +10,7 @@ the FANs of any other gravitational waves in the dataset.
 import sys
 import argparse, h5py, logging, itertools, numpy
 import lal
+import copy
 import numpy as np
 from pycbc.events import veto, coinc
 import pycbc.version, pycbc.pnutils, pycbc.io
@@ -71,12 +72,6 @@ parser.add_argument('--max-hier-removal', type=int, default=0,
                          'first: that there are no more hierarchical removals '
                          'to do or write the triggers for the max '
                          'hierarchical removal stage selected. [default=0] ')
-#parser.add_argument('--store-hier-removed-trigs', action='store_true',
-#                    default='store_true',
-#                    help='Store all hierarchically removed foreground '
-#                         'and append them to the end of the list of '
-#                         'foreground triggers with their IFAR (inc) and '
-#                         'FAP (inc).')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -258,6 +253,18 @@ for i in range(0, len(fnlouder)):
     if fnlouder[i] == 0:
         loud_t_ind.append(i)
 
+# Create arrays to save far and fap of hierarchically removed
+# foreground triggers
+
+save_ifar_fore_trig = np.array([], dtype=float)
+save_fap_fore_trig = np.array([], dtype=float)
+save_these_fore_ind = np.array([], dtype=int)
+
+# Use a copy of the original triggers befpre hierarchical removal
+# to regenerate hierarchically removed foreground triggers
+copy_trigs = copy_trigs = pycbc.io.StatmapData(all_trigs.data, all_trigs.seg,
+                                               all_trigs.attrs)
+
 # Step 2 : Loop until we don't have to hierarchically remove
 #          anymore.
 
@@ -267,7 +274,8 @@ for i in range(0, len(fnlouder)):
 # If you don't want to do continuous hierarchical removal then let the
 # iteration number be 1 and count how many hierarchical removals you're doing
 # until you get to the max preset.
-if args.cont_hier_removal :
+
+if args.cont_hier_removal == True:
     iter = -2
 else :
     iter = 1
@@ -278,30 +286,20 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
     # to -1 at the bottom of the loop. There is a condition in the code
     # above to ensure that args.max_hier_removal is always 0 or greater.
     # So -1 is always less than 0. KLUDGE
-    if args.cont_hier_removal : 
+    if args.cont_hier_removal == True : 
         iter = -2
 
-    # find the loudest of these triggers, its index, its newsnr
-    # and its ifar
-    max_ifar = 0
-    max_ifar_ind = 0
-    max_rank_stat = 0
+    # Find the loudest of these triggers, its index, its newsnr
+    # We know that the IFARs of these triggers are all louder
+    # than the inclusive background
+    max_ifar_ind = loud_t_ind[0]
     for i in range(0, len(loud_t_ind)):
-         # Check for the largest ifar
-         if ifar[loud_t_ind[i]] >= max_ifar:
-           # Check to see if they have equal ifar, then check largest
-           # ranking statistic
-              if ifar[loud_t_ind[i]] == max_ifar:
-                   if fore_stat[loud_t_ind[i]] >= \
-                      fore_stat[loud_t_ind[max_ifar_ind]] :
-                        max_ifar_ind = loud_t_ind[i]
-                        max_rank_stat = fore_stat[loud_t_ind[i]]
-                   else :
-                        max_rank_stat = fore_stat[max_ifar_ind]
-                        
-              else :
-                   max_ifar = ifar[loud_t_ind[i]]
-                   max_ifar_ind = loud_t_ind[i]
+        # Check to see which of these louder than all of the background
+        # foreground triggers has the greatest snr. We will assign this
+        # location the "max_ifar_ind" and remove that trigger first.
+        if fore_stat[loud_t_ind[i]] > fore_stat[max_ifar_ind]:
+            max_ifar_ind = loud_t_ind[i]
+
     # Step 3: Remove that trigger from the list of zerolag triggers
 
     # Store where the loud foreground trigger that I want to remove next in the
@@ -322,20 +320,26 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
     # This is the foreground trigger index in the all_trigs array that we
     # want to remove
     my_loudest_ind = where_is_fore_t[0][0]
+    print "The loudest index in the all_trigs list", my_loudest_ind
+    # Store any foreground trigger's information that we want to
+    # hierarchically remove. Below save the ifar.
 
-#    # Store any foreground trigger's information that we want to
-#    # hierarchically remove. This option is set if
-#    # args.store_hier_removed_trigs is set to true. (This is by default set
-#    # to true).
+    save_ifar_fore_trig = np.append(save_ifar_fore_trig, ifar[max_ifar_ind])
+    # The following equation should be safe bcause coinc_time
+    # will only be reassigned after we remove this trigger for the
+    # next quietest louder-than-the-inclusive-background foreground
+    # trigger.
+    save_fap_fore_trig = np.append(save_fap_fore_trig, \
+                                   1 - numpy.exp(- coinc_time / ifar[max_ifar_ind]))
 
-#    if args.store_hier_removed_trigs :
-#        save_ifar_fore_trig = ifar[max_ifar_ind]
-#        # The following equation should be safe bcause coinc_time
-#        # will only be reassigned after we remove this trigger for the
-#        # next quietest louder-than-the-inclusive-background foreground
-#        # trigger.
-#        save_fap_fore_trig = 1 - numpy.exp(- coinc_time / ifar)
-#        save_this_trig.append(all_trigs[where_is_fore_t[0][0])
+#    # Save all information regarding this trigger that we're about to remove
+#    # I do this by saving the index in all_trigs that we're about to remove
+#    # Need to save it to a copy because I regenerate it above.
+
+#    save_these_trigs_ind.append(save_these_trigs_ind, where_is_fore_t[0][0])
+
+    # Save the location in the foreground trigger array too
+    save_these_fore_ind = np.append(save_these_fore_ind, max_ifar_ind)
 
     logging.info("Removing foreground trigger that is louder than the inclusive background.")
     # Remove this foreground trigger from the list of loud foreground triggers
@@ -367,6 +371,8 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
 
     logging.info("%s clustered foreground triggers" % fore_locs.sum())
 
+    logging.info("%s hierarchically removed foreground trigger"
+                  % len(save_these_fore_ind))
     back_locs = all_trigs.timeslide_id != 0 
 
     logging.info("Dumping foreground triggers")
@@ -392,7 +398,6 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
     logging.info("Dumping background triggers (inclusive of zerolag)")
     for k in all_trigs.data:
          f['background/' + k] = all_trigs.data[k][back_locs]
-
 
     maxtime = max(all_trigs.attrs['foreground_time1'], all_trigs.attrs['foreground_time2'])
     mintime = min(all_trigs.attrs['foreground_time1'], all_trigs.attrs['foreground_time2'])
@@ -432,5 +437,57 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
     # next one.
     iter += 1
 
+# If there were hierarchically removed foreground triggers, please  write
+# them back into the file with the correct statistics.
+# This is not going to work!!!!
+print "What's the length of save_these_fore_ind", len(save_these_fore_ind)
+if fore_locs.sum() > 0 and len(save_these_fore_ind) > 0:
+    fore_locs = copy_trigs.timeslide_id == 0
+    print "The number of fore_locs is", fore_locs.sum()
+    print "The number of foreground triggers in copy_trigs is", len(copy_trigs.stat[fore_locs])
+    for k in copy_trigs.data:
+        f['foreground/' + k] = copy_trigs.data[k][fore_locs]
+
+    print "The length of the list of ifars of foreground/ifar (hdf) is", len(f['foreground/ifar'])
+    print "The length of the list of ranking statistic of foreground/stat (hdf) is", len(f['foreground/stat'])
+    
+    # We won't run into trouble inserting the foreground triggers back in
+    # if we insert them in from least to greatest. Otherwise we could really
+    # mess up the ordering of assigning the proper ifar to every foreground
+    # trigger. So we need to preserve the original ordering!
+    sort_like_this = numpy.argsort(save_these_fore_ind)
+    save_these_fore_ind = save_these_fore_ind[sort_like_this]
+    save_ifar_fore_trig = save_ifar_fore_trig[sort_like_this]
+    save_fap_fore_trig = save_fap_fore_trig[sort_like_this]
+
+    for i in range(0, len(save_these_fore_ind)):
+        # Handle the edge case that you have to add to the end of the list
+        # if your array of ifar has gotten too small
+        if save_these_fore_ind[i] > len(ifar):
+            ifar = np.append(ifar, save_ifar_fore_trig[i])
+            print "Appended", save_ifar_fore_trig[i], "to location", save_these_fore_ind[i], "in the list of IFARs"
+        else :
+            ifar = np.insert(ifar, save_these_fore_ind[i] + i, save_ifar_fore_trig[i])
+            print "Inserted", save_ifar_fore_trig[i], "to location", save_these_fore_ind[i] + i, "in the list of IFARs"
+        if save_these_fore_ind[i] > len(fap):
+            fap = np.append(fap, save_fap_fore_trig[i])
+            print "Appended", save_fap_fore_trig[i], "to location", save_these_fore_ind[i], "in the list of FAPs"
+        else :
+            fap = np.insert(fap, save_these_fore_ind[i] + i, save_fap_fore_trig[i])
+            print "Inserted", save_fap_fore_trig[i], "to location", save_these_fore_ind[i] + i, "in the list of FAPs"
+
+    print "The number of foreground triggers with IFARs is", len(ifar)
+    print "The number of foreground triggers with FAPs is", len(fap)
+    ifar = sec_to_year(ifar)
+
+    f['foreground/ifar'] = ifar
+    for i in range(0,2848):
+        if i == 20 or i ==2570:
+            print "The ifar of", i,"th index is ", f['foreground/ifar'][i]
+    f['foreground/fap'] = fap
+    for i in range(0,2848):
+        if i == 20 or i ==2570:
+            print "The fap of", i,"th index is ", f['foreground/fap'][i]
+    print "The length of foreground/ifar (hdf) is", len(f['foreground/fap'])    
 f.close()
 logging.info("Done") 
