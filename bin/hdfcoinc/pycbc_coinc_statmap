@@ -276,10 +276,10 @@ copy_trigs = copy_trigs = pycbc.io.StatmapData(all_trigs.data, all_trigs.seg,
 # until you get to the max preset.
 
 if args.cont_hier_removal == True:
-    iter = -2
+    iteration = -2
 else :
-    iter = 1
-while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
+    iteration = 1
+while len(loud_t_ind) > 0 and iteration <= args.max_hier_removal :
     # If the user wants to continuously hierarchically remove without any
     # max limit hack it so that the second condition  above is alway true.
     # This is a bit of a hack, but it should work. The iteration will go
@@ -287,7 +287,7 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
     # above to ensure that args.max_hier_removal is always 0 or greater.
     # So -1 is always less than 0. KLUDGE
     if args.cont_hier_removal == True : 
-        iter = -2
+        iteration = -2
 
     # Find the loudest of these triggers, its index, its newsnr
     # We know that the IFARs of these triggers are all louder
@@ -435,7 +435,7 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
 
     # We've done a hierarchical removal so add the iteration number to the
     # next one.
-    iter += 1
+    iteration += 1
 
 # If there were hierarchically removed foreground triggers, please  write
 # them back into the file with the correct statistics.
