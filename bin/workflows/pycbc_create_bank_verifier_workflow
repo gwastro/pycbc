@@ -60,6 +60,39 @@ class BanksimExecutable(wf.Executable):
                                  tags=self.tags + extra_tags)
         return node
 
+class BanksimBankCombineExecutable(wf.Executable):
+    """Class for running pycbc_banksim_combine_banks
+    """
+    # This can be altered if you don't always want to store output files
+    current_retention_level = wf.Executable.FINAL_RESULT
+
+    def create_node(self, analysis_time, inp_files, extra_tags=None):
+        if extra_tags is None:
+            extra_tags = []
+        node = wf.Executable.create_node(self)
+        node.add_input_list_opt('--input-files', inp_files)
+        node.new_output_file_opt(analysis_time, '.dat', '--output-file',
+                                 tags=self.tags + extra_tags)
+        return node
+
+class BanksimMatchCombineExecutable(wf.Executable):
+    """Class for running pycbc_banksim_match_combine
+    """
+    # This can be altered if you don't always want to store output files
+    current_retention_level = wf.Executable.FINAL_RESULT
+
+    def create_node(self, analysis_time, match_files, inj_files,
+                    extra_tags=None):
+        if extra_tags is None:
+            extra_tags = []
+        node = wf.Executable.create_node(self)
+        node.add_input_list_opt('--match-files', match_files)
+        for curr_file in inj_files:
+            node._add_input(curr_file)
+        node.new_output_file_opt(analysis_time, '.dat', '--output-file',
+                                 tags=self.tags + extra_tags)
+        return node
+
 
 # Argument parsing and setup of workflow
 
@@ -95,26 +128,30 @@ inp_bank.segment = workflow.analysis_time
 inspinj_job = LalappsInspinjExecutable(workflow.cp, 'injection', out_dir='.',
                                        ifos='HL', tags=[])
 
-curr_tags = ['shortinjbanksplit']
-split_banks = setup_splittable_dax_generated(workflow, [inp_bank],
-                                             'splitbankfiles', curr_tags)
-
-# Injection file running
-for file_tag, num_injs in workflow.cp.items('workflow-pointinjs'):
-    curr_tags = ['shortinjs', file_tag]
+def add_banksim_set(workflow, file_tag, num_injs, curr_tags, split_banks):
+    """Add a group of jobs that does a complete banksim.
+    """
     inspinj_job.update_current_tags(curr_tags)
-    node = inspinj_job.create_node(segments.segment([1000000000,
-                                                     1000000000+int(num_injs)]))
+    t_seg = segments.segment([1000000000, 1000000000+int(num_injs)])
+    node = inspinj_job.create_node(t_seg)
     workflow += node
     inj_file = node.output_file
-
     split_injs = setup_splittable_dax_generated(workflow, [inj_file],
                                                 'splitinjfiles', curr_tags)
     # Banksim job
     banksim_job = BanksimExecutable(workflow.cp, 'banksim',
                                     out_dir=file_tag+'match',
                                     ifos='HL', tags=[file_tag])
+    bscombine_job = \
+        BanksimBankCombineExecutable(workflow.cp, 'banksim_bank_combine',
+                                     out_dir=file_tag+'match', ifos='HL',
+                                     tags=[file_tag])
+    mcombine_job = \
+        BanksimMatchCombineExecutable(workflow.cp, 'banksim_match_combine',
+                                      out_dir=file_tag+'match', ifos='HL',
+                                      tags=[file_tag])
     banksim_files = wf.FileList([])
+
     for inj_idx, split_inj in enumerate(split_injs):
         inj_tag = 'INJ{}'.format(inj_idx)
         currinj_banksim_files = wf.FileList([])
@@ -126,23 +163,38 @@ for file_tag, num_injs in workflow.cp.items('workflow-pointinjs'):
                                            extra_tags=[bank_tag,inj_tag])
             workflow+=node
             currinj_banksim_files.append(node.output_file)
-        # FIXME: Here add a job to cat all outputs together for given inj
-        #        This would probably use a large parallelization factor.
-    # FIXME: Here add a job to cat the whole thing together
+        curr_node = bscombine_job.create_node(workflow.analysis_time,
+                                              currinj_banksim_files,
+                                              extra_tags=[inj_tag])
+        workflow += curr_node
+        banksim_files.append(curr_node.output_file)
+    curr_node = mcombine_job.create_node(workflow.analysis_time, banksim_files,
+                                         split_injs)
+    workflow += curr_node
+    return curr_node.output_file
+
+# Set up the actual banksims
+curr_tags = ['shortinjbanksplit']
+split_banks = setup_splittable_dax_generated(workflow, [inp_bank],
+                                             'splitbankfiles', curr_tags)
+
+output_pointinjs = {}
+for file_tag, num_injs in workflow.cp.items('workflow-pointinjs'):
+    curr_tags = ['shortinjs', file_tag]
+    curr_file = add_banksim_set(workflow, file_tag, num_injs, curr_tags,
+                                split_banks)
+    output_pointinjs[file_tag] = curr_file
 
 curr_tags = ['broadinjbanksplit']
 split_banks = setup_splittable_dax_generated(workflow, [inp_bank], 
                                              'splitbankfiles', curr_tags)
 
+output_broadinjs = {}
 for file_tag, num_injs in workflow.cp.items('workflow-broadinjs'):
     curr_tags = ['broadinjs', file_tag]
-    inspinj_job.update_current_tags(curr_tags)
-    node = inspinj_job.create_node(segments.segment([1000000000,
-                                                     1000000000+int(num_injs)]))
-    workflow += node
-    inj_file = node.output_files[0]
+    curr_file = add_banksim_set(workflow, file_tag, num_injs, curr_tags,
+                                split_banks)
+    output_broadinjs[file_tag] = curr_file
 
-    split_injs = setup_splittable_dax_generated(workflow, [inj_file], 
-                                                'splitinjfiles', curr_tags)
 
 workflow.save()

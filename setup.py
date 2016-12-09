@@ -354,6 +354,8 @@ setup (
                'bin/lalapps/lalapps_tmpltbank_ahope',
                'bin/pycbc_banksim',
                'bin/pycbc_banksim_spedup',
+               'bin/pycbc_banksim_combine_banks',
+               'bin/pycbc_banksim_match_combine',
                'bin/pycbc_faithsim',
                'bin/pycbc_inspiral',
                'bin/pycbc_inspiral_skymax',
