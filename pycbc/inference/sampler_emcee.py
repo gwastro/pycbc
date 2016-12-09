@@ -643,10 +643,6 @@ class EmceePTSampler(BaseMCMCSampler):
         # loop over stats
         for stat in lls.fieldnames:
             arr = lls[stat]
-            # create an empty array if desired, in case this is the first time
-            # writing
-            if max_iterations is not None:
-                out = numpy.zeros(max_iterations, dtype=arr.dtype)
             # loop over temps
             for tk in tidx:
                 # loop over number of walkers
