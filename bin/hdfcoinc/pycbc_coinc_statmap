@@ -439,18 +439,11 @@ while len(loud_t_ind) > 0 and iter <= args.max_hier_removal :
 
 # If there were hierarchically removed foreground triggers, please  write
 # them back into the file with the correct statistics.
-# This is not going to work!!!!
-print "What's the length of save_these_fore_ind", len(save_these_fore_ind)
 if fore_locs.sum() > 0 and len(save_these_fore_ind) > 0:
     fore_locs = copy_trigs.timeslide_id == 0
-    print "The number of fore_locs is", fore_locs.sum()
-    print "The number of foreground triggers in copy_trigs is", len(copy_trigs.stat[fore_locs])
     for k in copy_trigs.data:
         f['foreground/' + k] = copy_trigs.data[k][fore_locs]
-
-    print "The length of the list of ifars of foreground/ifar (hdf) is", len(f['foreground/ifar'])
-    print "The length of the list of ranking statistic of foreground/stat (hdf) is", len(f['foreground/stat'])
-    
+ 
     # We won't run into trouble inserting the foreground triggers back in
     # if we insert them in from least to greatest. Otherwise we could really
     # mess up the ordering of assigning the proper ifar to every foreground
@@ -465,29 +458,16 @@ if fore_locs.sum() > 0 and len(save_these_fore_ind) > 0:
         # if your array of ifar has gotten too small
         if save_these_fore_ind[i] > len(ifar):
             ifar = np.append(ifar, save_ifar_fore_trig[i])
-            print "Appended", save_ifar_fore_trig[i], "to location", save_these_fore_ind[i], "in the list of IFARs"
         else :
             ifar = np.insert(ifar, save_these_fore_ind[i] + i, save_ifar_fore_trig[i])
-            print "Inserted", save_ifar_fore_trig[i], "to location", save_these_fore_ind[i] + i, "in the list of IFARs"
         if save_these_fore_ind[i] > len(fap):
             fap = np.append(fap, save_fap_fore_trig[i])
-            print "Appended", save_fap_fore_trig[i], "to location", save_these_fore_ind[i], "in the list of FAPs"
         else :
             fap = np.insert(fap, save_these_fore_ind[i] + i, save_fap_fore_trig[i])
-            print "Inserted", save_fap_fore_trig[i], "to location", save_these_fore_ind[i] + i, "in the list of FAPs"
 
-    print "The number of foreground triggers with IFARs is", len(ifar)
-    print "The number of foreground triggers with FAPs is", len(fap)
     ifar = sec_to_year(ifar)
 
     f['foreground/ifar'] = ifar
-    for i in range(0,2848):
-        if i == 20 or i ==2570:
-            print "The ifar of", i,"th index is ", f['foreground/ifar'][i]
     f['foreground/fap'] = fap
-    for i in range(0,2848):
-        if i == 20 or i ==2570:
-            print "The fap of", i,"th index is ", f['foreground/fap'][i]
-    print "The length of foreground/ifar (hdf) is", len(f['foreground/fap'])    
 f.close()
 logging.info("Done") 
