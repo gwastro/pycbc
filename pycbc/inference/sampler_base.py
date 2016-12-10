@@ -462,10 +462,8 @@ class BaseMCMCSampler(_BaseSampler):
         dataset_name = "acceptance_fraction"
         acf = self.acceptance_fraction
 
-        aa = start_iteration
         if end_iteration is None:
             end_iteration = acf.size
-        bb = end_iteration
 
         if max_iterations is not None and max_iterations < acf.size:
             raise IndexError("The provided max size is less than the "
@@ -477,13 +475,15 @@ class BaseMCMCSampler(_BaseSampler):
             if bb > fp[dataset_name].size:
                 # resize the dataset
                 fp[dataset_name].resize(bb, axis=0)
-            fp[dataset_name][aa:bb] = acf[aa:bb]
+            fp[dataset_name][start_iteration:end_iteration] = \
+                acf[start_iteration:end_iteration]
         except KeyError:
             # dataset doesn't exist yet
-            fp.create_dataset(dataset_name, (bb,),
+            fp.create_dataset(dataset_name, (end_iteration,),
                               maxshape=(max_iterations,),
                               dtype=acf.dtype)
-            fp[dataset_name][aa:bb] = acf[aa:bb]
+            fp[dataset_name][start_iteration:end_iteration] = \
+                acf[start_iteration:end_iteration]
 
 
     def write_results(self, fp, start_iteration=0, end_iteration=None,
