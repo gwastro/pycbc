@@ -34,11 +34,13 @@ import os
 import ConfigParser
 import urlparse, urllib
 import logging
+import pycbc
 from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
 from pycbc.workflow.jobsetup import select_tmpltbank_class, select_matchedfilter_class, sngl_ifo_job_setup
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
-                             output_dir=None, psd_files=None, tags=None):
+                             output_dir=None, psd_files=None, tags=None,
+                             return_format=None):
     '''
     Setup template bank section of CBC workflow. This function is responsible
     for deciding which of the various template bank workflow generation
@@ -50,11 +52,11 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
         An instanced class that manages the constructed workflow.
     science_segs : Keyed dictionary of glue.segmentlist objects
         scienceSegs[ifo] holds the science segments to be analysed for each
-        ifo. 
+        ifo.
     datafind_outs : pycbc.workflow.core.FileList
         The file list containing the datafind files.
     output_dir : path string
-        The directory where data products will be placed. 
+        The directory where data products will be placed.
     psd_files : pycbc.workflow.core.FileList
         The file list containing predefined PSDs, if provided.
     tags : list of strings
@@ -71,7 +73,7 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     logging.info("Entering template bank generation module.")
     make_analysis_dir(output_dir)
     cp = workflow.cp
-    
+
     # Parse for options in ini file
     tmpltbankMethod = cp.get_opt_tags("workflow-tmpltbank", "tmpltbank-method",
                                       tags)
@@ -128,9 +130,32 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
         errMsg += "PREGENERATED_BANK, WORKFLOW_INDEPENDENT_IFOS "
         errMsg += "or WORKFLOW_INDEPENDENT_IFOS_NODATA."
         raise ValueError(errMsg)
-    
+
+    # Check the format of the input template bank file and return it in
+    # the format requested as per return_format, provided a conversion
+    # between the two specific formats has been implemented. Currently,
+    # a conversion from xml.gz or xml to hdf is supported, but not vice
+    # versa. If a return_format is not specified the function returns
+    # the bank in the format as it was inputted.
+    tmplt_bank_filename=tmplt_banks[0].name
+    ext = tmplt_bank_filename.split('.', 1)[1]
+    logging.info("Input bank is a %s file", ext)
+    if return_format is None :
+        tmplt_banks_return = tmplt_banks
+    elif return_format == 'hdf' or return_format == 'h5' :
+        if ext == 'hdf' or ext == 'h5' :
+            tmplt_banks_return = tmplt_banks
+        elif ext == 'xml.gz' or ext == 'xml':
+            tmplt_banks_return = pycbc.workflow.convert_bank_to_hdf(workflow,
+                                                        tmplt_banks, "bank")
+    else :
+        if ext == return_format :
+            tmplt_banks_return = tmplt_banks
+        else:
+            raise NotImplementedError("%s to %s conversion is not "
+                                      "supported." % (ext, return_format))
     logging.info("Leaving template bank generation module.")
-    return tmplt_banks
+    return tmplt_banks_return
 
 def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
                                   output_dir, tags=None,
@@ -152,11 +177,11 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
         An instanced class that manages the constructed workflow.
     science_segs : Keyed dictionary of glue.segmentlist objects
         scienceSegs[ifo] holds the science segments to be analysed for each
-        ifo. 
+        ifo.
     datafind_outs : pycbc.workflow.core.FileList
         The file list containing the datafind files.
     output_dir : path string
-        The directory where data products will be placed. 
+        The directory where data products will be placed.
     tags : list of strings
         If given these tags are used to uniquely name and identify output files
         that would be produced in multiple calls to this function.
@@ -178,7 +203,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     cp = workflow.cp
     # Need to get the exe to figure out what sections are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
-    # will require a bit of effort here .... 
+    # will require a bit of effort here ....
 
     ifos = science_segs.keys()
     tmplt_bank_exe = os.path.basename(cp.get('executables', 'tmpltbank'))
@@ -187,7 +212,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
 
     # The exe instance needs to know what data segments are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
-    # will require a bit of effort here .... 
+    # will require a bit of effort here ....
 
     if link_to_matchedfltr:
         # Use this to ensure that inspiral and tmpltbank jobs overlap. This
@@ -210,7 +235,7 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
     # Template banks are independent for different ifos, but might not be!
     # Begin with independent case and add after FIXME
     for ifo in ifos:
-        job_instance = exe_class(workflow.cp, 'tmpltbank', ifo=ifo, 
+        job_instance = exe_class(workflow.cp, 'tmpltbank', ifo=ifo,
                                                out_dir=output_dir,
                                                tags=tags)
         # Check for the write_psd flag
@@ -224,9 +249,9 @@ def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,
                         out_dir=output_dir, tags=tags)
         else:
             link_job_instance = None
-        sngl_ifo_job_setup(workflow, ifo, tmplt_banks, job_instance, 
+        sngl_ifo_job_setup(workflow, ifo, tmplt_banks, job_instance,
                            science_segs[ifo], datafind_outs,
-                           link_job_instance=link_job_instance, 
+                           link_job_instance=link_job_instance,
                            allow_overlap=True,
                            compatibility_mode=compatibility_mode)
     return tmplt_banks
@@ -246,7 +271,7 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
     workflow: pycbc.workflow.core.Workflow
         An instanced class that manages the constructed workflow.
     output_dir : path string
-        The directory where the template bank outputs will be placed. 
+        The directory where the template bank outputs will be placed.
     tags : list of strings
         If given these tags are used to uniquely name and identify output files
         that would be produced in multiple calls to this function.
@@ -266,7 +291,7 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
     cp = workflow.cp
     # Need to get the exe to figure out what sections are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
-    # will require a bit of effort here .... 
+    # will require a bit of effort here ....
 
     ifos = workflow.ifos
     fullSegment = workflow.analysis_time
@@ -296,14 +321,14 @@ def setup_tmpltbank_without_frames(workflow, output_dir,
         exe_instance.write_psd = False
 
     for ifo in ifoList:
-        job_instance = exe_instance(workflow.cp, 'tmpltbank', ifo=ifo, 
+        job_instance = exe_instance(workflow.cp, 'tmpltbank', ifo=ifo,
                                                out_dir=output_dir,
                                                tags=tags,
                                                psd_files=psd_files)
         node = job_instance.create_nodata_node(fullSegment)
         workflow.add_node(node)
         tmplt_banks += node.output_files
-        
+
     return tmplt_banks
 
 def setup_tmpltbank_pregenerated(workflow, tags=None):
@@ -331,7 +356,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
         tags = []
     # Currently this uses the *same* fixed bank for all ifos.
     # Maybe we want to add capability to analyse separate banks in all ifos?
-    
+
     # Set up class for holding the banks
     tmplt_banks = FileList([])
 
@@ -373,6 +398,6 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
                 err_msg += "I looked for 'tmpltbank-pregenerated-bank' option "
                 err_msg += "and 'tmpltbank-pregenerated-bank-%s'." %(ifo,)
                 raise ConfigParser.Error(err_msg)
-            
+
     return tmplt_banks
 
