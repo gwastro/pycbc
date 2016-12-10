@@ -152,25 +152,10 @@ precalc_psd_files = wf.setup_psd_workflow(workflow, analyzable_segs,
                                             datafind_files, "psdfiles")
 
 # Template bank stuff
-bank_files = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
-                                         datafind_files, output_dir="bank",
-                                         psd_files=precalc_psd_files)
-
-# Determine the extension of the bank file taken as input
-cp = workflow.cp
-tmpltbankMethod = cp.get_opt_tags("workflow-tmpltbank", "tmpltbank-method", '')
-if tmpltbankMethod == "PREGENERATED_BANK":
-    pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
-                                           'tmpltbank-pregenerated-bank', '')
-    bank_filename, ext = (pre_gen_bank.split('/')[-1].split('.'))
-
-# If the bank is a hdf or h5 file do not change the format. If not,
-# convert it to hdf
-if ext == 'hdf' or ext == 'h5' :
-    hdfbank = bank_files
-else :
-    hdfbank = wf.convert_bank_to_hdf(workflow, bank_files, "bank")
-logging.info("Input bank is a %s file", ext)
+hdfbank = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
+                                      datafind_files, output_dir="bank",
+                                      psd_files=precalc_psd_files,
+                                      return_format='hdf')
 
 splitbank_files_fd = wf.setup_splittable_workflow(workflow, hdfbank,
                                                   out_dir="bank",
