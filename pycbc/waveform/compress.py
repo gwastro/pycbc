@@ -30,7 +30,7 @@ from pycbc import WEAVE_FLAGS, DYN_RANGE_FAC
 from scipy.weave import inline
 from scipy import interpolate
 from scipy.interpolate import splrep
-from pycbc.types import FrequencySeries, zeros, real_same_precision_as
+from pycbc.types import FrequencySeries, real_same_precision_as
 from pycbc.waveform import utils
 
 def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
@@ -347,7 +347,6 @@ def partial_rom_compression(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
     amp_freq_points = amp_freq_points/Mtot_sec
     phase_freq_points = phase_freq_points/Mtot_sec
     fmin_interp = max(amp_freq_points.min(), phase_freq_points.min())
-    fmax_interp = min(amp_freq_points.max(), phase_freq_points.max())
 
     # Perform the frequency space interpolation to get the decompressed waveform
     hdecomp = fd_decompress(amp_interp_points, phase_interp_points,
@@ -383,7 +382,7 @@ def partial_rom_compression(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
     # Calculated the match and then the mismatch between htilde and
     # hdecomp
     match, _ = filter.match(hdecomp_cut, htilde_cut, low_frequency_cutoff=fLow, high_frequency_cutoff=high_frequency_cutoff)
-    logging.info("match=%.10f"%match)
+    logging.info("match=%.10f", match)
     mismatch = 1.0-match
     logging.info("mismatch: %.10f, for low_frequency_cutoff = %.1f and high_frequency_cutoff = %.1f", \
                  mismatch, fLow, high_frequency_cutoff)
