@@ -57,7 +57,7 @@ parser.add_argument('--veto-window', type=float, default=.1,
 parser.add_argument('--veto-window-hierarch', type=float, default=1.0,
                     help='Time around each trigger to window out for a very '
                          'louder trigger in the hierarchical removal '
-                         'procedure.')
+                         'procedure. [default=1.0s]')
 parser.add_argument('--cont-hier-removal', action='store_true',
                     default='store_false', 
                     help='Use this option to do continuous hierarchical '
