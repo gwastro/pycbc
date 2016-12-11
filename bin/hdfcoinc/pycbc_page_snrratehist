@@ -110,21 +110,7 @@ if fstat is not None and not args.closed_box:
         # find them in our data set
         fstat_unsorted = f['foreground/stat'][:]
 
-        save_h_removed_indices = []
-
-        ifar_check = f['foreground/ifar'][:]
-        ifar_max = max(ifar_check)
-
-        for i in range(0, len(fstat_unsorted)):
-            if ifar_check[i] == ifar_max: 
-                save_h_removed_indices.append(i)
-            # There is a case that the code finds a trigger louder than the
-            # inclusive background but if --max-hier-removal is set too low
-            # then it didn't actually hierarchically remove the trigger.
-            # So break if that happens (it will mark a trigger as having been
-            # hierarchically removed when it hasn't been without this line.
-            if len(save_h_removed_indices) == h_iterations:
-                break
+        save_h_removed_indices = f['hierarchically-removed-fore-indices'][:]
 
         fstat_h_rm = fstat_unsorted[save_h_removed_indices]
         fstat_h_rm = numpy.sort(fstat_h_rm)
