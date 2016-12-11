@@ -472,9 +472,9 @@ class BaseMCMCSampler(_BaseSampler):
             max_iterations = acf.size
 
         try:
-            if bb > fp[dataset_name].size:
+            if end_iteration > fp[dataset_name].size:
                 # resize the dataset
-                fp[dataset_name].resize(bb, axis=0)
+                fp[dataset_name].resize(end_iteration, axis=0)
             fp[dataset_name][start_iteration:end_iteration] = \
                 acf[start_iteration:end_iteration]
         except KeyError:
