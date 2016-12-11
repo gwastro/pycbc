@@ -72,6 +72,17 @@ parser.add_argument('--max-hier-removal', type=int, default=0,
                          'first: that there are no more hierarchical removals '
                          'to do or write the triggers for the max '
                          'hierarchical removal stage selected. [default=0] ')
+parser.add_argument('--store-last-h-rm-background', action='store_true',
+                    default='store_false',
+                    help='Toggle whether the user wants to store the '
+                         'inclusive background from the last iteration '
+                         'of hierarchical removal. If not indicated '
+                         'the final inclusive background triggers will '
+                         'be the inclusive background prior to hierarchical '
+                         'removal. (Note: The output file still stores '
+                         'the inclusive background from each hierarchical '
+                         'removal, but they are not stored as -final- results.'
+                         ' [default=false]')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -473,13 +484,22 @@ if len(save_these_fore_ind) > 0:
     save_ifar_fore_trig = save_ifar_fore_trig[sort_like_this]
     save_fap_fore_trig = save_fap_fore_trig[sort_like_this]
 
+    # The indices of hierarchically removed indices will shift around as
+    # we put them back into the list of foreground triggers. So save the
+    # final foreground trigger indices for writing to file.
+    final_fore_ind = []
+
     for i in range(0, len(save_these_fore_ind)):
         # Handle the edge case that you have to add to the end of the list
-        # if your array of ifar has gotten too small
+        # if your array of ifar has gotten too small. Also save final
+        # foreground indices for writing to file.
         if save_these_fore_ind[i] > len(ifar):
             ifar = np.append(ifar, save_ifar_fore_trig[i])
+            final_fore_ind.append(save_ifar_fore_trig[i])
         else :
             ifar = np.insert(ifar, save_these_fore_ind[i] + i, save_ifar_fore_trig[i])
+            final_fore_ind.append(save_these_fore_ind[i] + i)
+
         if save_these_fore_ind[i] > len(fap):
             fap = np.append(fap, save_fap_fore_trig[i])
         else :
@@ -487,6 +507,10 @@ if len(save_these_fore_ind) > 0:
 
     f['foreground/ifar'] = sec_to_year(ifar)
     f['foreground/fap'] = fap
+
+    # Write the foreground indices that have been hierarchical removed for
+    # programs downstream.
+    f['hierarchically-removed-fore-indices'] = np.array(final_fore_ind[:])
 
 # If we didn't do any hierarchical removal write out the foreground information
 # This also works in the case that there were not any foreground triggers.
@@ -498,15 +522,26 @@ else :
     f['foreground/ifar'] = f['foreground_h_iter0/ifar']
     f['foreground/fap'] = f['foreground_h_iter0/fap']
 
-# Write the values of the last h_iteration for the background and everything else too.
-# CONTROVERSIAL: Which one do I write to file?
-for k in all_trigs.data:
-    f['background/' + k] = f['background_h_iter' + h_iter_string + '/' +k]
+# Write the values of the last h_iteration for the inclusive background if
+# the user has indicated this is what they want to do.
+if args.store_last_h_rm_background == True:
+    for k in all_trigs.data:
+        f['background/' + k] = f['background_h_iter' + h_iter_string + '/' +k]
 
-f['background/ifar'] = f['background_h_iter' + h_iter_string + '/ifar']
-f.attrs['background_time'] = f.attrs['background_time_h_iter' + h_iter_string]
+    f['background/ifar'] = f['background_h_iter' + h_iter_string + '/ifar']
+    f.attrs['background_time'] = f.attrs['background_time_h_iter' + h_iter_string]
 
-# This is controversial, if all of the foreground times are put back in
+# The default is to store the inclusive background from before any
+# hierarchical removals.
+else :
+    for k in all_trigs.data:
+        f['background/' + k] = f['background_h_iter0/' +k]
+
+    f['background/ifar'] = f['background_h_iter0/ifar']
+    f.attrs['background_time'] = f.attrs['background_time_h_iter0']
+
+
+# This may be controversial, if all of the foreground times are put back in
 # I have write the coinc_time from h_iterations = 0.
 f.attrs['foreground_time'] = f.attrs['foreground_time_h_iter0']
 
