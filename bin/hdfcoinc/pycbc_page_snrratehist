@@ -49,7 +49,6 @@ else:
     if len(fstat) == 0:
         fstat = None
 
-
 dec = f['background/decimation_factor'][:]
 bstat = f['background/stat'][:]
 fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
@@ -63,13 +62,12 @@ bstat_exc = f['background_exc/stat'][:]
 s = bstat_exc.argsort()
 dec_exc, bstat_exc = dec_exc[s], bstat_exc[s]
 
-
 logging.info('Found %s background (exclusive zerolag) triggers' % len(bstat_exc))
 
 fig = pylab.figure()
 
 if fstat is not None:
-    minimum = fstat.min()
+    minimum = min(fstat.min(), bstat.min())
     maximum = max(fstat.max(), bstat.max())
 elif args.closed_box:
     minimum = bstat_exc.min()
@@ -103,6 +101,43 @@ if fstat is not None and not args.closed_box:
     pylab.errorbar(bins[:-1] + args.bin_size / 2, count,
                    xerr=args.bin_size/2, label='Foreground',
                    mec='none', fmt='o', ms=1, capthick=0, elinewidth=4,  color='#ff6600')
+
+    # We need to plot a second histogram "errorbar" with the hierarchically
+    # removed foreground triggers in red.
+    h_iterations = f['hierarchical_removal_iterations'][0]
+    if h_iterations > 0:
+        # If there were any hierarchically removed foreground triggers let's
+        # find them in our data set
+        fstat_unsorted = f['foreground/stat'][:]
+
+        save_h_removed_indices = []
+
+        ifar_check = f['foreground/ifar'][:]
+        ifar_max = max(ifar_check)
+
+        for i in range(0, len(fstat_unsorted)):
+            if ifar_check[i] == ifar_max: 
+                save_h_removed_indices.append(i)
+            # There is a case that the code finds a trigger louder than the
+            # inclusive background but if --max-hier-removal is set too low
+            # then it didn't actually hierarchically remove the trigger.
+            # So break if that happens (it will mark a trigger as having been
+            # hierarchically removed when it hasn't been without this line.
+            if len(save_h_removed_indices) == h_iterations:
+                break
+
+        fstat_h_rm = fstat_unsorted[save_h_removed_indices]
+        fstat_h_rm = numpy.sort(fstat_h_rm)
+        left_h_rm = numpy.searchsorted(fstat_h_rm, le)
+        right_h_rm = numpy.searchsorted(fstat_h_rm, re)
+        count_h_rm = (right_h_rm - left_h_rm) / f.attrs['foreground_time'] * \
+                     lal.YRJUL_SI
+
+        pylab.errorbar(bins[:-1] + args.bin_size / 2, count_h_rm,
+                       xerr=args.bin_size/2,
+                       label='Hierarchically Removed Foreground', mec='none',
+                       fmt='o', ms=1, capthick=0, elinewidth=4,
+                       color='#ff0000')
 
 pylab.xlabel('Weighted Network SNR, $\\rho_c$ (Bin Size = %.2f)' % args.bin_size)
 pylab.ylabel('Trigger Rate (yr$^{-1})$')
@@ -153,4 +188,3 @@ pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="%s bin, Count vs Rank" % f.attrs['name'] if 'name' in f.attrs else "Count vs Rank", 
      caption="Histogram of the FAR vs the ranking statistic in the search.",
      cmd=' '.join(sys.argv))
-             
