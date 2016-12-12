@@ -110,7 +110,7 @@ if fstat is not None and not args.closed_box:
         # find them in our data set
         fstat_unsorted = f['foreground/stat'][:]
 
-        save_h_removed_indices = f['hierarchically-removed-fore-indices'][:]
+        save_h_removed_indices = f['hierarchical_removed_fore_indices'][:]
 
         fstat_h_rm = fstat_unsorted[save_h_removed_indices]
         fstat_h_rm = numpy.sort(fstat_h_rm)

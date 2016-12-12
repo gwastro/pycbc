@@ -7,13 +7,11 @@ the capability of doing hierarchical removal of foreground triggers that are
 louder than all of the background triggers. We use this to properly assess 
 the FANs of any other gravitational waves in the dataset.
 """
-import sys
-import argparse, h5py, logging, itertools, numpy
-import lal
-import copy
-import numpy as np
+import argparse, copy, h5py, itertools
+import lal, logging, numpy 
 from pycbc.events import veto, coinc
 import pycbc.version, pycbc.pnutils, pycbc.io
+import sys
 
 def sec_to_year(sec):
     return sec / lal.YRJUL_SI
@@ -169,20 +167,20 @@ f.attrs['timeslide_interval'] = all_trigs.attrs['timeslide_interval']
 h_iter_string = str(h_iterations)
 # Copy over the segment for coincs and singles
 for key in all_trigs.seg.keys():
-    f['segments_h_iter' + h_iter_string + '/%s/start' % key] = all_trigs.seg[key]['start'][:]
-    f['segments_h_iter' + h_iter_string + '/%s/end' % key] = all_trigs.seg[key]['end'][:]
+    f['segments_h/h_iter' + h_iter_string + '/%s/start' % key] = all_trigs.seg[key]['start'][:]
+    f['segments_h/h_iter' + h_iter_string + '/%s/end' % key] = all_trigs.seg[key]['end'][:]
 
 if fore_locs.sum() > 0:
-    f['segments_h_iter' + h_iter_string + '/foreground_veto/start'] = veto_start_time
-    f['segments_h_iter' + h_iter_string + '/foreground_veto/end'] = veto_end_time
+    f['segments_h/h_iter' + h_iter_string + '/foreground_veto/start'] = veto_start_time
+    f['segments_h/h_iter' + h_iter_string + '/foreground_veto/end'] = veto_end_time
     for k in all_trigs.data:
-        f['foreground_h_iter' + h_iter_string + '/' + k] = all_trigs.data[k][fore_locs]
+        f['foreground_h/h_iter' + h_iter_string + '/' + k] = all_trigs.data[k][fore_locs]
 else:
     # Put SOMETHING in here to avoid failures later
-    f['segments_h_iter' + h_iter_string + '/foreground_veto/start'] = numpy.array([0])
-    f['segments_h_iter' + h_iter_string + '/foreground_veto/end'] = numpy.array([0])
+    f['segments_h/h_iter' + h_iter_string + '/foreground_veto/start'] = numpy.array([0])
+    f['segments_h/h_iter' + h_iter_string + '/foreground_veto/end'] = numpy.array([0])
     for k in all_trigs.data:
-        f['foreground_h_iter/' + k] = numpy.array([], dtype=all_trigs.data[k].dtype)
+        f['foreground_h/h_iter/' + k] = numpy.array([], dtype=all_trigs.data[k].dtype)
 
 # If the sum of all Booleans in the array (1 = True, 0 = False) is False,
 # then there aren't any background triggers. So leave!
@@ -193,7 +191,7 @@ if (back_locs.sum()) == 0:
 
 logging.info("Dumping background triggers (inclusive of zerolag)")
 for k in all_trigs.data:
-    f['background_h_iter' + h_iter_string + '/' + k] = all_trigs.data[k][back_locs]
+    f['background_h/h_iter' + h_iter_string + '/' + k] = all_trigs.data[k][back_locs]
     
 logging.info("Dumping background triggers (exclusive of zerolag)")   
 for k in exc_zero_trigs.data:
@@ -228,12 +226,12 @@ back_cnum_exc, fnlouder_exc = coinc.calculate_n_louder(exc_zero_trigs.stat,
                                                        fore_stat,
                                                        exc_zero_trigs.decimation_factor)
 
-f['background_h_iter' + h_iter_string + '/ifar'] = sec_to_year(background_time / (back_cnum + 1))  
+f['background_h/h_iter' + h_iter_string + '/ifar'] = sec_to_year(background_time / (back_cnum + 1))  
 f['background_exc/ifar'] = sec_to_year(background_time_exc / (back_cnum_exc + 1))
 
-f.attrs['background_time_h_iter' + h_iter_string] = background_time
+f.attrs['background_time_h/h_iter' + h_iter_string] = background_time
 
-f.attrs['foreground_time_h_iter' + h_iter_string] = coinc_time
+f.attrs['foreground_time_h/h_iter' + h_iter_string] = coinc_time
 f.attrs['background_time_exc'] = background_time_exc
 f.attrs['foreground_time_exc'] = coinc_time_exc
 
@@ -242,18 +240,18 @@ logging.info("calculating ifar/fap values")
 if fore_locs.sum() > 0:
     ifar = background_time / (fnlouder + 1)
     fap = 1 - numpy.exp(- coinc_time / ifar)
-    f['foreground_h_iter' + h_iter_string + '/ifar'] = sec_to_year(ifar)
-    f['foreground_h_iter' + h_iter_string + '/fap'] = fap
+    f['foreground_h/h_iter' + h_iter_string + '/ifar'] = sec_to_year(ifar)
+    f['foreground_h/h_iter' + h_iter_string + '/fap'] = fap
 
     ifar_exc = background_time_exc / (fnlouder_exc + 1)
     fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
     f['foreground/ifar_exc'] = sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
 else:
-    f['foreground_h_iter' + h_iter_string + '/ifar'] = numpy.array([])
-    f['foreground_h_iter' + h_iter_string + '/fap'] = numpy.array([])
-    f['foreground_h_iter' + h_iter_string + '/ifar_exc'] = numpy.array([])
-    f['foreground_h_iter' + h_iter_string + '/fap_exc'] = numpy.array([])
+    f['foreground_h/h_iter' + h_iter_string + '/ifar'] = numpy.array([])
+    f['foreground_h/h_iter' + h_iter_string + '/fap'] = numpy.array([])
+    f['foreground_h/h_iter' + h_iter_string + '/ifar_exc'] = numpy.array([])
+    f['foreground_h/h_iter' + h_iter_string + '/fap_exc'] = numpy.array([])
 
 if 'name' in all_trigs.attrs:
     f.attrs['name'] = all_trigs.attrs['name']
@@ -277,9 +275,9 @@ for i in range(0, len(fnlouder)):
 # Create arrays to save far and fap of hierarchically removed
 # foreground triggers
 
-save_ifar_fore_trig = np.array([], dtype=float)
-save_fap_fore_trig = np.array([], dtype=float)
-save_these_fore_ind = np.array([], dtype=int)
+save_ifar_fore_trig = numpy.array([], dtype=float)
+save_fap_fore_trig = numpy.array([], dtype=float)
+save_these_fore_ind = numpy.array([], dtype=int)
 
 # Use a copy of the original triggers befpre hierarchical removal
 # to regenerate hierarchically removed foreground triggers
@@ -320,14 +318,13 @@ while len(loud_t_ind) > 0:
 
     # Store where the loud foreground trigger that I want to remove next in the
     # list of all of the triggers located is at
-    where_is_fore_t = np.where(all_trigs.stat[:] == fore_stat[max_ifar_ind])
+    where_is_fore_t = numpy.where(all_trigs.stat[:] == fore_stat[max_ifar_ind])
 
     # FIXME:
     # In the RARE case that there are two equally loud
     # louder-than-the-background foreground triggers give preference
     # to the one with the earliest GPS time, just for documenting purposes
     if len(where_is_fore_t[0]) > 1:
-        # where_is_fore_t[0] = np.argsort(all_trigs.time1[where_is_fore_t[0][:]])
         logging.warn("WARNING: There is more than one foreground trigger "
                      " that is louder than the background and have the same "
                      "ranking statistic. This code may operate strangely in"
@@ -340,16 +337,16 @@ while len(loud_t_ind) > 0:
     # Store any foreground trigger's information that we want to
     # hierarchically remove. Below save the ifar.
 
-    save_ifar_fore_trig = np.append(save_ifar_fore_trig, ifar[max_ifar_ind])
+    save_ifar_fore_trig = numpy.append(save_ifar_fore_trig, ifar[max_ifar_ind])
     # The following equation should be safe bcause coinc_time
     # will only be reassigned after we remove this trigger for the
     # next quietest louder-than-the-inclusive-background foreground
     # trigger.
-    save_fap_fore_trig = np.append(save_fap_fore_trig, \
+    save_fap_fore_trig = numpy.append(save_fap_fore_trig, \
                                    1 - numpy.exp(- coinc_time / ifar[max_ifar_ind]))
 
     # Save the location in the foreground trigger array too
-    save_these_fore_ind = np.append(save_these_fore_ind, max_ifar_ind)
+    save_these_fore_ind = numpy.append(save_these_fore_ind, max_ifar_ind)
 
     logging.info("Removing foreground trigger that is louder than the inclusive background.")
 
@@ -365,7 +362,7 @@ while len(loud_t_ind) > 0:
     ind_to_rm_ifo2 = veto.indices_within_times(all_trigs.time2, \
                               [all_trigs.time2[my_loudest_ind] - args.veto_window_hierarch], \
                               [all_trigs.time2[my_loudest_ind] + args.veto_window_hierarch])
-    indices_to_rm = np.concatenate([ind_to_rm_ifo1, ind_to_rm_ifo2])
+    indices_to_rm = numpy.concatenate([ind_to_rm_ifo1, ind_to_rm_ifo2])
 
     all_trigs = all_trigs.remove(indices_to_rm)
 
@@ -401,19 +398,19 @@ while len(loud_t_ind) > 0:
     logging.info("Dumping foreground triggers")
 
     for key in all_trigs.seg.keys():
-        f['segments_h_iter' + h_iter_string + '/%s/start' % key] = all_trigs.seg[key]['start'][:]
-        f['segments_h_iter' + h_iter_string + '/%s/end' % key] = all_trigs.seg[key]['end'][:]
+        f['segments_h/h_iter' + h_iter_string + '/%s/start' % key] = all_trigs.seg[key]['start'][:]
+        f['segments_h/h_iter' + h_iter_string + '/%s/end' % key] = all_trigs.seg[key]['end'][:]
 
     if fore_locs.sum() > 0:
-        f['segments_h_iter' + h_iter_string + '/foreground_veto/start'] = veto_start_time
-        f['segments_h_iter' + h_iter_string + '/foreground_veto/end'] = veto_end_time
+        f['segments_h/h_iter' + h_iter_string + '/foreground_veto/start'] = veto_start_time
+        f['segments_h/h_iter' + h_iter_string + '/foreground_veto/end'] = veto_end_time
         for k in all_trigs.data:
-            f['foreground_h_iter' + h_iter_string + '/' + k] = all_trigs.data[k][fore_locs]
+            f['foreground_h/h_iter' + h_iter_string + '/' + k] = all_trigs.data[k][fore_locs]
     else:
-         f['segments_h_iter' + h_iter_string + '/foreground_veto/start'] = numpy.array([0])
-         f['segments_h_iter' + h_iter_string + '/foreground_veto/end'] = numpy.array([0])
+         f['segments_h/h_iter' + h_iter_string + '/foreground_veto/start'] = numpy.array([0])
+         f['segments_h/h_iter' + h_iter_string + '/foreground_veto/end'] = numpy.array([0])
          for k in all_trigs.data:
-             f['foreground_h_iter' + h_iter_string + '/' + k] = numpy.array([], dtype=all_trigs.data[k].dtype)
+             f['foreground_h/h_iter' + h_iter_string + '/' + k] = numpy.array([], dtype=all_trigs.data[k].dtype)
 
     if (back_locs.sum()) == 0:
          logging.warn("There were no background events, so we could not assign "
@@ -422,7 +419,7 @@ while len(loud_t_ind) > 0:
 
     logging.info("Dumping background triggers (inclusive of zerolag)")
     for k in all_trigs.data:
-         f['background_h_iter' + h_iter_string + '/' + k] = all_trigs.data[k][back_locs]
+         f['background_h/h_iter' + h_iter_string + '/' + k] = all_trigs.data[k][back_locs]
 
     maxtime = max(all_trigs.attrs['foreground_time1'], all_trigs.attrs['foreground_time2'])
     mintime = min(all_trigs.attrs['foreground_time1'], all_trigs.attrs['foreground_time2'])
@@ -440,16 +437,16 @@ while len(loud_t_ind) > 0:
 
     logging.info("Calculating ifar/fap values")
 
-    f['background_h_iter' + h_iter_string + '/ifar'] = sec_to_year(background_time / (back_cnum + 1))
-    f.attrs['background_time_h_iter' + h_iter_string] = background_time
-    f.attrs['foreground_time_h_iter' + h_iter_string] = coinc_time
+    f['background_h/h_iter' + h_iter_string + '/ifar'] = sec_to_year(background_time / (back_cnum + 1))
+    f.attrs['background_time_h/h_iter' + h_iter_string] = background_time
+    f.attrs['foreground_time_h/h_iter' + h_iter_string] = coinc_time
 
     if fore_locs.sum() > 0:
         ifar = background_time / (fnlouder + 1)
         fap = 1 - numpy.exp(- coinc_time / ifar)
 
-        f['foreground_h_iter' + h_iter_string + '/ifar'] = sec_to_year(ifar)
-        f['foreground_h_iter' + h_iter_string + '/fap'] = fap
+        f['foreground_h/h_iter' + h_iter_string + '/ifar'] = sec_to_year(ifar)
+        f['foreground_h/h_iter' + h_iter_string + '/fap'] = fap
 
     # Repopulate the list of foreground indices for the loudest events 
     loud_t_ind = []
@@ -462,18 +459,18 @@ while len(loud_t_ind) > 0:
 logging.info("Writing final calculations to file")
 
 for key in all_trigs.seg.keys():
-    f['segments/%s/start' % key] = f['segments_h_iter0/%s/start' % key]
-    f['segments/%s/end' % key] = f['segments_h_iter0/%s/end' % key]
+    f['segments/%s/start' % key] = f['segments_h/h_iter0/%s/start' % key]
+    f['segments/%s/end' % key] = f['segments_h/h_iter0/%s/end' % key]
 
 # If there were hierarchically removed foreground triggers, please  write
 # them back into the file with the correct statistics.
 if len(save_these_fore_ind) > 0:
 #   CONTROVERSIAL: Which one do I write here? It won't match if I write the background
 #   back for the last iteration. I don't know what to use.
-    f['segments/foreground_veto/start'] = f['segments_h_iter0/foreground_veto/start']
-    f['segments/foreground_veto/end'] =  f['segments_h_iter0/foreground_veto/end']
+    f['segments/foreground_veto/start'] = f['segments_h/h_iter0/foreground_veto/start']
+    f['segments/foreground_veto/end'] =  f['segments_h/h_iter0/foreground_veto/end']
     for k in copy_trigs.data:
-        f['foreground/' + k] = f['foreground_h_iter0/' + k]
+        f['foreground/' + k] = f['foreground_h/h_iter0/' + k]
  
     # We won't run into trouble inserting the foreground triggers back in
     # if we insert them in from least to greatest. Otherwise we could really
@@ -494,61 +491,63 @@ if len(save_these_fore_ind) > 0:
         # if your array of ifar has gotten too small. Also save final
         # foreground indices for writing to file.
         if save_these_fore_ind[i] > len(ifar):
-            ifar = np.append(ifar, save_ifar_fore_trig[i])
+            ifar = numpy.append(ifar, save_ifar_fore_trig[i])
             final_fore_ind.append(save_ifar_fore_trig[i])
         else :
-            ifar = np.insert(ifar, save_these_fore_ind[i] + i, save_ifar_fore_trig[i])
+            ifar = numpy.insert(ifar, save_these_fore_ind[i] + i,
+                                save_ifar_fore_trig[i])
             final_fore_ind.append(save_these_fore_ind[i] + i)
 
         if save_these_fore_ind[i] > len(fap):
-            fap = np.append(fap, save_fap_fore_trig[i])
+            fap = numpy.append(fap, save_fap_fore_trig[i])
         else :
-            fap = np.insert(fap, save_these_fore_ind[i] + i, save_fap_fore_trig[i])
+            fap = numpy.insert(fap, save_these_fore_ind[i] + i,
+                            save_fap_fore_trig[i])
 
     f['foreground/ifar'] = sec_to_year(ifar)
     f['foreground/fap'] = fap
 
     # Write the foreground indices that have been hierarchical removed for
     # programs downstream.
-    f['hierarchically-removed-fore-indices'] = np.array(final_fore_ind[:])
+    f['hierarchical_removed_fore_indices'] = numpy.array(final_fore_ind[:])
 
 # If we didn't do any hierarchical removal write out the foreground information
 # This also works in the case that there were not any foreground triggers.
 else :
-    f['segments/foreground_veto/start'] = f['segments_h_iter0/foreground_veto/start']
-    f['segments/foreground_veto/end'] =  f['segments_h_iter0/foreground_veto/end']
+    f['segments/foreground_veto/start'] = f['segments_h/h_iter0/foreground_veto/start']
+    f['segments/foreground_veto/end'] =  f['segments_h/h_iter0/foreground_veto/end']
     for k in all_trigs.data:
-        f['foreground/' + k] = f['foreground_h_iter0/' + k]
-    f['foreground/ifar'] = f['foreground_h_iter0/ifar']
-    f['foreground/fap'] = f['foreground_h_iter0/fap']
+        f['foreground/' + k] = f['foreground_h/h_iter0/' + k]
+    f['foreground/ifar'] = f['foreground_h/h_iter0/ifar']
+    f['foreground/fap'] = f['foreground_h/h_iter0/fap']
 
 # Write the values of the last h_iteration for the inclusive background if
 # the user has indicated this is what they want to do.
 if args.store_last_h_rm_background == True:
     for k in all_trigs.data:
-        f['background/' + k] = f['background_h_iter' + h_iter_string + '/' +k]
+        f['background/' + k] = f['background_h/h_iter' + h_iter_string + '/' +k]
 
-    f['background/ifar'] = f['background_h_iter' + h_iter_string + '/ifar']
-    f.attrs['background_time'] = f.attrs['background_time_h_iter' + h_iter_string]
+    f['background/ifar'] = f['background_h/h_iter' + h_iter_string + '/ifar']
+    f.attrs['background_time'] = f.attrs['background_time_h/h_iter' + h_iter_string]
 
 # The default is to store the inclusive background from before any
 # hierarchical removals.
 else :
     for k in all_trigs.data:
-        f['background/' + k] = f['background_h_iter0/' +k]
+        f['background/' + k] = f['background_h/h_iter0/' +k]
 
-    f['background/ifar'] = f['background_h_iter0/ifar']
-    f.attrs['background_time'] = f.attrs['background_time_h_iter0']
+    f['background/ifar'] = f['background_h/h_iter0/ifar']
+    f.attrs['background_time'] = f.attrs['background_time_h/h_iter0']
 
 
 # This may be controversial, if all of the foreground times are put back in
 # I have write the coinc_time from h_iterations = 0.
-f.attrs['foreground_time'] = f.attrs['foreground_time_h_iter0']
+f.attrs['foreground_time'] = f.attrs['foreground_time_h/h_iter0']
 
 # Write to file how many hierarchical removals were implemented, this number
 # will be used in the plotting code downstream.
 
-f['hierarchical_removal_iterations'] = np.array([h_iterations])
+f['hierarchical_removal_iterations'] = numpy.array([h_iterations])
 
 f.close()
 logging.info("Done") 
