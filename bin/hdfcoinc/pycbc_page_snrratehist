@@ -95,14 +95,7 @@ if not args.closed_box:
 
 if fstat is not None and not args.closed_box:
     le, re = bins[:-1], bins[1:]
-    left = numpy.searchsorted(fstat, le)
-    right = numpy.searchsorted(fstat, re)
-    count = (right - left) / f.attrs['foreground_time'] * lal.YRJUL_SI
-    pylab.errorbar(bins[:-1] + args.bin_size / 2, count,
-                   xerr=args.bin_size/2, label='Foreground',
-                   mec='none', fmt='o', ms=1, capthick=0, elinewidth=4,  color='#ff6600')
-
-    # We need to plot a second histogram "errorbar" with the hierarchically
+    # We need to plot a histogram "errorbar" with the hierarchically
     # removed foreground triggers in red.
     h_iterations = f['hierarchical_removal_iterations'][0]
     if h_iterations > 0:
@@ -114,6 +107,15 @@ if fstat is not None and not args.closed_box:
 
         fstat_h_rm = fstat_unsorted[save_h_removed_indices]
         fstat_h_rm = numpy.sort(fstat_h_rm)
+
+        # Remove any hierarchically removed foreground triggers from the list
+        # of foreground triggers.
+
+        fstat_unsorted = numpy.delete(fstat_unsorted, save_h_removed_indices)
+        fstat = fstat_unsorted
+        fstat = numpy.sort(fstat)
+
+        # Write "histogram" information.
         left_h_rm = numpy.searchsorted(fstat_h_rm, le)
         right_h_rm = numpy.searchsorted(fstat_h_rm, re)
         count_h_rm = (right_h_rm - left_h_rm) / f.attrs['foreground_time'] * \
@@ -124,6 +126,13 @@ if fstat is not None and not args.closed_box:
                        label='Hierarchically Removed Foreground', mec='none',
                        fmt='o', ms=1, capthick=0, elinewidth=4,
                        color='#ff0000')
+
+    left = numpy.searchsorted(fstat, le)
+    right = numpy.searchsorted(fstat, re)
+    count = (right - left) / f.attrs['foreground_time'] * lal.YRJUL_SI
+    pylab.errorbar(bins[:-1] + args.bin_size / 2, count,
+                   xerr=args.bin_size/2, label='Foreground',
+                   mec='none', fmt='o', ms=1, capthick=0, elinewidth=4,  color='#ff6600')
 
 pylab.xlabel('Weighted Network SNR, $\\rho_c$ (Bin Size = %.2f)' % args.bin_size)
 pylab.ylabel('Trigger Rate (yr$^{-1})$')
