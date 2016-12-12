@@ -46,7 +46,7 @@ class BanksimExecutable(wf.Executable):
     """Class for running pycbc_banksim
     """
     # This can be altered if you don't always want to store output files
-    current_retention_level = wf.Executable.FINAL_RESULT
+    current_retention_level = wf.Executable.ALL_TRIGGERS
 
     file_input_options = ['--psd-file', '--asd-file']
 
@@ -64,7 +64,7 @@ class BanksimBankCombineExecutable(wf.Executable):
     """Class for running pycbc_banksim_combine_banks
     """
     # This can be altered if you don't always want to store output files
-    current_retention_level = wf.Executable.FINAL_RESULT
+    current_retention_level = wf.Executable.ALL_TRIGGERS
 
     def create_node(self, analysis_time, inp_files, extra_tags=None):
         if extra_tags is None:
@@ -81,13 +81,15 @@ class BanksimMatchCombineExecutable(wf.Executable):
     # This can be altered if you don't always want to store output files
     current_retention_level = wf.Executable.FINAL_RESULT
 
-    def create_node(self, analysis_time, match_files, inj_files,
+    def create_node(self, analysis_time, match_files, inj_files, bank_files,
                     extra_tags=None):
         if extra_tags is None:
             extra_tags = []
         node = wf.Executable.create_node(self)
         node.add_input_list_opt('--match-files', match_files)
         for curr_file in inj_files:
+            node._add_input(curr_file)
+        for curr_file in bank_files:
             node._add_input(curr_file)
         node.new_output_file_opt(analysis_time, '.dat', '--output-file',
                                  tags=self.tags + extra_tags)
@@ -169,7 +171,7 @@ def add_banksim_set(workflow, file_tag, num_injs, curr_tags, split_banks):
         workflow += curr_node
         banksim_files.append(curr_node.output_file)
     curr_node = mcombine_job.create_node(workflow.analysis_time, banksim_files,
-                                         split_injs)
+                                         split_injs, split_banks)
     workflow += curr_node
     return curr_node.output_file
 
