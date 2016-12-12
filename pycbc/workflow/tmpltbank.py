@@ -142,14 +142,14 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     logging.info("Input bank is a %s file", ext)
     if return_format is None :
         tmplt_banks_return = tmplt_banks
-    elif return_format in ('hdf', 'h5') :
-        if ext in ('hdf', 'h5') :
+    elif return_format in ('hdf', 'h5', 'hdf5'):
+        if ext in ('hdf', 'h5', 'hdf5'):
             tmplt_banks_return = tmplt_banks
-        elif ext in ('xml.gz' , 'xml') :
+        elif ext in ('xml.gz' , 'xml'):
             tmplt_banks_return = pycbc.workflow.convert_bank_to_hdf(workflow,
                                                         tmplt_banks, "bank")
     else :
-        if ext == return_format :
+        if ext == return_format:
             tmplt_banks_return = tmplt_banks
         else:
             raise NotImplementedError("{0} to {1} conversion is not "
