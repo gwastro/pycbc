@@ -442,7 +442,8 @@ with ctx:
     if opts.checkpoint_interval:
 
         # determine intervals to run sampler until we save the new samples 
-        intervals = [i for i in range(0, opts.niterations, opts.checkpoint_interval)]
+        intervals = [i for i in range(0, opts.niterations,
+                                      opts.checkpoint_interval)]
 
         # determine if there is a small bit at the end
         remainder = opts.niterations % opts.checkpoint_interval
@@ -481,14 +482,16 @@ with ctx:
         # run sampler and set initial values to None so that sampler
         # picks up from where it left off next call
         logging.info("Running sampler for %i to %i out of %i iterations"%(
-            start-n_burnin,end-n_burnin,opts.niterations))
+            start-n_burnin, end-n_burnin, opts.niterations))
         sampler.run(end-start)
 
         # write new samples
         with InferenceFile(opts.output_file, "a") as fp:
 
             logging.info("Writing results to file")
-            sampler.write_results(fp, max_iterations=opts.niterations+n_burnin)
+            sampler.write_results(fp, start_iteration=start,
+                                  end_iteration=end,
+                                  max_iterations=opts.niterations+n_burnin)
 
             if not opts.checkpoint_fast or end == opts.niterations:
 
@@ -503,6 +506,10 @@ with ctx:
                     sampler.write_logevidence(fp, lnz, dlnz)
                 except NotImplementedError:
                     pass
+
+            # clear the in-memory chain to save memory
+            logging.info("Clearing chain")
+            sampler.clear_chain()
 
 # exit
 logging.info("Done")
