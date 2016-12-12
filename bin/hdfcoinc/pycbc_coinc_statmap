@@ -64,12 +64,12 @@ parser.add_argument('--cont-hier-removal', action='store_true',
 parser.add_argument('--max-hier-removal', type=int, default=0,
                     help='Maximum amount of hierarchical removals to carry '
                          'out when hierarchical removal is desired. Choose '
-                         '0 for no hierarchical removal. Choose 1 for do at '
+                         '0 for no hierarchical removal. Choose 1 to do at '
                          'most 1 hierarchical removal, and so on. The code '
                          'will write the triggers out for whatever comes '
                          'first: that there are no more hierarchical removals '
                          'to do or write the triggers for the max '
-                         'hierarchical removal stage selected. [default=0] ')
+                         'hierarchical removal stage selected. [default=0]')
 parser.add_argument('--store-last-h-rm-background', action='store_true',
                     default='store_false',
                     help='Toggle whether the user wants to store the '
