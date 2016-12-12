@@ -62,9 +62,9 @@ dtypem={'names': ('match', 'bank', 'bank_i', 'sim', 'sim_i', 'sigmasq'),
 res = None
 for fil in options.match_files:
     if res is not None:
-        res = append(res, loadtxt(fil, dtype=dtypem))
+        res = numpy.append(res, numpy.loadtxt(fil, dtype=dtypem))
     else:
-        res = loadtxt(fil, dtype=dtypem)
+        res = numpy.loadtxt(fil, dtype=dtypem)
 
 btables = {}
 itables = {}     
