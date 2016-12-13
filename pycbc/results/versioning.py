@@ -21,72 +21,99 @@ import os
 import subprocess
 from pycbc.results import save_fig_with_metadata, html_escape
 
+import lal, lalframe, lalmetaio, lalinspiral, lalsimulation
+import glue.git_version, pycbc.version
+
 def get_library_version_info():
     """This will return a list of dictionaries containing versioning
     information about the various LIGO libraries that PyCBC will use in an
     analysis run."""
     library_list = []
-    import lal, lalframe, lalmetaio, lalinspiral, lalsimulation
-    import glue.git_version, pylal.git_version, pycbc.version
+
+    def add_info_new_version(info_dct, curr_module, extra_str):
+        vcs_object = getattr(curr_module, extra_str +'VCSInfo')
+        info_dct['ID'] =  vcs_object.vcsId
+        info_dct['Status'] = vcs_object.vcsStatus
+        info_dct['Version'] = vcs_object.version
+        info_dct['Tag'] = vcs_object.vcsTag
+        info_dct['Author'] = vcs_object.vcsAuthor
+        info_dct['Branch'] = vcs_object.vcsBranch
+        info_dct['Committer'] = vcs_object.vcsCommitter
+        info_dct['Date'] = vcs_object.vcsDate
 
     lalinfo = {}
     lalinfo['Name'] = 'LAL'
-    lalinfo['ID'] = lal.VCSId
-    lalinfo['Status'] = lal.VCSStatus
-    lalinfo['Version'] = lal.VCSVersion
-    lalinfo['Tag'] = lal.VCSTag
-    lalinfo['Author'] = lal.VCSAuthor
-    lalinfo['Branch'] = lal.VCSBranch
-    lalinfo['Committer'] = lal.VCSCommitter
-    lalinfo['Date'] = lal.VCSDate
+    try:
+        lalinfo['ID'] = lal.VCSId
+        lalinfo['Status'] = lal.VCSStatus
+        lalinfo['Version'] = lal.VCSVersion
+        lalinfo['Tag'] = lal.VCSTag
+        lalinfo['Author'] = lal.VCSAuthor
+        lalinfo['Branch'] = lal.VCSBranch
+        lalinfo['Committer'] = lal.VCSCommitter
+        lalinfo['Date'] = lal.VCSDate
+    except AttributeError:
+        add_info_new_version(lalinfo, lal, '')
     library_list.append(lalinfo)
 
     lalframeinfo = {}
-    lalframeinfo['Name'] = 'LALFrame'
-    lalframeinfo['ID'] = lalframe.FrameVCSId
-    lalframeinfo['Status'] = lalframe.FrameVCSStatus
-    lalframeinfo['Version'] = lalframe.FrameVCSVersion
-    lalframeinfo['Tag'] = lalframe.FrameVCSTag
-    lalframeinfo['Author'] = lalframe.FrameVCSAuthor
-    lalframeinfo['Branch'] = lalframe.FrameVCSBranch
-    lalframeinfo['Committer'] = lalframe.FrameVCSCommitter
-    lalframeinfo['Date'] = lalframe.FrameVCSDate
+    try:
+        lalframeinfo['Name'] = 'LALFrame'
+        lalframeinfo['ID'] = lalframe.FrameVCSId
+        lalframeinfo['Status'] = lalframe.FrameVCSStatus
+        lalframeinfo['Version'] = lalframe.FrameVCSVersion
+        lalframeinfo['Tag'] = lalframe.FrameVCSTag
+        lalframeinfo['Author'] = lalframe.FrameVCSAuthor
+        lalframeinfo['Branch'] = lalframe.FrameVCSBranch
+        lalframeinfo['Committer'] = lalframe.FrameVCSCommitter
+        lalframeinfo['Date'] = lalframe.FrameVCSDate
+    except AttributeError:
+        add_info_new_version(lalframeinfo, lalframe, 'Frame')
     library_list.append(lalframeinfo)
 
     lalmetaioinfo = {}
     lalmetaioinfo['Name'] = 'LALMetaIO'
-    lalmetaioinfo['ID'] = lalmetaio.MetaIOVCSId
-    lalmetaioinfo['Status'] = lalmetaio.MetaIOVCSStatus
-    lalmetaioinfo['Version'] = lalmetaio.MetaIOVCSVersion
-    lalmetaioinfo['Tag'] = lalmetaio.MetaIOVCSTag
-    lalmetaioinfo['Author'] = lalmetaio.MetaIOVCSAuthor
-    lalmetaioinfo['Branch'] = lalmetaio.MetaIOVCSBranch
-    lalmetaioinfo['Committer'] = lalmetaio.MetaIOVCSCommitter
-    lalmetaioinfo['Date'] = lalmetaio.MetaIOVCSDate
+    try:
+        lalmetaioinfo['ID'] = lalmetaio.MetaIOVCSId
+        lalmetaioinfo['Status'] = lalmetaio.MetaIOVCSStatus
+        lalmetaioinfo['Version'] = lalmetaio.MetaIOVCSVersion
+        lalmetaioinfo['Tag'] = lalmetaio.MetaIOVCSTag
+        lalmetaioinfo['Author'] = lalmetaio.MetaIOVCSAuthor
+        lalmetaioinfo['Branch'] = lalmetaio.MetaIOVCSBranch
+        lalmetaioinfo['Committer'] = lalmetaio.MetaIOVCSCommitter
+        lalmetaioinfo['Date'] = lalmetaio.MetaIOVCSDate
+    except AttributeError:
+        add_info_new_version(lalmetaioinfo, lalmetaio, 'MetaIO')
     library_list.append(lalmetaioinfo)
 
     lalinspiralinfo = {}
     lalinspiralinfo['Name'] = 'LALInspiral'
-    lalinspiralinfo['ID'] = lalinspiral.InspiralVCSId
-    lalinspiralinfo['Status'] = lalinspiral.InspiralVCSStatus
-    lalinspiralinfo['Version'] = lalinspiral.InspiralVCSVersion
-    lalinspiralinfo['Tag'] = lalinspiral.InspiralVCSTag
-    lalinspiralinfo['Author'] = lalinspiral.InspiralVCSAuthor
-    lalinspiralinfo['Branch'] = lalinspiral.InspiralVCSBranch
-    lalinspiralinfo['Committer'] = lalinspiral.InspiralVCSCommitter
-    lalinspiralinfo['Date'] = lalinspiral.InspiralVCSDate
+    try:
+        lalinspiralinfo['ID'] = lalinspiral.InspiralVCSId
+        lalinspiralinfo['Status'] = lalinspiral.InspiralVCSStatus
+        lalinspiralinfo['Version'] = lalinspiral.InspiralVCSVersion
+        lalinspiralinfo['Tag'] = lalinspiral.InspiralVCSTag
+        lalinspiralinfo['Author'] = lalinspiral.InspiralVCSAuthor
+        lalinspiralinfo['Branch'] = lalinspiral.InspiralVCSBranch
+        lalinspiralinfo['Committer'] = lalinspiral.InspiralVCSCommitter
+        lalinspiralinfo['Date'] = lalinspiral.InspiralVCSDate
+    except AttributeError:
+        add_info_new_version(lalinspiralinfo, lalinspiral, 'Inspiral')
     library_list.append(lalinspiralinfo)
 
     lalsimulationinfo = {}
     lalsimulationinfo['Name'] = 'LALSimulation'
-    lalsimulationinfo['ID'] = lalsimulation.SimulationVCSId
-    lalsimulationinfo['Status'] = lalsimulation.SimulationVCSStatus
-    lalsimulationinfo['Version'] = lalsimulation.SimulationVCSVersion
-    lalsimulationinfo['Tag'] = lalsimulation.SimulationVCSTag
-    lalsimulationinfo['Author'] = lalsimulation.SimulationVCSAuthor
-    lalsimulationinfo['Branch'] = lalsimulation.SimulationVCSBranch
-    lalsimulationinfo['Committer'] = lalsimulation.SimulationVCSCommitter
-    lalsimulationinfo['Date'] = lalsimulation.SimulationVCSDate
+    try:
+        lalsimulationinfo['ID'] = lalsimulation.SimulationVCSId
+        lalsimulationinfo['Status'] = lalsimulation.SimulationVCSStatus
+        lalsimulationinfo['Version'] = lalsimulation.SimulationVCSVersion
+        lalsimulationinfo['Tag'] = lalsimulation.SimulationVCSTag
+        lalsimulationinfo['Author'] = lalsimulation.SimulationVCSAuthor
+        lalsimulationinfo['Branch'] = lalsimulation.SimulationVCSBranch
+        lalsimulationinfo['Committer'] = lalsimulation.SimulationVCSCommitter
+        lalsimulationinfo['Date'] = lalsimulation.SimulationVCSDate
+    except AttributeError:
+        add_info_new_version(lalsimulationinfo, lalsimulation, 'Simulation')
     library_list.append(lalsimulationinfo)
 
     glueinfo = {}
@@ -101,21 +128,6 @@ def get_library_version_info():
     glueinfo['Committer'] = glue.git_version.committer
     glueinfo['Date'] = glue.git_version.date
     library_list.append(glueinfo)
-
-    # NOTE: We hope to remove pylal dependance in the future, but it will be
-    # used in O1.
-    pylalinfo = {}
-    pylalinfo['Name'] = 'Pylal'
-    pylalinfo['ID'] = pylal.git_version.id
-    pylalinfo['Status'] = pylal.git_version.status
-    pylalinfo['Version'] = pylal.git_version.version
-    pylalinfo['Tag'] = pylal.git_version.tag
-    pylalinfo['Author'] = pylal.git_version.author
-    pylalinfo['Builder'] = pylal.git_version.builder
-    pylalinfo['Branch'] = pylal.git_version.branch
-    pylalinfo['Committer'] = pylal.git_version.committer
-    pylalinfo['Date'] = pylal.git_version.date
-    library_list.append(pylalinfo)
 
     pycbcinfo = {}
     pycbcinfo['Name'] = 'PyCBC'

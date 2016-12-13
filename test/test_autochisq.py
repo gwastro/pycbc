@@ -78,7 +78,6 @@ class TestAutochisquare(unittest.TestCase):
         hpt = TimeSeries(h, self.del_t)
         self.htilde = make_frequency_series(hpt)
        
-        
        
         # generate sin-gaussian signal
         time = np.arange(0, len(hp))*self.del_t
@@ -103,28 +102,31 @@ class TestAutochisquare(unittest.TestCase):
         flow = self.low_frequency_cutoff
   
         with _context: 
-           hautocor, hacorfr, hnrm = matched_filter_core(self.htilde, self.htilde, psd=psd, \
+            hautocor, hacorfr, hnrm = matched_filter_core(self.htilde, self.htilde, psd=psd, \
 			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
- 
-           snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
+            hautocor = hautocor * float(np.real(1./hautocor[0]))
+
+            snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
 			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
   
-        hacor = Array(hautocor.real(), copy=True)
+        hacor = Array(hautocor, copy=True)
 
-        indx = Array(np.array([352250, 352256, 352260]))
+        indx = np.array([352250, 352256, 352260])
 
         snr = snr*nrm
+        
 
         with _context:
-           dof, achi_list = autochisq_from_precomputed(snr, cor,  hacor, stride=3, num_points=20, \
-	 	 indices=indx)
+           dof, achisq, indices= \
+               autochisq_from_precomputed(snr, snr, hacor, indx, stride=3,
+                                          num_points=20)
          
-        obt_snr = achi_list[1,1]
-        obt_ach = achi_list[1,2]
+        obt_snr = abs(snr[indices[1]])
+        obt_ach = achisq[1]
         self.assertTrue(obt_snr > 10.0 and obt_snr < 12.0)
-        self.assertTrue(obt_ach < 1.e-3)
-        self.assertTrue(achi_list[0,2] > 20.0)
-        self.assertTrue(achi_list[2,2] > 20.0)
+        self.assertTrue(obt_ach < 2.e-3)
+        self.assertTrue(achisq[0] > 20.0)
+        self.assertTrue(achisq[2] > 20.0)
 
         
 	#with _context:
@@ -150,6 +152,8 @@ class TestAutochisquare(unittest.TestCase):
         with _context: 
             hautocor, hacorfr, hnrm = matched_filter_core(self.htilde, self.htilde, psd=psd, \
 			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
+            hautocor = hautocor * float(np.real(1./hautocor[0]))
+
  
             snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
 			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
@@ -158,18 +162,22 @@ class TestAutochisquare(unittest.TestCase):
   
         hacor = Array(hautocor.real(), copy=True)
 
-        indx = Array(np.array([301440, 301450, 301460])) 
+        indx = np.array([301440, 301450, 301460])
 
         snr = snr*nrm
+
         with _context:
-            dof, achi_list = autochisq_from_precomputed(snr, cor,  hacor, stride=3, num_points=20, \
-	 	 indices=indx)
-	obt_snr = achi_list[1,1]
-	obt_ach = achi_list[1,2]
-	self.assertTrue(obt_snr > 12.0 and obt_snr < 15.0)
-	self.assertTrue(obt_ach > 6.8e3)
-	self.assertTrue(achi_list[0,2] > 6.8e3)
-	self.assertTrue(achi_list[2,2] > 6.8e3)
+           dof, achisq, indices= \
+               autochisq_from_precomputed(snr, snr, hacor, indx, stride=3,
+                                          num_points=20)
+
+        obt_snr = abs(snr[indices[1]])
+        obt_ach = achisq[1]
+        self.assertTrue(obt_snr > 12.0 and obt_snr < 15.0)
+        self.assertTrue(obt_ach > 6.8e3)
+        self.assertTrue(achisq[0] > 6.8e3)
+        self.assertTrue(achisq[2] > 6.8e3)
+
 
     #    with _context:
 	#    dof, achi_list = autochisq(self.htilde, sig_tilde, psd,  stride=3,  num_points=20, \

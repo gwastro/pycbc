@@ -8,39 +8,50 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument("--veto-files", nargs='*',
-                    help="Optional veto file. Triggers within these times are ignored")
+                    help="Optional veto file. Triggers within veto segments "
+                    "contained in the file are ignored")
+parser.add_argument("--segment-name",
+                    help="Optional, name of veto segment in veto file")
 parser.add_argument("--strict-coinc-time", action='store_true',
-                    help="Optional, only allow coincidences between triggers that are "
-                         "in coincident time after applying vetoes ")
-parser.add_argument('--segment-name', default=None, type=str,
-                    help='Optional, name of segment list to use for vetoes')
+                    help="Optional, only allow coincidences between triggers "
+                    "that lie in coincident time after applying vetoes")
 parser.add_argument("--trigger-files", nargs=2,
                     help="File containing the single-detector triggers")
-parser.add_argument("--template-bank",
+parser.add_argument("--template-bank", required=True,
                     help="Template bank file in HDF format")
+# produces a list of lists to allow multiple invocations and multiple args
+parser.add_argument("--statistic-files", nargs='*', action='append', default=[],
+                    help="Files containing ranking statistic info")
 parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
                     help="The ranking statistic to use", default='newsnr')
 parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
-parser.add_argument("--timeslide-interval", type=float, default=0,
-                    help="Inverval between timeslides in seconds.")
+parser.add_argument("--timeslide-interval", type=float,
+                    help="Interval between timeslides in seconds. Timeslides are "
+                         "disabled if the option is omitted.")
 parser.add_argument("--decimation-factor", type=int,
                     help="The factor to reduce the background trigger rate.")
-parser.add_argument("--loudest-keep", type=int,
-                    help="Number of the loudest triggers to keep from each template.")
-parser.add_argument("--loudest-keep-value", type=float,
-                    help="Keep all coincident triggers above this value.")
-parser.add_argument("--template-fraction-range", help="Optional, format string to"
-                    "analyze part of template bank. Format is PART/NUM_PARTS",
-                    default="0/1")
-parser.add_argument("--cluster-window", help="Optional, window size in seconds to "
-                    "cluster coincidences over the bank", type=float)
-parser.add_argument("--output-file", help="File to store the coincident triggers")
-parser.add_argument("--statistic-files", help="Statistic mapping files", nargs='*', default=[])
+loudest = parser.add_mutually_exclusive_group()
+loudest.add_argument("--loudest-keep", type=int,
+                     help="Keep this number of loudest triggers from each template.")
+loudest.add_argument("--loudest-keep-value", type=float,
+                     help="Keep all coincident triggers above this value.")
+parser.add_argument("--template-fraction-range", default="0/1",
+                    help="Optional, analyze only part of template bank. Format"
+                    " PART/NUM_PARTS")
+parser.add_argument("--cluster-window", type=float,
+                    help="Optional, window size in seconds to cluster "
+                    "coincidences over the bank")
+parser.add_argument("--output-file",
+                    help="File to store the coincident triggers")
 args = parser.parse_args()
+
+# flatten the list of lists of filenames to a single list (may be empty)
+args.statistic_files = sum(args.statistic_files, [])
 
 if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
+
 
 def parse_template_range(num_templates, rangestr):
     part = int(rangestr.split('/')[0])
@@ -167,6 +178,15 @@ if args.strict_coinc_time:
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
 time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
+
+if time_window >= args.timeslide_interval and args.timeslide_interval is not None:
+    raise parser.error("The maximum time delay between detectors should be smaller "
+                       "than the timeslide interval.")
+                       
+# slide = 0 significes don't do timeslides
+if args.timeslide_interval is None:
+    args.timeslide_interval = 0
+
 logging.info('The coincidence window is %3.1f ms' % (time_window * 1000))
 
 data = {'stat':[], 'decimation_factor':[], 'time1':[], 'time2':[],
@@ -248,8 +268,9 @@ for tnum in range(tmin, tmax):
     data['timeslide_id'] += [slide[ti]]
     data['template_id'] += [numpy.zeros(len(ti), dtype=numpy.uint32) + tnum]
 
-for key in data:
-    data[key] = numpy.concatenate(data[key])
+if len(data['stat']) > 0:
+    for key in data:
+        data[key] = numpy.concatenate(data[key])
 
 if args.cluster_window and len(data['stat']) > 0:
     cid = coinc.cluster_coincs(data['stat'], data['time1'], data['time2'],

@@ -69,12 +69,11 @@ class Stat(object):
             f = h5py.File(filename, 'r')
             stat = f.attrs['stat']
             self.files[stat] = f
-            
-        # We provide the dtype of output of the single detector method
+
+        # Provide the dtype of the single detector method's output
         # This is used by background estimation codes that need to maintain
         # a buffer of such values.
         self.single_dtype = numpy.float32
-
 
 
 class NewSNRStatistic(Stat):
@@ -95,14 +94,14 @@ class NewSNRStatistic(Stat):
         """
         return get_newsnr(trigs)
 
-    def coinc(self, s1, s2, slide, step):
+    def coinc(self, s0, s1, slide, step):
         """Calculate the coincident detection statistic.
 
         Parameters
         ----------
-        s1: numpy.ndarray
+        s0: numpy.ndarray
             Single detector ranking statistic for the first detector.
-        s2: numpy.ndarray
+        s1: numpy.ndarray
             Single detector ranking statistic for the second detector.
         slide: (unused in this statistic)
         step: (unused in this statistic)
@@ -112,7 +111,7 @@ class NewSNRStatistic(Stat):
         numpy.ndarray
             Array of coincident ranking statistic values
         """
-        return (s1**2.0 + s2**2.0) ** 0.5
+        return (s0**2. + s1**2.) ** 0.5
 
 
 class NewSNRCutStatistic(NewSNRStatistic):
@@ -138,14 +137,14 @@ class NewSNRCutStatistic(NewSNRStatistic):
         newsnr[numpy.logical_and(newsnr < 10, rchisq > 2)] = -1
         return newsnr
 
-    def coinc(self, s1, s2, slide, step):
+    def coinc(self, s0, s1, slide, step):
         """Calculate the coincident detection statistic.
 
         Parameters
         ----------
-        s1: numpy.ndarray
+        s0: numpy.ndarray
             Single detector ranking statistic for the first detector.
-        s2: numpy.ndarray
+        s1: numpy.ndarray
             Single detector ranking statistic for the second detector.
         slide: (unused in this statistic)
         step: (unused in this statistic)
@@ -155,26 +154,34 @@ class NewSNRCutStatistic(NewSNRStatistic):
         cstat: numpy.ndarray
             Array of coincident ranking statistic values
         """
-        cstat = (s1**2.0 + s2**2.0) ** 0.5
+        cstat = (s0**2. + s1**2.) ** 0.5
+        cstat[s0==-1] = 0
         cstat[s1==-1] = 0
-        cstat[s2==-1] = 0
         return cstat
 
 
 class PhaseTDStatistic(NewSNRStatistic):
 
-    """Detection statistic that re-weights the network SNR based on the
-    PDF of time delays, phase difference, and amplitude ratios.
+    """Statistic that re-weights combined newsnr using coinc parameters.
+
+    The weighting is based on the PDF of time delays, phase differences and
+    amplitude ratios between triggers in different ifos.
     """
     def __init__(self, files):
         NewSNRStatistic.__init__(self, files)
         self.hist = self.files['phasetd_newsnr']['map'][:]
-        top = float(self.hist.max())
 
         #normalize so that peak has no effect on newsnr
-        self.hist = self.hist / top
+        self.hist = self.hist / float(self.hist.max())
         self.hist = numpy.log(self.hist)
-        self.single_dtype = [('newsnr', numpy.float32),
+
+        # Bin boundaries are stored in the hdf file
+        self.tbins = self.files['phasetd_newsnr']['tbins'][:]
+        self.pbins = self.files['phasetd_newsnr']['pbins'][:]
+        self.sbins = self.files['phasetd_newsnr']['sbins'][:]
+        self.rbins = self.files['phasetd_newsnr']['rbins'][:]
+
+        self.single_dtype = [('snglstat', numpy.float32),
                     ('coa_phase', numpy.float32),
                     ('end_time', numpy.float64),
                     ('sigmasq', numpy.float32),
@@ -196,66 +203,62 @@ class PhaseTDStatistic(NewSNRStatistic):
         numpy.ndarray
             Array of single detector parameter values
         """
-        newsnr = get_newsnr(trigs)
-        singles = numpy.zeros(len(newsnr), dtype=self.single_dtype)
-        singles['newsnr'] = newsnr
+        sngl_stat = get_newsnr(trigs)
+        singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
+        singles['snglstat'] = sngl_stat
         singles['coa_phase'] = trigs['coa_phase']
         singles['end_time'] = trigs['end_time']
         singles['sigmasq'] = trigs['sigmasq']
         singles['snr'] = trigs['snr']
         return numpy.array(singles, ndmin=1)
 
-    def signal_likelihood(self, s1, s2, slide, step):
-        td = numpy.array(s1['end_time'] - s2['end_time'] - slide * step, ndmin=1)
-        pd = numpy.array((s1['coa_phase'] - s2['coa_phase']) % (numpy.pi * 2), ndmin=1)
-        rd = numpy.array((s1['sigmasq'] / s2['sigmasq']) ** 0.5, ndmin=1)
+    def logsignalrate(self, s0, s1, slide, step):
+        """Calculate the normalized log rate density of signals via lookup"""
+        td = numpy.array(s0['end_time'] - s1['end_time'] - slide*step, ndmin=1)
+        pd = numpy.array((s0['coa_phase'] - s1['coa_phase']) % \
+                         (2. * numpy.pi), ndmin=1)
+        rd = numpy.array((s0['sigmasq'] / s1['sigmasq']) ** 0.5, ndmin=1)
+        sn0 = numpy.array(s0['snr'], ndmin=1)
         sn1 = numpy.array(s1['snr'], ndmin=1)
-        sn2 = numpy.array(s2['snr'], ndmin=1)
- 
+
+        snr0 = sn0 * 1
         snr1 = sn1 * 1
-        snr2 = sn2 * 1
 
-        snr1[rd > 1] = sn2[rd > 1]
-        snr2[rd > 1] = sn1[rd > 1]
-        rd[rd > 1] = 1.0 / rd[rd > 1]
-
-        # Bin boundaries are stored in the hdf file
-        tbins = self.files['phasetd_newsnr']['tbins'][:]
-        pbins = self.files['phasetd_newsnr']['pbins'][:]
-        sbins = self.files['phasetd_newsnr']['sbins'][:]
-        rbins = self.files['phasetd_newsnr']['rbins'][:]
+        snr0[rd > 1] = sn1[rd > 1]
+        snr1[rd > 1] = sn0[rd > 1]
+        rd[rd > 1] = 1. / rd[rd > 1]
 
         # Find which bin each coinc falls into
-        tv = numpy.searchsorted(tbins, td) - 1
-        pv = numpy.searchsorted(pbins, pd) - 1
-        s1v = numpy.searchsorted(sbins, snr1) - 1
-        s2v = numpy.searchsorted(sbins, snr2) - 1    
-        rv = numpy.searchsorted(rbins, rd) - 1  
+        tv = numpy.searchsorted(self.tbins, td) - 1
+        pv = numpy.searchsorted(self.pbins, pd) - 1
+        s0v = numpy.searchsorted(self.sbins, snr0) - 1
+        s1v = numpy.searchsorted(self.sbins, snr1) - 1
+        rv = numpy.searchsorted(self.rbins, rd) - 1
 
         # Enforce that points fits into the bin boundaries: if a point lies
         # outside the boundaries it is pushed back to the nearest bin.
         tv[tv < 0] = 0
-        tv[tv >= len(tbins) - 1] = len(tbins) - 2
+        tv[tv >= len(self.tbins) - 1] = len(self.tbins) - 2
         pv[pv < 0] = 0
-        pv[pv >= len(pbins) - 1] = len(pbins) - 2
+        pv[pv >= len(self.pbins) - 1] = len(self.pbins) - 2
+        s0v[s0v < 0] = 0
+        s0v[s0v >= len(self.sbins) - 1] = len(self.sbins) - 2
         s1v[s1v < 0] = 0
-        s1v[s1v >= len(sbins) - 1] = len(sbins) - 2
-        s2v[s2v < 0] = 0
-        s2v[s2v >= len(sbins) - 1] = len(sbins) - 2
+        s1v[s1v >= len(self.sbins) - 1] = len(self.sbins) - 2
         rv[rv < 0] = 0
-        rv[rv >= len(rbins) - 1] = len(rbins) - 2
+        rv[rv >= len(self.rbins) - 1] = len(self.rbins) - 2
         
-        return self.hist[tv, pv, s1v, s2v, rv]
+        return self.hist[tv, pv, s0v, s1v, rv]
 
-    def coinc(self, s1, s2, slide, step):
+    def coinc(self, s0, s1, slide, step):
         """
         Calculate the coincident detection statistic.
 
         Parameters
         ----------
-        s1: numpy.ndarray
+        s0: numpy.ndarray
             Single detector ranking statistic for the first detector.
-        s2: numpy.ndarray
+        s1: numpy.ndarray
             Single detector ranking statistic for the second detector.
         slide: numpy.ndarray
             Array of ints. These represent the multiple of the timeslide
@@ -266,10 +269,10 @@ class PhaseTDStatistic(NewSNRStatistic):
         Returns
         -------
         coinc_stat: numpy.ndarray
-            An array of the coincident ranking statitic values
+            An array of the coincident ranking statistic values
         """
-        rstat = s1['newsnr']**2.0 + s2['newsnr']**2.0
-        cstat = rstat + 2.0 * self.signal_likelihood(s1, s2, slide, step)
+        rstat = s0['snglstat']**2. + s1['snglstat']**2.
+        cstat = rstat + 2. * self.logsignalrate(s0, s1, slide, step)
         cstat[cstat < 0] = 0
         return cstat ** 0.5
 
@@ -287,8 +290,9 @@ class ExpFitStatistic(NewSNRStatistic):
             raise RuntimeError("Can't find any statistic files !")
         NewSNRStatistic.__init__(self, files)
         # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
-        self.ifos = [f.split('-')[0] for f in self.files.keys() if
-                     f.split('-')[1] == 'fit_coeffs']
+        parsed_attrs = [f.split('-') for f in self.files.keys()]
+        self.ifos = [at[0] for at in parsed_attrs if
+                     (len(at) == 2 and at[1] == 'fit_coeffs')]
         if not len(self.ifos):
             raise RuntimeError("None of the statistic files has the required "
                                "attribute called {ifo}-fit_coeffs !")
@@ -317,9 +321,9 @@ class ExpFitStatistic(NewSNRStatistic):
         thresh = self.fits_by_tid[trigs.ifo]['thresh']
         return alphai, lambdai, thresh
 
-    def single(self, trigs):
+    def lognoiserate(self, trigs):
         """
-        Calculate the parts of the coinc statistic depending on sngl parameters
+        Calculate the log noise rate density over single-ifo newsnr
 
         Read in single trigger information, make the newsnr statistic
         and rescale by the fitted coefficients alpha and lambda
@@ -334,17 +338,21 @@ class ExpFitStatistic(NewSNRStatistic):
                       numpy.log(lambdai)
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
+    def single(self, trigs):
+        """Single-detector statistic, here just equal to the log noise rate"""
+        return self.lognoiserate(trigs)
+
     def coinc(self, s0, s1, slide, step):
         """Calculate the final coinc ranking statistic"""
         # Approximate log likelihood ratio by summing single-ifo negative
         # log noise likelihoods
         loglr = - s0 - s1
-        # add squares of threshold stat values with notional Gaussian formula
+        # add squares of threshold stat values via idealized Gaussian formula
         threshes = [self.fits_by_tid[i]['thresh'] for i in self.ifos]
-        loglr += sum([t**2 / 2. for t in threshes])
+        loglr += sum([t**2. / 2. for t in threshes])
         # convert back to a coinc-SNR-like statistic
-        # notionally, log likelihood ratio \propto rho_c^2 / 2
-        return (2 * loglr) ** 0.5
+        # via log likelihood ratio \propto rho_c^2 / 2
+        return (2. * loglr) ** 0.5
 
 
 class ExpFitCombinedSNR(ExpFitStatistic):
@@ -361,19 +369,50 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         self.alpharef = 6.
 
     def single(self, trigs):
-        alphai, lambdai, thresh = self.find_fits(trigs)
-        newsnr = get_newsnr(trigs)
-        # noise rate density shifted by log of reference slope alpha
-        lognoiserate = - alphai * (newsnr - thresh) + \
-                       numpy.log(alphai / self.alpharef) + \
-                       numpy.log(lambdai)
+        logr_n = self.lognoiserate(trigs)
+        _, _, thresh = self.find_fits(trigs)
+        # shift by log of reference slope alpha
+        logr_n += -1. * numpy.log(self.alpharef)
         # add threshold and rescale by reference slope
-        stat = thresh - (lognoiserate / self.alpharef)
+        stat = thresh - (logr_n / self.alpharef)
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
     def coinc(self, s0, s1, slide, step):
-        # rescale by 1/sqrt(2) to resemble network SNR
+        # scale by 1/sqrt(2) to resemble network SNR
         return (s0 + s1) / (2.**0.5)
+
+
+class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
+
+    """Statistic combining exponential noise model with signal histogram PDF"""
+
+    def __init__(self, files):
+        # read in both foreground PDF and background fit info
+        ExpFitCombinedSNR.__init__(self, files)
+        # need the self.single_dtype value from PhaseTDStatistic
+        PhaseTDStatistic.__init__(self, files)
+
+    def single(self, trigs):
+        # same single-ifo stat as ExpFitCombinedSNR
+        sngl_stat = ExpFitCombinedSNR.single(self, trigs)
+        singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
+        singles['snglstat'] = sngl_stat
+        singles['coa_phase'] = trigs['coa_phase']
+        singles['end_time'] = trigs['end_time']
+        singles['sigmasq'] = trigs['sigmasq']
+        singles['snr'] = trigs['snr']
+        return numpy.array(singles, ndmin=1)
+
+    def coinc(self, s0, s1, slide, step):
+        # logsignalrate function inherited from PhaseTDStatistic
+        logr_s = self.logsignalrate(s0, s1, slide, step)
+        # rescale by ExpFitCombinedSNR reference slope as for sngl stat
+        cstat = s0['snglstat'] + s1['snglstat'] + logr_s / self.alpharef
+        # cut off underflowing and very small values
+        cstat[cstat < 8.] = 8.
+        # scale to resemble network SNR
+        return cstat / (2.**0.5)
+
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
@@ -400,12 +439,14 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
         return numpy.array(numpy.minimum(chisq_newsnr, autochisq_newsnr,
                            dtype=numpy.float32), ndmin=1, copy=False)
 
+
 statistic_dict = {
     'newsnr': NewSNRStatistic,
     'newsnr_cut': NewSNRCutStatistic,
     'phasetd_newsnr': PhaseTDStatistic,
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
+    'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
 }
 

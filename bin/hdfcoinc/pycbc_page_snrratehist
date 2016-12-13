@@ -76,7 +76,7 @@ else:
     minimum = bstat.min()
     maximum = bstat.max()
 
-bins = numpy.arange(minimum, maximum + args.bin_size, args.bin_size)   
+bins = numpy.arange(minimum, maximum + args.bin_size, args.bin_size)
 
 # plot background minus foreground
 pylab.hist(bstat_exc, bins=bins, histtype='step', 

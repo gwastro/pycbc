@@ -894,8 +894,13 @@ class FieldArray(numpy.recarray):
         are properties that are assumed to operate on one or more of self's
         fields, thus returning an array of values.
         """
+        if isinstance(names, str) or isinstance(names, unicode):
+            names = [names]
+            methods = [methods]
         out = self.add_properties(names, methods)
-        out._virtualfields.append(names)
+        if out._virtualfields is None:
+            out._virtualfields = []
+        out._virtualfields.extend(names)
         return out
 
     @classmethod
@@ -1042,6 +1047,33 @@ class FieldArray(numpy.recarray):
         # return the values as an instance of cls
         return cls.from_records(input_array, dtype=dtype,
             name=name)
+
+    def to_array(self, fields=None, axis=0):
+        """Returns an `numpy.ndarray` of self in which the fields are included
+        as an extra dimension.
+
+        Parameters
+        ----------
+        fields : {None, (list of) strings}
+            The fields to get. All of the fields must have the same datatype.
+            If None, will try to return all of the fields.
+        axis : {0, int}
+            Which dimension to put the fields in in the returned array. For
+            example, if `self` has shape `(l,m,n)` and `k` fields, the
+            returned array will have shape `(k,l,m,n)` if `axis=0`, `(l,k,m,n)`
+            if `axis=1`, etc. Setting `axis=-1` will put the fields in the
+            last dimension. Default is 0.
+        
+        Returns
+        -------
+        numpy.ndarray
+            The desired fields as a numpy array.
+        """
+        if fields is None:
+            fields = self.fieldnames
+        if isinstance(fields, str) or isinstance(fields, unicode):
+            fields = [fields]
+        return numpy.stack([self[f] for f in fields], axis=axis)
 
     @property
     def fieldnames(self):
@@ -1589,7 +1621,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def m_p(self):
         """Returns the larger of self.mass1 and self.mass2 (p = primary)."""
-        out = numpy.zeros(self.size, dtype=self.mass1.dtype)
+        out = numpy.zeros(self.shape, dtype=self.mass1.dtype)
         out[:] = self.mass1
         mask = self.mass1 < self.mass2
         out[mask] = self.mass2[mask]
@@ -1598,7 +1630,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def m_s(self):
         """Returns the smaller of self.mass1 and self.mass2 (s = secondary)."""
-        out = numpy.zeros(self.size, dtype=self.mass2.dtype)
+        out = numpy.zeros(self.shape, dtype=self.mass2.dtype)
         out[:] = self.mass2
         mask = self.mass1 < self.mass2
         out[mask] = self.mass1[mask]
@@ -1636,7 +1668,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin_px(self):
         """Returns the x-component of the primary mass."""
-        out = numpy.zeros(self.size, dtype=self.spin1x.dtype)
+        out = numpy.zeros(self.shape, dtype=self.spin1x.dtype)
         out[:] = self.spin1x
         mask = self.mass1 < self.mass2
         out[mask] = self.spin2x[mask]
@@ -1645,7 +1677,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin_py(self):
         """Returns the y-component of the primary mass."""
-        out = numpy.zeros(self.size, dtype=self.spin1y.dtype)
+        out = numpy.zeros(self.shape, dtype=self.spin1y.dtype)
         out[:] = self.spin1y
         mask = self.mass1 < self.mass2
         out[mask] = self.spin2y[mask]
@@ -1654,7 +1686,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin_pz(self):
         """Returns the z-component of the secondary mass."""
-        out = numpy.zeros(self.size, dtype=self.spin1z.dtype)
+        out = numpy.zeros(self.shape, dtype=self.spin1z.dtype)
         out[:] = self.spin1z
         mask = self.mass1 < self.mass2
         out[mask] = self.spin2z[mask]
@@ -1663,7 +1695,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin_sx(self):
         """Returns the x-component of the secondary mass."""
-        out = numpy.zeros(self.size, dtype=self.spin2x.dtype)
+        out = numpy.zeros(self.shape, dtype=self.spin2x.dtype)
         out[:] = self.spin2x
         mask = self.mass1 < self.mass2
         out[mask] = self.spin1x[mask]
@@ -1672,7 +1704,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin_sy(self):
         """Returns the y-component of the secondary mass."""
-        out = numpy.zeros(self.size, dtype=self.spin2y.dtype)
+        out = numpy.zeros(self.shape, dtype=self.spin2y.dtype)
         out[:] = self.spin2y
         mask = self.mass1 < self.mass2
         out[mask] = self.spin1y[mask]
@@ -1681,7 +1713,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     @property
     def spin_sz(self):
         """Returns the z-component of the secondary mass."""
-        out = numpy.zeros(self.size, dtype=self.spin2z.dtype)
+        out = numpy.zeros(self.shape, dtype=self.spin2z.dtype)
         out[:] = self.spin2z
         mask = self.mass1 < self.mass2
         out[mask] = self.spin1z[mask]

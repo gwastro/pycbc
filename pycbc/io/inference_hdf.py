@@ -241,8 +241,36 @@ class InferenceFile(h5py.File):
                 return parameter
         return label
 
-    def write_psds(self, psds, low_frequency_cutoff):
-        """ Writes PSD for each IFO to file.
+    def write_strain(self, strain_dict):
+        """Writes strain for each IFO to file.
+
+        Parameters
+        -----------
+        strain : {dict, FrequencySeries}
+            A dict of FrequencySeries where the key is the IFO.
+        """
+        group = "{ifo}/strain"
+        for ifo,strain in strain_dict.items():
+            self[group.format(ifo=ifo)] = strain
+            self[group.format(ifo=ifo)].attrs['delta_t'] = strain.delta_t
+            self[group.format(ifo=ifo)].attrs['start_time'] = float(strain.start_time)
+
+    def write_stilde(self, stilde_dict):
+        """Writes stilde for each IFO to file.
+
+        Parameters
+        -----------
+        stilde : {dict, FrequencySeries}
+            A dict of FrequencySeries where the key is the IFO.
+        """
+        group = "{ifo}/stilde"
+        for ifo,stilde in stilde_dict.items():
+            self[group.format(ifo=ifo)] = stilde
+            self[group.format(ifo=ifo)].attrs['delta_f'] = stilde.delta_f
+            self[group.format(ifo=ifo)].attrs['epoch'] = float(stilde.epoch)
+
+    def write_psd(self, psds, low_frequency_cutoff):
+        """Writes PSD for each IFO to file.
 
         Parameters
         -----------

@@ -456,7 +456,7 @@ to specific configuration files managed for an analysis. For example, to
 generate a workflow to search two weeks of S6D data and place the results in
 your ``public_html`` directory, run the command::
 
-    pycbc_make_hdf_coinc_workflow --workflow-name s6d_chunk3 --output-dir output \
+    pycbc_make_coinc_search_workflow --workflow-name s6d_chunk3 --output-dir output \
       --config-files https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/s6_run_pycbc_er8_pre_release.ini \
       https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/executables.ini \
       https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/injections.ini \
@@ -469,7 +469,7 @@ set the output web page location.
 
 .. note::
 
-   To use released exectutables for production analysis, you should specify
+   To use released executables for production analysis, you should specify
    the URL to an ``executables.ini`` file from the 
    `PyCBC Software repository <https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software>`_.
 
@@ -493,7 +493,7 @@ determine the correct tags. These can be applied by adding the following line
 to your submit invocation.
 
 For example, to plan and submit the workflow in the example above, change to the directory that you specified with the ``--output``
-command line option to ``pycbc_make_hdf_coinc_workflow`` and plan and submit
+command line option to ``pycbc_make_coinc_search_workflow`` and plan and submit
 the workflow::
 
     cd output
@@ -669,45 +669,67 @@ Prerequisites
 
 There are a number of requirements on the machine on which the workflow will be started:
 
-- Pegasus version 4.6.1 or later.
+- Pegasus version 4.7.1 or later.
 
 - The bundled executables available on the submit machine
 
 - A gridftp server running on the submit machine
 
-- Condor configuration (beyond the scope of this document)
+- Condor configured on the head node to connect to OSG as documented at::
+
+    https://its-condor-blog.syr.edu/dokuwiki/doku.php?id=researchgroups:physics:sl7_cluster_setup
 
 ------------------------
 Configuring the workflow
 ------------------------
 
-In order for ``pycbc_inspiral`` to be sent to worker nodes it must be available
-via a remote protocol, either http or gridFTP.  The easiest way to ensure this
-is to include the ``osg_executables.ini``. This file can be downloaded from::
+In order for ``pycbc_inspiral`` to be sent to worker nodes it must be
+available via a remote protocol, either http, gsiftp, or CVMFS. Releases of
+pycbc are installed in CVMFS and the LDG head nodes run a gridftp server that
+can serve your own development copy.  Specify this path when you run
+``pycbc_make_coinc_search_workflow``. To run from a released bundle in CVMFS 
+give the following argument to the ``--config-overrides`` option (changing the
+path to point to the release that you want to use)::
 
-    https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/tree/master
+    'executables:inspiral:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_6/bundle/v1.5.7/pycbc_inspiral'
 
-When downloading the ``osg_executables.ini`` make sure that you are obtaining the correct version. The URL/location for the ``osg_executables.ini`` should be added to the list of config files::
+If you are running your own build of ``pycbc_inspiral``, you will need to give
+a path to a gsiftp URL and tell Pegasus that the executable is not installed
+on the OSG with the two ``--config-overrides`` options::
 
-    [URL/location for osg_executables.ini] \
+    'executables:inspiral:gsiftp://server.hostname/path/to/pycbc_inspiral' \
 
-Add the following to the list of ``--config-overrides`` when running ``pycbc_make_coinc_search_workflow``::
+Add the following to the list of ``--config-overrides`` when running ``pycbc_make_coinc_search_workflow`` to tell Pegasus to run the inspiral code on the OSG::
      
-    'pegasus_profile-inspiral:hints|execution.site:osg' \
-    'pegasus_profile-inspiral:condor|request_memory:1920M' \
-    'workflow-main:staging-site:osg=osg-scratch' \
-    'pegasus_profile-inspiral:dagman|pre:/usr/bin/grid-proxy-info' \
+    'pegasus_profile-inspiral:pycbc|site:osg'
+    'pegasus_profile-inspiral:hints|execution.site:osg'
+    'pegasus_profile-inspiral:pycbc|installed:False'
+
+You also need a ``--config-overrides`` to ``pycbc_make_coinc_search_workflow`` that sets the staging site for the main workflow to the local site. To do this, add the following argument, replacing ``${WORKFLOW_NAME}`` with the string that is given as the argument to the option ``--workflow-name ``::
+
+    'workflow-${WORKFLOW_NAME}-main:staging-site:osg=local'
+
+Optionally, you can add a configuration that will check that your grid proxy
+is valid locally before submitting the job. This means that if your grid proxy
+expires before the workflow is complete, the failure will be on the local site
+before the job is actually submitted, and not on the remote site once the job
+has been scheduled and matched::
+
+    'pegasus_profile-inspiral:dagman|pre:/usr/bin/grid-proxy-info'
+
+Another useful enhancement for OSG running is to add profiles to your inspiral
+job that will tell Condor to put it on hold if it has been running for more
+that 48 hours and terminate it after 5 failed attempts. To do this, add the
+follwing lines to your ``executables.ini`` file::
+
+    [pegasus_profile-inspiral]
+    condor|periodic_hold = (JobStatus == 2) && ((CurrentTime - EnteredCurrentStatus) > (2 * 86400))
+    condor|periodic_release = (JobStatus == 5) && (HoldReasonCode == 3) && (NumJobStarts < 5) && ((CurrentTime - EnteredCurrentStatus) > (300))
+    condor|periodic_remove = (NumJobStarts >= 5)
 
 --------------------
 Running the workflow
 --------------------
-
-Before running the workflow, a proxy compatible with Xrootd needs to be generated. To generate this proxy run the commands
-::
-
-    ligo-proxy-init albert.einstein
-    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
-    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
 
 Add the following arguments to ``pycbc_submit_dax``::
 
@@ -715,19 +737,6 @@ Add the following arguments to ``pycbc_submit_dax``::
     --execution-sites osg \
     --append-pegasus-property 'pegasus.transfer.bypass.input.staging=true' \
     --remote-staging-server `hostname -f` \
-    --cache [URL/location of osg cache file] \
-
-.. note::
-   Cache files for the C02 frames can be obtained from https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/tree/master/O1/osg-cache-frame-files. The cache file contains the location of the frame files on Sugar, XSede, and xroot.
 
 ``hostname -f`` will give the correct value if there is a gsiftp server running on the submit machine.  If not, change this as needed. The remote-staging-site is the intermediary computer than can pass files between the submitting computer and the computers doing the work.  ``hostname -f`` returns the full name of the computer. The full name of the computer that ``hostname -f`` has to be one that is accessible to both the submit machine and the workers. 
-
-If you are in the run directory of your workflow use ``cd output/submitdir/work/main_ID0000001``. If you are not in the run directory. Go to ``https://sugar-dev2.phy.syr.edu/pegasus/u/[username]`` and find the submit directory of the run most recently submitted. To prevent unnessary copying of files run these commands after ``submitdir/work/main_ID0000001`` exists.::
-
-     cd [submit directory]
-     cd main_ID0000001
-     perl -pi.bak -e 's+file:///home+symlink:///home+g' stage_inter_local_hdf_trigger_merge-*in
-     perl -pi.bak2 -e 's+gsiftp://sugar-dev2.phy.syr.edu/home+file:///home+g' stage_inter_local_hdf_trigger_merge-*in
-     perl -pi.bak -e 's+gsiftp://sugar-dev2.phy.syr.edu/home+file:///home+g' stage_out_local_osg-scratch_*in
-
 

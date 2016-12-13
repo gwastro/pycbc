@@ -51,6 +51,7 @@ class _BaseSampler(object):
 
     def __init__(self, likelihood_evaluator):
         self.likelihood_evaluator = likelihood_evaluator
+        self._lastclear = 0
 
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator):
@@ -81,9 +82,15 @@ class _BaseSampler(object):
         return NotImplementedError("chain function not set.")
 
     @property
+    def clear_chain(self):
+        """This function should clear the current chain of samples from memory.
+        """
+        return NotImplementedError("clear chain function not set.")
+
+    @property
     def niterations(self):
         """Get the current number of iterations."""
-        return self.chain.shape[-2]
+        return self.chain.shape[-2] + self._lastclear
 
     @property
     def acceptance_fraction(self):
@@ -199,10 +206,12 @@ class BaseMCMCSampler(_BaseSampler):
         self._sampler = sampler
         self._pos = None
         self._p0 = None
+        self._currentblob = None
         self._nwalkers = None
         if min_burn_in is None:
             min_burn_in = 0
         self.burn_in_iterations = min_burn_in
+        self._lastclear = 0
         # initialize
         super(BaseMCMCSampler, self).__init__(likelihood_evaluator)
 
@@ -290,7 +299,8 @@ class BaseMCMCSampler(_BaseSampler):
         fp.attrs["nwalkers"] = self.nwalkers
         fp.attrs['burn_in_iterations'] = self.burn_in_iterations
 
-    def write_chain(self, fp, max_iterations=None):
+    def write_chain(self, fp, start_iteration=0, end_iteration=None,
+                    max_iterations=None):
         """Writes the samples from the current chain to the given file. Results
         are written to: `fp[fp.samples_group/{vararg}/walker{i}]`, where
         `{vararg}` is the name of a variable arg, and `{i}` is the index of
@@ -300,6 +310,10 @@ class BaseMCMCSampler(_BaseSampler):
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
+        start_iteration : {0, int}
+            Write results starting from the given iteration.
+        end_iteration : {None, int}
+            Write results up to the given iteration.
         max_iterations : {None, int}
             If samples have not previously been written to the file, a new
             dataset will be created. By default, the size of this dataset will
@@ -312,15 +326,29 @@ class BaseMCMCSampler(_BaseSampler):
         samples = self.chain
         nwalkers, niterations, _ = samples.shape
 
-        group = fp.samples_group + '/{name}/walker{wi}'
+        # due to clearing memory, there can be a difference between indices in
+        # memory and on disk
+        niterations += self._lastclear
+        fa = start_iteration # file start index
+        if end_iteration is None:
+            end_iteration = niterations
+        fb = end_iteration # file end index
+        ma = fa - self._lastclear # memory start index
+        mb = fb - self._lastclear # memory end index
 
-        # create an empty array if desired, in case this is the first time
-        # writing
-        if max_iterations is not None:
-            if max_iterations < niterations:
-                raise IndexError("The provided max size is less than the "
-                                 "number of iterations")
-            out = numpy.zeros(max_iterations, dtype=samples.dtype)
+        if max_iterations is not None and max_iterations < niterations:
+            raise IndexError("The provided max size is less than the "
+                             "number of iterations")
+        elif max_iterations is None:
+            max_iterations = niterations
+
+        # map sample values to the values that were actually passed to the
+        # waveform generator and prior evaluator
+        samples = numpy.array(
+            self.likelihood_evaluator._prior.apply_boundary_conditions(
+            samples.transpose(2,0,1))).transpose(1,2,0)
+
+        group = fp.samples_group + '/{name}/walker{wi}'
 
         # loop over number of dimensions
         widx = numpy.arange(nwalkers)
@@ -329,17 +357,20 @@ class BaseMCMCSampler(_BaseSampler):
             for wi in widx:
                 dataset_name = group.format(name=param, wi=wi)
                 try:
-                    fp[dataset_name][:niterations] = samples[wi, :, pi]
+                    if fb > fp[dataset_name].size:
+                        # resize the dataset
+                        fp[dataset_name].resize(fb, axis=0)
+                    fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
                 except KeyError:
-                    # dataset doesn't exist yet, see if a larger array is
-                    # desired
-                    if max_iterations is not None:
-                        out[:niterations] = samples[wi, :, pi]
-                        fp[dataset_name] = out
-                    else:
-                        fp[dataset_name] = samples[wi, :, pi]
+                    # dataset doesn't exist yet
+                    fp.create_dataset(dataset_name, (fb,),
+                                      maxshape=(max_iterations,),
+                                      dtype=samples.dtype)
+                    fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
 
-    def write_likelihood_stats(self, fp, max_iterations=None):
+
+    def write_likelihood_stats(self, fp, start_iteration=0, end_iteration=None,
+                               max_iterations=None):
         """Writes the `likelihood_stats` to the given file.  Results are
         written to: `fp[fp.stats_group/{field}/walker{i}]`, where `{i}` is
         the index of a walker and `{field}` is the name of each field returned
@@ -350,6 +381,10 @@ class BaseMCMCSampler(_BaseSampler):
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
+        start_iteration : {0, int}
+            Write results starting from the given iteration.
+        end_iteration : {None, int}
+            Write results up to the given iteration.
         max_iterations : {None, int}
             If the stats have not previously been written to the file, a new
             dataset will be created. By default, the size of this dataset will
@@ -371,32 +406,44 @@ class BaseMCMCSampler(_BaseSampler):
         nwalkers, niterations = stats.shape
         fields = stats.fieldnames
 
+        # due to clearing memory, there can be a difference between indices in
+        # memory and on disk
+        niterations += self._lastclear
+        fa = start_iteration # file start index
+        if end_iteration is None:
+            end_iteration = niterations
+        fb = end_iteration # file end index
+        ma = fa - self._lastclear # memory start index
+        mb = fb - self._lastclear # memory end index
+
         group = fp.stats_group + '/{param}/walker{wi}'
 
         if max_iterations is not None and max_iterations < niterations:
             raise IndexError("The provided max size is less than the "
                              "number of iterations")
+        elif max_iterations is None:
+            max_iterations = niterations
 
         for param in fields:
-            # create an empty array if desired, in case this is the first time
-            # writing
-            out = numpy.zeros(max_iterations, dtype=stats.dtype[param])
             # loop over number of walkers
             for wi in range(nwalkers):
                 dataset_name = group.format(param=param, wi=wi)
                 try:
-                    fp[dataset_name][:niterations] = stats[param][wi, :]
+                    if fb > fp[dataset_name].size:
+                        # resize the dataset
+                        fp[dataset_name].resize(fb, axis=0)
+                    fp[dataset_name][fa:fb] = stats[param][wi, ma:mb]
                 except KeyError:
-                    # dataset doesn't exist yet, see if a larger array is
-                    # desired
-                    if max_iterations is not None:
-                        out[:niterations] = stats[param][wi, :]
-                        fp[dataset_name] = out
-                    else:
-                        fp[dataset_name] = stats[param][wi, :]
+                    # dataset doesn't exist yet
+                    fp.create_dataset(dataset_name, (fb,),
+                                      maxshape=(max_iterations,),
+                                      dtype=stats[param].dtype)
+                    fp[dataset_name][fa:fb] = stats[param][wi, ma:mb]
         return stats
 
-    def write_acceptance_fraction(self, fp, max_iterations=None):
+
+    def write_acceptance_fraction(self, fp, start_iteration=0,
+                                  end_iteration=None, max_iterations=None):
         """Write acceptance_fraction data to file. Results are written to
         `fp[acceptance_fraction]`.
 
@@ -414,19 +461,33 @@ class BaseMCMCSampler(_BaseSampler):
         """
         dataset_name = "acceptance_fraction"
         acf = self.acceptance_fraction
-        try:
-            fp[dataset_name][:acf.size] = acf
-        except KeyError:
-            # dataset doesn't exist yet, see if a larger array is
-            # desired
-            if max_iterations is not None:
-                out = numpy.zeros(max_iterations, dtype=acf.dtype)
-                out[:acf.size] = acf
-            else:
-                out = acf
-            fp[dataset_name] = out
 
-    def write_results(self, fp, max_iterations=None):
+        if end_iteration is None:
+            end_iteration = acf.size
+
+        if max_iterations is not None and max_iterations < acf.size:
+            raise IndexError("The provided max size is less than the "
+                             "number of iterations")
+        elif max_iterations is None:
+            max_iterations = acf.size
+
+        try:
+            if end_iteration > fp[dataset_name].size:
+                # resize the dataset
+                fp[dataset_name].resize(end_iteration, axis=0)
+            fp[dataset_name][start_iteration:end_iteration] = \
+                acf[start_iteration:end_iteration]
+        except KeyError:
+            # dataset doesn't exist yet
+            fp.create_dataset(dataset_name, (end_iteration,),
+                              maxshape=(max_iterations,),
+                              dtype=acf.dtype)
+            fp[dataset_name][start_iteration:end_iteration] = \
+                acf[start_iteration:end_iteration]
+
+
+    def write_results(self, fp, start_iteration=0, end_iteration=None,
+                      max_iterations=None):
         """Writes metadata, samples, likelihood stats, and acceptance fraction
         to the given file. Also computes and writes the autocorrleation lengths
         of the chains. See the various write function for details.
@@ -435,6 +496,10 @@ class BaseMCMCSampler(_BaseSampler):
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
+        start_iteration : {0, int}
+            Write results starting from the given iteration.
+        end_iteration : {None, int}
+            Write results up to the given iteration.
         max_iterations : {None, int}
             If results have not previously been written to the
             file, new datasets will be created. By default, the size of these
@@ -444,9 +509,16 @@ class BaseMCMCSampler(_BaseSampler):
             large enough to accomodate future data.
         """
         self.write_metadata(fp)
-        self.write_chain(fp, max_iterations=max_iterations)
-        self.write_likelihood_stats(fp, max_iterations=max_iterations)
-        self.write_acceptance_fraction(fp, max_iterations=max_iterations)
+        self.write_chain(fp, start_iteration=start_iteration,
+                         end_iteration=end_iteration,
+                         max_iterations=max_iterations)
+        self.write_likelihood_stats(fp, start_iteration=start_iteration,
+                                    end_iteration=end_iteration,
+                                    max_iterations=max_iterations)
+        self.write_acceptance_fraction(fp, start_iteration=start_iteration,
+                                    end_iteration=end_iteration,
+                                    max_iterations=max_iterations)
+
 
     @staticmethod
     def _read_fields(fp, fields_group, fields, array_class,

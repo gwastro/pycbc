@@ -61,20 +61,26 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) CACHE_FILE=1
-           export IFS=","
+           OLD_IFS=${IFS}
+           IFS=","
            set +e
            for URL in $2; do
-               curl --fail "$URL" >> _reuse.cache 2>/dev/null
-               #If curl fails but the file exists, write to cache, else exit
-               if [ $? != 0 ]; then
-                   if [ -f $URL ]; then
-                       echo "$URL cache file found. Appending..."
-                       cat $URL >> _reuse.cache
-                   else
-                       echo "$URL not found!"
-                       exit
-                   fi
-               fi
+              FOUND_URL=1
+              # strip of any leading file:// URI and see if the file exists
+              FILE_URL=${URL##file://}
+              if [ -f ${FILE_URL} ] ; then
+                 cat ${FILE_URL} >> _reuse.cache
+                 FOUND_URL=0
+              else
+                 # otherwise try and get the file using curl
+                 curl --fail ${URL} >> _reuse.cache
+                 FOUND_URL=${?}
+              fi
+              if [ ${FOUND_URL} -ne 0 ] ; then
+                 echo "$URL not found!"
+                 exit
+              fi
+              IFS=${OLD_IFS}
            done
            set -e
            shift 2 ;;
@@ -123,12 +129,25 @@ while true ; do
     -k|--append-site-profile)
       case "$2" in
         "") shift 2 ;;
-        *) APPEND_SITE_PROFILE_ARRAY=(${2//:/ })
+        *) SITE_PROFILE=${2}
+           APPEND_SITE_PROFILE_ARRAY=`perl -e 'use HTML::Entities; print encode_entities(decode_entities(<STDIN>), "\'\"'\'\''<>()&+" );' <<< ${SITE_PROFILE}`
+           OIFS=${IFS}; IFS=":"
+           read -ra APPEND_SITE_PROFILE_ARRAY <<< "${APPEND_SITE_PROFILE_ARRAY}"
+           IFS=${OIFS}
            APPEND_SITE=${APPEND_SITE_PROFILE_ARRAY[0]}
            APPEND_SITE_NS_KEY=(${APPEND_SITE_PROFILE_ARRAY[1]//\|/ })
-           APPEND_SITE_VALUE=${APPEND_SITE_PROFILE_ARRAY[2]}
-           echo "    <profile namespace=\"${APPEND_SITE_NS_KEY[0]}\" key=\"${APPEND_SITE_NS_KEY[1]}\">${APPEND_SITE_VALUE}</profile>" >> ${APPEND_SITE}-extra-site-properties.xml
-        shift 2 ;;
+           APPEND_SITE_VALUE=("${APPEND_SITE_PROFILE_ARRAY[@]:2}")
+           /bin/echo -n "    <profile namespace=\"${APPEND_SITE_NS_KEY[0]}\" key=\"${APPEND_SITE_NS_KEY[1]}\">" >> ${APPEND_SITE}-extra-site-properties.xml
+           need_colon=0
+           for i in "${APPEND_SITE_VALUE[@]}" ; do
+               if [ ${need_colon} -eq 1 ] ; then
+                   /bin/echo -n ":" >> ${APPEND_SITE}-extra-site-properties.xml
+               fi
+               /bin/echo -n "${i}" >> ${APPEND_SITE}-extra-site-properties.xml
+               need_colon=1
+           done
+           echo "</profile>" >> ${APPEND_SITE}-extra-site-properties.xml
+           shift 2 ;;
       esac ;;
     -t|--transformation-catalog)
       case "$2" in
@@ -188,7 +207,7 @@ while true ; do
       echo "  -l, --local-dir         Directory to put condor files under"
       echo
       echo "If the environment variable TMPDIR is set then this is prepended to the "
-      echo "path to the temporary workflow execte directory passed to pegasus-plan."
+      echo "path to the temporary workflow execute directory passed to pegasus-plan."
       echo "If the --local-dir option is not given."
       echo
       echo "If the environment variable PEGASUS_FILE_DIRECTORY is set then the"
@@ -234,7 +253,33 @@ if [ $NO_CREATE_PROXY == 0 ]; then
   done
   unset X509_USER_PROXY
   ligo-proxy-init $LIGO_USER_NAME || exit 1
+else
+  if [ ! -z ${X509_USER_PROXY} ] ; then
+    if [ -f ${X509_USER_PROXY} ] ; then
+      cp -a ${X509_USER_PROXY} /tmp/x509up_u`id -u`
+    fi
+  unset X509_USER_PROXY
+  fi
 fi
+
+#Check that the proxy is valid
+grid-proxy-info -exists
+RESULT=$?
+if [ ${RESULT} -eq 0 ] ; then
+  PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
+  if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
+    grid-proxy-info
+  else
+    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
+    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+    rm -f /tmp/x509up_u`id -u`.orig
+    grid-proxy-info
+  fi
+else
+  echo "Error: Could not find a valid grid proxy to submit workflow."
+  exit 1
+fi
+
 
 #Make a directory for the submit files
 SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
@@ -264,7 +309,6 @@ export LOCAL_SITE_URL
 if [ -z $SITE_LIST ] ; then
   SITE_LIST="local"
   REMOTE_STAGING_URL=${LOCAL_SITE_URL}
-
 else
   SITE_LIST="local,${SITE_LIST}"
 fi
@@ -382,7 +426,43 @@ chmod 755 debug
 echo pegasus-remove $SUBMIT_DIR/work > stop
 chmod 755 stop
 
-echo pegasus-run $SUBMIT_DIR/work > start
+cat << EOF > start
+#!/bin/bash
+
+if [ -f /tmp/x509up_u\`id -u\` ] ; then
+  unset X509_USER_PROXY
+else
+  if [ ! -z \${X509_USER_PROXY} ] ; then
+    if [ -f \${X509_USER_PROXY} ] ; then
+      cp -a \${X509_USER_PROXY} /tmp/x509up_u\`id -u\`
+    fi
+  fi
+  unset X509_USER_PROXY
+fi
+
+# Check that the proxy is valid
+grid-proxy-info -exists
+RESULT=\${?}
+if [ \${RESULT} -eq 0 ] ; then
+  PROXY_TYPE=\`grid-proxy-info -type | tr -d ' '\`
+  if [ x\${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
+    grid-proxy-info
+  else
+    cp /tmp/x509up_u\`id -u\` /tmp/x509up_u\`id -u\`.orig
+    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u\`id -u\`.orig -key /tmp/x509up_u\`id -u\`.orig
+    rm -f /tmp/x509up_u\`id -u\`.orig
+    grid-proxy-info
+  fi
+else
+  echo "Error: Could not find a valid grid proxy to submit workflow."
+  exit 1
+fi
+
+EOF
+echo pegasus-run $SUBMIT_DIR/work >> start
+
+
+
 chmod 755 start
 
 # Copy planning information into workflow directory so it can be displayed on the results page
@@ -436,24 +516,39 @@ fi
 WORKFLOW_ID_STRING=""
 WORKFLOW_DB_CMD="sqlite3 -csv ${HOME}/.pegasus/workflow.db \"select submit_hostname,wf_id,wf_uuid from master_workflow where submit_dir = '${SUBMIT_DIR}/work';\""
 DB_TRY=0
-/bin/echo -n "Querying Pegasus database for job:"
+/bin/echo "Querying Pegasus database for workflow stored in ${SUBMIT_DIR}/work"
+/bin/echo -n "This may take up to 120 seconds. Please wait..."
+rm -f pegasus_db.log
+touch pegasus_db.log
 # querying the database sometimes fails, so allow retries
 set +e
-until [ $DB_TRY -ge 10 ]
+until [ $DB_TRY -ge 15 ]
 do 
-  /bin/echo -n "Querying..."
-  WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD`
+  /bin/echo -n "."
+  WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD 2>> pegasus_db.log`
   if [ $? -eq 0 ] && [ ! -z $WORKFLOW_ID_STRING ] ; then
-    /bin/echo "Done."
+    /bin/echo " Done."
+    DB_QUERY_SUCCESS=0
     break
   else
-    /bin/echo "Query failed: ${WORKFLOW_DB_CMD}"
-    /bin/echo "Sleeping for ${DB_TRY} seconds and retrying..."
+    DB_QUERY_SUCCESS=1
   fi
-  sleep $DB_TRY
   DB_TRY=$(( $DB_TRY + 1 ))
+  for s in `seq ${DB_TRY}`
+  do
+    /bin/echo -n "."
+    sleep 1
+  done
 done
 set -e
+
+if [ ${DB_QUERY_SUCCESS} -eq 1 ] ; then
+  echo; echo
+  /bin/echo "Query failed: ${WORKFLOW_DB_CMD}"
+  cat pegasus_db.log
+else
+  rm -f pegasus_db.log
+fi
 
 if [ -z $WORKFLOW_ID_STRING ] ; then
   echo "WARNING: Could not find the workflow in the Pegasus dashboard database."
@@ -481,6 +576,7 @@ if [ -e ${DASHBOARD_PATH} ] ; then
     cp ${DASHBOARD_PATH} ${DASHBOARD_COPY}
   fi
 
+  COMMAND_LINE=`perl -e 'use HTML::Entities; print encode_entities(decode_entities(<STDIN>), "\'\"'\'\''<>()&+" );' <<< ${COMMAND_LINE}`
   perl -pi.bak -e "s+PYCBC_SUBMIT_DAX_ARGV+${COMMAND_LINE}+g" ${DASHBOARD_PATH}
   perl -pi.bak -e "s+PEGASUS_DASHBOARD_URL+${DASHBOARD_URL}+g" ${DASHBOARD_PATH}
 fi

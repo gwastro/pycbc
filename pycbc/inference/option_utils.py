@@ -21,17 +21,18 @@ This module contains standard options used for inference-related programs.
 import logging
 from pycbc.io import InferenceFile
 import pycbc.inference.sampler
+from pycbc.inference import likelihood
+
 
 def add_sampler_option_group(parser):
-    """
-    Adds the options needed to set up an inference sampler.
+    """Adds the options needed to set up an inference sampler.
 
     Parameters
     ----------
     parser : object
         ArgumentParser instance.
     """
-    sampler_group = parser.add_argument_group("arguments for setting up "
+    sampler_group = parser.add_argument_group("Arguments for setting up "
         "a sampler")
 
     # required options
@@ -59,8 +60,17 @@ def add_sampler_option_group(parser):
         default=False,
         help="Do not burn in with sampler. An error will be raised if "
              "min-burn-in is also provided.")
+    sampler_group.add_argument("--update-interval", type=int, default=None,
+        help="If using kombine, specify the number of steps to take between "
+             "proposal updates. Note: for purposes of updating, kombine "
+             "counts iterations since the last checkpoint. This interval "
+             "should therefore be less than the checkpoint interval, else "
+             "no updates will occur. To ensure that updates happen at equal "
+             "intervals, make checkpoint-interval a multiple of "
+             "update-interval.")
 
     return sampler_group
+
 
 def sampler_from_cli(opts, likelihood_evaluator):
     """Parses the given command-line options to set up a sampler.
@@ -83,9 +93,9 @@ def sampler_from_cli(opts, likelihood_evaluator):
         raise ValueError("both skip-burn-in and min-burn-in specified")
     return sclass.from_cli(opts, likelihood_evaluator)
 
+
 def add_inference_results_option_group(parser):
-    """
-    Adds the options used to call pycbc.inference.results_from_cli function
+    """Adds the options used to call pycbc.inference.results_from_cli function
     to an argument parser. These are options releated to loading the results
     from a run of pycbc_inference, for purposes of plotting and/or creating
     tables.
@@ -96,7 +106,7 @@ def add_inference_results_option_group(parser):
         ArgumentParser instance.
     """
 
-    results_reading_group = parser.add_argument_group("arguments for loading "
+    results_reading_group = parser.add_argument_group("Arguments for loading "
         "inference results")
 
     # required options
@@ -133,6 +143,7 @@ def add_inference_results_option_group(parser):
              "the thin-start/interval/end options.")
 
     return results_reading_group
+
 
 def results_from_cli(opts, load_samples=True, walkers=None):
     """
@@ -183,3 +194,175 @@ def results_from_cli(opts, load_samples=True, walkers=None):
     else:
         samples = None
     return fp, parameters, labels, samples
+
+
+def get_zvalues(fp, arg, likelihood_stats):
+    """Reads the data for the z-value of the plots from the inference file.
+
+    Parameters
+    ----------
+    fp : InferenceFile
+        An open inference file; needed to get the value of the log noise
+        likelihood.
+    arg : str
+        The argument to plot; must be one of `loglr`, `snr`, `logplr`,
+        `logposterior`, or `prior`. If not one of these, a ValueError is
+        raised.
+    likelihood_stats : FieldArray
+        The likelihood stats; the sort of thing returned by
+        `fp.read_likelihood_stats`.
+
+    Returns
+    -------
+    zvals : numpy.array
+        An array of the desired likelihood values to plot.
+    zlbl : str
+        The label to use for the values on a plot.
+    """
+    if arg == 'loglr':
+        zvals = likelihood_stats.loglr
+        zlbl = r'$\log\mathcal{L}(\vec{\vartheta})$'
+    elif arg == 'snr':
+        zvals = likelihood.snr_from_loglr(likelihood_stats.loglr)
+        zlbl = r'$\rho(\vec{\vartheta})$'
+    elif arg == 'logplr':
+        zvals = likelihood_stats.loglr + likelihood_stats.prior
+        zlbl = r'$\log[\mathcal{L}(\vec{\vartheta})p(\vec{\vartheta})]$'
+    elif arg == 'logposterior':
+        zvals = likelihood_stats.loglr + likelihood_stats.prior + fp.lognl
+        zlbl = r'$\log[p(d|\vec{\vartheta})p(\vec{\vartheta})]$'
+    elif arg == 'prior':
+        zvals = likelihood_stats.prior
+        zlbl = r'$\log p(\vec{\vartheta})$'
+    else:
+        raise ValueError("Unrecognized arg {}".format(arg))
+    return zvals, zlbl
+
+
+def add_plot_posterior_option_group(parser):
+    """Adds the options needed to configure plots of posterior results.
+
+    Parameters
+    ----------
+    parser : object
+        ArgumentParser instance.
+    """
+    pgroup = parser.add_argument_group("Options for what plots to create and "
+                                         "their formats.")
+    pgroup.add_argument('--plot-marginal', action='store_true', default=False,
+                        help="Plot 1D marginalized distributions on the "
+                             "diagonal axes.")
+    pgroup.add_argument("--plot-scatter", action='store_true', default=False,
+                        help="Plot each sample point as a scatter plot.")
+    pgroup.add_argument("--plot-density", action="store_true", default=False,
+                        help="Plot the posterior density as a color map.")
+    pgroup.add_argument("--plot-contours", action="store_true", default=False,
+                        help="Draw contours showing the 50th and 90th "
+                             "percentile confidence regions.")
+    # add mins, maxs options
+    pgroup.add_argument('--mins', nargs='+', metavar='PARAM:VAL', default=[],
+                        help="Specify minimum parameter values to plot. This "
+                             "should be done by specifying the parameter name "
+                             "followed by the value. Parameter names must be "
+                             "the same as the PARAM argument in --parameters "
+                             "(or, if no parameters are provided, the same as "
+                             "the parameter name specified in the variable "
+                             "args in the input file. If none provided, "
+                             "the smallest parameter value in the posterior "
+                             "will be used.")
+    pgroup.add_argument('--maxs', nargs='+', metavar='PARAM:VAL', default=[],
+                        help="Same as mins, but for the maximum values to "
+                             "plot.")
+    return pgroup
+
+
+def plot_ranges_from_cli(opts):
+    """Parses the mins and maxs arguments from the `plot_posterior` option
+    group.
+
+    Parameters
+    ----------
+    opts : ArgumentParser
+        The parsed arguments from the command line.
+
+    Returns
+    -------
+    mins : dict
+        Dictionary of parameter name -> specified mins. Only parameters that
+        were specified in the --mins option will be included; if no parameters
+        were provided, will return an empty dictionary.
+    maxs : dict
+        Dictionary of parameter name -> specified maxs. Only parameters that
+        were specified in the --mins option will be included; if no parameters
+        were provided, will return an empty dictionary.
+    """
+    mins = {}
+    for x in opts.mins:
+        x = x.split(':')
+        if len(x) != 2:
+            raise ValueError("option --mins not specified correctly; see help")
+        mins[x[0]] = float(x[1])
+    maxs = {}
+    for x in opts.maxs:
+        x = x.split(':')
+        if len(x) != 2:
+            raise ValueError("option --maxs not specified correctly; see help")
+        maxs[x[0]] = float(x[1])
+    return mins, maxs
+
+
+def add_scatter_option_group(parser):
+    """Adds the options needed to configure scatter plots.
+
+    Parameters
+    ----------
+    parser : object
+        ArgumentParser instance.
+    """
+    scatter_group = parser.add_argument_group("Options for configuring the "
+                                              "scatter plot.")
+
+    scatter_group.add_argument('--z-arg', type=str, default=None,
+                    choices=['loglr', 'snr', 'logplr', 'logposterior',
+                             'prior'],
+                    help='What to color the scatter points by. If not set, '
+                         'all points will be the same color. Choices are: '
+                         'loglr: the log likelihood ratio; snr: SNR; '
+                         'logplr: loglr + log of the prior; '
+                         'logposterior: log likelihood function + log prior; '
+                         'prior: the log of the prior.')
+    scatter_group.add_argument("--vmin", type=float,
+                    help="Minimum value for the colorbar.")
+    scatter_group.add_argument("--vmax", type=float,
+                    help="Maximum value for the colorbar.")
+    scatter_group.add_argument("--scatter-cmap", type=str, default='plasma',
+                    help="Specify the colormap to use for points. Default is "
+                         "plasma.")
+
+    return scatter_group
+
+
+def add_density_option_group(parser):
+    """Adds the options needed to configure contours and density colour map.
+
+    Parameters
+    ----------
+    parser : object
+        ArgumentParser instance.
+    """
+    density_group = parser.add_argument_group("Options for configuring the "
+                                          "contours and density color map")
+
+    density_group.add_argument("--density-cmap", type=str, default='viridis',
+                    help="Specify the colormap to use for the density. "
+                         "Default is viridis.")
+    density_group.add_argument("--contour-color", type=str,
+                    help="Specify the color to use for the contour lines. "
+                         "Default is white for density plots and black "
+                         "for scatter plots.")
+    density_group.add_argument('--use-kombine-kde', default=False,
+                    action="store_true",
+                    help="Use kombine's KDE for determining contours. Default "
+                         "is to use scipy's gaussian_kde.")
+
+    return density_group

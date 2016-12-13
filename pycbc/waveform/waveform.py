@@ -57,25 +57,47 @@ _lalsim_enum = {}
 _lalsim_sgburst_approximants = {}
 
 def _lalsim_td_waveform(**p):
-    flags = lalsimulation.SimInspiralCreateWaveformFlags()
-    lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
-    lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
-
+    lal_pars = lal.CreateDict()
+    if p['phase_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(lal_pars,int(p['phase_order']))
+    if p['amplitude_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNAmplitudeOrder(lal_pars,int(p['amplitude_order']))
+    if p['spin_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNSpinOrder(lal_pars,int(p['spin_order']))
+    if p['tidal_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidalOrder(lal_pars, p['tidal_order'])
+    if p['eccentricity_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNEccentricityOrder(lal_pars, p['eccentricity_order'])
+    if p['lambda1']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidalLambda1(lal_pars, p['lambda1'])
+    if p['lambda2']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidalLambda2(lal_pars, p['lambda2'])
+    if p['dquad_mon1']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidaldQuadMon1(lal_pars, p['dquad_mon1'])
+    if p['dquad_mon2']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidaldQuadMon2(lal_pars, p['dquad_mon2'])
     if p['numrel_data']:
-        lalsimulation.SimInspiralSetNumrelData(flags, str(p['numrel_data']))
-
-    hp1, hc1 = lalsimulation.SimInspiralChooseTDWaveform(float(p['coa_phase']),
-               float(p['delta_t']),
+        lalsimulation.SimInspiralWaveformParamsInsertNumRelData(lal_pars, str(p['numrel_data']))
+    if p['modes_choice']:
+        lalsimulation.SimInspiralWaveformParamsInsertModesChoice(lal_pars, p['modes_choice'])
+    if p['frame_axis']:
+        lalsimulation.SimInspiralWaveformParamsInsertFrameAxis(lal_pars, p['frame_axis'])
+    if p['side_bands']:
+        lalsimulation.SimInspiralWaveformParamsInsertSideband(lal_pars, p['side_bands'])
+    #nonGRparams can be straightforwardly added if needed, however they have to
+    # be invoked one by one
+    hp1, hc1 = lalsimulation.SimInspiralChooseTDWaveform(
                float(pnutils.solar_mass_to_kg(p['mass1'])),
                float(pnutils.solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
                float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
-               float(p['f_lower']), float(p['f_ref']),
                pnutils.megaparsecs_to_meters(float(p['distance'])),
-               float(p['inclination']),
-               float(p['lambda1']),  float(p['lambda2']), flags, None,
-               int(p['amplitude_order']), int(p['phase_order']),
+               float(p['inclination']), float(p['coa_phase']),
+               float(p['long_asc_nodes']), float(p['eccentricity']), float(p['mean_per_ano']),
+               float(p['delta_t']), float(p['f_lower']), float(p['f_ref']),
+               lal_pars,
                _lalsim_enum[p['approximant']])
+    #lal.DestroyDict(lal_pars)
 
     hp = TimeSeries(hp1.data.data[:], delta_t=hp1.deltaT, epoch=hp1.epoch)
     hc = TimeSeries(hc1.data.data[:], delta_t=hc1.deltaT, epoch=hc1.epoch)
@@ -102,21 +124,45 @@ def _spintaylor_aligned_prec_swapper(**p):
     return hp, hc
 
 def _lalsim_fd_waveform(**p):
-    flags = lalsimulation.SimInspiralCreateWaveformFlags()
-    lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
-    lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
-
-    hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(float(p['coa_phase']),
-               p['delta_f'],
+    lal_pars = lal.CreateDict()
+    if p['phase_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(lal_pars,int(p['phase_order']))
+    if p['amplitude_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNAmplitudeOrder(lal_pars,int(p['amplitude_order']))
+    if p['spin_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNSpinOrder(lal_pars,int(p['spin_order']))
+    if p['tidal_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidalOrder(lal_pars, p['tidal_order'])
+    if p['eccentricity_order']!=-1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNEccentricityOrder(lal_pars, p['eccentricity_order'])
+    if p['lambda1']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidalLambda1(lal_pars, p['lambda1'])
+    if p['lambda2']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidalLambda2(lal_pars, p['lambda2'])
+    if p['dquad_mon1']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidaldQuadMon1(lal_pars, p['dquad_mon1'])
+    if p['dquad_mon2']:
+        lalsimulation.SimInspiralWaveformParamsInsertPNTidaldQuadMon2(lal_pars, p['dquad_mon2'])
+    if p['numrel_data']:
+        lalsimulation.SimInspiralWaveformParamsInsertNumRelData(lal_pars, str(p['numrel_data']))
+    if p['modes_choice']:
+        lalsimulation.SimInspiralWaveformParamsInsertModesChoice(lal_pars, p['modes_choice'])
+    if p['frame_axis']:
+        lalsimulation.SimInspiralWaveformParamsInsertFrameAxis(lal_pars, p['frame_axis'])
+    if p['side_bands']:
+        lalsimulation.SimInspiralWaveformParamsInsertSideband(lal_pars, p['side_bands'])
+    #nonGRparams can be straightforwardly added if needed, however they have to
+    # be invoked one by one
+    hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(
                float(pnutils.solar_mass_to_kg(p['mass1'])),
                float(pnutils.solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
                float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
-               float(p['f_lower']), float(p['f_final']), float(p['f_ref']),
                pnutils.megaparsecs_to_meters(float(p['distance'])),
-               float(p['inclination']),
-               float(p['lambda1']), float(p['lambda2']), flags, None,
-               int(p['amplitude_order']), int(p['phase_order']),
+               float(p['inclination']), float(p['coa_phase']),
+               float(p['long_asc_nodes']), float(p['eccentricity']), float(p['mean_per_ano']),
+               p['delta_f'], float(p['f_lower']), float(p['f_final']), float(p['f_ref']),
+               lal_pars,
                _lalsim_enum[p['approximant']])
 
     hp = FrequencySeries(hp1.data.data[:], delta_f=hp1.deltaF,
@@ -124,7 +170,7 @@ def _lalsim_fd_waveform(**p):
 
     hc = FrequencySeries(hc1.data.data[:], delta_f=hc1.deltaF,
                             epoch=hc1.epoch)                        
-
+    #lal.DestroyDict(lal_pars)
     return hp, hc
 
 def _lalsim_sgburst_waveform(**p):
@@ -182,7 +228,7 @@ cuda_fd = dict(_lalsim_fd_approximants.items() + _cuda_fd_approximants.items())
 # List the various available approximants ####################################
 
 def print_td_approximants():
-    print("Lalsimulation Approximants")
+    print("LalSimulation Approximants")
     for approx in _lalsim_td_approximants.keys():
         print "  " + approx
     print("CUDA Approximants")
@@ -190,7 +236,7 @@ def print_td_approximants():
         print "  " + approx
 
 def print_fd_approximants():
-    print("Lalsimulation Approximants")
+    print("LalSimulation Approximants")
     for approx in _lalsim_fd_approximants.keys():
         print "  " + approx
     print("CUDA Approximants")
@@ -198,7 +244,7 @@ def print_fd_approximants():
         print "  " + approx
 
 def print_sgburst_approximants():
-    print("Lalsimulation Approximants")
+    print("LalSimulation Approximants")
     for approx in _lalsim_sgburst_approximants.keys():
         print "  " + approx
 
@@ -531,70 +577,49 @@ _filter_preconditions = {}
 _template_amplitude_norms = {}
 _filter_time_lengths = {}
 
-def seobnrrom_final_frequency(**kwds):
-    from pycbc.pnutils import get_final_freq
-    return get_final_freq("SEOBNRv2", kwds['mass1'], kwds['mass2'],
-                   kwds['spin1z'], kwds['spin2z'])
+def seobnrv2_final_frequency(**kwds):
+    return pnutils.get_final_freq("SEOBNRv2", kwds['mass1'], kwds['mass2'],
+                                  kwds['spin1z'], kwds['spin2z'])
 
+def get_imr_length(approx, **kwds):
+    """Call through to pnutils to obtain IMR waveform durations
+    """
+    m1 = float(kwds['mass1'])
+    m2 = float(kwds['mass2'])
+    s1z = float(kwds['spin1z'])
+    s2z = float(kwds['spin2z'])
+    f_low = float(kwds['f_lower'])
+    # 10% margin of error is incorporated in the pnutils function
+    return pnutils.get_imr_duration(m1, m2, s1z, s2z, f_low, approximant=approx)
 
 def seobnrv2_length_in_time(**kwds):
-    """Stub for holding the calculation of ROM waveform duration.
+    """Stub for holding the calculation of SEOBNRv2* waveform duration.
     """
-    mass1 = float(kwds['mass1'])
-    mass2 = float(kwds['mass2'])
-    spin1z = float(kwds['spin1z'])
-    spin2z = float(kwds['spin2z'])
-    fmin = float(kwds['f_lower'])
-    chi = lalsimulation.SimIMRPhenomBComputeChi(mass1, mass2,
-                                                spin1z, spin2z)
-    time_length = lalsimulation.SimIMRSEOBNRv2ChirpTimeSingleSpin(
-            mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI, chi, fmin)
-    # FIXME: This is still approximate so add a 10% error margin
-    time_length = time_length * 1.1
-    return time_length
-
+    return get_imr_length("SEOBNRv2", **kwds)
 
 def seobnrv4_length_in_time(**kwds):
     """Stub for holding the calculation of SEOBNRv4* waveform duration.
     """
-    m1 = float(kwds['mass1'])
-    m2 = float(kwds['mass2'])
-    s1 = float(kwds['spin1z'])
-    s2 = float(kwds['spin2z'])
-    fmin = float(kwds['f_lower'])
-    t = lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency(
-            fmin, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1, s2)
-    # Allow a 10% margin of error
-    return t * 1.1
+    return get_imr_length("SEOBNRv4", **kwds)
 
 def imrphenomd_length_in_time(**kwds):
     """Stub for holding the calculation of IMRPhenomD waveform duration.
     """
-    mass1 = float(kwds['mass1'])
-    mass2 = float(kwds['mass2'])
-    spin1z = float(kwds['spin1z'])
-    spin2z = float(kwds['spin2z'])
-    fmin = float(kwds['f_lower'])
-    time_length = lalsimulation.SimIMRPhenomDChirpTime(mass1 * lal.MSUN_SI,
-                                                       mass2 * lal.MSUN_SI,
-                                                       spin1z, spin2z, fmin)
-    # FIXME add a 10% error margin for consistency
-    # with seobnrv2_length_in_time()
-    return time_length * 1.1
+    return get_imr_length("IMRPhenomD", **kwds)
 
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
 _filter_ends["SPAtmplt"] = spa_tmplt_end
 _filter_ends["TaylorF2"] = spa_tmplt_end
-#_filter_ends["SEOBNRv1_ROM_EffectiveSpin"] = seobnrrom_final_frequency
-#_filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrrom_final_frequency
-#_filter_ends["SEOBNRv2_ROM_EffectiveSpin"] = seobnrrom_final_frequency
-#_filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrrom_final_frequency
-#_filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrrom_final_frequency
+#_filter_ends["SEOBNRv1_ROM_EffectiveSpin"] = seobnrv2_final_frequency
+#_filter_ends["SEOBNRv1_ROM_DoubleSpin"] =  seobnrv2_final_frequency
+#_filter_ends["SEOBNRv2_ROM_EffectiveSpin"] = seobnrv2_final_frequency
+#_filter_ends["SEOBNRv2_ROM_DoubleSpin"] =  seobnrv2_final_frequency
+#_filter_ends["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrv2_final_frequency
 # PhenomD returns higher frequencies than this, so commenting this out for now
-#_filter_ends["IMRPhenomC"] = seobnrrom_final_frequency
-#_filter_ends["IMRPhenomD"] = seobnrrom_final_frequency
+#_filter_ends["IMRPhenomC"] = seobnrv2_final_frequency
+#_filter_ends["IMRPhenomD"] = seobnrv2_final_frequency
 
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
@@ -788,7 +813,6 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
     else:
         raise ValueError("Approximant %s not available" %
                             (input_params['approximant']))
-
 
 def waveform_norm_exists(approximant):
     if approximant in _filter_norms:

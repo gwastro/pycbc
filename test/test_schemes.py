@@ -101,34 +101,34 @@ class SchemeTestBase(unittest.TestCase):
             # isn't CPU)
             c = a1 * b1
             # Check that the data types are correct
-            self.assertEqual(type(a1._data),SchemeArray)
-            self.assertEqual(type(b1._data),SchemeArray)
-            self.assertEqual(type(c._data),SchemeArray)
+            self.assertTrue(isinstance(a1._data, SchemeArray))
+            self.assertTrue(isinstance(b1._data, SchemeArray))
+            self.assertTrue(isinstance(c._data, SchemeArray))
             # Check that schemes are correct
-            self.assertEqual(type(a1._scheme),type(self.context))
-            self.assertEqual(type(b1._scheme),type(self.context))
-            self.assertEqual(type(c._scheme),type(self.context))
+            self.assertTrue(isinstance(a1._scheme, type(self.context)))
+            self.assertTrue(isinstance(b1._scheme, type(self.context)))
+            self.assertTrue(isinstance(c._scheme, type(self.context)))
             # And finally check that the values are correct
             self.assertEqual(a1,self.a)
             self.assertEqual(b1,self.b)
             self.assertEqual(c,self.answer)
             # Now check that nothing about a2 has changed, since it wasn't involved
             # in the computation
-            self.assertEqual(type(a2._data),CPUArray)
-            self.assertEqual(type(a2._scheme),DefaultScheme)
+            self.assertTrue(isinstance(a2._data, CPUArray))
+            self.assertTrue(isinstance(a2._scheme, DefaultScheme))
             self.assertEqual(a2,self.a)
 
         # Now move back to the CPU, and check that everything is correctly
         # transferred:
         c = a1 * b1
         # Check that schemes are correct
-        self.assertEqual(type(a1._scheme),DefaultScheme)
-        self.assertEqual(type(b1._scheme),DefaultScheme)
-        self.assertEqual(type(c._scheme),DefaultScheme)
+        self.assertTrue(isinstance(a1._scheme, DefaultScheme))
+        self.assertTrue(isinstance(b1._scheme, DefaultScheme))
+        self.assertTrue(isinstance(c._scheme, DefaultScheme))
         # Check that the data types are correct
-        self.assertEqual(type(a1.data),CPUArray)
-        self.assertEqual(type(b1.data),CPUArray)
-        self.assertEqual(type(c.data),CPUArray)
+        self.assertTrue(isinstance(a1._data, CPUArray))
+        self.assertTrue(isinstance(b1._data, CPUArray))
+        self.assertTrue(isinstance(c.data, CPUArray))
         # And finally check that the values are correct
         self.assertEqual(a1,self.a)
         self.assertEqual(b1,self.b)
@@ -149,10 +149,10 @@ class SchemeTestBase(unittest.TestCase):
             a2 = acopy*1
             truth = (a1 == a2)
             # Now verify that nothing moved
-            self.assertEqual(type(a1._scheme),type(self.context))
-            self.assertEqual(type(a2._scheme),type(self.context))
-            self.assertEqual(type(a1.data),SchemeArray)
-            self.assertEqual(type(a2.data),SchemeArray)
+            self.assertTrue(isinstance(a1._scheme, type(self.context)))
+            self.assertTrue(isinstance(a2._scheme, type(self.context)))
+            self.assertTrue(isinstance(a1.data, SchemeArray))
+            self.assertTrue(isinstance(a2.data, SchemeArray))
 
 # Now the function that creates our various classes
 

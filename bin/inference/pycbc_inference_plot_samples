@@ -15,42 +15,43 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Plots samples from inference sampler.
+"""
 
 import argparse
 import h5py
 import logging
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
-import sys
+import pycbc
 from pycbc import results
 from pycbc.inference import option_utils
+import sys
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_inference_plot_samples [--options]",
-    description="Plots samples from inference sampler.")
+parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
+                                 description=__doc__)
 
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
-    help="Print logging info.")
+                    help="Print logging info.")
+
 # output plot options
 parser.add_argument("--output-file", type=str, required=True,
-    help="Path to output plot.")
-# add results group
+                    help="Path to output plot.")
+
+# add results group options
 option_utils.add_inference_results_option_group(parser)
 
 # parse the command line
 opts = parser.parse_args()
 
 # setup log
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+pycbc.init_logging(opts.verbose)
 
 # load the results
 fp, parameters, labels, _ = option_utils.results_from_cli(opts,
-    load_samples=False)
+                                                          load_samples=False)
 
 # get number of dimensions
 ndim = len(parameters)
@@ -63,14 +64,15 @@ plt.xlabel("Iteration")
 
 # loop over parameters
 axs = [axs] if not hasattr(axs, "__iter__") else axs
-for i,arg in enumerate(parameters):
+for i, arg in enumerate(parameters):
 
     # loop over walkers
     for j in range(fp.nwalkers):
 
         # plot each walker as a different line on the subplot
         y = fp.read_samples(arg, walkers=j, thin_start=opts.thin_start,
-                           thin_interval=opts.thin_interval)
+                            thin_interval=opts.thin_interval,
+                            thin_end=opts.thin_end)
         axs[i].plot(y[arg], alpha=0.25)
 
         # y-axis label

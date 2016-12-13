@@ -195,21 +195,29 @@ class Executable(pegasus_workflow.Executable):
 
         exe_url = urlparse.urlparse(exe_path)
 
-        if exe_url.scheme in ['', 'file']:
-            if os.path.isfile(exe_url.path):
-                self.add_pfn(exe_path)
+        # See if the user specified a list of sites for the executable
+        try:
+            exe_site_list = cp.get('pegasus_profile-%s' % name, 'pycbc|site')
+        except:
+            exe_site_list = 'local'
 
-                logging.debug("Using %s executable "
-                              "at %s" % (name, exe_url.path))
+        for s in exe_site_list.split(','):
+            exe_site = s.strip()
+
+            if exe_url.scheme in ['', 'file']:
+                if exe_site is 'local':
+                # Check that executables at file urls on the local site exist
+                   if os.path.isfile(exe_url.path) is False:
+                       raise TypeError("Failed to find %s executable " 
+                                       "at %s on site %s" % (name, exe_path,
+                                       exe_site))
             else:
-                raise TypeError("Failed to find %s executable " 
-                            "at %s" % (name, exe_path))
-        else:
-            # Could be http, gsiftp, etc.  Let Pegasus handle it.
+                # Could be http, gsiftp, etc. so it needs fetching if run now
+                self.needs_fetching = True
+
+            self.add_pfn(exe_path, site=exe_site)
             logging.debug("Using %s executable "
-                          "at %s" % (name, exe_path))
-            self.add_pfn(exe_path, site='nonlocal')
-            self.needs_fetching = True
+                          "at %s on site %s" % (name, exe_url.path, exe_site))
 
         # Determine the condor universe if we aren't given one 
         if self.universe is None:
@@ -679,7 +687,6 @@ class Node(pegasus_workflow.Node):
         
         if hasattr(executable, 'execution_site'):
             self.add_profile('hints', 'execution.site', executable.execution_site)
-            self.add_profile('hints', 'executionPool', executable.execution_site)
             
         self._options += self.executable.common_options
         for inp in self.executable.common_input_files:
