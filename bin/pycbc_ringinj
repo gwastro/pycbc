@@ -147,7 +147,7 @@ if opts.approximant=='FdQNMmultiModes' or opts.approximant=='TdQNMmultiModes':
         injection.create_dataset('amp%s' %mode, data=float(amps[mode]))
         injection.create_dataset('phi%s' %mode, data=float(phis[mode]))
     # Amplitude of 220 mode is always required, even if 22 not included
-    if 220 not in all_modes:
+    if '220' not in all_modes:
         try:
             injection.create_dataset('amp220', data=float(amps['220']))
         except:
