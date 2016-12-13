@@ -216,7 +216,7 @@ def get_kde_from_file(params_file, params=None):
     except:
         raise ValueError('File not found.')
     if params is not None:
-        if str(params)[0] != '[':
+        if type(params) != list:
             params = [params]
         for p in params:
             if p not in f.keys():
@@ -1254,17 +1254,24 @@ class Gaussian(_BoundedDist):
             bounds_required=False)
 
 class FromFile(_BoundedDist):
-    """A distribution that reads the values of the parameter(s) from a file,
-    computes the kde to construct the pdf, and draws random variables from it.
+    """A distribution that reads the values of the parameter(s) from an hdf
+    file, computes the kde to construct the pdf, and draws random variables
+    from it.
 
     Parameters
     ----------
     file_name : str
-        The path to a file containing the values of the parameters that want
-        to be used to construct the distribution.
+        The path to an hdf file containing the values of the parameters that
+        want to be used to construct the distribution. Each parameter should
+        be a separate dataset in the hdf file, and all datasets should have
+        the same size. For example, to give a prior for mass1 and mass2 from
+        file f, f['mass1'] and f['mass2'] contain the n values for each
+        parameter.
     \**params :
         The keyword arguments should provide the names of the parameters to be
-        read from the file and their bounds.
+        read from the file and (optionally) their bounds. If no parameters are
+        provided, it will use all the parameters found in the file. To provide
+        bounds, specify e.g. mass1=[10,100]. Otherwise, mass1=None.
 
     Attributes
     ----------
@@ -1303,14 +1310,15 @@ class FromFile(_BoundedDist):
         lower_bounds = [self.bounds[p][0] for p in pnames]
         higher_bounds = [self.bounds[p][1] for p in pnames]
         # Avoid inf because of inconsistencies in integrate_box
+        RANGE_LIMIT = 2 ** 31
         for ii, bnd in enumerate(lower_bounds):
             if abs(bnd) == numpy.inf:
-                lower_bounds[ii] = numpy.sign(bnd) * 2 ** 31
+                lower_bounds[ii] = numpy.sign(bnd) * RANGE_LIMIT
         for ii, bnd in enumerate(higher_bounds):
             if abs(bnd) == numpy.inf:
-                higher_bounds[ii] = numpy.sign(bnd) * 2 ** 31
+                higher_bounds[ii] = numpy.sign(bnd) * RANGE_LIMIT
         # Array of -inf for the lower limits in integrate_box
-        lower_limits = - 2 ** 31 * numpy.ones(shape=len(lower_bounds))
+        lower_limits = - RANGE_LIMIT * numpy.ones(shape=len(lower_bounds))
         # CDF(-inf,b) - CDF(-inf, a)
         invnorm = self._kde.integrate_box(lower_limits, higher_bounds) - \
                     self._kde.integrate_box(lower_limits, lower_bounds)
