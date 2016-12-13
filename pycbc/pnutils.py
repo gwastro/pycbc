@@ -79,7 +79,7 @@ def mchirp_mass1_to_mass2(mchirp, mass1):
     real_root = roots[(abs(roots - roots.real)).argmin()]
     return real_root.real
 
-def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False):
+def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False, force_real=True):
     """
     This function takes values for eta and one component mass and returns the
     second component mass. Similar to mchirp_mass1_to_mass2 this requires
@@ -93,6 +93,8 @@ def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False):
     behaviour.
     """
     roots = numpy.roots([eta, (2*eta - 1)*mass1, mass1*mass1*eta])
+    if force_real:
+        roots = numpy.real(roots)
     if return_mass_heavier==False:
         return roots[roots.argmin()]
     else:

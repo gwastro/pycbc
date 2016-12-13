@@ -340,6 +340,9 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
     if totmass[0] < 0.00011:
         raise ValueError("Cannot remove the guide point!")
 
+    mass1[totmass < 0.00011] = 0.0001
+    mass2[totmass < 0.00011] = 0.0001
+
     # Then map to xis
     new_xis = get_cov_params(mass1, mass2, spin1z, spin2z,
                              metricParams, fUpper)

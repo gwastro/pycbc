@@ -162,15 +162,13 @@ if len(evals) < 5:
 
 # Create a large set of points and map to xi_i to give a starting point when
 # mapping from xi_i to masses and spins
-rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
+rMass1, rMass2, rSpin1z, rSpin2z = \
       pycbc.tmpltbank.get_random_mass(2000000, massRangeParams)
-diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
-rMass1 = (rTotmass + diff)/2.
-rMass2 = (rTotmass - diff)/2.
-rChis = (rSpin1z + rSpin2z)/2.
+rTotmass = rMass1 + rMass2
+rEta = (rMass1 * rMass2) / (rTotmass * rTotmass)
 
-rXis = pycbc.tmpltbank.get_cov_params(rTotmass, rEta, rBeta, rSigma, rGamma,\
-           rChis, metricParams, opts.f0)
+rXis = pycbc.tmpltbank.get_cov_params(rMass1, rMass2, rSpin1z, rSpin2z,
+                                      metricParams, opts.f0)
 
 xis = (numpy.array(rXis)).T
 physMasses = numpy.array([rTotmass, rEta, rSpin1z, rSpin2z])
