@@ -52,48 +52,20 @@ parser.add_argument('--cluster-window', type=float, default=10,
 parser.add_argument('--veto-window', type=float, default=.1,
                     help='Time around each zerolag trigger to window out, '
                          '[default=.1s]')
-parser.add_argument('--veto-window-hierarch', type=float, default=1.0,
+parser.add_argument('--hierarchical-removal-window', type=float, default=1.0,
                     help='Time around each trigger to window out for a very '
                          'louder trigger in the hierarchical removal '
                          'procedure. [default=1.0s]')
-parser.add_argument('--cont-hier-removal', action='store_true',
-                    default='store_false', 
-                    help='Use this option to do continuous hierarchical '
-                         'removal without any cutoff number of hierarchical '
-                         'removals to stop at. [default=false]')
 parser.add_argument('--max-hier-removal', type=int, default=0,
                     help='Maximum amount of hierarchical removals to carry '
                          'out when hierarchical removal is desired. Choose '
-                         '0 for no hierarchical removal. Choose 1 to do at '
-                         'most 1 hierarchical removal, and so on. The code '
-                         'will write the triggers out for whichever comes '
-                         'first: that there are no more hierarchical removals '
-                         'to do, or the max allowed amount of hierarchical '
-                         'removals has been reached. [default=0]')
-parser.add_argument('--store-last-h-rm-background', action='store_true',
-                    default='store_false',
-                    help='Toggle whether the user wants to store the '
-                         'inclusive background from the last iteration '
-                         'of hierarchical removal. If not indicated '
-                         'the final inclusive background triggers will '
-                         'be the inclusive background prior to hierarchical '
-                         'removal. (Note: The output file still stores '
-                         'the inclusive background from each hierarchical '
-                         'removal, but they are not stored as -final- results.'
-                         ' [default=false]')
+                         '-1 for continuous hiearchical removal until none '
+                         ' are possible any longer. Choose 0 for no '
+                         'hierarchical removal. Choose 1 to do at most 1 '
+                         'hierarchical removal, and so on. [default=0]')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
-
-# Require that the user does not input negative number of iterations to
-# hierarchically remove foreground triggers. This is required for a later
-# hack in the while loop if the user wants to do continuous hierarchical
-# removal.
-if args.max_hier_removal < 0:
-   logging.warn('ERROR: Cannot hierarchically remove triggers %s '
-                'times.' % args.max_hier_removal)
-   logging.warn('Exiting.')
-   sys.exit()
 
 # Set an index to keep track of how many hiearrchical removals we want to do.
 # This number will be used to keep track of which inclusive background we are
@@ -113,21 +85,21 @@ fore_time2 = all_trigs.time2[fore_locs]
 # array of average times of triggers from ifo1 and ifo2
 ave_fore_time = (fore_time1 + fore_time2) / 2.0
 
-# veto start and end time around every average foreground trigger time to
+# remove start and end time around every average foreground trigger time to
 # window around.
-veto_start_time = ave_fore_time - args.veto_window
-veto_end_time = ave_fore_time + args.veto_window
+remove_start_time = ave_fore_time - args.veto_window
+remove_end_time = ave_fore_time + args.veto_window
 
 # The time contained between segments around the times contained
-# between each element of veto_start_time and veto_end_time
+# between each element of remove_start_time and remove_end_time
 
-veto_time = abs(veto.start_end_to_segments(veto_start_time,
-                                           veto_end_time).coalesce())
+veto_time = abs(veto.start_end_to_segments(remove_start_time,
+                                           remove_end_time).coalesce())
 
 # Veto indices from list of triggers for times in ifo 1 around the 
 # window times
-veto_indices1 = veto.indices_within_times(all_trigs.time1, veto_start_time,
-                                          veto_end_time) 
+veto_indices1 = veto.indices_within_times(all_trigs.time1, remove_start_time,
+                                          remove_end_time)
 
 # Remove any zerolag triggers and get all exclusive background triggers
 exc_zero_trigs = all_trigs.remove(veto_indices1)
@@ -135,7 +107,7 @@ exc_zero_trigs = all_trigs.remove(veto_indices1)
 # Veto indices from list of triggers for times in ifo 1 around the 
 # window gps times
 veto_indices2 = veto.indices_within_times(exc_zero_trigs.time2,
-                                          veto_start_time, veto_end_time)
+                                          remove_start_time, remove_end_time)
 
 # Remove any coincident trigger pairs from the data set that could be in
 # coincidence with other coincident triggers (by the light travel time +
@@ -171,8 +143,8 @@ for key in all_trigs.seg.keys():
     f['segments_h/h_iter' + h_iter_string + '/%s/end' % key] = all_trigs.seg[key]['end'][:]
 
 if fore_locs.sum() > 0:
-    f['segments_h/h_iter' + h_iter_string + '/foreground_veto/start'] = veto_start_time
-    f['segments_h/h_iter' + h_iter_string + '/foreground_veto/end'] = veto_end_time
+    f['segments_h/h_iter' + h_iter_string + '/foreground_veto/start'] = remove_start_time
+    f['segments_h/h_iter' + h_iter_string + '/foreground_veto/end'] = remove_end_time
     for k in all_trigs.data:
         f['foreground_h/h_iter' + h_iter_string + '/' + k] = all_trigs.data[k][fore_locs]
 else:
@@ -257,8 +229,7 @@ if 'name' in all_trigs.attrs:
     f.attrs['name'] = all_trigs.attrs['name']
 
 # Incorporate hierarchical removal for any other loud triggers
-logging.info("Beginning hierarchical removal of foreground triggers, "
-             "if necessary.")
+logging.info("Beginning hierarchical removal of foreground triggers.")
 
 # Step 1: Check to see if there are triggers that are louder
 #         then all of the inclusive background.
@@ -292,8 +263,7 @@ while len(loud_t_ind) > 0:
     # number of iterations then break when the h_iterations gets to that
     # number
 
-    if (args.cont_hier_removal == 'store_false' and
-        h_iterations == args.max_hier_removal): 
+    if (h_iterations == args.max_hier_removal): 
         logging.warn("Hierarchical removal can continue but user has set"
                      "--max-hier-removal too low!")
         break
@@ -357,11 +327,11 @@ while len(loud_t_ind) > 0:
     # triggers that are associated with it via the timeslides.
 
     ind_to_rm_ifo1 = veto.indices_within_times(all_trigs.time1, \
-                              [all_trigs.time1[my_loudest_ind] - args.veto_window_hierarch], \
-                              [all_trigs.time1[my_loudest_ind] + args.veto_window_hierarch])
+                              [all_trigs.time1[my_loudest_ind] - args.hierarchical_removal_window], \
+                              [all_trigs.time1[my_loudest_ind] + args.hierarchical_removal_window])
     ind_to_rm_ifo2 = veto.indices_within_times(all_trigs.time2, \
-                              [all_trigs.time2[my_loudest_ind] - args.veto_window_hierarch], \
-                              [all_trigs.time2[my_loudest_ind] + args.veto_window_hierarch])
+                              [all_trigs.time2[my_loudest_ind] - args.hierarchical_removal_window], \
+                              [all_trigs.time2[my_loudest_ind] + args.hierarchical_removal_window])
     indices_to_rm = numpy.concatenate([ind_to_rm_ifo1, ind_to_rm_ifo2])
 
     all_trigs = all_trigs.remove(indices_to_rm)
@@ -374,8 +344,8 @@ while len(loud_t_ind) > 0:
 
     ave_fore_time = (fore_time1 + fore_time2) / 2.0
 
-    veto_start_time = ave_fore_time - args.veto_window
-    veto_end_time = ave_fore_time + args.veto_window
+    remove_start_time = ave_fore_time - args.veto_window
+    remove_end_time = ave_fore_time + args.veto_window
 
     logging.info("We have %s triggers after hierarchical removal." % len(all_trigs.stat))
 
@@ -402,8 +372,8 @@ while len(loud_t_ind) > 0:
         f['segments_h/h_iter' + h_iter_string + '/%s/end' % key] = all_trigs.seg[key]['end'][:]
 
     if fore_locs.sum() > 0:
-        f['segments_h/h_iter' + h_iter_string + '/foreground_veto/start'] = veto_start_time
-        f['segments_h/h_iter' + h_iter_string + '/foreground_veto/end'] = veto_end_time
+        f['segments_h/h_iter' + h_iter_string + '/foreground_veto/start'] = remove_start_time
+        f['segments_h/h_iter' + h_iter_string + '/foreground_veto/end'] = remove_end_time
         for k in all_trigs.data:
             f['foreground_h/h_iter' + h_iter_string + '/' + k] = all_trigs.data[k][fore_locs]
     else:
@@ -521,27 +491,16 @@ else :
     f['foreground/ifar'] = f['foreground_h/h_iter0/ifar']
     f['foreground/fap'] = f['foreground_h/h_iter0/fap']
 
-# Write the values of the last h_iteration for the inclusive background if
-# the user has indicated this is what they want to do.
-if args.store_last_h_rm_background == True:
-    for k in all_trigs.data:
-        f['background/' + k] = f['background_h/h_iter' + h_iter_string + '/' +k]
-
-    f['background/ifar'] = f['background_h/h_iter' + h_iter_string + '/ifar']
-    f.attrs['background_time'] = f.attrs['background_time_h/h_iter' + h_iter_string]
-
 # The default is to store the inclusive background from before any
 # hierarchical removals.
-else :
-    for k in all_trigs.data:
-        f['background/' + k] = f['background_h/h_iter0/' +k]
+for k in all_trigs.data:
+    f['background/' + k] = f['background_h/h_iter0/' +k]
 
     f['background/ifar'] = f['background_h/h_iter0/ifar']
     f.attrs['background_time'] = f.attrs['background_time_h/h_iter0']
 
 
-# This may be controversial, if all of the foreground times are put back in
-# I have write the coinc_time from h_iterations = 0.
+# Put the foreground time from before hierarchical removals.
 f.attrs['foreground_time'] = f.attrs['foreground_time_h/h_iter0']
 
 # Write to file how many hierarchical removals were implemented, this number
