@@ -1262,7 +1262,7 @@ class FromFile(_BoundedDist):
             ps = None
         else:
             ps = params.keys()
-        pnames, self._kde = get_kde_from_file(file_name, params=ps)
+        pnames, self._kde = self.get_kde_from_file(file_name, params=ps)
         # If no parameters where given, populate with pnames
         for param in pnames:
             if param not in params:
@@ -1379,7 +1379,7 @@ class FromFile(_BoundedDist):
         return arr
 
     @classmethod
-    def get_kde_from_file(params_file, params=None):
+    def get_kde_from_file(cls, params_file, params=None):
         """Reads the values of one or more parameters from an hdf file and
         computes the kernel density estimate (kde).
 
