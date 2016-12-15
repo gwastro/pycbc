@@ -1378,8 +1378,8 @@ class FromFile(_BoundedDist):
             arr[param[0]] = randoms[order]
         return arr
 
-    @classmethod
-    def get_kde_from_file(cls, params_file, params=None):
+    @staticmethod
+    def get_kde_from_file(params_file, params=None):
         """Reads the values of one or more parameters from an hdf file and
         computes the kernel density estimate (kde).
 
