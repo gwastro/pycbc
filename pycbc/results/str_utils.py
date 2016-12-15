@@ -195,6 +195,7 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
         decs = error
     # now round the the appropriate number of sig figs
     valtxt = get_signum(value, decs)
+    valtxt = '{}{}'.format(minus_sign, valtxt)
 
     if include_error:
         if plus_error is None:
@@ -226,5 +227,5 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
                 txt = r'%s^{+%s}_{-%s}%s' %(valtxt, plus_err_txt,
                     minus_err_txt, powfactor)
     else:
-        txt = r'%s%s%s' %(minus_sign, valtxt, powfactor)
+        txt = r'%s%s' %(valtxt, powfactor)
     return txt 
