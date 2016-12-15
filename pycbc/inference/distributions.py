@@ -1402,7 +1402,7 @@ class FromFile(_BoundedDist):
         except:
             raise ValueError('File not found.')
         if params is not None:
-            if type(params) != list:
+            if not isinstance(params, list):
                 params = [params]
             for p in params:
                 if p not in f.keys():
