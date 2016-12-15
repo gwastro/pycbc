@@ -193,42 +193,6 @@ def _bounded_from_config(cls, cp, section, variable_args,
     return cls(**dist_args)
 
 
-def get_kde_from_file(params_file, params=None):
-    """Reads the values of one or more parameters from an hdf file and
-    computes the kernel density estimate (kde).
-
-    Parameters
-    ----------
-    params_file : str
-        The hdf file that contains the values of the parameters.
-    params : {None, list}
-        If provided, will just use the values for the given parameter.
-        Otherwise, uses the values for each parameter in the file.
-    Returns
-    -------
-    values
-        Array with the values of the parameters.
-    kde
-        The kde from the parameters.
-    """
-    try:
-        f = h5py.File(params_file, 'r')
-    except:
-        raise ValueError('File not found.')
-    if params is not None:
-        if type(params) != list:
-            params = [params]
-        for p in params:
-            if p not in f.keys():
-                raise ValueError('Parameter {} is not in {}'.format(p, params_file))
-    else:
-        params = [str(k) for k in f.keys()]
-    params_values = {p:f[p][:] for p in params}
-    f.close()
-    values = numpy.vstack((params_values[p] for p in params))
-    return params, scipy.stats.gaussian_kde(values)
-
-
 class _BoundedDist(object):
     """
     A generic class for storing common properties of distributions in which
@@ -1413,6 +1377,42 @@ class FromFile(_BoundedDist):
         for order, param in enumerate(dtype):
             arr[param[0]] = randoms[order]
         return arr
+
+    @classmethod
+    def get_kde_from_file(params_file, params=None):
+        """Reads the values of one or more parameters from an hdf file and
+        computes the kernel density estimate (kde).
+
+        Parameters
+        ----------
+        params_file : str
+            The hdf file that contains the values of the parameters.
+        params : {None, list}
+            If provided, will just use the values for the given parameter.
+            Otherwise, uses the values for each parameter in the file.
+        Returns
+        -------
+        values
+            Array with the values of the parameters.
+        kde
+            The kde from the parameters.
+        """
+        try:
+            f = h5py.File(params_file, 'r')
+        except:
+            raise ValueError('File not found.')
+        if params is not None:
+            if type(params) != list:
+                params = [params]
+            for p in params:
+                if p not in f.keys():
+                    raise ValueError('Parameter {} is not in {}'.format(p, params_file))
+        else:
+            params = [str(k) for k in f.keys()]
+        params_values = {p:f[p][:] for p in params}
+        f.close()
+        values = numpy.vstack((params_values[p] for p in params))
+        return params, scipy.stats.gaussian_kde(values)
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
