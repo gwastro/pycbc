@@ -125,7 +125,7 @@ If you are running on a Scientific Linux 6 cluster, you need to install the HDF5
     mkdir -p $VIRTUAL_ENV/src
     cd $VIRTUAL_ENV/src
     pip install "nose>=1.0.0"
-    curl https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
+    curl https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
     tar -zxvf hdf5-1.8.12.tar.gz
     cd hdf5-1.8.12
     ./configure --prefix=$VIRTUAL_ENV/opt/hdf5-1.8.12
