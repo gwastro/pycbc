@@ -17,6 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os.path, types
+import codecs
 
 from ConfigParser import ConfigParser
 from jinja2 import Environment, FileSystemLoader
@@ -180,7 +181,7 @@ def render_text(path, cp):
     content = None
 
     # read file as a string
-    with open(path, 'rb') as fp:
+    with codecs.open(path, 'r', encoding='utf-8', errors='replace') as fp:
         content = fp.read()
 
     # replace all the escaped characters
