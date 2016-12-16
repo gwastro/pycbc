@@ -14,8 +14,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 from __future__ import division
+import re
 import numpy
-from lal import MTSUN_SI, GAMMA
+from lal import MTSUN_SI, GAMMA, PI, CreateDict
+import lalsimulation
 from pycbc import pnutils
 
 # PLEASE ENSURE THESE ARE KEPT UP TO DATE WITH THE REST OF THIS FILE
@@ -154,9 +156,54 @@ def ethinca_order_from_string(order):
                            "calculation! Valid orders: "+
                            str(get_ethinca_orders().keys()))
 
-#def _get_phasing_params(
-
 def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order):
+    lal_pars = CreateDict()
+    phasing_vs = numpy.zeros([len(mass1), 13])
+    phasing_vlogvs = numpy.zeros([len(mass1), 13])
+    phasing_vlogvsqs = numpy.zeros([len(mass1), 13])
+    for i in xrange(len(mass1)):
+        m1 = float(mass1[i])
+        m2 = float(mass2[i])
+        s1z = float(spin1z[i])
+        s2z = float(spin2z[i])
+        phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
+                                    m1, m2, s1z, s2z, lal_pars)
+        phasing_vs[i,:] = phasing.v
+        phasing_vlogvs[i,:] = phasing.vlogv
+        phasing_vlogvsqs[i,:] = phasing.vlogvsq
+
+    pmf = PI * (mass1 + mass2)*MTSUN_SI * f0
+    pmf13 = pmf**(1./3.)
+
+    mapping = generate_inverse_mapping(order)
+    lambdas = []
+    lambda_str = '^Lambda([0-9]+)'
+    loglambda_str = '^LogLambda([0-9]+)'
+    logloglambda_str = '^LogLogLambda([0-9]+'
+    for idx in xrange(len(mapping.keys())):
+        # RE magic engage!
+        rematch = re.match(lambda_str, mapping[idx])
+        if rematch:
+            pn_order = int(rematch.groups()[0])
+            lambdas.append(phasing_vs[:,pn_order] * pmf13**(-5+pn_order))
+            continue
+        rematch = re.match(loglambda_str, mapping[idx])
+        if rematch:
+            pn_order = int(rematch.groups()[0])
+            lambdas.append(phasing_vlogvs[:,pn_order] * pmf13**(-5+pn_order))
+            continue
+        rematch = re.match(logloglambda_str, mapping[idx])
+        if rematch:
+            pn_order = int(rematch.groups()[0])
+            lambdas.append(phasing_vlogvsqs[:,pn_order] * pmf13**(-5+pn_order))
+            continue
+        err_msg = "Failed to parse " +  mapping[idx]
+        raise ValueError(err_msg)
+
+    return lambdas
+
+
+def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
     """
     Take a set of masses and spins and convert to the various lambda
     coordinates that describe the orbital phase. Accepted PN orders are: %s
