@@ -169,7 +169,8 @@ def select_generic_executable(workflow, exe_tag):
         "pylal_cbc_cohptf_injcombiner"   : LegacyCohPTFInjcombiner,
         "pylal_cbc_cohptf_sbv_plotter"   : LegacyCohPTFSbvPlotter,
         "pylal_cbc_cohptf_efficiency"    : LegacyCohPTFEfficiency,
-        "pycbc_make_grb_summary_page"  : PyGRBMakeSummaryPage
+        "pycbc_make_grb_summary_page"    : PyGRBMakeSummaryPage,
+        "pycbc_condition_strain"         : PycbcConditionStrainExecutable
     }
     try:
         return exe_to_class_map[exe_name]
@@ -1722,4 +1723,32 @@ class PycbcSplitBankXmlExecutable(PycbcSplitBankExecutable):
     """ Subclass resonsible for creating jobs for pycbc_splitbank. """
 
     extension='.xml.gz'
+
+class PycbcConditionStrainExecutable(Executable):
+    """ The class responsible for creating jobs for pycbc_condition_strain. """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None, universe=None,
+            tags=None):
+        super(PycbcConditionStrainExecutable, self).__init__(cp, exe_name, universe,
+              ifo, out_dir, tags)
+
+    def create_node(self, input_files, tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+        start_time = self.cp.get("workflow", "start-time")
+        end_time = self.cp.get("workflow", "end-time")
+        node.add_opt('--gps-start-time', start_time)
+        node.add_opt('--gps-end-time', end_time)
+        node.add_input_list_opt('--frame-files', input_files)
+
+        out_file = File(self.ifo, "gated",
+                        segments.segment(int(start_time), int(end_time)),
+                        directory=self.out_dir, store_file=self.retain_files,
+                        extension=input_files[0].name.split('.', 1)[-1],
+                        tags=tags)
+        node.add_output_opt('--output-strain-file', out_file)
+
+        return node, out_file
 
