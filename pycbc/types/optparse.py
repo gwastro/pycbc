@@ -23,6 +23,20 @@ from collections import defaultdict
 class DictWithDefaultReturn(defaultdict):
     default_set = False
     ifo_set = False
+    def __bool__(self):
+        if self.items() and not all(entry is None for entry in self.values()):
+            # True if any values are explictly set.
+            return True
+        elif self['RANDOM_STRING_314324'] is not None:
+            # Or true if the default value was set
+            # NOTE: This stores the string RANDOM_STRING_314324 in the dict
+            # so subsequent calls will be caught in the first test here.
+            return True
+        else:
+            # Else false
+            return False
+    # Python 2 and 3 have different conventions for boolean method
+    __nonzero__ = __bool__
 
 class MultiDetOptionAction(argparse.Action):
     # Initialise the same as the standard 'append' action
@@ -272,7 +286,6 @@ def ensure_one_opt_multi_ifo(opt, parser, ifo, opt_list):
                               % (the_one, name))
 
     if the_one is None:
-        print opt, ifo
         parser.error("you must supply one of the following %s" \
                       % (', '.join(opt_list)))
 
