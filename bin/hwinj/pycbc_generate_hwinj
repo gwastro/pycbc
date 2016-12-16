@@ -200,6 +200,8 @@ _psd.insert_psd_option_group_multi_ifo(parser)
 opts = parser.parse_args()
 
 # verify options are sane if using strain options
+print bool(opts.psd_estimation)
+print "CHECKING"
 if opts.psd_estimation:
     _strain.verify_strain_options_multi_ifo(opts, parser, opts.instruments)
 if not opts.psd_estimation and (opts.frame_files or opts.frame_type
@@ -355,6 +357,12 @@ for ifo in opts.instruments:
     # get Detector instance for IFO
     det = Detector(ifo)
 
+    # get time delay to detector from center of the Earth
+    time_delay = det.time_delay_from_earth_center(sim.longitude, sim.latitude,
+                                                  sim.geocent_end_time)
+    end_time = sim.geocent_end_time + time_delay
+
+
     # get antenna pattern
     f_plus, f_cross = det.antenna_pattern(sim.longitude, sim.latitude,
                                           sim.polarization,
@@ -410,7 +418,7 @@ for ifo in opts.instruments:
 network_snr = numpy.sqrt(network_snr)
 scale = network_snr / opts.network_snr
 sim.distance = scale*sim.distance
-for ifo in opt.instruments:
+for ifo in opts.instruments:
     attrname='eff_dist_'+ifo[0].lower()
     effdist=getattr(sim,attrname)
     setattr(sim,attrname,effdist*scale)
