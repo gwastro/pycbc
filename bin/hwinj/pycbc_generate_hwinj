@@ -362,7 +362,6 @@ for ifo in opts.instruments:
                                                   sim.geocent_end_time)
     end_time = sim.geocent_end_time + time_delay
 
-
     # get antenna pattern
     f_plus, f_cross = det.antenna_pattern(sim.longitude, sim.latitude,
                                           sim.polarization,
