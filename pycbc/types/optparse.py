@@ -24,11 +24,13 @@ class DictWithDefaultReturn(defaultdict):
     default_set = False
     ifo_set = False
     def __bool__(self):
-        if self.items():
+        if self.items() and not all(entry is None for entry in self.values()):
             # True if any values are explictly set.
             return True
-        elif self.default_factory() is not None:
+        elif self['RANDOM_STRING_314324'] is not None:
             # Or true if the default value was set
+            # NOTE: This stores the string RANDOM_STRING_314324 in the dict
+            # so subsequent calls will be caught in the first test here.
             return True
         else:
             # Else false
