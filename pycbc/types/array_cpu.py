@@ -139,7 +139,6 @@ def inner(self, other):
     """
     cdtype = common_kind(self.dtype, other.dtype)
     if cdtype.kind == 'c':
-        acum_dtype = complex128
         return _np.sum(self.data.conj() * other, dtype=complex128)
     else:
         return inner_inline_real(self, other)
