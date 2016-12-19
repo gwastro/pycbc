@@ -174,15 +174,15 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
     phasing_vlogvs = numpy.zeros([len(mass1), 13])
     phasing_vlogvsqs = numpy.zeros([len(mass1), 13])
     for i in xrange(len(mass1)):
-        m1 = float(mass1[i])
-        m2 = float(mass2[i])
-        s1z = float(spin1z[i])
-        s2z = float(spin2z[i])
         phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
-                                    m1, m2, s1z, s2z, lal_pars)
-        phasing_vs[i,:] = phasing.v
-        phasing_vlogvs[i,:] = phasing.vlogv
-        phasing_vlogvsqs[i,:] = phasing.vlogvsq
+                            mass1[i], mass2[i], spin1z[i], spin2z[i], lal_pars)
+        phasing_vs[i] = phasing.v
+        phasing_vlogvs[i] = phasing.vlogv
+        phasing_vlogvsqs[i] = phasing.vlogvsq
+
+    phasing_vs = numpy.array(phasing_vs)
+    phasing_vlogvs = numpy.array(phasing_vlogvs)
+    phasing_vlogvsqs = numpy.array(phasing_vlogvsqs)
 
     pmf = PI * (mass1 + mass2)*MTSUN_SI * f0
     pmf13 = pmf**(1./3.)
