@@ -98,7 +98,7 @@ if args.plot_caption is None:
     args.plot_caption = ''
 
 if 'command_line' in f.attrs:
-    cmd = f.attrs['command_line'] + '\n\n' + ' '.join(sys.argv)
+    cmd = f.attrs['command_line'] + '\\n\\n' + ' '.join(sys.argv)
 else:
     cmd = ' '.join(sys.argv)
 
