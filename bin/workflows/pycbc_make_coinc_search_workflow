@@ -356,14 +356,14 @@ for bin_file in bin_files:
 # Also run minifollowups on loudest sngl detector events
 for insp_file in full_insps:
     curr_ifo = insp_file.ifo
-    currdir = rdir['single_triggers/%s_loudest_triggers' %(curr_ifo,)]
+    currdir = rdir['single_triggers/%s_loudest_all_time' %(curr_ifo,)]
     wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
                                   insp_files_seg_file, data_analysed_name,
                                   trig_generated_name, 'daxes', currdir,
                                   veto_file=censored_veto,
                                   veto_segment_name='closed_box',
                                   tags=insp_file.tags)
-    currdir = rdir['single_triggers/%s_snglifo_triggers' %(curr_ifo,)]
+    currdir = rdir['single_triggers/%s_loudest_noncoinc_time' %(curr_ifo,)]
     wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
                                   insp_files_seg_file, data_analysed_name,
                                   trig_generated_name, 'daxes', currdir,
