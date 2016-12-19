@@ -392,8 +392,6 @@ setup (
                'bin/pycbc_optimal_snr',
                'bin/pycbc_fit_sngl_trigs',
                'bin/pycbc_randomize_inj_dist_by_optsnr',
-               'bin/hdfcoinc/pycbc_make_coinc_search_workflow',
-               'bin/hdfcoinc/pycbc_make_psd_estimation_workflow',
                'bin/hdfcoinc/pycbc_calculate_psd',
                'bin/hdfcoinc/pycbc_average_psd',
                'bin/hdfcoinc/pycbc_coinc_mergetrigs',
