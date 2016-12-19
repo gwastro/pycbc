@@ -17,7 +17,7 @@
 """ Calculate the SNR and CHISQ timeseries for either a chosen template, or 
 a specific Nth loudest coincident event.
 """
-import logging, argparse, numpy, pycbc, h5py
+import sys, logging, argparse, numpy, pycbc, h5py
 from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter
 from pycbc.io import WaveformArray
 from pycbc import events
@@ -391,6 +391,7 @@ with ctx:
     f['chisq'].attrs['delta_t'] = snr.delta_t 
     f.attrs['approximant'] = approximant
     f.attrs['ifo'] = ifo
+    f.attrs['command_line'] = ' '.join(sys.argv)
     
 logging.info("Finished")
 
