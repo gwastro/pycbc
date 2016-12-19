@@ -156,7 +156,19 @@ def ethinca_order_from_string(order):
                            "calculation! Valid orders: "+
                            str(get_ethinca_orders().keys()))
 
-def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order):
+def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
+    # Determine whether array or single value input
+    sngl_inp = False
+    try:
+        num_trigs = len(mass1)
+    except:
+        sngl_inp = True
+        # If you care about speed, you aren't calling this function one entry
+        # at a time.
+        mass1 = numpy.array([mass1])
+        mass2 = numpy.array([mass2])
+        spin1z = numpy.array([spin1z])
+        spin2z = numpy.array([spin2z])
     lal_pars = CreateDict()
     phasing_vs = numpy.zeros([len(mass1), 13])
     phasing_vlogvs = numpy.zeros([len(mass1), 13])
@@ -200,7 +212,10 @@ def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order):
         err_msg = "Failed to parse " +  mapping[idx]
         raise ValueError(err_msg)
 
-    return lambdas
+    if sngl_inp:
+        return [l[0] for l in lambdas]
+    else:
+        return lambdas
 
 
 def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
@@ -396,3 +411,5 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
             raise ValueError(errMsg)
                  
     return lambdas
+
+get_chirp_params = get_chirp_params_old
