@@ -83,7 +83,7 @@ def fir_zero_filter(coeff, timeseries):
     Parameters
     ----------
     coeff: numpy.ndarray
-        FIR coefficients. Should be and odd length and symettric.
+        FIR coefficients. Should be and odd length and symmetric.
     timeseries: pycbc.types.TimeSeries
         Time series to be filtered.
 
