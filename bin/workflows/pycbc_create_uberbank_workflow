@@ -174,7 +174,7 @@ geom_exe = GeomBankExecutable(workflow.cp, 'geom_aligned_bank',
 # for a later sub-workflow.
 geom_out_dir = os.path.abspath('initial_geom_bank')
 geom_out_file = wf.File(geom_exe.ifo_list, geom_exe.name,
-                        workflow.analysis_time, extension='.xml',
+                        workflow.analysis_time, extension='.h5',
                         store_file=True, directory=geom_out_dir,
                         tags=[], use_tmp_subdirs=False)
 geom_node = geom_exe.create_node(workflow.analysis_time, geom_out_file,
@@ -222,7 +222,7 @@ sbank_exe = SbankDaxGenerator(workflow.cp, 'sbank_workflow',
                               ifos=workflow.ifos, out_dir='daxes')
 
 sbank_out_file_bbh = wf.File(sbank_exe.ifo_list, sbank_exe.name,
-                             workflow.analysis_time, extension='.xml',
+                             workflow.analysis_time, extension='.h5',
                              store_file=True, directory=sbank_exe.out_dir,
                              tags=['sbank_bbh'], use_tmp_subdirs=False)
 
@@ -260,7 +260,7 @@ sbank_bbh_dax_job = dax_job
 ###############################################
 
 sbank_out_file_final = wf.File(sbank_exe.ifo_list, sbank_exe.name,
-                         workflow.analysis_time, extension='.xml',
+                         workflow.analysis_time, extension='.h5',
                          store_file=True, directory='.',
                          tags=['sbank_final'], use_tmp_subdirs=False)
 

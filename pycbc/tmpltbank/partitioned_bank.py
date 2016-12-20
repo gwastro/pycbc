@@ -583,6 +583,28 @@ class PartitionedTmpltbank(object):
             self.add_point_by_masses(sngl.mass1, sngl.mass2, sngl.spin1z,
                                      sngl.spin2z, vary_fupper=vary_fupper)
 
+    def add_tmpltbank_from_hdf_file(self, hdf_fp, vary_fupper=False):
+        """
+        This function will take a pointer to an open HDF File object containing
+        a list of templates and add them into the partitioned template bank
+        object.
+
+        Parameters
+        -----------
+        hdf_fp : h5py.File object
+            The template bank in HDF5 format.
+        vary_fupper : False
+            If given also include the additional information needed to compute
+            distances with a varying upper frequency cutoff.
+        """
+        mass1s = hdf_fp['mass1'][:]
+        mass2s = hdf_fp['mass2'][:]
+        spin1zs = hdf_fp['spin1z'][:]
+        spin2zs = hdf_fp['spin2z'][:]
+        for idx in xrange(len(mass1s)):
+            self.add_point_by_masses(mass1s[idx], mass2s[idx], spin1zs[idx],
+                                     spin2zs[idx], vary_fupper=vary_fupper)
+
     def output_all_points(self):
         """
         Return all point in the bank as lists of m1, m2, spin1z, spin2z.
