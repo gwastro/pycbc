@@ -195,3 +195,6 @@ elif options.output_file.endswith(('.h5','.hdf','.hdf5')):
     out_fp['template_duration'] = tmplt_durations
     out_fp['approximant'] = ['TaylorF2'] * len(temp_bank[:,0])
     out_fp.close()
+else:
+    err_msg = "Unrecognized extension for file {}.".format(options.output_file)
+    raise ValueError(err_msg)
