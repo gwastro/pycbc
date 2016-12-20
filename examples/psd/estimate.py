@@ -17,7 +17,7 @@ ts = pycbc.noise.noise_from_psd(tsamples, delta_t, psd, seed=127)
 ## We'll choose 4 seconds PSD samples that are overlapped 50 %
 seg_len = int(4 / delta_t)
 seg_stride = seg_len / 2
-estimated_psd = pycbc.psd.welch(ts, 
+estimated_psd = pycbc.psd.welch(ts,
                       seg_len=seg_len,
                       seg_stride=seg_stride)
 
