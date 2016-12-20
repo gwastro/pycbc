@@ -22,3 +22,10 @@ Matched Filter SNR
 
 .. plot:: ../examples/filter/snr.py
    :include-source:
+
+=====================================
+Chisq time series
+=====================================
+
+.. plot:: ../examples/filter/chisq.py
+   :include-source:
