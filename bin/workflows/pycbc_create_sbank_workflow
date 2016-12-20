@@ -79,7 +79,7 @@ class SbankExecutable(wf.Executable):
 
         # Here we add the output file, but we are letting pycbc.workflow
         # handle how to name the file
-        node.new_output_file_opt(analysis_time, '.xml.gz',
+        node.new_output_file_opt(analysis_time, '.h5',
                               '--output-filename', tags=self.tags + extra_tags)
         return node
 
@@ -126,6 +126,38 @@ class LigolwAddExecutable(wf.LigolwAddExecutable):
                         (jobSegment, input_files, output=out_file,
                          use_tmp_subdirs=use_tmp_subdirs, tags=tags)
 
+class CombineHDFBanksExecutable(wf.Executable):
+    """ Class for running a combination of hdf banks
+    """
+    current_retention_level = wf.Executable.ALL_TRIGGERS
+
+    def create_node(self, analysis_time, input_file_list, output=None,
+                    tags=None):
+        node = wf.Executable.create_node(self)
+
+        # Here we add the input files
+        node.add_input_list_opt('--input-filenames', input_file_list)
+
+        curr_tags = self.tags
+        if tags is not None:
+            curr_tags += tags
+
+        # Output file
+        if output is not None:
+            # Convert path to file
+            out_file = wf.File.from_path(output)
+            if self.retain_files:
+                if not os.path.isabs(output):
+                    out_file.storage_path = os.path.join(self.out_dir,
+                                                         output)
+                else:
+                    out_file.storage_path = output
+            node.add_output_opt('--output-file', out_file)
+        else:
+            node.new_output_file_opt(analysis_time, '.h5',
+                                     '--output-file', tags=curr_tags)
+
+        return node
 
 
 ##############################################################################
@@ -203,18 +235,18 @@ if workflow.cp.has_option_tags('workflow', 'seed-bank', args.tags):
     if len(seed_files) == 1:
         seed_file = seed_files[0]
     else:
-        # Combine with llwadd
+        # Combine with h5add
         out_dir = os.path.join(args.output_dir, 'input_combine')
-        llwadd_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
-                                         out_dir=out_dir,
-                                         tags=['INPUT'] + args.tags)
-        llwadd_exe.update_current_retention_level(wf.Executable.ALL_TRIGGERS)
-        llwadd_node = llwadd_exe.create_node(workflow.analysis_time,
-                                             seed_files,
-                                             use_tmp_subdirs=False)
-        workflow += llwadd_node
-        assert(len(llwadd_node.output_files) == 1)
-        seed_file = llwadd_node.output_files[0]
+        h5add_exe = CombineHDFBanksExecutable(workflow.cp, 'h5add',
+                                              ifos=['H1L1V1'],
+                                              out_dir=out_dir,
+                                              tags=['INPUT'] + args.tags)
+        h5add_exe.update_current_retention_level(wf.Executable.ALL_TRIGGERS)
+        h5add_node = h5add_exe.create_node(workflow.analysis_time,
+                                           seed_files)
+        workflow += h5add_node
+        assert(len(h5add_node.output_files) == 1)
+        seed_file = h5add_node.output_files[0]
 
     # bins_inp_file will go to the mchirp_bins generator. seed file will go to
     # the first set of sbank jobs if not None.
@@ -266,13 +298,15 @@ bins_exe = SbankChooseMchirpBinsExecutable(workflow.cp, 'sbank_mchirp_bins',
                                     ifos=workflow.ifos, tags=args.tags)
 main_sbank_exe = SbankExecutable(workflow.cp, 'sbank', ifos=workflow.ifos,
                                      tags=['parallel'] + args.tags)
-llwadd_first_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
-                                     tags=['FIRST'] + args.tags)
+h5add_first_exe = CombineHDFBanksExecutable(workflow.cp, 'h5add',
+                                            ifos=['H1L1V1'],
+                                            tags=['FIRST'] + args.tags)
 readder_sbank_exe = SbankExecutable(workflow.cp, 'sbank',
                                     ifos=workflow.ifos,
                                     tags=['readder'] + args.tags)
-llwadd_final_exe = LigolwAddExecutable(workflow.cp, 'llwadd', ifos=['H1L1V1'],
-                                     tags=['FINAL'] + args.tags)
+h5add_final_exe = CombineHDFBanksExecutable(workflow.cp, 'h5add',
+                                            ifos=['H1L1V1'],
+                                            tags=['FINAL'] + args.tags)
 
 for cycle_idx in range(num_cycles):
     #########
@@ -325,15 +359,14 @@ for cycle_idx in range(num_cycles):
     # COMBINER #
     ############
 
-    llwadd_first_exe.update_current_tags([cycle_tag, 'FIRST'] + args.tags)
-    llwadd_first_exe.update_output_directory(out_dir=out_dir)
-    llwadd_first_exe.update_current_retention_level(wf.Executable.ALL_TRIGGERS)
-    llwadd_node = llwadd_first_exe.create_node(workflow.analysis_time,
-                                         main_sbank_files,
-                                         use_tmp_subdirs=False)
-    workflow += llwadd_node
-    assert(len(llwadd_node.output_files) == 1)
-    llwadd_out = llwadd_node.output_files[0]
+    h5add_first_exe.update_current_tags([cycle_tag, 'FIRST'] + args.tags)
+    h5add_first_exe.update_output_directory(out_dir=out_dir)
+    h5add_first_exe.update_current_retention_level(wf.Executable.ALL_TRIGGERS)
+    h5add_node = h5add_first_exe.create_node(workflow.analysis_time,
+                                              main_sbank_files)
+    workflow += h5add_node
+    assert(len(h5add_node.output_files) == 1)
+    h5add_out = h5add_node.output_files[0]
 
     ###########
     # READDER #
@@ -344,7 +377,7 @@ for cycle_idx in range(num_cycles):
     readder_sbank_exe.update_current_retention_level\
             (wf.Executable.ALL_TRIGGERS)
     readder_sbank_node = readder_sbank_exe.create_node(workflow.analysis_time,
-                                                       trial_bank=llwadd_out)
+                                                       trial_bank=h5add_out)
     workflow += readder_sbank_node
     assert(len(readder_sbank_node.output_files) == 1)
     readder_out = readder_sbank_node.output_files[0]
@@ -362,22 +395,21 @@ for cycle_idx in range(num_cycles):
         crl = wf.Executable.MERGED_TRIGGERS
         output_path = None
 
-    llwadd_final_exe.update_current_tags([cycle_tag, 'FINAL'] + args.tags)
-    llwadd_final_exe.update_output_directory(out_dir)
-    llwadd_final_exe.update_current_retention_level(crl)
+    h5add_final_exe.update_current_tags([cycle_tag, 'FINAL'] + args.tags)
+    h5add_final_exe.update_output_directory(out_dir)
+    h5add_final_exe.update_current_retention_level(crl)
 
     if seed_file is None:
         inputs = [readder_out]
     else:
         inputs = [seed_file, readder_out]
 
-    llwadd_node = llwadd_final_exe.create_node(workflow.analysis_time,
-                                         inputs, output=output_path,
-                                         use_tmp_subdirs=False)
-    workflow += llwadd_node
-    assert(len(llwadd_node.output_files) == 1)
+    h5add_node = h5add_final_exe.create_node(workflow.analysis_time,
+                                             inputs, output=output_path)
+    workflow += h5add_node
+    assert(len(h5add_node.output_files) == 1)
     # This becomes the input file for the next loop if going again
-    seed_file = llwadd_node.output_files[0]
+    seed_file = h5add_node.output_files[0]
     bins_inp_file = seed_file
 
 workflow.save(filename=args.dax_filename, output_map=args.map_filename)

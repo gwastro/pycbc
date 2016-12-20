@@ -95,7 +95,7 @@ class AlignedBankCatExecutable(wf.Executable):
         node.add_input_opt('--metadata-file', metadata_file)
 
         if output_file_path is None:
-            node.new_output_file_opt(analysis_time, '.xml', '--output-file',
+            node.new_output_file_opt(analysis_time, '.h5', '--output-file',
                                      tags=self.tags)
         else:
             # Convert path to file

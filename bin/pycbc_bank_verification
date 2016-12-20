@@ -36,6 +36,7 @@ import os, sys
 import copy
 import logging
 import numpy
+import h5py
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from pycbc import tmpltbank, psd, strain, pnutils
 import matplotlib
@@ -184,26 +185,37 @@ partitioned_bank_object = tmpltbank.PartitionedTmpltbank(massRangeParams,
                                metricParams, refFreq, (opts.bin_spacing)**0.5,
                                bin_range_check=1)
 
-# dummy class needed for loading LIGOLW files
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-
-lsctables.use_in(LIGOLWContentHandler)
-
-# Reading in the template bank
-logging.info("Reading template bank.")
-
-indoc = ligolw_utils.load_filename(opts.input_bank,
-                                   contenthandler=LIGOLWContentHandler)
-template_list = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
-
 # Map the frequency values to idx if --vary-fupper is used
 if opts.vary_fupper:
     partitioned_bank_object.get_freq_map_and_normalizations(fs,
                                                       opts.bank_fupper_formula)
 
-partitioned_bank_object.add_tmpltbank_from_xml_table(template_list,
-                                                  vary_fupper=opts.vary_fupper)
+# Reading in the template bank
+logging.info("Reading template bank.")
+
+
+if opts.input_bank.endswith(('.xml','.xml.gz','.xmlgz')):
+    # dummy class needed for loading LIGOLW files
+    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+
+    lsctables.use_in(LIGOLWContentHandler)
+
+    indoc = ligolw_utils.load_filename(opts.input_bank,
+                                       contenthandler=LIGOLWContentHandler)
+    template_list = table.get_table(indoc,
+                                    lsctables.SnglInspiralTable.tableName)
+
+    partitioned_bank_object.add_tmpltbank_from_xml_table\
+        (template_list, vary_fupper=opts.vary_fupper)
+
+elif opts.input_bank.endswith(('.h5','.hdf','.hdf5')):
+    h5_fp = h5py.File(opts.input_bank, 'r')
+    partitioned_bank_object.add_tmpltbank_from_hdf_file\
+        (h5_fp, vary_fupper=opts.vary_fupper)
+else:
+    err_msg = "Don't know how to read extension {}.".format(opts.input_bank)
+    raise NotImplementedError(err_msg)
 
 logging.info("Bank read in and sorted")
 # Okay, now lets test a bunch of matches
