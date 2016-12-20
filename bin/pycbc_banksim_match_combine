@@ -25,6 +25,7 @@ bank files, and the number of injections in each must correspond one-to-one.
 from os.path import isfile
 import argparse
 import numpy
+import h5py
 from glue.ligolw import utils, table
 import pycbc
 
@@ -69,8 +70,30 @@ for fil in options.match_files:
 btables = {}
 itables = {}     
 
-f = open(options.output_file, "w")
-for row in res: 
+f = h5py.File(options.output_file, "w")
+
+# If we more these over to HDF we can decide column names dynamically. This is
+# why I'm using a dictionary now.
+
+bank_params = {}
+bank_par_list = ['mass1', 'mass2', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
+                 'spin2y', 'spin2z']
+for val in bank_par_list:
+    bank_params[val] = numpy.zeros(len(f), dtype=numpy.float64)
+
+inj_params = {}
+inj_par_list = ['mass1', 'mass2', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
+                'spin2y', 'spin2z', 'coa_phase', 'inclination', 'latitude',
+                'longitude', 'polarization']
+for val in inj_par_list
+    inj_params[val] = numpy.zeros(len(f), dtype=numpy.float64)
+
+trig_params = {}
+trig_par_list = ['match', 'sigmasq']
+for val in trig_par_list:
+    trig_params[val] = numpy.zeros(len(f), dtype=numpy.float64)
+
+for idx, row in enumerate(res): 
     outstr = ""
     if row['bank'] not in btables:
         indoc = utils.load_filename(row['bank'], False, contenthandler=mycontenthandler)
@@ -83,31 +106,26 @@ for row in res:
     bt = btables[row['bank']][row['bank_i']]     
     it = itables[row['sim']][row['sim_i']]
  
-    outstr += str(row['match']) + " "
-    outstr += str(bt.mass1) + " "
-    outstr += str(bt.mass2) + " "
-    outstr += str(bt.spin1x) + " "
-    outstr += str(bt.spin1y) + " "
-    outstr += str(bt.spin1z) + " "
-    outstr += str(bt.spin2x) + " "
-    outstr += str(bt.spin2y) + " " 
-    outstr += str(bt.spin2z) + " "
-    
-    outstr += str(it.mass1) + " "
-    outstr += str(it.mass2) + " "
-    outstr += str(it.spin1x) + " "
-    outstr += str(it.spin1y) + " "
-    outstr += str(it.spin1z) + " "
-    outstr += str(it.spin2x) + " "
+    for val in trig_par_list:
+        trig_params[val][idx] = row[val]
+    for val in bank_par_list:
+        bank_params[val][idx] = getattr(bt, val)
+    for val in inj_par_list:
+        inj_params[val][idx] = getattr(it, val)
 
-    outstr += str(it.coa_phase) + " "
-    outstr += str(it.inclination) + " "
-    outstr += str(it.latitude) + " " 
-    outstr += str(it.longitude) + " "
-    outstr += str(it.polarization) + " "
-    
-    outstr += str(row['sigmasq']) + " "
-                
-    outstr += "\\n"
-    
-    f.write(outstr)
+for val in bank_par_list:
+    f['bank_params/{}'.format(val)] = bank_params[val] 
+for val in inj_par_list:
+    f['inj_params/{}'.format(val)] = inj_params[val]
+for val in trig_par_list:
+    f['trig_params/{}'.format(val)] = trig_params[val]
+
+# Also consider values over the whole set
+# Signal recovery fraction
+srfn = numpy.sum((trig_params['match'] * trig_params['sigmasq'])**(1./3.))
+srfd = numpy.sum((trig_params['sigmasq'])**(1./3.))
+
+f['sig_rec_fac'] = srfn / srfd
+f['eff_fitting_factor'] = sig_ref_fac**(1./3.)
+
+f.close()

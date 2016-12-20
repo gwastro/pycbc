@@ -91,7 +91,7 @@ class BanksimMatchCombineExecutable(wf.Executable):
             node._add_input(curr_file)
         for curr_file in bank_files:
             node._add_input(curr_file)
-        node.new_output_file_opt(analysis_time, '.dat', '--output-file',
+        node.new_output_file_opt(analysis_time, '.h5', '--output-file',
                                  tags=self.tags + extra_tags)
         return node
 
