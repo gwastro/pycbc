@@ -8,7 +8,7 @@ delta_f = 1.0 / 64
 flen = int(2048 / delta_f) + 1
 psd = pycbc.psd.aLIGOZeroDetHighPower(flen, delta_f, flow)
 
-# Here the noise is generated directly in the frequency domain so it matches 
+# Here the noise is generated directly in the frequency domain so it matches
 # the parameters of the PSD you give.
 fs = pycbc.noise.frequency_noise_from_psd(psd, seed=127)
 
