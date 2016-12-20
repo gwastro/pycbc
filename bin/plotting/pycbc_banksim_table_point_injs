@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+# Copyright (C) 2016 Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Plot effective fitting factor from a bunch of point-source files.
+"""
+
+import sys
+import h5py
+import argparse
+import numpy
+
+from pycbc import version
+from pycbc import results
+
+parser = argparse.ArgumentParser(usage='',
+    description="Plot effective fitting factor vs mass1 and mass2.")
+parser.add_argument('--input-files', nargs='+', default=None, required=True,
+                    help="List of input files.")
+parser.add_argument('--output-file', default=None, required=True,
+                    help="Output file.")
+ 
+opt = parser.parse_args()
+
+col_names = ['Mass 1', 'Mass 2', 'Sig. Rec. Fraction', 'Eff. FF', 'Max FF',
+             'Min FF']
+format_strings = ['##.##', '##.##', '#.###', '#.###', '#.###', '#.###']
+m1 = []
+m2 = []
+srf = []
+eff_ff = []
+max_ff = []
+min_ff = []
+for file_name in opt.input_files:
+    curr_fp = h5py.File(file_name, 'r')
+    m1.append(curr_fp['inj_params/mass1'][0])
+    m2.append(curr_fp['inj_params/mass2'][0])
+    eff_ff.append(curr_fp['eff_fitting_factor'][()])
+    srf.append(curr_fp['sig_rec_fac'][()])
+    max_ff.append(max(curr_fp['trig_params/match'][:]))
+    min_ff.append(min(curr_fp['trig_params/match'][:]))
+    curr_fp.close()
+
+columns = [numpy.array(m1), numpy.array(m2), numpy.array(srf),
+           numpy.array(eff_ff), numpy.array(max_ff), numpy.array(min_ff)]
+
+html_table = results.table(columns, col_names, format_strings=format_strings,
+                           page_size=10)
+
+kwds = {'title' : 'Point Injection Results',
+        'cmd' :' '.join(sys.argv), }
+
+results.save_fig_with_metadata(str(html_table), opt.output_file, **kwds)
