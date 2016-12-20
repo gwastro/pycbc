@@ -32,6 +32,7 @@ from glue import segments
 import pycbc.version
 import pycbc.workflow as wf
 import pycbc.workflow.pegasus_workflow as pwf
+from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.workflow import LalappsInspinjExecutable
 from pycbc.workflow import setup_splittable_dax_generated
 
@@ -95,6 +96,51 @@ class BanksimMatchCombineExecutable(wf.Executable):
                                  tags=self.tags + extra_tags)
         return node
 
+class BanksimPlotFittingFactorsExecutable(wf.Executable):
+    """Class for running pycbc_banksim_plot_fitting_factors
+    """
+    # This can be altered if you don't always want to store output files
+    current_retention_level = wf.Executable.FINAL_RESULT
+
+    def create_node(self, analysis_time, input_file, extra_tags=None):
+        if extra_tags is None:
+            extra_tags = []
+        node = wf.Executable.create_node(self)
+        node.add_input_opt('--input-file', input_file)
+        node.new_output_file_opt(analysis_time, '.png', '--output-file',
+                                 tags=self.tags + extra_tags)
+        return node
+
+class BanksimPlotEffFittingFactorsExecutable(wf.Executable):
+    """Class for running pycbc_banksim_plot_eff_fitting_factor
+    """
+    # This can be altered if you don't always want to store output files
+    current_retention_level = wf.Executable.FINAL_RESULT
+
+    def create_node(self, analysis_time, input_files, extra_tags=None):
+        if extra_tags is None:
+            extra_tags = []
+        node = wf.Executable.create_node(self)
+        node.add_input_list_opt('--input-files', input_files)
+        node.new_output_file_opt(analysis_time, '.png', '--output-file',
+                                 tags=self.tags + extra_tags)
+        return node
+
+class BanksimTablePointInjsExecutable(wf.Executable):
+    """Class for running pycbc_banksim_table_point_injs
+    """
+    # This can be altered if you don't always want to store output files
+    current_retention_level = wf.Executable.FINAL_RESULT
+
+    def create_node(self, analysis_time, input_files, extra_tags=None):
+        if extra_tags is None:
+            extra_tags = []
+        node = wf.Executable.create_node(self)
+        node.add_input_list_opt('--input-files', input_files)
+        node.new_output_file_opt(analysis_time, '.html', '--output-file',
+                                 tags=self.tags + extra_tags)
+        return node
+
 
 # Argument parsing and setup of workflow
 
@@ -117,6 +163,10 @@ workflow = wf.Workflow(args, args.workflow_name)
 wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
 args.output_dir = '.'
+
+rdir = layout.SectionNumber('results', ['workflow'])
+wf.makedir(rdir.base)
+wf.makedir(rdir['workflow'])
 
 # Input bank file
 inp_bank = workflow.cp.get('workflow', 'input-bank')
@@ -198,5 +248,42 @@ for file_tag, num_injs in workflow.cp.items('workflow-broadinjs'):
                                 split_banks)
     output_broadinjs[file_tag] = curr_file
 
+plotting_nodes = []
+
+out_dir = rdir.base
+point_injs_table_exe = BanksimTablePointInjsExecutable\
+    (workflow.cp, 'banksim_table_point_injs', out_dir=out_dir, ifos='HL')
+eff_fitting_facs_exe = BanksimPlotEffFittingFactorsExecutable\
+    (workflow.cp, 'banksim_plot_eff_fitting_fac', out_dir=out_dir, ifos='HL')
+plot_fitting_facs_exe = BanksimPlotFittingFactorsExecutable\
+    (workflow.cp, 'banksim_plot_fitting_factors', out_dir=out_dir, ifos='HL')
+
+curr_node = point_injs_table_exe.create_node\
+    (workflow.analysis_time, [output_pointinjs[f] for f in output_pointinjs])
+workflow += curr_node
+plotting_nodes.append(curr_node)
+curr_node = eff_fitting_facs_exe.create_node\
+    (workflow.analysis_time, [output_pointinjs[f] for f in output_pointinjs])
+workflow += curr_node
+plotting_nodes.append(curr_node)
+for tag in output_broadinjs:
+    curr_file = output_broadinjs[tag]
+    curr_node = plot_fitting_facs_exe.create_node\
+        (workflow.analysis_time, curr_file, extra_tags=[tag])
+    workflow += curr_node
+    plotting_nodes.append(curr_node)
+for tag in output_pointinjs:
+    curr_file = output_pointinjs[tag]
+    curr_node = plot_fitting_facs_exe.create_node\
+        (workflow.analysis_time, curr_file, extra_tags=[tag])
+    workflow += curr_node
+    plotting_nodes.append(curr_node)
+
+# Create versioning information
+create_versioning_page(rdir['workflow/version'], workflow.cp)
+
+print len(plotting_nodes)
+wf.make_results_web_page(workflow, os.path.join(os.getcwd(), rdir.base),
+                         explicit_dependencies=plotting_nodes)
 
 workflow.save()
