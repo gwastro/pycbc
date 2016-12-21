@@ -120,7 +120,7 @@ class TestLALSimulation(unittest.TestCase):
         
         from pycbc import version
         self.version_txt = "pycbc: %s  %s\n" % (version.git_hash, version.date) + \
-                           "lalsimulation: %s  %s" % (lalsimulation.SimulationVCSId, lalsimulation.SimulationVCSDate)
+                           "lalsimulation: %s  %s" % (lalsimulation.SimulationVCSIdentInfo.vcsId, lalsimulation.SimulationVCSIdentInfo.vcsDate)
       
         
     def test_varying_orbital_phase(self):
@@ -335,7 +335,7 @@ class TestLALSimulation(unittest.TestCase):
         self.assertAlmostEqual(1, op, places=7)
         oc = overlap(hc, hcswap)
         self.assertAlmostEqual(1, oc, places=7)
-    
+
 def test_maker(class_name, name, **kwds):
     class Test(class_name):
         def __init__(self, *args):
