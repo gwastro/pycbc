@@ -34,7 +34,7 @@ import lal, lalsimulation
 import pycbc
 from pycbc.filter import match, overlap, sigma, make_frequency_series
 from pycbc.waveform import td_approximants, fd_approximants, \
-        get_td_waveform, get_fd_waveform
+        get_td_waveform, get_fd_waveform, TimeSeries
 
 import optparse
 from utils import simple_exit, _check_scheme_cpu
@@ -120,7 +120,7 @@ class TestLALSimulation(unittest.TestCase):
         
         from pycbc import version
         self.version_txt = "pycbc: %s  %s\n" % (version.git_hash, version.date) + \
-                           "lalsimulation: %s  %s" % (lalsimulation.SimulationVCSId, lalsimulation.SimulationVCSDate)
+                           "lalsimulation: %s  %s" % (lalsimulation.SimulationVCSIdentInfo.vcsId, lalsimulation.SimulationVCSIdentInfo.vcsDate)
       
         
     def test_varying_orbital_phase(self):
@@ -335,7 +335,49 @@ class TestLALSimulation(unittest.TestCase):
         self.assertAlmostEqual(1, op, places=7)
         oc = overlap(hc, hcswap)
         self.assertAlmostEqual(1, oc, places=7)
-    
+
+    def test_change_rate(self):
+        #""" Test that waveform remains unchanged under changing rate
+        #"""
+        hp, hc = get_waveform(self.p)
+        hp2dec, hc2dec = get_waveform(self.p, delta_t=self.p.delta_t*2.)
+
+        hpdec=numpy.zeros(len(hp2dec.data))
+        hcdec=numpy.zeros(len(hp2dec.data))
+
+        for idx in range(min(len(hp2dec.data),int(len(hp.data)/2))):
+            hpdec[idx]=hp.data[2*idx]
+            hcdec[idx]=hc.data[2*idx]
+
+        hpTS=TimeSeries(hpdec, delta_t=self.p.delta_t*2.,epoch=hp.start_time)
+        hcTS=TimeSeries(hcdec, delta_t=self.p.delta_t*2.,epoch=hc.start_time)
+
+        f = pylab.figure()
+        pylab.plot(hp.sample_times, hp.data,label="rate %s Hz" %"{:.0f}".format(1./self.p.delta_t))
+        pylab.plot(hp2dec.sample_times, hp2dec.data, label="rate %s Hz" %"{:.0f}".format(1./(self.p.delta_t*2.)))
+
+        pylab.title("Halving %s rate, $\\tilde{h}$+" % self.p.approximant)
+        pylab.xlabel("time (sec)")
+        pylab.ylabel("amplitude")
+        pylab.legend()
+
+        info = self.version_txt
+        pylab.figtext(0.05, 0.05, info)
+
+        if self.save_plots:
+            pname = self.plot_dir + "/%s-vary-rate.png" % self.p.approximant
+            pylab.savefig(pname)
+
+        if self.show_plots:
+            pylab.show()
+        else:
+            pylab.close(f)
+
+        op=overlap(hpTS,hp2dec)
+        self.assertAlmostEqual(1., op, places=2)
+        oc=overlap(hcTS,hc2dec)
+        self.assertAlmostEqual(1., oc, places=2)
+
 def test_maker(class_name, name, **kwds):
     class Test(class_name):
         def __init__(self, *args):
