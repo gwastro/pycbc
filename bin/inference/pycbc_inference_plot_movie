@@ -45,7 +45,7 @@ parser.add_argument("--input-file", type=str, required=True,
 parser.add_argument("--start-sample", type=int, default=0,
                     help="Start sample for the first frame. Default is 0.")
 parser.add_argument("--end-sample", type=int, default=None,
-                    help="Start sample for the first frame. If None, will "
+                    help="End sample for the last frame. If None, will "
                          "default to the last sample.")
 parser.add_argument("--frame-number", type=int,
                     help="Number of frames for the movie.")
@@ -132,7 +132,7 @@ for p in parameters:
         maxs[p] = samples[p].max()
 
 # Make each figure
-# for sorting purposes, we will need to zero-pad the sample numer with the
+# for sorting purposes, we will need to zero-pad the sample number with the
 # appriopriate number of 0's
 max_sample_num = nframes * thinint
 
