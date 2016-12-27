@@ -1055,8 +1055,6 @@ p="H1L1-SBANK_FOR_GW150914ER10.xml.gz"
 md5="c24f5513d3066b4f637daffb6aa20fec"
 if check_md5 "$p" "$md5"; then
     rm -f "$p"
-    # FIXME should host this file on $albert
-    #wget $wget_opts "$albert/$p"
     wget $wget_opts "$albert/$p"
     if check_md5 "$p" "$md5"; then
         echo "can't download $p - md5 mismatch"
