@@ -261,7 +261,7 @@ for i in $*; do
             pycbc_remote=bema-ligo;;
         --no-cleanup) cleanup=false;;
         --verbose-python) verbose_pyinstalled_python=true;;
-        --clean) rm -rf "$HOME/.cache" "$SOURCE/$BUILDDIRNAME-preinst.tgz" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$PYCBC";;
+        --clean) rm -rf "$HOME/.cache" "$HOME/Library/Caches/pip" "$SOURCE/$BUILDDIRNAME-preinst.tgz" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$PYCBC";;
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz";;
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
         --pycbc-commit=*) pycbc_commit="`echo $i|sed 's/^--pycbc-commit=//'`";;
