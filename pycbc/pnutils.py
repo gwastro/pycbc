@@ -150,7 +150,7 @@ def mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(mass1, mass2,
     # the spin of the heaviest body first
     heavy_spin = numpy.where(mass2 <= mass1, spin1z, spin2z)
     light_spin = numpy.where(mass2 > mass1, spin1z, spin2z)
-    beta, sigma, gamma, xs = get_beta_sigma_from_aligned_spins(
+    beta, sigma, gamma = get_beta_sigma_from_aligned_spins(
         eta, heavy_spin, light_spin)
     return beta, sigma, gamma
 
@@ -191,7 +191,7 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
     gamma = (732985. / 2268. - 24260. / 81. * eta - \
             340. / 9. * eta * eta) * chiS
     gamma += (732985. / 2268. + 140. / 9. * eta) * delta * chiA
-    return beta, sigma, gamma, chiS
+    return beta, sigma, gamma
 
 def _get_phenomb_chi(m1, m2, s1z, s2z):
     """

@@ -268,7 +268,7 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
 
     totmass = mass1 + mass2
     eta = mass1 * mass2 / (totmass * totmass)
-    beta, sigma, gamma, chis = pnutils.get_beta_sigma_from_aligned_spins(\
+    beta, sigma, gamma = pnutils.get_beta_sigma_from_aligned_spins(\
                eta, spin1z, spin2z)
 
     # Convert mass to seconds
