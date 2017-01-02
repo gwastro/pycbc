@@ -139,7 +139,7 @@ def unity(length, delta_f, low_freq_cutoff):
         Returns a FrequencySeries containing the unity PSD model.
     """
     fseries = FrequencySeries(numpy.ones(length), delta_f=delta_f)
-    kmin = int(low_freq_cutoff / fseries.delta_f) + 1
+    kmin = int(low_freq_cutoff / fseries.delta_f)
     fseries.data[:kmin] = 0
     return fseries
 
