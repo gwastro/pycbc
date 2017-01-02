@@ -145,5 +145,5 @@ def unity(length, delta_f, low_freq_cutoff):
 
 # dict of analytical PSDs coded in PyCBC
 pycbc_analytical_psds = {
-    'unity' : unity,
+    'flat_unity' : unity,
 }
