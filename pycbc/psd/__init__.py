@@ -160,7 +160,7 @@ def insert_psd_option_group(parser, output=True):
                           "and --psd-estimation are mutually exclusive.")
     psd_options.add_argument("--psd-model",
                           help="Get PSD from given analytical model. ", 
-                          choices=get_lalsim_psd_list())
+                          choices=get_psd_model_list())
     psd_options.add_argument("--psd-file",
                           help="Get PSD using given PSD ASCII file")
     psd_options.add_argument("--asd-file",
@@ -210,7 +210,7 @@ def insert_psd_option_group_multi_ifo(parser):
     psd_options.add_argument("--psd-model", nargs="+", 
                           action=MultiDetOptionAction, metavar='IFO:MODEL',
                           help="Get PSD from given analytical model. "
-                          "Choose from %s" %(', '.join(get_lalsim_psd_list()),))
+                          "Choose from %s" %(', '.join(get_psd_model_list()),))
     psd_options.add_argument("--psd-file", nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:FILE',
                           help="Get PSD using given PSD ASCII file")
