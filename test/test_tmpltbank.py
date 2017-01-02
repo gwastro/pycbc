@@ -109,7 +109,7 @@ class TmpltbankTestClass(unittest.TestCase):
         self.f_upper = 2000
         self.f0 = 70
         self.sampleRate = 4096
-        self.pnOrder = 'taylorF4_45PN'
+        self.pnOrder = 'threePointFivePN'
         self.min_mass1 = 1
         self.min_mass2 = 1
         self.max_mass1 = 5
@@ -473,7 +473,7 @@ class TmpltbankTestClass(unittest.TestCase):
         masses2 = [2.02,1.97,0.41,0.59]
         dist, xis1, xis2 = pycbc.tmpltbank.get_point_distance(masses1, \
                              masses2, self.metricParams, self.f_upper)
-        diff = abs((dist - 23.4019262742) / dist)
+        diff = abs((dist - 23.3560790221) / dist)
   
         errMsg = "Obtained distance does not agree with expected value."
         self.assertTrue( diff < 1E-5, msg=errMsg)
