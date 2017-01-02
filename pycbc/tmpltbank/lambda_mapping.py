@@ -25,14 +25,13 @@ pycbcValidTmpltbankOrders = ['zeroPN','onePN','onePointFivePN','twoPN',\
       'twoPointFivePN','threePN','threePointFivePN']
 
 pycbcValidOrdersHelpDescriptions="""
-* zeroPN: Will only include the dominant term (proportional to chirp mass)
-* onePN: Will only the leading orbit term and first correction at 1PN
-* onePointFivePN: Will include orbit and spin terms to 1.5PN.
-* twoPN: Will include orbit and spin terms to 2PN.
-* twoPointFivePN: Will include orbit and spin terms to 2.5PN.
-* threePN: Will include orbit terms to 3PN and spin terms to 2.5PN.
-* threePointFivePN: Include orbit terms to 3.5PN and spin terms to 2.5PN
-spin terms from 3 to 4.5PN and partial orbit terms from 4 to 4.5PN.
+     * zeroPN: Will only include the dominant term (proportional to chirp mass)
+     * onePN: Will only the leading orbit term and first correction at 1PN
+     * onePointFivePN: Will include orbit and spin terms to 1.5PN.
+     * twoPN: Will include orbit and spin terms to 2PN.
+     * twoPointFivePN: Will include orbit and spin terms to 2.5PN.
+     * threePN: Will include orbit terms to 3PN and spin terms to 2.5PN.
+     * threePointFivePN: Include orbit terms to 3.5PN and spin terms to 2.5PN
 """
 
 
@@ -44,17 +43,18 @@ def generate_mapping(order):
     transforming to/from the xi_i coordinates to the lambda_i coordinates.
 
     NOTE: This is not a great way of doing this. It would be nice to clean
-    this up. Hence pulling this function out. The valid PN orders are: %s
+    this up. Hence pulling this function out. The valid PN orders are {}
 
     Parameters
     ----------
     order : string
         A string containing a PN order. Valid values are given above.
+
     Returns
     --------
-    mapping: dictionary
+    mapping : dictionary
         A mapping between the active Lambda terms and index in the metric
-    """ %(pycbcValidOrdersHelpDescriptions)
+    """
     mapping = {}
     mapping['Lambda0'] = 0
     if order == 'zeroPN':
@@ -80,6 +80,10 @@ def generate_mapping(order):
         return mapping
     raise ValueError("Order %s is not understood." %(order))
 
+# Override doc so the PN orders are added automatically to online docs
+generate_mapping.__doc__ = \
+    generate_mapping.__doc__.format(pycbcValidOrdersHelpDescriptions)
+
 def generate_inverse_mapping(order):
     """
     This function will generate the opposite of generate mapping. So where
@@ -87,24 +91,28 @@ def generate_inverse_mapping(order):
     dict[key] = item
     This will give
     dict[item] = key
-    Valid PN orders are: %s
+    Valid PN orders are: {}
     
     Parameters
     ----------
     order : string
         A string containing a PN order. Valid values are given above.
+
     Returns
     --------
-    mapping: dictionary
+    mapping : dictionary
         An inverse mapping between the active Lambda terms and index in the
         metric
-    """ %(pycbcValidOrdersHelpDescriptions)
+    """
     mapping = generate_mapping(order)
     inv_mapping = {}
     for key,value in mapping.items():
         inv_mapping[value] = key
 
     return inv_mapping
+
+generate_inverse_mapping.__doc__ = \
+    generate_inverse_mapping.__doc__.format(pycbcValidOrdersHelpDescriptions)
 
 def get_ethinca_orders():
     """
@@ -143,7 +151,7 @@ def ethinca_order_from_string(order):
 def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
     """
     Take a set of masses and spins and convert to the various lambda
-    coordinates that describe the orbital phase. Accepted PN orders are: %s
+    coordinates that describe the orbital phase. Accepted PN orders are: {}
  
     Parameters
     ----------
@@ -170,7 +178,7 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
     --------
     lambdas : list of floats or numpy.arrays
         The lambda coordinates for the input system(s)
-    """ %(pycbcValidOrdersHelpDescriptions)
+    """
 
     # Determine whether array or single value input
     sngl_inp = False
@@ -233,11 +241,13 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
     else:
         return lambdas
 
+get_chirp_params_new.__doc__ = \
+    get_chirp_params_new.__doc__.format(pycbcValidOrdersHelpDescriptions)
 
 def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
     """
     Take a set of masses and spins and convert to the various lambda
-    coordinates that describe the orbital phase. Accepted PN orders are: %s
+    coordinates that describe the orbital phase. Accepted PN orders are: {}
  
     Parameters
     ----------
@@ -264,7 +274,7 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
     --------
     lambdas : list of floats or numpy.arrays
         The lambda coordinates for the input system(s)
-    """ %(pycbcValidOrdersHelpDescriptions)
+    """
 
     totmass = mass1 + mass2
     eta = mass1 * mass2 / (totmass * totmass)
@@ -324,5 +334,8 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
             raise ValueError(err_msg)
                  
     return lambdas
+
+get_chirp_params_old.__doc__ = \
+    get_chirp_params_old.__doc__.format(pycbcValidOrdersHelpDescriptions)
 
 get_chirp_params = get_chirp_params_old
