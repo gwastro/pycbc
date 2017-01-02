@@ -121,7 +121,7 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff):
 
     return psd
 
-def unity(length, delta_f, low_freq_cutoff):
+def flat_unity(length, delta_f, low_freq_cutoff):
     """ Returns a FrequencySeries of ones above the low_frequency_cutoff.
 
     Parameters
@@ -145,5 +145,5 @@ def unity(length, delta_f, low_freq_cutoff):
 
 # dict of analytical PSDs coded in PyCBC
 pycbc_analytical_psds = {
-    'flat_unity' : unity,
+    'flat_unity' : flat_unity,
 }
