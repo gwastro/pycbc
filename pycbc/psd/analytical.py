@@ -93,7 +93,7 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff):
 
     # check if valid PSD model
     if psd_name not in get_psd_model_list():
-        raise ValueError(psd_name + ' not found amoung analytical '
+        raise ValueError(psd_name + ' not found among analytical '
                          'PSD functions.')
 
     # if PSD model is in LALSimulation
