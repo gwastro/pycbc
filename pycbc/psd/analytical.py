@@ -43,13 +43,36 @@ def %s(length, delta_f, low_freq_cutoff):
     return from_string("%s", length, delta_f, low_freq_cutoff)
 """ % (_name, _name, _name))
 
+def get_psd_model_list():
+    """ Returns a list of available reference PSD functions.
+
+    Returns
+    -------
+    list
+        Returns a list of names of reference PSD functions.
+    """
+    return get_lalsim_psd_list() + get_pycbc_psd_list()
+
 def get_lalsim_psd_list():
-    """Return a list of available reference PSD functions.
+    """Return a list of available reference PSD functions from LALSimulation.
     """
     return _psd_list
 
+def get_pycbc_psd_list():
+    """ Return a list of available reference PSD functions coded in PyCBC.
+
+    Returns
+    -------
+    list
+        Returns a list of names of all reference PSD functions coded in PyCBC.
+    """
+    pycbc_analytical_psd_list = pycbc_analytical_psds.keys()
+    pycbc_analytical_psd_list.sort()
+    return pycbc_analytical_psd_list
+
 def from_string(psd_name, length, delta_f, low_freq_cutoff):
-    """Generate a frequency series containing a LALSimulation PSD specified by name.
+    """Generate a frequency series containing a LALSimulation PSD specified
+    by name.
 
     Parameters
     ----------
@@ -67,18 +90,60 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff):
     psd : FrequencySeries
         The generated frequency series.
     """
-    if psd_name not in _psd_list:
-        raise ValueError(psd_name + ' not found among LALSimulation PSD functions.')
-    kmin = int(low_freq_cutoff / delta_f)
-    lalseries = lal.CreateREAL8FrequencySeries(
-        '', lal.LIGOTimeGPS(0), 0, delta_f, lal.DimensionlessUnit, length)
-    try:
-        func = lalsimulation.__dict__[_name_prefix + psd_name + _name_suffix]
-    except KeyError:
-        func = lalsimulation.__dict__[_name_prefix + psd_name]
-        func(lalseries, low_freq_cutoff)
+
+    # check if valid PSD model
+    if psd_name not in get_psd_model_list():
+        raise ValueError(psd_name + ' not found among analytical '
+                         'PSD functions.')
+
+    # if PSD model is in LALSimulation
+    if psd_name in get_lalsim_psd_list():
+        lalseries = lal.CreateREAL8FrequencySeries(
+            '', lal.LIGOTimeGPS(0), 0, delta_f, lal.DimensionlessUnit, length)
+        try:
+            func = lalsimulation.__dict__[
+                                        _name_prefix + psd_name + _name_suffix]
+        except KeyError:
+            func = lalsimulation.__dict__[_name_prefix + psd_name]
+            func(lalseries, low_freq_cutoff)
+        else:
+            lalsimulation.SimNoisePSD(lalseries, 0, func)
+        psd = FrequencySeries(lalseries.data.data, delta_f=delta_f)
+
+    # if PSD model is coded in PyCBC
     else:
-        lalsimulation.SimNoisePSD(lalseries, 0, func)
-    psd = FrequencySeries(lalseries.data.data, delta_f=delta_f)
+        func = pycbc_analytical_psds[psd_name]
+        psd = func(length, delta_f, low_freq_cutoff)
+
+    # zero-out content below low-frequency cutoff
+    kmin = int(low_freq_cutoff / delta_f)
     psd.data[:kmin] = 0
+
     return psd
+
+def flat_unity(length, delta_f, low_freq_cutoff):
+    """ Returns a FrequencySeries of ones above the low_frequency_cutoff.
+
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : int
+        Low-frequency cutoff for output FrequencySeries.
+
+    Returns
+    -------
+    FrequencySeries
+        Returns a FrequencySeries containing the unity PSD model.
+    """
+    fseries = FrequencySeries(numpy.ones(length), delta_f=delta_f)
+    kmin = int(low_freq_cutoff / fseries.delta_f)
+    fseries.data[:kmin] = 0
+    return fseries
+
+# dict of analytical PSDs coded in PyCBC
+pycbc_analytical_psds = {
+    'flat_unity' : flat_unity,
+}
