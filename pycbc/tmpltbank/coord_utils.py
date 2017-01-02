@@ -257,6 +257,7 @@ def get_random_mass(numPoints, massRangeParams):
             mass1, mass2, spin1z, spin2z = \
                 get_random_mass_point_particles(numPoints-numPointsFound,
                                                 massRangeParams)
+            _, eta = pnutils.mass1_mass2_to_mtotal_eta(mass1, mass2)
 
             # Now proceed with cutting out EM dim systems
             # Logical mask to clean up points by removing EM dim binaries
@@ -280,7 +281,7 @@ def get_random_mass(numPoints, massRangeParams):
             spin2z_out = numpy.concatenate((spin2z_out,spin2z[mask]))
 
             # Number of points that survived all cuts
-            numPointsFound = len(massOut)
+            numPointsFound = len(mass1_out)
 
         # Ready to go
         mass1 = mass1_out

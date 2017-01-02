@@ -161,7 +161,7 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
     sngl_inp = False
     try:
         num_trigs = len(mass1)
-    except:
+    except TypeError:
         sngl_inp = True
         # If you care about speed, you aren't calling this function one entry
         # at a time.
@@ -169,10 +169,11 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
         mass2 = numpy.array([mass2])
         spin1z = numpy.array([spin1z])
         spin2z = numpy.array([spin2z])
+        num_trigs = 1
     lal_pars = CreateDict()
-    phasing_vs = numpy.zeros([len(mass1), 13])
-    phasing_vlogvs = numpy.zeros([len(mass1), 13])
-    phasing_vlogvsqs = numpy.zeros([len(mass1), 13])
+    phasing_vs = numpy.zeros([num_trigs, 13])
+    phasing_vlogvs = numpy.zeros([num_trigs, 13])
+    phasing_vlogvsqs = numpy.zeros([num_trigs, 13])
     for i in xrange(len(mass1)):
         phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
                             mass1[i], mass2[i], spin1z[i], spin2z[i], lal_pars)

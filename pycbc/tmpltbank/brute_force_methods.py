@@ -2,7 +2,6 @@ from __future__ import division
 import copy
 import numpy
 from pycbc.tmpltbank.coord_utils import get_cov_params
-from pycbc.pnutils import get_beta_sigma_from_aligned_spins
 
 
 def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
@@ -80,7 +79,7 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
             if currDist > 1 and scaleFactor == origScaleFactor:
                 scaleFactor = origScaleFactor*10
         # Get a set of test points with mass -> xi mappings
-        chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, new_xis = \
+        totmass, eta, spin1z, spin2z, diff, mass1, mass2, new_xis = \
             get_mass_distribution([bestChirpmass, bestMasses[1], bestMasses[2],
                                    bestMasses[3]],
                                   scaleFactor, massRangeParams, metricParams,
@@ -168,8 +167,6 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
 
     Returns 
     --------
-    Chirpmass : numpy.array
-        chirp mass of the resulting points
     Totmass : numpy.array
         Total mass of the resulting points
     Eta : numpy.array
@@ -346,7 +343,7 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
     # Then map to xis
     new_xis = get_cov_params(mass1, mass2, spin1z, spin2z,
                              metricParams, fUpper)
-    return chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, new_xis
+    return totmass, eta, spin1z, spin2z, diff, mass1, mass2, new_xis
 
 def stack_xi_direction_brute(xis, bestMasses, bestXis, direction_num,
                              req_match, massRangeParams, metricParams, fUpper,
@@ -489,7 +486,7 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, req_match, \
 
     for i in xrange(numIterations):
         # Evaluate extrema of the xi direction specified
-        chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, new_xis = \
+        totmass, eta, spin1z, spin2z, diff, mass1, mass2, new_xis = \
             get_mass_distribution([bestChirpmass,bestMasses[1],bestMasses[2],
                                    bestMasses[3]],
                                   scaleFactor, massRangeParams, metricParams,

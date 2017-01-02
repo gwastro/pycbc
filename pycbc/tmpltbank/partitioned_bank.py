@@ -17,7 +17,6 @@
 import copy
 import numpy
 import logging
-from pycbc import pnutils
 from pycbc.tmpltbank import coord_utils
 
 class PartitionedTmpltbank(object):
@@ -545,9 +544,9 @@ class PartitionedTmpltbank(object):
             freq_cutoff = coord_utils.return_nearest_cutoff(\
                                      self.upper_freq_formula, mass_dict, freqs)
             freq_cutoff = freq_cutoff[0]
-            lambdas = coord_utils.get_chirp_params(tot_mass, eta, beta, sigma,
-                                           gamma, chis, self.metric_params.f0,
-                                           self.metric_params.pnOrder)
+            lambdas = coord_utils.get_chirp_params\
+                (mass1, mass2, spin1z, spin2z, self.metric_params.f0,
+                 self.metric_params.pnOrder)
             mus = []
             for freq in self.frequency_map:
                 mus.append(coord_utils.get_mu_params(lambdas,
