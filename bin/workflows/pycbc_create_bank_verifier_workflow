@@ -282,7 +282,6 @@ for tag in output_pointinjs:
 # Create versioning information
 create_versioning_page(rdir['workflow/version'], workflow.cp)
 
-print len(plotting_nodes)
 wf.make_results_web_page(workflow, os.path.join(os.getcwd(), rdir.base),
                          explicit_dependencies=plotting_nodes)
 
