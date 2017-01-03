@@ -26,7 +26,7 @@ import pycbc
 import pycbc.opt
 import pycbc.weave
 from pycbc import fft
-from pycbc import gates
+from pycbc import gate
 from pycbc import inference
 from pycbc import psd
 from pycbc import scheme
@@ -139,7 +139,7 @@ psd.insert_psd_option_group_multi_ifo(parser)
 scheme.insert_processing_option_group(parser)
 strain.insert_strain_option_group_multi_ifo(parser)
 pycbc.weave.insert_weave_option_group(parser)
-gates.add_gates_option_group(parser)
+gate.add_gate_option_group(parser)
 
 # parse command line
 opts = parser.parse_args()
@@ -176,8 +176,8 @@ ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
 
 # get gates to apply
-gates = gates.gates_from_cli(opts)
-psd_gates = gates.psd_gates_from_cli(opts)
+gates = gate.gates_from_cli(opts)
+psd_gates = gate.psd_gates_from_cli(opts)
 
 # get strain time series
 strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
@@ -185,7 +185,7 @@ strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
 # apply gates if not waiting to overwhiten
 if not opts.gate_overwhitened:
     logging.info("Applying gates to strain data")
-    strain_dict = gates.apply_gates_to_td(strain_dict, gates)
+    strain_dict = gate.apply_gates_to_td(strain_dict, gates)
 
 # get strain time series to use for PSD estimation
 # if user has not given the PSD time options then use same data as analysis
@@ -198,7 +198,7 @@ if opts.psd_start_time and opts.psd_end_time:
                                                 precision="double")
     # apply any gates
     logging.info("Applying gates to PSD data")
-    psd_strain_dict = gates.apply_gates_to_td(psd_strain_dict, psd_gates)
+    psd_strain_dict = gate.apply_gates_to_td(psd_strain_dict, psd_gates)
 
 elif opts.psd_start_time or opts.psd_end_time:
     raise ValueError("Must give --psd-start-time and --psd-end-time")
@@ -232,7 +232,7 @@ with ctx:
         # overwhiten the data
         for ifo in gates:
             stilde_dict[ifo] /= psd_dict[ifo]
-        stilde_dict = gates.apply_gates_to_fd(stilde_dict, gates)
+        stilde_dict = gate.apply_gates_to_fd(stilde_dict, gates)
 
         # unwhiten the data for the likelihood generator
         for ifo in gates:
