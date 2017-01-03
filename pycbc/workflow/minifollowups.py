@@ -574,8 +574,9 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
     makedir(out_dir)
     name = 'plot_singles_timefreq'
 
-    node = PlotExecutable(workflow.cp, name, ifos=[single.ifo],
-                          out_dir=out_dir, tags=tags).create_node()
+    curr_exe = PlotExecutable(workflow.cp, name, ifos=[single.ifo],
+                          out_dir=out_dir, tags=tags)
+    node = curr_exe.create_node()
     node.add_input_opt('--trig-file', single)
     node.add_input_opt('--bank-file', bank_file)
 
@@ -597,22 +598,22 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
             err_msg += "This shouldn't be possible, please ask for help!"
             raise ValueError(err_msg)
         # Check for pad-data
-        if node.has_opt('pad-data')
-            pad_data = int(pad_data)
+        if curr_exe.has_opt('pad-data'):
+            pad_data = int(curr_exe.get_opt('pad-data'))
         else:
             pad_data = 0
-        if len(data_seg) < (2 * time_window + 2 * pad_data):
+        if abs(data_seg) < (2 * time_window + 2 * pad_data):
             tl = 2 * time_window + 2 * pad_data
             err_msg = "I was asked to use {} seconds of data ".format(tl)
             err_msg += "to run a plot_singles_timefreq job. However, I have "
-            err_msg += "only {} seconds available.".format(len(data_seg))
+            err_msg += "only {} seconds available.".format(abs(data_seg))
             raise ValueError(err_msg)
         if data_seg[0] > (start - pad_data):
             start = data_seg[0] + pad_data
-            end = start + 2 * time_window + 2 * pad_data
+            end = start + 2 * time_window
         if data_seg[1] < (end + pad_data):
             end = data_seg[1] - pad_data
-            start = end - 2 * time_window + 2 * pad_data
+            start = end - 2 * time_window
         # Sanity check, shouldn't get here!
         if data_seg[0] > (start - pad_data):
             err_msg = "I shouldn't be here! Go ask Ian what he broke."

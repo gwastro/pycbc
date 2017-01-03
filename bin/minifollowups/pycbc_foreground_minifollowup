@@ -164,7 +164,7 @@ for num_event in range(num_events):
     for single in single_triggers:
         time = times[single.ifo][num_event]
         files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
-                                time - 10, time + 10, args.output_dir,
+                                time, args.output_dir,
                                 data_segments=insp_data_seglists[single.ifo],
                                 tags=args.tags + [str(num_event)])
     
