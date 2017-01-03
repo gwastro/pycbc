@@ -112,3 +112,30 @@ def apply_gates_to_fd(stilde_dict, gates):
         outdict[ifo] = d.to_frequencyseries()
     return outdict
 
+
+def add_gates_option_group(parser):
+    """Adds the options needed to apply gates to data.
+
+    Parameters
+    ----------
+    parser : object
+        ArgumentParser instance.
+    """
+    gates_group = parser.add_argument_group("Options for gating data.")
+
+    gates_group.add_argument("--gate", nargs="+", type=str,
+                             metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
+                             help="Apply one or more gates to the data before "
+                                  "filtering.")
+    gates_group.add_argument("--gate-overwhitened", action="store_true",
+                             help="Overwhiten data first, then apply the "
+                                  "gates specified in --gate. Overwhitening "
+                                  "allows for sharper tapers to be used, "
+                                  "since lines are not blurred.")
+    gates_group.add_argument("--psd-gate", nargs="+", type=str,
+                             metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
+                             help="Apply one or more gates to the data used "
+                                  "for computing the PSD. Gates are applied "
+                                  "prior to FFT-ing the data for PSD "
+                                  "estimation.")
+    return gates_group

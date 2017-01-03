@@ -27,6 +27,7 @@ import pycbc.opt
 import pycbc.weave
 import random
 from pycbc import fft
+from pycbc import gates
 from pycbc import inference
 from pycbc import psd
 from pycbc import scheme
@@ -84,20 +85,6 @@ parser.add_argument("--psd-start-time", type=float, default=None,
 parser.add_argument("--psd-end-time", type=float, default=None,
                     help="End time to use for PSD estimation if different "
                          "from analysis.")
-parser.add_argument("--gate", nargs="+", type=str,
-                    metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
-                    help="Apply one or more gates to the data before "
-                         "filtering.")
-parser.add_argument("--gate-overwhitened", action="store_true", default=False,
-                    help="Overwhiten data first, then apply the gates "
-                         "specified in --gate. Overwhitening allows for "
-                         "sharper tapers to be used, since lines are not "
-                         "blurred.")
-parser.add_argument("--psd-gate", nargs="+", type=str,
-                    metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
-                    help="Apply one or more gates to the data used for "
-                         "computing the PSD. Gates are applied prior to "
-                         "FFT-ing the data for PSD estimation.")
 
 # add inference options
 parser.add_argument("--likelihood-evaluator", required=True,
@@ -153,6 +140,7 @@ psd.insert_psd_option_group_multi_ifo(parser)
 scheme.insert_processing_option_group(parser)
 strain.insert_strain_option_group_multi_ifo(parser)
 pycbc.weave.insert_weave_option_group(parser)
+gates.add_gates_option_group(parser)
 
 # parse command line
 opts = parser.parse_args()
@@ -188,8 +176,8 @@ ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
 
 # get gates to apply
-gates = gates_from_cli(opts)
-psd_gates = psd_gates_from_cli(opts)
+gates = gates.gates_from_cli(opts)
+psd_gates = gates.psd_gates_from_cli(opts)
 
 # get strain time series
 strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
@@ -197,7 +185,7 @@ strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
 # apply gates if not waiting to overwhiten
 if not opts.gate_overwhitened:
     logging.info("Applying gates to strain data")
-    strain_dict = apply_gates_to_td(strain_dict, gates)
+    strain_dict = gates.apply_gates_to_td(strain_dict, gates)
 
 # get strain time series to use for PSD estimation
 # if user has not given the PSD time options then use same data as analysis
@@ -210,7 +198,7 @@ if opts.psd_start_time and opts.psd_end_time:
                                                 precision="double")
     # apply any gates
     logging.info("Applying gates to PSD data")
-    psd_strain_dict = apply_gates_to_td(psd_strain_dict, psd_gates)
+    psd_strain_dict = gates.apply_gates_to_td(psd_strain_dict, psd_gates)
 
 elif opts.psd_start_time or opts.psd_end_time:
     raise ValueError("Must give --psd-start-time and --psd-end-time")
@@ -243,7 +231,7 @@ with ctx:
         # overwhiten the data
         for ifo in gates:
             stilde_dict[ifo] /= psd_dict[ifo]
-        stilde_dict = apply_gates_to_fd(stilde_dict, gates)
+        stilde_dict = gates.apply_gates_to_fd(stilde_dict, gates)
         # unwhiten the data for the likelihood generator
         for ifo in gates:
             stilde_dict[ifo] *= psd_dict[ifo]
