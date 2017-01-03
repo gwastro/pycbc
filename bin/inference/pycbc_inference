@@ -25,7 +25,6 @@ import numpy
 import pycbc
 import pycbc.opt
 import pycbc.weave
-import random
 from pycbc import fft
 from pycbc import gates
 from pycbc import inference
@@ -157,6 +156,7 @@ pycbc.weave.verify_weave_options(opts, parser)
 if os.path.exists(opts.output_file) and not opts.force:
     raise OSError("output-file already exists; use --force if you wish to "
                   "overwrite it.")
+
 # create the file for adding to
 fp = InferenceFile(opts.output_file, "w")
 fp.close()
@@ -228,16 +228,19 @@ with ctx:
     # apply any gates to overwhitened data, if desired
     if opts.gate_overwhitened and opts.gate is not None:
         logging.info("Applying gates to overwhitened data")
+
         # overwhiten the data
         for ifo in gates:
             stilde_dict[ifo] /= psd_dict[ifo]
         stilde_dict = gates.apply_gates_to_fd(stilde_dict, gates)
+
         # unwhiten the data for the likelihood generator
         for ifo in gates:
             stilde_dict[ifo] *= psd_dict[ifo]
 
     # save PSD
     if opts.save_psd:
+
         # apply dynamic range factor for saving PSDs since
         # plotting code expects it
         logging.info("Saving PSDs")
