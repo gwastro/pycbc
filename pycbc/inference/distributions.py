@@ -52,14 +52,16 @@ def get_param_bounds_from_config(cp, section, tag, param):
     For example, the following will create right-open bounds for parameter
     `foo`:
 
-    .. code::
+    .. code-block:: ini
+
         [{section}-{tag}]
         min-foo = -1
         max-foo = 1
 
     This would make the boundaries cyclic:
 
-    .. code::
+    .. code-block:: ini
+
         [{section}-{tag}]
         min-foo = -1
         max-foo = 1
@@ -347,8 +349,8 @@ class Uniform(_BoundedDist):
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
 
-    Class Attributes
-    ----------------
+    Attributes
+    ----------
     name : 'uniform'
         The name of this distribution.
 
@@ -363,39 +365,46 @@ class Uniform(_BoundedDist):
     lognorm : float
         The log of the normalization.
 
-    Example
-    -------
+    Examples
+    --------
     Create a 2 dimensional uniform distribution:
+
     >>> dist = prior.Uniform(mass1=(10.,50.), mass2=(10.,50.))
 
     Get the log of the pdf at a particular value:
+
     >>> dist.logpdf(mass1=25., mass2=10.)
-    -7.3777589082278725
+        -7.3777589082278725
 
     Do the same by calling the distribution:
+
     >>> dist(mass1=25., mass2=10.)
-    -7.3777589082278725
+        -7.3777589082278725
 
     Generate some random values:
+
     >>> dist.rvs(size=3)
-    array([(36.90885758394699, 51.294212757995254),
-           (39.109058546060346, 13.36220145743631),
-           (34.49594465315212, 47.531953033719454)], 
-          dtype=[('mass1', '<f8'), ('mass2', '<f8')])
+        array([(36.90885758394699, 51.294212757995254),
+               (39.109058546060346, 13.36220145743631),
+               (34.49594465315212, 47.531953033719454)], 
+              dtype=[('mass1', '<f8'), ('mass2', '<f8')])
     
     Initialize a uniform distribution using a boundaries.Bounds instance,
     with cyclic bounds:
+
     >>> dist = distributions.Uniform(phi=Bounds(10, 50, cyclic=True))
     
     Apply boundary conditions to a value:
+
     >>> dist.apply_boundary_conditions(phi=60.)
-    {'mass1': array(20.0)}
+        {'mass1': array(20.0)}
     
     The boundary conditions are applied to the value before evaluating the pdf;
     note that the following returns a non-zero pdf. If the bounds were not
     cyclic, the following would return 0:
+
     >>> dist.pdf(phi=60.)
-    0.025
+        0.025
     """
     name = 'uniform'
     def __init__(self, **params):
@@ -511,18 +520,17 @@ class UniformAngle(Uniform):
         in [0,2). These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
 
-    Class Attributes
+    Attributes
     ----------------
     name : 'uniform_angle'
         The name of this distribution.
-
-    Attributes
-    ----------
     params : list of strings
         The list of parameter names.
     bounds : dict
         A dictionary of the parameter names and their bounds, in radians.
 
+    Notes
+    ------
     For more information, see Uniform.
     """
     name = 'uniform_angle'
@@ -625,13 +633,10 @@ class SinAngle(UniformAngle):
         in [0,1]. These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
 
-    Class Attributes
+    Attributes
     ----------------
     name : 'sin_angle'
         The name of this distribution.
-
-    Attributes
-    ----------
     params : list of strings
         The list of parameter names.
     bounds : dict
@@ -715,13 +720,10 @@ class CosAngle(SinAngle):
         in [-0.5, 0.5]. These are converted to radians for storage.
         None may also be passed; in that case, the domain bounds will be used.
 
-    Class Attributes
+    Attributes
     ----------------
     name : 'cos_angle'
         The name of this distribution.
-
-    Attributes
-    ----------
     params : list of strings
         The list of parameter names.
     bounds : dict
@@ -757,13 +759,10 @@ class UniformSolidAngle(_BoundedDist):
         bounds should be specified as factors of pi. For example, to limit
         the distribution to the one hemisphere, set `azimuthal_bounds=(0,1)`.
 
-    Class Attributes
+    Attributes
     ----------------
     name : 'uniform_solidangle'
         The name of the distribution.
-
-    Attributes
-    ----------
     bounds : dict
         The bounds on each angle. The keys are the names of the polar and
         azimuthal angles, the values are the minimum and maximum of each, in
@@ -914,7 +913,8 @@ class UniformSolidAngle(_BoundedDist):
         must have the names of the polar and azimuthal angles in the tag part
         of the section header. For example:
 
-        .. code-block::
+        .. code-block:: ini
+
             [prior-theta+phi]
             name = uniform_solidangle
 
@@ -923,7 +923,8 @@ class UniformSolidAngle(_BoundedDist):
         each angle, set the `polar-angle` and `azimuthal-angle` attributes. For
         example: 
 
-        ..code-block::
+        .. code-block:: ini
+
             [prior-foo+bar]
             name = uniform_solidangle
             polar-angle = foo
@@ -935,7 +936,8 @@ class UniformSolidAngle(_BoundedDist):
         Bounds may also be specified for each angle, as factors of pi. For
         example:
 
-        .. code-block::
+        .. code-block:: ini
+
             [prior-theta+phi]
             polar-angle = theta
             azimuthal-angle = phi
@@ -1045,13 +1047,13 @@ class Gaussian(_BoundedDist):
         will be a normal, unbounded Gaussian (equivalent to setting the bounds
         to `[-inf, inf)`).
 
-    Class Attributes
+    Attributes
     ----------------
     name : 'guassian'
         The name of this distribution.
 
-    Example
-    -------
+    Examples
+    --------
     Create an unbounded Gaussian distribution with zero mean and unit variance:
     >>> dist = distributions.Gaussian(mass1=None)
 
@@ -1189,7 +1191,8 @@ class Gaussian(_BoundedDist):
         truncated Gaussian distribution between 0 and 6.28 for a parameter
         called `phi` with mean 3.14 and variance 0.5 that is cyclic:
 
-        .. code::
+        .. code-block:: ini
+
             [{section}-{tag}]
             min-phi = 0
             max-phi = 6.28
@@ -1416,7 +1419,9 @@ class FromFile(_BoundedDist):
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
-        """Returns a distribution based on a configuration file. The parameters
+        """Returns a distribution based on a configuration file.
+
+        The parameters
         for the distribution are retrieved from the section titled
         "[`section`-`variable_args`]" in the config file.
 
@@ -1424,7 +1429,8 @@ class FromFile(_BoundedDist):
         `file_name`. Boundary arguments can be provided in the same way as
         described in `get_param_bounds_from_config`.
 
-        .. code::
+        .. code-block:: ini
+
             [{section}-{tag}]
             name = fromfile
             file_name = ra_prior.hdf

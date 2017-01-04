@@ -264,8 +264,11 @@ def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
                       dtype=timeseries.dtype, epoch=timeseries._epoch)
 
 def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right'):
-    """Return a new complex frequency series that has been interpolated to the
+    """Interpolate complex frequency series to desired delta_f.
+
+    Return a new complex frequency series that has been interpolated to the
     desired delta_f.
+
     Parameters
     ----------
     series : FrequencySeries

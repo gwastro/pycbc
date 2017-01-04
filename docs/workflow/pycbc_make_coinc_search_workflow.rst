@@ -617,15 +617,15 @@ Generate the full workflow you want to do
 -----------------------------------------
 
 First generate the full workflow for the
-run you would like to do as normal. Follow the instructions of this page from :ref:`howtorunworkflow`,
-but stop before planning the workflow with plan.sh in :ref:`coincworkflowplan`.
+run you would like to do as normal. Follow the instructions of this page from :ref:`coincworkflowgenerate`,
+but stop before planning and submitting the workflow in :ref:`coincworkflowplan`.
 
 -----------------------------------------------------
 Select the files you want to reuse from the prior run
 -----------------------------------------------------
 
 Locate the directory of the run that you would like to reuse. There is a file
-called ``output.map`` in the directory that you specified with the
+ending in ``output.map`` in the directory that you specified with the
 ``--output`` argument to ``pycbc_make_coinc_search_workflow``. This file contains a 
 listing of all of the data products of the prior workflow, and can be used to tell
 pegasus to skip regenerating them.
@@ -705,7 +705,7 @@ Add the following to the list of ``--config-overrides`` when running ``pycbc_mak
     'pegasus_profile-inspiral:hints|execution.site:osg'
     'pegasus_profile-inspiral:pycbc|installed:False'
 
-You also need a ``--config-overrides`` to ``pycbc_make_coinc_search_workflow`` that sets the staging site for the main workflow to the local site. To do this, add the following argument, replacing ``${WORKFLOW_NAME}`` with the string that is given as the argument to the option ``--workflow-name ``::
+You also need a ``--config-overrides`` to ``pycbc_make_coinc_search_workflow`` that sets the staging site for the main workflow to the local site. To do this, add the following argument, replacing ``${WORKFLOW_NAME}`` with the string that is given as the argument to the option ``--workflow-name``::
 
     'workflow-${WORKFLOW_NAME}-main:staging-site:osg=local'
 

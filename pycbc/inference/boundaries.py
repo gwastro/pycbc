@@ -167,18 +167,16 @@ class Bounds(object):
     minimum and maximum bounds. Specifically, if `btype_min` (`btype_max`) is
     set to:
 
-        * "open": the minimum (maximum) boundary will be an instance of
-        `OpenBound`. This means that a value must be `>` (`<`) the bound
-        for it to be considered within the bounds.
-
-        * "closed": the minimum (maximum) boundary will be an instance of
-        `ClosedBound`. This means that a value must be `>=` (`<=`) the bound
-        for it to be considered within the bounds.
-
-        * "reflected": the minimum (maximum) boundary will be an isntance of
-        `ReflectedBound`. This means that a value will be reflected to the
-        right (left) if `apply_conditions` is used on the value. For more
-        details see `apply_conditions`.
+     * "open": the minimum (maximum) boundary will be an instance of
+       `OpenBound`. This means that a value must be `>` (`<`) the bound
+       for it to be considered within the bounds.
+     * "closed": the minimum (maximum) boundary will be an instance of
+       `ClosedBound`. This means that a value must be `>=` (`<=`) the bound
+       for it to be considered within the bounds.
+     * "reflected": the minimum (maximum) boundary will be an isntance of
+       `ReflectedBound`. This means that a value will be reflected to the
+       right (left) if `apply_conditions` is used on the value. For more
+       details see `apply_conditions`.
 
     If the `cyclic` keyword is set to True, then `apply_conditions` will cause
     values to be wrapped around to the minimum (maximum) bound if the value
@@ -358,30 +356,26 @@ class Bounds(object):
         
         The value is manipulated according based on the following conditions:
 
-            * If `self.cyclic` is True then `value` is wrapped around to the
-            minimum (maximum) bound if `value` is `>= self.max` (`< self.min`)
-            bound. For example, if the minimum and maximum bounds are `0, 2*pi`
-            and `value = 5*pi`, then the returned value will be `pi`.
-
-            * If `self.min` is a reflected boundary then `value` will be
-            reflected to the right if it is `< self.min`. For example, if
-            `self.min = 10` and `value = 3`, then the returned value will be
-            17.
-
-            * If `self.max` is a reflected boundary then `value` will be
-            reflected to the left if it is `> self.max`. For example, if
-            `self.max = 20` and `value = 27`, then the returned value will be
-            13.
-
-            * If `self.min` and `self.max` are both reflected boundaries, then
-            `value` will be reflected between the two boundaries until it
-            falls within the bounds. The first reflection occurs off of the
-            maximum boundary. For example, if `self.min = 10`, `self.max =
-            20`, and `value = 42`, the returned value will be 18 ( the first
-            reflection yields -2, the second 22, and the last 18).
-           
-            * If neither bounds are reflected and cyclic is False, then the
-            value is just returned as-is.
+         * If `self.cyclic` is True then `value` is wrapped around to the
+           minimum (maximum) bound if `value` is `>= self.max` (`< self.min`)
+           bound. For example, if the minimum and maximum bounds are `0, 2*pi`
+           and `value = 5*pi`, then the returned value will be `pi`.
+         * If `self.min` is a reflected boundary then `value` will be
+           reflected to the right if it is `< self.min`. For example, if
+           `self.min = 10` and `value = 3`, then the returned value will be
+           17.
+         * If `self.max` is a reflected boundary then `value` will be
+           reflected to the left if it is `> self.max`. For example, if
+           `self.max = 20` and `value = 27`, then the returned value will be
+           13.
+         * If `self.min` and `self.max` are both reflected boundaries, then
+           `value` will be reflected between the two boundaries until it
+           falls within the bounds. The first reflection occurs off of the
+           maximum boundary. For example, if `self.min = 10`, `self.max =
+           20`, and `value = 42`, the returned value will be 18 ( the first
+           reflection yields -2, the second 22, and the last 18).
+         * If neither bounds are reflected and cyclic is False, then the
+           value is just returned as-is.
 
         Parameters
         ----------

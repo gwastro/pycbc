@@ -20,8 +20,10 @@ This module implements a set of checks to test for each segment and template
 combination whether injections contained within the segment are sufficiently
 "similar" to the template to require a matched-filter. There are a few ways of
 testing the "similarity" of templates and injections.
- * A chirp time threshold rejects templates if chirp time difference is large
- * A coarse match threshold rejects templates if a coarse overlap is small
+
+* A chirp time threshold rejects templates if chirp time difference is large
+* A coarse match threshold rejects templates if a coarse overlap is small
+
 """
 
 import numpy as np

@@ -94,12 +94,13 @@ binaries should read the documentation in the links at:
    workflow/pycbc_make_coinc_search_workflow
    workflow/pycbc_make_sngl_workflow
    workflow/pygrb.rst
+   using_production_binaries
 
 Users who want to create and run parameter estimation workflows should read the
 documentation at:
 
 .. toctree::
-      :maxdepth: 1
+   :maxdepth: 1
 
    workflow/pycbc_make_inference_workflow
 

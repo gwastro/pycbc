@@ -390,6 +390,7 @@ def get_fd_qnm(template=None, **kwargs):
 
 def get_td_lm(template=None, **kwargs):
     """Return frequency domain lm mode with the given number of overtones.
+
     Parameters
     ----------
     template: object
@@ -420,6 +421,7 @@ def get_td_lm(template=None, **kwargs):
         The ending time of the output time series.
         If None, it will be set to the time at which the amplitude is 
         1/1000 of the peak amplitude (the maximum of all modes).
+
     Returns
     -------
     hplustilde: FrequencySeries
@@ -461,6 +463,7 @@ def get_td_lm(template=None, **kwargs):
 
 def get_fd_lm(template=None, **kwargs):
     """Return frequency domain lm mode with a given number of overtones.
+
     Parameters
     ----------
     template: object
@@ -491,6 +494,7 @@ def get_fd_lm(template=None, **kwargs):
         The ending frequency of the output frequency series.
         If None, it will be set to the frequency at which the amplitude
         is 1/1000 of the peak amplitude (the maximum of all modes).
+
     Returns
     -------
     hplustilde: FrequencySeries
@@ -533,6 +537,7 @@ def get_fd_lm(template=None, **kwargs):
 
 def get_td_lm_allmodes(template=None, **kwargs):
     """Return time domain ringdown with all the modes specified.
+
     Parameters
     ----------
     template: object
@@ -562,6 +567,7 @@ def get_td_lm_allmodes(template=None, **kwargs):
         The ending time of the output frequency series.
         If None, it will be set to the time at which the amplitude
         is 1/1000 of the peak amplitude (the maximum of all modes).
+
     Returns
     -------
     hplustilde: FrequencySeries
@@ -601,6 +607,7 @@ def get_td_lm_allmodes(template=None, **kwargs):
 
 def get_fd_lm_allmodes(template=None, **kwargs):
     """Return frequency domain ringdown with all the modes specified.
+
     Parameters
     ----------
     template: object
@@ -633,6 +640,7 @@ def get_fd_lm_allmodes(template=None, **kwargs):
         The ending frequency of the output frequency series.
         If None, it will be set to the frequency at which the amplitude
         is 1/1000 of the peak amplitude (the maximum of all modes).
+
     Returns
     -------
     hplustilde: FrequencySeries
