@@ -275,9 +275,6 @@ pycbc.init_logging(opts.verbose)
 numpy.random.seed(opts.seed)
 logging.info("Using seed %i" %(opts.seed))
 
-# change measure level for FFT to 0
-fft.fftw.set_measure_level(0)
-
 # get scheme
 ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
