@@ -749,9 +749,9 @@ fi
 v=4.7.0
 p=pegasus-python-source-$v
 echo -e "\\n\\n>> [`date`] building $p"
-test -r $p ||
-    wget $wget_opts "$atlas/tarballs/$p.tar.gz"
-# http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz
+test -r $p.tar.gz ||
+    wget $wget_opts "$atlas/tarballs/$p.tar.gz" ||
+    wget $wget_opts http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz
 pip install --no-deps $p.tar.gz
 
 # MPLD
