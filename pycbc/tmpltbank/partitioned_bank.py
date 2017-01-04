@@ -55,7 +55,8 @@ class PartitionedTmpltbank(object):
         bin_spacing : float
             The metric distance to space the bins by. NOTE: If you want to
             place the bins to have a width corresponding to a minimal match of
-            0.97 you would set this to (1 - 0.97)**0.5. Note the square root,
+            0.97 you would set this to :math:`(1 - 0.97)^{0.5}`.
+            Note the square root,
             matches correspond to the square of parameter space distance.
         bin_range_check : int
             When computing matches consider points in the corresponding bin and
@@ -116,22 +117,30 @@ class PartitionedTmpltbank(object):
         self.bin_loop_order = coord_utils.outspiral_loop(self.bin_range_check)
 
     def get_point_from_bins_and_idx(self, chi1_bin, chi2_bin, idx):
-        """
+        """Find masses and spins given bin numbers and index.
+
         Given the chi1 bin, chi2 bin and an index, return the masses and spins
         of the point at that index. Will fail if no point exists there.
 
         Parameters
         -----------
         chi1_bin : int
+            The bin number for chi1.
         chi2_bin : int
+            The bin number for chi2.
         idx : int
+            The index within the chi1, chi2 bin.
 
         Returns
         --------
         mass1 : float
+            Mass of heavier body.
         mass2 : float
+            Mass of lighter body.
         spin1z : float
+            Spin of heavier body.
         spin2z : float
+            Spin of lighter body.
         """
         mass1 = self.massbank[chi1_bin][chi2_bin]['mass1s'][idx]
         mass2 = self.massbank[chi1_bin][chi2_bin]['mass2s'][idx]
@@ -264,7 +273,7 @@ class PartitionedTmpltbank(object):
         chi_coords : numpy.array
             The position of the point in the chi coordinates.
         distance_threshold : float
-            The **SQUARE ROOT* of the metric distance to test as threshold.
+            The **SQUARE ROOT** of the metric distance to test as threshold.
             E.g. if you want to test to a minimal match of 0.97 you would
             use 1 - 0.97 = 0.03 for this value.
 
@@ -372,7 +381,7 @@ class PartitionedTmpltbank(object):
             holds the coordinates in the [not covaried] mu parameter space for
             each value of the upper frequency cutoff.
         distance_threshold : float
-            The **SQUARE ROOT* of the metric distance to test as threshold.
+            The **SQUARE ROOT** of the metric distance to test as threshold.
             E.g. if you want to test to a minimal match of 0.97 you would
             use 1 - 0.97 = 0.03 for this value.
 
@@ -600,11 +609,12 @@ class PartitionedTmpltbank(object):
                                      spin2zs[idx], vary_fupper=vary_fupper)
 
     def output_all_points(self):
-        """
-        Return all point in the bank as lists of m1, m2, spin1z, spin2z.
+        """Return all points in the bank.
+
+        Return all points in the bank as lists of m1, m2, spin1z, spin2z.
 
         Returns
-        --------
+        -------
         mass1 : list
             List of mass1 values.
         mass2 : list

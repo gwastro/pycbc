@@ -43,7 +43,8 @@ def generate_mapping(order):
     transforming to/from the xi_i coordinates to the lambda_i coordinates.
 
     NOTE: This is not a great way of doing this. It would be nice to clean
-    this up. Hence pulling this function out. The valid PN orders are {}
+    this up. Hence pulling this function out. The valid PN orders are
+    {}
 
     Parameters
     ----------
@@ -85,13 +86,12 @@ generate_mapping.__doc__ = \
     generate_mapping.__doc__.format(pycbcValidOrdersHelpDescriptions)
 
 def generate_inverse_mapping(order):
-    """
+    """Genereate a lambda entry -> PN order map.
+
     This function will generate the opposite of generate mapping. So where
-    generate_mapping gives:
-    dict[key] = item
-    This will give
-    dict[item] = key
-    Valid PN orders are: {}
+    generate_mapping gives dict[key] = item this will give
+    dict[item] = key. Valid PN orders are:
+    {}
     
     Parameters
     ----------
@@ -151,7 +151,8 @@ def ethinca_order_from_string(order):
 def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
     """
     Take a set of masses and spins and convert to the various lambda
-    coordinates that describe the orbital phase. Accepted PN orders are: {}
+    coordinates that describe the orbital phase. Accepted PN orders are:
+    {}
  
     Parameters
     ----------
@@ -247,7 +248,8 @@ get_chirp_params_new.__doc__ = \
 def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
     """
     Take a set of masses and spins and convert to the various lambda
-    coordinates that describe the orbital phase. Accepted PN orders are: {}
+    coordinates that describe the orbital phase. Accepted PN orders are:
+    {}
  
     Parameters
     ----------
@@ -330,7 +332,7 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
             lambda7 = lambda7 * 3./(128.*eta) * (pi * totmass * f0)**(2/3.)
             lambdas.append(lambda7)
         else:
-            err_msg = "Do not understand term %s." %(mapping[idx])
+            err_msg = "Do not understand term {}.".format(mapping[idx])
             raise ValueError(err_msg)
                  
     return lambdas
