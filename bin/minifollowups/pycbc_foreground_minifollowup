@@ -19,6 +19,7 @@
 import os, sys, argparse, logging, h5py, pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
+from pycbc.events import select_segments_by_definer
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
@@ -71,10 +72,18 @@ insp_segs = to_file(args.inspiral_segments)
 
 single_triggers = []
 fsdt = {}
+insp_data_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
     single_triggers.append(to_file(fname, ifo=ifo))
     fsdt[ifo] = h5py.File(args.single_detector_triggers[ifo], 'r')
+    insp_data_seglists[ifo] = select_segments_by_definer\
+        (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
+         ifo=ifo)
+    # NOTE: make_singles_timefreq needs a coalesced set of segments. If this is
+    #       being used to determine command-line options for other codes,
+    #       please think if that code requires coalesced, or not, segments.
+    insp_data_seglists[ifo].coalesce()
     
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
@@ -155,7 +164,8 @@ for num_event in range(num_events):
     for single in single_triggers:
         time = times[single.ifo][num_event]
         files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
-                                time - 10, time + 10, args.output_dir,
+                                time, args.output_dir,
+                                data_segments=insp_data_seglists[single.ifo],
                                 tags=args.tags + [str(num_event)])
     
     layouts += list(layout.grouper(files, 2))
