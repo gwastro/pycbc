@@ -77,7 +77,6 @@ elif test ".$1" = ".--force-debian4" ||
     build_swig=true
     build_framecpp=false
     h5py_from="git"
-    glue_from="pip-install" # "git-patched"
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
     patch_pyinstaller_bootloader=true
@@ -107,7 +106,6 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8
     build_swig=true
     build_framecpp=false
     h5py_from="git"
-    glue_from="pip-install" # "git-patched"
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
     patch_pyinstaller_bootloader=true
@@ -144,7 +142,6 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     build_swig=true
     build_framecpp=true
     h5py_from="pip-install" # "git"
-    glue_from="pip-install" # "git-patched"
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
     patch_pyinstaller_bootloader=true
@@ -171,7 +168,6 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     build_gsl=false
     build_swig=false
     build_framecpp=false
-    glue_from="git-patched" # "pip-install"
     h5py_from="pip-install"
     build_preinst_before_lalsuite=true
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
@@ -730,28 +726,6 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
     popd
 
 fi # if $BUILDDIRNAME-preinst.tgz
-
-# PyCBC-GLUE
-if [ "$glue_from" = "pip-install" ] ; then
-    echo -e "\\n\\n>> [`date`] pip install pycbc-glue==0.9.8"
-    pip install pycbc-glue==0.9.8
-else
-    echo -e "\\n\\n>> [`date`] building pycbc-glue v0.9.8"
-    if test -d pycbc-glue/.git; then
-        cd pycbc-glue
-    else
-        git clone https://github.com/ligo-cbc/pycbc-glue.git
-        cd pycbc-glue
-        git checkout v0.9.8
-        # this adds the initialization of *.tp_base,
-        # preserving the version for pycbc requirements
-        git config user.name "Dummy"
-        git config user.email "dummy@dummy.net"
-        git cherry-pick 16c7eeff3fc2a5cca2c3ea0e259ee5f57abac65c
-    fi
-    python setup.py install --prefix="$PREFIX"
-    cd ..
-fi
 
 # h5py
 if [ "$h5py_from" = "pip-install" ] ; then
