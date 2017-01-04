@@ -753,10 +753,10 @@ class PyCBCInspiralExecutable(Executable):
         if tags is None:
             tags = []
         node = Node(self)
-        pad_data = int(self.get_opt('pad-data'))
-        if pad_data is None:
+        if not self.has_opt('pad-data'):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
+        pad_data = int(self.get_opt('pad-data'))
 
         if not dfParents:
             raise ValueError("%s must be supplied with data file(s)"
@@ -836,7 +836,7 @@ class PyCBCInspiralExecutable(Executable):
         segment_length = int(self.get_opt('segment-length'))
         pad_data = 0
         if self.has_opt('pad-data'):
-            pad_data += int(self.get_opt( 'pad-data'))
+            pad_data += int(self.get_opt('pad-data'))
 
         # NOTE: Currently the tapered data is ignored as it is short and
         #       will lie within the segment start/end pad. This means that

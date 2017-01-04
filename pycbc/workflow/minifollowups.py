@@ -530,18 +530,98 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=
     return files
 
     
-def make_singles_timefreq(workflow, single, bank_file, start, end, out_dir,
-                          veto_file=None, tags=None):
+def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
+                          veto_file=None, time_window=10, data_segments=None,
+                          tags=None):
+    """ Generate a singles_timefreq node and add it to workflow.
+
+    This function generates a single node of the singles_timefreq executable
+    and adds it to the current workflow. Parent/child relationships are set by
+    the input/output files automatically.
+
+    Parameters
+    -----------
+    workflow: pycbc.workflow.core.Workflow
+        The workflow class that stores the jobs that will be run.
+    single: pycbc.workflow.core.File instance
+        The File object storing the single-detector triggers to followup.
+    bank_file: pycbc.workflow.core.File instance
+        The File object storing the template bank.
+    trig_time: int
+        The time of the trigger being followed up.
+    out_dir: str
+        Location of directory to output to
+    veto_file: File (optional, default=None)
+        If given use this file to veto triggers to determine the loudest event.
+        FIXME: Veto files *should* be provided a definer argument and not just
+        assume that all segments should be read.
+    time_window: int (optional, default=None)
+        The amount of data (not including padding) that will be read in by the
+        singles_timefreq job. The default value of 10s should be fine for most
+        cases.
+    data_segments: glue.segments.segmentlist (optional, default=None)
+        The list of segments for which data exists and can be read in. If given
+        the start/end times given to singles_timefreq will be adjusted if
+        [trig_time - time_window, trig_time + time_window] does not completely
+        lie within a valid data segment. A ValueError will be raised if the
+        trig_time is not within a valid segment, or if it is not possible to
+        find 2*time_window (plus the padding) of continuous data around the
+        trigger. This **must** be coalesced.
+    tags: list (optional, default=None)
+        List of tags to add to the created nodes, which determine file naming.
+    """
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'plot_singles_timefreq'
 
-    node = PlotExecutable(workflow.cp, name, ifos=[single.ifo],
-                          out_dir=out_dir, tags=tags).create_node()
+    curr_exe = PlotExecutable(workflow.cp, name, ifos=[single.ifo],
+                          out_dir=out_dir, tags=tags)
+    node = curr_exe.create_node()
     node.add_input_opt('--trig-file', single)
     node.add_input_opt('--bank-file', bank_file)
+
+    # Determine start/end times, using data segments if needed.
+    # Begin by choosing "optimal" times
+    start = trig_time - time_window
+    end = trig_time + time_window
+    # Then if data_segments is available, check against that, and move if
+    # needed
+    if data_segments is not None:
+        # Assumes coalesced, so trig_time can only be within one segment
+        for seg in data_segments:
+            if trig_time in seg:
+                data_seg = seg
+                break
+        else:
+            err_msg = "Trig time {} ".format(trig_time)
+            err_msg += "does not seem to lie within any data segments. "
+            err_msg += "This shouldn't be possible, please ask for help!"
+            raise ValueError(err_msg)
+        # Check for pad-data
+        if curr_exe.has_opt('pad-data'):
+            pad_data = int(curr_exe.get_opt('pad-data'))
+        else:
+            pad_data = 0
+        if abs(data_seg) < (2 * time_window + 2 * pad_data):
+            tl = 2 * time_window + 2 * pad_data
+            err_msg = "I was asked to use {} seconds of data ".format(tl)
+            err_msg += "to run a plot_singles_timefreq job. However, I have "
+            err_msg += "only {} seconds available.".format(abs(data_seg))
+            raise ValueError(err_msg)
+        if data_seg[0] > (start - pad_data):
+            start = data_seg[0] + pad_data
+            end = start + 2 * time_window
+        if data_seg[1] < (end + pad_data):
+            end = data_seg[1] - pad_data
+            start = end - 2 * time_window
+        # Sanity check, shouldn't get here!
+        if data_seg[0] > (start - pad_data):
+            err_msg = "I shouldn't be here! Go ask Ian what he broke."
+            raise ValueError(err_msg)
+
     node.add_opt('--gps-start-time', int(start))
     node.add_opt('--gps-end-time', int(end))
+    node.add_opt('--center-time', int(trig_time))
     
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)

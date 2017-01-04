@@ -19,6 +19,7 @@
 import os, argparse, numpy, logging, h5py, copy
 import pycbc.workflow as wf
 from pycbc.types import MultiDetOptionAction
+from pycbc.events import select_segments_by_definer
 from pycbc.results import layout
 from pycbc.detector import Detector
 import pycbc.workflow.minifollowups as mini
@@ -78,9 +79,17 @@ injection_xml_file = to_file(args.injection_xml_file)
 insp_segs = to_file(args.inspiral_segments)
 
 single_triggers = []
+insp_data_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
     single_triggers.append(to_file(fname, ifo=ifo))
+    insp_data_seglists[ifo] = select_segments_by_definer\
+        (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
+         ifo=ifo)
+    # NOTE: make_singles_timefreq needs a coalesced set of segments. If this is
+    #       being used to determine command-line options for other codes,
+    #       please think if that code requires coalesced, or not, segments.
+    insp_data_seglists[ifo].coalesce()
 
 f = h5py.File(args.injection_file, 'r')
 missed = f['missed/after_vetoes'][:]
@@ -141,7 +150,8 @@ for num_event in range(num_events):
     
     for single in single_triggers:
         files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
-                                time - 10, time + 10, args.output_dir,
+                                time, args.output_dir,
+                                data_segments=insp_data_seglists[single.ifo],
                                 tags=args.tags + [str(num_event)])
 
     files += mini.make_single_template_plots(workflow, insp_segs,

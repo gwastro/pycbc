@@ -20,6 +20,7 @@ import os, sys, argparse, logging, h5py
 from glue.ligolw import lsctables, table
 from glue.ligolw import utils as ligolw_utils
 from pycbc.results import layout
+from pycbc.events import select_segments_by_definer
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
@@ -90,6 +91,9 @@ if args.veto_file is not None:
 else:
     veto_file = None
 insp_segs = to_file(args.inspiral_segments)
+insp_data_seglists = select_segments_by_definer\
+        (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
+         ifo=args.instrument)
 
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
                  'num-sngl-events', ''))
@@ -173,7 +177,8 @@ for num_event in range(num_events):
                             tags=args.tags+[str(num_event)])
 
     files += mini.make_singles_timefreq(workflow, sngl_file, tmpltbank_file, 
-                            time - 10, time + 10, args.output_dir,
+                            time, args.output_dir,
+                            data_segments=insp_data_seglists,
                             tags=args.tags + [str(num_event)])                 
 
     files += mini.make_plot_waveform_plot(workflow, curr_params,
