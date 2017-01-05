@@ -232,20 +232,12 @@ if opts.point_file:
     temp_data = numpy.loadtxt(opts.point_file)
     rMass1 = temp_data[:,0]
     rMass2 = temp_data[:,1]
-    rTotmass = rMass1 + rMass2
-    rEta = rMass1 * rMass2 / (rTotmass * rTotmass)
     rSpin1z = temp_data[:,2]
     rSpin2z = temp_data[:,3]
-    rBeta, rSigma, rGamma, rChis = pnutils.get_beta_sigma_from_aligned_spins(
-                                                        rEta, rSpin1z, rSpin2z)
     opts.num_points = len(rMass1)
 else:
-    rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z =\
-            tmpltbank.get_random_mass(100000, massRangeParams)
-    diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
-    rMass1 = (rTotmass + diff)/2.
-    rMass2 = (rTotmass - diff)/2.
-    rChis = (rSpin1z + rSpin2z)/2.
+    rMass1, rMass2, rSpin1z, rSpin2z =\
+        tmpltbank.get_random_mass(100000, massRangeParams)
 
 if opts.vary_fupper:
     mass_dict = {}
@@ -255,9 +247,8 @@ if opts.vary_fupper:
     mass_dict['s2z'] = rSpin2z
     refEve = tmpltbank.return_nearest_cutoff(
                                        opts.bank_fupper_formula, mass_dict, fs)
-    lambdas = tmpltbank.get_chirp_params(
-                                  rTotmass, rEta, rBeta, rSigma, rGamma, rChis,
-                                  metricParams.f0, metricParams.pnOrder)
+    lambdas = tmpltbank.get_chirp_params(rMass1, rMass2, rSpin1z, rSpin2z,
+                                         metricParams.f0, metricParams.pnOrder)
     mus = []
     for freq in fs:
         if freq >= lowEve and freq <= highEve:
@@ -266,9 +257,8 @@ if opts.vary_fupper:
 else:
     refEve = numpy.zeros(100000)
     mus = numpy.zeros([1,1,100000])
-vecs = tmpltbank.get_cov_params(
-    rTotmass, rEta, rBeta, rSigma, rGamma, rChis,
-    metricParams, refFreq)
+vecs = tmpltbank.get_cov_params(rMass1, rMass2, rSpin1z, rSpin2z,
+                                metricParams, refFreq)
 vecs = numpy.array(vecs)
 
 for idx_curr in xrange(opts.num_points):

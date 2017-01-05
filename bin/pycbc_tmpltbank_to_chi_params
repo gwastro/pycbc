@@ -175,12 +175,8 @@ else:
 
 fP = open(opts.output_file, "w")
 for idx in xrange(len(mass1)):
-    tot_mass = mass1[idx] + mass2[idx]
-    eta = mass1[idx] * mass2[idx] / (tot_mass * tot_mass)
-    beta, sigma, gamma, chis = pnutils.get_beta_sigma_from_aligned_spins\
-        (eta, spin1z[idx], spin2z[idx])
-    chi_coords = tmpltbank.get_cov_params(tot_mass, eta, beta, sigma, gamma,
-                                          chis, metricParams, refFreq)
+    chi_coords = tmpltbank.get_cov_params(mass1[idx], mass2[idx], spin1z[idx],
+                                          spin2z[idx], metricParams, refFreq)
     vals = " ".join([str(mass1[idx]), str(mass2[idx]), str(spin1z[idx]),
                      str(spin2z[idx])])
     vals += " "

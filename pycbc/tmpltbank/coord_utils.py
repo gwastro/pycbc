@@ -57,19 +57,17 @@ def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
     xis : numpy.array
         A list of the positions of each point in the xi_i coordinate system.
     """
-    valsF = get_random_mass(numPoints, massRangeParams)
-    mass = valsF[0]
-    eta = valsF[1]
-    beta = valsF[2]
-    sigma = valsF[3]
-    gamma = valsF[4]
-    chis = 0.5*(valsF[5] + valsF[6])
+    vals_set = get_random_mass(numPoints, massRangeParams)
+    mass1 = vals_set[0]
+    mass2 = vals_set[1]
+    spin1z = vals_set[2]
+    spin2z = vals_set[3]
     if covary:
-        lambdas = get_cov_params(mass, eta, beta, sigma, gamma, chis, \
-                                 metricParams, fUpper)
+        lambdas = get_cov_params(mass1, mass2, spin1z, spin2z, metricParams,
+                                 fUpper)
     else:
-        lambdas = get_conv_params(mass, eta, beta, sigma, gamma, chis, \
-                                  metricParams, fUpper)
+        lambdas = get_conv_params(mass1, mass2, spin1z, spin2z, metricParams,
+                                  fUpper)
 
     return numpy.array(lambdas)
 
@@ -88,28 +86,14 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
 
     Returns
     --------
-    mass : numpy.array
-        List of the total masses.
-    eta : numpy.array
-        List of the symmetric mass ratios
-    beta : numpy.array
-        List of the 1.5PN beta spin coefficients
-    sigma : numpy.array
-        List of the 2PN sigma spin coefficients
-    gamma : numpy.array
-        List of the 2.5PN gamma spin coefficients
-    spin1z : numpy.array
-        List of the spin on the heavier body. NOTE: Body 1 is **always** the
-        heavier body to remove mass,eta -> m1,m2 degeneracy
-    spin2z : numpy.array
-        List of the spin on the smaller body. NOTE: Body 2 is **always** the
-        smaller body to remove mass,eta -> m1,m2 degeneracy
-    mass1 : numpy.array
-        List of the mass of the heavier body. NOTE: Body 1 is **always** the
-        heavier body to remove mass,eta -> m1,m2 degeneracy
-    mass2 : numpy.array
-        List of the mass of the smaller body. NOTE: Body 2 is **always** the
-        smaller body to remove mass,eta -> m1,m2 degeneracy
+    mass1 : float
+        Mass of heavier body.
+    mass2 : float
+        Mass of lighter body.
+    spin1z : float
+        Spin of body 1.
+    spin2z : float
+        Spin of body 2.
     """
 
     # WARNING: We expect mass1 > mass2 ALWAYS
@@ -172,12 +156,6 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
 
     # Next up is the spins. First check if we have non-zero spins
     if massRangeParams.maxNSSpinMag == 0 and massRangeParams.maxBHSpinMag == 0:
-        spinspin = numpy.zeros(numPoints,dtype=float)
-        spin1z = numpy.zeros(numPoints,dtype=float)
-        spin2z = numpy.zeros(numPoints,dtype=float)
-        beta = numpy.zeros(numPoints,dtype=float)
-        sigma = numpy.zeros(numPoints,dtype=float)
-        gamma = numpy.zeros(numPoints,dtype=float)
         spin1z = numpy.zeros(numPoints,dtype=float)
         spin2z = numpy.zeros(numPoints,dtype=float)
     elif massRangeParams.nsbhFlag:
@@ -189,9 +167,6 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
         mspin = numpy.zeros(len(mass2))
         mspin += massRangeParams.maxNSSpinMag
         spin2z = (2*numpy.random.random(numPoints) - 1) * mspin
-        # And compute the PN components that come out of this
-        beta, sigma, gamma, chiS = pnutils.get_beta_sigma_from_aligned_spins(
-            eta, spin1z, spin2z)
     else:        
         boundary_mass = massRangeParams.ns_bh_boundary_mass
         # Spin 1 first
@@ -204,11 +179,8 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
         mspin += massRangeParams.maxNSSpinMag
         mspin[mass2 > boundary_mass] = massRangeParams.maxBHSpinMag
         spin2z = (2*numpy.random.random(numPoints) - 1) * mspin
-        # And compute the PN components that come out of this
-        beta, sigma, gamma, chiS = pnutils.get_beta_sigma_from_aligned_spins(
-            eta, spin1z, spin2z)
 
-    return mass,eta,beta,sigma,gamma,spin1z,spin2z,mass1,mass2
+    return mass1, mass2, spin1z, spin2z
 
 def get_random_mass(numPoints, massRangeParams):
     """
@@ -227,22 +199,14 @@ def get_random_mass(numPoints, massRangeParams):
 
     Returns
     --------
-    mass : numpy.array
-        List of the total masses.
-    eta : numpy.array
-        List of the symmetric mass ratios
-    beta : numpy.array
-        List of the 1.5PN beta spin coefficients
-    sigma : numpy.array
-        List of the 2PN sigma spin coefficients
-    gamma : numpy.array
-        List of the 2.5PN gamma spin coefficients
-    spin1z : numpy.array
-        List of the spin on the heavier body. NOTE: Body 1 is **always** the
-        heavier body to remove mass,eta -> m1,m2 degeneracy
-    spin2z : numpy.array
-        List of the spin on the smaller body. NOTE: Body 2 is **always** the
-        smaller body to remove mass,eta -> m1,m2 degeneracy
+    mass1 : float
+        Mass of heavier body.
+    mass2 : float
+        Mass of lighter body.
+    spin1z : float
+        Spin of body 1.
+    spin2z : float
+        Spin of body 2.
     """
 
     # WARNING: We expect mass1 > mass2 ALWAYS
@@ -251,8 +215,8 @@ def get_random_mass(numPoints, massRangeParams):
     # a minimum remnant disk mass.  If this is not the case, proceed treating
     # the systems as point particle binaries
     if massRangeParams.remnant_mass_threshold is None:
-        mass, eta, beta, sigma, gamma, spin1z, spin2z, mass1, mass2 = \
-        get_random_mass_point_particles(numPoints, massRangeParams)
+        mass1, mass2, spin1z, spin2z = \
+            get_random_mass_point_particles(numPoints, massRangeParams)
     # otherwise, load EOS dependent data, generate the EM constraint
     # (i.e. compute the minimum symmetric mass ratio needed to
     # generate a given remnant disk mass as a function of the NS
@@ -278,13 +242,10 @@ def get_random_mass(numPoints, massRangeParams):
         eta_mins = constraint_datafile['eta_mins']
 
         # Empty arrays to store points that pass all cuts
-        massOut = []
-        etaOut = []
-        betaOut = []
-        sigmaOut = []
-        gammaOut = []
-        spin1zOut = []
-        spin2zOut = []
+        mass1_out = []
+        mass2_out = []
+        spin1z_out = []
+        spin2z_out = []
 
         # As the EM cut can remove several randomly generated
         # binaries, track the number of accepted points that pass
@@ -293,8 +254,10 @@ def get_random_mass(numPoints, massRangeParams):
         while numPointsFound < numPoints:
             # Generate the random points within the required mass
             # and spin cuts
-            mass, eta, beta, sigma, gamma, spin1z, spin2z, mass1, mass2 = \
-            get_random_mass_point_particles(numPoints-numPointsFound, massRangeParams)
+            mass1, mass2, spin1z, spin2z = \
+                get_random_mass_point_particles(numPoints-numPointsFound,
+                                                massRangeParams)
+            _, eta = pnutils.mass1_mass2_to_mtotal_eta(mass1, mass2)
 
             # Now proceed with cutting out EM dim systems
             # Logical mask to clean up points by removing EM dim binaries
@@ -312,48 +275,37 @@ def get_random_mass(numPoints, massRangeParams):
             mask[(mass1 >= massRangeParams.ns_bh_boundary_mass) & (mass2 <= max_ns_g_mass) & (eta < min_eta_em)] = False
             # Keep only binaries that can produce an EM counterpart and add them to
             # the pile of accpeted points to output
-            massOut   = numpy.concatenate((massOut,mass[mask]))
-            etaOut    = numpy.concatenate((etaOut,eta[mask]))
-            betaOut   = numpy.concatenate((betaOut,beta[mask]))
-            sigmaOut  = numpy.concatenate((sigmaOut,sigma[mask]))
-            gammaOut  = numpy.concatenate((gammaOut,gamma[mask]))
-            spin1zOut = numpy.concatenate((spin1zOut,spin1z[mask]))
-            spin2zOut = numpy.concatenate((spin2zOut,spin2z[mask]))
+            mass1_out = numpy.concatenate((mass1_out, mass1[mask]))
+            mass2_out = numpy.concatenate((mass2_out, mass2[mask]))
+            spin1z_out = numpy.concatenate((spin1z_out,spin1z[mask]))
+            spin2z_out = numpy.concatenate((spin2z_out,spin2z[mask]))
 
             # Number of points that survived all cuts
-            numPointsFound = len(massOut)
+            numPointsFound = len(mass1_out)
 
         # Ready to go
-        mass = massOut
-        eta = etaOut
-        beta = betaOut
-        sigma = sigmaOut
-        gamma = gammaOut
-        spin1z = spin1zOut
-        spin2z = spin2zOut
+        mass1 = mass1_out
+        mass2 = mass2_out
+        spin1z = spin1z_out
+        spin2z = spin2z_out
 
-    return mass,eta,beta,sigma,gamma,spin1z,spin2z
+    return mass1, mass2, spin1z, spin2z
 
-def get_cov_params(totmass, eta, beta, sigma, gamma, chis, metricParams, \
-                   fUpper):
+def get_cov_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper):
     """
     Function to convert between masses and spins and locations in the xi
     parameter space. Xi = Cartesian metric and rotated to principal components.
 
     Parameters
     -----------
-    totmass : float or numpy.array
-        Total mass(es) of the system(s)
-    eta : float or numpy.array
-        Symmetric mass ratio(s) of the system(s)
-    beta : float or numpy.array
-        1.5PN spin coefficient(s) of the system(s)
-    sigma: float or numpy.array
-        2PN spin coefficient(s) of the system(s)
-    gamma : float or numpy.array
-        2.5PN spin coefficient(s) of the system(s)
-    chis : float or numpy.array
-        0.5 * (spin1z + spin2z) for the system(s)
+    mass1 : float
+        Mass of heavier body.
+    mass2 : float
+        Mass of lighter body.
+    spin1z : float
+        Spin of body 1.
+    spin2z : float
+        Spin of body 2.
     metricParams : metricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
@@ -372,32 +324,26 @@ def get_cov_params(totmass, eta, beta, sigma, gamma, chis, metricParams, \
     """
 
     # Do this by doing masses - > lambdas -> mus
-    mus = get_conv_params(totmass, eta, beta, sigma, gamma, chis, \
-                          metricParams, fUpper)
+    mus = get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper)
     # and then mus -> xis
     xis = get_covaried_params(mus, metricParams.evecsCV[fUpper])
     return xis
 
-def get_conv_params(totmass, eta, beta, sigma, gamma, chis, metricParams, \
-                    fUpper):
+def get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper):
     """
     Function to convert between masses and spins and locations in the mu
     parameter space. Mu = Cartesian metric, but not principal components.
 
     Parameters
     -----------
-    totmass : float or numpy.array
-        Total mass(es) of the system(s)
-    eta : float or numpy.array
-        Symmetric mass ratio(s) of the system(s)
-    beta : float or numpy.array
-        1.5PN spin coefficient(s) of the system(s)
-    sigma: float or numpy.array
-        2PN spin coefficient(s) of the system(s)
-    gamma : float or numpy.array
-        2.5PN spin coefficient(s) of the system(s)
-    chis : float or numpy.array
-        0.5 * (spin1z + spin2z) for the system(s)
+    mass1 : float
+        Mass of heavier body.
+    mass2 : float
+        Mass of lighter body.
+    spin1z : float
+        Spin of body 1.
+    spin2z : float
+        Spin of body 2.
     metricParams : metricParameters instance
         Structure holding all the options for construction of the metric
         and the eigenvalues, eigenvectors and covariance matrix
@@ -415,7 +361,7 @@ def get_conv_params(totmass, eta, beta, sigma, gamma, chis, metricParams, \
     """
 
     # Do this by masses -> lambdas
-    lambdas = get_chirp_params(totmass, eta, beta, sigma, gamma, chis, \
+    lambdas = get_chirp_params(mass1, mass2, spin1z, spin2z,
                                metricParams.f0, metricParams.pnOrder)
     # and lambdas -> mus
     mus = get_mu_params(lambdas, metricParams, fUpper)
@@ -581,24 +527,9 @@ def get_point_distance(point1, point2, metricParams, fUpper):
     bSpin2 = point2[3]
     bArray = False
 
-    aTotMass = aMass1 + aMass2
-    aEta = (aMass1 * aMass2) / (aTotMass * aTotMass)
-    aCM = aTotMass * aEta**(3./5.)
+    aXis = get_cov_params(aMass1, aMass2, aSpin1, aSpin2, metricParams, fUpper)
 
-    bTotMass = bMass1 + bMass2
-    bEta = (bMass1 * bMass2) / (bTotMass * bTotMass)
-    bCM = bTotMass * bEta**(3./5.)
-
-    abeta, asigma, agamma, achis = pnutils.get_beta_sigma_from_aligned_spins(
-        aEta, aSpin1, aSpin2)
-    bbeta, bsigma, bgamma, bchis = pnutils.get_beta_sigma_from_aligned_spins(
-        bEta, bSpin1, bSpin2)
-
-    aXis = get_cov_params(aTotMass, aEta, abeta, asigma, agamma, achis, \
-                          metricParams, fUpper)
-
-    bXis = get_cov_params(bTotMass, bEta, bbeta, bsigma, bgamma, bchis, \
-                          metricParams, fUpper)
+    bXis = get_cov_params(bMass1, bMass2, bSpin1, bSpin2, metricParams, fUpper)
 
     dist = (aXis[0] - bXis[0])**2
     for i in xrange(1,len(aXis)):
@@ -722,9 +653,8 @@ def find_max_and_min_frequencies(name, mass_range_params, freqs):
     else:
         # Do this numerically
         # FIXME: Is 1000000 the right choice? I think so, but just highlighting
-        tot_mass, eta, _, _, _, spin1z, spin2z = \
+        mass1, mass2, spin1z, spin2z = \
                 get_random_mass(1000000, mass_range_params)
-        mass1, mass2 = pnutils.mtotal_eta_to_mass1_mass2(tot_mass, eta)
         mass_dict = {}
         mass_dict['m1'] = mass1
         mass_dict['m2'] = mass2
@@ -842,6 +772,7 @@ def find_closest_calculated_frequencies(input_freqs, metric_freqs):
         if logicArr.any():
             refEv[logicArr] = metric_freqs[i]
     return refEv
+
 
 def outspiral_loop(N):
     """

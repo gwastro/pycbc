@@ -32,6 +32,7 @@ import pycbc.psd
 import pycbc.strain
 import pycbc.types
 from pycbc import tmpltbank
+from pycbc import pnutils
 
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
@@ -275,16 +276,12 @@ logging.info("%d points in the lattice" % len(v1s))
 # FIXME: Most of this should probably move to a function in pycbc.tmpltbank
 
 # Choose an initial set of points to begin comparing points to physical space
-rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
+rMass1, rMass2, rSpin1z, rSpin2z = \
         tmpltbank.get_random_mass(2000000, massRangeParams)
-diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
-rMass1 = (rTotmass + diff)/2.
-rMass2 = (rTotmass - diff)/2.
-rChis = (rSpin1z + rSpin2z)/2.
+rTotmass, rEta = pnutils.mass1_mass2_to_mtotal_eta(rMass1, rMass2)
 # Here we have a set of m1s,m2s and mapped to Xis below
-rXis = tmpltbank.get_cov_params(
-    rTotmass, rEta, rBeta, rSigma, rGamma, rChis, metricParams, 
-    metricParams.fUpper)
+rXis = tmpltbank.get_cov_params(rMass1, rMass2, rSpin1z, rSpin2z, metricParams,
+                                metricParams.fUpper)
 
 xis = (numpy.array(rXis)).T
 physMasses = numpy.array([rTotmass, rEta, rSpin1z, rSpin2z])

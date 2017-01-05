@@ -227,13 +227,8 @@ logging.info("Starting bank placement")
 while True:
     if not (Ns % 100000):
         # For optimization we generate points in sets of 100000
-        rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z = \
-              tmpltbank.get_random_mass(100000, massRangeParams)
-        # Use pnutils function here
-        diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
-        rMass1 = (rTotmass + diff)/2.
-        rMass2 = (rTotmass - diff)/2.
-        rChis = (rSpin1z + rSpin2z)/2.
+        rMass1, rMass2, rSpin1z, rSpin2z = \
+            tmpltbank.get_random_mass(100000, massRangeParams)
         if opts.vary_fupper:
             mass_dict = {}
             mass_dict['m1'] = rMass1
@@ -242,9 +237,9 @@ while True:
             mass_dict['s2z'] = rSpin2z
             refEve = tmpltbank.return_nearest_cutoff(
                 opts.bank_fupper_formula, mass_dict, fs)
-            lambdas = tmpltbank.get_chirp_params(
-                rTotmass, rEta, rBeta, rSigma, rGamma, rChis,
-                metricParams.f0, metricParams.pnOrder)
+            lambdas = tmpltbank.get_chirp_params(rMass1, rMass2, rSpin1z,
+                                                 rSpin2z, metricParams.f0,
+                                                 metricParams.pnOrder)
             mus = []
             idx = 0
             for freq in fs:
@@ -252,9 +247,8 @@ while True:
                     tmpltbank.get_mu_params(lambdas, metricParams, freq))
                 idx += 1
             mus = numpy.array(mus)
-        vecs = tmpltbank.get_cov_params(
-            rTotmass, rEta, rBeta, rSigma, rGamma, rChis, 
-            metricParams, refFreq)
+        vecs = tmpltbank.get_cov_params(rMass1, rMass2, rSpin1z, rSpin2z,
+                                        metricParams, refFreq)
         vecs = numpy.array(vecs)
         Ns = 0
     # Then we check each point for acceptance

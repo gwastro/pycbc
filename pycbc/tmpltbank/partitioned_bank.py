@@ -17,7 +17,6 @@
 import copy
 import numpy
 import logging
-from pycbc import pnutils
 from pycbc.tmpltbank import coord_utils
 
 class PartitionedTmpltbank(object):
@@ -56,7 +55,8 @@ class PartitionedTmpltbank(object):
         bin_spacing : float
             The metric distance to space the bins by. NOTE: If you want to
             place the bins to have a width corresponding to a minimal match of
-            0.97 you would set this to (1 - 0.97)**0.5. Note the square root,
+            0.97 you would set this to :math:`(1 - 0.97)^{0.5}`.
+            Note the square root,
             matches correspond to the square of parameter space distance.
         bin_range_check : int
             When computing matches consider points in the corresponding bin and
@@ -117,22 +117,30 @@ class PartitionedTmpltbank(object):
         self.bin_loop_order = coord_utils.outspiral_loop(self.bin_range_check)
 
     def get_point_from_bins_and_idx(self, chi1_bin, chi2_bin, idx):
-        """
+        """Find masses and spins given bin numbers and index.
+
         Given the chi1 bin, chi2 bin and an index, return the masses and spins
         of the point at that index. Will fail if no point exists there.
 
         Parameters
         -----------
         chi1_bin : int
+            The bin number for chi1.
         chi2_bin : int
+            The bin number for chi2.
         idx : int
+            The index within the chi1, chi2 bin.
 
         Returns
         --------
         mass1 : float
+            Mass of heavier body.
         mass2 : float
+            Mass of lighter body.
         spin1z : float
+            Spin of heavier body.
         spin2z : float
+            Spin of lighter body.
         """
         mass1 = self.massbank[chi1_bin][chi2_bin]['mass1s'][idx]
         mass2 = self.massbank[chi1_bin][chi2_bin]['mass2s'][idx]
@@ -265,7 +273,7 @@ class PartitionedTmpltbank(object):
         chi_coords : numpy.array
             The position of the point in the chi coordinates.
         distance_threshold : float
-            The **SQUARE ROOT* of the metric distance to test as threshold.
+            The **SQUARE ROOT** of the metric distance to test as threshold.
             E.g. if you want to test to a minimal match of 0.97 you would
             use 1 - 0.97 = 0.03 for this value.
 
@@ -373,7 +381,7 @@ class PartitionedTmpltbank(object):
             holds the coordinates in the [not covaried] mu parameter space for
             each value of the upper frequency cutoff.
         distance_threshold : float
-            The **SQUARE ROOT* of the metric distance to test as threshold.
+            The **SQUARE ROOT** of the metric distance to test as threshold.
             E.g. if you want to test to a minimal match of 0.97 you would
             use 1 - 0.97 = 0.03 for this value.
 
@@ -529,15 +537,10 @@ class PartitionedTmpltbank(object):
             err_msg += "and spins."
             raise ValueError(err_msg)
 
-        # Get beta, sigma, gamma
-        tot_mass = mass1 + mass2
-        eta = mass1 * mass2 / (tot_mass * tot_mass)
-        beta, sigma, gamma, chis = pnutils.get_beta_sigma_from_aligned_spins(\
-                                                           eta, spin1z, spin2z)
-       
         # Get chi coordinates
-        chi_coords = coord_utils.get_cov_params(tot_mass, eta, beta, sigma,
-                               gamma, chis, self.metric_params, self.ref_freq)
+        chi_coords = coord_utils.get_cov_params(mass1, mass2, spin1z, spin2z,
+                                                self.metric_params,
+                                                self.ref_freq)
 
         # Get mus and best fupper for this point, if needed
         if vary_fupper:
@@ -550,9 +553,9 @@ class PartitionedTmpltbank(object):
             freq_cutoff = coord_utils.return_nearest_cutoff(\
                                      self.upper_freq_formula, mass_dict, freqs)
             freq_cutoff = freq_cutoff[0]
-            lambdas = coord_utils.get_chirp_params(tot_mass, eta, beta, sigma,
-                                           gamma, chis, self.metric_params.f0,
-                                           self.metric_params.pnOrder)
+            lambdas = coord_utils.get_chirp_params\
+                (mass1, mass2, spin1z, spin2z, self.metric_params.f0,
+                 self.metric_params.pnOrder)
             mus = []
             for freq in self.frequency_map:
                 mus.append(coord_utils.get_mu_params(lambdas,
@@ -606,11 +609,12 @@ class PartitionedTmpltbank(object):
                                      spin2zs[idx], vary_fupper=vary_fupper)
 
     def output_all_points(self):
-        """
-        Return all point in the bank as lists of m1, m2, spin1z, spin2z.
+        """Return all points in the bank.
+
+        Return all points in the bank as lists of m1, m2, spin1z, spin2z.
 
         Returns
-        --------
+        -------
         mass1 : list
             List of mass1 values.
         mass2 : list
