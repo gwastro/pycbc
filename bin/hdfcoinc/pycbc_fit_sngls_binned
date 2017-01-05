@@ -115,6 +115,8 @@ parser.add_argument("--bin-spacing", choices=["linear", "log"],
 parser.add_argument("--num-bins", type=int,
                     help="Number of regularly spaced bins to use over the "
                     " parameter")
+parser.add_argument("--bin-param-units",
+                    help="String to display units of the binning parameter")
 outputchoice = parser.add_mutually_exclusive_group()
 outputchoice.add_argument("--plot-dir",
                     help="Plot the fits made, the variation of fitting "
@@ -159,12 +161,17 @@ logging.info('Opening template file: %s' % args.bank_file)
 templatef = h5py.File(args.bank_file, 'r')
 
 # get the stat values
-chisq = trigf[args.ifo+'/chisq'][:]
-chisq_dof = trigf[args.ifo+'/chisq_dof'][:]
+minth = min(args.stat_threshold)
+snr = trigf[args.ifo+'/snr'][:]
+# SNR cut to reduce memory usage
+logging.info('Applying SNR cut at %f' % minth)
+aboveminth = snr >= minth
+snr = snr[aboveminth]
+chisq = trigf[args.ifo+'/chisq'][:][aboveminth]
+chisq_dof = trigf[args.ifo+'/chisq_dof'][:][aboveminth]
 rchisq = chisq / (2 * chisq_dof - 2)
 del chisq
 del chisq_dof
-snr = trigf[args.ifo+'/snr'][:]
 logging.info('Calculating stat values')
 stat = get_stat(args.sngl_stat, snr, rchisq, args.stat_factor)
 del snr
@@ -177,14 +184,14 @@ if args.bin_param == 'template_duration' and not args.f_lower:
 else:
     trig_dur = False
 
-# do first thresholding operation to reduce trigger numbers
+# stat threshold to reduce trigger numbers
 minth = min(args.stat_threshold)
 abovethresh = stat >= minth
 stat = stat[abovethresh]
-tid = trigf[args.ifo+'/template_id'][:][abovethresh]
-time = trigf[args.ifo+'/end_time'][:][abovethresh]
+tid = trigf[args.ifo+'/template_id'][:][aboveminth][abovethresh]
+time = trigf[args.ifo+'/end_time'][:][aboveminth][abovethresh]
 if trig_dur:
-    tdur = trigf[args.ifo+'/template_duration'][:][abovethresh]
+    tdur = trigf[args.ifo+'/template_duration'][:][aboveminth][abovethresh]
 logging.info('%i trigs left after thresholding at %f' % (len(stat), minth))
 
 # now do vetoing
@@ -210,6 +217,11 @@ def get_masses(args, tid):
 def get_param(args, tag, m1, m2, s1z, s2z):
     # here used for both pruning and binning params
     paramarg = getattr(args, tag+'_param')
+    try:
+        # will fail if m1 is a float rather than a sequence
+        logging.info('Getting %s values for %i triggers' % (paramarg, len(m1)))
+    except:
+        pass
     if paramarg == 'mchirp':
         parvals, _ = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
     elif paramarg == 'mtotal':
@@ -321,7 +333,6 @@ if args.prune_param:
     del statpruneall
     del tidpruneall
     del timepruneall
-    logging.info('%i trigs remain after pruning loop' % len(stat))
 
 # get binning params after tuning
 if trig_dur:
@@ -399,7 +410,7 @@ for th in args.stat_threshold:
         # add histogram to plot
         histcounts, edges = np.histogram(vals_inbin, bins=50)
         cum_counts = histcounts[::-1].cumsum()[::-1]
-        binlabel = r"%.2g - %.2g" % (lower, upper)
+        binlabel = r"%.3g - %.3g" % (lower, upper)
         # histogram of fitted values
         plt.semilogy(edges[:-1], cum_counts, linewidth=2,
                      color=histcolors[i], label=binlabel, alpha=0.6)
@@ -418,12 +429,15 @@ for th in args.stat_threshold:
                      sig_alpha, th), ":", alpha=0.6, color=histcolors[i])
     # finish the hist plot
     leg = plt.legend(labelspacing=0.2)
+    unitstring = " (%s)" % args.bin_param_units if \
+                                       args.bin_param_units is not None else ""
+    leg.set_title(paramname+unitstring)
     plt.setp(leg.get_texts(), fontsize=11)
     plt.ylim(0.7, 2*maxcount)
     plt.xlim(0.9*minth, 1.1*max(plotrange))
     plt.grid()
     plt.xlabel(statname, size="large")
-    plt.ylabel("Cumulative number", size="large")
+    plt.ylabel("cumulative number", size="large")
     if args.plot_dir:
         plt.title(args.ifo + " " + statname + " distribution split by " + \
               paramname)
@@ -437,8 +451,9 @@ for th in args.stat_threshold:
             fig, args.output_file,
             title="%s: %s histogram of single detector triggers" % (args.ifo,
                   statname),
-            caption=("Histogram of single detector trigger %s values binned by"
-                     " %s" % (statname, paramname)),
+            caption=(r"Histogram of single detector %s values binned by %s "
+                     "with fitted %s distribution parameterized by &alpha;"\
+                     % (statname, paramname, args.fit_function)),
             cmd=" ".join(sys.argv)
         )
     plt.close()
