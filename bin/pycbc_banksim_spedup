@@ -35,7 +35,7 @@ from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
 from pycbc.filter import match, sigmasq, resample_to_delta_t
 from math import ceil, log
-import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain
+import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain, pycbc.version
 from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
 
 def update_progress(progress):
@@ -155,6 +155,8 @@ parser.add_argument("--match-file", dest="out_file", metavar="FILE",
                     required=True, help="File to output match results")
 parser.add_argument("--verbose", action='store_true', default=False,
                     help="Print verbose statements")
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
 
 #Template Settings
 parser.add_argument("--template-file", dest="bank_file", metavar="FILE",

@@ -23,6 +23,7 @@ bank files, and the number of injections in each must correspond one-to-one.
 """
 
 from os.path import isfile
+import imp
 import argparse
 import numpy
 import h5py
@@ -55,6 +56,13 @@ parser.add_argument("--match-files", nargs='+',
 #                         "the same order, and match one-to-one with the "
 #                         "match-files.")
 parser.add_argument("-o", "--output-file",  help="Output file name")
+parser.add_argument("--filter-func-file", default=None,
+                    help="This can be provided to give a function to define "
+                         "which points are covered by the template bank "
+                         "bounds, and which are not. The file should contain "
+                         "a function called filter_injections, which should "
+                         "take as call profile, mass1, mass2, spin1z, spin2z, "
+                         "as numpy arrays.")
 options = parser.parse_args()
 dtypem={'names': ('match', 'bank', 'bank_i', 'sim', 'sim_i', 'sigmasq'),
         'formats': ('f8', 'S256', 'i4', 'S256', 'i4', 'f8')}
@@ -120,6 +128,13 @@ for val in inj_par_list:
 for val in trig_par_list:
     f['trig_params/{}'.format(val)] = trig_params[val]
 
+if options.filter_func_file:
+    modl = imp.load_source('filter_func', options.filter_func_file)
+    func = modl.filter_injections
+    bool_arr = func(inj_params['mass1'], inj_params['mass2'],
+                    inj_params['spin1z'], inj_params['spin2z'])
+    bool_arr = numpy.array(bool_arr)
+
 # Also consider values over the whole set
 # Signal recovery fraction
 srfn = numpy.sum((trig_params['match'] * trig_params['sigmasq'])**3.)
@@ -127,5 +142,17 @@ srfd = numpy.sum((trig_params['sigmasq'])**3.)
 
 f['sig_rec_fac'] = srfn / srfd
 f['eff_fitting_factor'] = (srfn / srfd)**(1./3.)
+
+if options.filter_func_file:
+    num_filtered = inj_params['mass1'][bool_arr]
+    f['frac_points_within_bank'] = \
+        num_filtered / float(len(inj_params['mass1']))
+    filt_match = trig_params['match'][bool_arr]
+    filt_sigmasq = trig_params['sigmasq'][bool_arr]
+    srfn_filt = numpy.sum((filt_match * filt_sigmasq)**3.)
+    srfd_filt = numpy.sum(filt_sigmasq**3)
+    f['filtered_sig_rec_fac'] = srfn_filt / srfd_filt
+    f['filtered_eff_fitting_factor'] = (srfn_filt / srfd_filt)**(1./3.)
+    f['filtered_points'] = bool_arr
 
 f.close()

@@ -82,6 +82,8 @@ class BanksimMatchCombineExecutable(wf.Executable):
     # This can be altered if you don't always want to store output files
     current_retention_level = wf.Executable.FINAL_RESULT
 
+    file_input_options = ['--filter-func-file']
+
     def create_node(self, analysis_time, match_files, inj_files, bank_files,
                     extra_tags=None):
         if extra_tags is None:
@@ -164,7 +166,9 @@ wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
 args.output_dir = '.'
 
-rdir = layout.SectionNumber('results', ['workflow'])
+rdir = layout.SectionNumber('results', ['point_injection_sets',
+                                        'broad_injection_sets',
+                                        'workflow'])
 wf.makedir(rdir.base)
 wf.makedir(rdir['workflow'])
 
@@ -252,32 +256,72 @@ plotting_nodes = []
 
 out_dir = rdir.base
 point_injs_table_exe = BanksimTablePointInjsExecutable\
-    (workflow.cp, 'banksim_table_point_injs', out_dir=out_dir, ifos='HL')
+    (workflow.cp, 'banksim_table_point_injs',
+     out_dir=rdir['point_injection_sets'], ifos='HL')
 eff_fitting_facs_exe = BanksimPlotEffFittingFactorsExecutable\
     (workflow.cp, 'banksim_plot_eff_fitting_fac', out_dir=out_dir, ifos='HL')
 plot_fitting_facs_exe = BanksimPlotFittingFactorsExecutable\
-    (workflow.cp, 'banksim_plot_fitting_factors', out_dir=out_dir, ifos='HL')
+    (workflow.cp, 'banksim_plot_fitting_factors',
+     out_dir=rdir['point_injection_sets'], ifos='HL')
 
-curr_node = point_injs_table_exe.create_node\
-    (workflow.analysis_time, [output_pointinjs[f] for f in output_pointinjs])
-workflow += curr_node
-plotting_nodes.append(curr_node)
-curr_node = eff_fitting_facs_exe.create_node\
-    (workflow.analysis_time, [output_pointinjs[f] for f in output_pointinjs])
-workflow += curr_node
-plotting_nodes.append(curr_node)
+summary_page_files = []
+# Add files to point_inj_summ_files in pairs. A tuple of one entry will span
+# the full column. A pair exists together.
+point_inj_summ_files = []
+# Nothing in this yet, so not sure how to set this.
+broad_inj_summ_files = []
+
+secs = workflow.cp.get_subsections('banksim_plot_fitting_factors')
+for tag in secs:
+    point_injs_table_exe.update_current_tags([tag])
+    curr_node = point_injs_table_exe.create_node\
+        (workflow.analysis_time,
+         [output_pointinjs[f] for f in output_pointinjs])
+    workflow += curr_node
+    plotting_nodes.append(curr_node)
+    point_inj_summ_files.append((curr_node.output_file,))
+
+secs = workflow.cp.get_subsections('banksim_plot_eff_fitting_fac')
+for tag in secs:
+    eff_fitting_facs_exe.update_current_tags([tag])
+    curr_node = eff_fitting_facs_exe.create_node\
+        (workflow.analysis_time,
+         [output_pointinjs[f] for f in output_pointinjs])
+    workflow += curr_node
+    plotting_nodes.append(curr_node)
+    summary_page_files.append(curr_node.output_file)
+
+# Set up layouts
+layout.group_layout(rdir.base, summary_page_files)
+layout.two_column_layout(rdir['point_injection_sets'], point_inj_summ_files)
+# Also add broad_injs when ready
+
 for tag in output_broadinjs:
+    curr_outs = []
     curr_file = output_broadinjs[tag]
+    plot_fitting_facs_exe.update_output_directory\
+        (rdir['broad_injection_sets/{}'.format(tag)])
     curr_node = plot_fitting_facs_exe.create_node\
         (workflow.analysis_time, curr_file, extra_tags=[tag])
     workflow += curr_node
     plotting_nodes.append(curr_node)
+    curr_outs.append((curr_node.output_file,))
+    # Other outputs could go here, before running the layout
+    layout.two_column_layout(rdir['broad_injection_sets/{}'.format(tag)],
+                             curr_outs)
 for tag in output_pointinjs:
+    curr_outs = []
     curr_file = output_pointinjs[tag]
+    plot_fitting_facs_exe.update_output_directory\
+        (rdir['point_injection_sets/{}'.format(tag)])
     curr_node = plot_fitting_facs_exe.create_node\
         (workflow.analysis_time, curr_file, extra_tags=[tag])
     workflow += curr_node
     plotting_nodes.append(curr_node)
+    curr_outs.append((curr_node.output_file,))
+    # Other outputs could go here, before running the layout
+    layout.two_column_layout(rdir['point_injection_sets/{}'.format(tag)],
+                             curr_outs)
 
 # Create versioning information
 create_versioning_page(rdir['workflow/version'], workflow.cp)
