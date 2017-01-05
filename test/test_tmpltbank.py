@@ -403,8 +403,8 @@ class TmpltbankTestClass(unittest.TestCase):
                  masses2[2], masses2[3], self.metricParams, self.f_upper)
 
         testXis = [xis1[0],xis1[1]]
-        b_mtot = masses2[0] + masses2[1]
-        b_eta = masses2[0] * masses2[1] / (b_mtot * b_mtot)
+        b_mtot, b_eta = pnutils.mass1_mass2_to_mtotal_eta(masses2[0],
+                                                          masses2[1])
         bestMasses = [b_mtot, b_eta, masses2[2], masses2[3]]
         bestXis = xis2
         output = pycbc.tmpltbank.get_physical_covaried_masses(testXis, \
@@ -459,8 +459,8 @@ class TmpltbankTestClass(unittest.TestCase):
         xis2 = pycbc.tmpltbank.get_cov_params(masses2[0], masses2[1], \
                  masses2[2], masses2[3], self.metricParams, self.f_upper)
         testXis = [xis1[0],xis1[1]]
-        b_mtot = masses2[0] + masses2[1]
-        b_eta = masses2[0] * masses2[1] / (b_mtot * b_mtot)
+        b_mtot, b_eta = pnutils.mass1_mass2_to_mtotal_eta(masses2[0],
+                                                          masses2[1])
         bestMasses = [b_mtot, b_eta, masses2[2], masses2[3]]
         bestXis = xis2
 

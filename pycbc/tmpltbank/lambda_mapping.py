@@ -184,7 +184,7 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
     # Determine whether array or single value input
     sngl_inp = False
     try:
-        num_trigs = len(mass1)
+        num_points = len(mass1)
     except TypeError:
         sngl_inp = True
         # If you care about speed, you aren't calling this function one entry
@@ -193,21 +193,17 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
         mass2 = numpy.array([mass2])
         spin1z = numpy.array([spin1z])
         spin2z = numpy.array([spin2z])
-        num_trigs = 1
+        num_points = 1
     lal_pars = CreateDict()
-    phasing_vs = numpy.zeros([num_trigs, 13])
-    phasing_vlogvs = numpy.zeros([num_trigs, 13])
-    phasing_vlogvsqs = numpy.zeros([num_trigs, 13])
-    for i in xrange(len(mass1)):
+    phasing_vs = numpy.zeros([num_points, 13])
+    phasing_vlogvs = numpy.zeros([num_points, 13])
+    phasing_vlogvsqs = numpy.zeros([num_points, 13])
+    for i in xrange(num_points):
         phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
                             mass1[i], mass2[i], spin1z[i], spin2z[i], lal_pars)
         phasing_vs[i] = phasing.v
         phasing_vlogvs[i] = phasing.vlogv
         phasing_vlogvsqs[i] = phasing.vlogvsq
-
-    phasing_vs = numpy.array(phasing_vs)
-    phasing_vlogvs = numpy.array(phasing_vlogvs)
-    phasing_vlogvsqs = numpy.array(phasing_vlogvsqs)
 
     pmf = PI * (mass1 + mass2)*MTSUN_SI * f0
     pmf13 = pmf**(1./3.)
@@ -278,8 +274,7 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
         The lambda coordinates for the input system(s)
     """
 
-    totmass = mass1 + mass2
-    eta = mass1 * mass2 / (totmass * totmass)
+    totmass, eta = pnutils.mass1_mass2_to_mtotal_eta(mass1, mass2)
     beta, sigma, gamma = pnutils.get_beta_sigma_from_aligned_spins(\
                eta, spin1z, spin2z)
 

@@ -34,6 +34,7 @@ import logging
 import h5py
 import pycbc.tmpltbank
 import pycbc.version
+from pycbc import pnutils
 from pycbc.tmpltbank.lambda_mapping import pycbcValidOrdersHelpDescriptions
 
 
@@ -164,8 +165,7 @@ if len(evals) < 5:
 # mapping from xi_i to masses and spins
 rMass1, rMass2, rSpin1z, rSpin2z = \
       pycbc.tmpltbank.get_random_mass(2000000, massRangeParams)
-rTotmass = rMass1 + rMass2
-rEta = (rMass1 * rMass2) / (rTotmass * rTotmass)
+rTotmass, rEta = pnutils.mass1_mass2_to_mtotal_eta(rMass1, rMass2)
 
 rXis = pycbc.tmpltbank.get_cov_params(rMass1, rMass2, rSpin1z, rSpin2z,
                                       metricParams, opts.f0)
