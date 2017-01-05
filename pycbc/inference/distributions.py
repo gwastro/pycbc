@@ -1457,7 +1457,7 @@ class FromFile(_BoundedDist):
         return super(FromFile, cls).from_config(cp, section, variable_args,
                                                 bounds_required=False)
 
-class UniformCubeRoot(_BoundedDist):
+class UniformRadius(_BoundedDist):
     """
     \**params :
         The keyword arguments should provide the names of parameters and their
@@ -1482,7 +1482,7 @@ class UniformCubeRoot(_BoundedDist):
     """
     name = 'uniform_cube_root'
     def __init__(self, **params):
-        super(UniformCubeRoot, self).__init__(**params)
+        super(UniformRadius, self).__init__(**params)
 
     @property
     def norm(self):
@@ -1586,7 +1586,7 @@ class UniformCubeRoot(_BoundedDist):
         Uniform
             A distribution instance from the pycbc.inference.prior module.
         """
-        return super(UniformCubeRoot, cls).from_config(cp, section,
+        return super(UniformRadius, cls).from_config(cp, section,
                                                        variable_args,
                                                        bounds_required=True)
 
@@ -1597,7 +1597,7 @@ distribs = {
     SinAngle.name : SinAngle,
     UniformSolidAngle.name : UniformSolidAngle,
     UniformSky.name : UniformSky,
-    UniformCubeRoot.name : UniformCubeRoot,
+    UniformRadius.name : UniformRadius,
     Gaussian.name : Gaussian,
     FromFile.name : FromFile,
 }
