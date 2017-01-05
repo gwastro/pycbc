@@ -1480,7 +1480,7 @@ class UniformRadius(_BoundedDist):
     lognorm : float
         The log of the normalization.
     """
-    name = 'uniform_cube_root'
+    name = 'uniform_radius'
     def __init__(self, **params):
         super(UniformRadius, self).__init__(**params)
 
