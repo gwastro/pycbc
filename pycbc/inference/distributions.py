@@ -1542,7 +1542,7 @@ class UniformRadius(_BoundedDist):
                             'Missing parameter {} to construct pdf.'.format(p))
         if kwargs in self:
             this_pdf = numpy.prod([3 * (kwargs[p] / self._bounds[p][1])**(2)
-                            for p in self._params])
+                                   for p in self._params])
             return float(this_pdf)
         else:
             return 0.
