@@ -1457,6 +1457,139 @@ class FromFile(_BoundedDist):
         return super(FromFile, cls).from_config(cp, section, variable_args,
                                                 bounds_required=False)
 
+class UniformCubeRoot(_BoundedDist):
+    """
+    \**params :
+        The keyword arguments should provide the names of parameters and their
+        corresponding bounds, as either tuples or a `boundaries.Bounds`
+        instance.
+
+    Class Attributes
+    ----------------
+    name : 'uniform'
+        The name of this distribution.
+
+    Attributes
+    ----------
+    params : list of strings
+        The list of parameter names.
+    bounds : dict
+        A dictionary of the parameter names and their bounds.
+    norm : float
+        The normalization of the multi-dimensional pdf.
+    lognorm : float
+        The log of the normalization.
+    """
+    name = 'uniform_cube_root'
+    def __init__(self, **params):
+        super(UniformCubeRoot, self).__init__(**params)
+
+    @property
+    def norm(self):
+        raise NotImplementedError("Not implemented.")
+
+    @property
+    def lognorm(self):
+        raise NotImplementedError("Not implemented.")
+
+    def rvs(self, size=1, param=None):
+        """Gives a set of random values drawn from this distribution.
+
+        Parameters
+        ----------
+        size : {1, int}
+            The number of values to generate; default is 1.
+        param : {None, string}
+            If provided, will just return values for the given parameter.
+            Otherwise, returns random values for each parameter.
+
+        Returns
+        -------
+        structured array
+            The random values in a numpy structured array. If a param was
+            specified, the array will only have an element corresponding to the
+            given parameter. Otherwise, the array will have an element for each
+            parameter in self's params.
+        """
+        if param is not None:
+            dtype = [(param, float)]
+        else:
+            dtype = [(p, float) for p in self.params]
+        arr = numpy.zeros(size, dtype=dtype)
+        for (p,_) in dtype:
+            arr[p] = numpy.random.uniform(self._bounds[p][0],
+                                        self._bounds[p][1],
+                                        size=size)
+            arr[p] = numpy.power(arr[p], 1.0 / 3)
+        return arr
+
+    def pdf(self, **kwargs):
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored. Any boundary conditions are applied to the values before the
+        pdf is evaluated.
+        """
+        return self._pdf(**self.apply_boundary_conditions(**kwargs))
+
+    def _pdf(self, **kwargs):
+        """The underlying pdf function called by `self.pdf`. This must be set
+        by any class that inherits from this class. Otherwise, a
+        `NotImplementedError` is raised.
+        """
+        for p in self._params:
+            if p not in kwargs.keys():
+                raise ValueError(
+                            'Missing parameter {} to construct pdf.'.format(p))
+        if kwargs in self:
+            this_pdf = numpy.prod([3 * (kwargs[p] / self._bounds[p][1])**(2)
+                            for p in self._params])
+            return float(this_pdf)
+        else:
+            return 0.
+
+    def _logpdf(self, **kwargs):
+        """The underlying pdf function called by `self.pdf`. This must be set
+        by any class that inherits from this class. Otherwise, a
+        `NotImplementedError` is raised.
+        """
+        for p in self._params:
+            if p not in kwargs.keys():
+                raise ValueError(
+                            'Missing parameter {} to construct pdf.'.format(p))
+        if kwargs in self:
+            this_pdf = numpy.log(numpy.prod([3 * (kwargs[p] / self._bounds[p][1])**(1.0 / 2)
+                            for p in self._params]))
+            return this_pdf
+        else:
+            return -numpy.inf
+
+    @classmethod
+    def from_config(cls, cp, section, variable_args):
+        """Returns a distribution based on a configuration file. The parameters
+        for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
+
+        Parameters
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        variable_args : str
+            The names of the parameters for this distribution, separated by
+            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
+
+        Returns
+        -------
+        Uniform
+            A distribution instance from the pycbc.inference.prior module.
+        """
+        return super(UniformCubeRoot, cls).from_config(cp, section,
+                                                       variable_args,
+                                                       bounds_required=True)
+
 distribs = {
     Uniform.name : Uniform,
     UniformAngle.name : UniformAngle,
@@ -1464,6 +1597,7 @@ distribs = {
     SinAngle.name : SinAngle,
     UniformSolidAngle.name : UniformSolidAngle,
     UniformSky.name : UniformSky,
+    UniformCubeRoot.name : UniformCubeRoot,
     Gaussian.name : Gaussian,
     FromFile.name : FromFile,
 }
