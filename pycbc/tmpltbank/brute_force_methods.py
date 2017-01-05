@@ -2,7 +2,6 @@ from __future__ import division
 import copy
 import numpy
 from pycbc.tmpltbank.coord_utils import get_cov_params
-from pycbc.pnutils import get_beta_sigma_from_aligned_spins
 
 
 def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
@@ -80,10 +79,11 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
             if currDist > 1 and scaleFactor == origScaleFactor:
                 scaleFactor = origScaleFactor*10
         # Get a set of test points with mass -> xi mappings
-        chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, beta, \
-              sigma, gamma, chis, new_xis = get_mass_distribution(\
-                    [bestChirpmass,bestMasses[1],bestMasses[2],bestMasses[3]],\
-                    scaleFactor, massRangeParams, metricParams, fUpper)
+        totmass, eta, spin1z, spin2z, mass1, mass2, new_xis = \
+            get_mass_distribution([bestChirpmass, bestMasses[1], bestMasses[2],
+                                   bestMasses[3]],
+                                  scaleFactor, massRangeParams, metricParams,
+                                  fUpper)
         cDist = (new_xis[0] - xis[0])**2
         for j in xrange(1,xi_size):
             cDist += (new_xis[j] - xis[j])**2
@@ -167,8 +167,6 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
 
     Returns 
     --------
-    Chirpmass : numpy.array
-        chirp mass of the resulting points
     Totmass : numpy.array
         Total mass of the resulting points
     Eta : numpy.array
@@ -183,14 +181,6 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
         Mass1 (mass of heavier body) of the resulting points
     Mass2 : numpy.array
         Mass2 (mass of smaller body) of the resulting points
-    Beta : numpy.array
-        1.5PN spin phasing coefficient of the resulting points
-    Sigma : numpy.array
-        2PN spin phasing coefficient of the resulting points
-    Gamma : numpy.array
-        2.5PN spin phasing coefficient of the resulting points
-    Chis : numpy.array
-        0.5 * (spin1z + spin2z) for the resulting points
     new_xis : list of numpy.array
         Position of points in the xi coordinates
     """
@@ -320,10 +310,6 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
         numplogb = numpy.logical_not(numplogb)
         spin2z[numplogb] = 0
 
-    # Get the various spin-derived quantities
-    beta, sigma, gamma, chis = get_beta_sigma_from_aligned_spins(eta, spin1z,
-                                                                 spin2z)
-
     if (maxSpinMag) and (numploga[0] or numplogb[0]):
         raise ValueError("Cannot remove the guide point!")
 
@@ -351,11 +337,13 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
     if totmass[0] < 0.00011:
         raise ValueError("Cannot remove the guide point!")
 
+    mass1[totmass < 0.00011] = 0.0001
+    mass2[totmass < 0.00011] = 0.0001
+
     # Then map to xis
-    new_xis = get_cov_params(totmass, eta, beta, sigma, gamma, chis,
+    new_xis = get_cov_params(mass1, mass2, spin1z, spin2z,
                              metricParams, fUpper)
-    return chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, beta, \
-           sigma, gamma, chis, new_xis
+    return totmass, eta, spin1z, spin2z, mass1, mass2, new_xis
 
 def stack_xi_direction_brute(xis, bestMasses, bestXis, direction_num,
                              req_match, massRangeParams, metricParams, fUpper,
@@ -498,10 +486,11 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, req_match, \
 
     for i in xrange(numIterations):
         # Evaluate extrema of the xi direction specified
-        chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, beta, \
-          sigma, gamma, chis, new_xis = get_mass_distribution(\
-               [bestChirpmass,bestMasses[1],bestMasses[2],bestMasses[3]], \
-               scaleFactor, massRangeParams, metricParams, fUpper)
+        totmass, eta, spin1z, spin2z, mass1, mass2, new_xis = \
+            get_mass_distribution([bestChirpmass,bestMasses[1],bestMasses[2],
+                                   bestMasses[3]],
+                                  scaleFactor, massRangeParams, metricParams,
+                                  fUpper)
         cDist = (new_xis[0] - xis[0])**2
         for j in xrange(1, xi_size):
             cDist += (new_xis[j] - xis[j])**2
