@@ -47,7 +47,7 @@ Documenting command-line scripts isn't ideal in any documentation language, incl
 
 In ``PyCBC``, command-line scripts in the ``bin`` directory of the git repository should be accompanied by a reStructuredText file in ``docs/bin``.
 
-For example, the ``pycbc_inspiral`` script is accompanied by ``docs/bin/pycbc_inspiral.rst`` which documents what the code does, and how to run it. Example: :doc:`bin/pycbc_inspiral`.
+However, at some point this directory got removed. So what is the current recommendation for documenting scripts??
 
 This file contains an overview of what the code does, and some other information, with finally a dump of the command-line ``--help`` message via this directive::
 

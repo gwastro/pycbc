@@ -32,20 +32,23 @@ from pycbc.filter.matchedfilter import correlate
 from pycbc.types import FrequencySeries, TimeSeries, zeros
 
 def calculate_acf(data, delta_t=1.0, unbiased=False):
-    """ Calculates the autocorrelation function (ACF) and returns the one-sided
-    ACF.
+    r"""Calculates the one-sided autocorrelation function.
 
-    The ACF is defined as the autocovariance divided by the variance. The ACF
-    can be estimated using
+    Calculates the autocorrelation function (ACF) and returns the one-sided
+    ACF. The ACF is defined as the autocovariance divided by the variance. The
+    ACF can be estimated using
 
-        \hat{R}(k) = \frac{1}{\left( n \sigma^{2}} \right) \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right) 
+    .. math::
 
-    Where \hat{R}(k) is the ACF, X_{t} is the data series at time t, \mu is the
-    mean of X_{t}, and \sigma^{2} is the variance of X_{t}.
+        \hat{R}(k) = \frac{1}{n \sigma^{2}} \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right) 
+
+    Where :math:`\hat{R}(k)` is the ACF, :math:`X_{t}` is the data series at
+    time t, :math:`\mu` is the mean of :math:`X_{t}`, and :math:`\sigma^{2}` is
+    the variance of :math:`X_{t}`.
 
     Parameters
     -----------
-    data : {TimeSeries, numpy.array}
+    data : TimeSeries or numpy.array
         A TimeSeries or numpy.array of data.
     delta_t : float
         The time step of the data series if it is not a TimeSeries instance.

@@ -542,20 +542,9 @@ class CompressedWaveform(object):
 
     Attributes
     ----------
-    sample_points : array
-        The frequencies at which the compressed waveform is sampled. This is
-        always returned as an array, even if the stored `sample_points` is an
-        hdf dataset. If `load_to_memory` is True and the stored points are
-        an hdf dataset, the `sample_points` will cached in memory the first
-        time this attribute is accessed.
-    amplitude : array
-        The amplitude of the waveform at the `sample_points`. This is always
-        returned as an array; the same logic as for `sample_points` is used
-        to determine whether or not to cache in memory.
-    phase : array
-        The phase of the waveform as the `sample_points`. This is always
-        returned as an array; the same logic as for `sample_points` is used to
-        determine whether or not to cache in memory.
+    sample_points
+    amplitude
+    phase
     load_to_memory : bool
         Whether or not to load `sample_points`/`amplitude`/`phase` into memory
         the first time they are accessed, if they are hdf datasets. Can be
@@ -569,22 +558,6 @@ class CompressedWaveform(object):
     mismatch : {None, float}
         The mismatch between the decompressed waveform and the original
         waveform.
-
-    Methods
-    -------
-    decompress :
-        Decompresses the waveform to the desired sampling.
-    write_to_hdf :
-        Writes the compressed waveform to an open hdf file.
-    clear_cache :
-        Clears the in-memory cache used to hold the
-        `sample_points`/`amplitude`/`phase`; only relevant if `load_to_memory`
-        is True.
-
-    Class Methods
-    -------------
-    from_hdf :
-        Loads a compressed waveform from the given open hdf file.
     """
     
     def __init__(self, sample_points, amplitude, phase,
@@ -633,14 +606,47 @@ class CompressedWaveform(object):
 
     @property
     def amplitude(self):
+        """The amplitude of the waveform at the `sample_points`.
+
+        This is always returned as an array; the same logic as for
+        `sample_points` is used to determine whether or not to cache in
+        memory.
+
+        Returns
+        -------
+        amplitude : Array
+        """
         return self._get('amplitude')
 
     @property
     def phase(self):
+        """The phase of the waveform as the `sample_points`.
+
+        This is always returned as an array; the same logic as for
+        `sample_points` returned as an array; the same logic as for
+        `sample_points` is used to determine whether or not to cache in
+        memory.
+
+        Returns
+        -------
+        phase : Array
+        """
         return self._get('phase')
 
     @property
     def sample_points(self):
+        """The frequencies at which the compressed waveform is sampled.
+
+        This is
+        always returned as an array, even if the stored `sample_points` is an
+        hdf dataset. If `load_to_memory` is True and the stored points are
+        an hdf dataset, the `sample_points` will cached in memory the first
+        time this attribute is accessed.
+
+        Returns
+        -------
+        sample_points : Array
+        """
         return self._get('sample_points')
 
     def clear_cache(self):

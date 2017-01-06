@@ -16,6 +16,7 @@
 """
 This modules contains functions for reading in data from frame files or caches
 """
+
 import lalframe, logging
 import lal
 import numpy
@@ -112,7 +113,7 @@ def read_frame(location, channels, start_time=None,
                end_time=None, duration=None, check_integrity=True):
     """Read time series from frame data.
 
-    Using a the `location`, which can either be a frame file ".gwf" or a 
+    Using the `location`, which can either be a frame file ".gwf" or a 
     frame cache ".gwf", read in the data for the given channel(s) and output
     as a TimeSeries or list of TimeSeries. 
 
@@ -120,7 +121,7 @@ def read_frame(location, channels, start_time=None,
     ----------
     location : string
         A source of gravitational wave frames. Either a frame filename
-       (can include pattern), a list of frame files, or frame cache file.  
+        (can include pattern), a list of frame files, or frame cache file.  
     channels : string or list of strings
         Either a string that contains the channel name or a list of channel
         name strings.

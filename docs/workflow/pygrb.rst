@@ -366,6 +366,7 @@ The Host Over Time Chart section displays a gantt chart where you can see what
 jobs in the workflow ran on a given machine.
 
 .. _pygrbreuse:
+
 ======================================
 Reuse of data from a previous workflow
 ======================================

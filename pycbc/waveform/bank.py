@@ -321,8 +321,10 @@ class TemplateBank(object):
         return self.table.fieldnames
 
     def ensure_hash(self):
-        """Ensure that there is a correctly populated template_hash
-        if it doesnt not already exist.
+        """Ensure that there is a correctly populated template_hash.
+
+        Check for a correctly populated template_hash and create if it doesn't
+        already exist.
         """
         fields = self.table.fieldnames
         if 'template_hash' in fields:
@@ -467,7 +469,7 @@ class TemplateBank(object):
         """ Initialize FilterBank common fields
         
         Parameters
-        ---------
+        ----------
         low_frequency_cutoff: {float, None}, Optional
             A low frequency cutoff which overrides any given within the
             template bank file.

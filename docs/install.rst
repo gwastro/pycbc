@@ -102,7 +102,8 @@ To leave this virtual environment type
     
 which will return you to a regular shell.
 
-.. installinglalsuite::
+
+.. _installinglalsuite:
 
 ==============================================
 Installing lalsuite into a virtual environment
@@ -282,11 +283,10 @@ To build the documentation from your virtual environment, first make sure that y
 
 .. code-block:: bash
 
-    pip install "Sphinx>=1.3.1"
+    pip install "Sphinx>=1.4.2"
     pip install numpydoc
     pip install sphinx-rtd-theme
     pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git@pypi_release#egg=sphinxcontrib-programoutput
-    pip install git+https://github.com/matplotlib/sampledoc.git@pypi_release#egg=sampledoc
     
 To generate the documentation, from the top level of the PyCBC source tree run
 

@@ -319,10 +319,10 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
         A dictionary containing the parameters of the template to be used.
         params[ifo+'end_time'] is required for all ifos in workflow.ifos.
         If use_exact_inj_params is False then also need to supply values for
-        ['mass1','mass2','spin1z','spin2x']. For precessing templates one also
-        needs to supply ['spin1y', 'spin1x', 'spin2x', 'spin2y', 'inclination']
-        additionally for precession one must supply 'u_vals' or
-        'u_vals_'+ifo for all ifos. u_vals is the ratio between h_+ and h_x to
+        [mass1, mass2, spin1z, spin2x]. For precessing templates one also
+        needs to supply [spin1y, spin1x, spin2x, spin2y, inclination]
+        additionally for precession one must supply u_vals or
+        u_vals_+ifo for all ifos. u_vals is the ratio between h_+ and h_x to
         use when constructing h(t). h(t) = (h_+ * u_vals) + h_x.
     out_dir : str
         Directory in which to store the output files.

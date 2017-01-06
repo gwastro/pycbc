@@ -348,7 +348,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
 
     .. math::
 
-        \log \hat{\mathcal{L}} = \log p(\Theta) + \sum_i \left\[\left<h_i(\Theta)|d_i\right> - \frac{1}{2} \left<h_i(\Theta)|h_i(\Theta)\right>\right]
+        \log \hat{\mathcal{L}} = \log p(\Theta) + \sum_i \left[ \left<h_i(\Theta)|d_i\right> - \frac{1}{2} \left<h_i(\Theta)|h_i(\Theta)\right> \right]
 
     For this reason, by default this class returns `logplr` when called as a
     function instead of `logposterior`. This can be changed via the
@@ -397,7 +397,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         and a given waveform will be used.
     norm : {None, float or array}
         An extra normalization weight to apply to the inner products. Can be
-        either a float or an array. If `None`, `4*data.values()[0].delta_f
+        either a float or an array. If `None`, `4*data.values()[0].delta_f`
         will be used.
     prior : callable
         A callable class or function that computes the prior.
@@ -408,6 +408,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     Examples
     --------
     Create a signal, and set up the likelihood evaluator on that signal:
+
     >>> seglen = 4
     >>> sample_rate = 2048
     >>> N = seglen*sample_rate/2+1
@@ -421,39 +422,45 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
 
     Now compute the log likelihood ratio and prior-weighted likelihood ratio;
     since we have not provided a prior, these should be equal to each other:
+
     >>> likelihood_eval.loglr([tsig]), likelihood_eval.logplr([tsig])
-    (ArrayWithAligned(277.92945279883855), ArrayWithAligned(277.92945279883855))
+        (ArrayWithAligned(277.92945279883855), ArrayWithAligned(277.92945279883855))
 
     Compute the log likelihood and log posterior; since we have not
     provided a prior, these should both be equal to zero:
+
     >>> likelihood_eval.loglikelihood([tsig]), likelihood_eval.logposterior([tsig])
-    (ArrayWithAligned(0.0), ArrayWithAligned(0.0))
+        (ArrayWithAligned(0.0), ArrayWithAligned(0.0))
 
     Compute the SNR; for this system and PSD, this should be approximately 24:
+
     >>> likelihood_eval.snr([tsig])
-    ArrayWithAligned(23.576660187517593)
+        ArrayWithAligned(23.576660187517593)
 
     Using the same likelihood evaluator, evaluate the log prior-weighted
     likelihood ratio at several points in time, check that the max is at tsig,
     and plot (note that we use the class as a function here, which defaults
     to calling `logplr`):
+
     >>> from matplotlib import pyplot
     >>> times = numpy.arange(seglen*sample_rate)/float(sample_rate)
     >>> lls = numpy.array([likelihood_eval([t]) for t in times])
     >>> times[lls.argmax()]
-    3.10009765625
+        3.10009765625
     >>> fig = pyplot.figure(); ax = fig.add_subplot(111)
     >>> ax.plot(times, lls)
-    [<matplotlib.lines.Line2D at 0x1274b5c50>]
+        [<matplotlib.lines.Line2D at 0x1274b5c50>]
     >>> fig.show()
 
     Create a prior and use it (see prior module for more details):
+
     >>> from pycbc.inference import prior
     >>> uniform_prior = prior.Uniform(tc=(tsig-0.2,tsig+0.2))
     >>> prior_eval = prior.PriorEvaluator(['tc'], uniform_prior)
     >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, 20., psds=psds, prior=prior_eval, return_meta=False)
     >>> likelihood_eval.logplr([tsig]), likelihood_eval.logposterior([tsig])
-    (ArrayWithAligned(278.84574353071264), ArrayWithAligned(0.9162907318741418))
+        (ArrayWithAligned(278.84574353071264), ArrayWithAligned(0.9162907318741418))
+
     """
     name = 'gaussian'
 
@@ -538,7 +545,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         
         .. math::
         
-        p(d|\Theta) = -\frac{1}{2}\sum_i \left<h_i(\Theta) - d_i | h_i(\Theta) - d_i\right>
+            p(d|\Theta) = -\frac{1}{2}\sum_i \left<h_i(\Theta) - d_i | h_i(\Theta) - d_i\right>
 
         Parameters
         ----------

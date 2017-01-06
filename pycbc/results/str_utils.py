@@ -27,16 +27,7 @@ This modules provides functions for formatting values into strings for display.
 
 import numpy
 
-
-def mathjax_html_header():
-    """
-    Standard header to use for html pages to display latex math.
-    Returns
-    -------
-    header: str
-        The necessary html head needed to use latex on an html page.
-    """
-    return """
+mjax_header = """
 <script type="text/x-mathjax-config">
   MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$']]}});
 </script>
@@ -44,6 +35,17 @@ def mathjax_html_header():
     src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 """
+
+
+def mathjax_html_header():
+    """Standard header to use for html pages to display latex math.
+
+    Returns
+    -------
+    header: str
+        The necessary html head needed to use latex on an html page.
+    """
+    return mjax_header
 
 def drop_trailing_zeros(num):
     """

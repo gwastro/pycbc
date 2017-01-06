@@ -12,7 +12,7 @@ You need at least version 7.1.0 of pip to manage the installation process for vi
 
     pip --version
 
-to determine the version of pip that you have installed. If you have version 7.1.0 or greater, you can continue to the section :ref:`Install virtualenv`_ without installing pip. If this command returns ``pip: command not found`` or a version of pip less than 7.1.0, then follow the instruction in the section to :ref:`Install pip`_
+to determine the version of pip that you have installed. If you have version 7.1.0 or greater, you can continue to the section `Install virtualenv`_ without installing pip. If this command returns ``pip: command not found`` or a version of pip less than 7.1.0, then follow the instruction in the section to `Install pip`_
 
 ================
 Install pip
