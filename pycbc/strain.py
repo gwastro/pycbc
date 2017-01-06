@@ -41,10 +41,12 @@ from scipy.signal import kaiserord
 
 def next_power_of_2(n):
     """Return the smallest integer power of 2 larger than the argument.
+
     Parameters
     ----------
     n : int
         A positive integer.
+
     Returns
     -------
     m : int
@@ -58,11 +60,13 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
                          threshold=50., cluster_window=5., corrupt_time=4.,
                          high_freq_cutoff=None, output_intermediates=False):
     """Automatic identification of loud transients for gating purposes.
+
     This function first estimates the PSD of the input time series using the
     FindChirp Welch method. Then it whitens the time series using that
     estimate. Finally, it computes the magnitude of the whitened series,
     thresholds it and applies the FindChirp clustering over time to the
     surviving samples.
+
     Parameters
     ----------
     strain : TimeSeries
@@ -89,10 +93,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
         frequency is used.
     output_intermediates : {bool, False}
         Save intermediate time series for debugging.
-    Returns
-    -------
     """
-
     logging.info('Autogating: tapering strain')
     taper_length = int(corrupt_time * strain.sample_rate)
     w = numpy.arange(taper_length) / float(taper_length)
@@ -185,6 +186,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
 def from_cli(opt, dyn_range_fac=1, precision='single',
              inj_filter_rejector=None):
     """Parses the CLI options related to strain data reading and conditioning.
+
     Parameters
     ----------
     opt : object
@@ -192,7 +194,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         required attributes  (gps-start-time, gps-end-time, strain-high-pass, 
         pad-data, sample-rate, (frame-cache or frame-files), channel-name, 
         fake-strain, fake-strain-seed, fake-strain-from-file, gating_file).
-
     dyn_range_fac: {float, 1}, optional
         A large constant to reduce the dynamic range of the strain.
     inj_filter_rejector: InjFilterRejector instance; optional, default=None
@@ -386,10 +387,12 @@ def from_cli_multi_ifos(opt, ifos, **kwargs):
 
 
 def insert_strain_option_group(parser, gps_times=True):
-    """
+    """ Add strain-related options to the optparser object.
+
     Adds the options used to call the pycbc.strain.from_cli function to an
     optparser as an OptionGroup. This should be used if you
     want to use these options in your code.
+
     Parameters
     -----------
     parser : object
@@ -521,8 +524,10 @@ def insert_strain_option_group_multi_ifo(parser):
     Adds the options used to call the pycbc.strain.from_cli function to an
     optparser as an OptionGroup. This should be used if you
     want to use these options in your code.
+
     Parameters
-    -----------    parser : object
+    -----------
+    parser : object
         OptionParser instance.
     """
 
@@ -687,8 +692,11 @@ required_opts_list = ['--gps-start-time', '--gps-end-time',
                       '--channel-name']
 
 def verify_strain_options(opts, parser):
-    """Parses the strain data CLI options and verifies that they are consistent
+    """Sanity check provided strain arguments.
+
+    Parses the strain data CLI options and verifies that they are consistent
     and reasonable.
+
     Parameters
     ----------
     opt : object
@@ -704,8 +712,11 @@ def verify_strain_options(opts, parser):
     required_opts(opts, parser, required_opts_list)
 
 def verify_strain_options_multi_ifo(opts, parser, ifos):
-    """Parses the strain data CLI options and verifies that they are consistent
+    """Sanity check provided strain arguments.
+
+    Parses the strain data CLI options and verifies that they are consistent
     and reasonable.
+
     Parameters
     ----------
     opt : object
@@ -725,10 +736,13 @@ def verify_strain_options_multi_ifo(opts, parser, ifos):
 
 
 def gate_data(data, gate_params):
-    """Apply a set of gating windows to a time series. Each gating window is
+    """Apply a set of gating windows to a time series.
+    
+    Each gating window is
     defined by a central time, a given duration (centered on the given
     time) to zero out, and a given duration of smooth tapering on each side of
     the window. The window function used for tapering is a Tukey window.
+
     Parameters
     ----------
     data : TimeSeries
@@ -740,6 +754,7 @@ def gate_data(data, gate_params):
         Tukey tapering on each side. All times in seconds. The total duration
         of the data affected by one gating window is thus twice the second
         parameter plus twice the third parameter.
+
     Returns
     -------
     data: TimeSeries
@@ -1097,10 +1112,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         """ Class to produce overwhitened strain incrementally
         
         Parameters
-        ---------
+        ----------
         frame_src: str of list of strings
             Strings that indicate where to read from files from. This can be a
-        list of frame files, a glob, etc.
+            list of frame files, a glob, etc.
         channel_name: str
             Name of the channel to read from the frame files
         start_time: 
@@ -1123,10 +1138,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             The number of seconds in each psd sample.
         psd_inverse_length: {float, 3.5}, Optional
             The length in seconds for fourier transform of the inverse of the
-        PSD to be truncated to.
+            PSD to be truncated to.
         trim_padding: {float, 0.25}, Optional
             Amount of padding in seconds to give for truncated the overwhitened
-        data stream.
+            data stream.
         autogating_threshold: {float, 100}, Optional
             Sigma deviation required to cause gating of data
         autogating_cluster: {float, 0.25}, Optional
@@ -1143,20 +1158,21 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Scale factor to apply to strain
         psd_abort_difference: {float, None}, Optional
             The relative change in the inspiral range from the previous PSD
-        estimate to trigger the data to be considered invalid.
+            estimate to trigger the data to be considered invalid.
         psd_recalculate_difference: {float, None}, Optional
             the relative change in the inspiral range from the previous PSD
-        to trigger a re-estimatoin of the PSD.
+            to trigger a re-estimatoin of the PSD.
         force_update_cache: {boolean, True}, Optional
             Re-check the filesystem for frame files on every attempt to 
-        read more data.
+            read more data.
         analyze_flags: list of strs
             The flags that must be on to mark the current data as valid for
-        *any* use.
+            *any* use.
         increment_update_cache: {str, None}, Optional
             Pattern to look for frame files in a GPS dependent directory. This
-        is an alternate to the forced updated of the frame cache, and attempts
-        to predict the next frame file name without probing the filesystem.
+            is an alternate to the forced updated of the frame cache, and
+            apptempts to predict the next frame file name without probing the
+            filesystem.
         """ 
         super(StrainBuffer, self).__init__(frame_src, channel_name, start_time,
                                            max_buffer=max_buffer,
@@ -1291,6 +1307,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
     def overwhitened_data(self, delta_f):
         """ Return overwhitened data
+
         Parameters
         ----------
         delta_f: float
@@ -1351,6 +1368,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
     def null_advance_strain(self, blocksize):
         """ Advance and insert zeros
+
         Parameters
         ----------
         blocksize: int
@@ -1368,12 +1386,16 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.taper_immediate_strain = True
        
     def advance(self, blocksize, timeout=10):
-        """ Add blocksize seconds more to the buffer, push blocksize seconds
+        """Advanced buffer blocksize seconds.
+
+        Add blocksize seconds more to the buffer, push blocksize seconds
         from the beginning.
+
         Parameters
         ----------
         blocksize: int
             The number of seconds to attempt to read from the channel
+
         Returns
         -------
         status: boolean

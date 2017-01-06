@@ -169,11 +169,11 @@ Checks for the hardware injection output
 
 Here are some follow-up checks the user can do.
 
+.. _runpycbcplothwinj:
+
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Plot ASCII waveform files with ``pycbc_plot_hwinj``
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
-.. _runpycbcplothwinj:
 
 You can plot the ASCII waveform files with an X11 connection. It's strongly recommended to use the X11 connection instead of saving a static image of the entire waveform. The X11 connection allows the user to zoom in and inspect the waveform more closely. A basic inspection would include checking the amplitude, the tapering, and the ringdown  of the waveforms are reasonable. For the ``pycbc_generate_hwinj`` example above one would do ::
 
@@ -214,11 +214,11 @@ Where ``${START}`` is the start of the injection and ``${DURATION}`` is the leng
 
 Then you can run pycbc on the output frame file ``H1-HWINJ.gwf``.
 
+.. _howtoquerysegdb:
+
 ---------------------------------
 How to query the segment database
 ---------------------------------
-
-.. _howtoquerysegdb:
 
 Here is an example on how to check if the detector was in science mode for a GPS time interval. To do this we query the segment database. A command line tool to do check the ``pycbc_generate_hwinj`` example above is ::
 
@@ -234,11 +234,11 @@ The output should be ``1124380361,1124382409`` for both ``ligolw_print`` command
 
 **Do not assume that the segment databse URL and science-mode segment names are the same as in this section. These values are correct for this example.**
 
+.. _howtoqueryldr:
+
 ---------------------------
 How to query the LDR server
 ---------------------------
-
-.. _howtoqueryldr:
 
 Here is an example on how to check if frame files exist for a GPS time interval. To do this we query the LDR server. A command line tool to do check the ``pycbc_generate_hwinj`` example above is ::
 

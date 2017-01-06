@@ -126,19 +126,22 @@ class TimeSeries(Array):
         """Return time between consecutive samples in seconds.
         """
         return self._delta_t
-    delta_t = property(get_delta_t)
+    delta_t = property(get_delta_t,
+                       doc="Time between consecutive samples in seconds.")
 
     def get_duration(self):
         """Return duration of time series in seconds.
         """
         return len(self) * self._delta_t
-    duration = property(get_duration)
+    duration = property(get_duration,
+                        doc="Duration of time series in seconds.")
     
     def get_sample_rate(self):
         """Return the sample rate of the time series.
         """
         return int(1.0/self.delta_t)
-    sample_rate = property(get_sample_rate)
+    sample_rate = property(get_sample_rate,
+                           doc="The sample rate of the time series.")
 
     @property
     def start_time(self):
@@ -156,7 +159,8 @@ class TimeSeries(Array):
         """Return time series end time as a LIGOTimeGPS.
         """
         return self._epoch + self.get_duration()
-    end_time = property(get_end_time)
+    end_time = property(get_end_time,
+                        doc="Time series end time as a LIGOTimeGPS.")
 
     def get_sample_times(self):
         """Return an Array containing the sample times.
@@ -165,7 +169,8 @@ class TimeSeries(Array):
             return Array(range(len(self))) * self._delta_t
         else:
             return Array(range(len(self))) * self._delta_t + float(self._epoch)
-    sample_times = property(get_sample_times)
+    sample_times = property(get_sample_times,
+                            doc="Array containing the sample times.")
 
     def __eq__(self,other):
         """
