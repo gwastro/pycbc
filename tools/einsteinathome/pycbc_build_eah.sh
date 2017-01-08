@@ -802,10 +802,10 @@ else
     git remote update
     git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
-echo -e ">> [`date`] downgrade setuptools"
-echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
-pycbc_tag="`git describe --tags --exact-match HEAD 2>/dev/null||true`"
+echo -e "[`date`] downgrade setuptools"
 pip install --upgrade `grep -w ^setuptools requirements.txt`
+echo -e "[`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
+pycbc_tag="`git describe --tags --exact-match HEAD 2>/dev/null||true`"
 pip install .
 hooks="$PWD/tools/static"
 cd ..
