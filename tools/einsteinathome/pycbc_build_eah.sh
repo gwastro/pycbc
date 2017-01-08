@@ -769,6 +769,11 @@ if $build_dlls; then
     rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
 fi
 
+# PyInstaller 9d0e0ad4 crashes with newer Jinja2,
+# so install this old version before it gets pulled in from PyCBC
+echo -e "\\n\\n>> [`date`] pip install Jinja2==2.8.1"
+pip install Jinja2==2.8.1
+
 # PyCBC
 echo -e "\\n\\n>> [`date`] building pycbc"
 if $scratch_pycbc || ! test -d pycbc/.git ; then
