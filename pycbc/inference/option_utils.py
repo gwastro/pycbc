@@ -273,6 +273,20 @@ def add_plot_posterior_option_group(parser):
     pgroup.add_argument('--maxs', nargs='+', metavar='PARAM:VAL', default=[],
                         help="Same as mins, but for the maximum values to "
                              "plot.")
+    # add expected parameters options
+    pgroup.add_argument('--expected-parameters', nargs='+', metavar='PARAM:VAL',
+                        default=[],
+                        help="Specify expected parameter values to plot. If "
+                             "provided, a cross will be plotted in each axis "
+                             "that an expected parameter is provided. "
+                             "Parameter names must be "
+                             "the same as the PARAM argument in --parameters "
+                             "(or, if no parameters are provided, the same as "
+                             "the parameter name specified in the variable "
+                             "args in the input file.")
+    pgroup.add_argument('--expected-parameters-color', default='r',
+                        help="What to color the expected-parameters cross. "
+                             "Default is red.")
     return pgroup
 
 
@@ -309,6 +323,32 @@ def plot_ranges_from_cli(opts):
             raise ValueError("option --maxs not specified correctly; see help")
         maxs[x[0]] = float(x[1])
     return mins, maxs
+
+
+def expected_parameters_from_cli(opts):
+    """Parses the --expected-parameters arguments from the `plot_posterior`
+    option group.
+
+    Parameters
+    ----------
+    opts : ArgumentParser
+        The parsed arguments from the command line.
+
+    Returns
+    -------
+    dict
+        Dictionary of parameter name -> expected value. Only parameters that
+        were specified in the --expected-parameters option will be included; if
+        no parameters were provided, will return an empty dictionary.
+    """
+    expected = {}
+    for x in opts.expected_parameters:
+        x = x.split(':')
+        if len(x) != 2:
+            raise ValueError("option --expected-paramters not specified "
+                             "correctly; see help")
+        expected[x[0]] = float(x[1])
+    return expected
 
 
 def add_scatter_option_group(parser):

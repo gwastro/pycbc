@@ -379,7 +379,8 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
 
 
 def create_multidim_plot(parameters, samples, labels=None,
-                mins=None, maxs=None,
+                mins=None, maxs=None, expected_parameters=None,
+                expected_parameters_color='r',
                 plot_marginal=True,
                 plot_scatter=True,
                     zvals=None, show_colorbar=True, cbar_label=None,
@@ -405,6 +406,12 @@ def create_multidim_plot(parameters, samples, labels=None,
         Maximum value for the axis of each variable in `parameters`.
         If None, it will use the maximum of the corresponding variable in
         `samples`.
+    expected_parameters : {None, dict}, optional
+        Expected values of `parameters`, as a dictionary mapping parameter
+        names -> values. A cross will be plotted at the location of the
+        expected parameters on axes that plot any of the expected parameters.
+    expected_parameters_color : {'r', string}, optional
+        What color to make the expected parameters cross.
     plot_marginal : {True, bool}
         Plot the marginalized distribution on the diagonals. If False, the
         diagonal axes will be turned off.
@@ -549,6 +556,18 @@ def create_multidim_plot(parameters, samples, labels=None,
                     ymin=mins[py], ymax=maxs[py],
                     exclude_region=exclude_region, ax=ax,
                     use_kombine=use_kombine)
+
+        if expected_parameters is not None:
+            try:
+                ax.vlines(expected_parameters[px], mins[py], maxs[py],
+                          colors=expected_parameters_color, zorder=5)
+            except KeyError:
+                pass
+            try:
+                ax.hlines(expected_parameters[py], mins[px], maxs[px],
+                          colors=expected_parameters_color, zorder=5)
+            except KeyError:
+                pass
 
         ax.set_xlim(mins[px], maxs[px])
         ax.set_ylim(mins[py], maxs[py])
