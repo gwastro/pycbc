@@ -271,15 +271,12 @@ point_inj_summ_files = []
 # Nothing in this yet, so not sure how to set this.
 broad_inj_summ_files = []
 
-secs = workflow.cp.get_subsections('banksim_plot_fitting_factors')
-for tag in secs:
-    point_injs_table_exe.update_current_tags([tag])
-    curr_node = point_injs_table_exe.create_node\
-        (workflow.analysis_time,
-         [output_pointinjs[f] for f in output_pointinjs])
-    workflow += curr_node
-    plotting_nodes.append(curr_node)
-    point_inj_summ_files.append((curr_node.output_file,))
+curr_node = point_injs_table_exe.create_node\
+    (workflow.analysis_time,
+     [output_pointinjs[f] for f in output_pointinjs])
+workflow += curr_node
+plotting_nodes.append(curr_node)
+point_inj_summ_files.append((curr_node.output_file,))
 
 secs = workflow.cp.get_subsections('banksim_plot_eff_fitting_fac')
 for tag in secs:
@@ -296,16 +293,19 @@ layout.group_layout(rdir.base, summary_page_files)
 layout.two_column_layout(rdir['point_injection_sets'], point_inj_summ_files)
 # Also add broad_injs when ready
 
+secs = workflow.cp.get_subsections('banksim_plot_fitting_factors')
 for tag in output_broadinjs:
     curr_outs = []
     curr_file = output_broadinjs[tag]
     plot_fitting_facs_exe.update_output_directory\
         (rdir['broad_injection_sets/{}'.format(tag)])
-    curr_node = plot_fitting_facs_exe.create_node\
-        (workflow.analysis_time, curr_file, extra_tags=[tag])
-    workflow += curr_node
-    plotting_nodes.append(curr_node)
-    curr_outs.append((curr_node.output_file,))
+    for tag2 in secs:
+        plot_fitting_facs_exe.update_current_tags([tag,tag2])
+        curr_node = plot_fitting_facs_exe.create_node\
+            (workflow.analysis_time, curr_file)
+        workflow += curr_node
+        plotting_nodes.append(curr_node)
+        curr_outs.append((curr_node.output_file,))
     # Other outputs could go here, before running the layout
     layout.two_column_layout(rdir['broad_injection_sets/{}'.format(tag)],
                              curr_outs)
@@ -314,11 +314,13 @@ for tag in output_pointinjs:
     curr_file = output_pointinjs[tag]
     plot_fitting_facs_exe.update_output_directory\
         (rdir['point_injection_sets/{}'.format(tag)])
-    curr_node = plot_fitting_facs_exe.create_node\
-        (workflow.analysis_time, curr_file, extra_tags=[tag])
-    workflow += curr_node
-    plotting_nodes.append(curr_node)
-    curr_outs.append((curr_node.output_file,))
+    for tag2 in secs:
+        plot_fitting_facs_exe.update_current_tags([tag,tag2])
+        curr_node = plot_fitting_facs_exe.create_node\
+            (workflow.analysis_time, curr_file)
+        workflow += curr_node
+        plotting_nodes.append(curr_node)
+        curr_outs.append((curr_node.output_file,))
     # Other outputs could go here, before running the layout
     layout.two_column_layout(rdir['point_injection_sets/{}'.format(tag)],
                              curr_outs)

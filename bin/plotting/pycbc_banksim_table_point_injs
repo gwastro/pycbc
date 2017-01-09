@@ -40,9 +40,10 @@ parser.add_argument('--output-file', default=None, required=True,
  
 opt = parser.parse_args()
 
-col_names = ['Mass 1', 'Mass 2', 'Signal recovery fraction',
-             'Effective fitting factor', 'Maximum fitting factor',
-             'Minimum fitting factor']
+col_names = ['Mass 1', 'Mass 2', 'Signal <br\\> recovery <br\\> fraction',
+             'Effective <br\\> fitting <br\\> factor',
+             'Maximum <br\\> fitting <br\\> factor',
+             'Minimum <br\\> fitting <br\\> factor']
 format_strings = ['##.##', '##.##', '#.###', '#.###', '#.###', '#.###']
 m1 = []
 m2 = []
@@ -66,21 +67,34 @@ columns = [numpy.array(m1), numpy.array(m2), numpy.array(srf),
 test_fp = h5py.File(opt.input_files[0], 'r')
 if 'filtered_points' in test_fp.keys():
     test_fp.close()
-    col_names += ['Fraction of points within template bank',
-                  'Filtered points\' signal recovery fraction',
-                  'Filtered points\' effective fitting factor']
-    format_strings += ['#.###', '#.###', '#.###']
+    cn1 = 'Fraction <br\\> of points <br\\> within <br\\> template <br\\> bank'
+    cn2 = 'Filtered <br\\> points <br\\> signal <br\\> recovery<br\\>fraction'
+    cn3 = 'Filtered <br\\> points <br\\> effective <br\\> fitting<br\\>factor'
+    cn4 = 'Filtered <br\\> points <br\\> maximum <br\\> fitting<br\\>factor'
+    cn5 = 'Filtered <br\\> points <br\\> minimum <br\\> fitting<br\\>factor'
+    col_names += [cn1, cn2, cn3, cn4, cn5]
+    format_strings += ['#.###', '#.###', '#.###', '#.###', '#.###']
     point_frac = []
     filt_srf = []
     filt_eff_ff = []
+    filt_max_ff = []
+    filt_min_ff = []
     for file_name in opt.input_files:
         curr_fp = h5py.File(file_name, 'r')
         point_frac.append(curr_fp['frac_points_within_bank'][()])
         filt_srf.append(curr_fp['filtered_sig_rec_fac'][()])
         filt_eff_ff.append(curr_fp['filtered_eff_fitting_factor'][()])
+        if point_frac[-1] > 0:
+            bool_arr = curr_fp['filtered_points'][:]
+            filt_max_ff.append(max(curr_fp['trig_params/match'][:][bool_arr]))
+            filt_min_ff.append(min(curr_fp['trig_params/match'][:][bool_arr]))
+        else:
+            filt_max_ff.append(-1)
+            filt_min_ff.append(-1)
         curr_fp.close()
     columns += [numpy.array(point_frac), numpy.array(filt_srf),
-                numpy.array(filt_eff_ff)]
+                numpy.array(filt_eff_ff), numpy.array(filt_max_ff),
+                numpy.array(filt_min_ff)]
 else:
     test_fp.close()
 

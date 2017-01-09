@@ -29,6 +29,7 @@ import numpy
 import h5py
 from glue.ligolw import utils, table
 import pycbc
+from pycbc import pnutils
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
@@ -142,17 +143,39 @@ srfd = numpy.sum((trig_params['sigmasq'])**3.)
 
 f['sig_rec_fac'] = srfn / srfd
 f['eff_fitting_factor'] = (srfn / srfd)**(1./3.)
+mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(inj_params['mass1'],
+                                              inj_params['mass2'])
+srfn_mcweighted = numpy.sum((trig_params['match'] * mchirp**(-5./6.) *\
+                             trig_params['sigmasq'])**3.)
+srfd_mcweighted = numpy.sum((mchirp**(-5./6.) * trig_params['sigmasq'])**3.)
+f['sig_rec_fac_chirp_mass_weighted'] = srfn_mcweighted / srfd_mcweighted
+f['eff_fitting_factor_chirp_mass_weighted'] = \
+    (srfn_mcweighted / srfd_mcweighted)**(1./3.)
 
 if options.filter_func_file:
-    num_filtered = inj_params['mass1'][bool_arr]
-    f['frac_points_within_bank'] = \
-        num_filtered / float(len(inj_params['mass1']))
-    filt_match = trig_params['match'][bool_arr]
-    filt_sigmasq = trig_params['sigmasq'][bool_arr]
-    srfn_filt = numpy.sum((filt_match * filt_sigmasq)**3.)
-    srfd_filt = numpy.sum(filt_sigmasq**3)
-    f['filtered_sig_rec_fac'] = srfn_filt / srfd_filt
-    f['filtered_eff_fitting_factor'] = (srfn_filt / srfd_filt)**(1./3.)
+    num_filtered = len(inj_params['mass1'][bool_arr])
+    if num_filtered == 0:
+        f['frac_points_within_bank'] = 0
+        f['filtered_sig_rec_fac'] = -1
+        f['filtered_eff_fitting_factor'] = -1
+    else:
+        f['frac_points_within_bank'] = \
+            num_filtered / float(len(inj_params['mass1']))
+        filt_match = trig_params['match'][bool_arr]
+        filt_sigmasq = trig_params['sigmasq'][bool_arr]
+        srfn_filt = numpy.sum((filt_match * filt_sigmasq)**3.)
+        srfd_filt = numpy.sum(filt_sigmasq**3)
+        f['filtered_sig_rec_fac'] = srfn_filt / srfd_filt
+        f['filtered_eff_fitting_factor'] = (srfn_filt / srfd_filt)**(1./3.)
+        mchirp = mchirp[bool_arr]
+        srfn_mcweighted = numpy.sum((filt_match * mchirp**(-5./6.) *\
+                                     filt_sigmasq)**3.)
+        srfd_mcweighted = numpy.sum((mchirp**(-5./6.) * filt_sigmasq)**3.)
+        f['filtered_sig_rec_fac_chirp_mass_weighted'] = \
+            srfn_mcweighted / srfd_mcweighted
+        f['filtered_eff_fitting_factor_chirp_mass_weighted'] = \
+            (srfn_mcweighted / srfd_mcweighted)**(1./3.)
+
     f['filtered_points'] = bool_arr
 
 f.close()

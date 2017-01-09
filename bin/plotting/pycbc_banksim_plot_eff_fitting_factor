@@ -19,6 +19,7 @@
 
 import sys
 import h5py
+import numpy
 import argparse
 import matplotlib
 matplotlib.use('Agg')
@@ -50,6 +51,9 @@ parser.add_argument('--plot-caption',
                     help="If given, use this as the plot caption")
 parser.add_argument('--log-axes', action='store_true', default=False,
                     help="If given, use logarithmic axes instead of linear.")
+parser.add_argument('--log-colorbar', action='store_true', default=False,
+                    help="If given, use logarithmic values for the colorbar, "
+                         "showing 1 - fitting factor.")
 
 opt = parser.parse_args()
 
@@ -61,10 +65,22 @@ for file_name in opt.input_files:
     m1.append(curr_fp['inj_params/mass1'][0])
     m2.append(curr_fp['inj_params/mass2'][0])
     if opt.filter_injections:
-        eff_ff.append(curr_fp['filtered_eff_fitting_factor'])
+        eff_ff.append(curr_fp['filtered_eff_fitting_factor'][()])
     else:
         eff_ff.append(curr_fp['eff_fitting_factor'][()])
     curr_fp.close()
+
+if opt.filter_injections:
+    eff_ff = numpy.array(eff_ff)
+    m1 = numpy.array(m1)
+    m2 = numpy.array(m2)
+    bool_arr = eff_ff > -0.5
+    opp_arr = eff_ff < -0.5
+    m1_empty = m1[opp_arr]
+    m2_empty = m2[opp_arr]
+    m1 = m1[bool_arr]
+    m2 = m2[bool_arr]
+    eff_ff = eff_ff[bool_arr]
 
 fig = plt.figure()
 ax = fig.gca()
@@ -74,10 +90,23 @@ except ValueError:
     from pycbc.future import cmaps
     cmap = cmaps['viridis']
 
-sctr = ax.scatter(m1, m2, c=eff_ff, cmap=cmap, edgecolors='none', marker='o',
-                  s=40)
-cb = fig.colorbar(sctr)
-cb.set_label("Effective fitting factor")
+if not opt.log_colorbar:
+    sctr = ax.scatter(m1, m2, c=eff_ff, cmap=cmap, edgecolors='none',
+                      marker='o', s=40)
+    cb = fig.colorbar(sctr)
+    cb.set_label("Effective fitting factor")
+    if opt.filter_injections:
+        sctr = ax.scatter(m1_empty, m2_empty, c='k', cmap=cmap,
+                          edgecolors='none', marker='x', s=40)
+else:
+    sctr = ax.scatter(m1, m2, c=numpy.log10(1 - numpy.array(eff_ff)),
+                      cmap=cmap, edgecolors='none', marker='o', s=40)
+    cb = fig.colorbar(sctr)
+    cb.set_label("log10(1 - Effective fitting factor)")
+    if opt.filter_injections:
+        sctr = ax.scatter(m1_empty, m2_empty, c='k', cmap=cmap,
+                          edgecolors='none', marker='x', s=40)
+
 ax.set_xlabel('Mass 1 (solar masses)')
 ax.set_ylabel('Mass 2 (solar masses)')
 if opt.log_axes:
@@ -100,7 +129,9 @@ if opt.plot_caption is None:
                              "the input files are considered. Usually this is "
                              "used to restrict to only signals that are "
                              "the parameter space used to create the template "
-                             "bank.")
+                             "bank. Any point marked with a black "
+                             "cross contain no injections that pass the "
+                             "filter function.")
 
 fig_kwds = {}
 if '.png' in opt.output_file:

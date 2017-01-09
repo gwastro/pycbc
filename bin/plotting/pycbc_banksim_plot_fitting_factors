@@ -138,18 +138,23 @@ cax.set_ylim([0.9,1000])
 
 cax = axarr[2,1]
 cax.autoscale_view('tight')
-normed_hist = hist / hist.sum()
+if len(m1):
+    normed_hist = hist / hist.sum()
+else:
+    normed_hist = hist
 cumulative = numpy.cumsum(normed_hist)
 cax.bar(center, cumulative, align='center', width=width, edgecolor="none")
 cax.set_xlabel('fitting factor')
 cax.set_ylabel('cumulative fraction')
-cax.set_yscale('log')
+if len(m1) > 50:
+    cax.set_yscale('log')
 cax.set_ylim([0,1])
 
 fig.subplots_adjust(right=0.8)
 cbar_ax = fig.add_axes([0.85, 0.05, 0.05, 0.91])
-cbar = fig.colorbar(image, cax=cbar_ax)
-cbar.set_label('Recovered fitting factor')
+if len(mtot):
+    cbar = fig.colorbar(image, cax=cbar_ax)
+    cbar.set_label('Recovered fitting factor')
 
 if opt.plot_title is None:
     opt.plot_title = 'Fitting factor plots'
