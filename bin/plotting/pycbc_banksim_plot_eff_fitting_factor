@@ -97,7 +97,7 @@ if not opt.log_colorbar:
     cb.set_label("Effective fitting factor")
     if opt.filter_injections:
         sctr = ax.scatter(m1_empty, m2_empty, c='k', cmap=cmap,
-                          edgecolors='none', marker='x', s=40)
+                          edgecolors='k', marker='x', s=40)
 else:
     sctr = ax.scatter(m1, m2, c=numpy.log10(1 - numpy.array(eff_ff)),
                       cmap=cmap, edgecolors='none', marker='o', s=40)
@@ -105,7 +105,7 @@ else:
     cb.set_label("log10(1 - Effective fitting factor)")
     if opt.filter_injections:
         sctr = ax.scatter(m1_empty, m2_empty, c='k', cmap=cmap,
-                          edgecolors='none', marker='x', s=40)
+                          edgecolors='k', marker='x', s=40)
 
 ax.set_xlabel('Mass 1 (solar masses)')
 ax.set_ylabel('Mass 2 (solar masses)')
