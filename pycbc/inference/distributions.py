@@ -1546,7 +1546,7 @@ class UniformRadius(_BoundedDist):
 
     @property
     def lognorm(self):
-        raise NotImplementedError("Not implemented %s." % name)
+        raise NotImplementedError("Not implemented for %s." % name)
 
     def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from this distribution.
@@ -1595,11 +1595,12 @@ class UniformRadius(_BoundedDist):
                 raise ValueError(
                             'Missing parameter {} to construct pdf.'.format(p))
         if kwargs in self:
-            this_pdf = numpy.prod([ self.dim  / self._bounds[p][1] * (kwargs[p] / self._bounds[p][1])**(self.dim - 1)
-                                   for p in self._params])
-            return float(this_pdf)
+            pdf = numpy.prod([self.dim  / self._bounds[p][1] *
+                              (kwargs[p] / self._bounds[p][1])**(self.dim - 1)
+                              for p in self._params])
+            return float(pdf)
         else:
-            return 0.
+            return 0.0
 
     def _logpdf(self, **kwargs):
         """The underlying pdf function called by `self.pdf`. This must be set
