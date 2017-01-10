@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 from pycbc.inference import distributions
-import numpy as np
 
 # Create a mass distribution object that is uniform between 0.5 and 1.5
 # solar masses.
