@@ -1469,7 +1469,7 @@ class UniformRadius(_BoundedDist):
 
     We want our sampling to be proportional to volume so we assume a probability density function (PDF)
         f(r) = c * r^n
-    For generality we use n for the dimension of the volume. Generally this is 3.
+    For generality we use n for the dimension of the infitestimal volume element, eg. 2 in the case above.
 
     So now we calculate a cumulative distribution function (CDF)
         F(r) = int f(r) dr
@@ -1482,7 +1482,7 @@ class UniformRadius(_BoundedDist):
         k = 0
     and
         1 = \frac{1}{n} * c * (R)^n
-        c = \frac{2}{R^n}
+        c = \frac{n}{R^n}
 
     so
         F(r) = \frac{1}{2} * \frac{2}{R^n} r^n = (\frac{r}{R})^n
@@ -1530,8 +1530,12 @@ class UniformRadius(_BoundedDist):
         The log of the normalization.
     """
     name = 'uniform_radius'
+    dim = 3
     def __init__(self, **params):
         super(UniformRadius, self).__init__(**params)
+        for p in self._params:
+            if self._bounds[p] is not 0:
+                raise ValueError("Lower bound must be 0 for %s" % p)
 
     @property
     def norm(self):
@@ -1569,7 +1573,7 @@ class UniformRadius(_BoundedDist):
             arr[p] = numpy.random.uniform(
                             self._bounds[p][1] - self._bounds[p][0],
                             self._bounds[p][1], size=size) + self._bounds[p][0]
-            arr[p] = numpy.power(arr[p], 1.0 / 3)
+            arr[p] = self._bounds[p][1] * numpy.power(arr[p], 1.0 / self.dim)
         return arr
 
     def pdf(self, **kwargs):
@@ -1590,7 +1594,7 @@ class UniformRadius(_BoundedDist):
                 raise ValueError(
                             'Missing parameter {} to construct pdf.'.format(p))
         if kwargs in self:
-            this_pdf = numpy.prod([3 * (kwargs[p] / self._bounds[p][1])**(2)
+            this_pdf = numpy.prod([self.dim * (kwargs[p] / self._bounds[p][1])**(self.dim - 1)
                                    for p in self._params])
             return float(this_pdf)
         else:
