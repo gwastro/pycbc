@@ -1534,8 +1534,11 @@ class UniformRadius(_BoundedDist):
     def __init__(self, **params):
         super(UniformRadius, self).__init__(**params)
         for p in self._params:
-            if self._bounds[p] is not 0:
+            if self._bounds[p][0] != 0:
                 raise ValueError("Lower bound must be 0 for %s" % p)
+            if not self.bounds[p][1] > 0:
+                raise ValueError("Upper bound must be greater than 0 "
+                                 "for %s" % p)
 
     @property
     def norm(self):
@@ -1570,9 +1573,7 @@ class UniformRadius(_BoundedDist):
             dtype = [(p, float) for p in self.params]
         arr = numpy.zeros(size, dtype=dtype)
         for (p,_) in dtype:
-            arr[p] = numpy.random.uniform(
-                            self._bounds[p][1] - self._bounds[p][0],
-                            self._bounds[p][1], size=size) + self._bounds[p][0]
+            arr[p] = numpy.random.uniform(0.0, 1.0, size=size)
             arr[p] = self._bounds[p][1] * numpy.power(arr[p], 1.0 / self.dim)
         return arr
 
@@ -1594,7 +1595,7 @@ class UniformRadius(_BoundedDist):
                 raise ValueError(
                             'Missing parameter {} to construct pdf.'.format(p))
         if kwargs in self:
-            this_pdf = numpy.prod([self.dim * (kwargs[p] / self._bounds[p][1])**(self.dim - 1)
+            this_pdf = numpy.prod([ self.dim  / self._bounds[p][1] * (kwargs[p] / self._bounds[p][1])**(self.dim - 1)
                                    for p in self._params])
             return float(this_pdf)
         else:
