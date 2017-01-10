@@ -1533,20 +1533,24 @@ class UniformRadius(_BoundedDist):
     dim = 3
     def __init__(self, **params):
         super(UniformRadius, self).__init__(**params)
+        self._norm = 1.0
+        self._lognorm = 0.0
         for p in self._params:
             if self._bounds[p][0] != 0:
                 raise ValueError("Lower bound must be 0 for %s" % p)
             if not self.bounds[p][1] > 0:
                 raise ValueError("Upper bound must be greater than 0 "
                                  "for %s" % p)
+            self._norm *= self.dim  / self._bounds[p][1]**(self.dim)
+            self._lognorm = numpy.log(self._norm)
 
     @property
     def norm(self):
-        raise NotImplementedError("Not implemented for %s." % name)
+        return self._norm
 
     @property
     def lognorm(self):
-        raise NotImplementedError("Not implemented for %s." % name)
+        return self._lognorm
 
     def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from this distribution.
@@ -1595,8 +1599,8 @@ class UniformRadius(_BoundedDist):
                 raise ValueError(
                             'Missing parameter {} to construct pdf.'.format(p))
         if kwargs in self:
-            pdf = numpy.prod([self.dim  / self._bounds[p][1] *
-                              (kwargs[p] / self._bounds[p][1])**(self.dim - 1)
+            pdf = self._norm * \
+                  numpy.prod([(kwargs[p])**(self.dim - 1)
                               for p in self._params])
             return float(pdf)
         else:
@@ -1612,9 +1616,10 @@ class UniformRadius(_BoundedDist):
                 raise ValueError(
                             'Missing parameter {} to construct pdf.'.format(p))
         if kwargs in self:
-            this_pdf = numpy.log(numpy.prod([3 * (kwargs[p] / self._bounds[p][1])**(2)
-                            for p in self._params]))
-            return this_pdf
+            log_pdf = self._lognorm + \
+                      (self.dim - 1) * \
+                      sum([numpy.log(kwargs[p]) for p in self._params])
+            return log_pdf
         else:
             return -numpy.inf
 
