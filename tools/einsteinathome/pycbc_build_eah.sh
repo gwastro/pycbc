@@ -932,8 +932,8 @@ pyinstaller pycbc_inspiral.spec
 cd dist/pycbc_inspiral
 
 # fix some libraries manually
-if test ".$CC" = ".gcc-mp-4.8"; then
-    cp `gcc-mp-4.8 -print-file-name=libgcc_s.1.dylib` libgcc_s.1.dylib
+if test -r "libgcc_s.1.dylib"; then
+    cp "`$CC -print-file-name=libgcc_s.1.dylib`" .
 fi
 if test -r /usr/bin/cyggomp-1.dll; then
     cp /usr/bin/cyggomp-1.dll .
