@@ -118,13 +118,17 @@ template banks) should read the documentation at:
    faithsim
    upload_to_gracedb
 
-Users who are intersted in using PyCBC for investigation of CBC waveforms
-should read the documentation at:
+Users who are intersted in using PyCBC utilities and functions should take a look at the
+short code snippets below.
 
 .. toctree::
    :maxdepth: 2
 
+   frame
+   psd
+   noise
    waveform
+   filter
 
 =============================
 Documentation for Developers
@@ -145,7 +149,6 @@ read the documentation at:
 .. toctree::
    :maxdepth: 1
 
-   frame
    formats/hdf_format
 
 Developers who are interested in creating new scientific workflow generation

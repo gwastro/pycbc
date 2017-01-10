@@ -1053,7 +1053,7 @@ def smear(idx, factor):
            
 def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
                   high_frequency_cutoff=None, sigmasq=None):
-    """ Return the complex snr and normalization.
+    """ Return the complex snr.
 
     Return the complex snr, along with its associated normalization of the
     template, matched filtered against the data.
