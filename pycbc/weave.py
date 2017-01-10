@@ -38,7 +38,7 @@ def pycbc_compile_function(code,arg_names,local_dict,global_dict,
     """
     from scipy.weave.inline_tools import _compile_function
     headers = [] if headers is None else headers
-    lockfile_dir = pycbc._cache_dir_path
+    lockfile_dir = os.environ['PYTHONCOMPILED']
     lockfile_name = os.path.join(lockfile_dir, 'code_lockfile')
     logging.info("attempting to aquire lock '%s' for "
                  "compiling code" % lockfile_name)
