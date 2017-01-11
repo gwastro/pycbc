@@ -357,16 +357,19 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
     def get_subsections(self, section_name):
         """ Return a list of subsections for the given section name
         """
-        subsections = [sec for sec in  self.sections() if sec.startswith(section_name + '-')]   
+        # Keep only subsection names
+        subsections = [sec[len(section_name)+1:] for sec in self.sections()\
+                       if sec.startswith(section_name + '-')]   
 
         for sec in subsections:
             sp = sec.split('-')
             # This is unusual, but a format [section-subsection-tag] is okay. Just
             # check that [section-subsection] section exists. If not it is possible
             # the user is trying to use an subsection name with '-' in it
-            if (len(sp) > 1) and not self.has_section('%s-%s' % (sp[0], sp[1])):
-                 raise ValueError( "Workflow uses the '-' as a delimiter so this is"
-                     "interpreted as section-subsection-tag. "
+            if (len(sp) > 1) and not self.has_section('%s-%s' % (section_name,
+                                                                 sp[0])):
+                 raise ValueError( "Workflow uses the '-' as a delimiter so "
+                     "this is interpreted as section-subsection-tag. "
                      "While checking section %s, no section with "
                      "name %s-%s was found. " 
                      "If you did not intend to use tags in an "
@@ -376,7 +379,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                      "[injection-nsbh-inj] is not." % (sec, sp[0], sp[1]))
         
         if len(subsections) > 0:
-            return [sec.split('-')[1] for sec in subsections]
+            return [sec.split('-')[0] for sec in subsections]
         elif self.has_section(section_name):
             return ['']
         else:
