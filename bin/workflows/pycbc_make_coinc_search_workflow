@@ -354,22 +354,25 @@ for bin_file in bin_files:
                                   'daxes', currdir, tags=bin_file.tags)
 
 # Also run minifollowups on loudest sngl detector events
+excl_subsecs = set([])
+
+for insp_file in full_insps:
+    for tag in insp_file.tags:
+        excl_subsecs.add(tag)
+
 for insp_file in full_insps:
     curr_ifo = insp_file.ifo
-    currdir = rdir['single_triggers/%s_loudest_all_time' %(curr_ifo,)]
-    wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
-                                  insp_files_seg_file, data_analysed_name,
-                                  trig_generated_name, 'daxes', currdir,
-                                  veto_file=censored_veto,
-                                  veto_segment_name='closed_box',
-                                  tags=insp_file.tags)
-    currdir = rdir['single_triggers/%s_loudest_noncoinc_time' %(curr_ifo,)]
-    wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
-                                  insp_files_seg_file, data_analysed_name,
-                                  trig_generated_name, 'daxes', currdir,
-                                  veto_file=censored_veto,
-                                  veto_segment_name='closed_box',
-                                  tags=insp_file.tags+['noncoinconly'])
+    for subsec in workflow.cp.get_subsections('workflow-sngl_minifollowups'):
+        if subsec in excl_subsecs:
+            continue
+        sec_name = 'workflow-sngl_minifollowups-{}'.format(subsec)
+        dir_str = workflow.cp.get(sec_name, section_header)
+        currdir = rdir['single_triggers/{}_{}'.format(curr_ifo, dir_str)]
+        wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
+                                      insp_files_seg_file, data_analysed_name,
+                                      trig_generated_name, 'daxes', currdir,
+                                      veto_file=censored_veto,
+                                      veto_segment_name='closed_box',
 
 ################## Setup segment / veto related plots #########################
 # do plotting of segments / veto times

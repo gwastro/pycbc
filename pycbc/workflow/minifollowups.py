@@ -145,8 +145,8 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     """
     logging.info('Entering minifollowups module')
 
-    if not workflow.cp.has_section('workflow-minifollowups'):
-        msg = 'There is no [workflow-minifollowups] section in '
+    if not workflow.cp.has_section('workflow-sngl_minifollowups'):
+        msg = 'There is no [workflow-sngl_minifollowups] section in '
         msg += 'configuration file'
         logging.info(msg)
         logging.info('Leaving minifollowups')
