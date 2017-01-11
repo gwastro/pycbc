@@ -125,6 +125,8 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
 #    lal_cppflags="-DDONT_RESOLVE_LALCACHE_PATH"
     libgfortran=libgfortran.dylib
     shared="--enable-shared"
+    fftw_flags=--enable-avx
+    fftw_cflags=-Wa,-q
     build_dlls=false
     build_ssl=false
     build_gcc=false
@@ -485,10 +487,10 @@ else # if $BUILDDIRNAME-preinst.tgz
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
-    ./configure $shared --enable-static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+    ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared --enable-static --prefix="$PREFIX" --enable-sse2 $fftw_flags
     make
     make install
-    ./configure $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
+    ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
     make
     make install
     cd ..
