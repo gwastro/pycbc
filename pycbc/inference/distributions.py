@@ -1502,11 +1502,17 @@ class UniformRadius(_BoundedDist):
 
         1 = \frac{1}{n + 1} c (R)^{n + 1}
 
-    Can see that :math:`c= \frac{n + 1}{R^{n + 1}}`. So the CDF is:
+    Can see that :math:`c= \frac{n + 1}{R^{n + 1}}`. So can see that the CDF is:
 
     .. math::
 
-        F(r) = \frac{1}{2} \frac{2}{R^{n + 1}} r^n = \frac{1}{R} (\frac{r}{R})^n
+        F(r) = \frac{1}{n + 1} \frac{n + 1}{R^{n + 1}} r^{n + 1} = (\frac{r}{R})^{n + 1}
+
+    And the PDF is the derivative of the CDF:
+
+    .. math::
+
+        f(r) = \frac{(n + 1)}{R} \left(\frac{r}{R} \right)^n
 
     Now we use the probabilty integral transform method to get sampling on
     uniform numbers from a continuous random variable. To do this we find
@@ -1520,12 +1526,12 @@ class UniformRadius(_BoundedDist):
 
     .. math::
 
-        u = (\frac{r}{R})^n
+        u = (\frac{r}{R})^{n + 1}
 
     And solving for :math:`r` gives:
 
     .. math::
-        r = R u^{1/n}
+        r = R u^{\frac{1}{n + 1}}
 
     Therefore the radius can be sampled by taking the n-th root of uniform
     numbers and multiplying by the radius.
