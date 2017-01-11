@@ -285,13 +285,13 @@ while len(loud_t_ind) > 0:
 
     # Store where the loud foreground trigger that I want to remove next in the
     # list of all of the triggers located is at
-    where_is_fore_t = numpy.where(all_trigs.stat[:] == fore_stat[max_ifar_ind])
+    where_is_fore_t = numpy.where(all_trigs.stat[:] == fore_stat[max_ifar_ind])[0]
 
     # FIXME:
     # In the RARE case that there are two equally loud
     # louder-than-the-background foreground triggers give preference
     # to the one with the earliest GPS time, just for documenting purposes
-    if len(where_is_fore_t[0]) > 1:
+    if len(where_is_fore_t) > 1:
         logging.warn("WARNING: There is more than one foreground trigger "
                      " that is louder than the background and have the same "
                      "ranking statistic. This code may operate strangely in"
@@ -299,7 +299,7 @@ while len(loud_t_ind) > 0:
 
     # This is the foreground trigger index in the all_trigs array that we
     # want to remove
-    my_loudest_ind = where_is_fore_t[0][0]
+    my_loudest_ind = where_is_fore_t[0]
 
     # Store any foreground trigger's information that we want to
     # hierarchically remove. Below save the ifar.
@@ -318,7 +318,7 @@ while len(loud_t_ind) > 0:
     logging.info("Removing foreground trigger that is louder than the inclusive background.")
 
     # Remove this foreground trigger from the list of loud foreground triggers
-    loud_t_ind.remove(max_ifar_ind)
+    loud_t_ind = numpy.delete(loud_t_ind, numpy.where(loud_t_ind[:] == max_ifar_ind)[0][0])
 
     # Remove the foreground trigger AND all of the inclusive background
     # triggers that are associated with it via the timeslides.
@@ -416,10 +416,7 @@ while len(loud_t_ind) > 0:
         f['foreground_h' + h_iter_str + '/fap'] = fap
 
     # Repopulate the list of foreground indices for the loudest events 
-    loud_t_ind = []
-    for i in range(0, len(fnlouder)):
-        if fnlouder[i] == 0:
-            loud_t_ind.append(i)
+    loud_t_ind = numpy.where(fnlouder == 0)[0]
 
 # End of the while loop, now take all of the information and write it back in
 # to file the way that other codes downstream know how to read.
