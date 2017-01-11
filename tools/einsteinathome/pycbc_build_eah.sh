@@ -1094,6 +1094,7 @@ zip -r "$cache" pycbc_inspiral SEOBNRv2ChirpTimeSS.dat
 if $build_gating_tool; then
     # restore unpatched pyinstaller version
     if $patch_pyinstaller_bootloader; then
+        echo -e "\\n\\n>> [`date`] restore unpatched pyinstaller version"
         cd $SOURCE/pyinstaller
         xargs rm -f < installed-files.txt
         tar -xPzf ../pyinstaller-clean-installed.tar.gz
@@ -1117,7 +1118,7 @@ if $build_gating_tool; then
         --hidden-import=pkg_resources $hidden_imports \
         --onefile ./bin/pycbc_inspiral --name pycbc_inspiral_osg
 
-    echo -e "\\n\\n>> [`date`] patching pyinstaller spec"
+    echo -e ">> [`date`] patching pyinstaller spec"
     mv pycbc_inspiral_osg.spec pycbc_inspiral_osg.spec1
     ls $SOURCE/test/pycbc_inspiral/ |
         sed "s%.*%a.datas += [('&','$SOURCE/test/pycbc_inspiral/&','DATA')]%" > pycbc_inspiral_osg.spec2
@@ -1127,7 +1128,7 @@ if $build_gating_tool; then
     awk '/exe = EXE/ { while (getline l < "pycbc_inspiral_osg.spec2") {print l} }; {print}' \
         pycbc_inspiral_osg.spec1 > pycbc_inspiral_osg.spec
 
-    echo -e "\\n\\n>> [`date`] running pyinstaller"
+    echo -e ">> [`date`] running pyinstaller"
     pyinstaller pycbc_inspiral_osg.spec
 
     if echo ".$pycbc_tag" | egrep '^\.v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
