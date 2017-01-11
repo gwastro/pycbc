@@ -479,7 +479,9 @@ else # if $BUILDDIRNAME-preinst.tgz
     # FFTW
     p=fftw-3.3.3
     echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz || wget $wget_opts http://www.aei.mpg.de/~bema/$p.tar.gz
+    test -r $p.tar.gz ||
+        wget $wget_opts $aei/$p.tar.gz ||
+        wget $wget_opts ftp://ftp.fftw.org/pub/fftw/$p.tar.gz
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
@@ -495,7 +497,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     # ZLIB
     p=zlib-1.2.8
     echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz || wget $wget_opts http://www.aei.mpg.de/~bema/$p.tar.gz
+    test -r $p.tar.gz || wget $wget_opts $aei/$p.tar.gz
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
@@ -520,8 +522,9 @@ Cflags: -I${includedir}' |
     if $build_hdf5; then
 	p=hdf5-1.8.12
 	echo -e "\\n\\n>> [`date`] building $p"
-	test -r $p.tar.gz || wget $wget_opts $atlas/tarballs/$p.tar.gz
-        # origin: http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src
+	test -r $p.tar.gz ||
+            wget $wget_opts $aei/$p.tar.gz ||
+            wget $wget_opts https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/$p.tar.gz
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
@@ -728,7 +731,7 @@ v=4.7.0
 p=pegasus-python-source-$v
 echo -e "\\n\\n>> [`date`] building $p"
 test -r $p.tar.gz ||
-    wget $wget_opts "$atlas/tarballs/$p.tar.gz" ||
+    wget $wget_opts "$aei/$p.tar.gz" ||
     wget $wget_opts http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz
 pip install --no-deps $p.tar.gz
 
