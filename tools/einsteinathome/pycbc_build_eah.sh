@@ -477,7 +477,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     fi
 
     # FFTW
-    p=fftw-3.3.3
+    p=fftw-3.3.5
     echo -e "\\n\\n>> [`date`] building $p"
     test -r $p.tar.gz ||
         wget $wget_opts $aei/$p.tar.gz ||
