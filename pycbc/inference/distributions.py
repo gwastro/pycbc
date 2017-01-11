@@ -1458,55 +1458,85 @@ class FromFile(_BoundedDist):
                                                 bounds_required=False)
 
 class UniformRadius(_BoundedDist):
-    """
+    r"""
     For a uniform distribution in volume using spherical coordinates, this
     is the distriubtion to use for the radius. The parameters are
     independent of each other. Instances of this class can be called like
     a function. By default, logpdf will be called, but this can be changed
     by setting the class's __call__ method to its pdf method.
 
-    We know that the infitesimal volume on a sphere is dV = r^2 * sin(phi) * dphi * dtheta * dr
+    The cumulative distribution function (CDF) will be the ratio of volumes:
 
-    We want our sampling to be proportional to volume so we assume a probability density function (PDF)
-        f(r) = c * r^n
-    For generality we use n for the dimension of the infitestimal volume element, eg. 2 in the case above.
+    .. math::
 
-    So now we calculate a cumulative distribution function (CDF)
-        F(r) = int f(r) dr
-             = int c * r^n dr
-             = \frac{1}{2} * c * r^n + k
+        F(r) = \frac{V(r)}{V(R)}
 
-    Now with the definition of the CDF at radius 0 is equal to 0 and at radius R
-    is equal to 1 we find that
-        0 = \frac{1}{n} * c * (0)^n + k
-        k = 0
-    and
-        1 = \frac{1}{n} * c * (R)^n
-        c = \frac{n}{R^n}
+    Where :math:`R` is the radius of the sphere. So we can write our
+    probability density function (PDF) as:
 
-    so
-        F(r) = \frac{1}{2} * \frac{2}{R^n} r^n = (\frac{r}{R})^n
+    .. math::
 
-    now we use probabilty integral transform method to get sampling on uniform numbers
-    from a continuous random variable
-        F(r) = u = (\frac{r}{R})^n
+        f(r) = c r^n
 
-    so
-        F^{-1}(u)
-    gives
+    For generality we use :math:`n` for the dimension of the volume element,
+    eg. :math:`n=2` for a 3-dimensional sphere. And use
+    :math:`c` as a general constant.
+
+    So now we calculate the CDF in general for this type of PDF:
+
+    .. math::
+
+        F(r) = \int f(r) dr = \int c r^n dr = \frac{1}{n + 1} c r^{n + 1} + k
+
+    Now with the definition of the CDF at radius 0 is equal to 0 and at
+    radius :math:`R` is equal to 1 we find that the constant from
+    integration is:
+
+    .. math::
+
+        0 = \frac{1}{n + 1} c (0)^{n + 1} + k
+
+    Can see that :math:`k=0`. And :math:`c` is:
+
+    .. math::
+
+        1 = \frac{1}{n + 1} c (R)^{n + 1}
+
+    Can see that :math:`c= \frac{n + 1}{R^{n + 1}}`. So the CDF is:
+
+    .. math::
+
+        F(r) = \frac{1}{2} \frac{2}{R^{n + 1}} r^n = \frac{1}{R} (\frac{r}{R})^n
+
+    Now we use the probabilty integral transform method to get sampling on
+    uniform numbers from a continuous random variable. To do this we find
+    the inverse of the CDF evaluated for uniform numbers:
+
+    .. math::
+
+        F(r) = u = \left(\frac{r}{R}\right)^{n + 1}
+
+    And find :math:`F^{-1}(u)` gives:
+
+    .. math::
+
         u = (\frac{r}{R})^n
-        r^n = R^n * u
-        r = R * u^{1/n}
 
-    Therefore the radius can be sampled by taking the cube root of uniform numbers and
-    multiplying by the radius.
+    And solving for :math:`r` gives:
 
-    .note:: Alternative method is drawing uniform points in a box and regarding
-    everything not in the sphere. This is quicker but loose half the samples you draw.
-    You know how many samples you throw away by calculating the probability inside sphere
-    given inside cube for 3 dimensions is
-        p(in sphere|in cube) = \frac{\frac{4}{3} * \pi * R^3}{8 * R^3} = 0.52
-    note that we use 8 * R^3 for the volume because the length of one side is 2 * R.
+    .. math::
+        r = R u^{1/n}
+
+    Therefore the radius can be sampled by taking the n-th root of uniform
+    numbers and multiplying by the radius.
+
+    Alternative method is drawing uniform points in a box and
+    regarding everything not in the sphere. This is quicker but loose half the
+    samples you draw. You know how many samples you throw away by calculating
+    the probability inside sphere given inside cube for 3 dimensions is
+    :math:`p(\mathrm{in sphere}|\mathrm{in cube}) = \frac{\frac{4}{3} \pi R^3}{8 R^3} = 0.52`.
+    Note that we use :math:`8 R^3` for the volume because the length of one
+    side is :math:`2 R`.
 
     \**params :
         The keyword arguments should provide the names of parameters and their
@@ -1517,6 +1547,8 @@ class UniformRadius(_BoundedDist):
     ----------------
     name : 'uniform_radius'
         The name of this distribution.
+    dim : int
+        The dimension of volume space. For a 3-dimensional sphere this is 3.
 
     Attributes
     ----------
