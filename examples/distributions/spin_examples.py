@@ -36,7 +36,7 @@ spinx, spiny, spinz = co.spherical_to_cartesian(spin_mag,
                                                 solid_angle_samples['phi'],
                                                 solid_angle_samples['theta'])
 
-# Choose 20 mass bins for the histograms.
+# Choose 20 bins for the histograms.
 n_bins = 20
 
 plt.figure(figsize=(10,10))
