@@ -680,9 +680,10 @@ class CompressedWaveform(object):
     Parameters
     ----------
     amplitude : {array, h5py.Dataset}
-        The amplitude of the waveform at the given `sample_points`.
+        The amplitude of the waveform at the `freq_points` or 
+        `amplitude_freq_points` depending on the case.
     phase : {array, h5py.Dataset}
-        The phase of the waveform at the given `sample_points`.
+        The phase of the waveform at the `freq_points`.
     freq_points : {array, h5py.Dataset}
         The frequency points at which the amplitude and phase of the
         compressed waveform is sampled if amplitude_freq_points is not
@@ -701,9 +702,9 @@ class CompressedWaveform(object):
         The actual mismatch between the decompressed waveform (using the
         given `interpolation`) and the full waveform.
     load_to_memory : {True, bool}
-        If `sample_points`, `amplitude`, and/or `phase` is an hdf dataset,
-        they will be cached in memory the first time they are accessed.
-        Default is True.
+        If `freq_points`, `amplitude_freq_points`, `amplitude`, and/or
+        `phase` is an hdf dataset, they will be cached in memory the
+        first time they are accessed. Default is True.
 
     Attributes
     ----------

@@ -65,9 +65,10 @@ parser.add_argument("--compression-algorithm", nargs='+', type=str,
                     "{}.format(', '.join(compress.compression_algorithms.keys())) ."
                     "To use an algorithm with a specific approximant, "
                     "add the approximant name preceded by a colon after "
-                    "the algorithm name;  e.g., 'spa:TaylorF2'. In this "
-                    "case, specify an algorithm for every approximant "
-                    "that the bank taken as input contains. ")
+                    "the algorithm name. In this case, specify an "
+                    "algorithm for every approximant that the bank "
+                    "taken as input contains; e.g., "
+                    "'spa:TaylorF2' 'partial_compress_rom:SEOBNRv2_ROM_DoubleSpin' .")
 parser.add_argument("--t-pad", type=float, default=0.001,
                     help="The minimum duration used for t(f) in seconds. The "
                     "inverse of this gives the maximum frequency step that "
@@ -190,10 +191,10 @@ for ii in range(imin, imax):
                          works only for SEOBNRv2_ROM_DoubleSpin templates.
                          Please enter a valid compression algorithm for
                          %s templates.""" %(tmplt_approximant))
+    
     # Call the appropriate function in compress.py to get the compressed
     # amplitude and phase frequency points and decompress them in
     # frequency space :
-
     if compression_type == 'mchirp':
         sample_points = compress.mchirp_compression(
             tmplt.mass1, tmplt.mass2, fmin, (kmax-1)*df,
