@@ -67,7 +67,7 @@ parser.add_argument('--non-coinc-time-only', default=False,
                     help="If given remove (veto) single-detector triggers "
                          "that occur during a time when at least one other "
                          "instrument is taking science data.")
-parser.add_argument('--minimum-duration', default=None, type=int,
+parser.add_argument('--minimum-duration', default=None, type=float,
                     help="If given only consider single-detector triggers "
                          "with template duration larger than this.")
 parser.add_argument('--output-map')
