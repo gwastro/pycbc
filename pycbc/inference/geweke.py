@@ -3,43 +3,45 @@
 
 import numpy
 
-def geweke(x, num_samples, last_start, last, intervals, stride):
+def geweke(x, seg_length, seg_stride, end_idx, ref_idx):
     """ Calculates Geweke.
 
     x : numpy.array
         A one-dimensional array of data.
-    num_samples : int
+    seg_length : int
         Number of samples to use for each Geweke calculation.
-    last_start : int
+    end_idx : int
         Index of last start.
-    last : int
+    ref_idx : int
         Index of beginning of end segment.
-    intervals : int
-        Number of intervals to split data into.
-    stride : int
+    seg_stride : int
         How far of a step to take for each point.
     """
+
+    # lists to hold statistic and end index
     stats = []
-
-    end = len(x) - 1
-
-    step = int(last / (intervals - 1))
-
-    starts = numpy.arange(0, last_start, stride)
     ends = []
 
+    # get the beginning of all segments
+    starts = numpy.arange(0, end_idx, seg_stride)
+
+    # get second segment of data at the end to compare
+    x_end = x[ref_idx:]
+
+    # loop over all segments
     for start in starts:
 
-        x_start_end = int(start + num_samples)
-        x_end_start = int(end - last)
+        # find the end of the first segment
+        x_start_end = int(start + seg_length)
 
+        # get first segment
         x_start = x[start:x_start_end]
-        x_end = x[x_end_start:]
 
-        print start, x_start_end, x_end_start
-
+        # compute statistic
         stats.append((x_start.mean() - x_end.mean())
                      / numpy.sqrt(x_start.var() + x_end.var()))
+
+        # store end of first segment
         ends.append(x_start_end)
 
     return numpy.array(starts), numpy.array(ends), numpy.array(stats)
