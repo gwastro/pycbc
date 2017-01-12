@@ -57,20 +57,17 @@ parser.add_argument("--tmplt-index", nargs=2, type=int, default=None,
                     "indices in the bank file. Must provide both a start "
                     "and a stop index. Default is to compress all of the "
                     "templates in the bank file.")
-parser.add_argument("--compression-algorithm", nargs='*', type=str,
-                    required=True,
-                    choices=compress.compression_algorithms.keys(),
-                    help="Specify the waveform model and compression"
-                    "algorithm to use for selecting frequency points"
-                    "for TaylorF2 templates and SEOBNRv2_ROM templates."
-                    "This would be used to select sets of frequency"
-                    "points for amplitude and phase interpolants. Either"
-                    "specify different algorithms for the TaylorF2 and"
-                    "SEOBNRv2_ROM or specify a common compression"
-                    "algorithm compatible with both. For example"
-                    "partial_rom_compression works only for the ROMs."
-                    "Look at compress.compression_algorithms.keys()"
-                    "for the available options")
+parser.add_argument("--compression-algorithm", nargs='+', type=str,
+                    required=True, metavar="ALGORITHM[:APPRX]",
+                    help="Specify the compression algorithm to use for "
+                    "selecting frequency points for amplitude and phase "
+                    "interpolants for generating waveforms. Choices are "
+                    "{}.format(', '.join(compress.compression_algorithms.keys())) ."
+                    "To use an algorithm with a specific approximant, "
+                    "add the approximant name preceded by a colon after "
+                    "the algorithm name;  e.g., 'spa:TaylorF2'. In this "
+                    "case, specify an algorithm for every approximant "
+                    "that the bank taken as input contains. ")
 parser.add_argument("--t-pad", type=float, default=0.001,
                     help="The minimum duration used for t(f) in seconds. The "
                     "inverse of this gives the maximum frequency step that "
@@ -78,10 +75,10 @@ parser.add_argument("--t-pad", type=float, default=0.001,
                     "0.001.")
 parser.add_argument("--tolerance", type=float, default=0.001,
                     help="The maximum mismatch to allow between the "
-                    "interpolated waveform and the full waveform. Points"
+                    "interpolated waveform and the full waveform. Points "
                     "will be added to the compressed waveform until its "
-                    "interpolation has a mismatch <= this value."
-                    " Default is 0.001.")
+                    "interpolation has a mismatch <= this value. "
+                    "Default is 0.001.")
 parser.add_argument("--interpolation", type=str,
                     default="inline_linear",
                     help="The interpolation to use for decompressing the "
@@ -95,7 +92,7 @@ parser.add_argument("--interpolation", type=str,
                     "Default is inline_linear.")
 parser.add_argument("--precision", type=str, choices=["double", "single"],
                     default="double",
-                    help="What precision to generate and store the"
+                    help="What precision to generate and store the "
                     "waveforms with; default is double.")
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
@@ -109,19 +106,13 @@ pycbc.init_logging(args.verbose)
 
 num_compression_algorithms = len(args.compression_algorithm)
 
-if num_compression_algorithms == 1:
-    compression_type = args.compression_algorithm[0]
-    if compression_type is 'partial_compress_rom':
-        raise ValueError("""partial_compress_rom cannot be used as a
-                         compression algorithm for TaylorF2 waveforms.
-                         Specify a different compression algorithm
-                         compatible with TaylorF2 and
-                         SEOBNRv2_ROM_DoubleSpin.""")
-
-elif num_compression_algorithms == 2:
-    compression_type_approximant1, compression_type_approximant2 = args.compression_algorithm
-    compression_type1, approximant1 = compression_type_approximant1.split(':')
-    compression_type2, approximant2 = compression_type_approximant2.split(':')
+# If the number of arguments taken in by compression_algorithm is
+# more than 1, create a dictionary to store the entries, mapping
+# the approximants to the compression algorithms.
+if num_compression_algorithms > 1:
+    compression_algorithm_dict = {k:v for k,v in (x.split(':')for x in args.compression_algorithm) }
+    algorithms = compression_algorithm_dict.keys()
+    approximants = compression_algorithm_dict.values()
 
 fmin = args.low_frequency_cutoff
 fmax = args.sample_rate/2.
@@ -179,17 +170,30 @@ for ii in range(imin, imax):
     tmplt = bank.table[ii-imin]
     kmax = htilde.end_idx
     tmplt_approximant = htilde.approximant
-    if num_compression_algorithms == 2:
-        if tmplt_approximant == approximant1:
-            compression_type = compression_type1
-        if tmplt_approximant == approximant2:
-            compression_type = compression_type2
+    # If the number of arguments entered for compression_algorithm is 1
+    # the same algorithm is expected to be used for all kinds of
+    # approximants in the bank. If multiple ALGORITHM:APPROX have been
+    # entered in compression_algorithm, pass the approximant for htilde
+    # to the dictionary created before and find the corressponding
+    # compression algorithm.
+    if num_compression_algorithms == 1 :
+        compression_type = args.compression_algorithm[0]
+    else :
+        if tmplt_approximant not in approximants :
+            raise ValueError("""A compression algorithm for the %s
+                             templates in the bank needs to be provided
+                             as input.""" %(tmplt_approximant))
+        compression_type = algorithms[approximants.index(tmplt_approximant)]
+
+    if compression_type == 'partial_compress_rom' and tmplt_approximant != 'SEOBNRv2_ROM_DoubleSpin' :
+        raise ValueError("""The compression algorithm partial_compress_rom
+                         works only for SEOBNRv2_ROM_DoubleSpin templates.
+                         Please enter a valid compression algorithm for
+                         %s templates.""" %(tmplt_approximant))
     # Call the appropriate function in compress.py to get the compressed
     # amplitude and phase frequency points and decompress them in
     # frequency space :
 
-    # If template is SEOBNRv2_ROM perform linear_compression or
-    # partial_ROM_compression as per user input
     if compression_type == 'mchirp':
         sample_points = compress.mchirp_compression(
             tmplt.mass1, tmplt.mass2, fmin, (kmax-1)*df,

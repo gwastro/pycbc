@@ -394,11 +394,7 @@ def partial_rom_compression(htilde, mass1, mass2, chi1, chi2, deltaF, fLow,
 compression_algorithms = {
         'mchirp': mchirp_compression,
         'spa': spa_compression,
-        'partial_compress_rom:SEOBNRv2_ROM_DoubleSpin' : partial_rom_compression,
-        'spa:TaylorF2' : spa_compression,
-        'spa:SEOBNRv2_ROM_DoubleSpin' : spa_compression,
-        'mchirp:TaylorF2' : mchirp_compression,
-        'mchirp:SEOBNRv2_ROM_DoubleSpin' : mchirp_compression
+        'partial_compress_rom': partial_rom_compression,
         }
 
 _linear_decompress_code = r"""
