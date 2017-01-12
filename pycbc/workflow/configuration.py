@@ -368,15 +368,15 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             # the user is trying to use an subsection name with '-' in it
             if (len(sp) > 1) and not self.has_section('%s-%s' % (section_name,
                                                                  sp[0])):
-                 raise ValueError( "Workflow uses the '-' as a delimiter so "
-                     "this is interpreted as section-subsection-tag. "
-                     "While checking section %s, no section with "
-                     "name %s-%s was found. " 
-                     "If you did not intend to use tags in an "
-                     "'advanced user' manner, or do not understand what "
-                     "this means, don't use dashes in section "
-                     "names. So [injection-nsbhinj] is good. "
-                     "[injection-nsbh-inj] is not." % (sec, sp[0], sp[1]))
+                raise ValueError( "Workflow uses the '-' as a delimiter so "
+                    "this is interpreted as section-subsection-tag. "
+                    "While checking section %s, no section with "
+                    "name %s-%s was found. " 
+                    "If you did not intend to use tags in an "
+                    "'advanced user' manner, or do not understand what "
+                    "this means, don't use dashes in section "
+                    "names. So [injection-nsbhinj] is good. "
+                    "[injection-nsbh-inj] is not." % (sec, sp[0], sp[1]))
         
         if len(subsections) > 0:
             return [sec.split('-')[0] for sec in subsections]
