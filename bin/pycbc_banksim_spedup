@@ -64,9 +64,11 @@ def generate_detector_strain(template_params, h_plus, h_cross):
     return h_plus * f_plus + h_cross * f_cross
 
 def make_padded_frequency_series(vec, filter_N=None, delta_f=None):
-    """Pad a TimeSeries with a length of zeros greater than its length, such
-    that the total length is the closest power of 2. This prevents the effects 
-    of wraparound.
+    """Convert vec (TimeSeries or FrequencySeries) to a FrequencySeries. If
+    filter_N and/or delta_f are given, the output will take those values. If
+    not told otherwise the code will attempt to pad a timeseries first such that
+    the waveform will not wraparound. However, if delta_f is specified to be
+    shorter than the waveform length then wraparound *will* be allowed.
     """
     if filter_N is None:
         power = ceil(log(len(vec), 2)) + 1
@@ -86,12 +88,20 @@ def make_padded_frequency_series(vec, filter_N=None, delta_f=None):
         delta_f = vec.delta_f
 
     elif isinstance(vec, TimeSeries):
+        # First determine if the timeseries is too short for the specified df
+        # and increase if necessary
         curr_length = len(vec)
         new_length = int(nearest_larger_binary_number(curr_length))
         while new_length * vec.delta_t < 1./delta_f:
             new_length = new_length * 2
         vec.resize(new_length)
+        # Then convert to frequencyseries
         v_tilde = vec.to_frequencyseries()
+        # Then convert frequencyseries to required length and spacing by keeping
+        # only every nth sample if delta_f needs increasing, and cutting at
+        # Nyquist if the max frequency is too high.
+        # NOTE: This assumes that the input and output data is using binary
+        #       lengths.
         i_delta_f = v_tilde.get_delta_f()
         v_tilde = v_tilde.numpy()
         df_ratio = int(delta_f / i_delta_f)
