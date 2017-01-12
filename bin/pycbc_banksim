@@ -28,13 +28,14 @@ class mycontenthandler(LIGOLWContentHandler):
 lsctables.use_in(mycontenthandler)
 
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta, f_SchwarzISCO
+from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
 from pycbc.waveform.utils import taper_timeseries
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
 from pycbc.filter import match, sigmasq, resample_to_delta_t
 from math import ceil, log
-import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain
+import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain, pycbc.version
 from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
 
 def update_progress(progress):
@@ -62,10 +63,12 @@ def generate_detector_strain(template_params, h_plus, h_cross):
 
     return h_plus * f_plus + h_cross * f_cross
 
-def make_padded_frequency_series(vec, filter_N=None):
-    """Pad a TimeSeries with a length of zeros greater than its length, such
-    that the total length is the closest power of 2. This prevents the effects 
-    of wraparound.
+def make_padded_frequency_series(vec, filter_N=None, delta_f=None):
+    """Convert vec (TimeSeries or FrequencySeries) to a FrequencySeries. If
+    filter_N and/or delta_f are given, the output will take those values. If
+    not told otherwise the code will attempt to pad a timeseries first such that
+    the waveform will not wraparound. However, if delta_f is specified to be
+    shorter than the waveform length then wraparound *will* be allowed.
     """
     if filter_N is None:
         power = ceil(log(len(vec), 2)) + 1
@@ -85,13 +88,28 @@ def make_padded_frequency_series(vec, filter_N=None):
         delta_f = vec.delta_f
 
     elif isinstance(vec, TimeSeries):
-        vec_pad = TimeSeries(zeros(N), delta_t=vec.delta_t,
-                         dtype=real_same_precision_as(vec))
-        vec_pad[0:len(vec)] = vec
-        delta_f = 1.0 / (vec.delta_t * N)
-        vectilde = FrequencySeries(zeros(n), delta_f=1.0,
-                               dtype=complex_same_precision_as(vec))
-        pycbc.fft.fft(vec_pad, vectilde)
+        # First determine if the timeseries is too short for the specified df
+        # and increase if necessary
+        curr_length = len(vec)
+        new_length = int(nearest_larger_binary_number(curr_length))
+        while new_length * vec.delta_t < 1./delta_f:
+            new_length = new_length * 2
+        vec.resize(new_length)
+        # Then convert to frequencyseries
+        v_tilde = vec.to_frequencyseries()
+        # Then convert frequencyseries to required length and spacing by keeping
+        # only every nth sample if delta_f needs increasing, and cutting at
+        # Nyquist if the max frequency is too high.
+        # NOTE: This assumes that the input and output data is using binary
+        #       lengths.
+        i_delta_f = v_tilde.get_delta_f()
+        v_tilde = v_tilde.numpy()
+        df_ratio = int(delta_f / i_delta_f)
+        n_freq_len = int((n-1) * df_ratio +1)
+        assert(n <= len(v_tilde))
+        df_ratio = int(delta_f / i_delta_f)
+        v_tilde = v_tilde[:n_freq_len:df_ratio]
+        vectilde = FrequencySeries(v_tilde, delta_f=delta_f, dtype=complex64)
 
     return FrequencySeries(vectilde * DYN_RANGE_FAC, delta_f=delta_f,
                            dtype=complex64)
@@ -100,8 +118,8 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
                  wf_params, start_frequency, sample_rate, length,
                  filter_rate):
 
+    delta_f = filter_rate / length
     if approximant in fd_approximants():
-        delta_f = filter_rate / length
         hp, hc = get_fd_waveform(wf_params, approximant=approximant,
                                  phase_order=phase_order, delta_f=delta_f,
                                  spin_order=spin_order,
@@ -122,11 +140,7 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
             hc = taper_timeseries(hc, wf_params.taper)
         hvec = generate_detector_strain(wf_params, hp, hc)
 
-        if filter_rate != sample_rate:
-            delta_t = 1.0 / filter_rate
-            hvec = resample_to_delta_t(hvec, delta_t)
-
-    return make_padded_frequency_series(hvec, filter_N)
+    return make_padded_frequency_series(hvec, filter_N, delta_f=delta_f)
 
 
 def filter_low_freq_cutoff(options, template_params):
@@ -151,6 +165,8 @@ parser.add_argument("--match-file", dest="out_file", metavar="FILE",
                     required=True, help="File to output match results")
 parser.add_argument("--verbose", action='store_true', default=False,
                     help="Print verbose statements")
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
 
 #Template Settings
 parser.add_argument("--template-file", dest="bank_file", metavar="FILE",
