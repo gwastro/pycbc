@@ -10,6 +10,8 @@ def geweke(x, seg_length, seg_stride, end_idx, ref_idx):
         A one-dimensional array of data.
     seg_length : int
         Number of samples to use for each Geweke calculation.
+    seg_stride : int
+        Number of samples to advance before next Geweke calculation.
     end_idx : int
         Index of last start.
     ref_idx : int
