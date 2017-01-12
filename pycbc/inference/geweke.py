@@ -5,7 +5,9 @@ import numpy
 
 def geweke(x, seg_length, seg_stride, end_idx, ref_start,
            ref_end=None, seg_start=0):
-    """ Calculates Geweke.
+    """ Calculates Geweke conervergence statistic for a chain of data.
+    This function will advance along the chain and calculate the
+    statistic for each step.
 
     x : numpy.array
         A one-dimensional array of data.
