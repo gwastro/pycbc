@@ -23,8 +23,8 @@ two_mass_distributions = distributions.Uniform(mass3=(1.6, 3.0),
                                                mass4=(1.6, 3.0))
 two_mass_samples = two_mass_distributions.rvs(size=1000000)
 
-# Choose 20 bins for the histogram subplots.
-n_bins = 20
+# Choose 50 bins for the histogram subplots.
+n_bins = 50
 
 # Plot histograms of samples in subplots
 fig, axes = plt.subplots(nrows=2, ncols=2)
