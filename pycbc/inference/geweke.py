@@ -3,7 +3,8 @@
 
 import numpy
 
-def geweke(x, seg_length, seg_stride, end_idx, ref_idx):
+def geweke(x, seg_length, seg_stride, end_idx, ref_start,
+           ref_end=None, seg_start=0):
     """ Calculates Geweke.
 
     x : numpy.array
@@ -14,10 +15,14 @@ def geweke(x, seg_length, seg_stride, end_idx, ref_idx):
         Number of samples to advance before next Geweke calculation.
     end_idx : int
         Index of last start.
-    ref_idx : int
-        Index of beginning of end segment.
-    seg_stride : int
-        How far of a step to take for each point.
+    ref_start : int
+        Index of beginning of end reference segment.
+    ref_end : int
+        Index of end of end reference segment. Default is None which
+        will go to the end of the data array.
+    seg_start : int
+        What index to start computing the statistic. Default is 0 which
+        will go to the beginning of the data array.
     """
 
     # lists to hold statistic and end index
@@ -25,10 +30,10 @@ def geweke(x, seg_length, seg_stride, end_idx, ref_idx):
     ends = []
 
     # get the beginning of all segments
-    starts = numpy.arange(0, end_idx, seg_stride)
+    starts = numpy.arange(seg_start, end_idx, seg_stride)
 
     # get second segment of data at the end to compare
-    x_end = x[ref_idx:]
+    x_end = x[ref_start:ref_end]
 
     # loop over all segments
     for start in starts:
