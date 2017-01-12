@@ -22,12 +22,12 @@ uniform_solid_angle_distribution = distributions.UniformSolidAngle(
 
 # Now we can take a random variable sample from that distribution. In this
 # case we want 50000 samples.
-solid_angle_samples = uniform_solid_angle_distribution.rvs(size=50000)
+solid_angle_samples = uniform_solid_angle_distribution.rvs(size=500000)
 
 # Make spins with unit length for coordinate transformation below.
-spin_mag = np.ndarray(shape=(50000), dtype=float)
+spin_mag = np.ndarray(shape=(500000), dtype=float)
 
-for i in range(0,50000):
+for i in range(0,500000):
     spin_mag[i] = 1.
 
 # Use the pycbc.coordinates as co spherical_to_cartesian function to convert
@@ -36,8 +36,8 @@ spinx, spiny, spinz = co.spherical_to_cartesian(spin_mag,
                                                 solid_angle_samples['phi'],
                                                 solid_angle_samples['theta'])
 
-# Choose 20 bins for the histograms.
-n_bins = 20
+# Choose 50 bins for the histograms.
+n_bins = 50
 
 plt.figure(figsize=(10,10))
 plt.subplot(2, 2, 1)
