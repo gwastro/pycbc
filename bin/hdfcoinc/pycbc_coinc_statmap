@@ -426,11 +426,9 @@ for key in all_trigs.seg.keys():
     f['segments/%s/start' % key] = f['segments_h0/%s/start' % key]
     f['segments/%s/end' % key] = f['segments_h0/%s/end' % key]
 
-# If there were hierarchically removed foreground triggers, please  write
-# them back into the file with the correct statistics.
+# If there were hierarchically removed foreground triggers, write them back
+# into the file with the correct statistics.
 if len(save_these_fore_ind) > 0:
-#   CONTROVERSIAL: Which one do I write here? It won't match if I write the background
-#   back for the last iteration. I don't know what to use.
     f['segments/foreground_veto/start'] = f['segments_h0/foreground_veto/start']
     f['segments/foreground_veto/end'] =  f['segments_h0/foreground_veto/end']
     for k in copy_trigs.data:
