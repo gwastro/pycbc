@@ -43,7 +43,6 @@ class mycontenthandler(LIGOLWContentHandler):
 lsctables.use_in(mycontenthandler)
 
 # Read command line options
-usage = """usage: %prog [options]"""
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 
@@ -56,7 +55,8 @@ parser.add_argument("--match-files", nargs='+',
 #                    help="Explicit list of injection files. These must be in "
 #                         "the same order, and match one-to-one with the "
 #                         "match-files.")
-parser.add_argument("-o", "--output-file",  help="Output file name")
+parser.add_argument("-o", "--output-file", required=True,
+                    help="Output file name")
 parser.add_argument("--filter-func-file", default=None,
                     help="This can be provided to give a function to define "
                          "which points are covered by the template bank "
