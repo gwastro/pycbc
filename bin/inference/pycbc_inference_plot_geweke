@@ -41,6 +41,23 @@ parser.add_argument("--walkers", type=int, nargs="+", default=None,
                     help="Specific walkers to plot. Default is plot "
                          "all walkers.")
 
+# Geweke calculation options
+parser.add_argument("--segment-length", type=int, required=True,
+                    help="Number of iterations to use in calculation.")
+parser.add_argument("--segment-stride", type=int, required=True,
+                    help="How many iterations to advance for next calculation "
+                         "along chain.")
+parser.add_argument("--segment-start", type=int, required=True,
+                    help="Start iteration for calculating statistic.")
+parser.add_argument("--segment-end", type=int, required=True,
+                    help="End iteration for calculating statistic.")
+parser.add_argument("--reference-start", type=int, required=True,
+                    help="Start of reference segment for "
+                         "calculating statistic.")
+parser.add_argument("--reference-end", type=int, required=True,
+                    help="End of reference segment for "
+                         "calculating statistic.")
+
 # add results group
 option_utils.add_inference_results_option_group(parser)
 
@@ -82,19 +99,12 @@ for param, label in zip(params, labels):
         # get samples for this parameter
         vals = y[param]
 
-        # settings for Geweke
-        seg_length = 2000
-        seg_stride = 1000
-        end_idx = len(vals) / 2
-        ref_start = len(vals) / 2 + 1
-        ref_end = None
-        seg_start = 0
-
         # calculate the Geweke convergence statistic
-        starts, ends, stats = geweke.geweke(vals, seg_length, seg_stride,
-                                            end_idx, ref_start,
-                                            ref_end=ref_end,
-                                            seg_start=seg_start)
+        starts, ends, stats = geweke.geweke(
+                                vals, opts.segment_length, opts.segment_stride,
+                                opts.segment_end, opts.reference_start,
+                                ref_end=opts.reference_end,
+                                seg_start=opts.segment_start)
 
         # plot walker
         for start, end, stat in zip(starts, ends, stats):
@@ -102,6 +112,7 @@ for param, label in zip(params, labels):
 
     # format plot
     plt.ylabel(label)
+    plt.xlabel("Iteration")
 
     # plot horizontal lines at -1 and 1
     plt.hlines([-1, 1], 0, len(vals), linestyles="dashed")
