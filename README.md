@@ -71,3 +71,4 @@ Bibtex keys for the citations ``Canton:2014ena`` and ``Usman:2015kfa`` are
 [![PyPI version](https://badge.fury.io/py/pycbc.svg)](http://badge.fury.io/py/pycbc)
 [![Build Status](https://travis-ci.org/ligo-cbc/pycbc.svg?branch=master)](https://travis-ci.org/ligo-cbc/pycbc)
 [![Code Health](https://landscape.io/github/ligo-cbc/pycbc/master/landscape.svg?style=flat)](https://landscape.io/github/ligo-cbc/pycbc/master)
+[![Research software impact](http://depsy.org/api/package/pypi/PyCBC/badge.svg)](http://depsy.org/package/python/PyCBC)
