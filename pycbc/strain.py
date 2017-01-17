@@ -531,7 +531,8 @@ def insert_strain_option_group_multi_ifo(parser):
         OptionParser instance.
     """
 
-    data_reading_group = parser.add_argument_group("Options for obtaining h(t)",
+    data_reading_group_multi = parser.add_argument_group("Options for obtaining"
+                  " h(t)",
                   "These options are used for generating h(t) either by "
                   "reading from a file or by generating it. This is only "
                   "needed if the PSD is to be estimated from the data, ie. "
@@ -539,149 +540,158 @@ def insert_strain_option_group_multi_ifo(parser):
                   "supports reading from multiple ifos simultaneously.")
 
     # Required options
-    data_reading_group.add_argument("--gps-start-time", nargs='+',
+    data_reading_group_multi.add_argument("--gps-start-time", nargs='+',
                             action=MultiDetOptionAction, metavar='IFO:TIME',
                             help="The gps start time of the data "
                                  "(integer seconds)", type=int)
-    data_reading_group.add_argument("--gps-end-time", nargs='+', type=int,
+    data_reading_group_multi.add_argument("--gps-end-time", nargs='+', type=int,
                             action=MultiDetOptionAction, metavar='IFO:TIME',
                             help="The gps end time of the data "
                                  "(integer seconds)")
-    data_reading_group.add_argument("--strain-high-pass", nargs='+',
+    data_reading_group_multi.add_argument("--strain-high-pass", nargs='+',
                             action=MultiDetOptionAction,
                             type=float, metavar='IFO:FREQUENCY',
                             help="High pass frequency")
-    data_reading_group.add_argument("--pad-data", nargs='+',
+    data_reading_group_multi.add_argument("--pad-data", nargs='+',
                             action=MultiDetOptionAction,
                             type=int, metavar='IFO:LENGTH',
                             help="Extra padding to remove highpass corruption "
                                 "(integer seconds)")
-    data_reading_group.add_argument("--taper-data", nargs='+',
+    data_reading_group_multi.add_argument("--taper-data", nargs='+',
                             action=MultiDetOptionAction,
                             type=int, default=0, metavar='IFO:LENGTH',
                             help="Taper ends of data to zero using the "
                                 "supplied length as a window (integer seconds)")
-    data_reading_group.add_argument("--sample-rate", type=int, nargs='+',
+    data_reading_group_multi.add_argument("--sample-rate", type=int, nargs='+',
                             action=MultiDetOptionAction, metavar='IFO:RATE',
                             help="The sample rate to use for h(t) generation "
                                 " (integer Hz).")
-    data_reading_group.add_argument("--channel-name", type=str, nargs='+',
+    data_reading_group_multi.add_argument("--channel-name", type=str, nargs='+',
                             action=MultiDetOptionActionSpecial,
                             metavar='IFO:CHANNEL',
                             help="The channel containing the gravitational "
                                 "strain data")
 
     #Read from cache file
-    data_reading_group.add_argument("--frame-cache", type=str, nargs="+",
+    data_reading_group_multi.add_argument("--frame-cache", type=str, nargs="+",
                             action=MultiDetOptionAppendAction,
                             metavar='IFO:FRAME_CACHE',
                             help="Cache file containing the frame locations.")
 
     #Read from frame files
-    data_reading_group.add_argument("--frame-files", type=str, nargs="+",
+    data_reading_group_multi.add_argument("--frame-files", type=str, nargs="+",
                             action=MultiDetOptionAppendAction,
                             metavar='IFO:FRAME_FILES',
                             help="list of frame files")
 
+    # Use datafind to get frame files
+    data_reading_group_multi.add_argument("--frame-type", type=str, nargs="+",
+                                    action=MultiDetOptionAction,
+                                    metavar='IFO:FRAME_TYPE',
+                                    help="(optional) Replaces frame-files. "
+                                         "Use datafind to get the needed frame "
+                                         "file(s) of this type.")
+
     #Generate gaussian noise with given psd
-    data_reading_group.add_argument("--fake-strain", type=str, nargs="+",
+    data_reading_group_multi.add_argument("--fake-strain", type=str, nargs="+",
                             action=MultiDetOptionAction, metavar='IFO:CHOICE',
                             help="Name of model PSD for generating fake "
                             "gaussian noise. Choose from %s or zeroNoise" \
                             %((', ').join(pycbc.psd.get_lalsim_psd_list()),) )
-    data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
-                            nargs="+",
-                            action=MultiDetOptionAction, metavar='IFO:SEED',
+    data_reading_group_multi.add_argument("--fake-strain-seed", type=int,
+                            default=0, nargs="+", action=MultiDetOptionAction,
+                            metavar='IFO:SEED',
                             help="Seed value for the generation of fake "
                             "colored gaussian noise")
-    data_reading_group.add_argument("--fake-strain-from-file", nargs="+",
+    data_reading_group_multi.add_argument("--fake-strain-from-file", nargs="+",
                             action=MultiDetOptionAction, metavar='IFO:FILE',
                             help="File containing ASD for generating fake "
                             "noise from it.")
 
     #optional
-    data_reading_group.add_argument("--injection-file", type=str, nargs="+",
-                            action=MultiDetOptionAction, metavar='IFO:FILE',
+    data_reading_group_multi.add_argument("--injection-file", type=str,
+                            nargs="+", action=MultiDetOptionAction,
+                            metavar='IFO:FILE',
                             help="(optional) Injection file used to add "
                             "waveforms into the strain")
 
-    data_reading_group.add_argument("--sgburst-injection-file", type=str,
+    data_reading_group_multi.add_argument("--sgburst-injection-file", type=str,
                       nargs="+", action=MultiDetOptionAction,
                       metavar='IFO:FILE',
                       help="(optional) Injection file used to add "
                       "sine-Gaussian burst waveforms into the strain")
 
-    data_reading_group.add_argument("--ringdown-injection-file", type=str,
+    data_reading_group_multi.add_argument("--ringdown-injection-file", type=str,
                     nargs="+", action=MultiDetOptionAction, metavar='IFO:FILE',
                     help="(optional) Injection file used to add "
                            "ringdown-only waveforms into the strain.")
 
-    data_reading_group.add_argument("--injection-scale-factor", type=float,
-                    nargs="+", action=MultiDetOptionAction, metavar="IFO:VAL",
-                    default=1.,
+    data_reading_group_multi.add_argument("--injection-scale-factor",
+                    type=float, nargs="+", action=MultiDetOptionAction,
+                    metavar="IFO:VAL", default=1.,
                     help="Multiple injections by this factor "
                          "before injecting into the data.")
 
-    data_reading_group.add_argument("--gating-file", type=str,
+    data_reading_group_multi.add_argument("--gating-file", type=str,
                       nargs="+", action=MultiDetOptionAction,
                       metavar='IFO:FILE',
                       help="(optional) Text file of gating segments to apply."
                           " Format of each line is (all times in secs):"
                           "  gps_time zeros_half_width pad_half_width")
 
-    data_reading_group.add_argument('--autogating-threshold', type=float,
+    data_reading_group_multi.add_argument('--autogating-threshold', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SIGMA',
                                     help='If given, find and gate glitches '
                                          'producing a deviation larger than '
                                          'SIGMA in the whitened strain time '
                                          'series.')
-    data_reading_group.add_argument('--autogating-cluster', type=float,
+    data_reading_group_multi.add_argument('--autogating-cluster', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SECONDS', default=5.,
                                     help='Length of clustering window for '
                                          'detecting glitches for autogating.')
-    data_reading_group.add_argument('--autogating-width', type=float,
+    data_reading_group_multi.add_argument('--autogating-width', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SECONDS', default=0.25,
                                     help='Half-width of the gating window.')
-    data_reading_group.add_argument('--autogating-taper', type=float,
+    data_reading_group_multi.add_argument('--autogating-taper', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SECONDS', default=0.25,
                                     help='Taper the strain before and after '
                                          'each gating window over a duration '
                                          'of SECONDS.')
-    data_reading_group.add_argument('--autogating-pad', type=float,
+    data_reading_group_multi.add_argument('--autogating-pad', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SECONDS', default=16,
                                     help='Ignore the given length of whitened '
                                          'strain at the ends of a segment, to '
                                          'avoid filters ringing.')
 
-    data_reading_group.add_argument("--normalize-strain", type=float,
+    data_reading_group_multi.add_argument("--normalize-strain", type=float,
                      nargs="+", action=MultiDetOptionAction,
                      metavar='IFO:VALUE',
                      help="(optional) Divide frame data by constant.")
 
-    data_reading_group.add_argument("--zpk-z", type=float,
+    data_reading_group_multi.add_argument("--zpk-z", type=float,
                      nargs="+", action=MultiDetOptionAppendAction,
                      metavar='IFO:VALUE',
                      help="(optional) Zero-pole-gain (zpk) filter strain. "
                          "A list of zeros for transfer function")
 
-    data_reading_group.add_argument("--zpk-p", type=float,
+    data_reading_group_multi.add_argument("--zpk-p", type=float,
                      nargs="+", action=MultiDetOptionAppendAction,
                      metavar='IFO:VALUE',
                      help="(optional) Zero-pole-gain (zpk) filter strain. "
                          "A list of poles for transfer function")
 
-    data_reading_group.add_argument("--zpk-k", type=float,
+    data_reading_group_multi.add_argument("--zpk-k", type=float,
                      nargs="+", action=MultiDetOptionAppendAction,
                      metavar='IFO:VALUE',
                      help="(optional) Zero-pole-gain (zpk) filter strain. "
                          "Transfer function gain")
 
-    return data_reading_group
+    return data_reading_group_multi
 
 
 ensure_one_opt_groups = []
