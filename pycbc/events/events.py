@@ -421,7 +421,7 @@ class EventManager(object):
                 f['u_vals'] = self.events['u_vals']
                 f['coa_phase'] = self.events['coa_phase']
                 f['hplus_cross_corr'] = self.events['hplus_cross_corr']
-            except:
+            except Exception:
                 # Not precessing
                 f['coa_phase'] = numpy.angle(self.events['snr'])
             f['chisq'] = self.events['chisq']
@@ -440,7 +440,7 @@ class EventManager(object):
                 #        need information from the plus and cross correlation
                 #        (both real and imaginary(?)) to get this.
                 f['sigmasq'] = template_sigmasq_plus[tid]
-            except:
+            except Exception:
                 # Not precessing
                 template_sigmasq = numpy.array([t['sigmasq'] for t in self.template_params], dtype=numpy.float32)
                 f['sigmasq'] = template_sigmasq[tid]
@@ -631,8 +631,7 @@ class EventManagerMultiDet(EventManager):
                     f['u_vals'] = ifo_events['u_vals']
                     f['coa_phase'] = ifo_events['coa_phase']
                     f['hplus_cross_corr'] = ifo_events['hplus_cross_corr']
-                except:
-                    # Not precessing
+                except Exception:
                     f['coa_phase'] = numpy.angle(ifo_events['snr'])
                 f['chisq'] = ifo_events['chisq']
                 f['bank_chisq'] = ifo_events['bank_chisq']
@@ -654,7 +653,7 @@ class EventManagerMultiDet(EventManager):
                     #        need information from the plus and cross correlation
                     #        (both real and imaginary(?)) to get this.
                     f['sigmasq'] = template_sigmasq_plus[tid]
-                except:
+                except Exception:
                     # Not precessing
                     template_sigmasq = numpy.array([t['sigmasq'][ifo] for t in \
                             self.template_params], dtype=numpy.float32)
