@@ -9,6 +9,8 @@ def geweke(x, seg_length, seg_stride, end_idx, ref_start,
     This function will advance along the chain and calculate the
     statistic for each step.
 
+    Parameters
+    ----------
     x : numpy.array
         A one-dimensional array of data.
     seg_length : int
@@ -25,6 +27,15 @@ def geweke(x, seg_length, seg_stride, end_idx, ref_start,
     seg_start : int
         What index to start computing the statistic. Default is 0 which
         will go to the beginning of the data array.
+
+    Returns
+    -------
+    starts : numpy.array
+        The start index of the first segment in the chain.
+    ends : numpy.array
+        The end index of the first segment in the chain.
+    stats : numpy.array
+        The Geweke convergence diagnostic statistic for the segment.
     """
 
     # lists to hold statistic and end index
