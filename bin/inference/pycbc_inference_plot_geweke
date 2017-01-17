@@ -34,9 +34,12 @@ parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
 parser.add_argument("--verbose", action="store_true", default=False,
     help="Print logging info.")
 
-# output 1-D histogram options
+# output options
 parser.add_argument("--output-file", type=str, required=True,
                     help="Path to output plot.")
+parser.add_argument("--walkers", type=int, nargs="+", default=None,
+                    help="Specific walkers to plot. Default is plot "
+                         "all walkers.")
 
 # add results group
 option_utils.add_inference_results_option_group(parser)
@@ -60,12 +63,15 @@ if opts.iteration is not None:
 fp, params, labels, _ = option_utils.results_from_cli(
                                          opts, load_samples=True, walkers=None)
 
+# get walkers to plot
+nwalkers = fp.nwalkers if opts.walkers is None else opts.walkers
+
 # loop over each parameter
 for param, label in zip(params, labels):
     logging.info("Plotting parameter %s", param)
 
     # loop over walkers
-    for j in range(fp.nwalkers):
+    for j in nwalkers:
 
         # plot each walker
         y = fp.read_samples(param, walkers=j,
@@ -77,10 +83,10 @@ for param, label in zip(params, labels):
         vals = y[param]
 
         # settings for Geweke
-        seg_length = 500
-        seg_stride = 250
-        end_idx = 30000 #len(vals) / 2
-        ref_start = -1000 #len(vals) / 2 + 1
+        seg_length = 2000
+        seg_stride = 1000
+        end_idx = len(vals) / 2
+        ref_start = len(vals) / 2 + 1
         ref_end = None
         seg_start = 0
 
@@ -94,8 +100,13 @@ for param, label in zip(params, labels):
         for start, end, stat in zip(starts, ends, stats):
             plt.plot([start, end], [stat, stat], "k")
 
-    # show plot for parameter
+    # format plot
     plt.ylabel(label)
+
+    # plot horizontal lines at -1 and 1
+    plt.hlines([-1, 1], 0, len(vals), linestyles="dashed")
+
+    # show plot for parameter
     plt.show()
 
 # exit
