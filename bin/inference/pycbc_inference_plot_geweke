@@ -1,0 +1,102 @@
+#! /usr/bin/env python
+
+# Copyright (C) 2017 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Plots the Geweke convergence diagnositic statistic.
+"""
+
+import argparse
+import logging
+#import matplotlib as mpl; mpl.use("Agg")
+import matplotlib.pyplot as plt
+from pycbc import results
+from pycbc.inference import geweke
+from pycbc.inference import option_utils
+
+# command line usage
+parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
+                                 description=__doc__)
+
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+    help="Print logging info.")
+
+# output 1-D histogram options
+parser.add_argument("--output-file", type=str, required=True,
+                    help="Path to output plot.")
+
+# add results group
+option_utils.add_inference_results_option_group(parser)
+
+# parse the command line
+opts = parser.parse_args()
+
+# setup log
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+
+# enfore that this is not a single iteration
+# since that does not make sense for the Geweke convergence test
+if opts.iteration is not None:
+    raise ValueError("Cannot use --iteration")
+
+# load the results
+fp, params, labels, _ = option_utils.results_from_cli(
+                                         opts, load_samples=True, walkers=None)
+
+# loop over each parameter
+for param, label in zip(params, labels):
+
+    # loop over walkers
+    for j in range(fp.nwalkers):
+
+        # plot each walker
+        y = fp.read_samples(param, walkers=j,
+                            thin_start=opts.thin_start,
+                            thin_interval=opts.thin_interval,
+                            thin_end=opts.thin_end)
+
+        # get samples for this parameter
+        vals = y[param]
+
+        # settings for Geweke
+        seg_length = 500
+        seg_stride = 250
+        end_idx = 30000 #len(vals) / 2
+        ref_start = -1000 #len(vals) / 2 + 1
+        ref_end = None
+        seg_start = 0
+
+        # calculate the Geweke convergence statistic
+        starts, ends, stats = geweke.geweke(vals, seg_length, seg_stride,
+                                            end_idx, ref_start,
+                                            ref_end=ref_end,
+                                            seg_start=seg_start)
+
+        # plot walker
+        for start, end, stat in zip(starts, ends, stats):
+            plt.plot([start, end], [stat, stat], "k")
+
+    # show plot for parameter
+    plt.ylabel(label)
+    plt.show()
+
+# exit
+fp.close()
+logging.info("Done")
