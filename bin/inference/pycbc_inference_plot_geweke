@@ -20,11 +20,12 @@
 
 import argparse
 import logging
-#import matplotlib as mpl; mpl.use("Agg")
+import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 from pycbc import results
 from pycbc.inference import geweke
 from pycbc.inference import option_utils
+import sys
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -83,6 +84,9 @@ fp, params, labels, _ = option_utils.results_from_cli(
 # get walkers to plot
 nwalkers = fp.nwalkers if opts.walkers is None else opts.walkers
 
+# create Figure
+fig = plt.figure()
+
 # loop over each parameter
 for param, label in zip(params, labels):
     logging.info("Plotting parameter %s", param)
@@ -110,15 +114,25 @@ for param, label in zip(params, labels):
         for start, end, stat in zip(starts, ends, stats):
             plt.plot([start, end], [stat, stat], "k")
 
-    # format plot
-    plt.ylabel(label)
-    plt.xlabel("Iteration")
+# format plot
+plt.ylabel(", ".join(labels))
+plt.xlabel("Iteration")
 
-    # plot horizontal lines at -1 and 1
-    plt.hlines([-1, 1], 0, len(vals), linestyles="dashed")
+# plot horizontal lines at -1 and 1
+plt.hlines([-1, 1], 0, len(vals), "r", linestyles="dashed")
 
-    # show plot for parameter
-    plt.show()
+# save figure with meta-data
+caption_kwargs = {
+    "parameters" : ", ".join(labels),
+}
+caption = """The Geweke convergence diagnostic statistic for {parameters}
+read from the input file.""".format(**caption_kwargs)
+title = "Geweke Convergence for {parameters}".format(**caption_kwargs)
+results.save_fig_with_metadata(fig, opts.output_file,
+                               cmd=" ".join(sys.argv),
+                               title=title,
+                               caption=caption)
+plt.close()
 
 # exit
 fp.close()
