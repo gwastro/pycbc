@@ -577,3 +577,51 @@ class FDomainDetFrameGenerator(object):
                             kmin=kmin, copy=False)
             h['RF'] = hp
         return h
+
+def select_waveform_generator(approximant):
+    """ Returns the single-IFO generator for the approximant.
+
+    Parameters
+    ----------
+    approximant : str
+        Name of waveform approximant. Valid names can be found using
+        ``pycbc.waveform`` methods.
+
+    Returns
+    -------
+    generator
+        A waveform generator object.
+
+    Example
+    -------
+    Get a list of available approximants:
+    >>> from pycbc import waveform
+    >>> waveform.fd_approximants()
+    >>> waveform.td_approximants()
+    >>> from pycbc.waveform import ringdown
+    >>> ringdown.ringdown_fd_approximants.keys()
+
+    Get generator object:
+    >>> waveform.select_waveform_generator(waveform.fd_approximants()[0])
+    """
+
+    # check if frequency-domain CBC waveform
+    if approximant in waveform.fd_approximants():
+        return FDomainCBCGenerator
+
+    # check if time-domain CBC waveform
+    elif approximant in waveform.td_approximants():
+        return TDomainCBCGenerator
+
+    # check if frequency-domain ringdown waveform
+    elif approximant in ringdown.ringdown_fd_approximants:
+        if approximant == 'FdQNM':
+            return FDomainRingdownGenerator
+        elif approximant == 'FdQNMmultiModes':
+            return FDomainMultiModeRingdownGenerator
+
+    # otherwise waveform approximant is not supported
+    elif approximant in ringdown.ringdown_td_approximants:
+        raise ValueError("Time domain ringdowns not supported")
+    else:
+        raise ValueError("%s is not a valid approximant." % approximant)
