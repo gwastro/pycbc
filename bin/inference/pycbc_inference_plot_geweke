@@ -62,6 +62,7 @@ fp, params, labels, _ = option_utils.results_from_cli(
 
 # loop over each parameter
 for param, label in zip(params, labels):
+    logging.info("Plotting parameter %s", param)
 
     # loop over walkers
     for j in range(fp.nwalkers):
