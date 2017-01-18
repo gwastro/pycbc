@@ -33,6 +33,30 @@ scratch_pycbc=false
 libgfortran=libgfortran.so
 extra_libs=""
 
+# defaults, possibly overwritten by OS-specific settings
+build_gcc=false
+build_ssl=false
+build_python=false
+fftw_flags=--enable-avx
+shared="--enable-shared"
+build_dlls=false
+build_lapack=true
+pyssl_from="tarball" # "pip-install"
+numpy_from="pip-install" # "tarball"
+scipy_from="pip-install" # "git"
+build_gsl=true
+build_swig=true
+build_framecpp=false
+build_preinst_before_lalsuite=true
+build_subprocess32=false
+build_hdf5=true
+build_freetype=true
+build_wrapper=false
+pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
+patch_pyinstaller_bootloader=true
+use_pycbc_pyinstaller_hooks=true
+build_gating_tool=false
+
 if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
     # example: WORKSPACE='/Users/jenkins/workspace/workspace/EAH_PyCBC_Master/label/OSX107'
@@ -59,59 +83,20 @@ elif test ".$1" = ".--force-debian4" ||
     # detected a Debian 4.0 (Etch) or Ubuntu 6.06 installation, expect a prepared build system
     echo -e "\\n\\n>> [`date`] Using Debian 4.0 (etch) settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
-    fftw_flags=--enable-avx
-    shared="--enable-shared"
-    build_dlls=false
-    build_ssl=true
     link_gcc_version=4.8.5
-    build_gcc=false
     gcc_path="/usr/local/bin"
-    build_python=false
-    build_lapack=true
-    pyssl_from="tarball" # "pip-install"
-    numpy_from="pip-install" # "tarball"
-    scipy_from="pip-install" # "git"
-    build_hdf5=true
-    build_freetype=true
-    build_gsl=true
-    build_swig=true
-    build_framecpp=false
-    build_preinst_before_lalsuite=true
-    build_subprocess32=false
-    pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
-    patch_pyinstaller_bootloader=true
+    build_ssl=true
     pyinstaller_lsb="--no-lsb"
-    use_pycbc_pyinstaller_hooks=true
-    build_wrapper=false
     build_gating_tool=true
     appendix="_Linux64"
 elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8 (Carbon)" ]] ; then # SL6
     echo -e "\\n\\n>> [`date`] Using Scientific Linux release 6.8 (Carbon) settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
-    fftw_flags=--enable-avx
-    shared="--enable-shared"
-    build_dlls=false
-    build_ssl=true
     link_gcc_version=4.4.7
-    build_gcc=false
     gcc_path="/usr/bin"
+    build_ssl=true
     build_python=true
-    build_lapack=true
-    pyssl_from="tarball" # "pip-install"
-    numpy_from="pip-install" # "tarball"
-    scipy_from="pip-install" # "git"
-    build_hdf5=true
-    build_freetype=true
-    build_gsl=true
-    build_swig=true
-    build_framecpp=false
-    build_preinst_before_lalsuite=true
-    build_subprocess32=false
-    pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
-    patch_pyinstaller_bootloader=true
     pyinstaller_lsb="--no-lsb"
-    use_pycbc_pyinstaller_hooks=true
-    build_wrapper=false
     build_gating_tool=true
     appendix="_Linux64"
 elif test "`uname -s`" = "Darwin" ; then # OSX
@@ -124,59 +109,22 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     export CXXFLAGS="$CXXFLAGS -m64"
     export LDFLAGS="$LDFLAGS -m64"
 #    libframe_debug_level=3
-#    lal_cppflags="-DDONT_RESOLVE_LALCACHE_PATH"
+    gcc_path="/opt/local/bin"
     libgfortran=libgfortran.dylib
-    shared="--enable-shared"
-    fftw_flags=--enable-avx
-    fftw_cflags=-Wa,-q
-    build_dlls=false
-    build_ssl=false
-    build_gcc=false
-    gcc_path="/usr/local/bin"
-    build_python=false
-    build_lapack=true
-    pyssl_from="tarball" # "pip-install"
-    numpy_from="pip-install" # "tarball"
-    scipy_from="pip-install" # "git"
-    build_hdf5=true
-    build_freetype=true
-    build_gsl=true
-    build_swig=true
+    fftw_cflags="-Wa,-q"
     build_framecpp=true
-    build_preinst_before_lalsuite=true
-    build_subprocess32=false
-    pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
-    patch_pyinstaller_bootloader=true
-    use_pycbc_pyinstaller_hooks=true
-    build_wrapper=false
-    build_gating_tool=false
     appendix="_OSX64"
 elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     echo -e "\\n\\n>> [`date`] Using Cygwin settings"
-    fftw_flags=--enable-avx
     lal_cppflags="-D_WIN32"
-    shared="--enable-shared"
     build_dlls=true
-    build_ssl=false
-    build_gcc=false
-    gcc_path="/usr/local/bin"
-    build_python=false
-    build_lapack=true
-    pyssl_from="tarball" # "pip-install"
     numpy_from="tarball" # "pip-install"
     scipy_from="git" # "pip-install"
     build_hdf5=false
     build_freetype=false
     build_gsl=false
     build_swig=false
-    build_framecpp=false
-    build_preinst_before_lalsuite=true
-    build_subprocess32=false
-    pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
     patch_pyinstaller_bootloader=false
-    use_pycbc_pyinstaller_hooks=true
-    build_wrapper=false
-    build_gating_tool=false
     appendix="_Windows64"
 else
     echo ERROR: unknown OS, exiting
