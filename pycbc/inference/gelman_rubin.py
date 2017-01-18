@@ -16,6 +16,8 @@
 diagnostic statistic.
 """
 
+import numpy
+
 def gelman_rubin(chains):
     """ Calculates the Gelman-Rubin convergence statistic.
 
@@ -33,12 +35,13 @@ def gelman_rubin(chains):
     overall_mean = chains_means.mean()
 
     # calculate variance of each chain
-    chains_variance = numpy.array([chain.var() for chain in chains])
+    chains_vars = numpy.array([chain.var() for chain in chains])
 
     # calculate the between-chain variance
     n = len(chains[0])
     m = len(chains)
-    b = n / (m - 1.0) * sum([(chains_means[i] - overall_mean)**2 for i in m])
+    b = n / (m - 1.0) * sum([(chain_mean - overall_mean)**2
+                             for chain_mean in chains_means])
 
     # calculate the within-chain variance
     w = 1.0 / m * sum([chain_var for chain_var in chains_vars])

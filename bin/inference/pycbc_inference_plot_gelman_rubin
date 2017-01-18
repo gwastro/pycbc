@@ -57,7 +57,8 @@ if opts.iteration is not None:
 
 # load the results
 fp, params, labels, _ = option_utils.results_from_cli(
-                                         opts, load_samples=True, walkers=None)
+                                         opts, load_samples=False,
+                                         walkers=None)
 
 # get walkers to plot
 walkers = range(fp.nwalkers) if opts.walkers is None else opts.walkers
@@ -65,10 +66,11 @@ nwalkers = len(walkers)
 
 # loop over parameters
 stats = []
-for param in parameters:
+for param in params:
+    logging.info("Plotting parameter %s", param)
 
     # get samples for each chain
-    chains = [fp.read_samples(param, walkers=j, thin_start=opts.thin_start,
+    chains = [fp.read_samples(param, walkers=i, thin_start=opts.thin_start,
                               thin_interval=opts.thin_interval,
                               thin_end=opts.thin_end)[param] for i in walkers]
 
