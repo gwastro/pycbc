@@ -30,7 +30,14 @@ import numpy
 import scipy.stats
 import itertools
 import matplotlib
-matplotlib.use('agg')
+# Only if a backend is not already set ... This should really *not* be done
+# here, but in the executables you should set matplotlib.use()
+# This matches the check that matplotlib does internally, but this *may* be
+# version dependenant. If this is a problem then remove this and control from
+# the executables directly.
+import sys
+if not 'matplotlib.backends' in sys.modules:
+    matplotlib.use('agg')
 from matplotlib import pyplot
 import matplotlib.gridspec as gridspec
 from pycbc.results import str_utils
