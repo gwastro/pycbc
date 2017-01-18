@@ -77,6 +77,7 @@ elif test ".$1" = ".--force-debian4" ||
     build_swig=true
     build_framecpp=false
     build_preinst_before_lalsuite=true
+    build_subprocess32=false
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
     patch_pyinstaller_bootloader=true
     pyinstaller_lsb="--no-lsb"
@@ -105,6 +106,7 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8
     build_swig=true
     build_framecpp=false
     build_preinst_before_lalsuite=true
+    build_subprocess32=false
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
     patch_pyinstaller_bootloader=true
     pyinstaller_lsb="--no-lsb"
@@ -142,6 +144,7 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     build_swig=true
     build_framecpp=true
     build_preinst_before_lalsuite=true
+    build_subprocess32=false
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
     patch_pyinstaller_bootloader=true
     use_pycbc_pyinstaller_hooks=true
@@ -168,6 +171,7 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     build_swig=false
     build_framecpp=false
     build_preinst_before_lalsuite=true
+    build_subprocess32=false
     pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi 
     patch_pyinstaller_bootloader=false
     use_pycbc_pyinstaller_hooks=true
@@ -750,6 +754,24 @@ fi
 # so install this old version before it gets pulled in from PyCBC
 echo -e "\\n\\n>> [`date`] pip install Jinja2==2.8.1"
 pip install Jinja2==2.8.1
+
+# manually build subprocess32 with -D_GNU_SOURCE
+# would be needed on old Linux with matplotlib>=2.0.0
+if $build_subprocess32; then
+    p=subprocess32-3.2.7
+    echo -e "\\n\\n>> [`date`] building $p"
+    test -r $p.tar.gz ||
+        wget $wget_opts https://pypi.python.org/packages/b8/2f/49e53b0d0e94611a2dc624a1ad24d41b6d94d0f1b0a078443407ea2214c2/$p.tar.gz
+    rm -rf $p
+    tar -xzf $p.tar.gz
+    cd $p
+#    python setup.py build_ext "-DO_CLOEXEC"
+    python setup.py build_ext --define "O_CLOEXEC=0"
+    python setup.py build
+    python setup.py install --prefix="$PREFIX"
+    cd ..
+    $cleanup && rm -rf $p
+fi
 
 # PyCBC
 echo -e "\\n\\n>> [`date`] building pycbc"
