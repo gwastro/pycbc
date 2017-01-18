@@ -738,7 +738,8 @@ test -r $p.tar.gz ||
 pip install --no-deps $p.tar.gz
 
 # on Windows, rebase DLLs
-# this _might_ fix a recurring problem with fork+git+pycbe
+# doing this here _might_ fix a recurring problem with fork+git+PyCBC
+# will be done again after building PyCBC
 if $build_dlls; then
     echo -e "\\n\\n>> [`date`] Rebasing DLLs"
     find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
