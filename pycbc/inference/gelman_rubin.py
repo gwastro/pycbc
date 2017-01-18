@@ -16,23 +16,37 @@
 diagnostic statistic.
 """
 
-def gelman_rubin(x):
+def gelman_rubin(chains):
     """ Calculates the Gelman-Rubin convergence statistic.
+
+    Parameters
+    ----------
+    chains : iterable
+        An iterable of numpy.array instances that contain the samples
+        for each chain.
     """
 
     # calculate mean of each chain
+    chains_means = numpy.array([chain.mean() for chain in chains])
 
     # calculate overall mean
+    overall_mean = chains_means.mean()
 
     # calculate variance of each chain
+    chains_variance = numpy.array([chain.var() for chain in chains])
 
     # calculate the between-chain variance
+    n = len(chains[0])
+    m = len(chains)
+    b = n / (m - 1.0) * sum([(chains_means[i] - overall_mean)**2 for i in m])
 
     # calculate the within-chain variance
+    w = 1.0 / m * sum([chain_var for chain_var in chains_vars])
 
     # calculate the pooled variance
+    v = (n - 1.0) / m * w + (m + 1.0) / (m * n) * b
 
     # calculate the potential scale reduction factor
-    psrf = 0.0
+    psrf = numpy.sqrt(v / w)
 
     return psrf
