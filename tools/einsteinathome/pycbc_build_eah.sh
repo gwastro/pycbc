@@ -779,8 +779,10 @@ else
     git remote update
     git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
-echo -e "[`date`] install six and pkgconfig"
-pip install `grep -w ^six requirements.txt||echo six==1.9.0` `grep -w ^pkgconfig requirements.txt||echo pkgconfig==1.1.0`
+echo -e "[`date`] install six, pkgconfig and matplotlib beforehand"
+pip install `grep -w ^six requirements.txt||echo six==1.9.0`
+pip install `grep -w ^pkgconfig requirements.txt||echo pkgconfig==1.1.0`
+pip install `grep ^matplotlib== requirements.txt||echo matplotlib==1.4.3`
 echo -e "[`date`] downgrade setuptools"
 pip install --upgrade `grep -w ^setuptools requirements.txt`
 echo -e "[`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
