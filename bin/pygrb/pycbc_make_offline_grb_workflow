@@ -356,7 +356,8 @@ ppDir = os.path.join(currDir, "post_processing")
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
 
-if post_proc_method == "COH_PTF_WORKFLOW":
+if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
+                        "COH_PTF_ONLINE"]:
     # Add parsed config file so it can be linked from summary page
     cp_file_name = "%s_parsed.ini" % workflow_name
     cp_file_url = "file://localhost%s/%s" % (baseDir, cp_file_name)

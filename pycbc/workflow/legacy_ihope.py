@@ -262,6 +262,7 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
 
     def create_node(self, trig_files=None, segment_dir=None, analysis_seg=None,
                     out_tags=None, tags=None):
+        import Pegasus.DAX3 as dax
         if out_tags is None:
             out_tags = []
         if tags is None:
@@ -285,9 +286,15 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         node.add_opt('--trig-start-time', analysis_seg[0])
         node.add_opt('--ifo-tag', self.ifos)
         node.add_opt('--user-tag', 'INSPIRAL')
+        if tags:
+            node.add_opt('--job-tag', '_'.join(tags))
 
         # Set input / output options
-        node.add_input_list_opt('--input-files', trig_files)
+        if all(t.node.executable.name == "trig_cluster" for t in trig_files):
+            node.add_opt('--input-files',
+                         " ".join([t.storage_path for t in trig_files]))
+        else:
+            node.add_input_list_opt('--input-files', trig_files)
 
         node.add_opt('--segment-dir', segment_dir)
         node.add_opt('--output-dir', self.out_dir)
@@ -296,16 +303,27 @@ class LegacyCohPTFTrigCombiner(LegacyAnalysisExecutable):
         for out_tag in out_tags:
             out_file = File(self.ifos, 'INSPIRAL', trig_files[0].segment,
                             directory=self.out_dir, extension='xml.gz',
-                            tags=["GRB%s" % trig_name, out_tag],
+                            tags=["GRB%s" % trig_name]+tags+[out_tag],
                             store_file=self.retain_files)
             out_files.append(out_file)
+            #node._dax_node.uses(out_file, link=dax.Link.OUTPUT, register=False,
+            #                    transfer=False)
+            #node._outputs += [out_file]
+            #out_file.node = node
+            #node._add_output(out_file)
 
         for trial in range(1, num_trials + 1):
             out_file = File(self.ifos, 'INSPIRAL', trig_files[0].segment,
                             directory=self.out_dir, extension='xml.gz',
-                            tags=["GRB%s" % trig_name, "OFFTRIAL_%d" % trial],
+                            tags=["GRB%s" % trig_name]+tags+\
+                                 ["OFFTRIAL_%d" % trial],
                             store_file=self.retain_files)
             out_files.append(out_file)
+            #node._dax_node.uses(out_file, link=dax.Link.OUTPUT, register=False,
+            #                    transfer=False)
+            #node._outputs += [out_file]
+            #out_file.node = node
+            #node._add_output(out_file)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
@@ -329,12 +347,17 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
         self.num_threads = 1
  
     def create_node(self, parent, tags=None):
+        import Pegasus.DAX3 as dax
         if tags is None:
             tags = []
         node = Node(self)
 
         # Set input / output options
         node.add_opt('--trig-file', '%s' % parent.storage_path)
+        #node._dax_node.uses(parent, link=dax.Link.INPUT, register=False,
+        #                    transfer=False)
+        #node._inputs += [parent]
+
         node.add_opt('--output-dir', self.out_dir)
 
         node.add_profile('condor', 'request_cpus', self.num_threads)
@@ -344,7 +367,12 @@ class LegacyCohPTFTrigCluster(LegacyAnalysisExecutable):
                         directory=self.out_dir, extension='xml.gz',
                         tags=[parent.tag_str, 'CLUSTERED'],
                         store_file=self.retain_files)
-        #out_file.PFN(out_file.cache_entry.path, site="local")
+        out_file.PFN(out_file.cache_entry.path, site="local")
+        #node._dax_node.uses(out_file, link=dax.Link.OUTPUT, register=False,
+        #                    transfer=False)
+        #node._outputs += [out_file]
+        out_file.node = node
+        #node._add_output(out_file)
 
         return node, FileList([out_file])
 
