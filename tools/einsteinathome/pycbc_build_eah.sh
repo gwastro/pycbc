@@ -40,6 +40,7 @@ build_python=false
 fftw_flags=--enable-avx
 shared="--enable-shared"
 build_dlls=false
+rebase_dlls_before_pycbc=false
 build_lapack=true
 pyssl_from="tarball" # "pip-install"
 numpy_from="pip-install" # "tarball"
@@ -118,6 +119,7 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     echo -e "\\n\\n>> [`date`] Using Cygwin settings"
     lal_cppflags="-D_WIN32"
     build_dlls=true
+    rebase_dlls_before_pycbc=false
     numpy_from="tarball" # "pip-install"
     scipy_from="git" # "pip-install"
     build_hdf5=false
@@ -694,15 +696,6 @@ test -r $p.tar.gz ||
     wget $wget_opts http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz
 pip install --no-deps $p.tar.gz
 
-# on Windows, rebase DLLs
-# doing this here _might_ fix a recurring problem with fork+git+PyCBC
-# will be done again after building PyCBC
-if $build_dlls; then
-    echo -e "\\n\\n>> [`date`] Rebasing DLLs"
-    find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
-    rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
-fi
-
 # PyInstaller 9d0e0ad4 crashes with newer Jinja2,
 # so install this old version before it gets pulled in from PyCBC
 echo -e "\\n\\n>> [`date`] pip install Jinja2==2.8.1"
@@ -724,6 +717,15 @@ if $build_subprocess32; then
     python setup.py install --prefix="$PREFIX"
     cd ..
     $cleanup && rm -rf $p
+fi
+
+# on Windows, rebase DLLs
+# doing this here _might_ fix a recurring problem with fork+git+PyCBC
+# will be done again after building PyCBC
+if $rebase_dlls_before_pycbc; then
+    echo -e "\\n\\n>> [`date`] Rebasing DLLs"
+    find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
+    rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
 fi
 
 # PyCBC
