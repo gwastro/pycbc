@@ -190,20 +190,6 @@ PYTHON_PREFIX="$PYCBC"
 ENVIRONMENT="$PYCBC/environment"
 PREFIX="$ENVIRONMENT"
 PATH="$PREFIX/bin:$PYTHON_PREFIX/bin:$PATH:/opt/local/Library/Frameworks/Python.framework/Versions/2.7/bin"
-if [ ".$link_gcc_version" != "." ]; then
-    mkdir -p $PYTHON_PREFIX/bin
-    ( cd $PYTHON_PREFIX/bin &&
-        for i in gcc g++ gfortran; do
-            rm -f $i &&
-                test -x "${gcc_path}/$i-$link_gcc_version" &&
-                ln -s "${gcc_path}/$i-$link_gcc_version" $i;
-        done
-    )
-fi
-libgfortran_dir="`$FC -print-file-name=$libgfortran|sed 's%/[^/]*$%%'`"
-export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran_dir:/usr/local/lib:$LD_LIBRARY_PATH"
-export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
-export LIBS="$LIBS -lgfortran"
 
 # log environment
 if [ ".$1" == ".--print-env" ]; then
@@ -283,6 +269,25 @@ for i in $*; do
         *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
     esac
 done
+
+# compilation environment
+if [ ".$link_gcc_version" != "." ]; then
+    mkdir -p $PYTHON_PREFIX/bin
+    ( cd $PYTHON_PREFIX/bin &&
+        for i in gcc g++ gfortran; do
+            rm -f $i &&
+                if test -x "${gcc_path}/$i-$link_gcc_version"; then
+                    ln -s "${gcc_path}/$i-$link_gcc_version" $i;
+                else
+                    echo ERROR; "${gcc_path}/$i-$link_gcc_version" not found
+                fi
+        done
+    )
+fi
+libgfortran_dir="`$FC -print-file-name=$libgfortran|sed 's%/[^/]*$%%'`"
+export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran_dir:/usr/local/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+export LIBS="$LIBS -lgfortran"
 
 # log compilation environment
 echo "export PATH='$PATH'"
