@@ -609,6 +609,7 @@ Libs: -L${libdir} -lhdf5' |
     fi
 
     if $build_preinst_before_lalsuite; then
+        echo -e "\\n\\n>> [`date`] building $BUILDDIRNAME-preinst.tgz"
         pushd $PYCBC/..
         tar -czf "$SOURCE/$BUILDDIRNAME-preinst.tgz" "$BUILDDIRNAME"
         popd
@@ -681,7 +682,8 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
     cd ..
     $cleanup && rm -rf lalsuite-build
 
-    pushd $PYCBC/..
+    echo -e "\\n\\n>> [`date`] building $BUILDDIRNAME-preinst-lalsuite.tgz"
+    pushd "$PYCBC/.."
     tar -czf "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$BUILDDIRNAME"
     popd
 
