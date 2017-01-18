@@ -23,8 +23,6 @@ and demonstrate how to generate one.
 .. plot:: ../examples/psd/analytic.py
    :include-source:
 
-.. command-output:: python ../examples/psd/analytic.py
-
 ====================================
 Estimating the PSD of a time series
 ====================================
