@@ -737,13 +737,6 @@ test -r $p.tar.gz ||
     wget $wget_opts http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz
 pip install --no-deps $p.tar.gz
 
-# MPLD
-p=mpld3-0.3git
-echo -e "\\n\\n>> [`date`] building $p"
-test -r $p.tar.gz ||
-   wget $wget_opts -O $p.tar.gz "https://github.com/ligo-cbc/mpld3/tarball/master#egg=$p"
-pip install $p.tar.gz
-
 # on Windows, rebase DLLs
 # this _might_ fix a recurring problem with fork+git+pycbe
 if $build_dlls; then
