@@ -82,7 +82,8 @@ fp, params, labels, _ = option_utils.results_from_cli(
                                          opts, load_samples=True, walkers=None)
 
 # get walkers to plot
-nwalkers = fp.nwalkers if opts.walkers is None else opts.walkers
+walkers = range(fp.nwalkers) if opts.walkers is None else opts.walkers
+nwalkers = len(walkers)
 
 # create Figure
 fig = plt.figure()
@@ -92,7 +93,8 @@ for param, label in zip(params, labels):
     logging.info("Plotting parameter %s", param)
 
     # loop over walkers
-    for j in nwalkers:
+    for j in walkers:
+        logging.info("Plotting walker %d of %d", j, nwalkers)
 
         # plot each walker
         y = fp.read_samples(param, walkers=j,
