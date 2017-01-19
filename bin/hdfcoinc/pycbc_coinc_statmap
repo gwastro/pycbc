@@ -240,12 +240,8 @@ save_these_fore_ind = numpy.array([], dtype=int)
 
 while len(loud_t_ind) > 0:
     # If the user wants to stop doing hierarchical removals after a set
-    # number of iterations then break when the h_iterations gets to that
-    # number
-
+    # number of iterations then break when that happens.
     if (h_iterations == args.max_hier_removal): 
-        logging.warn("Hierarchical removal can continue but user has set"
-                     "--max-hier-removal too low!")
         break
 
     # Add the iteration number of hierarchical removals done.
@@ -253,16 +249,16 @@ while len(loud_t_ind) > 0:
 
     # Among foreground triggers louder than the inc background, find the one
     # with the largest ranking statistic.
-    max_ifar_ind = loud_t_ind[0]
+    max_stat_ind = loud_t_ind[0]
     for i in range(0, len(loud_t_ind)):
-        if fore_stat[loud_t_ind[i]] > fore_stat[max_ifar_ind]:
-            max_ifar_ind = loud_t_ind[i]
+        if fore_stat[loud_t_ind[i]] > fore_stat[max_stat_ind]:
+            max_stat_ind = loud_t_ind[i]
 
     # Step 3: Remove that trigger from the list of zerolag triggers
 
     # Store where the loud foreground trigger that I want to remove next in the
     # list of all of the triggers located is at
-    where_is_fore_t = numpy.where(all_trigs.stat[:] == fore_stat[max_ifar_ind])[0]
+    where_is_fore_t = numpy.where(all_trigs.stat[:] == fore_stat[max_stat_ind])[0]
 
     # FIXME:
     # In the RARE case that there are two equally loud
@@ -281,17 +277,17 @@ while len(loud_t_ind) > 0:
     # Store any foreground trigger's information that we want to
     # hierarchically remove.
 
-    save_ifar_fore_trig = numpy.append(save_ifar_fore_trig, ifar[max_ifar_ind])
+    save_ifar_fore_trig = numpy.append(save_ifar_fore_trig, ifar[max_stat_ind])
     save_fap_fore_trig = numpy.append(save_fap_fore_trig, \
-                                   1 - numpy.exp(- coinc_time / ifar[max_ifar_ind]))
+                                   1 - numpy.exp(- coinc_time / ifar[max_stat_ind]))
 
     # Save the location in the foreground trigger array too.
-    save_these_fore_ind = numpy.append(save_these_fore_ind, max_ifar_ind)
+    save_these_fore_ind = numpy.append(save_these_fore_ind, max_stat_ind)
 
     logging.info("Removing foreground trigger that is louder than the inclusive background.")
 
     # Remove foreground trigger from the list of loud foreground triggers.
-    loud_t_ind = numpy.delete(loud_t_ind, numpy.where(loud_t_ind[:] == max_ifar_ind)[0][0])
+    loud_t_ind = numpy.delete(loud_t_ind, numpy.where(loud_t_ind[:] == max_stat_ind)[0][0])
 
     # Remove the foreground trigger AND all of the inclusive background
     # triggers that are associated with it via the timeslides.
