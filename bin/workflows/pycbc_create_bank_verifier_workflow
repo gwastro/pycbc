@@ -134,11 +134,13 @@ class BanksimTablePointInjsExecutable(wf.Executable):
     # This can be altered if you don't always want to store output files
     current_retention_level = wf.Executable.FINAL_RESULT
 
-    def create_node(self, analysis_time, input_files, extra_tags=None):
+    def create_node(self, analysis_time, input_files, relative_dirs,
+                    extra_tags=None):
         if extra_tags is None:
             extra_tags = []
         node = wf.Executable.create_node(self)
         node.add_input_list_opt('--input-files', input_files)
+        node.add_list_opt('--directory-links', relative_dirs)
         node.new_output_file_opt(analysis_time, '.html', '--output-file',
                                  tags=self.tags + extra_tags)
         return node
@@ -271,9 +273,15 @@ point_inj_summ_files = []
 # Nothing in this yet, so not sure how to set this.
 broad_inj_summ_files = []
 
+# Set the point injection names
+for f in sorted(output_pointinjs):
+    rdir['point_injection_sets/{}'.format(f)]
+
 curr_node = point_injs_table_exe.create_node\
     (workflow.analysis_time,
-     [output_pointinjs[f] for f in output_pointinjs])
+     [output_pointinjs[f] for f in sorted(output_pointinjs)],
+     ['../' + rdir.name['point_injection_sets/{}'.format(f)]
+      for f in sorted(output_pointinjs)])
 workflow += curr_node
 plotting_nodes.append(curr_node)
 point_inj_summ_files.append((curr_node.output_file,))
@@ -294,7 +302,9 @@ layout.two_column_layout(rdir['point_injection_sets'], point_inj_summ_files)
 # Also add broad_injs when ready
 
 secs = workflow.cp.get_subsections('banksim_plot_fitting_factors')
-for tag in output_broadinjs:
+# Note a sorted(dict) returns a list of sorted *keys*. Works in python 2.4+
+# and python 3 (dict.keys is removed in python 3)
+for tag in sorted(output_broadinjs):
     curr_outs = []
     curr_file = output_broadinjs[tag]
     plot_fitting_facs_exe.update_output_directory\
@@ -309,7 +319,8 @@ for tag in output_broadinjs:
     # Other outputs could go here, before running the layout
     layout.two_column_layout(rdir['broad_injection_sets/{}'.format(tag)],
                              curr_outs)
-for tag in output_pointinjs:
+
+for tag in sorted(output_pointinjs):
     curr_outs = []
     curr_file = output_pointinjs[tag]
     plot_fitting_facs_exe.update_output_directory\

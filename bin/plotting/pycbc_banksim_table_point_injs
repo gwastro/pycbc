@@ -35,6 +35,8 @@ parser = argparse.ArgumentParser(usage='',
 parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument('--input-files', nargs='+', default=None, required=True,
                     help="List of input files.")
+parser.add_argument('--directory-links', nargs='+', default=None,
+                    help="Relative directory paths to corresponding input")
 parser.add_argument('--output-file', default=None, required=True,
                     help="Output file.")
  
@@ -45,13 +47,21 @@ col_names = ['Mass 1', 'Mass 2', 'Signal <br\\> recovery <br\\> fraction',
              'Maximum <br\\> fitting <br\\> factor',
              'Minimum <br\\> fitting <br\\> factor']
 format_strings = ['##.##', '##.##', '#.###', '#.###', '#.###', '#.###']
+if opt.directory_links is not None:
+    col_names = ['More <br\\> details  <br\\> link'] +  col_names
+    format_strings = [None] + format_strings
+    dir_names = []
+
 m1 = []
 m2 = []
 srf = []
 eff_ff = []
 max_ff = []
 min_ff = []
-for file_name in opt.input_files:
+for idx, file_name in enumerate(opt.input_files):
+    if opt.directory_links is not None:
+        d = opt.directory_links[idx]
+        dir_names.append('<a href="{}">LINK</a>'.format(d))
     curr_fp = h5py.File(file_name, 'r')
     m1.append(curr_fp['inj_params/mass1'][0])
     m2.append(curr_fp['inj_params/mass2'][0])
@@ -63,6 +73,8 @@ for file_name in opt.input_files:
 
 columns = [numpy.array(m1), numpy.array(m2), numpy.array(srf),
            numpy.array(eff_ff), numpy.array(max_ff), numpy.array(min_ff)]
+if opt.directory_links is not None:
+    columns = [numpy.array(dir_names)] + columns
 
 test_fp = h5py.File(opt.input_files[0], 'r')
 if 'filtered_points' in test_fp.keys():
