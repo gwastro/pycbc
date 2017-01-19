@@ -350,7 +350,7 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
     workflow += node
     return node.output_files[0]
 
-def make_results_web_page(workflow, results_dir):
+def make_results_web_page(workflow, results_dir, explicit_dependencies=None):
     template_path = 'templates/orange.html'
 
     out_dir = workflow.cp.get('results_page', 'output-path')
@@ -360,6 +360,12 @@ def make_results_web_page(workflow, results_dir):
     node.add_opt('--plots-dir', results_dir)
     node.add_opt('--template-file', template_path)
     workflow += node
+    if explicit_dependencies is not None:
+        import Pegasus.DAX3 as dax
+        for dep in explicit_dependencies:
+            dax_dep = dax.Dependency(parent=dep._dax_node,
+                                     child=node._dax_node)
+            workflow._adag.addDependency(dax_dep)
 
 def make_single_hist(workflow, trig_file, veto_file, veto_name,
                      out_dir, bank_file=None, exclude=None,

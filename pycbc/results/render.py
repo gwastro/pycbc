@@ -26,7 +26,7 @@ from xml.sax.saxutils import unescape
 import pycbc.results
 from pycbc.results import unescape_table
 from pycbc.results.metadata import save_html_with_metadata
-from pycbc.workflow.core import SegFile
+from pycbc.workflow.core import SegFile, makedir
 
 def render_workflow_html_template(filename, subtemplate, filelists):
     """ Writes a template given inputs from the workflow generator. Takes
@@ -34,7 +34,8 @@ def render_workflow_html_template(filename, subtemplate, filelists):
     subtemplate to render and the filename of the output.
     """
 
-    dir = os.path.dirname(filename)
+    dirnam = os.path.dirname(filename)
+    makedir(dirnam)
 
     try:
         filenames = [f.name for filelist in filelists for f in filelist if f is not None]
@@ -49,7 +50,7 @@ def render_workflow_html_template(filename, subtemplate, filelists):
     env.globals.update(len=len)
     subtemplate = env.get_template(subtemplate)
     context = {'filelists' : filelists,
-               'dir' : dir}
+               'dir' : dirnam}
     output = subtemplate.render(context)
 
     # save as html page

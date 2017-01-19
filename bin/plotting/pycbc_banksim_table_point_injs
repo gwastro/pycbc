@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+# Copyright (C) 2016 Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Make summary table for a set of point injection runs.
+"""
+
+import sys
+import h5py
+import argparse
+import numpy
+
+import pycbc.version
+from pycbc import results
+
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_banksim_table_point_injs"
+
+parser = argparse.ArgumentParser(usage='',
+    description="Plot effective fitting factor vs mass1 and mass2.")
+parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument('--input-files', nargs='+', default=None, required=True,
+                    help="List of input files.")
+parser.add_argument('--directory-links', nargs='+', default=None,
+                    help="Relative directory paths to corresponding input")
+parser.add_argument('--output-file', default=None, required=True,
+                    help="Output file.")
+ 
+opt = parser.parse_args()
+
+col_names = ['Mass 1', 'Mass 2', 'Signal <br\\> recovery <br\\> fraction',
+             'Effective <br\\> fitting <br\\> factor',
+             'Maximum <br\\> fitting <br\\> factor',
+             'Minimum <br\\> fitting <br\\> factor']
+format_strings = ['##.##', '##.##', '#.###', '#.###', '#.###', '#.###']
+if opt.directory_links is not None:
+    col_names = ['More <br\\> details  <br\\> link'] +  col_names
+    format_strings = [None] + format_strings
+    dir_names = []
+
+m1 = []
+m2 = []
+srf = []
+eff_ff = []
+max_ff = []
+min_ff = []
+for idx, file_name in enumerate(opt.input_files):
+    if opt.directory_links is not None:
+        d = opt.directory_links[idx]
+        dir_names.append('<a href="{}">LINK</a>'.format(d))
+    curr_fp = h5py.File(file_name, 'r')
+    m1.append(curr_fp['inj_params/mass1'][0])
+    m2.append(curr_fp['inj_params/mass2'][0])
+    eff_ff.append(curr_fp['eff_fitting_factor'][()])
+    srf.append(curr_fp['sig_rec_fac'][()])
+    max_ff.append(max(curr_fp['trig_params/match'][:]))
+    min_ff.append(min(curr_fp['trig_params/match'][:]))
+    curr_fp.close()
+
+columns = [numpy.array(m1), numpy.array(m2), numpy.array(srf),
+           numpy.array(eff_ff), numpy.array(max_ff), numpy.array(min_ff)]
+if opt.directory_links is not None:
+    columns = [numpy.array(dir_names)] + columns
+
+test_fp = h5py.File(opt.input_files[0], 'r')
+if 'filtered_points' in test_fp.keys():
+    test_fp.close()
+    cn1 = 'Fraction <br\\> of points <br\\> within <br\\> template <br\\> bank'
+    cn2 = 'Filtered <br\\> points <br\\> signal <br\\> recovery<br\\>fraction'
+    cn3 = 'Filtered <br\\> points <br\\> effective <br\\> fitting<br\\>factor'
+    cn4 = 'Filtered <br\\> points <br\\> maximum <br\\> fitting<br\\>factor'
+    cn5 = 'Filtered <br\\> points <br\\> minimum <br\\> fitting<br\\>factor'
+    col_names += [cn1, cn2, cn3, cn4, cn5]
+    format_strings += ['#.###', '#.###', '#.###', '#.###', '#.###']
+    point_frac = []
+    filt_srf = []
+    filt_eff_ff = []
+    filt_max_ff = []
+    filt_min_ff = []
+    for file_name in opt.input_files:
+        curr_fp = h5py.File(file_name, 'r')
+        point_frac.append(curr_fp['frac_points_within_bank'][()])
+        filt_srf.append(curr_fp['filtered_sig_rec_fac'][()])
+        filt_eff_ff.append(curr_fp['filtered_eff_fitting_factor'][()])
+        if point_frac[-1] > 0:
+            bool_arr = curr_fp['filtered_points'][:]
+            filt_max_ff.append(max(curr_fp['trig_params/match'][:][bool_arr]))
+            filt_min_ff.append(min(curr_fp['trig_params/match'][:][bool_arr]))
+        else:
+            filt_max_ff.append(-1)
+            filt_min_ff.append(-1)
+        curr_fp.close()
+    columns += [numpy.array(point_frac), numpy.array(filt_srf),
+                numpy.array(filt_eff_ff), numpy.array(filt_max_ff),
+                numpy.array(filt_min_ff)]
+else:
+    test_fp.close()
+
+html_table = results.table(columns, col_names, format_strings=format_strings,
+                           page_size=len(m1))
+
+kwds = {'title' : 'Point Injection Results',
+        'cmd' :' '.join(sys.argv), }
+
+results.save_fig_with_metadata(str(html_table), opt.output_file, **kwds)
