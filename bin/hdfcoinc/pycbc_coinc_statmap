@@ -35,9 +35,6 @@ class fw(object):
     def __getitem__(self, *args):
         return self.f.__getitem__(*args)
 
-    def close(self):
-        self.f.close()
-
 parser = argparse.ArgumentParser()
 # General required options
 parser.add_argument('--version', action='version', 
@@ -289,14 +286,14 @@ while len(loud_t_ind) > 0:
     # Remove foreground trigger from the list of loud foreground triggers.
     loud_t_ind = numpy.delete(loud_t_ind, numpy.where(loud_t_ind[:] == max_stat_ind)[0][0])
 
-    # Remove the foreground trigger AND all of the inclusive background
-    # triggers that are associated with it via the timeslides.
+    # Remove the foreground trigger AND all of the background triggers that
+    # are associated with it.
 
-    ind_to_rm_ifo1 = veto.indices_within_times(all_trigs.time1, \
-                              [all_trigs.time1[my_loudest_ind] - args.hierarchical_removal_window], \
+    ind_to_rm_ifo1 = veto.indices_within_times(all_trigs.time1,
+                              [all_trigs.time1[my_loudest_ind] - args.hierarchical_removal_window],
                               [all_trigs.time1[my_loudest_ind] + args.hierarchical_removal_window])
-    ind_to_rm_ifo2 = veto.indices_within_times(all_trigs.time2, \
-                              [all_trigs.time2[my_loudest_ind] - args.hierarchical_removal_window], \
+    ind_to_rm_ifo2 = veto.indices_within_times(all_trigs.time2,
+                              [all_trigs.time2[my_loudest_ind] - args.hierarchical_removal_window],
                               [all_trigs.time2[my_loudest_ind] + args.hierarchical_removal_window])
     indices_to_rm = numpy.concatenate([ind_to_rm_ifo1, ind_to_rm_ifo2])
 
@@ -329,26 +326,6 @@ while len(loud_t_ind) > 0:
     back_locs = all_trigs.timeslide_id != 0 
 
     logging.info("Dumping foreground triggers")
-
-    for key in all_trigs.seg.keys():
-        f['segments_h' + h_iter_str + '/%s/start' % key] = all_trigs.seg[key]['start'][:]
-        f['segments_h' + h_iter_str + '/%s/end' % key] = all_trigs.seg[key]['end'][:]
-
-    if fore_locs.sum() > 0:
-        f['segments_h' + h_iter_str + '/foreground_veto/start'] = remove_start_time
-        f['segments_h' + h_iter_str + '/foreground_veto/end'] = remove_end_time
-        for k in all_trigs.data:
-            f['foreground_h' + h_iter_str + '/' + k] = all_trigs.data[k][fore_locs]
-    else:
-         f['segments_h' + h_iter_str + '/foreground_veto/start'] = numpy.array([0])
-         f['segments_h' + h_iter_str + '/foreground_veto/end'] = numpy.array([0])
-         for k in all_trigs.data:
-             f['foreground_h' + h_iter_str + '/' + k] = numpy.array([], dtype=all_trigs.data[k].dtype)
-
-    if (back_locs.sum()) == 0:
-         logging.warn("There were no background events, so we could not assign "
-                      "any statistic values")
-         sys.exit()
 
     logging.info("Dumping background triggers (inclusive of zerolag)")
     for k in all_trigs.data:
@@ -444,5 +421,4 @@ else :
 
 f['hierarchical_removal_iterations'] = numpy.array([h_iterations])
 
-f.close()
 logging.info("Done") 
