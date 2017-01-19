@@ -193,6 +193,13 @@ class Node(ProfileShortcuts):
         for inp in inputs:
             self.add_opt(inp)
             self._add_input(inp)
+
+    def add_list_opt(self, opt, values):
+        """ Add an option with a list of non-file parameters.
+        """
+        self.add_opt(opt)
+        for val in values:
+            self.add_opt(val)
         
     def add_input_arg(self, inp):
         """ Add an input as an argument
