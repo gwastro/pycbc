@@ -114,10 +114,6 @@ logging.info("%s clustered foreground triggers" % fore_locs.sum())
 logging.info("Clustering coinc triggers (exclusive of zerolag)")
 exc_zero_trigs = exc_zero_trigs.cluster(args.cluster_window)
 
-# If a particular index of all_trigs.timeslide_id isn't 0, evaluate true.
-# This returns an array of Booleans.
-back_locs = all_trigs.timeslide_id != 0
-
 logging.info("Dumping foreground triggers")
 f = fw(args.output_file)
 f.attrs['detector_1'] = all_trigs.attrs['detector_1']
@@ -141,8 +137,10 @@ else:
     for k in all_trigs.data:
         f['foreground/' + k] = numpy.array([], dtype=all_trigs.data[k].dtype)
 
-# If the sum of all Booleans in the array (1 = True, 0 = False) is False,
-# then there aren't any background triggers. So exit.
+# If a particular index of all_trigs.timeslide_id isn't 0, evaluate true.
+# List of locations that is background.
+back_locs = all_trigs.timeslide_id != 0
+
 if (back_locs.sum()) == 0:
     logging.warn("There were no background events, so we could not assign "
                  "any statistic values")
@@ -170,7 +168,7 @@ coinc_time_exc = coinc_time - veto_time
 
 logging.info("Making mapping from FAN to the combined statistic")
 
-# Assign vars to arrays of ranking statistics for back_locs and fore_locs?
+# Ranking statistic of foreground and background
 back_stat = all_trigs.stat[back_locs]
 fore_stat = all_trigs.stat[fore_locs]
 
