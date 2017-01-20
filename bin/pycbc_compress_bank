@@ -150,10 +150,10 @@ for ii in range(imin, imax):
     # get the compressed sample points
     if args.compression_algorithm == 'mchirp':
         sample_points = compress.mchirp_compression(tmplt.mass1, tmplt.mass2,
-            fmin, (kmax-1)*df, min_seglen=args.t_pad, df_multiple=df).astype(
+            fmin, kmax*df, min_seglen=args.t_pad, df_multiple=df).astype(
             real_same_precision_as(htilde))
     elif args.compression_algorithm == 'spa':
-        sample_points = compress.spa_compression(htilde, fmin, (kmax-1)*df,
+        sample_points = compress.spa_compression(htilde, fmin, kmax*df,
             min_seglen=args.t_pad).astype(real_same_precision_as(htilde))
     else:
         raise ValueError("unrecognized compression algorithm %s" %(

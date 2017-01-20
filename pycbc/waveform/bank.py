@@ -66,7 +66,8 @@ def sigma_cached(self, psd):
                 self.sigma_scale = (DYN_RANGE_FAC * amp_norm) ** 2.0
 
 
-            self._sigmasq[key] = psd.sigmasq_vec[self.approximant][self.end_idx] * self.sigma_scale
+            self._sigmasq[key] = self.sigma_scale * \
+                psd.sigmasq_vec[self.approximant][self.end_idx-1]
 
         else:
             if not hasattr(self, 'sigma_view'):
