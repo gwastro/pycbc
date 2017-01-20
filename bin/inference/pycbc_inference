@@ -32,28 +32,10 @@ from pycbc import psd
 from pycbc import scheme
 from pycbc import strain
 from pycbc import types
-from pycbc import waveform
 from pycbc.io.inference_hdf import InferenceFile
+from pycbc.waveform import generator
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import option_utils
-
-def select_waveform_generator(approximant):
-    """ Returns the generator for the approximant.
-    """
-    if approximant in waveform.fd_approximants():
-        return waveform.FDomainCBCGenerator
-    elif approximant in waveform.td_approximants():
-        return waveform.TDomainCBCGenerator
-    elif approximant in waveform.ringdown_fd_approximants:
-        if approximant=='FdQNM':
-            return waveform.FDomainRingdownGenerator
-        elif approximant=='FdQNMmultiModes':
-            return waveform.FDomainMultiModeRingdownGenerator
-    elif approximant in waveform.ringdown_td_approximants:
-        raise ValueError("Time domain ringdowns not supported")
-    else:
-        raise ValueError("%s is not a valid approximant."%approximant)
-
 
 def convert_liststring_to_list(lstring):
     """ Checks if an argument of the configuration file is a string of a list
@@ -292,13 +274,16 @@ with ctx:
     # construct class that will return the prior
     prior = inference.PriorEvaluator(variable_args, *distributions)
 
-    # select generator that will generate waveform
+    # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
     logging.info("Setting up sampler")
-    generator_function = select_waveform_generator(static_args["approximant"])
+    generator_function = generator.select_waveform_generator(
+                                                    static_args["approximant"])
 
-    # construct class that will generate waveforms
-    generator = waveform.FDomainDetFrameGenerator(generator_function,
+    # construct instance that will call single IFO waveform generator
+    # and apply the antenna pattern and timing offsets
+    generator = generator.FDomainDetFrameGenerator(
+                        generator_function,
                         epoch=stilde_dict.values()[0].epoch,
                         variable_args=variable_args,
                         detectors=opts.instruments,
