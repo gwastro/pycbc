@@ -21,7 +21,7 @@ full_corr = """
 zero_corr = """
     __device__ cufftComplex in_call(void* input, size_t offset, 
                                 void* caller_info, void* shared) {      
-        if (offset > callback_params.in_kmax)                       
+        if (offset >= callback_params.in_kmax)                       
             return (cufftComplex){0, 0};
         else{                                   
             cufftComplex r;

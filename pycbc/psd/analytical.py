@@ -119,10 +119,6 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff):
     kmin = int(low_freq_cutoff / delta_f)
     psd.data[:kmin] = 0
 
-    # Sometimes the last value can be 0, this can cause problems down the line
-    if psd.data[length-1] == 0:
-        psd.data[length-1] = psd.data[length-2]
-
     return psd
 
 def flat_unity(length, delta_f, low_freq_cutoff):
