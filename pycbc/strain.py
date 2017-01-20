@@ -928,8 +928,10 @@ class StrainSegments(object):
 
             if filter_inj_only and hasattr(strain, 'injections'):
                 analyze_this = False
+                inj_window = strain.sample_rate * 8
                 for inj_id in inj_idx:
-                    if inj_id < cum_end and inj_id > cum_start:
+                    if inj_id < (cum_end + inj_window) and \
+                            inj_id > (cum_start - inj_window):
                         analyze_this = True
 
                 if not analyze_this:
