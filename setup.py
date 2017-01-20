@@ -62,13 +62,12 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'pillow',
                       'h5py>=2.5',
                       'jinja2',
-                      'pycbc-mpld3>=0.3.dev0',
+                      'mpld3>=0.3',
                       'pyRXP>=2.1.0',
                       'pycbc-glue>=1.0.1',
                       'kombine',
                       'emcee>=2.2.0',
                       'corner>=2.0.1',
-                      #'scikit-learn>=0.17.0',  # travis does not like scikit-learn
                       ]
 
 #FIXME Remove me when we bump to h5py > 2.5
