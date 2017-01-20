@@ -730,16 +730,7 @@ class PyCBCInspiralExecutable(Executable):
         self.cp = cp
         self.set_memory(2000)
         self.injection_file = injection_file
-
-        try:
-            outtype = cp.get('workflow-matchedfilter', 'output-type')
-        except:
-            outtype = None
-
-        if outtype is None or 'hdf' in outtype:
-            self.ext = '.hdf'
-        else:
-            raise ValueError('Invalid output type for PyCBC Inspiral: %s' % outtype)
+        self.ext = '.hdf'
 
         self.num_threads = 1
         if self.get_opt('processing-scheme') is not None:
