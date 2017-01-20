@@ -298,11 +298,12 @@ with ctx:
     generator_function = select_waveform_generator(static_args["approximant"])
 
     # construct class that will generate waveforms
-    generator = waveform.FDomainDetFrameGenerator(generator_function,
-                        epoch=stilde_dict.values()[0].epoch,
-                        variable_args=variable_args,
-                        detectors=opts.instruments,
-                        delta_f=delta_f_dict.values()[0], **static_args)
+    generator = waveform.FDomainDetFrameGenerator(
+                       generator_function, epoch=stilde_dict.values()[0].epoch,
+                       variable_args=variable_args, detectors=opts.instruments,
+                       delta_f=delta_f_dict.values()[0],
+                       delta_t=strain_dict.values()[0].delta_t,
+                       **static_args)
 
     # construct class that will return the natural logarithm of likelihood
     likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](

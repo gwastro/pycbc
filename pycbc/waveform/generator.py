@@ -29,6 +29,7 @@ import functools
 import waveform
 import ringdown
 from pycbc import coordinates
+from pycbc import filter
 from pycbc.waveform import parameters
 from pycbc.waveform.utils import apply_fd_time_shift
 from pycbc.detector import Detector
@@ -549,6 +550,8 @@ class FDomainDetFrameGenerator(object):
         rfparams = dict([(param, self.current_params[param])
             for param in self.rframe_generator.variable_args])
         hp, hc = self.rframe_generator.generate_from_kwargs(**rfparams)
+        hp = filter.make_frequency_series(hp)
+        hc = filter.make_frequency_series(hc)
         hp._epoch = hc._epoch = self._epoch
         h = {}
         if 'tc' in self.current_params:
