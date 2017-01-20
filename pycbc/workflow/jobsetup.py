@@ -736,9 +736,7 @@ class PyCBCInspiralExecutable(Executable):
         except:
             outtype = None
 
-        if outtype is None or 'xml' in outtype:
-            self.ext = '.xml.gz'
-        elif 'hdf' in outtype:
+        if outtype is None or 'hdf' in outtype:
             self.ext = '.hdf'
         else:
             raise ValueError('Invalid output type for PyCBC Inspiral: %s' % outtype)
