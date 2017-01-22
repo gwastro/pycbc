@@ -823,10 +823,10 @@ fi
 cd bootloader
 # patch PyInstaller bootloader to not fork a second process
 if $patch_pyinstaller_bootloader; then
-    sed -i~ 's/ pid *= *fork()/ pid = 0/' common/pyi_utils.c
+    sed -i~ 's/ pid *= *fork()/ pid = 0/' */pyi_utils.c
 fi
 if echo "$pyinstaller_version" | grep '3\.' > /dev/null; then
-    python ./waf distclean all
+    python ./waf distclean configure $pyinstaller_lsb all
 else
     python ./waf configure $pyinstaller_lsb build install
 fi
