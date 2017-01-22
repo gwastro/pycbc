@@ -892,6 +892,7 @@ echo -e "\\n\\n>> [`date`] building pyinstaller spec"
 # create spec file
 if $use_pycbc_pyinstaller_hooks; then
     export NOW_BUILDING=NULL
+    export PYCBC_HOOKS_DIR="$hooks"
     pyi-makespec --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
 else
     # find hidden imports (pycbc CPU modules)
