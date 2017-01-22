@@ -5,17 +5,17 @@ set -e
 # update apt
 grep '^deb http://archive.debian.org/debian/' /etc/apt/sources.list ||
   echo 'deb http://archive.debian.org/debian/ etch main' >>/etc/apt/sources.list
-apt-get update || true
-apt-get install debian-keyring debian-archive-keyring
-apt-get update
+apt-get -y update || true
+apt-get -y install debian-keyring debian-archive-keyring
+apt-get -y update
 # tools for pycbc
-apt-get install git-core ant gcc g++ gfortran automake autoconf make libtool pkg-config bzip2
+apt-get -y install git-core gcc g++ gfortran automake autoconf make libtool pkg-config bzip2
 # libraries for pycbc
-apt-get install libpcre3-dev libfreetype6-dev libjpeg-dev libpng-dev libmysqlclient-dev libpq-dev libssl-dev libsqlite3-dev
+apt-get -y install libpcre3-dev libfreetype6-dev libjpeg-dev libpng-dev libmysqlclient-dev libpq-dev libssl-dev libsqlite3-dev
 # make sure these libraries aren't on the system
-apt-get remove lapack3-dev atlas3-base atlas3-headers refblas3
+apt-get -y remove lapack3-dev atlas3-base atlas3-headers refblas3
 # further necessary / useful tools
-apt-get install openssh-server ntpdate zip gettext curl libcurl3-openssl-dev wget bzip2 screen emacs
+apt-get -y install openssh-server ntpdate zip gettext curl libcurl3-openssl-dev wget bzip2 screen emacs
 
 test ".$PREFIX" = "." &&
   PREFIX=/usr/local
@@ -85,7 +85,8 @@ for url in `echo "
   $gnu/mpfr/mpfr-2.4.2.tar.gz
   $gnu/binutils/binutils-2.24.tar.gz
   $gnu/gcc/gcc-$GCC/gcc-$GCC.tar.bz2
-  http://atlas.atlas.aei.uni-hannover.de/~bema/tarballs/zlib-1.2.6.tar.gz
+  http://www.aei.uni-hannover.de/~bema/zlib-1.2.6.tar.gz
+  http://www.aei.uni-hannover.de/~bema/jre-6u45-linux-x64.bin
   http://www.multiprecision.org/mpc/download/mpc-0.9.tar.gz
   http://pkgconfig.freedesktop.org/releases/pkg-config-0.23.tar.gz
   http://www.python.org/ftp/python/2.7.10/Python-2.7.10.tgz
@@ -125,5 +126,12 @@ compile_tar_gz Python-2.7.10 --enable-shared
 python -m ensurepip
 pip install --upgrade pip
 pip install --trusted-host pypi.python.org virtualenv
+
+p=$PWD/jre-6u45-linux-x64.bin
+chmod +x $p
+mkdir -p /opt
+cd /opt
+$p
+ln -s jre1.6.0_45 java
 
 echo "==== `date` done."
