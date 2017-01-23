@@ -24,7 +24,6 @@
 """This modules defines functions for clustering and thresholding timeseries to
 produces event triggers
 """
-import glue.ligolw.utils.process
 import lal, numpy, copy, os.path
 
 from pycbc import WEAVE_FLAGS
