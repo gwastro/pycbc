@@ -1611,14 +1611,6 @@ class UniformRadius(_BoundedDist):
             arr[p] = self._bounds[p][1] * numpy.power(arr[p], 1.0 / self.dim)
         return arr
 
-    def pdf(self, **kwargs):
-        """Returns the pdf at the given values. The keyword arguments must
-        contain all of parameters in self's params. Unrecognized arguments are
-        ignored. Any boundary conditions are applied to the values before the
-        pdf is evaluated.
-        """
-        return self._pdf(**self.apply_boundary_conditions(**kwargs))
-
     def _pdf(self, **kwargs):
         """The underlying pdf function called by `self.pdf`. This must be set
         by any class that inherits from this class. Otherwise, a
