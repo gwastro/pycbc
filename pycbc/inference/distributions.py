@@ -1536,14 +1536,6 @@ class UniformRadius(_BoundedDist):
     Therefore the radius can be sampled by taking the n-th root of uniform
     numbers and multiplying by the radius.
 
-    Alternative method is drawing uniform points in a box and
-    regarding everything not in the sphere. This is quicker but loose half the
-    samples you draw. You know how many samples you throw away by calculating
-    the probability inside sphere given inside cube for 3 dimensions is
-    :math:`p(\mathrm{in sphere}|\mathrm{in cube}) = \frac{\frac{4}{3} \pi R^3}{8 R^3} = 0.52`.
-    Note that we use :math:`8 R^3` for the volume because the length of one
-    side is :math:`2 R`.
-
     \**params :
         The keyword arguments should provide the names of parameters and their
         corresponding bounds, as either tuples or a `boundaries.Bounds`
