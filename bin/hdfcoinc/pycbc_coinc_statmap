@@ -217,25 +217,25 @@ logging.info("Beginning hierarchical removal of foreground triggers.")
 # This number tracks which inclusive background is written to file.
 h_iterations = 0
 
-# Step 1: Check to see if there are triggers that are louder
-#         then all of the inclusive background.
+## Step 1: Check to see if there are triggers that are louder then all of the
+##         inclusive background.
 
 # fnlouder is the number of background events that are louder than the
 # foreground trigger.
 
-loud_t_ind = numpy.where(fnlouder == 0)[0]
+#loud_t_ind = numpy.where(fnlouder == 0)[0]
 
-# Create arrays to save far and fap of hierarchically removed foreground
-# triggers
+## Create arrays to save far and fap of hierarchically removed foreground
+## triggers
 
-save_ifar_fore_trig = numpy.array([], dtype=float)
-save_fap_fore_trig = numpy.array([], dtype=float)
-save_these_fore_ind = numpy.array([], dtype=int)
+#save_ifar_fore_trig = numpy.array([], dtype=float)
+#save_fap_fore_trig = numpy.array([], dtype=float)
+#save_these_fore_ind = numpy.array([], dtype=int)
 
-# Step 2 : Loop until we don't have to hierarchically remove
-#          anymore.
+# Step 2 : Loop until we don't have to hierarchically remove anymore. This
+#          will happen when fnlouder has no elements that equal 0.
 
-while len(loud_t_ind) > 0:
+while numpy.any(fnlouder == 0) is True:
     # If the user wants to stop doing hierarchical removals after a set
     # number of iterations then break when that happens.
     if (h_iterations == args.max_hier_removal): 
@@ -244,39 +244,43 @@ while len(loud_t_ind) > 0:
     # Add the iteration number of hierarchical removals done.
     h_iterations += 1
 
-    # Among foreground triggers louder than the inc background, find the one
-    # with the largest ranking statistic.
-    max_stat_ind = loud_t_ind[0]
-    for i in range(0, len(loud_t_ind)):
-        if fore_stat[loud_t_ind[i]] > fore_stat[max_stat_ind]:
-            max_stat_ind = loud_t_ind[i]
+    # Among foreground triggers, find the one with the largest ranking
+    # statistic and mark it for removal.
+    max_stat_idx = fore_stat.argmax()
+
+#    max_stat_ind = loud_t_ind[0]
+#    for i in range(0, len(loud_t_ind)):
+#        if fore_stat[loud_t_ind[i]] > fore_stat[max_stat_ind]:
+#            max_stat_ind = loud_t_ind[i]
 
     # Step 3: Remove that trigger from the list of zerolag triggers
 
-    # Store where the loud foreground trigger that I want to remove next in the
-    # list of all of the triggers located is at
-    where_is_fore_t = numpy.where(all_trigs.stat[:] == fore_stat[max_stat_ind])[0]
+    # Find the index of the loud foreground trigger to remove next.
+    #where_is_fore_t = numpy.where(all_trigs.stat[:] == fore_stat[max_stat_ind])[0]
+    find_trig_idx = numpy.where(all_trigs.stat[:] == fore_stat[max_stat_idx])[0]
 
     # FIXME:
     # In the RARE case that there are two equally loud
     # louder-than-the-background foreground triggers give preference
     # to the one with the earliest GPS time, just for documenting purposes
-    if len(where_is_fore_t) > 1:
+#    if len(where_is_fore_t) > 1:
+    if len(find_trid_idx) > 1:
         logging.warn("WARNING: There is more than one foreground trigger "
                      "that is louder than the background and have the same "
-                     "ranking statistic. This code may operate strangely in"
+                     "ranking statistic. This code may operate strangely in "
                      "this condition.")
 
     # This is the foreground trigger index in the all_trigs array that we
     # want to remove
-    my_loudest_ind = where_is_fore_t[0]
+#    my_loudest_ind = where_is_fore_t[0]
+    rm_trig_idx = find_trig_idx[0]
 
     # Store any foreground trigger's information that we want to
     # hierarchically remove.
 
-    save_ifar_fore_trig = numpy.append(save_ifar_fore_trig, ifar[max_stat_ind])
-    save_fap_fore_trig = numpy.append(save_fap_fore_trig, \
-                                   1 - numpy.exp(- coinc_time / ifar[max_stat_ind]))
+#    save_ifar_fore_trig = numpy.append(save_ifar_fore_trig, ifar[max_stat_ind])
+#    save_fap_fore_trig = numpy.append(save_fap_fore_trig,
+#                                   1 - numpy.exp(- coinc_time / ifar[max_stat_ind]))
 
     # Save the location in the foreground trigger array too.
     save_these_fore_ind = numpy.append(save_these_fore_ind, max_stat_ind)
