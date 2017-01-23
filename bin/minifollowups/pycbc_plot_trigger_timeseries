@@ -68,22 +68,24 @@ for ifo in args.single_trigger_files.keys():
         val = data['snr'][:][idx]
 
         if args.special_trigger_ids:
-            top = data['snr'][:][id_loud]
+            top = data['snr'][id_loud]
 
     if args.plot_type == 'newsnr':
         snr = data['snr'][:][idx]
-        chisq = data['chisq'][:][idx]
-        chisq_dof = data['chisq_dof'][:][idx]
+        rchisq = data['chisq'][:][idx] / (2 * data['chisq_dof'][:][idx] - 2)
 
-        if len(chisq) > 0:
-            val = pycbc.events.newsnr(snr, chisq / (2 * chisq_dof - 2))
+        if len(rchisq) > 0:
+            val = pycbc.events.newsnr(snr, rchisq)
         else:
             val = numpy.array([])
+    
+        del snr
+        del rchisq
 
         # Get the newnsr of the loudest trigger so we can plot a star there
         if args.special_trigger_ids:
-            rchisq = data['chisq'][:][id_loud] / (data['chisq_dof'][:][id_loud] * 2 - 2)
-            top = pycbc.events.newsnr(data['snr'][:][id_loud], rchisq)
+            rchisq = data['chisq'][id_loud] / (data['chisq_dof'][id_loud] * 2 - 2)
+            top = pycbc.events.newsnr(data['snr'][id_loud], rchisq)
 
     if type(val) in [numpy.float32, numpy.float64] or len(val) > 0:
         any_data = True
@@ -113,5 +115,6 @@ pylab.grid()
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
             cmd = ' '.join(sys.argv),
             title = 'Single Detector Trigger Timeseries (%s)' % args.plot_type,
-            caption = 'Time series showing the single detector triggers centered around the time of the trigger of interest.',           
+            caption = 'Time series showing the single detector triggers'
+                      ' centered around the time of the trigger of interest.',           
          )
