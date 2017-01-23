@@ -1612,9 +1612,9 @@ class UniformRadius(_BoundedDist):
         return arr
 
     def _pdf(self, **kwargs):
-        """The underlying pdf function called by `self.pdf`. This must be set
-        by any class that inherits from this class. Otherwise, a
-        `NotImplementedError` is raised.
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored.
         """
         for p in self._params:
             if p not in kwargs.keys():
@@ -1629,9 +1629,9 @@ class UniformRadius(_BoundedDist):
             return 0.0
 
     def _logpdf(self, **kwargs):
-        """The underlying pdf function called by `self.pdf`. This must be set
-        by any class that inherits from this class. Otherwise, a
-        `NotImplementedError` is raised.
+        """Returns the log of the pdf at the given values. The keyword
+        arguments must contain all of parameters in self's params. Unrecognized
+        arguments are ignored.
         """
         for p in self._params:
             if p not in kwargs.keys():
