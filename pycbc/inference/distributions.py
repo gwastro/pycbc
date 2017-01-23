@@ -1640,7 +1640,7 @@ class UniformRadius(_BoundedDist):
         if kwargs in self:
             log_pdf = self._lognorm + \
                       (self.dim - 1) * \
-                      sum([numpy.log(kwargs[p]) for p in self._params])
+                      numpy.log([kwargs[p] for p in self._params]).sum()
             return log_pdf
         else:
             return -numpy.inf
