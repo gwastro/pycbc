@@ -102,8 +102,14 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8
     appendix="_Linux64"
 elif test "`uname -s`" = "Darwin" ; then # OSX
     echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
-    libframe_debug_level=3 # not actually used, but kept for reference
-    link_gcc_version=mp-4.8
+    export FC=gfortran-mp-4.8
+    export CC=gcc-mp-4.8
+    export CXX=g++-mp-4.8
+    export FFLAGS="$FFLAGS -m64"
+    export CFLAGS="$CFLAGS -m64"
+    export CXXFLAGS="$CXXFLAGS -m64"
+    export LDFLAGS="$LDFLAGS -m64"
+#    libframe_debug_level=3
     gcc_path="/opt/local/bin"
     libgfortran=libgfortran.dylib
     fftw_cflags="-Wa,-q"
@@ -221,16 +227,13 @@ if [ ".$link_gcc_version" != "." ]; then
         for i in gcc g++ gfortran; do
             rm -f $i &&
                 if test -x "${gcc_path}/$i-$link_gcc_version"; then
-                    ln -s "${gcc_path}/$i-$link_gcc_version" $i
+                    ln -s "${gcc_path}/$i-$link_gcc_version" $i;
                 else
                     echo ERROR; "${gcc_path}/$i-$link_gcc_version" not found
                 fi
         done
     )
 fi
-export FC=gfortran
-export CC=gcc
-export CXX=g++
 libgfortran_dir="`$FC -print-file-name=$libgfortran|sed 's%/[^/]*$%%'`"
 export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran_dir:/usr/local/lib:$LD_LIBRARY_PATH"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
@@ -249,7 +252,7 @@ echo "WORKSPACE='$WORKSPACE'" # for Jenkins jobs
 # -static-libgfortran
 
 # URL abbrevations
-pypi="https://pypi.python.org/packages/source"
+pypi="http://pypi.python.org/packages/source"
 gitlab="https://gitlab.aei.uni-hannover.de/einsteinathome"
 atlas="https://www.atlas.aei.uni-hannover.de/~bema"
 albert="http://albert.phys.uwm.edu/download"
@@ -374,7 +377,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     if [ "$numpy_from" = "tarball" ]; then
 	p=numpy-1.9.3
 	echo -e "\\n\\n>> [`date`] building $p"
-	test -r $p.tar.gz || wget $wget_opts $pypi/n/numpy/$p.tar.gz
+	test -r $p.tar.gz || wget $wget_opts https://pypi.python.org/packages/source/n/numpy/$p.tar.gz
 	rm -rf $p
 	tar -xzf $p.tar.gz 
 	cd $p
@@ -783,7 +786,7 @@ if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9][0-9]*$' > /dev/null; then
     # regular release version, get source tarball from pypi
     p=PyInstaller-$pyinstaller_version
     echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz || wget $wget_opts "$pypi/P/PyInstaller/$p.tar.gz"
+    test -r $p.tar.gz || wget $wget_opts "https://pypi.python.org/packages/source/P/PyInstaller/$p.tar.gz"
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
