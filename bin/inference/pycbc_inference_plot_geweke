@@ -22,6 +22,7 @@ import argparse
 import logging
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
+import pycbc
 from pycbc import results
 from pycbc.inference import geweke
 from pycbc.inference import option_utils
@@ -66,11 +67,7 @@ option_utils.add_inference_results_option_group(parser)
 opts = parser.parse_args()
 
 # setup log
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+pycbc.init_logging(opts.verbose)
 
 # enfore that this is not a single iteration
 # since that does not make sense for the Geweke convergence test
