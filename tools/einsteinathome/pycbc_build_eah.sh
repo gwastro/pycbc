@@ -759,8 +759,8 @@ echo -e "[`date`] install six, pkgconfig and matplotlib beforehand"
 pip install `grep -w ^six requirements.txt||echo six==1.9.0`
 pip install `grep -w ^pkgconfig requirements.txt||echo pkgconfig==1.1.0`
 pip install `grep ^matplotlib== requirements.txt||echo matplotlib==1.4.3`
-# echo -e "[`date`] downgrade setuptools"
-# pip install --upgrade `grep -w ^setuptools requirements.txt`
+echo -e "[`date`] downgrade setuptools"
+pip install --upgrade `grep -w ^setuptools requirements.txt`
 echo -e "[`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
 pycbc_tag="`git describe --tags --exact-match HEAD 2>/dev/null||true`"
 pip install .
