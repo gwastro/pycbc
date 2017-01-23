@@ -57,29 +57,23 @@ for ifo in args.single_trigger_files.keys():
     
     data = h5py.File(args.single_trigger_files[ifo], 'r')[ifo]
     times = data['end_time'][:]
-    
-    idx = pycbc.events.indices_within_times(times, [t - args.window],
-                                                   [t + args.window])
-                                                   
+    idx = numpy.logical_and(times < t + args.window, times > t - args.window)
+                                              
     # center times on the trigger/chosen time
     times = times[idx] - t
     
     if args.plot_type == 'snr':
-        val = data['snr'][:][idx]
+        val = data['snr'][idx]
 
         if args.special_trigger_ids:
             top = data['snr'][id_loud]
 
     if args.plot_type == 'newsnr':
-        snr = data['snr'][:][idx]
-        rchisq = data['chisq'][:][idx] / (2 * data['chisq_dof'][:][idx] - 2)
-
+        rchisq = data['chisq'][idx] / (2 * data['chisq_dof'][idx] - 2)
         if len(rchisq) > 0:
-            val = pycbc.events.newsnr(snr, rchisq)
+            val = pycbc.events.newsnr(data['snr'][idx], rchisq)
         else:
             val = numpy.array([])
-    
-        del snr
         del rchisq
 
         # Get the newnsr of the loudest trigger so we can plot a star there
