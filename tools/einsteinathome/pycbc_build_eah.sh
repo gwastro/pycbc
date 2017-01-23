@@ -19,6 +19,8 @@ echo -e ">> [`date`] Start $0 $*"
 
 test ".$LANG" = "." && export LANG="en_US.UTF-8"
 test ".$LC_ALL" = "." && export LC_ALL="$LANG"
+export CC=gcc
+export CXX=g++
 export FC=gfortran
 
 # compilation environment
@@ -227,7 +229,7 @@ if [ ".$link_gcc_version" != "." ]; then
         for i in gcc g++ gfortran; do
             rm -f $i &&
                 if test -x "${gcc_path}/$i-$link_gcc_version"; then
-                    ln -s "${gcc_path}/$i-$link_gcc_version" $i;
+                    ln -s "${gcc_path}/$i-$link_gcc_version" $i
                 else
                     echo ERROR; "${gcc_path}/$i-$link_gcc_version" not found
                 fi
