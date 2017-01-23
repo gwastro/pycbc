@@ -76,7 +76,8 @@ if opts.iteration is not None:
 
 # load the results
 fp, params, labels, _ = option_utils.results_from_cli(
-                                         opts, load_samples=True, walkers=None)
+                                         opts, load_samples=False,
+                                         walkers=None)
 
 # get walkers to plot
 walkers = range(fp.nwalkers) if opts.walkers is None else opts.walkers
