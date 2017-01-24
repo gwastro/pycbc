@@ -760,6 +760,7 @@ else
     git remote update
     git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
+git clean -xdf
 echo -e "[`date`] install six, pkgconfig and matplotlib beforehand"
 pip install `grep -w ^six requirements.txt||echo six==1.9.0`
 pip install `grep -w ^pkgconfig requirements.txt||echo pkgconfig==1.1.0`
