@@ -249,12 +249,12 @@ while numpy.any(fnlouder == 0):
     f['foreground/ifar'][orig_fore_idx] = sec_to_year(ifar[max_stat_idx])
     f['foreground/fap'][orig_fore_idx] = fap[max_stat_idx]
 
-    # Save the location in the foreground trigger array too.
+    # Save the index location of the foreground trigger that was removed.
     save_these_fore_ind = numpy.append(save_these_fore_ind, orig_fore_idx)
 
     logging.info("Removing foreground trigger that is louder than the inclusive background.")
 
-    # Remove the foreground trigger AND all of the background triggers that
+    # Remove the foreground trigger and all of the background triggers that
     # are associated with it.
 
     ave_rm_time = (all_trigs.time1[rm_trig_idx] + all_trigs.time2[rm_trig_idx]) / 2.0
@@ -335,12 +335,8 @@ while numpy.any(fnlouder == 0):
             f['foreground/ifar'][orig_fore_idx] = sec_to_year(ifar[i])
             f['foreground/fap'][orig_fore_idx] = fap[i]
 
-# End of the while loop, now take all of the information and write it back in
-# to file the way that other codes downstream know how to read.
-logging.info("Writing final calculations to file")
-
-# If there were hierarchically removed foreground triggers, write them back
-# into the file with the correct statistics.
+# If there were hierarchically removed foreground triggers, write the indices
+# of hierarchically removed foreground triggers to file
 if h_iterations > 0:
      f['hierarchical_removed_fore_indices'] = save_these_fore_ind
 
