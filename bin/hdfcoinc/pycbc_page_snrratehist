@@ -69,7 +69,7 @@ if f.attrs['hierarchical_removal_iterations'] is not None:
         fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
         dec = f['background/decimation_factor'][:]   
     else :
-        bstat = f['background_h%s/stat', h_inc_back_num][:]
+        bstat = f['background_h%s/stat%s' % h_inc_back_num][:]
         fap = 1 - numpy.exp(- f.attrs['foreground_time_h%s' % h_inc_back_num] / f['background_h%s/ifar' % h_inc_back_num][:] / lal.YRJUL_SI)
         dec = f['background_h%s/decimation_factor' % h_inc_back_num][:]
 
@@ -136,7 +136,6 @@ if fstat is not None and not args.closed_box:
     le, re = bins[:-1], bins[1:]
     # We need to plot a histogram "errorbar" with the hierarchically
     # removed foreground triggers in purple.
-
     if f.attrs['hierarchical_removal_iterations'] is not None:
         if h_iterations > 0 :
             # If there were any hierarchically removed foreground triggers let's
