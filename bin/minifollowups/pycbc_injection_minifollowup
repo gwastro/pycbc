@@ -57,6 +57,9 @@ parser.add_argument('--inspiral-data-analyzed-name',
                          "analyzed by each analysis job.")
 parser.add_argument('--inj-window', type=int, default=0.5,
                     help="Time window in which to look for injection triggers")
+parser.add_argument('--ifar-threshold', type=float, default=None,
+                    help="If given also followup injections with ifar smaller "
+                         "than this threshold.")
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
@@ -93,6 +96,11 @@ for ifo in args.single_detector_triggers:
 
 f = h5py.File(args.injection_file, 'r')
 missed = f['missed/after_vetoes'][:]
+if args.ifar_threshold is not None:
+    ifars = f['found_after_vetoes']['ifar'][:]
+    lgc_arr = ifars < args.ifar_threshold
+    missed = numpy.append(missed,
+                          f['found_after_vetoes']['injection_index'][lgc_arr])
 
 num_events = int(workflow.cp.get_opt_tags('workflow-injection_minifollowups', 'num-events', ''))
 
