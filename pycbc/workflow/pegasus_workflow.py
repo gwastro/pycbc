@@ -426,7 +426,7 @@ class File(DataStorage, dax.File):
             transfer_file = True
         else:
             transfer_file = False
-        node._dax_node.uses(self, link=dax.Link.OUTPUT, register=False, 
+        node._dax_node.uses(self, link=dax.Link.OUTPUT, register=True, 
                                                         transfer=transfer_file)                                                       
     def output_map_str(self):
         if self.storage_path:
