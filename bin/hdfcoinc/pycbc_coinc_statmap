@@ -27,9 +27,8 @@ class fw(object):
             self.f.create_dataset(name, data=data, compression="gzip",
                                   compression_opts=9, shuffle=True,
                                   maxshape=data.shape)
-        # Else re-size that section and reassign values
+        # Else reassign values
         else:
-            self.f[name].resize(data.shape)
             self.f[name][:] = data
 
     def __getitem__(self, *args):
