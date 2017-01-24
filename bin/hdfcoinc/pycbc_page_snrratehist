@@ -26,10 +26,17 @@ parser.add_argument('--output-file')
 parser.add_argument('--bin-size', type=float, default=0.1)
 parser.add_argument('--x-min', type=float, default=8.0)
 parser.add_argument('--trials-factor', type=int, default=1)
-parser.add_argument('--cumulative', action='store_true')
+parser.add_argument('--h-iter-inc-background', type=int, default=0,
+                    help='Indicate which inclusive background to plot '
+                         'with the foreground triggers if there were '
+                         'any hierarchical removals done.')
 parser.add_argument('--closed-box', action='store_true',
-      help="Make a closed box version that excludes foreground triggers")
+                    help='Make a closed box version that excludes '
+                         'foreground triggers')
 args = parser.parse_args()
+
+# Parse the command line value to an variable we can change.
+h_inc_back_num = args.h_iter_inc_background
 
 if args.verbose:
     log_level = logging.INFO
@@ -49,9 +56,28 @@ else:
     if len(fstat) == 0:
         fstat = None
 
-dec = f['background/decimation_factor'][:]
-bstat = f['background/stat'][:]
-fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
+if f.attrs['hierarchical_removal_iterations'] is not None:
+    h_iterations = f.attrs['hierarchical_removal_iterations']
+    if h_inc_back_num > h_iterations:
+        logging.warn('User requested inclusive background iteration that was '
+                     'not done. Defaulting to last possible inclusive '
+                     'background.')
+        h_inc_back_num = h_iterations
+
+    h_iter_string = str(h_inc_back_num)
+    if h_inc_back_num == 0:
+        bstat = f['background/stat'][:]
+        fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
+        dec = f['background/decimation_factor'][:]   
+    else :
+        bstat = f['background_h' + h_iter_string + '/stat'][:]
+        fap = 1 - numpy.exp(- f.attrs['foreground_time_h' + h_iter_string] / f['background_h' + h_iter_string + '/ifar'][:] / lal.YRJUL_SI)
+        dec = f['background_h' + h_iter_string + '/decimation_factor'][:]
+
+else :
+    bstat = f['background/stat'][:]
+    fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
+    dec = f['background/decimation_factor'][:]
 
 s = bstat.argsort()
 dec, bstat, fap = dec[s], bstat[s], fap[s]
@@ -87,20 +113,80 @@ pylab.hist(bstat_exc, bins=bins, histtype='step',
 
 # plot full background
 if not args.closed_box:
-    pylab.hist(bstat, bins=bins, histtype='step',
-                  linewidth=2,
-                  color='black', log=True, 
-                  label='Full Background',
-                  weights=dec / f.attrs['background_time'] * lal.YRJUL_SI)
+    if f.attrs['hierarchical_removal_iterations'] is not None:
+        if h_inc_back_num == 0:
+            pylab.hist(bstat, bins=bins, histtype='step',
+                       linewidth=2,
+                       color='black', log=True, 
+                       label='Full Background',
+                       weights=dec / f.attrs['background_time'] * lal.YRJUL_SI)
+        else :
+            pylab.hist(bstat, bins=bins, histtype='step',
+                       linewidth=2,
+                       color='black', log=True,
+                       label='Full Background',
+                       weights=dec / f.attrs['background_time_h' + h_iter_string] * lal.YRJUL_SI)
+    else :
+        pylab.hist(bstat, bins=bins, histtype='step',
+                   linewidth=2,
+                   color='black', log=True,
+                   label='Full Background',
+                   weights=dec / f.attrs['background_time'] * lal.YRJUL_SI)
 
 if fstat is not None and not args.closed_box:
     le, re = bins[:-1], bins[1:]
+    # We need to plot a histogram "errorbar" with the hierarchically
+    # removed foreground triggers in purple.
+
+    if f.attrs['hierarchical_removal_iterations'] is not None:
+        if h_iterations > 0 :
+            # If there were any hierarchically removed foreground triggers let's
+            # find them in our data set
+            fstat_unsorted = f['foreground/stat'][:]
+
+            save_h_removed_indices = f['hierarchical_removed_fore_indices'][:]
+
+            fstat_h_rm = fstat_unsorted[save_h_removed_indices]
+            fstat_h_rm = numpy.sort(fstat_h_rm)
+
+            # Remove any hierarchically removed foreground triggers from the
+            # list of foreground triggers. Must remove them up the level
+            # indicated in plotting code, remove them in accordance with the
+            # inclusive background that the user wants to plot
+            h_remove_for_plot_indices = []
+            for i in range(len(fstat_h_rm)-1,
+                     len(fstat_h_rm) - h_inc_back_num - 1, -1):
+                h_remove_for_plot_indices.append(save_h_removed_indices[i-1])
+
+            fstat_h_rm = fstat_unsorted[h_remove_for_plot_indices]
+            fstat_h_rm = numpy.sort(fstat_h_rm)
+            fstat = numpy.delete(fstat_unsorted, h_remove_for_plot_indices)
+            fstat = numpy.sort(fstat)
+
+            # Write "histogram" information.
+            left_h_rm = numpy.searchsorted(fstat_h_rm, le)
+            right_h_rm = numpy.searchsorted(fstat_h_rm, re)
+            if h_inc_back_num == 0:
+                count_h_rm = (right_h_rm - left_h_rm) / \
+                             f.attrs['foreground_time'] * lal.YRJUL_SI
+
+            else : 
+                count_h_rm = (right_h_rm - left_h_rm) / \
+                             f.attrs['foreground_time_h' + \
+                             h_iter_string] * lal.YRJUL_SI
+
+            pylab.errorbar(bins[:-1] + args.bin_size / 2, count_h_rm, 
+                           xerr=args.bin_size/2,
+                           label='Hierarchically Removed Foreground', mec='none',
+                           fmt='s', ms=1, capthick=0, elinewidth=4,
+                           color='#b66dff')
+
     left = numpy.searchsorted(fstat, le)
     right = numpy.searchsorted(fstat, re)
     count = (right - left) / f.attrs['foreground_time'] * lal.YRJUL_SI
-    pylab.errorbar(bins[:-1] + args.bin_size / 2, count,
-                   xerr=args.bin_size/2, label='Foreground',
-                   mec='none', fmt='o', ms=1, capthick=0, elinewidth=4,  color='#ff6600')
+    pylab.errorbar(bins[:-1] + args.bin_size / 2, count, xerr=args.bin_size/2,
+                   label='Foreground', mec='none', fmt='o', ms=1, capthick=0,
+                   elinewidth=4,  color='#ff6600')
 
 pylab.xlabel('Weighted Network SNR, $\\rho_c$ (Bin Size = %.2f)' % args.bin_size)
 pylab.ylabel('Trigger Rate (yr$^{-1})$')
@@ -116,12 +202,16 @@ if not args.closed_box:
     for ii, sig in enumerate(sigmas[:-1]):
         next_sig = sigmas[ii + 1]
 
+        # Find the p-value of a sigma curve
         p1 = 1 - p_from_sigma(sig) / args.trials_factor
+
+        # Find the p-value of the next sigma curve
         p2 = 1 - p_from_sigma(next_sig) / args.trials_factor        
 
+        # Search the fap data for these p values
         x1 = numpy.searchsorted(fap[::-1], p1)
         x2 = numpy.searchsorted(fap[::-1], p2)
-        
+
         if x1 == x2:
             continue
         
@@ -139,7 +229,15 @@ if not args.closed_box:
 
 ax1 =  pylab.gca()
 ax2 = ax1.twinx()
-fac = f.attrs['foreground_time'] / lal.YRJUL_SI
+
+if f.attrs['hierarchical_removal_iterations'] is not None:
+    if h_inc_back_num == 0:
+        fac = f.attrs['foreground_time'] / lal.YRJUL_SI
+    else :
+        fac = f.attrs['foreground_time_h' + h_iter_string] / lal.YRJUL_SI
+else:
+    fac = f.attrs['foreground_time'] / lal.YRJUL_SI
+
 ymin = ax1.get_ylim()[0] * fac
 ymax =  ax1.get_ylim()[1] * fac
 
@@ -150,4 +248,4 @@ ax2.set_ylabel('Number per Experiment')
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="%s bin, Count vs Rank" % f.attrs['name'] if 'name' in f.attrs else "Count vs Rank", 
      caption="Histogram of the FAR vs the ranking statistic in the search.",
-     cmd=' '.join(sys.argv)) 
+     cmd=' '.join(sys.argv))
