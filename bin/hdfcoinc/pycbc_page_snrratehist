@@ -64,15 +64,15 @@ if f.attrs['hierarchical_removal_iterations'] is not None:
                      'background.')
         h_inc_back_num = h_iterations
 
-    h_iter_string = str(h_inc_back_num)
+#    h_iter_string = str(h_inc_back_num)
     if h_inc_back_num == 0:
         bstat = f['background/stat'][:]
         fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
         dec = f['background/decimation_factor'][:]   
     else :
-        bstat = f['background_h' + h_iter_string + '/stat'][:]
-        fap = 1 - numpy.exp(- f.attrs['foreground_time_h' + h_iter_string] / f['background_h' + h_iter_string + '/ifar'][:] / lal.YRJUL_SI)
-        dec = f['background_h' + h_iter_string + '/decimation_factor'][:]
+        bstat = f['background_h%s/stat', h_inc_back_num][:]
+        fap = 1 - numpy.exp(- f.attrs['foreground_time_h%s' % h_inc_back_num] / f['background_h%s/ifar' % h_inc_back_num][:] / lal.YRJUL_SI)
+        dec = f['background_h%s/decimation_factor' % h_inc_back_num][:]
 
 else :
     bstat = f['background/stat'][:]
@@ -125,7 +125,7 @@ if not args.closed_box:
                        linewidth=2,
                        color='black', log=True,
                        label='Full Background',
-                       weights=dec / f.attrs['background_time_h' + h_iter_string] * lal.YRJUL_SI)
+                       weights=dec / f.attrs['background_time_h%s' % h_inc_back_num] * lal.YRJUL_SI)
     else :
         pylab.hist(bstat, bins=bins, histtype='step',
                    linewidth=2,
@@ -167,13 +167,13 @@ if fstat is not None and not args.closed_box:
             left_h_rm = numpy.searchsorted(fstat_h_rm, le)
             right_h_rm = numpy.searchsorted(fstat_h_rm, re)
             if h_inc_back_num == 0:
-                count_h_rm = (right_h_rm - left_h_rm) / \
+                count_h_rm = (right_h_rm - left_h_rm) /
                              f.attrs['foreground_time'] * lal.YRJUL_SI
 
             else : 
-                count_h_rm = (right_h_rm - left_h_rm) / \
-                             f.attrs['foreground_time_h' + \
-                             h_iter_string] * lal.YRJUL_SI
+                count_h_rm = (right_h_rm - left_h_rm) /
+                             f.attrs['foreground_time_h%s' % h_inc_back_num] *
+                             lal.YRJUL_SI
 
             pylab.errorbar(bins[:-1] + args.bin_size / 2, count_h_rm, 
                            xerr=args.bin_size/2,
@@ -234,7 +234,7 @@ if f.attrs['hierarchical_removal_iterations'] is not None:
     if h_inc_back_num == 0:
         fac = f.attrs['foreground_time'] / lal.YRJUL_SI
     else :
-        fac = f.attrs['foreground_time_h' + h_iter_string] / lal.YRJUL_SI
+        fac = f.attrs['foreground_time_h%s' % h_inc_back_num] / lal.YRJUL_SI
 else:
     fac = f.attrs['foreground_time'] / lal.YRJUL_SI
 
