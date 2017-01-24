@@ -89,15 +89,14 @@ veto_time = abs(veto.start_end_to_segments(remove_start_time,
                                            remove_end_time).coalesce())
 
 # Veto indices from list of triggers for times in ifo 1&2 around the window
-# times.
+# times. This gives exclusive background triggers.
 veto_indices1 = veto.indices_within_times(all_trigs.time1, remove_start_time,
                                           remove_end_time)
 
+exc_zero_trigs = all_trigs.remove(veto_indices1)
+
 veto_indices2 = veto.indices_within_times(exc_zero_trigs.time2,
                                           remove_start_time, remove_end_time)
-
-# Remove zerolag triggers to get exclusive background triggers.
-exc_zero_trigs = all_trigs.remove(veto_indices1)
 
 exc_zero_trigs = exc_zero_trigs.remove(veto_indices2)
 
@@ -217,25 +216,17 @@ logging.info("Beginning hierarchical removal of foreground triggers.")
 # This number tracks which inclusive background is written to file.
 h_iterations = 0
 
-## Step 1: Check to see if there are triggers that are louder then all of the
-##         inclusive background.
+# Step 1: Create arrays to save far and fap of hierarchically removed
+#         foreground triggers
 
-# fnlouder is the number of background events that are louder than the
-# foreground trigger.
-
-#loud_t_ind = numpy.where(fnlouder == 0)[0]
-
-## Create arrays to save far and fap of hierarchically removed foreground
-## triggers
-
-#save_ifar_fore_trig = numpy.array([], dtype=float)
-#save_fap_fore_trig = numpy.array([], dtype=float)
-#save_these_fore_ind = numpy.array([], dtype=int)
+save_ifar_fore_trig = numpy.array([], dtype=float)
+save_fap_fore_trig = numpy.array([], dtype=float)
+save_these_fore_ind = numpy.array([], dtype=int)
 
 # Step 2 : Loop until we don't have to hierarchically remove anymore. This
 #          will happen when fnlouder has no elements that equal 0.
 
-while numpy.any(fnlouder == 0) is True:
+while numpy.any(fnlouder == 0):
     # If the user wants to stop doing hierarchical removals after a set
     # number of iterations then break when that happens.
     if (h_iterations == args.max_hier_removal): 
@@ -248,62 +239,39 @@ while numpy.any(fnlouder == 0) is True:
     # statistic and mark it for removal.
     max_stat_idx = fore_stat.argmax()
 
-#    max_stat_ind = loud_t_ind[0]
-#    for i in range(0, len(loud_t_ind)):
-#        if fore_stat[loud_t_ind[i]] > fore_stat[max_stat_ind]:
-#            max_stat_ind = loud_t_ind[i]
-
     # Step 3: Remove that trigger from the list of zerolag triggers
 
     # Find the index of the loud foreground trigger to remove next.
-    #where_is_fore_t = numpy.where(all_trigs.stat[:] == fore_stat[max_stat_ind])[0]
-    find_trig_idx = numpy.where(all_trigs.stat[:] == fore_stat[max_stat_idx])[0]
-
-    # FIXME:
-    # In the RARE case that there are two equally loud
-    # louder-than-the-background foreground triggers give preference
-    # to the one with the earliest GPS time, just for documenting purposes
-#    if len(where_is_fore_t) > 1:
-    if len(find_trid_idx) > 1:
-        logging.warn("WARNING: There is more than one foreground trigger "
-                     "that is louder than the background and have the same "
-                     "ranking statistic. This code may operate strangely in "
-                     "this condition.")
-
-    # This is the foreground trigger index in the all_trigs array that we
-    # want to remove
-#    my_loudest_ind = where_is_fore_t[0]
-    rm_trig_idx = find_trig_idx[0]
+    rm_trig_idx = numpy.where(all_trigs.stat[:] == fore_stat[max_stat_idx])[0][0]
 
     # Store any foreground trigger's information that we want to
     # hierarchically remove.
-
-#    save_ifar_fore_trig = numpy.append(save_ifar_fore_trig, ifar[max_stat_ind])
-#    save_fap_fore_trig = numpy.append(save_fap_fore_trig,
-#                                   1 - numpy.exp(- coinc_time / ifar[max_stat_ind]))
+    save_ifar_fore_trig = numpy.append(save_ifar_fore_trig, ifar[max_stat_idx])
+    save_fap_fore_trig = numpy.append(save_fap_fore_trig, fap[max_stat_idx])
 
     # Save the location in the foreground trigger array too.
-    save_these_fore_ind = numpy.append(save_these_fore_ind, max_stat_ind)
+    save_these_fore_ind = numpy.append(save_these_fore_ind, max_stat_idx)
 
     logging.info("Removing foreground trigger that is louder than the inclusive background.")
-
-    # Remove foreground trigger from the list of loud foreground triggers.
-    loud_t_ind = numpy.delete(loud_t_ind, numpy.where(loud_t_ind[:] == max_stat_ind)[0][0])
 
     # Remove the foreground trigger AND all of the background triggers that
     # are associated with it.
 
+    ave_rm_time = (all_trigs.time1[rm_trig_idx] + all_trigs.time2[rm_trig_idx]) / 2.0
+
     ind_to_rm_ifo1 = veto.indices_within_times(all_trigs.time1,
-                              [all_trigs.time1[my_loudest_ind] - args.hierarchical_removal_window],
-                              [all_trigs.time1[my_loudest_ind] + args.hierarchical_removal_window])
+                              [ave_rm_time - args.hierarchical_removal_window],
+                              [ave_rm_time + args.hierarchical_removal_window])
     ind_to_rm_ifo2 = veto.indices_within_times(all_trigs.time2,
-                              [all_trigs.time2[my_loudest_ind] - args.hierarchical_removal_window],
-                              [all_trigs.time2[my_loudest_ind] + args.hierarchical_removal_window])
+                              [ave_rm_time - args.hierarchical_removal_window],
+                              [ave_rm_time + args.hierarchical_removal_window])
+
     indices_to_rm = numpy.concatenate([ind_to_rm_ifo1, ind_to_rm_ifo2])
 
     all_trigs = all_trigs.remove(indices_to_rm)
 
     fore_locs = all_trigs.timeslide_id == 0
+    # The foreground trigger has been removed, continue with typical statmap operations. 
 
     # Calculate the change to foreground trigger time and vetoed out time
     fore_time1 = all_trigs.time1[fore_locs]
@@ -324,8 +292,7 @@ while numpy.any(fnlouder == 0) is True:
 
     logging.info("%s clustered foreground triggers" % fore_locs.sum())
 
-    logging.info("%s hierarchically removed foreground trigger"
-                  % len(save_these_fore_ind))
+    logging.info("%s hierarchically removed foreground trigger(s)" % h_iterations)
 
     back_locs = all_trigs.timeslide_id != 0 
 
@@ -362,29 +329,24 @@ while numpy.any(fnlouder == 0) is True:
         f['foreground_h%s/ifar' % h_iterations] = sec_to_year(ifar)
         f['foreground_h%s/fap' % h_iterations] = fap
 
-    # Repopulate the list of foreground indices for the loudest events 
-    loud_t_ind = numpy.where(fnlouder == 0)[0]
-
 # End of the while loop, now take all of the information and write it back in
 # to file the way that other codes downstream know how to read.
 logging.info("Writing final calculations to file")
 
 # If there were hierarchically removed foreground triggers, write them back
 # into the file with the correct statistics.
-if len(save_these_fore_ind) > 0:
+if h_iterations > 0:
  
     # We won't run into trouble inserting the foreground triggers back in
-    # if we insert them in from least to greatest. Otherwise we could really
-    # mess up the ordering of assigning the proper ifar to every foreground
-    # trigger. So we need to preserve the original ordering!
+    # if we insert them by smallest index to largest index. This should
+    # preserve the original ordering.
     sort_like_this = numpy.argsort(save_these_fore_ind)
     save_these_fore_ind = save_these_fore_ind[sort_like_this]
     save_ifar_fore_trig = save_ifar_fore_trig[sort_like_this]
     save_fap_fore_trig = save_fap_fore_trig[sort_like_this]
 
-    # The indices of hierarchically removed indices will shift around as
-    # we put them back into the list of foreground triggers. So save the
-    # final foreground trigger indices for writing to file.
+    # Save the final hierarchically removed foreground trigger indices for
+    # writing to file.
     final_fore_ind = []
 
     for i in range(0, len(save_these_fore_ind)):
@@ -410,13 +372,9 @@ if len(save_these_fore_ind) > 0:
     f['foreground/ifar'] = sec_to_year(ifar)
     f['foreground/fap'] = fap
 
-    # Write the foreground indices that have been hierarchical removed for
-    # programs downstream.
     f['hierarchical_removed_fore_indices'] = numpy.array(final_fore_ind[:])
 
-# Write to file how many hierarchical removals were implemented, this number
-# will be used in the plotting code downstream.
-
+# Write to file how many hierarchical removals were implemented.
 f.attrs['hierarchical_removal_iterations'] = h_iterations
 
 logging.info("Done") 
