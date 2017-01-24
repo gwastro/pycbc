@@ -64,7 +64,6 @@ if f.attrs['hierarchical_removal_iterations'] is not None:
                      'background.')
         h_inc_back_num = h_iterations
 
-#    h_iter_string = str(h_inc_back_num)
     if h_inc_back_num == 0:
         bstat = f['background/stat'][:]
         fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
