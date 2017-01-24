@@ -798,6 +798,7 @@ else
     if test -d pyinstaller/.git; then
         cd $p
         git reset --hard HEAD
+        git clean -xdf
     else
         git clone git://github.com/$p/$p.git
         cd $p
@@ -830,7 +831,9 @@ cd bootloader
 if $patch_pyinstaller_bootloader; then
     sed -i~ 's/ pid *= *fork()/ pid = 0/' */pyi_utils.c
 fi
-if echo "$pyinstaller_version" | grep '3\.' > /dev/null; then
+if echo "$pyinstaller_version" | grep '3\.' > /dev/null ||
+   test ".$pyinstaller_version" = ".HEAD"
+then
     python ./waf distclean configure $pyinstaller_lsb all
 else
     python ./waf configure $pyinstaller_lsb build install
