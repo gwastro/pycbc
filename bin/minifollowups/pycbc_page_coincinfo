@@ -52,12 +52,12 @@ headers = ["Coincident ranking statistic",
            "Time delay (s)"
           ]
 
-table = numpy.array([['%5.2f' % d['stat'][:][n], 
-                      '%5.2f' % d['ifar'][:][n], 
-                      '%5.2e' % d['fap'][:][n],
-                      '%5.2f' % d['ifar_exc'][:][n], 
-                      '%5.2e' % d['fap_exc'][:][n],
-                      '%5.4f' % (d['time2'][:][n] - d['time1'][:][n])
+table = numpy.array([['%5.2f' % d['stat'][n], 
+                      '%5.2f' % d['ifar'][n], 
+                      '%5.2e' % d['fap'][n],
+                      '%5.2f' % d['ifar_exc'][n], 
+                      '%5.2e' % d['fap_exc'][n],
+                      '%5.4f' % (d['time2'][n] - d['time1'][n])
                     ]], dtype=str)
 
 html = pycbc.results.dq.redirect_javascript + \
@@ -65,7 +65,7 @@ html = pycbc.results.dq.redirect_javascript + \
 
 # make a table for the single detector information ############################
 ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
-idx = {ifo1:d['trigger_id1'][:][n], ifo2:d['trigger_id2'][:][n]}
+idx = {ifo1:d['trigger_id1'][n], ifo2:d['trigger_id2'][n]}
 
 # Store the single detector trigger files keyed by ifo in a dictionary
 table = []
@@ -81,10 +81,10 @@ bank = h5py.File(args.bank_file, 'r')
 for ifo in files.keys():
     d = files[ifo]
     i = idx[ifo]
-    tid = d['template_id'][:][i]
-    rchisq =  d['chisq'][:][i] / (d['chisq_dof'][:][i] * 2 - 2)
-    mchirp = (pycbc.pnutils.mass1_mass2_to_mchirp_eta(bank['mass1'][:][tid], 
-                                                      bank['mass2'][:][tid]))[0]  
+    tid = d['template_id'][i]
+    rchisq =  d['chisq'][i] / (d['chisq_dof'][i] * 2 - 2)
+    mchirp = (pycbc.pnutils.mass1_mass2_to_mchirp_eta(bank['mass1'][tid], 
+                                                      bank['mass2'][tid]))[0]  
                                                       
     time = d['end_time'][:][i]
     utc = lal.GPSToUTC(int(time))[0:6]
@@ -92,17 +92,17 @@ for ifo in files.keys():
     data = [pycbc.results.dq.get_summary_page_link(ifo, utc),
             str(datetime.datetime(*utc)),
             '%.3f'  % time,
-            '%5.2f' % d['snr'][:][i],
-            '%5.2f' % pycbc.events.newsnr(d['snr'][:][i], rchisq),
+            '%5.2f' % d['snr'][i],
+            '%5.2f' % pycbc.events.newsnr(d['snr'][i], rchisq),
             '%5.2f' % rchisq,            
-            '%i'    % d['chisq_dof'][:][i],
-            '%5.2f' % d['coa_phase'][:][i],
-            '%5.2f' % bank['mass1'][:][tid],
-            '%5.2f' % bank['mass2'][:][tid],
+            '%i'    % d['chisq_dof'][i],
+            '%5.2f' % d['coa_phase'][i],
+            '%5.2f' % bank['mass1'][tid],
+            '%5.2f' % bank['mass2'][tid],
             '%5.2f' % mchirp,
-            '%5.2f' % bank['spin1z'][:][tid],
-            '%5.2f' % bank['spin2z'][:][tid],
-            '%5.2f' % d['template_duration'][:][i]
+            '%5.2f' % bank['spin1z'][tid],
+            '%5.2f' % bank['spin2z'][tid],
+            '%5.2f' % d['template_duration'][i]
            ]
     table.append(data)    
 
