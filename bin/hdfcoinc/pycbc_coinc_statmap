@@ -211,12 +211,11 @@ if 'name' in all_trigs.attrs:
 # Incorporate hierarchical removal for any other loud triggers
 logging.info("Beginning hierarchical removal of foreground triggers.")
 
-# Set an index to keep track of how many hierarchical removals we want to do.
-# This number tracks which inclusive background is written to file.
-h_iterations = 0
-
 # Step 1: Create arrays to save far and fap of hierarchically removed
 #         foreground triggers
+
+# Set an index to keep track of how many hierarchical removals we want to do.
+h_iterations = 0
 
 save_ifar_fore_trig = numpy.array([], dtype=float)
 save_fap_fore_trig = numpy.array([], dtype=float)
