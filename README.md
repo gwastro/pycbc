@@ -18,7 +18,7 @@ If you use any code from PyCBC in a scientific publication, then we ask that
 it is cited in the following way:
 
 ```
-These results were generating using the PyCBC software package
+These results were generated using the PyCBC software package
 \cite{Canton:2014ena,Usman:2015kfa,pycbc-software}
 ```
 
