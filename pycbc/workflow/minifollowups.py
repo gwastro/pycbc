@@ -469,7 +469,9 @@ def make_inj_info(workflow, injection_file, injection_index, num, out_dir,
     files += node.output_files
     return files
 
-def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, tags=None):
+def make_coinc_info(workflow, singles, bank, coinc, out_dir,
+                    n_loudest=None, trig_id=None, file_substring=None,
+                    tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_coincinfo'
@@ -479,7 +481,12 @@ def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, tags=None):
     node.add_input_list_opt('--single-trigger-files', singles)
     node.add_input_opt('--statmap-file', coinc)
     node.add_input_opt('--bank-file', bank)
-    node.add_opt('--n-loudest', str(num))
+    if n_loudest is not None:
+        node.add_opt('--n-loudest', str(n_loudest))
+    if trig_id is not None:
+        node.add_opt('--trigger-id', str(trig_id))
+    if file_substring is not None:
+        node.add_opt('--statmap-file-subspace-name', file_substring)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     files += node.output_files

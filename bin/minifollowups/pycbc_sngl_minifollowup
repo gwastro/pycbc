@@ -70,6 +70,9 @@ parser.add_argument('--non-coinc-time-only', default=False,
 parser.add_argument('--minimum-duration', default=None, type=float,
                     help="If given only consider single-detector triggers "
                          "with template duration larger than this.")
+parser.add_argument('--maximum-duration', default=None, type=float,
+                    help="If given only consider single-detector triggers "
+                         "with template duration smaller than this.")
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
@@ -121,15 +124,25 @@ if args.non_coinc_time_only:
             trigs.end_time, [args.inspiral_segments],
             ifo=ifo, segment_name=args.inspiral_data_analyzed_name)
         trigs.mask = trigs.mask[curr_veto_mask]
+
+def restrict_triggers_to_logic_mask(triggers, logic_mask):
+    if triggers.mask.dtype == 'bool':
+        orig_indices = triggers.mask.nonzero()[0][logic_mask]
+        triggers.mask = numpy.in1d(numpy.arange(len(triggers.mask)),
+                                                orig_indices,
+                                                assume_unique=True)
+    else:
+        triggers.mask = triggers.mask[logic_mask]
+
 if args.minimum_duration is not None:
     durations = trigs.template_duration
     lgc_mask = durations > args.minimum_duration
-    if trigs.mask.dtype == 'bool':
-        orig_indices = trigs.mask.nonzero()[0][lgc_mask]
-        trigs.mask = numpy.in1d(numpy.arange(len(trigs.mask)), orig_indices,
-                                assume_unique=True)
-    else:
-        trigs.mask = trigs.mask[lgc_mask]
+    restrict_triggers_to_logic_mask(trigs, lgc_mask)
+if args.maximum_duration is not None:
+    durations = trigs.template_duration
+    lgc_mask = durations < args.maximum_duration
+    restrict_triggers_to_logic_mask(trigs, lgc_mask)
+    
 
 if len(trigs.snr) == 0:
     # There are no triggers, make no-op job and exit
