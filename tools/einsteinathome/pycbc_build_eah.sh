@@ -57,6 +57,7 @@ build_freetype=true
 build_wrapper=false
 pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -> pypi
 patch_pyinstaller_bootloader=true
+pyinstaller21_hacks=true # use hacks & workarounds necessary for PyInstaller <3.0
 use_pycbc_pyinstaller_hooks=true
 build_gating_tool=false
 run_analysis=true
@@ -705,8 +706,10 @@ pip install --no-deps $p.tar.gz
 
 # PyInstaller 9d0e0ad4 crashes with newer Jinja2,
 # so install this old version before it gets pulled in from PyCBC
-echo -e "\\n\\n>> [`date`] pip install Jinja2==2.8.1"
-pip install Jinja2==2.8.1
+if $pyinstaller21_hacks; then
+    echo -e "\\n\\n>> [`date`] pip install Jinja2==2.8.1"
+    pip install Jinja2==2.8.1
+fi
 
 # manually build subprocess32 with -D_GNU_SOURCE
 # would be needed on old Linux with matplotlib>=2.0.0
@@ -763,13 +766,14 @@ else
     git remote update
     git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
-git clean -xdf
-echo -e "[`date`] install six, pkgconfig and matplotlib beforehand"
-pip install `grep -w ^six requirements.txt||echo six==1.9.0`
-pip install `grep -w ^pkgconfig requirements.txt||echo pkgconfig==1.1.0`
-pip install `grep ^matplotlib== requirements.txt||echo matplotlib==1.4.3`
-echo -e "[`date`] downgrade setuptools"
-pip install --upgrade `grep -w ^setuptools requirements.txt`
+if $pyinstaller21_hacks; then
+    echo -e "[`date`] install six, pkgconfig and matplotlib beforehand"
+    pip install `grep -w ^six requirements.txt||echo six==1.9.0`
+    pip install `grep -w ^pkgconfig requirements.txt||echo pkgconfig==1.1.0`
+    pip install `grep ^matplotlib== requirements.txt||echo matplotlib==1.4.3`
+    echo -e "[`date`] downgrade setuptools"
+    pip install --upgrade `grep -w ^setuptools requirements.txt`
+fi
 echo -e "[`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
 pycbc_tag="`git describe --tags --exact-match HEAD 2>/dev/null||true`"
 pip install .
