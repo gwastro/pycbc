@@ -888,7 +888,7 @@ class StrainSegments(object):
             self.analyze_slices.append(ana_slice)
 
         # The last segment takes up any integer boundary slop
-        seg_end = data_end
+        seg_end = int(data_end)
         seg_start = int(seg_end - seg_len * strain.sample_rate)
         seg_slice = slice(seg_start, seg_end)
         self.segment_slices.append(seg_slice)
