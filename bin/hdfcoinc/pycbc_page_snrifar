@@ -27,6 +27,12 @@ def _far_from_p(p, livetime, max_far):
     if far > max_far:
         return max_far
     return far
+
+def pretty_num(num):
+    exp = numpy.floor(numpy.log10(num))
+    val = num / 10.0 ** exp
+    return '%2.1fe%.0f' % (val, exp)
+
 far_from_p = numpy.vectorize(_far_from_p)
 
 pylab.rc('text', usetex=True)
@@ -38,41 +44,83 @@ parser.add_argument('--version', action='version', version=pycbc.version.git_ver
 parser.add_argument('--trigger-file')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
-parser.add_argument('--trials-factor', type=int, default=1)
 parser.add_argument('--not-cumulative', action='store_true')
+parser.add_argument('--trials-factor', type=int, default=1,
+                    help='Trials factor to divide from p-value and '
+                         'divide from IFAR to account for look-elsewhere '
+                         'effect. [default=1]')
 parser.add_argument('--no-sigma-shading', action='store_true')
-parser.add_argument('--fg-marker', default='^', help='Marker to use for the foreground triggers')
+parser.add_argument('--h-iter-inc-background', type=int, default=0,
+                    help='Indicate which inclusive background to plot '
+                         'with the foreground triggers if there were '
+                         'hierarchical removals done. [default=0]')
+parser.add_argument('--fg-marker', default='^',
+                    help='Marker to use for the foreground triggers, '
+                         '[default = ^]')
+parser.add_argument('--fg-marker-h-rm', default='v',
+                    help='Marker to use for the hierarchically removed '
+                         'foreground triggers. [default = v]')
 parser.add_argument('--closed-box', action='store_true',
-      help="Make a closed box version that excludes foreground triggers")
-parser.add_argument('--xmin', type=float, help='Set the minimum value of the x-axis')
-parser.add_argument('--xmax', type=float, help='Set the maximum value of the x-axis')
-parser.add_argument('--ymin', type=float, help='Set the minimum value of the y-axis (in units of 1/years)')
-parser.add_argument('--ymax', type=float, help='Set the maximum value of the y-axis (in units of 1/years)')
+                    help="Make a closed box version that excludes foreground "
+                         "triggers")
+parser.add_argument('--xmin', type=float,
+                    help='Set the minimum value of the x-axis')
+parser.add_argument('--xmax', type=float,
+                    help='Set the maximum value of the x-axis')
+parser.add_argument('--ymin', type=float,
+                    help='Set the minimum value of the y-axis ' 
+                         '(in units of 1/years)')
+parser.add_argument('--ymax', type=float,
+                    help='Set the maximum value of the y-axis '
+                         '(in units of 1/years)')
 args = parser.parse_args()
-
-args.cumulative = not args.not_cumulative
 
 if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
-    
+
 logging.info('Read in the data')
 f = h5py.File(args.trigger_file, 'r')
 
+# Parse which inclusive background to use for the plotting
+h_inc_back_num = args.h_iter_inc_background
+
+if f.attrs['hierarchical_removal_iterations'] is not None:
+    h_iterations = f.attrs['hierarchical_removal_iterations']
+    if h_inc_back_num > h_iterations:
+        h_inc_back_num = h_iterations
+        logging.warn('User requested inclusive background iteration that does '
+                     'not exist. Defaulting to last possible inclusive '
+                     'background.')
+
+else :
+    h_inc_back_num = 0
+
+args.cumulative = not args.not_cumulative
+
 foreground_livetime = f.attrs['foreground_time'] / lal.YRJUL_SI
 try:
-    cstat_fore = f['foreground/stat'][:]
     
     if args.cumulative:
+        cstat_fore = f['foreground/stat'][:]
         cstat_fore.sort()
-        cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * 3.15569e7
+        cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * lal.YRJUL_SI
         fap_end = f['foreground/fap'][:].min() * args.trials_factor
     else:
-        ssort = cstat_fore.argsort()
-        cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
-        cstat_rate = cstat_rate[ssort]
-        cstat_fore = cstat_fore[ssort]
-        cstat_fap = p_from_far(cstat_rate, foreground_livetime)
+        if h_inc_back_num == -1:
+            cstat_fore = f['foreground/stat'][:]
+            ssort = cstat_fore.argsort()
+            cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
+            cstat_rate = cstat_rate[ssort]
+            cstat_fore = cstat_fore[ssort]
+            cstat_fap = p_from_far(cstat_rate, foreground_livetime)
+        else :
+            cstat_fore = f['foreground_h%s/stat' % h_inc_back_num][:]
+            ssort = cstat_fore.argsort()
+            cstat_rate = 1.0 / f['foreground_h%s/ifar' % h_inc_back_num][:] * args.trials_factor
+            cstat_rate = cstat_rate[ssort]
+            cstat_fore = cstat_fore[ssort]
+            cstat_fap = p_from_far(cstat_rate, foreground_livetime)
     
     logging.info('Found %s foreground triggers' % len(cstat_fore))
 except:
@@ -81,8 +129,14 @@ except:
 if cstat_fore is not None and len(cstat_fore) == 0:
     cstat_fore = None
 
-back_ifar = f['background/ifar'][:]
-cstat_back = f['background/stat'][:]
+if h_inc_back_num > 0:
+    back_ifar = f['background_h%s/ifar' % h_inc_back_num][:]
+    cstat_back = f['background_h%s/stat' % h_inc_back_num][:]
+
+else :
+    back_ifar = f['background/ifar'][:]
+    cstat_back = f['background/stat'][:]
+
 back_sort = cstat_back.argsort()
 cstat_back = cstat_back[back_sort]
 
@@ -117,8 +171,8 @@ if not args.cumulative:
 
 logging.info('Found %s background (exclusive zerolag) triggers' % len(cstat_back_exc))
 
-# we'll us the background for the xlimits if closed box,
-# foreground otherwise
+# We'll use the background for the xlimits if closed box, foreground
+# otherwise.
 if args.xmin is not None:
     plot_xmin = args.xmin
 elif args.closed_box or cstat_fore is None:
@@ -128,8 +182,8 @@ else:
 
 if args.xmax is not None:
     plot_xmax = args.xmax
-# otherwise, make the furthest point to the right be ~1/10 of the
-# width of the plot from the right axis
+# Otherwise, make the furthest point to the right be ~1/10 of the width of the
+# plot from the right axis.
 else:
     if args.closed_box or cstat_fore is None:
         plot_xmax = cstat_back_exc.max()
@@ -141,21 +195,36 @@ fig = pylab.figure(1)
 back_marker = 'x'
 pylab.scatter(cstat_back_exc, far_back_exc, color='gray', marker=back_marker, s=10, label='Closed Box Background')
 
-def pretty_num(num):
-    exp = numpy.floor(numpy.log10(num))
-    val = num / 10.0 ** exp
-    return '%2.1fe%.0f' % (val, exp)
-
 if not args.closed_box:
     pylab.scatter(cstat_back, far_back, color='black', marker=back_marker, s=10,
         label='Open Box Background')
 
     if cstat_fore is not None and len(cstat_fore):
-        pylab.scatter(cstat_fore, cstat_rate, s=60, color='#ff6600',
-                                  marker=args.fg_marker,
-                                  label='Foreground', zorder=100,
-                                  linewidth=0.5, edgecolors='white')
+        # Remove hierarchically removed foreground triggers from the list
+        # of foreground triggers
+        if h_inc_back_num > 0:
+            cstat_fore_h_rm = numpy.array([], dtype=float)
+            cstat_rate_h_rm = numpy.array([], dtype=float)
 
+            # Since there is only one background bin we can just remove
+            # hierarchically removed triggers from highest ranking statistic
+            # to lower ranking statistic.
+            for i in range(0, h_inc_back_num):
+                rm_idx = cstat_fore.argmax()
+                cstat_fore_h_rm = numpy.append(cstat_fore_h_rm,
+                                               cstat_fore[rm_idx])
+                cstat_rate_h_rm = numpy.append(cstat_rate_h_rm,
+                                                cstat_rate[rm_idx])
+                cstat_fore = numpy.delete(cstat_fore, rm_idx)
+                cstat_rate = numpy.delete(cstat_rate, rm_idx)
+
+            pylab.scatter(cstat_fore_h_rm, cstat_rate_h_rm, s=60, color='#b66dff',
+                          marker=args.fg_marker, label='Hierarchically Removed Foreground',
+                          zorder=100, linewidth=0.5, edgecolors='white')
+
+        pylab.scatter(cstat_fore, cstat_rate, s=60, color='#ff6600',
+                      marker=args.fg_marker, label='Foreground', zorder=100,
+                      linewidth=0.5, edgecolors='white')
 
         if args.cumulative and not args.no_sigma_shading:
             end = sigma_from_p(fap_end)
@@ -181,7 +250,7 @@ if not args.closed_box:
 
                 try:
                     left = cstat_back[high < top].min()
-                    
+
                     if sigmas[i] == end:
                         pylab.text(left, top*1.05, r"\textbf{%1.1f $\sigma$}"  % sigmas[i], fontsize=8)
                     else:
@@ -189,20 +258,22 @@ if not args.closed_box:
                 except ValueError:
                     logging.warn(" Can't find a place for the sigma labels ")
 
-        if args.not_cumulative:
-            # add arrows to any points > the loudest background
-            louder_pts = numpy.where(cstat_fore > cstat_back.max())[0] 
-            for ii in louder_pts:
-                r = cstat_fore[ii]
-                arr_start = cstat_rate[ii]
-                # make the arrow length 1/15 the height of the plot
-                arr_end = arr_start * (plot_ymin / plot_ymax) ** (1./15)
-                pylab.plot([r, r], [arr_start, arr_end], lw=2, color='black',
-                    zorder=99)
-                pylab.plot([r, r], [arr_start, arr_end], lw=2.6, color='white',
-                    zorder=97)
-                pylab.scatter([r], [arr_end], marker='v', c='black',
-                    edgecolors='white', lw=0.5, s=40, zorder=98)
+#        if args.not_cumulative:
+#            # add arrows to any points > the loudest background
+#            far_min_possible = 1. / f.attrs['background_time']
+#            far_min_possible *= 3.15569e7 * args.trials_factor
+#            louder_pts = numpy.where(cstat_rate <= far_min_possible)
+#            for ii in louder_pts:
+#                r = cstat_fore[ii]
+#                arr_start = cstat_rate[ii]
+#                # make the arrow length 1/15 the height of the plot
+#                arr_end = arr_start * (plot_ymin / plot_ymax) ** (1./15)
+#                pylab.plot([r, r], [arr_start, arr_end], lw=2, color='black',
+#                    zorder=99)
+#                pylab.plot([r, r], [arr_start, arr_end], lw=2.6, color='white',
+#                    zorder=97)
+#                pylab.scatter([r], [arr_end], marker='v', c='black',
+#                    edgecolors='white', lw=0.5, s=40, zorder=98)
             
 if not args.cumulative:
     # add second y-axis for probabilities, sigmas
@@ -258,23 +329,22 @@ else:
     ymin, ymax = ax1.get_ylim()
     
     ax2.set_ylim(ymin, ymax)
-    # we'll put ticks at faps of 10^{-x}, where x is an integer
-    # get the ymin, ymax in terms of probability
+    # Put ticks at FAPs of 10^{-x}, where x is an integer get the ymin, ymax
+    # in terms of probability.
     pymin = p_from_far(ymin, foreground_livetime)
     pymax = p_from_far(ymax, foreground_livetime)
-    # figure out the range of values we need to plot: this will be the
-    # floor/ceil of the min/max
-    # values
+    # Figure out the range of values we need to plot: this will be the
+    # floor/ceil of the min/max values.
     tick_min = numpy.ceil(numpy.log10(pymin))
     tick_max = numpy.floor(numpy.log10(pymax))
-    # tick ranges
+    # Tick ranges
     pticks = numpy.arange(tick_min, tick_max+1)
-    # convert back to FAR
+    # Convert back to FAR
     fticks = far_from_p(10**pticks, foreground_livetime, far_back.max())
     ax2.set_yticks(fticks)
-    # set the labels
+    # Set the labels
     ax2.set_yticklabels(['$10^{%i}$' %(val) for val in pticks.astype(int)])
-    # add minor ticks
+    # Add minor ticks
     N_minor_per_decade = 10.
     pminorticks = numpy.zeros(N_minor_per_decade * (pticks.size-1))
     for ii,p in enumerate(10**pticks[:-1]):
