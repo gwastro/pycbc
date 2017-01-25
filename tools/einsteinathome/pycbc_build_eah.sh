@@ -92,6 +92,7 @@ elif test ".$1" = ".--force-debian4" ||
     gcc_path="/usr/local/bin"
     build_ssl=true
     pyinstaller_lsb="--no-lsb"
+    $pyinstaller21_hacks || build_subprocess32=true
     build_gating_tool=true
     appendix="_Linux64"
 elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8 (Carbon)" ]] ; then # SL6
@@ -721,9 +722,7 @@ if $build_subprocess32; then
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
-#    python setup.py build_ext "-DO_CLOEXEC"
-    python setup.py build_ext --define "O_CLOEXEC=0"
-    python setup.py build
+    sed -i~ '/^# *define *HAVE_PIPE2 *1/d' _posixsubprocess.c
     python setup.py install --prefix="$PREFIX"
     cd ..
     $cleanup && rm -rf $p
