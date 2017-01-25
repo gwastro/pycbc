@@ -59,6 +59,7 @@ pyinstaller_version=9d0e0ad4 # 9d0e0ad4, v2.1, v3.0 or v3.1 -> git, 2.1 or 3.0 -
 patch_pyinstaller_bootloader=true
 use_pycbc_pyinstaller_hooks=true
 build_gating_tool=false
+run_analysis=true
 
 if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
@@ -184,6 +185,7 @@ usage="
     --no-cleanup      : keep build directories after successful build for later inspection
     --with-extra-libs=<url> : add extra files from a tar file at <url> to the bundles
     --verbose-python  : run PyInstalled Python in verbose mode, showing imports
+    --no-analysis     : for testing, don't run analysis, assume weave cache is already there
 "
 
 # handle command-line arguments, possibly overriding above settings
@@ -196,6 +198,7 @@ for i in $*; do
             pycbc_branch=einsteinathome_testing
             pycbc_remote=bema-ligo;;
         --no-cleanup) cleanup=false;;
+        --no-analysis) run_analysis=false;;
         --verbose-python) verbose_pyinstalled_python=true;;
         --clean) rm -rf "$HOME/.cache" "$HOME/Library/Caches/pip" "$SOURCE/$BUILDDIRNAME-preinst.tgz" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$PYCBC";;
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz";;
@@ -954,11 +957,12 @@ if $build_dlls; then
 fi
 
 # run 10min self-test, build wave cache
-echo -e "\\n\\n>> [`date`] running analysis"
 cd "$SOURCE"
 mkdir -p test
 cd test
 
+if $run_analysis; then
+echo -e "\\n\\n>> [`date`] running analysis"
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
 if check_md5 "$p" "$md5"; then
@@ -1058,6 +1062,8 @@ LAL_DATA_PATH="." \
 # test for GW150914
 echo -e "\\n\\n>> [`date`] test for GW150914"
 python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRAL-OUT.hdf
+
+fi # if $run_analysis
 
 # zip weave cache
 echo -e "\\n\\n>> [`date`] zipping weave cache"
