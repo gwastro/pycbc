@@ -35,7 +35,8 @@ parser.add_argument('--closed-box', action='store_true',
                          'foreground triggers')
 args = parser.parse_args()
 
-# Parse the command line value to an variable we can change.
+# Parse the command line value to a variable we can change if the user
+# wants to plot an inclusive background that doesn't exist.
 h_inc_back_num = args.h_iter_inc_background
 
 if args.verbose:
@@ -69,7 +70,7 @@ if f.attrs['hierarchical_removal_iterations'] is not None:
         fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
         dec = f['background/decimation_factor'][:]   
     else :
-        bstat = f['background_h%s/stat%s' % h_inc_back_num][:]
+        bstat = f['background_h%s/stat' % h_inc_back_num][:]
         fap = 1 - numpy.exp(- f.attrs['foreground_time_h%s' % h_inc_back_num] / f['background_h%s/ifar' % h_inc_back_num][:] / lal.YRJUL_SI)
         dec = f['background_h%s/decimation_factor' % h_inc_back_num][:]
 
@@ -138,39 +139,34 @@ if fstat is not None and not args.closed_box:
     # removed foreground triggers in purple.
     if f.attrs['hierarchical_removal_iterations'] is not None:
         if h_iterations > 0 :
-            # If there were any hierarchically removed foreground triggers let's
-            # find them in our data set
-            fstat_unsorted = f['foreground/stat'][:]
+            fstat_h_rm = numpy.array([], dtype=float)
 
-            save_h_removed_indices = f['hierarchical_removed_fore_indices'][:]
+            # Since there is only one background bin we can just remove
+            # hierarchically removed triggers from highest ranking statistic
+            # to lower ranking statistic.
+            for i in range(0, h_inc_back_num):
+                rm_idx = fstat.argmax()
+                fstat_h_rm = numpy.append(fstat_h_rm, fstat[rm_idx])
+                fstat = numpy.delete(fstat, rm_idx)
 
-            fstat_h_rm = fstat_unsorted[save_h_removed_indices]
-            fstat_h_rm = numpy.sort(fstat_h_rm)
-
-            # Remove any hierarchically removed foreground triggers from the
-            # list of foreground triggers. Must remove them up the level
-            # indicated in plotting code, remove them in accordance with the
-            # inclusive background that the user wants to plot
-            h_remove_for_plot_indices = []
-            for i in range(len(fstat_h_rm)-1,
-                     len(fstat_h_rm) - h_inc_back_num - 1, -1):
-                h_remove_for_plot_indices.append(save_h_removed_indices[i-1])
-
-            fstat_h_rm = fstat_unsorted[h_remove_for_plot_indices]
-            fstat_h_rm = numpy.sort(fstat_h_rm)
-            fstat = numpy.delete(fstat_unsorted, h_remove_for_plot_indices)
+            # Sort these so the plotting doesn't screw up.
             fstat = numpy.sort(fstat)
+            fstat_h_rm = numpy.sort(fstat_h_rm)
 
             # Write "histogram" information.
             left_h_rm = numpy.searchsorted(fstat_h_rm, le)
             right_h_rm = numpy.searchsorted(fstat_h_rm, re)
+
+            # Just use the top level foreground time if you want background
+            # before h-removal.
             if h_inc_back_num == 0:
-                count_h_rm = (right_h_rm - left_h_rm) /
+                count_h_rm = (right_h_rm - left_h_rm) / \
                              f.attrs['foreground_time'] * lal.YRJUL_SI
 
+            # Or use the foreground time after h-removal
             else : 
-                count_h_rm = (right_h_rm - left_h_rm) /
-                             f.attrs['foreground_time_h%s' % h_inc_back_num] *
+                count_h_rm = (right_h_rm - left_h_rm) / \
+                             f.attrs['foreground_time_h%s' % h_inc_back_num] * \
                              lal.YRJUL_SI
 
             pylab.errorbar(bins[:-1] + args.bin_size / 2, count_h_rm, 
