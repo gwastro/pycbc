@@ -504,7 +504,13 @@ for inj_file, tag in zip(inj_files, inj_tags):
     if len(f) > 0: layout.two_column_layout(rdir['injections/%s' % tag], inj_layout)
 
     # run minifollowups on nearest missed injections
-    currdir = rdir['injections/followup_of_missed_%s' % tag]
+    curr_dir_nam = 'injections/followup_of_{}'.format(tag)
+    if workflow.cp.has_option_tags('workflow-injection_minifollowups',
+                                   'subsection-suffix', tags=[tag]):
+        suf_str = workflow.cp.get_opt_tags('workflow-injection_minifollowups',
+                                           'subsection-suffix', tags=[tag])
+        curr_dir_nam += '_' + suf_str
+    currdir = rdir[curr_dir_nam]
     wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
                                      insps,  hdfbank[0], insp_files_seg_file,
                                      data_analysed_name, trig_generated_name,

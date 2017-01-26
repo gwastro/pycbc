@@ -125,8 +125,8 @@ for num_event in range(num_events):
     bank_id = f['foreground/template_id'][:][sorting][num_event]
     
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
-                              coinc_file, num_event, 
-                              args.output_dir, tags=args.tags + [str(num_event)]),)        
+                              coinc_file, args.output_dir, n_loudest=num_event, 
+                              tags=args.tags + [str(num_event)]),)        
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir, special_tids=ifo_tids,
                               tags=args.tags + [str(num_event)])

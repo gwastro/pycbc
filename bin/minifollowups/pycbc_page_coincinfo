@@ -32,16 +32,33 @@ parser.add_argument('--output-file')
 parser.add_argument('--statmap-file', required=True,
     help="HDF format clustered coincident statmap file containing the result "
          "triggers. Required")
-parser.add_argument('--n-loudest', type=int,
+parser.add_argument('--statmap-file-subspace-name', default='foreground',
+    help="If given look in this 'sub-directory' of the HDF file for triggers, "
+         "takes a default value of 'foreground'.")
+trig_input = parser.add_mutually_exclusive_group(required=True)
+trig_input.add_argument('--n-loudest', type=int,
     help="Examine the n'th loudest trigger, use with statmap file")
+trig_input.add_argument('--trigger-id', type=int,
+    help="Examine the trigger with specified ID, use with statmap file. An "
+         "alternative to --n-loudest. Cannot be used together")
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 # Get the nth loudest trigger from the output of pycbc_coinc_statmap
 f = h5py.File(args.statmap_file, 'r')
-n = f['foreground/stat'][:].argsort()[::-1][args.n_loudest]
-d = f['foreground']
+d = f[args.statmap_file_subspace_name]
+if args.n_loudest is not None:
+    n = d['stat'][:].argsort()[::-1][args.n_loudest]
+    title = 'Parameters of coincident event ranked %s' % (args.n_loudest + 1)
+    caption = 'Parameters of event ranked %s by the search. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1)
+elif args.trigger_id is not None:
+    n = args.trigger_id
+    title = 'Details of coincident trigger'
+    caption = 'Parameters of coincident event. The figures below show the mini-followup data for this event.'
+else:
+    # It shouldn't be possible to get here!
+    raise ValueError()
 
 # make a table for the coincident information #################################
 headers = ["Coincident ranking statistic",
@@ -110,6 +127,6 @@ html += str(pycbc.results.static_table(table, pycbc.results.sngl_table_headers))
 ###############################################################################
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},
-                        cmd = ' '.join(sys.argv),
-                        title = 'Parameters of coincident event ranked %s' % (args.n_loudest + 1),
-                        caption = 'Parameters of event ranked %s by the search. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1))
+                        cmd=' '.join(sys.argv),
+                        title=title,
+                        caption=caption)
