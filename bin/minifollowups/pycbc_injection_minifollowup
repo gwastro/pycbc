@@ -57,6 +57,9 @@ parser.add_argument('--inspiral-data-analyzed-name',
                          "analyzed by each analysis job.")
 parser.add_argument('--inj-window', type=int, default=0.5,
                     help="Time window in which to look for injection triggers")
+parser.add_argument('--ifar-threshold', type=float, default=None,
+                    help="If given also followup injections with ifar smaller "
+                         "than this threshold.")
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
@@ -93,6 +96,11 @@ for ifo in args.single_detector_triggers:
 
 f = h5py.File(args.injection_file, 'r')
 missed = f['missed/after_vetoes'][:]
+if args.ifar_threshold is not None:
+    ifars = f['found_after_vetoes']['ifar'][:]
+    lgc_arr = ifars < args.ifar_threshold
+    missed = numpy.append(missed,
+                          f['found_after_vetoes']['injection_index'][lgc_arr])
 
 num_events = int(workflow.cp.get_opt_tags('workflow-injection_minifollowups', 'num-events', ''))
 
@@ -123,6 +131,7 @@ if len(missed) < num_events:
     num_events = len(missed)
 
 # loop over number of loudest events to be followed up
+found_inj_idxes = f['found_after_vetoes/injection_index'][:]
 for num_event in range(num_events):
     files = wf.FileList([])
     
@@ -144,6 +153,13 @@ for num_event in range(num_events):
           
     layouts += [(mini.make_inj_info(workflow, injection_file, injection_index, num_event,
                                args.output_dir, tags=args.tags + [str(num_event)])[0],)]   
+    if injection_index in found_inj_idxes:
+        trig_id = numpy.where(found_inj_idxes == injection_index)[0][0]
+        layouts += [(mini.make_coinc_info
+                     (workflow, single_triggers, tmpltbank_file,
+                      injection_file, args.output_dir, trig_id=trig_id,
+                      file_substring='found_after_vetoes',
+                      tags=args.tags + [str(num_event)])[0],)]
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir,
                               tags=args.tags + [str(num_event)])
