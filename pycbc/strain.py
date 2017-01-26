@@ -37,7 +37,6 @@ import pycbc.events
 import pycbc.frame
 import pycbc.filter
 from scipy.signal import kaiserord
- 
 
 def next_power_of_2(n):
     """Return the smallest integer power of 2 larger than the argument.
@@ -1120,6 +1119,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                  force_update_cache=True,
                  increment_update_cache=None,
                  analyze_flags=None,
+                 data_quality_flags=None,
                  ):
         """ Class to produce overwhitened strain incrementally
         
@@ -1180,6 +1180,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         analyze_flags: list of strs
             The flags that must be on to mark the current data as valid for
             *any* use.
+        data_quality_flags: list of strs
+            The flags used to determine if to keep triggers.
         increment_update_cache: {str, None}, Optional
             Pattern to look for frame files in a GPS dependent directory. This
             is an alternate to the forced updated of the frame cache, and
@@ -1193,18 +1195,33 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         self.low_frequency_cutoff = low_frequency_cutoff
 
-        # Set the state channel buffer
-        self.state_channel = state_channel
-        self.data_quality_channel = data_quality_channel
+        # Set up status buffers
         self.analyze_flags = analyze_flags
+        self.data_quality_flags = data_quality_flags
         self.state = None
-        if 'None' not in self.state_channel:
+        self.dq = None
+
+        # State channel
+        if state_channel is not None:
             valid_mask = 0
             for flag in self.analyze_flags:
                 valid_mask = valid_mask | getattr(pycbc.frame, flag)
             self.state = pycbc.frame.StatusBuffer(
                 frame_src,
                 state_channel, start_time,
+                max_buffer=max_buffer,
+                valid_mask=valid_mask,
+                force_update_cache=force_update_cache,
+                increment_update_cache=increment_update_cache)
+
+        # low latency dq channel
+        if data_quality_channel is not None:
+            valid_mask = 0
+            for flag in self.data_quality_flags:
+                valid_mask = valid_mask | getattr(pycbc.frame, flag)
+            self.dq = pycbc.frame.StatusBuffer(
+                frame_src,
+                data_quality_channel, start_time,
                 max_buffer=max_buffer,
                 valid_mask=valid_mask,
                 force_update_cache=force_update_cache,
@@ -1378,6 +1395,23 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         stilde = self.segments[delta_f]
         return stilde  
 
+    def near_hwinj(self):
+        """Check that the current set of triggers could be influenced by
+        a hardware injection.
+
+        Parameters
+        ----------
+        data_reader: dict of StrainBuffers
+            A dict of StrainBuffer instances, indexed by ifos.
+        """
+        from pycbc import frame
+        if not self.state:
+            return False
+
+        if not self.state.is_extent_valid(self.start_time, self.blocksize, frame.NO_HWINJ):
+            return True
+        return False
+
     def null_advance_strain(self, blocksize):
         """ Advance and insert zeros
 
@@ -1419,9 +1453,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         # We have given up so there is no time series
         if ts is None:
             logging.info("Giving on up frame...")
+            self.null_advance_strain(blocksize)
             if self.state:
                 self.state.null_advance(blocksize)
-                self.null_advance_strain(blocksize)
+            if self.dq:
+                self.dq.null_advance(blocksize)
             return False
 
         # We collected some data so we are closer to being able to analyze data
@@ -1432,8 +1468,14 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if self.state and self.state.advance(blocksize) is False:
             self.add_hard_count()
             self.null_advance_strain(blocksize)
+            if self.dq:
+                self.dq.null_advance(blocksize)
             logging.info("Time has invalid data, resetting buffer")
             return False
+
+        # Also advance the dq vector in lockstep
+        if self.dq:
+            self.dq.advance(blocksize)            
 
         self.segments = {}
 
@@ -1469,10 +1511,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.strain.start_time += blocksize
 
         # apply gating if need be: NOT YET IMPLEMENTED
-        # if DQ vector says the new bit of strain is has some invalid part
-        # return false so it is not analyzed (but may be used for PSD).
-        # This behavior is equivelant to how we handle CAT2 vetoes.
-
         if self.psd is None and self.wait_duration <=0:
             self.recalculate_psd()
 
@@ -1480,5 +1518,3 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             return False
         else:
             return True
-
-

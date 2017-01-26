@@ -633,6 +633,11 @@ NO_GAP = 16384
 NO_HWINJ = NO_STOCH_HW_INJ | NO_CBC_HW_INJ | \
            NO_BURST_HW_INJ | NO_DETCHAR_HW_INJ
 
+# O2 Low-Latency DQ vector definition 
+# If the bit is 0 then we should veto
+OMC_DCPD_ADC_OVERFLOW = 2
+ETMY_ESD_DAC_OVERFLOW = 4
+
 class StatusBuffer(DataBuffer):
 
     """ Read state vector information from a frame file """
@@ -697,7 +702,7 @@ class StatusBuffer(DataBuffer):
         Parameters
         ----------
         start_time: int
-            Begging of the duration to check in gps seconds
+            Beginning of the duration to check in gps seconds
         duration: int
             Number of seconds after the start_time to check
         flag: str, optional
@@ -714,6 +719,38 @@ class StatusBuffer(DataBuffer):
         e = s + int(duration * sr)
         data = self.raw_buffer[s:e]
         return self.check_valid(data, flag=flag)
+
+    def indices_of_flag(self, start_time, duration, times, padding=0):
+        """ Return the indices of the times lying in the flagged region
+        
+        Parameters
+        ----------
+        start_time: int
+            Beginning time to request for
+        duration: int
+            Number of seconds to check.
+        padding: float
+            Number of seconds to add around flag inactive times to be considered
+        inactive as well.
+        
+        Returns
+        -------
+        indices: numpy.ndarray
+            Array of indices marking the location of triggers within valid
+        time.
+        """ 
+        from pycbc.events.veto import indices_outside_times
+        sr = self.raw_buffer.sample_rate
+        s = int((start_time - self.raw_buffer.start_time - padding) * sr) - 1
+        e = s + int((duration + padding) * sr) + 1
+        data = self.raw_buffer[s:e]
+        stamps = data.sample_times.numpy()
+        invalid = numpy.bitwise_and(data.numpy(), self.valid_mask) != self.valid_mask
+
+        starts = stamps[invalid] - padding
+        ends = starts + 1.0 / sr + padding * 2.0
+        idx = indices_outside_times(times, starts, ends)
+        return idx
 
     def advance(self, blocksize):
         """ Add blocksize seconds more to the buffer, push blocksize seconds
@@ -737,4 +774,5 @@ class StatusBuffer(DataBuffer):
             ts = DataBuffer.advance(self, blocksize)
             return self.check_valid(ts)
         except RuntimeError:
+            self.null_advance(blocksize)
             return False
