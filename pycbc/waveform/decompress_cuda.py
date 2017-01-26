@@ -28,6 +28,7 @@ from pycuda.elementwise import ElementwiseKernel
 from pycuda.compiler import SourceModule
 import pycbc.scheme
 import pycuda.driver as drv
+from pycbc.types import zeros
 
 # The interpolation is the result of the call of two kernels.
 #
@@ -54,7 +55,7 @@ texture<float, 1> freq_tex;
 texture<float, 1> amp_tex;
 texture<float, 1> phase_tex;
 
-__device__ int bsearch(float freq, int lower, int upper){
+__device__ int binary_search(float freq, int lower, int upper){
 
     /*
 
@@ -82,7 +83,7 @@ __device__ int bsearch(float freq, int lower, int upper){
 
     while (begin != end){
         int mid = (begin + end)/2;
-        float fcomp = tex1D(freq_tex, mid);
+        float fcomp = tex1Dfetch(freq_tex, (float) mid);
         if (fcomp <= freq){
           begin = mid+1;
         } else {
@@ -135,13 +136,12 @@ __global__ void find_block_indices(int *lower, int *upper, int texlen,
 
     float ffirst = i*df*${ntpb};
     float flast = (i+1)*df*${ntpb}-df;
-
     if (ffirst < flow){
        ffirst = flow;
     }
 
-    lower[i] = bsearch(ffirst, 0, texlen);
-    upper[i] = bsearch(flast, 0, texlen) + 1;
+    lower[i] = binary_search(ffirst, 0, texlen);
+    upper[i] = binary_search(flast, 0, texlen) + 1;
 
     return;
 }
@@ -210,7 +210,7 @@ __global__ void linear_interp(float2 *h, float df, int hlen,
         low[0] = lower[blockIdx.x];
         high[0] = upper[blockIdx.x];
     }
-    syncthreads();
+    __syncthreads();
 
     int i = ${ntpb}*blockIdx.x + threadIdx.x;
 
@@ -222,22 +222,22 @@ __global__ void linear_interp(float2 *h, float df, int hlen,
           tmp.x = 0.0;
           tmp.y = 0.0;
         } else {
-          idx = bsearch(freq, low[0], high[0]);
+          idx = binary_search(freq, low[0], high[0]);
           if (idx < texlen-1) {
-              f0 = tex1D(freq_tex, idx);
-              f1 = tex1D(freq_tex, idx+1);
+              f0 = tex1Dfetch(freq_tex, idx);
+              f1 = tex1Dfetch(freq_tex, idx+1);
               inv_df = 1.0/(f1-f0);
-              a0 = tex1D(amp_tex, idx);
-              a1 = tex1D(amp_tex, idx+1);
-              p0 = tex1D(phase_tex, idx);
-              p1 = tex1D(phase_tex, idx+1);
-              amp = a0*inv_df*(freq-f0) + a1*inv_df*(f1-freq);
-              phase = p0*inv_df*(freq-f0) + p1*inv_df*(f1-freq);
+              a0 = tex1Dfetch(amp_tex, idx);
+              a1 = tex1Dfetch(amp_tex, idx+1);
+              p0 = tex1Dfetch(phase_tex, idx);
+              p1 = tex1Dfetch(phase_tex, idx+1);
+              amp = a0*inv_df*(f1-freq) + a1*inv_df*(freq-f0);
+              phase = p0*inv_df*(f1-freq) + p1*inv_df*(freq-f0);
           } else {
              // We must have idx = texlen-1, so this frequency
              // exactly equals fmax
-             amp = tex1D(amp_tex, idx);
-             phase = tex1D(phase_tex, idx);
+             amp = tex1Dfetch(amp_tex, idx);
+             phase = tex1Dfetch(phase_tex, idx);
           }
           __sincosf(phase, &y, &x);
           tmp.x = amp*x;
@@ -262,7 +262,7 @@ def get_dckernel(slen):
         raise ValueError("More than 1024 blocks not supported yet")
 
     try:
-        return dckernel_cache[nb], nt, nb
+        return dckernel_cache[nb]
     except KeyError:
         mod = SourceModule(kernel_sources.render(ntpb=nt,nblocks=nb))
         freq_tex = mod.get_texref("freq_tex")
@@ -270,10 +270,10 @@ def get_dckernel(slen):
         phase_tex = mod.get_texref("phase_tex")
         fn1 = mod.get_function("find_block_indices")
         fn1.prepare("PPifff", texrefs=[freq_tex])
-        fn2 = mod2.get_function("linear_interp")
+        fn2 = mod.get_function("linear_interp")
         fn2.prepare("PfiffiPP", texrefs=[freq_tex, amp_tex, phase_tex])
-        dckernel_cache[nb] = (fn1, fn2, freq_tex, amp_tex, phase_tex)
-        return dckernel_cache[nb], nt, nb
+        dckernel_cache[nb] = (fn1, fn2, freq_tex, amp_tex, phase_tex, nt, nb)
+        return dckernel_cache[nb]
     
     
 class CUDALinearInterpolate(object):
@@ -297,14 +297,38 @@ class CUDALinearInterpolate(object):
         texlen = numpy.int32(len(freqs))
         fmax = numpy.float32(freqs[texlen-1])
         freqs_gpu = gpuarray.to_gpu(freqs)
-        amps_gpu = gpuaray.to_gpu(amps)
+        freqs_gpu.bind_to_texref_ext(self.freq_tex, allow_offset=False)
+        amps_gpu = gpuarray.to_gpu(amps)
+        amps_gpu.bind_to_texref_ext(self.amp_tex, allow_offset=False)
         phases_gpu = gpuarray.to_gpu(phases)
-        self.freq_tex.set_array(freqs_gpu)
-        self.amp_tex.set_array(amps_gpu)
-        self.phase_tex.set_array(phases_gpu)
-        self.fn1((1, 1), (self.nb, 1, 1), self.lower, self.upper,
-                 texlen, self.df, flow, fmax)
-        self.fn2((self.nb, 1), (self.nt, 1, 1), self.output, self.df,
-                 self.hlen, flow, fmax, texlen, self.lower, self.upper)
-
+        phases_gpu.bind_to_texref_ext(self.phase_tex, allow_offset=False)
+        fn1 = self.fn1.prepared_call
+        fn2 = self.fn2.prepared_call
+        fn1((1, 1), (self.nb, 1, 1), self.lower, self.upper, texlen, self.df, flow, fmax)
+        fn2((self.nb, 1), (self.nt, 1, 1), self.output, self.df, self.hlen, flow, fmax, texlen, self.lower, self.upper)
+        pycbc.scheme.mgr.state.context.synchronize()
         return
+
+def cuda_linear_interp(output, flow, freqs, amps, phases):
+    flow = numpy.float32(flow)
+    texlen = numpy.int32(len(freqs))
+    fmax = numpy.float32(freqs[texlen-1])
+    hlen = numpy.int32( len(output) )
+    (fn1, fn2, ftex, atex, ptex, nt, nb) = get_dckernel(hlen)
+    freqs_gpu = gpuarray.to_gpu(freqs)
+    freqs_gpu.bind_to_texref_ext(ftex, allow_offset=False)
+    amps_gpu = gpuarray.to_gpu(amps)
+    amps_gpu.bind_to_texref_ext(atex, allow_offset=False)
+    phases_gpu = gpuarray.to_gpu(phases)
+    phases_gpu.bind_to_texref_ext(ptex, allow_offset=False)
+    fn1 = fn1.prepared_call
+    fn2 = fn2.prepared_call
+    df = numpy.float32(output.delta_f)
+    g_out = output.data.gpudata
+    lower = zeros(nb, dtype=numpy.int32).data.gpudata
+    upper = zeros(nb, dtype=numpy.int32).data.gpudata
+    fn1((1, 1), (nb, 1, 1), lower, upper, texlen, df, flow, fmax)
+    fn2((nb, 1), (nt, 1, 1), g_out, df, hlen, flow, fmax, texlen, lower, upper)
+    pycbc.scheme.mgr.state.context.synchronize()
+    return output
+
