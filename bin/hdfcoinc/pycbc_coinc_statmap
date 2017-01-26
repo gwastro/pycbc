@@ -211,13 +211,13 @@ if 'name' in all_trigs.attrs:
 # Incorporate hierarchical removal for any other loud triggers
 logging.info("Beginning hierarchical removal of foreground triggers.")
 
-# Step 1: Create arrays to use for reference when storing ifar and fap of
-#         foreground triggers that get hierarchically removed.
+# Step 1: Create a copy of foreground trigger ranking statistic for reference
+#         in the hierarchical removal while loop when updating ifar and fap of
+#         hierarchically removed foreground triggers.
 
 # Set an index to keep track of how many hierarchical removals we want to do.
 h_iterations = 0
 
-save_these_fore_ind = numpy.array([], dtype=int)
 orig_fore_stat = fore_stat
 
 # Step 2 : Loop until we don't have to hierarchically remove anymore. This
@@ -248,9 +248,6 @@ while numpy.any(fnlouder == 0):
 
     f['foreground/ifar'][orig_fore_idx] = sec_to_year(ifar[max_stat_idx])
     f['foreground/fap'][orig_fore_idx] = fap[max_stat_idx]
-
-    # Save the index location of the foreground trigger that was removed.
-    save_these_fore_ind = numpy.append(save_these_fore_ind, orig_fore_idx)
 
     logging.info("Removing foreground trigger that is louder than the inclusive background.")
 
@@ -334,11 +331,6 @@ while numpy.any(fnlouder == 0):
             orig_fore_idx = numpy.where(orig_fore_stat == fore_stat[i])[0][0]
             f['foreground/ifar'][orig_fore_idx] = sec_to_year(ifar[i])
             f['foreground/fap'][orig_fore_idx] = fap[i]
-
-# If there were hierarchically removed foreground triggers, write the indices
-# of hierarchically removed foreground triggers to file
-if h_iterations > 0:
-     f['hierarchical_removed_fore_indices'] = save_these_fore_ind
 
 # Write to file how many hierarchical removals were implemented.
 f.attrs['hierarchical_removal_iterations'] = h_iterations
