@@ -107,7 +107,7 @@ try:
         cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * lal.YRJUL_SI
         fap_end = f['foreground/fap'][:].min() * args.trials_factor
     else:
-        if h_inc_back_num == -1:
+        if h_inc_back_num == 0:
             cstat_fore = f['foreground/stat'][:]
             ssort = cstat_fore.argsort()
             cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
@@ -219,8 +219,9 @@ if not args.closed_box:
                 cstat_rate = numpy.delete(cstat_rate, rm_idx)
 
             pylab.scatter(cstat_fore_h_rm, cstat_rate_h_rm, s=60, color='#b66dff',
-                          marker=args.fg_marker, label='Hierarchically Removed Foreground',
-                          zorder=100, linewidth=0.5, edgecolors='white')
+                          marker=args.fg_marker_h_rm,
+                          label='Hierarchically Removed Foreground', zorder=100,
+                          linewidth=0.5, edgecolors='white')
 
         pylab.scatter(cstat_fore, cstat_rate, s=60, color='#ff6600',
                       marker=args.fg_marker, label='Foreground', zorder=100,
@@ -291,16 +292,14 @@ if not args.cumulative:
         for ii,p in enumerate(sigps[:-1]):
             nextp = sigps[ii+1]
             pylab.axhspan(far_from_p(nextp, foreground_livetime, far_back.max()),
-                        far_from_p(p, foreground_livetime, far_back.max()),
-                        linewidth=0,
-                        color=pylab.cm.Blues(float(sigmas[ii+1]) / sigmas.size),
-                        alpha=0.3, zorder=-1) 
+                          far_from_p(p, foreground_livetime, far_back.max()),
+                          linewidth=0,
+                          color=pylab.cm.Blues(float(sigmas[ii+1]) / sigmas.size),
+                          alpha=0.3, zorder=-1) 
             # add sigma label
             pylab.annotate('%1.0f$\sigma$' % sigmas[ii],
                            (anntx, far_from_p(p, foreground_livetime,
                             far_back.max())), zorder=100)
-
-
     pylab.sca(ax1)
     
 if args.cumulative:
@@ -320,9 +319,9 @@ pylab.xlim(plot_xmin, plot_xmax)
 if args.cumulative:
     pylab.legend(loc="lower left")
     pylab.grid()
-    figure_caption =  "Cumulative histogram of foreground and background triggers."
+    figure_caption = "Cumulative histogram of foreground and background triggers."
 else:
-    figure_caption =  "Mapping between the ranking statistic and false alarm rate."
+    figure_caption = "Mapping between the ranking statistic and false alarm rate."
     pylab.grid()
     pylab.legend(loc="upper right")
     ax2.set_yscale('log')
