@@ -1404,11 +1404,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         data_reader: dict of StrainBuffers
             A dict of StrainBuffer instances, indexed by ifos.
         """
-        from pycbc import frame
         if not self.state:
             return False
 
-        if not self.state.is_extent_valid(self.start_time, self.blocksize, frame.NO_HWINJ):
+        if not self.state.is_extent_valid(self.start_time, self.blocksize, pycbc.frame.NO_HWINJ):
             return True
         return False
 

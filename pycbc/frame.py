@@ -614,7 +614,7 @@ class DataBuffer(object):
                 time.sleep(1)
                 return self.attempt_advance(blocksize, timeout=timeout)
 
-# Status flags for the calibration state vector 
+# Status flags for the calibration state vector
 HOFT_OK = 1
 SCIENCE_INTENT = 2
 SCIENCE_QUALITY = 4
@@ -629,11 +629,11 @@ KAPPA_PU_OK = 1024
 KAPPA_TST_OK = 2048
 KAPPA_C_OK = 4096
 FCC_OK = 8192
-NO_GAP = 16384    
+NO_GAP = 16384
 NO_HWINJ = NO_STOCH_HW_INJ | NO_CBC_HW_INJ | \
            NO_BURST_HW_INJ | NO_DETCHAR_HW_INJ
 
-# O2 Low-Latency DQ vector definition 
+# O2 Low-Latency DQ vector definition
 # If the bit is 0 then we should veto
 OMC_DCPD_ADC_OVERFLOW = 2
 ETMY_ESD_DAC_OVERFLOW = 4
@@ -642,7 +642,7 @@ class StatusBuffer(DataBuffer):
 
     """ Read state vector information from a frame file """
 
-    def __init__(self, frame_src, 
+    def __init__(self, frame_src,
                        channel_name,
                        start_time,
                        max_buffer=2048,
@@ -674,7 +674,7 @@ class StatusBuffer(DataBuffer):
 
     def check_valid(self, values, flag=None):
         """Check if the data contains any non-valid status information
-        
+
         Parameters
         ----------
         values: pycbc.types.Array
@@ -687,7 +687,7 @@ class StatusBuffer(DataBuffer):
         status: boolean
             Returns True if all of the status information if valid,
              False if any is not.
-        """ 
+        """
         if flag is None:
             flag = self.valid_mask
 
