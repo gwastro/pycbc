@@ -142,7 +142,8 @@ Make sure your versions of ``pip`` and ``setuptools`` are up to date by running 
 
 .. code-block:: bash
 
-    pip install --upgrade pip setuptools
+    pip install --upgrade pip
+    pip install --upgrade setuptools
 
 Install unittest2, python-cjson, and numpy with the command:
 
