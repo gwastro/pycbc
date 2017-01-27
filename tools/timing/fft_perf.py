@@ -34,9 +34,6 @@ _options = vars(options)
 
 if _options['scheme'] == 'cpu':
     ctx = CPUScheme(num_threads=options.num_threads)
-    if options.backend == 'lal':
-        from pycbc.fft.lalfft import set_measure_level
-        set_measure_level(options.measure_level)
     if options.backend == 'fftw':     
         from pycbc.fft.fftw import set_measure_level, set_threads_backend
         with ctx:
