@@ -63,7 +63,7 @@ hiddenimports = ['pycbc.fft.fft_cpu',
 datas = []
 
 # Add html assets to all executables
-cwd     = os.getcwd()
+cwd     = os.environ.get("PYCBC_HOOKS_DIR", os.getcwd())
 basedir = cwd.replace('tools/static','')
 rootdir = basedir + 'pycbc/results'
 
@@ -81,7 +81,7 @@ store_path = '/'.join(file_path.split('/')[:-1])
 store_path = store_path.replace(basedir, '')
 datas.append( (file_path, store_path) )
 
-if os.environ["NOW_BUILDING"] in needs_mkl:
+if os.environ.get("NOW_BUILDING", None) in needs_mkl:
     # pull in all the mkl .so files
     datas += find_lib_path('mkl_rt', [])
     datas += find_lib_path('mkl_core', [])
