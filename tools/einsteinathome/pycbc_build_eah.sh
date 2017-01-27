@@ -758,6 +758,7 @@ cd pycbc
 if test ".$pycbc_remote" = "ligo-cbc" || test ".$pycbc_remote" = "bema-ligo" ; then
     :
 else
+    git remote rm $pycbc_remote || true
     git remote add $pycbc_remote https://github.com/${pycbc_remote}/pycbc.git
     git remote update
 fi
