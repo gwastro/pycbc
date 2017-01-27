@@ -759,7 +759,7 @@ if test ".$pycbc_remote" = "ligo-cbc" || test ".$pycbc_remote" = "bema-ligo" ; t
     :
 else
     git remote rm $pycbc_remote || true
-    git remote add $pycbc_remote https://github.com/${pycbc_remote}/pycbc.git
+    git remote add $pycbc_remote git://github.com/${pycbc_remote}/pycbc.git
     git remote update
 fi
 if test ".$pycbc_branch" = ".HEAD" ; then
