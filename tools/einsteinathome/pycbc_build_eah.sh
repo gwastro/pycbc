@@ -772,7 +772,7 @@ elif test ".$pycbc_branch" = ".master" ; then
 else
     # checkout branch from scratch, master must and should exist
     git checkout master
-    git branch -D $pycbc_branch
+    git branch -D $pycbc_branch || true
     git remote update
     git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
