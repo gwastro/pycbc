@@ -309,7 +309,6 @@ class SingleDetPowerChisq(object):
         else:
             self.do = False
         self.snr_threshold = snr_threshold
-        self._bin_cache = {}
 
     @staticmethod
     def parse_option(row, arg):
@@ -320,9 +319,15 @@ class SingleDetPowerChisq(object):
         return eval(arg, {"__builtins__":None}, safe_dict)
 
     def cached_chisq_bins(self, template, psd):
-        key = (id(template.params), id(psd))
-        if key not in self._bin_cache or not hasattr(psd, '_chisq_cached_key'):
-            psd._chisq_cached_key = True
+        key = id(psd)
+        if not hasattr(psd, '_chisq_cached_key'):
+            psd._chisq_cached_key = {}
+
+        if not hasattr(template, '_bin_cache'):
+            template._bin_cache = {}
+
+        if key not in template._bin_cache or id(template.params) not in psd._chisq_cached_key:
+            psd._chisq_cached_key[id(template.params)] = True
             num_bins = int(self.parse_option(template, self.num_bins))
 
             if hasattr(psd, 'sigmasq_vec') and template.approximant in psd.sigmasq_vec:
@@ -334,9 +339,9 @@ class SingleDetPowerChisq(object):
             else:
                 logging.info("...Calculating power chisq bins")
                 bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
-            self._bin_cache[key] = bins
+            template._bin_cache[key] = bins
 
-        return self._bin_cache[key]
+        return template._bin_cache[key]
 
     def values(self, corr, snrv, snr_norm, psd, indices, template):
         """ Calculate the chisq at points given by indices.
