@@ -1750,5 +1750,11 @@ class PycbcConditionStrainExecutable(Executable):
                         tags=tags)
         node.add_output_opt('--output-strain-file', out_file)
 
+        out_gates_file = File(self.ifo, "output_gates",
+                              segments.segment(int(start_time), int(end_time)),
+                              directory=self.out_dir, extension='txt',
+                              store_file=self.retain_files, tags=tags)
+        node.add_output_opt('--output-gates-file', out_gates_file)
+
         return node, out_file
 
