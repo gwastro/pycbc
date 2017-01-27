@@ -579,7 +579,8 @@ class LiveFilterBank(TemplateBank):
         if f_end is None or f_end >= (flen * delta_f):
             f_end = (flen-1) * delta_f
 
-        logging.info("Generating %s, %ss, %i, starting from %s Hz" % (approximant, 1.0/delta_f, index, flow))
+        logging.info("Generating %s, %ss, %i, starting from %s Hz",
+                     approximant, 1.0/delta_f, index, flow)
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
@@ -779,7 +780,7 @@ class FilterBankSkyMax(TemplateBank):
         else:
             f_low = self.f_lower
 
-        logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
+        logging.info('%s: generating %s from %s Hz', index, approximant, f_low)
 
         # What does this do???
         poke1 = tempoutplus.data
