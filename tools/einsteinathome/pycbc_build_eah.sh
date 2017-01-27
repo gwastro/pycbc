@@ -182,6 +182,8 @@ usage="
     --lalsuite-commit=<commit> : specify a commit (tag or branch) of lalsuite to build from
     --pycbc-commit=<commit> : specify a commit or tag of pycbc to build from (specifying a
                         branch will only work reliably in conjunction with --clean-pycbc)
+    --pycbc-remote=<username> : add pycbc repository github.com/username as remote
+    --pycbc-branch=<branch> : checkout branch before building
     --no-pycbc-update : don't update local pycbc repo
     --bema-testing    : use einsteinathome_testing branch of bema-ligo/pycbc repo
     --no-cleanup      : keep build directories after successful build for later inspection
