@@ -199,6 +199,8 @@ for i in $*; do
         --bema-testing)
             pycbc_branch=einsteinathome_testing
             pycbc_remote=bema-ligo;;
+        --pycbc-remote=*) pycbc_remote="`echo $i|sed 's/^--pycbc-remote=//'`";;
+        --pycbc-branch=*) pycbc_branch="`echo $i|sed 's/^--pycbc-branch=//'`";;
         --no-cleanup) cleanup=false;;
         --no-analysis) run_analysis=false;;
         --verbose-python) verbose_pyinstalled_python=true;;
@@ -751,9 +753,15 @@ if $scratch_pycbc || ! test -d pycbc/.git ; then
     cd ..
 fi
 cd pycbc
-if test ".$pycbc_branch" = ".HEAD"; then
+if test ".$pycbc_remote" = "ligo-cbc" || test ".$pycbc_remote" = "bema-ligo" ; then
     :
-elif test ".$pycbc_branch" = ".master"; then
+else
+    git remote add $pycbc_remote https://github.com/${pycbc_remote}/pycbc.git
+    git remote update
+fi
+if test ".$pycbc_branch" = ".HEAD" ; then
+    :
+elif test ".$pycbc_branch" = ".master" ; then
     git checkout master
     git pull
     test ".$pycbc_commit" != "." &&
