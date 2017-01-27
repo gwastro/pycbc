@@ -488,6 +488,10 @@ class TemplateBank(object):
                 self.table = self.table.add_fields(vec, 'f_lower')
             self.table['f_lower'][:] = low_frequency_cutoff        
 
+        self.min_f_lower = min(self.table['f_lower'])
+        if self.f_lower is None and self.min_f_lower == 0.:
+            raise ValueError('Invalid low-frequency cutoff settings')
+
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, sample_rate, minimum_buffer,
                        approximant=None, increment=8, parameters=None,
@@ -499,16 +503,17 @@ class LiveFilterBank(TemplateBank):
         self.filename = filename
         self.sample_rate = sample_rate
         self.minimum_buffer = minimum_buffer
+        self.f_lower = low_frequency_cutoff
 
         super(LiveFilterBank, self).__init__(filename, approximant=approximant,
                 parameters=parameters, load_compressed=load_compressed,
                 load_compressed_now=load_compressed_now, **kwds)
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
-        self.table.sort(order='mchirp')
         self.hash_lookup = {}
         for i, p in enumerate(self.table):
             hash_value =  hash((p.mass1, p.mass2, p.spin1z, p.spin2z))
             self.hash_lookup[hash_value] = i
+        self.table.sort(order='mchirp')
 
     def round_up(self, num):
         """Determine the length to use for this waveform by rounding.
@@ -567,14 +572,15 @@ class LiveFilterBank(TemplateBank):
         buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, **p)
         
         tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
-        flen = tlen / 2 + 1
+        flen = int(tlen / 2 + 1)
 
         delta_f = self.sample_rate / float(tlen)
 
         if f_end is None or f_end >= (flen * delta_f):
             f_end = (flen-1) * delta_f
 
-        logging.info("Generating %s, %ss, %i" % (approximant, 1.0/delta_f, index))
+        logging.info("Generating %s, %ss, %i, starting from %s Hz",
+                     approximant, 1.0/delta_f, index, flow)
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
@@ -597,7 +603,8 @@ class LiveFilterBank(TemplateBank):
 
         htilde = htilde.astype(numpy.complex64)
         htilde.f_lower = flow
-        htilde.end_idx = int(htilde.f_end / htilde.delta_f)
+        htilde.min_f_lower = self.min_f_lower
+        htilde.end_idx = int(f_end / htilde.delta_f)
         htilde.params = self.table[index]
         htilde.chirp_length = template_duration
         htilde.length_in_time = ttotal
@@ -637,10 +644,6 @@ class FilterBank(TemplateBank):
             load_compressed_now=load_compressed_now,
             **kwds)
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
-
-        self.min_f_lower = min(self.table['f_lower'])
-        if self.f_lower is None and self.min_f_lower == 0.:
-            raise ValueError('Invalid low-frequency cutoff settings')
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
@@ -777,7 +780,7 @@ class FilterBankSkyMax(TemplateBank):
         else:
             f_low = self.f_lower
 
-        logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
+        logging.info('%s: generating %s from %s Hz', index, approximant, f_low)
 
         # What does this do???
         poke1 = tempoutplus.data
