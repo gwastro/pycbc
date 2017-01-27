@@ -136,6 +136,8 @@ def verify_weave_options(opt, parser):
         sys.path = [cache_dir] + sys.path
         try: os.makedirs(cache_dir)
         except OSError: pass
+        if not os.environ.get("LAL_DATA_PATH", None):
+            os.environ['LAL_DATA_PATH'] = cache_dir
 
     # Check whether to use a private directory for scipy.weave
     if opt.per_process_weave_cache:
