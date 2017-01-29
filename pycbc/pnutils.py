@@ -587,7 +587,8 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
                     float(spin1), float(spin2)) for f in track_f])
     elif approximant in ['SEOBNRv4', 'SEOBNRv4_ROM']:
         f_high = get_final_freq('SEOBNRv4', mass1, mass2, spin1, spin2)
-        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
+        # use frequency below final freq in case of rounding error
+        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(0.999*f_high),
                                  n_points)
         track_t = numpy.array([
                 lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency(
