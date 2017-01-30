@@ -59,10 +59,25 @@ Configuration files follow the ``ConfigParser`` syntax.
 There are two required sections.
 One is a ``[variable_args]`` section that contains a list of varying parameters and the other is ``[static_args]`` section that contains a list of parameters that do not vary.
 
-A list of all parameters that can be used is
+A list of all parameters that can be used is found with
 
 .. literalinclude:: ../examples/inference/list_parameters.py
 .. command-output:: python ../examples/inference/list_parameters.py
+
+The mass parameters ``mass1`` and ``mass2`` can be substituted for ``mchirp`` and ``eta``i, or ``mchirp`` and ``q``.
+The component spin parameters ``spin1x``, ``spin1y``, and ``spin1z`` can be substituted for polar coordinates ``spin1_a``, ``spin1_azimuthal``, and ``spin1_polar``.
+
+Each parameter in ``[variable_args]`` must have a subsection in ``[prior]``.
+To create a subsection use the ``-`` char, eg. for chirp mass do ``[prior-mchirp]``.
+
+Each prior subsection must have a ``name`` option that identifies what prior to use.
+These distributions are described in :py:meth:`pycbc.inference.distributions`.
+A list of all distributions that can be used is found with
+
+.. literalinclude:: ../examples/inference/list_distributions.py
+.. command-output:: python ../examples/inference/list_distributions.py
+
+A simple example is given in the subsection below.
 
 ------------------------------
 BBH software injection example
