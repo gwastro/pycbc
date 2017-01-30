@@ -84,7 +84,7 @@ for sec in opts.sections:
         subsections = cp.get_subsections(section)
     for subsection in subsections:
         name = cp.get_opt_tag(section, "name", subsection)
-        dist = inference.priors[name].from_config(cp, section, subsection)
+        dist = inference.distribs[name].from_config(cp, section, subsection)
         variable_args += dist.params
         distributions.append( dist )
 variable_args = sorted(variable_args)
