@@ -184,6 +184,8 @@ usage="
     --lalsuite-commit=<commit> : specify a commit (tag or branch) of lalsuite to build from
     --pycbc-commit=<commit> : specify a commit or tag of pycbc to build from (specifying a
                         branch will only work reliably in conjunction with --clean-pycbc)
+    --pycbc-remote=<username> : add pycbc repository github.com/username as remote
+    --pycbc-branch=<branch> : checkout branch before building
     --no-pycbc-update : don't update local pycbc repo
     --bema-testing    : use einsteinathome_testing branch of bema-ligo/pycbc repo
     --no-cleanup      : keep build directories after successful build for later inspection
@@ -201,6 +203,8 @@ for i in $*; do
         --bema-testing)
             pycbc_branch=einsteinathome_testing
             pycbc_remote=bema-ligo;;
+        --pycbc-remote=*) pycbc_remote="`echo $i|sed 's/^--pycbc-remote=//'`";;
+        --pycbc-branch=*) pycbc_branch="`echo $i|sed 's/^--pycbc-branch=//'`";;
         --no-cleanup) cleanup=false;;
         --no-analysis) run_analysis=false;;
         --verbose-python) verbose_pyinstalled_python=true;;
@@ -754,9 +758,16 @@ if $scratch_pycbc || ! test -d pycbc/.git ; then
     cd ..
 fi
 cd pycbc
-if test ".$pycbc_branch" = ".HEAD"; then
+if test ".$pycbc_remote" = "ligo-cbc" || test ".$pycbc_remote" = "bema-ligo" ; then
     :
-elif test ".$pycbc_branch" = ".master"; then
+else
+    git remote rm $pycbc_remote || true
+    git remote add $pycbc_remote git://github.com/${pycbc_remote}/pycbc.git
+    git remote update
+fi
+if test ".$pycbc_branch" = ".HEAD" ; then
+    :
+elif test ".$pycbc_branch" = ".master" ; then
     git checkout master
     git pull
     test ".$pycbc_commit" != "." &&
@@ -764,7 +775,7 @@ elif test ".$pycbc_branch" = ".master"; then
 else
     # checkout branch from scratch, master must and should exist
     git checkout master
-    git branch -D $pycbc_branch
+    git branch -D $pycbc_branch || true
     git remote update
     git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
