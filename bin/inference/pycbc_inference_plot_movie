@@ -131,7 +131,7 @@ fp, parameters, labels, _ = option_utils.results_from_cli(opts,
                             load_samples=False)
 
 if opts.end_sample is None:
-    opts.end_sample = fp.niterations + 1
+    opts.end_sample = fp.niterations
 
 if opts.log_steps and not opts.frame_number:
     raise ValueError("log-steps requires a non-zero frame-number to be "
@@ -143,10 +143,15 @@ end_index = opts.end_sample - 1
 
 # Define thin interval based on number of frames or frame step
 if opts.frame_number and opts.frame_step:
-    raise ValueError("Only one of frame-number or frame-step must be provided.")
+    raise ValueError("Only one of frame-number or frame-step must be "
+                     "provided.")
 elif opts.frame_number:
+    if opts.frame_number > fp.niterations:
+        raise ValueError("frame number is > the number of iterations "
+                         "({})".format(fp.niterations))
     if opts.log_steps:
-        iterations = integer_logspace(start_index, end_index, opts.frame_number)
+        iterations = integer_logspace(start_index, end_index,
+                                      opts.frame_number)
     else:
         iterations = numpy.unique(numpy.linspace(start_index, end_index,
                                     num=opts.frame_number).astype(int))
@@ -158,12 +163,13 @@ elif opts.frame_number:
 elif opts.frame_step:
     thinint = opts.frame_step
     thin_start = start_index
-    thin_end = end_index
+    thin_end = end_index + thinint
     itermask = None
-    nframes = (thin_end - thin_start)/thinint
-    iterations = numpy.arange(nframes) * thinint + thin_start
+    nframes = 1 + (thin_end - thin_start)/thinint
+    iterations = numpy.arange(nframes-1) * thinint + thin_start
 else:
-    raise ValueError("At least one of frame-number or frame-step must be provided.")
+    raise ValueError("At least one of frame-number or frame-step must be "
+                     "provided.")
 
 samples = fp.read_samples(parameters, thin_start=thin_start,
                           thin_end=thin_end, thin_interval=thinint,
