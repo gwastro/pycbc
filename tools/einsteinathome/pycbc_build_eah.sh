@@ -804,6 +804,7 @@ else
     echo -e "\\n\\n>> [`date`] building $p"
     if test -d pyinstaller/.git; then
         cd $p
+        git remote update
         git reset --hard HEAD
         git clean -xdf
     else
