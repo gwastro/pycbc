@@ -31,6 +31,7 @@ from pycbc import pnutils
 from pycbc.waveform import parameters as wfparams
 import pycbc.inference.sampler
 import pycbc.inference.likelihood
+import sys
 
 class InferenceFile(h5py.File):
     """ A subclass of the h5py.File object that has extra functions for
@@ -126,6 +127,17 @@ class InferenceFile(h5py.File):
             The ACL.
         """
         return self.attrs["acl"]
+
+    @property
+    def cmd(self):
+        """ Returns the saved command line.
+
+        Returns
+        -------
+        cmd : {str}
+            The command line that created this InferenceFile.
+        """
+        return self.attrs["cmd"]
 
     @property
     def log_evidence(self):
@@ -285,6 +297,16 @@ class InferenceFile(h5py.File):
             psd_dim = self.create_dataset(key+"/psds/0",
                                           data=psds[key])
             psd_dim.attrs["delta_f"] = psds[key].delta_f
+
+    def write_command_line(self):
+        """Writes command line to attributes.
+
+        Parameters
+        ----------
+        opts : argparse.ArgumentParser
+            The parsed command line instance.
+        """
+        self.attrs["cmd"] = " ".join(sys.argv)
 
     def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
         """Formats a slice using the given arguments that can be used to
