@@ -769,7 +769,7 @@ if test ".$pycbc_branch" = ".HEAD" ; then
     :
 elif test ".$pycbc_branch" = ".master" ; then
     git checkout master
-    git pull
+    git pull ligo-cbc master
     test ".$pycbc_commit" != "." &&
         git checkout $pycbc_commit
 else
