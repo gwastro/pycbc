@@ -1081,7 +1081,9 @@ for bank_file in $extra_bank $p
 do
   for inspiral_approx in "$extra_approx" $gw150914_approx
   do
+    if ! test -z $inspiral_approx && ! test -z $bank_file ; then
     rm -f H1-INSPIRAL-OUT.hdf
+    echo -e "\\n\\n>> [`date`] pycbc_inspiral using $bank_file with $extra_approx"
     LAL_DATA_PATH="." \
       NO_TMPDIR=1 \
       INITIAL_LOG_LEVEL=10 \
@@ -1122,6 +1124,7 @@ do
       --frame-files "$f" \
       --bank-file "$bank_file" \
       --verbose 2>&1
+      fi
   done
 done
 
