@@ -8,19 +8,35 @@ Introduction
 
 This page gives details on how to use the various parameter estimation
 executables and modules available in PyCBC. The ``pycbc.inference`` subpackage
-is contains classes and functions for evaluating probability distributions,
+contains classes and functions for evaluating probability distributions,
 likelihoods, and running Bayesian samplers.
 
 =================================================
 Sampling the parameter space: ``pycbc_inference``
 =================================================
 
----------------------
+--------
 Overview
----------------------
+--------
 
 The executable ``pycbc_inference`` is designed to sample the parameter space
-and save the samples in an HDF file.
+and save the samples in an HDF file. There are options for generating a PSD
+from a model or data,  generating h(t) from a model or data, and gating.
+
+The user specifies the sampler on the command line with the ``--sampler``
+option. A list of available samplers is::
+
+    <code>
+
+The user specifies the likelihood model on the command line with
+the ``--likelihood`` option. At the moment there is only a single
+choice ``--likelihood gaussian``.
+
+The user specifies a configuration file that defines the priors with the
+``--config-files`` option. A description of the configuration file is given
+in the subsection below.
+
+The user 
 
 ------------------------------
 BBH software injection example
