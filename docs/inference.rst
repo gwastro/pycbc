@@ -7,17 +7,9 @@ Introduction
 ===================
 
 This page gives details on how to use the various parameter estimation
-executables and modules available in PyCBC, the ``pycbc.inference`` subpackage.
-
-The ``pycbc.inference`` subpackage uses other parts of the PyCBC toolkit. Of
-particular interest are:
-
-- ``pycbc.filter.autocorrelation`` : Autocorrelation function calculation.
-- ``pycbc.io.inference_hdf`` : Output datatype of ``pycbc_inference``.
-- ``pycbc.waveform.generator`` : Waveform generators for likelihood evaluation.
-
-These modules contain classes and functions involved in running the samplers.
-Other modules for PSD estimation, data conditioning, and filtering as well.
+executables and modules available in PyCBC. The ``pycbc.inference`` subpackage
+is contains classes and functions for evaluating probability distributions,
+likelihoods, and running Bayesian samplers.
 
 =================================================
 Sampling the parameter space: ``pycbc_inference``
