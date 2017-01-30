@@ -245,6 +245,7 @@ if [ ".$link_gcc_version" != "." ]; then
 fi
 libgfortran_dir="`$FC -print-file-name=$libgfortran|sed 's%/[^/]*$%%'`"
 export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran_dir:/usr/local/lib:$LD_LIBRARY_PATH"
+export CPPFLAGS="-I$PREFIX/include -I$PYTHON_PREFIX/include $CPPFLAGS"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LIBS="$LIBS -lgfortran"
 
@@ -490,11 +491,11 @@ Cflags: -I${includedir}' |
 
     # HDF5
     if $build_hdf5; then
-	p=hdf5-1.8.12
+	p=hdf5-1.8.13
 	echo -e "\\n\\n>> [`date`] building $p"
 	test -r $p.tar.gz ||
             wget $wget_opts $aei/$p.tar.gz ||
-            wget $wget_opts https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/$p.tar.gz
+            wget $wget_opts https://support.hdfgroup.org/ftp/HDF5/releases/$p/src/$p.tar.gz
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
