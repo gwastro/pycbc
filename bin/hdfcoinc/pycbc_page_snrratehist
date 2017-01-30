@@ -51,8 +51,8 @@ if args.h_iter_inc_background != None:
     if f.attrs['hierarchical_removal_iterations'] is not None:
         h_iterations = f.attrs['hierarchical_removal_iterations']
         if h_inc_back_num > h_iterations:
-            raise ValueError('User requested inclusive background iteration '
-                             'that was not done. Exiting!')
+            raise ValueError('User requested inclusive background after '
+                             'hierarchical removals that does not exist!')
 else :
     if f.attrs['hierarchical_removal_iterations'] is not None:
         h_inc_back_num = f.attrs['hierarchical_removal_iterations']
