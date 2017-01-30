@@ -20,8 +20,16 @@ Overview
 --------
 
 The executable ``pycbc_inference`` is designed to sample the parameter space
-and save the samples in an HDF file. There are options for generating a PSD
-from a model or data,  generating h(t) from a model or data, and gating.
+and save the samples in an HDF file. A high-level description of
+``pycbc_inference`` is::
+
+#. Estimate a PSD from a model or data.
+
+#. Read gravitational-wave strain from a gravitational-wave model or use recolored fake strain.
+
+#. Read priors from configuration file.
+
+#. Run sampler
 
 The user specifies the sampler on the command line with the ``--sampler``
 option. A list of available samplers is::
