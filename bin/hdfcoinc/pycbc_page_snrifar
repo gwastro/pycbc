@@ -92,7 +92,6 @@ if f.attrs['hierarchical_removal_iterations'] is not None:
         logging.warn('User requested inclusive background iteration that does '
                      'not exist. Defaulting to last possible inclusive '
                      'background.')
-
 else :
     h_inc_back_num = 0
 
@@ -109,6 +108,7 @@ try:
     else:
         if h_inc_back_num == 0:
             cstat_fore = f['foreground/stat'][:]
+            print "The length of the foreground triggers is...", len(cstat_fore)
             ssort = cstat_fore.argsort()
             cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
             cstat_rate = cstat_rate[ssort]
@@ -116,6 +116,7 @@ try:
             cstat_fap = p_from_far(cstat_rate, foreground_livetime)
         else :
             cstat_fore = f['foreground_h%s/stat' % h_inc_back_num][:]
+            print "The length of the foreground triggers is...", len(cstat_fore)
             ssort = cstat_fore.argsort()
             cstat_rate = 1.0 / f['foreground_h%s/ifar' % h_inc_back_num][:] * args.trials_factor
             cstat_rate = cstat_rate[ssort]
@@ -125,6 +126,8 @@ try:
     logging.info('Found %s foreground triggers' % len(cstat_fore))
 except:
     cstat_fore = None
+
+print "The length of the foreground triggers is...", len(cstat_fore)
 
 if cstat_fore is not None and len(cstat_fore) == 0:
     cstat_fore = None
