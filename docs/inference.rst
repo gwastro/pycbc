@@ -11,17 +11,17 @@ executables and modules available in PyCBC. The ``pycbc.inference`` subpackage
 contains classes and functions for evaluating probability distributions,
 likelihoods, and running Bayesian samplers.
 
-=================================================
-Sampling the parameter space: ``pycbc_inference``
-=================================================
+==================================================
+Sampling the parameter space (``pycbc_inference``)
+==================================================
 
 --------
 Overview
 --------
 
 The executable ``pycbc_inference`` is designed to sample the parameter space
-and save the samples in an HDF file. A high-level description of
-``pycbc_inference`` is::
+and save the samples in an HDF file. A high-level description of the
+``pycbc_inference`` algorithm is
 
 #. Estimate a PSD from a model or data.
 
@@ -29,22 +29,40 @@ and save the samples in an HDF file. A high-level description of
 
 #. Read priors from configuration file.
 
-#. Run sampler
+#. Construct prior-weighted likelihood function from PSD, gravitational-wave strain, and priors.
 
-The user specifies the sampler on the command line with the ``--sampler``
-option. A list of available samplers is::
+#. Run sampler that walks around parameter space and calculates the prior-weighted likelihood function.
 
-    <code>
+---------------------------------------------------
+Options for samplers, likelihood models, and priors
+---------------------------------------------------
 
-The user specifies the likelihood model on the command line with
-the ``--likelihood`` option. At the moment there is only a single
-choice ``--likelihood gaussian``.
+For a full listing of all options run ``pycbc_inference --help``. In this subsection we reference documentation for Python classes that contain more information about choices for samplers, likelihood models, and priors.
 
-The user specifies a configuration file that defines the priors with the
-``--config-files`` option. A description of the configuration file is given
-in the subsection below.
+The user specifies the sampler on the command line with the ``--sampler`` option.
+A complete list of samplers is given in ``pycbc_inference --help``.
+These samplers are described in :py:meth:`pycbc.inference.sampler_kombine.KombineSampler`, :py:meth:`pycbc.inference.sampler_emcee.EmceeEnsembleSampler`, and :py:meth:`pycbc.inference.sampler_emcee.EmceePTSampler`.
+In addition to ``--sampler`` the user will need to specify the number of walkers to use ``--nwalkers``, the number of iterations to go until ``--niterations``, and for parallel-tempered samplers the number of temperatures ``--ntemps``.
+If the sampler has a built-in burn-in function it will be used by default, otherwise you can skill the burn-in with ``--skip-burn-in`` or set a minimum number of iterations for burn-in with ``--min-burn-in``.
 
-The user 
+The user specifies the likelihood model on the command line with the ``--likelihood`` option.
+At the moment there is only a single choice ``--likelihood gaussian`` that is described in :py:meth:`pycbc.inference.likelihood.GaussianLikelihood`.
+
+The user specifies a configuration file that defines the priors with the ``--config-files`` option.
+The syntax of the configuration file is described in the subsection below.
+
+-------------------------
+Configuration file syntax
+-------------------------
+
+Configuration files follow the ``ConfigParser`` syntax.
+There are two required sections.
+One is a ``[variable_args]`` section that contains a list of varying parameters and the other is ``[static_args]`` section that contains a list of parameters that do not vary.
+
+A list of all parameters that can be used is
+
+.. literalinclude:: ../examples/inference/list_parameters.py
+.. command-output:: python ../examples/inference/list_parameters.py
 
 ------------------------------
 BBH software injection example
