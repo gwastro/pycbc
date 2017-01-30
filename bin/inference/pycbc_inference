@@ -213,6 +213,10 @@ with ctx:
         for ifo in gates:
             stilde_dict[ifo] *= psd_dict[ifo]
 
+    # save command line
+    with InferenceFile(opts.output_file, "a") as fp:
+        fp.write_command_line()
+
     # save PSD
     if opts.save_psd:
 
@@ -226,7 +230,7 @@ with ctx:
                                         delta_f=psd_dict[key].delta_f)
         with InferenceFile(opts.output_file, "a") as fp:
             fp.write_psd(psds=psd_dyn_dict,
-                          low_frequency_cutoff=low_frequency_cutoff_dict)
+                         low_frequency_cutoff=low_frequency_cutoff_dict)
 
     # save stilde
     if opts.save_stilde:
