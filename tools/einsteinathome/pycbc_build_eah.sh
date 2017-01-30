@@ -120,6 +120,8 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     fftw_cflags="-Wa,-q"
     build_framecpp=true
     appendix="_OSX64"
+    pyinstaller_version=9d0e0ad4
+    pyinstaller21_hacks=true
 elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     echo -e "\\n\\n>> [`date`] Using Cygwin settings"
     lal_cppflags="-D_WIN32"
