@@ -3,6 +3,8 @@
 """
 import matplotlib; matplotlib.use('Agg');
 import h5py, numpy, argparse, pylab, sys
+import lal, lalsimulation
+import scipy.optimize
 import pycbc.results, pycbc.types, pycbc.version, pycbc.waveform, pycbc.filter
 
 from pycbc.fft.fftw import set_measure_level
@@ -15,14 +17,58 @@ parser.add_argument("--output-file", help='output file name')
 parser.add_argument("--mass1", nargs="+", help="Mass of first component in solar masses", type=float)
 parser.add_argument("--mass2", nargs="+", help="Mass of second component in solar masses", type=float)
 parser.add_argument("--approximant", nargs="+", help="approximant to use for range")
+parser.add_argument("--distance-measure", choices=['horizon','range','comoving_range'], default='range', type=str, help="Type of distance measure to compute")
 args = parser.parse_args()
+
+titles = {}
+captions = {}
+mass_frame = {}
+y_labels = {}
+
+titles['horizon'] = "Inspiral Horizon Distance"
+titles['range'] = "Inspiral SenseMon Range"
+titles['comoving_range'] = "Inspiral Comoving Distance Range"
+
+captions['horizon'] = "The distance at which an optimally oriented " + \
+    "merger would produce a signal-to-noise ratio of 8 in a single " + \
+    "detector. The masses of the signal are the detector-frame masses."
+captions['range'] = "The canonical sky- and orientation-averaged " + \
+    "inspiral range for a single detector at SNR 8. This range is " + \
+    "comparable to the SenseMon range and a factor of 2.26 smaller " + \
+    "than the horizon distance. The masses of the signal are the " + \
+    "detector-frame masses and the range is not corrected for cosmology."
+captions['comoving_range'] = "The cosmology-corrected sky- and " + \
+    "orientation-averaged inspiral range for a single detector at SNR 8. " + \
+    "This is a volumetric average that is used to relate observed event " + \
+    "rates to uniform rate densities as in the SenseMon range. The " + \
+    "masses of the signal are the source-frame masses and so are redshifted."
+
+mass_frame['horizon'] = "Detector frame"
+mass_frame['range'] = "Detector frame"
+mass_frame['comoving_range'] = "Source frame"
+
+y_labels['horizon'] = "Inspiral Horizon Distance (Mpc)"
+y_labels['range'] = "Inspiral Range (Mpc)"
+y_labels['comoving_range'] = "Inspiral Comoving Range (Gpc)"
 
 canonical_snr = 8.0
 
+# From Planck2015, Table IV
+omega = lal.CreateCosmologicalParametersAndRate().omega
+lal.SetCosmologicalParametersDefaultValue(omega)
+omega.h = 0.679
+omega.om = 0.3156
+omega.ol = 0.6935
+omega.ok = 1.0 - omega.om - omega.ol
+omega.w0 = -1.0
+omega.w1 = 0.0
+omega.w2 = 0.0
+
 fig = pylab.figure(0) 
-pylab.xlabel('Time (s)')    
-pylab.ylabel('Inspiral Range (Mpc)')
+pylab.ylabel(y_labels[args.distance_measure])
 pylab.grid() 
+
+t_start = None
 
 for psd_file in args.psd_files:
     f = h5py.File(psd_file, 'r')
@@ -30,6 +76,8 @@ for psd_file in args.psd_files:
     flow = f.attrs['low_frequency_cutoff']
     keys = f[ifo + '/psds'].keys()
     start, end = f[ifo + '/start_time'][:], f[ifo + '/end_time'][:]
+    if t_start is None or start.min() < t_start:
+      t_start = start.min()
     f.close()
     ranges = {}  
     for i in range(len(keys)):
@@ -39,15 +87,21 @@ for psd_file in args.psd_files:
         out = pycbc.types.zeros(len(psd), dtype=numpy.complex64)
       
         for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):        
-            htilde = pycbc.waveform.get_waveform_filter(out, 
-                                     mass1=m1,mass2=m2, approximant=apx,
-                                     f_lower=flow, delta_f=psd.delta_f,
-                                     delta_t=delta_t, 
-                                     distance = 1.0/pycbc.DYN_RANGE_FAC)
-            htilde = htilde.astype(numpy.complex64)
-            sigma = pycbc.filter.sigma(htilde, psd=psd, low_frequency_cutoff=flow)
-            horizon_distance = sigma / canonical_snr 
-            inspiral_range = horizon_distance / 2.26
+
+            # calculate the traditional detector-frame mass horizon and range
+            if args.distance_measure in ('horizon', 'range'):
+                htilde = pycbc.waveform.get_waveform_filter(out, 
+                                         mass1=m1,mass2=m2, approximant=apx,
+                                         f_lower=flow, delta_f=psd.delta_f,
+                                         delta_t=delta_t, 
+                                         distance = 1.0/pycbc.DYN_RANGE_FAC)
+                htilde = htilde.astype(numpy.complex64)
+                sigma = pycbc.filter.sigma(htilde, psd=psd, low_frequency_cutoff=flow)
+                horizon_distance = sigma / canonical_snr 
+                if args.distance_measure == 'range':
+                    inspiral_range = horizon_distance / 2.26
+                else:
+                    inspiral_range = horizon_distance
             
             wf_key = (m1, m2, apx)
             if wf_key in ranges:
@@ -66,13 +120,17 @@ for psd_file in args.psd_files:
                        fmt=None)
 pylab.legend(loc="best", fontsize='small')
 
+locs,labels = pylab.xticks()
+pylab.xticks(locs, map(lambda x: "%5.2f" % x, (locs-t_start)/86400.0 ))
+pylab.xlabel('Time (days from GPS %d)' % (int(t_start)) )
+
 if len(args.approximant) == 1:
-    fig.suptitle('$%sM_{\odot}-%sM_{\odot}$ %s' % (m1, m2, apx))
+    fig.suptitle('%s $%sM_{\odot}-%sM_{\odot}$ %s' % 
+       (mass_frame[args.distance_measure], m1, m2, apx))
          
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-    title = "Inspiral Range",
-    caption = "The canonical sky- and orientation-averaged inspiral range for a single "
-              "detector at SNR 8. This range is comparable to the SenseMon range and a factor of 2.26 smaller than the horizon distance.",
+    title = titles[args.distance_measure],
+    caption = captions[args.distance_measure],
     cmd = ' '.join(sys.argv),
     fig_kwds={'dpi':200}
     )
