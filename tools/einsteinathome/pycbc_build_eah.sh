@@ -120,8 +120,6 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     fftw_cflags="-Wa,-q"
     build_framecpp=true
     appendix="_OSX64"
-    pyinstaller_version=9d0e0ad4
-    pyinstaller21_hacks=true
 elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     echo -e "\\n\\n>> [`date`] Using Cygwin settings"
     lal_cppflags="-D_WIN32"
@@ -133,6 +131,8 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     build_freetype=false
     build_gsl=false
     build_swig=false
+    pyinstaller_version=9d0e0ad4
+    pyinstaller21_hacks=true
     patch_pyinstaller_bootloader=false
     appendix="_Windows64"
 else
@@ -831,7 +831,7 @@ if $patch_pyinstaller_bootloader && $build_gating_tool; then
 fi
 
 # patch PyInstaller to find the Python library on Cygwin
-if $build_dlls; then
+if $build_dlls && $pyinstaller21_hacks; then
     sed -i~ "s|'libpython%d%d.dll'|'libpython%d.%d.dll'|" `find PyInstaller -name bindepend.py`
 fi
 
@@ -844,9 +844,11 @@ fi
 if echo "$pyinstaller_version" | grep '3\.' > /dev/null ||
    test ".$pyinstaller_version" = ".HEAD"
 then
-    python ./waf distclean configure $pyinstaller_lsb all
+    test "$appendix" = "_OSX64" &&
+        sed -i~ /-Wdeclaration-after-statement/d wscript
+    python waf distclean configure $pyinstaller_lsb all
 else
-    python ./waf configure $pyinstaller_lsb build install
+    python waf configure $pyinstaller_lsb build install
 fi
 cd ..
 python setup.py install --prefix="$PREFIX" --record installed-files.txt
