@@ -1,5 +1,7 @@
 #!/usr/bin/python
-""" Make table of the foreground coincident events
+""" Make SNR vs rate of triggers histogram for foreground coincident events.
+    Also has the ability to plot inclusive backgrounds from different stages
+    of hierarchical removal.
 """
 import argparse, h5py, numpy, logging, sys, lal
 import matplotlib
@@ -26,25 +28,40 @@ parser.add_argument('--output-file')
 parser.add_argument('--bin-size', type=float, default=0.1)
 parser.add_argument('--x-min', type=float, default=8.0)
 parser.add_argument('--trials-factor', type=int, default=1)
-parser.add_argument('--h-iter-inc-background', type=int, default=0,
+parser.add_argument('--h-iter-inc-background', type=int, default=None,
                     help='Indicate which inclusive background to plot '
                          'with the foreground triggers if there were '
-                         'any hierarchical removals done.')
+                         'any hierarchical removals done. Choosing 0 '
+                         'indicates plotting the inclusive background '
+                         'prior to any hierarchical removals. Choosing 1 '
+                         'indicates the inclusive background after the '
+                         'loudest foreground trigger was removed. '
+                         '[default=None]')
 parser.add_argument('--closed-box', action='store_true',
                     help='Make a closed box version that excludes '
                          'foreground triggers')
 args = parser.parse_args()
 
-# Parse the command line value to a variable we can change if the user
-# wants to plot an inclusive background that doesn't exist.
-h_inc_back_num = args.h_iter_inc_background
+logging.info('Read in the data')
+f = h5py.File(args.trigger_file, 'r')
+
+# Determine which inclusive background to plot.
+if args.h_iter_inc_background != None:
+    h_inc_back_num = args.h_iter_inc_background
+    if f.attrs['hierarchical_removal_iterations'] is not None:
+        h_iterations = f.attrs['hierarchical_removal_iterations']
+        if h_inc_back_num > h_iterations:
+            raise ValueError('User requested inclusive background iteration '
+                             'that was not done. Exiting!')
+else :
+    if f.attrs['hierarchical_removal_iterations'] is not None:
+        h_inc_back_num = f.attrs['hierarchical_removal_iterations']
+    else :
+        h_inc_back_num = 0
 
 if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
-    
-logging.info('Read in the data')
-f = h5py.File(args.trigger_file, 'r')
 
 if args.closed_box:
     fstat = None
@@ -59,12 +76,6 @@ else:
 
 if f.attrs['hierarchical_removal_iterations'] is not None:
     h_iterations = f.attrs['hierarchical_removal_iterations']
-    if h_inc_back_num > h_iterations:
-        logging.warn('User requested inclusive background iteration that was '
-                     'not done. Defaulting to last possible inclusive '
-                     'background.')
-        h_inc_back_num = h_iterations
-
     if h_inc_back_num == 0:
         bstat = f['background/stat'][:]
         fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
