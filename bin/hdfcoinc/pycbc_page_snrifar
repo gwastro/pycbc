@@ -106,28 +106,16 @@ try:
         cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * lal.YRJUL_SI
         fap_end = f['foreground/fap'][:].min() * args.trials_factor
     else:
-        if h_inc_back_num == 0:
-            cstat_fore = f['foreground/stat'][:]
-            print "The length of the foreground triggers is...", len(cstat_fore)
-            ssort = cstat_fore.argsort()
-            cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
-            cstat_rate = cstat_rate[ssort]
-            cstat_fore = cstat_fore[ssort]
-            cstat_fap = p_from_far(cstat_rate, foreground_livetime)
-        else :
-            cstat_fore = f['foreground_h%s/stat' % h_inc_back_num][:]
-            print "The length of the foreground triggers is...", len(cstat_fore)
-            ssort = cstat_fore.argsort()
-            cstat_rate = 1.0 / f['foreground_h%s/ifar' % h_inc_back_num][:] * args.trials_factor
-            cstat_rate = cstat_rate[ssort]
-            cstat_fore = cstat_fore[ssort]
-            cstat_fap = p_from_far(cstat_rate, foreground_livetime)
+         cstat_fore = f['foreground/stat'][:]
+         ssort = cstat_fore.argsort()
+         cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
+         cstat_rate = cstat_rate[ssort]
+         cstat_fore = cstat_fore[ssort]
+         cstat_fap = p_from_far(cstat_rate, foreground_livetime)
     
     logging.info('Found %s foreground triggers' % len(cstat_fore))
 except:
     cstat_fore = None
-
-print "The length of the foreground triggers is...", len(cstat_fore)
 
 if cstat_fore is not None and len(cstat_fore) == 0:
     cstat_fore = None
