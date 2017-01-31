@@ -36,6 +36,7 @@ libgfortran=libgfortran.so
 extra_libs=""
 extra_bank=""
 extra_approx=""
+lal_data_path="."
 
 # defaults, possibly overwritten by OS-specific settings
 build_gcc=false
@@ -194,6 +195,7 @@ usage="
     --with-extra-libs=<url> : add extra files from a tar file at <url> to the bundles
     --with-extra-bank=<file> : run pycbc_inspiral again with an extra template bank
     --with-extra-approx=<file> : run pycbc_inspiral again with an extra approximant
+    --with-lal-data=<path> : run test job using ROM data from <path>
     --verbose-python  : run PyInstalled Python in verbose mode, showing imports
     --no-analysis     : for testing, don't run analysis, assume weave cache is already there
 "
@@ -234,6 +236,7 @@ for i in $*; do
         --with-extra-libs=*) extra_libs="`echo $i|sed 's/^--with-extra-libs=//'`";;
         --with-extra-bank=*) extra_bank="`echo $i|sed 's/^--with-extra-bank=//'`";;
         --with-extra-approx=*) extra_approx="${extra_approx}`echo $i|sed 's/^--with-extra-approx=//'` ";;
+        --with-lal-data=*) lal_data_path="`echo $i|sed 's/^--with-lal-data=//'`";;
         --help) echo -e "Options:\n$usage">&2; exit 0;;
         *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
     esac
@@ -1098,7 +1101,8 @@ for (( i=0; i<${n_runs}; i++ ))
 do
     rm -f H1-INSPIRAL-OUT.hdf
     echo -e "\\n\\n>> [`date`] pycbc_inspiral using --bank-file ${bank_array[$i]} --approximant ${approx_array[$i]}"
-    LAL_DATA_PATH="." \
+    echo -e "\\n\\n>> [`date`] pycbc_inspiral using ROM data from $lal_data_path"
+    LAL_DATA_PATH="$lal_data_path" \
       NO_TMPDIR=1 \
       INITIAL_LOG_LEVEL=10 \
       LEVEL2_CACHE_SIZE=8192 \
