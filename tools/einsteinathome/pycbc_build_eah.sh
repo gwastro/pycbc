@@ -249,7 +249,7 @@ if [ ".$link_gcc_version" != "." ]; then
 fi
 libgfortran_dir="`$FC -print-file-name=$libgfortran|sed 's%/[^/]*$%%'`"
 export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran_dir:/usr/local/lib:$LD_LIBRARY_PATH"
-export CPPFLAGS="-I$PREFIX/include -I$PYTHON_PREFIX/include $CPPFLAGS"
+export CPPFLAGS="-I$PREFIX/include -I$PREFIX/dist/pycbc_inspiral/include -I$PYTHON_PREFIX/include $CPPFLAGS"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LIBS="$LIBS -lgfortran"
 
