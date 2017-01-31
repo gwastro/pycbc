@@ -72,7 +72,7 @@ end = triggertime + int(wflow.cp.get("workflow-exttrig_segments",
                                      "max-duration"))
 wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
 
-# Retrieve segments ahope-style
+# Retrieve science segments
 currDir = os.getcwd()
 segDir = os.path.join(currDir, "segments")
 sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
@@ -152,13 +152,48 @@ ext_file = None
 
 # DATAFIND
 dfDir = os.path.join(currDir, "datafind")
-datafind_files, _, sciSegs, _ = _workflow.setup_datafind_workflow(wflow, sciSegs,
-        dfDir, segsFileList)
+datafind_files, _, sciSegs, _ = _workflow.setup_datafind_workflow(wflow,
+        sciSegs, dfDir, segsFileList)
+ifos = sciSegs.keys()
+wflow.ifos = ifos
+datafind_veto_files = _workflow.FileList([])
+
+# GATING
+if wflow.cp.has_option("workflow-condition_strain", "do-autogating"):
+    logging.info("Creating autogating jobs.")
+    gating_nodes, gated_files = _workflow.make_gating_node(wflow,
+            datafind_files, outdir=dfDir)
+    gating_method = wflow.cp.get("workflow-condition_strain",
+                                 "autogating-method")
+    for gating_node in gating_nodes:
+        if gating_method == "IN_WORKFLOW":
+            wflow.add_node(gating_node)
+        elif gating_method == "AT_RUNTIME":
+            logging.info("Executing autogating node...")
+            wflow.execute_node(gating_node)
+        else:
+            msg = "[workflow-condition_strain] option 'autogating-method' can "
+            msg += "only have one of the values 'IN_WORKFLOW' or 'AT_RUNTIME'. "
+            msg += "You have provided the value %s." % gating_method
+            logging.error(msg)
+            sys.exit()
+    datafind_files = _workflow.FileList([])
+    for ifo in ifos:
+        gated_frames = _workflow.FileList([gated_frame for gated_frame in \
+                gated_files if gated_frame.ifo == ifo])
+        gated_cache = _workflow.File(ifo, "gated",
+                segment(int(wflow.cp.get("workflow", "start-time")),
+                        int(wflow.cp.get("workflow", "end-time"))),
+                extension="lcf", directory=dfDir)
+        gated_cache.PFN(gated_cache.cache_entry.path, site="local")
+        gated_frames.convert_to_lal_cache().tofile(\
+                            open(gated_cache.storage_path, "w"))
+        datafind_files.extend(_workflow.FileList([gated_cache]))
+
+datafind_veto_files.extend(datafind_files)
 ifo = sciSegs.keys()[0]
 ifos = ''.join(sciSegs.keys())
 wflow.ifos = ifos
-datafind_veto_files = _workflow.FileList([])
-datafind_veto_files.extend(datafind_files)
 
 # Is this an IPN GRB?
 if wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
