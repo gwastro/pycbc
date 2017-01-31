@@ -111,7 +111,6 @@ def snr_minus_canonical_snr(z,canonical_snr,mass1,mass2,apx,psd,flow,delta_t,out
         htilde = htilde.astype(numpy.complex64)
         sigma = pycbc.filter.sigma(htilde, psd=psd, low_frequency_cutoff=flow)
 
-        logging.info("SNR = %g" % sigma)
         return sigma - canonical_snr
 
 
@@ -124,7 +123,7 @@ parser.add_argument("--mass1", nargs="+", help="Mass of first component in solar
 parser.add_argument("--mass2", nargs="+", help="Mass of second component in solar masses", type=float)
 parser.add_argument("--approximant", nargs="+", help="approximant to use for range")
 parser.add_argument("--canonical-snr", nargs="+", help="single detector signal-to-noise threshold", type=float, default=8.0)
-parser.add_argument("--distance-measure", choices=['horizon','range','comoving_range'], default='range', type=str, help="Type of distance measure to compute")
+parser.add_argument("--distance-measure", choices=['horizon','range','comoving'], default='range', type=str, help="Type of distance measure to compute")
 parser.add_argument("--verbose", action="store_true", help="print extra debugging information", default=False )
 
 args = parser.parse_args()
@@ -138,19 +137,19 @@ y_labels = {}
 
 titles['horizon'] = "Inspiral Horizon Distance"
 titles['range'] = "Inspiral SenseMon Range"
-titles['comoving_range'] = "Inspiral Comoving Distance Range"
+titles['comoving'] = "Inspiral Comoving Distance Range"
 
 captions['horizon'] = "The distance at which an optimally oriented merger would produce a signal-to-noise ratio of %3.2f in a single detector. The masses of the signal are the detector-frame masses." % args.canonical_snr
 captions['range'] = "The canonical sky- and orientation-averaged inspiral range for a single detector at signal-to-noise ratio of %3.2f. This range is comparable to the SenseMon range and a factor of 2.26 smaller than the horizon distance. The masses of the signal are the Adetector-frame masses and the range is not redshift corrected." % args.canonical_snr
-captions['comoving_range'] = "The redshift-corrected sky- and orientation-averaged inspiral range for a single detector at signal-to-noise ratio of %3.2f. This is a volumetric average that is used to relate observed event rates to uniform rate densities as in the SenseMon range. The masses of the signal are the source-frame masses." % args.canonical_snr
+captions['comoving'] = "The redshift-corrected sky- and orientation-averaged inspiral range for a single detector at signal-to-noise ratio of %3.2f. This is a volumetric average that is used to relate observed event rates to uniform rate densities as in the SenseMon range. The masses of the signal are the source-frame masses." % args.canonical_snr
 
 mass_frame['horizon'] = "Detector frame"
 mass_frame['range'] = "Detector frame"
-mass_frame['comoving_range'] = "Source frame"
+mass_frame['comoving'] = "Source frame"
 
 y_labels['horizon'] = "Inspiral Horizon Distance (Mpc)"
 y_labels['range'] = "Inspiral Range (Mpc)"
-y_labels['comoving_range'] = "Inspiral Comoving Range (Gpc)"
+y_labels['comoving'] = "Inspiral Comoving Range (Gpc)"
 
 # From Planck2015, Table IV
 omega = lal.CreateCosmologicalParametersAndRate().omega
@@ -208,7 +207,7 @@ for psd_file in args.psd_files:
                     inspiral_range = horizon_distance
 
             # calculate the cosmology-corrected range
-            if args.distance_measure in ('comoving_range'):
+            if args.distance_measure in ('comoving'):
                 max_redshift = 1.5
 
                 # look for snr=8 root for z in (0.01, 1.0)
@@ -234,16 +233,17 @@ for psd_file in args.psd_files:
                                 accept += 1
                                 luminosity_distances += [lal.LuminosityDistance(omega, z) / 1e3]
                 
-                        if (accept + reject) % 1000 == 0:
-                                logging.info( "Calculating comoving range... accepted %d, rejected %d" % (accepted, rejected) )
-                
+                        if (accept + reject) % 100 == 0:
+                                logging.info( "Monte Carlo at %d / 10000... accepted %d, rejected %d" % (accept + reject, accept, reject) )
+
                         if (accept + reject) > 10000:
-                                logging.warning( "Giving up calculating comoving range after 10000 tries" )
                                 break
 
+                logging.info( "Monte Carlo complete... accepted %d, rejected %d" % (accept + reject, accept, reject) )
                 Veff = V * float(accept) / float(accept + reject)
                 inspiral_range = (3.0 * Veff / 4.0 / numpy.pi) ** (1.0 / 3.0)
 
+            logging.info("%s = %g" % (y_labels[args.distance_measure], inspiral_range))
             wf_key = (m1, m2, apx)
             if wf_key in ranges:
                 ranges[wf_key].append(inspiral_range)
