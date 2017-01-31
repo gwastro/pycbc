@@ -358,6 +358,7 @@ post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
 
 if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
                         "COH_PTF_ONLINE"]:
+    from pylal import pygrb_cohptf_pp
     # Add parsed config file so it can be linked from summary page
     cp_file_name = "%s_parsed.ini" % workflow_name
     cp_file_url = "file://localhost%s/%s" % (baseDir, cp_file_name)
@@ -369,8 +370,8 @@ if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
 
     # Generate post-processing workflow
     html_dir = wflow.cp.get("workflow", "html-dir")
-    pp_files = _workflow.setup_coh_PTF_post_processing(wflow, inspiral_files,
-            inspiral_cache, ppDir, segDir,
+    pp_files = pygrb_cohptf_pp.setup_coh_PTF_post_processing(wflow,
+            inspiral_files, inspiral_cache, ppDir, segDir,
             injection_trigger_files=inj_insp_files, injection_files=injs,
             injection_trigger_caches=inj_insp_caches,
             injection_caches=inj_caches, config_file=cp_file, web_dir=html_dir,
