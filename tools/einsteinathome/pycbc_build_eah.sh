@@ -233,7 +233,7 @@ for i in $*; do
             fi ;;
         --with-extra-libs=*) extra_libs="`echo $i|sed 's/^--with-extra-libs=//'`";;
         --with-extra-bank=*) extra_bank="`echo $i|sed 's/^--with-extra-bank=//'`";;
-        --with-extra-approx=*) extra_approx="`echo $i|sed 's/^--with-extra-approx=//'`";;
+        --with-extra-approx=*) extra_approx="${extra_approx}`echo $i|sed 's/^--with-extra-approx=//'` ";;
         --help) echo -e "Options:\n$usage">&2; exit 0;;
         *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
     esac
@@ -1074,16 +1074,28 @@ else
     export LAL_FRAME_LIBRARY=FrameL
 fi
 
-# run pycbc_inspiral for each bank and approximant
-# end with the standard gw150914 bank and approximant for validation
-gw150914_approx="'SPAtmplt:mtotal<4' 'SEOBNRv2_ROM_DoubleSpin:else'"
-for bank_file in $extra_bank $p
+gw150914_bank=$p
+gw150914_approx='SPAtmplt:mtotal<4 SEOBNRv2_ROM_DoubleSpin:else'
+bank_array=( "$gw150914_bank" )
+approx_array=( "$gw150914_approx" )
+
+if ! test -z "$extra_approx" || ! test -z "$extra_bank" ; then
+    if test -z "$extra_bank" ; then
+        bank_array=( "$gw150914_bank" "$gw150914_bank" )
+    else
+        bank_array=( "$extra_bank" "$gw150914_bank" )
+    fi
+    if test -z "$extra_approx" ; then
+        approx_array=( "$gw150914_approx" "$gw150914_approx" )
+    else
+        approx_array=( "$extra_approx" "$gw150914_approx" )
+    fi
+fi
+
+for (( i=0; i<${n_runs}; i++ ))
 do
-  for inspiral_approx in "$extra_approx" $gw150914_approx
-  do
-    if ! test -z $inspiral_approx && ! test -z $bank_file ; then
     rm -f H1-INSPIRAL-OUT.hdf
-    echo -e "\\n\\n>> [`date`] pycbc_inspiral using --bank-file $bank_file --approximant $inspiral_approx"
+    echo -e "\\n\\n>> [`date`] pycbc_inspiral using --bank-file ${bank_array[$i]} --approximant ${approx_array[$i]}"
     LAL_DATA_PATH="." \
       NO_TMPDIR=1 \
       INITIAL_LOG_LEVEL=10 \
@@ -1102,7 +1114,6 @@ do
       --injection-window 4.5 \
       --segment-start-pad 112 \
       --psd-segment-stride 8 \
-      --approximant $inspiral_approx \
       --psd-inverse-length 16 \
       --filter-inj-only \
       --psd-segment-length 16 \
@@ -1122,10 +1133,9 @@ do
       --gps-end-time 1126259846 \
       --output H1-INSPIRAL-OUT.hdf \
       --frame-files "$f" \
-      --bank-file "$bank_file" \
+      --approximant ${approx_array[$i]} \
+      --bank-file ${bank_array[$i]} \
       --verbose 2>&1
-      fi
-  done
 done
 
 # test for GW150914
