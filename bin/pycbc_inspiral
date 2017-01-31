@@ -28,6 +28,19 @@ import pycbc.weave
 import pycbc.inject
 import time
 
+last_progress_update = -1.0
+
+def update_progress(p,u,n):
+    """ updates a file 'progress.txt' with a value 0 .. 1.0 when enough (filtering) progress was made
+    """
+    global last_progress_update
+    if p > last_progress_update + u:
+        f = open(n,"w")
+        if f:
+            f.write("%.4f" % p)
+            f.close()
+        last_progress_update = p
+
 tstart = time.time()
 
 parser = argparse.ArgumentParser(usage='',
@@ -37,6 +50,12 @@ parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument("-V", "--verbose", action="store_true",
                   help="print extra debugging information", default=False )
+parser.add_argument("--update-progress",
+                  help="updates a file 'progress.txt' with a value 0 .. 1.0 when this amount of (filtering) progress was made",
+                  type=float, default=0)
+parser.add_argument("--update-progress-file",
+                  help="name of the file to write the amount of (filtering) progress to",
+                  type=str, default="progress.txt")
 parser.add_argument("--output", type=str, help="FIXME: ADD")
 parser.add_argument("--bank-file", type=str, help="FIXME: ADD")
 parser.add_argument("--snr-threshold",
@@ -311,7 +330,9 @@ with ctx:
                 cluster_window = \
                     int(template.chirp_length * gwstrain.sample_rate)
 
-
+            if opt.update_progress:
+                update_progress((t_num + (s_num / float(len(segments))) ) / len(bank),
+                                opt.update_progress, opt.update_progress_file)
             logging.info("Filtering template %d/%d segment %d/%d" %
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
