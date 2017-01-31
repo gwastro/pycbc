@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """ Plot variation in PSD
 """
+import logging
 import matplotlib; matplotlib.use('Agg');
 import h5py, numpy, argparse, pylab, sys
 import lal, lalsimulation
@@ -10,6 +11,111 @@ import pycbc.results, pycbc.types, pycbc.version, pycbc.waveform, pycbc.filter
 from pycbc.fft.fftw import set_measure_level
 set_measure_level(0)
 
+
+def surveyed_spacetime_volume(T, max_redshift, omega):
+    '''
+    Returns the total spacetime volume surveyed:
+
+        <VT> = T \int dz \frac{dV_c}{dz} \frac{1}{1+z}
+
+    Results are given in units Gpc^3 yr(Julian).
+    '''
+
+    # Note: LAL's cosmology routines returns distances in Mpc
+    def integrand(z, omega):
+        '''
+        Returns the integrand
+
+            (1 + z) D_A^2(z) / E(z)
+
+        in units of Mpc^2.  Multiply the integral by 4 * pi * D_H
+        to get the desired integral.
+        '''
+
+        return (1.0 + z) * lal.AngularDistance(omega, z)**2 * lal.HubbleParameter(z, omega)
+
+    I, _ = scipy.integrate.quad(integrand, 0.0, max_redshift, args=omega)
+
+    # multiply by remaining factors and scale to Gpc^3
+    V = 4.0 * numpy.pi * lal.HubbleDistance(omega) * I / (1e3)**3
+
+    return V * T
+
+
+def draw_redshift(zmax, omega):
+    '''
+    Yields a random redshift from a cosmologically-correct distribution.
+    Uses Metropolis algorithm to draw from the desired pdf.
+    '''
+
+    def pdf(z):
+        '''
+        This redshift pdf yields a uniform distribution
+        in comoving volume divided by (1+z).
+        '''
+        # FIXME: XLALUniformComovingVolumeDensity() currently implements
+        # the factor of 1/(1+z) that converts to source-frame time.
+        # If this changes, modify the code below.
+        return lal.UniformComovingVolumeDensity(z, omega)
+        #return lal.UniformComovingVolumeDensity(z, omega) / (1.0 + z)
+
+    z0 = numpy.random.uniform(0.0, zmax)
+    p0 = pdf(z0)
+    while True:
+        # acceptance rate is 50% so take every 10th
+        # draw from distribution to avoid repeating
+        # the same value too often
+        for _ in xrange(10):
+            z = numpy.random.uniform(0.0, zmax)
+            p = pdf(z)
+            if p > p0 or numpy.random.random() < p / p0:
+                z0 = z
+                p0 = p
+        yield z0
+
+
+def optimal_snr_minus_canonical_snr(z,canonical_snr,mass1,mass2,apx,psd,flow,delta_t,out):
+
+        dL = lal.LuminosityDistance(omega, z)
+        m1 = mass1 * (1.0 + z)
+        m2 = mass2 * (1.0 + z)
+
+        htilde = pycbc.waveform.get_waveform_filter(out, 
+                                 mass1=m1,mass2=m2, approximant=apx,
+                                 f_lower=flow, delta_f=psd.delta_f,
+                                 delta_t=delta_t, 
+                                 distance = dL/pycbc.DYN_RANGE_FAC)
+        htilde = htilde.astype(numpy.complex64)
+        sigma = pycbc.filter.sigma(htilde, psd=psd, low_frequency_cutoff=flow)
+
+        return sigma - canonical_snr
+
+
+def snr_minus_canonical_snr(z,canonical_snr,mass1,mass2,apx,psd,flow,delta_t,out):
+
+        dL = lal.LuminosityDistance(omega, z)
+        cosi = numpy.random.uniform(-1.0, 1.0)
+        costheta = numpy.random.uniform(-1.0, 1.0)
+        phi = numpy.random.uniform(0.0, numpy.pi)
+        fp = -0.5*(1.0 + costheta**2) * numpy.cos(2.0 * phi)
+        fc = -costheta * numpy.sin(2.0 * phi)
+        m1 = mass1 * (1.0 + z)
+        m2 = mass2 * (1.0 + z)
+        dist = dL * ((0.5 * (1.0 + cosi**2) * fp)**2 + (cosi * fc)**2)**-0.5
+
+        htilde = pycbc.waveform.get_waveform_filter(out, 
+                                 mass1=m1,mass2=m2, approximant=apx,
+                                 f_lower=flow, delta_f=psd.delta_f,
+                                 delta_t=delta_t, 
+                                 distance = dist/pycbc.DYN_RANGE_FAC)
+        htilde = htilde.astype(numpy.complex64)
+        sigma = pycbc.filter.sigma(htilde, psd=psd, low_frequency_cutoff=flow)
+
+        logging.info("SNR = %g" % sigma)
+        return sigma - canonical_snr
+
+
+
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--version", action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument("--psd-files", nargs='+', help='HDF file of psds')
@@ -17,8 +123,13 @@ parser.add_argument("--output-file", help='output file name')
 parser.add_argument("--mass1", nargs="+", help="Mass of first component in solar masses", type=float)
 parser.add_argument("--mass2", nargs="+", help="Mass of second component in solar masses", type=float)
 parser.add_argument("--approximant", nargs="+", help="approximant to use for range")
+parser.add_argument("--canonical-snr", nargs="+", help="single detector signal-to-noise threshold", type=float, default=8.0)
 parser.add_argument("--distance-measure", choices=['horizon','range','comoving_range'], default='range', type=str, help="Type of distance measure to compute")
+parser.add_argument("--verbose", action="store_true", help="print extra debugging information", default=False )
+
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 titles = {}
 captions = {}
@@ -29,19 +140,9 @@ titles['horizon'] = "Inspiral Horizon Distance"
 titles['range'] = "Inspiral SenseMon Range"
 titles['comoving_range'] = "Inspiral Comoving Distance Range"
 
-captions['horizon'] = "The distance at which an optimally oriented " + \
-    "merger would produce a signal-to-noise ratio of 8 in a single " + \
-    "detector. The masses of the signal are the detector-frame masses."
-captions['range'] = "The canonical sky- and orientation-averaged " + \
-    "inspiral range for a single detector at SNR 8. This range is " + \
-    "comparable to the SenseMon range and a factor of 2.26 smaller " + \
-    "than the horizon distance. The masses of the signal are the " + \
-    "detector-frame masses and the range is not corrected for cosmology."
-captions['comoving_range'] = "The cosmology-corrected sky- and " + \
-    "orientation-averaged inspiral range for a single detector at SNR 8. " + \
-    "This is a volumetric average that is used to relate observed event " + \
-    "rates to uniform rate densities as in the SenseMon range. The " + \
-    "masses of the signal are the source-frame masses and so are redshifted."
+captions['horizon'] = "The distance at which an optimally oriented merger would produce a signal-to-noise ratio of %3.2f in a single detector. The masses of the signal are the detector-frame masses." % args.canonical_snr
+captions['range'] = "The canonical sky- and orientation-averaged inspiral range for a single detector at signal-to-noise ratio of %3.2f. This range is comparable to the SenseMon range and a factor of 2.26 smaller than the horizon distance. The masses of the signal are the Adetector-frame masses and the range is not redshift corrected." % args.canonical_snr
+captions['comoving_range'] = "The redshift-corrected sky- and orientation-averaged inspiral range for a single detector at signal-to-noise ratio of %3.2f. This is a volumetric average that is used to relate observed event rates to uniform rate densities as in the SenseMon range. The masses of the signal are the source-frame masses." % args.canonical_snr
 
 mass_frame['horizon'] = "Detector frame"
 mass_frame['range'] = "Detector frame"
@@ -50,8 +151,6 @@ mass_frame['comoving_range'] = "Source frame"
 y_labels['horizon'] = "Inspiral Horizon Distance (Mpc)"
 y_labels['range'] = "Inspiral Range (Mpc)"
 y_labels['comoving_range'] = "Inspiral Comoving Range (Gpc)"
-
-canonical_snr = 8.0
 
 # From Planck2015, Table IV
 omega = lal.CreateCosmologicalParametersAndRate().omega
@@ -64,13 +163,16 @@ omega.w0 = -1.0
 omega.w1 = 0.0
 omega.w2 = 0.0
 
+logging.info('Calculating %s' % titles[args.distance_measure])
+
 fig = pylab.figure(0) 
-pylab.ylabel(y_labels[args.distance_measure])
+pylab.ylabel(y_labels[args.distance_measure] + "at $\\rho = %3.1f" % args.canonical_snr)
 pylab.grid() 
 
 t_start = None
 
 for psd_file in args.psd_files:
+    logging.info("Reading PSD from %s" % psd_file)
     f = h5py.File(psd_file, 'r')
     ifo = f.keys()[0]
     flow = f.attrs['low_frequency_cutoff']
@@ -80,7 +182,9 @@ for psd_file in args.psd_files:
       t_start = start.min()
     f.close()
     ranges = {}  
-    for i in range(len(keys)):
+    n_psds = len(keys)
+    for i in range(n_psds):
+        logging.info("Calculating %s for PSD %d / %d" % (args.distance_measure, i, n_psds))
         name = ifo + '/psds/' + str(i)
         psd = pycbc.types.load_frequencyseries(psd_file, group=name)
         delta_t = 1.0 / ((len(psd) - 1) * 2 * psd.delta_f)
@@ -97,12 +201,49 @@ for psd_file in args.psd_files:
                                          distance = 1.0/pycbc.DYN_RANGE_FAC)
                 htilde = htilde.astype(numpy.complex64)
                 sigma = pycbc.filter.sigma(htilde, psd=psd, low_frequency_cutoff=flow)
-                horizon_distance = sigma / canonical_snr 
+                horizon_distance = sigma / args.canonical_snr 
                 if args.distance_measure == 'range':
                     inspiral_range = horizon_distance / 2.26
                 else:
                     inspiral_range = horizon_distance
-            
+
+            # calculate the cosmology-corrected range
+            if args.distance_measure in ('comoving_range'):
+                max_redshift = 1.5
+
+                # look for snr=8 root for z in (0.01, 1.0)
+                zhor = scipy.optimize.brentq(optimal_snr_minus_canonical_snr, 0.01, max_redshift, args=(args.canonical_snr,m1,m2,apx,psd,flow,delta_t,out))
+                logging.info("horizon redshift = %g" % zhor)
+                logging.info("horizon luminosity distance = %g Gpc" % (lal.LuminosityDistance(omega, zhor) / 1e3))
+
+                max_redshift = zhor
+                V = surveyed_spacetime_volume(1.0, max_redshift, omega)
+                logging.info("VT / T of horizon = %g Gpc" % V )
+                logging.info("Range of horizon: = %g Gpc" % ((3.0 * V / 4.0 / numpy.pi) ** (1.0 / 3.0)) )
+
+                accept = 0
+                reject = 0
+                
+                luminosity_distances = []
+                
+                for z in draw_redshift(max_redshift, omega):
+                
+                        if snr_minus_canonical_snr(z,args.canonical_snr,m1,m2,apx,psd,flow,delta_t,out) < 0:
+                                reject += 1
+                        else:
+                                accept += 1
+                                luminosity_distances += [lal.LuminosityDistance(omega, z) / 1e3]
+                
+                        if (accept + reject) % 1000 == 0:
+                                logging.info( "Calculating comoving range... accepted %d, rejected %d" % (accepted, rejected) )
+                
+                        if (accept + reject) > 10000:
+                                logging.warning( "Giving up calculating comoving range after 10000 tries" )
+                                break
+
+                Veff = V * float(accept) / float(accept + reject)
+                inspiral_range = (3.0 * Veff / 4.0 / numpy.pi) ** (1.0 / 3.0)
+
             wf_key = (m1, m2, apx)
             if wf_key in ranges:
                 ranges[wf_key].append(inspiral_range)
@@ -134,3 +275,5 @@ pycbc.results.save_fig_with_metadata(fig, args.output_file,
     cmd = ' '.join(sys.argv),
     fig_kwds={'dpi':200}
     )
+
+logging.info("Finished")
