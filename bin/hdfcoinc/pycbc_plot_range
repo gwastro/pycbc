@@ -122,8 +122,10 @@ parser.add_argument("--output-file", help='output file name')
 parser.add_argument("--mass1", nargs="+", help="Mass of first component in solar masses", type=float)
 parser.add_argument("--mass2", nargs="+", help="Mass of second component in solar masses", type=float)
 parser.add_argument("--approximant", nargs="+", help="approximant to use for range")
-parser.add_argument("--canonical-snr", nargs="+", help="single detector signal-to-noise threshold", type=float, default=8.0)
+parser.add_argument("--canonical-snr", help="single detector signal-to-noise threshold", type=float, default=8.0)
 parser.add_argument("--distance-measure", choices=['horizon','range','comoving'], default='range', type=str, help="Type of distance measure to compute")
+parser.add_argument("--decimate-psd", type=int, default=0, help="PSD decimation factor")
+parser.add_argument("--mc-samples", type=int, default=10000, help="number of samples for the range monte carlo")
 parser.add_argument("--verbose", action="store_true", help="print extra debugging information", default=False )
 
 args = parser.parse_args()
@@ -186,6 +188,20 @@ for psd_file in args.psd_files:
         logging.info("Calculating %s for PSD %d / %d" % (args.distance_measure, i, n_psds))
         name = ifo + '/psds/' + str(i)
         psd = pycbc.types.load_frequencyseries(psd_file, group=name)
+        if args.decimate_psd:
+            logging.info("Input PSD size %d at resolution: %g Hz" % (len(psd), psd.delta_f) )
+            psd_data = pycbc.types.zeros(len(psd) / args.decimate_psd, dtype=numpy.complex64)
+            for k in range(len(psd_data)):
+                psd_data[k] = psd[k*args.decimate_psd]
+            psd_data = numpy.append(psd_data,[psd[len(psd) - 1]])
+            psd = pycbc.types.frequencyseries.FrequencySeries(
+                               psd_data,
+                               delta_f=psd.delta_f*args.decimate_psd,
+                               epoch=psd.epoch, 
+                               dtype=psd.dtype, 
+                               copy=False)
+            logging.info("PSD decimated by factor %d to size %d at resolution: %g Hz" % (args.decimate_psd, len(psd), psd.delta_f) )
+                
         delta_t = 1.0 / ((len(psd) - 1) * 2 * psd.delta_f)
         out = pycbc.types.zeros(len(psd), dtype=numpy.complex64)
       
@@ -234,12 +250,12 @@ for psd_file in args.psd_files:
                                 luminosity_distances += [lal.LuminosityDistance(omega, z) / 1e3]
                 
                         if (accept + reject) % 100 == 0:
-                                logging.info( "Monte Carlo at %d / 10000... accepted %d, rejected %d" % (accept + reject, accept, reject) )
+                                logging.info( "Monte Carlo at %d / %d... accepted %d, rejected %d" % (accept + reject, args.mc_samples, accept, reject) )
 
-                        if (accept + reject) > 10000:
+                        if (accept + reject) > args.mc_samples:
                                 break
 
-                logging.info( "Monte Carlo complete... accepted %d, rejected %d" % (accept + reject, accept, reject) )
+                logging.info( "Monte Carlo complete... accepted %d, rejected %d" % (accept, reject) )
                 Veff = V * float(accept) / float(accept + reject)
                 inspiral_range = (3.0 * Veff / 4.0 / numpy.pi) ** (1.0 / 3.0)
 
