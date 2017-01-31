@@ -1083,7 +1083,7 @@ do
   do
     if ! test -z $inspiral_approx && ! test -z $bank_file ; then
     rm -f H1-INSPIRAL-OUT.hdf
-    echo -e "\\n\\n>> [`date`] pycbc_inspiral using $bank_file with $extra_approx"
+    echo -e "\\n\\n>> [`date`] pycbc_inspiral using --bank-file $bank_file --approximant $inspiral_approx"
     LAL_DATA_PATH="." \
       NO_TMPDIR=1 \
       INITIAL_LOG_LEVEL=10 \
