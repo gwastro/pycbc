@@ -1092,6 +1092,8 @@ if ! test -z "$extra_approx" || ! test -z "$extra_bank" ; then
     fi
 fi
 
+n_runs=${#bank_array[@]}
+
 for (( i=0; i<${n_runs}; i++ ))
 do
     rm -f H1-INSPIRAL-OUT.hdf
