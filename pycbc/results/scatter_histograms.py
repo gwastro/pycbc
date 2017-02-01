@@ -147,7 +147,7 @@ def construct_kde(samples_array, use_kombine=False):
             raise ImportError("kombine is not installed.")
     # construct the kde
     if use_kombine:
-        kde = kombine.KDE(samples_array)
+        kde = kombine.clustered_kde.KDE(samples_array)
     else:
         kde = scipy.stats.gaussian_kde(samples_array.T)
     return kde
