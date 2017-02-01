@@ -41,12 +41,12 @@ For a full listing of all options run ``pycbc_inference --help``. In this subsec
 
 The user specifies the sampler on the command line with the ``--sampler`` option.
 A complete list of samplers is given in ``pycbc_inference --help``.
-These samplers are described in :py:meth:`pycbc.inference.sampler_kombine.KombineSampler`, :py:meth:`pycbc.inference.sampler_emcee.EmceeEnsembleSampler`, and :py:meth:`pycbc.inference.sampler_emcee.EmceePTSampler`.
+These samplers are described in :py:class:`pycbc.inference.sampler_kombine.KombineSampler`, :py:class:`pycbc.inference.sampler_emcee.EmceeEnsembleSampler`, and :py:class:`pycbc.inference.sampler_emcee.EmceePTSampler`.
 In addition to ``--sampler`` the user will need to specify the number of walkers to use ``--nwalkers``, the number of iterations to go until ``--niterations``, and for parallel-tempered samplers the number of temperatures ``--ntemps``.
 If the sampler has a built-in burn-in function it will be used by default, otherwise you can skill the burn-in with ``--skip-burn-in`` or set a minimum number of iterations for burn-in with ``--min-burn-in``.
 
 The user specifies the likelihood model on the command line with the ``--likelihood`` option.
-At the moment there is only a single choice ``--likelihood gaussian`` that is described in :py:meth:`pycbc.inference.likelihood.GaussianLikelihood`.
+At the moment there is only a single choice ``--likelihood gaussian`` that is described in :py:class:`pycbc.inference.likelihood.GaussianLikelihood`.
 
 The user specifies a configuration file that defines the priors with the ``--config-files`` option.
 The syntax of the configuration file is described in the subsection below.
@@ -64,14 +64,14 @@ A list of all parameters that can be used is found with
 .. literalinclude:: ../examples/inference/list_parameters.py
 .. command-output:: python ../examples/inference/list_parameters.py
 
-The mass parameters ``mass1`` and ``mass2`` can be substituted for ``mchirp`` and ``eta``i, or ``mchirp`` and ``q``.
+The mass parameters ``mass1`` and ``mass2`` can be substituted for ``mchirp`` and ``eta``, or ``mchirp`` and ``q``.
 The component spin parameters ``spin1x``, ``spin1y``, and ``spin1z`` can be substituted for polar coordinates ``spin1_a``, ``spin1_azimuthal``, and ``spin1_polar``.
 
 Each parameter in ``[variable_args]`` must have a subsection in ``[prior]``.
 To create a subsection use the ``-`` char, eg. for chirp mass do ``[prior-mchirp]``.
 
 Each prior subsection must have a ``name`` option that identifies what prior to use.
-These distributions are described in :py:meth:`pycbc.inference.distributions`.
+These distributions are described in :py:mod:`pycbc.inference.distributions`.
 A list of all distributions that can be used is found with
 
 .. literalinclude:: ../examples/inference/list_distributions.py
@@ -83,8 +83,73 @@ A simple example is given in the subsection below.
 BBH software injection example
 ------------------------------
 
-This example recovers the parameters of a non-spinning binary black-hole (BBH)
-software injection in fake data.
+This example recovers the parameters of a precessing binary black-hole (BBH).
+
+An example configuration file (named ``inference.ini``) is::
+
+    [variable_args]
+    ; waveform parameters that will vary in MCMC
+    tc =
+    mchirp =
+    q =
+    spin1_a =
+    spin1_azimuthal =
+    spin1_polar =
+    spin2_a =
+    spin2_azimuthal =
+    spin2_polar =
+    distance =
+    coa_phase =
+    inclination =
+    polarization =
+    ra =
+    dec =
+
+    [static_args]
+    ; waveform parameters that will not change in MCMC
+    approximant = SEOBNRv2_ROM_DoubleSpin
+    f_lower = 28.0
+
+    [prior-tc]
+    ; coalescence time prior
+    name = uniform
+    min-tc = 1126259461.8
+    max-tc= 1126259462.2
+
+    [prior-mass1]
+    [prior-mass2]
+    [prior-spin1_a]
+    [prior-spin1_azimuthal]
+    [prior-spin1_polar]
+    [prior-spin2_a]
+    [prior-spin2_azimuthal]
+    [prior-spin2_polar]
+
+    [prior-distance]
+    ; distance prior
+    name = uniform
+    min-distance = 10
+    max-distance = 500
+
+    [prior-coa_phase]
+    ; coalescence phase prior
+    name = uniform_angle
+
+    [prior-inclination]
+    ; inclination prior
+    name = uniform_angle
+    min-inclination = 0
+    max-inclination = 1
+
+    [prior-ra+dec]
+    ; sky position prior
+    name = uniform_sky
+
+    [prior-polarization]
+    ; polarization prior
+    name = uniform_angle
+
+An example of generating an injection::
 
 .. code-block:: bash
 
@@ -136,31 +201,35 @@ software injection in fake data.
 
     # create injection file
     lalapps_inspinj \
-        --output ${INJ_PATH} \
-        --seed 1000 \
-        --f-lower ${INJ_F_MIN} \
-        --waveform ${INJ_APPROX} \
-        --amp-order 7 \
-        --gps-start-time ${TRIGGER_TIME} \
-        --gps-end-time ${TRIGGER_TIME} \
-        --time-step 1 \
-        --t-distr fixed \
-        --l-distr fixed \
-        --longitude ${LONGITUDE} \
-        --latitude ${LATITUDE} \
-        --d-distr uniform \
-        --min-distance ${DISTANCE} \
-        --max-distance ${DISTANCE} \
-        --i-distr fixed \
-        --fixed-inc ${INC} \
-        --coa-phase-distr fixed \
-        --fixed-coa-phase ${COA_PHASE} \
-        --polarization ${POLARIZATION} \
-        --m-distr fixMasses \
-        --fixed-mass1 ${MASS1} \
-        --fixed-mass2 ${MASS2} \
-        --taper-injection ${TAPER} \
-        --disable-spin
+    --output ${INJ_PATH} \
+    --seed 1000 \
+    --f-lower ${INJ_F_MIN} \
+    --waveform ${INJ_APPROX} \
+    --amp-order 7 \
+    --gps-start-time ${TRIGGER_TIME} \
+    --gps-end-time ${TRIGGER_TIME} \
+    --time-step 1 \
+    --t-distr fixed \
+    --l-distr fixed \
+    --longitude ${LONGITUDE} \
+    --latitude ${LATITUDE} \
+    --d-distr uniform \
+    --min-distance ${DISTANCE} \
+    --max-distance ${DISTANCE} \
+    --i-distr fixed \
+    --fixed-inc ${INC} \
+    --coa-phase-distr fixed \
+    --fixed-coa-phase ${COA_PHASE} \
+    --polarization ${POLARIZATION} \
+    --m-distr fixMasses \
+    --fixed-mass1 ${MASS1} \
+    --fixed-mass2 ${MASS2} \
+    --taper-injection ${TAPER} \
+    --disable-spin
+
+An example of running ``pycbc_inference`` to analyze the injection in fake data::
+
+.. code-block:: bash
 
     # run sampler
     # specifies the number of threads for OpenMP
@@ -169,106 +238,54 @@ software injection in fake data.
     # by pycbc_inference and cause a reduced runtime.
     OMP_NUM_THREADS=1 \
     pycbc_inference --verbose \
-        --instruments ${IFOS} \
-        --gps-start-time ${GPS_START_TIME} \
-        --gps-end-time ${GPS_END_TIME} \
-        --psd-model ${STRAIN} \
-        --psd-inverse-length ${PSD_INVERSE_LENGTH} \
-        --fake-strain ${STRAIN} \
-        --sample-rate ${SAMPLE_RATE} \
-        --low-frequency-cutoff ${F_MIN} \
-        --channel-name H1:FOOBAR L1:FOOBAR \
-        --injection-file ${INJ_PATH} \
-        --processing-scheme ${PROCESSING_SCHEME} \
-        --sampler kombine \
-        --likelihood-evaluator gaussian \
-        --nwalkers ${N_WALKERS} \
-        --niterations ${N_ITERATIONS} \
-        --config-file ${CONFIG_PATH} \
-        --output-file ${OUTPUT} \
-        --checkpoint-interval ${N_CHECKPOINT} \
-        --nprocesses ${NPROCS}
+    --instruments ${IFOS} \
+    --gps-start-time ${GPS_START_TIME} \
+    --gps-end-time ${GPS_END_TIME} \
+    --psd-model ${STRAIN} \
+    --psd-inverse-length ${PSD_INVERSE_LENGTH} \
+    --fake-strain ${STRAIN} \
+    --sample-rate ${SAMPLE_RATE} \
+    --low-frequency-cutoff ${F_MIN} \
+    --channel-name H1:FOOBAR L1:FOOBAR \
+    --injection-file ${INJ_PATH} \
+    --processing-scheme ${PROCESSING_SCHEME} \
+    --sampler kombine \
+    --likelihood-evaluator gaussian \
+    --nwalkers ${N_WALKERS} \
+    --niterations ${N_ITERATIONS} \
+    --config-file ${CONFIG_PATH} \
+    --output-file ${OUTPUT} \
+    --checkpoint-interval ${N_CHECKPOINT} \
+    --nprocesses ${NPROCS}
 
-An example configuration file (named ``inference.ini`` above) is::
+An example analyzing the injection in real data::
 
-    [variable_args]
-    ; waveform parameters that will vary in MCMC
-    tc =
-    mass1 =
-    mass2 =
-    distance =
-    coa_phase =
-    inclination =
-    polarization =
-    ra =
-    dec =
+.. code-block:: bash
 
-    [static_args]
-    ; waveform parameters that will not change in MCMC
-    approximant = SEOBNRv2_ROM_DoubleSpin
-    f_lower = 28.0
+    exit
 
-    [prior-tc]
-    ; coalescence time prior
-    name = uniform
-    min-tc = 1126259461.8
-    max-tc= 1126259462.2
+----------------------------------------------------
+HDF output file handler (``pycbc.io.InferenceFile``)
+----------------------------------------------------
 
-    [prior-mass1]
-    ; component mass prior
-    name = uniform
-    min-mass1 = 10.
-    max-mass1 = 80.
-
-    [prior-mass2]
-    ; component mass prior
-    name = uniform
-    min-mass2 = 10.
-    max-mass2 = 80.
-
-    [prior-distance]
-    ; distance prior
-    name = uniform
-    min-distance = 10
-    max-distance = 500
-
-    [prior-coa_phase]
-    ; coalescence phase prior
-    name = uniform_angle
-
-    [prior-inclination]
-    ; inclination prior
-    name = uniform_angle
-    min-inclination = 0
-    max-inclination = 1
-
-    [prior-ra+dec]
-    ; sky position prior
-    name = uniform_sky
-
-    [prior-polarization]
-    ; polarization prior
-    name = uniform_angle
-
-
----------------------------------------------------
-HDF output file handler: ``pycbc.io.InferenceFile``
----------------------------------------------------
-
-The executable ``pycbc_inference`` will write a HDF file with all the samples from each walker along with the PSDs and some meta-data about the sampler. There is a handler class ``pycbc.io.InferenceFile`` that extends ``h5py.File``. To read the output file you can do::
+The executable ``pycbc_inference`` will write a HDF file with all the samples from each walker along with the PSDs and some meta-data about the sampler.
+There is a handler class ``pycbc.io.InferenceFile`` that extends ``h5py.File``.
+To read the output file you can do::
 
     from pycbc.io import InferenceFile
     fp = InferenceFile("cbc_example-n1e4.hdf.hdf", "r")
 
-To get all samples for ``mass1`` from the first walker you can do::
+To get all samples for ``distance`` from the first walker you can do::
 
-    samples = fp.read_samples("mass1", walkers=0)
-    print samples.mass1
+    samples = fp.read_samples("distance", walkers=0)
+    print samples.distance
 
-The function ``InferenceFile.read_samples`` includes the options to thin the samples. By default the function will return samples beginning at the end of the burn-in to the last written sample, and will use the autocorrelation length (ACL) calcualted by ``pycbc_inference`` to select the indepdedent samples. You can supply ``thin_start``, ``thin_end``, and ``thin_interval`` to override this. To read all samples you would do::
+The function ``InferenceFile.read_samples`` includes the options to thin the samples.
+By default the function will return samples beginning at the end of the burn-in to the last written sample, and will use the autocorrelation length (ACL) calcualted by ``pycbc_inference`` to select the indepdedent samples.
+You can supply ``thin_start``, ``thin_end``, and ``thin_interval`` to override this. To read all samples you would do::
 
-    samples = fp.read_samples("mass1", walkers=0, thin_start=0, thin_end=-1, thin_interval=1)
-    print samples.mass1
+    samples = fp.read_samples("distance", walkers=0, thin_start=0, thin_end=-1, thin_interval=1)
+    print samples.distance
 
 Some standard parameters that are derived from the variable arguments (listed via ``fp.variable_args``) can also be retrieved. For example, if ``fp.variable_args`` includes ``mass1`` and ``mass2``, then you can retrieve the chirp mass with::
 
@@ -277,4 +294,30 @@ Some standard parameters that are derived from the variable arguments (listed vi
 
 In this case, ``fp.read_samples`` will retrieve ``mass1`` and ``mass2`` (since they are needed to compute chirp mass); ``samples.mchirp`` then returns an array of the chirp mass computed from ``mass1`` and ``mass2``.
 
-For more information, including the list of predefined derived parameters, see the docstring of ``pycbc.io.InferenceFile``.
+For more information, including the list of predefined derived parameters, see :py:class:`pycbc.io.InferenceFile`.
+
+=============================================================
+Plotting the posteriors (``pycbc_inference_plot_posteriors``)
+=============================================================
+
+There is an executable that can plot the posteriors called ``pycbc_inference_plot_posteriors``.
+
+An example of plotting the posteriors at a specific iteration::
+
+.. code-block:: bash
+
+    ITER=4999
+    pycbc_inference_plot_posterior \
+    --input-file /usr1/cbiwer/precess_init_vol_m1m2.hdf \
+    --parameters 'ra*12/pi:$\alpha$ (h)' 'dec*180/pi:$\delta$ (deg)' 'polarization*180/pi:$\psi$ (deg)' m_p m_s mchirp eta chi_eff 'spin1_a':'$a_1$' 'spin2_a':'$a_2$' 'spin1_polar*180/pi:$\theta_{1}^{\mathrm{polar}}$ (deg)' 'spin2_polar*180/pi:$\theta_{2}^{\mathrm{polar}}$ (deg)' 'inclination*180/pi:$\iota$ (deg)' distance 'coa_phase*180/pi:$\phi_0$ (deg)' tc \
+    --output-file posterior_${ITER}.png \
+    --iteration ${ITER} \
+    --plot-density \
+    --plot-marginal \
+    --z-arg logplr
+
+There are also options for thinning the chains of samples from the command line, an example::
+
+.. code-block:: bash
+
+    exit
