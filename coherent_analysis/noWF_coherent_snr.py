@@ -9,6 +9,20 @@ import math
 import fstat 
 import numpy
 from strain_generator import strain_generator
+from zeros_generator import zeros_generator
+import sys
+
+
+if len(sys.argv[1:]) == 0:
+    strainType = "waveform"
+elif sys.argv[1:][0] in ["waveform", "noise", "zeros"]:
+    strainType = sys.argv[1:][0]
+else:
+    print "Please use strain type: waveform, noise, zeros"
+    sys.exit()
+
+print "Strain type used: " + str(strainType)
+
 
 #The list of IFOs used in our analysis
 ifoList = ['H1','L1']
@@ -46,7 +60,12 @@ sp, sc = get_td_waveform(approximant="TaylorT4",
 # Make our trigger
 ####################
 # Strain is our trigger, later we will replace this with actual IFO data
-strain = strain_generator()
+if strainType == "waveform":
+    strain = strain_generator()
+elif strainType == "zeros":
+    strain = zeros_generator()
+#Add noise test
+
 sp.prepend_zeros(len(strain['H1']) - len(sp))
 
 
