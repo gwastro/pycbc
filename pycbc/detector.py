@@ -71,6 +71,34 @@ class Detector(object):
         return lal.TimeDelayFromEarthCenter(self.location,
                       float(right_ascension), float(declination), float(t_gps))
 
+    def time_delay_from_detector(self, other_detector, right_ascension,
+                                 declination, t_gps):
+        """Return the time delay from the given to detector for a signal with
+        the given sky location; i.e. return `t1 - t2` where `t1` is the
+        arrival time in this detector and `t2` is the arrival time in the
+        other detector. Note that this would return the same value as
+        `time_delay_from_earth_center` if `other_detector` was geocentric.
+
+        Parameters
+        ----------
+        other_detector : detector.Detector
+            A detector instance.
+        right_ascension : float
+            The right ascension (in rad) of the signal.
+        declination : float
+            The declination (in rad) of the signal.
+        t_gps : float
+            The GPS time (in s) of the signal.
+
+        Returns
+        -------
+        float
+            The arrival time difference between the detectors.
+        """
+        return lal.ArrivalTimeDiff(self.location, other_detector.location,
+                                   float(right_ascension), float(declination),
+                                   float(t_gps))
+
     def project_wave(self, hp, hc, longitude, latitude, polarization):
         """Return the strain of a wave with given amplitudes and angles as
         measured by the detector.
