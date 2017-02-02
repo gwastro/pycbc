@@ -58,10 +58,10 @@ parser.add_argument("--bank-file", default=None,
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. "
                     "Format is PART/NUM_PARTS")
-parser.add_argument("--veto-file", nargs='*',
+parser.add_argument("--veto-file", nargs='*', default=[],
                     help="File(s) in .xml format with veto segments to apply "
                     "to triggers before fitting")
-parser.add_argument("--veto-segment-name", default=None,
+parser.add_argument("--veto-segment-name", nargs='*', default=[],
                     help="Name(s) of veto segments to apply. Optional, if not "
                     "given all segments for a given ifo will be used")
 parser.add_argument("--output", required=True,
@@ -149,15 +149,16 @@ if args.save_trig_param:
 logging.info('%i trigs left after thresholding' % len(stat))
 
 # now do vetoing
-retain, junk = events.veto.indices_outside_segments(time, args.veto_file,
-                             ifo=args.ifo, segment_name=args.veto_segment_name)
-stat = stat[retain]
-tid = tid[retain]
-time = time[retain]
-if args.save_trig_param:
-    tparam = tparam[retain]
-logging.info('%i trigs left after vetoing with %s' %
-                                                   (len(stat), args.veto_file))
+for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
+    retain, junk = events.veto.indices_outside_segments(time, veto_file,
+                                 ifo=args.ifo, segment_name=veto_segment_name)
+    stat = stat[retain]
+    tid = tid[retain]
+    time = time[retain]
+    if args.save_trig_param:
+        tparam = tparam[retain]
+    logging.info('%i trigs left after vetoing with %s' %
+                                                       (len(stat), veto_file))
 
 ### Functions for doing the pruning (removal of trigs at loudest times)
 
