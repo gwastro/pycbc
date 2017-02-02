@@ -15,7 +15,7 @@ parser.add_argument('--injection-file', required=True,
 parser.add_argument('--output-file', required=True,
                     help='Destination file for the plot')
 parser.add_argument('--bin-type', choices=['spin', 'mchirp',
-                                           'total_mass', 'eta'],
+                                           'total_mass', 'eta', 'template_duration'],
                     default='mchirp',
                     help="Parameter used to bin injections. Default 'mchirp'")
 # FIXME: Make bins options properly optional, if no bins are specified then
@@ -65,6 +65,9 @@ parser.add_argument('--spin-frame', choices=['line-of-sight', 'orbit'],
                     'for specifying spin vectors. LAL versions after summer '
                     '2015 should use the orbit convention, which is the '
                     'default choice here.')
+parser.add_argument('--hdf-out', help='HDF file to save curve data')
+parser.add_argument('--f-lower', default=20, type=float, help='Low frequency '
+                    'cutoff for calculating template durations')
 
 args = parser.parse_args()
 
@@ -99,12 +102,17 @@ s1x, s2x = f['injections/spin1x'][:], f['injections/spin2x'][:]
 s1y, s2y = f['injections/spin1y'][:], f['injections/spin2y'][:]
 inc = f['injections/inclination'][:]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+if args.bin_type == 'template_duration':
+    duration = pycbc.pnutils.get_imr_duration(m1, m2, s1z, s2z, f_low=args.f_lower)
+else:
+    duration = None
 
 # Dict to hold possible bin types
 values = {}
 values['mchirp'] = mchirp
 values['eta'] = eta
 values['total_mass'] = m1 + m2
+values['template_duration'] = duration
 
 if args.spin_frame == 'line-of-sight':
     s1 = s1x * numpy.sin(inc) + s1z * numpy.cos(inc)
@@ -118,6 +126,7 @@ labels = {}
 labels['mchirp'] = "$ M_{\\rm chirp} \in [%5.2f, %5.2f] M_\odot $"
 labels['total_mass'] = "$ M_{\\rm total} \in [%5.2f, %5.2f] M_\odot $"
 labels['spin'] = "$\\chi^{\\parallel}_{\\rm eff} \in [%5.2f, %5.2f] $"
+labels['template_duration'] = "$t_{\\rm template} \in [%5.2f, %5.2f] s$"
 
 ylabel = xlabel = ""
 
@@ -150,6 +159,10 @@ color=iter(cm.rainbow(numpy.linspace(0, 1, len(args.bins)-1)))
 fvalues = [sig, sig_exc]
 do_labels = [True, False]
 alphas = [.8, .3]
+
+if args.hdf_out:
+    plotdict = {}
+    plotdict['xvals'] = x_values
 
 fig = pylab.figure()
 # Plot each injection parameter bin
@@ -234,6 +247,14 @@ for j in range(len(args.bins)-1):
         pylab.plot(x_values, reach, alpha=alpha, c='black')
         pylab.fill_between(x_values, reach - elow, reach + ehigh,
                            facecolor=c, edgecolor=c, alpha=alpha)
+        if label and args.hdf_out:
+            plotdict['data/%s' % label] = reach
+            plotdict['error/%s' % label] = ehigh
+
+if args.hdf_out:
+    outfile = h5py.File(args.hdf_out,'w')
+    for key in plotdict.keys():
+        outfile.create_dataset(key,data=plotdict[key])
 
 ax = pylab.gca()
 
