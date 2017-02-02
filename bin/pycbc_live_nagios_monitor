@@ -11,7 +11,10 @@ import argparse
 import time
 import os.path
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(
+    description="This scripts monitors the log file of the "
+    "PyCBC Live process. This is used to generate a json file that can be "
+    "picked up by nagios to determine if the PyCBC Live process has died.")
 parser.add_argument('--log-file',
                    help="The pycbc live log file")
 parser.add_argument('--output-file',

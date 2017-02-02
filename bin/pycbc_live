@@ -157,7 +157,11 @@ class LiveEventManager(object):
     def ingest(self, ifo, results):
         pass
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="Look for CBC signals in low "
+    "latency. This program takes a fixed template bank and analyzes in fixed "
+    "short blocks of time. It is capable of reading from low latency data "
+    "directories on the ldg clusters. Work is parallelized through the use "
+    "of MPI, so this script should typically be launched with mpirun")
 pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--version', action='version', version=version.git_verbose_msg)
