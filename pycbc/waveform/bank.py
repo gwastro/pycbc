@@ -264,7 +264,7 @@ class TemplateBank(object):
             names = tuple([n if n!= 'alpha6' else 'f_lower' for n in names])
             self.table.dtype.names = names
 
-        elif ext.endswith('hdf'):
+        elif ext.endswith(('hdf', '.h5')):
             self.indoc = None
             f = h5py.File(filename, 'r')
             self.filehandler = f
