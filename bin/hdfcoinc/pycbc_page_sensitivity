@@ -249,7 +249,8 @@ for j in range(len(args.bins)-1):
                            facecolor=c, edgecolor=c, alpha=alpha)
         if label and args.hdf_out:
             plotdict['data/%s' % label] = reach
-            plotdict['error/%s' % label] = ehigh
+            plotdict['errorhigh/%s' % label] = ehigh
+            plotdict['errorlow/%s' % label] = elow
 
 if args.hdf_out:
     outfile = h5py.File(args.hdf_out,'w')
