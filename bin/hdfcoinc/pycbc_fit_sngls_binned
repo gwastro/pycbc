@@ -131,6 +131,12 @@ parser.add_argument("--user-tag", default="",
 
 args = parser.parse_args()
 
+args.veto_segment_name = sum(args.veto_segment_name, [])
+args.veto_file = sum(args.veto_file, [])
+
+if len(args.veto_segment_name) != len(args.veto_file):
+    raise RuntimeError("Number of veto files much match veto file names")
+
 if (args.prune_param or args.prune_bins or args.prune_number) and not \
    (args.prune_param and args.prune_bins and args.prune_number):
     raise RuntimeError("To prune, need to specify param, number of bins and "

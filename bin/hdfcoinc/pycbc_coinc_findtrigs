@@ -48,6 +48,8 @@ args = parser.parse_args()
 
 # flatten the list of lists of filenames to a single list (may be empty)
 args.statistic_files = sum(args.statistic_files, [])
+args.segment_name = sum(args.segment_name, [])
+args.veto_files = sum(args.veto_files, [])
 
 if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)

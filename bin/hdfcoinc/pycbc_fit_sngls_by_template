@@ -109,6 +109,12 @@ parser.add_argument("--min-duration", default=0.,
 
 args = parser.parse_args()
 
+args.veto_segment_name = sum(args.veto_segment_name, [])
+args.veto_file = sum(args.veto_file, [])
+
+if len(args.veto_segment_name) != len(args.veto_file):
+    raise RuntimeError("Number of veto files much match veto file names")
+
 if (args.prune_param or args.prune_bins or args.prune_number) and not \
    (args.prune_param and args.prune_bins and args.prune_number):
     raise RuntimeError("To prune, need to specify param, number of bins and "
@@ -150,7 +156,6 @@ logging.info('%i trigs left after thresholding' % len(stat))
 
 # now do vetoing
 for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
-    print veto_file, veto_segment_name, args.veto_file
     retain, junk = events.veto.indices_outside_segments(time, [veto_file],
                                  ifo=args.ifo, segment_name=veto_segment_name)
     stat = stat[retain]
