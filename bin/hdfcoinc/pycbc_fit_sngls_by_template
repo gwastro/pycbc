@@ -150,7 +150,8 @@ logging.info('%i trigs left after thresholding' % len(stat))
 
 # now do vetoing
 for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
-    retain, junk = events.veto.indices_outside_segments(time, veto_file,
+    print veto_file, veto_segment_name, args.veto_file
+    retain, junk = events.veto.indices_outside_segments(time, [veto_file],
                                  ifo=args.ifo, segment_name=veto_segment_name)
     stat = stat[retain]
     tid = tid[retain]
