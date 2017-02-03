@@ -147,17 +147,23 @@ def mass2_from_mtotal_eta(mtotal, eta):
     return 0.5 * mtotal * (1.0 - (1.0 - 4.0 * eta)**0.5)
 
 
+def mtotal_from_mchirp_eta(mchirp, eta):
+    """Returns the total mass from the chirp mass and symmetric mass ratio.
+    """
+    return mchirp / (eta**(3./5.))
+
+
 def mass1_from_mchirp_eta(mchirp, eta):
     """Returns the primary mass from the chirp mass and symmetric mass ratio.
     """
-    mtotal = mchirp / (eta**(3./5.))
+    mtotal = mtotal_from_mchirp_eta(mchirp, eta)
     return mass1_from_mtotal_eta(mtotal, eta)
 
 
 def mass2_from_mchirp_eta(mchirp, eta):
     """Returns the primary mass from the chirp mass and symmetric mass ratio.
     """
-    mtotal = mchirp / (eta**(3./5.))
+    mtotal = mtotal_from_mchirp_eta(mchirp, eta)
     return mass2_from_mtotal_eta(mtotal, eta)
 
 
@@ -240,7 +246,12 @@ def eta_from_q(q):
 
 def mass1_from_mchirp_q(mchirp, q):
     """Returns the primary mass from the given chirp mass and mass ratio."""
-    return mchirp_eta_to_mass1_mass2(mchirp, eta_from_q(q))
+    return mass1_from_mchirp_eta(mchirp, eta_from_q(q))
+
+
+def mass1_from_mchirp_q(mchirp, q):
+    """Returns the secondary mass from the given chirp mass and mass ratio."""
+    return mass2_from_mchirp_eta(mchirp, eta_from_q(q))
 
 
 def _a0(f_lower):
@@ -255,7 +266,7 @@ def _a3(f_lower):
   
 
 def tau0_from_mtotal_eta(mtotal, eta, f_lower):
-    r"""Returns :math:`tau_0` from the total mass, symmetric mass ratio, and
+    r"""Returns :math:`\tau_0` from the total mass, symmetric mass ratio, and
     the given frequency.
     """
     # convert to seconds
@@ -265,7 +276,7 @@ def tau0_from_mtotal_eta(mtotal, eta, f_lower):
 
 
 def tau3_from_mtotal_eta(mtotal, eta, f_lower):
-    r"""Returns :math:`tau_0` from the total mass, symmetric mass ratio, and
+    r"""Returns :math:`\tau_0` from the total mass, symmetric mass ratio, and
     the given frequency.
     """
     # convert to seconds
@@ -275,7 +286,7 @@ def tau3_from_mtotal_eta(mtotal, eta, f_lower):
 
 
 def tau0_from_mass1_mass2(mass1, mass2, f_lower):
-    r"""Returns :math:`tau_0` from the component masses and given frequency.
+    r"""Returns :math:`\tau_0` from the component masses and given frequency.
     """
     mtotal = mass1 + mass2
     eta = eta_from_mass1_mass2(mass1, mass2)
@@ -283,11 +294,39 @@ def tau0_from_mass1_mass2(mass1, mass2, f_lower):
 
 
 def tau3_from_mass1_mass2(mass1, mass2, f_lower):
-    r"""Returns :math:`tau_3` from the component masses and given frequency.
+    r"""Returns :math:`\tau_3` from the component masses and given frequency.
     """
     mtotal = mass1 + mass2
     eta = eta_from_mass1_mass2(mass1, mass2)
     return tau3_from_mtotal_eta(mtotal, eta)
+
+
+def mtotal_from_tau0_tau3(tau0, tau3, f_lower):
+    r"""Returns total mass from :math:`\tau_0, \tau_3`."""
+    mtotal = (tau3 / _a3(f_lower)) / (tau0 / _a0(f_lower))
+    # convert back to solar mass units
+    return mtotal/lal.MTSUN_SI
+
+
+def eta_from_tau0_tau3(tau0, tau3, f_lower):
+    r"""Returns symmetric mass ratio from :math:`\tau_0, \tau_3`."""
+    mtotal = mtotal_from_tau0_tau3(tau0, tau3, f_lower)
+    eta = mtotal**(-2./3.) * (_a3(f_lower) / tau3)
+    return eta
+    
+
+def mass1_from_tau0_tau3(tau0, tau3, f_lower):
+    r"""Returns the primary mass from the given :math:`\tau_0, \tau_3`."""
+    mtotal = mtotal_from_tau0_tau3(tau0, tau3, f_lower)
+    eta = eta_from_tau0_tau3(tau0, tau3, f_lower)
+    return mass1_from_mtotal_eta(mtotal, eta)
+
+
+def mass2_from_tau0_tau3(tau0, tau3, f_lower):
+    r"""Returns the secondary mass from the given :math:`\tau_0, \tau_3`."""
+    mtotal = mtotal_from_tau0_tau3(tau0, tau3, f_lower)
+    eta = eta_from_tau0_tau3(tau0, tau3, f_lower)
+    return mass2_from_mtotal_eta(mtotal, eta)
 
 #
 # =============================================================================
