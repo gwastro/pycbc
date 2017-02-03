@@ -107,8 +107,8 @@ An example configuration file (named ``inference.ini``) is::
 
     [static_args]
     ; waveform parameters that will not change in MCMC
-    approximant = SEOBNRv2_ROM_DoubleSpin
-    f_lower = 28.0
+    approximant = IMRPhenomPv2
+    f_lower = 19.0
 
     [prior-tc]
     ; coalescence time prior
@@ -116,14 +116,41 @@ An example configuration file (named ``inference.ini``) is::
     min-tc = 1126259461.8
     max-tc= 1126259462.2
 
-    [prior-mass1]
-    [prior-mass2]
+    [prior-mchirp]
+    name = uniform
+    min-mchirp = 7.
+    max-mchirp = 40.
+
+    [prior-q]
+    name = uniform
+    min-q = 1.
+    max-q = 5.
+
     [prior-spin1_a]
+    name = uniform
+    min-spin1_a = 0.0
+    max-spin1_a = 0.9
+
     [prior-spin1_azimuthal]
+    name = uniform
+    min-spin1_azimuthal = 0.
+    max-spin1_azimuthal = 6.283185307179586
+
     [prior-spin1_polar]
+    name = sin_angle
+
     [prior-spin2_a]
+    name = uniform
+    min-spin2_a = 0.0
+    max-spin2_a = 0.9
+
     [prior-spin2_azimuthal]
+    name = uniform
+    min-spin2_azimuthal = 0.
+    max-spin2_azimuthal = 6.283185307179586
+
     [prior-spin2_polar]
+    name = sin_angle
 
     [prior-distance]
     ; distance prior
@@ -151,9 +178,7 @@ An example configuration file (named ``inference.ini``) is::
 
 An example of generating an injection::
 
-.. code-block:: bash
-
-    # define coalescence time, observed masses, and waveform parameters
+    # define waveform parameters
     TRIGGER_TIME=1126259462.0
     INJ_APPROX=SEOBNRv2threePointFivePN
     MASS1=37.
@@ -177,20 +202,55 @@ An example of generating an injection::
     POLARIZATION=`python -c "import numpy; print ${POLARIZATION} * 180/numpy.pi"`
     COA_PHASE=`python -c "import numpy; print ${COA_PHASE} * 180/numpy.pi"`
 
+    # create injection file
+    lalapps_inspinj \
+        --output ${INJ_PATH} \
+        --seed 1000 \
+        --f-lower ${INJ_F_MIN} \
+        --waveform ${INJ_APPROX} \
+        --amp-order 7 \
+        --gps-start-time ${TRIGGER_TIME} \
+        --gps-end-time ${TRIGGER_TIME} \
+        --time-step 1 \
+        --t-distr fixed \
+        --l-distr fixed \
+        --longitude ${LONGITUDE} \
+        --latitude ${LATITUDE} \
+        --d-distr uniform \
+        --min-distance ${DISTANCE} \
+        --max-distance ${DISTANCE} \
+        --i-distr fixed \
+        --fixed-inc ${INC} \
+        --coa-phase-distr fixed \
+        --fixed-coa-phase ${COA_PHASE} \
+        --polarization ${POLARIZATION} \
+        --m-distr fixMasses \
+        --fixed-mass1 ${MASS1} \
+        --fixed-mass2 ${MASS2} \
+        --taper-injection ${TAPER} \
+        --disable-spin
+
+An example of running ``pycbc_inference`` to analyze the injection in fake data::
+
+    # injection parameters
+    TRIGGER_TIME=1126259462.0
+    INJ_PATH=injection.xml.gz
+
     # sampler parameters
-    OUTPUT=cbc_example-n1e4.hdf
+    CONFIG_PATH=inference.ini
+    OUTPUT_PATH=inference.hdf
     SEGLEN=8
     PSD_INVERSE_LENGTH=4
     IFOS="H1 L1"
     STRAIN="H1:aLIGOZeroDetHighPower L1:aLIGOZeroDetHighPower"
     SAMPLE_RATE=2048
     F_MIN=30.
+    N_UPDATE=500
     N_WALKERS=5000
-    N_ITERATIONS=1000
-    N_CHECKPOINT=100
+    N_ITERATIONS=12000
+    N_CHECKPOINT=1000
     PROCESSING_SCHEME=cpu
     NPROCS=12
-    CONFIG_PATH=inference.ini
 
     # get coalescence time as an integer
     TRIGGER_TIME_INT=${TRIGGER_TIME%.*}
@@ -199,38 +259,6 @@ An example of generating an injection::
     GPS_START_TIME=$((${TRIGGER_TIME_INT} - ${SEGLEN}))
     GPS_END_TIME=$((${TRIGGER_TIME_INT} + ${SEGLEN}))
 
-    # create injection file
-    lalapps_inspinj \
-    --output ${INJ_PATH} \
-    --seed 1000 \
-    --f-lower ${INJ_F_MIN} \
-    --waveform ${INJ_APPROX} \
-    --amp-order 7 \
-    --gps-start-time ${TRIGGER_TIME} \
-    --gps-end-time ${TRIGGER_TIME} \
-    --time-step 1 \
-    --t-distr fixed \
-    --l-distr fixed \
-    --longitude ${LONGITUDE} \
-    --latitude ${LATITUDE} \
-    --d-distr uniform \
-    --min-distance ${DISTANCE} \
-    --max-distance ${DISTANCE} \
-    --i-distr fixed \
-    --fixed-inc ${INC} \
-    --coa-phase-distr fixed \
-    --fixed-coa-phase ${COA_PHASE} \
-    --polarization ${POLARIZATION} \
-    --m-distr fixMasses \
-    --fixed-mass1 ${MASS1} \
-    --fixed-mass2 ${MASS2} \
-    --taper-injection ${TAPER} \
-    --disable-spin
-
-An example of running ``pycbc_inference`` to analyze the injection in fake data::
-
-.. code-block:: bash
-
     # run sampler
     # specifies the number of threads for OpenMP
     # Running with OMP_NUM_THREADS=1 stops lalsimulation
@@ -238,29 +266,36 @@ An example of running ``pycbc_inference`` to analyze the injection in fake data:
     # by pycbc_inference and cause a reduced runtime.
     OMP_NUM_THREADS=1 \
     pycbc_inference --verbose \
-    --instruments ${IFOS} \
-    --gps-start-time ${GPS_START_TIME} \
-    --gps-end-time ${GPS_END_TIME} \
-    --psd-model ${STRAIN} \
-    --psd-inverse-length ${PSD_INVERSE_LENGTH} \
-    --fake-strain ${STRAIN} \
-    --sample-rate ${SAMPLE_RATE} \
-    --low-frequency-cutoff ${F_MIN} \
-    --channel-name H1:FOOBAR L1:FOOBAR \
-    --injection-file ${INJ_PATH} \
-    --processing-scheme ${PROCESSING_SCHEME} \
-    --sampler kombine \
-    --likelihood-evaluator gaussian \
-    --nwalkers ${N_WALKERS} \
-    --niterations ${N_ITERATIONS} \
-    --config-file ${CONFIG_PATH} \
-    --output-file ${OUTPUT} \
-    --checkpoint-interval ${N_CHECKPOINT} \
-    --nprocesses ${NPROCS}
+        --seed 12 \
+        --instruments ${IFOS} \
+        --gps-start-time ${GPS_START_TIME} \
+        --gps-end-time ${GPS_END_TIME} \
+        --psd-model ${STRAIN} \
+        --psd-inverse-length ${PSD_INVERSE_LENGTH} \
+        --fake-strain ${STRAIN} \
+        --fake-strain-seed 44 \
+        --sample-rate ${SAMPLE_RATE} \
+        --low-frequency-cutoff ${F_MIN} \
+        --channel-name H1:FOOBAR L1:FOOBAR \
+        --injection-file ${INJ_PATH} \
+        --config-file ${CONFIG_PATH} \
+        --output-file ${OUTPUT_PATH} \
+        --processing-scheme ${PROCESSING_SCHEME} \
+        --sampler kombine \
+        --skip-burn-in \
+        --update-interval ${N_UPDATE} \
+        --likelihood-evaluator gaussian \
+        --nwalkers ${N_WALKERS} \
+        --niterations ${N_ITERATIONS} \
+        --checkpoint-interval ${N_CHECKPOINT} \
+        --checkpoint-fast \
+        --nprocesses ${NPROCS} \
+        --save-strain \
+        --save-psd \
+        --save-stilde \
+        --force
 
 An example analyzing the injection in real data::
-
-.. code-block:: bash
 
     exit
 
@@ -300,24 +335,73 @@ For more information, including the list of predefined derived parameters, see :
 Plotting the posteriors (``pycbc_inference_plot_posteriors``)
 =============================================================
 
-There is an executable that can plot the posteriors called ``pycbc_inference_plot_posteriors``.
+--------
+Overview
+--------
+
+There is an executable that can plot the posteriors called
+``pycbc_inference_plot_posteriors``. You can use ``--plot-scatter``
+to plot a each sample as a point or ``--plot-density`` to plot a density map.
+
+By default the plotting executables will plot all the parameters in the input
+file. In order to specific a different set of variables to plot use the
+``--parameters`` option. Examples how to use this option are shown below.
+
+By default the plotting executables will plot samples beginning at the end of
+the burn in. If the burn-in was skipped, then it starts from the first sample.
+It will then use a sample every autocorrelation length along the chain.
+Examples how to plot a specific iteration or change how the thinning is
+performed is shown in the examples below.
+
+You may plot a z-axis on the 2-D histograms using the ``--z-arg`` option.
+For a list of options use ``pycbc_inference_plot_posterior --help``.
+
+-----------------------------
+Plotting a specific iteration
+-----------------------------
 
 An example of plotting the posteriors at a specific iteration::
 
-.. code-block:: bash
-
     ITER=4999
+    INPUT_FILE=inference.hdf
+    OUTPUT_FILE=scatter.png
     pycbc_inference_plot_posterior \
-    --input-file /usr1/cbiwer/precess_init_vol_m1m2.hdf \
-    --parameters 'ra*12/pi:$\alpha$ (h)' 'dec*180/pi:$\delta$ (deg)' 'polarization*180/pi:$\psi$ (deg)' m_p m_s mchirp eta chi_eff 'spin1_a':'$a_1$' 'spin2_a':'$a_2$' 'spin1_polar*180/pi:$\theta_{1}^{\mathrm{polar}}$ (deg)' 'spin2_polar*180/pi:$\theta_{2}^{\mathrm{polar}}$ (deg)' 'inclination*180/pi:$\iota$ (deg)' distance 'coa_phase*180/pi:$\phi_0$ (deg)' tc \
-    --output-file posterior_${ITER}.png \
-    --iteration ${ITER} \
-    --plot-density \
-    --plot-marginal \
-    --z-arg logplr
+        --iteration ${ITER} \
+        --input-file ${INPUT_FILE} \
+        --output-file ${OUTPUT_FILE} \
+        --plot-scatter \
+        --plot-marginal \
+        --z-arg logplr \
+        --parameters "ra*12/pi:$\alpha$ (h)" \
+                     "dec*180/pi:$\delta$ (deg)" \
+                     "polarization*180/pi:$\psi$ (deg)" \
+                     mchirp q spin1_a spin1_azimuthal spin1_polar \
+                     spin2_a spin2_azimuthal spin2_polar \
+                     "inclination*180/pi:$\iota$ (deg)" distance \
+                     "coa_phase*180/pi:$\phi_0$ (deg)" tc
 
-There are also options for thinning the chains of samples from the command line, an example::
+-----------------------------------
+Plotting a thinned chain of samples
+-----------------------------------
 
-.. code-block:: bash
+There are also options for thinning the chains of samples from the command line, an example starting at the 6000-th iteration and taking every 2000-th iteration until the 12000-th iteration::
 
-    exit
+    THIN_START=5999
+    THIN_INTERVAL=2000
+    THIN_END=11999
+    INPUT_FILE=inference.hdf
+    OUTPUT_FILE=scatter.png
+    pycbc_inference_plot_posterior \
+        --iteration ${ITER} \
+        --input-file ${INPUT_FILE} \
+        --output-file ${OUTPUT_FILE} \
+        --plot-scatter \
+        --plot-marginal \
+        --z-arg logplr \
+        --parameters "ra*12/pi:$\alpha$ (h)" \
+                     "dec*180/pi:$\delta$ (deg)" \
+                     "polarization*180/pi:$\psi$ (deg)" \
+                     mchirp q spin1_a spin1_azimuthal spin1_polar \
+                     spin2_a spin2_azimuthal spin2_polar \
+                     "inclination*180/pi:$\iota$ (deg)" distance \
+                     "coa_phase*180/pi:$\phi_0$ (deg)" tc
