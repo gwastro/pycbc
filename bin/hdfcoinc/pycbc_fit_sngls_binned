@@ -61,7 +61,7 @@ parser.add_argument("--trigger-file",
                     "Required")
 parser.add_argument("--bank-file", default=None,
                     help="hdf file containing template parameters. Required")
-parser.add_argument("--veto-file", nargs='*',, default=[],
+parser.add_argument("--veto-file", nargs='*', default=[],
                     help="File(s) in .xml format with veto segments to apply "
                     "to triggers before fitting")
 parser.add_argument("--veto-segment-name", nargs='*', default=[],
