@@ -460,10 +460,18 @@ else # if $BUILDDIRNAME-preinst.tgz
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
-    ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared --enable-static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+    if test ".$fftw_cflags" = "."; then
+        ./configure $shared --enable-static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+    else
+        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared --enable-static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+    fi
     make
     make install
-    ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
+    if test ".$fftw_cflags" = "."; then
+        ./configure $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
+    else
+        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
+    fi
     make
     make install
     cd ..
