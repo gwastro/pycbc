@@ -295,9 +295,105 @@ An example of running ``pycbc_inference`` to analyze the injection in fake data:
         --save-stilde \
         --force
 
-An example analyzing the injection in real data::
+----------------
+GW150914 example
+----------------
 
-    exit
+You can reuse ``inference.ini`` from the previous example to analyze a signal in real data::
+
+    # trigger parameters
+    TRIGGER_TIME=1126259462.0
+
+    # data to use
+    # the longest waveform covered by the prior must fit in these times
+    SEARCH_BEFORE=6
+    SEARCH_AFTER=2
+
+    # use an extra number of seconds of data in addition to the data specified
+    PAD_DATA=8
+
+    # PSD estimation options
+    PSD_ESTIMATION="H1:median L1:median"
+    PSD_INVLEN=4
+    PSD_SEG_LEN=8
+    PSD_STRIDE=4
+    PSD_DATA_LEN=1024
+
+    # frame type and channel
+    FRAMES="H1:H1_HOFT_C02 L1:L1_HOFT_C02"
+    CHANNELS="H1:H1:DCS-CALIB_STRAIN_C02 L1:L1:DCS-CALIB_STRAIN_C02"
+
+    # sampler parameters
+    CONFIG_PATH=inference.ini
+    OUTPUT_PATH=inference.hdf
+    SEGLEN=8
+    IFOS="H1 L1"
+    STRAIN="H1:aLIGOZeroDetHighPower L1:aLIGOZeroDetHighPower"
+    SAMPLE_RATE=2048
+    F_HIGHPASS=20
+    F_MIN=30.
+    N_UPDATE=500
+    N_WALKERS=5000
+    N_ITERATIONS=12000
+    N_CHECKPOINT=1000
+    PROCESSING_SCHEME=cpu
+    NPROCS=12
+
+    # get coalescence time as an integer
+    TRIGGER_TIME_INT=${TRIGGER_TIME%.*}
+
+    # start and end time of data to read in
+    GPS_START_TIME=$((${TRIGGER_TIME_INT} - ${SEGLEN}))
+    GPS_END_TIME=$((${TRIGGER_TIME_INT} + ${SEGLEN}))
+
+    # start and end time of data to read in for PSD estimation
+    PSD_START_TIME=$((${GPS_START_TIME} - ${PSD_DATA_LEN}/2))
+    PSD_END_TIME=$((${GPS_END_TIME} + ${PSD_DATA_LEN}/2))
+
+    # run sampler
+    # specifies the number of threads for OpenMP
+    # Running with OMP_NUM_THREADS=1 stops lalsimulation
+    # to spawn multiple jobs that would otherwise be used
+    # by pycbc_inference and cause a reduced runtime.
+    OMP_NUM_THREADS=1 \
+    pycbc_inference --verbose \
+        --seed 12 \
+        --instruments ${IFOS} \
+        --gps-start-time ${GPS_START_TIME} \
+        --gps-end-time ${GPS_END_TIME} \
+        --channel-name ${CHANNELS} \
+        --frame-type ${FRAMES} \
+        --strain-high-pass ${F_HIGHPASS} \
+        --pad-data ${PAD_DATA} \
+        --psd-estimation ${PSD_ESTIMATION} \
+        --psd-start-time ${PSD_START_TIME} \
+        --psd-end-time ${PSD_END_TIME} \
+        --psd-segment-length ${PSD_SEG_LEN} \
+        --psd-segment-stride ${PSD_STRIDE} \
+        --psd-inverse-length ${PSD_INVLEN} \
+        --sample-rate ${SAMPLE_RATE} \
+        --low-frequency-cutoff ${F_MIN} \
+        --config-file ${CONFIG_PATH} \
+        --output-file ${OUTPUT_PATH} \
+        --processing-scheme ${PROCESSING_SCHEME} \
+        --sampler kombine \
+        --skip-burn-in \
+        --update-interval ${N_UPDATE} \
+        --likelihood-evaluator gaussian \
+        --nwalkers ${N_WALKERS} \
+        --niterations ${N_ITERATIONS} \
+        --checkpoint-interval ${N_CHECKPOINT} \
+        --checkpoint-fast \
+        --nprocesses ${NPROCS} \
+        --save-strain \
+        --save-psd \
+        --save-stilde \
+        --force
+
+To get data we used ``--frame-type`` which will query the LIGO Data
+Replicator (LDR) server to locate the frame files for us. You can also
+use ``--frame-files`` or ``--frame-cache`` if you have a list or LAL cache
+file of frames you wish to use.
 
 ----------------------------------------------------
 HDF output file handler (``pycbc.io.InferenceFile``)
