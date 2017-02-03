@@ -30,6 +30,7 @@ from __future__ import division
 import lal, lalsimulation
 import numpy
 from scipy.optimize import bisect, brentq, minimize
+from pycbc import derived_parameters
 
 def nearest_larger_binary_number(input_len):
     """ Return the nearest binary number larger than input_len.
@@ -37,26 +38,28 @@ def nearest_larger_binary_number(input_len):
     return 2**numpy.ceil(numpy.log2(input_len))
 
 def chirp_distance(dist, mchirp, ref_mass=1.4):
-    return dist * (2.**(-1./5) * ref_mass / mchirp)**(5./6)
+    return derived_parameters.chirp_distance(dist, mchirp, ref_mass=ref_mass)
 
 def mass1_mass2_to_mtotal_eta(mass1, mass2):
-    m_total = mass1 + mass2
-    eta = (mass1 * mass2) / (m_total * m_total)
+    m_total = dervied_parameters.mtotal_from_mass1_mass2(mass1, mass2)
+    eta = derived_parameters.eta_from_mass1_mass2(mass1, mass2)
     return m_total,eta
 
 def mtotal_eta_to_mass1_mass2(m_total, eta):
-    mass1 = 0.5 * m_total * (1.0 + (1.0 - 4.0 * eta)**0.5)
-    mass2 = 0.5 * m_total * (1.0 - (1.0 - 4.0 * eta)**0.5)
+    mass1 = derived_parameters.mass1_from_mtotal_eta(m_total, eta)
+    mass2 = derived_parameters.mass2_from_mtotal_eta(m_total, eta)
     return mass1,mass2
 
 def mass1_mass2_to_mchirp_eta(mass1, mass2):
-    m_total, eta = mass1_mass2_to_mtotal_eta(mass1, mass2)
-    m_chirp = m_total * eta**(3./5.)
+    m_chirp = derived_parameters.mchirp_from_mass1_mass2(mass1, mass2)
+    eta = derived_parameters.eta_from_mass1_mass2(mass1, mass2)
     return m_chirp,eta
 
 def mchirp_eta_to_mass1_mass2(m_chirp, eta):
-    M = m_chirp / (eta**(3./5.))
-    return mtotal_eta_to_mass1_mass2(M, eta)
+    mtotal = derived_parameters.mtotal_from_mchirp_eta(m_chirp, eta)
+    mass1 = derived_parameters.mass1_from_mtotal_eta(mtotal, eta)
+    mass2 = derived_parameters.mass2_from_mtotal_eta(mtotal, eta)
+    return mass1, mass2
 
 def mchirp_mass1_to_mass2(mchirp, mass1):
     """
@@ -73,11 +76,7 @@ def mchirp_mass1_to_mass2(mchirp, mass1):
 
     this has 3 solutions but only one will be real.
     """
-    a = mchirp**5 / mass1**3
-    roots = numpy.roots([1,0,-a,-a*mass1])
-    # Find the real one
-    real_root = roots[(abs(roots - roots.real)).argmin()]
-    return real_root.real
+    return derived_parameters.mass2_from_mchirp_mass1(mchirp, mass1)
 
 def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False, force_real=True):
     """
@@ -92,14 +91,8 @@ def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False, force_real=True):
     mass1 > mass2 is returned. Use the return_mass_heavier kwarg to invert this
     behaviour.
     """
-    roots = numpy.roots([eta, (2*eta - 1)*mass1, mass1*mass1*eta])
-    if force_real:
-        roots = numpy.real(roots)
-    if return_mass_heavier==False:
-        return roots[roots.argmin()]
-    else:
-        return roots[roots.argmax()]
-
+    return derived_parameters.mass_from_knownmass_eta(eta, mass1,
+        known_is_secondary=return_mass_heavier, force_real=force_real)
 
 def mchirp_q_to_mass1_mass2(mchirp, q):
     """ This function takes a value of mchirp and the mass ratio
@@ -111,33 +104,30 @@ def mchirp_q_to_mass1_mass2(mchirp, q):
 
     Then we can map from (mchirp,eta) to (mass1,mass2).
     """
-    eta = q / (1+q)**2
-    return mchirp_eta_to_mass1_mass2(mchirp, eta)
+    eta = derived_parameters.eta_from_q(q)
+    mass1 = dervied_parameters.mass1_from_mchirp_eta(mchirp, eta)
+    mass2 = derived_parameters.mass2_from_mchirp_eta(mchirp, eta)
+    return mass1, mass2
 
 def A0(f_lower):
     """used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437
        appendix 1, also lalinspiral/python/sbank/tau0tau3.py
     """
-    return 5. / (256. * (lal.PI * f_lower)**(8./3.))
+    return derived_parameters._a0(f_lower)
 
 def A3(f_lower):
     """another parameter used for chirp times"""
-    return lal.PI / (8. * (lal.PI * f_lower)**(5./3.))
+    return derived_parameters._a3(f_lower)
   
 def mass1_mass2_to_tau0_tau3(mass1, mass2, f_lower):
-    m_total,eta = mass1_mass2_to_mtotal_eta(mass1, mass2)
-    # convert to seconds
-    m_total = m_total * lal.MTSUN_SI
-    # formulae from arxiv.org:0706.4437
-    tau0 = A0(f_lower) / (m_total**(5./3.) * eta)
-    tau3 = A3(f_lower) / (m_total**(2./3.) * eta)
+    tau0 = derived_parameters.tau0_from_mass1_mass2(mass1, mass2, f_lower)
+    tau3 = derived_parameters.tau3_from_mass1_mass2(mass1, mass2, f_lower)
     return tau0,tau3
 
 def tau0_tau3_to_mtotal_eta(tau0, tau3, f_lower):
-    m_total = (tau3 / A3(f_lower)) / (tau0 / A0(f_lower))
-    eta = m_total**(-2./3.) * (A3(f_lower) / tau3)
-    # convert back to solar mass units
-    return (m_total/lal.MTSUN_SI),eta
+    mtotal = derived_parameters.mtotal_from_tau0_tau3(tau0, tau3, f_lower)
+    eta = derived_parameters.eta_from_tau0_tau3(tau0, tau3, f_lower)
+    return mtotal, eta
 
 def tau0_tau3_to_mass1_mass2(tau0, tau3, f_lower):
     m_total,eta = tau0_tau3_to_mtotal_eta(tau0, tau3, f_lower)
