@@ -132,6 +132,7 @@ class DictArray(object):
                 for g in groups:
                     if g in d:
                         self.data[g].append(d[g][:])
+                d.close()
                     
             for k in self.data:
                 if not len(self.data[k]) == 0:
