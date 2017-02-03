@@ -58,10 +58,10 @@ parser.add_argument("--bank-file", default=None,
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. "
                     "Format is PART/NUM_PARTS")
-parser.add_argument("--veto-file", nargs='*', default=[],
+parser.add_argument("--veto-file", nargs='*', default=[], action='append',
                     help="File(s) in .xml format with veto segments to apply "
                     "to triggers before fitting")
-parser.add_argument("--veto-segment-name", nargs='*', default=[],
+parser.add_argument("--veto-segment-name", nargs='*', default=[], action='append',
                     help="Name(s) of veto segments to apply. Optional, if not "
                     "given all segments for a given ifo will be used")
 parser.add_argument("--output", required=True,
