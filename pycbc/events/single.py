@@ -31,10 +31,15 @@ class LiveSingleFarThreshold(object):
                    )
 
     def check(self, triggers, data_reader):
+        """ Look for a single detector trigger that passes the thresholds in 
+        the current data.
+        """
         if len(triggers['snr']) == 0:
             return None 
 
         i = triggers['snr'].argmax()
+        # This uses the pycbc live convention of chisq always meaning the 
+        # reduced chisq. 
         rchisq = triggers['chisq'][i]
         nsnr = newsnr(triggers['snr'][i], rchisq)
         dur = triggers['template_duration'][i]

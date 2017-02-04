@@ -364,6 +364,9 @@ class MultiRingBuffer(object):
         return self.size
 
     def straighten(self):
+        """ Resets ring buffers that wrap around to the beginning to start
+        at zero. This ensures they lie in contiguous memory. 
+        """
         locs = numpy.where(self.index < self.start)[0]
         for l in locs:
             self.buffer[l] = numpy.roll(self.buffer[l], self.pad_count - self.start[l])
@@ -643,7 +646,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         group.add_argument('--timeslide-interval', type=float,
             help="The interval between timeslides in seconds", default=0.1)
         group.add_argument('--ifar-remove-threshold', type=float,
-            help="NOT YET IMLEMENTED", default=100.0)
+            help="NOT YET IMPLEMENTED", default=100.0)
 
     @property
     def background_time(self):
