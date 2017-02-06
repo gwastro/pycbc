@@ -346,16 +346,15 @@ class MultiRingBuffer(object):
         self.max_length = max_length
 
         # Set initial size of buffers
-        self.pad_count = 64
+        self.pad_count = 16
         self.num_rings = num_rings
         self.buffer = numpy.zeros((num_rings, self.pad_count), dtype=dtype)
         self.buffer_expire = numpy.zeros((num_rings, self.pad_count), dtype=numpy.int32)
-
         self.buffer_expire -= self.max_length * 2
 
-        self.start = numpy.zeros(num_rings, dtype=numpy.uint32)
-        self.index = numpy.zeros(num_rings, dtype=numpy.uint32)
-        self.ladder = numpy.arange(0, num_rings, dtype=numpy.uint32)
+        self.start = numpy.zeros(num_rings, dtype=numpy.int32)
+        self.index = numpy.zeros(num_rings, dtype=numpy.int32)
+        self.ladder = numpy.arange(0, num_rings, dtype=numpy.int32)
 
         self.size = 0
         self.expire = 0
@@ -364,12 +363,22 @@ class MultiRingBuffer(object):
         """ Return the number of elements in the ring buffer, including nulls"""
         return self.size
 
+    def straighten(self):
+        """ Resets ring buffers that wrap around to the beginning to start
+        at zero. This ensures they lie in contiguous memory. 
+        """
+        locs = numpy.where(self.index < self.start)[0]
+        for l in locs:
+            self.buffer[l] = numpy.roll(self.buffer[l], self.pad_count - self.start[l])
+        self.index[locs] = (self.pad_count - self.start[locs]) + self.index[locs]
+        self.start[locs] = 0
+
     def increase_buffer_size(self, size):
         """ Increase the internal buffer size up to 'size'"""
         oldsize = self.pad_count
         if size < oldsize:
             raise ValueError("The new size must be larger than the old one")
-
+        self.straighten()
         self.pad_count = size
         self.buffer.resize((self.num_rings, size))
         self.buffer_expire.resize((self.num_rings, size))
@@ -395,7 +404,7 @@ class MultiRingBuffer(object):
         """Discard the triggers added in the latest update"""
         index = self.index[indices]
         index -= 1
-        index[index < 0] = self.pad_count
+        index[index < 0] = self.pad_count - 1
         self.index[indices] = index
 
     def advance_time(self):
@@ -408,13 +417,13 @@ class MultiRingBuffer(object):
 
         idx = self.buffer_expire[self.ladder, self.start] < self.expire - self.max_length
         self.start[numpy.logical_and(idx, self.start != self.index)] += 1
-        self.start[self.start == self.pad_count] = 0
+        self.start[self.start >= self.pad_count] = 0
 
     def add(self, indices, values):
         """Add triggers in 'values' to the buffers indicated by the indices
         """
-        if self.ring_sizes().max() > self.pad_count * .9:
-            self.increase_buffer_size(int(self.pad_count * 1.5))
+        if self.ring_sizes().max() + 2 > self.pad_count * .9:
+            self.increase_buffer_size(int(self.pad_count * 1.5 + 5))
 
         index = self.index[indices]
 
@@ -422,7 +431,7 @@ class MultiRingBuffer(object):
         self.buffer_expire[indices, index] = self.expire
 
         index += 1
-        index[index == self.pad_count] = 0
+        index[index >= self.pad_count] = 0
         self.index[indices] = index
         self.advance_time()
 
@@ -610,6 +619,35 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         #        pass
         #    signal.signal(signal.SIGINT, sig_handler)
 
+    @classmethod
+    def from_cli(cls, args, num_templates, analysis_chunk, ifos):
+        return cls(num_templates, analysis_chunk,
+                   args.background_statistic, 
+                   args.background_statistic_files, 
+                   return_background=args.store_background,
+                   ifar_limit=args.background_ifar_limit,
+                   timeslide_interval=args.timeslide_interval,
+                   ifar_remove_threshold=args.ifar_remove_threshold,
+                   ifos=ifos)  
+
+    @staticmethod
+    def insert_args(parser):
+        group = parser.add_argument_group('Coincident Background Estimation')
+        group.add_argument('--background-statistic', default='newsnr', 
+            help="Ranking statistic to use for candidate coincident events")
+        group.add_argument('--background-statistic-files', nargs='+',
+            help="Files containing precalculate values to calculate ranking"
+                 " statistic values", default=[])
+        group.add_argument('--store-background', action='store_true',
+            help="Return background triggers with zerolag coincidencs")
+        group.add_argument('--background-ifar-limit', type=float,
+            help="The limit on inverse false alarm rate to calculate "
+                 "background in years", default=100.0)
+        group.add_argument('--timeslide-interval', type=float,
+            help="The interval between timeslides in seconds", default=0.1)
+        group.add_argument('--ifar-remove-threshold', type=float,
+            help="NOT YET IMPLEMENTED", default=100.0)
+
     @property
     def background_time(self):
         """Return the amount of background time that the buffers contain"""
@@ -757,7 +795,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                                  self.time_window,
                                  self.timeslide_interval)
                 trig_stat = numpy.resize(trig_stat, len(i1))
-                c = self.stat_calculator.coinc(trig_stat, stats[i1],
+                c = self.stat_calculator.coinc(stats[i1], trig_stat,
                                                slide, self.timeslide_interval)
                 offsets.append(slide)
                 cstat.append(c)
@@ -813,7 +851,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         ####################################Collect coinc results for saving
         coinc_results = {}
-
         # Save information about zerolag triggers
         if num_zerolag > 0:
             zerolag_results = {}
@@ -863,24 +900,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             self.singles[ifo].discard_last(updated_singles[ifo])
         self.coincs.remove(num_coincs)
 
-    def check_for_hwinj(self, data_reader, valid_ifos):
-        """Check that the current set of triggers could be influenced by
-        a hardware injection.
-
-        Parameters
-        ----------
-        data_reader: dict of StrainBuffers
-            A dict of StrainBuffer instances, indexed by ifos.
-        """
-        from pycbc import frame
-        for ifo in valid_ifos:
-            start = data_reader[ifo].start_time
-            state = data_reader[ifo].state
-            if not state.is_extent_valid(start, self.analysis_block,
-                                         frame.NO_HWINJ):
-                return True
-        return False
-
     def add_singles(self, results, data_reader):
         """Add singles to the bacckground estimate and find candidates
 
@@ -913,7 +932,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         # If there is a hardware injection anywhere near here dump these
         # results and mark the result group as possibly being influenced
-        if self.check_for_hwinj(data_reader, valid_ifos):
-            self.backout_last(updated_indices, num_background)
-            coinc_results['HWINJ'] = True
+        for ifo in valid_ifos:
+            if data_reader[ifo].near_hwinj():
+                self.backout_last(updated_indices, num_background)
+                coinc_results['HWINJ'] = True
+                break
         return coinc_results
