@@ -355,6 +355,8 @@ setup (
                'bin/pycbc_faithsim',
                'bin/pycbc_inspiral',
                'bin/pycbc_inspiral_skymax',
+               'bin/pycbc_live',
+               'bin/pycbc_live_nagios_monitor',
                'bin/pycbc_single_template',
                'bin/pycbc_multi_inspiral',
                'bin/pycbc_make_banksim',
