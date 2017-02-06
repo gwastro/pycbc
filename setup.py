@@ -62,13 +62,12 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'pillow',
                       'h5py>=2.5',
                       'jinja2',
-                      'pycbc-mpld3>=0.3.dev0',
+                      'mpld3>=0.3',
                       'pyRXP>=2.1.0',
                       'pycbc-glue>=1.0.1',
                       'kombine',
                       'emcee>=2.2.0',
                       'corner>=2.0.1',
-                      #'scikit-learn>=0.17.0',  # travis does not like scikit-learn
                       ]
 
 #FIXME Remove me when we bump to h5py > 2.5
@@ -261,7 +260,7 @@ def get_version_info():
 
     # If this is a release or another kind of source distribution of PyCBC
     except:
-        version = '1.6.0dev'
+        version = '1.7.0dev'
         release = 'False'
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
 
@@ -313,22 +312,9 @@ class build_gh_pages(Command):
                               " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
-class build_docs_test(Command):
-    user_options = []
-    description = "Build the documentation pages in testing mode"
-    def initialize_options(self):
-        pass
-    def finalize_options(self):
-        pass
-    def run(self):
-        subprocess.check_call("cd docs; cp Makefile.std Makefile; cp conf_test.py conf.py; sphinx-apidoc "
-                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
-                            stderr=subprocess.STDOUT, shell=True)
-
 cmdclass = { 'test'  : test,
              'build_docs' : build_docs,
              'build_gh_pages' : build_gh_pages,
-             'build_docs_test' : build_docs_test,
              'install' : install,
              'test_cpu':test_cpu,
              'test_cuda':test_cuda,
@@ -363,12 +349,14 @@ setup (
                'bin/minifollowups/pycbc_page_injinfo',
                'bin/minifollowups/pycbc_page_snglinfo',
                'bin/minifollowups/pycbc_plot_trigger_timeseries',
-               'bin/lalapps/lalapps_inspiral_ahope',
-               'bin/lalapps/lalapps_tmpltbank_ahope',
                'bin/pycbc_banksim',
+               'bin/pycbc_banksim_combine_banks',
+               'bin/pycbc_banksim_match_combine',
                'bin/pycbc_faithsim',
                'bin/pycbc_inspiral',
                'bin/pycbc_inspiral_skymax',
+               'bin/pycbc_live',
+               'bin/pycbc_live_nagios_monitor',
                'bin/pycbc_single_template',
                'bin/pycbc_multi_inspiral',
                'bin/pycbc_make_banksim',
@@ -397,7 +385,6 @@ setup (
                'bin/hdfcoinc/pycbc_coinc_mergetrigs',
                'bin/hdfcoinc/pycbc_coinc_findtrigs',
                'bin/hdfcoinc/pycbc_coinc_bank2hdf',
-               'bin/hdfcoinc/pycbc_coinc_trig2hdf',
                'bin/hdfcoinc/pycbc_coinc_statmap',
                'bin/hdfcoinc/pycbc_coinc_statmap_inj',
                'bin/hdfcoinc/pycbc_page_foreground',
@@ -451,16 +438,21 @@ setup (
                'bin/inference/pycbc_inference_plot_acf',
                'bin/inference/pycbc_inference_plot_acl',
                'bin/inference/pycbc_inference_plot_corner',
+               'bin/inference/pycbc_inference_plot_geweke',
                'bin/inference/pycbc_inference_plot_movie',
                'bin/inference/pycbc_inference_plot_posterior',
                'bin/inference/pycbc_inference_plot_prior',
                'bin/inference/pycbc_inference_plot_samples',
                'bin/inference/pycbc_inference_table_summary',
                'bin/plotting/pycbc_plot_waveform',
+               'bin/plotting/pycbc_banksim_plot_eff_fitting_factor',
+               'bin/plotting/pycbc_banksim_table_point_injs',
+               'bin/plotting/pycbc_banksim_plot_fitting_factors',
                'bin/workflows/pycbc_create_sbank_workflow',
                'bin/workflows/pycbc_create_uberbank_workflow',
                'bin/workflows/pycbc_make_coinc_search_workflow',
                'bin/workflows/pycbc_make_psd_estimation_workflow',
+               'bin/workflows/pycbc_create_bank_verifier_workflow',
                'bin/pycbc_compress_bank',
                'bin/pycbc_ringinj',
                ],

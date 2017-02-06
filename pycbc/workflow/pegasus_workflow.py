@@ -193,6 +193,13 @@ class Node(ProfileShortcuts):
         for inp in inputs:
             self.add_opt(inp)
             self._add_input(inp)
+
+    def add_list_opt(self, opt, values):
+        """ Add an option with a list of non-file parameters.
+        """
+        self.add_opt(opt)
+        for val in values:
+            self.add_opt(val)
         
     def add_input_arg(self, inp):
         """ Add an input as an argument
@@ -305,7 +312,7 @@ class Workflow(object):
         Parameters
         ----------
         node : Node
-            A node that should be exectuded as part of this workflow.
+            A node that should be executed as part of this workflow.
         """
         node._finalize()
         node.in_workflow = self
@@ -419,7 +426,7 @@ class File(DataStorage, dax.File):
             transfer_file = True
         else:
             transfer_file = False
-        node._dax_node.uses(self, link=dax.Link.OUTPUT, register=False, 
+        node._dax_node.uses(self, link=dax.Link.OUTPUT, register=True, 
                                                         transfer=transfer_file)                                                       
     def output_map_str(self):
         if self.storage_path:

@@ -26,6 +26,7 @@ This modules provides classes and functions for using the kombine sampler
 packages for parameter estimation.
 """
 
+import numpy
 from pycbc.inference.sampler_base import BaseMCMCSampler
 
 #
@@ -59,11 +60,14 @@ class KombineSampler(BaseMCMCSampler):
     min_burn_in : {None, int}
         Set the minimum number of burn in iterations to use. If None,
         `burn_in_iterations` will be initialized to `0`.
+    update_interval : {None, int}
+        Make the sampler update the proposal densities every `update_interval`
+        iterations.
     """
     name = "kombine"
 
     def __init__(self, likelihood_evaluator, nwalkers, transd=False,
-                 processes=None, min_burn_in=None):
+                 processes=None, min_burn_in=None, update_interval=None):
         try:
             import kombine
         except ImportError:
@@ -77,6 +81,7 @@ class KombineSampler(BaseMCMCSampler):
         super(KombineSampler, self).__init__(sampler, likelihood_evaluator,
                                              min_burn_in=min_burn_in)
         self._nwalkers = nwalkers
+        self.update_interval = update_interval
 
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator):
@@ -96,7 +101,8 @@ class KombineSampler(BaseMCMCSampler):
             A kombine sampler initialized based on the given arguments.
         """
         return cls(likelihood_evaluator, opts.nwalkers,
-                   processes=opts.nprocesses, min_burn_in=opts.min_burn_in)
+                   processes=opts.nprocesses, min_burn_in=opts.min_burn_in,
+                   update_interval=opts.update_interval)
 
     def run(self, niterations, **kwargs):
         """Advance the sampler for a number of samples.
@@ -118,8 +124,8 @@ class KombineSampler(BaseMCMCSampler):
             with shape (nwalkers, ndim).
         """
         blob0 = None
-        if self.burn_in_iterations == 0:
-            # no burn in, use the initial positions
+        if self.niterations == 0:
+            # first time running, use the initial positions
             p0 = self.p0
             if self.likelihood_evaluator.return_meta:
                 blob0 = [self.likelihood_evaluator(p0[wi, :])[1]
@@ -127,13 +133,17 @@ class KombineSampler(BaseMCMCSampler):
         else:
             p0 = None
             # kombine requires blob data to be specified
-            if self.likelihood_evaluator.return_meta:
-                blob0 = self._sampler.blobs[-1]
+            blob0 = self._currentblob
         kwargs['blob0'] = blob0
+        if 'update_interval' not in kwargs:
+            # use the internal update interval
+            kwargs['update_interval'] = self.update_interval
         res = self._sampler.run_mcmc(niterations, p0=p0, **kwargs)
         p, lnpost, lnprop = res[0], res[1], res[2]
         # update the positions
         self._pos = p
+        if self.likelihood_evaluator.return_meta:
+            self._currentblob = self._sampler.blobs[-1]
         return p, lnpost, lnprop
 
     @property
@@ -149,6 +159,23 @@ class KombineSampler(BaseMCMCSampler):
         """Get all past samples as an nwalker x niterations x ndim array."""
         # kombine returns niterations x nwalkers x ndim
         return self._sampler.chain.transpose((1, 0, 2))
+
+    def clear_chain(self):
+        """Clears the chain and blobs from memory.
+        """
+        # store the iteration that the clear is occuring on
+        self._lastclear = self.niterations
+        # kombine stores its chain as niterations x nwalkers x ndim
+        current_shape = self._sampler._chain.shape
+        new_shape = (0, current_shape[1], current_shape[2])
+        if isinstance(self._sampler._chain, numpy.ma.MaskedArray):
+            self._sampler._chain = numpy.ma.resize(self._sampler._chain,
+                                                   new_shape)
+        else:
+            self._sampler._chain.resize(new_shape)
+        self._sampler.stored_iterations = 0
+        # clear the blobs
+        self._sampler._blobs = []
 
     def burn_in(self):
         """Use kombine's `burnin` routine to advance the sampler.
@@ -189,5 +216,6 @@ class KombineSampler(BaseMCMCSampler):
             p, post, q = res[0], res[1], res[2]
             # update position
             self._pos = p
+            self._currentblob = self._sampler.blobs[-1]
         self.burn_in_iterations = self.niterations
         return p, post, q

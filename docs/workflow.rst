@@ -74,17 +74,6 @@ Generate injection files for use later in the analysis
    workflow/injections
 
 ----------------------------------
-Time-slide generation
-----------------------------------
-
-Generate the time-slide files used for describing time slides to be performed later in the analysis
-
-.. toctree::
-   :maxdepth: 1
-
-   workflow/time_slides
-
-----------------------------------
 Template bank
 ----------------------------------
 
@@ -124,28 +113,7 @@ Determine if "triggers" seen in one detector are also seen in other detectors. A
 
 .. toctree::   :maxdepth: 1 
 
-   workflow/coincidence
    workflow/hdf_coincidence
-
-----------------------------------
-Post processing preparation
-----------------------------------
-
-Prepare output files for the post-processing stage
-
-.. toctree:: :maxdepth: 1
-
-   workflow/postprocprep
-
-----------------------------------
-Post-processing
-----------------------------------
-
-Assess the significance of all triggers and calculate any rate statements
-
-.. toctree:: :maxdepth: 1
-
-   workflow/postproc
 
 ====================
 Method documentation

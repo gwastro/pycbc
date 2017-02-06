@@ -25,36 +25,17 @@ import numpy
 import pycbc
 import pycbc.opt
 import pycbc.weave
-import random
-import pycbc
 from pycbc import fft
+from pycbc import gate
 from pycbc import inference
 from pycbc import psd
 from pycbc import scheme
 from pycbc import strain
 from pycbc import types
-from pycbc import waveform
 from pycbc.io.inference_hdf import InferenceFile
+from pycbc.waveform import generator
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import option_utils
-
-def select_waveform_generator(approximant):
-    """ Returns the generator for the approximant.
-    """
-    if approximant in waveform.fd_approximants():
-        return waveform.FDomainCBCGenerator
-    elif approximant in waveform.td_approximants():
-        return waveform.TDomainCBCGenerator
-    elif approximant in waveform.ringdown_fd_approximants:
-        if approximant=='FdQNM':
-            return waveform.FDomainRingdownGenerator
-        elif approximant=='FdQNMmultiModes':
-            return waveform.FDomainMultiModeRingdownGenerator
-    elif approximant in waveform.ringdown_td_approximants:
-        raise ValueError("Time domain ringdowns not supported")
-    else:
-        raise ValueError("%s is not a valid approximant."%approximant)
-
 
 def convert_liststring_to_list(lstring):
     """ Checks if an argument of the configuration file is a string of a list
@@ -66,100 +47,6 @@ def convert_liststring_to_list(lstring):
     return lvalue
 
 
-def _gates_from_cli(opts, gate_opt):
-    """Parses the given `gate_opt` into something understandable by
-    `strain.gate_data`.
-    """
-    gates = {}
-    if getattr(opts, gate_opt) is None:
-        return gates
-    for gate in getattr(opts, gate_opt):
-        try:
-            ifo, central_time, half_dur, taper_dur = gate.split(':')
-            central_time = float(central_time)
-            half_dur = float(half_dur)
-            taper_dur = float(taper_dur)
-        except ValueError:
-            raise ValueError("--gate {} not formatted correctly; ".format(
-                gate) + "see help")
-        try:
-            gates[ifo].append((central_time, half_dur, taper_dur))
-        except KeyError:
-            gates[ifo] = [(central_time, half_dur, taper_dur)]
-    return gates
-
-
-def gates_from_cli(opts):
-    """Parses the --gate option into something understandable by
-    `strain.gate_data`.
-    """
-    return _gates_from_cli(opts, 'gate')
-
-
-def psd_gates_from_cli(opts):
-    """Parses the --psd-gate option into something understandable by
-    `strain.gate_data`.
-    """
-    return _gates_from_cli(opts, 'psd_gate')
-
-
-def apply_gates_to_td(strain_dict, gates):
-    """Applies the given dictionary of gates to the given dictionary of
-    strain.
-
-    Parameters
-    ----------
-    strain_dict : dict
-        Dictionary of time-domain strain, keyed by the ifos.
-    gates : dict
-        Dictionary of gates. Keys should be the ifo to apply the data to,
-        values are a tuple giving the central time of the gate, the half
-        duration, and the taper duration.
-
-    Returns
-    -------
-    dict
-        Dictionary of time-domain strain with the gates applied.
-    """
-    # copy data to new dictionary
-    outdict = dict(strain_dict.items())
-    for ifo in gates:
-        logging.info("Gating {} strain".format(ifo))
-        outdict[ifo] = strain.gate_data(outdict[ifo], gates[ifo])
-    return outdict
-
-
-def apply_gates_to_fd(stilde_dict, gates):
-    """Applies the given dictionary of gates to the given dictionary of
-    strain in the frequency domain.
-
-    Gates are applied by IFFT-ing the strain data to the time domain, applying
-    the gate, then FFT-ing back to the frequency domain.
-
-    Parameters
-    ----------
-    stilde_dict : dict
-        Dictionary of frequency-domain strain, keyed by the ifos.
-    gates : dict
-        Dictionary of gates. Keys should be the ifo to apply the data to,
-        values are a tuple giving the central time of the gate, the half
-        duration, and the taper duration.
-
-    Returns
-    -------
-    dict
-        Dictionary of frequency-domain strain with the gates applied.
-    """
-    # copy data to new dictionary
-    outdict = dict(stilde_dict.items())
-    # create a time-domin strain dictionary to apply the gates to
-    strain_dict = dict([[ifo, outdict[ifo].to_timeseries()] for ifo in gates])
-    # apply gates and fft back to the frequency domain
-    for ifo,d in apply_gates_to_td(strain_dict, gates).items():
-        outdict[ifo] = d.to_frequencyseries()
-    return outdict
-
-
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
                                  description=__doc__)
@@ -167,10 +54,6 @@ parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
 # add data options
 parser.add_argument("--instruments", type=str, nargs="+", required=True,
                     help="IFOs, eg. H1 L1.")
-parser.add_argument("--frame-type", type=str, nargs="+",
-                    action=types.MultiDetOptionAction,
-                    metavar="IFO:FRAME_TYPE",
-                    help="Frame type for each IFO.")
 parser.add_argument("--low-frequency-cutoff", type=float, required=True,
                     help="Low frequency cutoff for each IFO.")
 parser.add_argument("--psd-start-time", type=float, default=None,
@@ -179,20 +62,6 @@ parser.add_argument("--psd-start-time", type=float, default=None,
 parser.add_argument("--psd-end-time", type=float, default=None,
                     help="End time to use for PSD estimation if different "
                          "from analysis.")
-parser.add_argument("--gate", nargs="+", type=str,
-                    metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
-                    help="Apply one or more gates to the data before "
-                         "filtering.")
-parser.add_argument("--gate-overwhitened", action="store_true", default=False,
-                    help="Overwhiten data first, then apply the gates "
-                         "specified in --gate. Overwhitening allows for "
-                         "sharper tapers to be used, since lines are not "
-                         "blurred.")
-parser.add_argument("--psd-gate", nargs="+", type=str,
-                    metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
-                    help="Apply one or more gates to the data used for "
-                         "computing the PSD. Gates are applied prior to "
-                         "FFT-ing the data for PSD estimation.")
 
 # add inference options
 parser.add_argument("--likelihood-evaluator", required=True,
@@ -248,6 +117,7 @@ psd.insert_psd_option_group_multi_ifo(parser)
 scheme.insert_processing_option_group(parser)
 strain.insert_strain_option_group_multi_ifo(parser)
 pycbc.weave.insert_weave_option_group(parser)
+gate.add_gate_option_group(parser)
 
 # parse command line
 opts = parser.parse_args()
@@ -264,6 +134,7 @@ pycbc.weave.verify_weave_options(opts, parser)
 if os.path.exists(opts.output_file) and not opts.force:
     raise OSError("output-file already exists; use --force if you wish to "
                   "overwrite it.")
+
 # create the file for adding to
 fp = InferenceFile(opts.output_file, "w")
 fp.close()
@@ -275,16 +146,13 @@ pycbc.init_logging(opts.verbose)
 numpy.random.seed(opts.seed)
 logging.info("Using seed %i" %(opts.seed))
 
-# change measure level for FFT to 0
-fft.fftw.set_measure_level(0)
-
 # get scheme
 ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
 
 # get gates to apply
-gates = gates_from_cli(opts)
-psd_gates = psd_gates_from_cli(opts)
+gates = gate.gates_from_cli(opts)
+psd_gates = gate.psd_gates_from_cli(opts)
 
 # get strain time series
 strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
@@ -292,7 +160,7 @@ strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
 # apply gates if not waiting to overwhiten
 if not opts.gate_overwhitened:
     logging.info("Applying gates to strain data")
-    strain_dict = apply_gates_to_td(strain_dict, gates)
+    strain_dict = gate.apply_gates_to_td(strain_dict, gates)
 
 # get strain time series to use for PSD estimation
 # if user has not given the PSD time options then use same data as analysis
@@ -305,7 +173,7 @@ if opts.psd_start_time and opts.psd_end_time:
                                                 precision="double")
     # apply any gates
     logging.info("Applying gates to PSD data")
-    psd_strain_dict = apply_gates_to_td(psd_strain_dict, psd_gates)
+    psd_strain_dict = gate.apply_gates_to_td(psd_strain_dict, psd_gates)
 
 elif opts.psd_start_time or opts.psd_end_time:
     raise ValueError("Must give --psd-start-time and --psd-end-time")
@@ -335,16 +203,23 @@ with ctx:
     # apply any gates to overwhitened data, if desired
     if opts.gate_overwhitened and opts.gate is not None:
         logging.info("Applying gates to overwhitened data")
+
         # overwhiten the data
         for ifo in gates:
             stilde_dict[ifo] /= psd_dict[ifo]
-        stilde_dict = apply_gates_to_fd(stilde_dict, gates)
+        stilde_dict = gate.apply_gates_to_fd(stilde_dict, gates)
+
         # unwhiten the data for the likelihood generator
         for ifo in gates:
             stilde_dict[ifo] *= psd_dict[ifo]
 
+    # save command line
+    with InferenceFile(opts.output_file, "a") as fp:
+        fp.write_command_line()
+
     # save PSD
     if opts.save_psd:
+
         # apply dynamic range factor for saving PSDs since
         # plotting code expects it
         logging.info("Saving PSDs")
@@ -355,7 +230,7 @@ with ctx:
                                         delta_f=psd_dict[key].delta_f)
         with InferenceFile(opts.output_file, "a") as fp:
             fp.write_psd(psds=psd_dyn_dict,
-                          low_frequency_cutoff=low_frequency_cutoff_dict)
+                         low_frequency_cutoff=low_frequency_cutoff_dict)
 
     # save stilde
     if opts.save_stilde:
@@ -403,13 +278,16 @@ with ctx:
     # construct class that will return the prior
     prior = inference.PriorEvaluator(variable_args, *distributions)
 
-    # select generator that will generate waveform
+    # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
     logging.info("Setting up sampler")
-    generator_function = select_waveform_generator(static_args["approximant"])
+    generator_function = generator.select_waveform_generator(
+                                                    static_args["approximant"])
 
-    # construct class that will generate waveforms
-    generator = waveform.FDomainDetFrameGenerator(generator_function,
+    # construct instance that will call single IFO waveform generator
+    # and apply the antenna pattern and timing offsets
+    generator = generator.FDomainDetFrameGenerator(
+                        generator_function,
                         epoch=stilde_dict.values()[0].epoch,
                         variable_args=variable_args,
                         detectors=opts.instruments,
@@ -442,7 +320,8 @@ with ctx:
     if opts.checkpoint_interval:
 
         # determine intervals to run sampler until we save the new samples 
-        intervals = [i for i in range(0, opts.niterations, opts.checkpoint_interval)]
+        intervals = [i for i in range(0, opts.niterations,
+                                      opts.checkpoint_interval)]
 
         # determine if there is a small bit at the end
         remainder = opts.niterations % opts.checkpoint_interval
@@ -481,14 +360,16 @@ with ctx:
         # run sampler and set initial values to None so that sampler
         # picks up from where it left off next call
         logging.info("Running sampler for %i to %i out of %i iterations"%(
-            start-n_burnin,end-n_burnin,opts.niterations))
+            start-n_burnin, end-n_burnin, opts.niterations))
         sampler.run(end-start)
 
         # write new samples
         with InferenceFile(opts.output_file, "a") as fp:
 
             logging.info("Writing results to file")
-            sampler.write_results(fp, max_iterations=opts.niterations+n_burnin)
+            sampler.write_results(fp, start_iteration=start,
+                                  end_iteration=end,
+                                  max_iterations=opts.niterations+n_burnin)
 
             if not opts.checkpoint_fast or end == opts.niterations:
 
@@ -503,6 +384,10 @@ with ctx:
                     sampler.write_logevidence(fp, lnz, dlnz)
                 except NotImplementedError:
                     pass
+
+            # clear the in-memory chain to save memory
+            logging.info("Clearing chain")
+            sampler.clear_chain()
 
 # exit
 logging.info("Done")

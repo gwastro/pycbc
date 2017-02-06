@@ -85,7 +85,7 @@ def makedir(path):
     Make the analysis directory path and any parent directories that don't
     already exist. Will do nothing if path already exists.
     """
-    if not os.path.exists(path) and path is not None:
+    if path is not None and not os.path.exists(path):
         os.makedirs(path)
 
 def is_condor_exec(exe_path):
@@ -851,11 +851,12 @@ class File(pegasus_workflow.File):
 
     An example of initiating this class:
     
-    c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
+    >> c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
 
     another where the file url is generated from the inputs:
 
-    c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
+    >> c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
+
     '''
     def __init__(self, ifos, exe_name, segs, file_url=None, 
                  extension=None, directory=None, tags=None, 
@@ -1077,7 +1078,8 @@ class FileList(list):
         return keys, groups
 
     def find_output(self, ifo, time):
-        '''
+        '''Returns one File most appropriate at the given time/time range.
+
         Return one File that covers the given time, or is most
         appropriate for the supplied time range.
 
@@ -1095,8 +1097,8 @@ class FileList(list):
 
         Returns
         --------
-        File class
-           The File that corresponds to the time/time range
+        pycbc_file : pycbc.workflow.File instance
+           The File that corresponds to the time or time range
         '''
         # Determine whether I have a specific time, or a range of times
         try:
@@ -1117,18 +1119,18 @@ class FileList(list):
        '''
        Return File that covers the given time.
 
-        Parameters
-        -----------
-        ifo : string
-           Name of the ifo (or ifos) that the File should correspond to
-        time : int/float/LIGOGPStime
-           Return the Files that covers the supplied time. If no
-           File covers the time this will return None.
+       Parameters
+       -----------
+       ifo : string
+          Name of the ifo (or ifos) that the File should correspond to
+       time : int/float/LIGOGPStime
+          Return the Files that covers the supplied time. If no
+          File covers the time this will return None.
 
-        Returns
-        --------
-        list of File classes
-           The Files that corresponds to the time.
+       Returns
+       --------
+       list of File classes
+          The Files that corresponds to the time.
         '''
        # Get list of Files that overlap time, for given ifo
        outFiles = [i for i in self if ifo in i.ifo_list and time in i.segment_list] 
@@ -1434,7 +1436,7 @@ class SegFile(File):
         glue.segments.segmentlistdict rather than the usual dict[ifo]
         we key by dict[ifo:name].
 
-        Parameters:
+        Parameters
         ------------
         ifo_list : string or list (required)
             See File.__init__
@@ -1462,7 +1464,7 @@ class SegFile(File):
                           seg_summ_list=None, **kwargs):
         """ Initialize a SegFile object from a segmentlist. 
 
-        Parameters:
+        Parameters
         ------------
         description : string (required)
             See File.__init__
@@ -1492,7 +1494,7 @@ class SegFile(File):
                                 seg_summ_lists=None, **kwargs):
         """ Initialize a SegFile object from a list of segmentlists. 
 
-        Parameters:
+        Parameters
         ------------
         description : string (required)
             See File.__init__
@@ -1527,7 +1529,7 @@ class SegFile(File):
                                **kwargs):
         """ Initialize a SegFile object from a segmentlistdict. 
 
-        Parameters:
+        Parameters
         ------------
         description : string (required)
             See File.__init__
@@ -1808,6 +1810,7 @@ def get_full_analysis_chunk(science_segs):
     -----------
     science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
         The list of times that are being analysed in this workflow.
+
     Returns
     --------
     fullSegment : glue.segments.segment

@@ -477,48 +477,48 @@ class FieldArray(numpy.recarray):
     Some additional features:
 
     * **Arbitrary functions**:
-    You can retrive functions on fields in the same manner that you access
-    individual fields. For example, if you have an FieldArray ``x`` with fields
-    ``a`` and ``b``, you can access each field with ``x['a'], x['b']``.
-    You can also do ``x['a*b/(a+b)**2.']``, ``x[cos(a)*sin(b)]``, etc. Boolean
-    operations are also possible, e.g., ``x['(a < 3) & (b < 2)']``. Syntax
-    for functions is python, and any numpy ufunc can be used to operate
-    on the fields. Note that while fields may be accessed as
-    attributes (e.g, field ``a`` can be accessed via ``x['a']`` or ``x.a``),
-    functions on multiple fields may not (``x.a+b`` does not work, for obvious
-    reasons).
+      You can retrive functions on fields in the same manner that you access
+      individual fields. For example, if you have an FieldArray ``x`` with
+      fields ``a`` and ``b``, you can access each field with ``x['a'], x['b']``.
+      You can also do ``x['a*b/(a+b)**2.']``, ``x[cos(a)*sin(b)]``, etc. Boolean
+      operations are also possible, e.g., ``x['(a < 3) & (b < 2)']``. Syntax
+      for functions is python, and any numpy ufunc can be used to operate
+      on the fields. Note that while fields may be accessed as
+      attributes (e.g, field ``a`` can be accessed via ``x['a']`` or ``x.a``),
+      functions on multiple fields may not (``x.a+b`` does not work, for obvious
+      reasons).
 
     * **Subfields and '.' indexing**:
-    Structured arrays, which are the base class for recarrays and, by
-    inheritance, FieldArrays, allows for fields to themselves have fields. For
-    example, an array ``x`` may have fields ``a`` and ``b``, with ``b`` having
-    subfields ``c`` and ``d``. You can access subfields using other index
-    notation or attribute notation. So, the subfields ``d`` may be retrieved
-    via ``x['b']['d']``, ``x.b.d``, ``x['b'].d`` or ``x['b.d']``. Likewise,
-    functions can be carried out on the subfields, as they can on fields. If
-    ``d`` is a float field, we could get the log of it via ``x['log(b.d)']``.
-    There is no limit to the number of subfields. So, ``c`` could also have
-    subfield ``c0``, which would be accessed via ``x.c.c0``, or any of the
-    other methods.
+      Structured arrays, which are the base class for recarrays and, by
+      inheritance, FieldArrays, allows for fields to themselves have fields. For
+      example, an array ``x`` may have fields ``a`` and ``b``, with ``b`` having
+      subfields ``c`` and ``d``. You can access subfields using other index
+      notation or attribute notation. So, the subfields ``d`` may be retrieved
+      via ``x['b']['d']``, ``x.b.d``, ``x['b'].d`` or ``x['b.d']``. Likewise,
+      functions can be carried out on the subfields, as they can on fields. If
+      ``d`` is a float field, we could get the log of it via ``x['log(b.d)']``.
+      There is no limit to the number of subfields. So, ``c`` could also have
+      subfield ``c0``, which would be accessed via ``x.c.c0``, or any of the
+      other methods.
 
     .. warning::
-        Record arrays also allow you to set values of a field using attribute
-        notation. However, this can lead to unexpected results if you
-        accidently misspell the attribute. For example, if ``x`` has field
-        ``foo``, and you misspell this when setting, e.g., you try to do
-        ``x.fooo = numpy.arange(x.size)``, ``foo`` will not be set, nor will
-        you get an error. Instead, the attribute ``fooo`` will be added to
-        ``x``. If you tried to do this using index notation, however ---
-        ``x['fooo'] = numpy.arange(x.size)`` --- you will
-        get an ``AttributeError`` as you might expect. For this reason, it is
-        recommended that you always use index notation when *setting* values;
-        you can use either index or attribute notation when *retrieving*
-        values.
+       Record arrays also allow you to set values of a field using attribute
+       notation. However, this can lead to unexpected results if you
+       accidently misspell the attribute. For example, if ``x`` has field
+       ``foo``, and you misspell this when setting, e.g., you try to do
+       ``x.fooo = numpy.arange(x.size)``, ``foo`` will not be set, nor will
+       you get an error. Instead, the attribute ``fooo`` will be added to
+       ``x``. If you tried to do this using index notation, however ---
+       ``x['fooo'] = numpy.arange(x.size)`` --- you will
+       get an ``AttributeError`` as you might expect. For this reason, it is
+       recommended that you always use index notation when *setting* values;
+       you can use either index or attribute notation when *retrieving*
+       values.
 
     * **Properties and methods as fields**:
-    If a propety or instance method is defined for a class that inherits from
-    FieldArray, those can be accessed in the same way as fields are. For example,
-    define ``Foo`` as:
+      If a propety or instance method is defined for a class that inherits from
+      FieldArray, those can be accessed in the same way as fields are. For
+      example, define ``Foo`` as:
 
     .. code-block:: python
 
@@ -535,13 +535,13 @@ class FieldArray(numpy.recarray):
     ``foo.bar``, ``foo['bar']``, ``foo.narf(10)`` and ``foo['narf(10)']``.
 
     * **Virtual fields**:
-    Virtual fields are methods wrapped as properties that operate on one or
-    more fields, thus returning an array of values. To outside code virtual
-    fields look the same as fields, and can be called similarily. Internally,
-    no additional data is stored; the operation is performed on the fly when
-    the virtual field is called. Virtual fields can be added to an array instance
-    with the add_virtualfields method. Alternatively, virtual fields can be
-    defined by sub-classing FieldArray:
+      Virtual fields are methods wrapped as properties that operate on one or
+      more fields, thus returning an array of values. To outside code virtual
+      fields look the same as fields, and can be called similarily. Internally,
+      no additional data is stored; the operation is performed on the fly when
+      the virtual field is called. Virtual fields can be added to an array
+      instance with the add_virtualfields method. Alternatively, virtual fields
+      can be defined by sub-classing FieldArray:
 
     .. code-block:: python
 
@@ -931,9 +931,9 @@ class FieldArray(numpy.recarray):
 
     @classmethod
     def from_records(cls, records, name=None, **kwargs):
-        """
-        Creates a new instance of self from the given (list of) record(s). A
-        "record" is a tuple in which each element is the value of one field
+        """Creates a new instance of self from the given (list of) record(s).
+
+        A "record" is a tuple in which each element is the value of one field
         in the resulting record array. This is done by calling
         `numpy.rec.fromrecords` on the given records with the given kwargs.
         The type of the returned array is cast to this class, and the name
@@ -946,6 +946,8 @@ class FieldArray(numpy.recarray):
         name : {None|str}
             What the output array should be named.
 
+        Other Parameters
+        ----------------
         For other keyword parameters, see the `numpy.rec.fromrecords` help.
 
         Returns
@@ -1185,27 +1187,30 @@ class FieldArray(numpy.recarray):
         Examples
         --------
         Given the following array:
+
         >>> arr = FieldArray(5, dtype=[('mtotal', float)])
         >>> arr['mtotal'] = numpy.array([3., 5., 2., 1., 4.])
 
         Return `"TaylorF2"` for all elements with `mtotal < 4` (note that the
         elements 1 and 4 are leftover):
+
         >>> arr.parse_boolargs(('TaylorF2', 'mtotal<4'))
-        (array(['TaylorF2', '', 'TaylorF2', 'TaylorF2', ''], 
-              dtype='|S8'),
-        array([1, 4]))
+            (array(['TaylorF2', '', 'TaylorF2', 'TaylorF2', ''], 
+            dtype='|S8'),
+            array([1, 4]))
 
         Return `"TaylorF2"` for all elements with `mtotal < 4`,
         `"SEOBNR_ROM_DoubleSpin"` otherwise:
+
         >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', 'else')])
-        (array(['TaylorF2', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
-               'SEOBNRv2_ROM_DoubleSpin'], 
-              dtype='|S23'),
-         array([], dtype=int64))
+            (array(['TaylorF2', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
+            'SEOBNRv2_ROM_DoubleSpin'], 
+            dtype='|S23'),
+            array([], dtype=int64))
         
         The following will also return the same:
-        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin',)])
 
+        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin',)])
         >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', '')])
         >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), 'SEOBNRv2_ROM_DoubleSpin'])
 
@@ -1214,16 +1219,18 @@ class FieldArray(numpy.recarray):
         otherwise:
 
         >>> arr.parse_boolargs([('TaylorF2', 'mtotal<3'), ('IMRPhenomD', 'mtotal<4'), 'SEOBNRv2_ROM_DoubleSpin'])
-        (array(['IMRPhenomD', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
-               'SEOBNRv2_ROM_DoubleSpin'], 
-              dtype='|S23'),
-         array([], dtype=int64))
+            (array(['IMRPhenomD', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
+            'SEOBNRv2_ROM_DoubleSpin'], 
+            dtype='|S23'),
+            array([], dtype=int64))
 
         Just return `"TaylorF2"` for all elements:
+
         >>> arr.parse_boolargs('TaylorF2')
-        (array(['TaylorF2', 'TaylorF2', 'TaylorF2', 'TaylorF2', 'TaylorF2'], 
-              dtype='|S8'),
-         array([], dtype=int64))
+            (array(['TaylorF2', 'TaylorF2', 'TaylorF2', 'TaylorF2', 'TaylorF2'], 
+            dtype='|S8'),
+            array([], dtype=int64))
+
         """
         if not isinstance(args, list):
             args = [args]
@@ -1547,50 +1554,55 @@ class WaveformArray(_FieldArrayWithDefaults):
     
     1. With just the size of the array. In this case, the returned array will
     have all of the default field names. Example:
+
     >>> warr = WaveformArray(10)
     >>> warr.fieldnames
-    ('distance',
-     'spin2x',
-     'mass1',
-     'mass2',
-     'lambda1',
-     'polarization',
-     'spin2y',
-     'spin2z',
-     'spin1y',
-     'spin1x',
-     'spin1z',
-     'inclination',
-     'coa_phase',
-     'dec',
-     'tc',
-     'lambda2',
-     'ra')
+        ('distance',
+         'spin2x',
+         'mass1',
+         'mass2',
+         'lambda1',
+         'polarization',
+         'spin2y',
+         'spin2z',
+         'spin1y',
+         'spin1x',
+         'spin1z',
+         'inclination',
+         'coa_phase',
+         'dec',
+         'tc',
+         'lambda2',
+         'ra')
 
     2. With some subset of the default field names. Example:
+
     >>> warr = WaveformArray(10, names=['mass1', 'mass2'])
     >>> warr.fieldnames
-    ('mass1', 'mass2')
+        ('mass1', 'mass2')
 
     The list of names may include virtual fields, and methods, as well as
     functions of these. If one or more virtual fields or methods are specified,
     the source code is analyzed to pull out whatever underlying fields are
     needed. Example:
+
     >>> warr = WaveformArray(10, names=['mchirp**(5/6)', 'chi_eff', 'cos(coa_phase)'])
     >>> warr.fieldnames
-    ('spin2z', 'mass1', 'mass2', 'coa_phase', 'spin1z')
+        ('spin2z', 'mass1', 'mass2', 'coa_phase', 'spin1z')
 
     3. By specifying a dtype. In this case, only the provided fields will
     be used, even if they are not in the defaults. Example:
+
     >>> warr = WaveformArray(10, dtype=[('foo', float)])
     >>> warr.fieldnames
-    ('foo',)    
+        ('foo',)    
 
     Additional fields can also be specified using the additional_fields
     keyword argument. Example:
+
     >>> warr = WaveformArray(10, names=['mass1', 'mass2'], additional_fields=[('bar', float)])
     >>> warr.fieldnames
-    ('mass1', 'mass2', 'bar')
+        ('mass1', 'mass2', 'bar')
 
     .. note::
         If an array is initialized with all of the default fields (case 1,
@@ -1598,13 +1610,15 @@ class WaveformArray(_FieldArrayWithDefaults):
         are actually Parameter instances, not just strings. This means that the
         field names carry all of the metadata that a Parameter has. For
         example:
+
         >>> warr = WaveformArray(10)
         >>> warr.fields[0]
-        'distance'
+            'distance'
         >>> warr.fields[0].description
-        'Luminosity distance to the binary (in Mpc).'
+            'Luminosity distance to the binary (in Mpc).'
         >>> warr.fields[0].label
-        '$d_L$ (Mpc)'
+            '$d_L$ (Mpc)'
+
     """
 
     _staticfields = (parameters.cbc_intrinsic_params +

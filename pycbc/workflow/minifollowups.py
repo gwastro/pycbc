@@ -145,8 +145,8 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     """
     logging.info('Entering minifollowups module')
 
-    if not workflow.cp.has_section('workflow-minifollowups'):
-        msg = 'There is no [workflow-minifollowups] section in '
+    if not workflow.cp.has_section('workflow-sngl_minifollowups'):
+        msg = 'There is no [workflow-sngl_minifollowups] section in '
         msg += 'configuration file'
         logging.info(msg)
         logging.info('Leaving minifollowups')
@@ -319,10 +319,10 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
         A dictionary containing the parameters of the template to be used.
         params[ifo+'end_time'] is required for all ifos in workflow.ifos.
         If use_exact_inj_params is False then also need to supply values for
-        ['mass1','mass2','spin1z','spin2x']. For precessing templates one also
-        needs to supply ['spin1y', 'spin1x', 'spin2x', 'spin2y', 'inclination']
-        additionally for precession one must supply 'u_vals' or
-        'u_vals_'+ifo for all ifos. u_vals is the ratio between h_+ and h_x to
+        [mass1, mass2, spin1z, spin2x]. For precessing templates one also
+        needs to supply [spin1y, spin1x, spin2x, spin2y, inclination]
+        additionally for precession one must supply u_vals or
+        u_vals_+ifo for all ifos. u_vals is the ratio between h_+ and h_x to
         use when constructing h(t). h(t) = (h_+ * u_vals) + h_x.
     out_dir : str
         Directory in which to store the output files.
@@ -469,7 +469,9 @@ def make_inj_info(workflow, injection_file, injection_index, num, out_dir,
     files += node.output_files
     return files
 
-def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, tags=None):
+def make_coinc_info(workflow, singles, bank, coinc, out_dir,
+                    n_loudest=None, trig_id=None, file_substring=None,
+                    tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_coincinfo'
@@ -479,7 +481,12 @@ def make_coinc_info(workflow, singles, bank, coinc, num, out_dir, tags=None):
     node.add_input_list_opt('--single-trigger-files', singles)
     node.add_input_opt('--statmap-file', coinc)
     node.add_input_opt('--bank-file', bank)
-    node.add_opt('--n-loudest', str(num))
+    if n_loudest is not None:
+        node.add_opt('--n-loudest', str(n_loudest))
+    if trig_id is not None:
+        node.add_opt('--trigger-id', str(trig_id))
+    if file_substring is not None:
+        node.add_opt('--statmap-file-subspace-name', file_substring)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     files += node.output_files
@@ -530,18 +537,98 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=
     return files
 
     
-def make_singles_timefreq(workflow, single, bank_file, start, end, out_dir,
-                          veto_file=None, tags=None):
+def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
+                          veto_file=None, time_window=10, data_segments=None,
+                          tags=None):
+    """ Generate a singles_timefreq node and add it to workflow.
+
+    This function generates a single node of the singles_timefreq executable
+    and adds it to the current workflow. Parent/child relationships are set by
+    the input/output files automatically.
+
+    Parameters
+    -----------
+    workflow: pycbc.workflow.core.Workflow
+        The workflow class that stores the jobs that will be run.
+    single: pycbc.workflow.core.File instance
+        The File object storing the single-detector triggers to followup.
+    bank_file: pycbc.workflow.core.File instance
+        The File object storing the template bank.
+    trig_time: int
+        The time of the trigger being followed up.
+    out_dir: str
+        Location of directory to output to
+    veto_file: File (optional, default=None)
+        If given use this file to veto triggers to determine the loudest event.
+        FIXME: Veto files *should* be provided a definer argument and not just
+        assume that all segments should be read.
+    time_window: int (optional, default=None)
+        The amount of data (not including padding) that will be read in by the
+        singles_timefreq job. The default value of 10s should be fine for most
+        cases.
+    data_segments: glue.segments.segmentlist (optional, default=None)
+        The list of segments for which data exists and can be read in. If given
+        the start/end times given to singles_timefreq will be adjusted if
+        [trig_time - time_window, trig_time + time_window] does not completely
+        lie within a valid data segment. A ValueError will be raised if the
+        trig_time is not within a valid segment, or if it is not possible to
+        find 2*time_window (plus the padding) of continuous data around the
+        trigger. This **must** be coalesced.
+    tags: list (optional, default=None)
+        List of tags to add to the created nodes, which determine file naming.
+    """
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'plot_singles_timefreq'
 
-    node = PlotExecutable(workflow.cp, name, ifos=[single.ifo],
-                          out_dir=out_dir, tags=tags).create_node()
+    curr_exe = PlotExecutable(workflow.cp, name, ifos=[single.ifo],
+                          out_dir=out_dir, tags=tags)
+    node = curr_exe.create_node()
     node.add_input_opt('--trig-file', single)
     node.add_input_opt('--bank-file', bank_file)
+
+    # Determine start/end times, using data segments if needed.
+    # Begin by choosing "optimal" times
+    start = trig_time - time_window
+    end = trig_time + time_window
+    # Then if data_segments is available, check against that, and move if
+    # needed
+    if data_segments is not None:
+        # Assumes coalesced, so trig_time can only be within one segment
+        for seg in data_segments:
+            if trig_time in seg:
+                data_seg = seg
+                break
+        else:
+            err_msg = "Trig time {} ".format(trig_time)
+            err_msg += "does not seem to lie within any data segments. "
+            err_msg += "This shouldn't be possible, please ask for help!"
+            raise ValueError(err_msg)
+        # Check for pad-data
+        if curr_exe.has_opt('pad-data'):
+            pad_data = int(curr_exe.get_opt('pad-data'))
+        else:
+            pad_data = 0
+        if abs(data_seg) < (2 * time_window + 2 * pad_data):
+            tl = 2 * time_window + 2 * pad_data
+            err_msg = "I was asked to use {} seconds of data ".format(tl)
+            err_msg += "to run a plot_singles_timefreq job. However, I have "
+            err_msg += "only {} seconds available.".format(abs(data_seg))
+            raise ValueError(err_msg)
+        if data_seg[0] > (start - pad_data):
+            start = data_seg[0] + pad_data
+            end = start + 2 * time_window
+        if data_seg[1] < (end + pad_data):
+            end = data_seg[1] - pad_data
+            start = end - 2 * time_window
+        # Sanity check, shouldn't get here!
+        if data_seg[0] > (start - pad_data):
+            err_msg = "I shouldn't be here! Go ask Ian what he broke."
+            raise ValueError(err_msg)
+
     node.add_opt('--gps-start-time', int(start))
     node.add_opt('--gps-end-time', int(end))
+    node.add_opt('--center-time', int(trig_time))
     
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)

@@ -28,6 +28,7 @@ for parameter estimation.
 
 import numpy
 import scipy.stats
+import h5py
 from ConfigParser import Error
 import warnings
 from pycbc.inference import boundaries
@@ -42,8 +43,8 @@ def get_param_bounds_from_config(cp, section, tag, param):
 
     Minimum and maximum values for bounds are specified by adding
     `min-{param}` and `max-{param}` options, where `{param}` is the name of
-    the paramter. The types of boundary (open, closed, or reflected) to create
-    may also be specified by adding options `bytime-min-{param}` and
+    the parameter. The types of boundary (open, closed, or reflected) to create
+    may also be specified by adding options `btype-min-{param}` and
     `btype-max-{param}`. Cyclic conditions can be adding option
     `cyclic-{param}`. If no `btype` arguments are provided, the
     left bound will be closed and the right open.
@@ -51,14 +52,16 @@ def get_param_bounds_from_config(cp, section, tag, param):
     For example, the following will create right-open bounds for parameter
     `foo`:
 
-    .. code::
+    .. code-block:: ini
+
         [{section}-{tag}]
         min-foo = -1
         max-foo = 1
 
     This would make the boundaries cyclic:
 
-    .. code::
+    .. code-block:: ini
+
         [{section}-{tag}]
         min-foo = -1
         max-foo = 1
@@ -214,7 +217,9 @@ class _BoundedDist(object):
     def __init__(self, **params):
         # convert input bounds to Bounds class, if necessary
         for param,bnds in params.items():
-            if not isinstance(bnds, boundaries.Bounds):
+            if bnds is None:
+                params[param] = boundaries.Bounds()
+            elif not isinstance(bnds, boundaries.Bounds):
                 params[param] = boundaries.Bounds(bnds[0], bnds[1])
             # warn the user about reflected boundaries
             if isinstance(bnds, boundaries.Bounds) and (
@@ -344,8 +349,8 @@ class Uniform(_BoundedDist):
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
 
-    Class Attributes
-    ----------------
+    Attributes
+    ----------
     name : 'uniform'
         The name of this distribution.
 
@@ -360,39 +365,46 @@ class Uniform(_BoundedDist):
     lognorm : float
         The log of the normalization.
 
-    Example
-    -------
+    Examples
+    --------
     Create a 2 dimensional uniform distribution:
+
     >>> dist = prior.Uniform(mass1=(10.,50.), mass2=(10.,50.))
 
     Get the log of the pdf at a particular value:
+
     >>> dist.logpdf(mass1=25., mass2=10.)
-    -7.3777589082278725
+        -7.3777589082278725
 
     Do the same by calling the distribution:
+
     >>> dist(mass1=25., mass2=10.)
-    -7.3777589082278725
+        -7.3777589082278725
 
     Generate some random values:
+
     >>> dist.rvs(size=3)
-    array([(36.90885758394699, 51.294212757995254),
-           (39.109058546060346, 13.36220145743631),
-           (34.49594465315212, 47.531953033719454)], 
-          dtype=[('mass1', '<f8'), ('mass2', '<f8')])
+        array([(36.90885758394699, 51.294212757995254),
+               (39.109058546060346, 13.36220145743631),
+               (34.49594465315212, 47.531953033719454)], 
+              dtype=[('mass1', '<f8'), ('mass2', '<f8')])
     
     Initialize a uniform distribution using a boundaries.Bounds instance,
     with cyclic bounds:
+
     >>> dist = distributions.Uniform(phi=Bounds(10, 50, cyclic=True))
     
     Apply boundary conditions to a value:
+
     >>> dist.apply_boundary_conditions(phi=60.)
-    {'mass1': array(20.0)}
+        {'mass1': array(20.0)}
     
     The boundary conditions are applied to the value before evaluating the pdf;
     note that the following returns a non-zero pdf. If the bounds were not
     cyclic, the following would return 0:
+
     >>> dist.pdf(phi=60.)
-    0.025
+        0.025
     """
     name = 'uniform'
     def __init__(self, **params):
@@ -508,18 +520,17 @@ class UniformAngle(Uniform):
         in [0,2). These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
 
-    Class Attributes
+    Attributes
     ----------------
     name : 'uniform_angle'
         The name of this distribution.
-
-    Attributes
-    ----------
     params : list of strings
         The list of parameter names.
     bounds : dict
         A dictionary of the parameter names and their bounds, in radians.
 
+    Notes
+    ------
     For more information, see Uniform.
     """
     name = 'uniform_angle'
@@ -622,13 +633,10 @@ class SinAngle(UniformAngle):
         in [0,1]. These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
 
-    Class Attributes
+    Attributes
     ----------------
     name : 'sin_angle'
         The name of this distribution.
-
-    Attributes
-    ----------
     params : list of strings
         The list of parameter names.
     bounds : dict
@@ -712,13 +720,10 @@ class CosAngle(SinAngle):
         in [-0.5, 0.5]. These are converted to radians for storage.
         None may also be passed; in that case, the domain bounds will be used.
 
-    Class Attributes
+    Attributes
     ----------------
     name : 'cos_angle'
         The name of this distribution.
-
-    Attributes
-    ----------
     params : list of strings
         The list of parameter names.
     bounds : dict
@@ -754,13 +759,10 @@ class UniformSolidAngle(_BoundedDist):
         bounds should be specified as factors of pi. For example, to limit
         the distribution to the one hemisphere, set `azimuthal_bounds=(0,1)`.
 
-    Class Attributes
+    Attributes
     ----------------
     name : 'uniform_solidangle'
         The name of the distribution.
-
-    Attributes
-    ----------
     bounds : dict
         The bounds on each angle. The keys are the names of the polar and
         azimuthal angles, the values are the minimum and maximum of each, in
@@ -911,7 +913,8 @@ class UniformSolidAngle(_BoundedDist):
         must have the names of the polar and azimuthal angles in the tag part
         of the section header. For example:
 
-        .. code-block::
+        .. code-block:: ini
+
             [prior-theta+phi]
             name = uniform_solidangle
 
@@ -920,7 +923,8 @@ class UniformSolidAngle(_BoundedDist):
         each angle, set the `polar-angle` and `azimuthal-angle` attributes. For
         example: 
 
-        ..code-block::
+        .. code-block:: ini
+
             [prior-foo+bar]
             name = uniform_solidangle
             polar-angle = foo
@@ -932,7 +936,8 @@ class UniformSolidAngle(_BoundedDist):
         Bounds may also be specified for each angle, as factors of pi. For
         example:
 
-        .. code-block::
+        .. code-block:: ini
+
             [prior-theta+phi]
             polar-angle = theta
             azimuthal-angle = phi
@@ -1042,13 +1047,13 @@ class Gaussian(_BoundedDist):
         will be a normal, unbounded Gaussian (equivalent to setting the bounds
         to `[-inf, inf)`).
 
-    Class Attributes
+    Attributes
     ----------------
     name : 'guassian'
         The name of this distribution.
 
-    Example
-    -------
+    Examples
+    --------
     Create an unbounded Gaussian distribution with zero mean and unit variance:
     >>> dist = distributions.Gaussian(mass1=None)
 
@@ -1078,11 +1083,6 @@ class Gaussian(_BoundedDist):
         var_args = [p for p in params if p.endswith('_var')]
         self._mean = dict([[p[:-5], params.pop(p)] for p in mean_args])
         self._var = dict([[p[:-4], params.pop(p)] for p in var_args])
-        # if any param is set to None, make its bounds -inf, inf
-        for param in params:
-            if params[param] is None:
-                # Bounds defaults to -inf, inf
-                params[param] = boundaries.Bounds()
         # initialize the bounds
         super(Gaussian, self).__init__(**params)
 
@@ -1191,7 +1191,8 @@ class Gaussian(_BoundedDist):
         truncated Gaussian distribution between 0 and 6.28 for a parameter
         called `phi` with mean 3.14 and variance 0.5 that is cyclic:
 
-        .. code::
+        .. code-block:: ini
+
             [{section}-{tag}]
             min-phi = 0
             max-phi = 6.28
@@ -1219,6 +1220,457 @@ class Gaussian(_BoundedDist):
         return _bounded_from_config(cls, cp, section, variable_args,
             bounds_required=False)
 
+class FromFile(_BoundedDist):
+    """A distribution that reads the values of the parameter(s) from an hdf
+    file, computes the kde to construct the pdf, and draws random variables
+    from it.
+
+    Parameters
+    ----------
+    file_name : str
+        The path to an hdf file containing the values of the parameters that
+        want to be used to construct the distribution. Each parameter should
+        be a separate dataset in the hdf file, and all datasets should have
+        the same size. For example, to give a prior for mass1 and mass2 from
+        file f, f['mass1'] and f['mass2'] contain the n values for each
+        parameter.
+    \**params :
+        The keyword arguments should provide the names of the parameters to be
+        read from the file and (optionally) their bounds. If no parameters are
+        provided, it will use all the parameters found in the file. To provide
+        bounds, specify e.g. mass1=[10,100]. Otherwise, mass1=None.
+
+    Attributes
+    ----------
+    name : 'fromfile'
+        The name of the distribution.
+    file_name : str
+        The path to the file containing values for the parameter(s).
+    params : list
+        Parameters read from file.
+    norm : float
+        The normalization of the multi-dimensional pdf.
+    lognorm : float
+        The log of the normalization.
+    kde :
+        The kde obtained from the values in the file.
+    """
+    name = 'fromfile'
+    def __init__(self, file_name=None, **params):
+        if file_name is None:
+            raise ValueError('A file must be specified for this distribution.')
+        self._filename = file_name
+        # Get the parameter names to pass to get_kde_from_file
+        if len(params) == 0:
+            ps = None
+        else:
+            ps = params.keys()
+        pnames, self._kde = self.get_kde_from_file(file_name, params=ps)
+        # If no parameters where given, populate with pnames
+        for param in pnames:
+            if param not in params:
+                params[param] = None
+        super(FromFile, self).__init__(**params)
+        # Make sure to store parameter names in same order as given by kde function
+        self._params = pnames
+        # Compute the norm and save
+        lower_bounds = [self.bounds[p][0] for p in pnames]
+        higher_bounds = [self.bounds[p][1] for p in pnames]
+        # Avoid inf because of inconsistencies in integrate_box
+        RANGE_LIMIT = 2 ** 31
+        for ii, bnd in enumerate(lower_bounds):
+            if abs(bnd) == numpy.inf:
+                lower_bounds[ii] = numpy.sign(bnd) * RANGE_LIMIT
+        for ii, bnd in enumerate(higher_bounds):
+            if abs(bnd) == numpy.inf:
+                higher_bounds[ii] = numpy.sign(bnd) * RANGE_LIMIT
+        # Array of -inf for the lower limits in integrate_box
+        lower_limits = - RANGE_LIMIT * numpy.ones(shape=len(lower_bounds))
+        # CDF(-inf,b) - CDF(-inf, a)
+        invnorm = self._kde.integrate_box(lower_limits, higher_bounds) - \
+                    self._kde.integrate_box(lower_limits, lower_bounds)
+        self._norm = 1. / invnorm
+        self._lognorm = numpy.log(self._norm)
+
+    @property
+    def file_name(self):
+        return self._filename
+
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def norm(self):
+        return self._norm
+
+    @property
+    def lognorm(self):
+        return self._lognorm
+
+    @property
+    def kde(self):
+        return self._kde
+
+    def _pdf(self, **kwargs):
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored.
+        """
+        for p in self._params:
+            if p not in kwargs.keys():
+                raise ValueError('Missing parameter {} to construct pdf.'.format(p))
+        if kwargs in self:
+            # for scipy < 0.15.0, gaussian_kde.pdf = gaussian_kde.evaluate
+            this_pdf = self._norm * self._kde.evaluate([kwargs[p]
+                                                        for p in self._params])
+            if len(this_pdf) == 1:
+                return float(this_pdf)
+            else:
+                return this_pdf
+        else:
+            return 0.
+
+    def _logpdf(self, **kwargs):
+        """Returns the log of the pdf at the given values. The keyword
+        arguments must contain all of parameters in self's params.
+        Unrecognized arguments are ignored.
+        """
+        for p in self._params:
+            if p not in kwargs.keys():
+                raise ValueError('Missing parameter {} to construct pdf.'.format(p))
+        if kwargs in self:
+            # for scipy < 0.15.0,
+            # gaussian_kde.logpdf = numpy.log(gaussian_kde.evaluate)
+            this_logpdf = self._lognorm + \
+                          numpy.log(self._kde.evaluate([kwargs[p]
+                                                     for p in self._params]))
+            if len(this_logpdf) == 1:
+                return float(this_logpdf)
+            else:
+                return this_logpdf
+        else:
+            return -numpy.inf
+
+    def rvs(self, size=1, param=None):
+        """Gives a set of random values drawn from the kde.
+
+        Parameters
+        ----------
+        size : {1, int}
+            The number of values to generate; default is 1.
+        param : {None, string}
+            If provided, will just return values for the given parameter.
+            Otherwise, returns random values for each parameter.
+
+        Returns
+        -------
+        structured array
+            The random values in a numpy structured array. If a param was
+            specified, the array will only have an element corresponding to the
+            given parameter. Otherwise, the array will have an element for each
+            parameter in self's params.
+        """
+        if param is not None:
+            dtype = [(param, float)]
+        else:
+            dtype = [(p, float) for p in self.params]
+        arr = numpy.zeros(size, dtype=dtype)
+        randoms = self._kde.resample(size)
+        for order, param in enumerate(dtype):
+            arr[param[0]] = randoms[order]
+        return arr
+
+    @staticmethod
+    def get_kde_from_file(params_file, params=None):
+        """Reads the values of one or more parameters from an hdf file and
+        computes the kernel density estimate (kde).
+
+        Parameters
+        ----------
+        params_file : str
+            The hdf file that contains the values of the parameters.
+        params : {None, list}
+            If provided, will just use the values for the given parameter.
+            Otherwise, uses the values for each parameter in the file.
+        Returns
+        -------
+        values
+            Array with the values of the parameters.
+        kde
+            The kde from the parameters.
+        """
+        try:
+            f = h5py.File(params_file, 'r')
+        except:
+            raise ValueError('File not found.')
+        if params is not None:
+            if not isinstance(params, list):
+                params = [params]
+            for p in params:
+                if p not in f.keys():
+                    raise ValueError('Parameter {} is not in {}'.format(p, params_file))
+        else:
+            params = [str(k) for k in f.keys()]
+        params_values = {p:f[p][:] for p in params}
+        f.close()
+        values = numpy.vstack((params_values[p] for p in params))
+        return params, scipy.stats.gaussian_kde(values)
+
+    @classmethod
+    def from_config(cls, cp, section, variable_args):
+        """Returns a distribution based on a configuration file.
+
+        The parameters
+        for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
+
+        The file to construct the distribution from must be provided by setting
+        `file_name`. Boundary arguments can be provided in the same way as
+        described in `get_param_bounds_from_config`.
+
+        .. code-block:: ini
+
+            [{section}-{tag}]
+            name = fromfile
+            file_name = ra_prior.hdf
+            min-ra = 0
+            max-ra = 6.28
+
+        Parameters
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        variable_args : str
+            The names of the parameters for this distribution, separated by
+            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
+
+        Returns
+        -------
+        Uniform
+            A distribution instance from the pycbc.inference.prior module.
+        """
+        return super(FromFile, cls).from_config(cp, section, variable_args,
+                                                bounds_required=False)
+
+class UniformRadius(_BoundedDist):
+    r"""
+    For a uniform distribution in volume using spherical coordinates, this
+    is the distriubtion to use for the radius. The parameters are
+    independent of each other. Instances of this class can be called like
+    a function. By default, logpdf will be called, but this can be changed
+    by setting the class's __call__ method to its pdf method.
+
+    The cumulative distribution function (CDF) will be the ratio of volumes:
+
+    .. math::
+
+        F(r) = \frac{V(r)}{V(R)}
+
+    Where :math:`R` is the radius of the sphere. So we can write our
+    probability density function (PDF) as:
+
+    .. math::
+
+        f(r) = c r^n
+
+    For generality we use :math:`n` for the dimension of the volume element,
+    eg. :math:`n=2` for a 3-dimensional sphere. And use
+    :math:`c` as a general constant.
+
+    So now we calculate the CDF in general for this type of PDF:
+
+    .. math::
+
+        F(r) = \int f(r) dr = \int c r^n dr = \frac{1}{n + 1} c r^{n + 1} + k
+
+    Now with the definition of the CDF at radius 0 is equal to 0 and at
+    radius :math:`R` is equal to 1 we find that the constant from
+    integration is:
+
+    .. math::
+
+        0 = \frac{1}{n + 1} c (0)^{n + 1} + k
+
+    Can see that :math:`k=0`. And :math:`c` is:
+
+    .. math::
+
+        1 = \frac{1}{n + 1} c (R)^{n + 1}
+
+    Can see that :math:`c= \frac{n + 1}{R^{n + 1}}`. So can see that the CDF is:
+
+    .. math::
+
+        F(r) = \frac{1}{n + 1} \frac{n + 1}{R^{n + 1}} r^{n + 1} = (\frac{r}{R})^{n + 1}
+
+    And the PDF is the derivative of the CDF:
+
+    .. math::
+
+        f(r) = \frac{(n + 1)}{R} \left(\frac{r}{R} \right)^n
+
+    Now we use the probabilty integral transform method to get sampling on
+    uniform numbers from a continuous random variable. To do this we find
+    the inverse of the CDF evaluated for uniform numbers:
+
+    .. math::
+
+        F(r) = u = \left(\frac{r}{R}\right)^{n + 1}
+
+    And find :math:`F^{-1}(u)` gives:
+
+    .. math::
+
+        u = (\frac{r}{R})^{n + 1}
+
+    And solving for :math:`r` gives:
+
+    .. math::
+        r = R u^{\frac{1}{n + 1}}
+
+    Therefore the radius can be sampled by taking the n-th root of uniform
+    numbers and multiplying by the radius.
+
+    \**params :
+        The keyword arguments should provide the names of parameters and their
+        corresponding bounds, as either tuples or a `boundaries.Bounds`
+        instance.
+
+    Class Attributes
+    ----------------
+    name : 'uniform_radius'
+        The name of this distribution.
+    dim : int
+        The dimension of volume space. For a 3-dimensional sphere this is 3.
+
+    Attributes
+    ----------
+    params : list of strings
+        The list of parameter names.
+    bounds : dict
+        A dictionary of the parameter names and their bounds.
+    norm : float
+        The normalization of the multi-dimensional pdf.
+    lognorm : float
+        The log of the normalization.
+    """
+    name = 'uniform_radius'
+    dim = 3
+    def __init__(self, **params):
+        super(UniformRadius, self).__init__(**params)
+        self._norm = 1.0
+        self._lognorm = 0.0
+        for p in self._params:
+            if self._bounds[p][0] != 0:
+                raise ValueError("Lower bound must be 0 for %s" % p)
+            if not self.bounds[p][1] > 0:
+                raise ValueError("Upper bound must be greater than 0 "
+                                 "for %s" % p)
+            self._norm *= self.dim  / self._bounds[p][1]**(self.dim)
+            self._lognorm = numpy.log(self._norm)
+
+    @property
+    def norm(self):
+        return self._norm
+
+    @property
+    def lognorm(self):
+        return self._lognorm
+
+    def rvs(self, size=1, param=None):
+        """Gives a set of random values drawn from this distribution.
+
+        Parameters
+        ----------
+        size : {1, int}
+            The number of values to generate; default is 1.
+        param : {None, string}
+            If provided, will just return values for the given parameter.
+            Otherwise, returns random values for each parameter.
+
+        Returns
+        -------
+        structured array
+            The random values in a numpy structured array. If a param was
+            specified, the array will only have an element corresponding to the
+            given parameter. Otherwise, the array will have an element for each
+            parameter in self's params.
+        """
+        if param is not None:
+            dtype = [(param, float)]
+        else:
+            dtype = [(p, float) for p in self.params]
+        arr = numpy.zeros(size, dtype=dtype)
+        for (p,_) in dtype:
+            arr[p] = numpy.random.uniform(0.0, 1.0, size=size)
+            arr[p] = self._bounds[p][1] * numpy.power(arr[p], 1.0 / self.dim)
+        return arr
+
+    def _pdf(self, **kwargs):
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored.
+        """
+        for p in self._params:
+            if p not in kwargs.keys():
+                raise ValueError(
+                            'Missing parameter {} to construct pdf.'.format(p))
+        if kwargs in self:
+            pdf = self._norm * \
+                  numpy.prod([(kwargs[p])**(self.dim - 1)
+                              for p in self._params])
+            return float(pdf)
+        else:
+            return 0.0
+
+    def _logpdf(self, **kwargs):
+        """Returns the log of the pdf at the given values. The keyword
+        arguments must contain all of parameters in self's params. Unrecognized
+        arguments are ignored.
+        """
+        for p in self._params:
+            if p not in kwargs.keys():
+                raise ValueError(
+                            'Missing parameter {} to construct pdf.'.format(p))
+        if kwargs in self:
+            log_pdf = self._lognorm + \
+                      (self.dim - 1) * \
+                      numpy.log([kwargs[p] for p in self._params]).sum()
+            return log_pdf
+        else:
+            return -numpy.inf
+
+    @classmethod
+    def from_config(cls, cp, section, variable_args):
+        """Returns a distribution based on a configuration file. The parameters
+        for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
+
+        Parameters
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        variable_args : str
+            The names of the parameters for this distribution, separated by
+            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
+
+        Returns
+        -------
+        Uniform
+            A distribution instance from the pycbc.inference.prior module.
+        """
+        return super(UniformRadius, cls).from_config(cp, section,
+                                                       variable_args,
+                                                       bounds_required=True)
 
 distribs = {
     Uniform.name : Uniform,
@@ -1227,7 +1679,9 @@ distribs = {
     SinAngle.name : SinAngle,
     UniformSolidAngle.name : UniformSolidAngle,
     UniformSky.name : UniformSky,
+    UniformRadius.name : UniformRadius,
     Gaussian.name : Gaussian,
+    FromFile.name : FromFile,
 }
 
 def read_distributions_from_config(cp, section="prior"):

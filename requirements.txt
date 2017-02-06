@@ -42,7 +42,7 @@ python-dateutil==2.4.2
 pytz==2015.6
 requests==1.2.3
 setuptools==18.2
-six==1.9.0
+six==1.10.0
 snowballstemmer==1.2.0
 Sphinx==1.3.1
 sphinx-rtd-theme==0.1.9

@@ -18,7 +18,7 @@ If you use any code from PyCBC in a scientific publication, then we ask that
 it is cited in the following way:
 
 ```
-These results were generating using the PyCBC software package
+These results were generated using the PyCBC software package
 \cite{Canton:2014ena,Usman:2015kfa,pycbc-software}
 ```
 
@@ -67,7 +67,7 @@ Bibtex keys for the citations ``Canton:2014ena`` and ``Usman:2015kfa`` are
       SLACcitation   = "%%CITATION = ARXIV:1508.02357;%%"
 }
 ```
-
-[![PyPI version](https://badge.fury.io/py/pycbc.svg)](http://badge.fury.io/py/pycbc)
+[![PyPI version](https://badge.fury.io/py/PyCBC.svg)](https://badge.fury.io/py/PyCBC)
 [![Build Status](https://travis-ci.org/ligo-cbc/pycbc.svg?branch=master)](https://travis-ci.org/ligo-cbc/pycbc)
 [![Code Health](https://landscape.io/github/ligo-cbc/pycbc/master/landscape.svg?style=flat)](https://landscape.io/github/ligo-cbc/pycbc/master)
+[![Research software impact](http://depsy.org/api/package/pypi/PyCBC/badge.svg)](http://depsy.org/package/python/PyCBC)

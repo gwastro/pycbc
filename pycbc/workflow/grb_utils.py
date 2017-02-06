@@ -34,6 +34,7 @@ import urlparse, urllib
 from glue import segments
 from glue.ligolw import ligolw, lsctables, utils, ilwd
 from pycbc.workflow.core import File, FileList, resolve_url
+from pycbc.workflow.jobsetup import select_generic_executable
 
 
 def set_grb_start_end(cp, start, end):
@@ -229,3 +230,48 @@ def get_ipn_sky_files(workflow, file_url, tags=None):
 
     return sky_points_file
 
+def make_gating_node(workflow, datafind_files, outdir=None, tags=None):
+    '''
+    Generate jobs for autogating the data for PyGRB runs.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.core.Workflow
+        An instanced class that manages the constructed workflow.
+    datafind_files : pycbc.workflow.core.FileList
+        A FileList containing the frame files to be gated.
+    outdir : string
+        Path of the output directory
+    tags : list of strings
+        If given these tags are used to uniquely name and identify output files
+        that would be produced in multiple calls to this function.
+
+    Returns
+    --------
+    condition_strain_nodes : list
+        List containing the pycbc.workflow.core.Node objects representing the
+        autogating jobs.
+    condition_strain_outs : pycbc.workflow.core.FileList
+        FileList containing the pycbc.workflow.core.File objects representing
+        the gated frame files.
+    '''
+
+    cp = workflow.cp
+    if tags is None:
+        tags = []
+    
+    condition_strain_class = select_generic_executable(workflow,
+                                                       "condition_strain")
+    condition_strain_nodes = []
+    condition_strain_outs = FileList([])
+    for ifo in workflow.ifos:
+        input_files = FileList([datafind_file for datafind_file in \
+                                datafind_files if datafind_file.ifo == ifo])
+        condition_strain_jobs = condition_strain_class(cp, "condition_strain",
+                ifo=ifo, out_dir=outdir, tags=tags)
+        condition_strain_node, condition_strain_out = \
+                condition_strain_jobs.create_node(input_files, tags=tags)
+        condition_strain_nodes.append(condition_strain_node)
+        condition_strain_outs.extend(FileList([condition_strain_out]))
+
+    return condition_strain_nodes, condition_strain_outs

@@ -152,10 +152,11 @@ precalc_psd_files = wf.setup_psd_workflow(workflow, analyzable_segs,
                                             datafind_files, "psdfiles")
 
 # Template bank stuff
-bank_files = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
-                                         datafind_files, output_dir="bank",
-                                         psd_files=precalc_psd_files)
-hdfbank = wf.convert_bank_to_hdf(workflow, bank_files, "bank")
+hdfbank = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
+                                      datafind_files, output_dir="bank",
+                                      psd_files=precalc_psd_files,
+                                      return_format='hdf')
+
 splitbank_files_fd = wf.setup_splittable_workflow(workflow, hdfbank,
                                                   out_dir="bank",
                                                   tags=['full_data'])
@@ -353,22 +354,26 @@ for bin_file in bin_files:
                                   'daxes', currdir, tags=bin_file.tags)
 
 # Also run minifollowups on loudest sngl detector events
+excl_subsecs = set([])
+
+for insp_file in full_insps:
+    for tag in insp_file.tags:
+        excl_subsecs.add(tag)
+
 for insp_file in full_insps:
     curr_ifo = insp_file.ifo
-    currdir = rdir['single_triggers/%s_loudest_triggers' %(curr_ifo,)]
-    wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
-                                  insp_files_seg_file, data_analysed_name,
-                                  trig_generated_name, 'daxes', currdir,
-                                  veto_file=censored_veto,
-                                  veto_segment_name='closed_box',
-                                  tags=insp_file.tags)
-    currdir = rdir['single_triggers/%s_snglifo_triggers' %(curr_ifo,)]
-    wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
-                                  insp_files_seg_file, data_analysed_name,
-                                  trig_generated_name, 'daxes', currdir,
-                                  veto_file=censored_veto,
-                                  veto_segment_name='closed_box',
-                                  tags=insp_file.tags+['noncoinconly'])
+    for subsec in workflow.cp.get_subsections('workflow-sngl_minifollowups'):
+        if subsec in excl_subsecs:
+            continue
+        sec_name = 'workflow-sngl_minifollowups-{}'.format(subsec)
+        dir_str = workflow.cp.get(sec_name, 'section-header')
+        currdir = rdir['single_triggers/{}_{}'.format(curr_ifo, dir_str)]
+        wf.setup_single_det_minifollowups(workflow, insp_file, hdfbank[0],
+                                      insp_files_seg_file, data_analysed_name,
+                                      trig_generated_name, 'daxes', currdir,
+                                      veto_file=censored_veto,
+                                      veto_segment_name='closed_box',
+                                      tags=insp_file.tags + [subsec])
 
 ################## Setup segment / veto related plots #########################
 # do plotting of segments / veto times
@@ -499,7 +504,13 @@ for inj_file, tag in zip(inj_files, inj_tags):
     if len(f) > 0: layout.two_column_layout(rdir['injections/%s' % tag], inj_layout)
 
     # run minifollowups on nearest missed injections
-    currdir = rdir['injections/followup_of_missed_%s' % tag]
+    curr_dir_nam = 'injections/followup_of_{}'.format(tag)
+    if workflow.cp.has_option_tags('workflow-injection_minifollowups',
+                                   'subsection-suffix', tags=[tag]):
+        suf_str = workflow.cp.get_opt_tags('workflow-injection_minifollowups',
+                                           'subsection-suffix', tags=[tag])
+        curr_dir_nam += '_' + suf_str
+    currdir = rdir[curr_dir_nam]
     wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
                                      insps,  hdfbank[0], insp_files_seg_file,
                                      data_analysed_name, trig_generated_name,

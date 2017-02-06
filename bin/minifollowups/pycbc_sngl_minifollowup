@@ -17,9 +17,11 @@
 """ Followup foreground events
 """
 import os, sys, argparse, logging, h5py
+import numpy
 from glue.ligolw import lsctables, table
 from glue.ligolw import utils as ligolw_utils
 from pycbc.results import layout
+from pycbc.events import select_segments_by_definer
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
@@ -65,6 +67,12 @@ parser.add_argument('--non-coinc-time-only', default=False,
                     help="If given remove (veto) single-detector triggers "
                          "that occur during a time when at least one other "
                          "instrument is taking science data.")
+parser.add_argument('--minimum-duration', default=None, type=float,
+                    help="If given only consider single-detector triggers "
+                         "with template duration larger than this.")
+parser.add_argument('--maximum-duration', default=None, type=float,
+                    help="If given only consider single-detector triggers "
+                         "with template duration smaller than this.")
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
@@ -90,8 +98,11 @@ if args.veto_file is not None:
 else:
     veto_file = None
 insp_segs = to_file(args.inspiral_segments)
+insp_data_seglists = select_segments_by_definer\
+        (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
+         ifo=args.instrument)
 
-num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
+num_events = int(workflow.cp.get_opt_tags('workflow-sngl_minifollowups',
                  'num-sngl-events', ''))
 
 trigs = hdf.SingleDetTriggers(args.single_detector_file, args.bank_file,
@@ -113,6 +124,25 @@ if args.non_coinc_time_only:
             trigs.end_time, [args.inspiral_segments],
             ifo=ifo, segment_name=args.inspiral_data_analyzed_name)
         trigs.mask = trigs.mask[curr_veto_mask]
+
+def restrict_triggers_to_logic_mask(triggers, logic_mask):
+    if triggers.mask.dtype == 'bool':
+        orig_indices = triggers.mask.nonzero()[0][logic_mask]
+        triggers.mask = numpy.in1d(numpy.arange(len(triggers.mask)),
+                                                orig_indices,
+                                                assume_unique=True)
+    else:
+        triggers.mask = triggers.mask[logic_mask]
+
+if args.minimum_duration is not None:
+    durations = trigs.template_duration
+    lgc_mask = durations > args.minimum_duration
+    restrict_triggers_to_logic_mask(trigs, lgc_mask)
+if args.maximum_duration is not None:
+    durations = trigs.template_duration
+    lgc_mask = durations < args.maximum_duration
+    restrict_triggers_to_logic_mask(trigs, lgc_mask)
+    
 
 if len(trigs.snr) == 0:
     # There are no triggers, make no-op job and exit
@@ -173,7 +203,8 @@ for num_event in range(num_events):
                             tags=args.tags+[str(num_event)])
 
     files += mini.make_singles_timefreq(workflow, sngl_file, tmpltbank_file, 
-                            time - 10, time + 10, args.output_dir,
+                            time, args.output_dir,
+                            data_segments=insp_data_seglists,
                             tags=args.tags + [str(num_event)])                 
 
     files += mini.make_plot_waveform_plot(workflow, curr_params,

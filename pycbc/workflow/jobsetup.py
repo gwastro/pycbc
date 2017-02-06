@@ -34,11 +34,6 @@ import lal
 from glue import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
-from pycbc.workflow.legacy_ihope import (LegacyCohPTFInspiralExecutable,
-        LegacyCohPTFTrigCombiner, LegacyCohPTFTrigCluster,
-        LegacyCohPTFInjfinder, LegacyCohPTFInjcombiner,
-        LegacyCohPTFSbvPlotter, LegacyCohPTFEfficiency, PyGRBMakeSummaryPage)
-
 
 def int_gps_time_to_str(t):
     """Takes an integer GPS time, either given as int or lal.LIGOTimeGPS, and
@@ -101,7 +96,6 @@ def select_matchedfilter_class(curr_exe):
     """
     exe_to_class_map = {
         'pycbc_inspiral'          : PyCBCInspiralExecutable,
-        'lalapps_coh_PTF_inspiral': LegacyCohPTFInspiralExecutable,
         'pycbc_inspiral_skymax'   : PyCBCInspiralExecutable
     }
     try:
@@ -163,13 +157,7 @@ def select_generic_executable(workflow, exe_tag):
         "gstlal_inspiral_plot_background" : GstlalPlotBackground,
         "gstlal_inspiral_plotsummary"     : GstlalPlotSummary,
         "gstlal_inspiral_summary_page"    : GstlalSummaryPage,
-        "pylal_cbc_cohptf_trig_combiner" : LegacyCohPTFTrigCombiner,
-        "pylal_cbc_cohptf_trig_cluster"  : LegacyCohPTFTrigCluster,
-        "pylal_cbc_cohptf_injfinder"     : LegacyCohPTFInjfinder,
-        "pylal_cbc_cohptf_injcombiner"   : LegacyCohPTFInjcombiner,
-        "pylal_cbc_cohptf_sbv_plotter"   : LegacyCohPTFSbvPlotter,
-        "pylal_cbc_cohptf_efficiency"    : LegacyCohPTFEfficiency,
-        "pycbc_make_grb_summary_page"  : PyGRBMakeSummaryPage
+        "pycbc_condition_strain"         : PycbcConditionStrainExecutable
     }
     try:
         return exe_to_class_map[exe_name]
@@ -730,18 +718,7 @@ class PyCBCInspiralExecutable(Executable):
         self.cp = cp
         self.set_memory(2000)
         self.injection_file = injection_file
-
-        try:
-            outtype = cp.get('workflow-matchedfilter', 'output-type')
-        except:
-            outtype = None
-
-        if outtype is None or 'xml' in outtype:
-            self.ext = '.xml.gz'
-        elif 'hdf' in outtype:
-            self.ext = '.hdf'
-        else:
-            raise ValueError('Invalid output type for PyCBC Inspiral: %s' % outtype)
+        self.ext = '.hdf'
 
         self.num_threads = 1
         if self.get_opt('processing-scheme') is not None:
@@ -753,10 +730,10 @@ class PyCBCInspiralExecutable(Executable):
         if tags is None:
             tags = []
         node = Node(self)
-        pad_data = int(self.get_opt('pad-data'))
-        if pad_data is None:
+        if not self.has_opt('pad-data'):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
+        pad_data = int(self.get_opt('pad-data'))
 
         if not dfParents:
             raise ValueError("%s must be supplied with data file(s)"
@@ -836,7 +813,7 @@ class PyCBCInspiralExecutable(Executable):
         segment_length = int(self.get_opt('segment-length'))
         pad_data = 0
         if self.has_opt('pad-data'):
-            pad_data += int(self.get_opt( 'pad-data'))
+            pad_data += int(self.get_opt('pad-data'))
 
         # NOTE: Currently the tapered data is ignored as it is short and
         #       will lie within the segment start/end pad. This means that
@@ -863,7 +840,6 @@ class PyCBCInspiralExecutable(Executable):
         valid_regions = []
         for nsegs in seg_ranges:
             analysis_length = (segment_length - start_pad - end_pad) * nsegs
-            data_length = analysis_length + pad_data * 2
             if not self.zero_padding:
                 data_length = analysis_length + pad_data * 2 \
                               + start_pad + end_pad
@@ -877,6 +853,19 @@ class PyCBCInspiralExecutable(Executable):
             if data_length < min_analysis_length: continue
             data_lengths += [data_length]
             valid_regions += [segments.segment(start, end)]
+        # If min_analysis_length is given, ensure that it is added as an option
+        # for job analysis length.
+        if min_analysis_length:
+            data_length = min_analysis_length
+            if not self.zero_padding:
+                start = pad_data + start_pad
+                end = data_length - pad_data - end_pad
+            else:
+                start = pad_data
+                end = data_length - pad_data
+            if end > start:
+                data_lengths += [data_length]
+                valid_regions += [segments.segment(start, end)]
 
         return data_lengths, valid_regions
 
@@ -1662,8 +1651,9 @@ class PycbcTimeslidesExecutable(Executable):
         return node
 
 class PycbcSplitBankExecutable(Executable):
-    """ The class responsible for creating jobs for pycbc_splitbank. """
+    """ The class responsible for creating jobs for pycbc_hdf5_splitbank. """
 
+    extension = '.hdf'
     current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, num_banks,
                  ifo=None, out_dir=None, universe=None):
@@ -1673,7 +1663,7 @@ class PycbcSplitBankExecutable(Executable):
 
     def create_node(self, bank, tags=None):
         """
-        Set up a CondorDagmanNode class to run lalapps_splitbank code
+        Set up a CondorDagmanNode class to run splitbank code
 
         Parameters
         ----------
@@ -1699,8 +1689,48 @@ class PycbcSplitBankExecutable(Executable):
             curr_tags = bank.tags + [curr_tag] + tags
             job_tag = bank.description + "_" + self.name.upper()
             out_file = File(bank.ifo_list, job_tag, bank.segment,
-                               extension=".hdf", directory=self.out_dir,
-                               tags=curr_tags, store_file=self.retain_files)
+                            extension=self.extension, directory=self.out_dir,
+                            tags=curr_tags, store_file=self.retain_files)
             out_files.append(out_file)
         node.add_output_list_opt('--output-filenames', out_files)
         return node
+
+class PycbcSplitBankXmlExecutable(PycbcSplitBankExecutable):
+    """ Subclass resonsible for creating jobs for pycbc_splitbank. """
+
+    extension='.xml.gz'
+
+class PycbcConditionStrainExecutable(Executable):
+    """ The class responsible for creating jobs for pycbc_condition_strain. """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None, universe=None,
+            tags=None):
+        super(PycbcConditionStrainExecutable, self).__init__(cp, exe_name, universe,
+              ifo, out_dir, tags)
+
+    def create_node(self, input_files, tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+        start_time = self.cp.get("workflow", "start-time")
+        end_time = self.cp.get("workflow", "end-time")
+        node.add_opt('--gps-start-time', start_time)
+        node.add_opt('--gps-end-time', end_time)
+        node.add_input_list_opt('--frame-files', input_files)
+
+        out_file = File(self.ifo, "gated",
+                        segments.segment(int(start_time), int(end_time)),
+                        directory=self.out_dir, store_file=self.retain_files,
+                        extension=input_files[0].name.split('.', 1)[-1],
+                        tags=tags)
+        node.add_output_opt('--output-strain-file', out_file)
+
+        out_gates_file = File(self.ifo, "output_gates",
+                              segments.segment(int(start_time), int(end_time)),
+                              directory=self.out_dir, extension='txt',
+                              store_file=self.retain_files, tags=tags)
+        node.add_output_opt('--output-gates-file', out_gates_file)
+
+        return node, out_file
+

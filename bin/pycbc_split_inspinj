@@ -7,8 +7,7 @@ import glue.ligolw.utils
 import glue.ligolw.table
 from glue.ligolw import ligolw, lsctables
 from itertools import cycle
-
-
+import pycbc.version
 
 
 # The following is required for reasons
@@ -17,7 +16,8 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 
 # Parse command line
 parser = argparse.ArgumentParser()
-
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("-n", "--num-splits", type=int,
                    help="Number of files to be generated")

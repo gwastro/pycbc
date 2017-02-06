@@ -42,6 +42,9 @@ parser.add_argument("--thin-start", type=int, default=None,
     help="Sample number to start collecting samples to plot.")
 parser.add_argument("--thin-interval", type=int, default=None,
     help="Interval to use for thinning samples.")
+parser.add_argument("--thin-end", type=int, default=None,
+    help="Sample number to stop collecting samples to plot. If none "
+         "provided, will stop at the last sample from the sampler.")
 
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
@@ -61,7 +64,8 @@ logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 logging.info("Reading input file")
 fp = InferenceFile(opts.input_file, "r")
 acceptance_fraction = fp.read_acceptance_fraction(thin_start=opts.thin_start,
-                                              thin_interval=opts.thin_interval)
+                                              thin_interval=opts.thin_interval,
+                                              thin_end=opts.thin_end)
 
 # plot acceptance rate and drawn values
 logging.info("Plotting acceptance fraction")

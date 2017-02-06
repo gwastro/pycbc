@@ -77,7 +77,7 @@ def _lalsim_td_waveform(**p):
     if p['dquad_mon2']:
         lalsimulation.SimInspiralWaveformParamsInsertPNTidaldQuadMon2(lal_pars, p['dquad_mon2'])
     if p['numrel_data']:
-        lalsimulation.SimInspiralSetNumrelData(lal_pars, str(p['numrel_data']))
+        lalsimulation.SimInspiralWaveformParamsInsertNumRelData(lal_pars, str(p['numrel_data']))
     if p['modes_choice']:
         lalsimulation.SimInspiralWaveformParamsInsertModesChoice(lal_pars, p['modes_choice'])
     if p['frame_axis']:
@@ -144,7 +144,7 @@ def _lalsim_fd_waveform(**p):
     if p['dquad_mon2']:
         lalsimulation.SimInspiralWaveformParamsInsertPNTidaldQuadMon2(lal_pars, p['dquad_mon2'])
     if p['numrel_data']:
-        lalsimulation.SimInspiralSetNumrelData(lal_pars, str(p['numrel_data']))
+        lalsimulation.SimInspiralWaveformParamsInsertNumRelData(lal_pars, str(p['numrel_data']))
     if p['modes_choice']:
         lalsimulation.SimInspiralWaveformParamsInsertModesChoice(lal_pars, p['modes_choice'])
     if p['frame_axis']:

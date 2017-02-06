@@ -128,7 +128,7 @@ total[0] = value;
 def inner_inline_real(self, other):
     x = _np.array(self._data, copy=False)
     y = _np.array(other, copy=False)
-    total = _np.array([0])
+    total = _np.array([0.], dtype=float64)
     N = len(self)
     inline(inner_code, ['x', 'y', 'total', 'N'], libraries=omp_libs,
            extra_compile_args=code_flags)
@@ -139,12 +139,9 @@ def inner(self, other):
     """
     cdtype = common_kind(self.dtype, other.dtype)
     if cdtype.kind == 'c':
-        acum_dtype = complex128
+        return _np.sum(self.data.conj() * other, dtype=complex128)
     else:
         return inner_inline_real(self, other)
-        acum_dtype = float64
-    return _np.sum(self.data.conj() * other, dtype=acum_dtype)
-    #return _np.vdot(self.data, other)
 
 def vdot(self, other):
     """ Return the inner product of the array with complex conjugation.

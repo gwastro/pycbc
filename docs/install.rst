@@ -102,7 +102,8 @@ To leave this virtual environment type
     
 which will return you to a regular shell.
 
-.. installinglalsuite::
+
+.. _installinglalsuite:
 
 ==============================================
 Installing lalsuite into a virtual environment
@@ -125,7 +126,7 @@ If you are running on a Scientific Linux 6 cluster, you need to install the HDF5
     mkdir -p $VIRTUAL_ENV/src
     cd $VIRTUAL_ENV/src
     pip install "nose>=1.0.0"
-    curl https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
+    curl https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
     tar -zxvf hdf5-1.8.12.tar.gz
     cd hdf5-1.8.12
     ./configure --prefix=$VIRTUAL_ENV/opt/hdf5-1.8.12
@@ -141,7 +142,8 @@ Make sure your versions of ``pip`` and ``setuptools`` are up to date by running 
 
 .. code-block:: bash
 
-    pip install --upgrade pip setuptools
+    pip install --upgrade pip
+    pip install --upgrade setuptools
 
 Install unittest2, python-cjson, and numpy with the command:
 
@@ -182,13 +184,13 @@ Next install the Pegasus WMS python libraries needed to build the workflows with
 
 .. code-block:: bash
 
-    pip install http://download.pegasus.isi.edu/pegasus/4.7.1/pegasus-python-source-4.7.1.tar.gz
+    pip install http://download.pegasus.isi.edu/pegasus/4.7.2/pegasus-python-source-4.7.2.tar.gz
 
-To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. At the moment, these are not available from the Python Package Index, so you will need to install them from a branch in Duncan's repository with the command
+To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. Install the 1.4.1 pre-release of these tools, run the command:
 
 .. code-block:: bash
 
-    pip install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
+    pip install git+https://github.com/ligovirgo/dqsegdb@clean_pip_install_1_4_1#egg=dqsegdb
 
 For uploading triggers to GraceDB at the end of the workflow you will need to have the gracedb client tools installed. The latest release is in pip
 
@@ -206,7 +208,15 @@ Installing a released version of PyCBC
 
     Make sure you have run the commands in the section :ref:`installinglalsuite` above to install unittest2 before installing PyCBC.
 
-To install a release of the code, determine the tag of the release that you want to install from the `list of PyCBC tags <https://github.com/ligo-cbc/pycbc/tags>`_. This example installs the v1.1.0 release. If you want to install a different release, change the command below accordingly:
+Releases of PyCBC are available from the `PyPi PyCBC page <https://pypi.python.org/pypi/PyCBC/1.6.0>`_. To install the latest release run the command
+
+.. code-block:: bash
+
+    pip install PyCBC
+
+To install an older version, use the `pip version specifier <https://packaging.python.org/glossary/#term-version-specifier>`_.
+
+To install a release of the code from GitHub, determine the tag of the release that you want to install from the `list of PyCBC tags <https://github.com/ligo-cbc/pycbc/tags>`_. This example installs the v1.1.0 release. If you want to install a different release, change the command below accordingly:
 
 .. code-block:: bash
 
@@ -274,11 +284,10 @@ To build the documentation from your virtual environment, first make sure that y
 
 .. code-block:: bash
 
-    pip install "Sphinx>=1.3.1"
+    pip install "Sphinx>=1.4.2"
     pip install numpydoc
     pip install sphinx-rtd-theme
     pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git@pypi_release#egg=sphinxcontrib-programoutput
-    pip install git+https://github.com/matplotlib/sampledoc.git@pypi_release#egg=sampledoc
     
 To generate the documentation, from the top level of the PyCBC source tree run
 

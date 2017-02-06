@@ -12,6 +12,7 @@ parser.add_argument('--injection-file',
                     help="The hdf injection file to plot", required=True)
 parser.add_argument('--axis-type', default='mchirp', choices=['mchirp',
                     'effective_spin', 'time', 'mtotal', 'mass_ratio'])
+parser.add_argument('--log-x', action='store_true', default=False)
 parser.add_argument('--distance-type', default='decisive_distance',
                     choices=['decisive_distance', 'dec_chirp_distance',
                              'chirp_distance', 'comb_optimal_snr',
@@ -158,6 +159,14 @@ plot.xlabel(labels[args.axis_type])
 plot.ylabel(labels[args.distance_type])
 plot.grid()
 
+if args.log_x:
+    # log x axis may fail for some choices, eg effective spin
+    ax.set_xscale('log')
+    xmax = 1.4 * max(vals[args.axis_type][missed].max(),
+                     vals[args.axis_type][found].max())
+    xmin = 0.7 * min(vals[args.axis_type][missed].min(),
+                     vals[args.axis_type][found].min())
+    plot.xlim(xmin, xmax)
 if args.log_distance:
     ax.set_yscale('log')
 

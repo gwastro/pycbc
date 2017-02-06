@@ -27,16 +27,7 @@ This modules provides functions for formatting values into strings for display.
 
 import numpy
 
-
-def mathjax_html_header():
-    """
-    Standard header to use for html pages to display latex math.
-    Returns
-    -------
-    header: str
-        The necessary html head needed to use latex on an html page.
-    """
-    return """
+mjax_header = """
 <script type="text/x-mathjax-config">
   MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$']]}});
 </script>
@@ -44,6 +35,17 @@ def mathjax_html_header():
     src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 """
+
+
+def mathjax_html_header():
+    """Standard header to use for html pages to display latex math.
+
+    Returns
+    -------
+    header: str
+        The necessary html head needed to use latex on an html page.
+    """
+    return mjax_header
 
 def drop_trailing_zeros(num):
     """
@@ -195,6 +197,7 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
         decs = error
     # now round the the appropriate number of sig figs
     valtxt = get_signum(value, decs)
+    valtxt = '{}{}'.format(minus_sign, valtxt)
 
     if include_error:
         if plus_error is None:
@@ -226,5 +229,5 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
                 txt = r'%s^{+%s}_{-%s}%s' %(valtxt, plus_err_txt,
                     minus_err_txt, powfactor)
     else:
-        txt = r'%s%s%s' %(minus_sign, valtxt, powfactor)
+        txt = r'%s%s' %(valtxt, powfactor)
     return txt 

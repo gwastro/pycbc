@@ -37,14 +37,15 @@ import pycbc.events
 import pycbc.frame
 import pycbc.filter
 from scipy.signal import kaiserord
- 
 
 def next_power_of_2(n):
     """Return the smallest integer power of 2 larger than the argument.
+
     Parameters
     ----------
     n : int
         A positive integer.
+
     Returns
     -------
     m : int
@@ -58,11 +59,13 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
                          threshold=50., cluster_window=5., corrupt_time=4.,
                          high_freq_cutoff=None, output_intermediates=False):
     """Automatic identification of loud transients for gating purposes.
+
     This function first estimates the PSD of the input time series using the
     FindChirp Welch method. Then it whitens the time series using that
     estimate. Finally, it computes the magnitude of the whitened series,
     thresholds it and applies the FindChirp clustering over time to the
     surviving samples.
+
     Parameters
     ----------
     strain : TimeSeries
@@ -89,10 +92,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
         frequency is used.
     output_intermediates : {bool, False}
         Save intermediate time series for debugging.
-    Returns
-    -------
     """
-
     logging.info('Autogating: tapering strain')
     taper_length = int(corrupt_time * strain.sample_rate)
     w = numpy.arange(taper_length) / float(taper_length)
@@ -185,6 +185,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
 def from_cli(opt, dyn_range_fac=1, precision='single',
              inj_filter_rejector=None):
     """Parses the CLI options related to strain data reading and conditioning.
+
     Parameters
     ----------
     opt : object
@@ -192,7 +193,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         required attributes  (gps-start-time, gps-end-time, strain-high-pass, 
         pad-data, sample-rate, (frame-cache or frame-files), channel-name, 
         fake-strain, fake-strain-seed, fake-strain-from-file, gating_file).
-
     dyn_range_fac: {float, 1}, optional
         A large constant to reduce the dynamic range of the strain.
     inj_filter_rejector: InjFilterRejector instance; optional, default=None
@@ -386,10 +386,12 @@ def from_cli_multi_ifos(opt, ifos, **kwargs):
 
 
 def insert_strain_option_group(parser, gps_times=True):
-    """
+    """ Add strain-related options to the optparser object.
+
     Adds the options used to call the pycbc.strain.from_cli function to an
     optparser as an OptionGroup. This should be used if you
     want to use these options in your code.
+
     Parameters
     -----------
     parser : object
@@ -521,12 +523,15 @@ def insert_strain_option_group_multi_ifo(parser):
     Adds the options used to call the pycbc.strain.from_cli function to an
     optparser as an OptionGroup. This should be used if you
     want to use these options in your code.
+
     Parameters
-    -----------    parser : object
+    -----------
+    parser : object
         OptionParser instance.
     """
 
-    data_reading_group = parser.add_argument_group("Options for obtaining h(t)",
+    data_reading_group_multi = parser.add_argument_group("Options for obtaining"
+                  " h(t)",
                   "These options are used for generating h(t) either by "
                   "reading from a file or by generating it. This is only "
                   "needed if the PSD is to be estimated from the data, ie. "
@@ -534,149 +539,158 @@ def insert_strain_option_group_multi_ifo(parser):
                   "supports reading from multiple ifos simultaneously.")
 
     # Required options
-    data_reading_group.add_argument("--gps-start-time", nargs='+',
+    data_reading_group_multi.add_argument("--gps-start-time", nargs='+',
                             action=MultiDetOptionAction, metavar='IFO:TIME',
                             help="The gps start time of the data "
                                  "(integer seconds)", type=int)
-    data_reading_group.add_argument("--gps-end-time", nargs='+', type=int,
+    data_reading_group_multi.add_argument("--gps-end-time", nargs='+', type=int,
                             action=MultiDetOptionAction, metavar='IFO:TIME',
                             help="The gps end time of the data "
                                  "(integer seconds)")
-    data_reading_group.add_argument("--strain-high-pass", nargs='+',
+    data_reading_group_multi.add_argument("--strain-high-pass", nargs='+',
                             action=MultiDetOptionAction,
                             type=float, metavar='IFO:FREQUENCY',
                             help="High pass frequency")
-    data_reading_group.add_argument("--pad-data", nargs='+',
+    data_reading_group_multi.add_argument("--pad-data", nargs='+',
                             action=MultiDetOptionAction,
                             type=int, metavar='IFO:LENGTH',
                             help="Extra padding to remove highpass corruption "
                                 "(integer seconds)")
-    data_reading_group.add_argument("--taper-data", nargs='+',
+    data_reading_group_multi.add_argument("--taper-data", nargs='+',
                             action=MultiDetOptionAction,
                             type=int, default=0, metavar='IFO:LENGTH',
                             help="Taper ends of data to zero using the "
                                 "supplied length as a window (integer seconds)")
-    data_reading_group.add_argument("--sample-rate", type=int, nargs='+',
+    data_reading_group_multi.add_argument("--sample-rate", type=int, nargs='+',
                             action=MultiDetOptionAction, metavar='IFO:RATE',
                             help="The sample rate to use for h(t) generation "
                                 " (integer Hz).")
-    data_reading_group.add_argument("--channel-name", type=str, nargs='+',
+    data_reading_group_multi.add_argument("--channel-name", type=str, nargs='+',
                             action=MultiDetOptionActionSpecial,
                             metavar='IFO:CHANNEL',
                             help="The channel containing the gravitational "
                                 "strain data")
 
     #Read from cache file
-    data_reading_group.add_argument("--frame-cache", type=str, nargs="+",
+    data_reading_group_multi.add_argument("--frame-cache", type=str, nargs="+",
                             action=MultiDetOptionAppendAction,
                             metavar='IFO:FRAME_CACHE',
                             help="Cache file containing the frame locations.")
 
     #Read from frame files
-    data_reading_group.add_argument("--frame-files", type=str, nargs="+",
+    data_reading_group_multi.add_argument("--frame-files", type=str, nargs="+",
                             action=MultiDetOptionAppendAction,
                             metavar='IFO:FRAME_FILES',
                             help="list of frame files")
 
+    # Use datafind to get frame files
+    data_reading_group_multi.add_argument("--frame-type", type=str, nargs="+",
+                                    action=MultiDetOptionAction,
+                                    metavar='IFO:FRAME_TYPE',
+                                    help="(optional) Replaces frame-files. "
+                                         "Use datafind to get the needed frame "
+                                         "file(s) of this type.")
+
     #Generate gaussian noise with given psd
-    data_reading_group.add_argument("--fake-strain", type=str, nargs="+",
+    data_reading_group_multi.add_argument("--fake-strain", type=str, nargs="+",
                             action=MultiDetOptionAction, metavar='IFO:CHOICE',
                             help="Name of model PSD for generating fake "
                             "gaussian noise. Choose from %s or zeroNoise" \
                             %((', ').join(pycbc.psd.get_lalsim_psd_list()),) )
-    data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
-                            nargs="+",
-                            action=MultiDetOptionAction, metavar='IFO:SEED',
+    data_reading_group_multi.add_argument("--fake-strain-seed", type=int,
+                            default=0, nargs="+", action=MultiDetOptionAction,
+                            metavar='IFO:SEED',
                             help="Seed value for the generation of fake "
                             "colored gaussian noise")
-    data_reading_group.add_argument("--fake-strain-from-file", nargs="+",
+    data_reading_group_multi.add_argument("--fake-strain-from-file", nargs="+",
                             action=MultiDetOptionAction, metavar='IFO:FILE',
                             help="File containing ASD for generating fake "
                             "noise from it.")
 
     #optional
-    data_reading_group.add_argument("--injection-file", type=str, nargs="+",
-                            action=MultiDetOptionAction, metavar='IFO:FILE',
+    data_reading_group_multi.add_argument("--injection-file", type=str,
+                            nargs="+", action=MultiDetOptionAction,
+                            metavar='IFO:FILE',
                             help="(optional) Injection file used to add "
                             "waveforms into the strain")
 
-    data_reading_group.add_argument("--sgburst-injection-file", type=str,
+    data_reading_group_multi.add_argument("--sgburst-injection-file", type=str,
                       nargs="+", action=MultiDetOptionAction,
                       metavar='IFO:FILE',
                       help="(optional) Injection file used to add "
                       "sine-Gaussian burst waveforms into the strain")
 
-    data_reading_group.add_argument("--ringdown-injection-file", type=str,
+    data_reading_group_multi.add_argument("--ringdown-injection-file", type=str,
                     nargs="+", action=MultiDetOptionAction, metavar='IFO:FILE',
                     help="(optional) Injection file used to add "
                            "ringdown-only waveforms into the strain.")
 
-    data_reading_group.add_argument("--injection-scale-factor", type=float,
-                    nargs="+", action=MultiDetOptionAction, metavar="IFO:VAL",
-                    default=1.,
+    data_reading_group_multi.add_argument("--injection-scale-factor",
+                    type=float, nargs="+", action=MultiDetOptionAction,
+                    metavar="IFO:VAL", default=1.,
                     help="Multiple injections by this factor "
                          "before injecting into the data.")
 
-    data_reading_group.add_argument("--gating-file", type=str,
+    data_reading_group_multi.add_argument("--gating-file", type=str,
                       nargs="+", action=MultiDetOptionAction,
                       metavar='IFO:FILE',
                       help="(optional) Text file of gating segments to apply."
                           " Format of each line is (all times in secs):"
                           "  gps_time zeros_half_width pad_half_width")
 
-    data_reading_group.add_argument('--autogating-threshold', type=float,
+    data_reading_group_multi.add_argument('--autogating-threshold', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SIGMA',
                                     help='If given, find and gate glitches '
                                          'producing a deviation larger than '
                                          'SIGMA in the whitened strain time '
                                          'series.')
-    data_reading_group.add_argument('--autogating-cluster', type=float,
+    data_reading_group_multi.add_argument('--autogating-cluster', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SECONDS', default=5.,
                                     help='Length of clustering window for '
                                          'detecting glitches for autogating.')
-    data_reading_group.add_argument('--autogating-width', type=float,
+    data_reading_group_multi.add_argument('--autogating-width', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SECONDS', default=0.25,
                                     help='Half-width of the gating window.')
-    data_reading_group.add_argument('--autogating-taper', type=float,
+    data_reading_group_multi.add_argument('--autogating-taper', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SECONDS', default=0.25,
                                     help='Taper the strain before and after '
                                          'each gating window over a duration '
                                          'of SECONDS.')
-    data_reading_group.add_argument('--autogating-pad', type=float,
+    data_reading_group_multi.add_argument('--autogating-pad', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SECONDS', default=16,
                                     help='Ignore the given length of whitened '
                                          'strain at the ends of a segment, to '
                                          'avoid filters ringing.')
 
-    data_reading_group.add_argument("--normalize-strain", type=float,
+    data_reading_group_multi.add_argument("--normalize-strain", type=float,
                      nargs="+", action=MultiDetOptionAction,
                      metavar='IFO:VALUE',
                      help="(optional) Divide frame data by constant.")
 
-    data_reading_group.add_argument("--zpk-z", type=float,
+    data_reading_group_multi.add_argument("--zpk-z", type=float,
                      nargs="+", action=MultiDetOptionAppendAction,
                      metavar='IFO:VALUE',
                      help="(optional) Zero-pole-gain (zpk) filter strain. "
                          "A list of zeros for transfer function")
 
-    data_reading_group.add_argument("--zpk-p", type=float,
+    data_reading_group_multi.add_argument("--zpk-p", type=float,
                      nargs="+", action=MultiDetOptionAppendAction,
                      metavar='IFO:VALUE',
                      help="(optional) Zero-pole-gain (zpk) filter strain. "
                          "A list of poles for transfer function")
 
-    data_reading_group.add_argument("--zpk-k", type=float,
+    data_reading_group_multi.add_argument("--zpk-k", type=float,
                      nargs="+", action=MultiDetOptionAppendAction,
                      metavar='IFO:VALUE',
                      help="(optional) Zero-pole-gain (zpk) filter strain. "
                          "Transfer function gain")
 
-    return data_reading_group
+    return data_reading_group_multi
 
 
 ensure_one_opt_groups = []
@@ -687,8 +701,11 @@ required_opts_list = ['--gps-start-time', '--gps-end-time',
                       '--channel-name']
 
 def verify_strain_options(opts, parser):
-    """Parses the strain data CLI options and verifies that they are consistent
+    """Sanity check provided strain arguments.
+
+    Parses the strain data CLI options and verifies that they are consistent
     and reasonable.
+
     Parameters
     ----------
     opt : object
@@ -704,8 +721,11 @@ def verify_strain_options(opts, parser):
     required_opts(opts, parser, required_opts_list)
 
 def verify_strain_options_multi_ifo(opts, parser, ifos):
-    """Parses the strain data CLI options and verifies that they are consistent
+    """Sanity check provided strain arguments.
+
+    Parses the strain data CLI options and verifies that they are consistent
     and reasonable.
+
     Parameters
     ----------
     opt : object
@@ -725,10 +745,13 @@ def verify_strain_options_multi_ifo(opts, parser, ifos):
 
 
 def gate_data(data, gate_params):
-    """Apply a set of gating windows to a time series. Each gating window is
+    """Apply a set of gating windows to a time series.
+    
+    Each gating window is
     defined by a central time, a given duration (centered on the given
     time) to zero out, and a given duration of smooth tapering on each side of
     the window. The window function used for tapering is a Tukey window.
+
     Parameters
     ----------
     data : TimeSeries
@@ -740,6 +763,7 @@ def gate_data(data, gate_params):
         Tukey tapering on each side. All times in seconds. The total duration
         of the data affected by one gating window is thus twice the second
         parameter plus twice the third parameter.
+
     Returns
     -------
     data: TimeSeries
@@ -863,7 +887,7 @@ class StrainSegments(object):
             self.analyze_slices.append(ana_slice)
 
         # The last segment takes up any integer boundary slop
-        seg_end = data_end
+        seg_end = int(data_end)
         seg_start = int(seg_end - seg_len * strain.sample_rate)
         seg_slice = slice(seg_start, seg_end)
         self.segment_slices.append(seg_slice)
@@ -903,8 +927,10 @@ class StrainSegments(object):
 
             if filter_inj_only and hasattr(strain, 'injections'):
                 analyze_this = False
+                inj_window = strain.sample_rate * 8
                 for inj_id in inj_idx:
-                    if inj_id < cum_end and inj_id > cum_start:
+                    if inj_id < (cum_end + inj_window) and \
+                            inj_id > (cum_start - inj_window):
                         analyze_this = True
 
                 if not analyze_this:
@@ -1093,14 +1119,15 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                  force_update_cache=True,
                  increment_update_cache=None,
                  analyze_flags=None,
+                 data_quality_flags=None,
                  ):
         """ Class to produce overwhitened strain incrementally
         
         Parameters
-        ---------
+        ----------
         frame_src: str of list of strings
             Strings that indicate where to read from files from. This can be a
-        list of frame files, a glob, etc.
+            list of frame files, a glob, etc.
         channel_name: str
             Name of the channel to read from the frame files
         start_time: 
@@ -1123,10 +1150,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             The number of seconds in each psd sample.
         psd_inverse_length: {float, 3.5}, Optional
             The length in seconds for fourier transform of the inverse of the
-        PSD to be truncated to.
+            PSD to be truncated to.
         trim_padding: {float, 0.25}, Optional
             Amount of padding in seconds to give for truncated the overwhitened
-        data stream.
+            data stream.
         autogating_threshold: {float, 100}, Optional
             Sigma deviation required to cause gating of data
         autogating_cluster: {float, 0.25}, Optional
@@ -1143,20 +1170,23 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Scale factor to apply to strain
         psd_abort_difference: {float, None}, Optional
             The relative change in the inspiral range from the previous PSD
-        estimate to trigger the data to be considered invalid.
+            estimate to trigger the data to be considered invalid.
         psd_recalculate_difference: {float, None}, Optional
             the relative change in the inspiral range from the previous PSD
-        to trigger a re-estimatoin of the PSD.
+            to trigger a re-estimatoin of the PSD.
         force_update_cache: {boolean, True}, Optional
             Re-check the filesystem for frame files on every attempt to 
-        read more data.
+            read more data.
         analyze_flags: list of strs
             The flags that must be on to mark the current data as valid for
-        *any* use.
+            *any* use.
+        data_quality_flags: list of strs
+            The flags used to determine if to keep triggers.
         increment_update_cache: {str, None}, Optional
             Pattern to look for frame files in a GPS dependent directory. This
-        is an alternate to the forced updated of the frame cache, and attempts
-        to predict the next frame file name without probing the filesystem.
+            is an alternate to the forced updated of the frame cache, and
+            apptempts to predict the next frame file name without probing the
+            filesystem.
         """ 
         super(StrainBuffer, self).__init__(frame_src, channel_name, start_time,
                                            max_buffer=max_buffer,
@@ -1165,18 +1195,33 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         self.low_frequency_cutoff = low_frequency_cutoff
 
-        # Set the state channel buffer
-        self.state_channel = state_channel
-        self.data_quality_channel = data_quality_channel
+        # Set up status buffers
         self.analyze_flags = analyze_flags
+        self.data_quality_flags = data_quality_flags
         self.state = None
-        if 'None' not in self.state_channel:
+        self.dq = None
+
+        # State channel
+        if state_channel is not None:
             valid_mask = 0
             for flag in self.analyze_flags:
                 valid_mask = valid_mask | getattr(pycbc.frame, flag)
             self.state = pycbc.frame.StatusBuffer(
                 frame_src,
                 state_channel, start_time,
+                max_buffer=max_buffer,
+                valid_mask=valid_mask,
+                force_update_cache=force_update_cache,
+                increment_update_cache=increment_update_cache)
+
+        # low latency dq channel
+        if data_quality_channel is not None:
+            valid_mask = 0
+            for flag in self.data_quality_flags:
+                valid_mask = valid_mask | getattr(pycbc.frame, flag)
+            self.dq = pycbc.frame.StatusBuffer(
+                frame_src,
+                data_quality_channel, start_time,
                 max_buffer=max_buffer,
                 valid_mask=valid_mask,
                 force_update_cache=force_update_cache,
@@ -1291,6 +1336,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
     def overwhitened_data(self, delta_f):
         """ Return overwhitened data
+
         Parameters
         ----------
         delta_f: float
@@ -1349,8 +1395,25 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         stilde = self.segments[delta_f]
         return stilde  
 
+    def near_hwinj(self):
+        """Check that the current set of triggers could be influenced by
+        a hardware injection.
+
+        Parameters
+        ----------
+        data_reader: dict of StrainBuffers
+            A dict of StrainBuffer instances, indexed by ifos.
+        """
+        if not self.state:
+            return False
+
+        if not self.state.is_extent_valid(self.start_time, self.blocksize, pycbc.frame.NO_HWINJ):
+            return True
+        return False
+
     def null_advance_strain(self, blocksize):
         """ Advance and insert zeros
+
         Parameters
         ----------
         blocksize: int
@@ -1368,12 +1431,16 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.taper_immediate_strain = True
        
     def advance(self, blocksize, timeout=10):
-        """ Add blocksize seconds more to the buffer, push blocksize seconds
+        """Advanced buffer blocksize seconds.
+
+        Add blocksize seconds more to the buffer, push blocksize seconds
         from the beginning.
+
         Parameters
         ----------
         blocksize: int
             The number of seconds to attempt to read from the channel
+
         Returns
         -------
         status: boolean
@@ -1385,9 +1452,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         # We have given up so there is no time series
         if ts is None:
             logging.info("Giving on up frame...")
+            self.null_advance_strain(blocksize)
             if self.state:
                 self.state.null_advance(blocksize)
-                self.null_advance_strain(blocksize)
+            if self.dq:
+                self.dq.null_advance(blocksize)
             return False
 
         # We collected some data so we are closer to being able to analyze data
@@ -1398,8 +1467,14 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if self.state and self.state.advance(blocksize) is False:
             self.add_hard_count()
             self.null_advance_strain(blocksize)
+            if self.dq:
+                self.dq.null_advance(blocksize)
             logging.info("Time has invalid data, resetting buffer")
             return False
+
+        # Also advance the dq vector in lockstep
+        if self.dq:
+            self.dq.advance(blocksize)            
 
         self.segments = {}
 
@@ -1435,10 +1510,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.strain.start_time += blocksize
 
         # apply gating if need be: NOT YET IMPLEMENTED
-        # if DQ vector says the new bit of strain is has some invalid part
-        # return false so it is not analyzed (but may be used for PSD).
-        # This behavior is equivelant to how we handle CAT2 vetoes.
-
         if self.psd is None and self.wait_duration <=0:
             self.recalculate_psd()
 
@@ -1446,5 +1517,3 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             return False
         else:
             return True
-
-

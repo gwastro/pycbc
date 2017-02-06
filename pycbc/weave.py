@@ -38,7 +38,7 @@ def pycbc_compile_function(code,arg_names,local_dict,global_dict,
     """
     from scipy.weave.inline_tools import _compile_function
     headers = [] if headers is None else headers
-    lockfile_dir = pycbc._cache_dir_path
+    lockfile_dir = os.environ['PYTHONCOMPILED']
     lockfile_name = os.path.join(lockfile_dir, 'code_lockfile')
     logging.info("attempting to aquire lock '%s' for "
                  "compiling code" % lockfile_name)
@@ -136,6 +136,8 @@ def verify_weave_options(opt, parser):
         sys.path = [cache_dir] + sys.path
         try: os.makedirs(cache_dir)
         except OSError: pass
+        if not os.environ.get("LAL_DATA_PATH", None):
+            os.environ['LAL_DATA_PATH'] = cache_dir
 
     # Check whether to use a private directory for scipy.weave
     if opt.per_process_weave_cache:

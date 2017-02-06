@@ -456,7 +456,7 @@ to specific configuration files managed for an analysis. For example, to
 generate a workflow to search two weeks of S6D data and place the results in
 your ``public_html`` directory, run the command::
 
-    pycbc_make_hdf_coinc_workflow --workflow-name s6d_chunk3 --output-dir output \
+    pycbc_make_coinc_search_workflow --workflow-name s6d_chunk3 --output-dir output \
       --config-files https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/s6_run_pycbc_er8_pre_release.ini \
       https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/executables.ini \
       https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/injections.ini \
@@ -469,7 +469,7 @@ set the output web page location.
 
 .. note::
 
-   To use released exectutables for production analysis, you should specify
+   To use released executables for production analysis, you should specify
    the URL to an ``executables.ini`` file from the 
    `PyCBC Software repository <https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software>`_.
 
@@ -493,7 +493,7 @@ determine the correct tags. These can be applied by adding the following line
 to your submit invocation.
 
 For example, to plan and submit the workflow in the example above, change to the directory that you specified with the ``--output``
-command line option to ``pycbc_make_hdf_coinc_workflow`` and plan and submit
+command line option to ``pycbc_make_coinc_search_workflow`` and plan and submit
 the workflow::
 
     cd output
@@ -617,15 +617,15 @@ Generate the full workflow you want to do
 -----------------------------------------
 
 First generate the full workflow for the
-run you would like to do as normal. Follow the instructions of this page from :ref:`howtorunworkflow`,
-but stop before planning the workflow with plan.sh in :ref:`coincworkflowplan`.
+run you would like to do as normal. Follow the instructions of this page from :ref:`coincworkflowgenerate`,
+but stop before planning and submitting the workflow in :ref:`coincworkflowplan`.
 
 -----------------------------------------------------
 Select the files you want to reuse from the prior run
 -----------------------------------------------------
 
 Locate the directory of the run that you would like to reuse. There is a file
-called ``output.map`` in the directory that you specified with the
+ending in ``output.map`` in the directory that you specified with the
 ``--output`` argument to ``pycbc_make_coinc_search_workflow``. This file contains a 
 listing of all of the data products of the prior workflow, and can be used to tell
 pegasus to skip regenerating them.
@@ -705,7 +705,7 @@ Add the following to the list of ``--config-overrides`` when running ``pycbc_mak
     'pegasus_profile-inspiral:hints|execution.site:osg'
     'pegasus_profile-inspiral:pycbc|installed:False'
 
-You also need a ``--config-overrides`` to ``pycbc_make_coinc_search_workflow`` that sets the staging site for the main workflow to the local site. To do this, add the following argument, replacing ``${WORKFLOW_NAME}`` with the string that is given as the argument to the option ``--workflow-name ``::
+You also need a ``--config-overrides`` to ``pycbc_make_coinc_search_workflow`` that sets the staging site for the main workflow to the local site. To do this, add the following argument, replacing ``${WORKFLOW_NAME}`` with the string that is given as the argument to the option ``--workflow-name``::
 
     'workflow-${WORKFLOW_NAME}-main:staging-site:osg=local'
 

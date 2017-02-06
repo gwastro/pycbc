@@ -257,3 +257,16 @@ intersphinx_mapping = {'http://docs.python.org/': None}
 # Fix for WARNING: toctree references unknown document
 # http://stackoverflow.com/questions/12206334/sphinx-autosummary-toctree-contains-reference-to-nonexisting-document-warnings
 numpydoc_show_class_members = False
+numpydoc_class_members_toctree = False
+
+# Ensure that __init__ gets documented for classes ... Not sure why this isn't
+# done by default ...
+def skip(app, what, name, obj, skip, options):
+    if name == "__init__":
+        return False
+    return skip
+
+def setup(app):
+    app.connect("autodoc-skip-member", skip)
+
+suppress_warnings = ['image.nonlocal_uri']

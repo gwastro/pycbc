@@ -79,7 +79,7 @@ def mchirp_mass1_to_mass2(mchirp, mass1):
     real_root = roots[(abs(roots - roots.real)).argmin()]
     return real_root.real
 
-def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False):
+def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False, force_real=True):
     """
     This function takes values for eta and one component mass and returns the
     second component mass. Similar to mchirp_mass1_to_mass2 this requires
@@ -93,6 +93,8 @@ def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False):
     behaviour.
     """
     roots = numpy.roots([eta, (2*eta - 1)*mass1, mass1*mass1*eta])
+    if force_real:
+        roots = numpy.real(roots)
     if return_mass_heavier==False:
         return roots[roots.argmin()]
     else:
@@ -148,7 +150,7 @@ def mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(mass1, mass2,
     # the spin of the heaviest body first
     heavy_spin = numpy.where(mass2 <= mass1, spin1z, spin2z)
     light_spin = numpy.where(mass2 > mass1, spin1z, spin2z)
-    beta, sigma, gamma, xs = get_beta_sigma_from_aligned_spins(
+    beta, sigma, gamma = get_beta_sigma_from_aligned_spins(
         eta, heavy_spin, light_spin)
     return beta, sigma, gamma
 
@@ -189,7 +191,7 @@ def get_beta_sigma_from_aligned_spins(eta, spin1z, spin2z):
     gamma = (732985. / 2268. - 24260. / 81. * eta - \
             340. / 9. * eta * eta) * chiS
     gamma += (732985. / 2268. + 140. / 9. * eta) * delta * chiA
-    return beta, sigma, gamma, chiS
+    return beta, sigma, gamma
 
 def _get_phenomb_chi(m1, m2, s1z, s2z):
     """
@@ -585,7 +587,8 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
                     float(spin1), float(spin2)) for f in track_f])
     elif approximant in ['SEOBNRv4', 'SEOBNRv4_ROM']:
         f_high = get_final_freq('SEOBNRv4', mass1, mass2, spin1, spin2)
-        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
+        # use frequency below final freq in case of rounding error
+        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(0.999*f_high),
                                  n_points)
         track_t = numpy.array([
                 lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency(

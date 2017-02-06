@@ -41,9 +41,12 @@ class FrequencySeries(Array):
 
     Attributes
     ----------
-    delta_f
-    epoch
-    sample_frequencies
+    delta_f : float
+        Frequency spacing
+    epoch : lal.LIGOTimeGPS
+        Time at 0 index.
+    sample_frequencies : Array
+        Frequencies that each index corresponds to.
     """
 
     def __init__(self, initial_array, delta_f=None, epoch="", dtype=None, copy=True):
@@ -95,19 +98,22 @@ class FrequencySeries(Array):
         """Return frequency between consecutive samples in Hertz.
         """
         return self._delta_f
-    delta_f = property(get_delta_f)
+    delta_f = property(get_delta_f,
+                       doc="Frequency between consecutive samples in Hertz.")
 
     def get_epoch(self):
         """Return frequency series epoch as a LIGOTimeGPS.
         """
         return self._epoch
-    epoch = property(get_epoch)
+    epoch = property(get_epoch,
+                     doc="Frequency series epoch as a LIGOTimeGPS.")
 
     def get_sample_frequencies(self):
         """Return an Array containing the sample frequencies.
         """
         return Array(range(len(self))) * self._delta_f
-    sample_frequencies = property(get_sample_frequencies)
+    sample_frequencies = property(get_sample_frequencies,
+                                  doc="Array of the sample frequencies.")
 
     def __eq__(self,other):
         """

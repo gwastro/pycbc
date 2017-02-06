@@ -179,11 +179,6 @@ parser.add_argument('--psd-high-frequency-cutoff', type=float,
                     help='(optional) Upper frequency to terminate the SNR '
                          'calculation. Default will be Nyquist frequency, '
                          'ie. int(sample_rate/2).')
-parser.add_argument("--frame-type", type=str, nargs="+",
-                    action=MultiDetOptionAppendAction,
-                    metavar='IFO:FRAME_TYPE',
-                    help='(optional) Replaces frame-files. Use datafind '
-                         'to get the needed frame file(s) of this type.')
 
 # output options
 parser.add_argument("--tag", type=str, default='hwinjcbc',
@@ -355,6 +350,11 @@ for ifo in opts.instruments:
     # get Detector instance for IFO
     det = Detector(ifo)
 
+    # get time delay to detector from center of the Earth
+    time_delay = det.time_delay_from_earth_center(sim.longitude, sim.latitude,
+                                                  sim.geocent_end_time)
+    end_time = sim.geocent_end_time + time_delay
+
     # get antenna pattern
     f_plus, f_cross = det.antenna_pattern(sim.longitude, sim.latitude,
                                           sim.polarization,
@@ -410,7 +410,7 @@ for ifo in opts.instruments:
 network_snr = numpy.sqrt(network_snr)
 scale = network_snr / opts.network_snr
 sim.distance = scale*sim.distance
-for ifo in opt.instruments:
+for ifo in opts.instruments:
     attrname='eff_dist_'+ifo[0].lower()
     effdist=getattr(sim,attrname)
     setattr(sim,attrname,effdist*scale)

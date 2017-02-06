@@ -7,10 +7,10 @@ import pycbc.version
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
-parser.add_argument("--veto-files", nargs='*',
+parser.add_argument("--veto-files", nargs='*', action='append', default=[],
                     help="Optional veto file. Triggers within veto segments "
                     "contained in the file are ignored")
-parser.add_argument("--segment-name",
+parser.add_argument("--segment-name", nargs='*', action='append', default=[],
                     help="Optional, name of veto segment in veto file")
 parser.add_argument("--strict-coinc-time", action='store_true',
                     help="Optional, only allow coincidences between triggers "
@@ -48,6 +48,8 @@ args = parser.parse_args()
 
 # flatten the list of lists of filenames to a single list (may be empty)
 args.statistic_files = sum(args.statistic_files, [])
+args.segment_name = sum(args.segment_name, [])
+args.veto_files = sum(args.veto_files, [])
 
 if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
@@ -61,7 +63,7 @@ def parse_template_range(num_templates, rangestr):
     return tmin, tmax
 
 class ReadByTemplate(object):
-    def __init__(self, filename, bank=None, segment_name=None, veto_files=[]):
+    def __init__(self, filename, bank=None, segment_name=[], veto_files=[]):
         self.filename = filename
         self.file = h5py.File(filename, 'r')
         self.ifo = self.file.keys()[0]
@@ -74,11 +76,11 @@ class ReadByTemplate(object):
         key = '%s/search/' % self.ifo
         s, e = self.file[key + 'start_time'][:], self.file[key + 'end_time'][:]
         self.segs = veto.start_end_to_segments(s, e).coalesce()
-        for vfile in veto_files:
+        for vfile, name in zip(veto_files, segment_name):
             veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo,
-                                                     segment_name=segment_name)
+                                                     segment_name=name)
             self.segs = (self.segs - veto_segs).coalesce()
-            self.valid = veto.segments_to_start_end(self.segs)
+        self.valid = veto.segments_to_start_end(self.segs)
 
     def get_data(self, col, num):
         """ Get a column of data for template with id 'num'
