@@ -1,4 +1,4 @@
-#!/usr/bin/env python]
+#!/usr/bin/env python
 import argparse, numpy, numpy.random, pycbc, logging, cProfile, h5py, lal
 from pycbc import fft, version, waveform, types, filter as pfilter, scheme, psd as pypsd, noise, vetoes, strain, frame
 from pycbc.types import MultiDetOptionAction, zeros
