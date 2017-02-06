@@ -288,15 +288,14 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
     ifos = science_segs.keys()
     match_fltr_exe = os.path.basename(cp.get('executables','inspiral'))
 
-    # Select the appropriate class
-    exe_class = select_matchedfilter_class(match_fltr_exe)
-
     # List for holding the output
     inspiral_outs = FileList([])
 
     logging.info("Setting up matched-filtering for %s." %(' '.join(ifos),))
 
     if match_fltr_exe == 'lalapps_coh_PTF_inspiral':
+        from pylal.legacy_ihope import select_legacy_matchedfilter_class
+        exe_class = select_legacy_matchedfilter_class(match_fltr_exe)
         cp.set('inspiral', 'right-ascension', cp.get('workflow', 'ra'))
         cp.set('inspiral', 'declination', cp.get('workflow', 'dec'))
         cp.set('inspiral', 'sky-error', cp.get('workflow', 'sky-error'))
@@ -313,6 +312,8 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                                      science_segs, datafind_outs, output_dir,
                                      parents=tmplt_banks)
     else:
+        # Select the appropriate class
+        exe_class = select_matchedfilter_class(match_fltr_exe)
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
                                  out_dir=output_dir,
                                  injection_file=injection_file,

@@ -34,11 +34,6 @@ import lal
 from glue import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
-from pycbc.workflow.legacy_ihope import (LegacyCohPTFInspiralExecutable,
-        LegacyCohPTFTrigCombiner, LegacyCohPTFTrigCluster,
-        LegacyCohPTFInjfinder, LegacyCohPTFInjcombiner,
-        LegacyCohPTFSbvPlotter, LegacyCohPTFEfficiency, PyGRBMakeSummaryPage)
-
 
 def int_gps_time_to_str(t):
     """Takes an integer GPS time, either given as int or lal.LIGOTimeGPS, and
@@ -101,7 +96,6 @@ def select_matchedfilter_class(curr_exe):
     """
     exe_to_class_map = {
         'pycbc_inspiral'          : PyCBCInspiralExecutable,
-        'lalapps_coh_PTF_inspiral': LegacyCohPTFInspiralExecutable,
         'pycbc_inspiral_skymax'   : PyCBCInspiralExecutable
     }
     try:
@@ -163,13 +157,6 @@ def select_generic_executable(workflow, exe_tag):
         "gstlal_inspiral_plot_background" : GstlalPlotBackground,
         "gstlal_inspiral_plotsummary"     : GstlalPlotSummary,
         "gstlal_inspiral_summary_page"    : GstlalSummaryPage,
-        "pylal_cbc_cohptf_trig_combiner" : LegacyCohPTFTrigCombiner,
-        "pylal_cbc_cohptf_trig_cluster"  : LegacyCohPTFTrigCluster,
-        "pylal_cbc_cohptf_injfinder"     : LegacyCohPTFInjfinder,
-        "pylal_cbc_cohptf_injcombiner"   : LegacyCohPTFInjcombiner,
-        "pylal_cbc_cohptf_sbv_plotter"   : LegacyCohPTFSbvPlotter,
-        "pylal_cbc_cohptf_efficiency"    : LegacyCohPTFEfficiency,
-        "pycbc_make_grb_summary_page"    : PyGRBMakeSummaryPage,
         "pycbc_condition_strain"         : PycbcConditionStrainExecutable
     }
     try:
