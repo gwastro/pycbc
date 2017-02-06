@@ -1,0 +1,66 @@
+#!/bin/env python
+# Monitor the pycbc live process and log files to determine the state
+
+# Future
+# Actually check log file for errors and node specific problems
+# Monitor data transfer to sites as well
+
+import json
+import lal
+import argparse
+import time
+import os.path
+
+parser = argparse.ArgumentParser(
+    description="This scripts monitors the log file of the "
+    "PyCBC Live process. This is used to generate a json file that can be "
+    "picked up by nagios to determine if the PyCBC Live process has died.")
+parser.add_argument('--log-file',
+                   help="The pycbc live log file")
+parser.add_argument('--output-file',
+                   help="The JSON nagios status file")
+parser.add_argument('--check-interval', type=int,
+                   help="Time in seconds to wait before rechecking status")
+args = parser.parse_args()
+
+
+while 1:
+    everything_ok = True
+    status = {}
+    status['author'] = "Alexander Harvey Nitz"
+    status['email'] = "alex.nitz@ligo.org"
+    status['created_gps'] = int(lal.GPSTimeNow())
+
+    try:
+        tdiff = time.time() - os.path.getmtime(args.log_file)
+        # Check that the pycbc live logfile has been updated recently.
+        if tdiff >= 60: everything_ok = False
+    except:   
+        everything_ok = False 
+
+    if everything_ok:
+        status['status_intervals'] = \
+            [
+                {
+                    "num_status": 0,
+                    "txt_status": "OK: No reported problems",
+                    "start_sec": 0
+                },
+                {
+                    "num_status": 1,
+                    "txt_status": "WARNING: The process is slow to report.",
+                    "start_sec": 120
+                },
+                {
+                    "num_status": 3,
+                    "txt_status": "UNKNOWN: It has been 4 minutes. Has it died?",
+                    "start_sec": 240
+                }
+            ]
+    else:
+        status['status_intervals'] = [{"num_status": 2,
+                                       "txt_status": "PyCBC Live appears to be down!",
+                                      }]
+    open(args.output_file, 'w').write(json.dumps(status))
+    time.sleep(args.check_interval)
+    
