@@ -62,20 +62,6 @@ if h_inc_back_num > h_iterations:
     raise ValueError('User requested inclusive background after '
                      'hierarchical removals that does not exist!')
 
-#if args.h_iter_inc_background != None:
-#    h_inc_back_num = args.h_iter_inc_background
-#    if f.attrs['hierarchical_removal_iterations'] is not None:
-#        h_iterations = f.attrs['hierarchical_removal_iterations']
-#        if h_inc_back_num > h_iterations:
-#            raise ValueError('User requested inclusive background after '
-#                             'hierarchical removals that does not exist!')
-#else :
-#    if f.attrs['hierarchical_removal_iterations'] is not None:
-#        h_inc_back_num = f.attrs['hierarchical_removal_iterations']
-#        h_iterations = h_inc_back_num
-#    else :
-#        h_inc_back_num = 0
-
 if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
@@ -91,7 +77,6 @@ else:
     if len(fstat) == 0:
         fstat = None
 
-#if f.attrs['hierarchical_removal_iterations'] is not None:
 if h_inc_back_num == 0:
     bstat = f['background/stat'][:]
     fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
@@ -100,11 +85,6 @@ else :
     bstat = f['background_h%s/stat' % h_inc_back_num][:]
     fap = 1 - numpy.exp(- f.attrs['foreground_time_h%s' % h_inc_back_num] / f['background_h%s/ifar' % h_inc_back_num][:] / lal.YRJUL_SI)
     dec = f['background_h%s/decimation_factor' % h_inc_back_num][:]
-
-#else :
-#    bstat = f['background/stat'][:]
-#    fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
-#    dec = f['background/decimation_factor'][:]
 
 s = bstat.argsort()
 dec, bstat, fap = dec[s], bstat[s], fap[s]
@@ -140,7 +120,6 @@ pylab.hist(bstat_exc, bins=bins, histtype='step',
 
 # plot full background
 if not args.closed_box:
-#    if f.attrs['hierarchical_removal_iterations'] is not None:
     if h_inc_back_num == 0:
         pylab.hist(bstat, bins=bins, histtype='step',
                    linewidth=2,
@@ -153,18 +132,11 @@ if not args.closed_box:
                    color='black', log=True,
                    label='Full Background',
                    weights=dec / f.attrs['background_time_h%s' % h_inc_back_num] * lal.YRJUL_SI)
- #   else :
- #       pylab.hist(bstat, bins=bins, histtype='step',
- #                  linewidth=2,
- #                  color='black', log=True,
- #                  label='Full Background',
- #                  weights=dec / f.attrs['background_time'] * lal.YRJUL_SI)
 
 if fstat is not None and not args.closed_box:
     le, re = bins[:-1], bins[1:]
     # We need to plot a histogram "errorbar" with the hierarchically
     # removed foreground triggers in purple.
-#    if f.attrs['hierarchical_removal_iterations'] is not None:
     if h_iterations > 0 :
         fstat_h_rm = numpy.array([], dtype=float)
 
@@ -251,13 +223,10 @@ if not args.closed_box:
 ax1 =  pylab.gca()
 ax2 = ax1.twinx()
 
-#if f.attrs['hierarchical_removal_iterations'] is not None:
 if h_inc_back_num == 0:
     fac = f.attrs['foreground_time'] / lal.YRJUL_SI
 else :
     fac = f.attrs['foreground_time_h%s' % h_inc_back_num] / lal.YRJUL_SI
-#else:
-#    fac = f.attrs['foreground_time'] / lal.YRJUL_SI
 
 ymin = ax1.get_ylim()[0] * fac
 ymax =  ax1.get_ylim()[1] * fac
