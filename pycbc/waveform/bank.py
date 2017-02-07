@@ -247,7 +247,7 @@ class TemplateBank(object):
             **kwds):
         ext = os.path.basename(filename)
         self.compressed_waveforms = None
-        if ext.endswith('.xml') or ext.endswith('.xml.gz') or ext.endswith('.xmlgz'):
+        if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
             self.filehandler = None
             self.indoc = ligolw_utils.load_filename(
                 filename, False, contenthandler=LIGOLWContentHandler)
@@ -264,7 +264,7 @@ class TemplateBank(object):
             names = tuple([n if n!= 'alpha6' else 'f_lower' for n in names])
             self.table.dtype.names = names
 
-        elif ext.endswith('hdf'):
+        elif ext.endswith(('hdf', '.h5')):
             self.indoc = None
             f = h5py.File(filename, 'r')
             self.filehandler = f
