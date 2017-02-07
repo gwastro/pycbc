@@ -359,7 +359,7 @@ class MatchedFilterControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
-        norm = (4.0 * self.stilde.delta_f) / sqrt(template_norm)
+        norm = (4.0 * self.stilde_delta_f) / sqrt(template_norm)
         self.correlators[segnum].correlate()
         self.ifft.execute()
         snrv, idx = events.threshold_only(self.snr_mem[self.segments[segnum].analyze],
