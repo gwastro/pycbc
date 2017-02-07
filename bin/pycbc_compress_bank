@@ -31,7 +31,7 @@ import numpy
 import h5py
 import logging
 import pycbc
-import pycbc.psd
+from pycbc import psd, strain, DYN_RANGE_FAC
 from pycbc.waveform import compress
 from pycbc import waveform
 from pycbc.types import FrequencySeries, real_same_precision_as
@@ -50,9 +50,6 @@ parser.add_argument("--low-frequency-cutoff", type=float, required=True,
                     "the waveforms (Hz).")
 # add approximant arg
 pycbc.waveform.bank.add_approximant_arg(parser)
-parser.add_argument("--sample-rate", type=int, required=True,
-                    help="Half this value sets the maximum frequency of the "
-                    "compressed waveforms.")
 parser.add_argument("--tmplt-index", nargs=2, type=int, default=None,
                     help="Only generate compressed waveforms for the given "
                     "indices in the bank file. Must provide both a start "
@@ -82,19 +79,23 @@ parser.add_argument("--precision", type=str, choices=["double", "single"],
                     default="double",
                     help="What precision to generate and store the "
                     "waveforms with; default is double.")
-parser.add_argument("--psd-from-file", type=str,
-                    help="File from which psd would be read in to used "
-                    "in compress.py for calculating the overlap/match "
-                    "between the compressed and full waveforms. ")
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
                     "Otherwise, an error is raised.")
 parser.add_argument("--verbose", action="store_true", default=False)
 
+# Insert the PSD options
+pycbc.psd.insert_psd_option_group(parser)
+
+# Insert the data reading options
+pycbc.strain.insert_strain_option_group(parser)
 
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
+
+psd.verify_psd_options(args, parser)
+strain.verify_strain_options(args, parser)
 
 fmin = args.low_frequency_cutoff
 fmax = args.sample_rate/2.
@@ -135,6 +136,10 @@ output = bank.write_to_hdf(args.output, force=args.force,
 # get the compressed sample points for each template
 logging.info("getting compressed amplitude and phase")
 mismatches = numpy.zeros(imax-imin, dtype=float)
+
+# Create a dictionary to store the psd for every value of N that is used
+psd_dict = {}
+
 for ii in range(imin, imax):
     # update the N, df to use based on this waveform
     N = int(args.sample_rate*seg_lens[ii-imin])
@@ -154,18 +159,22 @@ for ii in range(imin, imax):
                          is required.""")
     tmplt = bank.table[ii-imin]
     kmax = htilde.end_idx
-    if args.psd_from_file :
-        logging.info("Generating psd for %d'th template", (ii-imin))
+    # calculate psd if psd options are provided as input to be used to
+    # compute the overlap between the full waveform and the decompressed
+    # waveform
+    try:
+        psd = psd_dict[N]
+    except KeyError:
         psd_length = int(args.sample_rate / df) / 2  + 1
-        psd = pycbc.psd.from_txt(args.psd_from_file, psd_length,
-                                 df, fmin, is_asd_file=False)
+        psd = pycbc.psd.from_cli(args, length=psd_length, delta_f=df,
+                                 low_frequency_cutoff=fmin,
+                                 dyn_range_factor=pycbc.DYN_RANGE_FAC)
         if args.precision == 'single' :
             psd_dtype=numpy.float32
         elif args.precision == 'double' :
             psd_dtype=numpy.float64
         psd = FrequencySeries(psd, delta_f=psd.delta_f, dtype=psd_dtype)
-    else :
-        psd = None
+        psd_dict[N] = psd
 
     # get the compressed sample points
     if args.compression_algorithm == 'mchirp':
