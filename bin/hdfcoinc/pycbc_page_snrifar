@@ -1,5 +1,7 @@
 #!/usr/bin/python
-""" Make table of the foreground coincident events
+""" Make cumulative histogram of foreground coincident events via rate vs
+    ranking statistic, or make statistical significance vs ranking statistic
+    cumulative histograms. 
 """
 import argparse, h5py, numpy, logging, sys, lal
 import matplotlib
