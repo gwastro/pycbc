@@ -757,16 +757,13 @@ echo -e "\\n\\n>> [`date`] building pycbc"
 if $scratch_pycbc || ! test -d pycbc/.git ; then
     # clone
     rm -rf pycbc
-    git clone git://github.com/ligo-cbc/pycbc
+    git clone -o ligo-cbc -n git://github.com/ligo-cbc/pycbc
     cd pycbc
-    git remote rename origin ligo-cbc
-    git remote add bema-ligo https://github.com/bema-ligo/pycbc.git
-    git remote update
-    git branch einsteinathome_testing bema-ligo/einsteinathome_testing
+    git checkout -b master ligo-cbc/master
     cd ..
 fi
 cd pycbc
-if test ".$pycbc_remote" = "ligo-cbc" || test ".$pycbc_remote" = "bema-ligo" ; then
+if test ".$pycbc_remote" = ".ligo-cbc" ; then
     :
 else
     git remote rm $pycbc_remote || true
@@ -782,6 +779,7 @@ elif test ".$pycbc_branch" = ".master" ; then
         git checkout $pycbc_commit
 else
     # checkout branch from scratch, master must and should exist
+    git reset --hard HEAD
     git checkout master
     git branch -D $pycbc_branch || true
     git remote update
