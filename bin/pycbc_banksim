@@ -391,7 +391,7 @@ logging.info("Determining maximum overlaps and outputting results")
 
 # Find the maximum overlap in the bank and output to a file
 with open(options.out_file, "w") as fout:
-    for i, (stilde, s_norm, matches, sim_template, hfc) in enumerate(signals):
+    for i, (stilde, s_norm, matches, sim_template) in enumerate(signals):
         match_str = "%5.5f " % max(matches)
         match_str += " " + options.bank_file
         match_str += " " + str(matches.index(max(matches)))
