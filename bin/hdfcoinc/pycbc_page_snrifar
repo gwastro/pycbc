@@ -106,16 +106,6 @@ if h_inc_back_num > h_iterations:
     raise ValueError('User requested inclusive background after '
                      'hierarchical removals that does not exist!')
 
-#if f.attrs['hierarchical_removal_iterations'] is not None:
-#    h_iterations = f.attrs['hierarchical_removal_iterations']
-#    if h_inc_back_num > h_iterations:
-#        h_inc_back_num = h_iterations
-#        logging.warn('User requested inclusive background iteration that does '
-#                     'not exist. Defaulting to last possible inclusive '
-#                     'background.')
-#else :
-#    h_inc_back_num = 0
-
 args.cumulative = not args.not_cumulative
 
 foreground_livetime = f.attrs['foreground_time'] / lal.YRJUL_SI
