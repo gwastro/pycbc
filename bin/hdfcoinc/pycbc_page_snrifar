@@ -63,8 +63,6 @@ parser.add_argument('--h-iter-inc-background', type=int, default=None,
                          'Choose other integers greater than this for other '
                          'inclusive backgrounds after hierarchical removal. '
                          '[default=None]')
-                         'with the foreground triggers if there were '
-                         'hierarchical removals done. [default=None]')
 parser.add_argument('--fg-marker', default='^',
                     help='Marker to use for the foreground triggers, '
                          '[default = ^]')
@@ -96,15 +94,27 @@ f = h5py.File(args.trigger_file, 'r')
 # Parse which inclusive background to use for the plotting
 h_inc_back_num = args.h_iter_inc_background
 
-if f.attrs['hierarchical_removal_iterations'] is not None:
+try:
     h_iterations = f.attrs['hierarchical_removal_iterations']
-    if h_inc_back_num > h_iterations:
-        h_inc_back_num = h_iterations
-        logging.warn('User requested inclusive background iteration that does '
-                     'not exist. Defaulting to last possible inclusive '
-                     'background.')
-else :
-    h_inc_back_num = 0
+except KeyError:
+    h_iterations = 0
+
+if h_inc_back_num is None:
+    h_inc_back_num = h_iterations
+
+if h_inc_back_num > h_iterations:
+    raise ValueError('User requested inclusive background after '
+                     'hierarchical removals that does not exist!')
+
+#if f.attrs['hierarchical_removal_iterations'] is not None:
+#    h_iterations = f.attrs['hierarchical_removal_iterations']
+#    if h_inc_back_num > h_iterations:
+#        h_inc_back_num = h_iterations
+#        logging.warn('User requested inclusive background iteration that does '
+#                     'not exist. Defaulting to last possible inclusive '
+#                     'background.')
+#else :
+#    h_inc_back_num = 0
 
 args.cumulative = not args.not_cumulative
 
@@ -120,6 +130,16 @@ try:
          cstat_fore = f['foreground/stat'][:]
          ssort = cstat_fore.argsort()
          cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
+         # Correct the foreground ifars depending on the values calculated
+         # under a particular inclusive background distribution.
+         if h_inc_back_num > 0:
+             ifar_h_inc = f['foreground_h%s/ifar' % h_inc_back_num][:]
+             stat_h_inc = f['foreground_h%s/stat' % h_inc_back_num][:]
+             for i in range(0, len(ifar_h_inc)):
+                 orig_idx = numpy.where(cstat_fore == stat_h_inc[i])[0][0]
+                 if orig_idx is not None:
+                     cstat_rate[orig_idx] = 1.0 / ifar_h_inc[i] \
+                                            * args.trials_factor
          cstat_rate = cstat_rate[ssort]
          cstat_fore = cstat_fore[ssort]
          cstat_fap = p_from_far(cstat_rate, foreground_livetime)
