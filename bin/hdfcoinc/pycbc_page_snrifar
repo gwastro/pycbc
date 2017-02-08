@@ -52,10 +52,19 @@ parser.add_argument('--trials-factor', type=int, default=1,
                          'divide from IFAR to account for look-elsewhere '
                          'effect. [default=1]')
 parser.add_argument('--no-sigma-shading', action='store_true')
-parser.add_argument('--h-iter-inc-background', type=int, default=0,
+parser.add_argument('--h-iter-inc-background', type=int, default=None,
                     help='Indicate which inclusive background to plot '
                          'with the foreground triggers if there were '
-                         'hierarchical removals done. [default=0]')
+                         'any hierarchical removals done. Choosing 0 '
+                         'or None indicates plotting the inclusive '
+                         'background prior to any hierarchical removals. '
+                         'Choosing 1 indicates the inclusive background '
+                         'after the loudest foreground trigger was removed. '
+                         'Choose other integers greater than this for other '
+                         'inclusive backgrounds after hierarchical removal. '
+                         '[default=None]')
+                         'with the foreground triggers if there were '
+                         'hierarchical removals done. [default=None]')
 parser.add_argument('--fg-marker', default='^',
                     help='Marker to use for the foreground triggers, '
                          '[default = ^]')
