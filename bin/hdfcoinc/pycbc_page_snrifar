@@ -53,16 +53,19 @@ parser.add_argument('--trials-factor', type=int, default=1,
                          'effect. [default=1]')
 parser.add_argument('--no-sigma-shading', action='store_true')
 parser.add_argument('--h-iter-inc-background', type=int, default=None,
-                    help='Indicate which inclusive background to plot '
-                         'with the foreground triggers if there were '
-                         'any hierarchical removals done. Choosing 0 '
-                         'or None indicates plotting the inclusive '
-                         'background prior to any hierarchical removals. '
-                         'Choosing 1 indicates the inclusive background '
-                         'after the loudest foreground trigger was removed. '
-                         'Choose other integers greater than this for other '
-                         'inclusive backgrounds after hierarchical removal. '
-                         '[default=None]')
+                    help='Indicate which inclusive background and FARs of '
+                         'foreground triggers to plot if there were any '
+                         'hierarchical removals done. Choosing None plots '
+                         'the inclusive backgrounds prior to any '
+                         'hierarchical removals with the updated FARs for '
+                         'foreground triggers after hierarchical removal(s). '
+                         'Choosing 0 means plotting inclusive background '
+                         'from prior to any hierarchical removals with FARs '
+                         'for foreground triggers prior to hierarchical '
+                         'removal. Choosing 1 means plotting the inclusive '
+                         'background after doing 1 hierarchical removal, and '
+                         'includes updated FARs from after 1 hierarchical '
+                         'removal. [default=None]')
 parser.add_argument('--fg-marker', default='^',
                     help='Marker to use for the foreground triggers, '
                          '[default = ^]')
