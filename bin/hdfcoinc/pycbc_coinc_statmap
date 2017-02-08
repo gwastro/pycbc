@@ -321,7 +321,7 @@ while numpy.any(fnlouder == 0):
 
     if fore_locs.sum() > 0:
         # Write ranking statistic to file just for downstream plotting code
-        f['foreground_h%s/stat/' % h_iterations] = fore_stat
+        f['foreground_h%s/stat' % h_iterations] = fore_stat
 
         ifar = background_time / (fnlouder + 1)
         fap = 1 - numpy.exp(- coinc_time / ifar)
