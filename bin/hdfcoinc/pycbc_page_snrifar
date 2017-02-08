@@ -100,7 +100,7 @@ except KeyError:
     h_iterations = 0
 
 if h_inc_back_num is None:
-    h_inc_back_num = h_iterations
+    h_inc_back_num = None
 
 if h_inc_back_num > h_iterations:
     raise ValueError('User requested inclusive background after '
@@ -122,7 +122,7 @@ try:
          cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
          # Correct the foreground ifars depending on the values calculated
          # under a particular inclusive background distribution.
-         if h_inc_back_num > 0:
+         if h_inc_back_num >= 0:
              ifar_h_inc = f['foreground_h%s/ifar' % h_inc_back_num][:]
              stat_h_inc = f['foreground_h%s/stat' % h_inc_back_num][:]
              for i in range(0, len(ifar_h_inc)):
