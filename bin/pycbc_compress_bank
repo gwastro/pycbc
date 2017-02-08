@@ -94,8 +94,15 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-psd.verify_psd_options(args, parser)
-strain.verify_strain_options(args, parser)
+# Verify if the input options for calculating the psd are correct, if
+# a PSD is to be used while calculating the overlaps in compress.py . If
+# using a PSD is not desired, this check would prevent raising an error
+# asking for PSD options.
+if args.psd_model or args.psd_file or args.asd_file or args.psd_estimation :
+    psd.verify_psd_options(args, parser)
+
+if args.psd_estimation :
+    strain.verify_strain_options(args, parser)
 
 fmin = args.low_frequency_cutoff
 fmax = args.sample_rate/2.
@@ -159,21 +166,17 @@ for ii in range(imin, imax):
                          is required.""")
     tmplt = bank.table[ii-imin]
     kmax = htilde.end_idx
-    # calculate psd if psd options are provided as input to be used to
-    # compute the overlap between the full waveform and the decompressed
-    # waveform
+    # Calculate psd if psd options are provided as input. The psd would
+    # be used to compute the overlap between the full waveform and the
+    # decompressed waveform.
     try:
         psd = psd_dict[N]
     except KeyError:
         psd_length = int(args.sample_rate / df) / 2  + 1
         psd = pycbc.psd.from_cli(args, length=psd_length, delta_f=df,
                                  low_frequency_cutoff=fmin,
-                                 dyn_range_factor=pycbc.DYN_RANGE_FAC)
-        if args.precision == 'single' :
-            psd_dtype=numpy.float32
-        elif args.precision == 'double' :
-            psd_dtype=numpy.float64
-        psd = FrequencySeries(psd, delta_f=psd.delta_f, dtype=psd_dtype)
+                                 dyn_range_factor=pycbc.DYN_RANGE_FAC,
+                                 precision=args.precision)
         psd_dict[N] = psd
 
     # get the compressed sample points
