@@ -229,6 +229,13 @@ while numpy.any(fnlouder == 0):
     if (h_iterations == args.max_hier_removal): 
         break
 
+    # Write foreground trigger info before hierarchical removals for
+    # downstream codes.
+    if h_iterations == 0:
+        f['foreground_h%s/stat' % h_iterations] = fore_stat
+        f['foreground_h%s/ifar' % h_iterations] = sec_to_year(ifar)
+        f['foreground_h%s/fap' % h_iterations] = fap
+
     # Add the iteration number of hierarchical removals done.
     h_iterations += 1
 
