@@ -27,6 +27,9 @@ test $? -ne 0 && RESULT=1
 python test/test_chisq.py
 test $? -ne 0 && RESULT=1
 
+python test/test_conversions.py
+test $? -ne 0 && RESULT=1
+
 python test/test_correlate.py
 test $? -ne 0 && RESULT=1
 
