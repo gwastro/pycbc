@@ -41,7 +41,7 @@ def chirp_distance(dist, mchirp, ref_mass=1.4):
     return derived_parameters.chirp_distance(dist, mchirp, ref_mass=ref_mass)
 
 def mass1_mass2_to_mtotal_eta(mass1, mass2):
-    m_total = dervied_parameters.mtotal_from_mass1_mass2(mass1, mass2)
+    m_total = derived_parameters.mtotal_from_mass1_mass2(mass1, mass2)
     eta = derived_parameters.eta_from_mass1_mass2(mass1, mass2)
     return m_total,eta
 
@@ -105,7 +105,7 @@ def mchirp_q_to_mass1_mass2(mchirp, q):
     Then we can map from (mchirp,eta) to (mass1,mass2).
     """
     eta = derived_parameters.eta_from_q(q)
-    mass1 = dervied_parameters.mass1_from_mchirp_eta(mchirp, eta)
+    mass1 = derived_parameters.mass1_from_mchirp_eta(mchirp, eta)
     mass2 = derived_parameters.mass2_from_mchirp_eta(mchirp, eta)
     return mass1, mass2
 
