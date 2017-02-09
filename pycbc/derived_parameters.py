@@ -23,7 +23,8 @@
 #
 """
 This modules provides a library of functions that calculate waveform parameters
-from other parameters.
+from other parameters. All exposed functions in this module's namespace return
+one parameter given a set of inputs.
 """
 
 import copy
@@ -56,9 +57,6 @@ def _formatreturn(arg):
         arg = arg.item()
     return arg
 
-# The function library provides the functions that can be used.
-function_library = {}
-
 #
 # =============================================================================
 #
@@ -77,8 +75,6 @@ def primary_mass(mass1, mass2):
     mp[mask] = mass2[mask]
     return _formatreturn(mp)
 
-function_library[primary_mass.func_name] = primary_mass
-
 
 def secondary_mass(mass1, mass2):
     """Returns the smaller of mass1 and mass2 (s = secondary)."""
@@ -91,42 +87,30 @@ def secondary_mass(mass1, mass2):
     ms[mask] = mass1[mask]
     return _formatreturn(ms)
 
-function_library[secondary_mass.func_name] = secondary_mass
-
 
 def mtotal_from_mass1_mass2(mass1, mass2):
     """Returns the total mass from mass1 and mass2."""
     return mass1 + mass2
-
-function_library[mtotal_from_mass1_mass2.func_name] = mtotal_from_mass1_mass2
 
 
 def q_from_mass1_mass2(mass1, mass2):
     """Returns the mass ratio m1/m2, where m1 >= m2."""
     return primary_mass(mass1, mass2) / secondary_mass(mass1, mass2)
 
-function_library[q_from_mass1_mass2.func_name] = q_from_mass1_mass2
-
 
 def invq_from_mass1_mass2(mass1, mass2):
     """Returns the inverse mass ratio m2/m1, where m1 >= m2."""
     return secondary_mass(mass1, mass2) / primary_mass(mass1, mass2)
-
-function_library[invq_from_mass1_mass2.func_name] = invq_from_mass1_mass2
 
 
 def eta_from_mass1_mass2(mass1, mass2):
     """Returns the symmetric mass ratio from mass1 and mass2."""
     return mass1*mass2 / (mass1+mass2)**2.
 
-function_library[eta_from_mass1_mass2.func_name] = eta_from_mass1_mass2
-
 
 def mchirp_from_mass1_mass2(mass1, mass2):
     """Returns the chirp mass from mass1 and mass2."""
     return eta_from_mass1_mass2(mass1, mass2)**(3./5) * (mass1+mass2)
-
-function_library[mchirp_from_mass1_mass2.func_name] = mchirp_from_mass1_mass2
 
 
 def mass1_from_mtotal_q(mtotal, q):
@@ -138,8 +122,6 @@ def mass1_from_mtotal_q(mtotal, q):
     """
     return q*mtotal / (1.+q)
 
-function_library[mass1_from_mtotal_q.func_name] = mass1_from_mtotal_q
-
 
 def mass2_from_mtotal_q(mtotal, q):
     """Returns a component mass from the given total mass and mass ratio.
@@ -150,16 +132,12 @@ def mass2_from_mtotal_q(mtotal, q):
     """
     return mtotal / (1.+q)
 
-function_library[mass2_from_mtotal_q.func_name] = mass2_from_mtotal_q
-
 
 def mass1_from_mtotal_eta(mtotal, eta):
     """Returns the primary mass from the total mass and symmetric mass
     ratio.
     """
     return 0.5 * mtotal * (1.0 + (1.0 - 4.0 * eta)**0.5)
-
-function_library[mass1_from_mtotal_eta.func_name] = mass1_from_mtotal_eta
 
 
 def mass2_from_mtotal_eta(mtotal, eta):
@@ -168,15 +146,11 @@ def mass2_from_mtotal_eta(mtotal, eta):
     """
     return 0.5 * mtotal * (1.0 - (1.0 - 4.0 * eta)**0.5)
 
-function_library[mass2_from_mtotal_eta.func_name] = mass2_from_mtotal_eta
-
 
 def mtotal_from_mchirp_eta(mchirp, eta):
     """Returns the total mass from the chirp mass and symmetric mass ratio.
     """
     return mchirp / (eta**(3./5.))
-
-function_library[mtotal_from_mchirp_eta.func_name] = mtotal_from_mchirp_eta
 
 
 def mass1_from_mchirp_eta(mchirp, eta):
@@ -185,16 +159,12 @@ def mass1_from_mchirp_eta(mchirp, eta):
     mtotal = mtotal_from_mchirp_eta(mchirp, eta)
     return mass1_from_mtotal_eta(mtotal, eta)
 
-function_library[mass1_from_mchirp_eta.func_name] = mass1_from_mchirp_eta
-
 
 def mass2_from_mchirp_eta(mchirp, eta):
     """Returns the primary mass from the chirp mass and symmetric mass ratio.
     """
     mtotal = mtotal_from_mchirp_eta(mchirp, eta)
     return mass2_from_mtotal_eta(mtotal, eta)
-
-function_library[mass2_from_mchirp_eta.func_name] = mass2_from_mchirp_eta
 
 
 def _mass2_from_mchirp_mass1(mchirp, mass1):
@@ -220,7 +190,7 @@ def _mass2_from_mchirp_mass1(mchirp, mass1):
     return real_root.real
 
 mass2_from_mchirp_mass1 = numpy.vectorize(_mass2_from_mchirp_mass1)
-function_library['mass2_from_mchirp_mass1'] = mass2_from_mchirp_mass1
+
 
 def _mass_from_knownmass_eta(known_mass, eta, known_is_secondary=False,
                             force_real=True):
@@ -265,7 +235,6 @@ def _mass_from_knownmass_eta(known_mass, eta, known_is_secondary=False,
         return roots[roots.argmin()]
 
 mass_from_knownmass_eta = numpy.vectorize(_mass_from_knownmass_eta)
-function_library['mass_from_knownmass_eta'] = mass_from_knownmass_eta
 
 
 def mass2_from_mass1_eta(mass1, eta, force_real=True):
@@ -274,7 +243,6 @@ def mass2_from_mass1_eta(mass1, eta, force_real=True):
     """
     return mass_from_knownmass_eta(mass1, eta, known_is_secondary=False,
                                    force_real=force_real)
-function_library[mass2_from_mass1_eta.func_name] = mass2_from_mass1_eta
 
 
 def mass1_from_mass2_eta(mass2, eta, force_real=True):
@@ -283,8 +251,6 @@ def mass1_from_mass2_eta(mass2, eta, force_real=True):
     """
     return mass_from_knownmass_eta(mass2, eta, known_is_secondary=True,
                                    force_real=force_real)
-
-function_library[mass1_from_mass2_eta.func_name] = mass1_from_mass2_eta
 
 
 def eta_from_q(q):
@@ -299,21 +265,15 @@ def eta_from_q(q):
     """
     return q / (1.+q)**2
 
-function_library[eta_from_q.func_name] = eta_from_q
-
 
 def mass1_from_mchirp_q(mchirp, q):
     """Returns the primary mass from the given chirp mass and mass ratio."""
     return mass1_from_mchirp_eta(mchirp, eta_from_q(q))
 
-function_library[mass1_from_mchirp_q.func_name] = mass1_from_mchirp_q
-
 
 def mass2_from_mchirp_q(mchirp, q):
     """Returns the secondary mass from the given chirp mass and mass ratio."""
     return mass2_from_mchirp_eta(mchirp, eta_from_q(q))
-
-function_library[mass2_from_mchirp_q.func_name] = mass2_from_mchirp_q
 
 
 def _a0(f_lower):
@@ -336,8 +296,6 @@ def tau0_from_mtotal_eta(mtotal, eta, f_lower):
     # formulae from arxiv.org:0706.4437
     return _a0(f_lower) / (mtotal**(5./3.) * eta)
 
-function_library[tau0_from_mtotal_eta.func_name] = tau0_from_mtotal_eta
-
 
 def tau3_from_mtotal_eta(mtotal, eta, f_lower):
     r"""Returns :math:`\tau_0` from the total mass, symmetric mass ratio, and
@@ -348,8 +306,6 @@ def tau3_from_mtotal_eta(mtotal, eta, f_lower):
     # formulae from arxiv.org:0706.4437
     return _a3(f_lower) / (mtotal**(2./3.) * eta)
 
-function_library[tau3_from_mtotal_eta.func_name] = tau3_from_mtotal_eta
-
 
 def tau0_from_mass1_mass2(mass1, mass2, f_lower):
     r"""Returns :math:`\tau_0` from the component masses and given frequency.
@@ -358,8 +314,6 @@ def tau0_from_mass1_mass2(mass1, mass2, f_lower):
     eta = eta_from_mass1_mass2(mass1, mass2)
     return tau0_from_mtotal_eta(mtotal, eta, f_lower)
 
-function_library[tau0_from_mass1_mass2.func_name] = tau0_from_mass1_mass2
-
 
 def tau3_from_mass1_mass2(mass1, mass2, f_lower):
     r"""Returns :math:`\tau_3` from the component masses and given frequency.
@@ -367,8 +321,6 @@ def tau3_from_mass1_mass2(mass1, mass2, f_lower):
     mtotal = mass1 + mass2
     eta = eta_from_mass1_mass2(mass1, mass2)
     return tau3_from_mtotal_eta(mtotal, eta, f_lower)
-
-function_library[tau3_from_mass1_mass2.func_name] = tau3_from_mass1_mass2
 
 
 def mtotal_from_tau0_tau3(tau0, tau3, f_lower,
@@ -380,8 +332,6 @@ def mtotal_from_tau0_tau3(tau0, tau3, f_lower,
         mtotal /= lal.MTSUN_SI
     return mtotal
 
-function_library[mtotal_from_tau0_tau3.func_name] = mtotal_from_tau0_tau3
-
 
 def eta_from_tau0_tau3(tau0, tau3, f_lower):
     r"""Returns symmetric mass ratio from :math:`\tau_0, \tau_3`."""
@@ -390,8 +340,6 @@ def eta_from_tau0_tau3(tau0, tau3, f_lower):
     eta = mtotal**(-2./3.) * (_a3(f_lower) / tau3)
     return eta
     
-function_library[eta_from_tau0_tau3.func_name] = eta_from_tau0_tau3
-
 
 def mass1_from_tau0_tau3(tau0, tau3, f_lower):
     r"""Returns the primary mass from the given :math:`\tau_0, \tau_3`."""
@@ -399,16 +347,12 @@ def mass1_from_tau0_tau3(tau0, tau3, f_lower):
     eta = eta_from_tau0_tau3(tau0, tau3, f_lower)
     return mass1_from_mtotal_eta(mtotal, eta)
 
-function_library[mass1_from_tau0_tau3.func_name] = mass1_from_tau0_tau3
-
 
 def mass2_from_tau0_tau3(tau0, tau3, f_lower):
     r"""Returns the secondary mass from the given :math:`\tau_0, \tau_3`."""
     mtotal = mtotal_from_tau0_tau3(tau0, tau3, f_lower)
     eta = eta_from_tau0_tau3(tau0, tau3, f_lower)
     return mass2_from_mtotal_eta(mtotal, eta)
-
-function_library[mass2_from_tau0_tau3.func_name] = mass2_from_tau0_tau3
 
 
 #
@@ -421,8 +365,6 @@ function_library[mass2_from_tau0_tau3.func_name] = mass2_from_tau0_tau3
 def chi_eff(mass1, mass2, spin1z, spin2z):
     """Returns the effective spin from mass1, mass2, spin1z, and spin2z."""
     return (spin1z * mass1 + spin2z * mass2) / (mass1+mass2)
-
-function_library[chi_eff.func_name] = chi_eff
 
 
 def primary_spin(mass1, mass2, spin1, spin2):
@@ -439,8 +381,6 @@ def primary_spin(mass1, mass2, spin1, spin2):
     sp[mask] = spin2[mask]
     return _formatreturn(sp)
 
-function_library[primary_spin.func_name] = primary_spin
-
 
 def secondary_spin(mass1, mass2, spin1, spin2):
     """Returns the dimensionless spin of the secondary mass."""
@@ -456,45 +396,6 @@ def secondary_spin(mass1, mass2, spin1, spin2):
     ss[mask] = spin1[mask]
     return _formatreturn(ss)
 
-function_library[secondary_spin.func_name] = secondary_spin
-
-
-def primary_spinx(mass1, mass2, spin1x, spin2x):
-    """Returns the x-component of the dimensionless spin of the primary mass.
-    """
-    return primary_spin(mass1, mass2, spin1x, spin2x)
-
-
-def primary_spiny(mass1, mass2, spin1y, spin2y):
-    """Returns the y-component of the dimensionless spin of the primary mass.
-    """
-    return primary_spin(mass1, mass2, spin1y, spin2y)
-
-
-def primary_spinz(mass1, mass2, spin1z, spin2z):
-    """Returns the z-component of the dimensionless spin of the primary mass.
-    """
-    return primary_spin(mass1, mass2, spin1z, spin2z)
-
-
-def secondary_spinx(mass1, mass2, spin1x, spin2x):
-    """Returns the x-component of the dimensionless spin of the secondary mass.
-    """
-    return secondary_spin(mass1, mass2, spin1x, spin2x)
-
-
-def secondary_spiny(mass1, mass2, spin1y, spin2y):
-    """Returns the y-component of the dimensionless spin of the secondary mass.
-    """
-    return secondary_spin(mass1, mass2, spin1y, spin2y)
-
-
-def secondary_spinz(mass1, mass2, spin1z, spin2z):
-    """Returns the z-component of the dimensionless spin of the secondary mass.
-    """
-    return secondary_spin(mass1, mass2, spin1z, spin2z)
-
-
 
 #
 # =============================================================================
@@ -507,8 +408,6 @@ def chirp_distance(dist, mchirp, ref_mass=1.4):
     """Returns the chirp distance given a distance and chirp mass.
     """
     return dist * (2.**(-1./5) * ref_mass / mchirp)**(5./6)
-
-function_library[chirp_distance.func_name] = chirp_distance
 
 
 def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
@@ -543,6 +442,21 @@ def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
         return tc + detector.time_delay_from_detector(other, ra, dec, tc) 
 
 det_tc = numpy.vectorize(_det_tc)
-function_library['det_tc'] = det_tc
 
-__all__ = function_library.keys()
+
+__all__ = ['primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
+           'q_from_mass1_mass2', 'invq_from_mass1_mass2',
+           'eta_from_mass1_mass2', 'mchirp_from_mass1_mass2',
+           'mass1_from_mtotal_q', 'mass2_from_mtotal_q',
+           'mass1_from_mtotal_eta', 'mass2_from_mtotal_eta',
+           'mtotal_from_mchirp_eta', 'mass1_from_mchirp_eta',
+           'mass2_from_mchirp_eta', 'mass2_from_mchirp_mass1',
+           'mass_from_knownmass_eta', 'mass2_from_mass1_eta',
+           'mass1_from_mass2_eta', 'eta_from_q', 'mass1_from_mchirp_q',
+           'mass2_from_mchirp_q', 'tau0_from_mtotal_eta',
+           'tau3_from_mtotal_eta', 'tau0_from_mass1_mass2',
+           'tau3_from_mass1_mass2', 'mtotal_from_tau0_tau3',
+           'eta_from_tau0_tau3', 'mass1_from_tau0_tau3',
+           'mass2_from_tau0_tau3', 'chi_eff', 'primary_spin',
+           'secondary_spin', 'chirp_distance', 'det_tc'
+          ]
