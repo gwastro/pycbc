@@ -309,11 +309,11 @@ def mass1_from_mchirp_q(mchirp, q):
 function_library[mass1_from_mchirp_q.func_name] = mass1_from_mchirp_q
 
 
-def mass1_from_mchirp_q(mchirp, q):
+def mass2_from_mchirp_q(mchirp, q):
     """Returns the secondary mass from the given chirp mass and mass ratio."""
     return mass2_from_mchirp_eta(mchirp, eta_from_q(q))
 
-function_library[mass1_from_mchirp_q.func_name] = mass1_from_mchirp_q
+function_library[mass2_from_mchirp_q.func_name] = mass2_from_mchirp_q
 
 
 def _a0(f_lower):
@@ -356,7 +356,7 @@ def tau0_from_mass1_mass2(mass1, mass2, f_lower):
     """
     mtotal = mass1 + mass2
     eta = eta_from_mass1_mass2(mass1, mass2)
-    return tau0_from_mtotal_eta(mtotal, eta)
+    return tau0_from_mtotal_eta(mtotal, eta, f_lower)
 
 function_library[tau0_from_mass1_mass2.func_name] = tau0_from_mass1_mass2
 
@@ -366,23 +366,27 @@ def tau3_from_mass1_mass2(mass1, mass2, f_lower):
     """
     mtotal = mass1 + mass2
     eta = eta_from_mass1_mass2(mass1, mass2)
-    return tau3_from_mtotal_eta(mtotal, eta)
+    return tau3_from_mtotal_eta(mtotal, eta, f_lower)
 
 function_library[tau3_from_mass1_mass2.func_name] = tau3_from_mass1_mass2
 
 
-def mtotal_from_tau0_tau3(tau0, tau3, f_lower):
+def mtotal_from_tau0_tau3(tau0, tau3, f_lower,
+                          in_seconds=False):
     r"""Returns total mass from :math:`\tau_0, \tau_3`."""
     mtotal = (tau3 / _a3(f_lower)) / (tau0 / _a0(f_lower))
-    # convert back to solar mass units
-    return mtotal/lal.MTSUN_SI
+    if not in_seconds:
+        # convert back to solar mass units
+        mtotal /= lal.MTSUN_SI
+    return mtotal
 
 function_library[mtotal_from_tau0_tau3.func_name] = mtotal_from_tau0_tau3
 
 
 def eta_from_tau0_tau3(tau0, tau3, f_lower):
     r"""Returns symmetric mass ratio from :math:`\tau_0, \tau_3`."""
-    mtotal = mtotal_from_tau0_tau3(tau0, tau3, f_lower)
+    mtotal = mtotal_from_tau0_tau3(tau0, tau3, f_lower,
+                                   in_seconds=True)
     eta = mtotal**(-2./3.) * (_a3(f_lower) / tau3)
     return eta
     
@@ -499,7 +503,7 @@ def spin_a(spinx, spiny, spinz):
 function_library[spin_a.func_name] = spin_a
 
 
-def spin_azimuthal(spinx, spinz):
+def spin_azimuthal(spinx, spiny):
     """Returns the azimuthal spin angle."""
     # do not need to normalize by mass because it cancels
     return coordinates.cartesian_to_spherical_azimuthal(spinx, spiny)
