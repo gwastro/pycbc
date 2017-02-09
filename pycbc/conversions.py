@@ -30,7 +30,6 @@ one parameter given a set of inputs.
 import copy
 import numpy
 import lal
-from pycbc import coordinates
 from pycbc.detector import Detector
 
 #
@@ -115,7 +114,7 @@ def mchirp_from_mass1_mass2(mass1, mass2):
 
 def mass1_from_mtotal_q(mtotal, q):
     """Returns a component mass from the given total mass and mass ratio.
-    
+
     If the mass ratio q is >= 1, the returned mass will be the primary
     (heavier) mass. If q < 1, the returned mass will be the secondary
     (lighter) mass.
@@ -439,7 +438,7 @@ def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
         return tc + detector.time_delay_from_center(ra, dec, tc)
     else:
         other = Detector(ref_frame)
-        return tc + detector.time_delay_from_detector(other, ra, dec, tc) 
+        return tc + detector.time_delay_from_detector(other, ra, dec, tc)
 
 det_tc = numpy.vectorize(_det_tc)
 
