@@ -495,29 +495,6 @@ def secondary_spinz(mass1, mass2, spin1z, spin2z):
     return secondary_spin(mass1, mass2, spin1z, spin2z)
 
 
-def spin_a(spinx, spiny, spinz):
-    """Returns the dimensionless spin magnitude from the given spin components.
-    """
-    return coordinates.cartesian_to_spherical_rho(spinx, spiny, spinz)
-
-function_library[spin_a.func_name] = spin_a
-
-
-def spin_azimuthal(spinx, spiny):
-    """Returns the azimuthal spin angle."""
-    # do not need to normalize by mass because it cancels
-    return coordinates.cartesian_to_spherical_azimuthal(spinx, spiny)
-
-function_library[spin_azimuthal.func_name] = spin_azimuthal
-
-
-def spin_polar(spinx, spiny, spinz):
-    """Returns the polar spin angle."""
-    # do not need to normalize by mass because it cancels
-    return coordinates.cartesian_to_spherical_polar(spin1x, spin1y, spin1z)
-
-function_library[spin_polar.func_name] = spin_polar
-
 
 #
 # =============================================================================
