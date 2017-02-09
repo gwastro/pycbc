@@ -32,18 +32,21 @@ parser.add_argument('--hwinj-file', type=str, required=True,
                     help='Path to single-column ASCII file.')
 parser.add_argument('--hwinj-start-time', type=int, required=True,
                     help='Start time of the single-column ASCII file.')
+parser.add_argument('--scale-factor', type=float, default=1.0,
+                    help='Scales the waveform amplitude by a float.')
 
 # frame options
 parser.add_argument('--ifo', type=str, required=True,
                      help='IFO.')
 parser.add_argument('--output-file', type=str, required=True,
                     help='Path to output frame file.')
+parser.add_argument('--precision', type=str, default=None,
+                    choices=['single', 'double'],
+                    help='Store as a numpy.float64.')
 
 # fake data options
 parser.add_argument('--low-frequency-cutoff', type=int, required=False,
                     help='Low-frequency cutoff for generating fake PSD.')
-parser.add_argument('--scale-factor', type=float, default=1.0,
-                    help='Scales the waveform amplitude by a float.')
 
 # add option groups
 _strain.insert_strain_option_group(parser)
@@ -70,6 +73,12 @@ start_pad = (opts.hwinj_start_time-opts.gps_start_time) * opts.sample_rate
 logging.info('Summing the two time series')
 for i in range(len(initial_array)):
     strain[start_pad+1+i] += initial_array[i]
+
+# typecast
+if opts.precision == 'single':
+    strain = strain.astype(numpy.float32)
+elif opts.precision == 'double':
+    strain = strain.astype(numpy.float64)
 
 # write frame
 logging.info('Writing data')
