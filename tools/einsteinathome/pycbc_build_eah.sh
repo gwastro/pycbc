@@ -757,9 +757,10 @@ echo -e "\\n\\n>> [`date`] building pycbc"
 if $scratch_pycbc || ! test -d pycbc/.git ; then
     # clone
     rm -rf pycbc
-    git clone -o ligo-cbc -n git://github.com/ligo-cbc/pycbc
+    git clone -n -o ligo-cbc git://github.com/ligo-cbc/pycbc
     cd pycbc
-    git checkout -b master ligo-cbc/master
+    git branch|grep ' master$'>/dev/null ||
+        git checkout -b master ligo-cbc/master
     cd ..
 fi
 cd pycbc
@@ -774,7 +775,7 @@ if test ".$pycbc_branch" = ".HEAD" ; then
     :
 elif test ".$pycbc_branch" = ".master" ; then
     git checkout master
-    git pull ligo-cbc master
+    git pull
     test ".$pycbc_commit" != "." &&
         git checkout $pycbc_commit
 else
