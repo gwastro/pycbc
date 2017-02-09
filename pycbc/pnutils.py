@@ -91,7 +91,7 @@ def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False, force_real=True):
     mass1 > mass2 is returned. Use the return_mass_heavier kwarg to invert this
     behaviour.
     """
-    return derived_parameters.mass_from_knownmass_eta(eta, mass1,
+    return derived_parameters.mass_from_knownmass_eta(mass1, eta,
         known_is_secondary=return_mass_heavier, force_real=force_real)
 
 def mchirp_q_to_mass1_mass2(mchirp, q):
