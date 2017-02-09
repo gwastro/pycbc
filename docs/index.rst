@@ -92,7 +92,6 @@ binaries should read the documentation in the links at:
 
    workflow/pycbc_make_psd_estimation_workflow
    workflow/pycbc_make_coinc_search_workflow
-   workflow/pycbc_make_sngl_workflow
    workflow/pygrb.rst
    using_production_binaries
 
@@ -129,6 +128,7 @@ short code snippets below.
    noise
    waveform
    filter
+   distributions
 
 =============================
 Documentation for Developers
