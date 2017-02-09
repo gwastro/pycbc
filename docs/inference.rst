@@ -404,7 +404,7 @@ There is a handler class ``pycbc.io.InferenceFile`` that extends ``h5py.File``.
 To read the output file you can do::
 
     from pycbc.io import InferenceFile
-    fp = InferenceFile("cbc_example-n1e4.hdf.hdf", "r")
+    fp = InferenceFile("cbc_example-n1e4.hdf", "r")
 
 To get all samples for ``distance`` from the first walker you can do::
 
