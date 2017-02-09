@@ -42,7 +42,7 @@ parser.add_argument('--output-file', type=str, required=True,
                     help='Path to output frame file.')
 parser.add_argument('--precision', type=str, default=None,
                     choices=['single', 'double'],
-                    help='Store as a numpy.float64.')
+                    help='Store as a float32 or float64.')
 
 # fake data options
 parser.add_argument('--low-frequency-cutoff', type=int, required=False,
