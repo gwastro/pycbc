@@ -1,7 +1,7 @@
 import numpy
 from pycbc import coordinates
 from pycbc.inference import distributions
-from pycbc.derived_parameters import *
+from pycbc.conversions import *
 import unittest
 from utils import simple_exit
 
