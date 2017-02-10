@@ -29,7 +29,7 @@ redshift.
 import numpy
 import lal
 from scipy import interpolate
-from pycbc.derived_parameters import _ensurearray, _formatreturn
+from pycbc.conversions import _ensurearray, _formatreturn
 
 class _DistToZ(object):
     """Class to convert luminosity distance to redshift using the given
@@ -186,3 +186,6 @@ def redshift(distance, h=None, om=None, ol=None, w0=None, w1=None, w2=None):
     else:
         dL2z = _DistToZ(h=h, om=om, ol=ol, w0=w0, w1=w1, w2=w2)
     return dL2z(distance)
+
+
+__all__ = ['redshift']
