@@ -263,8 +263,10 @@ else
 fi
 
 #Check that the proxy is valid
+set +e
 grid-proxy-info -exists
 RESULT=$?
+set -e
 if [ ${RESULT} -eq 0 ] ; then
   PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
   if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
