@@ -39,7 +39,7 @@ class _DistToZ(object):
     (see below). Otherwise, standard LambdaCDM will be used by default; see
     `LALCosmologyCalculator` for details.
 
-    LAL provides functions to convert red shift to luminosity distance,
+    LAL provides functions to convert redshift to luminosity distance,
     assuming a cosmology. This class works by setting up a dense grid of
     redshifts, then using linear interpolation to find the inverse function.
     The interpolation uses a grid linear in z for z < 1, and log in z for z >
@@ -99,27 +99,27 @@ class _DistToZ(object):
         self.z2d = numpy.vectorize(lal.LuminosityDistance)
         # for computing nearby (z < 1) redshifts
         zs = numpy.linspace(0., 1., num=numpoints)
-        dLs = self.z2d(self.omega, zs)
-        self.nearby_dL2z = interpolate.interp1d(dLs, zs, kind='linear',
+        ds = self.z2d(self.omega, zs)
+        self.nearby_d2z = interpolate.interp1d(ds, zs, kind='linear',
                                                 bounds_error=False)
         # for computing far away (z > 1) redshifts
         zs = numpy.logspace(0, numpy.log10(default_maxz), num=numpoints)
-        dLs = self.z2d(self.omega, zs)
-        self.faraway_dL2z = interpolate.interp1d(dLs, zs, kind='linear',
+        ds = self.z2d(self.omega, zs)
+        self.faraway_d2z = interpolate.interp1d(ds, zs, kind='linear',
                                                  bounds_error=False)
         # store the default maximum distance
-        self.default_maxdist = dLs.max()
+        self.default_maxdist = ds.max()
 
     def get_redshift(self, dist):
         """Returns the redshift for the given distance.
         """
         dist = _ensurearray(dist)
-        zs = self.nearby_dL2z(dist)
+        zs = self.nearby_d2z(dist)
         # if any points had red shifts beyond the nearby, will have nans;
         # replace using the faraway interpolation
         replacemask = numpy.isnan(zs)
         if replacemask.any():
-            zs[replacemask] = self.faraway_dL2z(dist[replacemask])
+            zs[replacemask] = self.faraway_d2z(dist[replacemask])
             replacemask = numpy.isnan(zs)
             # if we still have nans, means that some distances are beyond our
             # furthest default; replace
@@ -131,10 +131,10 @@ class _DistToZ(object):
                 maxz = minz + 5
                 while replacemask.any():
                     gridzs = numpy.logspace(minz, maxz, num=self.numpoints)
-                    dLs = self.z2d(self.omega, gridzs)
-                    dL2z = interpolate.interp1d(dLs, gridzs, kind='linear',
+                    ds = self.z2d(self.omega, gridzs)
+                    d2z = interpolate.interp1d(ds, gridzs, kind='linear',
                                                 bounds_error=False)
-                    zs[replacemask] = dL2z(dist[replacemask])
+                    zs[replacemask] = d2z(dist[replacemask])
                     replacemask = numpy.isnan(zs)
                     minz = maxz - 1
                     maxz = minz + 5
@@ -144,7 +144,7 @@ class _DistToZ(object):
         return self.get_redshift(dist)
 
 # we'll use the default cosmology for computing red shifts.
-_dL2z = _DistToZ()
+_d2z = _DistToZ()
 
 def redshift(distance, h=None, om=None, ol=None, w0=None, w1=None, w2=None):
     """Returns the redshift associated with the given distance.
@@ -182,10 +182,10 @@ def redshift(distance, h=None, om=None, ol=None, w0=None, w1=None, w2=None):
     """
     if all([p is None for p in [h, om, ol, w0, w1, w2]]):
         # just use the default converter
-        dL2z = _dL2z
+        d2z = _d2z
     else:
-        dL2z = _DistToZ(h=h, om=om, ol=ol, w0=w0, w1=w1, w2=w2)
-    return dL2z(distance)
+        d2z = _DistToZ(h=h, om=om, ol=ol, w0=w0, w1=w1, w2=w2)
+    return d2z(distance)
 
 
 __all__ = ['redshift']
