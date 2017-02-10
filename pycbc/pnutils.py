@@ -95,7 +95,7 @@ def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False, force_real=True):
     roots = numpy.roots([eta, (2*eta - 1)*mass1, mass1*mass1*eta])
     if force_real:
         roots = numpy.real(roots)
-    if return_mass_heavier==False:
+    if return_mass_heavier is False:
         return roots[roots.argmin()]
     else:
         return roots[roots.argmax()]
