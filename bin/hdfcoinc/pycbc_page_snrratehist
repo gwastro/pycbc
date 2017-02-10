@@ -32,13 +32,14 @@ parser.add_argument('--h-iter-inc-background', type=int, default=None,
                     help='Indicate which inclusive background to plot '
                          'with the foreground triggers if there were '
                          'any hierarchical removals done. Choosing 0 '
-                         'or None indicates plotting the inclusive '
-                         'background prior to any hierarchical removals. '
-                         'Choosing 1 indicates the inclusive background '
-                         'after the loudest foreground trigger was removed. '
-                         'Choose another integer for the inclusive '
-                         'background after that integer number of '
-                         'hierarchical removals. [default=None]')
+                         'indicates plotting the inclusive background prior '
+                         'to any hierarchical removals. Choosing 1 indicates '
+                         'the inclusive background after the loudest '
+                         'foreground trigger was removed. Choosing another '
+                         'integer gives the inclusive background after that '
+                         'integer number of hierarchical removals. Choosing '
+                         'None defaults to the background from after all '
+                         'hierarchical removals performed. [default=None]')
 parser.add_argument('--closed-box', action='store_true',
                     help='Make a closed box version that excludes '
                          'foreground triggers')
