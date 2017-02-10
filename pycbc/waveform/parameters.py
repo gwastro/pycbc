@@ -255,11 +255,11 @@ dquad_mon2 = Parameter("dquad_mon2",
 
 # derived parameters for component spin magnitude and angles
 spin1_a = Parameter("spin1_a",
-                    dtype=float, label=r"$\a_{1}$",
+                    dtype=float, label=r"$a_{1}$",
                     description="The dimensionless spin magnitude "
                                 "$|\vec{s}/m_{1}^2|$.")
 spin2_a = Parameter("spin2_a",
-                    dtype=float, label=r"$\a_{2}$",
+                    dtype=float, label=r"$a_{2}$",
                     description="The dimensionless spin magnitude "
                                 "$|\vec{s}/m_{2}^2|$.")
 spin1_azimuthal = Parameter(
