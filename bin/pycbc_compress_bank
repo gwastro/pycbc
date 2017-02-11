@@ -99,7 +99,7 @@ pycbc.init_logging(args.verbose)
 # using a PSD is not desired, this check would prevent raising an error
 # asking for PSD options.
 if args.psd_model or args.psd_file or args.asd_file :
-psd.verify_psd_options(args, parser)
+    psd.verify_psd_options(args, parser)
 
 fmin = args.low_frequency_cutoff
 fmax = args.sample_rate/2.
