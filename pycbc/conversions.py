@@ -366,25 +366,25 @@ def chi_eff(mass1, mass2, spin1z, spin2z):
     return (spin1z * mass1 + spin2z * mass2) / (mass1 + mass2)
 
 def chi_a(mass1, mass2, spin1z, spin2z):
-    """Returns the mass-weighted spin difference from mass1, mass2, spin1z,
-    and spin2z"""
+    """Returns the aligned mass-weighted spin difference from mass1, mass2,
+    spin1z, and spin2z"""
     return (spin1z * mass1 - spin2z * mass2) / (mass1 + mass2)
 
 def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Returns the effective precession spin from mass1, mass2, spin1x,
     spin1y, spin2x, and spin2y."""
-    return max(primary_xi(mass1, mass2, spin1x, spin1y),
-               secondary_xi(spin2x, spin2y))
+    return max(xi1(mass1, mass2, spin1x, spin1y),
+               xi2(spin2x, spin2y))
 
-def primary_xi(mass1, mass2, spin1x, spin1y):
-    """Returns the effective precession spin of mass1."""
+def xi1(mass1, mass2, spin1x, spin1y):
+    """Returns the effective precession spin argument for mass1."""
     q = q_from_mass1_mass2(mass1, mass2)
     a1 = 2 + 3 * q / 2
     a2 = 2 + 3 / (2 * q)
     return a1 / (q**2 * a2) * in_plane_spin(spin1x, spin1y)
 
-def secondary_xi(spin2x, spin2y):
-    """Returns the effective precession spin of mass2."""
+def xi2(spin2x, spin2y):
+    """Returns the effective precession spin argument for mass2."""
     return in_plane_spin(spin2x, spin2y)
 
 def in_plane_spin(spin1x, spin1y):
@@ -419,6 +419,14 @@ def secondary_spin(mass1, mass2, spin1, spin2):
     mask = mass1 < mass2
     ss[mask] = spin1[mask]
     return _formatreturn(ss)
+
+def spin1z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
+    """Returns spin1z."""
+    return (mass1 + mass2) / mass1 * (chi_eff + chi_a)
+
+def spin2z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
+    """Returns spin2z."""
+    return (mass1 + mass2) / mass2 * (chi_eff - chi_a)
 
 
 #
@@ -481,6 +489,7 @@ __all__ = ['primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'tau3_from_mtotal_eta', 'tau0_from_mass1_mass2',
            'tau3_from_mass1_mass2', 'mtotal_from_tau0_tau3',
            'eta_from_tau0_tau3', 'mass1_from_tau0_tau3',
-           'mass2_from_tau0_tau3', 'chi_eff', 'primary_spin',
-           'secondary_spin', 'chirp_distance', 'det_tc'
+           'mass2_from_tau0_tau3', 'chi_eff', 'chi_a', 'chi_p', 'primary_spin',
+           'secondary_spin', 'xi1', 'xi2', 'in_plane_spin',
+           'chirp_distance', 'det_tc'
           ]
