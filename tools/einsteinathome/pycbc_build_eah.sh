@@ -983,6 +983,7 @@ echo -e "\\n\\n>> [`date`] testing"
 cd ..
 
 # build zip file from dir
+echo -e "\\n\\n>> [`date`] zip archive"
 zip -r pycbc_inspiral$appendix.zip pycbc_inspiral
 
 # if the executable is "pycbc_inspiral.exe", add a "XML soft link" "pycbc_inspiral" to the bundle for the wrapper
@@ -1024,7 +1025,15 @@ if check_md5 "$p" "$md5"; then
 fi
 
 failed=false
-echo 'SEOBNRv2ChirpTimeSS.dat         7b7dbadacc3f565fb2c8e6971df2ab74
+while read f md5; do
+    if check_md5 "$f" "$md5"; then
+	failed=true
+	break
+    else
+	roms="$f $roms"
+    fi
+done <<EOF
+SEOBNRv2ChirpTimeSS.dat               7b7dbadacc3f565fb2c8e6971df2ab74
 SEOBNRv2ROM_DS_sub1_Amp_ciall.dat     f82ddc5dc0b6fdc75122e767bd5e78c8
 SEOBNRv2ROM_DS_sub1_AmpPrefac_ci.dat  62afa5351d6b775ac33cb4d898f0016b
 SEOBNRv2ROM_DS_sub1_Bamp_bin.dat      a6829fa05437cc0aad81e3f8dae839cc
@@ -1044,15 +1053,8 @@ SEOBNRv2ROM_SS_Amp_ciall.dat          e6c243f76609cada55612cfe53f82e41
 SEOBNRv2ROM_SS_AmpPrefac_ci.dat       08186a21682d2e73cb00a3ef35aa5c9c
 SEOBNRv2ROM_SS_Bamp_bin.dat           1ef7953a977a1fb551f59585c5d63d7a
 SEOBNRv2ROM_SS_Bphase_bin.dat         b5923860bf021e6a2a23d743e5724bee
-SEOBNRv2ROM_SS_Phase_ciall.dat        2947032d0ad7ffde9704e24bf9e676f5' |
-while read f md5; do
-    if check_md5 "$f" "$md5"; then
-	failed=true
-	break
-    else
-	roms="$f $roms"
-    fi
-done
+SEOBNRv2ROM_SS_Phase_ciall.dat        2947032d0ad7ffde9704e24bf9e676f5
+EOF
 if $failed; then
     p="lal-data-r7.tar.gz"
     md5="8e72ced90c82691f16e1c1ac33be18d7"
