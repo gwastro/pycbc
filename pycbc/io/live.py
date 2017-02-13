@@ -62,13 +62,17 @@ class SingleCoincForGraceDB(object):
         ifos: list of strs
             A list of the ifos pariticipating in this trigger
         coinc_results: dict of values
-            A dictionary of values. The format is define
-            in pycbc/events/coinc.py
-        and matches the on disk representation in the hdf file for this time.
+            A dictionary of values. The format is defined in
+            pycbc/events/coinc.py and matches the on disk representation
+            in the hdf file for this time.
         """
         self.ifos = ifos
+        if 'followup_ifos' in kwargs and kwargs['followup_ifos'] is not None:
+            self.followup_ifos = kwargs['followup_ifos']
+        else:
+            self.followup_ifos = []
         self.template_id = coinc_results['foreground/%s/template_id' % self.ifos[0]]
-        
+
         # remember if this should be marked as HWINJ
         self.is_hardware_injection = False
         if 'HWINJ' in coinc_results:
@@ -113,16 +117,14 @@ class SingleCoincForGraceDB(object):
         sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
         coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
 
-        sngl_id = 0
         sngl_event_id_map = {}
-        for ifo in ifos:
-            names = [n.split('/')[-1] for n in coinc_results
-                     if 'foreground/%s' % ifo in n]
-            sngl_id += 1
+        for sngl_id, ifo in enumerate(ifos + self.followup_ifos):
             sngl = return_empty_sngl()
             sngl.event_id = lsctables.SnglInspiralID(sngl_id)
             sngl_event_id_map[ifo] = sngl.event_id
             sngl.ifo = ifo
+            names = [n.split('/')[-1] for n in coinc_results
+                     if 'foreground/%s' % ifo in n]
             for name in names:
                 val = coinc_results['foreground/%s/%s' % (ifo, name)]
                 if name == 'end_time':
@@ -132,11 +134,13 @@ class SingleCoincForGraceDB(object):
                         setattr(sngl, name, val)
                     except AttributeError:
                         pass
-            sngl.mtotal, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(
-                    sngl.mass1, sngl.mass2)
-            sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
-                    sngl.mass1, sngl.mass2)
-            sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
+            if sngl.mass1 > 0 and sngl.mass2 > 0:
+                sngl.mtotal, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(
+                        sngl.mass1, sngl.mass2)
+                sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
+                        sngl.mass1, sngl.mass2)
+            if sngl.snr > 0:
+                sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
             sngl_inspiral_table.append(sngl)
 
             # Set up coinc_map entry
@@ -175,9 +179,16 @@ class SingleCoincForGraceDB(object):
             data_readers = kwargs['data_readers']
             bank = kwargs['bank']
             htilde = bank[self.template_id]
+            # for detectors which did not trigger, center the SNR series
+            # on the mean arrival time at the detectors which *did* trigger
+            trig_times = [coinc_results['foreground/%s/end_time' % ifo] for ifo in ifos]
+            logging.info('Trigger times: %s', trig_times)
+            subthreshold_center_time = numpy.mean(trig_times)
+            logging.info('Using %s as center time for subthreshold detectors', subthreshold_center_time)
             self.snr_series = {}
             self.snr_series_psd = {}
-            for ifo in self.ifos:
+            for ifo in self.ifos + self.followup_ifos:
+                logging.info('Computing onsource SNR for %s', ifo)
                 stilde = data_readers[ifo].overwhitened_data(htilde.delta_f)
                 norm = 4.0 * htilde.delta_f / (htilde.sigmasq(stilde.psd) ** 0.5)
                 qtilde = zeros((len(htilde)-1)*2, dtype=htilde.dtype)
@@ -197,12 +208,23 @@ class SingleCoincForGraceDB(object):
                 self.snr_series_psd[ifo] = stilde.psd
 
                 # store the on-source slice of the series into the XML doc
-                snr_onsource_time = coinc_results['foreground/%s/end_time' % ifo] - snr.start_time
-                snr_onsource_dur = lal.REARTH_SI / lal.C_SI
-                onsource_idx = round(snr_onsource_time * snr.sample_rate)
+                if ifo in ifos:
+                    snr_onsource_time = coinc_results['foreground/%s/end_time' % ifo] - snr.start_time
+                else:
+                    snr_onsource_time = subthreshold_center_time - snr.start_time
+                # the window lasts half an Earth light travel time
+                # plus 10 ms to account for timing uncertainty
+                snr_onsource_dur = lal.REARTH_SI / lal.C_SI + 0.01
+                onsource_idx = int(float(snr_onsource_time) * snr.sample_rate)
                 onsource_start = onsource_idx - int(snr.sample_rate * snr_onsource_dur / 2)
+                # FIXME avoid clipping with better handling of past data
+                if onsource_start < 0:
+                    onsource_start = 0
                 onsource_end = onsource_idx + int(snr.sample_rate * snr_onsource_dur / 2)
+                if onsource_end > len(snr):
+                    onsource_end = len(snr) - 1
                 onsource_slice = slice(onsource_start, onsource_end + 1)
+                logging.info('%s len(snr) = %s onsource start %s end %s', ifo, len(snr), onsource_start, onsource_end)
                 snr_lal = snr[onsource_slice].lal()
                 snr_lal.name = 'snr'
                 snr_lal.sampleUnits = ''
@@ -285,7 +307,7 @@ class SingleCoincForGraceDB(object):
 
         if self.upload_snr_series:
             snr_series_fname = fname + '.hdf'
-            for ifo in self.ifos:
+            for ifo in self.ifos + self.followup_ifos:
                 self.snr_series[ifo].save(snr_series_fname,
                                           group='%s/snr' % ifo)
                 self.snr_series_psd[ifo].save(snr_series_fname,
