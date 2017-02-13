@@ -368,28 +368,22 @@ def chi_eff(mass1, mass2, spin1z, spin2z):
 def chi_a(mass1, mass2, spin1z, spin2z):
     """Returns the aligned mass-weighted spin difference from mass1, mass2,
     spin1z, and spin2z"""
-    return (spin1z * mass1 - spin2z * mass2) / (mass1 + mass2)
+    m_p = primary_mass(mass1, mass2)
+    spin_p = primary_spin(mass1, mass2, spin1z, spin2z)
+    m_s = secondary_mass(mass1, mass2)
+    spin_s = secondary_spin(mass1, mass2, spin1z, spin2z)
+    return (spin_s * m_s - spin_p * m_p) / (m_s + m_p)
 
 def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Returns the effective precession spin from mass1, mass2, spin1x,
     spin1y, spin2x, and spin2y."""
-    return max(xi1(mass1, mass2, spin1x, spin1y),
-               xi2(spin2x, spin2y))
-
-def xi1(mass1, mass2, spin1x, spin1y):
-    """Returns the effective precession spin argument for mass1."""
-    q = q_from_mass1_mass2(mass1, mass2)
-    a1 = 2 + 3 * q / 2
-    a2 = 2 + 3 / (2 * q)
-    return a1 / (q**2 * a2) * in_plane_spin(spin1x, spin1y)
-
-def xi2(spin2x, spin2y):
-    """Returns the effective precession spin argument for mass2."""
-    return in_plane_spin(spin2x, spin2y)
-
-def in_plane_spin(spin1x, spin1y):
-    """Returns the in-plane spin from spin1x and spin1y."""
-    return numpy.sqrt(spin1x**2 + spin1y**2)
+    spinx_p = primary_spin(mass1, mass2, spin1x, spin2x)
+    spiny_p = primary_spin(mass1, mass2, spin1y, spin2y)
+    spinx_s = secondary_spin(mass1, mass2, spin1x, spin2x)
+    spiny_s = secondary_spin(mass1, mass2, spin1y, spin2y)
+    xi1 = secondary_xi(mass1, mass2, spinx_s, spiny_s)
+    xi2 = primary_xi(spinx_p, spiny_p)
+    return chi_p_from_xi1_xi2(xi1, xi2)
 
 def primary_spin(mass1, mass2, spin1, spin2):
     """Returns the dimensionless spin of the primary mass."""
@@ -405,7 +399,6 @@ def primary_spin(mass1, mass2, spin1, spin2):
     sp[mask] = spin2[mask]
     return _formatreturn(sp)
 
-
 def secondary_spin(mass1, mass2, spin1, spin2):
     """Returns the dimensionless spin of the secondary mass."""
     mass1 = _ensurearray(mass1)
@@ -420,6 +413,50 @@ def secondary_spin(mass1, mass2, spin1, spin2):
     ss[mask] = spin1[mask]
     return _formatreturn(ss)
 
+def primary_xi(spinx, spiny):
+    """Returns the effective precession spin argument for the larger mass."""
+    return chi_perp_from_spin1x_spin1y(spinx, spiny)
+
+def secondary_xi(mass1, mass2, spinx, spiny):
+    """Returns the effective precession spin argument for the smaller mass."""
+    q = q_from_mass1_mass2(mass1, mass2)
+    a1 = 2 + 3 * q / 2
+    a2 = 2 + 3 / (2 * q)
+    return a1 / (q**2 * a2) * chi_perp_from_spin1x_spin1y(spinx, spiny)
+
+def chi_perp_from_spin1x_spin1y(spin1x, spin1y):
+    """Returns the in-plane spin from spin1x and spin1y."""
+    return numpy.sqrt(spin1x**2 + spin1y**2)
+
+def chi_perp_from_spin2x_spin2y(spin2x, spin2y):
+    """Returns the in-plane spin from spin2x and spin2y."""
+    return chi_perp_from_spin1x_spin1y(spin2x, spin2y)
+
+def chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2):
+    """Returns the in-plane spin from mass1, mass2, and xi2 for the
+    secondary mass."""
+    q = q_from_mass1_mass2(mass1, mass2)
+    a1 = 2 + 3 * q / 2
+    a2 = 2 + 3 / (2 * q)
+    return q**2 * a2 / a1 * xi2
+
+def chi_p_from_xi1_xi2(xi1, xi2):
+    """Returns effective precession spin from xi1 and xi2."""
+    if hasattr(xi1, "__iter__"):
+        return map(max, zip(xi1, xi2))
+    else:
+        return max(xi1, xi2)    
+
+def phi1_from_phi_s_phi_a(phi_s, phi_a):
+    """Returns the angle between the x-component axis and the in-plane
+    spin for the primary mass from phi_s and phi_a."""
+    return (phi_s + phi_a) / 2.0
+
+def phi2_from_phi_s_phi_a(phi_s, phi_a):
+    """Returns the angle between the x-component axis and the in-plane
+    spin for the secondary mass from phi_s and phi_a."""
+    return (phi_s - phi_a) / 2.0
+
 def spin1z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
     """Returns spin1z."""
     return (mass1 + mass2) / mass1 * (chi_eff + chi_a)
@@ -428,6 +465,27 @@ def spin2z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
     """Returns spin2z."""
     return (mass1 + mass2) / mass2 * (chi_eff - chi_a)
 
+def spin1x_from_xi1_phi_a_phi_s(xi1, phi_a, phi_s):
+    """Returns spin2x for primary mass."""
+    phi1 = phi1_from_phi_s_phi_a(phi_s, phi_a)
+    return xi1 * numpy.cos(phi1)
+
+def spin1y_from_xi2_phi_a_phi_s(xi1, phi_a, phi_s):
+    """Returns spin2y for primary mass."""
+    phi1 = phi1_from_phi_s_phi_a(phi_s, phi_a)
+    return xi1 * numpy.sin(phi1)
+
+def spin2x_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
+    """Returns spin2x for secondary mass."""
+    chi_perp = chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2)
+    phi2 = phi2_from_phi_s_phi_a(phi_s, phi_a)
+    return chi_perp * numpy.cos(phi2)
+
+def spin2y_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
+    """Returns spin2y for secondary mass."""
+    chi_perp = chi_perp1_from_mass1_mass2_xi2(mass1, mass2, xi2)
+    phi2 = phi2_from_phi_s_phi_a(phi_s, phi_a)
+    return chi_perp * numpy.cos(phi2)
 
 #
 # =============================================================================
@@ -490,6 +548,6 @@ __all__ = ['primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'tau3_from_mass1_mass2', 'mtotal_from_tau0_tau3',
            'eta_from_tau0_tau3', 'mass1_from_tau0_tau3',
            'mass2_from_tau0_tau3', 'chi_eff', 'chi_a', 'chi_p', 'primary_spin',
-           'secondary_spin', 'xi1', 'xi2', 'in_plane_spin',
+           'secondary_spin', 'xi1', 'xi2', 'chi_perp_from_spin1x_spin2x',
            'chirp_distance', 'det_tc'
           ]
