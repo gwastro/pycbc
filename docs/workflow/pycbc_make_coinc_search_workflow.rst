@@ -608,8 +608,8 @@ If you have a subdax that failed, ``pegasus_analyzer`` will provide you with a c
 Reuse of data from a previous workflow
 ======================================
 
-One of the features of  Pegasus is to reuse the data products of prior runs.
-This can be used to expand an analysis or recover a run with mistaken settings without
+One of the features of Pegasus is reus the data products of prior runs.
+This can be used to e.g. expand an analysis or recover a run with mistaken settings without
 duplicating work. The steps below explain how to do this.
 
 ------------------------------------
