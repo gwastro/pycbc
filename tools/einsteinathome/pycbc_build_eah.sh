@@ -1013,7 +1013,7 @@ if check_md5 "$p" "$md5"; then
         exit 1
     fi
 fi
-f="$PWD/$p"
+frames="$PWD/$p"
 
 p="SEOBNRv2ChirpTimeSS.dat"
 md5="7b7dbadacc3f565fb2c8e6971df2ab74"
@@ -1149,7 +1149,7 @@ do
       --gps-start-time 1126259078 \
       --gps-end-time 1126259846 \
       --output H1-INSPIRAL-OUT.hdf \
-      --frame-files "$f" \
+      --frame-files "$frames" \
       --approximant ${approx_array[$i]} \
       --bank-file ${bank_array[$i]} \
       --verbose 2>&1
