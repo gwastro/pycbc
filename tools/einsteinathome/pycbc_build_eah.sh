@@ -34,6 +34,9 @@ pycbc_remote=ligo-cbc
 scratch_pycbc=false
 libgfortran=libgfortran.so
 extra_libs=""
+extra_bank=""
+extra_approx=""
+lal_data_path="."
 
 # defaults, possibly overwritten by OS-specific settings
 build_gcc=false
@@ -190,6 +193,9 @@ usage="
     --bema-testing    : use einsteinathome_testing branch of bema-ligo/pycbc repo
     --no-cleanup      : keep build directories after successful build for later inspection
     --with-extra-libs=<url> : add extra files from a tar file at <url> to the bundles
+    --with-extra-bank=<file> : run pycbc_inspiral again with an extra template bank
+    --with-extra-approx=<file> : run pycbc_inspiral again with an extra approximant
+    --with-lal-data=<path> : run test job using ROM data from <path>
     --verbose-python  : run PyInstalled Python in verbose mode, showing imports
     --no-analysis     : for testing, don't run analysis, assume weave cache is already there
 "
@@ -228,6 +234,9 @@ for i in $*; do
                 fi
             fi ;;
         --with-extra-libs=*) extra_libs="`echo $i|sed 's/^--with-extra-libs=//'`";;
+        --with-extra-bank=*) extra_bank="`echo $i|sed 's/^--with-extra-bank=//'`";;
+        --with-extra-approx=*) extra_approx="${extra_approx}`echo $i|sed 's/^--with-extra-approx=//'` ";;
+        --with-lal-data=*) lal_data_path="`echo $i|sed 's/^--with-lal-data=//'`";;
         --help) echo -e "Options:\n$usage">&2; exit 0;;
         *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
     esac
@@ -249,7 +258,7 @@ if [ ".$link_gcc_version" != "." ]; then
 fi
 libgfortran_dir="`$FC -print-file-name=$libgfortran|sed 's%/[^/]*$%%'`"
 export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran_dir:/usr/local/lib:$LD_LIBRARY_PATH"
-export CPPFLAGS="-I$PREFIX/include -I$PYTHON_PREFIX/include $CPPFLAGS"
+export CPPFLAGS="-I$PREFIX/include -I$PYTHON_PREFIX/include/python2.7 -I$PYTHON_PREFIX/include $CPPFLAGS"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LIBS="$LIBS -lgfortran"
 
@@ -1075,46 +1084,72 @@ else
     export LAL_FRAME_LIBRARY=FrameL
 fi
 
-LAL_DATA_PATH="." \
-  NO_TMPDIR=1 \
-  INITIAL_LOG_LEVEL=10 \
-  LEVEL2_CACHE_SIZE=8192 \
-  WEAVE_FLAGS='-O3 -march=core2 -w' \
-  FIXED_WEAVE_CACHE="$PWD/pycbc_inspiral" \
-  "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" \
-  --fixed-weave-cache \
-  --sample-rate 2048 \
-  --segment-end-pad 16 \
-  --cluster-method window \
-  --low-frequency-cutoff 30 \
-  --pad-data 8 \
-  --cluster-window 1 \
-  --cluster-function symmetric \
-  --injection-window 4.5 \
-  --segment-start-pad 112 \
-  --psd-segment-stride 8 \
-  --approximant 'SPAtmplt:mtotal<4' 'SEOBNRv2_ROM_DoubleSpin:else' \
-  --psd-inverse-length 16 \
-  --filter-inj-only \
-  --psd-segment-length 16 \
-  --snr-threshold 5.5 \
-  --segment-length 256 \
-  --autogating-width 0.25 \
-  --autogating-threshold 100 \
-  --autogating-cluster 0.5 \
-  --autogating-taper 0.25 \
-  --newsnr-threshold 5 \
-  --psd-estimation median \
-  --strain-high-pass 20 \
-  --order -1 \
-  --chisq-bins "1.75*(get_freq('fSEOBNRv2Peak',params.mass1,params.mass2,params.spin1z,params.spin2z)-60.)**0.5" \
-  --channel-name H1:LOSC-STRAIN \
-  --gps-start-time 1126259078 \
-  --gps-end-time 1126259846 \
-  --output H1-INSPIRAL-OUT.hdf \
-  --frame-files "$f" \
-  --bank-file "$p" \
-  --verbose 2>&1
+gw150914_bank=$p
+gw150914_approx='SPAtmplt:mtotal<4 SEOBNRv2_ROM_DoubleSpin:else'
+bank_array=( "$gw150914_bank" )
+approx_array=( "$gw150914_approx" )
+
+if ! test -z "$extra_approx" || ! test -z "$extra_bank" ; then
+    if test -z "$extra_bank" ; then
+        bank_array=( "$gw150914_bank" "$gw150914_bank" )
+    else
+        bank_array=( "$extra_bank" "$gw150914_bank" )
+    fi
+    if test -z "$extra_approx" ; then
+        approx_array=( "$gw150914_approx" "$gw150914_approx" )
+    else
+        approx_array=( "$extra_approx" "$gw150914_approx" )
+    fi
+fi
+
+n_runs=${#bank_array[@]}
+
+for (( i=0; i<${n_runs}; i++ ))
+do
+    rm -f H1-INSPIRAL-OUT.hdf
+    echo -e "\\n\\n>> [`date`] pycbc_inspiral using --bank-file ${bank_array[$i]} --approximant ${approx_array[$i]}"
+    echo -e "\\n\\n>> [`date`] pycbc_inspiral using ROM data from $lal_data_path"
+    LAL_DATA_PATH="$lal_data_path" \
+      NO_TMPDIR=1 \
+      INITIAL_LOG_LEVEL=10 \
+      LEVEL2_CACHE_SIZE=8192 \
+      WEAVE_FLAGS='-O3 -march=core2 -w' \
+      FIXED_WEAVE_CACHE="$PWD/pycbc_inspiral" \
+      "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" \
+      --fixed-weave-cache \
+      --sample-rate 2048 \
+      --segment-end-pad 16 \
+      --cluster-method window \
+      --low-frequency-cutoff 30 \
+      --pad-data 8 \
+      --cluster-window 1 \
+      --cluster-function symmetric \
+      --injection-window 4.5 \
+      --segment-start-pad 112 \
+      --psd-segment-stride 8 \
+      --psd-inverse-length 16 \
+      --filter-inj-only \
+      --psd-segment-length 16 \
+      --snr-threshold 5.5 \
+      --segment-length 256 \
+      --autogating-width 0.25 \
+      --autogating-threshold 100 \
+      --autogating-cluster 0.5 \
+      --autogating-taper 0.25 \
+      --newsnr-threshold 5 \
+      --psd-estimation median \
+      --strain-high-pass 20 \
+      --order -1 \
+      --chisq-bins "1.75*(get_freq('fSEOBNRv2Peak',params.mass1,params.mass2,params.spin1z,params.spin2z)-60.)**0.5" \
+      --channel-name H1:LOSC-STRAIN \
+      --gps-start-time 1126259078 \
+      --gps-end-time 1126259846 \
+      --output H1-INSPIRAL-OUT.hdf \
+      --frame-files "$f" \
+      --approximant ${approx_array[$i]} \
+      --bank-file ${bank_array[$i]} \
+      --verbose 2>&1
+done
 
 # test for GW150914
 echo -e "\\n\\n>> [`date`] test for GW150914"
