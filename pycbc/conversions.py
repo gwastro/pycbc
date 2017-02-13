@@ -422,7 +422,8 @@ def secondary_xi(mass1, mass2, spinx, spiny):
     q = q_from_mass1_mass2(mass1, mass2)
     a1 = 2 + 3 * q / 2
     a2 = 2 + 3 / (2 * q)
-    return a1 / (q**2 * a2) * chi_perp_from_spin1x_spin1y(spinx, spiny)
+#    return a1 / (q**2 * a2) * chi_perp_from_spin1x_spin1y(spinx, spiny)
+    return chi_perp_from_spin1x_spin1y(spinx, spiny)
 
 def chi_perp_from_spin1x_spin1y(spin1x, spin1y):
     """Returns the in-plane spin from spin1x and spin1y."""
@@ -451,12 +452,12 @@ def chi_p_from_xi1_xi2(xi1, xi2):
     chi_p[mask] = xi2[mask]
     return _formatreturn(chi_p)
 
-def phi1_from_phi_s_phi_a(phi_s, phi_a):
+def phi1_from_phi_a_phi_s(phi_a, phi_s):
     """Returns the angle between the x-component axis and the in-plane
     spin for the primary mass from phi_s and phi_a."""
     return (phi_s + phi_a) / 2.0
 
-def phi2_from_phi_s_phi_a(phi_s, phi_a):
+def phi2_from_phi_a_phi_s(phi_a, phi_s):
     """Returns the angle between the x-component axis and the in-plane
     spin for the secondary mass from phi_s and phi_a."""
     return (phi_s - phi_a) / 2.0
@@ -471,25 +472,25 @@ def spin2z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
 
 def spin1x_from_xi1_phi_a_phi_s(xi1, phi_a, phi_s):
     """Returns spin2x for primary mass."""
-    phi1 = phi1_from_phi_s_phi_a(phi_s, phi_a)
+    phi1 = phi1_from_phi_a_phi_s(phi_a, phi_s)
     return xi1 * numpy.cos(phi1)
 
 def spin1y_from_xi1_phi_a_phi_s(xi1, phi_a, phi_s):
     """Returns spin2y for primary mass."""
-    phi1 = phi1_from_phi_s_phi_a(phi_s, phi_a)
+    phi1 = phi1_from_phi_a_phi_s(phi_s, phi_a)
     return xi1 * numpy.sin(phi1)
 
 def spin2x_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
     """Returns spin2x for secondary mass."""
     chi_perp = chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2)
-    phi2 = phi2_from_phi_s_phi_a(phi_s, phi_a)
+    phi2 = phi2_from_phi_a_phi_s(phi_a, phi_s)
     return chi_perp * numpy.cos(phi2)
 
 def spin2y_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
     """Returns spin2y for secondary mass."""
     chi_perp = chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2)
-    phi2 = phi2_from_phi_s_phi_a(phi_s, phi_a)
-    return chi_perp * numpy.cos(phi2)
+    phi2 = phi2_from_phi_a_phi_s(phi_a, phi_s)
+    return chi_perp * numpy.sin(phi2)
 
 #
 # =============================================================================
