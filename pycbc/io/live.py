@@ -182,9 +182,7 @@ class SingleCoincForGraceDB(object):
             # for detectors which did not trigger, center the SNR series
             # on the mean arrival time at the detectors which *did* trigger
             trig_times = [coinc_results['foreground/%s/end_time' % ifo] for ifo in ifos]
-            logging.info('Trigger times: %s', trig_times)
             subthreshold_center_time = numpy.mean(trig_times)
-            logging.info('Using %s as center time for subthreshold detectors', subthreshold_center_time)
             self.snr_series = {}
             self.snr_series_psd = {}
             for ifo in self.ifos + self.followup_ifos:
@@ -224,7 +222,6 @@ class SingleCoincForGraceDB(object):
                 if onsource_end > len(snr):
                     onsource_end = len(snr) - 1
                 onsource_slice = slice(onsource_start, onsource_end + 1)
-                logging.info('%s len(snr) = %s onsource start %s end %s', ifo, len(snr), onsource_start, onsource_end)
                 snr_lal = snr[onsource_slice].lal()
                 snr_lal.name = 'snr'
                 snr_lal.sampleUnits = ''

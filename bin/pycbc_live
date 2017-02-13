@@ -238,6 +238,8 @@ parser.add_argument('--store-loudest-index', type=int, default=0)
 parser.add_argument('--max-psd-abort-distance', type=float, default=numpy.inf)
 parser.add_argument('--min-psd-abort-distance', type=float, default=-numpy.inf)
 parser.add_argument('--max-triggers-in-batch', type=int)
+parser.add_argument('--max-length', type=float,
+                    help='Maximum duration of templates, used to set the data buffer size')
 
 parser.add_argument('--enable-profiling', type=int, 
                     help="Dump out profiling information from an MPI process at"
@@ -308,6 +310,8 @@ with ctx:
                                      newsnr_threshold=args.newsnr_threshold,
                                      max_triggers_in_batch=args.max_triggers_in_batch,
                                      maxelements=args.max_batch_size)
+    if args.max_length is not None:
+        maxlen = args.max_length
     data_reader = {}
     sngl_estimator = {}
     for ifo in ifos + followup_ifos:
@@ -385,11 +389,11 @@ with ctx:
                 continue
 
             if status is True:
-                logging.info('%s: %s: Filtering', evnt.rank, ifo)
+                logging.info('%s: Filtering: %s', evnt.rank, ifo)
                 if evnt.rank > 0:
                     results[ifo] = mf.process_data(data_reader[ifo])
             else:
-                logging.info('%s: %s: Insufficient data for analysis', evnt.rank, ifo)
+                logging.info('Insufficient data for analysis')
 
         if evnt.rank > 0:
             evnt.commit_results((results, data_end()))
