@@ -385,6 +385,16 @@ def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     xi2 = primary_xi(spinx_p, spiny_p)
     return chi_p_from_xi1_xi2(xi1, xi2)
 
+def phi_a(spin1x, spin1y, spin2x, spin2y):
+    phi1 = phi1_from_spin1x_spin1y(spin1x, spin1y)
+    phi2 = phi2_from_spin2x_spin2y(spin2x, spin2y)
+    return phi1 - phi2
+
+def phi_s(spin1x, spin1y, spin2x, spin2y):
+    phi1 = phi1_from_spin1x_spin1y(spin1x, spin1y)
+    phi2 = phi2_from_spin2x_spin2y(spin2x, spin2y)
+    return phi1 + phi2
+
 def primary_spin(mass1, mass2, spin1, spin2):
     """Returns the dimensionless spin of the primary mass."""
     mass1 = _ensurearray(mass1)
@@ -461,6 +471,14 @@ def phi2_from_phi_a_phi_s(phi_a, phi_s):
     """Returns the angle between the x-component axis and the in-plane
     spin for the secondary mass from phi_s and phi_a."""
     return (phi_s - phi_a) / 2.0
+
+def phi1_from_spin1x_spin1y(spin1x, spin1y):
+    """Returns phi1 for primary mass."""
+    return numpy.arctan(spin1y / spin1x)
+
+def phi2_from_spin2x_spin2y(spin2x, spin2y):
+    """Returns phi2 for secondary mass."""
+    return phi1_from_spin1x_spin1y(spin2x, spin2y)
 
 def spin1z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
     """Returns spin1z."""
