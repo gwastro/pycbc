@@ -610,51 +610,236 @@ Reuse of data from a previous workflow
 
 One of the features of  Pegasus is to reuse the data products of prior runs.
 This can be used to expand an analysis or recover a run with mistaken settings without
-duplicating work.
+duplicating work. The steps below explain how to do this.
 
------------------------------------------
-Generate the full workflow you want to do
------------------------------------------
+------------------------------------
+Setting up a workflow for data reuse
+------------------------------------
 
-First generate the full workflow for the
-run you would like to do as normal. Follow the instructions of this page from :ref:`coincworkflowgenerate`,
-but stop before planning and submitting the workflow in :ref:`coincworkflowplan`.
+The first step is to generate a new workflow that performs the analysis that
+you would like to do. Data reuse happens at the ``pycbc_submit_dax`` step, so
+first run ``pycbc_make_coinc_search_workflow`` to build a new workflow,
+following the instructions in the section :ref:`coincworkflowgenerate` of this
+page.
 
------------------------------------------------------
-Select the files you want to reuse from the prior run
------------------------------------------------------
+**Stop** before you plan and submit the workflow with ``pycbc_submit_dax``.
+You will pass an additional file to ``pycbc_submit_dax`` using the
+``--cache-file`` option with a list of files that Pegasus can re-use from a
+pervious run.  The Pegasus Workflow Planner will try to reduce the workflow
+using this cache file. Reduction works by deleting jobs from the workflow
+whose output files have been found in some location in this cache file.
 
-Locate the directory of the run that you would like to reuse. There is a file
-ending in ``output.map`` in the directory that you specified with the
-``--output`` argument to ``pycbc_make_coinc_search_workflow``. This file contains a 
-listing of all of the data products of the prior workflow, and can be used to tell
-pegasus to skip regenerating them.
+The key to data reuse is building the cache file passed to ``pycbc_submit_dax``. This file maps a file created in the workflow to a URL and a site where that URL can be found. The syntax of the cache file is plain ASCII with each line in the file giving the location of a file in the format::
 
-Select the entries in the file that you would like to skip generating again and
-place that into a new file. The example below selects all the inspiral and 
-tmpltbank jobs and places their entries into a new listing called prior_data.map.::
+    LOGICAL_FILE_NAME PHYSICAL_FILE_URL pool="SITE"
 
-    # Lets get the tmpltbank entries
-    cat /path/to/old/run/${GPS_START_TIME}-${GPS_END_TIME}/output.map | grep 'TMPLTBANK' > prior_data.map
-    
-    # Add in the inspiral  files
-    cat /path/to/old/run/${GPS_START_TIME}-${GPS_END_TIME}/output.map | grep 'INSPIRAL' >> prior_data.map
+where ``LOGICAL_FILE_NAME`` is the name of the file as it appears in the
+workflow (incluing any preceeding path), ``PHYSICAL_FILE_URL`` is a URL where
+the file can be found, and ``SITE`` is the site on which that URL resides.
+
+The URI in the ``PHYSICAL_FILE_URL`` can be any of the URIs that Pegasus
+recognizes. The URIs ``file://``, ``gsiftp://``, and ``http://`` are likely
+the most useful. Pegasus will take care of adding transfer jobs for
+``gsiftp://`` and ``http://`` URIs, if the data is not available locally.
+
+The string ``SITE`` is a hint that tells Pegasus on which site the
+``PHYSICAL_FILE_URL`` can be found (This is needed beacuse the execution site
+might not be obvious from the hostname in the ``PHYSICAL_FILE_URL``). In
+practice, we only use three ``SITE`` strings when constructing cache files:
+
+1. ``local`` which is the regular Condor pool on the local cluster where the workflow is being run from. This is typically used when re-using data that exists on the filesystem of the local cluster.
+2. ``osg`` which is the Open Science Grid pool, as described in * :ref:`weeklyahopeosg` below. This is only used if the data to be re-used is accessible via the ``/cvmfs`` filesystem.
+3. ``remote`` implies that the file is neither on the ``local`` or the ``osg`` site and so Pegasus must add file transfer jobs to fetch the file from some other site.
+
+The following rule should be helpful when chosing the ``SITE`` string:
+
+* If you are re-using a file that is available locally with a ``file://`` URI in its ``PHYSICAL_FILE_URL`` (or has an implicit ``file://`` URI since the ``PHYSICAL_FILE_URL`` starts with a ``/``) then the string ``SITE`` should be set to ``local``.
+* If you are re-using a file from another cluster, e.g. you are on the Syracuse cluster and want to re-use data from AEI Atlas cluster, then the string ``SITE`` should be set to ``remote`` for that file. In this case, the URI in ``PHYSICAL_FILE_URL`` will be either ``gsiftp://`` or ``http://`` depending on how the file can be accessed.
+
+To illustrate this, an example of a simple cache file containing four files for re-use from the ``local`` site is::
+
+    H1-VETOTIME_CAT3-1169107218-1066800.xml file://localhost/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/results/1._analysis_time/1.01_segment_data/H1-VETOTIME_CAT3-1169107218-1066800.xml pool="local"
+    L1-VETOTIME_CAT3-1169107218-1066800.xml file://localhost/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/results/1._analysis_time/1.01_segment_data/L1-VETOTIME_CAT3-1169107218-1066800.xml pool="local"
+    116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf file://localhost/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/full_data/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf pool="local"
+    116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf file://localhost/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/full_data/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf pool="local"
+
+In this case, Pegasus will delete the jobs from the workflow that create the files ``H1-VETOTIME_CAT3-1169107218-1066800.xml``, ``L1-VETOTIME_CAT3-1169107218-1066800.xml``, ``116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf``, and ``116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf`` when it plans the workflow. Insted, the data will be re-used from the URLs specified in the cache. Since ``site="local"`` for these files, Pegasus expects that the files all exist on the host where the workflow is run from.
+
+To re-use data from a remote cluster, the URLs must contain a file transfer
+mechanism and the ``SITE`` should be set to ``remote``. For example, if the
+files listed in the example above are available on
+``sugwg-condor.phy.syr.edu`` and you want to re-use them in a workflow on the
+AEI Atlas cluster, then the cache file would contain::
+
+    H1-VETOTIME_CAT3-1169107218-1066800.xml gsiftp://sugwg-condor.phy.syr.edu/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/results/1._analysis_time/1.01_segment_data/H1-VETOTIME_CAT3-1169107218-1066800.xml pool="remote"
+    L1-VETOTIME_CAT3-1169107218-1066800.xml gsiftp://sugwg-condor.phy.syr.edu/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/results/1._analysis_time/1.01_segment_data/L1-VETOTIME_CAT3-1169107218-1066800.xml pool="remote"
+    116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf gsiftp://sugwg-condor.phy.syr.edu/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/full_data/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf pool="remote"
+    116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf gsiftp://sugwg-condor.phy.syr.edu/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/full_data/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf pool="remote"
+
+Note that the URL now contains ``gsiftp://sugwg-condor.phy.syr.edu`` rather
+than ``file://localhost`` and the files are listes as ``pool="remote"`` rather
+than ``pool="local"``. Pegasus will re-use these data files adding in
+file transfer jobs to the workflow to move them into the appropriate
+locations.
+
+Once a cache file has been constructed, to enable data re-use, you follow the
+standard instructions for planning and submitting the workflow in the section
+:ref:`coincworkflowplan`, but add the ``--cache-file`` argument that points to
+the cache file that you have created. For example:: 
+
+    pycbc_submit_dax --accounting-group ligo.dev.o1.cbc.explore.test --dax s6d_chunk3.dax --cache-fole /path/to/prior_data.map
+
+will use the URLs from the file ``/path/to/prior_data.map`` to implement
+data re-use and subsequent workflow reduction.
+
+The main key to data re-use is generating the cache file. There is no rule for
+doing this, as it depends on eactly what you are trying to do. The sections
+below explain how to do this for a few common situations.
 
 .. note::
 
-    You can include files in the prior data listing that wouldn't be generated anyway by your new run. These are simply
-    ignored.
+    The ``[workflow]`` section of the ini configuration file contains an
+    option ``file-retention-level``. This is commonly set to ``all_files`` or
+    ``all_triggers``, in which was the data products re-used will be copied
+    from the input locations and stored into the output location of the new
+    workflow when the new workflow is run with data re-use. This can be
+    wasteful of disk space, so you may want to set this option to either
+    ``merged_triggers`` or ``results`` to store a smaller sub-set of the
+    workflow's data products. These setting will allow the use of data from
+    a previous run, but not make duplicate copies of intermediate data files.
+    See the documentation under :ref:`workflowconfigparsermod` for more
+    details of the ``file-retention-level`` configuration option.
 
----------------------------
-Plan the workflow
----------------------------
 
-From the directory where the dax was created, now plan the workflow with an additional argument as follows.::
+.. _workflow_rerun_extend:
 
-    pycbc_submit_dax --accounting-group ligo.dev.o1.cbc.explore.test --dax s6d_chunk3.dax --cache /path/to/prior_data.map
+-------------------------------------------------
+Extending the GPS end time of a previous workflow
+-------------------------------------------------
 
-Follow the remaining :ref:`coincworkflowplan` instructions to submit your reduced
-workflow.
+A common mode of data re-use is to extend the GPS end time of a previous
+workflow to generate a new result page that e.g. extends the analysis by a few
+days. This assumes that:
+
+* The previous workflow completed successfully.
+* There are no changes to the workflow configuration file, other than incrementing the end time of the workflow.
+
+In this case, first re-run ``pycbc_make_coinc_search_workflow`` to build the
+new workflow, and then create a cache file in the following way:
+
+1. Locate the PyCBC result page for the workflow that you wish to extend.
+2. In the menu under **Section 8: Workflow**, locate the **Output map**
+section (usually Section 8.06) and open that page.
+3. This page will show three output cache files that contain the URLs of the
+data created by the workflow. Locate the file that ends ``main.map`` and
+download it by clicking on the **Link to file**. This file contains the main
+intermediate and output data products of the workflow.
+4. Edit this file so that it only contains the output of the
+``pycbc_inspiral`` jobs, i.e. delete all of the lines that do not match the
+pattern ``*INSPIRAL*hdf``. You can do this in a text editor, or with your
+favorite combination of UNIX ``grep``, ``sed``, ``awk``, or ``perl`` commands.
+For example::
+
+    egrep 'INSPIRAL.*hdf' /path/to/downloaded/workflow-main.map > inspiral_files.map
+
+will pull out all cache file lines for the outputs of ``pycbc_inspiral`` files
+and write them to a new cache file called ``inspiral_files.map``.  
+5. If the files in the new cache file exist locally on the cluster where you
+are submitting the workflow, then the cache file is complete. If they do not,
+you will need to modify the file to change the ``PHYSICAL_FILE_URL`` to a
+valid ``gsiftp://`` or ``http://`` URL on the remote cluster, and change
+``pool="local"`` to ``pool="remote"``. Again, these changes can be made with a
+text editor or UNIX shell tools. For example, if the file URLs begin with
+``/home/dbrown`` and they are on the Syracuse cluster, to run on Atlas you
+would use the following ``sed`` commands to change the ``SITE`` and the URI in
+the cache file::
+
+    sed 's/pool="local"/pool="remote"/g' inspiral_files.map > inspiral_files.map.tmp
+    sed 's+/home/dbrown+gsiftp://sugwg-condor.phy.syr.edu/home/dbrown+g' inspiral_files.map.tmp > inspiral_files.map
+    rm inspiral_files.map.tmp
+
+6. Finally, copy the file ``inspiral_files.map`` to your new workflow directory and
+then run ``pycbc_submit_dax`` as usual, giving the path to
+``inspiral_files.map`` as the ``--cache-file`` argument.
+
+---------------------------------------------------
+Re-running a workflow using a new veto definer file
+---------------------------------------------------
+
+The instruction above in :ref:`workflow_rerun_extend` can also be used to re-running a workflow with a new veto definer file, assuming that:
+
+* The previous workflow completed successfully.
+* No changes to the configuration file are made, other than changing the ``segments-veto-definer-url`` in the ``[workflow-segments]`` section of the workflow configration file (although the GPS end time can also be extended at the same time, if necessary).
+
+Follow the instructions in the :ref:`workflow_rerun_extend` to make the cache
+file and re-run the workflow.
+
+----------------------------
+Re-running a failed workflow
+----------------------------
+
+Ocasionaly it may be necessary to use data from a partially completed
+workflow, e.g. if there a bug in an executable and you wish to re-run the
+workflow with a new version of the executable. If the workflow failed, no
+results web page will have been generated and the output data may not have
+been copied to the locations in ``main.map``. To re-use data from a previous
+failed workflow, you need to create a cache file containing the completed jobs
+from the previous workflow. 
+
+To do this, ``cd`` into the ``local-site-scratch/work`` directory of your
+failed workflow. For example, if you used ``--output-dir output`` when
+planning the workflow, the then run the command::
+
+    cd /path/to/workflow/output/local-site-scratch/work
+
+Once in this directory there should be a directory that ends with
+``main_ID0000001`` (e.g. ``my-workflow-main_ID0000001``) Change into that
+directory.
+
+Once in the ``main_ID0000001`` directory, run the command::
+
+    for pfn in `find . -type f | sed 's+^./++g'` ; do echo $pfn file://`pwd`/$pfn pool=\"local\" ; done > /path/to/partial_workflow.map
+
+
+changing ``/path/to`` to a location where you want to save the cache.
+
+If your run used the Open Science Grid, you will need to do the same thing for
+the ``osg-site-scratch`` directory. In this case::
+
+    cd /path/to/workflow/output/osg-site-scratch/work
+
+and change into the directory that ends with ``main_ID0000001``. Then run the
+same command as above::
+
+    for pfn in `find . -type f | sed 's+^./++g'` ; do echo $pfn file://`pwd`/$pfn pool=\"local\" ; done >> /path/to/partial_workflow.map
+
+but **note** the ``>>`` rather than ``>`` to append to the file ``partial_workflow.map``, rather than clobbering the file and creating a new file.
+ 
+Now you can than use the ``partial_workflow.map`` cache file as the ``--cache-file`` argument to ``pycbc_submit_dax``.
+
+
+-----------------------------------------------
+Using partial products from a previous workflow
+-----------------------------------------------
+
+If you are changing the configuration parameters of a workflow, then you can
+build a cache file from a previous ``main.map`` file or the files under
+``local-site-scratch``, but you will need to filter the cache file to remove
+the files for jobs that have a changed configuration.  Here are a few
+examples:
+
+* If you are changing the configuration of ``pycbc_inspiral`` you must regenerate almost all the files in the workflow so it easier to start from scratch.
+* If you are changing the injections, but want to re-use the ``FULL_DATA`` previous analysis, you can filter the ``main.map`` to keep the veto files, template bank files, full data inspiral files, and PSD files. For example::
+
+    egrep '(VETO|BANK|FULL_DATA|PSD)' /path/to/main.map > /path/to/reuse.map
+
+* If you are changing the configuration of the coincident code, you can reuse all the injection files and inspiral files. For example::
+
+    egrep '(VETO|BANK|INSPIRAL|MERGE|OPTIMAL|PSD)' /path/to/main.map > /path/to/reuse.map
+
+.. note::
+
+    There is no rule for exactly which products can be reused as it depends on what you are changing in the workflow configuration. For partial reuse, it is best to consult an expert on how to build the cache file.
 
 
 .. _weeklyahopeosg:
