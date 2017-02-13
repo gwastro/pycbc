@@ -432,8 +432,7 @@ def secondary_xi(mass1, mass2, spinx, spiny):
     q = q_from_mass1_mass2(mass1, mass2)
     a1 = 2 + 3 * q / 2
     a2 = 2 + 3 / (2 * q)
-#    return a1 / (q**2 * a2) * chi_perp_from_spin1x_spin1y(spinx, spiny)
-    return chi_perp_from_spin1x_spin1y(spinx, spiny)
+    return a1 / (q**2 * a2) * chi_perp_from_spin1x_spin1y(spinx, spiny)
 
 def chi_perp_from_spin1x_spin1y(spin1x, spin1y):
     """Returns the in-plane spin from spin1x and spin1y."""
