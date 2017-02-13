@@ -442,10 +442,14 @@ def chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2):
 
 def chi_p_from_xi1_xi2(xi1, xi2):
     """Returns effective precession spin from xi1 and xi2."""
-    if hasattr(xi1, "__iter__"):
-        return map(max, zip(xi1, xi2))
-    else:
-        return max(xi1, xi2)    
+    xi1 = _ensurearray(xi1)
+    xi2 = _ensurearray(xi2)
+    if xi1.shape != xi2.shape:
+        raise ValueError("xi1, xi2 must have same shape")
+    chi_p = copy.copy(xi1)
+    mask = xi1 < xi2
+    chi_p[mask] = xi2[mask]
+    return _formatreturn(chi_p)
 
 def phi1_from_phi_s_phi_a(phi_s, phi_a):
     """Returns the angle between the x-component axis and the in-plane
@@ -459,18 +463,18 @@ def phi2_from_phi_s_phi_a(phi_s, phi_a):
 
 def spin1z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
     """Returns spin1z."""
-    return (mass1 + mass2) / mass1 * (chi_eff + chi_a)
+    return (mass1 + mass2) / (2 * mass1) * (chi_eff - chi_a)
 
 def spin2z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
     """Returns spin2z."""
-    return (mass1 + mass2) / mass2 * (chi_eff - chi_a)
+    return (mass1 + mass2) / (2 * mass2) * (chi_eff + chi_a)
 
 def spin1x_from_xi1_phi_a_phi_s(xi1, phi_a, phi_s):
     """Returns spin2x for primary mass."""
     phi1 = phi1_from_phi_s_phi_a(phi_s, phi_a)
     return xi1 * numpy.cos(phi1)
 
-def spin1y_from_xi2_phi_a_phi_s(xi1, phi_a, phi_s):
+def spin1y_from_xi1_phi_a_phi_s(xi1, phi_a, phi_s):
     """Returns spin2y for primary mass."""
     phi1 = phi1_from_phi_s_phi_a(phi_s, phi_a)
     return xi1 * numpy.sin(phi1)
@@ -483,7 +487,7 @@ def spin2x_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
 
 def spin2y_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
     """Returns spin2y for secondary mass."""
-    chi_perp = chi_perp1_from_mass1_mass2_xi2(mass1, mass2, xi2)
+    chi_perp = chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2)
     phi2 = phi2_from_phi_s_phi_a(phi_s, phi_a)
     return chi_perp * numpy.cos(phi2)
 
