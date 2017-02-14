@@ -37,8 +37,8 @@ parser.add_argument('--h-iter-inc-background', type=int, default=None,
                          'the inclusive background after the loudest '
                          'foreground trigger was removed. Choosing another '
                          'integer gives the inclusive background after that '
-                         'integer number of hierarchical removals. Choosing '
-                         'None defaults to the background from after all '
+                         'integer number of hierarchical removals. If not '
+                         'provided defaults to the background from after all '
                          'hierarchical removals performed. [default=None]')
 parser.add_argument('--closed-box', action='store_true',
                     help='Make a closed box version that excludes '
