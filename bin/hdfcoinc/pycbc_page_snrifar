@@ -274,23 +274,35 @@ if not args.closed_box:
                 except ValueError:
                     logging.warn(" Can't find a place for the sigma labels ")
 
-#        if args.not_cumulative:
-#            # add arrows to any points > the loudest background
-#            far_min_possible = 1. / f.attrs['background_time']
-#            far_min_possible *= 3.15569e7 * args.trials_factor
-#            louder_pts = numpy.where(cstat_rate <= far_min_possible)
-#            for ii in louder_pts:
-#                r = cstat_fore[ii]
-#                arr_start = cstat_rate[ii]
-#                # make the arrow length 1/15 the height of the plot
-#                arr_end = arr_start * (plot_ymin / plot_ymax) ** (1./15)
-#                pylab.plot([r, r], [arr_start, arr_end], lw=2, color='black',
-#                    zorder=99)
-#                pylab.plot([r, r], [arr_start, arr_end], lw=2.6, color='white',
-#                    zorder=97)
-#                pylab.scatter([r], [arr_end], marker='v', c='black',
-#                    edgecolors='white', lw=0.5, s=40, zorder=98)
-            
+        if args.not_cumulative:
+            # add arrows to any points > the loudest background
+            louder_pts = numpy.where(cstat_fore > cstat_back.max())[0] 
+            for ii in louder_pts:
+                r = cstat_fore[ii]
+                arr_start = cstat_rate[ii]
+                # make the arrow length 1/15 the height of the plot
+                arr_end = arr_start * (plot_ymin / plot_ymax) ** (1./15)
+                pylab.plot([r, r], [arr_start, arr_end], lw=2, color='black',
+                           zorder=99)
+                pylab.plot([r, r], [arr_start, arr_end], lw=2.6, color='white',
+                           zorder=97)
+                pylab.scatter([r], [arr_end], marker='v', c='black',
+                              edgecolors='white', lw=0.5, s=40, zorder=98) 
+
+            if h_inc_back_num > 0:
+               #louder_pts = numpy.where(cstat_rate_h_rm > cstat_back.max())[0]
+               for ii in range(0, len(cstat_fore_h_rm)):
+                   r = cstat_fore_h_rm[ii]
+                   arr_start = cstat_rate_h_rm[ii]
+                   # make the arrow length 1/15 the height of the plot
+                   arr_end = arr_start * (plot_ymin / plot_ymax) ** (1./15)
+                   pylab.plot([r, r], [arr_start, arr_end], lw=2,
+                              color='black', zorder=99)
+                   pylab.plot([r, r], [arr_start, arr_end], lw=2.6,
+                              color='white', zorder=97)
+                   pylab.scatter([r], [arr_end], marker='v', c='black',
+                                 edgecolors='white', lw=0.5, s=40, zorder=98)
+
 if not args.cumulative:
     # add second y-axis for probabilities, sigmas
     sigmas = numpy.arange(6)+1
