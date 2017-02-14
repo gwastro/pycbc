@@ -260,7 +260,7 @@ if [ ".$link_gcc_version" != "." ]; then
 fi
 libgfortran_dir="`$FC -print-file-name=$libgfortran|sed 's%/[^/]*$%%'`"
 export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran_dir:/usr/local/lib:$LD_LIBRARY_PATH"
-export CPPFLAGS="-I$PREFIX/include -I$PYTHON_PREFIX/include/python2.7 -I$PYTHON_PREFIX/include $CPPFLAGS"
+export CPPFLAGS="-I$PREFIX/include -I$PYTHON_PREFIX/include $CPPFLAGS"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LIBS="$LIBS -lgfortran"
 
@@ -1113,6 +1113,7 @@ do
     rm -f H1-INSPIRAL-OUT.hdf
     echo -e "\\n\\n>> [`date`] pycbc_inspiral using --bank-file ${bank_array[$i]} --approximant ${approx_array[$i]}"
     echo -e "\\n\\n>> [`date`] pycbc_inspiral using ROM data from $lal_data_path"
+    CPPFLAGS="$CPPFLAGS `python-config --includes`" \
     LAL_DATA_PATH="$lal_data_path" \
       NO_TMPDIR=1 \
       INITIAL_LOG_LEVEL=10 \
