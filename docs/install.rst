@@ -184,7 +184,7 @@ Next install the Pegasus WMS python libraries needed to build the workflows with
 
 .. code-block:: bash
 
-    pip install http://download.pegasus.isi.edu/pegasus/4.7.2/pegasus-python-source-4.7.2.tar.gz
+    pip install http://download.pegasus.isi.edu/pegasus/4.7.3/pegasus-python-source-4.7.3.tar.gz
 
 To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. Install the 1.4.1 pre-release of these tools, run the command:
 
@@ -287,7 +287,7 @@ To build the documentation from your virtual environment, first make sure that y
     pip install "Sphinx>=1.4.2"
     pip install numpydoc
     pip install sphinx-rtd-theme
-    pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git@pypi_release#egg=sphinxcontrib-programoutput
+    pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
     
 To generate the documentation, from the top level of the PyCBC source tree run
 
