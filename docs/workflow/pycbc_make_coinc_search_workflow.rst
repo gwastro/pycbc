@@ -720,60 +720,71 @@ Extending the GPS end time of a previous workflow
 
 A common mode of data re-use is to extend the GPS end time of a previous
 workflow to generate a new result page that e.g. extends the analysis by a few
-days. This assumes that:
-
+days. This assumes that: 
 * The previous workflow completed successfully.
+
 * There are no changes to the workflow configuration file, other than incrementing the end time of the workflow.
 
 In this case, first re-run ``pycbc_make_coinc_search_workflow`` to build the
 new workflow, and then create a cache file in the following way:
 
 1. Locate the PyCBC result page for the workflow that you wish to extend.
-2. In the menu under **Section 8: Workflow**, locate the **Output map**
-section (usually Section 8.06) and open that page.
-3. This page will show three output cache files that contain the URLs of the
-data created by the workflow. Locate the file that ends ``main.map`` and
-download it by clicking on the **Link to file**. This file contains the main
-intermediate and output data products of the workflow.
-4. Edit this file so that it only contains the output of the
-``pycbc_inspiral`` jobs, i.e. delete all of the lines that do not match the
-pattern ``*INSPIRAL*hdf``. You can do this in a text editor, or with your
-favorite combination of UNIX ``grep``, ``sed``, ``awk``, or ``perl`` commands.
+
+2. In the menu under **Section 8: Workflow**, locate the **Output map** section (usually Section 8.06) and open that page.
+
+3. This page will show three output cache files that contain the URLs of the data created by the workflow. Locate the file that ends ``main.map`` and download it by clicking on the **Link to file**. This file contains the main intermediate and output data products of the workflow.
+
+4. Edit this file so that it only contains the output of the ``pycbc_inspiral`` jobs, i.e. delete all of the lines that do not match the pattern ``*INSPIRAL*hdf``. You can do this in a text editor, or with your favorite combination of UNIX ``grep``, ``sed``, ``awk``, or ``perl`` commands.
 For example::
 
     egrep 'INSPIRAL.*hdf' /path/to/downloaded/workflow-main.map > inspiral_files.map
 
-will pull out all cache file lines for the outputs of ``pycbc_inspiral`` files
-and write them to a new cache file called ``inspiral_files.map``.  
-5. If the files in the new cache file exist locally on the cluster where you
-are submitting the workflow, then the cache file is complete. If they do not,
-you will need to modify the file to change the ``PHYSICAL_FILE_URL`` to a
-valid ``gsiftp://`` or ``http://`` URL on the remote cluster, and change
-``pool="local"`` to ``pool="remote"``. Again, these changes can be made with a
-text editor or UNIX shell tools. For example, if the file URLs begin with
-``/home/dbrown`` and they are on the Syracuse cluster, to run on Atlas you
-would use the following ``sed`` commands to change the ``SITE`` and the URI in
-the cache file::
+will pull out all cache file lines for the outputs of ``pycbc_inspiral`` files and write them to a new cache file called ``inspiral_files.map``.  
+
+5. If the files in the new cache file exist locally on the cluster where you are submitting the workflow, then the cache file is complete. If they do not, you will need to modify the file to change the ``PHYSICAL_FILE_URL`` to a valid ``gsiftp://`` or ``http://`` URL on the remote cluster, and change ``pool="local"`` to ``pool="remote"``. Again, these changes can be made with a text editor or UNIX shell tools. For example, if the file URLs begin with ``/home/dbrown`` and they are on the Syracuse cluster, to run on Atlas you would use the following ``sed`` commands to change the ``SITE`` and the URI in the cache file::
 
     sed 's/pool="local"/pool="remote"/g' inspiral_files.map > inspiral_files.map.tmp
     sed 's+/home/dbrown+gsiftp://sugwg-condor.phy.syr.edu/home/dbrown+g' inspiral_files.map.tmp > inspiral_files.map
     rm inspiral_files.map.tmp
 
-6. Finally, copy the file ``inspiral_files.map`` to your new workflow directory and
-then run ``pycbc_submit_dax`` as usual, giving the path to
-``inspiral_files.map`` as the ``--cache-file`` argument.
+6. Finally, copy the file ``inspiral_files.map`` to your new workflow directory and then run ``pycbc_submit_dax`` as usual, giving the path to ``inspiral_files.map`` as the ``--cache-file`` argument.
 
 ---------------------------------------------------
 Re-running a workflow using a new veto definer file
 ---------------------------------------------------
 
-The instruction above in :ref:`workflow_rerun_extend` can also be used to re-running a workflow with a new veto definer file, assuming that:
+Data reuse can be used to re-running a workflow with a new veto definer file, assuming that:
 
 * The previous workflow completed successfully.
 * No changes to the configuration file are made, other than changing the ``segments-veto-definer-url`` in the ``[workflow-segments]`` section of the workflow configration file (although the GPS end time can also be extended at the same time, if necessary).
 
-Follow the instructions in the :ref:`workflow_rerun_extend` to make the cache
-file and re-run the workflow.
+In this case, first re-run ``pycbc_make_coinc_search_workflow`` to build the
+new workflow, and then create a cache file in the following way:
+
+1. Locate the PyCBC result page for the workflow that you wish to extend.
+
+2. In the menu under **Section 8: Workflow**, locate the **Output map** section (usually Section 8.06) and open that page.
+
+3. This page will show three output cache files that contain the URLs of the data created by the workflow. Locate the file that ends ``main.map`` and download it by clicking on the **Link to file**. This file contains the main intermediate and output data products of the workflow.
+
+4. Remove output files that match the following strings from the output map file: 
+  * ``VETOTIME`` to remove the files containing the old veto segments.
+  * ``LIGOLW_COMBINE_SEGMENTS`` to remove the files that combine the veto segments into categories.
+  * ``CUMULATIVE_CAT_12H_VETO_SEGMENTS`` to remove the files that contain times to veto.
+  * ``COINC`` to remove the output of the coincidence code.
+  * ``FIT`` to remove the background bin statistic results.
+  * ``STATMAP`` to remove the detection statistic ranking output.
+  * ``INJFIND`` to remove the results of software-injection tests.
+  * ``PAGE`` to remove the results make with the loudest events.
+  * ``FOREGROUND_CENSOR`` to remove the veto files used to remove events from the closed box plots.
+  * ``html`` to remove any output web pages genereated.
+  * ``png`` to remove any output plots generated.
+  * ``dax`` to remove any follow-up workflows generated.
+This can be acomplished with the following command::
+
+    egrep -v '(VETOTIME|LIGOLW_COMBINE_SEGMENTS|CUMULATIVE_CAT_12H_VETO_SEGMENTS|COINC|FIT|STATMAP|INJFIND|PAGE|FOREGROUND_CENSOR|html|png|dax)' /path/to/main.map > /path/to/reuse_cache.map
+
+6. Copy the file ``reuse_cache.map`` to your new workflow directory and then run ``pycbc_submit_dax`` as usual, giving the path to ``reuse_cache.map`` as the ``--cache-file`` argument.
 
 ----------------------------
 Re-running a failed workflow
