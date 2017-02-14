@@ -58,6 +58,18 @@ _lalsim_sgburst_approximants = {}
 
 
 def _check_lal_pars(p):
+    """ Create a laldict object from the dictionary of waveform parameters
+
+    Parameters
+    ----------
+    p: dictionary
+        The dictionary of lalsimulation paramaters
+
+    Returns
+    -------
+    laldict: LalDict
+        The lal type dictionary to pass to the lalsimulation waveform functions.
+    """
     lal_pars = lal.CreateDict()
     #nonGRparams can be straightforwardly added if needed, however they have to
     # be invoked one by one
