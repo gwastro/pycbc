@@ -635,8 +635,10 @@ The key to data reuse is building the cache file passed to ``pycbc_submit_dax``.
     LOGICAL_FILE_NAME PHYSICAL_FILE_URL pool="SITE"
 
 where ``LOGICAL_FILE_NAME`` is the name of the file as it appears in the
-workflow (including any preceding path), ``PHYSICAL_FILE_URL`` is a URL where
-the file can be found, and ``SITE`` is the site on which that URL resides.
+workflow. This should include any subdirectory path used by the workflow to organize files in the case of, e.g.,
+``INSPIRAL`` files but it should not be the absolute path to the file. ``PHYSICAL_FILE_URL`` is a
+full URL where the file can be found, and ``SITE`` is the site on which that URL
+resides.
 
 The URI in the ``PHYSICAL_FILE_URL`` can be any of the URIs that Pegasus
 recognizes. The URIs ``file://``, ``gsiftp://``, and ``http://`` are likely
@@ -649,7 +651,7 @@ names used by ``pycbc_submit_dax`` to identify the cluster where jobs are run.
 In practice there are only two execution sites used by PyCBC workflows:
 
 1. ``local`` which is the regular Condor pool on the local cluster where the workflow is being run from. This is typically used when re-using data that exists on the filesystem of the local cluster.
-2. ``osg`` which is the Open Science Grid pool, as described in * :ref:`weeklyahopeosg` below. This is only used if the data to be re-used is accessible via the ``/cvmfs`` filesystem.
+2. ``osg`` which is the Open Science Grid pool, as described in :ref:`weeklyahopeosg` below. This is only used if the data to be re-used is accessible via the ``/cvmfs`` filesystem.
 
 If the ``SITE`` string for a file matches the site where a job will be run,
 then Pegasus assumes that the file can be accessed locally via the regular
@@ -677,7 +679,9 @@ To illustrate this, an example of a simple cache file containing four files for 
     116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf file://localhost/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/full_data/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf pool="local"
     116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf file://localhost/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/full_data/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf pool="local"
 
-In this case, Pegasus will delete the jobs from the workflow that create the files ``H1-VETOTIME_CAT3-1169107218-1066800.xml``, ``L1-VETOTIME_CAT3-1169107218-1066800.xml``, ``116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf``, and ``116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf`` when it plans the workflow. Insted, the data will be re-used from the URLs specified in the cache. Since ``site="local"`` for these files, Pegasus expects that the files all exist on the host where the workflow is run from.
+Note that the ``LOGICAL_FILE_NAME`` for the veto files is just the name of the
+file, but for the two inspiral files it contains the subdirectory that the
+workflow uses to organize the files by GPS time. In the case of this file Pegasus will delete from the workflow the jobs that create the files ``H1-VETOTIME_CAT3-1169107218-1066800.xml``, ``L1-VETOTIME_CAT3-1169107218-1066800.xml``, ``116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf``, and ``116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf`` when it plans the workflow. Insted, the data will be re-used from the URLs specified in the cache. Since ``site="local"`` for these files, Pegasus expects that the files all exist on the host where the workflow is run from.
 
 To re-use data from a remote cluster, the URLs must contain a file transfer
 mechanism and the ``SITE`` should be set to ``remote``. For example, if the
