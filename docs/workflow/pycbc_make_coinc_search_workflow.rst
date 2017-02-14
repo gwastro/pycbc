@@ -608,7 +608,7 @@ If you have a subdax that failed, ``pegasus_analyzer`` will provide you with a c
 Reuse of data from a previous workflow
 ======================================
 
-One of the features of Pegasus is reus the data products of prior runs.
+One of the features of Pegasus is reuse the data products of prior runs.
 This can be used to e.g. expand an analysis or recover a run with mistaken settings without
 duplicating work. The steps below explain how to do this.
 
@@ -617,7 +617,8 @@ Setting up a workflow for data reuse
 ------------------------------------
 
 The first step is to generate a new workflow that performs the analysis that
-you would like to do. Data reuse happens at the ``pycbc_submit_dax`` step, so
+you would like to do. This workflow should be generated in a new directory so that it does not overwrite data from your previous workflows.
+Data reuse happens at the ``pycbc_submit_dax`` step, so
 first run ``pycbc_make_coinc_search_workflow`` to build a new workflow,
 following the instructions in the section :ref:`coincworkflowgenerate` of this
 page.
@@ -625,7 +626,7 @@ page.
 **Stop** before you plan and submit the workflow with ``pycbc_submit_dax``.
 You will pass an additional file to ``pycbc_submit_dax`` using the
 ``--cache-file`` option with a list of files that Pegasus can re-use from a
-pervious run.  The Pegasus Workflow Planner will try to reduce the workflow
+previous run.  The Pegasus Workflow Planner will reduce the workflow
 using this cache file. Reduction works by deleting jobs from the workflow
 whose output files have been found in some location in this cache file.
 
