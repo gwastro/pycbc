@@ -56,8 +56,11 @@ _lalsim_fd_approximants = {}
 _lalsim_enum = {}
 _lalsim_sgburst_approximants = {}
 
-def _lalsim_td_waveform(**p):
+
+def _check_lal_pars(p):
     lal_pars = lal.CreateDict()
+    #nonGRparams can be straightforwardly added if needed, however they have to
+    # be invoked one by one
     if p['phase_order']!=-1:
         lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(lal_pars,int(p['phase_order']))
     if p['amplitude_order']!=-1:
@@ -84,6 +87,10 @@ def _lalsim_td_waveform(**p):
         lalsimulation.SimInspiralWaveformParamsInsertFrameAxis(lal_pars, p['frame_axis'])
     if p['side_bands']:
         lalsimulation.SimInspiralWaveformParamsInsertSideband(lal_pars, p['side_bands'])
+    return lal_pars
+
+def _lalsim_td_waveform(**p):
+    lal_pars = _check_lal_pars(p)
     #nonGRparams can be straightforwardly added if needed, however they have to
     # be invoked one by one
     hp1, hc1 = lalsimulation.SimInspiralChooseTDWaveform(
@@ -124,35 +131,7 @@ def _spintaylor_aligned_prec_swapper(**p):
     return hp, hc
 
 def _lalsim_fd_waveform(**p):
-    lal_pars = lal.CreateDict()
-    if p['phase_order']!=-1:
-        lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(lal_pars,int(p['phase_order']))
-    if p['amplitude_order']!=-1:
-        lalsimulation.SimInspiralWaveformParamsInsertPNAmplitudeOrder(lal_pars,int(p['amplitude_order']))
-    if p['spin_order']!=-1:
-        lalsimulation.SimInspiralWaveformParamsInsertPNSpinOrder(lal_pars,int(p['spin_order']))
-    if p['tidal_order']!=-1:
-        lalsimulation.SimInspiralWaveformParamsInsertPNTidalOrder(lal_pars, p['tidal_order'])
-    if p['eccentricity_order']!=-1:
-        lalsimulation.SimInspiralWaveformParamsInsertPNEccentricityOrder(lal_pars, p['eccentricity_order'])
-    if p['lambda1']:
-        lalsimulation.SimInspiralWaveformParamsInsertPNTidalLambda1(lal_pars, p['lambda1'])
-    if p['lambda2']:
-        lalsimulation.SimInspiralWaveformParamsInsertPNTidalLambda2(lal_pars, p['lambda2'])
-    if p['dquad_mon1']:
-        lalsimulation.SimInspiralWaveformParamsInsertPNTidaldQuadMon1(lal_pars, p['dquad_mon1'])
-    if p['dquad_mon2']:
-        lalsimulation.SimInspiralWaveformParamsInsertPNTidaldQuadMon2(lal_pars, p['dquad_mon2'])
-    if p['numrel_data']:
-        lalsimulation.SimInspiralWaveformParamsInsertNumRelData(lal_pars, str(p['numrel_data']))
-    if p['modes_choice']:
-        lalsimulation.SimInspiralWaveformParamsInsertModesChoice(lal_pars, p['modes_choice'])
-    if p['frame_axis']:
-        lalsimulation.SimInspiralWaveformParamsInsertFrameAxis(lal_pars, p['frame_axis'])
-    if p['side_bands']:
-        lalsimulation.SimInspiralWaveformParamsInsertSideband(lal_pars, p['side_bands'])
-    #nonGRparams can be straightforwardly added if needed, however they have to
-    # be invoked one by one
+    lal_pars = _check_lal_pars(p)
     hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(
                float(pnutils.solar_mass_to_kg(p['mass1'])),
                float(pnutils.solar_mass_to_kg(p['mass2'])),
@@ -355,11 +334,10 @@ def get_fd_waveform_sequence(template=None, **kwds):
         The cross phase of the waveform in frequency domain evaluated at the
     frequency points.
     """
-
     kwds['delta_f'] = -1
     kwds['f_lower'] = -1
     p = props(template, **kwds)
-
+    lal_pars = _check_lal_pars(p)
     flags = lalsimulation.SimInspiralCreateWaveformFlags()
     lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
     lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
@@ -372,11 +350,9 @@ def get_fd_waveform_sequence(template=None, **kwds):
                float(p['f_ref']),
                pnutils.megaparsecs_to_meters(float(p['distance'])),
                float(p['inclination']),
-               float(p['lambda1']), float(p['lambda2']), flags, None,
-               int(p['amplitude_order']), int(p['phase_order']),
+               lal_pars,
                _lalsim_enum[p['approximant']], 
-               p['sample_points'].lal())
-              
+               p['sample_points'].lal())        
     return Array(hp.data.data), Array(hc.data.data)
 
 get_fd_waveform_sequence.__doc__ = get_fd_waveform_sequence.__doc__.format(
