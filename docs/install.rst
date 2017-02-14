@@ -287,7 +287,7 @@ To build the documentation from your virtual environment, first make sure that y
     pip install "Sphinx>=1.4.2"
     pip install numpydoc
     pip install sphinx-rtd-theme
-    pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git@pypi_release#egg=sphinxcontrib-programoutput
+    pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
     
 To generate the documentation, from the top level of the PyCBC source tree run
 
