@@ -279,7 +279,7 @@ echo "WORKSPACE='$WORKSPACE'" # for Jenkins jobs
 # -static-libgfortran
 
 # URL abbrevations
-pypi="https://pypi.python.org/packages/source"
+pypi="https://pypi.python.org/packages"
 gitlab="https://gitlab.aei.uni-hannover.de/einsteinathome"
 atlas="https://www.atlas.aei.uni-hannover.de/~bema"
 albert="http://albert.phys.uwm.edu/download"
@@ -370,7 +370,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     else
 	p=pyOpenSSL-0.13
 	echo -e "\\n\\n>> [`date`] building $p"
-	test -r $p.tar.gz || wget $wget_opts "$pypi/p/pyOpenSSL/$p.tar.gz"
+	test -r $p.tar.gz || wget $wget_opts "$pypi/source/p/pyOpenSSL/$p.tar.gz"
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
@@ -404,7 +404,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     if [ "$numpy_from" = "tarball" ]; then
 	p=numpy-1.9.3
 	echo -e "\\n\\n>> [`date`] building $p"
-	test -r $p.tar.gz || wget $wget_opts $pypi/n/numpy/$p.tar.gz
+	test -r $p.tar.gz || wget $wget_opts $pypi/source/n/numpy/$p.tar.gz
 	rm -rf $p
 	tar -xzf $p.tar.gz 
 	cd $p
@@ -746,7 +746,8 @@ if $build_subprocess32; then
     p=subprocess32-3.2.7
     echo -e "\\n\\n>> [`date`] building $p"
     test -r $p.tar.gz ||
-        wget $wget_opts https://pypi.python.org/packages/b8/2f/49e53b0d0e94611a2dc624a1ad24d41b6d94d0f1b0a078443407ea2214c2/$p.tar.gz
+        wget $wget_opts "$aei/$p.tar.gz" ||
+        wget $wget_opts $pypi/b8/2f/49e53b0d0e94611a2dc624a1ad24d41b6d94d0f1b0a078443407ea2214c2/$p.tar.gz
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
@@ -830,7 +831,7 @@ if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9][0-9]*$' > /dev/null; then
     # regular release version, get source tarball from pypi
     p=PyInstaller-$pyinstaller_version
     echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz || wget $wget_opts "$pypi/P/PyInstaller/$p.tar.gz"
+    test -r $p.tar.gz || wget $wget_opts "$pypi/source/P/PyInstaller/$p.tar.gz"
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
