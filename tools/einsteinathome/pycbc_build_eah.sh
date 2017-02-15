@@ -186,6 +186,7 @@ usage="
     --clean-lalsuite  : clean lalsuite before building, checkout and build it from scratch
     --clean-sundays   : perform a clean build on sundays
     --clean-pycbc     : check out pycbc git repo from scratch
+    --clean-weave-cache : clean weave code cache before running analysis
     --lalsuite-commit=<commit> : specify a commit (tag or branch) of lalsuite to build from
     --pycbc-commit=<commit> : specify a commit or tag of pycbc to build from (specifying a
                         branch will only work reliably in conjunction with --clean-pycbc)
@@ -221,6 +222,7 @@ for i in $*; do
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
         --pycbc-commit=*) pycbc_commit="`echo $i|sed 's/^--pycbc-commit=//'`";;
         --clean-pycbc) scratch_pycbc=true;;
+        --clean-weave-cache) rm -f "$SOURCE/test/pycbc_inspiral";;
         --clean-sundays)
             if [ `date +%u` -eq 7 ]; then
                 if [ -r "$SOURCE/last_sunday_build" ]; then
