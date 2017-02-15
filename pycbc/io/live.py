@@ -118,8 +118,9 @@ class SingleCoincForGraceDB(object):
         coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
 
         sngl_event_id_map = {}
+        sngl_populated = None
         for sngl_id, ifo in enumerate(ifos + self.followup_ifos):
-            sngl = return_empty_sngl()
+            sngl = return_empty_sngl(nones=True)
             sngl.event_id = lsctables.SnglInspiralID(sngl_id)
             sngl_event_id_map[ifo] = sngl.event_id
             sngl.ifo = ifo
@@ -134,12 +135,13 @@ class SingleCoincForGraceDB(object):
                         setattr(sngl, name, val)
                     except AttributeError:
                         pass
-            if sngl.mass1 > 0 and sngl.mass2 > 0:
+            if sngl.mass1 and sngl.mass2:
                 sngl.mtotal, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(
                         sngl.mass1, sngl.mass2)
                 sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
                         sngl.mass1, sngl.mass2)
-            if sngl.snr > 0:
+                sngl_populated = sngl
+            if sngl.snr:
                 sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
             sngl_inspiral_table.append(sngl)
 
@@ -149,6 +151,18 @@ class SingleCoincForGraceDB(object):
             coinc_map_row.coinc_event_id = coinc_id
             coinc_map_row.event_id = sngl.event_id
             coinc_event_map_table.append(coinc_map_row)
+
+        # for subthreshold detectors, respect BAYESTAR's assumptions and checks
+        bayestar_check_fields = ('mass1 mass2 mtotal mchirp eta spin1x '
+                                 'spin1y spin1z spin2x spin2y spin2z').split()
+        subthreshold_sngl_time = numpy.mean(
+                [coinc_results['foreground/%s/end_time' % ifo]
+                 for ifo in ifos])
+        for sngl in sngl_inspiral_table:
+            if sngl.ifo in self.followup_ifos:
+                for bcf in bayestar_check_fields:
+                    setattr(sngl, bcf, getattr(sngl_populated, bcf))
+                sngl.set_end(lal.LIGOTimeGPS(subthreshold_sngl_time))
 
         outdoc.childNodes[0].appendChild(coinc_event_map_table)
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
@@ -161,17 +175,17 @@ class SingleCoincForGraceDB(object):
         coinc_inspiral_row.minimum_duration = 0.
         coinc_inspiral_row.set_ifos(ifos)
         coinc_inspiral_row.coinc_event_id = coinc_id
-        coinc_inspiral_row.mchirp = sngl.mchirp
-        coinc_inspiral_row.mass = sngl.mtotal
-        coinc_inspiral_row.end_time = sngl.end_time
-        coinc_inspiral_row.end_time_ns = sngl.end_time_ns
+        coinc_inspiral_row.mchirp = sngl_populated.mchirp
+        coinc_inspiral_row.mass = sngl_populated.mtotal
+        coinc_inspiral_row.end_time = sngl_populated.end_time
+        coinc_inspiral_row.end_time_ns = sngl_populated.end_time_ns
         coinc_inspiral_row.snr = coinc_results['foreground/stat']
         far = 1.0 / (lal.YRJUL_SI * coinc_results['foreground/ifar'])
         coinc_inspiral_row.combined_far = far
         coinc_inspiral_table.append(coinc_inspiral_row)
         outdoc.childNodes[0].appendChild(coinc_inspiral_table)
         self.outdoc = outdoc
-        self.time = sngl.get_end()
+        self.time = sngl_populated.get_end()
 
         # compute SNR time series
         self.upload_snr_series = kwargs['upload_snr_series']
@@ -179,10 +193,6 @@ class SingleCoincForGraceDB(object):
             data_readers = kwargs['data_readers']
             bank = kwargs['bank']
             htilde = bank[self.template_id]
-            # for detectors which did not trigger, center the SNR series
-            # on the mean arrival time at the detectors which *did* trigger
-            trig_times = [coinc_results['foreground/%s/end_time' % ifo] for ifo in ifos]
-            subthreshold_center_time = numpy.mean(trig_times)
             self.snr_series = {}
             self.snr_series_psd = {}
             for ifo in self.ifos + self.followup_ifos:
@@ -209,7 +219,7 @@ class SingleCoincForGraceDB(object):
                 if ifo in ifos:
                     snr_onsource_time = coinc_results['foreground/%s/end_time' % ifo] - snr.start_time
                 else:
-                    snr_onsource_time = subthreshold_center_time - snr.start_time
+                    snr_onsource_time = subthreshold_sngl_time - snr.start_time
                 # the window lasts half an Earth light travel time
                 # plus 10 ms to account for timing uncertainty
                 snr_onsource_dur = lal.REARTH_SI / lal.C_SI + 0.01
