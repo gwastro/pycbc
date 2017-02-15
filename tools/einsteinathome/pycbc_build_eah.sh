@@ -196,8 +196,8 @@ usage="
     --no-cleanup      : keep build directories after successful build for later inspection
     --with-extra-libs=<url> : add extra files from a tar file at <url> to the bundles
     --with-extra-bank=<file> : run pycbc_inspiral again with an extra template bank
-    --with-extra-approx=<file> : run pycbc_inspiral again with an extra approximant
-    --with-lal-data=<path> : run test job using ROM data from <path>
+    --with-extra-approximant=<file> : run pycbc_inspiral again with an extra approximant
+    --with-lal-data-path=<path> : run test job using ROM data from <path>
     --verbose-python  : run PyInstalled Python in verbose mode, showing imports
     --no-analysis     : for testing, don't run analysis, assume weave cache is already there
 "
@@ -236,9 +236,9 @@ for i in $*; do
                 fi
             fi ;;
         --with-extra-libs=*) extra_libs="`echo $i|sed 's/^--with-extra-libs=//'`";;
-        --with-extra-bank=*) extra_bank="`echo $i|sed 's/^--with-extra-bank=//'`";;
-        --with-extra-approx=*) extra_approx="${extra_approx}`echo $i|sed 's/^--with-extra-approx=//'` ";;
-        --with-lal-data=*) lal_data_path="`echo $i|sed 's/^--with-lal-data=//'`";;
+        --with-extra-bank=*) extra_bank="$extra_bank `echo $i|sed 's/^--with-extra-bank=//'`";;
+        --with-extra-approximant=*) extra_approx="$extra_approx ${extra_approx}`echo $i|sed 's/^--with-extra-approx=//'` ";;
+        --with-lal-data-path=*) lal_data_path="`echo $i|sed 's/^--with-lal-data=//'`";;
         --help) echo -e "Options:\n$usage">&2; exit 0;;
         *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
     esac
