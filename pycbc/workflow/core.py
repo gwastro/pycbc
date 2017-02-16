@@ -661,8 +661,10 @@ class Workflow(pegasus_workflow.Workflow):
     def save(self, filename=None, output_map=None, staging_site=None):
         if output_map is None:
             output_map = self.output_map
-            self.as_job.file.PFN(output_map, site='local')
-            self._adag.addFile(self.as_job.file)
+            if self.in_workflow is not False:
+                output_map_file = Pegasus.DAX3.File(os.path.basename(output_map))
+                output_map_file.addPFN(Pegasus.DAX3.PFN(output_map, 'local'))
+                self.in_workflow._adag.addFile(output_map_file)
 
         staging_site = self.staging_site
             
