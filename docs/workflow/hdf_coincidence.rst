@@ -153,19 +153,3 @@ Additional plots can be made by adding a tag. This works similary to the system 
 example you can add  [plot_sensitivity-mchirp], [plot_sensitivity-mtotal], and [plot_sensitivity-spin]
 sections to make three versions of the plot.
 
-===============================================================
-Reusing data from workflow that uses some other post-processing
-===============================================================
-
-Assuming the list of limitations is satisfied by the previous run, then one
-can simply select the 'main.map' file in the '--cache' option to the
-pegasus planner.::
-
-    cd gwanalysis
-    pycbc_basic_pegasus_plan weekly_ahope.dax $LOGPATH --cache /path/to/prior/worklfow/main.map
-
-If the prior workflow did not use the post-processing described on this page, then there is no need
-to edit the map file and it can be used as is.
-
-If you are rerunning a workflow using this post-processing, then select from your weekly_ahope.map file only
-the files you want to reuse, and then point the '--cache' option to it instead.
