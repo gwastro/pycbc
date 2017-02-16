@@ -220,7 +220,7 @@ for i in $*; do
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
         --pycbc-commit=*) pycbc_commit="`echo $i|sed 's/^--pycbc-commit=//'`";;
         --clean-pycbc) scratch_pycbc=true;;
-        --clean-weave-cache) rm -f "$SOURCE/test/pycbc_inspiral";;
+        --clean-weave-cache) rm -rf "$SOURCE/test/pycbc_inspiral";;
         --clean-sundays)
             if [ `date +%u` -eq 7 ]; then
                 if [ -r "$SOURCE/last_sunday_build" ]; then
