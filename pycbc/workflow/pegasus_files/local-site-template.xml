@@ -13,5 +13,6 @@
     <profile namespace="condor" key="accounting_group_user">$ACCOUNTING_GROUP_USER</profile>
     <profile namespace="condor" key="should_transfer_files">YES</profile>
     <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
+    <profile namespace="condor" key="use_x509userproxy">True</profile>
     <profile namespace="condor" key="+DESIRED_Sites">&quot;nogrid&quot;</profile>
     <profile namespace="condor" key="+IS_GLIDEIN">&quot;False&quot;</profile>
