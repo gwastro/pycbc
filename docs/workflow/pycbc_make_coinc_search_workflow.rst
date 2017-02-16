@@ -731,6 +731,14 @@ below explain how to do this for a few common situations.
     See the documentation under :ref:`workflowconfigparsermod` for more
     details of the ``file-retention-level`` configuration option.
 
+.. note::
+
+    At present you *cannot* re-use ``.dax`` and ``.map`` files from a previous
+    run. A workflow using data reuse must regenerate and re-run any sub-daxes
+    from scratch. If you re-use a ``.map`` file rather than re-generating it,
+    then the new workflow will write results files in the location of the old
+    workflow. All of the examples below use an ``egrep -v '(dax|map)'`` to
+    filter out these files.
 
 .. _workflow_rerun_extend:
 
@@ -845,8 +853,7 @@ directory.
 
 Once in the ``main_ID0000001`` directory, run the command::
 
-    for pfn in `find . -type f | sed 's+^./++g'` ; do echo $pfn file://`pwd`/$pfn pool=\"local\" ; done > /path/to/partial_workflow.map
-
+    for pfn in `find . -type f | sed 's+^./++g'` ; do echo $pfn file://`pwd`/$pfn pool=\"local\" ; done | egrep -v '(dax|map)' > /path/to/partial_workflow.map
 
 changing ``/path/to`` to a location where you want to save the cache.
 
@@ -858,7 +865,7 @@ the ``osg-site-scratch`` directory. In this case::
 and change into the directory that ends with ``main_ID0000001``. Then run the
 same command as above::
 
-    for pfn in `find . -type f | sed 's+^./++g'` ; do echo $pfn file://`pwd`/$pfn pool=\"local\" ; done >> /path/to/partial_workflow.map
+    for pfn in `find . -type f | sed 's+^./++g'` ; do echo $pfn file://`pwd`/$pfn pool=\"local\" ; done | egrep -v '(dax|map)' >> /path/to/partial_workflow.map
 
 but **note** the ``>>`` rather than ``>`` to append to the file ``partial_workflow.map``, rather than deteling the existing file and creating a new file.
  

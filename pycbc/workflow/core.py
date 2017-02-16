@@ -32,6 +32,7 @@ import numpy, cPickle, random
 from itertools import combinations, groupby, permutations
 from operator import attrgetter
 import lal as lalswig
+import Pegasus.DAX3
 from glue import lal, segments
 from glue.ligolw import table, lsctables, ligolw
 from glue.ligolw import utils as ligolw_utils
@@ -580,7 +581,7 @@ class Workflow(pegasus_workflow.Workflow):
  
     @property
     def output_map(self):  
-        if self.in_workflow != False:
+        if self.in_workflow is not False:
             name = self.name + '.map'
         else:
             name = 'output.map'
@@ -589,7 +590,7 @@ class Workflow(pegasus_workflow.Workflow):
         
     @property
     def staging_site(self):  
-        if self.in_workflow != False:
+        if self.in_workflow is not False:
             workflow_section = 'workflow-%s' % self.name 
         else:
             workflow_section = 'workflow'
@@ -638,19 +639,32 @@ class Workflow(pegasus_workflow.Workflow):
     
     @staticmethod
     def set_job_properties(job, output_map, staging_site=None):
-        job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % output_map) 
+        job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % 
+                         os.path.basename(output_map))
+        job.uses(Pegasus.DAX3.File(os.path.basename(output_map)), 
+                 link=Pegasus.DAX3.Link.INPUT)
         job.addArguments('-Dpegasus.dir.storage.mapper.replica=File') 
-        job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache')) 
+
         job.addArguments('--output-site local')     
         job.addArguments('--cleanup inplace')
         job.addArguments('--cluster label,horizontal')
         job.addArguments('-vvv')
+
+        # FIXME _reuse_cache needs to be fixed to use PFNs properly. This will
+        # work as pegasus-plan is currently invoked on the local site so has
+        # access to a file in os.getcwd() but this code is fragile.
+        job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache'))
+
         if staging_site:
             job.addArguments('--staging-site %s' % staging_site)
             
     def save(self, filename=None, output_map=None, staging_site=None):
         if output_map is None:
             output_map = self.output_map
+            if self.in_workflow is not False:
+                output_map_file = Pegasus.DAX3.File(os.path.basename(output_map))
+                output_map_file.addPFN(Pegasus.DAX3.PFN(output_map, 'local'))
+                self.in_workflow._adag.addFile(output_map_file)
 
         staging_site = self.staging_site
             
