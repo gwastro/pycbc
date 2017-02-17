@@ -1,0 +1,28 @@
+<job_desc>
+    <task>
+        <application>progress</application>
+        <command_line>-f pycbc_stderr.txt</command_line>
+        <stdout_filename>progress_stdout.txt</stdout_filename>
+        <stderr_filename>progress_stderr.txt</stderr_filename>
+        <daemon/>
+    </task>
+    <task>
+        <application>pycbc_inspiral/pycbc_inspiral</application>
+        <command_line>--fixed-weave-cache --segment-end-pad 16 --cluster-method window --low-frequency-cutoff 30 --pad-data 8 --cluster-window 1 --sample-rate 4096 --injection-window 4.5 --segment-start-pad 112 --psd-segment-stride 8 --approximant SPAtmplt --psd-inverse-length 16 --filter-inj-only --autogating-width 0.25 --psd-segment-length 16 --snr-threshold 5.5 --segment-length 256 --autogating-threshold 100 --autogating-cluster 0.5 --newsnr-threshold 5 --psd-estimation median --autogating-taper 0.25 --strain-high-pass 20 --order -1 --chisq-bins "1.75*(get_freq('fSEOBNRv2Peak',params.mass1,params.mass2,params.spin1z,params.spin2z)-60.)**0.5" --channel-name H1:LOSC-STRAIN --gps-start-time 1126257438 --gps-end-time 1126261486 --trig-start-time 1126257638 --trig-end-time 1126261386 --output $PROJECT_DIR/H1-INSPIRAL_FIND_ME_GW150914.hdf --frame-files $PROJECT_DIR/H-H1_LOSC_4_V1-1126257414-4096.gwf --bank-file $PROJECT_DIR/H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800.xml.gz --verbose</command_line>
+        <setenv>NO_GETCONF=1</setenv>
+        <setenv>NO_TMPDIR=1</setenv>
+        <setenv>NO_PKGCONFIG=1</setenv>
+        <setenv>INITIAL_LOG_LEVEL=10</setenv>
+        <setenv>LEVEL2_CACHE_SIZE=8192</setenv>
+        <setenv>WEAVE_FLAGS=-O3 -march=core2 -w</setenv>
+        <stdout_filename>pycbc_stderr.txt</stdout_filename>
+        <stderr_filename>pycbc_stderr.txt</stderr_filename>
+        <fraction_done_filename>progress.txt</fraction_done_filename>
+    </task>
+    <unzip_input>
+        <zipfilename>pycbc_inspiral.zip</zipfilename>
+    </unzip_input>
+    <unzip_input>
+        <zipfilename>pythoncompiled.zip</zipfilename>
+    </unzip_input>
+</job_desc>

@@ -1,0 +1,19 @@
+# backups
+*~
+
+# statndard result files
+H1-INSPIRAL-OUT.hdf
+
+# application zips
+pycbc_inspiral*
+pythoncompiled*.zip
+
+# binaries for transfer, packaging etc.
+wrapper*
+fstab
+progress
+*.exe
+*_OSX64
+*_Linux64
+validator_test_CBC1
+validator_test_CBC1.exe
