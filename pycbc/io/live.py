@@ -192,17 +192,12 @@ class SingleCoincForGraceDB(object):
         if self.upload_snr_series:
             data_readers = kwargs['data_readers']
             htilde = kwargs['bank'][self.template_id]
-            #htilde.save('%.3f-template.txt' % subthreshold_sngl_time)
+            assert(abs(htilde.params['mass1'] - sngl_populated.mass1) < 0.1)
             self.snr_series = {}
             self.snr_series_psd = {}
             for ifo in self.ifos + self.followup_ifos:
                 logging.info('Computing onsource SNR for %s, trigger time ~%.3f', ifo, subthreshold_sngl_time)
-
-                logging.info('SingleCoincForGraceDB asks for %s stilde with delta_f=%f', ifo, htilde.delta_f)
                 stilde = data_readers[ifo].overwhitened_data(htilde.delta_f)
-                logging.info('SingleCoincForGraceDB receives %s stilde which claims to span (%.3f,%.3f)', ifo, stilde.start_time, stilde.end_time)
-                stilde.save('%.3f-coinc-stilde-%s-%f.txt' % (subthreshold_sngl_time, ifo, htilde.delta_f))
-
                 norm = 4.0 * htilde.delta_f / (htilde.sigmasq(stilde.psd) ** 0.5)
                 qtilde = zeros((len(htilde)-1)*2, dtype=htilde.dtype)
                 correlate(htilde, stilde, qtilde)
@@ -217,10 +212,11 @@ class SingleCoincForGraceDB(object):
                 delta_t = 1.0 / data_readers[ifo].sample_rate
                 snr = TimeSeries(snr, delta_t=delta_t,
                                  epoch=data_readers[ifo].start_time)
+
+                snr.save('%.3f-snr-%s.txt' % (subthreshold_sngl_time, ifo))
+
                 self.snr_series[ifo] = snr
                 self.snr_series_psd[ifo] = stilde.psd
-
-                logging.info('SingleCoincForGraceDB computes %s SNR series spanning (%.3f,%.3f)', ifo, snr.start_time, snr.end_time)
 
                 # store the on-source slice of the series into the XML doc
                 if ifo in ifos:

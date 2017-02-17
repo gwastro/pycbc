@@ -301,6 +301,7 @@ with ctx:
         pass
     maxlen = args.psd_segment_length * (args.psd_samples / 2 + 1)
     if evnt.rank > 0:
+        bank.table.sort(order='mchirp')
         waveforms = list(bank[evnt.rank-1::evnt.size-1])
         lengths = numpy.array([1.0 / waveform.delta_f for waveform in waveforms])
         psd_len = args.psd_segment_length * (args.psd_samples / 2 + 1)
