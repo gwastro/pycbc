@@ -1,4 +1,4 @@
-.. _building_bundled_executables.rst:
+.. _building_bundled_executables:
 
 ############################
 Building Bundled Executables
