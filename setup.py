@@ -455,6 +455,7 @@ setup (
                'bin/workflows/pycbc_create_bank_verifier_workflow',
                'bin/pycbc_compress_bank',
                'bin/pycbc_ringinj',
+               'tools/einsteinathome/pycbc_build_eah.sh'
                ],
     packages = [
                'pycbc',
