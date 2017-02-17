@@ -24,19 +24,19 @@ print fin.items()['/H1/template_hash']
 group = "/" + fin.keys()[0] + "/"
 
 # check that all datasets exist and have same length
-len = None
+l = None
 for dataset in datasets:
     if not fin.get(group + dataset):
         raise ValueError("dataset " + group + dataset + " not found")
-    elif not len:
-        len = fin.get(group + dataset).len()
-    elif len != fin.get(group + dataset).len():
+    elif not l:
+        l = fin.get(group + dataset).len()
+    elif l != fin.get(group + dataset).len():
         raise ValueError("datasets have different length")
 
-print("Dataset Length:", len, file=sys.stderr)
+print("Dataset Length:", l, file=sys.stderr)
 
 # print data to stdout in correct order
-for i in range(len):
+for i in range(l):
     for dataset in datasets:
         print (" ", fin.get(group + dataset)[i], end="")
     print ("")
