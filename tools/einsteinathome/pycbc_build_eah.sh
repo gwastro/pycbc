@@ -176,29 +176,49 @@ mkdir -p "$SOURCE"
 
 # usage message
 usage="
-    --force-debian4   : force Debian 4.0 build, must be first option in command-line
-    --print-env       : dump environment at beginning, must be first option in command-line
-    --help            : print this messge and exit
-    --clean           : perform a clean build (takes quite some time); delete ~/.cache and
-                        tarballs containing precompiled libraries (lalsuite, scipy etc.)
-    --clean-lalsuite  : clean lalsuite before building, checkout and build it from scratch
-    --clean-sundays   : perform a clean build on sundays
-    --clean-pycbc     : check out pycbc git repo from scratch
-    --clean-weave-cache : clean weave code cache before running analysis
-    --lalsuite-commit=<commit> : specify a commit (tag or branch) of lalsuite to build from
-    --pycbc-commit=<commit> : specify a commit or tag of pycbc to build from (specifying a
-                        branch will only work reliably in conjunction with --clean-pycbc)
-    --pycbc-remote=<username> : add pycbc repository github.com/username as remote
-    --pycbc-branch=<branch> : checkout branch before building
-    --no-pycbc-update : don't update local pycbc repo
-    --bema-testing    : use einsteinathome_testing branch of bema-ligo/pycbc repo
-    --no-cleanup      : keep build directories after successful build for later inspection
-    --with-extra-libs=<url> : add extra files from a tar file at <url> to the bundles
-    --with-extra-bank=<file> : run pycbc_inspiral again with an extra template bank
-    --with-extra-approximant=<file> : run pycbc_inspiral again with an extra approximant
-    --with-lal-data-path=<path> : run test job using ROM data from <path>
-    --verbose-python  : run PyInstalled Python in verbose mode, showing imports
-    --no-analysis     : for testing, don't run analysis, assume weave cache is already there
+    --force-debian4                 force Debian 4.0 build, must be first option in command-line
+
+    --print-env                     dump environment at beginning, must be first option in command-line
+
+    --help                          print this messge and exit
+
+    --clean                         perform a clean build (takes quite some time); delete ~/.cache and
+                                    tarballs containing precompiled libraries (lalsuite, scipy etc.)
+
+    --clean-lalsuite                checkout and build lalsuite from scratch
+
+    --clean-sundays                 perform a clean-lalsuite build on sundays
+
+    --clean-pycbc                   check out pycbc git repo from scratch
+
+    --clean-weave-cache             clean weave code cache before running analysis
+
+    --lalsuite-commit=<commit>      specify a commit (or tag or branch) of lalsuite to build from
+
+    --pycbc-commit=<commit>         specify a commit or tag of pycbc to build from (specifying a
+                                    branch will only work reliably in conjunction with --clean-pycbc)
+
+    --pycbc-remote=<username>       add pycbc repository github.com/username as remote
+
+    --pycbc-branch=<branch>         checkout branch before building
+
+    --no-pycbc-update               don't update local pycbc repo
+
+    --bema-testing                  use einsteinathome_testing branch of bema-ligo/pycbc repo
+
+    --no-cleanup                    keep build directories after successful build for later inspection
+
+    --with-extra-libs=<url>         add extra files from a tar file at <url> to the bundles
+
+    --with-extra-bank=<file>        run pycbc_inspiral again with an extra template bank
+
+    --with-extra-approximant=<file> run pycbc_inspiral again with an extra approximant
+
+    --with-lal-data-path=<path>     run test job using ROM data from <path>
+
+    --verbose-python                run PyInstalled Python in verbose mode, showing imports
+
+    --no-analysis                   for testing, don't run analysis, assume weave cache is already there
 "
 
 # handle command-line arguments, possibly overriding above settings
