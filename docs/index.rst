@@ -83,6 +83,7 @@ To install PyCBC and get started, follow the links at:
    :maxdepth: 1
 
    install
+   building_bundled_executables
 
 Users who want to create and run scientific workflows to search for compact
 binaries should read the documentation in the links at:
