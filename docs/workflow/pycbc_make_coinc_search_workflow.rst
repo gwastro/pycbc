@@ -922,6 +922,19 @@ There are a number of requirements on the machine on which the workflow will be 
 Configuring the workflow
 ------------------------
 
+.. note::
+
+    Standard PyCBC installs build a version of ``pycbc_inspiral`` that uses weave
+    to compile code at runtime. Many OSG machines do not have all of the
+    compiler tools required to support weave compilation. In order to run on
+    the OSG, the ``pycbc_inspiral`` executable must be built as a PyInstaller
+    bundle that contains all of the weave-compiled code inside the bundle.
+    This bundle must be built on a lowest-common denominator platform so that
+    the shared libraries that it needs at runtime (e.g. glibc) are available.
+    RHEL6 (or a similar derivative) is a suitable platform. The ``/cvmfs``
+    filesystem contains ``pycbc_inspiral`` bundles that are built on the
+    ``x86_64_rhel_6`` platform and are suitable for use on the OSG.
+
 In order for ``pycbc_inspiral`` to be sent to worker nodes it must be
 available via a remote protocol, either http, gsiftp, or CVMFS. Releases of
 pycbc are installed in CVMFS and the LDG head nodes run a gridftp server that
@@ -930,7 +943,7 @@ can serve your own development copy.  Specify this path when you run
 give the following argument to the ``--config-overrides`` option (changing the
 path to point to the release that you want to use)::
 
-    'executables:inspiral:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_6/bundle/v1.5.7/pycbc_inspiral'
+    'executables:inspiral:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_6/bundle/v1.6.6/pycbc_inspiral'
 
 If you are running your own build of ``pycbc_inspiral``, you will need to give
 a path to a gsiftp URL and tell Pegasus that the executable is not installed
@@ -943,6 +956,7 @@ Add the following to the list of ``--config-overrides`` when running ``pycbc_mak
     'pegasus_profile-inspiral:pycbc|site:osg'
     'pegasus_profile-inspiral:hints|execution.site:osg'
     'pegasus_profile-inspiral:pycbc|installed:False'
+    'inspiral:fixed-weave-cache'
 
 You also need a ``--config-overrides`` to ``pycbc_make_coinc_search_workflow`` that sets the staging site for the main workflow to the local site. To do this, add the following argument, replacing ``${WORKFLOW_NAME}`` with the string that is given as the argument to the option ``--workflow-name``::
 
