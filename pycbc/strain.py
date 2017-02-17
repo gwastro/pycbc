@@ -1347,6 +1347,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         htilde: FrequencySeries
             Overwhited strain data
         """
+        logging.info('StrainBuffer is asked stilde with delta_f=%f', delta_f)
+
         # we haven't alread computed htilde for this delta_f
         if delta_f not in self.segments:
             buffer_length = int(1.0 / delta_f)
@@ -1390,7 +1392,17 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 fseries_trimmed = fseries
 
             fseries_trimmed.psd = psd
+
+            # save start/end times so we can do checks later
+            fseries_trimmed._epoch = lal.LIGOTimeGPS(self.strain[s:e].start_time)
+            fseries_trimmed.start_time = fseries_trimmed._epoch
+            fseries_trimmed.end_time = lal.LIGOTimeGPS(self.strain[s:e].end_time)
+
             self.segments[delta_f] = fseries_trimmed
+            logging.info('StrainBuffer computes stilde spanning (%.3f-%.3f)', fseries_trimmed.start_time, fseries_trimmed.end_time)
+            fseries_trimmed.save('%.3f-correct-stilde-%s-%f.txt' % (fseries_trimmed.start_time, self.channel_name[0:2], delta_f))
+        else:
+            logging.info('StrainBuffer returns preexisting stilde spanning (%.3f-%.3f)', self.segments[delta_f].start_time, self.segments[delta_f].end_time)
             
         stilde = self.segments[delta_f]
         return stilde  

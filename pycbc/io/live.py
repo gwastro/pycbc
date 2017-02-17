@@ -191,13 +191,18 @@ class SingleCoincForGraceDB(object):
         self.upload_snr_series = kwargs['upload_snr_series']
         if self.upload_snr_series:
             data_readers = kwargs['data_readers']
-            bank = kwargs['bank']
-            htilde = bank[self.template_id]
+            htilde = kwargs['bank'][self.template_id]
+            #htilde.save('%.3f-template.txt' % subthreshold_sngl_time)
             self.snr_series = {}
             self.snr_series_psd = {}
             for ifo in self.ifos + self.followup_ifos:
-                logging.info('Computing onsource SNR for %s', ifo)
+                logging.info('Computing onsource SNR for %s, trigger time ~%.3f', ifo, subthreshold_sngl_time)
+
+                logging.info('SingleCoincForGraceDB asks for %s stilde with delta_f=%f', ifo, htilde.delta_f)
                 stilde = data_readers[ifo].overwhitened_data(htilde.delta_f)
+                logging.info('SingleCoincForGraceDB receives %s stilde which claims to span (%.3f,%.3f)', ifo, stilde.start_time, stilde.end_time)
+                stilde.save('%.3f-coinc-stilde-%s-%f.txt' % (subthreshold_sngl_time, ifo, htilde.delta_f))
+
                 norm = 4.0 * htilde.delta_f / (htilde.sigmasq(stilde.psd) ** 0.5)
                 qtilde = zeros((len(htilde)-1)*2, dtype=htilde.dtype)
                 correlate(htilde, stilde, qtilde)
@@ -210,26 +215,36 @@ class SingleCoincForGraceDB(object):
                 snr = snr[seg]
                 snr *= norm
                 delta_t = 1.0 / data_readers[ifo].sample_rate
-                start = data_readers[ifo].start_time
-                snr = TimeSeries(snr, delta_t=delta_t, epoch=start)
+                snr = TimeSeries(snr, delta_t=delta_t,
+                                 epoch=data_readers[ifo].start_time)
                 self.snr_series[ifo] = snr
                 self.snr_series_psd[ifo] = stilde.psd
 
+                logging.info('SingleCoincForGraceDB computes %s SNR series spanning (%.3f,%.3f)', ifo, snr.start_time, snr.end_time)
+
                 # store the on-source slice of the series into the XML doc
                 if ifo in ifos:
-                    snr_onsource_time = coinc_results['foreground/%s/end_time' % ifo] - snr.start_time
+                    trig_time = coinc_results['foreground/%s/end_time' % ifo]
+                    if stilde.start_time > trig_time or stilde.end_time < trig_time:
+                        raise RuntimeError('%s trigger time %.3f outside stilde (%.3f-%.3f)' \
+                                % (ifo, trig_time, stilde.start_time, stilde.end_time))
+                    snr_onsource_time = trig_time - snr.start_time
                 else:
                     snr_onsource_time = subthreshold_sngl_time - snr.start_time
                 # the window lasts half an Earth light travel time
                 # plus 10 ms to account for timing uncertainty
                 snr_onsource_dur = lal.REARTH_SI / lal.C_SI + 0.01
                 onsource_idx = int(float(snr_onsource_time) * snr.sample_rate)
+                if ifo in ifos and abs(abs(snr[onsource_idx]) - coinc_results['foreground/%s/snr' % ifo]) > 0.5:
+                    raise RuntimeError('%s trigger SNR (%.1f) inconsistent with time series (%.1f)' % (ifo, coinc_results['foreground/%s/snr' % ifo], abs(snr[onsource_idx])))
                 onsource_start = onsource_idx - int(snr.sample_rate * snr_onsource_dur / 2)
                 # FIXME avoid clipping with better handling of past data
                 if onsource_start < 0:
+                    logging.warn('Clipping start of %s SNR series', ifo)
                     onsource_start = 0
                 onsource_end = onsource_idx + int(snr.sample_rate * snr_onsource_dur / 2)
                 if onsource_end > len(snr):
+                    logging.warn('Clipping end of %s SNR series', ifo)
                     onsource_end = len(snr) - 1
                 onsource_slice = slice(onsource_start, onsource_end + 1)
                 snr_lal = snr[onsource_slice].lal()
