@@ -1,4 +1,4 @@
-.. _using_pyinstaller_binaries::
+.. _using_pyinstaller_binaries:
 
 ######################################
 Building and Using Bundled Executables
