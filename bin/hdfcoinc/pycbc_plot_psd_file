@@ -14,6 +14,13 @@ parser.add_argument("--version", action="version",
 parser.add_argument("--psd-files", nargs='+', required=True,
                     help='HDF file(s) containing the PSDs to plot')
 parser.add_argument("--output-file", required=True, help='Output file name')
+parser.add_argument("--memory-limit", default=2., type=float, metavar="X GB",
+                    help="Reading in all PSD files can use a lot of memory. "
+                         "If given, this option will read the PSDs in slices "
+                         "ensuring that memory usage approximately is limited "
+                         "to the given value in GB. For general usage on LDG "
+                         "clusters, this defaults to 2GB if this option is "
+                         "not provided explicitly.")
 pycbc.psd.insert_psd_option_group(parser, output=False)
 args = parser.parse_args()
 
@@ -27,28 +34,57 @@ y_min = None
 
 for psd_file in args.psd_files:
     f = h5py.File(psd_file, 'r')
-    ifo = f.keys()[0]
-    df = f[ifo + '/psds/0'].attrs['delta_f']
-    keys = f[ifo + '/psds'].keys()
-    psds = [f[ifo + '/psds/' + key][:] for key in keys]
 
-    flow = f.attrs['low_frequency_cutoff']
-    kmin = int(flow / df)
+    if "ifo_list" in f.attrs.keys():
+        ifo_list = f.attrs["ifo_list"]
+    else:
+        ifo_list = [f.keys()[0]]
 
-    fac = 1.0 / pycbc.DYN_RANGE_FAC
-    high = numpy.percentile(psds, 95, axis=0)[kmin:] ** 0.5 * fac
-    low = numpy.percentile(psds, 5, axis=0)[kmin:] ** 0.5 * fac
-    middle = numpy.percentile(psds, 50, axis=0)[kmin:] ** 0.5 * fac
-    samples = numpy.arange(0, len(psds[0]))[kmin:] * df
+    for ifo in ifo_list:
+        fac = 1.0 / pycbc.DYN_RANGE_FAC
+        df = f[ifo + '/psds/0'].attrs['delta_f']
+        keys = f[ifo + '/psds'].keys()
+        flow = f.attrs['low_frequency_cutoff']
+        kmin = int(flow / df)
+        kmax = len(f[ifo + '/psds/' + keys[0]][:])
+        klen = kmax - kmin
+        # Let's try and keep this to 1GB
+        num_points = len(keys) * (klen)
+        # Assuming 16 bytes memory usage per PSD point read. That number was
+        # determined empirically using top on a 16GB machine
+        max_points_read = args.memory_limit * (1E9 / 16.)
+        num_splits = int(numpy.ceil(num_points / max_points_read))
+        num_points_to_read = int((klen) / num_splits)
 
-    if y_min is None or y_min > low.min():
-        y_min = low.min()
+        high = numpy.zeros(klen)
+        low = numpy.zeros(klen)
+        middle = numpy.zeros(klen)
+        samples = numpy.arange(kmin, kmax) * df
 
-    color = pycbc.results.ifo_color(ifo)
+        for split_idx in xrange(num_splits):
+            curr_kmin = kmin + split_idx * num_points_to_read
+            curr_kmax = kmin + (split_idx+1) * num_points_to_read
+            # klen may not divide by num_gb perfectly
+            if split_idx == (num_splits - 1):
+                curr_kmax = kmax
 
-    ax.fill_between(samples, low, high, alpha=0.4, linewidth=0, color=color)
-    ax.loglog(samples, middle, linewidth=0.3, color=color, label=ifo)
-    ax.set_xlim(flow, samples[-1])
+            psds = [f[ifo + '/psds/' + key][curr_kmin:curr_kmax] \
+                    for key in keys]
+            high[curr_kmin-kmin:curr_kmax-kmin] = \
+                numpy.percentile(psds, 95, axis=0) ** 0.5 * fac
+            low[curr_kmin-kmin:curr_kmax-kmin] = \
+                numpy.percentile(psds, 5, axis=0) ** 0.5 * fac
+            middle[curr_kmin-kmin:curr_kmax-kmin] = \
+                numpy.percentile(psds, 50, axis=0) ** 0.5 * fac
+
+        if y_min is None or y_min > low.min():
+            y_min = low.min()
+
+        color = pycbc.results.ifo_color(ifo)
+
+        ax.fill_between(samples, low, high, alpha=0.4, linewidth=0, color=color)
+        ax.loglog(samples, middle, linewidth=0.3, color=color, label=ifo)
+        ax.set_xlim(flow, samples[-1])
 
 reference_psd = pycbc.psd.from_cli(args, 2048, 1., 10., None)
 if reference_psd is not None:

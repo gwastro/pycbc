@@ -17,7 +17,6 @@ parser.add_argument("--analysis-segment-file",  required=True,
                     help="File defining the segments to estimate PSDs over")
 parser.add_argument("--segment-name", help="Name of segment list to use")
 parser.add_argument("--cores", default=1, type=int)
-parser.add_argument("--psd-recalculate-segments", type=int, default=0)
 parser.add_argument("--output-file", required=True)
 
 pycbc.psd.insert_psd_option_group(parser, output=False)
@@ -62,15 +61,14 @@ def get_psd((seg, i)):
     delta_f = strain_segments.delta_f
 
     logging.info('%d: calculating psd', i)
+    psds_and_times = pycbc.psd.generate_overlapping_psds(args, gwstrain,
+                      flen, delta_f, flow, dyn_range_factor=pycbc.DYN_RANGE_FAC)
+
     lpsd = []
-    nsegs = args.psd_recalculate_segments
-    nsegs = nsegs if nsegs != 0 else len(strain_segments.full_segment_slices)
-    groups = grouper(nsegs, strain_segments.full_segment_slices)
-    
-    for psegs in groups:
-        strain_part = gwstrain[psegs[0].start:psegs[-1].stop]
-        psd = pycbc.psd.from_cli(args, flen, delta_f, flow, strain_part, pycbc.DYN_RANGE_FAC)        
-        lpsd.append((psd.numpy(), psd.delta_f, int(strain_part.start_time), int(strain_part.end_time)))
+    for start_idx, end_idx, psd in psds_and_times:
+        start_time = gwstrain.start_time + start_idx/gwstrain.sample_rate
+        end_time = gwstrain.start_time + end_idx/gwstrain.sample_rate
+        lpsd.append((psd.numpy(), psd.delta_f, int(start_time), int(end_time)))
 
     return lpsd
 

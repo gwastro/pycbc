@@ -28,6 +28,34 @@ from scipy.weave import inline
 from .simd_correlate import default_segsize, corr_parallel_code, corr_support
 from .matchedfilter import _BaseCorrelator
 
+batch_correlator_code = """
+    #pragma omp parallel for
+    for (int i=0; i<num_vectors; i++){
+        std::complex<float>* xp = (std::complex<float>*) x[i];
+        std::complex<float>* zp = (std::complex<float>*) z[i];
+        for (int j=0; j<size; j++){
+            float xr, yr, xi, yi, re, im;
+            xr = xp[j].real();
+            xi = xp[j].imag();
+            yr = y[j].real();       
+            yi = y[j].imag();
+            re = xr*yr + xi*yi;
+            im = xr*yi - xi*yr;
+            zp[j] = std::complex<float>(re, im);
+        }
+    }
+"""
+
+def batch_correlate_execute(self, y):
+    num_vectors = self.num_vectors
+    size = self.size
+    x = numpy.array(self.x.data, copy=False)
+    z = numpy.array(self.z.data, copy=False)
+    y = numpy.array(y.data, copy=False)        
+    inline(batch_correlator_code, ['x', 'y', 'z', 'size', 'num_vectors'],
+                extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags,
+                libraries=omp_libs)
+
 support = """
     #include <stdio.h>
     #include <math.h>
@@ -36,6 +64,40 @@ support = """
 def correlate_numpy(x, y, z):
     z.data[:] = numpy.conjugate(x.data)[:]
     z *= y
+
+code_batch = """
+#pragma omp parallel for
+for (int i=0; i<N; i++){
+    TYPE xr, yr, xi, yi, re, im;
+    xr = xa[i].real();
+    xi = xa[i].imag();
+    yr = ya[i].real();       
+    yi = ya[i].imag();
+
+    re = xr*yr + xi*yi;
+    im = xr*yi - xi*yr;
+
+    za[i] = std::complex<TYPE>(re, im);
+}
+"""
+single_codeb = code_batch.replace('TYPE', 'float')
+double_codeb = code_batch.replace('TYPE', 'double')
+
+def correlate_batch_inline(x, y, z):
+    if z.precision == 'single':
+        the_code = single_codeb
+    else:
+        the_code = double_codeb
+        
+    za = numpy.array(z.ptr, copy=False)
+    xa = numpy.array(x.ptr, copy=False)
+    ya = numpy.array(y.ptr, copy=False)
+    N = len(x) 
+    inline(the_code, ['xa', 'ya', 'za', 'N'], 
+                    extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags,
+                    support_code = support,
+                    libraries=omp_libs
+          )
     
 code = """
 #pragma omp parallel for

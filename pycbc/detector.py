@@ -40,6 +40,8 @@ class Detector(object):
         self.frDetector =  lalsimulation.DetectorPrefixToLALDetector(self.name)
         self.response = self.frDetector.response
         self.location = self.frDetector.location
+        self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
+        self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
 
     def light_travel_time_to_detector(self, det):
         """ Return the light travel time from this detector
@@ -69,6 +71,34 @@ class Detector(object):
         return lal.TimeDelayFromEarthCenter(self.location,
                       float(right_ascension), float(declination), float(t_gps))
 
+    def time_delay_from_detector(self, other_detector, right_ascension,
+                                 declination, t_gps):
+        """Return the time delay from the given to detector for a signal with
+        the given sky location; i.e. return `t1 - t2` where `t1` is the
+        arrival time in this detector and `t2` is the arrival time in the
+        other detector. Note that this would return the same value as
+        `time_delay_from_earth_center` if `other_detector` was geocentric.
+
+        Parameters
+        ----------
+        other_detector : detector.Detector
+            A detector instance.
+        right_ascension : float
+            The right ascension (in rad) of the signal.
+        declination : float
+            The declination (in rad) of the signal.
+        t_gps : float
+            The GPS time (in s) of the signal.
+
+        Returns
+        -------
+        float
+            The arrival time difference between the detectors.
+        """
+        return lal.ArrivalTimeDiff(self.location, other_detector.location,
+                                   float(right_ascension), float(declination),
+                                   float(t_gps))
+
     def project_wave(self, hp, hc, longitude, latitude, polarization):
         """Return the strain of a wave with given amplitudes and angles as
         measured by the detector.
@@ -80,6 +110,13 @@ class Detector(object):
                 h_lal.data.data, delta_t=h_lal.deltaT, epoch=h_lal.epoch,
                 dtype=np.float64, copy=False)
 
+    def optimal_orientation(self, t_gps):
+        """Return the optimal orientation in right ascension and declination
+           for a given GPS time.
+        """
+        ra = self.longitude + (lal.GreenwichMeanSiderealTime(t_gps) % (2*np.pi))
+        dec = self.latitude
+        return ra, dec
 
 def overhead_antenna_pattern(right_ascension, declination, polarization):
     """Return the detector response where (0, 0) indicates an overhead source. 
@@ -109,4 +146,7 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
                 cos(theta) * sin(2.0*right_ascension) * cos (2.0 * polarization)
 
     return f_plus, f_cross
+
+def effective_distance(distance, inclination, f_plus, f_cross):
+    return distance / np.sqrt( ( 1 + np.cos( inclination )**2 )**2 / 4 * f_plus**2 + np.cos( inclination )**2 * f_cross**2 )
 

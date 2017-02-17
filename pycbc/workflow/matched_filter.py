@@ -38,7 +38,7 @@ from pycbc.workflow.jobsetup import (select_matchedfilter_class,
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                tmplt_banks, output_dir=None,
-                               injection_file=None, gate_files=None, tags=[]):
+                               injection_file=None, tags=None):
     '''
     This function aims to be the gateway for setting up a set of matched-filter
     jobs in a workflow. This function is intended to support multiple
@@ -78,6 +78,8 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
         If you require access to any intermediate products produced at this
         stage you can call the various sub-functions directly.
     '''
+    if tags is None:
+        tags = []
     logging.info("Entering matched-filtering setup module.")
     make_analysis_dir(output_dir)
     cp = workflow.cp
@@ -117,7 +119,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
         inspiral_outs = setup_matchedfltr_dax_generated(workflow, science_segs, 
                                       datafind_outs, tmplt_banks, output_dir,
                                       injection_file=injection_file, 
-                                      gate_files=gate_files, tags=tags,
+                                      tags=tags,
                                       link_to_tmpltbank=linkToTmpltbank,
                                       compatibility_mode=compatibility_mode)
     elif mfltrMethod == "WORKFLOW_MULTIPLE_IFOS":
@@ -125,7 +127,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
         inspiral_outs = setup_matchedfltr_dax_generated_multi(workflow,
                                       science_segs, datafind_outs, tmplt_banks,
                                       output_dir, injection_file=injection_file,
-                                      gate_files=gate_files, tags=tags)
+                                      tags=tags)
     else:
         errMsg = "Matched filter method not recognized. Must be one of "
         errMsg += "WORKFLOW_INDEPENDENT_IFOS (currently only one option)."
@@ -136,8 +138,8 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
 
 def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
                                     tmplt_banks, output_dir,
-                                    injection_file=None, gate_files=None,
-                                    tags=[], link_to_tmpltbank=False,
+                                    injection_file=None,
+                                    tags=None, link_to_tmpltbank=False,
                                     compatibility_mode=False):
     '''
     Setup matched-filter jobs that are generated as part of the workflow.
@@ -181,6 +183,8 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         If you require access to any intermediate products produced at this
         stage you can call the various sub-functions directly.
     '''
+    if tags is None:
+        tags = []
     # Need to get the exe to figure out what sections are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
     # will require a bit of effort here .... 
@@ -216,7 +220,6 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifo, 
                                                out_dir=output_dir, 
                                                injection_file=injection_file, 
-                                               gate_files=gate_files,
                                                tags=tags)
         if link_exe_instance:
             link_job_instance = link_exe_instance(cp, 'tmpltbank', ifo=ifo,
@@ -233,8 +236,8 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
 
 def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                                           tmplt_banks, output_dir,
-                                          injection_file=None, gate_files=None,
-                                          tags=[], link_to_tmpltbank=False,
+                                          injection_file=None,
+                                          tags=None, link_to_tmpltbank=False,
                                           compatibility_mode=False):
     '''
     Setup matched-filter jobs that are generated as part of the workflow in
@@ -275,6 +278,8 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         If you require access to any intermediate products produced at this
         stage you can call the various sub-functions directly.
     '''
+    if tags is None:
+        tags = []
     # Need to get the exe to figure out what sections are analysed, what is
     # discarded etc. This should *not* be hardcoded, so using a new executable
     # will require a bit of effort here ....
@@ -283,15 +288,14 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
     ifos = science_segs.keys()
     match_fltr_exe = os.path.basename(cp.get('executables','inspiral'))
 
-    # Select the appropriate class
-    exe_class = select_matchedfilter_class(match_fltr_exe)
-
     # List for holding the output
     inspiral_outs = FileList([])
 
     logging.info("Setting up matched-filtering for %s." %(' '.join(ifos),))
 
     if match_fltr_exe == 'lalapps_coh_PTF_inspiral':
+        from pylal.legacy_ihope import select_legacy_matchedfilter_class
+        exe_class = select_legacy_matchedfilter_class(match_fltr_exe)
         cp.set('inspiral', 'right-ascension', cp.get('workflow', 'ra'))
         cp.set('inspiral', 'declination', cp.get('workflow', 'dec'))
         cp.set('inspiral', 'sky-error', cp.get('workflow', 'sky-error'))
@@ -303,15 +307,17 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
                                  out_dir=output_dir,
                                  injection_file=injection_file, 
-                                 gate_files=gate_files, tags=tags)
+                                 tags=tags)
         multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
                                      science_segs, datafind_outs, output_dir,
                                      parents=tmplt_banks)
     else:
+        # Select the appropriate class
+        exe_class = select_matchedfilter_class(match_fltr_exe)
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
                                  out_dir=output_dir,
                                  injection_file=injection_file,
-                                 gate_files=gate_files, tags=tags)
+                                 tags=tags)
         multi_ifo_job_setup(workflow, inspiral_outs, job_instance,
                             science_segs, datafind_outs, output_dir,
                             parents=tmplt_banks)

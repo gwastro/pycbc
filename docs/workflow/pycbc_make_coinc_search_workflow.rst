@@ -456,7 +456,7 @@ to specific configuration files managed for an analysis. For example, to
 generate a workflow to search two weeks of S6D data and place the results in
 your ``public_html`` directory, run the command::
 
-    pycbc_make_hdf_coinc_workflow --workflow-name s6d_chunk3 --output-dir output \
+    pycbc_make_coinc_search_workflow --workflow-name s6d_chunk3 --output-dir output \
       --config-files https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/s6_run_pycbc_er8_pre_release.ini \
       https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/executables.ini \
       https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/S6/pipeline/injections.ini \
@@ -469,7 +469,7 @@ set the output web page location.
 
 .. note::
 
-   To use released exectutables for production analysis, you should specify
+   To use released executables for production analysis, you should specify
    the URL to an ``executables.ini`` file from the 
    `PyCBC Software repository <https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software>`_.
 
@@ -493,7 +493,7 @@ determine the correct tags. These can be applied by adding the following line
 to your submit invocation.
 
 For example, to plan and submit the workflow in the example above, change to the directory that you specified with the ``--output``
-command line option to ``pycbc_make_hdf_coinc_workflow`` and plan and submit
+command line option to ``pycbc_make_coinc_search_workflow`` and plan and submit
 the workflow::
 
     cd output
@@ -608,54 +608,293 @@ If you have a subdax that failed, ``pegasus_analyzer`` will provide you with a c
 Reuse of data from a previous workflow
 ======================================
 
-One of the features of  Pegasus is to reuse the data products of prior runs.
-This can be used to expand an analysis or recover a run with mistaken settings without
-duplicating work.
+One of the features of Pegasus is reuse the data products of prior runs.
+This can be used to e.g. expand an analysis or recover a run with mistaken settings without
+duplicating work. The steps below explain how to do this.
 
------------------------------------------
-Generate the full workflow you want to do
------------------------------------------
+------------------------------------
+Setting up a workflow for data reuse
+------------------------------------
 
-First generate the full workflow for the
-run you would like to do as normal. Follow the instructions of this page from :ref:`howtorunworkflow`,
-but stop before planning the workflow with plan.sh in :ref:`coincworkflowplan`.
+The first step is to generate a new workflow that performs the analysis that
+you would like to do. This workflow should be generated in a new directory so that it does not overwrite data from your previous workflows.
+Data reuse happens at the ``pycbc_submit_dax`` step, so
+first run ``pycbc_make_coinc_search_workflow`` to build a new workflow,
+following the instructions in the section :ref:`coincworkflowgenerate` of this
+page.
 
------------------------------------------------------
-Select the files you want to reuse from the prior run
------------------------------------------------------
+**Stop** before you plan and submit the workflow with ``pycbc_submit_dax``.
+You will pass an additional file to ``pycbc_submit_dax`` using the
+``--cache-file`` option with a list of files that Pegasus can re-use from a
+previous run.  The Pegasus Workflow Planner will reduce the workflow
+using this cache file. Reduction works by deleting jobs from the workflow
+whose output files have been found in some location in this cache file.
 
-Locate the directory of the run that you would like to reuse. There is a file
-called ``output.map`` in the directory that you specified with the
-``--output`` argument to ``pycbc_make_coinc_search_workflow``. This file contains a 
-listing of all of the data products of the prior workflow, and can be used to tell
-pegasus to skip regenerating them.
+The key to data reuse is building the cache file passed to ``pycbc_submit_dax``. This file maps a file created in the workflow to a URL and a site where that URL can be found. The syntax of the cache file is plain ASCII with each line in the file giving the location of a file in the format::
 
-Select the entries in the file that you would like to skip generating again and
-place that into a new file. The example below selects all the inspiral and 
-tmpltbank jobs and places their entries into a new listing called prior_data.map.::
+    LOGICAL_FILE_NAME PHYSICAL_FILE_URL pool="SITE"
 
-    # Lets get the tmpltbank entries
-    cat /path/to/old/run/${GPS_START_TIME}-${GPS_END_TIME}/output.map | grep 'TMPLTBANK' > prior_data.map
-    
-    # Add in the inspiral  files
-    cat /path/to/old/run/${GPS_START_TIME}-${GPS_END_TIME}/output.map | grep 'INSPIRAL' >> prior_data.map
+where ``LOGICAL_FILE_NAME`` is the name of the file as it appears in the
+workflow. This should include any subdirectory path used by the workflow to organize files in the case of, e.g.,
+``INSPIRAL`` files but it should not be the absolute path to the file. ``PHYSICAL_FILE_URL`` is a
+full URL where the file can be found, and ``SITE`` is the site on which that URL
+resides.
+
+The URI in the ``PHYSICAL_FILE_URL`` can be any of the URIs that Pegasus
+recognizes. The URIs ``file://``, ``gsiftp://``, and ``http://`` are likely
+the most useful. Pegasus will take care of adding transfer jobs for
+``gsiftp://`` and ``http://`` URIs, if the data is not available locally.
+
+The string ``SITE`` is a hint that tells Pegasus on which site the
+``PHYSICAL_FILE_URL`` can be found. The ``SITE`` string should be one of the
+names used by ``pycbc_submit_dax`` to identify the cluster where jobs are run.
+In practice there are only two execution sites used by PyCBC workflows:
+
+1. ``local`` which is the regular Condor pool on the local cluster where the workflow is being run from. This is typically used when re-using data that exists on the filesystem of the local cluster.
+2. ``osg`` which is the Open Science Grid pool, as described in :ref:`weeklyahopeosg` below. This is only used if the data to be re-used is accessible via the ``/cvmfs`` filesystem.
+
+If the ``SITE`` string for a file matches the site where a job will be run,
+then Pegasus assumes that the file can be accessed locally via the regular
+file open commands. If the ``SITE`` string does not match the site where a job
+will be run, then Pegasus adds transfer jobs to the workflow to move the file
+to the site where it will be needed by a job.
+
+To tell Pegasus that the file is neither accessible via file open on the
+``local`` submit host nor on the ``osg`` pool, then the ``SITE`` string can be
+set to ``remote``. This tells Pegasus that the file is neither on the
+``local`` or the ``osg`` site and so Pegasus must add file transfer jobs to
+fetch the file from some other site.  This ``SITE`` attribute is needed
+beacuse a map between the job execution site and the location of the file
+might not be obvious from the hostname in the ``PHYSICAL_FILE_URL``.  
+
+The following rule should be helpful when chosing the ``SITE`` string:
+
+* If you are re-using a file that is available locally with a ``file://`` URI in its ``PHYSICAL_FILE_URL`` (or has an implicit ``file://`` URI since the ``PHYSICAL_FILE_URL`` starts with a ``/``) then the string ``SITE`` should be set to ``local``.
+* If you are re-using a file from another cluster, e.g. you are on the Syracuse cluster and want to re-use data from AEI Atlas cluster, then the string ``SITE`` should be set to ``remote`` for that file. In this case, the URI in ``PHYSICAL_FILE_URL`` will be either ``gsiftp://`` or ``http://`` depending on how the file can be accessed.
+
+To illustrate this, an example of a simple cache file containing four files for re-use from the ``local`` site is::
+
+    H1-VETOTIME_CAT3-1169107218-1066800.xml file://localhost/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/results/1._analysis_time/1.01_segment_data/H1-VETOTIME_CAT3-1169107218-1066800.xml pool="local"
+    L1-VETOTIME_CAT3-1169107218-1066800.xml file://localhost/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/results/1._analysis_time/1.01_segment_data/L1-VETOTIME_CAT3-1169107218-1066800.xml pool="local"
+    116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf file://localhost/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/full_data/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf pool="local"
+    116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf file://localhost/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/full_data/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf pool="local"
+
+Note that the ``LOGICAL_FILE_NAME`` for the veto files is just the name of the
+file, but for the two inspiral files it contains the subdirectory that the
+workflow uses to organize the files by GPS time. In the case of this file Pegasus will delete from the workflow the jobs that create the files ``H1-VETOTIME_CAT3-1169107218-1066800.xml``, ``L1-VETOTIME_CAT3-1169107218-1066800.xml``, ``116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf``, and ``116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf`` when it plans the workflow. Insted, the data will be re-used from the URLs specified in the cache. Since ``site="local"`` for these files, Pegasus expects that the files all exist on the host where the workflow is run from.
+
+To re-use data from a remote cluster, the URLs must contain a file transfer
+mechanism and the ``SITE`` should be set to ``remote``. For example, if the
+files listed in the example above are available on
+``sugwg-condor.phy.syr.edu`` and you want to re-use them in a workflow on the
+AEI Atlas cluster, then the cache file would contain::
+
+    H1-VETOTIME_CAT3-1169107218-1066800.xml gsiftp://sugwg-condor.phy.syr.edu/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/results/1._analysis_time/1.01_segment_data/H1-VETOTIME_CAT3-1169107218-1066800.xml pool="remote"
+    L1-VETOTIME_CAT3-1169107218-1066800.xml gsiftp://sugwg-condor.phy.syr.edu/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/results/1._analysis_time/1.01_segment_data/L1-VETOTIME_CAT3-1169107218-1066800.xml pool="remote"
+    116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf gsiftp://sugwg-condor.phy.syr.edu/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/full_data/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf pool="remote"
+    116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf gsiftp://sugwg-condor.phy.syr.edu/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/full_data/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf pool="remote"
+
+Note that the URL now contains ``gsiftp://sugwg-condor.phy.syr.edu`` rather
+than ``file://localhost`` and the files are listes as ``pool="remote"`` rather
+than ``pool="local"``. Pegasus will re-use these data files adding in
+file transfer jobs to the workflow to move them into the appropriate
+locations.
+
+Once a cache file has been constructed, to enable data re-use, you follow the
+standard instructions for planning and submitting the workflow in the section
+:ref:`coincworkflowplan`, but add the ``--cache-file`` argument that points to
+the cache file that you have created. For example:: 
+
+    pycbc_submit_dax --cache-file /path/to/prior_data.map --accounting-group ligo.dev.o1.cbc.explore.test --dax s6d_chunk3.dax
+
+will use the URLs from the file ``/path/to/prior_data.map`` to implement
+data re-use and subsequent workflow reduction. If more than once cache file is
+provided, pass the paths as a comma separated list to ``pycbc_submit_dax``::
+
+    pycbc_submit_dax --cache-file /path/to/prior_data.map,/path/to/other.map --accounting-group ligo.dev.o1.cbc.explore.test --dax s6d_chunk3.dax
+
+Which file URLs should be included in the reuse cache? There is no single
+correct way of deciding this, as it depends on exactly what you are trying to do. The sections
+below explain how to do this for a few common situations.
 
 .. note::
 
-    You can include files in the prior data listing that wouldn't be generated anyway by your new run. These are simply
-    ignored.
+    The ``[workflow]`` section of the ini configuration file contains an
+    option ``file-retention-level``. This is commonly set to ``all_files`` or
+    ``all_triggers``, in which case the data products re-used will be copied
+    from the input locations and stored into the output location of the new
+    workflow when the new workflow is run with data re-use. This can be
+    wasteful of disk space, so you may want to set this option to either
+    ``merged_triggers`` or ``results`` to store a smaller sub-set of the
+    workflow's data products. These setting will allow the use of data from
+    a previous run, but not make duplicate copies of intermediate data files.
+    See the documentation under :ref:`workflowconfigparsermod` for more
+    details of the ``file-retention-level`` configuration option.
 
----------------------------
-Plan the workflow
----------------------------
+.. note::
 
-From the directory where the dax was created, now plan the workflow with an additional argument as follows.::
+    At present you *cannot* re-use ``.dax`` and ``.map`` files from a previous
+    run. A workflow using data reuse must regenerate and re-run any sub-daxes
+    from scratch. If you re-use a ``.map`` file rather than re-generating it,
+    then the new workflow will write results files in the location of the old
+    workflow. All of the examples below use an ``egrep -v '(dax|map)'`` to
+    filter out these files.
 
-    pycbc_submit_dax --accounting-group ligo.dev.o1.cbc.explore.test --dax s6d_chunk3.dax --cache /path/to/prior_data.map
+.. _workflow_rerun_extend:
 
-Follow the remaining :ref:`coincworkflowplan` instructions to submit your reduced
-workflow.
+-------------------------------------------------
+Extending the GPS end time of a previous workflow
+-------------------------------------------------
 
+A common mode of data re-use is to extend the GPS end time of a previous
+workflow to generate a new result page that e.g. extends the analysis by a few
+days. This assumes that: 
+
+* The previous workflow completed successfully.
+
+* There are no changes to the workflow configuration file, other than incrementing the end time of the workflow.
+
+In this case, first re-run ``pycbc_make_coinc_search_workflow`` to build the
+new workflow. The normal file retention level will copy a lot of reused data
+from the previous workflow directory into the new workflow directory. If you
+do not want to do this, use a ``--config-override`` to change the value of
+``workflow:file-retention-level`` as described on the page
+:ref:`workflowconfigparsermod`.
+
+Then create a cache file in the following way:
+
+1. Locate the PyCBC result page for the workflow that you wish to extend.
+
+2. In the menu under **Section 8: Workflow**, locate the **Output map** section (usually Section 8.06) and open that page.
+
+3. This page will show three output cache files that contain the URLs of the data created by the workflow. Locate the file that ends ``main.map`` and download it by clicking on the **Link to file**. This file contains the main intermediate and output data products of the workflow.
+
+4. Edit this file so that it only contains the output of the ``pycbc_inspiral`` jobs, i.e. delete all of the lines that do not match the pattern ``*INSPIRAL*hdf``. You can do this in a text editor, or with your favorite combination of UNIX ``grep``, ``sed``, ``awk``, or ``perl`` commands.
+For example::
+
+    egrep 'INSPIRAL.*hdf' /path/to/downloaded/workflow-main.map > inspiral_files.map
+
+will pull out all cache file lines for the outputs of ``pycbc_inspiral`` files and write them to a new cache file called ``inspiral_files.map``.  
+
+5. If the files in the new cache file exist locally on the cluster where you are submitting the workflow, then the cache file is complete. If they do not, you will need to modify the file to change the ``PHYSICAL_FILE_URL`` to a valid ``gsiftp://`` or ``http://`` URL on the remote cluster, and change ``pool="local"`` to ``pool="remote"``. Again, these changes can be made with a text editor or UNIX shell tools. For example, if the file URLs begin with ``/home/dbrown`` and they are on the Syracuse cluster, to run on Atlas you would use the following ``sed`` commands to change the ``SITE`` and the URI in the cache file::
+
+    sed 's/pool="local"/pool="remote"/g' inspiral_files.map > inspiral_files.map.tmp
+    sed 's+/home/dbrown+gsiftp://sugwg-condor.phy.syr.edu/home/dbrown+g' inspiral_files.map.tmp > inspiral_files.map
+    rm inspiral_files.map.tmp
+
+6. Finally, copy the file ``inspiral_files.map`` to your new workflow directory and then run ``pycbc_submit_dax`` as usual, giving the path to ``inspiral_files.map`` as the ``--cache-file`` argument.
+
+---------------------------------------------------
+Re-running a workflow using a new veto definer file
+---------------------------------------------------
+
+Data reuse can be used to re-running a workflow with a new veto definer file, assuming that:
+
+* The previous workflow completed successfully.
+* No changes to the configuration file are made, other than changing the ``segments-veto-definer-url`` in the ``[workflow-segments]`` section of the workflow configration file (although the GPS end time can also be extended at the same time, if necessary).
+
+In this case, first re-run ``pycbc_make_coinc_search_workflow`` to build the
+new workflow. The normal file retention level will copy a lot of reused data
+from the previous workflow directory into the new workflow directory. If you
+do not want to do this, use a ``--config-override`` to change the value of
+``workflow:file-retention-level`` as described on the page
+:ref:`workflowconfigparsermod`.
+
+Then create the cache file as follows:
+
+1. Locate the PyCBC result page for the workflow that you wish to extend.
+
+2. In the menu under **Section 8: Workflow**, locate the **Output map** section (usually Section 8.06) and open that page.
+
+3. This page will show three output cache files that contain the URLs of the data created by the workflow. Locate the file that ends ``main.map`` and download it by clicking on the **Link to file**. This file contains the main intermediate and output data products of the workflow.
+
+4. If only category 2 and higher vetoes have change, remove the output files that match the following strings from the output map file: 
+  * ``VETOTIME`` to remove the files containing the old veto segments.
+  * ``LIGOLW_COMBINE_SEGMENTS`` to remove the files that combine the veto segments into categories.
+  * ``CUMULATIVE_CAT_12H_VETO_SEGMENTS`` to remove the files that contain times to veto.
+  * ``COINC`` to remove the output of the coincidence code.
+  * ``FIT`` to remove the background bin statistic results.
+  * ``STATMAP`` to remove the detection statistic ranking output.
+  * ``INJFIND`` to remove the results of software-injection tests.
+  * ``PAGE`` to remove the results make with the loudest events.
+  * ``FOREGROUND_CENSOR`` to remove the veto files used to remove events from the closed box plots.
+  * ``html`` to remove any output web pages genereated.
+  * ``png`` to remove any output plots generated.
+  * ``dax`` to remove any follow-up workflows generated.
+This can be acomplished with the following command::
+
+    egrep -v '(VETOTIME|LIGOLW_COMBINE_SEGMENTS|CUMULATIVE_CAT_12H_VETO_SEGMENTS|COINC|FIT|STATMAP|INJFIND|PAGE|FOREGROUND_CENSOR|html|png|dax)' /path/to/main.map > /path/to/reuse_cache.map
+
+If category 1 vetoes have changed, you must also remove files matching ``PSD``, ``OPTIMAL``, and ``MERGE`` to remove the PSD estimation jobs, the jobs that compute the optimal SNR of injections, and the merged single-detector inspiral trigger files which may also change if the category 1 vetoes change.
+
+6. Copy the file ``reuse_cache.map`` to your new workflow directory and then run ``pycbc_submit_dax`` as usual, giving the path to ``reuse_cache.map`` as the ``--cache-file`` argument.
+
+----------------------------
+Re-running a failed workflow
+----------------------------
+
+Occasionally it may be necessary to use data from a partially completed
+workflow, e.g. if there a bug in an executable and you wish to re-run the
+workflow with a new version of the executable. If the workflow failed, no
+results web page will have been generated and the output data may not have
+been copied to the locations in ``main.map``. To re-use data from a previous
+failed workflow, you need to create a cache file containing the completed jobs
+from the previous workflow. 
+
+To do this, ``cd`` into the ``local-site-scratch/work`` directory of your
+failed workflow. For example, if you used ``--output-dir output`` when
+planning the workflow, the then run the command::
+
+    cd /path/to/workflow/output/local-site-scratch/work
+
+Once in this directory there should be a directory that ends with
+``main_ID0000001`` (e.g. ``my-workflow-main_ID0000001``) Change into that
+directory.
+
+Once in the ``main_ID0000001`` directory, run the command::
+
+    for pfn in `find . -type f | sed 's+^./++g'` ; do echo $pfn file://`pwd`/$pfn pool=\"local\" ; done | egrep -v '(dax|map)' > /path/to/partial_workflow.map
+
+changing ``/path/to`` to a location where you want to save the cache.
+
+If your run used the Open Science Grid, you will need to do the same thing for
+the ``osg-site-scratch`` directory. In this case::
+
+    cd /path/to/workflow/output/osg-site-scratch/work
+
+and change into the directory that ends with ``main_ID0000001``. Then run the
+same command as above::
+
+    for pfn in `find . -type f | sed 's+^./++g'` ; do echo $pfn file://`pwd`/$pfn pool=\"local\" ; done | egrep -v '(dax|map)' >> /path/to/partial_workflow.map
+
+but **note** the ``>>`` rather than ``>`` to append to the file ``partial_workflow.map``, rather than deteling the existing file and creating a new file.
+ 
+Now you can than use the ``partial_workflow.map`` cache file as the ``--cache-file`` argument to ``pycbc_submit_dax``.
+
+
+-----------------------------------------------
+Using partial products from a previous workflow
+-----------------------------------------------
+
+If you are changing the configuration parameters of a workflow, then you can
+build a cache file from a previous ``main.map`` file or the files under
+``local-site-scratch``, but you will need to filter the cache file to remove
+the files for jobs that have a changed configuration.  Here are a few
+examples:
+
+* If you are changing the configuration of ``pycbc_inspiral`` you must regenerate almost all the files in the workflow so it easier to start from scratch.
+
+* If you are changing the injections, but want to re-use the ``FULL_DATA`` previous analysis, you can filter the ``main.map`` to keep the veto files, template bank files, full data inspiral files, and PSD files but filtering out any plots and result pages. For example::
+
+    egrep '(VETO|BANK|INSPIRAL_FULL_DATA|MERGE_FULL_DATA|PSD)' /path/to/main.map | egrep -v '(png|html|dax)' > /path/to/reuse.map
+
+* If you are changing the configuration of the coincident code, you can reuse all the injection files and inspiral files. For example::
+
+    egrep '(VETO|BANK|FULL_DATA|PSD)' /path/to/main.map | egrep -v '(COINC|FIT|STATMAP|INJFIND|html|png|dax)' /path/to/main.map > /path/to/reuse.map
+
+.. note::
+
+    There is no rule for exactly which products can be reused as it depends on what you are changing in the workflow configuration. For partial reuse, it is best to consult an expert on how to build the cache file.
 
 .. _weeklyahopeosg:
 
@@ -669,71 +908,77 @@ Prerequisites
 
 There are a number of requirements on the machine on which the workflow will be started:
 
-- Pegasus version 4.5.3 or later.
-
-- An updated version of Java SSL proxies.  Replace ``share/pegasus/java/ssl-proxies-2.1.0.jar`` with the one from http://gaul.isi.edu/pub/ssl-proxies-2.1.1-SNAPSHOT.jar
+- Pegasus version 4.7.1 or later.
 
 - The bundled executables available on the submit machine
 
 - A gridftp server running on the submit machine
 
-- Condor configuration (beyond the scope of this document)
+- Condor configured on the head node to connect to OSG as documented at::
 
-
-For the following instructions set ``SUBMIT_MACHINE`` to be the full name of the submit machine and ``EXECUTABLE_PATH`` to be the full path to the directory containing the
-bundles.  You will need to set::
-
-    export PATH=${EXECUTABLE_PATH}:${PATH}
-
-to ensure the correct versions are found by the workflow generator.
-
-
------------------------
-Generating a cache file
------------------------
-
-In order to get frame files, jobs running on OSG need a cache file that points to the gridFTP server at Nebraska.::
-
-    find /frames/ER8/*HOFT_C00* /frames/O1/*HOFT_C00* -type f -name \*gwf > cache.tmp
-
-    sed -e 's+.*/\([^/]*\)$+\1+' -e 's+.*\([0-9]\{6\}\)[0-9]\{4\}.*+\1/\0+' cache.tmp > short.tmp
-    sed -e 's+^+gsiftp://red-gridftp.unl.edu/user/ligo+' -e 's+$+ pool="osg"+' cache.tmp > long.tmp
-
-    paste -d' ' short.tmp long.tmp > osg-frames-c00.cache 
-
-    rm cache.tmp short.tmp long.tmp
-
-This will need to be tweaked depending on the submission site.
-
-.. note::
-
-    If the inspiral jobs require any files that are not generated by the workflow, such as gating files, entries
-    for these files must be added to the cache manually.
-
+    https://its-condor-blog.syr.edu/dokuwiki/doku.php?id=researchgroups:physics:sl7_cluster_setup
 
 ------------------------
 Configuring the workflow
 ------------------------
 
-In order for ``pycbc_inspiral`` to be sent to worker nodes it must be available
-via a remote protocol, either http or gridFTP.  The easiest way to ensure this
-is to include the ``executables.ini`` file assocated with the current release
-in the list of ini files, for example::
+.. note::
 
-    http://code.pycbc.phy.syr.edu/pycbc-software/v1.3.1/x86_64/composer_xe_2015.0.090/
+    Standard PyCBC installs build a version of ``pycbc_inspiral`` that uses weave
+    to compile code at runtime. Many OSG machines do not have all of the
+    compiler tools required to support weave compilation. In order to run on
+    the OSG, the ``pycbc_inspiral`` executable must be built as a PyInstaller
+    bundle that contains all of the weave-compiled code inside the bundle.
+    This bundle must be built on a lowest-common denominator platform so that
+    the shared libraries that it needs at runtime (e.g. glibc) are available.
+    RHEL6 (or a similar derivative) is a suitable platform. The ``/cvmfs``
+    filesystem contains ``pycbc_inspiral`` bundles that are built on the
+    ``x86_64_rhel_6`` platform and are suitable for use on the OSG.
 
-Add the following to the list of ``--config-overrides`` when running ``pycbc_make_coinc_search_workflow``::
+In order for ``pycbc_inspiral`` to be sent to worker nodes it must be
+available via a remote protocol, either http, gsiftp, or CVMFS. Releases of
+pycbc are installed in CVMFS and the LDG head nodes run a gridftp server that
+can serve your own development copy.  Specify this path when you run
+``pycbc_make_coinc_search_workflow``. To run from a released bundle in CVMFS 
+give the following argument to the ``--config-overrides`` option (changing the
+path to point to the release that you want to use)::
 
-    'pegasus_profile-inspiral:hints|execution.site:osg' \
-    'pegasus_profile-inspiral:condor|request_memory:1920M' \
-    'workflow-main:staging-site:osg=osg-scratch' \
+    'executables:inspiral:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_6/bundle/v1.6.6/pycbc_inspiral'
 
-If a custom ``executables.ini`` is being used it will also be necessary to mark ``pycbc-inspiral`` as
-uninstalled by also adding::
+If you are running your own build of ``pycbc_inspiral``, you will need to give
+a path to a gsiftp URL and tell Pegasus that the executable is not installed
+on the OSG with the two ``--config-overrides`` options::
 
-    'pegasus_profile-inspiral:pycbc|installed:False' \
+    'executables:inspiral:gsiftp://server.hostname/path/to/pycbc_inspiral' \
 
-to the list of ``--config-overrides``
+Add the following to the list of ``--config-overrides`` when running ``pycbc_make_coinc_search_workflow`` to tell Pegasus to run the inspiral code on the OSG::
+     
+    'pegasus_profile-inspiral:pycbc|site:osg'
+    'pegasus_profile-inspiral:hints|execution.site:osg'
+    'pegasus_profile-inspiral:pycbc|installed:False'
+    'inspiral:fixed-weave-cache'
+
+You also need a ``--config-overrides`` to ``pycbc_make_coinc_search_workflow`` that sets the staging site for the main workflow to the local site. To do this, add the following argument, replacing ``${WORKFLOW_NAME}`` with the string that is given as the argument to the option ``--workflow-name``::
+
+    'workflow-${WORKFLOW_NAME}-main:staging-site:osg=local'
+
+Optionally, you can add a configuration that will check that your grid proxy
+is valid locally before submitting the job. This means that if your grid proxy
+expires before the workflow is complete, the failure will be on the local site
+before the job is actually submitted, and not on the remote site once the job
+has been scheduled and matched::
+
+    'pegasus_profile-inspiral:dagman|pre:/usr/bin/grid-proxy-info'
+
+Another useful enhancement for OSG running is to add profiles to your inspiral
+job that will tell Condor to put it on hold if it has been running for more
+that 48 hours and terminate it after 5 failed attempts. To do this, add the
+follwing lines to your ``executables.ini`` file::
+
+    [pegasus_profile-inspiral]
+    condor|periodic_hold = (JobStatus == 2) && ((CurrentTime - EnteredCurrentStatus) > (2 * 86400))
+    condor|periodic_release = (JobStatus == 5) && (HoldReasonCode == 3) && (NumJobStarts < 5) && ((CurrentTime - EnteredCurrentStatus) > (300))
+    condor|periodic_remove = (NumJobStarts >= 5)
 
 --------------------
 Running the workflow
@@ -741,11 +986,10 @@ Running the workflow
 
 Add the following arguments to ``pycbc_submit_dax``::
 
+    --no-create-proxy \
     --execution-sites osg \
-    --append-pegasus-property 'pegasus.data.configuration=nonsharedfs' \
-    --append-site-profile 'local:dagman|maxidle:5000' \
+    --append-pegasus-property 'pegasus.transfer.bypass.input.staging=true' \
     --remote-staging-server `hostname -f` \
-    --cache osg-frames-c00.cache \
 
-``hostname -f`` will give the correct value if there is a gsiftp server running on the submit machine.  If not, change this as needed.
+``hostname -f`` will give the correct value if there is a gsiftp server running on the submit machine.  If not, change this as needed. The remote-staging-site is the intermediary computer than can pass files between the submitting computer and the computers doing the work.  ``hostname -f`` returns the full name of the computer. The full name of the computer that ``hostname -f`` has to be one that is accessible to both the submit machine and the workers. 
 

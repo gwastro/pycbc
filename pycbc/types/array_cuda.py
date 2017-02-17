@@ -121,7 +121,7 @@ def get_norm_kernel(dtype_x, dtype_out):
                 "tp_z": dtype_to_ctype(dtype_out),
                 },
             "z[i] = norm(x[i])",
-            "norm")
+            "normalize")
 
 def squared_norm(self):
     a = self.data
@@ -130,6 +130,14 @@ def squared_norm(self):
     krnl = get_norm_kernel(a.dtype, dtype_out)
     krnl(a, out)
     return out     
+
+# FIXME: Write me!
+#def multiply_and_add(self, other, mult_fac):
+#    """
+#    Return other multiplied by mult_fac and with self added.
+#    Self will be modified in place. This requires all inputs to be of the same
+#    precision.
+#    """
  
 @context_dependent_memoize
 def get_weighted_inner_kernel(dtype_x, dtype_y, dtype_w, dtype_out):
@@ -174,7 +182,7 @@ vdot = inner
 
 def weighted_inner(self, b, w):
     if w is None:
-        return self.inner(other)  
+        return self.inner(b)  
     a = self.data
     dtype_out = _get_common_dtype(a, b)
     krnl = get_weighted_inner_kernel(a.dtype, b.dtype, w.dtype, dtype_out)

@@ -7,9 +7,9 @@ then
 fi
 
 cat > build_one.sub <<EOT
-universe = vanilla
+universe = local
 priority = 100
-request_memory = 32000
+request_memory = 500
 executable = ${PWD}/build_one.sh
 arguments = \$(prog)
 output = pyinstaller_build.\$(cluster).\$(process).out
@@ -33,13 +33,13 @@ do
 		# revisited
 		if ! grep -q ${exename} cant_be_built
 		then
-			NEW_UUID=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+			NEW_UUID=`uuidgen`
 
 			echo "JOB ${NEW_UUID} ${PWD}/build_one.sub DIR ${PWD}"
 			echo "VARS ${NEW_UUID} prog=\"${prog}\""
-			echo
+			echo "RETRY ${NEW_UUID} 3"
+                        echo
 		fi
 	fi
 done > build_static.dag
-
 

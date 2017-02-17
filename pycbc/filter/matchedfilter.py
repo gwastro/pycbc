@@ -44,7 +44,31 @@ def correlate(x, y, z):
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def _correlate_factory(x, y, z):
-    pass
+    return
+
+class BatchCorrelator(object):
+    """ Create a batch correlation engine 
+    """
+    def __init__(self, xs, zs, size):
+        """ Correlate x and y, store in z. Arrays need not be equal length, but
+        must be at least size long and of the same dtype. No error checking
+        will be performed, so be careful. All dtypes must be the same.
+        Note, must be created within the processing context that it will be used in.
+        """
+        self.size = int(size)
+        self.dtype = xs[0].dtype
+        self.num_vectors = len(xs)
+
+        # Store each pointer as in integer array
+        self.x = Array([v.ptr for v in xs], dtype=numpy.int)
+        self.z = Array([v.ptr for v in zs], dtype=numpy.int)
+
+    @pycbc.scheme.schemed(BACKEND_PREFIX)
+    def batch_correlate_execute(self, y):
+        pass
+
+    execute = batch_correlate_execute
+
 
 class Correlator(object):
     """ Create a correlator engine
@@ -137,11 +161,12 @@ class MatchedFilterControl(object):
         if cluster_function not in ['symmetric', 'findchirp']:
             raise ValueError("MatchedFilter: 'cluster_function' must be either 'symmetric' or 'findchirp'")
         self.cluster_function = cluster_function
+        self.segments = segment_list
+        self.htilde = template_output
 
         if downsample_factor == 1:
             self.snr_mem = zeros(self.tlen, dtype=self.dtype)
             self.corr_mem = zeros(self.tlen, dtype=self.dtype)
-            self.segments = segment_list
 
             if use_cluster and (cluster_function == 'symmetric'):
                 self.matched_filter_and_cluster = self.full_matched_filter_and_cluster_symm
@@ -157,7 +182,6 @@ class MatchedFilterControl(object):
                 
             # Assuming analysis time is constant across templates and segments, also
             # delta_f is constant across segments.
-            self.htilde = template_output
             self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh, 
                                                       self.delta_f, self.tlen)   
                                                       
@@ -321,21 +345,19 @@ class MatchedFilterControl(object):
         logging.info("%s points above threshold" % str(len(idx)))
         return self.snr_mem, norm, self.corr_mem, idx, snrv
 
-    def heirarchical_matched_filter_and_cluster(self, htilde, template_norm, stilde, window):
+    def heirarchical_matched_filter_and_cluster(self, segnum, template_norm, window):
         """ Return the complex snr and normalization. 
     
         Calculated the matched filter, threshold, and cluster. 
 
         Parameters
         ----------
-        htilde : FrequencySeries 
-            The template waveform. Must come from the FilterBank class.
+        segnum : int
+            Index into the list of segments at MatchedFilterControl construction
         template_norm : float
             The htilde, template normalization factor.
-        stilde : FrequencySeries 
-            The strain data to be filtered.
         window : int
-            The size of the cluster window in samples.
+            Size of the window over which to cluster triggers, in samples
 
         Returns
         -------
@@ -350,8 +372,10 @@ class MatchedFilterControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
-        from pycbc.fft.fftw_pruned import pruned_c2cifft, fft_transpose                           
-                                         
+        from pycbc.fft.fftw_pruned import pruned_c2cifft, fft_transpose
+        htilde = self.htilde
+        stilde = self.segments[segnum]
+
         norm = (4.0 * stilde.delta_f) / sqrt(template_norm)
         
         correlate(htilde[self.kmin_red:self.kmax_red], 
@@ -414,6 +438,324 @@ class MatchedFilterControl(object):
         else:
             raise ValueError("Invalid upsample method")            
 
+class MatchedFilterSkyMaxControl(object):
+    # FIXME: This seems much more simplistic than the aligned-spin class.
+    #        E.g. no correlators. Is this worth updating?
+    def __init__(self, low_frequency_cutoff, high_frequency_cutoff,
+                snr_threshold, tlen, delta_f, dtype):
+        """
+        Create a matched filter engine.
+
+        Parameters
+        ----------
+        low_frequency_cutoff : {None, float}, optional
+            The frequency to begin the filter calculation. If None, begin
+            at the first frequency after DC.
+        high_frequency_cutoff : {None, float}, optional
+            The frequency to stop the filter calculation. If None, continue
+            to the nyquist frequency.
+        snr_threshold : float
+            The minimum snr to return when filtering
+        """
+        self.tlen = tlen
+        self.delta_f = delta_f
+        self.dtype = dtype
+        self.snr_threshold = snr_threshold
+        self.flow = low_frequency_cutoff
+        self.fhigh = high_frequency_cutoff
+
+        self.matched_filter_and_cluster = \
+                                    self.full_matched_filter_and_cluster
+        self.snr_plus_mem = zeros(self.tlen, dtype=self.dtype)
+        self.corr_plus_mem = zeros(self.tlen, dtype=self.dtype)
+        self.snr_cross_mem = zeros(self.tlen, dtype=self.dtype)
+        self.corr_cross_mem = zeros(self.tlen, dtype=self.dtype)
+        self.snr_mem = zeros(self.tlen, dtype=self.dtype)
+        self.cached_hplus_hcross_correlation = None
+        self.cached_hplus_hcross_hplus = None
+        self.cached_hplus_hcross_hcross = None
+        self.cached_hplus_hcross_psd = None
+
+    def full_matched_filter_and_cluster(self, hplus, hcross, hplus_norm,
+                                        hcross_norm, psd, stilde, window):
+        """
+        Return the complex snr and normalization.
+
+        Calculated the matched filter, threshold, and cluster.
+
+        Parameters
+        ----------
+        h_quantities : Various
+            FILL ME IN
+        stilde : FrequencySeries
+            The strain data to be filtered.
+        window : int
+            The size of the cluster window in samples.
+
+        Returns
+        -------
+        snr : TimeSeries
+            A time series containing the complex snr.
+        norm : float
+            The normalization of the complex snr.
+        correlation: FrequencySeries
+            A frequency series containing the correlation vector.
+        idx : Array
+            List of indices of the triggers.
+        snrv : Array
+            The snr values at the trigger locations.
+        """
+        I_plus, Iplus_corr, Iplus_norm = matched_filter_core(hplus, stilde,
+                                          h_norm=hplus_norm,
+                                          low_frequency_cutoff=self.flow,
+                                          high_frequency_cutoff=self.fhigh,
+                                          out=self.snr_plus_mem,
+                                          corr_out=self.corr_plus_mem)
+
+        I_cross, Icross_corr, Icross_norm = matched_filter_core(hcross,
+                                          stilde, h_norm=hcross_norm,
+                                          low_frequency_cutoff=self.flow,
+                                          high_frequency_cutoff=self.fhigh,
+                                          out=self.snr_cross_mem,
+                                          corr_out=self.corr_cross_mem)
+
+        # The information on the complex side of this overlap is important
+        # we may want to use this in the future.
+        if not id(hplus) == self.cached_hplus_hcross_hplus:
+            self.cached_hplus_hcross_correlation = None
+        if not id(hcross) == self.cached_hplus_hcross_hcross:
+            self.cached_hplus_hcross_correlation = None
+        if not id(psd) == self.cached_hplus_hcross_psd:
+            self.cached_hplus_hcross_correlation = None
+        if self.cached_hplus_hcross_correlation is None:
+            hplus_cross_corr = overlap_cplx(hplus, hcross, psd=psd,
+                                           low_frequency_cutoff=self.flow,
+                                           high_frequency_cutoff=self.fhigh,
+                                           normalized=False)
+            hplus_cross_corr = numpy.real(hplus_cross_corr)
+            hplus_cross_corr = hplus_cross_corr / (hcross_norm*hplus_norm)**0.5
+            self.cached_hplus_hcross_correlation = hplus_cross_corr
+            self.cached_hplus_hcross_hplus = id(hplus)
+            self.cached_hplus_hcross_hcross = id(hcross)
+            self.cached_hplus_hcross_psd = id(psd)
+        else:
+            hplus_cross_corr = self.cached_hplus_hcross_correlation
+
+        snr = compute_max_snr_over_sky_loc_stat(I_plus,I_cross,
+                                                hplus_cross_corr,
+                                                thresh=self.snr_threshold,
+                                                out=self.snr_mem,
+                                                hpnorm=Iplus_norm,
+                                                hcnorm=Icross_norm,
+                                                analyse_slice=stilde.analyze)
+        # FIXME: This should live further down
+        # Convert output to pycbc TimeSeries
+        delta_t = 1.0 / (self.tlen * stilde.delta_f)
+
+        snr = TimeSeries(snr, epoch=stilde._epoch, delta_t=delta_t, copy=False)
+
+        idx, snrv = events.threshold_real_numpy(snr[stilde.analyze],
+                                                self.snr_threshold)
+
+        if len(idx) == 0:
+            return [], 0, 0, [], [], [], [], 0, 0, 0
+        logging.info("%s points above threshold" % str(len(idx)))            
+ 
+
+        idx, snrv = events.cluster_reduce(idx, snrv, window)
+        logging.info("%s clustered points" % str(len(idx)))
+
+        u_vals, coa_phase = compute_u_val_for_sky_loc_stat(
+                                   I_plus.data, I_cross.data, hplus_cross_corr,
+                                   indices=idx+stilde.analyze.start,
+                                   hpnorm=Iplus_norm, hcnorm=Icross_norm)
+
+        return snr, Iplus_corr, Icross_corr, idx, snrv, u_vals, coa_phase,\
+                                      hplus_cross_corr, Iplus_norm, Icross_norm
+
+
+def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
+                                                      hpnorm=None, hcnorm=None,
+                                                      out=None, thresh=0,
+                                                      analyse_slice=None):
+    """
+    Compute the maximized over sky location statistic.
+
+    Parameters
+    -----------
+    hplus : TimeSeries
+        This is the IFFTed complex SNR time series of (h+, data). If not
+        normalized, supply the normalization factor so this can be done!
+        It is recommended to normalize this before sending through this
+        function
+    hcross : TimeSeries
+        This is the IFFTed complex SNR time series of (hx, data). If not
+        normalized, supply the normalization factor so this can be done!
+    hphccorr : float
+        The real component of the overlap between the two polarizations
+        Re[(h+, hx)]. Note that the imaginary component does not enter the
+        detection statistic. This must be normalized and is sign-sensitive.
+    thresh : float
+        Used for optimization. If we do not care about the value of SNR
+        values below thresh we can calculate a quick statistic that will
+        always overestimate SNR and then only calculate the proper, more
+        expensive, statistic at points where the quick SNR is above thresh.
+    hpsigmasq : float
+        The normalization factor (h+, h+). Default = None (=1, already 
+        normalized)
+    hcsigmasq : float
+        The normalization factor (hx, hx). Default = None (=1, already 
+        normalized)
+    out : TimeSeries (optional, default=None)
+        If given, use this array to store the output.
+
+    Returns
+    --------
+    det_stat : TimeSeries
+        The SNR maximized over sky location
+    """
+    # NOTE: Not much optimization has been done here! This may need to be
+    # C-ified using scipy.weave.
+
+    if out is None:
+        out = zeros(len(hplus))
+        out.non_zero_locs = numpy.array([], dtype=out.dtype)
+    else:
+        if not hasattr(out, 'non_zero_locs'):
+            # Doing this every time is not a zero-cost operation
+            out.data[:] = 0
+            out.non_zero_locs = numpy.array([], dtype=out.dtype)
+        else:
+            # Only set non zero locations to zero
+            out.data[out.non_zero_locs] = 0
+
+
+    # If threshold is given we can limit the points at which to compute the
+    # full statistic
+    if thresh:
+        # This is the statistic that always overestimates the SNR...
+        # It allows some unphysical freedom that the full statistic does not
+        idx_p, _ = events.threshold(hplus[analyse_slice],
+                                                    thresh / (2**0.5 * hpnorm))
+        idx_c, _ = events.threshold(hcross[analyse_slice],
+                                                    thresh / (2**0.5 * hcnorm))
+        idx_p = idx_p + analyse_slice.start
+        idx_c = idx_c + analyse_slice.start
+        hp_red = hplus[idx_p] * hpnorm
+        hc_red = hcross[idx_p] * hcnorm
+        stat_p = hp_red.real**2 + hp_red.imag**2 + \
+                     hc_red.real**2 + hc_red.imag**2
+        locs_p = idx_p[stat_p > (thresh*thresh)]
+        hp_red = hplus[idx_c] * hpnorm
+        hc_red = hcross[idx_c] * hcnorm
+        stat_c = hp_red.real**2 + hp_red.imag**2 + \
+                     hc_red.real**2 + hc_red.imag**2
+        locs_c = idx_c[stat_c > (thresh*thresh)]
+        locs = numpy.unique(numpy.concatenate((locs_p, locs_c)))
+
+        hplus = hplus[locs]
+        hcross = hcross[locs]
+
+    hplus = hplus * hpnorm
+    hcross = hcross * hcnorm
+  
+
+    # Calculate and sanity check the denominator
+    denom = 1 - hphccorr*hphccorr
+    if denom < 0:
+        if hphccorr > 1:
+            err_msg = "Overlap between hp and hc is given as %f. " %(hphccorr)
+            err_msg += "How can an overlap be bigger than 1?"
+            raise ValueError(err_msg)
+        else:
+            err_msg = "There really is no way to raise this error!?! "
+            err_msg += "If you're seeing this, it is bad."
+            raise ValueError(err_msg)
+    if denom == 0:
+        # This case, of hphccorr==1, makes the statistic degenerate
+        # This case should not physically be possible luckily.
+        err_msg = "You have supplied a real overlap between hp and hc of 1. "
+        err_msg += "Ian is reasonably certain this is physically impossible "
+        err_msg += "so why are you seeing this?"
+        raise ValueError(err_msg)
+  
+    assert(len(hplus) == len(hcross))
+
+    # Now the stuff where comp. cost may be a problem
+    hplus_magsq = numpy.real(hplus) * numpy.real(hplus) + \
+                       numpy.imag(hplus) * numpy.imag(hplus)
+    hcross_magsq = numpy.real(hcross) * numpy.real(hcross) + \
+                       numpy.imag(hcross) * numpy.imag(hcross)
+    rho_pluscross = numpy.real(hplus) * numpy.real(hcross) + numpy.imag(hplus)*numpy.imag(hcross)
+
+    sqroot = (hplus_magsq - hcross_magsq)**2
+    sqroot += 4 * (hphccorr * hplus_magsq - rho_pluscross) * \
+                  (hphccorr * hcross_magsq - rho_pluscross) 
+    # Sometimes this can be less than 0 due to numeric imprecision, catch this.
+    if (sqroot < 0).any():
+        indices = numpy.arange(len(sqroot))[sqroot < 0] 
+        # This should not be *much* smaller than 0 due to numeric imprecision
+        if (sqroot[indices] < -0.0001).any():
+            err_msg = "Square root has become negative. Something wrong here!"
+            raise ValueError(err_msg)
+        sqroot[indices] = 0
+    sqroot = numpy.sqrt(sqroot)
+    det_stat_sq = 0.5 * (hplus_magsq + hcross_magsq - \
+                         2 * rho_pluscross*hphccorr + sqroot)
+
+    det_stat = numpy.sqrt(det_stat_sq)
+
+    if thresh:
+        out.data[locs] = det_stat
+        out.non_zero_locs = locs
+        return out
+    else:
+        return Array(det_stat, copy=False)
+
+def compute_u_val_for_sky_loc_stat(hplus, hcross, hphccorr,
+                                 hpnorm=None, hcnorm=None, indices=None):
+    """The max-over-sky location detection statistic maximizes over a phase,
+    an amplitude and the ratio of F+ and Fx, encoded in a variable called u.
+    Here we return the value of u for the given indices.
+    """
+    if indices is not None:
+        hplus = hplus[indices]
+        hcross = hcross[indices]
+
+    if hpnorm is not None:
+        hplus = hplus * hpnorm
+    if hcnorm is not None:
+        hcross = hcross * hcnorm
+
+    # Sanity checking in func. above should already have identified any points
+    # which are bad, and should be used to construct indices for input here
+    hplus_magsq = numpy.real(hplus) * numpy.real(hplus) + \
+                       numpy.imag(hplus) * numpy.imag(hplus)
+    hcross_magsq = numpy.real(hcross) * numpy.real(hcross) + \
+                       numpy.imag(hcross) * numpy.imag(hcross)
+    rho_pluscross = numpy.real(hplus) * numpy.real(hcross) + \
+                       numpy.imag(hplus)*numpy.imag(hcross)
+
+    a = hphccorr * hplus_magsq - rho_pluscross
+    b = hplus_magsq - hcross_magsq
+    c = rho_pluscross - hphccorr * hcross_magsq
+
+    sq_root = b*b - 4*a*c
+    sq_root = sq_root**0.5
+    sq_root = -sq_root
+    u = (-b + sq_root) / (2*a)
+    # Catch the a->0 case
+    bad_lgc = (a == 0)
+    dbl_bad_lgc = numpy.logical_and(c == 0, b == 0)
+    dbl_bad_lgc = numpy.logical_and(bad_lgc, dbl_bad_lgc)
+    u[bad_lgc] = -c[bad_lgc] / b[bad_lgc]
+    # In this case u is completely degenerate, so set it to 1
+    u[dbl_bad_lgc] = 1.
+
+    snr_cplx = hplus * u + hcross
+    coa_phase = numpy.angle(snr_cplx)
+
+    return u, coa_phase
 
 def make_frequency_series(vec):
     """Return a frequency series of the input vector.
@@ -517,8 +859,11 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
                                    high_frequency_cutoff, htilde.delta_f, N)  
     ht = htilde[kmin:kmax] 
 
-    if psd and ht.delta_f != psd.delta_f:
-        raise ValueError('Waveform does not have same delta_f as psd')
+    if psd:
+        try:
+            numpy.testing.assert_almost_equal(ht.delta_f, psd.delta_f)
+        except:
+            raise ValueError('Waveform does not have same delta_f as psd')
 
     if psd is None:
         sq = ht.inner(ht)
@@ -706,12 +1051,12 @@ def smear(idx, factor):
         s += [idx + a]
     return numpy.unique(numpy.concatenate(s))
            
-def matched_filter(template, data, psd, low_frequency_cutoff=None,
-                  high_frequency_cutoff=None):
-    """ Return the complex snr and normalization. 
-    
-    Return the complex snr, along with its associated normalization of the template,
-    matched filtered against the data. 
+def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
+                  high_frequency_cutoff=None, sigmasq=None):
+    """ Return the complex snr.
+
+    Return the complex snr, along with its associated normalization of the
+    template, matched filtered against the data.
 
     Parameters
     ----------
@@ -727,13 +1072,18 @@ def matched_filter(template, data, psd, low_frequency_cutoff=None,
     high_frequency_cutoff : {None, float}, optional
         The frequency to stop the filter calculation. If None, continue to the 
         the nyquist frequency.
+    sigmasq : {None, float}, optional
+        The template normalization. If none, this value is calculated
+        internally.
 
     Returns
     -------
     snr : TimeSeries
         A time series containing the complex snr. 
     """
-    snr, corr, norm = matched_filter_core(template, data, psd, low_frequency_cutoff, high_frequency_cutoff)
+    snr, corr, norm = matched_filter_core(template, data, psd=psd,
+            low_frequency_cutoff=low_frequency_cutoff,
+            high_frequency_cutoff=high_frequency_cutoff, h_norm=sigmasq)
     return snr * norm
     
 _snr = None 
@@ -878,9 +1228,266 @@ def quadratic_interpolate_peak(left, middle, right):
     bin_offset = 1.0/2.0 * (left - right) / (left - 2 * middle + right)
     peak_value = middle + 0.25 * (left - right) * bin_offset
     return bin_offset, peak_value
+
+class LiveBatchMatchedFilter(object):
+
+    """Calculate SNR and signal consistency tests in a batched progression"""        
+
+    def __init__(self, templates, snr_threshold, chisq_bins,
+                 maxelements=2**27,
+                 snr_abort_threshold=None,
+                 newsnr_threshold=None,
+                 max_triggers_in_batch=None):
+        """Create a batched matchedfilter instance
+
+        Parameters
+        ----------
+        templates: list of `FrequencySeries`
+            List of templates from the FilterBank class.
+        snr_threshold: float
+            Minimum value to record peaks in the SNR time series.
+        chisq_bins: str
+            Str that determines how the number of chisq bins varies as a
+        function of the template bank parameters.
+        maxelements: {int, 2**27}
+            Maximum size of a batched fourier transform.
+        snr_abort_threshold: {float, None}
+            If the SNR is above this threshold, do not record any triggers.
+        newsnr_threshold: {float, None}
+            Only record triggers that have a re-weighted NewSNR above this
+        threshold.
+        max_triggers_in_batch: {int, None}
+            Record X number of the loudest triggers by newsnr in each mpi
+        process group. Signal consistency values will also only be calculated
+        for these triggers.
+        """
+        self.snr_threshold = snr_threshold
+        self.snr_abort_threshold = snr_abort_threshold
+        self.newsnr_threshold = newsnr_threshold
+        self.max_triggers_in_batch = max_triggers_in_batch
+
+        from pycbc import vetoes
+        self.power_chisq = vetoes.SingleDetPowerChisq(chisq_bins, None)
+
+        durations = numpy.array([1.0 / t.delta_f for t in templates])
+
+        lsort = durations.argsort()
+        durations = durations[lsort]
+        templates = [templates[li] for li in lsort]
+
+        # Figure out how to chunk together the templates into groups to process
+        _, counts = numpy.unique(durations, return_counts=True)
+        tsamples = [(len(t) - 1) * 2 for t in templates]
+        grabs = maxelements / numpy.unique(tsamples) 
+
+        chunks = numpy.array([])
+        num = 0
+        for count, grab in zip(counts, grabs):
+            chunks = numpy.append(chunks, numpy.arange(num, count + num, grab))
+            chunks = numpy.append(chunks, [count + num])
+            num += count
+        chunks = numpy.unique(chunks).astype(numpy.uint32)
+
+        # We now have how many templates to grab at a time.
+        self.chunks = chunks[1:] - chunks[0:-1]
+
+        self.out_mem = {}
+        self.cout_mem = {}
+        self.ifts = {}
+        chunk_durations = [durations[i] for i in chunks[:-1]]
+        self.chunk_tsamples = [tsamples[int(i)] for i in chunks[:-1]]
+        samples = self.chunk_tsamples * self.chunks
+ 
+        # Create workspace memory for correlate and snr      
+        mem_ids = [(a, b) for a, b in zip(chunk_durations, self.chunks)]
+        mem_types = set(zip(mem_ids, samples))
+
+        self.tgroups, self.mids = [], []
+        for i, size in mem_types:
+            dur, count = i
+            self.out_mem[i] = zeros(size, dtype=numpy.complex64)
+            self.cout_mem[i] = zeros(size, dtype=numpy.complex64)
+            self.ifts[i] = IFFT(self.cout_mem[i], self.out_mem[i],
+                                nbatch=count,
+                                size=len(self.cout_mem[i]) / count)
+
+        # Split the templates into their processing groups
+        for dur, count in mem_ids:
+            tgroup = templates[0:count]
+            self.tgroups.append(tgroup)
+            self.mids.append((dur, count))
+            templates = templates[count:]
+
+        # Associate the snr and corr memory block to each template
+        self.corr = []
+        for i, tgroup in enumerate(self.tgroups):
+            psize = self.chunk_tsamples[i]
+            s = 0
+            e = psize
+            mid = self.mids[i]
+            for htilde in tgroup:
+                htilde.out = self.out_mem[mid][s:e]
+                htilde.cout = self.cout_mem[mid][s:e]
+                s += psize
+                e += psize
+            self.corr.append(BatchCorrelator(tgroup, [t.cout for t in tgroup], len(tgroup[0])))
+            
+
+    def set_data(self, data):
+        """Set the data reader object to use"""
+        self.data = data
+        self.block_id = 0
+
+    def combine_results(self, results):
+        """Combine results from different batches of filtering"""
+        result = {}
+        for key in results[0]:
+            result[key] = numpy.concatenate([r[key] for r in results])
+        return result
+
+    def process_data(self, data_reader):
+        """Process the data for all of the templates"""
+        self.set_data(data_reader)
+        return self.process_all()
+
+    def process_all(self):
+        """Process every batch group and return as single result"""
+        results = []
+        veto_info = []
+        while 1:
+            result, veto = self._process_batch()
+            if result is False: return False
+            if result is None: break
+            results.append(result)
+            veto_info += veto
+
+        result = self.combine_results(results)
         
+        if self.max_triggers_in_batch:
+            sort = result['snr'].argsort()[::-1][:self.max_triggers_in_batch]
+            for key in result:
+                result[key] = result[key][sort]
+            
+            tmp = veto_info
+            veto_info = [tmp[i] for i in sort]
+        
+        result = self._process_vetoes(result, veto_info)
+        return result
+
+    def _process_vetoes(self, results, veto_info):
+        """Calculate signal based vetoes"""            
+        chisq = numpy.array(numpy.zeros(len(veto_info)), numpy.float32, ndmin=1)
+        dof = numpy.array(numpy.zeros(len(veto_info)), numpy.uint32, ndmin=1)
+        results['chisq'] = chisq
+        results['chisq_dof'] = dof
+        
+        keep = []
+        for i, (snrv, norm, l, htilde, stilde) in enumerate(veto_info): 
+            correlate(htilde, stilde, htilde.cout)
+            c, d = self.power_chisq.values(htilde.cout, snrv,
+                                           norm, stilde.psd, [l], htilde)
+            chisq[i] = c[0] / d[0]
+            dof[i] = d[0]
+            
+            if self.newsnr_threshold:
+                newsnr = events.newsnr(results['snr'][i], chisq[i])
+                if newsnr >= self.newsnr_threshold:
+                    keep.append(i)
+                    
+        if self.newsnr_threshold:
+            keep = numpy.array(keep, dtype=numpy.uint32)
+            for key in results:
+                results[key] = results[key][keep]
+                
+        return results 
+
+    def _process_batch(self):
+        """Process only a single batch group of data"""
+        if self.block_id == len(self.tgroups):
+            return None, None
+
+        tgroup = self.tgroups[self.block_id]
+        psize = self.chunk_tsamples[self.block_id]
+        mid = self.mids[self.block_id]
+        stilde = self.data.overwhitened_data(tgroup[0].delta_f)
+        psd = stilde.psd 
+
+        valid_end = int(psize - self.data.trim_padding)
+        valid_start = int(valid_end - self.data.blocksize * self.data.sample_rate)
+
+        seg = slice(valid_start, valid_end)
+        
+        self.corr[self.block_id].execute(stilde)
+        self.ifts[mid].execute()
+
+        self.block_id += 1
+
+        snr = numpy.zeros(len(tgroup), dtype=numpy.complex64)
+        time = numpy.zeros(len(tgroup), dtype=numpy.float64)
+        templates = numpy.zeros(len(tgroup), dtype=numpy.uint64)
+        sigmasq = numpy.zeros(len(tgroup), dtype=numpy.float32)
+
+        time[:] = self.data.start_time
+
+        result = {}
+        tkeys = tgroup[0].params.dtype.names
+        for key in tkeys:
+            result[key] = []
+
+        veto_info = []
+
+        # Find the peaks in our SNR times series from the various templates
+        i = 0
+        for htilde in tgroup:
+            l = htilde.out[seg].abs_arg_max()
+
+            sgm = htilde.sigmasq(psd)
+            norm = 4.0 * htilde.delta_f / (sgm ** 0.5)
+
+            l += valid_start
+            snrv = numpy.array([htilde.out[l]])
+
+            # If nothing is above threshold we can exit this template
+            s = abs(snrv[0]) * norm
+            if s < self.snr_threshold:
+                continue    
+
+            time[i] += float(l - valid_start) / self.data.sample_rate            
+
+            # We have an SNR so high that we will drop the entire analysis 
+            # of this chunk of time!
+            if self.snr_abort_threshold is not None and s > self.snr_abort_threshold:
+                logging.info("We are seeing some *really* high SNRs, lets"
+                             " assume they aren't signals and just give up")
+                return False, []
+     
+            veto_info.append((snrv, norm, l, htilde, stilde))
+     
+            snr[i] = snrv[0] * norm
+            sigmasq[i] = sgm
+            templates[i] = htilde.id
+            if not hasattr(htilde, 'dict_params'):
+                htilde.dict_params = {}
+                for key in tkeys:
+                    htilde.dict_params[key] = htilde.params[key]
+            
+            for key in tkeys:            
+                result[key].append(htilde.dict_params[key])
+            i += 1
+        
+        result['snr'] = abs(snr[0:i])
+        result['coa_phase'] = numpy.angle(snr[0:i])
+        result['end_time'] = time[0:i]
+        result['template_id'] = templates[0:i]
+        result['sigmasq'] = sigmasq[0:i]
+
+        for key in tkeys:
+            result[key] = numpy.array(result[key])
+
+        return result, veto_info  
 
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
-           'matched_filter_core', 'correlate', 'MatchedFilterControl']
+           'matched_filter_core', 'correlate', 'MatchedFilterControl', 'LiveBatchMatchedFilter',
+           'MatchedFilterSkyMaxControl', 'compute_max_snr_over_sky_loc_stat']
 

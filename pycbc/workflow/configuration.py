@@ -29,10 +29,71 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.
 
 import os
 import re
+import logging
+import urllib2
+import time
 import distutils.spawn
 import ConfigParser
+import itertools
 import glue.pipeline
-import pycbc.workflow
+
+def resolve_url(url, directory=None, permissions=None):
+    """
+    Resolves a URL to a local file, and returns the path to
+    that file.
+    """
+    if directory is None:
+        directory = os.getcwd()
+        
+    # If the "url" is really a path, allow this to work as well and simply
+    # return
+    if os.path.isfile(url):
+        return os.path.abspath(url)
+
+    if url.startswith('http://') or url.startswith('https://') or \
+       url.startswith('file://'):
+        filename = url.split('/')[-1]
+        filename = os.path.join(directory, filename)
+        succeeded = False
+        num_tries = 5
+        t_sleep   = 10
+
+        while not succeeded and num_tries > 0: 
+            try:
+                response = urllib2.urlopen(url)
+                result   = response.read()
+                out_file = open(filename, 'w')
+                out_file.write(result)
+                out_file.close()
+                succeeded = True
+            except:
+                logging.warn("Unable to download %s, retrying" % url)
+                time.sleep(t_sleep)
+                num_tries -= 1
+                t_sleep   *= 2
+                
+        if not succeeded:
+            errMsg  = "Unable to download %s " % (url)
+            raise ValueError(errMsg)
+
+    elif url.find('://') != -1:
+        # TODO: We could support other schemes such as gsiftp by
+        # calling out to globus-url-copy
+        errMsg  = "%s: Only supported URL schemes are\n" % (url)
+        errMsg += "   file: http: https:" 
+        raise ValueError(errMsg)
+    else:
+        filename = url
+
+    if not os.path.isfile(filename):
+        errMsg = "File %s does not exist." %(url)
+        raise ValueError(errMsg)
+
+    if permissions:
+        os.chmod(filename, permissions)
+
+    return filename
+
 
 def add_workflow_command_line_group(parser):
     """
@@ -78,7 +139,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
     This is a sub-class of glue.pipeline.DeepCopyableConfigParser, which lets
     us add a few additional helper features that are useful in workflows.
     """
-    def __init__(self, configFiles=[], overrideTuples=[], parsedFilePath=None):
+    def __init__(self, configFiles=None, overrideTuples=None, parsedFilePath=None):
         """
         Initialize an WorkflowConfigParser. This reads the input configuration
         files, overrides values if necessary and performs the interpolation.
@@ -100,21 +161,31 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         WorkflowConfigParser
             Initialized WorkflowConfigParser instance.
         """
+        if configFiles is None:
+            configFiles = []
+        if overrideTuples is None:
+            overrideTuples = []
         glue.pipeline.DeepCopyableConfigParser.__init__(self)
         
         # Enable case sensitive options
         self.optionxform = str
 
-        # The full path needs to be specified to avoid circular imports between
-        # this file and pycbc.workflow.core
-        configFiles = [pycbc.workflow.core.resolve_url(cFile) for cFile in configFiles]
+        configFiles = [resolve_url(cFile) for cFile in configFiles]
 
         self.read_ini_file(configFiles)
 
-        # Do overrides first
+        # Replace exe macros with full paths
+        self.perform_exe_expansion()
+
+        # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
+        self.split_multi_sections() 
+
+        # Populate shared options from the [sharedoptions] section
+        self.populate_shared_sections()
+
+        # Do overrides from command line
         for override in overrideTuples:
             if len(override) not in [2,3]:
-                print override
                 errMsg = "Overrides must be tuples of length 2 or 3."
                 errMsg = "Got %s." %(str(override))
                 raise ValueError(errMsg)
@@ -128,11 +199,6 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                 self.add_section(section)
             self.set(section, option, value)
 
-        # Replace exe macros with full paths
-        self.perform_exe_expansion()
-
-        # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
-        self.split_multi_sections()
 
         # Check for any substitutions that can be made
         # FIXME: The python 3 version of ConfigParser can do this automatically
@@ -149,7 +215,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # Dump parsed .ini file if needed
         if parsedFilePath:
             fp = open(parsedFilePath,'w')
-            cp.write(fp)
+            self.write(fp)
             fp.close()
 
 
@@ -291,26 +357,29 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
     def get_subsections(self, section_name):
         """ Return a list of subsections for the given section name
         """
-        subsections = [sec for sec in  self.sections() if sec.startswith(section_name + '-')]   
+        # Keep only subsection names
+        subsections = [sec[len(section_name)+1:] for sec in self.sections()\
+                       if sec.startswith(section_name + '-')]   
 
         for sec in subsections:
             sp = sec.split('-')
             # This is unusual, but a format [section-subsection-tag] is okay. Just
             # check that [section-subsection] section exists. If not it is possible
             # the user is trying to use an subsection name with '-' in it
-            if (len(sp) > 1) and not self.has_section('%s-%s' % (sp[0], sp[1])):
-                 raise ValueError( "Workflow uses the '-' as a delimiter so this is"
-                     "interpreted as section-subsection-tag. "
-                     "While checking section %s, no section with "
-                     "name %s-%s was found. " 
-                     "If you did not intend to use tags in an "
-                     "'advanced user' manner, or do not understand what "
-                     "this means, don't use dashes in section "
-                     "names. So [injection-nsbhinj] is good. "
-                     "[injection-nsbh-inj] is not." % (sec, sp[0], sp[1]))
+            if (len(sp) > 1) and not self.has_section('%s-%s' % (section_name,
+                                                                 sp[0])):
+                raise ValueError( "Workflow uses the '-' as a delimiter so "
+                    "this is interpreted as section-subsection-tag. "
+                    "While checking section %s, no section with "
+                    "name %s-%s was found. " 
+                    "If you did not intend to use tags in an "
+                    "'advanced user' manner, or do not understand what "
+                    "this means, don't use dashes in section "
+                    "names. So [injection-nsbhinj] is good. "
+                    "[injection-nsbh-inj] is not." % (sec, sp[0], sp[1]))
         
         if len(subsections) > 0:
-            return [sec.split('-')[1] for sec in subsections]
+            return [sec.split('-')[0] for sec in subsections]
         elif self.has_section(section_name):
             return ['']
         else:
@@ -422,6 +491,39 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                 self.add_options_to_section(newSec, self.items(section))
             self.remove_section(section)
 
+    def populate_shared_sections(self):
+        """Parse the [sharedoptions] section of the ini file.
+
+        That section should contain entries according to:
+
+          * massparams = inspiral, tmpltbank
+          * dataparams = tmpltbank
+
+        This will result in all options in [sharedoptions-massparams] being
+        copied into the [inspiral] and [tmpltbank] sections and the options
+        in [sharedoptions-dataparams] being copited into [tmpltbank].
+        In the case of duplicates an error will be raised.
+        """
+        if not self.has_section('sharedoptions'):
+            # No sharedoptions, exit
+            return
+        for key, value in self.items('sharedoptions'):
+            assert(self.has_section('sharedoptions-%s' %(key)))
+            # Comma separated
+            values = value.split(',')
+            common_options = self.items('sharedoptions-%s' %(key))
+            for section in values:
+                if not self.has_section(section):
+                    self.add_section(section)
+                for arg, val in common_options:
+                    if arg in self.options(section):
+                        raise ValueError('Option exists in both original ' + \
+                               'ConfigParser section [%s] and ' %(section,) + \
+                               'sharedoptions section: %s %s' \
+                               %(arg,'sharedoptions-%s' %(key)))
+                    self.set(section, arg, val)
+            self.remove_section('sharedoptions-%s' %(key))
+        self.remove_section('sharedoptions')
 
     def add_options_to_section(self ,section, items, overwrite_options=False):
         """
@@ -468,6 +570,11 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         """
         # Loop over the sections in the ini file
         for section in self.sections():
+            # [pegasus_profile] specially is allowed to be overriden by
+            # sub-sections
+            if section == 'pegasus_profile':
+                continue
+
             # Loop over the sections again
             for section2 in self.sections():
                 # Check if any are subsections of section
@@ -575,24 +682,35 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         try:
             return self.get(section, option)
         except ConfigParser.Error:
-            errString = "No option '%s' in section [%s] " %(option,section)
+            err_string = "No option '%s' in section [%s] " %(option,section)
             if not tags:
-                raise ConfigParser.Error(errString + ".")
-            returnVals = []
-            sectionList = ["%s-%s" %(section, tag) for tag in tags]
-            for tag in tags:
-                if self.has_section('%s-%s' %(section, tag)):
-                    if self.has_option('%s-%s' %(section, tag), option):
-                        returnVals.append(self.get('%s-%s' %(section, tag),
+                raise ConfigParser.Error(err_string + ".")
+            return_vals = []
+            sub_section_list = []
+            for sec_len in range(1, len(tags)+1):
+                for tag_permutation in itertools.permutations(tags, sec_len):
+                    joined_name = '-'.join(tag_permutation)
+                    sub_section_list.append(joined_name)
+            section_list = ["%s-%s" %(section, sb) for sb in sub_section_list]
+            err_section_list = []
+            for sub in sub_section_list:
+                if self.has_section('%s-%s' %(section, sub)):
+                    if self.has_option('%s-%s' %(section, sub), option):
+                        err_section_list.append("%s-%s" %(section, sub))
+                        return_vals.append(self.get('%s-%s' %(section, sub),
                                                     option))
-            if not returnVals:
-                errString += "or in sections [%s]." %("] [".join(sectionList))
-                raise ConfigParser.Error(errString)
-            if len(returnVals) > 1:
-                errString += "and multiple entries found in sections [%s]."\
-                              %("] [".join(sectionList))
-                raise ConfigParser.Error(errString)
-            return returnVals[0]
+
+            # We also want to recursively go into sections
+
+            if not return_vals:
+                err_string += "or in sections [%s]." \
+                               %("] [".join(section_list))
+                raise ConfigParser.Error(err_string)
+            if len(return_vals) > 1:
+                err_string += "and multiple entries found in sections [%s]."\
+                              %("] [".join(err_section_list))
+                raise ConfigParser.Error(err_string)
+            return return_vals[0]
 
 
     def has_option_tag(self, section, option, tag):

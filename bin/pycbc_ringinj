@@ -1,0 +1,156 @@
+# Copyright (C) 2016 Miriam Cabero Mueller
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+"""
+Create an HDF file with a ringdown injection
+"""
+
+import argparse
+import h5py
+from pycbc.waveform import ringdown
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--output', required=True,
+                    help='Path to output hdf file.')
+parser.add_argument('--approximant', required=True, 
+                    help='Name of the ringdown approximant.')
+parser.add_argument('--tc', required=True, type=float,
+                    help='Geocentric coalescence time '
+                         '(start time of the ringdown injection).')
+parser.add_argument('--f-0', type=float,
+                    help='Central frequency of the ringdown for '
+                         'single mode approximants.')
+parser.add_argument('--tau', type=float,
+                    help='Damping time of the ringdown for '
+                         'single mode approximants.')
+parser.add_argument('--amp', type=float,
+                    help='Amplitude for single mode approximants.')
+parser.add_argument('--phi', type=float,
+                    help='Phase for single mode approximants.')
+parser.add_argument('--final-mass', type=float,
+                    help='Mass of the final black hole for '
+                         'multi-mode approximants.')
+parser.add_argument('--final-spin', type=float,
+                    help='Spin of the final black hole for ' 
+                         'multi-mode approximants.')
+parser.add_argument('--lmns', nargs='+',
+                    help='Modes desired for multi-mode approximants ' 
+                         '(lm modes available: 22, 21, 33, 44, 55). '
+                         'Example: 222 331 gives the modes 220, 221, and 330.')
+parser.add_argument('--amps-phis', nargs='+',
+                    help='Amplitudes and phases for each mode. '
+                         'Use format mode:amplitude:phase. '
+                         'Always give amplitude and phase for 220 mode, even if '
+                         'not included in lmns, and specifiy amplitudes of '
+                         'subdominant modes as fraction of 220 amplitude. '
+                         'Example: 220:1e-21:0 221:0.1:3.14 330:0.05:3.14')
+parser.add_argument('--t-final', type=float,
+                    help='Ending time of the output time series '
+                         'for time domain approximants.')
+parser.add_argument('--f-lower', type=float,
+                    help='Starting frequency of the output freqeucny series '
+                         'for frequency domain approximants.')
+parser.add_argument('--f-final', type=float, 
+                    help='Ending frequency of the output frequency series '
+                         'for frequency domain approximants.')
+parser.add_argument('--ra', required=True, type=float,
+                    help='Right ascension for detector frame waveform generator class.')
+parser.add_argument('--dec', required=True, type=float,
+                    help='Declination for detector frame waveform generator class.')
+parser.add_argument('--polarization', required=True, type=float,
+                    help='Polarization for detector frame waveform generator class.')
+
+opts = parser.parse_args()
+
+# Check that the approximant given is a valid rindown approximant
+if opts.approximant not in ringdown.ringdown_fd_approximants.keys()+ringdown.ringdown_td_approximants.keys():
+    raise ValueError('Invalid ringdown approximant')
+
+# Write hdf file with the parameters for the injection
+injection = h5py.File('%s' %opts.output, 'w')
+# Store common arguments
+injection.create_dataset('approximant', data=opts.approximant)
+injection.create_dataset('tc', data=opts.tc)
+injection.create_dataset('ra', data=opts.ra)
+injection.create_dataset('dec', data=opts.dec)
+injection.create_dataset('polarization', data=opts.polarization)
+if opts.approximant in ringdown.ringdown_fd_approximants:
+    if opts.f_lower is not None:
+        injection.create_dataset('f_lower', data=opts.f_lower)
+    if opts.f_final is not None:
+        injection.create_dataset('f_final', data=opts.f_final)
+else:
+    if opts.t_final is not None:
+        injection.create_dataset('t_final', data=opts.t_final)
+
+# Single mode approximant
+if opts.approximant=='FdQNM' or opts.approximant=='TdQNM':
+    # Check that the necessary arguments are given
+    for parameter in ringdown.qnm_required_args:
+        if getattr(opts, parameter) is None:
+            raise ValueError('%s is required' %parameter)
+    # Create datasets for each argument
+    injection.create_dataset('f_0', data=opts.f_0)
+    injection.create_dataset('tau', data=opts.tau)
+    injection.create_dataset('amp', data=opts.amp)
+    injection.create_dataset('phi', data=opts.phi)
+
+# Multi-mode approximant
+if opts.approximant=='FdQNMmultiModes' or opts.approximant=='TdQNMmultiModes':
+    # Check that the necessary arguments are given
+    for parameter in ringdown.lm_allmodes_required_args:
+        if getattr(opts, parameter) is None:
+            raise ValueError('%s is required' %parameter)
+    # Amplitudes and phases for each mode have to be given
+    all_modes = []
+    for lmn in opts.lmns:
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        [all_modes.append('%d%d%d' %(l,m,n)) for n in range(nmodes)]
+    info_modes=[info.split(':')[0] for info in opts.amps_phis]
+    amps, phis = {}, {}
+    for mode in all_modes:
+        if mode not in info_modes:
+            raise ValueError('Amplitude and phase for mode %s are required' %mode)
+    for info in opts.amps_phis:
+        try:
+            amps['%s' %info.split(':')[0]]=info.split(':')[1]
+            phis['%s' %info.split(':')[0]]=info.split(':')[2]
+        except:
+            raise ValueError('Amplitude or phase for one of the modes is missing')
+    # Create datasets for each argument
+    injection.create_dataset('final_mass', data=opts.final_mass)
+    injection.create_dataset('final_spin', data=opts.final_spin)
+    injection.create_dataset('lmns', data=opts.lmns)
+    for mode in all_modes:
+        injection.create_dataset('amp%s' %mode, data=float(amps[mode]))
+        injection.create_dataset('phi%s' %mode, data=float(phis[mode]))
+    # Amplitude of 220 mode is always required, even if 22 not included
+    if '220' not in all_modes:
+        try:
+            injection.create_dataset('amp220', data=float(amps['220']))
+        except:
+            raise ValueError('Please provide information of 220 mode')
+
+injection.close()

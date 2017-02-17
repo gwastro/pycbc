@@ -17,6 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os.path, types
+import codecs
 
 from ConfigParser import ConfigParser
 from jinja2 import Environment, FileSystemLoader
@@ -25,7 +26,7 @@ from xml.sax.saxutils import unescape
 import pycbc.results
 from pycbc.results import unescape_table
 from pycbc.results.metadata import save_html_with_metadata
-from pycbc.workflow.segment import fromsegmentxml
+from pycbc.workflow.core import SegFile, makedir
 
 def render_workflow_html_template(filename, subtemplate, filelists):
     """ Writes a template given inputs from the workflow generator. Takes
@@ -33,10 +34,11 @@ def render_workflow_html_template(filename, subtemplate, filelists):
     subtemplate to render and the filename of the output.
     """
 
-    dir = os.path.dirname(filename)
+    dirnam = os.path.dirname(filename)
+    makedir(dirnam)
 
     try:
-        filenames = [f.name for filelist in filelists for f in filelist if f != None]
+        filenames = [f.name for filelist in filelists for f in filelist if f is not None]
     except TypeError:
         filenames = []
 
@@ -48,7 +50,7 @@ def render_workflow_html_template(filename, subtemplate, filelists):
     env.globals.update(len=len)
     subtemplate = env.get_template(subtemplate)
     context = {'filelists' : filelists,
-               'dir' : dir}
+               'dir' : dirnam}
     output = subtemplate.render(context)
 
     # save as html page
@@ -125,7 +127,10 @@ def render_default(path, cp):
         # segment or veto file return a segmentslistdict instance
         with open(path, 'r') as xmlfile:
             try:
-                content = fromsegmentxml(xmlfile, return_dict=True)
+                wf_file = SegFile.from_segment_xml(path)
+                # FIXME: This is a dictionary, but the code wants a segmentlist
+                #        for now I just coalesce.
+                seg_dict = wf_file.return_union_seglist()
             except Exception as e:
                 print 'No segment table found in', path, ':', e
 
@@ -177,7 +182,7 @@ def render_text(path, cp):
     content = None
 
     # read file as a string
-    with open(path, 'rb') as fp:
+    with codecs.open(path, 'r', encoding='utf-8', errors='replace') as fp:
         content = fp.read()
 
     # replace all the escaped characters

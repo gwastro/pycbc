@@ -28,6 +28,7 @@ provides additional abstraction and argument handling.
 """
 import Pegasus.DAX3 as dax
 import os
+import urlparse
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -68,8 +69,7 @@ class Executable(ProfileShortcuts):
     id = 0
     def __init__(self, name, namespace=None, os='linux', 
                        arch='x86_64', installed=True, version=None):
-        self.name = name
-        self.logical_name = self.name + "_ID%s" % str(Executable.id)
+        self.logical_name = name + "_ID%s" % str(Executable.id)
         Executable.id += 1
         self.namespace = namespace
         self.version = version
@@ -92,14 +92,18 @@ class Executable(ProfileShortcuts):
     def insert_into_dax(self, dax):
         dax.addExecutable(self._dax_executable)
         
-    def add_profile(self, namespace, key, value):
+    def add_profile(self, namespace, key, value, force=False):
         """ Add profile information to this executable
         """
         try:
             entry = dax.Profile(namespace, key, value)
             self._dax_executable.addProfile(entry)  
         except dax.DuplicateError:
-            pass
+            if force:
+                # Replace with the new key
+                self._dax_executable.removeProfile(entry)
+                self._dax_executable.addProfile(entry)
+        
  
 class Node(ProfileShortcuts):    
     def __init__(self, executable):
@@ -140,7 +144,7 @@ class Node(ProfileShortcuts):
     def add_opt(self, opt, value=None):
         """ Add a option
         """
-        if value:
+        if value is not None:
             if not isinstance(value, File):
                 value = str(value)
             self._options += [opt, value]
@@ -189,6 +193,13 @@ class Node(ProfileShortcuts):
         for inp in inputs:
             self.add_opt(inp)
             self._add_input(inp)
+
+    def add_list_opt(self, opt, values):
+        """ Add an option with a list of non-file parameters.
+        """
+        self.add_opt(opt)
+        for val in values:
+            self.add_opt(val)
         
     def add_input_arg(self, inp):
         """ Add an input as an argument
@@ -210,14 +221,17 @@ class Node(ProfileShortcuts):
         return fil
 
     # functions to describe properties of this node
-    def add_profile(self, namespace, key, value):
+    def add_profile(self, namespace, key, value, force=False):
         """ Add profile information to this node at the DAX level
         """
         try:
             entry = dax.Profile(namespace, key, value)
             self._dax_node.addProfile(entry)
         except dax.DuplicateError:
-            pass    
+            if force:
+                # Replace with the new key
+                self._dax_node.removeProfile(entry)
+                self._dax_node.addProfile(entry)
         
     def _finalize(self):
         args = self._args + self._options
@@ -298,7 +312,7 @@ class Workflow(object):
         Parameters
         ----------
         node : Node
-            A node that should be exectuded as part of this workflow.
+            A node that should be executed as part of this workflow.
         """
         node._finalize()
         node.in_workflow = self
@@ -398,6 +412,11 @@ class File(DataStorage, dax.File):
 
     def _dax_repr(self):
         return self
+
+    @property
+    def dax_repr(self):
+        """Return the dax representation of a File."""
+        return self._dax_repr()
         
     def _set_as_input_of(self, node):
         node._dax_node.uses(self, link=dax.Link.INPUT, register=False, 
@@ -407,16 +426,37 @@ class File(DataStorage, dax.File):
             transfer_file = True
         else:
             transfer_file = False
-        node._dax_node.uses(self, link=dax.Link.OUTPUT, register=False, 
+        node._dax_node.uses(self, link=dax.Link.OUTPUT, register=True, 
                                                         transfer=transfer_file)                                                       
     def output_map_str(self):
         if self.storage_path:
             return '%s %s pool="%s"' % (self.name, self.storage_path, 'local')
         else:
             raise ValueError('This file does not have a storage path')
+
+    def has_pfn(self, url, site=None):
+        """ Wrapper of the pegasus hasPFN function, that allows it to be called
+        outside of specific pegasus functions.
+        """
+        curr_pfn = dax.PFN(url, site)
+        return self.hasPFN(curr_pfn)
         
     def insert_into_dax(self, dax):
         dax.addFile(self)
+
+    @classmethod
+    def from_path(cls, path):
+        """Takes a path and returns a File object with the path as the PFN."""
+        urlparts = urlparse.urlsplit(path)
+        site = 'nonlocal'
+        if (urlparts.scheme == '' or urlparts.scheme == 'file'):
+            if os.path.isfile(urlparts.path):
+                path = os.path.abspath(urlparts.path)
+                site = 'local'
+
+        fil = File(os.path.basename(path))
+        fil.PFN(path, site)
+        return fil
     
 class Database(DataStorage):
     pass

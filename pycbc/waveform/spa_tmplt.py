@@ -153,7 +153,7 @@ def spa_tmplt_engine(htilde, kmin, phase_order, delta_f, piM, pfaN,
     """
 
 def spa_tmplt(**kwds):
-    """
+    """ Generate a minimal TaylorF2 approximant with optimations for the sin/cos
     """
     # Pull out the input arguments
     f_lower = kwds['f_lower']
@@ -174,9 +174,20 @@ def spa_tmplt(**kwds):
 
     amp_factor = spa_amplitude_factor(mass1=mass1, mass2=mass2) / distance
 
-    #Calculate the PN terms 
-    phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(mass1, 
-                                        mass2, s1z, s2z, 1, 1, spin_order)
+    lal_pars = lal.CreateDict()
+    if phase_order != -1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(
+            lal_pars, phase_order)
+
+    if spin_order != -1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNSpinOrder(
+            lal_pars, spin_order)
+
+    #Calculate the PN terms
+    phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
+                                    float(mass1), float(mass2), 
+                                    float(s1z), float(s2z),
+                                    lal_pars)
                                            
     pfaN = phasing.v[0]
     pfa2 = phasing.v[2] / pfaN

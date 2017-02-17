@@ -46,7 +46,7 @@ from pycbc.types.aligned import ArrayWithAligned
 # we should restrict any functions that do not allow an
 # array of uint32 integers
 _ALLOWED_DTYPES = [_numpy.float32, _numpy.float64, _numpy.complex64,
-                   _numpy.complex128, _numpy.uint32]
+                   _numpy.complex128, _numpy.uint32, _numpy.int32, _numpy.int]
 _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
 
 def _convert_to_scheme(ary):
@@ -615,6 +615,16 @@ class Array(object):
     def squared_norm(self):
         """ Return the elementwise squared norm of the array """
 
+    @_returntype
+    @_checkother
+    @_convert
+    @schemed(BACKEND_PREFIX)
+    def multiply_and_add(self, other, mult_fac):
+        """ Return other multiplied by mult_fac and with self added.
+        Self is modified in place and returned as output.
+        Precisions of inputs must match.
+        """
+
     @_vrcheckother
     @_convert
     @schemed(BACKEND_PREFIX)
@@ -663,6 +673,11 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def max_loc(self):
         """Return the maximum value in the array along with the index location """
+
+    @_convert
+    @schemed(BACKEND_PREFIX)
+    def abs_arg_max(self):
+        """ Return location of the maximum argument max """
 
     @_convert
     @schemed(BACKEND_PREFIX)
@@ -735,6 +750,7 @@ class Array(object):
     def roll(self, shift):
         """shift vector
         """
+        self._saved = {}
         new_arr = zeros(len(self), dtype=self.dtype)
 
         if shift == 0:
@@ -797,8 +813,10 @@ class Array(object):
     def kind(self):
         if self.dtype == float32 or self.dtype == float64:
             return 'real'
+        elif self.dtype == complex64 or self.dtype == complex128:
+            return 'complex'
         else:
-            return 'complex'    
+            return 'unknown'
 
     @property
     @_convert
@@ -898,9 +916,11 @@ class Array(object):
                 _numpy.savetxt(path, output)
         elif ext == '.hdf':
             key = 'data' if group is None else group
-            h5py.File(path)[key] = self.numpy()
+            f = h5py.File(path)
+            ds = f.create_dataset(key, data=self.numpy(), compression='gzip',
+                                  compression_opts=9, shuffle=True)
         else:
-            raise ValueError('Path must end with .npy, .txt, or hdf')  
+            raise ValueError('Path must end with .npy, .txt, or .hdf')
            
     @_convert 
     def trim_zeros(self):
@@ -948,7 +968,7 @@ def _return_array(fn, *args, **kwds):
 def zeros(length, dtype=float64):
     """ Return an Array filled with zeros.
     """
-    pass
+    return
 
 def load_array(path, group=None):
     """
@@ -969,14 +989,11 @@ def load_array(path, group=None):
     ValueError
         If path does not end in .npy or .txt.
     """
-    import numpy
-    import os
-    
-    ext = os.path.splitext(path)[1]
+    ext = _os.path.splitext(path)[1]
     if ext == '.npy':
-        data = numpy.load(path)    
+        data = _numpy.load(path)    
     elif ext == '.txt':
-        data = numpy.loadtxt(path)
+        data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
         return Array(h5py.File(path)[key]) 

@@ -25,20 +25,22 @@ from __future__ import division
 import re
 import os
 from argparse import ArgumentParser
-import matplotlib; matplotlib.use("Agg")
+import matplotlib
+# Only if a backend is not already set ... This should really *not* be done
+# here, but in the executables you should set matplotlib.use()
+# This matches the check that matplotlib does internally, but this *may* be
+# version dependenant. If this is a problem then remove this and control from
+# the executables directly.
+import sys
+if not 'matplotlib.backends' in sys.modules:
+    matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from glue import markup, segments
-from pylal import antenna, git_version
 from lal.gpstime import gps_to_utc, LIGOTimeGPS
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
 from matplotlib.ticker import ScalarFormatter
 from pycbc.results.color import ifo_color
-
-__author__  = "Andrew Williamson <andrew.williamson@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__    = git_version.date
-
 
 def initialize_page(title, style, script, header=None):
     """
@@ -129,6 +131,7 @@ def write_summary(page, args, ifos, skyError=None, ipn=False, ipnError=False):
     """
         Write summary of information to markup.page object page
     """
+    from pylal import antenna
 
     gps = args.start_time
     grbdate = gps_to_utc(LIGOTimeGPS(gps))\
@@ -199,6 +202,7 @@ def write_antenna(page, args, seg_plot=None, grid=False, ipn=False):
     Write antenna factors to merkup.page object page and generate John's
     detector response plot.
     """
+    from pylal import antenna
 
     page.h3()
     page.add('Antenna factors and sky locations')
@@ -454,6 +458,9 @@ def write_found_missed(page, args, injList):
     plots = []
     text  = {}
     ifos = [args.ifo_tag[i:i+2] for i in range(0, len(args.ifo_tag), 2)]
+    plots.extend(['dist', 'dist_time'])
+    text['dist'] = 'Dist vs Mchirp'
+    text['dist_time'] = 'Dist vs Time'
     for ifo in ifos:
         plots.extend(['effdist_%s' % ifo[0].lower(),\
                       'effdist_time_%s' % ifo[0].lower()])
@@ -628,22 +635,22 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
 
     page = write_table(page, th, td)
 
-    page.h3()
-    page.add('90% confidence exclusion distances (Mpc)')
-    th = injList
-    td = []
-    d = []
-    for inj in injList:
-        file = open('%s/efficiency_%s/exclusion_distance.txt' % (inj, trial),
-                    'r')
-        for line in file:
-            line = line.replace('\n','')
-            excl_dist = float(line)
-        d.append(excl_dist)
-        file.close()
-    td.append(d)
-
-    page = write_table(page, th, td)
+    for percentile in [90, 50]:
+        page.h3()
+        page.add('%d%% confidence exclusion distances (Mpc)' % percentile)
+        th = injList
+        td = []
+        d = []
+        for inj in injList:
+            file = open('%s/efficiency_%s/exclusion_distance_%d.txt'
+                        % (inj, trial, percentile), 'r')
+            for line in file:
+                line = line.replace('\n','')
+                excl_dist = float(line)
+            d.append(excl_dist)
+            file.close()
+        td.append(d)
+        page = write_table(page, th, td)
 
     page.h3.close()
 
@@ -658,9 +665,12 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
         extent = segments.segment(int(wkflow.cp.get("workflow", "start-time")),
                                   int(wkflow.cp.get("workflow", "end-time")))
     else:
-        extent = science_segs.union([ifo for ifo in ifos \
-                                     if ifo in science_segs.keys()]).extent()
-    
+        pltpad = [science_segs.extent_all()[1] - trigger_time,
+                  trigger_time - science_segs.extent_all()[0]]
+        extent = segments.segmentlist([science_segs.extent_all(),
+            segments.segment(trigger_time - pltpad[0],
+                             trigger_time + pltpad[1])]).extent()
+
     ifo_colors = {}
     for ifo in ifos:
         ifo_colors[ifo] = ifo_color(ifo)

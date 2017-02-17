@@ -23,11 +23,20 @@
 # =============================================================================
 #
 """PyCBC contains a toolkit for CBC gravitational wave analysis
-
 """
 import subprocess, os, sys, tempfile
 import logging
 import signal
+
+# We need to allow a try/except here to allow for importing during install
+# of pycbc, where we can't guarantee that scipy is installed yet.
+try:
+    import scipy.weave.inline_tools
+    from . import weave as pycbc_weave
+    scipy.weave.inline_tools._compile_function = scipy.weave.inline_tools.compile_function
+    scipy.weave.inline_tools.compile_function = pycbc_weave.pycbc_compile_function
+except:
+    pass
 
 try:
     # This will fail when pycbc is imported during the build process,
@@ -38,11 +47,11 @@ except:
     git_hash = 'none'
     pycbc_version = 'none'
 
-def init_logging(verbose=False):
-    """
-    Common utility for setting up logging in PyCBC. Installs a signal handler
-    such that verbosity can be activated at run-time by sending a SIGUSR1 to
-    the process.
+def init_logging(verbose=False, format='%(asctime)s %(message)s'):
+    """ Common utility for setting up logging in PyCBC.
+
+    Installs a signal handler such that verbosity can be activated at
+    run-time by sending a SIGUSR1 to the process.
     """
     def sig_handler(signum, frame):
         logger = logging.getLogger()
@@ -62,16 +71,16 @@ def init_logging(verbose=False):
     else:
         initial_level = logging.WARN
     logging.getLogger().setLevel(initial_level)
-    logging.basicConfig(format='%(asctime)s %(message)s', level=initial_level)
+    logging.basicConfig(format=format, level=initial_level)
 
 
 # Check for optional components of the PyCBC Package
 try:
     # This is a crude check to make sure that the driver is installed
     try:
-        err = subprocess.call(["nvidia-smi"], stdout=open(os.devnull, 'wb'), stderr=open(os.devnull, 'wb'))
-        if err != 0:
-            raise ImportError("Cannot access 'nvidia-smi', driver may not be installed correctly")
+        loaded_modules = subprocess.Popen(['lsmod'], stdout=subprocess.PIPE).communicate()[0]
+        if str.find(loaded_modules, "nvidia") == -1:
+            raise ImportError("nvidia driver may not be installed correctly")
     except OSError:
         pass
 
@@ -103,13 +112,8 @@ PYCBC_ALIGNMENT = 32
 DYN_RANGE_FAC =  5.9029581035870565e+20
 
 if os.environ.get("INITIAL_LOG_LEVEL", None):
-    logging.basicConfig(format='%(asctime)s %(message)s', level=int(os.environ["INITIAL_LOG_LEVEL"]))
-
-# If PROJECT_DIR is set (i.e. running a BOINC app) and '/project' exists as well,
-# assume that '/project' is in a fstab prepared for Cygwin and override PROJECT_DIR with that.
-# This should take care of possible blanks in PROJECT_DIR patah, as '/project' has no blanks
-if os.environ.get("PROJECT_DIR", None) and os.path.exists('/project'):
-    os.environ['PROJECT_DIR'] = '/project'
+    logging.basicConfig(format='%(asctime)s %(message)s',
+                        level=int(os.environ["INITIAL_LOG_LEVEL"]))
 
 # Make sure we use a user specific, machine specific compiled cache location
 _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
@@ -124,11 +128,13 @@ _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name)
 _cache_dir_path = os.path.join(_cache_dir_path, pycbc_version)
 _cache_dir_path = os.path.join(_cache_dir_path, git_hash)
 if os.environ.get("NO_TMPDIR", None):
-    print >>sys.stderr, "__init__: Skipped creating %s as NO_TEMPDIR is set" % _cache_dir_path
+    if os.environ.get("INITIAL_LOG_LEVEL", 0) >= 10:
+        print >>sys.stderr, "__init__: Skipped creating %s as NO_TEMPDIR is set" % _cache_dir_path
 else:
     try: os.makedirs(_cache_dir_path)
     except OSError: pass
-    print >>sys.stderr, "__init__: Setting weave cache to %s" % _cache_dir_path
+    if os.environ.get("INITIAL_LOG_LEVEL", 0) >= 10:
+        print >>sys.stderr, "__init__: Setting weave cache to %s" % _cache_dir_path
 os.environ['PYTHONCOMPILED'] = _cache_dir_path
 
 # Check for MKL capability
@@ -147,9 +153,6 @@ if 'WEAVE_FLAGS' in os.environ:
         WEAVE_FLAGS = os.environ['WEAVE_FLAGS']
     else:
         WEAVE_FLAGS += os.environ['WEAVE_FLAGS']
-
-if '-march=' in WEAVE_FLAGS:
-    DEFAULT_WEAVE_FLAGS = ''
 
 def multiprocess_cache_dir():
     import multiprocessing

@@ -1,0 +1,79 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2016 Tito Dal Canton
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Read strain data, apply the standard preparation done in offline CBC searches
+(highpass, downsampling, gating, injections etc) and write the result back to
+a file. Optionally also write the gating data to a text file.
+"""
+
+import logging
+import argparse
+import numpy as np
+import pycbc.strain
+import pycbc.version
+import pycbc.frame
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--output-strain-file', required=True,
+                    help='Name of output frame file. The file format is '
+                         'selected based on the extension (.gwf, .npy, .hdf '
+                         'and .txt accepted)')
+parser.add_argument('--output-channel-name',
+                    help='Name of channel in output frame file (default: same '
+                         'as input channel)')
+parser.add_argument('--output-gates-file',
+                    help='Save gating info to specified file, in the same '
+                         'format as accepted by the --gating-file option')
+parser.add_argument('--single-precision', action='store_true',
+                    help='Multiply the conditioned strain by %f and save it '
+                         'in single precision' % pycbc.DYN_RANGE_FAC)
+parser.add_argument('--low-frequency-cutoff', type=float,
+                    help='Provide a low-frequency-cutoff for fake strain. '
+                         'This is only needed if fake-strain or '
+                         'fake-strain-from-file is used.')
+pycbc.strain.insert_strain_option_group(parser)
+args = parser.parse_args()
+
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+
+if args.single_precision:
+    precision = 'single'
+else:
+    precision = 'double'
+out_strain = pycbc.strain.from_cli(args, pycbc.DYN_RANGE_FAC, precision=precision)
+
+logging.info('Writing output strain')
+output_channel_name = args.output_channel_name or args.channel_name
+if args.output_strain_file.endswith('.gwf'):
+    pycbc.frame.write_frame(args.output_strain_file, output_channel_name,
+                            out_strain)
+else:
+    out_strain.save(args.output_strain_file, group=output_channel_name)
+
+if args.output_gates_file:
+    logging.info('Writing output gates')
+    with file(args.output_gates_file, 'wb') as gate_f:
+        for k, v in strain.gating_info.items():
+            for t, w, p in v:
+                gate_f.write('%.4f %.2f %.2f\n' % (t, w, p))
+
+logging.info('Done')

@@ -23,9 +23,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 from scipy.stats import kstest
 
-from pylal import SnglInspiralUtils as sniuls, trigger_fits as trstats, rate
-
-from pycbc import io, events
+from pycbc import io, events, bin_utils
+from pycbc.events import trstats
 import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
@@ -47,11 +46,11 @@ def get_stat(statchoice, snr, rchisq, fac):
 
 def get_bins(opt, pmin, pmax):
     if opt.bin_spacing == "linear":
-        return rate.LinearBins(pmin, pmax, opt.num_bins)
+        return bin_utils.LinearBins(pmin, pmax, opt.num_bins)
     elif opt.bin_spacing == "log":
-        return rate.LogarithmicBins(pmin, pmax, opt.num_bins)
+        return bin_utils.LogarithmicBins(pmin, pmax, opt.num_bins)
     elif opt.bin_spacing == "irregular":
-        return rate.IrregularBins(opt.bin_edges)
+        return bin_utils.IrregularBins(opt.bin_edges)
 
 #### MAIN ####
 
@@ -67,7 +66,7 @@ parser.add_argument("--inputs", nargs="+",
                     help="Input file or space-separated list of input files "
                     "containing single triggers.  Currently .xml(.gz), "
                     ".sqlite and .hdf supported.  Required")
-parser.add_argument("--template-file", default=None,
+parser.add_argument("--bank-file", default=None,
                     help="hdf file containing template parameters; required "
                     "if fitting over trigger masses and/or spins with hdf "
                     "format triggers")
@@ -217,15 +216,16 @@ for ifo in opt.ifos:
             "snr>"+str(opt.snr_threshold)])
         sngls.retrieve_rows()
     elif trigformat == "xml":
+        from pylal import SnglInspiralUtils as sniuls
         sngls = sniuls.ReadSnglInspiralFromFiles(opt.inputs,
             filterFunc=lambda s: s.snr>opt.snr_threshold,
             verbose=opt.verbose)
         sngls.ifocut(ifo, inplace=True)
     elif trigformat == "hdf":
-        if opt.template_file:
+        if opt.bank_file:
             # io function can currently only handle 1 file
             sngls = io.hdf.SingleDetTriggers(opt.inputs[0], 
-                  opt.template_file, opt.veto_file, opt.veto_segment_name,
+                  opt.bank_file, opt.veto_file, opt.veto_segment_name,
                   filter_func, ifo)
             done_vetoing = True
         else:
@@ -276,9 +276,9 @@ for ifo in opt.ifos:
     logging.info("Parameter range of triggers: %f - %f" %
                                                   (min(parvals), max(parvals)))
     if opt.bin_spacing == "irregular":
-        logging.info("Removing triggers outside bin range %f - %f" % 
+        logging.info("Removing triggers outside bin range %f - %f" %
                                       (min(opt.bin_edges), max(opt.bin_edges)))
-        in_range = np.logical_and(parvals >= min(opt.bin_edges), 
+        in_range = np.logical_and(parvals >= min(opt.bin_edges),
                                   parvals <= max(opt.bin_edges))
         statv = statv[in_range]
         parvals = parvals[in_range]
@@ -288,7 +288,7 @@ for ifo in opt.ifos:
     binind = [pbins[c] for c in pbins.centres()]
     logging.info("Assigning trigger param values to bins")
     # FIXME: This is slow!! either find a better way of using pylal.rate
-    # or write faster binning routime 
+    # or write faster binning routine
     pind = np.array([pbins[par] for par in parvals])
 
     logging.info("Getting max counts in bins")

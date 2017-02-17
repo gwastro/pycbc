@@ -3,69 +3,83 @@
 correlations between two detectors by
 doing a simple monte-carlo
 """
-
 import argparse, h5py, numpy.random, pycbc.detector, logging, multiprocessing
 from numpy.random import normal, uniform, power
+from scipy.ndimage.filters import gaussian_filter
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--ifos', nargs=2, help="The two ifos to generate a histogram for")
 parser.add_argument('--sample-size', type=int, 
                     help="Approximant number of independent samples to draw for the distribution")
-parser.add_argument('--snr-threshold', type=float, 
+parser.add_argument('--min-snr', type=float, 
                     help="SNR cutoff to apply to the drawn SNR values.")
-parser.add_argument('--phase-bins', type=int, default=100,
-                    help="Number of bins to distribute phase differences into")
-parser.add_argument('--sample-rate', type=int, default=4096, 
-                    help="Sample rate used to determine the bin size in the time difference")
-parser.add_argument('--max-combined-snr', type=float, default=100,
-                    help="Maximum combine newsnr to draw signals out to")
-parser.add_argument('--amplitude-ratio-bins', type=int, default=50,
-                    help="Number of bins to use for storing amplitude ratios")
-parser.add_argument('--amplitude-magnitude-bins', type=int, default=50,
-                    help="Number of bins to use for storing the combined SNR magnitudes")
-parser.add_argument('--fixed-timing-error', default=1.0/4096, type=float,
-                    help="Fixed value for a timing error")
+parser.add_argument('--max-snr', type=float, default=100,
+                    help="Maximum snr to draw signals out to")
+parser.add_argument('--timing-error', type=float,
+                    help="Error on timing measurement in seconds")
+parser.add_argument('--min-detector-ratio', type=float, default=0.5,
+                    help="The minimum ratio between detector sensitivities to bin")
+parser.add_argument('--snr-error', type=float,
+                    help="Error on the SNR recovery.")
 parser.add_argument('--coinc-threshold', default=0, type=float,
                     help="seconds to add to the TOF coinc window")
 parser.add_argument('--seed', type=int, default=124)
+parser.add_argument('--detector-ratio-granularity', type=float, default=0.1)
+parser.add_argument('--bin-density', type=int, default=2,
+                    help="Density of bins to make as a multiplicity of errors in each bin paramter")
 parser.add_argument('--output-file')
 parser.add_argument('--cores', default=1, type=int)
 parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
-numpy.random.seed(args.seed)
 
 d1 = pycbc.detector.Detector(str(args.ifos[0]))
 d2 = pycbc.detector.Detector(str(args.ifos[1]))
 maxdt = d1.light_travel_time_to_detector(d2) + args.coinc_threshold
 
 # Calculate the edges of the bins
-max_csnr = args.max_combined_snr
-max_ratio = numpy.log((max_csnr**2.0- args.snr_threshold**2.0) ** 0.5 / args.snr_threshold)
-tbins = numpy.linspace(- maxdt, maxdt, num=int(args.sample_rate * 2 * maxdt))
-pbins = numpy.linspace(0, 2.0 * numpy.pi, num=args.phase_bins + 1)
-rbins = numpy.linspace(-max_ratio, max_ratio, num=args.amplitude_ratio_bins + 1)
-mbins = numpy.logspace(numpy.log(args.snr_threshold * 2 ** 0.5), numpy.log(max_csnr),
-                       num=args.amplitude_magnitude_bins + 1, base=numpy.e)
-hist_bins = (tbins, pbins, rbins, mbins)
+
+def bcount(left, right, error):
+    bin_density = args.bin_density
+    num = int((right - left) / float(error) * bin_density)
+    width = (right - left) / float(num)
+    bins = numpy.linspace(left, right, num=num)
+    return num, width, bins
+
+snr_error = args.snr_error * 2 ** 0.5
+
+# Phase error is approximated for SNR ~ snr threshold
+phase_error = numpy.arctan(snr_error / args.min_snr)
+detector_error = args.detector_ratio_granularity * args.bin_density / 2.0
+
+tnum, twidth, tbins = bcount(-maxdt, maxdt, args.timing_error)
+pnum, pwidth, pbins = bcount(0, 2.0 * numpy.pi, phase_error)
+snum, swidth, sbins = bcount(args.min_snr, args.max_snr, snr_error)
+rnum, rwidth, rbins = bcount(args.min_detector_ratio, 1, detector_error)
+
+hist_bins = (tbins, pbins, sbins, sbins, rbins)
 print tbins
 print pbins
+print sbins
 print rbins
-print mbins
 pycbc.init_logging(args.verbose)
 
-def generate_hist(size):
+def generate_hist(val):
+    size, seed = val
     total = 0
     data = None
     chunksize = 20000 if 20000 < size else size
     while total < size:
         total += chunksize
-        chunk_hist, _ = numpy.histogramdd(generate_samples(chunksize), bins=hist_bins)
+        chunk_hist, _ = numpy.histogramdd(generate_samples((chunksize, seed)), bins=hist_bins)
         if data is None:
             data = chunk_hist
         else:
             data += chunk_hist
     return data
 
-def generate_samples(size):
+def generate_samples(val):
+    size, seed = val
+    numpy.random.seed(seed)
     logging.info('generating %s samples' % size)
     # Choose random sky location and polarizations
     ra = uniform(0, 2 * numpy.pi, size=size)
@@ -93,38 +107,43 @@ def generate_samples(size):
     # add on gaussian errors in SNR
     f = 1000
     fsize = f * size
-    dist = power(3, fsize) / args.snr_threshold
-    
-    sp1 = numpy.resize(fp1 * ip, len(dist)) / dist + numpy.resize(normal(0, scale=1.0, size=size), fsize)
-    sp2 = numpy.resize(fp2 * ip, len(dist)) / dist + numpy.resize(normal(0, scale=1.0, size=size), fsize)
-    sc1 = numpy.resize(fc1 * ic, len(dist)) / dist + numpy.resize(normal(0, scale=1.0, size=size), fsize)
-    sc2 = numpy.resize(fc2 * ic, len(dist)) / dist + numpy.resize(normal(0, scale=1.0, size=size), fsize)
-    td = numpy.resize(td, fsize) + normal(0, scale=args.fixed_timing_error, size=fsize)
+    dist = power(3, fsize) / args.min_snr
+   
+    r = uniform(args.min_detector_ratio, 1.0, size=len(dist))
+    sp1 = numpy.resize(fp1 * ip, len(dist)) / dist * r
+    sc1 = numpy.resize(fc1 * ic, len(dist)) / dist * r
+    sp2 = numpy.resize(fp2 * ip, len(dist)) / dist
+    sc2 = numpy.resize(fc2 * ic, len(dist)) / dist 
+    td = numpy.resize(td, fsize)
 
     # Remove points below the SNR threshold
-    t = sp1**2.0 + sc1**2.0 > args.snr_threshold ** 2.0
-    t2 = sp2**2.0 + sc2**2.0 > args.snr_threshold ** 2.0
+    t = sp1**2.0 + sc1**2.0 > args.min_snr ** 2.0
+    t2 = sp2**2.0 + sc2**2.0 > args.min_snr ** 2.0
     t = numpy.logical_and(t, t2)
     sp1 = sp1[t]
     sp2 = sp2[t]
     sc1 = sc1[t]
     sc2 = sc2[t]
+    r = r[t]
 
     s1 = (sp1**2.0 + sc1**2.0)**0.5
     s2 = (sp2**2.0 + sc2**2.0)**0.5
 
     td = td[t]
     phase_diff = (numpy.arctan2(sc1, sp1) - numpy.arctan2(sc2, sp2)) % (numpy.pi * 2)
-    ratio = numpy.log(s1 / s2)
-    mag = (s1**2.0 + s2**2.0)**0.5
     
-    logging.info('keeping %s values' % len(ratio))
-    return td, phase_diff, ratio, mag
+    logging.info('keeping %s values' % len(s1))
+    print r
+    return td, phase_diff, s1, s2, r
 
 # This just makes sure that 3 chunks are submitted to each process
-fiddle = 3
+fiddle = 1
 core_size = int(args.sample_size / args.cores) / fiddle
 chunk_data = [core_size] * args.cores * fiddle
+
+seeds = numpy.arange(args.seed, args.seed + len(chunk_data), 1)
+chunk_data = tuple(list(zip(chunk_data, seeds)))
+print chunk_data
 
 if args.cores == 1:
     h = map(generate_hist, chunk_data)
@@ -135,11 +154,18 @@ else:
 h = numpy.sum(h, axis=0)
 f = h5py.File(args.output_file, 'w')
 
-f['map'] = h
+# Convert the errors to units of number of histogram bins and apply using
+# a gaussian filter
+errors = (args.timing_error / twidth, 
+          phase_error / pwidth,
+          snr_error / swidth,
+          snr_error / swidth,
+          .0000001)
+f['map'] = gaussian_filter(h, errors, mode='nearest', truncate=8).astype(numpy.float32)
 f['tbins'] = tbins
 f['pbins'] = pbins
+f['sbins'] = sbins
 f['rbins'] = rbins
-f['mbins'] = mbins
 f.attrs['ifo0'] = args.ifos[0]
 f.attrs['ifo1'] = args.ifos[1]
 f.attrs['stat'] = "phasetd_newsnr"

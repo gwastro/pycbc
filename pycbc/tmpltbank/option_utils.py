@@ -129,6 +129,9 @@ def insert_base_bank_options(parser):
     parser.add_argument(
             '-O', '--output-file', required=True,
             help="Output file name. Required.")
+    parser.add_argument('--f-low-column', type=str, metavar='NAME',
+                        help='If given, store the lower frequency cutoff into '
+                             'column NAME of the single-inspiral table.')
 
 def insert_metric_calculation_options(parser):
     """
@@ -997,59 +1000,59 @@ class massRangeParameters(object):
         range of parameters allowed by the massParams object.
         """
         # Mass1 test
-        if mass1 < self.minMass1:
+        if mass1 * 1.001 < self.minMass1:
             return 1
-        if mass1 > self.maxMass1:
+        if mass1 > self.maxMass1 * 1.001:
             return 1
         # Mass2 test
-        if mass2 < self.minMass2:
+        if mass2 * 1.001 < self.minMass2:
             return 1
-        if mass2 > self.maxMass2:
+        if mass2 > self.maxMass2 * 1.001:
             return 1
         # Spin1 test
         if self.nsbhFlag:
-            if (abs(spin1z) > self.maxBHSpinMag):
+            if (abs(spin1z) > self.maxBHSpinMag * 1.001):
                 return 1
         else:
             spin1zM = abs(spin1z)
-            if not( (mass1 > self.ns_bh_boundary_mass \
-                     and spin1zM <= self.maxBHSpinMag) \
-                 or (mass1 < self.ns_bh_boundary_mass \
-                     and spin1zM <= self.maxNSSpinMag)):
+            if not( (mass1 * 1.001 > self.ns_bh_boundary_mass \
+                     and spin1zM <= self.maxBHSpinMag * 1.001) \
+                 or (mass1 < self.ns_bh_boundary_mass * 1.001 \
+                     and spin1zM <= self.maxNSSpinMag * 1.001)):
                 return 1
         # Spin2 test
         if self.nsbhFlag:
-            if (abs(spin2z) > self.maxNSSpinMag):
+            if (abs(spin2z) > self.maxNSSpinMag * 1.001):
                 return 1
         else:
             spin2zM = abs(spin2z)
-            if not( (mass2 > self.ns_bh_boundary_mass \
-                     and spin2zM <= self.maxBHSpinMag) \
-                 or (mass2 < self.ns_bh_boundary_mass and \
-                     spin2zM <= self.maxNSSpinMag)):
+            if not( (mass2 * 1.001 > self.ns_bh_boundary_mass \
+                     and spin2zM <= self.maxBHSpinMag * 1.001) \
+                 or (mass2 < self.ns_bh_boundary_mass * 1.001 and \
+                     spin2zM <= self.maxNSSpinMag * 1.001)):
                 return 1
         # Total mass test
         mTot = mass1 + mass2
-        if mTot > self.maxTotMass:
+        if mTot > self.maxTotMass * 1.001:
             return 1
-        if mTot < self.minTotMass:
+        if mTot * 1.001 < self.minTotMass:
             return 1
 
         # Eta test
         eta = mass1 * mass2 / (mTot * mTot)
-        if eta > self.maxEta:
+        if eta > self.maxEta * 1.001:
             return 1
-        if eta < self.minEta:
+        if eta * 1.001 < self.minEta:
             return 1
 
         # Chirp mass test
         chirp_mass = mTot * eta**(3./5.)
-        if self.min_chirp_mass is not None:
-            if chirp_mass < min_chirp_mass:
-                return 1
-        if self.max_chirp_mass is not None:
-            if chirp_mass > max_chirp_mass:
-                return
+        if self.min_chirp_mass is not None \
+                and chirp_mass * 1.001 < self.min_chirp_mass:
+            return 1
+        if self.max_chirp_mass is not None \
+                and chirp_mass > self.max_chirp_mass * 1.001:
+            return 1
 
         return 0
 
@@ -1198,7 +1201,7 @@ def check_ethinca_against_bank_params(ethincaParams, metricParams):
             raise ValueError("Ethinca metric calculation does not currently "
                              "support a f-low value different from the bank "
                              "metric!")
-        if ethincaParams.pnOrder == None:
+        if ethincaParams.pnOrder is None:
             ethincaParams.pnOrder = metricParams.pnOrder
     else: pass
 

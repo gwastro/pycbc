@@ -21,6 +21,84 @@ from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, pnutils
 
+class HFile(h5py.File):   
+    """ Low level extensions to the capabilities of reading an hdf5 File
+    """
+
+    def select(self, fcn, *args, **kwds):
+        """ Return arrays from an hdf5 file that satisfy the given function
+
+        Parameters
+        ----------
+        fcn : a function
+            A function that accepts the same number of argument as keys given
+            and returns a boolean array of the same length.
+
+        args : strings
+            A variable number of strings that are keys into the hdf5. These must
+            refer to arrays of equal length.
+
+        chunksize : {1e6, int}, optional
+            Number of elements to read and process at a time.
+
+        return_indices : bool, optional
+            If True, also return the indices of elements passing the function.
+
+        Returns
+        -------
+        values : np.ndarrays
+            A variable number of arrays depending on the number of keys into
+            the hdf5 file that are given. If return_indices is True, the first
+            element is an array of indices of elements passing the function.
+
+        >>> f = HFile(filename)
+        >>> snr = f.select(lambda snr: snr > 6, 'H1/snr')
+        """
+
+        # get references to each array
+        refs = {}
+        data = {}
+        for arg in args:
+            refs[arg] = self[arg]
+            data[arg] = []
+
+        return_indices = kwds.get('return_indices', False)
+        indices = np.array([], dtype=np.uint64)
+
+        # To conserve memory read the array in chunks
+        chunksize = kwds.get('chunksize', int(1e6))
+        size = len(refs[arg])
+
+        i = 0
+        while i < size:
+            r = i + chunksize if i + chunksize < size else size
+
+            #Read each chunks worth of data and find where it passes the function
+            partial = [refs[arg][i:r] for arg in args]
+            keep = fcn(*partial)
+            if return_indices:
+                indices = np.concatenate([indices, np.flatnonzero(keep) + i])
+
+            #store only the results that pass the function
+            for arg, part in zip(args, partial):
+                data[arg].append(part[keep])
+
+            i += chunksize
+
+        # Combine the partial results into full arrays
+        if len(args) == 1:
+            res = np.concatenate(data[args[0]])
+            if return_indices:
+                return indices, res
+            else:
+                return res
+        else:
+            res = tuple(np.concatenate(data[arg]) for arg in args)
+            if return_indices:
+                return (indices,) + res
+            else:
+                return res
+
 
 class DictArray(object):
     """ Utility for organizing sets of arrays of equal length. 
@@ -50,10 +128,11 @@ class DictArray(object):
                 self.data[g] = []
             
             for f in files:
-                d = h5py.File(f)
+                d = HFile(f)
                 for g in groups:
                     if g in d:
                         self.data[g].append(d[g][:])
+                d.close()
                     
             for k in self.data:
                 if not len(self.data[k]) == 0:
@@ -102,7 +181,7 @@ class StatmapData(DictArray):
             self.seg=seg
             self.attrs=attrs
         elif files:
-            f = h5py.File(files[0], "r")
+            f = HFile(files[0], "r")
             self.seg = f['segments']
             self.attrs = f.attrs
 
@@ -123,7 +202,7 @@ class StatmapData(DictArray):
         return self.select(cid) 
 
     def save(self, outname):
-        f = h5py.File(outname, "w")
+        f = HFile(outname, "w")
         for k in self.attrs:
             f.attrs[k] = self.attrs[k]
             
@@ -139,11 +218,10 @@ class StatmapData(DictArray):
             f['segments/%s/end' % key] = self.seg[key]['end'][:]
         f.close()
 
-
 class FileData(object):
 
     def __init__(self, fname, group=None, columnlist=None, filter_func=None):
-        '''
+        """
         Parameters
         ----------
         group : string
@@ -153,10 +231,10 @@ class FileData(object):
         filter_func : string 
             String should evaluate to a Boolean expression using attributes
             of the class instance derived from columns: ex. 'self.snr < 6.5'
-        '''
+        """
         if not fname: raise RuntimeError("Didn't get a file!")
         self.fname = fname
-        self.h5file = h5py.File(fname, "r")
+        self.h5file = HFile(fname, "r")
         if group is None:
             if len(self.h5file.keys()) == 1:
                 group = self.h5file.keys()[0]
@@ -174,14 +252,14 @@ class FileData(object):
 
     @property
     def mask(self):
-        '''
+        """
         Create a mask implementing the requested filter on the datasets
 
         Returns
         -------
         array of Boolean
             True for dataset indices to be returned by the get_column method
-        '''
+        """
         if self.filter_func is None:
             raise RuntimeError("Can't get a mask without a filter function!")
         else:
@@ -195,7 +273,7 @@ class FileData(object):
             return self._mask
 
     def get_column(self, col):
-        '''
+        """
         Parameters
         ----------
         col : string
@@ -205,7 +283,7 @@ class FileData(object):
         -------
         numpy array
             Values from the dataset, filtered if requested
-        '''
+        """
         # catch corner case with an empty file (group with no datasets)
         if not len(self.group.keys()):
             return np.array([])
@@ -225,7 +303,7 @@ class DataFromFiles(object):
         self.filter_func = filter_func
 
     def get_column(self, col):
-        '''
+        """
         Loop over files getting the requested dataset values from each
 
         Parameters
@@ -238,7 +316,7 @@ class DataFromFiles(object):
         numpy array
             Values from the dataset, filtered if requested and
             concatenated in order of file list
-        '''
+        """
         logging.info('getting %s' % col)
         vals = []
         for f in self.files:
@@ -251,7 +329,6 @@ class DataFromFiles(object):
         logging.info('- got %i values' % sum(len(v) for v in vals))
         return np.concatenate(vals)
 
-
 class SingleDetTriggers(object):
     """
     Provides easy access to the parameters of single-detector CBC triggers.
@@ -259,11 +336,11 @@ class SingleDetTriggers(object):
     # FIXME: Some of these are optional and should be kwargs.
     def __init__(self, trig_file, bank_file, veto_file, segment_name, filter_func, detector):
         logging.info('Loading triggers')
-        self.trigs_f = h5py.File(trig_file, 'r')
+        self.trigs_f = HFile(trig_file, 'r')
         self.trigs = self.trigs_f[detector]
         if bank_file:
             logging.info('Loading bank')
-            self.bank = h5py.File(bank_file, 'r')
+            self.bank = HFile(bank_file, 'r')
         else:
             logging.info('No bank file given')
             # empty dict in place of non-existent hdf file
@@ -327,6 +404,9 @@ class SingleDetTriggers(object):
         # If this becomes memory intensive we can optimize
         if ranking_statistic == "newsnr":
             stat = self.newsnr
+            # newsnr doesn't return an array if len(stat) == 1
+            if len(self.snr) == 1:
+                stat = np.array([stat])
             self.stat_name = "Reweighted SNR"
         elif ranking_statistic == "snr":
             stat = self.snr
@@ -351,7 +431,12 @@ class SingleDetTriggers(object):
                 break
         index = np.array(new_index)
         self.stat = stat[index]
-        self.mask = self.mask[index]
+        if self.mask.dtype == 'bool':
+            orig_indices = self.mask.nonzero()[0][index]
+            self.mask = np.in1d(np.arange(len(self.mask)), orig_indices,
+                                assume_unique=True)
+        else:
+            self.mask = self.mask[index]
 
     @property
     def template_id(self):
@@ -376,6 +461,31 @@ class SingleDetTriggers(object):
     def spin2z(self):
         self.checkbank('spin2z')
         return np.array(self.bank['spin2z'])[self.template_id]
+
+    @property
+    def spin2x(self):
+        self.checkbank('spin2x')
+        return np.array(self.bank['spin2x'])[self.template_id]
+
+    @property
+    def spin2y(self):
+        self.checkbank('spin2y')
+        return np.array(self.bank['spin2y'])[self.template_id]
+
+    @property
+    def spin1x(self):
+        self.checkbank('spin1x')
+        return np.array(self.bank['spin1x'])[self.template_id]
+
+    @property
+    def spin1y(self):
+        self.checkbank('spin1y')
+        return np.array(self.bank['spin1y'])[self.template_id]
+
+    @property
+    def inclination(self):
+        self.checkbank('inclination')
+        return np.array(self.bank['inclination'])[self.template_id]
 
     @property
     def mtotal(self):
@@ -408,6 +518,11 @@ class SingleDetTriggers(object):
                                 self.spin1z, self.spin2z)
 
     @property
+    def f_seobnrv4_peak(self):
+        return pnutils.get_freq('fSEOBNRv4Peak', self.mass1, self.mass2,
+                                self.spin1z, self.spin2z)
+
+    @property
     def end_time(self):
         return np.array(self.trigs['end_time'])[self.mask]
 
@@ -418,6 +533,10 @@ class SingleDetTriggers(object):
     @property
     def snr(self):
         return np.array(self.trigs['snr'])[self.mask]
+
+    @property
+    def u_vals(self):
+        return np.array(self.trigs['u_vals'])[self.mask]
 
     @property
     def rchisq(self):
@@ -446,7 +565,7 @@ class ForegroundTriggers(object):
                 curr_dat = FileData(file)
                 curr_ifo = curr_dat.group_key
                 self.sngl_files[curr_ifo] = curr_dat
-        self.bank_file = h5py.File(bank_file, "r")
+        self.bank_file = HFile(bank_file, "r")
         self.n_loudest = n_loudest
 
         self._sort_arr = None
@@ -694,6 +813,6 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
     elif chisq_choice == 'max_bank_cont_trad':
         chisq = np.maximum(np.maximum(bank_chisq, cont_chisq), trad_chisq)
     else:
-        err_msg="Do not recognized --chisq-choice %s" %(args.chisq_choice,)
+        err_msg="Do not recognized --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)
     return chisq

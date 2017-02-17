@@ -35,6 +35,7 @@ import os, sys
 import copy
 import logging
 import numpy
+import h5py
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from pycbc import tmpltbank, psd, strain, pnutils
 import matplotlib
@@ -146,29 +147,38 @@ evalsCV,evecsCV = numpy.linalg.eig(cov)
 metricParams.evecsCV = {}
 metricParams.evecsCV[refFreq] = evecsCV
 
-# dummy class needed for loading LIGOLW files
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-
-lsctables.use_in(LIGOLWContentHandler)
-
-# Reading in the template bank
 logging.info("Reading template bank.")
+if opts.input_bank.endswith(('.xml','.xml.gz','.xmlgz')):
+    # dummy class needed for loading LIGOLW files
+    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+        pass
 
-indoc = ligolw_utils.load_filename(opts.input_bank,
-                                   contenthandler=LIGOLWContentHandler)
-template_list = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
+    lsctables.use_in(LIGOLWContentHandler)
+
+    indoc = ligolw_utils.load_filename(opts.input_bank,
+                                       contenthandler=LIGOLWContentHandler)
+    template_list = table.get_table(indoc,
+                                    lsctables.SnglInspiralTable.tableName)
+    mass1 = [template.mass1 for template in template_list]
+    mass2 = [template.mass2 for template in template_list]
+    spin1z = [template.spin1z for template in template_list]
+    spin2z = [template.spin2z for template in template_list]
+elif opts.input_bank.endswith(('.h5','.hdf','.hdf5')):
+    h5_fp = h5py.File(opts.input_bank, 'r')
+    mass1 = h5_fp['mass1'][:]
+    mass2 = h5_fp['mass2'][:]
+    spin1z = h5_fp['spin1z'][:]
+    spin2z = h5_fp['spin2z'][:]
+else:
+    err_msg = "Don't know how to read extension {}.".format(opts.input_bank)
+    raise NotImplementedError(err_msg)
 
 fP = open(opts.output_file, "w")
-for template in template_list:
-    tot_mass = template.mass1 + template.mass2
-    eta = template.mass1 * template.mass2 / (tot_mass * tot_mass)
-    beta, sigma, gamma, chis = pnutils.get_beta_sigma_from_aligned_spins(\
-                                         eta, template.spin1z, template.spin2z)
-    chi_coords = tmpltbank.get_cov_params(tot_mass, eta, beta, sigma, gamma,
-                                                   chis, metricParams, refFreq)
-    vals = " ".join([str(template.mass1), str(template.mass2),
-                                   str(template.spin1z), str(template.spin2z)])
+for idx in xrange(len(mass1)):
+    chi_coords = tmpltbank.get_cov_params(mass1[idx], mass2[idx], spin1z[idx],
+                                          spin2z[idx], metricParams, refFreq)
+    vals = " ".join([str(mass1[idx]), str(mass2[idx]), str(spin1z[idx]),
+                     str(spin2z[idx])])
     vals += " "
     vals += " ".join([str(i) for i in chi_coords])
     fP.write("%s\n" %(vals))

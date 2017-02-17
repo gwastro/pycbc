@@ -1,0 +1,161 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2016  Soumi De
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+The code reads in a compressed template bank and splits it up into
+smaller banks where the number of smaller banks is a user input
+"""
+
+import argparse
+import numpy
+import h5py
+import logging
+import pycbc, pycbc.version
+from pycbc.waveform import bank
+from numpy import random
+__author__  = "Soumi De <soumi.de@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_hdf5_splitbank"
+
+
+parser = argparse.ArgumentParser(description=__doc__[1:])
+parser.add_argument("--bank-file", type=str,
+                    help="Bank hdf file to load.")
+parser.add_argument('--templates-per-bank', type = int,
+                    help="This specifies the number of templates in "
+                    "each of the output sub-banks. Either specify this "
+                    "or --number-of-banks, as one of them is used to "
+                    "calculate the other in the code. Do not supply "
+                    "both.")
+parser.add_argument("--number-of-banks", type=int,
+                    help="This specifies the number of output sub-banks."
+                    "Either specify this or --templates-per-bank, as one"
+                    "of them is used to calculate the other in the code."
+                    "Do not supply both.")
+parser.add_argument("--output-filenames", nargs='*', default=None,
+                    action="store",
+                    help="Directly specify the names of the output files."
+                    "The number of files specified here will dictate "
+                    "how to split the bank. It will be split equally "
+                    "between all specified files.")
+parser.add_argument("--output-prefix", default=None,
+                    help="Prefix to add to the output template bank names,"
+                    "for example 'sub-bank'. The output file names would"
+                    "become args.output_prefix.hdf")
+parser.add_argument("--random-sort", action="store_true", default=False,
+                    help='Sort templates randomly before splitting')
+parser.add_argument("--random-seed", type=int,
+                    help="Random seed to use when sorting randomly the"
+                    "indices of array of templates")
+parser.add_argument("--force", action="store_true", default=False,
+                    help="Overwrite the given hdf file if it exists. "
+                         "Otherwise, an error is raised.")
+parser.add_argument("--verbose", action="store_true", default=False)
+
+
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+logging.info("loading bank")
+
+tmplt_bank = bank.TemplateBank(args.bank_file)
+
+templates = tmplt_bank.table
+
+if args.output_filenames and args.output_prefix:
+    errMsg="""Either supply specific filenames for all output files via
+    args.output_filenames or supply a common prefix for all output files
+    via args.output_prefix. Cannot supply both."""
+    parser.error(errMsg)
+
+if args.templates_per_bank and args.number_of_banks:
+    errMsg="""Either request a --templates-per-bank which would be used
+    to calculate the number of sub-banks to be generated or request
+    --number-of-banks which would be used to calculate the number of
+    templates to be put in each sub-bank. Cannot supply both. """
+    parser.error(errMsg)
+
+# If an array of filenames
+if args.output_filenames:
+    args.number_of_banks = len(args.output_filenames)
+
+# The indices for the array of templates are shuffled and the shuffled
+# array of indices are used to rearrange the elements of the templates
+# array
+if args.random_sort:
+    if args.random_seed is not None:
+        random.seed(args.random_seed)
+    idx = numpy.arange(templates.size)
+    numpy.random.shuffle(idx)
+    templates = templates[idx]
+
+# Split the templates in the bank taken as input into the smaller banks
+
+# If the number of output banks is taken as input calculate the number
+# of templates to be stored per bank
+if args.number_of_banks:
+    num_files = args.number_of_banks
+    num_per_file = int(templates[:].size/num_files)
+
+# If the number of templates per bank is taken as input calculate the
+# number of output banks
+elif args.templates_per_bank:
+    num_per_file = args.templates_per_bank
+    num_files = int(templates[:].size / num_per_file)
+
+else:
+    errMsg = """Either one of the options --templates-per-bank or
+    --number-of-banks should be requested to generate the output
+    sub-banks."""
+    parser.error(errMsg)
+
+# Generate sub-banks
+logging.info("Generating the output sub-banks")
+for ii in range(num_files):
+    start_idx = ii * num_per_file
+    # The output banks are assigned a fixed length equal to the number
+    # of templates per bank requested by the user or calculated earlier
+    # in the code except for the last bank in which the remaining
+    # templates, if any, are put.
+    if ( ii == (num_files-1)):
+        end_idx = templates[:].size
+    else:
+        end_idx = (ii + 1) * num_per_file
+
+    # Assign a name to the h5py output file to store the ii'th smaller bank
+    if args.output_filenames:
+        outname = args.output_filenames[ii]
+    elif args.output_prefix:
+        outname = args.output_prefix + str(ii) + '.hdf'
+    else:
+        errMsg = """Cannot resolve the process of assigning names to
+                output files. --output-filenames or --output-prefix
+                should be taken as input."""
+        raise ValueError(errMsg)
+
+    # Generate the hdf5 output file for the ii'th sub-bank, which would
+    # be a slice of the input template bank having a start index and
+    # end index as calculated above
+    output = tmplt_bank.write_to_hdf(outname, start_idx, end_idx,
+                                     force=args.force,
+                                     skip_fields='template_duration')
+    output.close()
+
+logging.info("finished")

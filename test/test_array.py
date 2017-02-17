@@ -28,6 +28,7 @@ These are the unittests for the pycbc array type
 
 import pycbc
 import unittest
+import itertools
 from pycbc.types import *
 from pycbc.scheme import *
 import numpy
@@ -199,21 +200,12 @@ class ArrayTestBase(array_base,unittest.TestCase):
             self.assertEqual(out5[0],1)
             self.assertEqual(out5[1],2)
             self.assertEqual(out5[2],3)
-            self.assertTrue(out5.dtype==numpy.float64)
-
-            # We shouldn't be able to copy it though
-            self.assertRaises(TypeError,Array,in5, copy=False)
 
             # Just checking that we can make an empty array correctly
             empty = numpy.array([])
             out6 = Array(empty)
             self.assertTrue(out6.dtype==numpy.float64)
             self.assertRaises(IndexError, out6.__getitem__,0)
-
-        if self.scheme != 'cpu':
-            self.assertRaises(TypeError, Array, in4, copy=False)
-        self.assertRaises(TypeError, Array, in5, copy=False)
-
 
     def test_array_init(self):
         # this array is made outside the context so we can check that an error is raised when copy = false in a GPU scheme
@@ -288,8 +280,6 @@ class ArrayTestBase(array_base,unittest.TestCase):
             self.assertEqual(out4[1],2)
             self.assertEqual(out4[2],3)
             self.assertTrue(out4.dtype==self.dtype)
-
-            self.assertRaises(TypeError, Array,in1, dtype=numpy.int32)
 
             # Check for copy=false
             in3 = Array([5,3,1],dtype=self.dtype)
@@ -410,10 +400,9 @@ class ArrayTestBase(array_base,unittest.TestCase):
 
             else:
                 self.assertRaises(TypeError, Array,[5+0j, 3+0j, 1+0j],dtype=self.dtype)
-            self.assertRaises(TypeError, Array,[1,2,3], dtype=numpy.int32)
-
+                
             #Also, when it is unspecified
-            out3 = Array([5,3,1])
+            out3 = Array([5.0,3,1])
 
             self.assertTrue(type(out3._scheme) == type(self.context))
             self.assertTrue(type(out3._data) is SchemeArray)
@@ -481,6 +470,28 @@ class ArrayTestBase(array_base,unittest.TestCase):
                 self.assertEqual(b.shape, a_numpy.shape)
             self.assertEqual(numpy.abs(b - a_numpy).max(), 0)
             os.remove(temp_path_txt)
+
+    def test_multiply_and_add(self):
+        with self.context:
+            if not self.kind == self.okind:
+                # Currently this is not supported
+                return
+
+            if self.kind == 'complex':
+                inp = Array([5+2j,3+1j,1+2j], dtype=self.dtype)
+                out = Array([5+2j,3+1j,1+2j], dtype=self.odtype)
+                mult_fac = 12+17j
+            else:
+                inp = Array([5,3,1], dtype=self.dtype)
+                out = Array([5,3,1], dtype=self.odtype)
+                mult_fac=12
+
+            out_check = mult_fac * inp + out
+            out.multiply_and_add(inp, mult_fac)
+            self.assertEqual(out[0], out_check[0])
+            self.assertEqual(out[1], out_check[1])
+            self.assertEqual(out[2], out_check[2])
+
 
 def array_test_maker(dtype,odtype):
     class tests(ArrayTestBase):

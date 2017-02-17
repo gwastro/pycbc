@@ -154,13 +154,14 @@ class ContentHandler(ligolw.LIGOLWContentHandler):
 lsctables.use_in(ContentHandler)
 
 fils = glob.glob("match/match*.dat")
-mfields = ('match', 'overlap', 'sigma1', 'sigma2')
-bfields = ('match', 'overlap', 'sigma1', 'sigma2', 'mass1', 'mass2', 
-                  'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z',
-                  'inclination', 'latitude', 'longitude', 'polarization', 'coa_phase')
-dtypem={'names': mfields, 'formats': ('f8', 'f8', 'f8', 'f8')}
+mfields = ('match', 'overlap', 'time_offset', 'sigma1', 'sigma2')
+bfields = ('match', 'overlap', 'time_offset', 'sigma1', 'sigma2', 'mass1',
+           'mass2', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
+           'spin2z', 'inclination', 'latitude', 'longitude',
+           'polarization', 'coa_phase')
+dtypem={'names': mfields, 'formats': ('f8', 'f8', 'f8', 'f8', 'f8')}
 dtypeo={'names': bfields,
-        'formats': ('f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 
+        'formats': ('f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8',
                     'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8')}
                     
 if __name__ == "__main__":
@@ -225,11 +226,12 @@ import glob
 
 from pycbc import pnutils
 
-bfields = ('match', 'overlap', 'sigma1', 'sigma2', 'mass1', 'mass2', 
-                  'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z',
-                  'inclination', 'latitude', 'longitude', 'polarization', 'coa_phase')
+bfields = ('match', 'overlap', 'time_offset', 'sigma1', 'sigma2', 'mass1',
+           'mass2', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
+           'spin2z', 'inclination', 'latitude', 'longitude',
+           'polarization', 'coa_phase')
 dtypeo={'names': bfields,
-        'formats': ('f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 
+        'formats': ('f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8',
                     'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8')}
                     
 def basic_scatter(out_name, xname, yname, title, xval, yval,  
@@ -289,6 +291,8 @@ for fil in fils:
     s82 = data['sigma2'] / 8
     
     pname = tag + '-'
+
+    red_data = data[data['match'] > -0.5]
     
     combs =  [('mass1', 'mass2', 'match'),
              ]            
@@ -297,6 +301,13 @@ for fil in fils:
         title = tag
         basic_scatter(name, v1, v2, title, data[v1], data[v2], data[v3], v3, xmin=0, ymin=0)
         
+    v1 = 'mass1'
+    v2 = 'mass2'
+    v3 = 'time_offset'
+    name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
+    title = tag
+    basic_scatter(name, v1, v2, title, red_data[v1], red_data[v2], red_data[v3], v3, vmin=None, vmax=None)
+
     v1 = 'mass ratio'
     v1d = q
     v2 = 'spin 1 magnitude' 

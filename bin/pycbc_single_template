@@ -17,40 +17,85 @@
 """ Calculate the SNR and CHISQ timeseries for either a chosen template, or 
 a specific Nth loudest coincident event.
 """
-import sys, logging, argparse, numpy, itertools, pycbc, h5py
+import sys, logging, argparse, numpy, pycbc, h5py
 from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter
+from pycbc.io import WaveformArray
 from pycbc import events
 from pycbc.filter import resample_to_delta_t
-from pycbc.types import zeros, float32, complex64, TimeSeries, FrequencySeries
+from pycbc.types import zeros, complex64
 from pycbc.types import complex_same_precision_as
+import pycbc.waveform.utils
 
-def select_segment(fname, segment, ifo, time, start_pad, end_pad):
-    segs = events.select_segments_by_definer(fname, segment, ifo)
+def subtract_template(stilde, template, snr, trigger_time, flow):
+    idx = int((trigger_time - snr.start_time) / snr.delta_t)
+    if idx >= 0 and idx < len(snr):                
+        sig = filter.sigma(template, psd=stilde.psd, low_frequency_cutoff=flow) 
+        inverse = template * snr[idx] / sig
+        dt = trigger_time - snr.start_time
+        stilde -= pycbc.waveform.utils.apply_fseries_time_shift(inverse, dt)
+    return stilde
 
-    s = numpy.array([t[0] for t in segs])
-    e = numpy.array([t[1] for t in segs])
+def select_segments(fname, anal_name, data_name, ifo, time, pad_data):
+    anal_segs = events.select_segments_by_definer(fname, anal_name, ifo)
+    data_segs = events.select_segments_by_definer(fname, data_name, ifo)
 
+    # Anal segs should be disjoint, so first find the seg containing time
+    s = numpy.array([t[0] for t in anal_segs])
+    e = numpy.array([t[1] for t in anal_segs])
     #ensure sorted
     sorting = s.argsort()    
-    s = s[sorting] + start_pad
-    e = e[sorting] - end_pad
-
+    s = s[sorting]
+    e = e[sorting]
     idx = numpy.searchsorted(s, time) - 1
-    return (s[idx] - start_pad, e[idx] + end_pad)
+    anal_time = (s[idx], e[idx])
+
+    # Now need to find the corresponding data_seg. This could be complicated
+    # as in edge cases the anal_time tuple could be completely contained within
+    # *two* data blocks (think analysis chunk slightly longer than minimum).
+    # We need to choose the *right* block to reproduce what the search did.
+
+    s2 = numpy.array([t[0] for t in data_segs])
+    e2 = numpy.array([t[1] for t in data_segs])
+    lgc = (s2 < time) & (e2 > time)
+    s2 = s2[lgc]
+    e2 = e2[lgc]
+    if len(s2) == 0:
+        err_msg = "Cannot find a data segment within %s" %(str(time))
+        raise ValueError(err_msg)
+    if len(s2) == 1:
+        data_time = (s2[0], e2[0])
+    if len(s2) > 1:
+        # The tricksy case. The corresponding data segment should have the
+        # largest overlap with anal_time
+        overlap = None
+        for start, end in zip(s2, e2):
+            if start + pad_data > anal_time[0] or end - pad_data < anal_time[1]:
+                # The analysis time must lie within the data time, otherwise
+                # this clearly is not the right data segment!
+                continue
+
+            curr_nonoverlap = anal_time[0] - start
+            curr_nonoverlap += end - anal_time[1]
+            if (overlap is None) or (curr_nonoverlap < overlap):
+                overlap = curr_nonoverlap
+                data_time = (start, end)
+
+    return anal_time, data_time
 
 parser = argparse.ArgumentParser(usage='',
     description="Single template gravitational-wave followup")
 parser.add_argument('--version', action='version', 
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--output-file')
+parser.add_argument('--output-file', required=True)
+parser.add_argument('--subtract-template', action='store_true')
 parser.add_argument("-V", "--verbose", action="store_true", 
                   help="print extra debugging information", default=False )
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
 parser.add_argument("--chisq-bins", default="0", type=str, help=
                     "Number of frequency bins to use for power chisq.")
-parser.add_argument("--psd-recalculate-segments", type=int, 
-                    help="Number of segments to use before recalculating the PSD", default=0)
+parser.add_argument("--minimum-chisq-bins", default=0, type=int, help=
+                    "If the chisq bin formula fails, default to this number.")
 parser.add_argument("--trigger-time", type=float, default=0,
                   help="The central time of the trigger to use.")
 parser.add_argument("--use-params-of-closest-injection", action="store_true",
@@ -60,7 +105,8 @@ parser.add_argument("--use-params-of-closest-injection", action="store_true",
                        "using this do not supply mass and spin options. "
                        "Using this requires trigger-time and injection-file "
                        "to be given.")
-parser.add_argument("--approximant", type=str,
+# add approximant arg
+waveform.bank.add_approximant_arg(parser,
                   help="The name of the approximant to use for filtering. "
                       "Do not use if using --use-params-of-closest-injection.")
 parser.add_argument("--mass1", type=float, 
@@ -75,6 +121,26 @@ parser.add_argument("--spin1z", type=float, default=0,
 parser.add_argument("--spin2z", type=float, default=0,
                   help="The aligned pin of the second component object. "
                       "Do not use if using --use-params-of-closest-injection.")
+# Optional arguments for precessing templates
+parser.add_argument("--spin1x", type=float, default=0,
+                  help="The non-aligned spin of the first component object. "
+                    "Default = 0.")
+parser.add_argument("--spin2x", type=float, default=0,
+                  help="The non-aligned spin of the second component object. "
+                    "Default = 0.")
+parser.add_argument("--spin1y", type=float, default=0,
+                  help="The non-aligned spin of the first component object. "
+                    "Default = 0.")
+parser.add_argument("--spin2y", type=float, default=0,
+                  help="The non-aligned spin of the second component object. "
+                    "Default = 0.")
+parser.add_argument("--inclination", type=float, default=0,
+                  help="The inclination of the source w.r.t the observer. "
+                    "Default = 0.")
+parser.add_argument("--u-val", type=float, default=None,
+                  help="The ratio between hplus and hcross to use in the "
+                    "template, according to h(t) = hplus * u_val + hcross. "
+                    "If not given only hplus is used.")
 parser.add_argument("--window", type=float, 
                   help="Time to save around the trigger time (if given)")
 parser.add_argument("--order", type=int,
@@ -90,8 +156,12 @@ parser.add_argument("--taper-template", choices=["start","end","startend"],
 parser.add_argument("--inspiral-segments",
         help="XML file containing the inspiral analysis segments. "
              "Only used with the --statmap-file option")
-parser.add_argument("--segment-name", 
-        help="name of the segmentlist to read from the inspiral segment file")
+parser.add_argument("--data-read-name",
+        help="name of the segmentlist containing the data read in by each job "
+             "from the inspiral segment file")
+parser.add_argument("--data-analyzed-name",
+        help="name of the segmentlist containing the data analysed by each job "
+             "from the inspiral segment file")
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -106,12 +176,16 @@ ifo = opt.channel_name[0:2]
 
 # If we are choosing start/end times from XML file ############################
 if opt.inspiral_segments:
-    start_pad = opt.pad_data + opt.segment_start_pad
-    end_pad = opt.pad_data + opt.segment_end_pad
-    seg = select_segment(opt.inspiral_segments, opt.segment_name, ifo,
-                         opt.trigger_time, start_pad, end_pad)
-    opt.gps_start_time, opt.gps_end_time = \
-                                   seg[0] + opt.pad_data, seg[1] - opt.pad_data
+    # Important for trig-start/end and data-start/end to match inspiral jobs.
+    # Zero-padding also will not zero-pad unless explicitly told to in the
+    # trig start/end times
+    anal_seg, data_seg = select_segments(opt.inspiral_segments,
+                                    opt.data_analyzed_name, opt.data_read_name,
+                                    ifo, opt.trigger_time, opt.pad_data)
+    opt.trig_start_time = anal_seg[0]
+    opt.trig_end_time = anal_seg[1]
+    opt.gps_start_time = data_seg[0] + opt.pad_data
+    opt.gps_end_time = data_seg[1] - opt.pad_data
     f.attrs['event_time'] = opt.trigger_time
 
 ###############################################################################
@@ -124,41 +198,20 @@ scheme.verify_processing_options(opt, parser)
 fft.verify_fft_options(opt,parser)
 pycbc.init_logging(opt.verbose)
 
-def associate_psd(strain_segments, gwstrain, segments, nsegs, flen, delta_f, flow):
-    logging.info("Computing noise PSD")
-    def grouper(n, iterable):
-        args = [iter(iterable)] * n
-        return list([e for e in t if e != None] for t in itertools.izip_longest(*args))
-
-    nsegs = nsegs if nsegs != 0 else len(strain_segments.full_segment_slices)
-    groups = grouper(nsegs, strain_segments.full_segment_slices)
-    if len(groups[-1]) != len(groups[0]):
-        logging.warn('PSD recalculation does not divide equally among analysis'
-                     'segments. Make sure that this is what you want')
-
-    psds = []
-    for psegs in groups:
-        strain_part = gwstrain[psegs[0].start:psegs[-1].stop]
-        ppsd = psd.from_cli(opt, flen, delta_f, flow, strain_part, pycbc.DYN_RANGE_FAC)
-        psds.append(ppsd)
-        for seg in segments:
-            if seg.seg_slice in psegs:
-                seg.psd = ppsd.astype(float32)
-    return psds
-
 ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, pycbc.DYN_RANGE_FAC)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
-class t(object):
-    pass
- 
-row = t()
-row.params = t()
-row.params.mass1 = opt.mass1
-row.params.mass2 = opt.mass2
-row.params.spin1z = opt.spin1z
-row.params.spin2z = opt.spin2z
+if not opt.use_params_of_closest_injection:
+    row = WaveformArray.from_kwargs(
+            mass1=opt.mass1,
+            mass2=opt.mass2,
+            spin1x=opt.spin1x,
+            spin1y=opt.spin1y,
+            spin1z=opt.spin1z,
+            spin2x=opt.spin2x,
+            spin2y=opt.spin2y,
+            spin2z=opt.spin2z)
 
 with ctx:
     fft.from_cli(opt)
@@ -170,9 +223,9 @@ with ctx:
     segments = strain_segments.fourier_segments()
     
     logging.info("Calculating the PSDs")
-    psds = associate_psd(strain_segments, gwstrain, segments, 
-                         opt.psd_recalculate_segments, 
-                         flen, delta_f, flow)
+    psd.associate_psds_to_segments(opt, segments, gwstrain, flen, delta_f,
+                             flow, dyn_range_factor=pycbc.DYN_RANGE_FAC,
+                             precision='single')
 
     logging.info("Making template: %s" % opt.approximant)
     if opt.use_params_of_closest_injection:
@@ -187,10 +240,15 @@ with ctx:
         inj_idx = abs(end_times - opt.trigger_time).argmin()
         inj = inj_set.table[inj_idx]
         # Use injection values for things like choosing number of chisq bins
-        row.params.mass1 = opt.mass1 = inj.mass1
-        row.params.mass2 = opt.mass2 = inj.mass2
-        row.params.spin1z = opt.spin1z = inj.spin1z
-        row.params.spin2z = opt.spin2z = inj.spin2z
+        row = WaveformArray.from_kwargs(
+            mass1=inj.mass1,
+            mass2=inj.mass2,
+            spin1x=inj.spin1x,
+            spin1y=inj.spin1y,
+            spin1z=inj.spin1z,
+            spin2x=inj.spin2x,
+            spin2y=inj.spin2y,
+            spin2z=inj.spin2z)
         # FIXME: Don't like hardcoded 16384 here
         # NOTE: f_lower is set in strain.py as inj.f_lower, but this is a
         #       little unclear to see and caused me some problems! Stating
@@ -202,31 +260,66 @@ with ctx:
                                           method='ldas')
         td_template = td_template * pycbc.DYN_RANGE_FAC
         td_template._epoch -= inj.get_end(site=opt.channel_name[0])
-        opt.approximant = inj.waveform
+        approximant = inj.waveform
         template = waveform.td_waveform_to_fd_waveform(td_template, length=flen)
         template = template.astype(complex_same_precision_as(segments[0]))
     else:
-        # FIXME: This check is hacky!
-        if opt.approximant and 'params' in opt.approximant:
-            opt.approximant = waveform.FilterBank.parse_option(row,
-                                                               opt.approximant)
+        approximant = waveform.bank.parse_approximant_arg(opt.approximant, row)[0] 
         logging.info("Making template: %s" % opt.approximant)
-        template = waveform.get_waveform_filter(zeros(flen, dtype=complex64), 
-                                    approximant=opt.approximant,
-                                    mass1=opt.mass1, mass2=opt.mass2,
-                                    spin1z=opt.spin1z, spin2z=opt.spin2z,
+        if opt.u_val is None:
+            template = waveform.get_waveform_filter(
+                                    zeros(flen, dtype=complex64),
+                                    approximant=approximant,
+                                    template=row[0],
+                                    inclination=opt.inclination,
                                     taper=opt.taper_template, 
                                     f_lower=flow, delta_f=delta_f,
+                                    delta_t=gwstrain.delta_t,
+                                    distance = 1.0/pycbc.DYN_RANGE_FAC)
+        else:
+            tp, tc = waveform.get_two_pol_waveform_filter(
+                                    zeros(flen, dtype=complex64),
+                                    zeros(flen, dtype=complex64), row[0],
+                                    approximant=approximant,
+                                    inclination=opt.inclination,
+                                    taper=opt.taper_template,
+                                    f_lower=flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)
-    chisq_bins = int(vetoes.SingleDetPowerChisq.parse_option(row,
-                                                               opt.chisq_bins))
+            template = tc.multiply_and_add(tp, opt.u_val)
+
+    # FIXME: should probably switch to something like what is done for parsing
+    # the approximant for chisq bins at some point
+    class t(object):
+        pass
+    parse_row = t()
+    parse_row.params = t()
+    for param in row.fieldnames:
+        setattr(parse_row.params, param, row[param][0])
+
+    chisq_bins_float = vetoes.SingleDetPowerChisq.parse_option(parse_row,
+        opt.chisq_bins)
+    if numpy.isnan(chisq_bins_float) or (int(chisq_bins_float) < 
+                                    opt.minimum_chisq_bins): 
+        if opt.minimum_chisq_bins:
+            chisq_bins = opt.minimum_chisq_bins
+            logging.warning( "Number of chisq bins is less than minimum or is NaN."
+                            + (" Using %d bins." % opt.minimum_chisq_bins) )
+        else:
+            raise ValueError(
+                "Chisq bins is NaN or negative and no minimum is set.")
+    else:
+        chisq_bins = int(chisq_bins_float)
 
     f['template'] = template.numpy()                  
     snrs, chisqs = [], []  
     raw_bins = [[] for b in range(chisq_bins)]
     
-    start_time = opt.gps_start_time + opt.segment_start_pad
-    end_time = opt.gps_end_time - opt.segment_end_pad
+    if opt.trig_start_time:
+        start_time = opt.trig_start_time
+        end_time = opt.trig_end_time
+    else:
+        start_time = opt.gps_start_time + opt.segment_start_pad
+        end_time = opt.gps_end_time - opt.segment_end_pad
 
     if opt.window:
         start_time_wind = opt.trigger_time - opt.window
@@ -240,7 +333,7 @@ with ctx:
         start = stilde.epoch + stilde.analyze.start / float(opt.sample_rate)
         end = stilde.epoch + stilde.analyze.stop / float(opt.sample_rate)
         
-        if  end < start_time:
+        if end < start_time:
             continue
             
         if start > end_time:
@@ -250,7 +343,15 @@ with ctx:
         snr, corr, norm = filter.matched_filter_core(template, stilde, 
                                     psd=stilde.psd,
                                     low_frequency_cutoff=flow)
-        snr *= norm
+        snr *= norm 
+                                    
+        if opt.subtract_template:
+            stilde = subtract_template(stilde, template,
+                                snr, opt.trigger_time, opt.low_frequency_cutoff)
+            snr, corr, norm = filter.matched_filter_core(template, stilde, 
+                                psd=stilde.psd,
+                                low_frequency_cutoff=flow)
+        
         logging.info("calculating chisq")
         chisq, raw_bin = vetoes.power_chisq(template, stilde, chisq_bins, stilde.psd, 
                                     low_frequency_cutoff=flow, 
@@ -265,6 +366,12 @@ with ctx:
     
     sidx = int((start_time - snrs[0].start_time) / snr.delta_t)
     eidx = int((end_time - start_time) / snr.delta_t) + sidx
+
+    if sidx < 0:
+        err_msg = "Ian has probably broken single_template again. Please email "
+        err_msg += "with the command line that is raising this error and "
+        err_msg += "shout at him. Beer may speed up the fixing process."
+        raise ValueError(err_msg)
 
     for i in range(chisq_bins):
         key = 'chisq_bins/%s' % i
@@ -282,7 +389,9 @@ with ctx:
     f['chisq'] = numpy.concatenate([chisq.numpy() for chisq in chisqs])[sidx:eidx]
     f['chisq'].attrs['start_time'] = start_time
     f['chisq'].attrs['delta_t'] = snr.delta_t 
-    f.attrs['approximant'] = opt.approximant
+    f.attrs['approximant'] = approximant
     f.attrs['ifo'] = ifo
+    f.attrs['command_line'] = ' '.join(sys.argv)
     
 logging.info("Finished")
+

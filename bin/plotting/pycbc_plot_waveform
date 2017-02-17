@@ -1,0 +1,176 @@
+#!/usr/bin/env python
+# Copyright (C) 2016 Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Plot a waveform in both time and frequency domain.
+"""
+
+# imports
+import sys, argparse, matplotlib, numpy, math
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+from pycbc import waveform, io
+from pycbc import version
+from pycbc import results
+from pycbc.fft import ifft
+from pycbc.types import complex_same_precision_as
+from pycbc.types import TimeSeries, zeros, complex64
+
+parser = argparse.ArgumentParser(usage='',
+    description="Plot a waveform in both time and frequency domain.")
+parser.add_argument('--version', action='version',
+                    version=version.git_verbose_msg)
+parser.add_argument('--output-file', required=True)
+parser.add_argument("--low-frequency-cutoff", type=float,
+                  help="The low frequency cutoff to use for generation.")
+# add the approximant argument
+waveform.bank.add_approximant_arg(parser,
+                  help="The name of the approximant to use for filtering. "
+                      "Do not use if using --use-params-of-closest-injection.")
+parser.add_argument("--mass1", type=float, required=True,
+                  help="The mass of the first component object. "
+                      "Do not use if using --use-params-of-closest-injection.")
+parser.add_argument("--mass2", type=float, required=True,
+                  help="The mass of the second component object. "
+                      "Do not use if using --use-params-of-closest-injection.")
+parser.add_argument("--spin1z", type=float, required=True,
+                  help="The aligned spin of the first component object. "
+                      "Do not use if using --use-params-of-closest-injection.")
+parser.add_argument("--spin2z", type=float, required=True,
+                  help="The aligned pin of the second component object. "
+                      "Do not use if using --use-params-of-closest-injection.")
+parser.add_argument("--sample-rate", type=float, required=True,
+                  help="Sample rate to use when generating waveform.")
+parser.add_argument("--waveform-length", type=float, required=True,
+                  help="Used to set the value of delta-f when either generating"
+                       "in frequency domain, or when FFTing.")
+# Optional arguments for precession
+parser.add_argument("--spin1x", type=float, default=0,
+                  help="Non-aligned spin of the first component object. ")
+parser.add_argument("--spin1y", type=float, default=0,
+                  help="Non-aligned spin of the first component object. ")
+parser.add_argument("--spin2x", type=float, default=0,
+                  help="Non-aligned spin of the second component object. ")
+parser.add_argument("--spin2y", type=float, default=0,
+                  help="Non-aligned spin of the second component object. ")
+parser.add_argument("--inclination", type=float, default=0,
+                  help="Non-aligned spin of the second component object. ")
+parser.add_argument("--u-val", type=float, default=0,
+                  help="Ratio between h_+ and h_x according to "
+                        "h(t) = h_+ * u_val + h_x. Only needed in the case of "
+                        "waveforms where h_+ and h_x are not related by a "
+                        "simple phase shift.")
+# Other optional arguments
+parser.add_argument("--taper-template", choices=["start","end","startend"],
+                    help="For time-domain approximants, taper the start and/or"
+                    " end of the waveform before FFTing.")
+# Plotting options
+parser.add_argument('--plot-title',
+                    help="If given, use this as the plot title")
+parser.add_argument('--plot-caption',
+                    help="If given, use this as the plot caption")
+
+opt = parser.parse_args()
+
+delta_f = 1. / opt.waveform_length
+delta_t = 1. / opt.sample_rate
+tlen = int(opt.waveform_length * opt.sample_rate)
+flen = tlen / 2 + 1
+
+tmp_params = io.WaveformArray.from_kwargs(
+                    mass1=opt.mass1,
+                    mass2=opt.mass2,
+                    spin1x=opt.spin1x,
+                    spin1y=opt.spin1y,
+                    spin1z=opt.spin1z,
+                    spin2x=opt.spin2x,
+                    spin2y=opt.spin2y,
+                    spin2z=opt.spin2z,
+                    inclination=opt.inclination)
+
+# Deal with parameter-dependent approximant string
+approximant = waveform.bank.parse_approximant_arg(opt.approximant,
+                tmp_params)[0]
+
+# This is a hack. We don't have a two-pol SPATmplt, so use TaylorF2
+if approximant == 'SPAtmplt':
+    approximant = 'TaylorF2'
+
+hp, hc = waveform.get_two_pol_waveform_filter(zeros(flen, dtype=complex64),
+                                    zeros(flen, dtype=complex64),
+                                    tmp_params[0], approximant=approximant,
+                                    taper=opt.taper_template,
+                                    f_lower=opt.low_frequency_cutoff,
+                                    delta_f=delta_f, delta_t=delta_t)
+
+# 0.1s (post-merger) added for safety
+tmplt_length = hp.length_in_time + 0.1
+pre_merger_length = hp.chirp_length
+post_merger_length = tmplt_length - pre_merger_length
+
+# Find last non-zero frequency point
+f_length = hp.sample_frequencies[numpy.nonzero(hp.data)][-1]
+
+template = hp * opt.u_val + hc
+
+template_td = template.to_timeseries()
+
+# Figure out how best to plot waveform
+template_td.roll(int(-post_merger_length * opt.sample_rate))
+
+fig = plt.figure()
+ax = plt.subplot(2,1,1)
+ax.plot(template_td.sample_times, template_td)
+ax.set_xlim([template_td.sample_times.max() - tmplt_length*1.1,
+          template_td.sample_times.max()])
+ax.set_xlabel('Time (s)')
+ax.set_ylabel('$h(t)$')
+
+if tmplt_length > 1.:
+    # Make inset zoom on merger
+    axins = zoomed_inset_axes(ax, 0.5, loc=3,bbox_to_anchor=(0.12, 0.69),
+                              bbox_transform=ax.figure.transFigure)
+
+    x_zoom_fac = tmplt_length / 0.2
+
+    axins.plot(template_td.sample_times * x_zoom_fac, template_td)
+    axins.set_xlim([(template_td.sample_times.max() - 0.2)*x_zoom_fac,
+                    x_zoom_fac*template_td.sample_times.max()])
+    axins.get_xaxis().set_ticks([])
+    axins.get_yaxis().set_ticks([])
+    # Can't get this to work for what I'm doing :-(
+    #mark_inset(ax, axins, loc1=1, loc2=3, fc="none", ec="0.5")
+
+plt.subplot(2,1,2)
+plt.plot(template.sample_frequencies, abs(template))
+plt.xlabel('Frequency (Hz)')
+plt.xlim([0,f_length*1.1])
+plt.ylabel('abs( $\\tilde{h}(f)$ )')
+
+
+if opt.plot_title is None:
+    opt.plot_title = 'Waveform plot'
+if opt.plot_caption is None:
+    opt.plot_caption = ("The first plot represents the template waveform"
+                        "in the time domain with the inset showing a"
+                        "zoom-up at merger. The second plot represents"
+                        "the template waveform in the frequency domain.")
+
+results.save_fig_with_metadata(fig, opt.output_file,
+                             cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
+                             title=opt.plot_title,
+                             caption=opt.plot_caption)

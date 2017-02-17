@@ -27,423 +27,15 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/coincidence.html
 """
 
-
-from __future__ import division
-
-import re
 import logging
-from glue import segments
-from glue.ligolw import lsctables,ligolw
-from glue.ligolw import utils as ligolw_utils
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node, File
-from pycbc.workflow.jobsetup import LigolwAddExecutable, LigolwSSthincaExecutable, SQLInOutExecutable
-
-class ContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-
-lsctables.use_in(ContentHandler)
-
-def setup_coincidence_workflow(workflow, segsList, timeSlideFiles,
-                               inspiral_outs, output_dir, veto_cats=[2,3,4],
-                               tags=[], timeSlideTags=None):
-    '''
-    This function aims to be the gateway for setting up a set of coincidence
-    jobs in a workflow. The goal is that this function can support a
-    number of different ways/codes that could be used for doing this.
-    For now it only supports ligolw_sstinca.
-
-    Parameters
-    -----------
-    workflow : pycbc.workflow.core.Workflow
-        The Workflow instance that the coincidence jobs will be added to.
-    segsList : pycbc.workflow.core.FileList
-        The list of files returned by workflow's segment module that contains
-        pointers to all the segment files generated in the workflow. If the
-        coincidence code will be applying the data quality vetoes, then this
-        will be used to ensure that the codes get the necessary input to do
-        this.
-    timeSlideFiles : pycbc.workflow.core.FileList
-        An FileList of the timeSlide input files that are needed to
-        determine what time sliding needs to be done if the coincidence code
-        will be running time slides to facilitate background computations later
-        in the workflow.
-    inspiral_outs : pycbc.workflow.core.FileList
-        An FileList of the matched-filter module output that is used as
-        input to the coincidence codes running at this stage.
-    output_dir : path
-        The directory in which coincidence output will be stored.
-    veto_cats : list of ints (optional, default = [2,3,4])
-        Veto categories that will be applied in the coincidence jobs. If this
-        takes the default value the code will run data quality at cumulative 
-        categories 2, 3 and 4. Note that if we change the flag definitions to
-        be non-cumulative then this option will need to be revisited.
-    tags : list of strings (optional, default = [])
-        A list of the tagging strings that will be used for all jobs created
-        by this call to the workflow. An example might be ['BNSINJECTIONS'] or
-        ['NOINJECTIONANALYSIS']. This will be used in output names.
-    timeSlideTags : list of strings (optional, default = [])
-        A list of the tags corresponding to the timeSlideFiles that are to be
-        used in this call to the module. This can be used to ensure that the
-        injection runs do no time sliding, but the no-injection runs do perform
-        time slides (or vice-versa if you prefer!)
-    Returns
-    --------
-    coinc_outs : pycbc.workflow.core.FileList
-        A list of the *final* outputs of the coincident stage. This *does not*
-        include any intermediate products produced within the workflow. If you
-        require access to intermediate products call the various sub-functions
-        in this module directly.
-    '''
-    logging.info('Entering coincidence setup module.')
-    make_analysis_dir(output_dir)
-
-    # Parse for options in .ini file
-    coincidenceMethod = workflow.cp.get_opt_tags("workflow-coincidence",
-                                        "coincidence-method", tags)
-
-    # Scope here for adding different options/methods here. For now we only
-    # have the single_stage ihope method which consists of using ligolw_add
-    # to create a large job for coincidence and then running ligolw_thinca
-    # on that output.
-    if coincidenceMethod == "WORKFLOW_DISCRETE_SLIDES":
-        # If I am doing exact match I can parallelize these jobs and reduce
-        # memory footprint. This will require all input inspiral jobs to have
-        # a JOB%d tag to distinguish between them.
-        if workflow.cp.has_option_tags("workflow-coincidence",
-                             "coincidence-exact-match-parallelize", tags):
-            parallelize_split_input = True
-        else:
-            parallelize_split_input = False
-
-        # If you want the ligolw_add outputs, call this function directly
-        coinc_outs, other_outs = setup_coincidence_workflow_ligolw_thinca(
-                     workflow,
-                     segsList, timeSlideFiles, inspiral_outs,
-                     output_dir, veto_cats=veto_cats, tags=tags,
-                     timeSlideTags=timeSlideTags,
-                     parallelize_split_input=parallelize_split_input)
-    else:
-        errMsg = "Coincidence method not recognized. Must be one of "
-        errMsg += "WORKFLOW_DISCRETE_SLIDES (currently only one option)."
-        raise ValueError(errMsg)
-
-    logging.info('Leaving coincidence setup module.')
-
-    return coinc_outs, other_outs
-
-def setup_coincidence_workflow_ligolw_thinca(
-        workflow, segsList, timeSlideFiles, inspiral_outs, output_dir,
-        veto_cats=[2,3,4], tags=[], timeSlideTags=None,
-        parallelize_split_input=False):
-    """
-    This function is used to setup a single-stage ihope style coincidence stage
-    of the workflow using ligolw_sstinca (or compatible code!).
-
-    Parameters
-    -----------
-    workflow : pycbc.workflow.core.Workflow
-        The workflow instance that the coincidence jobs will be added to.
-    segsList : pycbc.workflow.core.FileList
-        The list of files returned by workflow's segment module that contains
-        pointers to all the segment files generated in the workflow. If the
-        coincidence code will be applying the data quality vetoes, then this
-        will be used to ensure that the codes get the necessary input to do
-        this.
-    timeSlideFiles : pycbc.workflow.core.FileList
-        An FileList of the timeSlide input files that are needed to
-        determine what time sliding needs to be done. One of the timeSlideFiles
-        will normally be "zero-lag only", the others containing time slides
-        used to facilitate background computations later in the workflow.
-    inspiral_outs : pycbc.workflow.core.FileList
-        An FileList of the matched-filter module output that is used as
-        input to the coincidence codes running at this stage.
-    output_dir : path
-        The directory in which coincidence output will be stored.
-    veto_cats : list of ints (optional, default = [2,3,4])
-        Veto categories that will be applied in the coincidence jobs. If this
-        takes the default value the code will run data quality at cumulative 
-        categories 2, 3 and 4. Note that if we change the flag definitions to
-        be non-cumulative then this option will need to be revisited.
-    tags : list of strings (optional, default = [])
-        A list of the tagging strings that will be used for all jobs created
-        by this call to the workflow. An example might be ['BNSINJECTIONS'] or
-        ['NOINJECTIONANALYSIS']. This will be used in output names.
-    timeSlideTags : list of strings (optional, default = [])
-        A list of the tags corresponding to the timeSlideFiles that are to be
-        used in this call to the module. This can be used to ensure that the
-        injection runs do no time sliding, but the no-injection runs do perform
-        time slides (or vice-versa if you prefer!)
-    Returns
-    --------
-    ligolwThincaOuts : pycbc.workflow.core.FileList
-        A list of the output files generated from ligolw_sstinca.
-    ligolwAddOuts : pycbc.workflow.core.FileList
-        A list of the output files generated from ligolw_add.
-    """
-    from pylal import ligolw_cafe
-
-    logging.debug("Entering coincidence module.")
-    cp = workflow.cp
-    ifoString = workflow.ifo_string
-
-    # setup code for each veto_category
-
-    coinc_outs = FileList([])
-    other_outs = {}
-
-    if not timeSlideTags:
-        # Get all sections by looking in ini file, use all time slide files.
-        timeSlideTags = [(sec.split('-')[-1]).upper()
-                  for sec in workflow.cp.sections() if sec.startswith('tisi-')]
-
-    if parallelize_split_input:
-        # Want to split all input jobs according to their JOB%d tag.
-        # This matches any string that is the letters JOB followed by some
-        # numbers and nothing else.
-        inspiral_outs_dict = {}
-        regex_match = re.compile('JOB([0-9]+)\Z')
-        for file in inspiral_outs:
-            matches = [regex_match.match(tag) for tag in file.tags]
-            # Remove non matching entries
-            matches = [i for i in matches if i is not None]
-            # Must have one entry
-            if len(matches) == 0:
-                warn_msg = "I was asked to parallelize over split inspiral "
-                warn_msg += "files at the coincidence stage, but at least one "
-                warn_msg += "input file does not have a JOB\%d tag indicating "
-                warn_msg += "that it was split. Assuming that I do not have "
-                warn_msg += "split input files and turning "
-                warn_msg += "parallelize_split_input off."
-                logging.warn(warn_msg)
-                parallelize_split_input = False
-                break
-            if len(matches) > 1:
-                err_msg = "One of my input files has two tags fitting JOB\%d "
-                err_msg += "this means I cannot tell which split job this "
-                err_msg += "file is from."
-                raise ValueError(err_msg)
-            # Extract the job ID
-            id = int(matches[0].string[3:])
-            if not inspiral_outs_dict.has_key(id):
-                inspiral_outs_dict[id] = FileList([])
-            inspiral_outs_dict[id].append(file)
-        else:
-            # If I got through all the files I want to sort the dictionaries so
-            # that file with key a and index 3 is the same file as key b and
-            # index 3 other than the tag is JOBA -> JOBB ... ie. it has used
-            # a different part of the template bank.
-            sort_lambda = lambda x: (x.ifo_string, x.segment,
-                                     x.tagged_description)
-            for key in inspiral_outs_dict.keys():
-                inspiral_outs_dict[id].sort(key = sort_lambda)
-            # These should be in ascending order, so I can assume the existence
-            # of a JOB0 tag
-            inspiral_outs = inspiral_outs_dict[0]
-            for index, file in enumerate(inspiral_outs):
-                # Store the index in the file for quicker mapping later
-                file.thinca_index = index
-    else:
-        inspiral_outs_dict = None
-
-    for timeSlideTag in timeSlideTags:
-        # Get the time slide file from the inputs
-        tisiOutFile = timeSlideFiles.find_output_with_tag(timeSlideTag)
-        if not len(tisiOutFile) == 1:
-            errMsg = "If you are seeing this, something batshit is going on!"
-            if len(tisiOutFile) == 0:
-                errMsg = "No time slide files found matching %s." \
-                                                                %(timeSlideTag)
-            if len(tisiOutFile) > 1:
-                errMsg = "More than one time slide files match %s." \
-                                                                %(timeSlideTag)
-            raise ValueError(errMsg)
-        tisiOutFile = tisiOutFile[0]
-
-        # Next we run ligolw_cafe. This is responsible for
-        # identifying what times will be used for the ligolw_thinca jobs and
-        # what files are needed for each. If doing time sliding there
-        # will be some triggers read into multiple jobs
-        cacheInspOuts = inspiral_outs.convert_to_lal_cache()
-        if workflow.cp.has_option_tags("workflow-coincidence", 
-                                       "maximum-extent", tags):
-            max_extent = float( workflow.cp.get_opt_tags(
-                              "workflow-coincidence", "maximum-extent", tags) )
-        else:
-            # hard-coded default value for extent of time in a single job
-            max_extent = 3600
-        logging.debug("Calling into cafe.")
-        time_slide_table = lsctables.TimeSlideTable.get_table(\
-                ligolw_utils.load_filename(tisiOutFile.storage_path,
-                                 gz=tisiOutFile.storage_path.endswith(".gz"),
-                                 contenthandler=ContentHandler,
-                                 verbose=False))
-        time_slide_table.sync_next_id()
-        time_slide_dict = time_slide_table.as_dict()
-
-        cafe_seglists, cafe_caches = ligolw_cafe.ligolw_cafe(cacheInspOuts,
-            time_slide_dict.values(), extentlimit=max_extent, verbose=False)
-        logging.debug("Done with cafe.")
-
-        # Take the combined seglist file
-        dqSegFile=segsList.find_output_with_tag('COMBINED_CUMULATIVE_SEGMENTS')
-        if not len(dqSegFile) == 1:
-            errMsg = "Did not find exactly 1 data quality file."
-            print len(dqSegFile), dqSegFile
-            raise ValueError(errMsg)
-        dqSegFile=dqSegFile[0]
-
-        # Set up llwadd job
-        llwadd_tags = [timeSlideTag] + tags 
-        ligolwadd_job = LigolwAddExecutable(cp, 'llwadd', ifo=ifoString,
-                                          out_dir=output_dir, tags=llwadd_tags)
-        ligolwAddOuts = FileList([])
-
-        # Go global setup at each category
-        # This flag will add a clustering job after ligolw_thinca
-        if workflow.cp.has_option_tags("workflow-coincidence",
-                                      "coincidence-post-cluster", llwadd_tags):
-            coinc_post_cluster = True
-        else:
-            coinc_post_cluster = False
-
-        # Go global setup at each category
-        ligolwthinca_job = {}
-        cluster_job = {}
-        thinca_tags = {}
-        for category in veto_cats:
-            logging.debug("Preparing %s %s" %(timeSlideTag,category))
-            dqVetoName = 'VETO_CAT%d_CUMULATIVE' %(category)
-            # FIXME: Should we resolve this now?
-            # FIXME: Here we set the dqVetoName to be compatible with pipedown
-            #        For pipedown must put the slide identifier first and
-            #        dqVetoName last.
-            pipedownDQVetoName = 'CAT_%d_VETO' %(category)
-            curr_thinca_job_tags = [timeSlideTag] + tags + [pipedownDQVetoName]
-            thinca_tags[category]=curr_thinca_job_tags
-            # Set up jobs for ligolw_thinca
-            ligolwthinca_job[category] = LigolwSSthincaExecutable(cp, 'thinca',
-                                             ifo=ifoString, out_dir=output_dir,
-                                             dqVetoName=dqVetoName,
-                                             tags=curr_thinca_job_tags)
-            if coinc_post_cluster:
-                cluster_job[category] = SQLInOutExecutable(cp, 'pycbccluster',
-                                             ifo=ifoString, out_dir=output_dir,
-                                             tags=curr_thinca_job_tags)
-        
-        for idx, cafe_cache in enumerate(cafe_caches):
-            ligolwAddOuts = FileList([])
-            ligolwThincaOuts = FileList([])
-            ligolwThincaLikelihoodOuts = FileList([])
-            ligolwClusterOuts = FileList([])
-
-            if not len(cafe_cache.objects):
-                raise ValueError("One of the cache objects contains no files!")
-        
-            # Determine segments to accept coincidences.
-            # If cache is not the first or last in the timeseries, check if the
-            # two closes caches in the timeseries and see if their extent
-            # match. If they match, they're adjacent and use the time where
-            # they meet as a bound for accepting coincidences. If they're not
-            # adjacent, then there is no bound for accepting coincidences.
-            coincStart, coincEnd = None, None
-            if idx and (cafe_cache.extent[0] == cafe_caches[idx-1].extent[1]):
-                coincStart = cafe_cache.extent[0]
-            if idx + 1 - len(cafe_caches) and \
-                        (cafe_cache.extent[1] == cafe_caches[idx+1].extent[0]):
-                coincEnd = cafe_cache.extent[1]
-            coincSegment = (coincStart, coincEnd)
-        
-            # Need to create a list of the File(s) contained in the cache.
-            # Assume that if we have partitioned input then if *one* job in the
-            # partitioned input is an input then *all* jobs will be.
-            if not parallelize_split_input:
-                inputTrigFiles = FileList([])
-                for object in cafe_cache.objects:
-                    inputTrigFiles.append(object.workflow_file)
-        
-                llw_files = inputTrigFiles + [dqSegFile] + [tisiOutFile]
-        
-                # Now we can create the nodes
-                node = ligolwadd_job.create_node(cafe_cache.extent, llw_files)
-                ligolwAddFile = node.output_files[0]
-                ligolwAddOuts.append(ligolwAddFile)
-                workflow.add_node(node)
-                for category in veto_cats:
-                    node = ligolwthinca_job[category].create_node(\
-                                cafe_cache.extent, coincSegment, ligolwAddFile)
-                    ligolwThincaOuts += \
-                        node.output_files.find_output_without_tag('DIST_STATS')
-                    ligolwThincaLikelihoodOuts += \
-                           node.output_files.find_output_with_tag('DIST_STATS')
-                    workflow.add_node(node)
-                    if coinc_post_cluster:
-                        node = cluster_job[category].create_node(\
-                                       cafe_cache.extent, ligolwThincaOuts[-1])
-                        ligolwClusterOuts += node.output_files
-                        workflow.add_node(node)
-            else:
-                for key in inspiral_outs_dict.keys():
-                    curr_tags = ["JOB%d" %(key)]
-                    curr_list = inspiral_outs_dict[key]
-                    inputTrigFiles = FileList([])
-                    for object in cafe_cache.objects:
-                        inputTrigFiles.append(
-                                  curr_list[object.workflow_file.thinca_index])
-        
-                    llw_files = inputTrigFiles + [dqSegFile] + [tisiOutFile]
-
-                    # Now we can create the nodes
-                    node = ligolwadd_job.create_node(cafe_cache.extent,
-                                                     llw_files, tags=curr_tags)
-                    ligolwAddFile = node.output_files[0]
-                    ligolwAddOuts.append(ligolwAddFile)
-                    workflow.add_node(node)
-                    if workflow.cp.has_option_tags("workflow-coincidence",
-                          "coincidence-write-likelihood",curr_thinca_job_tags):
-                        write_likelihood=True
-                    else:
-                        write_likelihood=False
-                    for category in veto_cats:
-                        node = ligolwthinca_job[category].create_node(\
-                             cafe_cache.extent, coincSegment, ligolwAddFile,
-                             tags=curr_tags, write_likelihood=write_likelihood)
-                        ligolwThincaOuts += \
-                               node.output_files.find_output_without_tag(\
-                                                                  'DIST_STATS')
-                        ligolwThincaLikelihoodOuts += \
-                              node.output_files.find_output_with_tag(\
-                                                                  'DIST_STATS')
-                        workflow.add_node(node)
-                        if coinc_post_cluster:
-                            node = cluster_job[category].create_node(\
-                                       cafe_cache.extent, ligolwThincaOuts[-1])
-                            ligolwClusterOuts += node.output_files
-                            workflow.add_node(node)
-
-            other_returns = {}
-            other_returns['LIGOLW_ADD'] = ligolwAddOuts
-            other_returns['DIST_STATS'] = ligolwThincaLikelihoodOuts
-        
-            if coinc_post_cluster:
-                main_return = ligolwClusterOuts
-                other_returns['THINCA'] = ligolwThincaOuts
-            else:
-                main_return = ligolwThincaOuts
-        
-            logging.debug("Done")
-            coinc_outs.extend(main_return)
-            for key, file_list in other_returns.items():
-                if other_outs.has_key(key):
-                    other_outs[key].extend(other_returns[key])
-                else:
-                    other_outs[key] = other_returns[key]
-    return coinc_outs, other_outs
-
+from glue import segments
 
 class PyCBCBank2HDFExecutable(Executable):
-    """ This converts xml tmpltbank to an hdf format
-    """
-    current_retention_level = Executable.CRITICAL
+
+    """Converts xml tmpltbank to hdf format"""
+
+    current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, bank_file):
         node = Node(self)
         node.add_input_opt('--bank-file', bank_file)
@@ -451,9 +43,10 @@ class PyCBCBank2HDFExecutable(Executable):
         return node
 
 class PyCBCTrig2HDFExecutable(Executable):
-    """ This converts xml triggers to an hdf format, grouped by template hash
-    """
-    current_retention_level = Executable.CRITICAL
+
+    """Converts xml triggers to hdf format, grouped by template hash"""
+
+    current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, trig_files, bank_file):
         node = Node(self)
         node.add_input_opt('--bank-file', bank_file)
@@ -462,17 +55,50 @@ class PyCBCTrig2HDFExecutable(Executable):
                                  '--output-file', use_tmp_subdirs=True)
         return node
 
+class PyCBCFitByTemplateExecutable(Executable):
+
+    """Calculates values that describe the background distribution template by template"""
+
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, trig_file, bank_file, veto_file, veto_name):
+        node = Node(self)
+        # Executable objects are initialized with ifo information
+        node.add_opt('--ifo', self.ifo_string)
+        node.add_input_opt('--trigger-file', trig_file)
+        node.add_input_opt('--bank-file', bank_file)
+        node.add_input_opt('--veto-file', veto_file)
+        node.add_opt('--veto-segment-name', veto_name)
+        node.new_output_file_opt(trig_file.segment, '.hdf', '--output')
+        return node
+
+class PyCBCFitOverParamExecutable(Executable):
+
+    """Smooths the background distribution parameters over a continuous parameter"""
+
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, raw_fit_file, bank_file):
+        node = Node(self)
+        node.add_input_opt('--template-fit-file', raw_fit_file)
+        node.add_input_opt('--bank-file', bank_file)
+        node.new_output_file_opt(raw_fit_file.segment, '.hdf', '--output')
+        return node
+
 class PyCBCFindCoincExecutable(Executable):
-    """ Find coinc triggers using a folded interval method
-    """
-    current_retention_level = Executable.CRITICAL
-    def create_node(self, trig_files, bank_file, veto_file, veto_name, template_str, tags=[]):
+    """Find coinc triggers using a folded interval method"""
+    current_retention_level = Executable.ALL_TRIGGERS
+    file_input_options = ['--statistic-files']
+    def create_node(self, trig_files, bank_file, stat_files, veto_file,
+                    veto_name, template_str, tags=None):
+        if tags is None:
+            tags = []
         segs = trig_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
         node = Node(self)
         node.set_memory(10000)
         node.add_input_opt('--template-bank', bank_file)
         node.add_input_list_opt('--trigger-files', trig_files)
+        if len(stat_files) > 0:
+            node.add_input_list_opt('--statistic-files', stat_files)
         if veto_file is not None:
             node.add_input_opt('--veto-files', veto_file)
             node.add_opt('--segment-name', veto_name)
@@ -481,10 +107,11 @@ class PyCBCFindCoincExecutable(Executable):
         return node
 
 class PyCBCStatMapExecutable(Executable):
-    """ Calculate FAP, IFAR, etc
-    """
-    current_retention_level = Executable.CRITICAL
-    def create_node(self, coinc_files, tags=[]):
+    """Calculate FAP, IFAR, etc"""
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, coinc_files, tags=None):
+        if tags is None:
+            tags = []
         segs = coinc_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
 
@@ -495,10 +122,11 @@ class PyCBCStatMapExecutable(Executable):
         return node
         
 class PyCBCStatMapInjExecutable(Executable):
-    """ Calculate FAP, IFAR, etc
-    """
-    current_retention_level = Executable.CRITICAL
-    def create_node(self, zerolag, full_data, injfull, fullinj, tags=[]):
+    """Calculate FAP, IFAR, etc"""
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, zerolag, full_data, injfull, fullinj, tags=None):
+        if tags is None:
+            tags = []
         segs = zerolag.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
 
@@ -512,10 +140,11 @@ class PyCBCStatMapInjExecutable(Executable):
         return node
         
 class PyCBCHDFInjFindExecutable(Executable):
-    """ Find injections in the hdf files output
-    """
-    current_retention_level = Executable.CRITICAL
-    def create_node(self, inj_coinc_file, inj_xml_file, veto_file, veto_name, tags=[]):
+    """Find injections in the hdf files output"""
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, inj_coinc_file, inj_xml_file, veto_file, veto_name, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)        
         node.add_input_list_opt('--trigger-file', inj_coinc_file)
         node.add_input_list_opt('--injection-file', inj_xml_file)
@@ -527,9 +156,11 @@ class PyCBCHDFInjFindExecutable(Executable):
         return node
 
 class PyCBCDistributeBackgroundBins(Executable):
-    """ Distribute coinc files amoung different background bins """
-    current_retention_level = Executable.CRITICAL
-    def create_node(self, coinc_files, bank_file,  background_bins, tags=[]):
+    """Distribute coinc files amoung different background bins"""
+    current_retention_level = Executable.ALL_TRIGGERS
+    def create_node(self, coinc_files, bank_file, background_bins, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
         node.add_input_list_opt('--coinc-files', coinc_files)
         node.add_input_opt('--bank-file', bank_file)
@@ -548,18 +179,21 @@ class PyCBCDistributeBackgroundBins(Executable):
         return node
         
 class PyCBCCombineStatmap(Executable):
-    current_retention_level = Executable.CRITICAL
-    def create_node(self, stat_files, tags=[]):
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, statmap_files, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
-        node.add_input_list_opt('--statmap-files', stat_files)
-        node.new_output_file_opt(stat_files[0].segment, '.hdf', '--output-file', tags=tags)
+        node.add_input_list_opt('--statmap-files', statmap_files)
+        node.new_output_file_opt(statmap_files[0].segment, '.hdf',
+                                 '--output-file', tags=tags)
         return node
  
 class MergeExecutable(Executable):
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
 
 class CensorForeground(Executable):
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
 
 def make_foreground_censored_veto(workflow, bg_file, veto_file, veto_name, 
                                   censored_name, out_dir, tags=None):
@@ -574,7 +208,9 @@ def make_foreground_censored_veto(workflow, bg_file, veto_file, veto_name,
     workflow += node
     return node.output_files[0]
 
-def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir, tags=[]):
+def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir, tags=None):
+    if tags is None:
+        tags = []
     make_analysis_dir(out_dir)
     out = FileList()
     for ifo in workflow.ifos:
@@ -587,8 +223,32 @@ def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir,
         out += node.output_files
     return out
 
+def setup_trigger_fitting(workflow, insps, hdfbank, veto_file, veto_name):
+    if not workflow.cp.has_option('workflow-coincidence', 'do-trigger-fitting'):
+        return FileList()
+    else:
+        assert len(hdfbank) == 1  # must be a list with exactly 1 bank file
+        assert len(veto_file) == 1
+        assert len(veto_name) == 1
+        smoothed_fit_files = FileList()
+        for i in workflow.ifos:
+            ifo_insp = [insp for insp in insps if (insp.ifo == i)]
+            assert len(ifo_insp)==1
+            raw_node = PyCBCFitByTemplateExecutable(workflow.cp,
+                'fit_by_template', ifos=i).create_node(ifo_insp[0], hdfbank[0],
+                                                    veto_file[0], veto_name[0])
+            workflow += raw_node
+            smooth_node = PyCBCFitOverParamExecutable(workflow.cp,
+                'fit_over_param', ifos=i).create_node(raw_node.output_files[0],
+                                                                    hdfbank[0])
+            workflow += smooth_node
+            smoothed_fit_files += smooth_node.output_files
+        return smoothed_fit_files
+
 def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file, 
-                                 veto_file, veto_name, out_dir, tags=[]):
+                                 veto_file, veto_name, out_dir, tags=None):
+    if tags is None:
+        tags = []
     make_analysis_dir(out_dir)
     exe = PyCBCHDFInjFindExecutable(workflow.cp, 'hdfinjfind', 
                                     ifos=workflow.ifos, 
@@ -597,9 +257,10 @@ def find_injections_in_hdf_coinc(workflow, inj_coinc_file, inj_xml_file,
     workflow += node
     return node.output_files[0]     
 
-def convert_bank_to_hdf(workflow, xmlbank, out_dir, tags=[]):
-    """Return the template bank in hdf format
-    """
+def convert_bank_to_hdf(workflow, xmlbank, out_dir, tags=None):
+    """Return the template bank in hdf format"""
+    if tags is None:
+        tags = []
     #FIXME, make me not needed
     if len(xmlbank) > 1:
         raise ValueError('Can only convert a single template bank')
@@ -613,9 +274,10 @@ def convert_bank_to_hdf(workflow, xmlbank, out_dir, tags=[]):
     workflow.add_node(bank2hdf_node)
     return bank2hdf_node.output_files
 
-def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=[]):
-    """Return the list of hdf5 trigger files outpus
-    """
+def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None):
+    """Return the list of hdf5 trigger files outputs"""
+    if tags is None:
+        tags = []
     #FIXME, make me not needed
     logging.info('convert single inspiral trigger files to hdf5')
     make_analysis_dir(out_dir)
@@ -667,18 +329,18 @@ def setup_background_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
     background_bins = [x for x in background_bins if x != '']
     bins_node = bins_exe.create_node(coinc_files, bank_file, background_bins)
     workflow += bins_node
-    
-    stat_files = FileList([])
+
+    statmap_files = FileList([])
     for i, coinc_file in enumerate(bins_node.output_files):
         statnode = statmap_exe.create_node(FileList([coinc_file]), tags=tags + ['BIN_%s' % i])
         workflow += statnode
-        stat_files.append(statnode.output_files[0])
-        stat_files[i].bin_name = bins_node.names[i]
+        statmap_files.append(statnode.output_files[0])
+        statmap_files[i].bin_name = bins_node.names[i]
     
-    cstat_node = cstat_exe.create_node(stat_files, tags=tags)
+    cstat_node = cstat_exe.create_node(statmap_files, tags=tags)
     workflow += cstat_node
     
-    return cstat_node.output_files[0], stat_files
+    return cstat_node.output_files[0], statmap_files
     
 def setup_statmap_inj(workflow, coinc_files, background_file, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -720,25 +382,28 @@ def setup_background_bins_inj(workflow, coinc_files, background_file, bank_file,
         workflow += bins_node
         coinc_files[inj_type] = bins_node.output_files
     
-    stat_files = FileList([])
+    statmap_files = FileList([])
     for i in range(len(background_bins)):
         statnode = statmap_exe.create_node(FileList([coinc_files['injinj'][i]]), FileList([background_file[i]]), 
                                      FileList([coinc_files['injfull'][i]]), FileList([coinc_files['fullinj'][i]]), 
                                      tags=tags + ['BIN_%s' % i])
         workflow += statnode
-        stat_files.append(statnode.output_files[0])
+        statmap_files.append(statnode.output_files[0])
         
-    cstat_node = cstat_exe.create_node(stat_files, tags=tags)
+    cstat_node = cstat_exe.create_node(statmap_files, tags=tags)
     workflow += cstat_node
     
     return cstat_node.output_files[0]
 
 def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
-                           background_file, veto_file, veto_name, out_dir, tags=[]):
+              stat_files, background_file, veto_file, veto_name, out_dir, tags=None):
     """
-    This function sets up exact match coincidence and background estimation
+    This function sets up exact match coincidence and background estimation 
+
     using a folded interval technique.
     """
+    if tags is None:
+        tags = []
     make_analysis_dir(out_dir)
     logging.info('Setting up coincidence for injection')
 
@@ -774,51 +439,57 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
                                               tags=tags + [ctag], out_dir=out_dir)
         for i in range(factor):
             group_str = '%s/%s' % (i, factor)
-            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, 
-                                           veto_file, veto_name,
-                                           group_str, tags=([str(i)]))
+            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
+                                                   stat_files,
+                                                   veto_file, veto_name,
+                                                   group_str,
+                                                   tags=[str(i)])
             bg_files[ctag] += coinc_node.output_files
             workflow.add_node(coinc_node)
 
     return setup_statmap_inj(workflow, bg_files, background_file, hdfbank, out_dir, tags=tags)
     
-def setup_interval_coinc(workflow, hdfbank, trig_files,
-                         veto_files, veto_names, out_dir, tags=[]):
+def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
+                         veto_files, veto_names, out_dir, tags=None):
     """
     This function sets up exact match coincidence and background estimation
+
     using a folded interval technique.
     """
+    if tags is None:
+        tags = []
     make_analysis_dir(out_dir)
     logging.info('Setting up coincidence')
 
-    if len(hdfbank) > 1:
-        raise ValueError('This coincidence method only supports a '
-                         'pregenerated template bank')
+    if len(hdfbank) != 1:
+        raise ValueError('Must use exactly 1 bank file for this coincidence '
+                         'method, I got %i !' % len(hdfbank))
     hdfbank = hdfbank[0]
 
     if len(workflow.ifos) > 2:
         raise ValueError('This coincidence method only supports two ifo searches')
 
     findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
-                                              ifos=workflow.ifos,
-                                              tags=tags, out_dir=out_dir)
+                                             ifos=workflow.ifos,
+                                             tags=tags, out_dir=out_dir)
                                          
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
-    stat_files = []
+    statmap_files = []
     for veto_file, veto_name in zip(veto_files, veto_names):
         bg_files = FileList()
         for i in range(factor):
             group_str = '%s/%s' % (i, factor)
-            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank, 
+            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
+                                                   stat_files,
                                                    veto_file, veto_name,
                                                    group_str,
-                                                   tags= [veto_name, str(i)])
+                                                   tags=[veto_name, str(i)])
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
              
-        stat_files += [setup_statmap(workflow, bg_files, hdfbank, out_dir, tags=tags + [veto_name])]
+        statmap_files += [setup_statmap(workflow, bg_files, hdfbank, out_dir, tags=tags + [veto_name])]
 
-    return stat_files
     logging.info('...leaving coincidence ')
+    return statmap_files

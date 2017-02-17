@@ -1,0 +1,356 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2014 Alex Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import logging, argparse, sys, numpy
+from pycbc import vetoes, psd, waveform, events, strain, scheme, fft
+from pycbc import DYN_RANGE_FAC
+from pycbc.filter import MatchedFilterSkyMaxControl, make_frequency_series
+from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
+import pycbc.fft.fftw
+import pycbc.opt
+import pycbc.weave
+
+parser = argparse.ArgumentParser(usage='',
+    description="Find single detector precessing gravitational-wave triggers.")
+
+parser.add_argument("-V", "--verbose", action="store_true", 
+                  help="print extra debugging information", default=False )
+parser.add_argument("--output", type=str, help="FIXME: ADD")
+parser.add_argument("--bank-file", type=str, help="FIXME: ADD")
+parser.add_argument("--snr-threshold", 
+                  help="SNR threshold for trigger generation", type=float)
+parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
+                    help="Cut triggers with NewSNR less than THRESHOLD")
+parser.add_argument("--low-frequency-cutoff", type=float,
+                  help="The low frequency cutoff to use for filtering (Hz)")
+parser.add_argument("--enable-bank-start-frequency", action='store_true',
+                  help="Read the starting frequency of template waveforms"
+                       " from the template bank.")
+parser.add_argument("--max-template-length", type=float,
+                  help="The maximum length of a template is seconds. The "
+                       "starting frequency of the template is modified to "
+                       "ensure the proper length")
+# add approximant arg
+waveform.bank.add_approximant_arg(parser)
+parser.add_argument("--order", type=int,
+                  help="The integer half-PN order at which to generate"
+                       " the approximant. Default is -1 which indicates to use"
+                       " approximant defined default.", default=-1,
+                       choices = numpy.arange(-1, 9, 1))
+taper_choices = ["start","end","startend"]
+parser.add_argument("--taper-template", choices=taper_choices,
+                  help="For time-domain approximants, taper the start and/or "
+                       "end of the waveform before FFTing.")
+parser.add_argument("--cluster-method", choices=["template", "window"],
+                    help="FIXME: ADD")
+parser.add_argument("--cluster-function", choices=["findchirp", "symmetric"],
+               help="How to cluster together triggers within a window. "
+               "'findchirp' uses a forward sliding window; 'symmetric' "
+               "will compare each window to the one before and after, keeping "
+               "only a local maximum.", default="findchirp")
+parser.add_argument("--cluster-window", type=float, default = -1,
+                    help="Length of clustering window in seconds."
+                    " Set to 0 to disable clustering.")
+parser.add_argument("--maximization-interval", type=float, default=0,
+                  help="Maximize triggers over the template bank (ms)")
+parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
+parser.add_argument("--chisq-snr-threshold", type=float,
+                    help="Minimum SNR to calculate the power chisq")
+parser.add_argument("--chisq-bins", default=0, help=
+                    "Number of frequency bins to use for power chisq. Specify"
+                    " an integer for a constant number of bins, or a function "
+                    "of template attributes.  Math functions are "
+                    "allowed, ex. "
+                    "'10./math.sqrt((params.mass1+params.mass2)/100.)'. "
+                    "Non-integer values will be rounded down.")
+parser.add_argument("--chisq-threshold", type=float, default=0,
+                    help="FIXME: ADD")
+parser.add_argument("--chisq-delta", type=float, default=0, help="FIXME: ADD")
+parser.add_argument("--autochi-number-points", type=int, default=0,
+                    help="The number of points to use, in both directions if"
+                         "doing a two-sided auto-chisq, to calculate the"
+                         "auto-chisq statistic.")
+parser.add_argument("--autochi-stride", type=int, default=0,
+                    help="The gap, in sample points, between the points at"
+                         "which to calculate auto-chisq.")
+parser.add_argument("--autochi-two-phase", action="store_true",
+                    default=False,
+                    help="If given auto-chisq will be calculated by testing "
+                         "against both phases of the SNR time-series. "
+                         "If not given, only the phase matching the trigger "
+                         "will be used.")
+parser.add_argument("--autochi-onesided", action='store', default=None,
+                    choices=['left','right'],
+                    help="Decide whether to calculate auto-chisq using"
+                         "points on both sides of the trigger or only on one"
+                         "side. If not given points on both sides will be"
+                         "used. If given, with either 'left' or 'right',"
+                         "only points on that side (right = forward in time,"
+                         "left = back in time) will be used.")
+parser.add_argument("--autochi-reverse-template", action="store_true",
+                    default=False,
+                    help="If given, time-reverse the template before"
+                         "calculating the auto-chisq statistic. This will"
+                         "come at additional computational cost as the SNR"
+                         "time-series will need recomputing for the time-"
+                         "reversed template.")
+parser.add_argument("--autochi-max-valued", action="store_true",
+                    default=False,
+                    help="If given, store only the maximum value of the auto-"
+                         "chisq over all points tested. A disadvantage of this "
+                         "is that the mean value will not be known "
+                         "analytically.")
+parser.add_argument("--autochi-max-valued-dof", action="store", metavar="INT",
+                    type=int,
+                    help="If using --autochi-max-valued this value denotes "
+                         "the pre-calculated mean value that will be stored "
+                         "as the auto-chisq degrees-of-freedom value.")
+parser.add_argument("--downsample-factor", type=int, 
+                    help="Factor that determines the interval between the "
+                         "initial SNR sampling. If not set (or 1) no sparse sample "
+                         "is created, and the standard full SNR is calculated.", default=1)
+parser.add_argument("--upsample-threshold", type=float, 
+                    help="The fraction of the SNR threshold to check the sparse SNR sample.")
+parser.add_argument("--upsample-method", choices=["pruned_fft"],
+                    help="The method to find the SNR points between the sparse SNR sample.", default='pruned_fft')
+
+parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
+                    This is used to identify FULL_DATA jobs for 
+                    compatibility with pipedown post-processing. 
+                    Option will be removed when no longer needed.""")
+parser.add_argument("--keep-loudest-interval", type=float,
+                    help="Window in seconds to maximize triggers over bank")
+parser.add_argument("--keep-loudest-num", type=int,
+                    help="Number of triggers to keep from each maximization interval")
+parser.add_argument("--gpu-callback-method", default='none')
+
+
+# Add options groups
+psd.insert_psd_option_group(parser)
+strain.insert_strain_option_group(parser)
+strain.StrainSegments.insert_segment_option_group(parser)
+scheme.insert_processing_option_group(parser)
+fft.insert_fft_option_group(parser)
+pycbc.opt.insert_optimization_option_group(parser)
+pycbc.weave.insert_weave_option_group(parser)
+
+opt = parser.parse_args()
+
+# Check that the values returned for the options make sense
+psd.verify_psd_options(opt, parser)
+strain.verify_strain_options(opt, parser)
+strain.StrainSegments.verify_segment_options(opt, parser)
+scheme.verify_processing_options(opt, parser)
+fft.verify_fft_options(opt,parser)
+pycbc.opt.verify_optimization_options(opt, parser)
+pycbc.weave.verify_weave_options(opt, parser)
+
+pycbc.init_logging(opt.verbose)
+
+ctx = scheme.from_cli(opt)
+gwstrain = strain.from_cli(opt, DYN_RANGE_FAC)
+strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
+
+with ctx:
+    fft.from_cli(opt)
+
+    flow = opt.low_frequency_cutoff
+    flen = strain_segments.freq_len
+    tlen = strain_segments.time_len
+    delta_f = strain_segments.delta_f
+
+    logging.info("Making frequency-domain data segments")
+    segments = strain_segments.fourier_segments()
+    psd.associate_psds_to_segments(opt, segments, gwstrain, flen, delta_f,
+                  flow, dyn_range_factor=DYN_RANGE_FAC, precision='single')
+
+    # storage for values and types to be passed to event manager
+    out_types = {
+        'time_index' : int,
+        'snr'        : float32,
+        'chisq'      : float32,
+        'chisq_dof'  : int,
+        'bank_chisq' : float32,
+        'bank_chisq_dof' : int,
+        'cont_chisq' : float32,
+        'u_vals' : float32,
+        'coa_phase' : float32,
+        'hplus_cross_corr' : float32
+                }
+    out_vals = {
+        'time_index' : None,
+        'snr'        : None,
+        'chisq'      : None,
+        'chisq_dof'  : None,
+        'bank_chisq' : None,
+        'bank_chisq_dof' : None,
+        'cont_chisq' : None,
+        'u_vals' : None,
+        'coa_phase' : None,
+        'hplus_cross_corr' : None
+               }
+    names = sorted(out_vals.keys())
+
+
+    if len(strain_segments.segment_slices) == 0:
+        logging.info("--filter-inj-only specified and no injections in analysis time")
+        event_mgr = events.EventManager(
+              opt, names, [out_types[n] for n in names], psd=None,
+              gating_info=gwstrain.gating_info)
+        event_mgr.finalize_template_events()
+        event_mgr.write_events(opt.output)
+        logging.info("Finished")
+        sys.exit(0)
+
+
+    matched_filter = MatchedFilterSkyMaxControl(opt.low_frequency_cutoff,
+                                   None, opt.snr_threshold, tlen, delta_f,
+                                   complex64)
+
+    bank_chisq = vetoes.SingleDetSkyMaxBankVeto(opt.bank_veto_bank_file,
+                                          flen, delta_f, flow, complex64,
+                                          phase_order=opt.order,
+                                          approximant=opt.approximant)
+
+    power_chisq = vetoes.SingleDetSkyMaxPowerChisq(num_bins=opt.chisq_bins,
+                                         snr_threshold=opt.chisq_snr_threshold)
+
+    autochisq = vetoes.SingleDetSkyMaxAutoChisq(opt.autochi_stride,
+                                 opt.autochi_number_points,
+                                 onesided=opt.autochi_onesided,
+                                 twophase=opt.autochi_two_phase,
+                                 reverse_template=opt.autochi_reverse_template,
+                                 take_maximum_value=opt.autochi_max_valued,
+                                 maximal_value_dof=opt.autochi_max_valued_dof)
+
+    logging.info("Overwhitening frequency-domain data segments")
+    for seg in segments:
+        seg /= seg.psd
+
+    event_mgr = events.EventManager(opt, names,
+                           [out_types[n] for n in names], psd=segments[0].psd,
+                           gating_info=gwstrain.gating_info)
+
+    logging.info("Read in template bank")
+    lfc = None if opt.enable_bank_start_frequency else flow
+    bank = waveform.FilterBankSkyMax(opt.bank_file, flen,
+                    delta_f, complex64, phase_order=opt.order,
+                    taper=opt.taper_template, approximant=opt.approximant,
+                    out_plus=zeros(tlen, dtype=complex64),
+                    out_cross=zeros(tlen, dtype=complex64),
+                    max_template_length=opt.max_template_length,
+                    low_frequency_cutoff=lfc)
+
+    for t_num, (hplus, hcross) in enumerate(bank):
+        # FIXME: Here we need to store sigmasq for plus *and* cross. Derived
+        #        quantities like effective distance may be more complicated!
+        #        These may depend on the [complex] overlap between plus and
+        #        cross.
+        event_mgr.new_template(tmplt=hplus.params,
+                               sigmasq_plus=hplus.sigmasq(segments[0].psd),
+                               sigmasq_cross=hcross.sigmasq(segments[0].psd))
+        if opt.cluster_method == "window":
+            cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
+        elif opt.cluster_method == "template":
+            cluster_window = int(template.chirp_length * gwstrain.sample_rate)
+
+        for s_num, stilde in enumerate(segments):
+            logging.info("Filtering template %d/%d segment %d/%d" % \
+                         (t_num + 1, len(bank), s_num + 1, len(segments)))
+
+            # FIXME: Why this takes more inputs than for non-spin?
+            snr, corr_plus, corr_cross, idx, snrv, u_vals, coa_phase,\
+               hplus_cross_corr, hpnorm, hcnorm =\
+                       matched_filter.matched_filter_and_cluster(hplus, hcross,
+                                       hplus.sigmasq(stilde.psd),
+                                       hcross.sigmasq(stilde.psd),
+                                       stilde.psd, stilde, cluster_window)
+
+            if not len(idx):
+                continue
+
+            out_vals['u_vals'] = u_vals
+            out_vals['coa_phase'] = coa_phase
+            out_vals['hplus_cross_corr'] = numpy.repeat(hplus_cross_corr,
+                                                        len(u_vals))
+
+            # This hasn't been implemented yet, but the stub is still here.
+            out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
+                  bank_chisq.values()
+
+            out_vals['chisq'], out_vals['chisq_dof'] = power_chisq.values(\
+                      corr_plus, corr_cross, snrv, stilde.psd,
+                      idx+stilde.analyze.start, hplus, hcross, u_vals,
+                      hplus_cross_corr, hpnorm, hcnorm)
+
+            # This hasn't been implemented yet, but the stub is still here.
+            out_vals['cont_chisq'] = \
+                  autochisq.values()
+
+            idx += stilde.cumulative_index
+
+            out_vals['time_index'] = idx
+            out_vals['snr'] = snrv
+
+            event_mgr.add_template_events(names, [out_vals[n] for n in names])
+
+        event_mgr.cluster_template_events("time_index", "snr", cluster_window)
+        event_mgr.finalize_template_events()
+
+logging.info("Found %s triggers" % str(len(event_mgr.events)))
+
+if opt.chisq_threshold and opt.chisq_bins:
+    logging.info("Removing triggers with poor chisq")
+    event_mgr.chisq_threshold(opt.chisq_threshold, opt.chisq_bins,
+                              opt.chisq_delta)
+    logging.info("%d remaining triggers" % len(event_mgr.events))
+
+if opt.newsnr_threshold and opt.chisq_bins:
+    logging.info("Removing triggers with NewSNR below threshold")
+    event_mgr.newsnr_threshold(opt.newsnr_threshold)
+    logging.info("%d remaining triggers" % len(event_mgr.events))
+
+if opt.keep_loudest_interval:
+    logging.info("Removing triggers that are not within the top %s loudest"
+                 " of a %s second interval" % (opt.keep_loudest_num,
+                                               opt.keep_loudest_interval))
+    event_mgr.keep_loudest_in_interval(opt.keep_loudest_interval * opt.sample_rate,
+                                       opt.keep_loudest_num)
+    logging.info("%d remaining triggers" % len(event_mgr.events))
+
+if opt.injection_window and hasattr(gwstrain, 'injections'):
+    logging.info("Keeping triggers within %s seconds of injection" % opt.injection_window)
+    event_mgr.keep_near_injection(opt.injection_window, gwstrain.injections)
+    logging.info("%d remaining triggers" % len(event_mgr.events))
+
+if opt.maximization_interval:
+    logging.info("Maximizing triggers over %s ms window" % opt.maximization_interval)
+    window = int(opt.maximization_interval * gwstrain.sample_rate / 1000)
+    event_mgr.maximize_over_bank("time_index", "snr", window)
+    logging.info("%d remaining triggers" % len(event_mgr.events))
+
+logging.info("Writing out triggers")
+event_mgr.write_events(opt.output)
+
+if opt.fftw_output_float_wisdom_file:
+    fft.fftw.export_single_wisdom_to_filename(opt.fftw_output_float_wisdom_file)
+
+if opt.fftw_output_double_wisdom_file:
+    fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
+
+logging.info("Finished")

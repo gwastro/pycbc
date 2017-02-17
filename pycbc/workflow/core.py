@@ -26,14 +26,25 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import os, stat, subprocess, logging, math, string, urllib2, urlparse, ConfigParser, copy, time
+import sys, os, stat, subprocess, logging, math, string, urlparse
+import ConfigParser, copy, time
 import numpy, cPickle, random
-from itertools import combinations, groupby
+from itertools import combinations, groupby, permutations
 from operator import attrgetter
 import lal as lalswig
+import Pegasus.DAX3
 from glue import lal, segments
-from pycbc.workflow.configuration import WorkflowConfigParser
+from glue.ligolw import table, lsctables, ligolw
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import segments as ligolw_segments
+from glue.ligolw.utils import process as ligolw_process
+from pycbc.workflow.configuration import WorkflowConfigParser, resolve_url
 from pycbc.workflow import pegasus_workflow
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+
+lsctables.use_in(ContentHandler)
 
 # workflow should never be using the glue LIGOTimeGPS class, override this with
 # the nice SWIG-wrapped class in lal
@@ -75,7 +86,7 @@ def makedir(path):
     Make the analysis directory path and any parent directories that don't
     already exist. Will do nothing if path already exists.
     """
-    if not os.path.exists(path) and path is not None:
+    if path is not None and not os.path.exists(path):
         os.makedirs(path)
 
 def is_condor_exec(exe_path):
@@ -96,13 +107,24 @@ def is_condor_exec(exe_path):
         return True
     else:
         return False
+
+file_input_from_config_dict = {}
         
 class Executable(pegasus_workflow.Executable):
     # These are the file retention levels
     INTERMEDIATE_PRODUCT = 1
-    NON_CRITICAL = 2
-    CRITICAL = 3
+    ALL_TRIGGERS = 2
+    MERGED_TRIGGERS = 3
     FINAL_RESULT = 4
+
+    # Set this parameter to indicate that this option is used to specify a
+    # file and is *not* handled explicitly in the create_node or __init__
+    # methods of the sub-class. Usually that is to say that this option is a
+    # file and is normally specified in an file, e.g. a PSD file. As files
+    # need to be identified as such to pegasus, this attempts to catch this
+    # case.
+    # file_input_options = ['--psd-file, '--bank-file'] (as an example)
+    file_input_options = []
     
     # This is the default value. It will give a warning if a class is
     # used where the retention level is not set. The file will still be stored
@@ -113,7 +135,7 @@ class Executable(pegasus_workflow.Executable):
     # file will be retained, but a warning given
     current_retention_level = KEEP_BUT_RAISE_WARNING
     def __init__(self, cp, name, 
-                       universe=None, ifos=None, out_dir=None, tags=[]):
+                 universe=None, ifos=None, out_dir=None, tags=None):
         """
         Initialize the Executable class.
 
@@ -136,8 +158,6 @@ class Executable(pegasus_workflow.Executable):
         tags : list of strings
             A list of strings that is used to identify this job.
         """
-        tags = [tag.upper() for tag in tags]
-        self.tags = tags
         if isinstance(ifos, (str, unicode)):
             self.ifo_list = [ifos]
         else:
@@ -149,32 +169,25 @@ class Executable(pegasus_workflow.Executable):
         self.cp = cp
         self.universe=universe
         
-        if len(tags) != 0:
-            self.tagged_name = "%s-%s" % (name, '_'.join(tags))
-        else:
-            self.tagged_name = name
-        if self.ifo_string is not None:
-            self.tagged_name = "%s-%s" % (self.tagged_name, self.ifo_string)
-
         try:
             self.installed = cp.getboolean('pegasus_profile-%s' % name, 'pycbc|installed')
         except:
             self.installed = True
 
-        super(Executable, self).__init__(self.tagged_name, installed=self.installed)
-        
         self.name=name
-        
-        # Determine the output directory
-        if out_dir is not None:
-            self.out_dir = out_dir
-        elif len(tags) == 0:
-            self.out_dir = name
-        else:
-            self.out_dir = self.tagged_name            
-        if not os.path.isabs(self.out_dir):
-            self.out_dir = os.path.join(os.getcwd(), self.out_dir) 
-              
+
+        self.update_current_tags(tags)
+
+        self.update_output_directory(out_dir=out_dir)
+
+        # Determine the level at which output files should be kept
+        self.update_current_retention_level(self.current_retention_level)
+
+        super(Executable, self).__init__(self.tagged_name,
+                                         installed=self.installed)
+
+        self._set_pegasus_profile_options()
+
         # Check that the executable actually exists locally or 
         # looks like a URL, in which case trust Pegasus to be
         # able to fetch it.
@@ -183,21 +196,29 @@ class Executable(pegasus_workflow.Executable):
 
         exe_url = urlparse.urlparse(exe_path)
 
-        if exe_url.scheme in ['', 'file']:
-            if os.path.isfile(exe_url.path):
-                self.add_pfn(exe_path)
+        # See if the user specified a list of sites for the executable
+        try:
+            exe_site_list = cp.get('pegasus_profile-%s' % name, 'pycbc|site')
+        except:
+            exe_site_list = 'local'
 
-                logging.debug("Using %s executable "
-                              "at %s" % (name, exe_url.path))
+        for s in exe_site_list.split(','):
+            exe_site = s.strip()
+
+            if exe_url.scheme in ['', 'file']:
+                if exe_site is 'local':
+                # Check that executables at file urls on the local site exist
+                   if os.path.isfile(exe_url.path) is False:
+                       raise TypeError("Failed to find %s executable " 
+                                       "at %s on site %s" % (name, exe_path,
+                                       exe_site))
             else:
-                raise TypeError("Failed to find %s executable " 
-                            "at %s" % (name, exe_path))
-        else:
-            # Could be http, gsiftp, etc.  Let Pegasus handle it.
+                # Could be http, gsiftp, etc. so it needs fetching if run now
+                self.needs_fetching = True
+
+            self.add_pfn(exe_path, site=exe_site)
             logging.debug("Using %s executable "
-                          "at %s" % (name, exe_path))
-            self.add_pfn(exe_path, site='nonlocal')
-            self.needs_fetching = True
+                          "at %s on site %s" % (name, exe_url.path, exe_site))
 
         # Determine the condor universe if we aren't given one 
         if self.universe is None:
@@ -211,94 +232,12 @@ class Executable(pegasus_workflow.Executable):
     
         self.set_universe(self.universe)
 
-        # Determine the sections from the ini file that will configure
-        # this executable
-        sections = [name]
-        if self.ifo_list is not None:
-            if len(self.ifo_list) > 1:
-                sec_tags = tags + self.ifo_list + [self.ifo_string]
-            else:
-                sec_tags = tags + self.ifo_list
-        else:
-            sec_tags = tags
-        for tag in sec_tags:
-             section = '%s-%s' %(name, tag.lower())
-             if cp.has_section(section):
-                sections.append(section)
-        self.sections = sections   
-        # Do some basic sanity checking on the options      
-        for sec1, sec2 in combinations(sections, 2):
-            cp.check_duplicate_options(sec1, sec2, raise_error=True)
-             
-        # collect the options and profile information 
-        # from the ini file section(s)
-        self.common_options = []        
-        for sec in sections:
-            if cp.has_section(sec):
-                self.add_ini_opts(cp, sec)
-            else:
-                warnString = "warning: config file is missing section [%s]"\
-                             %(sec,)
-                logging.warn(warnString)
-            if cp.has_section('pegasus_profile-%s' % sec):
-                self.add_ini_profile(cp, 'pegasus_profile-%s' % sec)
-                
-        # Add executable non-specific profile information
-        if cp.has_section('pegasus_profile'):
-            self.add_ini_profile(cp, 'pegasus_profile')
-
-        # Determine the level at which output files should be kept
-        try:
-            global_retention_level = \
-                cp.get_opt_tags("workflow", "file-retention-level",
-                                   tags+[name])
-        except:
-            msg="Cannot find file-retention-level in [workflow] section "
-            msg+="of the configuration file. Setting a default value of "
-            msg+="retain all files."
-            logging.warn(msg)
-            self.retain_files = True
-            self.global_retention_threshold = 1
-            cp.set("workflow", "file-retention-level", "all_files")
-        else:
-            # FIXME: Are these names suitably descriptive?
-            if global_retention_level == 'all_files':
-                self.global_retention_threshold = 1
-            elif global_retention_level == 'no_intermediates':
-                self.global_retention_threshold = 2
-            elif global_retention_level == 'all_triggers':
-                self.global_retention_threshold = 3
-            elif global_retention_level == 'results_only':
-                self.global_retention_threshold = 4
-            else:
-                err_msg = "Cannot recognize the file-retention-level in the "
-                err_msg += "[workflow] section of the ini file. "
-                err_msg += "Got : %s." %(global_retention_level,)
-                err_msg += "Valid options are: 'all_files', 'no_intermediates',"
-                err_msg += "'all_triggers' or 'results_only' "
-                raise ValueError(err_msg)
-            if self.current_retention_level == 5:
-                self.retain_files = True
-                if type(self).__name__ in Executable._warned_classes_list:
-                    pass
-                else:
-                    warn_msg = "Attribute current_retention_level has not "
-                    warn_msg += "been set in class %s. " %(type(self),)
-                    warn_msg += "This value should be set explicitly. "
-                    warn_msg += "All output from this class will be stored."
-                    logging.warn(warn_msg)
-                    Executable._warned_classes_list.append(type(self).__name__)
-            elif self.global_retention_threshold > self.current_retention_level:
-                self.retain_files = False
-            else:
-                self.retain_files = True
-                
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)        
-
     @property
     def ifo(self):
-        """
+        """Return the ifo.
+
         If only one ifo in the ifo list this will be that ifo. Otherwise an
         error is raised.
         """
@@ -310,6 +249,15 @@ class Executable(pegasus_workflow.Executable):
             raise TypeError(errMsg)
 
     def add_ini_profile(self, cp, sec):
+        """Add profile from configuration file.
+
+        Parameters
+        -----------
+        cp : ConfigParser object
+            The ConfigParser object holding the workflow configuration settings
+        sec : string
+            The section containing options for this job.
+        """
         for opt in cp.options(sec):
             namespace = opt.split('|')[0]
             if namespace == 'pycbc':
@@ -317,24 +265,76 @@ class Executable(pegasus_workflow.Executable):
 
             value = string.strip(cp.get(sec, opt))
             key = opt.split('|')[1]
-            self.add_profile(namespace, key, value)
+            self.add_profile(namespace, key, value, force=True)
 
             # Remove if Pegasus can apply this hint in the TC
             if namespace == 'hints' and key == 'execution.site':
                 self.execution_site = value
 
     def add_ini_opts(self, cp, sec):
+        """Add job-specific options from configuration file.
+
+        Parameters
+        -----------
+        cp : ConfigParser object
+            The ConfigParser object holding the workflow configuration settings
+        sec : string
+            The section containing options for this job.
+        """
         for opt in cp.options(sec):
             value = string.strip(cp.get(sec, opt))
-            self.common_options += ['--%s' % opt, value]
+            opt = '--%s' %(opt,)
+            if opt in self.file_input_options:
+                # This now expects the option to be a file
+                # Get LFN and PFN
+                curr_lfn = os.path.basename(value)
+
+                # If the file exists make sure to use. 
+                if os.path.isfile(value):
+                    curr_pfn = os.path.abspath(value)
+                else:
+                    curr_pfn = value
+
+                if curr_lfn in file_input_from_config_dict.keys():
+                    file_pfn = file_input_from_config_dict[curr_lfn][0]
+                    assert(file_pfn == curr_pfn)
+                    curr_file = file_input_from_config_dict[curr_lfn][1]
+                else:
+                    curr_file = File.from_path(value)
+                    tuple_val = (curr_pfn, curr_file)
+                    file_input_from_config_dict[curr_lfn] = tuple_val
+                self.common_input_files.append(curr_file)
+                value = curr_file.dax_repr
+            self.common_options += [opt, value]
             
     def add_opt(self, opt, value=None):
+        """Add option to job.
+
+        Parameters
+        -----------
+        opt : string
+            Name of option (e.g. --output-file-format)
+        value : string, (default=None)
+            The value for the option (no value if set to None).
+        """
         if value is None:
             self.common_options += [opt]
         else:
             self.common_options += [opt, value]
             
     def get_opt(self, opt):
+        """Get value of option from configuration file
+
+        Parameters
+        -----------
+        opt : string
+            Name of option (e.g. output-file-format)
+
+        Returns
+        --------
+        value : string
+            The value for the option. Returns None if option not present.
+        """
         for sec in self.sections:
             try:
                 key = self.cp.get(sec, opt)
@@ -346,6 +346,13 @@ class Executable(pegasus_workflow.Executable):
         return None
 
     def has_opt(self, opt):
+        """Check if option is present in configuration file
+
+        Parameters
+        -----------
+        opt : string
+            Name of option (e.g. output-file-format)
+        """
         for sec in self.sections:
             val = self.cp.has_option(sec, opt)
             if val:
@@ -354,10 +361,169 @@ class Executable(pegasus_workflow.Executable):
         return False
 
     def create_node(self):
-        """ Default node constructor. This is usually overridden by subclasses
-        of Executable.
+        """Default node constructor.
+
+        This is usually overridden by subclasses of Executable.
         """
         return Node(self)
+
+    def update_current_retention_level(self, value):
+        """Set a new value for the current retention level.
+
+        This updates the value of self.retain_files for an updated value of the
+        retention level.
+
+        Parameters
+        -----------
+        value : int
+            The new value to use for the retention level.
+        """
+        # Determine the level at which output files should be kept
+        self.current_retention_level = value
+        try:
+            global_retention_level = \
+                self.cp.get_opt_tags("workflow", "file-retention-level",
+                                   self.tags+[self.name])
+        except ConfigParser.Error:
+            msg="Cannot find file-retention-level in [workflow] section "
+            msg+="of the configuration file. Setting a default value of "
+            msg+="retain all files."
+            logging.warn(msg)
+            self.retain_files = True
+            self.global_retention_threshold = 1
+            self.cp.set("workflow", "file-retention-level", "all_files")
+        else:
+            # FIXME: Are these names suitably descriptive?
+            retention_choices = {
+                                 'all_files' : 1,
+                                 'all_triggers' : 2,
+                                 'merged_triggers' : 3,
+                                 'results' : 4
+                                }
+            try:
+                self.global_retention_threshold = \
+                      retention_choices[global_retention_level]
+            except KeyError:
+                err_msg = "Cannot recognize the file-retention-level in the "
+                err_msg += "[workflow] section of the ini file. "
+                err_msg += "Got : {0}.".format(global_retention_level)
+                err_msg += "Valid options are: 'all_files', 'all_triggers',"
+                err_msg += "'merged_triggers' or 'results' "
+                raise ValueError(err_msg)
+            if self.current_retention_level == 5:
+                self.retain_files = True
+                if type(self).__name__ in Executable._warned_classes_list:
+                    pass
+                else:
+                    warn_msg = "Attribute current_retention_level has not "
+                    warn_msg += "been set in class {0}. ".format(type(self))
+                    warn_msg += "This value should be set explicitly. "
+                    warn_msg += "All output from this class will be stored."
+                    logging.warn(warn_msg)
+                    Executable._warned_classes_list.append(type(self).__name__)
+            elif self.global_retention_threshold > self.current_retention_level:
+                self.retain_files = False
+            else:
+                self.retain_files = True
+
+    def update_current_tags(self, tags):
+        """Set a new set of tags for this executable.
+
+        Update the set of tags that this job will use. This updated default
+        file naming and shared options. It will *not* update the pegasus
+        profile, which belong to the executable and cannot be different for
+        different nodes.
+
+        Parameters
+        -----------
+        tags : list
+            The new list of tags to consider.
+        """
+        if tags is None:
+            tags = []
+        tags = [tag.upper() for tag in tags]
+        self.tags = tags
+
+        if len(tags) != 0:
+            self.tagged_name = "{0}-{1}".format(self.name, '_'.join(tags))
+        else:
+            self.tagged_name = self.name
+        if self.ifo_string is not None:
+            self.tagged_name = "{0}-{1}".format(self.tagged_name,
+                                                self.ifo_string)
+
+
+        # Determine the sections from the ini file that will configure
+        # this executable
+        sections = [self.name]
+        if self.ifo_list is not None:
+            if len(self.ifo_list) > 1:
+                sec_tags = tags + self.ifo_list + [self.ifo_string]
+            else:
+                sec_tags = tags + self.ifo_list
+        else:
+            sec_tags = tags
+        for sec_len in range(1, len(sec_tags)+1):
+            for tag_permutation in permutations(sec_tags, sec_len):
+                joined_name = '-'.join(tag_permutation)
+                section = '{0}-{1}'.format(self.name, joined_name.lower())
+                if self.cp.has_section(section):
+                    sections.append(section)
+
+        self.sections = sections
+
+        # Do some basic sanity checking on the options
+        for sec1, sec2 in combinations(sections, 2):
+            self.cp.check_duplicate_options(sec1, sec2, raise_error=True)
+
+        # collect the options and profile information
+        # from the ini file section(s)
+        self.common_options = []
+        self.common_input_files = []
+        for sec in sections:
+            if self.cp.has_section(sec):
+                self.add_ini_opts(self.cp, sec)
+            else:
+                warn_string = "warning: config file is missing section "
+                warn_string += "[{0}]".format(sec)
+                logging.warn(warn_string)
+
+    def update_output_directory(self, out_dir=None):
+        """Update the default output directory for output files.
+
+        Parameters
+        -----------
+        out_dir : string (optional, default=None)
+            If provided use this as the output directory. Else choose this
+            automatically from the tags.
+        """
+        # Determine the output directory
+        if out_dir is not None:
+            self.out_dir = out_dir
+        elif len(self.tags) == 0:
+            self.out_dir = self.name
+        else:
+            self.out_dir = self.tagged_name
+        if not os.path.isabs(self.out_dir):
+            self.out_dir = os.path.join(os.getcwd(), self.out_dir)
+
+    def _set_pegasus_profile_options(self):
+        """Set the pegasus-profile settings for this Executable.
+
+        These are a property of the Executable and not of nodes that it will
+        spawn. Therefore it *cannot* be updated without also changing values
+        for nodes that might already have been created. Therefore this is
+        only called once in __init__. Second calls to this will fail.
+        """
+        # Add executable non-specific profile information
+        if self.cp.has_section('pegasus_profile'):
+            self.add_ini_profile(self.cp, 'pegasus_profile')
+
+        # Executable- and tag-specific profile information
+        for sec in self.sections:
+            if self.cp.has_section('pegasus_profile-{0}'.format(sec)):
+                self.add_ini_profile(self.cp,
+                                     'pegasus_profile-{0}'.format(sec))
 
 class Workflow(pegasus_workflow.Workflow):
     """
@@ -415,7 +581,7 @@ class Workflow(pegasus_workflow.Workflow):
  
     @property
     def output_map(self):  
-        if self.in_workflow != False:
+        if self.in_workflow is not False:
             name = self.name + '.map'
         else:
             name = 'output.map'
@@ -424,7 +590,7 @@ class Workflow(pegasus_workflow.Workflow):
         
     @property
     def staging_site(self):  
-        if self.in_workflow != False:
+        if self.in_workflow is not False:
             workflow_section = 'workflow-%s' % self.name 
         else:
             workflow_section = 'workflow'
@@ -473,19 +639,32 @@ class Workflow(pegasus_workflow.Workflow):
     
     @staticmethod
     def set_job_properties(job, output_map, staging_site=None):
-        job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % output_map) 
+        job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' % 
+                         os.path.basename(output_map))
+        job.uses(Pegasus.DAX3.File(os.path.basename(output_map)), 
+                 link=Pegasus.DAX3.Link.INPUT)
         job.addArguments('-Dpegasus.dir.storage.mapper.replica=File') 
-        job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache')) 
+
         job.addArguments('--output-site local')     
         job.addArguments('--cleanup inplace')
         job.addArguments('--cluster label,horizontal')
         job.addArguments('-vvv')
+
+        # FIXME _reuse_cache needs to be fixed to use PFNs properly. This will
+        # work as pegasus-plan is currently invoked on the local site so has
+        # access to a file in os.getcwd() but this code is fragile.
+        job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache'))
+
         if staging_site:
             job.addArguments('--staging-site %s' % staging_site)
             
     def save(self, filename=None, output_map=None, staging_site=None):
         if output_map is None:
             output_map = self.output_map
+            if self.in_workflow is not False:
+                output_map_file = Pegasus.DAX3.File(os.path.basename(output_map))
+                output_map_file.addPFN(Pegasus.DAX3.PFN(output_map, 'local'))
+                self.in_workflow._adag.addFile(output_map_file)
 
         staging_site = self.staging_site
             
@@ -522,9 +701,10 @@ class Node(pegasus_workflow.Node):
         
         if hasattr(executable, 'execution_site'):
             self.add_profile('hints', 'execution.site', executable.execution_site)
-            self.add_profile('hints', 'executionPool', executable.execution_site)
             
         self._options += self.executable.common_options
+        for inp in self.executable.common_input_files:
+            self._add_input(inp)
     
     def get_command_line(self):
         self._finalize()
@@ -548,7 +728,7 @@ class Node(pegasus_workflow.Node):
 
         return [exe_path] + arglist
         
-    def new_output_file_opt(self, valid_seg, extension, option_name, tags=[],
+    def new_output_file_opt(self, valid_seg, extension, option_name, tags=None,
                             store_file=None, use_tmp_subdirs=False):
         """
         This function will create a workflow.File object corresponding to the given
@@ -573,6 +753,8 @@ class Node(pegasus_workflow.Node):
             in the specified output location if True. If false file will be
             removed when no longer needed in the workflow.
         """
+        if tags is None:
+            tags = []
         
         # Changing this from set(tags) to enforce order. It might make sense
         # for all jobs to have file names with tags in the same order.
@@ -623,7 +805,7 @@ class Node(pegasus_workflow.Node):
             self._add_output(outfile)
 
     def new_multiifo_output_list_opt(self, opt, ifos, analysis_time, extension,
-                                     tags=[], store_file=None,
+                                     tags=None, store_file=None,
                                      use_tmp_subdirs=False):
         """ Add an option that determines a list of outputs from multiple
             detectors. Files will be supplied as --opt ifo1:input1 ifo2:input2
@@ -631,6 +813,8 @@ class Node(pegasus_workflow.Node):
             File names are created internally from the provided extension and
             analysis time.
         """
+        if tags is None:
+            tags = []
         all_tags = copy.deepcopy(self.executable.tags)
         for tag in tags:
             if tag not in all_tags:
@@ -681,11 +865,12 @@ class File(pegasus_workflow.File):
 
     An example of initiating this class:
     
-    c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
+    >> c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), file_url="file://localhost/home/spxiwh/H1-INSPIRAL_S6LOWMASS-815901601-400.xml.gz" )
 
     another where the file url is generated from the inputs:
 
-    c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
+    >> c = File("H1", "INSPIRAL_S6LOWMASS", segments.segment(815901601, 815902001), directory="/home/spxiwh", extension="xml.gz" )
+
     '''
     def __init__(self, ifos, exe_name, segs, file_url=None, 
                  extension=None, directory=None, tags=None, 
@@ -747,9 +932,11 @@ class File(pegasus_workflow.File):
             err = "segs input must be either glue.segments.segment or "
             err += "segments.segmentlist. Got %s." %(str(type(segs)),)
             raise ValueError(err)
-            
-        self.tags = tags 
         if tags is not None:
+            self.tags = [t.upper() for t in tags]
+        else:
+            self.tags = []
+        if len(self.tags):
             self.tag_str = '_'.join(tags)
             tagged_description = '_'.join([self.description] + tags)
         else:
@@ -905,7 +1092,8 @@ class FileList(list):
         return keys, groups
 
     def find_output(self, ifo, time):
-        '''
+        '''Returns one File most appropriate at the given time/time range.
+
         Return one File that covers the given time, or is most
         appropriate for the supplied time range.
 
@@ -923,8 +1111,8 @@ class FileList(list):
 
         Returns
         --------
-        File class
-           The File that corresponds to the time/time range
+        pycbc_file : pycbc.workflow.File instance
+           The File that corresponds to the time or time range
         '''
         # Determine whether I have a specific time, or a range of times
         try:
@@ -945,18 +1133,18 @@ class FileList(list):
        '''
        Return File that covers the given time.
 
-        Parameters
-        -----------
-        ifo : string
-           Name of the ifo (or ifos) that the File should correspond to
-        time : int/float/LIGOGPStime
-           Return the Files that covers the supplied time. If no
-           File covers the time this will return None.
+       Parameters
+       -----------
+       ifo : string
+          Name of the ifo (or ifos) that the File should correspond to
+       time : int/float/LIGOGPStime
+          Return the Files that covers the supplied time. If no
+          File covers the time this will return None.
 
-        Returns
-        --------
-        list of File classes
-           The Files that corresponds to the time.
+       Returns
+       --------
+       list of File classes
+          The Files that corresponds to the time.
         '''
        # Get list of Files that overlap time, for given ifo
        outFiles = [i for i in self if ifo in i.ifo_list and time in i.segment_list] 
@@ -1033,7 +1221,7 @@ class FileList(list):
         File class
            The File that is most appropriate for the time range
         '''
-        currsegment_list = segments.segmentlist([current_segment])
+        currsegment_list = segments.segmentlist([segments.segment(start, end)])
 
         # First filter Files corresponding to ifo
         outFiles = [i for i in self if ifo in i.ifo_list]
@@ -1085,6 +1273,8 @@ class FileList(list):
 
             outFiles = []
             for idx in range(startIdx, endIdx + 1):
+                if idx < 0 or idx >= self._splitListsNum:
+                    continue
                 outFilesTemp = [i for i in self._splitLists[idx] \
                                                             if ifo in i.ifo_list]
                 outFiles.extend([i for i in outFilesTemp \
@@ -1189,6 +1379,7 @@ class FileList(list):
 
         # Set information needed to detect changes and to be used elsewhere
         self._splitListsLength = len(self)
+        self._splitListsNum = numSubLists
         self._splitListsStart = startTime
         self._splitListsEnd = endTime
         self._splitListsStep = step
@@ -1208,7 +1399,7 @@ class FileList(list):
             return True
 
     @classmethod
-    def load(self, filename):
+    def load(cls, filename):
         """
         Load an AhopeFileList from a pickle file
         """
@@ -1243,46 +1434,227 @@ class FileList(list):
         self.dump(file_ref.storage_path)
         return file_ref
 
-class OutSegFile(File):
+class SegFile(File):
     '''
     This class inherits from the File class, and is designed to store
-    workflow output files containing a segment list. This is identical in
+    workflow output files containing a segment dict. This is identical in
     usage to File except for an additional kwarg for holding the
-    segment list, if it is known at workflow run time.
+    segment dictionary, if it is known at workflow run time.
     '''
-    def __init__(self, ifo, description, segment, fileUrl,
-                 segment_list=None, **kwargs):
+    def __init__(self, ifo_list, description, valid_segment,
+                 segment_dict=None, seg_summ_dict=None, **kwargs):
         """
         See File.__init__ for a full set of documentation for how to
         call this class. The only thing unique and added to this class is
-        the required option timeSeg, as described below:
+        the optional segment_dict. NOTE that while segment_dict is a
+        glue.segments.segmentlistdict rather than the usual dict[ifo]
+        we key by dict[ifo:name].
 
-        Parameters:
+        Parameters
         ------------
-        ifo : string or list (required)
+        ifo_list : string or list (required)
             See File.__init__
         description : string (required)
             See File.__init__
         segment : glue.segments.segment or glue.segments.segmentlist
             See File.__init__
-        fileUrl : string (required)
-            See File.__init__
-            FIXME: This is a kwarg in File and should be here as well,
-            if this is removed from the explicit arguments it would allow for
-            either fileUrls or constructed file names to be used in File.
-        segment_list : glue.segments.segmentlist (optional, default=None)
-            A glue.segments.segmentlist covering the times covered by the
-            segmentlist associated with this file. If this is the science time
-            or CAT_1 file this will be used to determine analysis time. Can
-            be added by setting self.segment_list after initializing an instance of
-            the class.
+        segment_dict : glue.segments.segmentlistdict (optional, default=None)
+            A glue.segments.segmentlistdict covering the times covered by the
+            segmentlistdict associated with this file.
+            Can be added by setting self.segment_dict after initializing an
+            instance of the class.
 
         """
-        super(OutSegFile, self).__init__(ifo, description, segment, fileUrl,
-                              **kwargs)
-        self.segmentList = segment_list
+        super(SegFile, self).__init__(ifo_list, description, valid_segment,
+                                      **kwargs)
+        # To avoid confusion with the segment_list property of the parent class
+        # we refer to this as valid_segments here
+        self.valid_segments = self.segment_list
+        self.segment_dict = segment_dict
+        self.seg_summ_dict = seg_summ_dict
 
-    def removeShortSciSegs(self, minSegLength):
+    @classmethod
+    def from_segment_list(cls, description, segmentlist, name, ifo,
+                          seg_summ_list=None, **kwargs):
+        """ Initialize a SegFile object from a segmentlist. 
+
+        Parameters
+        ------------
+        description : string (required)
+            See File.__init__
+        segmentlist : glue.segments.segmentslist
+            The segment list that will be stored in this file.
+        name : str
+            The name of the segment lists to be stored in the file.
+        ifo : str
+            The ifo of the segment lists to be stored in this file.
+        seg_summ_list : glue.segments.segmentslist (OPTIONAL)
+            Specify the segment_summary segmentlist that goes along with the
+            segmentlist. Default=None, in this case segment_summary is taken
+            from the valid_segment of the SegFile class.
+        """
+        seglistdict = segments.segmentlistdict()
+        seglistdict[ifo + ':' + name] = segmentlist
+        if seg_summ_list is not None:
+            seg_summ_dict = segments.segmentlistdict()
+            seg_summ_dict[ifo + ':' + name] = seg_summ_list
+        else:
+            seg_summ_dict = None
+        return cls.from_segment_list_dict(description, seglistdict, 
+                                          seg_summ_dict=None, **kwargs)
+
+    @classmethod
+    def from_multi_segment_list(cls, description, segmentlists, names, ifos,
+                                seg_summ_lists=None, **kwargs):
+        """ Initialize a SegFile object from a list of segmentlists. 
+
+        Parameters
+        ------------
+        description : string (required)
+            See File.__init__
+        segmentlists : List of glue.segments.segmentslist
+            List of segment lists that will be stored in this file.
+        names : List of str
+            List of names of the segment lists to be stored in the file.
+        ifos : str
+            List of ifos of the segment lists to be stored in this file.
+        seg_summ_lists : glue.segments.segmentslist (OPTIONAL)
+            Specify the segment_summary segmentlists that go along with the
+            segmentlists. Default=None, in this case segment_summary is taken
+            from the valid_segment of the SegFile class.
+        """
+        seglistdict = segments.segmentlistdict()
+        for name, ifo, segmentlist in zip(names, ifos, segmentlists):
+            seglistdict[ifo + ':' + name] = segmentlist
+        if seg_summ_lists is not None:
+            seg_summ_dict = segments.segmentlistdict()
+            for name, ifo, seg_summ_list in zip(names, ifos, seg_summ_lists):
+                seg_summ_dict[ifo + ':' + name] = seg_summ_list
+        else:
+            seg_summ_dict = None
+
+        return cls.from_segment_list_dict(description, seglistdict,
+                                         seg_summ_dict=seg_summ_dict, **kwargs)
+
+    @classmethod
+    def from_segment_list_dict(cls, description, segmentlistdict,
+                               ifo_list=None, valid_segment=None,
+                               file_exists=False, seg_summ_dict=None, 
+                               **kwargs):
+        """ Initialize a SegFile object from a segmentlistdict. 
+
+        Parameters
+        ------------
+        description : string (required)
+            See File.__init__
+        segmentlistdict : glue.segments.segmentslistdict
+            See SegFile.__init__
+        ifo_list : string or list (optional)
+            See File.__init__, if not given a list of all ifos in the
+            segmentlistdict object will be used
+        valid_segment : glue.segments.segment or glue.segments.segmentlist
+            See File.__init__, if not given the extent of all segments in the
+            segmentlistdict is used.
+        file_exists : boolean (default = False)
+            If provided and set to True it is assumed that this file already
+            exists on disk and so there is no need to write again.
+        seg_summ_dict : glue.segments.segmentslistdict
+            Optional. See SegFile.__init__.
+        """
+        if ifo_list is None:
+            ifo_set = set([i.split(':')[0] for i in segmentlistdict.keys()])
+            ifo_list = list(ifo_set)
+            ifo_list.sort()
+        if valid_segment is None:
+            if seg_summ_dict and \
+                    numpy.any([len(v) for k, v in seg_summ_dict.items()]):
+                # Only come here if seg_summ_dict is supplied and it is
+                # not empty.
+                valid_segment = seg_summ_dict.extent_all()
+            else:
+                try:
+                    valid_segment = segmentlistdict.extent_all()
+                except:
+                    # Numpty probably didn't supply a glue.segmentlistdict
+                    segmentlistdict=segments.segmentlistdict(segmentlistdict)
+                    try:
+                        valid_segment = segmentlistdict.extent_all()
+                    except ValueError:
+                        # No segment_summary and segment list is empty
+                        # Setting valid segment now is hard!
+                        warn_msg = "No information with which to set valid "
+                        warn_msg += "segment."
+                        logging.warn(warn_msg)
+                        valid_segment = segments.segment([0,1])
+        instnc = cls(ifo_list, description, valid_segment,
+                     segment_dict=segmentlistdict, seg_summ_dict=seg_summ_dict,
+                     **kwargs)
+        if not file_exists:
+            instnc.to_segment_xml()
+        else:
+            instnc.PFN(instnc.storage_path, site='local')
+        return instnc
+
+    @classmethod
+    def from_segment_xml(cls, xml_file, **kwargs):
+        """
+        Read a glue.segments.segmentlist from the file object file containing an
+        xml segment table.
+
+        Parameters
+        -----------
+        xml_file : file object
+            file object for segment xml file
+        """
+        # load xmldocument and SegmentDefTable and SegmentTables
+        fp = open(xml_file, 'r')
+        xmldoc, digest = ligolw_utils.load_fileobj(fp,
+                                            gz=xml_file.endswith(".gz"),
+                                            contenthandler=ContentHandler)
+
+        seg_def_table = table.get_table(xmldoc,
+                                        lsctables.SegmentDefTable.tableName)
+        seg_table = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
+        seg_sum_table = table.get_table(xmldoc,
+                                        lsctables.SegmentSumTable.tableName)
+
+        segs = segments.segmentlistdict()
+        seg_summ = segments.segmentlistdict()
+
+        seg_id = {}
+        for seg_def in seg_def_table:
+            # Here we want to encode ifo and segment name
+            full_channel_name = ':'.join([str(seg_def.ifos),
+                                          str(seg_def.name)])
+            seg_id[int(seg_def.segment_def_id)] = full_channel_name
+            segs[full_channel_name] = segments.segmentlist()
+            seg_summ[full_channel_name] = segments.segmentlist()
+
+        for seg in seg_table:
+            seg_obj = segments.segment(
+                    lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
+                    lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns))
+            segs[seg_id[int(seg.segment_def_id)]].append(seg_obj)
+
+        for seg in seg_sum_table:
+            seg_obj = segments.segment(
+                    lal.LIGOTimeGPS(seg.start_time, seg.start_time_ns),
+                    lal.LIGOTimeGPS(seg.end_time, seg.end_time_ns))
+            seg_summ[seg_id[int(seg.segment_def_id)]].append(seg_obj)
+
+        for seg_name in seg_id.values():
+            segs[seg_name] = segs[seg_name].coalesce()
+
+        xmldoc.unlink()
+        fp.close()
+        curr_url = urlparse.urlunparse(['file', 'localhost', xml_file, None,
+                                        None, None])
+
+        return cls.from_segment_list_dict('SEGMENTS', segs, file_url=curr_url,
+                                          file_exists=True,
+                                          seg_summ_dict=seg_summ, **kwargs)
+
+    def remove_short_sci_segs(self, minSegLength):
         """
         Function to remove all science segments
         shorter than a specific length. Also updates the file on disk to remove
@@ -1295,20 +1667,63 @@ class OutSegFile(File):
             be removed.
         """
         newsegment_list = segments.segmentlist()
-        for seg in self.segmentList:
-            if abs(seg) > minSegLength:
-                newsegment_list.append(seg)
-        newsegment_list.coalesce()
-        self.segmentList = newsegment_list
-        self.toSegmentXml()
+        for key, seglist in self.segment_dict.items():
+            newsegment_list = segments.segmentlist()
+            for seg in seglist:
+                if abs(seg) > minSegLength:
+                    newsegment_list.append(seg)
+            newsegment_list.coalesce()
+            self.segment_dict[key] = newsegment_list
+        self.to_segment_xml(override_file_if_exists=True)
 
-    def toSegmentXml(self):
+    def return_union_seglist(self):
+        return self.segment_dict.union(self.segment_dict.keys())
+
+    def parse_segdict_key(self, key):
         """
-        Write the segment list in self.segmentList to the url in self.url.
+        Return ifo and name from the segdict key.
         """
-        from pycbc.events import segments_to_file
-        segments_to_file(self.segmentList, self.storage_path, 
-                             self.tagged_description,  ifo=self.ifo_string)
+        splt = key.split(':')
+        if len(splt) == 2:
+            return splt[0], splt[1]
+        else:
+            err_msg = "Key should be of the format 'ifo:name', got %s." %(key,)
+            raise ValueError(err_msg)
+
+    def to_segment_xml(self, override_file_if_exists=False):
+        """
+        Write the segment list in self.segmentList to self.storage_path.
+        """
+        # create XML doc and add process table
+        outdoc = ligolw.Document()
+        outdoc.appendChild(ligolw.LIGO_LW())
+        process = ligolw_process.register_to_xmldoc(outdoc, sys.argv[0], {})
+
+        for key, seglist in self.segment_dict.items():
+            ifo, name = self.parse_segdict_key(key)
+            # Ensure we have LIGOTimeGPS
+            fsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
+                     for seg in seglist]
+
+            if self.seg_summ_dict is None:
+                vsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
+                         for seg in self.valid_segments]
+            else:
+                vsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
+                         for seg in self.seg_summ_dict[key]]
+
+            # Add using glue library to set all segment tables
+            with ligolw_segments.LigolwSegments(outdoc, process) as xmlsegs:
+                xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name,
+                                                    valid = {ifo : vsegs})
+        # write file
+        if override_file_if_exists and \
+                                 self.has_pfn(self.storage_path, site='local'):
+            pass
+        else:
+            self.PFN(self.storage_path, site='local')
+        ligolw_utils.write_filename(outdoc, self.storage_path)
+
 
 def make_external_call(cmdList, out_dir=None, out_basename='external_call',
                        shell=False, fail_on_error=True):
@@ -1409,6 +1824,7 @@ def get_full_analysis_chunk(science_segs):
     -----------
     science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
         The list of times that are being analysed in this workflow.
+
     Returns
     --------
     fullSegment : glue.segments.segment
@@ -1430,62 +1846,3 @@ def get_random_label():
     """
     return ''.join(random.choice(string.ascii_uppercase + string.digits) \
                    for _ in range(15))
-
-
-def resolve_url(url, directory=None, permissions=None):
-    """
-    Resolves a URL to a local file, and returns the path to
-    that file.
-    """
-    if directory is None:
-        directory = os.getcwd()
-        
-    # If the "url" is really a path, allow this to work as well and simply
-    # return
-    if os.path.isfile(url):
-        return os.path.abspath(url)
-
-    if url.startswith('http://') or url.startswith('https://') or \
-       url.startswith('file://'):
-        filename = url.split('/')[-1]
-        filename = os.path.join(directory, filename)
-        succeeded = False
-        num_tries = 5
-        t_sleep   = 10
-
-        while not succeeded and num_tries > 0: 
-            try:
-                response = urllib2.urlopen(url)
-                result   = response.read()
-                out_file = open(filename, 'w')
-                out_file.write(result)
-                out_file.close()
-                succeeded = True
-            except:
-                logging.warn("Unable to download %s, retrying" % url)
-                time.sleep(t_sleep)
-                num_tries -= 1
-                t_sleep   *= 2
-                
-        if not succeeded:
-            errMsg  = "Unable to download %s " % (url)
-            raise ValueError(errMsg)
-
-    elif url.find('://') != -1:
-        # TODO: We could support other schemes such as gsiftp by
-        # calling out to globus-url-copy
-        errMsg  = "%s: Only supported URL schemes are\n" % (url)
-        errMsg += "   file: http: https:" 
-        raise ValueError(errMsg)
-    else:
-        filename = url
-
-    if not os.path.isfile(filename):
-        errMsg = "File %s does not exist." %(url)
-        raise ValueError(errMsg)
-
-    if permissions:
-        os.chmod(filename, permissions)
-
-    return filename
-   

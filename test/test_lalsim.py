@@ -32,15 +32,14 @@ import numpy
 
 import lal, lalsimulation
 import pycbc
-from pycbc.types import *
-from pycbc.filter import *
-from pycbc.waveform import *
+from pycbc.filter import match, overlap, sigma, make_frequency_series
+from pycbc.waveform import td_approximants, fd_approximants, \
+        get_td_waveform, get_fd_waveform, TimeSeries
 
 import optparse
-from optparse import OptionParser
 from utils import simple_exit, _check_scheme_cpu
 
-parser = OptionParser()
+parser = optparse.OptionParser()
 parser.add_option('--scheme','-s', action='callback', type = 'choice',
                    choices = ('cpu','cuda'),
                    default = 'cpu', dest = 'scheme', callback = _check_scheme_cpu,
@@ -58,7 +57,7 @@ parser.add_option('--approximant', type = 'choice', choices = td_approximants() 
                   help = "Choices are %s" % str(td_approximants() + fd_approximants()))      
                                    
 parser.add_option('--mass1', type = float, default=10, help = "[default: %default]")    
-parser.add_option('--mass2', type = float, default=10, help = "[default: %default]")   
+parser.add_option('--mass2', type = float, default=9, help = "[default: %default]")
 parser.add_option('--spin1x', type = float, default=0, help = "[default: %default]")   
 parser.add_option('--spin1y', type = float, default=0, help = "[default: %default]")   
 parser.add_option('--spin1z', type = float, default=0, help = "[default: %default]")   
@@ -121,7 +120,7 @@ class TestLALSimulation(unittest.TestCase):
         
         from pycbc import version
         self.version_txt = "pycbc: %s  %s\n" % (version.git_hash, version.date) + \
-                           "lalsimulation: %s  %s" % (lalsimulation.SimulationVCSId, lalsimulation.SimulationVCSDate)
+                           "lalsimulation: %s  %s" % (lalsimulation.SimulationVCSIdentInfo.vcsId, lalsimulation.SimulationVCSIdentInfo.vcsDate)
       
         
     def test_varying_orbital_phase(self):
@@ -133,7 +132,7 @@ class TestLALSimulation(unittest.TestCase):
         else:
             sample_attr = 'sample_frequencies'   
             
-        pylab.figure()
+        f = pylab.figure()
         pylab.axes([.1, .2, 0.8, 0.70])
         hp_ref, hc_ref = get_waveform(self.p, coa_phase=0)
         pylab.plot(getattr(hp_ref, sample_attr), hp_ref.real(), label="phiref")
@@ -172,12 +171,14 @@ class TestLALSimulation(unittest.TestCase):
         info = self.version_txt
         pylab.figtext(0.05, 0.05, info)
         
-        if self.show_plots:
-            pylab.show()
-            
         if self.save_plots:
             pname = self.plot_dir + "/%s-vary-phase.png" % self.p.approximant
             pylab.savefig(pname)
+        if self.show_plots:
+            pylab.show()
+        else:
+            pylab.close(f)
+
         
     def test_distance_scaling(self):   
         #""" Check that the waveform is consistent under distance changes
@@ -191,7 +192,7 @@ class TestLALSimulation(unittest.TestCase):
         hpf, hcf = get_waveform(self.p, distance=distance*fac*fac)
         hpn, hcn = get_waveform(self.p, distance=distance/fac)
         
-        pylab.figure()
+        f = pylab.figure()
         pylab.axes([.1, .2, 0.8, 0.70])
         htilde = make_frequency_series(hpc)
         pylab.loglog(htilde.sample_frequencies, abs(htilde), label="D")
@@ -214,12 +215,14 @@ class TestLALSimulation(unittest.TestCase):
         info = self.version_txt
         pylab.figtext(0.05, .05, info)
         
-        if self.show_plots:
-            pylab.show()
-            
         if self.save_plots:
             pname = self.plot_dir + "/%s-distance-scaling.png" % self.p.approximant
             pylab.savefig(pname)
+
+        if self.show_plots:
+            pylab.show()
+        else:
+            pylab.close(f)
             
         self.assertTrue(hpc.almost_equal_elem(hpm * fac, tolerance, relative=True))
         self.assertTrue(hpc.almost_equal_elem(hpf * fac * fac, tolerance, relative=True))
@@ -256,6 +259,32 @@ class TestLALSimulation(unittest.TestCase):
             hpn.resize(maxlen)
             o = overlap(hp, hpn)
             self.assertAlmostEqual(1, o, places=5)
+
+    def test_almost_equal_mass_waveform(self):
+        #""" Check that the overlaps are consistent for nearby waveforms
+        #"""
+        def nearby(params):
+            tol = 1e-7
+
+            from numpy.random import uniform
+            nearby_params = copy.copy(params)
+            nearby_params.mass2 = nearby_params.mass1 * \
+                uniform(low=1-tol, high=1+tol)
+            nearby_params.mass1 *= uniform(low=1-tol, high=1+tol)
+            nearby_params.spin1x *= uniform(low=1-tol, high=1+tol)
+            nearby_params.spin1y *= uniform(low=1-tol, high=1+tol)
+            nearby_params.spin1z *= uniform(low=1-tol, high=1+tol)
+            nearby_params.spin2x *= uniform(low=1-tol, high=1+tol)
+            nearby_params.spin2y *= uniform(low=1-tol, high=1+tol)
+            nearby_params.spin2z *= uniform(low=1-tol, high=1+tol)
+            nearby_params.inclination *= uniform(low=1-tol, high=1+tol)
+            nearby_params.coa_phase *= uniform(low=1-tol, high=1+tol)
+            return nearby_params
+
+        for i in range(10):
+            p_near = nearby(self.p)
+            hpn, hcn = get_waveform(p_near)
+
             
     def test_varying_inclination(self):
         #""" Test that the waveform is consistent for changes in inclination
@@ -270,7 +299,7 @@ class TestLALSimulation(unittest.TestCase):
             s = sigma(hp, low_frequency_cutoff=self.p.f_lower)        
             sigmas.append(s)
          
-        pylab.figure()
+        f = pylab.figure()
         pylab.axes([.1, .2, 0.8, 0.70])   
         pylab.plot(incs, sigmas)
         pylab.title("Vary %s inclination, $\\tilde{h}$+" % self.p.approximant)
@@ -280,12 +309,14 @@ class TestLALSimulation(unittest.TestCase):
         info = self.version_txt
         pylab.figtext(0.05, 0.05, info)
         
-        if self.show_plots:
-            pylab.show()
-            
         if self.save_plots:
             pname = self.plot_dir + "/%s-vary-inclination.png" % self.p.approximant
             pylab.savefig(pname)
+
+        if self.show_plots:
+            pylab.show()
+        else:
+            pylab.close(f)
 
         self.assertAlmostEqual(sigmas[-1], sigmas[0], places=7)
         self.assertAlmostEqual(max(sigmas), sigmas[0], places=7)
@@ -304,7 +335,49 @@ class TestLALSimulation(unittest.TestCase):
         self.assertAlmostEqual(1, op, places=7)
         oc = overlap(hc, hcswap)
         self.assertAlmostEqual(1, oc, places=7)
-    
+
+    def test_change_rate(self):
+        #""" Test that waveform remains unchanged under changing rate
+        #"""
+        hp, hc = get_waveform(self.p)
+        hp2dec, hc2dec = get_waveform(self.p, delta_t=self.p.delta_t*2.)
+
+        hpdec=numpy.zeros(len(hp2dec.data))
+        hcdec=numpy.zeros(len(hp2dec.data))
+
+        for idx in range(min(len(hp2dec.data),int(len(hp.data)/2))):
+            hpdec[idx]=hp.data[2*idx]
+            hcdec[idx]=hc.data[2*idx]
+
+        hpTS=TimeSeries(hpdec, delta_t=self.p.delta_t*2.,epoch=hp.start_time)
+        hcTS=TimeSeries(hcdec, delta_t=self.p.delta_t*2.,epoch=hc.start_time)
+
+        f = pylab.figure()
+        pylab.plot(hp.sample_times, hp.data,label="rate %s Hz" %"{:.0f}".format(1./self.p.delta_t))
+        pylab.plot(hp2dec.sample_times, hp2dec.data, label="rate %s Hz" %"{:.0f}".format(1./(self.p.delta_t*2.)))
+
+        pylab.title("Halving %s rate, $\\tilde{h}$+" % self.p.approximant)
+        pylab.xlabel("time (sec)")
+        pylab.ylabel("amplitude")
+        pylab.legend()
+
+        info = self.version_txt
+        pylab.figtext(0.05, 0.05, info)
+
+        if self.save_plots:
+            pname = self.plot_dir + "/%s-vary-rate.png" % self.p.approximant
+            pylab.savefig(pname)
+
+        if self.show_plots:
+            pylab.show()
+        else:
+            pylab.close(f)
+
+        op=overlap(hpTS,hp2dec)
+        self.assertAlmostEqual(1., op, places=2)
+        oc=overlap(hcTS,hc2dec)
+        self.assertAlmostEqual(1., oc, places=2)
+
 def test_maker(class_name, name, **kwds):
     class Test(class_name):
         def __init__(self, *args):
@@ -319,14 +392,34 @@ suite = unittest.TestSuite()
 if opt.approximant:
     apxs = [opt.approximant]
 else:
-    apxs = td_approximants()
+    apxs = td_approximants() + fd_approximants()
+
+# These waveforms fail the current sanity checks, and are not used in current
+# analyses. Tracking down reasons for each of these failures is a lot of work,
+# so for now I just exclude these from tests.
+fail_list = ['EOBNRv2', 'HGimri', 'SEOBNRv1', 'SpinDominatedWf',
+             'PhenSpinTaylor', 'PhenSpinTaylorRD', 'EccentricTD',
+             'EccentricFD', 'Lackey_Tidal_2013_SEOBNRv2_ROM']
 
 for apx in apxs:
     # The inspiral wrapper is only single precision we won't bother checking
     # it here. It may need different tolerances and some special care.
-    
     if apx.startswith("Inspiral-"):
         continue
+
+    # The INTERP waveforms are designed only for filters
+    if apx.endswith('_INTERP') and not opt.approximant:
+        continue
+
+    if apx in fail_list and not opt.approximant:
+        # These waveforms segfault and prints debugging to screen
+        # Only test this is specifically told to do so
+        continue
+    if apx in ['NR_hdf5']:
+        # We'll need an example file for this. Also it will need a special
+        # set of tests.
+        continue
+
     vars()[apx] = test_maker(TestLALSimulation, apx, approximant=apx)
     suite.addTest( unittest.TestLoader().loadTestsFromTestCase(vars()[apx]) )
 

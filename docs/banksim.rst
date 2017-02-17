@@ -2,6 +2,8 @@
 Calculating the Effectualness (Fitting Factor) of Template Banks
 ################################################################
 
+.. _banksim:
+
 ===================
 Introduction
 ===================

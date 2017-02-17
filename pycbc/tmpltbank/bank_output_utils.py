@@ -35,7 +35,7 @@ def return_empty_sngl():
         elif cols[entry] == 'lstring':
             setattr(sngl,entry,'')
         elif entry == 'process_id':
-            sngl.process_id = ilwd.ilwdchar("sngl_inspiral:process_id:0")
+            sngl.process_id = ilwd.ilwdchar("process:process_id:0")
         elif entry == 'event_id':
             sngl.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
         else:
@@ -43,7 +43,7 @@ def return_empty_sngl():
     return sngl
 
 def return_search_summary(start_time=0, end_time=0, nevents=0,
-                          ifos=[], **kwargs):
+                          ifos=None, **kwargs):
     """
     Function to create a SearchSummary object where all columns are populated
     but all are set to values that test False (ie. strings to '', floats/ints
@@ -59,6 +59,8 @@ def return_search_summary(start_time=0, end_time=0, nevents=0,
     lsctables.SeachSummary
         The "empty" SearchSummary object.
     """
+    if ifos is None:
+        ifos = []
 
     # create an empty search summary
     search_summary = lsctables.SearchSummary()
@@ -283,7 +285,7 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
     return fMax_theor, gammaVals
 
 def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
-                               ethincaParams, programName="", optDict = {},
+                               ethincaParams, programName="", optDict = None,
                                outdoc=None, **kwargs):
     """
     Function that converts the information produced by the various pyCBC bank
@@ -317,6 +319,8 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
         All other key word arguments will be passed directly to 
         ligolw_process.register_to_xmldoc
     """
+    if optDict is None:
+        optDict = {}
     if outdoc is None:
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
@@ -353,6 +357,12 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
                 sngl.f_final = pnutils.frequency_cutoff_from_name(
                     ethincaParams.cutoff,
                     sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z)
+
+    # set per-template low-frequency cutoff
+    if 'f_low_column' in optDict and 'f_low' in optDict and \
+            optDict['f_low_column'] is not None:
+        for sngl in sngl_inspiral_table:
+            setattr(sngl, optDict['f_low_column'], optDict['f_low'])
 
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 

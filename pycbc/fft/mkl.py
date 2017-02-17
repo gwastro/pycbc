@@ -113,7 +113,7 @@ def fft(invec, outvec, prec, itype, otype):
     f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     status = f(descr, invec.ptr, outvec.ptr)
     check_status(status)
-    
+
 def ifft(invec, outvec, prec, itype, otype):
     descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype,
                               outvec.dtype, (invec.ptr == outvec.ptr))
@@ -135,6 +135,8 @@ def _get_desc(fftobj):
     check_status(status)
     # Now we set various things depending on exactly what kind of transform we're
     # performing.
+
+    lib.DftiSetValue.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int]
 
     # The following only matters if the transform is C2R or R2C
     status = lib.DftiSetValue(desc, DFTI_CONJUGATE_EVEN_STORAGE,

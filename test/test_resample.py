@@ -30,6 +30,9 @@ from pycbc.types import *
 from pycbc.filter import *
 from pycbc.scheme import *
 from utils import parse_args_all_schemes, simple_exit
+from numpy.random import uniform
+import scipy.signal
+from pycbc.filter.resample import lfilter
 
 _scheme, _context = parse_args_all_schemes("Resampling")
 
@@ -64,6 +67,23 @@ class TestUtils(unittest.TestCase):
         if self.scheme != 'cpu':
             with self.context:
                 self.assertRaises(TypeError, resample_to_delta_t, self.a, self.target_delta_t)
+
+    def test_lfilter(self):
+        "Check our hand written lfilter"
+        c = uniform(-10, 10, size=1024)
+        ts = uniform(-1, 1, size=4323)
+        
+        ref = scipy.signal.lfilter(c, 1.0, ts)
+        test = lfilter(c, ts)
+
+        # These only agree where there is no fft wraparound
+        # so excluded corrupted region from test
+        ref = ref[len(c):]
+        test = test[len(c):]
+
+        maxreldiff =  ((ref - test) / ref).max()
+        
+        self.assertTrue(maxreldiff < 1e-7)
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestUtils))

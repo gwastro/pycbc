@@ -16,7 +16,7 @@ If you are currently in your virtual environment, leave it by running ``deactiva
 
 .. code-block:: bash
 
-    NAME=${HOME}/pycbc-dev
+    NAME=${HOME}/src/pycbc
 
 The install requires that you set the environment variable ``CUDA_ROOT``, make sure that the CUDA ``bin`` directory is in your path, and add the CUDA library path to your ``LD_LIBRARY_PATH``. You can do this by adding these commands to your ``activate`` script by running the commands:
 

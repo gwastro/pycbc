@@ -1,0 +1,101 @@
+#! /usr/bin/env python
+
+# Copyright (C) 2016 Miriam Cabero Mueller, Collin Capano
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+import argparse
+import logging
+import numpy
+import matplotlib
+matplotlib.use('agg')
+from matplotlib import pyplot
+import pycbc
+from pycbc.inference import option_utils, likelihood
+from pycbc.io.inference_hdf import InferenceFile
+from pycbc.results.scatter_histograms import create_multidim_plot
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--output-file", type=str, required=True,
+                    help="Output plot path.")
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="Be verbose")
+# add options for what plots to create
+option_utils.add_plot_posterior_option_group(parser)
+# Scatter configuration
+option_utils.add_scatter_option_group(parser)
+# Density configuration
+option_utils.add_density_option_group(parser)
+# add standard option utils
+option_utils.add_inference_results_option_group(parser)
+
+opts = parser.parse_args()
+
+pycbc.init_logging(opts.verbose)
+
+# Get parameters
+logging.info("Loading parameters")
+fp, parameters, labels, samples = option_utils.results_from_cli(opts)
+logging.info("Using {i} samples".format(i=samples.size))
+if opts.z_arg is not None:
+    logging.info("Getting likelihood stats")
+    likelihood_stats = fp.read_likelihood_stats(thin_start=opts.thin_start,
+            thin_end=opts.thin_end, thin_interval=opts.thin_interval,
+            iteration=opts.iteration)
+    zvals, zlbl = option_utils.get_zvalues(fp, opts.z_arg, likelihood_stats)
+    show_colorbar = True
+else:
+    zvals = None
+    zlbl = None
+    show_colorbar = False
+fp.close()
+
+mins, maxs = option_utils.plot_ranges_from_cli(opts)
+# add any missing parameters
+for p in parameters:
+    if p not in mins:
+        mins[p] = samples[p].min()
+for p in parameters:
+    if p not in maxs:
+        maxs[p] = samples[p].max()
+
+logging.info("Plotting")
+fig, axis_dict = create_multidim_plot(
+                parameters, samples, labels=labels,
+                plot_marginal=opts.plot_marginal,
+                plot_scatter=opts.plot_scatter,
+                    zvals=zvals, show_colorbar=show_colorbar,
+                    cbar_label=zlbl, vmin=opts.vmin, vmax=opts.vmax,
+                    scatter_cmap=opts.scatter_cmap,
+                plot_density=opts.plot_density,
+                plot_contours=opts.plot_contours,
+                    density_cmap=opts.density_cmap,
+                    contour_color=opts.contour_color,
+                    use_kombine=opts.use_kombine_kde,
+                mins=mins, maxs=maxs)
+
+# save
+fig.savefig(opts.output_file, bbox_inches='tight', dpi=200)
+logging.info("Done")

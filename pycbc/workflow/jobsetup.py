@@ -34,12 +34,6 @@ import lal
 from glue import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
-from pycbc.workflow.legacy_ihope import (LegacyTmpltbankExecutable,
-        LegacyInspiralExecutable, LegacyCohPTFInspiralExecutable,
-        LegacyCohPTFTrigCombiner, LegacyCohPTFTrigCluster,
-        LegacyCohPTFInjfinder, LegacyCohPTFInjcombiner, 
-        LegacyCohPTFSbvPlotter, LegacyCohPTFEfficiency, PyGRBMakeSummaryPage)
-
 
 def int_gps_time_to_str(t):
     """Takes an integer GPS time, either given as int or lal.LIGOTimeGPS, and
@@ -73,7 +67,6 @@ def select_tmpltbank_class(curr_exe):
         * job.get_valid_times(ifo, )
     """
     exe_to_class_map = {
-        'lalapps_tmpltbank_ahope' : LegacyTmpltbankExecutable,
         'pycbc_geom_nonspinbank'  : PyCBCTmpltbankExecutable,
         'pycbc_aligned_stoch_bank': PyCBCTmpltbankExecutable
     }
@@ -102,9 +95,8 @@ def select_matchedfilter_class(curr_exe):
         * job.get_valid_times(ifo, )
     """
     exe_to_class_map = {
-        'lalapps_inspiral_ahope'  : LegacyInspiralExecutable,
         'pycbc_inspiral'          : PyCBCInspiralExecutable,
-        'lalapps_coh_PTF_inspiral': LegacyCohPTFInspiralExecutable
+        'pycbc_inspiral_skymax'   : PyCBCInspiralExecutable
     }
     try:
         return exe_to_class_map[curr_exe]
@@ -116,9 +108,9 @@ def select_matchedfilter_class(curr_exe):
 def select_generic_executable(workflow, exe_tag):
     """ Returns a class that is appropriate for setting up jobs to run executables
     having specific tags in the workflow config.
-    Executables should not be "specialized" jobs fitting into one of the 
+    Executables should not be "specialized" jobs fitting into one of the
     select_XXX_class functions above, i.e. not a matched filter or template
-    bank job, which require extra setup.  
+    bank job, which require extra setup.
 
     Parameters
     ----------
@@ -165,13 +157,7 @@ def select_generic_executable(workflow, exe_tag):
         "gstlal_inspiral_plot_background" : GstlalPlotBackground,
         "gstlal_inspiral_plotsummary"     : GstlalPlotSummary,
         "gstlal_inspiral_summary_page"    : GstlalSummaryPage,
-        "pylal_cbc_cohptf_trig_combiner" : LegacyCohPTFTrigCombiner,
-        "pylal_cbc_cohptf_trig_cluster"  : LegacyCohPTFTrigCluster,
-        "pylal_cbc_cohptf_injfinder"     : LegacyCohPTFInjfinder,
-        "pylal_cbc_cohptf_injcombiner"   : LegacyCohPTFInjcombiner,
-        "pylal_cbc_cohptf_sbv_plotter"   : LegacyCohPTFSbvPlotter,
-        "pylal_cbc_cohptf_efficiency"    : LegacyCohPTFEfficiency,
-        "pycbc_make_grb_summary_page"  : PyGRBMakeSummaryPage
+        "pycbc_condition_strain"         : PycbcConditionStrainExecutable
     }
     try:
         return exe_to_class_map[exe_name]
@@ -180,8 +166,8 @@ def select_generic_executable(workflow, exe_tag):
         raise NotImplementedError(
             "No job class exists for executable %s, exiting" % exe_name)
 
-def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs, 
-                       datafind_outs, parents=None, 
+def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
+                       datafind_outs, parents=None,
                        link_job_instance=None, allow_overlap=True,
                        compatibility_mode=True):
     """ This function sets up a set of single ifo jobs. A basic overview of how this
@@ -242,7 +228,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
     if compatibility_mode and not link_job_instance:
         errMsg = "Compability mode requires a link_job_instance."
         raise ValueError(errMsg)
-    
+
     ########### (1) ############
     # Get the times that can be analysed and needed data lengths
     data_length, valid_chunk, valid_length = identify_needed_data(curr_exe_job,
@@ -253,8 +239,9 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
         ########### (2) ############
         # Initialize the class that identifies how many jobs are needed and the
         # shift between them.
-        segmenter = JobSegmenter(data_length, valid_chunk, valid_length, 
-                    curr_seg, compatibility_mode=compatibility_mode)
+        segmenter = JobSegmenter(data_length, valid_chunk, valid_length,
+                                 curr_seg, curr_exe_job,
+                                 compatibility_mode=compatibility_mode)
 
         for job_num in range(segmenter.num_jobs):
             ############## (3) #############
@@ -265,7 +252,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
             ############## (4) #############
             # Get the data that this job should read in
             job_data_seg = segmenter.get_data_times_for_job(job_num)
-                
+
             ############# (5) ############
             # Identify parents/inputs to the job
             if parents:
@@ -273,7 +260,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                 curr_parent = parents.find_outputs_in_range(ifo, job_valid_seg,
                                                             useSplitLists=True)
                 if not curr_parent:
-                    err_string = ("No parent jobs found overlapping %d to %d." 
+                    err_string = ("No parent jobs found overlapping %d to %d."
                                   %(job_valid_seg[0], job_valid_seg[1]))
                     err_string += "\nThis is a bad error! Contact a developer."
                     raise ValueError(err_string)
@@ -282,7 +269,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
 
             if datafind_outs:
-                curr_dfouts = datafind_outs.find_all_output_in_range(ifo, 
+                curr_dfouts = datafind_outs.find_all_output_in_range(ifo,
                                               job_data_seg, useSplitLists=True)
                 if not curr_dfouts:
                     err_str = ("No datafind jobs found overlapping %d to %d."
@@ -304,11 +291,11 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                 else:
                     tag = []
                 # To ensure output file uniqueness I add a tag
-                # We should generate unique names automatically, but it is a 
-                # pain until we can set the output names for all Executables              
-                node = curr_exe_job.create_node(job_data_seg, job_valid_seg, 
+                # We should generate unique names automatically, but it is a
+                # pain until we can set the output names for all Executables
+                node = curr_exe_job.create_node(job_data_seg, job_valid_seg,
                                                 parent=parent,
-                                                dfParents=curr_dfouts, 
+                                                dfParents=curr_dfouts,
                                                 tags=tag)
                 workflow.add_node(node)
                 curr_out_files = node.output_files
@@ -322,26 +309,36 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
 def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
                                  science_segs, datafind_outs, output_dir,
-                                 parents=None, tags=[]):
+                                 parents=None, tags=None):
     """
     Method for setting up coherent inspiral jobs.
     """
+    if tags is None:
+        tags = []
     cp = workflow.cp
     ifos = science_segs.keys()
     job_tag = curr_exe_job.name.upper()
     data_seg, job_valid_seg = curr_exe_job.get_valid_times()
     curr_out_files = FileList([])
-    bank_veto = datafind_outs[-1]
-    frame_files = datafind_outs[:-1]
+    if 'IPN' in datafind_outs[-1].description \
+            and 'bank_veto_bank' in datafind_outs[-2].description:
+        ipn_sky_points = datafind_outs[-1]
+        bank_veto = datafind_outs[-2]
+        frame_files = datafind_outs[:-2]
+    else:
+        ipn_sky_points = None
+        bank_veto = datafind_outs[-1]
+        frame_files = datafind_outs[:-1]
+
     split_bank_counter = 0
-    
+
     if curr_exe_job.injection_file is None:
         for split_bank in parents:
             tag = list(tags)
             tag.append(split_bank.tag_str)
             node = curr_exe_job.create_node(data_seg, job_valid_seg,
                     parent=split_bank, dfParents=frame_files,
-                    bankVetoBank=bank_veto, tags=tag)
+                    bankVetoBank=bank_veto, ipn_file=ipn_sky_points, tags=tag)
             workflow.add_node(node)
             split_bank_counter += 1
             curr_out_files.extend(node.output_files)
@@ -353,7 +350,8 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
                 tag.append(split_bank.tag_str)
                 node = curr_exe_job.create_node(data_seg, job_valid_seg,
                         parent=split_bank, inj_file=inj_file, tags=tag,
-                        dfParents=frame_files, bankVetoBank=bank_veto)
+                        dfParents=frame_files, bankVetoBank=bank_veto,
+                        ipn_file=ipn_sky_points)
                 workflow.add_node(node)
                 split_bank_counter += 1
                 curr_out_files.extend(node.output_files)
@@ -466,7 +464,7 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
     """ This function will identify the length of data that a specific executable
     needs to analyse and what part of that data is valid (ie. inspiral doesn't
     analyse the first or last 64+8s of data it reads in).
-    
+
     In addition you can supply a second job instance to "link" to, which will
     ensure that the two jobs will have a one-to-one correspondence (ie. one
     template bank per one matched-filter job) and the corresponding jobs will
@@ -513,7 +511,7 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
         if len(link_data_length) > 1 or len(valid_lengths) > 1:
             raise ValueError('Linking job instances for tiling is not supported'
                              ' between jobs that allow variable tile size')
-        
+
         # What data is lost at start of both jobs? Take the maximum.
         start_data_loss = max(valid_chunks[0][0], link_valid_chunk[0][0])
         # What data is lost at end of both jobs? Take the maximum.
@@ -533,7 +531,7 @@ def identify_needed_data(curr_exe_job, link_job_instance=None):
         # Which one is now longer? Use this is valid_length
         if link_valid_length < valid_lengths[0]:
             valid_lengths[0] = link_valid_length
-            
+
     return data_lengths, valid_chunks, valid_lengths
 
 
@@ -541,21 +539,21 @@ class JobSegmenter(object):
     """ This class is used when running sngl_ifo_job_setup to determine what times
     should be analysed be each job and what data is needed.
     """
-    
+
     def __init__(self, data_lengths, valid_chunks, valid_lengths, curr_seg,
-                 compatibility_mode = False):
+                 curr_exe_class, compatibility_mode = False):
         """ Initialize class. """
-        
+        self.exe_class = curr_exe_class
         self.curr_seg = curr_seg
         self.curr_seg_length = float(abs(curr_seg))
-        
+
         self.data_length, self.valid_chunk, self.valid_length = \
                       self.pick_tile_size(self.curr_seg_length, data_lengths,
                                                   valid_chunks, valid_lengths)
-        
+
         self.data_chunk = segments.segment([0, self.data_length])
         self.data_loss = self.data_length - abs(self.valid_chunk)
-        
+
         if self.data_loss < 0:
             raise ValueError("pycbc.workflow.jobsetup needs fixing! Please contact a developer")
 
@@ -600,14 +598,14 @@ class JobSegmenter(object):
             for i, size in enumerate(valid_lengths):
                 if abs(size - target_size) < pick_diff:
                     pick, pick_diff  = i, abs(size - target_size)
-            return data_lengths[pick], valid_chunks[pick], valid_lengths[pick]      
+            return data_lengths[pick], valid_chunks[pick], valid_lengths[pick]
 
     def get_valid_times_for_job(self, num_job, allow_overlap=True):
         """ Get the times for which this job is valid. """
         if self.compatibility_mode:
             return self.get_valid_times_for_job_legacy(num_job)
         else:
-            return self.get_valid_times_for_job_workflow(num_job, 
+            return self.get_valid_times_for_job_workflow(num_job,
                                                    allow_overlap=allow_overlap)
 
     def get_valid_times_for_job_workflow(self, num_job, allow_overlap=True):
@@ -675,6 +673,10 @@ class JobSegmenter(object):
                 err += "science segment. It should be using all data."
                 raise ValueError(err)
 
+        if hasattr(self.exe_class, 'zero_pad_data_extend'):
+            job_data_seg = self.exe_class.zero_pad_data_extend(job_data_seg,
+                                                                 self.curr_seg)
+
         return job_data_seg
 
     def get_data_times_for_job_workflow(self, num_job):
@@ -703,40 +705,35 @@ class JobSegmenter(object):
 
 class PyCBCInspiralExecutable(Executable):
     """ The class used to create jobs for pycbc_inspiral Executable. """
-    
-    current_retention_level = Executable.CRITICAL
-    def __init__(self, cp, exe_name, ifo=None, out_dir=None, injection_file=None, 
-                 gate_files=None, tags=[]):
-        super(PyCBCInspiralExecutable, self).__init__(cp, exe_name, None, ifo, out_dir, tags=tags)
+
+    current_retention_level = Executable.ALL_TRIGGERS
+    file_input_options = ['--gating-file']
+
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None,
+                 injection_file=None, tags=None):
+        if tags is None:
+            tags = []
+        super(PyCBCInspiralExecutable, self).__init__(cp, exe_name, None, ifo,
+                                                      out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.injection_file = injection_file
-        self.gate_files = gate_files
-        
-        try:
-            outtype = cp.get('workflow-matchedfilter', 'output-type')
-        except:
-            outtype = None
+        self.ext = '.hdf'
 
-        if outtype is None or 'xml' in outtype:
-            self.ext = '.xml.gz'
-        elif 'hdf' in outtype:
-            self.ext = '.hdf'
-        else:
-            raise ValueError('Invalid output type for PyCBC Inspiral: %s' % outtype)
-
-        self.num_threads = 1  
+        self.num_threads = 1
         if self.get_opt('processing-scheme') is not None:
             stxt = self.get_opt('processing-scheme')
             if len(stxt.split(':')) > 1:
                 self.num_threads = stxt.split(':')[1]
 
-    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
-        pad_data = int(self.get_opt('pad-data'))
-        if pad_data is None:
+        if not self.has_opt('pad-data'):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
+        pad_data = int(self.get_opt('pad-data'))
 
         if not dfParents:
             raise ValueError("%s must be supplied with data file(s)"
@@ -749,20 +746,12 @@ class PyCBCInspiralExecutable(Executable):
                      int_gps_time_to_str(data_seg[1] - pad_data))
         node.add_opt('--trig-start-time', int_gps_time_to_str(valid_seg[0]))
         node.add_opt('--trig-end-time', int_gps_time_to_str(valid_seg[1]))
-        node.add_profile('condor', 'request_cpus', self.num_threads)        
+        node.add_profile('condor', 'request_cpus', self.num_threads)
 
         if self.injection_file is not None:
             node.add_input_opt('--injection-file', self.injection_file)
 
-        if self.gate_files is not None:
-            ifo_gate = None
-            for gate_file in self.gate_files:
-                if gate_file.ifo == self.ifo:
-                    ifo_gate = gate_file
-            if ifo_gate is not None:
-                node.add_input_opt('--gating-file', ifo_gate)
-
-        # set the input and output files        
+        # set the input and output files
         fil = node.new_output_file_opt(valid_seg, self.ext, '--output', tags=tags,
                          store_file=self.retain_files, use_tmp_subdirs=True)
         fil.add_metadata('data_seg', data_seg)
@@ -772,7 +761,7 @@ class PyCBCInspiralExecutable(Executable):
         # FIXME: This hack is needed for pipedown compatibility. user-tag is
         #        no-op and is only needed for pipedown to know whether this is
         #        a "FULL_DATA" job or otherwise. Alex wants to burn this code
-        #        with fire. 
+        #        with fire.
         if node.output_files[0].storage_path is not None:
             outFile = os.path.basename(node.output_files[0].storage_path)
             userTag = outFile.split('-')[1]
@@ -792,59 +781,132 @@ class PyCBCInspiralExecutable(Executable):
     def get_valid_times(self):
         """ Determine possible dimensions of needed input and valid output
         """
-        
-        min_analysis_segs = int(self.cp.get('workflow-matchedfilter',
-                                          'min-analysis-segments'))
-        max_analysis_segs = int(self.cp.get('workflow-matchedfilter',
-                                    'max-analysis-segments'))
-        
+
+        if self.cp.has_option('workflow-matchedfilter',
+                                                      'min-analysis-segments'):
+            min_analysis_segs = int(self.cp.get('workflow-matchedfilter',
+                                                'min-analysis-segments'))
+        else:
+            min_analysis_segs = 0
+
+        if self.cp.has_option('workflow-matchedfilter',
+                                                      'max-analysis-segments'):
+            max_analysis_segs = int(self.cp.get('workflow-matchedfilter',
+                                                'max-analysis-segments'))
+        else:
+            # Choose ridiculously large default value
+            max_analysis_segs = 1000
+
+        if self.cp.has_option('workflow-matchedfilter', 'min-analysis-length'):
+            min_analysis_length = int(self.cp.get('workflow-matchedfilter',
+                                                  'min-analysis-length'))
+        else:
+            min_analysis_length = 0
+
+        if self.cp.has_option('workflow-matchedfilter', 'max-analysis-length'):
+            max_analysis_length = int(self.cp.get('workflow-matchedfilter',
+                                                  'max-analysis-length'))
+        else:
+            # Choose a ridiculously large default value
+            max_analysis_length = 100000
+
         segment_length = int(self.get_opt('segment-length'))
-        pad_data = int(self.get_opt( 'pad-data'))
+        pad_data = 0
+        if self.has_opt('pad-data'):
+            pad_data += int(self.get_opt('pad-data'))
+
+        # NOTE: Currently the tapered data is ignored as it is short and
+        #       will lie within the segment start/end pad. This means that
+        #       the tapered data *will* be used for PSD estimation (but this
+        #       effect should be small). It will also be in the data segments
+        #       used for SNR generation (when in the middle of a data segment
+        #       where zero-padding is not being used) but the templates should
+        #       not be long enough to use this data assuming segment start/end
+        #       pad take normal values. When using zero-padding this data will
+        #       be used for SNR generation.
+
+        #if self.has_opt('taper-data'):
+        #    pad_data += int(self.get_opt( 'taper-data' ))
+        if self.has_opt('allow-zero-padding'):
+            self.zero_padding=True
+        else:
+            self.zero_padding=False
+
         start_pad = int(self.get_opt( 'segment-start-pad'))
         end_pad = int(self.get_opt('segment-end-pad'))
-        
-        constant_psd_segs = self.get_opt('psd-recalculate-segments')
-        if constant_psd_segs is None:
-            constant_psd_segs = min_analysis_segs
-            max_analysis_segs = min_analysis_segs
-        else:
-            constant_psd_segs = int(constant_psd_segs)
-        
-        if min_analysis_segs % constant_psd_segs != 0:
-            raise ValueError('Constant PSD segments does not evenly divide the '
-                             'number of analysis segments') 
-        
-        if max_analysis_segs is None:
-            max_analysis_segs = min_analysis_segs
-        
-        seg_ranges = range(min_analysis_segs, max_analysis_segs + 1, constant_psd_segs)
+
+        seg_ranges = range(min_analysis_segs, max_analysis_segs + 1)
         data_lengths = []
         valid_regions = []
         for nsegs in seg_ranges:
             analysis_length = (segment_length - start_pad - end_pad) * nsegs
-            data_length = analysis_length + pad_data * 2 + start_pad + end_pad
-            start = pad_data + start_pad
-            end = data_length - pad_data - end_pad
+            if not self.zero_padding:
+                data_length = analysis_length + pad_data * 2 \
+                              + start_pad + end_pad
+                start = pad_data + start_pad
+                end = data_length - pad_data - end_pad
+            else:
+                data_length = analysis_length + pad_data * 2
+                start = pad_data
+                end = data_length - pad_data
+            if data_length > max_analysis_length: continue
+            if data_length < min_analysis_length: continue
             data_lengths += [data_length]
             valid_regions += [segments.segment(start, end)]
-            
+        # If min_analysis_length is given, ensure that it is added as an option
+        # for job analysis length.
+        if min_analysis_length:
+            data_length = min_analysis_length
+            if not self.zero_padding:
+                start = pad_data + start_pad
+                end = data_length - pad_data - end_pad
+            else:
+                start = pad_data
+                end = data_length - pad_data
+            if end > start:
+                data_lengths += [data_length]
+                valid_regions += [segments.segment(start, end)]
+
         return data_lengths, valid_regions
+
+    def zero_pad_data_extend(self, job_data_seg, curr_seg):
+        """When using zero padding, *all* data is analysable, but the setup
+        functions must include the padding data where it is available so that
+        we are not zero-padding in the middle of science segments. This
+        function takes a job_data_seg, that is chosen for a particular node
+        and extends it with segment-start-pad and segment-end-pad if that
+        data is available.
+        """
+        if self.zero_padding is False:
+            return job_data_seg
+        else:
+            start_pad = int(self.get_opt( 'segment-start-pad'))
+            end_pad = int(self.get_opt('segment-end-pad'))
+            new_data_start = max(curr_seg[0], job_data_seg[0] - start_pad)
+            new_data_end = min(curr_seg[1], job_data_seg[1] + end_pad)
+            new_data_seg = segments.segment([new_data_start, new_data_end])
+            return new_data_seg
+
 
 class PyCBCTmpltbankExecutable(Executable):
     """ The class used to create jobs for pycbc_geom_nonspin_bank Executable and
     any other Executables using the same command line option groups.
     """
-    
-    current_retention_level = Executable.CRITICAL
+
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, ifo=None, out_dir=None,
-                 tags=[], write_psd=False, psd_files=None):
+                 tags=None, write_psd=False, psd_files=None):
+        if tags is None:
+            tags = []
         super(PyCBCTmpltbankExecutable, self).__init__(cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
         self.cp = cp
         self.set_memory(2000)
         self.write_psd = write_psd
         self.psd_files = psd_files
 
-    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=[]):
+    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         if not dfParents:
@@ -872,7 +934,7 @@ class PyCBCTmpltbankExecutable(Executable):
         node.add_input_list_opt('--frame-files', dfParents)
         return node
 
-    def create_nodata_node(self, valid_seg, tags=[]):
+    def create_nodata_node(self, valid_seg, tags=None):
         """ A simplified version of create_node that creates a node that does not
         need to read in data.
 
@@ -887,6 +949,8 @@ class PyCBCTmpltbankExecutable(Executable):
         node : pycbc.workflow.core.Node
             The instance corresponding to the created node.
         """
+        if tags is None:
+            tags = []
         node = Node(self)
 
         # Set the output file
@@ -927,7 +991,7 @@ class LigoLWCombineSegsExecutable(Executable):
     """ This class is used to create nodes for the ligolw_combine_segments
     Executable
     """
-    
+
     # Always want to keep the segments
     current_retention_level = Executable.FINAL_RESULT
     def create_node(self, valid_seg, veto_files, segment_name):
@@ -941,13 +1005,16 @@ class LigoLWCombineSegsExecutable(Executable):
 
 class LigolwAddExecutable(Executable):
     """ The class used to create nodes for the ligolw_add Executable. """
-    
+
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
-    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
-        super(LigolwAddExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
+    def __init__(self, *args, **kwargs):
+        super(LigolwAddExecutable, self).__init__(*args, **kwargs)
         self.set_memory(2000)
 
-    def create_node(self, jobSegment, input_files, output=None, tags=[]):
+    def create_node(self, jobSegment, input_files, output=None,
+                    use_tmp_subdirs=True, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         # Very few options to ligolw_add, all input files are given as a long
@@ -967,22 +1034,26 @@ class LigolwAddExecutable(Executable):
         else:
             node.new_output_file_opt(jobSegment, '.xml.gz', '--output',
                                     tags=tags, store_file=self.retain_files,
-                                    use_tmp_subdirs=True)
+                                    use_tmp_subdirs=use_tmp_subdirs)
         return node
 
 class LigolwSSthincaExecutable(Executable):
     """ The class responsible for making jobs for ligolw_sstinca. """
-    
-    current_retention_level = Executable.CRITICAL
+
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 dqVetoName=None, tags=[]):
+                 dqVetoName=None, tags=None):
+        if tags is None:
+            tags = []
         super(LigolwSSthincaExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
         if dqVetoName:
             self.add_opt("--vetoes-name", dqVetoName)
 
-    def create_node(self, jobSegment, coincSegment, inputFile, tags=[],
+    def create_node(self, jobSegment, coincSegment, inputFile, tags=None,
                     write_likelihood=False):
+        if tags is None:
+            tags = []
         node = Node(self)
         node.add_input_arg(inputFile)
 
@@ -1009,9 +1080,11 @@ class LigolwSSthincaExecutable(Executable):
 
 class PycbcSqliteSimplifyExecutable(Executable):
     """ The class responsible for making jobs for pycbc_sqlite_simplify. """
-    
-    current_retention_level = Executable.NON_CRITICAL
-    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
+
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=None):
+        if tags is None:
+            tags = []
         super(PycbcSqliteSimplifyExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
         self.set_memory(2000)
 
@@ -1033,6 +1106,7 @@ class PycbcSqliteSimplifyExecutable(Executable):
             count = 0
             testing = 0
             curr_node = Node(self)
+            # hack the retention level ..
             if self.global_retention_threshold > \
                                  Executable.INTERMEDIATE_PRODUCT:
                 curr_store_file = False
@@ -1042,7 +1116,7 @@ class PycbcSqliteSimplifyExecutable(Executable):
                 curr_node.add_input_arg(file)
                 if ( (not (i % 20)) and (i != 0) ) or ((i+1) == num_inputs):
                     count_tag = ['SPLIT%d' %(count)]
-                    curr_node.new_output_file_opt(job_segment, '.sqlite', 
+                    curr_node.new_output_file_opt(job_segment, '.sqlite',
                                     '--output-file',
                                      tags=self.tags+extra_tags+count_tag,
                                      store_file=curr_store_file)
@@ -1073,8 +1147,10 @@ class SQLInOutExecutable(Executable):
     The class responsible for making jobs for SQL codes taking one input and
     one output.
     """
-    current_retention_level=Executable.NON_CRITICAL
-    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=[]):
+    current_retention_level=Executable.ALL_TRIGGERS
+    def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None, tags=None):
+        if tags is None:
+            tags = []
         super(SQLInOutExecutable, self).__init__(cp, exe_name, universe, ifo, out_dir, tags=tags)
 
     def create_node(self, job_segment, input_file):
@@ -1104,7 +1180,9 @@ class ExtractToXMLExecutable(Executable):
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, input_file):
@@ -1113,7 +1191,6 @@ class ExtractToXMLExecutable(Executable):
         node.new_output_file_opt(job_segment, '.xml', '--extract',
                                  tags=self.tags, store_file=self.retain_files)
         return node
-
 
 class ComputeDurationsExecutable(SQLInOutExecutable):
     """
@@ -1134,7 +1211,9 @@ class InspinjfindExecutable(Executable):
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, input_file):
@@ -1154,11 +1233,13 @@ class PycbcSplitInspinjExecutable(Executable):
         super(PycbcSplitInspinjExecutable, self).__init__(cp, exe_name,
                 universe, ifo, out_dir, tags=[])
         self.num_splits = int(num_splits)
-    def create_node(self, parent, tags=[]):
+    def create_node(self, parent, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         node.add_input_opt('--input-file', parent)
-        
+
         if parent.name.endswith("gz"):
             ext = ".xml.gz"
         else:
@@ -1173,7 +1254,7 @@ class PycbcSplitInspinjExecutable(Executable):
                             extension=ext, directory=self.out_dir,
                             tags=curr_tags, store_file=self.retain_files)
             out_files.append(out_file)
-        
+
         node.add_output_list_opt('--output-files', out_files)
         return node
 
@@ -1186,7 +1267,9 @@ class PycbcPickleHorizonDistsExecutable(Executable):
     # FIXME: This class will soon be removed when gstlal post-proc is updated
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, trigger_files):
@@ -1205,7 +1288,9 @@ class PycbcCombineLikelihoodExecutable(Executable):
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, likelihood_files, horizon_dist_file):
@@ -1224,7 +1309,9 @@ class PycbcGenerateRankingDataExecutable(Executable):
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_num_cpus(4)
@@ -1245,7 +1332,9 @@ class PycbcCalculateLikelihoodExecutable(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, trigger_file, likelihood_file,
@@ -1271,7 +1360,9 @@ class GstlalMarginalizeLikelihoodExecutable(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, input_file):
@@ -1287,7 +1378,9 @@ class GstlalFarfromsnrchisqhistExecutable(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_node(self, job_segment, non_inj_db, marg_input_file,
@@ -1307,14 +1400,15 @@ class GstlalFarfromsnrchisqhistExecutable(Executable):
                                   store_file=self.retain_files)
         return node
 
-
 class GstlalPlotSensitivity(Executable):
     """
     The class responsible for running gstlal_plot_sensitivity
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_memory('4000')
@@ -1331,7 +1425,9 @@ class GstlalPlotSummary(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_memory('4000')
@@ -1348,7 +1444,9 @@ class GstlalPlotBackground(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
         self.set_memory('4000')
@@ -1364,7 +1462,9 @@ class GstlalSummaryPage(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifo=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifo, out_dir,
                                   tags=tags)
     def create_and_add_node(self, workflow, parent_nodes):
@@ -1384,7 +1484,9 @@ class LalappsInspinjExecutable(Executable):
     The class used to create jobs for the lalapps_inspinj Executable.
     """
     current_retention_level = Executable.FINAL_RESULT
-    def create_node(self, segment, exttrig_file=None, tags=[]):
+    def create_node(self, segment, exttrig_file=None, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
 
         curr_tags = self.tags + tags
@@ -1396,22 +1498,41 @@ class LalappsInspinjExecutable(Executable):
         else:
             ext = '.xml'
 
-        if exttrig_file is not None:
+        # Check if these injections are using trigger information to choose
+        # sky positions for the simulated signals
+        if (self.get_opt('l-distr') == 'exttrig' and exttrig_file is not None \
+                and 'trigger' in exttrig_file.description):
+            # Use an XML file containing trigger information
+            triggered = True
+            node.add_input_opt('--exttrig-file', exttrig_file)
+        elif (self.get_opt('l-distr') == 'ipn' and exttrig_file is not None \
+                and 'IPN' in exttrig_file.description):
+            # Use an IPN sky points file
+            triggered = True
+            node.add_input_opt('--ipn-file', exttrig_file)
+        elif (self.get_opt('l-distr') != 'exttrig') \
+                and (self.get_opt('l-distr') != 'ipn' and not \
+                     self.has_opt('ipn-file')):
+            # Use no trigger information for generating injections
+            triggered = False
+        else:
+            err_msg = "The argument 'l-distr' passed to the "
+            err_msg += "%s job has the value " % self.tagged_name
+            err_msg += "'%s' but you have not " % self.get_opt('l-distr')
+            err_msg += "provided the corresponding ExtTrig or IPN file. "
+            err_msg += "Please check your configuration files and try again."
+            raise ValueError(err_msg)
+
+        if triggered:
             num_injs = int(self.cp.get_opt_tags('workflow-injections',
                                                 'num-injs', curr_tags))
             inj_tspace = float(segment[1] - segment[0]) / num_injs
             node.add_opt('--time-interval', inj_tspace)
             node.add_opt('--time-step', inj_tspace)
-            
-            if self.get_opt('l-distr') == 'exttrig':
-                node.add_opt('--exttrig-file', '%s' % exttrig_file.storage_path)
-            
-            node.new_output_file_opt(segment, ext, '--output',
-                                     store_file=self.retain_files)
-        else:
-            node.new_output_file_opt(segment, ext, '--output',
-                                     store_file=self.retain_files)
-        
+
+        node.new_output_file_opt(segment, ext, '--output',
+                                 store_file=self.retain_files)
+
         node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
         node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
         return node
@@ -1422,19 +1543,23 @@ class PycbcDarkVsBrightInjectionsExecutable(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
                             tags=tags)
         self.cp = cp
         self.out_dir = out_dir
         self.exe_name = exe_name
 
-    def create_node(self, parent, segment, tags=[]):
+    def create_node(self, parent, segment, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
         if not parent:
             raise ValueError("Must provide an input file.")
 
-        node = Node(self) 
+        node = Node(self)
         # Standard injection file produced by lalapps_inspinj
         # becomes the input here
         node.add_input_opt('-i', parent)
@@ -1458,45 +1583,53 @@ class LigolwCBCJitterSkylocExecutable(Executable):
     """
     The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
                             tags=tags)
         self.cp = cp
         self.out_dir = out_dir
         self.exe_name = exe_name
-            
-    def create_node(self, parent, segment, tags=[]):
+
+    def create_node(self, parent, segment, tags=None):
+        if tags is None:
+            tags = []
         if not parent:
             raise ValueError("Must provide an input file.")
 
-        node = Node(self) 
+        node = Node(self)
         node.add_input_opt('--input-file', parent)
         output_file = File(parent.ifo_list, self.exe_name,
                            segment, extension='.xml', store_file=True,
                            directory=self.out_dir, tags=tags)
         node.add_output_opt('--output-file', output_file)
-        
+
         return node
 
 class LigolwCBCAlignTotalSpinExecutable(Executable):
     """
     The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
     """
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
-                 tags=[]):
+                 tags=None):
+        if tags is None:
+            tags = []
         Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
                             tags=tags)
         self.cp = cp
         self.out_dir = out_dir
         self.exe_name = exe_name
 
-    def create_node(self, parent, segment, tags=[]):
+    def create_node(self, parent, segment, tags=None):
+        if tags is None:
+            tags = []
         if not parent:
             raise ValueError("Must provide an input file.")
-        
+
         node = Node(self)
         output_file = File(parent.ifo_list, self.exe_name, segment,
                            extension='.xml', store_file=self.retain_files,
@@ -1518,22 +1651,23 @@ class PycbcTimeslidesExecutable(Executable):
         return node
 
 class PycbcSplitBankExecutable(Executable):
-    """ The class responsible for creating jobs for pycbc_splitbank. """
-    
-    current_retention_level = Executable.NON_CRITICAL
+    """ The class responsible for creating jobs for pycbc_hdf5_splitbank. """
+
+    extension = '.hdf'
+    current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, num_banks,
                  ifo=None, out_dir=None, universe=None):
         super(PycbcSplitBankExecutable, self).__init__(cp, exe_name, universe,
                 ifo, out_dir, tags=[])
         self.num_banks = int(num_banks)
 
-    def create_node(self, bank, tags=[]):
+    def create_node(self, bank, tags=None):
         """
-        Set up a CondorDagmanNode class to run lalapps_splitbank code
+        Set up a CondorDagmanNode class to run splitbank code
 
         Parameters
         ----------
-        bank : pycbc.workflow.core.File 
+        bank : pycbc.workflow.core.File
             The File containing the template bank to be split
 
         Returns
@@ -1541,6 +1675,8 @@ class PycbcSplitBankExecutable(Executable):
         node : pycbc.workflow.core.Node
             The node to run the job
         """
+        if tags is None:
+            tags = []
         node = Node(self)
         node.add_input_opt('--bank-file', bank)
 
@@ -1553,8 +1689,48 @@ class PycbcSplitBankExecutable(Executable):
             curr_tags = bank.tags + [curr_tag] + tags
             job_tag = bank.description + "_" + self.name.upper()
             out_file = File(bank.ifo_list, job_tag, bank.segment,
-                               extension=".xml.gz", directory=self.out_dir,
-                               tags=curr_tags, store_file=self.retain_files)
+                            extension=self.extension, directory=self.out_dir,
+                            tags=curr_tags, store_file=self.retain_files)
             out_files.append(out_file)
         node.add_output_list_opt('--output-filenames', out_files)
         return node
+
+class PycbcSplitBankXmlExecutable(PycbcSplitBankExecutable):
+    """ Subclass resonsible for creating jobs for pycbc_splitbank. """
+
+    extension='.xml.gz'
+
+class PycbcConditionStrainExecutable(Executable):
+    """ The class responsible for creating jobs for pycbc_condition_strain. """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None, universe=None,
+            tags=None):
+        super(PycbcConditionStrainExecutable, self).__init__(cp, exe_name, universe,
+              ifo, out_dir, tags)
+
+    def create_node(self, input_files, tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+        start_time = self.cp.get("workflow", "start-time")
+        end_time = self.cp.get("workflow", "end-time")
+        node.add_opt('--gps-start-time', start_time)
+        node.add_opt('--gps-end-time', end_time)
+        node.add_input_list_opt('--frame-files', input_files)
+
+        out_file = File(self.ifo, "gated",
+                        segments.segment(int(start_time), int(end_time)),
+                        directory=self.out_dir, store_file=self.retain_files,
+                        extension=input_files[0].name.split('.', 1)[-1],
+                        tags=tags)
+        node.add_output_opt('--output-strain-file', out_file)
+
+        out_gates_file = File(self.ifo, "output_gates",
+                              segments.segment(int(start_time), int(end_time)),
+                              directory=self.out_dir, extension='txt',
+                              store_file=self.retain_files, tags=tags)
+        node.add_output_opt('--output-gates-file', out_gates_file)
+
+        return node, out_file
+

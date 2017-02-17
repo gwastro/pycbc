@@ -19,6 +19,7 @@ DAX_FILE=""
 CACHE_FILE=0
 LOCAL_PEGASUS_DIR=""
 ACCOUNTING_GROUP=""
+ACCOUNTING_GROUP_USER=""
 NO_ACCOUNTING_GROUP=0
 PEGASUS_PROPERTIES=""
 SHARED_FILESYSTEM=0
@@ -46,7 +47,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:g:r:a:p:P:es:S:k:t:Fknl:h --long dax:,cache-file:,local-gsiftp-server:,remote-staging-server:,accounting-group:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:g:r:a:u:p:P:es:S:k:t:Fknl:h --long dax:,cache-file:,local-gsiftp-server:,remote-staging-server:,accounting-group:,accounting-group-user:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -60,12 +61,28 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) CACHE_FILE=1
-           if [ -e $2 ] ; then 
-             cat $2 >> _reuse.cache
-             else
-               echo "Error: cache file $2 not found"
-               exit 1
-             fi
+           OLD_IFS=${IFS}
+           IFS=","
+           set +e
+           for URL in $2; do
+              FOUND_URL=1
+              # strip of any leading file:// URI and see if the file exists
+              FILE_URL=${URL##file://}
+              if [ -f ${FILE_URL} ] ; then
+                 cat ${FILE_URL} >> _reuse.cache
+                 FOUND_URL=0
+              else
+                 # otherwise try and get the file using curl
+                 curl --fail ${URL} >> _reuse.cache
+                 FOUND_URL=${?}
+              fi
+              if [ ${FOUND_URL} -ne 0 ] ; then
+                 echo "$URL not found!"
+                 exit
+              fi
+              IFS=${OLD_IFS}
+           done
+           set -e
            shift 2 ;;
       esac ;;
     -g|--local-gsiftp-server)
@@ -82,6 +99,11 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) export ACCOUNTING_GROUP=$2 ; shift 2 ;;
+      esac ;;
+    -u|--accounting-group-user)
+      case "$2" in
+        "") shift 2 ;;
+        *) export ACCOUNTING_GROUP_USER=$2 ; shift 2 ;;
       esac ;;
     -p|--pegasus-properties)
       case "$2" in
@@ -107,12 +129,25 @@ while true ; do
     -k|--append-site-profile)
       case "$2" in
         "") shift 2 ;;
-        *) APPEND_SITE_PROFILE_ARRAY=(${2//:/ })
+        *) SITE_PROFILE=${2}
+           APPEND_SITE_PROFILE_ARRAY=`perl -e 'use HTML::Entities; print encode_entities(decode_entities(<STDIN>), "\'\"'\'\''<>()&+" );' <<< ${SITE_PROFILE}`
+           OIFS=${IFS}; IFS=":"
+           read -ra APPEND_SITE_PROFILE_ARRAY <<< "${APPEND_SITE_PROFILE_ARRAY}"
+           IFS=${OIFS}
            APPEND_SITE=${APPEND_SITE_PROFILE_ARRAY[0]}
            APPEND_SITE_NS_KEY=(${APPEND_SITE_PROFILE_ARRAY[1]//\|/ })
-           APPEND_SITE_VALUE=${APPEND_SITE_PROFILE_ARRAY[2]}
-           echo "    <profile namespace=\"${APPEND_SITE_NS_KEY[0]}\" key=\"${APPEND_SITE_NS_KEY[1]}\">${APPEND_SITE_VALUE}</profile>" >> ${APPEND_SITE}-extra-site-properties.xml
-        shift 2 ;;
+           APPEND_SITE_VALUE=("${APPEND_SITE_PROFILE_ARRAY[@]:2}")
+           /bin/echo -n "    <profile namespace=\"${APPEND_SITE_NS_KEY[0]}\" key=\"${APPEND_SITE_NS_KEY[1]}\">" >> ${APPEND_SITE}-extra-site-properties.xml
+           need_colon=0
+           for i in "${APPEND_SITE_VALUE[@]}" ; do
+               if [ ${need_colon} -eq 1 ] ; then
+                   /bin/echo -n ":" >> ${APPEND_SITE}-extra-site-properties.xml
+               fi
+               /bin/echo -n "${i}" >> ${APPEND_SITE}-extra-site-properties.xml
+               need_colon=1
+           done
+           echo "</profile>" >> ${APPEND_SITE}-extra-site-properties.xml
+           shift 2 ;;
       esac ;;
     -t|--transformation-catalog)
       case "$2" in
@@ -172,7 +207,7 @@ while true ; do
       echo "  -l, --local-dir         Directory to put condor files under"
       echo
       echo "If the environment variable TMPDIR is set then this is prepended to the "
-      echo "path to the temporary workflow execte directory passed to pegasus-plan."
+      echo "path to the temporary workflow execute directory passed to pegasus-plan."
       echo "If the --local-dir option is not given."
       echo
       echo "If the environment variable PEGASUS_FILE_DIRECTORY is set then the"
@@ -197,7 +232,7 @@ if [ "x$DAX_FILE" == "x" ]; then
 fi
 
 if [ "x$ACCOUNTING_GROUP" == "x" ] && [ $NO_ACCOUNTING_GROUP == 0 ]; then
-  echo "Error: You must specify and accounting group with --accounting-group or"
+  echo "Error: You must specify an accounting group with --accounting-group or"
   echo "override this check with --force-no-accounting-group. If you do not specify"
   echo "an accounting group, job submission will fail on the LIGO Data Grid."
   echo
@@ -218,7 +253,35 @@ if [ $NO_CREATE_PROXY == 0 ]; then
   done
   unset X509_USER_PROXY
   ligo-proxy-init $LIGO_USER_NAME || exit 1
+else
+  if [ ! -z ${X509_USER_PROXY} ] ; then
+    if [ -f ${X509_USER_PROXY} ] ; then
+      cp -a ${X509_USER_PROXY} /tmp/x509up_u`id -u`
+    fi
+  unset X509_USER_PROXY
+  fi
 fi
+
+#Check that the proxy is valid
+set +e
+grid-proxy-info -exists
+RESULT=$?
+set -e
+if [ ${RESULT} -eq 0 ] ; then
+  PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
+  if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
+    grid-proxy-info
+  else
+    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
+    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+    rm -f /tmp/x509up_u`id -u`.orig
+    grid-proxy-info
+  fi
+else
+  echo "Error: Could not find a valid grid proxy to submit workflow."
+  exit 1
+fi
+
 
 #Make a directory for the submit files
 SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
@@ -244,8 +307,10 @@ fi
 export LOCAL_SITE_URL
 
 # add the local site
+# Set remote staging url to local
 if [ -z $SITE_LIST ] ; then
   SITE_LIST="local"
+  REMOTE_STAGING_URL=${LOCAL_SITE_URL}
 else
   SITE_LIST="local,${SITE_LIST}"
 fi
@@ -255,10 +320,13 @@ if [ -z ${PEGASUS_SITE_CATALOG_PATH} ] ; then
 fi
 
 # Create the site catalog
-if [ -z $REMOTE_STAGING_SERVER ] ; then
-  REMOTE_STAGING_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
-else
-  REMOTE_STAGING_URL="gsiftp://${REMOTE_STAGING_SERVER}${LOCAL_SITE_PATH}"
+# Don't overwrite remote staging URL if site list is local
+if [ ${SITE_LIST} != "local" ] ; then
+  if [ -z $REMOTE_STAGING_SERVER ] ; then
+    REMOTE_STAGING_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
+  else
+    REMOTE_STAGING_URL="gsiftp://${REMOTE_STAGING_SERVER}${LOCAL_SITE_PATH}"
+  fi
 fi
 export REMOTE_STAGING_URL
 
@@ -341,9 +409,9 @@ fi
 
 
 if [ $CACHE_FILE == 0 ]; then
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-submit-dir work --cluster label $SUBMIT_DAX 
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster label $SUBMIT_DAX
 else
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-submit-dir work --cluster label $SUBMIT_DAX
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster label $SUBMIT_DAX
 fi
 
 echo
@@ -360,7 +428,43 @@ chmod 755 debug
 echo pegasus-remove $SUBMIT_DIR/work > stop
 chmod 755 stop
 
-echo pegasus-run $SUBMIT_DIR/work > start
+cat << EOF > start
+#!/bin/bash
+
+if [ -f /tmp/x509up_u\`id -u\` ] ; then
+  unset X509_USER_PROXY
+else
+  if [ ! -z \${X509_USER_PROXY} ] ; then
+    if [ -f \${X509_USER_PROXY} ] ; then
+      cp -a \${X509_USER_PROXY} /tmp/x509up_u\`id -u\`
+    fi
+  fi
+  unset X509_USER_PROXY
+fi
+
+# Check that the proxy is valid
+grid-proxy-info -exists
+RESULT=\${?}
+if [ \${RESULT} -eq 0 ] ; then
+  PROXY_TYPE=\`grid-proxy-info -type | tr -d ' '\`
+  if [ x\${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
+    grid-proxy-info
+  else
+    cp /tmp/x509up_u\`id -u\` /tmp/x509up_u\`id -u\`.orig
+    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u\`id -u\`.orig -key /tmp/x509up_u\`id -u\`.orig
+    rm -f /tmp/x509up_u\`id -u\`.orig
+    grid-proxy-info
+  fi
+else
+  echo "Error: Could not find a valid grid proxy to submit workflow."
+  exit 1
+fi
+
+EOF
+echo pegasus-run $SUBMIT_DIR/work >> start
+
+
+
 chmod 755 start
 
 # Copy planning information into workflow directory so it can be displayed on the results page
@@ -382,7 +486,9 @@ fi
 
 # ugly shell to extract the sub-dax names from the uberdax xml
 for dax in `egrep '<[[:blank:]]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do 
-  cp ${dax} workflow/dax
+  if [ -e ${dax} ] ; then
+    cp ${dax} workflow/dax
+  fi
   map=`basename ${dax} .dax`.map
   if [ -e ${map} ] ; then
     cp ${map} workflow/output_map
@@ -408,21 +514,43 @@ if [ ! -e ${HOME}/.pegasus/workflow.db ] ; then
   echo
   exit 1
 fi
-  
+
+WORKFLOW_ID_STRING=""
 WORKFLOW_DB_CMD="sqlite3 -csv ${HOME}/.pegasus/workflow.db \"select submit_hostname,wf_id,wf_uuid from master_workflow where submit_dir = '${SUBMIT_DIR}/work';\""
 DB_TRY=0
-/bin/echo -n "Querying Pegasus database for job."
-until [ $DB_TRY -ge 10 ]
+/bin/echo "Querying Pegasus database for workflow stored in ${SUBMIT_DIR}/work"
+/bin/echo -n "This may take up to 120 seconds. Please wait..."
+rm -f pegasus_db.log
+touch pegasus_db.log
+# querying the database sometimes fails, so allow retries
+set +e
+until [ $DB_TRY -ge 15 ]
 do 
   /bin/echo -n "."
-  WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD`
+  WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD 2>> pegasus_db.log`
   if [ $? -eq 0 ] && [ ! -z $WORKFLOW_ID_STRING ] ; then
+    /bin/echo " Done."
+    DB_QUERY_SUCCESS=0
     break
+  else
+    DB_QUERY_SUCCESS=1
   fi
-  sleep $DB_TRY
   DB_TRY=$(( $DB_TRY + 1 ))
+  for s in `seq ${DB_TRY}`
+  do
+    /bin/echo -n "."
+    sleep 1
+  done
 done
-echo " done."
+set -e
+
+if [ ${DB_QUERY_SUCCESS} -eq 1 ] ; then
+  echo; echo
+  /bin/echo "Query failed: ${WORKFLOW_DB_CMD}"
+  cat pegasus_db.log
+else
+  rm -f pegasus_db.log
+fi
 
 if [ -z $WORKFLOW_ID_STRING ] ; then
   echo "WARNING: Could not find the workflow in the Pegasus dashboard database."
@@ -450,6 +578,7 @@ if [ -e ${DASHBOARD_PATH} ] ; then
     cp ${DASHBOARD_PATH} ${DASHBOARD_COPY}
   fi
 
+  COMMAND_LINE=`perl -e 'use HTML::Entities; print encode_entities(decode_entities(<STDIN>), "\'\"'\'\''<>()&+" );' <<< ${COMMAND_LINE}`
   perl -pi.bak -e "s+PYCBC_SUBMIT_DAX_ARGV+${COMMAND_LINE}+g" ${DASHBOARD_PATH}
   perl -pi.bak -e "s+PEGASUS_DASHBOARD_URL+${DASHBOARD_URL}+g" ${DASHBOARD_PATH}
 fi

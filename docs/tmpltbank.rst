@@ -9,20 +9,26 @@ Introduction
 ===================
 
 This page gives details on how to use the various bank generation codes
-available in pyCBC, the pyCBC.tmpltbank module. In addition we describe the
-sBank code. These codes currently consist of 
+and bank generation workflows
+available in pyCBC and specifically the pyCBC.tmpltbank module.
+We also describe the sBank code, currently in lalinspiral.
+These codes currently consist of 
 
 * :ref:`A program to generate a non-spinning template bank (pycbc_geom_nonspinbank) <tmpltbank_nonspinbank>`
 * :ref:`A program to generate an aligned-spin template bank using a geometrical lattice algorithm (pycbc_geom_aligned_bank) <tmpltbank_alignedgeombank>`
 * :ref:`Two programs to generate an aligned-spin template bank using a stochastic placement algorithm. This is done either using a metric to approximate distances, or by computing explicit matches from waveforms. (pycbc_aligned_stoch_bank, lalapps_cbc_sbank) <tmpltbank_alignedstochbank>`
+* :ref:`A workflow generator for generating large template banks using the lalapps_cbc_sbank executables, but allowing the parallel use of multiple cores to optimize the generation of large template banks. (pycbc_create_sbank_workflow) <tmpltbank_sbankworkflow>`
+* :ref:`A workflow generator for generating the "uberbank". This consists of a chain of calls to the geometric aligned-spin lattice code and the sbank workflow generator to create a template bank suitable for analysing Advanced LIGO and Advanced Virgo data. (pycbc_create_uberbank_workflow) <tmpltbank_uberbankworkflow>`
 
-Each of these codes is described in turn and is accompanied by some examples of how to run the code, some relevant background and references and the options described from the codes' help messages.
+Each of these codes and workflow generators is described in turn and is accompanied by some examples of how to run the code, some relevant background and references and the options described from the codes' help messages.
 
 The output of all these codes is currently a sngl_inspiral_table XML object.
-However, if people want to output in SQL or other formats it should be
+However, if people want to output in HDF or other formats it should be
 easy to write a back-end module to do this. The code may not fill every
 necessary column of the sngl_inspiral table, please let me know if something
 is missing and it will be added!
+
+**NOTE: Aligned-spin template generation is not at the point where it can be considered "plug and play". Here we give some examples for distinct situations, but these options may not be suitable in other situations, for example if changing the mass ranges, or PSD, or frequency ranges etc. Template banks should always be checked (see :ref:`pycbc_banksim <banksim>`) and you should consider if you have placed too many templates ("overcovering" the parameter space), or if the placement has left gaps in the coverage ("undercovering" the parameter space). There are numerous things that can be tuned in the workflow generators, we try to describe them here, but it is often good to ask questions if you are unsure!**
 
 **In some cases recommendations are given for which codes to use where. It
 should be noted that these are personal recommendations of the page maintainer
@@ -50,9 +56,11 @@ placement slower than lalapps_tmpltbank. However, it doesn't waste stupid
 amounts of time calculating the ethinca metric so it is faster than tmpltbank
 if the ethinca components are being computed.
 
+A metric-based approach is not very reliable at high masses, but we have found
+that in general this just results in overcoverage, which is not normally a problem as most templates are found at lower masses. One might want to consider the stochastic code sbank if placing a high-mass only non-spinning template bank.
 
 **Ian's recommendation: Use this code instead of lalapps_tmpltbank if you want
-a non-spinning bank.**
+a non-spinning bank. If only placing high-mass templates consider using lalapps_cbc_sbank, described below.**
 
 ----------------
 Background
@@ -117,6 +125,7 @@ Some notes on these options:
 * The value of f0 generally doesn't matter (so just use 70 if unsure). However if ethinca is being calculated f0 and f-low must be equal.
 * Choose f-upper wisely! If your signals coalesce at <1000Hz, you might want to use a lower value ... although of course in this regime this inspiral-only metric will lose validity.
 * A delta-f value of 1/256 will certainly be accurate enough, a larger value will cause the code to run faster.
+* Using binary values for f-upper, delta-f and sample-rate is not needed for the metric calculation (which is a direct integral), but will provide a noticeable speed difference if reading data to compute a PSD.
 
 .. _tmpltbank_alignedgeombank:
 
@@ -129,22 +138,22 @@ Overview
 ---------------------
 
 pycbc_geom_aligned_bank is a code for placing of aligned-spin banks using the
-TaylorF2 metric (or TaylorR2F4, which is an approximation of TaylorT4).
+TaylorF2 metric.
 
-This code will begin by generating a dag, which the user submits, that will
+This code will begin by generating a dax (a pegasus workflow, from which a DAG
+is created), which the user submits, that will
 generate the final template bank. This code will not calculate ethinca, as
 ethinca is not defined for spinning waveforms. However, if a new coincidence
-scheme is developed it could be used in that. This code has already been used
-in two published works, has been run through the GRB code, MBTA and in
-ahope development work ongoing at AEI.
+scheme is developed it could be used in that. This code forms part of the
+"uberbank", described later, that is being used in Advanced LIGO searches.
 
 **Ian's recommendation: This code will produce optimal template banks, if the
 metric can be trusted (ie. BNS). For NSBH and BBH the merger matters. Here the
 stochastic approaches described below could be more appropriate for your
-parameter space. It is recommended to try these, and maybe even look into
-the hybrid approaches described below. Note that the merger matters less in
-ZDHP than in O1, so this approach works better for NSBH banks in 2018 than it
-will in 2015.**
+parameter space. It is recommended to try these, or a combination of the two
+as in the uberbank workflow. Note that the merger matters less in
+ZDHP than in O1, so this approach will work better for NSBH banks in 2018 than
+it does in 2015.**
 
 If any problems are encountered please email ian.harry@ligo.org.
 
@@ -180,7 +189,21 @@ Here is one example for making an aligned-spin template bank using a pre-generat
 
 .. code-block:: bash
 
-    pycbc_geom_aligned_bank --pn-order threePointFivePN --f0 70 --f-low 15 --f-upper 1000 --delta-f 0.01 --min-match 0.97 --min-mass1 2.5 --min-mass2 2.5 --max-mass1 3. --max-mass2 3. --verbose --log-path /usr1/spxiwh/logs --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --output-file testAligned.xml --split-bank-num 5 --asd-file ZERO_DET_high_P.txt
+    pycbc_geom_aligned_bank --pn-order threePointFivePN --f0 70 --f-low 15 --f-upper 1000 --delta-f 0.01 --min-match 0.97 --min-mass1 2.5 --min-mass2 2.5 --max-mass1 3. --max-mass2 3. --verbose --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --output-file testAligned.xml --split-bank-num 5 --asd-file /home/spxiwh/aLIGO/BBH_template_banks/asd-T1200307v4.txt --intermediate-data-file intermediate.hdf --metadata-file metadata.xml
+
+and then submitted with something like:
+
+.. code-block:: bash
+
+    pycbc_submit_dax --dax bank_gen.dax --accounting-group ligo.dev.o2.cbc.bbh.pycbcoffline
+
+run
+
+.. code-block:: bash
+
+    pycbc_submit_dax --help
+
+for more details on options for submitting an abstract workflow to condor.
 
 --------------------------
 Command line options
@@ -197,8 +220,8 @@ Some notes on these options:
 * The value of f0 generally doesn't matter (so just use 70 if unsure). However if ethinca is being calculated f0 and f-low must be equal.
 * Choose f-upper wisely! If your signals coalesce at <1000Hz, you might want to use a lower value ... although of course in this regime this inspiral-only metric will lose validity.
 * A delta-f value of 1/256 will certainly be accurate enough, a larger value will cause the code to run faster.
-* For the purposes of spin calculations a NS is considered to be anything with mass < 3 solar masses
-* And a BH is considered to be anything with mass > 3 solar masses.
+* Using binary values for f-upper, delta-f and sample-rate is not needed for the metric calculation (which is a direct integral), but will provide a noticeable speed difference if reading data to compute a PSD.
+* For the purposes of spin calculations a NS is considered to be anything with mass < 3 solar masses and a BH is considered to be anything with mass > 3 solar masses. But this can be overridden with the `--ns-bh-boundary-mass` option.
 * To avoid generating a NSBH bank where you have a wall of triggers with NS mass = 3 and spins up to the black hole maximum use the nsbh-flag. This will ensure that only neutron-star--black-hole systems are generated.
 * If a remnant-mass-threshold is specified the code sets up the bank so that it does not target NS-BH systems that cannot produce a remnant disk mass that exceeds the threshold: this is used to remove EM dim NS-BH binaries from the target parameter space, as discussed in Pannarale and Ohme, ApJL 7, 5 (2014).  Please contact francesco.pannarale@ligo.org if you want to know more about this.
 
@@ -218,15 +241,27 @@ pycbc_aligned_stoch_bank is an aligned-spin bank generator that uses a
 stochastic algorithm and the TaylorF2 (or TaylorR2F4) metric to create a bank
 of templates.
 
-lalapps_cbc_sbank is an aligned-spin bank generator that uses a stochastic algorithm to create a bank of templates. It can use a metric to approximate distances (currently available metrics: TaylorF2 single spin approximation). It can also compute banks using direct matches between waveforms instead of a metric. In theory this could also be used to generate precessing banks (and of course non-spin banks), although computational cost of precessing banks may be way too much to make this practical.
+lalapps_cbc_sbank is an aligned-spin bank generator that uses a stochastic algorithm to create a bank of templates. It can use a metric to approximate distances (currently available metrics: TaylorF2 single spin approximation). It can also compute banks using direct matches between waveforms instead of a metric. It can also be used to generate precessing banks (and of course non-spin banks), although computational cost of precessing banks makes this difficult; here the workflow code is necessary and one must spend some time constructing a good configuration file.
 
 Comparisons, advantages and disadvantages of the two codes are discussed below.
 
 When using a metric these codes do not require the processing power of the
-geometric lattice algorithm and does not produce a dag.
+geometric lattice algorithm and do not produce a dag.
 Run the command, wait, get bank. When using the direct match method in sbank
-computational cost is much higher. For this purpose a dag generator is also
-supplied to parallelize generation.
+computational cost is much higher. For this purpose a workflow generator is
+also supplied to parallelize generation.
+
+**NOTE: The question "Do I need to use the sbank workflow or just call sbank
+directly?" is an important one. As a rough rule of thumb if your template bank
+will result in less than 20000 templates (assuming quick-to-generate waveforms)
+and you use the optimization options, then a single sbank job should be
+sufficient. If expecting more than this then expect to need the workflow
+generator. Many of the optimizations used to speed up sbank do not work with
+time-domain waveforms, which are often much slower to generate than
+frequency-domain ones. sbank can run with time-domain waveforms, but it will
+generally be too slow to generate anything but the smallest template banks
+(approximately 1000 templates). We strongly recommend not using time-domain
+waveforms for bank generation!**
 
 ------------------
 Background
@@ -243,9 +278,10 @@ a space than a geometric approach. Additionally the computational cost will
 increase as a factor of the number of points in the bank to a power between 2 
 and 3 - the exact number depends on how well you are able to optimize the 
 parameter space and not match **every** point in the bank with every seed point.
-Nevertheless it has been found that the computational cost is not prohibitive
-for aLIGO-size stochastically-generated spinning banks, when a metric can be
-used. 
+Nevertheless it has been found that the computational cost of generating
+aligned-spin banks for Advanced LIGO, using direct-match algorithms is not
+too large, and this approach forms a large part of the "uberbank" construction
+described below.
 
 The stochastic bank code can calculate the ethinca metric, but **only** if both 
 component maximum spins are set to 0.0, i.e. a stochastic non-spinning bank. One can also generate only the time component of the metric if doing exact-match coincidence.
@@ -265,9 +301,10 @@ Recently stochastic placement has been explored for LIGO searches in
 * Ajith et al., Phys.Rev. D89 (2014) 084041
 * Privitera et al., Phys.Rev. D89 (2014) 024003
 * Harry et al., Phys.Rev. D89 (2014) 024010
+* Capano et al., Phys.Rev. D93 (2016) 124007
 
 pycbc_aligned_stoch_bank follows the method described in Harry et al. (2009)
-and calculates matches using a metric (in this case the F2 or R2F4 metrics).
+and calculates matches using a metric (in this case the F2 metric).
 lalapps_cbc_sbank can do stochastic template bank generation with or
 without a metric. In the absence of a metric it uses the method introduced in
 Babak (2008) and used in Privitera (2013) to compute distances
@@ -284,10 +321,10 @@ of these two codes into a single front-end to get the best of both worlds.
 In the mean-time here is how I see the breakdown of the two codes:
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-I want to use the F2 or R2F4 metric
+I want to use the F2 metric
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-If you want to use one of the metrics that can be used in the geometric code
+If you want to use the F2 metric used in the geometric code
 then I recommend to use pycbc_aligned_stoch_bank. Here I have found the
 code to be faster
 than lalapps_cbc_sbank using the F2 reduced spin metric because the pycbc
@@ -315,17 +352,8 @@ contact a developer for help in integrating this.
 I want to use direct match
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-Use lalapps_cbc_sbank. Be aware though that this is difficult to run in a
-single process and will require the dag generator described below. However,
-this will produce banks that have significantly overlapping coverage regions
-as the parallelized jobs cannot talk to each other. Choose the number of
-parallel jobs wisely! It is possible to have 2x-3x more templates than would be
-generated from running the code in a single process.
-
-We are also working on a hybrid method where the metric approach is used to
-create a first-pass of a template bank and then the direct match is used to
-fill the holes. This has the advantage of significantly reducing the
-overcoverage from using the dag generator.
+Use lalapps_cbc_sbank. Be aware though that this is often difficult to run in a
+single process and may require the dag generator described below.
 
 --------------------
 Some examples
@@ -338,19 +366,19 @@ Here is one example reading data from a frame cache, as in the non-spinning exam
 
 .. code-block:: bash
 
-    pycbc_aligned_stoch_bank -v --pn-order threePointFivePN --f0 60 --f-low 30 -V --delta-f 0.01 --min-match 0.97 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --verbose --output-file testStoch.xml --num-seeds 2000000
+    pycbc_aligned_stoch_bank --pn-order threePointFivePN --f0 60 --f-low 30 -V --delta-f 0.01 --min-match 0.97 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --psd-estimation median --psd-segment-length 256 --psd-segment-stride 128 --psd-inverse-length 8 --gps-start-time 900000033 --gps-end-time 900002081 --strain-high-pass 30 --pad-data 8 --sample-rate 4096 --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --verbose --output-file testStoch.xml --num-seeds 2000000 --f-upper 2000
 
 Another example where we read the PSD from a supplied ASD file:
 
 .. code-block:: bash
 
-    pycbc_aligned_stoch_bank -v --pn-order threePointFivePN --f0 60 --f-low 30 --delta-f 0.1 --min-match 0.97 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --verbose --asd-file ZERO_DET_high_P.txt --num-seeds 10000 --output-file "testStoch.xml"
+    pycbc_aligned_stoch_bank --pn-order threePointFivePN --f0 60 --f-low 30 --delta-f 0.1 --min-match 0.97 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --verbose --asd-file ZERO_DET_high_P.txt --num-seeds 10000 --output-file "testStoch.xml" --f-upper 2000
 
 And a third example where we use a batshit PN order.
 
 .. code-block:: bash
 
-    pycbc_aligned_stoch_bank -v --pn-order onePN --f0 60 --f-low 30 --delta-f 0.1 --min-match 0.97 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --verbose --asd-file ZERO_DET_high_P.txt --num-seeds 10000 --output-file "testStoch.xml"
+    pycbc_aligned_stoch_bank --pn-order onePN --f0 60 --f-low 30 --delta-f 0.1 --min-match 0.97 --min-mass1 2.5 --max-mass1 3 --min-mass2 2.5 --max-mass2 3 --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --nsbh-flag --verbose --asd-file ZERO_DET_high_P.txt --num-seeds 10000 --output-file "testStoch.xml" --f-upper 2000
 
 lalapps_cbc_sbank provides example in the help text, see below.
 
@@ -369,8 +397,7 @@ Some notes on these options:
 * The value of f0 generally doesn't matter (so just use 70 if unsure). However if ethinca is being calculated f0 and f-low must be equal.
 * Choose f-upper wisely! If your signals coalesce at <1000Hz, you might want to use a lower value ... although of course in this regime this inspiral-only metric will lose validity.
 * A delta-f value of 1/256 will certainly be accurate enough, a larger value will cause the code to run faster.
-* For the purposes of spin calculations a NS is considered to be anything with mass < 3 solar masses
-* And a BH is considered to be anything with mass > 3 solar masses.
+* For the purposes of spin calculations a NS is considered to be anything with mass < 3 solar masses and a BH is considered to be anything with mass > 3 solar masses. But this can be overridden with the `--ns-bh-boundary-mass` option.
 * To avoid generating a NSBH bank where you have a wall of triggers with NS mass = 3 and spins up to the black hole maximum use the nsbh-flag. This will ensure that only neutron-star--black-hole systems are generated.
 * --num-seeds is the termination condition. The code will throw NUM_SEEDS points at the parameter space, and then filter out those that are too close to each other. If this value is too low, the bank will not converge, if it is too high, the code will take longer to run.
 * --num-failed-cutoff can be used as an alternative termination condition. Here the code runs until NUM_FAILED_CUTOFF points have been **consecutively** rejected and will then stop.
@@ -387,30 +414,88 @@ The command line options read as follows
 
 Some notes on these options:
 
-* Anything to highlight Steve?
+* Using the `--iterative-match-df-max 8` option will greatly speed up the code by generating waveforms with a large frequency step and then iteratively lowering it until the calculated matches converge.
+* Using the `--cache-waveforms` option will greatly speed up the code by avoiding generating a waveform more than once. With this enabled memory usage can become a concern. If memory usage becomes high consider using the workflow generator.
 
------------------------------------------------
-Command line options: lalapps_cbc_sbank_pipe
------------------------------------------------
+.. _tmpltbank_sbankworkflow:
 
-The command line options read as follows
+------------------------------------------------
+Sbank workflow generator
+------------------------------------------------
 
-.. command-output:: lalapps_cbc_sbank_pipe --help
+In the case where one sbank job will not do the job you can use
+pycbc_create_sbank_workflow to parallelize your template bank placement
+needs.
 
-Some notes on these options:
+The command line options for this code read as follows
 
-* Anything to highlight Steve?
+.. command-output:: pycbc_create_sbank_workflow --help
+
+The main thing here is that a configuration file is supplied. This
+configuration file supplies basically all options about the template bank
+generation. One can read about the general setup of such files
+:ref:`at the following page <workflowconfigparsermod>`, but we provide
+some examples here. First we give a simple example, with some options commented
+out, but still shown and explained.
+
+.. literalinclude:: resources/sbank_example1.ini
+   :language: ini
+
+Then a more complex example, where we exercise more fine-grained control over
+the parallel job and use different settings during each cycle of the generator.
+
+.. literalinclude:: resources/sbank_example2.ini
+   :language: ini
+
+**PLEASE NOTE: These examples are intended to be illustrative of the workflow
+generator and not intended to be used verbatim, expecting this to work for all
+examples. You will want to tune these options based around whatever examples
+you are running. When doing that you want to balance job run time, memory
+usage, wall-clock time, avoiding too many templates at the readder stage.
+Please ask for help if you have a specific example and want some help to
+optimize.**
+
+.. _tmpltbank_uberbankworkflow:
 
 ===================================================
 Hybrid approaches: the best of both worlds
 ===================================================
 
-We are currently looking into hybrid bank construction techniques. This is
-where one of the methods used above is used to create a preliminary bank and
-then a second method is run on that output to fill in any holes that might 
-exist in parameter space.
+We have found that in many cases it makes sense to combine the techniques of
+sbank with the geometric lattic algorithm to produce a template bank. This
+technique was used in Advanced LIGO's first observing run to produce what was
+called the "uberbank". The references for this are the following:
 
-Documentation on hybrid approaches will be added soon.
+* Abbott et al., Phys.Rev. D93 (2016) 122003
+* Capano et al., Phys.Rev. D93 (2016) 124007
+
+The uberbank construction process is now written up in a single workflow,
+pycbc_create_uberbank_workflow. The current setup of this workflow is as
+follows:
+
+* Run in parallel one sbank workflow and one geometric workflow
+* Combine the two outputs together (this assumes the two do not overlap)
+* Run a further sbank workflow to fill in the remaining space and any holes
+
+The idea to this 3-part workflow is it allows us to first focus on covering
+well both the BNS and BBH regions of parameter space, before filling in the
+rest with potentially different settings. There is a lot of scope for editing
+and reordering this workflow, potentially adding, or removing various of the
+stages.
+
+The command-line help for the workflow generator is as follows:
+
+.. command-output:: pycbc_create_uberbank_workflow --help
+
+As with the sbank workflow generator the main bulk of the configuration is the
+configuration file, which is provided on the command line. This configuration
+file contains options for all 3 stages of the workflow, and so is a little more
+involved than the sbank example given above. Here we provide a particularly
+detailed configuration for generating a bank equivalent to the uberbank on
+O1-like data.
+
+.. literalinclude:: resources/uberbank_example1.ini
+   :language: ini
 
 ==========================
 The module's source code

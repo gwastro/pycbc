@@ -56,7 +56,7 @@ class TimeSeries(Array):
     def __init__(self, initial_array, delta_t=None, epoch="", dtype=None, copy=True):
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
-        if delta_t == None:
+        if delta_t is None:
             try:
                 delta_t = initial_array.delta_t
             except AttributeError:
@@ -109,23 +109,39 @@ class TimeSeries(Array):
         else:
             return Array.__getitem__(self, index)
 
+    def prepend_zeros(self, num):
+        """Prepend num zeros onto the beginning of this TimeSeries. Update also
+        epoch to include this prepending.
+        """
+        self.resize(len(self) + num)
+        self.roll(num)
+        self._epoch = self._epoch - num * self._delta_t
+
+    def append_zeros(self, num):
+        """Append num zeros onto the end of this TimeSeries.
+        """
+        self.resize(len(self) + num)
+
     def get_delta_t(self):
         """Return time between consecutive samples in seconds.
         """
         return self._delta_t
-    delta_t = property(get_delta_t)
+    delta_t = property(get_delta_t,
+                       doc="Time between consecutive samples in seconds.")
 
     def get_duration(self):
         """Return duration of time series in seconds.
         """
         return len(self) * self._delta_t
-    duration = property(get_duration)
+    duration = property(get_duration,
+                        doc="Duration of time series in seconds.")
     
     def get_sample_rate(self):
         """Return the sample rate of the time series.
         """
         return int(1.0/self.delta_t)
-    sample_rate = property(get_sample_rate)
+    sample_rate = property(get_sample_rate,
+                           doc="The sample rate of the time series.")
 
     @property
     def start_time(self):
@@ -143,7 +159,8 @@ class TimeSeries(Array):
         """Return time series end time as a LIGOTimeGPS.
         """
         return self._epoch + self.get_duration()
-    end_time = property(get_end_time)
+    end_time = property(get_end_time,
+                        doc="Time series end time as a LIGOTimeGPS.")
 
     def get_sample_times(self):
         """Return an Array containing the sample times.
@@ -152,7 +169,8 @@ class TimeSeries(Array):
             return Array(range(len(self))) * self._delta_t
         else:
             return Array(range(len(self))) * self._delta_t + float(self._epoch)
-    sample_times = property(get_sample_times)
+    sample_times = property(get_sample_times,
+                            doc="Array containing the sample times.")
 
     def __eq__(self,other):
         """
@@ -398,11 +416,12 @@ class TimeSeries(Array):
         elif ext =='.hdf':
             key = 'data' if group is None else group
             f = h5py.File(path)
-            f[key] = self.numpy()
-            f[key].attrs['start_time'] = float(self.start_time)
-            f[key].attrs['delta_t'] = float(self.delta_t)
+            ds = f.create_dataset(key, data=self.numpy(), compression='gzip',
+                                  compression_opts=9, shuffle=True)
+            ds.attrs['start_time'] = float(self.start_time)
+            ds.attrs['delta_t'] = float(self.delta_t)
         else:
-            raise ValueError('Path must end with .npy or .txt')
+            raise ValueError('Path must end with .npy, .txt or .hdf')
                 
     @_nocomplex
     def to_frequencyseries(self, delta_f=None):
@@ -422,14 +441,15 @@ class TimeSeries(Array):
         from pycbc.fft import fft
         if not delta_f:
             delta_f = 1.0 / self.duration
-        
-        tlen  = int(1.0 / delta_f / self.delta_t)
+
+        # add 0.5 to round integer
+        tlen  = int(1.0 / delta_f / self.delta_t + 0.5)
         flen = tlen / 2 + 1
-        
+
         if tlen < len(self):
             raise ValueError("The value of delta_f (%s) would be "
                              "undersampled. Maximum delta_f "
-                             "is %s." % (delta_f, 1.0 / self.duration))         
+                             "is %s." % (delta_f, 1.0 / self.duration))
         if not delta_f:
             tmp = self
         else:
@@ -442,8 +462,6 @@ class TimeSeries(Array):
                            delta_f=delta_f)
         fft(tmp, f)
         return f
-        
-        
 
 def load_timeseries(path, group=None):
     """
@@ -464,15 +482,11 @@ def load_timeseries(path, group=None):
     ValueError
         If path does not end in .npy or .txt.
     """
-    import numpy
-    import os
-    import lal
-    
-    ext = os.path.splitext(path)[1]
+    ext = _os.path.splitext(path)[1]
     if ext == '.npy':
-        data = numpy.load(path)    
+        data = _numpy.load(path)    
     elif ext == '.txt':
-        data = numpy.loadtxt(path)
+        data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
         f = h5py.File(path)
@@ -486,12 +500,13 @@ def load_timeseries(path, group=None):
         
     if data.ndim == 2:
         delta_t = (data[-1][0] - data[0][0]) / (len(data)-1)
-        epoch = lal.LIGOTimeGPS(data[0][0])
+        epoch = _lal.LIGOTimeGPS(data[0][0])
         return TimeSeries(data[:,1], delta_t=delta_t, epoch=epoch)
     elif data.ndim == 3:
         delta_t = (data[-1][0] - data[0][0]) / (len(data)-1)
-        epoch = lal.LIGOTimeGPS(data[0][0])
-        return TimeSeries(data[:,1] + 1j*data[:,2], delta_t=delta_t, epoch=epoch)
+        epoch = _lal.LIGOTimeGPS(data[0][0])
+        return TimeSeries(data[:,1] + 1j*data[:,2],
+                          delta_t=delta_t, epoch=epoch)
     else:
         raise ValueError('File has %s dimensions, cannot convert to Array, \
                           must be 2 (real) or 3 (complex)' % data.ndim)

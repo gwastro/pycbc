@@ -34,14 +34,14 @@ from __future__ import division
 import os
 import logging
 from pycbc.workflow.core import FileList, make_analysis_dir
-from pycbc.workflow.jobsetup import PycbcSplitBankExecutable, PycbcSplitInspinjExecutable
-from pycbc.workflow.legacy_ihope import LegacySplitBankExecutable
+from pycbc.workflow.jobsetup import (PycbcSplitBankExecutable,
+        PycbcSplitBankXmlExecutable, PycbcSplitInspinjExecutable)
 
 def select_splitfilejob_instance(curr_exe):
     """
     This function returns an instance of the class that is appropriate for
     splitting an output file up within workflow (for e.g. splitbank).
-    
+
     Parameters
     ----------
     curr_exe : string
@@ -58,12 +58,10 @@ def select_splitfilejob_instance(curr_exe):
         and the job returned by this **must** contain
         * job.create_node()
     """
-    # This is basically a list of if statements
-    if curr_exe == 'lalapps_splitbank':
-        exe_class = LegacySplitBankExecutable
-    # Some elif statements
-    elif curr_exe == 'pycbc_splitbank':
+    if curr_exe == 'pycbc_hdf5_splitbank':
         exe_class = PycbcSplitBankExecutable
+    elif curr_exe == 'pycbc_splitbank':
+        exe_class = PycbcSplitBankXmlExecutable
     elif curr_exe == 'pycbc_split_inspinj':
         exe_class = PycbcSplitInspinjExecutable
     else:
@@ -73,7 +71,7 @@ def select_splitfilejob_instance(curr_exe):
 
     return exe_class
 
-def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=[]):
+def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=None):
     '''
     This function aims to be the gateway for code that is responsible for taking
     some input file containing some table, and splitting into multiple files
@@ -95,6 +93,8 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=[]):
     split_table_outs : pycbc.workflow.core.FileList
         The list of split up files as output from this job.
     '''
+    if tags is None:
+        tags = []
     logging.info("Entering split output files module.")
     make_analysis_dir(out_dir)
     # Parse for options in .ini file
@@ -115,7 +115,7 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=[]):
         errMsg += "IN_WORKFLOW or NOOP."
         raise ValueError(errMsg)
 
-    logging.info("Leaving split output files module.")  
+    logging.info("Leaving split output files module.")
     return split_table_outs
 
 def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
@@ -137,7 +137,7 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
         The list of split up files as output from this job.
     '''
     cp = workflow.cp
-    
+
     # Get values from ini file
     try:
         num_splits = cp.get_opt_tags("workflow-splittable",

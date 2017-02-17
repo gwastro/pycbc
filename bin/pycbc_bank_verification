@@ -36,6 +36,7 @@ import os, sys
 import copy
 import logging
 import numpy
+import h5py
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from pycbc import tmpltbank, psd, strain, pnutils
 import matplotlib
@@ -51,8 +52,9 @@ parser = argparse.ArgumentParser(description=_desc,
 parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="verbose output")
-parser.add_argument("--make-histogram", action="store_true", default=False,
-                    help="Output a histogram of fitting factors.")
+parser.add_argument("--histogram-output-file", action="store", default=None,
+                    help="Output a histogram of fitting factors to the "
+                    "supplied file. If not given no histogram is produced.")
 parser.add_argument("--print-distances", action="store_true", default=False,
                     help="Print details about the match of each point.")
 parser.add_argument("-B", "--input-bank", action="store", required=True,
@@ -64,12 +66,15 @@ parser.add_argument("--bank-fupper-step", type=float, default=10.,
                     help="Size of discrete frequency steps used when varying "
                     "the fupper. If --calculate-ethinca-metric and "
                     "--ethinca-freq-step are also given, the code will use "
-                    "the smaller of the two step values. OPTIONAL. Units=Hz")
+                    "the smaller of the two step values. This option will do "
+                    "nothing if the --vary-fupper flag is not given. "
+                    "OPTIONAL, default=10. Units=Hz")
 parser.add_argument("--bank-fupper-formula", default="SchwarzISCO",
                     choices=["SchwarzISCO","LightRing","ERD"],
                     help="Frequency cutoff formula for varying fupper. "
                     "Frequencies will be rounded to the nearest discrete "
-                    "step. OPTIONAL.")
+                    "step. This option will do nothing if --vary-fupper is "
+                    "not given. OPTIONAL, default='SchwarzISCO'.")
 parser.add_argument("-N", "--num-points", action="store", type=int,
                     default=100000, help="Number of points used to test ")
 parser.add_argument("-P", "--point-file", action="store", default=None,
@@ -158,13 +163,11 @@ else:
     # total masses
     fs = numpy.array(metricParams.evals.keys(), dtype=float)
     fs.sort()
-    lowEve = tmpltbank.return_nearest_cutoff(
-        opts.bank_fupper_formula,
-        numpy.array([opts.max_total_mass]), fs)[0]
-    highEve = tmpltbank.return_nearest_cutoff(
-        opts.bank_fupper_formula,
-        numpy.array([opts.min_total_mass]), fs)[0]
+    lowEve, highEve = tmpltbank.find_max_and_min_frequencies(\
+                              opts.bank_fupper_formula, massRangeParams, fs)
     refFreq = lowEve
+    fs = fs[fs >= lowEve]
+    fs = fs[fs <= highEve]
 
 logging.info("Calculating covariance matrix")
 
@@ -182,26 +185,37 @@ partitioned_bank_object = tmpltbank.PartitionedTmpltbank(massRangeParams,
                                metricParams, refFreq, (opts.bin_spacing)**0.5,
                                bin_range_check=1)
 
-# dummy class needed for loading LIGOLW files
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-
-lsctables.use_in(LIGOLWContentHandler)
-
-# Reading in the template bank
-logging.info("Reading template bank.")
-
-indoc = ligolw_utils.load_filename(opts.input_bank,
-                                   contenthandler=LIGOLWContentHandler)
-template_list = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
-
 # Map the frequency values to idx if --vary-fupper is used
 if opts.vary_fupper:
     partitioned_bank_object.get_freq_map_and_normalizations(fs,
                                                       opts.bank_fupper_formula)
 
-partitioned_bank_object.add_tmpltbank_from_xml_table(template_list,
-                                                  vary_fupper=opts.vary_fupper)
+# Reading in the template bank
+logging.info("Reading template bank.")
+
+
+if opts.input_bank.endswith(('.xml','.xml.gz','.xmlgz')):
+    # dummy class needed for loading LIGOLW files
+    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+
+    lsctables.use_in(LIGOLWContentHandler)
+
+    indoc = ligolw_utils.load_filename(opts.input_bank,
+                                       contenthandler=LIGOLWContentHandler)
+    template_list = table.get_table(indoc,
+                                    lsctables.SnglInspiralTable.tableName)
+
+    partitioned_bank_object.add_tmpltbank_from_xml_table\
+        (template_list, vary_fupper=opts.vary_fupper)
+
+elif opts.input_bank.endswith(('.h5','.hdf','.hdf5')):
+    h5_fp = h5py.File(opts.input_bank, 'r')
+    partitioned_bank_object.add_tmpltbank_from_hdf_file\
+        (h5_fp, vary_fupper=opts.vary_fupper)
+else:
+    err_msg = "Don't know how to read extension {}.".format(opts.input_bank)
+    raise NotImplementedError(err_msg)
 
 logging.info("Bank read in and sorted")
 # Okay, now lets test a bunch of matches
@@ -218,43 +232,33 @@ if opts.point_file:
     temp_data = numpy.loadtxt(opts.point_file)
     rMass1 = temp_data[:,0]
     rMass2 = temp_data[:,1]
-    rTotmass = rMass1 + rMass2
-    rEta = rMass1 * rMass2 / (rTotmass * rTotmass)
     rSpin1z = temp_data[:,2]
     rSpin2z = temp_data[:,3]
-    rBeta, rSigma, rGamma, rChis = pnutils.get_beta_sigma_from_aligned_spins(
-                                                        rEta, rSpin1z, rSpin2z)
     opts.num_points = len(rMass1)
 else:
-    rTotmass, rEta, rBeta, rSigma, rGamma, rSpin1z, rSpin2z =\
-            tmpltbank.get_random_mass(100000, massRangeParams)
-    diff = (rTotmass*rTotmass * (1-4*rEta))**0.5
-    rMass1 = (rTotmass + diff)/2.
-    rMass2 = (rTotmass - diff)/2.
-    rChis = (rSpin1z + rSpin2z)/2.
+    rMass1, rMass2, rSpin1z, rSpin2z =\
+        tmpltbank.get_random_mass(100000, massRangeParams)
 
 if opts.vary_fupper:
+    mass_dict = {}
+    mass_dict['m1'] = rMass1
+    mass_dict['m2'] = rMass2
+    mass_dict['s1z'] = rSpin1z
+    mass_dict['s2z'] = rSpin2z
     refEve = tmpltbank.return_nearest_cutoff(
-                                        opts.bank_fupper_formula, rTotmass, fs)
-    lambdas = tmpltbank.get_chirp_params(
-                                  rTotmass, rEta, rBeta, rSigma, rGamma, rChis,
-                                  metricParams.f0, metricParams.pnOrder)
+                                       opts.bank_fupper_formula, mass_dict, fs)
+    lambdas = tmpltbank.get_chirp_params(rMass1, rMass2, rSpin1z, rSpin2z,
+                                         metricParams.f0, metricParams.pnOrder)
     mus = []
-    idx = 0
     for freq in fs:
         if freq >= lowEve and freq <= highEve:
-            mus.append(
-                          tmpltbank.get_mu_params(lambdas, metricParams, freq))
-            if freqMap[freq] != idx:
-                raise BrokenError
-            idx += 1
+            mus.append(tmpltbank.get_mu_params(lambdas, metricParams, freq))
     mus = numpy.array(mus)
 else:
     refEve = numpy.zeros(100000)
     mus = numpy.zeros([1,1,100000])
-vecs = tmpltbank.get_cov_params(
-    rTotmass, rEta, rBeta, rSigma, rGamma, rChis,
-    metricParams, refFreq)
+vecs = tmpltbank.get_cov_params(rMass1, rMass2, rSpin1z, rSpin2z,
+                                metricParams, refFreq)
 vecs = numpy.array(vecs)
 
 for idx_curr in xrange(opts.num_points):
@@ -285,11 +289,11 @@ points_fittingfactor = numpy.array(points_fittingfactor)
 
 logging.info("Distances calculated.")
 
-if opts.make_histogram:
+if opts.histogram_output_file:
     pylab.hist(points_fittingfactor, 100)
     pylab.xlabel("Fitting factor")
     pylab.ylabel("# of signals")
-    pylab.savefig("fitting_factor_histogram.png")
+    pylab.savefig(opts.histogram_output_file)
 
 if opts.print_distances:
     print

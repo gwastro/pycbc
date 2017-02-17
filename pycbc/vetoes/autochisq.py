@@ -277,3 +277,18 @@ class SingleDetAutoChisq(object):
                                maxvalued=self.take_maximum_value)
             self.dof = dof
             return achi_list
+
+class SingleDetSkyMaxAutoChisq(SingleDetAutoChisq):
+    """Stub for precessing auto chisq if anyone ever wants to code it up.
+    """
+    def __init__(self, *args, **kwds):
+        super(SingleDetSkyMaxAutoChisq, self).__init__(*args, **kwds)
+
+    def values(self, *args, **kwargs):
+        if self.do:
+            err_msg = "Precessing single detector sky-max auto chisq has not "
+            err_msg += "been written. If you want to use it, why not help "
+            err_msg += "write it?"
+            raise NotImplementedError(err_msg)
+        else:
+            return None

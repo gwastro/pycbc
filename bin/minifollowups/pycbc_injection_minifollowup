@@ -19,6 +19,7 @@
 import os, argparse, numpy, logging, h5py, copy
 import pycbc.workflow as wf
 from pycbc.types import MultiDetOptionAction
+from pycbc.events import select_segments_by_definer
 from pycbc.results import layout
 from pycbc.detector import Detector
 import pycbc.workflow.minifollowups as mini
@@ -46,12 +47,19 @@ parser.add_argument('--injection-xml-file',
                     help="XML format injection file")
 parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOptionAction,
                     help="HDF format merged single detector trigger files")
-parser.add_argument('--inspiral-segments', nargs='+', action=MultiDetOptionAction,
+parser.add_argument('--inspiral-segments',
                     help="xml segment files containing the inspiral analysis times")
-parser.add_argument('--inspiral-segment-name',
-                    help="Name of inspiral segmentlist to read from segment files")
+parser.add_argument('--inspiral-data-read-name',
+                    help="Name of inspiral segmentlist containing data read in "
+                         "by each analysis job.")
+parser.add_argument('--inspiral-data-analyzed-name',
+                    help="Name of inspiral segmentlist containing data "
+                         "analyzed by each analysis job.")
 parser.add_argument('--inj-window', type=int, default=0.5,
                     help="Time window in which to look for injection triggers")
+parser.add_argument('--ifar-threshold', type=float, default=None,
+                    help="If given also followup injections with ifar smaller "
+                         "than this threshold.")
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
@@ -71,19 +79,28 @@ layouts = []
 tmpltbank_file = to_file(args.bank_file)
 injection_file = to_file(args.injection_file)
 injection_xml_file = to_file(args.injection_xml_file)
+insp_segs = to_file(args.inspiral_segments)
 
 single_triggers = []
+insp_data_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
     single_triggers.append(to_file(fname, ifo=ifo))
-
-insp_segs = {}
-for ifo in args.inspiral_segments:
-    fname = args.inspiral_segments[ifo]
-    insp_segs[ifo] = to_file(fname, ifo=ifo)
+    insp_data_seglists[ifo] = select_segments_by_definer\
+        (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
+         ifo=ifo)
+    # NOTE: make_singles_timefreq needs a coalesced set of segments. If this is
+    #       being used to determine command-line options for other codes,
+    #       please think if that code requires coalesced, or not, segments.
+    insp_data_seglists[ifo].coalesce()
 
 f = h5py.File(args.injection_file, 'r')
 missed = f['missed/after_vetoes'][:]
+if args.ifar_threshold is not None:
+    ifars = f['found_after_vetoes']['ifar'][:]
+    lgc_arr = ifars < args.ifar_threshold
+    missed = numpy.append(missed,
+                          f['found_after_vetoes']['injection_index'][lgc_arr])
 
 num_events = int(workflow.cp.get_opt_tags('workflow-injection_minifollowups', 'num-events', ''))
 
@@ -114,6 +131,7 @@ if len(missed) < num_events:
     num_events = len(missed)
 
 # loop over number of loudest events to be followed up
+found_inj_idxes = f['found_after_vetoes/injection_index'][:]
 for num_event in range(num_events):
     files = wf.FileList([])
     
@@ -135,17 +153,26 @@ for num_event in range(num_events):
           
     layouts += [(mini.make_inj_info(workflow, injection_file, injection_index, num_event,
                                args.output_dir, tags=args.tags + [str(num_event)])[0],)]   
+    if injection_index in found_inj_idxes:
+        trig_id = numpy.where(found_inj_idxes == injection_index)[0][0]
+        layouts += [(mini.make_coinc_info
+                     (workflow, single_triggers, tmpltbank_file,
+                      injection_file, args.output_dir, trig_id=trig_id,
+                      file_substring='found_after_vetoes',
+                      tags=args.tags + [str(num_event)])[0],)]
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir,
                               tags=args.tags + [str(num_event)])
     
     for single in single_triggers:
         files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
-                                time - 10, time + 10, args.output_dir,
+                                time, args.output_dir,
+                                data_segments=insp_data_seglists[single.ifo],
                                 tags=args.tags + [str(num_event)])
 
     files += mini.make_single_template_plots(workflow, insp_segs,
-                            args.inspiral_segment_name, inj_params,
+                            args.inspiral_data_read_name,
+                            args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
                             tags=args.tags+['INJ_PARAMS',str(num_event)],
                             params_str='injection parameters as template, ' +\
@@ -153,7 +180,8 @@ for num_event in range(num_events):
                             use_exact_inj_params=True)
 
     files += mini.make_single_template_plots(workflow, insp_segs,
-                            args.inspiral_segment_name, inj_params,
+                            args.inspiral_data_read_name,
+                            args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
                             tags=args.tags+['INJ_PARAMS_INVERTED',
                                             str(num_event)],
@@ -162,7 +190,8 @@ for num_event in range(num_events):
                             use_exact_inj_params=True)
 
     files += mini.make_single_template_plots(workflow, insp_segs,
-                            args.inspiral_segment_name, inj_params,
+                            args.inspiral_data_read_name,
+                            args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
                             tags=args.tags+['INJ_PARAMS_NOINJ',
                                             str(num_event)],
@@ -189,10 +218,26 @@ for num_event in range(num_events):
         curr_params['mass2'] = hd_sngl.mass2
         curr_params['spin1z'] = hd_sngl.spin1z
         curr_params['spin2z'] = hd_sngl.spin2z
+        # don't require precessing template info if not present
+        try:
+            curr_params['spin1x'] = hd_sngl.spin1x
+            curr_params['spin2x'] = hd_sngl.spin2x
+            curr_params['spin1y'] = hd_sngl.spin1y
+            curr_params['spin2y'] = hd_sngl.spin2y
+            curr_params['inclination'] = hd_sngl.inclination
+        except KeyError:
+            pass
+        try:
+            # Only present for precessing search
+            curr_params['u_vals'] = hd_sngl.u_vals
+        except:
+            pass
+
         curr_tags = ['TMPLT_PARAMS_%s' %(curr_ifo,)]
         curr_tags += [str(num_event)]
         files += mini.make_single_template_plots(workflow, insp_segs,
-                                args.inspiral_segment_name, curr_params,
+                                args.inspiral_data_read_name,
+                                args.inspiral_data_analyzed_name, curr_params,
                                 args.output_dir, inj_file=injection_xml_file,
                                 tags=args.tags + curr_tags,
                                 params_str='loudest template in %s' % curr_ifo )

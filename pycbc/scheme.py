@@ -116,7 +116,7 @@ class CUDAScheme(Scheme):
         import pycuda.driver
         pycuda.driver.init()
         self.device = pycuda.driver.Device(device_num)
-        self.context = self.device.make_context(flags=pycuda.driver.ctx_flags.SCHED_YIELD)
+        self.context = self.device.make_context(flags=pycuda.driver.ctx_flags.SCHED_BLOCKING_SYNC)
         import atexit
         atexit.register(clean_cuda,self.context)
 

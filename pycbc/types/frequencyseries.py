@@ -41,15 +41,18 @@ class FrequencySeries(Array):
 
     Attributes
     ----------
-    delta_f
-    epoch
-    sample_frequencies
+    delta_f : float
+        Frequency spacing
+    epoch : lal.LIGOTimeGPS
+        Time at 0 index.
+    sample_frequencies : Array
+        Frequencies that each index corresponds to.
     """
 
     def __init__(self, initial_array, delta_f=None, epoch="", dtype=None, copy=True):
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
-        if delta_f == None:
+        if delta_f is None:
             try:
                 delta_f = initial_array.delta_f
             except AttributeError:
@@ -82,7 +85,10 @@ class FrequencySeries(Array):
 
     def _typecheck(self, other):
         if isinstance(other, FrequencySeries):
-            if other._delta_f != self._delta_f:
+            try:
+                _numpy.testing.assert_almost_equal(other._delta_f,
+                                                   self._delta_f)
+            except:
                 raise ValueError('different delta_f')
             # consistency of _epoch is not required because we may want
             # to combine frequency series estimated at different times
@@ -92,19 +98,22 @@ class FrequencySeries(Array):
         """Return frequency between consecutive samples in Hertz.
         """
         return self._delta_f
-    delta_f = property(get_delta_f)
+    delta_f = property(get_delta_f,
+                       doc="Frequency between consecutive samples in Hertz.")
 
     def get_epoch(self):
         """Return frequency series epoch as a LIGOTimeGPS.
         """
         return self._epoch
-    epoch = property(get_epoch)
+    epoch = property(get_epoch,
+                     doc="Frequency series epoch as a LIGOTimeGPS.")
 
     def get_sample_frequencies(self):
         """Return an Array containing the sample frequencies.
         """
         return Array(range(len(self))) * self._delta_f
-    sample_frequencies = property(get_sample_frequencies)
+    sample_frequencies = property(get_sample_frequencies,
+                                  doc="Array of the sample frequencies.")
 
     def __eq__(self,other):
         """
@@ -355,13 +364,15 @@ class FrequencySeries(Array):
                                  gz=path.endswith(".gz"))
         elif ext =='.hdf':
             key = 'data' if group is None else group
-            d = h5py.File(path)
-            d[key] = self.numpy()
-            d[key].attrs['epoch'] = float(self.epoch)
-            d[key].attrs['delta_f'] = float(self.delta_f)
+            f = h5py.File(path)
+            ds = f.create_dataset(key, data=self.numpy(), compression='gzip',
+                                  compression_opts=9, shuffle=True)
+            ds.attrs['epoch'] = float(self.epoch)
+            ds.attrs['delta_f'] = float(self.delta_f)
         else:
-            raise ValueError('Path must end with .npy or .txt')
-            
+            raise ValueError('Path must end with .npy, .txt, .xml, .xml.gz '
+                             'or .hdf')
+
     @_noreal
     def to_timeseries(self, delta_t=None):
         """ Return the Fourier transform of this time series
@@ -383,14 +394,15 @@ class FrequencySeries(Array):
         nat_delta_t =  1.0 / ((len(self)-1)*2) / self.delta_f
         if not delta_t:
             delta_t = nat_delta_t
-            
-        tlen  = int(1.0 / self.delta_f / delta_t)
+
+        # add 0.5 to round integer
+        tlen  = int(1.0 / self.delta_f / delta_t + 0.5)
         flen = tlen / 2 + 1
         
         if flen < len(self):
             raise ValueError("The value of delta_t (%s) would be "
                              "undersampled. Maximum delta_t "
-                             "is %s." % (delta_t, nat_delta_t))         
+                             "is %s." % (delta_t, nat_delta_t))
         if not delta_t:
             tmp = self
         else:
@@ -423,16 +435,12 @@ def load_frequencyseries(path, group=None):
     ------
     ValueError
         If path does not end in .npy or .txt.
-    """
-    import numpy
-    import os
-    import lal
-    
-    ext = os.path.splitext(path)[1]
+    """    
+    ext = _os.path.splitext(path)[1]
     if ext == '.npy':
-        data = numpy.load(path)    
+        data = _numpy.load(path)    
     elif ext == '.txt':
-        data = numpy.loadtxt(path)
+        data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
         f = h5py.File(path)
@@ -446,11 +454,11 @@ def load_frequencyseries(path, group=None):
         
     if data.ndim == 2:
         delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
-        epoch = lal.LIGOTimeGPS(data[0][0])
+        epoch = _lal.LIGOTimeGPS(data[0][0])
         return FrequencySeries(data[:,1], delta_f=delta_f)
     elif data.ndim == 3:
         delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
-        epoch = lal.LIGOTimeGPS(data[0][0])
+        epoch = _lal.LIGOTimeGPS(data[0][0])
         return FrequencySeries(data[:,1] + 1j*data[:,2], delta_f=delta_f)
     else:
         raise ValueError('File has %s dimensions, cannot convert to Array, \

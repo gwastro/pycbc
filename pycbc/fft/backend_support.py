@@ -64,7 +64,7 @@ def set_backend(backend_list):
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def get_backend():
-    pass
+    return
 
 # Import all scheme-dependent backends, to get _all_backends accurate:
 

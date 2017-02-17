@@ -92,27 +92,6 @@ _other_kind = {float32:complex64, float64:complex128,
 _bad_dtype = {float32: float32, float64: float64,
               complex64: float32, complex128: float64}
 
-# Several dicts for our direct comparisons with LAL's Time/Freq FFT routines.
-
-_fwd_plan_dict = {float32: _lal.CreateForwardREAL4FFTPlan,
-                  float64: _lal.CreateForwardREAL8FFTPlan,
-                  complex64: _lal.CreateForwardCOMPLEX8FFTPlan,
-                  complex128: _lal.CreateForwardCOMPLEX16FFTPlan}
-
-_rev_plan_dict = {float32: _lal.CreateReverseREAL4FFTPlan,
-                  float64: _lal.CreateReverseREAL8FFTPlan,
-                  complex64: _lal.CreateReverseCOMPLEX8FFTPlan,
-                  complex128: _lal.CreateReverseCOMPLEX16FFTPlan}
-
-_fwd_lalfft_dict = {float32: _lal.REAL4TimeFreqFFT,
-                    float64: _lal.REAL8TimeFreqFFT,
-                    complex64: _lal.COMPLEX8TimeFreqFFT,
-                    complex128: _lal.COMPLEX16TimeFreqFFT}
-
-_rev_lalfft_dict = {float32: _lal.REAL4FreqTimeFFT,
-                    float64: _lal.REAL8FreqTimeFFT,
-                    complex64: _lal.COMPLEX8FreqTimeFFT,
-                    complex128: _lal.COMPLEX16FreqTimeFFT}
 
 # Our actual helper functions.  Note that these perform the necessary operations
 # within the appropriate context, so they should not themselves be called inside
@@ -137,7 +116,7 @@ def _test_fft(test_case,inarr,expec,tol):
     if hasattr(outarr,'delta_f'):
         outarr._delta_f *= 5*tol
     with tc.context:
-        pycbc.fft.fft(inarr,outarr,tc.backends)
+        pycbc.fft.fft(inarr, outarr)
         # First, verify that the input hasn't been overwritten
         emsg = 'FFT overwrote input array'
         tc.assertEqual(inarr,in_pristine,emsg)
@@ -168,7 +147,7 @@ def _test_ifft(test_case,inarr,expec,tol):
     if hasattr(outarr,'delta_f'):
         outarr._delta_f *= 5*tol
     with tc.context:
-        pycbc.fft.ifft(inarr,outarr,tc.backends)
+        pycbc.fft.ifft(inarr, outarr)
         # First, verify that the input hasn't been overwritten
         emsg = 'Inverse FFT overwrote input array'
         tc.assertEqual(inarr,in_pristine,emsg)
@@ -204,8 +183,8 @@ def _test_random(test_case,inarr,outarr,tol):
     if type(inarr) == pycbc.types.Array:
         incopy *= len(inarr)
     with tc.context:
-        pycbc.fft.fft(inarr,outarr,tc.backends)
-        pycbc.fft.ifft(outarr,inarr,tc.backends)
+        pycbc.fft.fft(inarr, outarr)
+        pycbc.fft.ifft(outarr, inarr)
         emsg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol)
         if isinstance(incopy,ts) or isinstance(incopy,fs):
             tc.assertTrue(incopy.almost_equal_norm(inarr,tol=tol,dtol=tol),
@@ -231,8 +210,8 @@ def _test_random(test_case,inarr,outarr,tol):
     if type(outarr) == pycbc.types.Array:
         outcopy *= len(inarr)
     with tc.context:
-        pycbc.fft.ifft(outarr,inarr,tc.backends)
-        pycbc.fft.fft(inarr,outarr,tc.backends)
+        pycbc.fft.ifft(outarr, inarr)
+        pycbc.fft.fft(inarr, outarr)
         emsg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol)
         if isinstance(outcopy,ts) or isinstance(outcopy,fs):
             tc.assertTrue(outcopy.almost_equal_norm(outarr,tol=tol,dtol=tol),
@@ -241,67 +220,7 @@ def _test_random(test_case,inarr,outarr,tol):
             tc.assertTrue(outcopy.almost_equal_norm(outarr,tol=tol),
                           msg=emsg)
 
-def _test_lal_tf_fft(test_case,inarr,outarr,tol):
-    tc = test_case
-    # Make sure input and output have been moved back to CPU if needed
-    inarr *= 1.0
-    outarr *=1.0
-    # Fill input array with random, clear output, and get lal handles for each.
-    if dtype(inarr).kind == 'c':
-        inarr._data[:] = randn(len(inarr)) +1j*randn(len(inarr))
-    else:
-        inarr._data[:] = randn(len(inarr))
-    outarr.clear()
-    inlal = inarr.lal()
-    outlal = outarr.lal()
-    # Calculate the pycbc fft:
-    with tc.context:
-        pycbc.fft.fft(inarr,outarr,tc.backends)
-    fwdplan = _fwd_plan_dict[dtype(inarr).type](len(inarr),0)
-    # Call the lal function directly (see above for dict).  Note that
-    # lal functions want *output* given first.
-    _fwd_lalfft_dict[dtype(inarr).type](outlal,inlal,fwdplan)
-    # Make a pycbc type from outlal.  Some hackiness because we don't know the
-    # type of outlal.
-    if hasattr(outlal,'deltaT'):
-        cmparr = ts(outlal.data.data,epoch=outlal.epoch,delta_t=outlal.deltaT)
-    else:
-        cmparr = fs(outlal.data.data,epoch=outlal.epoch,delta_f=outlal.deltaF)
-    emsg = "Direct call to LAL TimeFreqFFT() did not agree with fft() to within precision {0}".format(tol)
-    tc.assertTrue(outarr.almost_equal_norm(cmparr,tol=tol),msg=emsg)
-
-def _test_lal_tf_ifft(test_case,inarr,outarr,tol):
-    tc = test_case
-    # Fill input array with random, clear output, and get lal handles for each.
-    if dtype(inarr).kind == 'c':
-        inarr._data[:] = randn(len(inarr)) +1j*randn(len(inarr))
-        # We must worry about DC/Nyquist imag parts if this is HC2R transform:
-        if dtype(outarr).kind == 'f':
-            inarr._data[0] = real(inarr._data[0])
-            if (len(outarr)%2)==0:
-                inarr._data[len(inarr)-1] = real(inarr[len(inarr)-1])
-    else:
-        inarr._data[:] = randn(len(outarr))
-    outarr.clear()
-    inlal = inarr.lal()
-    outlal = outarr.lal()
-    # Calculate the pycbc fft:
-    with tc.context:
-        pycbc.fft.ifft(inarr,outarr,tc.backends)
-    revplan = _rev_plan_dict[dtype(outarr).type](len(outarr),0)
-    # Call the lal function directly (see above for dict).  Note that
-    # lal functions want *output* given first.
-    _rev_lalfft_dict[dtype(outarr).type](outlal,inlal,revplan)
-    # Make a pycbc type from outlal.  Some hackiness because we don't know the
-    # type of outlal.
-    if hasattr(outlal,'deltaT'):
-        cmparr = ts(outlal.data.data,epoch=outlal.epoch,delta_t=outlal.deltaT)
-    else:
-        cmparr = fs(outlal.data.data,epoch=outlal.epoch,delta_f=outlal.deltaF)
-    emsg = "Direct call to LAL TimeFreqFFT() did not agree with fft() to within precision {0}".format(tol)
-    tc.assertTrue(outarr.almost_equal_norm(cmparr,tol=tol),msg=emsg)
-
-def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
+def _test_raise_excep_fft(test_case,inarr,outarr,other_args=None):
     # As far as can be told from the unittest module documentation, the
     # 'assertRaises' tests do not permit a custom message.  So more
     # comments than usual here, to help diagnose and test failures.
@@ -310,34 +229,36 @@ def _test_raise_excep_fft(test_case,inarr,outarr,other_args={}):
     # the constructors of some types (T/F series); we cannot simply copy since
     # the whole point is to vary the input/output in some way that should cause
     # an exception.
+    if other_args is None:
+        other_args = {}
     tc = test_case
     with tc.context:
         outty = type(outarr)
         outzer = pycbc.types.zeros(len(outarr))
         # If we give an output array that is wrong only in length, raise ValueError:
         out_badlen = outty(pycbc.types.zeros(len(outarr)+1),dtype=outarr.dtype,**other_args)
-        args = [inarr,out_badlen,tc.backends]
-        tc.assertRaises(ValueError,pycbc.fft.fft,*args)
+        args = [inarr, out_badlen]
+        tc.assertRaises(ValueError, pycbc.fft.fft, *args)
         # If we give an output array that has the wrong precision, raise ValueError:
         out_badprec = outty(outzer,dtype=_other_prec[dtype(outarr).type],**other_args)
-        args = [inarr,out_badprec,tc.backends]
+        args = [inarr, out_badprec]
         tc.assertRaises(ValueError,pycbc.fft.fft,*args)
         # If we give an output array that has the wrong kind (real or complex) but
         # correct precision, then raise a ValueError.  This only makes sense if we try
         # to do either C2R or R2R.
         out_badkind = outty(outzer,dtype=_bad_dtype[dtype(inarr).type],**other_args)
-        args = [inarr,out_badkind,tc.backends]
+        args = [inarr, out_badkind]
         tc.assertRaises(ValueError,pycbc.fft.fft,*args)
         # If we give an output array that isn't a PyCBC type, raise TypeError:
         out_badtype = numpy.zeros(len(outarr),dtype=outarr.dtype)
-        args = [inarr,out_badtype,tc.backends]
+        args = [inarr, out_badtype]
         tc.assertRaises(TypeError,pycbc.fft.fft,*args)
         # If we give an input array that isn't a PyCBC type, raise TypeError:
         in_badtype = numpy.zeros(len(inarr),dtype=inarr.dtype)
-        args = [in_badtype,outarr,tc.backends]
+        args = [in_badtype, outarr]
         tc.assertRaises(TypeError,pycbc.fft.fft,*args)
 
-def _test_raise_excep_ifft(test_case,inarr,outarr,other_args={}):
+def _test_raise_excep_ifft(test_case,inarr,outarr,other_args=None):
     # As far as can be told from the unittest module documentation, the
     # 'assertRaises' tests do not permit a custom message.  So more
     # comments than usual here, to help diagnose and test failures.
@@ -346,17 +267,19 @@ def _test_raise_excep_ifft(test_case,inarr,outarr,other_args={}):
     # the constructors of some types (T/F series); we cannot simply copy since
     # the whole point is to vary the input/output in some way that should cause
     # an exception.
+    if other_args is None:
+        other_args = {}
     tc = test_case
     with tc.context:
         outty = type(outarr)
         outzer = pycbc.types.zeros(len(outarr))
         # If we give an output array that is wrong only in length, raise ValueError:
         out_badlen = outty(pycbc.types.zeros(len(outarr)+1),dtype=outarr.dtype,**other_args)
-        args = [inarr,out_badlen,tc.backends]
+        args = [inarr, out_badlen]
         tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
         # If we give an output array that has the wrong precision, raise ValueError:
         out_badprec = outty(outzer,dtype=_other_prec[dtype(outarr).type],**other_args)
-        args = [inarr,out_badprec,tc.backends]
+        args = [inarr,out_badprec]
         tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
         # If we give an output array that has the wrong kind (real or complex) but
         # correct precision, then raise a ValueError.  Here we must adjust the kind
@@ -370,39 +293,21 @@ def _test_raise_excep_ifft(test_case,inarr,outarr,other_args={}):
             except KeyError:
                 delta = new_args.pop('delta_f')
                 new_args.update({'delta_t' : delta})
-        in_badkind = type(inarr)(pycbc.types.zeros(len(inarr)),dtype=_bad_dtype[dtype(outarr).type],
+        in_badkind = type(inarr)(pycbc.types.zeros(len(inarr)),
+                                 dtype=_bad_dtype[dtype(outarr).type],
                                  **new_args)
-        args = [in_badkind,outarr,tc.backends]
-        tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
+        args = [in_badkind, outarr]
+        #pycbc.fft.ifft(in_badkind, outarr)
+        if str(outarr.dtype) not in ['complex64', 'complex128']:
+            tc.assertRaises((ValueError, KeyError), pycbc.fft.ifft, *args)
         # If we give an output array that isn't a PyCBC type, raise TypeError:
         out_badtype = numpy.zeros(len(outarr),dtype=outarr.dtype)
-        args = [inarr,out_badtype,tc.backends]
+        args = [inarr,out_badtype]
         tc.assertRaises(TypeError,pycbc.fft.ifft,*args)
         # If we give an input array that isn't a PyCBC type, raise TypeError:
         in_badtype = numpy.zeros(len(inarr),dtype=inarr.dtype)
-        args = [in_badtype,outarr,tc.backends]
+        args = [in_badtype,outarr]
         tc.assertRaises(TypeError,pycbc.fft.ifft,*args)
-
-# The following isn't a helper function, called by several test functions, but it only applies
-# to the 'lalfft' backend, so we only add it to that TestCase class, rather than putting it in
-# the main class definition
-def _test_lalfft(test_case):
-    import pycbc.fft.lalfft as lfft
-    tc = test_case
-    tc.assertEquals(lfft._default_measurelvl,1,
-                    msg="Default lalfft measure level not initialized to 1")
-    tc.assertRaises(ValueError,lfft.set_measure_level,5)
-    tc.assertEquals(lfft.get_measure_level(),1,
-                    msg="lalfft.get_measure_level() did not return _default_measurelvl")
-    plan1 = lfft._get_fwd_plan('single','complex','complex',4)
-    lfft.set_measure_level(2)
-    plan2 = lfft._get_fwd_plan('single','complex','complex',4)
-    tc.assertTrue(plan1 is not plan2,msg="Increasing measure level did not result in new plan")
-    lfft.set_measure_level(0)
-    plan0 = lfft._get_fwd_plan('single','complex','complex',4)
-    tc.assertTrue(plan2 is plan0,msg="Decreasing measure level *did* result in new plan")
-    # Restore default
-    lfft.set_measure_level(1)
 
 class _BaseTestFFTClass(unittest.TestCase):
     """

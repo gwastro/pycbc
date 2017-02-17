@@ -183,8 +183,8 @@ class SingleDetBankVeto(object):
             logging.info("Read in bank veto template bank")
             bank_veto_bank = FilterBank(bank_file,
                     self.seg_len_freq,
-                    self.delta_f, f_low,
-                    dtype=self.cdtype,
+                    self.delta_f, self.cdtype,
+                    low_frequency_cutoff=f_low,
                     approximant=approximant, **kwds)
 
             self.filters = list(bank_veto_bank)
@@ -231,4 +231,18 @@ class SingleDetBankVeto(object):
             return chisq, dof
         else:
             return None, None      
-                  
+
+class SingleDetSkyMaxBankVeto(SingleDetBankVeto):
+    """Stub for precessing bank veto if anyone ever wants to code it up.
+    """
+    def __init__(self, *args, **kwds):
+        super(SingleDetSkyMaxBankVeto, self).__init__(*args, **kwds)
+
+    def values(self, *args, **kwargs):
+        if self.do:
+            err_msg = "Precessing single detector sky-max bank veto has not "
+            err_msg += "been written. If you want to use it, why not help "
+            err_msg += "write it?"
+            raise NotImplementedError(err_msg)
+        else:
+            return None, None
