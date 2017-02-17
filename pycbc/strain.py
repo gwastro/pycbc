@@ -1347,8 +1347,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         htilde: FrequencySeries
             Overwhited strain data
         """
-        logging.info('StrainBuffer is asked stilde with delta_f=%f', delta_f)
-
         # we haven't alread computed htilde for this delta_f
         if delta_f not in self.segments:
             buffer_length = int(1.0 / delta_f)

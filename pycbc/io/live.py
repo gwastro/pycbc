@@ -220,11 +220,7 @@ class SingleCoincForGraceDB(object):
 
                 # store the on-source slice of the series into the XML doc
                 if ifo in ifos:
-                    trig_time = coinc_results['foreground/%s/end_time' % ifo]
-                    if stilde.start_time > trig_time or stilde.end_time < trig_time:
-                        raise RuntimeError('%s trigger time %.3f outside stilde (%.3f-%.3f)' \
-                                % (ifo, trig_time, stilde.start_time, stilde.end_time))
-                    snr_onsource_time = trig_time - snr.start_time
+                    snr_onsource_time = coinc_results['foreground/%s/end_time' % ifo] - snr.start_time
                 else:
                     snr_onsource_time = subthreshold_sngl_time - snr.start_time
                 # the window lasts half an Earth light travel time
