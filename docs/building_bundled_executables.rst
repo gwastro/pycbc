@@ -1,8 +1,8 @@
-.. _using_pyinstaller_binaries::
+.. _building_bundled_executables:
 
-######################################
-Building and Using Bundled Executables
-######################################
+############################
+Building Bundled Executables
+############################
 
 For most applications, PyCBC executables can be built and run from a standard
 Python install following the instructions in :ref:`installing_pycbc`. The
