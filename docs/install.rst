@@ -15,7 +15,7 @@ the execution machine.
 If you wish to run PyCBC executables on a machine that does not have the
 required environment, then you must use PyInstaller to build bundled versions
 of the executables. Documentation on doing this is available on the page
-:ref:`using_pyinstaller_binaries`.
+:ref:`building_bundled_executables`.
 
 .. note::
 
