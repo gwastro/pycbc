@@ -933,7 +933,9 @@ Configuring the workflow
     the shared libraries that it needs at runtime (e.g. glibc) are available.
     RHEL6 (or a similar derivative) is a suitable platform. The ``/cvmfs``
     filesystem contains ``pycbc_inspiral`` bundles that are built on the
-    ``x86_64_rhel_6`` platform and are suitable for use on the OSG.
+    ``x86_64_rhel_6`` platform and are suitable for use on the OSG. For
+    instructions on how to build PyInstaller bundled executables, see the page
+    :ref:`using_pyinstaller_binaries`.
 
 In order for ``pycbc_inspiral`` to be sent to worker nodes it must be
 available via a remote protocol, either http, gsiftp, or CVMFS. Releases of
@@ -950,6 +952,9 @@ a path to a gsiftp URL and tell Pegasus that the executable is not installed
 on the OSG with the two ``--config-overrides`` options::
 
     'executables:inspiral:gsiftp://server.hostname/path/to/pycbc_inspiral' \
+
+Make sure this executable is build following the instructions on the page
+:ref:`using_pyinstaller_binaries`.
 
 Add the following to the list of ``--config-overrides`` when running ``pycbc_make_coinc_search_workflow`` to tell Pegasus to run the inspiral code on the OSG::
      
