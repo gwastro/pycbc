@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
-from pycbc.inference import distributions
+import numpy
 import pycbc.coordinates as co
-import numpy as np
+from pycbc import distributions
 
 # We can choose any bounds between 0 and pi for this distribution but in
 # units of pi so we use between 0 and 1
@@ -25,7 +25,7 @@ uniform_solid_angle_distribution = distributions.UniformSolidAngle(
 solid_angle_samples = uniform_solid_angle_distribution.rvs(size=500000)
 
 # Make spins with unit length for coordinate transformation below.
-spin_mag = np.ndarray(shape=(500000), dtype=float)
+spin_mag = numpy.ndarray(shape=(500000), dtype=float)
 
 for i in range(0,500000):
     spin_mag[i] = 1.
