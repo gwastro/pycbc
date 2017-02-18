@@ -19,7 +19,7 @@ This modules provides classes for evaluating uniform distributions.
 import numpy
 from pycbc.distributions import bounded
 
-class Uniform(bounded._BoundedDist):
+class Uniform(bounded.BoundedDist):
     """
     A uniform distribution on the given parameters. The parameters are
     independent of each other. Instances of this class can be called like

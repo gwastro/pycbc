@@ -22,7 +22,7 @@ import numpy
 import scipy.stats
 from pycbc.distributions import bounded
 
-class FromFile(bounded._BoundedDist):
+class FromFile(bounded.BoundedDist):
     """A distribution that reads the values of the parameter(s) from an hdf
     file, computes the kde to construct the pdf, and draws random variables
     from it.
