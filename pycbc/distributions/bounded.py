@@ -18,7 +18,7 @@ This modules provides classes for evaluating distributions with bounds.
 
 import warnings
 from ConfigParser import Error
-from pycbc.inference import boundaries
+from pycbc.distributions import boundaries
 
 VARARGS_DELIM = '+'
 
