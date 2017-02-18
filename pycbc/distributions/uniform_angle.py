@@ -18,9 +18,9 @@ This modules provides classes for evaluating uniform angle distributions.
 
 import numpy
 from ConfigParser import Error
+from pycbc.distributions import boundaries
 from pycbc.distributions import bounded
 from pycbc.distributions import uniform
-from pycbc.inference import boundaries
 
 class UniformAngle(uniform.Uniform):
     """A uniform distribution in which the dependent variable is cyclic between
