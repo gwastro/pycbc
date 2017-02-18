@@ -124,8 +124,8 @@ class UniformAngle(uniform.Uniform):
         UniformAngle
             A distribution instance from the pycbc.inference.prior module.
         """
-        return _bounded_from_config(cls, cp, section, variable_args,
-            bounds_required=False)
+        return bounded.bounded_from_config(cls, cp, section, variable_args,
+                                           bounds_required=False)
 
 
 class SinAngle(UniformAngle):
