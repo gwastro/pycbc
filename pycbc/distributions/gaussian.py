@@ -20,7 +20,7 @@ import numpy
 import scipy.stats
 from pycbc.distributions import bounded
 
-class Gaussian(bounded._BoundedDist):
+class Gaussian(bounded.BoundedDist):
     r"""A Gaussian distribution on the given parameters; the parameters are
     independent of each other.
     
