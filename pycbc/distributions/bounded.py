@@ -12,25 +12,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-
-#
-# =============================================================================
-#
-#                                   Preamble
-#
-# =============================================================================
-#
 """
-This modules provides classes and functions for evaluating the prior
-for parameter estimation.
+This modules provides classes for evaluating distributions with bounds.
 """
 
-import numpy
-import scipy.stats
-import h5py
-from ConfigParser import Error
 import warnings
+from ConfigParser import Error
 from pycbc.inference import boundaries
 
 VARARGS_DELIM = '+'

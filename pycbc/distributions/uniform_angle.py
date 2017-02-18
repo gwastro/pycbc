@@ -1,8 +1,23 @@
+# Copyright (C) 2016  Collin Capano
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+This modules provides classes for evaluating uniform angle distributions.
+"""
+
 import numpy
-import scipy.stats
-import h5py
 from ConfigParser import Error
-import warnings
 from pycbc.distributions import bounded
 from pycbc.distributions import uniform
 from pycbc.inference import boundaries
@@ -467,7 +482,7 @@ class UniformSolidAngle(bounded._BoundedDist):
             A distribution instance from the pycbc.inference.prior module.
         """
         tag = variable_args
-        variable_args = variable_args.split(VARARGS_DELIM)
+        variable_args = variable_args.split(bounded.VARARGS_DELIM)
 
         # get the variables that correspond to the polar/azimuthal angles
         try:
