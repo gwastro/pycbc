@@ -461,6 +461,7 @@ setup (
                ],
     packages = [
                'pycbc',
+               'pycbc.distributions',
                'pycbc.fft',
                'pycbc.types',
                'pycbc.filter',
