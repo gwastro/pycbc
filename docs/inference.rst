@@ -71,11 +71,11 @@ Each parameter in ``[variable_args]`` must have a subsection in ``[prior]``.
 To create a subsection use the ``-`` char, eg. for chirp mass do ``[prior-mchirp]``.
 
 Each prior subsection must have a ``name`` option that identifies what prior to use.
-These distributions are described in :py:mod:`pycbc.inference.distributions`.
+These distributions are described in :py:mod:`pycbc.distributions`.
 A list of all distributions that can be used is found with
 
-.. literalinclude:: ../examples/inference/list_distributions.py
-.. command-output:: python ../examples/inference/list_distributions.py
+.. literalinclude:: ../examples/distributions/list_distributions.py
+.. command-output:: python ../examples/distributions/list_distributions.py
 
 A simple example is given in the subsection below.
 
