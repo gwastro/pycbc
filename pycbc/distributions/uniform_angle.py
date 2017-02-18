@@ -255,7 +255,7 @@ class CosAngle(SinAngle):
     _domain = boundaries.Bounds(-numpy.pi/2., numpy.pi/2.,
         btype_min='closed', btype_max='closed', cyclic=False)
 
-class UniformSolidAngle(bounded._BoundedDist):
+class UniformSolidAngle(bounded.BoundedDist):
     """A distribution that is uniform in the solid angle of a sphere. The names
     of the two angluar parameters can be specified on initalization.
 

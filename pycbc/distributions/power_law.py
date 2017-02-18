@@ -20,7 +20,7 @@ probability density function is a power law.
 import numpy
 from pycbc.distributions import bounded
 
-class UniformRadius(bounded._BoundedDist):
+class UniformRadius(bounded.BoundedDist):
     r"""
     For a uniform distribution in volume using spherical coordinates, this
     is the distriubtion to use for the radius. The parameters are

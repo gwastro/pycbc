@@ -182,7 +182,7 @@ def _bounded_from_config(cls, cp, section, variable_args,
     return cls(**dist_args)
 
 
-class _BoundedDist(object):
+class BoundedDist(object):
     """
     A generic class for storing common properties of distributions in which
     each parameter has a minimum and maximum value.
@@ -315,7 +315,7 @@ class _BoundedDist(object):
 
         Returns
         -------
-        _BoundedDist
+        BoundedDist
             A distribution instance from the pycbc.inference.prior module.
         """
         return _bounded_from_config(cls, cp, section, variable_args,
