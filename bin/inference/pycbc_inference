@@ -25,6 +25,7 @@ import numpy
 import pycbc
 import pycbc.opt
 import pycbc.weave
+from pycbc import distributions
 from pycbc import fft
 from pycbc import gate
 from pycbc import inference
@@ -240,10 +241,10 @@ with ctx:
 
     # get prior distribution for each variable parameter
     logging.info("Setting up priors for each parameter")
-    distributions = inference.read_distributions_from_config(cp, "prior")
+    dists = distributions.read_distributions_from_config(cp, "prior")
 
     # construct class that will return the prior
-    prior = inference.PriorEvaluator(variable_args, *distributions)
+    prior = inference.PriorEvaluator(variable_args, *dists)
 
     # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
@@ -302,14 +303,14 @@ with ctx:
     # check if user wants to use different distributions than prior for setting
     # walkers initial positions
     if len(cp.get_subsections("initial")):
-        initial_distributions = inference.read_distributions_from_config(cp,
-            section="initial")
+        initial_dists = distributions.read_distributions_from_config(
+                                                         cp, section="initial")
     else:
-        initial_distributions = inference.read_distributions_from_config(cp,
-            section="prior")
+        initial_dists = distributions.read_distributions_from_config(
+                                                         cp, section="prior")
 
     # set the initial positions
-    sampler.set_p0(initial_distributions)
+    sampler.set_p0(initial_dists)
 
     # setup checkpointing
     if opts.checkpoint_interval:
