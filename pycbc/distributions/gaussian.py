@@ -231,6 +231,6 @@ class Gaussian(bounded.BoundedDist):
         Gaussain
             A distribution instance from the pycbc.inference.prior module.
         """
-        return _bounded_from_config(cls, cp, section, variable_args,
-                                    bounds_required=False)
+        return bounded.bounded_from_config(cls, cp, section, variable_args,
+                                                  bounds_required=False)
 

@@ -17,24 +17,24 @@ This modules provides classes and functions for drawing and calculating the
 probability density function of distributions.
 """
 
-from pycbc.distributions import from_file
-from pycbc.distributions import gaussian
-from pycbc.distributions import power_law
-from pycbc.distributions import uniform 
-from pycbc.distributions import uniform_angle 
-from pycbc.distributions import uniform_sky 
+from pycbc.distributions.from_file import *
+from pycbc.distributions.gaussian import *
+from pycbc.distributions.power_law import *
+from pycbc.distributions.uniform import *
+from pycbc.distributions.uniform_angle import *
+from pycbc.distributions.uniform_sky import *
 
 # a dict of all available distributions
 distribs = {
-    from_file.FromFile.name : from_file.FromFile,
-    gaussian.Gaussian.name : gaussian.Gaussian,
-    power_law.UniformRadius.name : power_law.UniformRadius,
-    uniform.Uniform.name : uniform.Uniform,
-    uniform_angle.UniformAngle.name : uniform_angle.UniformAngle,
-    uniform_angle.CosAngle.name : uniform_angle.CosAngle,
-    uniform_angle.SinAngle.name : uniform_angle.SinAngle,
-    uniform_angle.UniformSolidAngle.name : uniform_angle.UniformSolidAngle,
-    uniform_sky.UniformSky.name : uniform_sky.UniformSky,
+    FromFile.name : FromFile,
+    Gaussian.name : Gaussian,
+    UniformRadius.name : UniformRadius,
+    Uniform.name : Uniform,
+    UniformAngle.name : UniformAngle,
+    CosAngle.name : CosAngle,
+    SinAngle.name : SinAngle,
+    UniformSolidAngle.name : UniformSolidAngle,
+    UniformSky.name : UniformSky,
 }
 
 def read_distributions_from_config(cp, section="prior"):
