@@ -113,7 +113,7 @@ def get_param_bounds_from_config(cp, section, tag, param):
     return bnds
 
 
-def _bounded_from_config(cls, cp, section, variable_args,
+def bounded_from_config(cls, cp, section, variable_args,
         bounds_required=False):
     """Returns a bounded distribution based on a configuration file. The
     parameters for the distribution are retrieved from the section titled
@@ -318,5 +318,5 @@ class BoundedDist(object):
         BoundedDist
             A distribution instance from the pycbc.inference.prior module.
         """
-        return _bounded_from_config(cls, cp, section, variable_args,
+        return bounded_from_config(cls, cp, section, variable_args,
                                     bounds_required=bounds_required)
