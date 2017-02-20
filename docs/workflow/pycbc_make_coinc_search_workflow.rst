@@ -845,7 +845,7 @@ from the previous workflow.
 
 To do this, ``cd`` into the ``local-site-scratch/work`` directory of your
 failed workflow. For example, if you used ``--output-dir output`` when
-planning the workflow, the then run the command::
+planning the workflow, and then run the command::
 
     cd /path/to/workflow/output/local-site-scratch/work
 
@@ -858,21 +858,8 @@ Once in the ``main_ID0000001`` directory, run the command::
     for pfn in `find . -type f | sed 's+^./++g'` ; do echo $pfn file://`pwd`/$pfn pool=\"local\" ; done | egrep -v '(dax|map)' > /path/to/partial_workflow.map
 
 changing ``/path/to`` to a location where you want to save the cache.
-
-If your run used the Open Science Grid, you will need to do the same thing for
-the ``osg-site-scratch`` directory. In this case::
-
-    cd /path/to/workflow/output/osg-site-scratch/work
-
-and change into the directory that ends with ``main_ID0000001``. Then run the
-same command as above::
-
-    for pfn in `find . -type f | sed 's+^./++g'` ; do echo $pfn file://`pwd`/$pfn pool=\"local\" ; done | egrep -v '(dax|map)' >> /path/to/partial_workflow.map
-
-but **note** the ``>>`` rather than ``>`` to append to the file ``partial_workflow.map``, rather than deteling the existing file and creating a new file.
  
 Now you can than use the ``partial_workflow.map`` cache file as the ``--cache-file`` argument to ``pycbc_submit_dax``.
-
 
 -----------------------------------------------
 Using partial products from a previous workflow
