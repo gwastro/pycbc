@@ -47,9 +47,31 @@ software installed.
 Using the build script
 ======================
 
+.. note::
+
+    The build script creates a new virtual environment to build the bundled
+    executables, and so it should **not** be run from within an existing
+    virtual environment. Run the ``deactivate`` command if you are currently
+    in a virtual environment. You may also need to specify the full path to
+    the ``pycbc_build_eah.sh`` script once you leave your virtual environment.
+
 The command-line arguments for the ``pycbc_build_eah.sh`` build script are:
 
 .. command-output:: pycbc_build_eah.sh --force-debian4 --help
+
+.. note::
+
+    Command line parsing is performed with shell syntax matching, not Python
+    argument parsing, so command line arguments must be given as
+    ``--option=argument`` with the option name spelled out in full and including
+    the ``=`` between the option and the argument.
+
+The build script creates the directories ``pycbc-sources`` and ``pycbc-build``
+in the directory that it is run from.  The build script creates the bundles in
+the directory ``pycbc-build/environment/dist/`` relative to the directory from
+which it run. The ``pycbc_inspiral`` executable will be named
+``pycbc_inspiral_osg`` or ``pycbc_inspiral_osg_vX.Y.Z`` if the git commit matches
+a git tag of the form ``vX.Y.Z`` (where X, Y, and Z are integers).
 
 .. note::
 
@@ -81,14 +103,22 @@ GitHub repository ior branch you can use the arguments::
     --pycbc-remote=soumide1102 --pycbc-branch=comp_wave_in_search
 
 You may also tell the script to run ``pycbc_inspiral`` with additional
-template banks or approximants to ensure that all of the necessary weave code
-is compiled into the executable with the arguments::
+waveform approximants to ensure that all of the necessary weave code
+is compiled into the executable with the arguments. The argument
+``--with-extra-approximant`` can be specified multiple times to weave-compile
+and bundle different waveform approximants, for example::
 
-    --with-extra-approx='SPAtmplt:mtotal<4'
-    --with-extra-approx='SEOBNRv4_ROM:else'
+    --with-extra-approximant='SPAtmplt:mtotal<4' --with-extra-approximant='SEOBNRv4_ROM:else'
+
+To test with compressed waveform banks, you can provide the following option
+*after* all the other ``--with-extra-approximant`` arguments::
+
     --with-extra-approx=--use-compressed-waveforms
-    --with-extra-bank=/home/soumi.de/projects/cbc/SEOBNRROM-proj/testbank_TF2v4ROM.hdf
 
+The weave-compilation step can also be run with additional template banks by
+passing the argument::
+
+    --with-extra-bank=/home/soumi.de/projects/cbc/SEOBNRROM-proj/testbank_TF2v4ROM.hdf
 
 ===========================
 Building Releases for CVMFS
@@ -97,7 +127,7 @@ Building Releases for CVMFS
 To build a release of ``pycbc_inspiral`` for installation in CVMFS, run the
 script with the arguments::
 
-    ./pycbc_build_eah.sh --lalsuite-commit=a2a5a476d33f169b8749e2840c306a48df63c936 --pycbc-commit=b68832784969a47fe2658abffb3888ee06cd1be4 --with-extra-libs=file://`pwd`/composer_xe_2015.0.090.tar.gz
+    pycbc_build_eah.sh --lalsuite-commit=a3a5a476d33f169b8749e2840c306a48df63c936 --pycbc-commit=b68832784969a47fe2658abffb3888ee06cd1be4 --with-extra-libs=file:///home/pycbc/build/composer_xe_2015.0.090.tar.gz
 
 changing the ``--lalsuite-commit`` and ``--pycbc-commit`` to the appropriate
 hashes for the release.
