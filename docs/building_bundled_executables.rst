@@ -128,7 +128,6 @@ Building Releases for CVMFS
 To build a release of ``pycbc_inspiral`` for installation in CVMFS, run the
 script with the arguments::
 
-    pycbc_build_eah.sh --lalsuite-commit=a3a5a476d33f169b8749e2840c306a48df63c936 --pycbc-commit=b68832784969a47fe2658abffb3888ee06cd1be4 --with-extra-libs=file:///home/pycbc/build/composer_xe_2015.0.090.tar.gz
+    pycbc_build_eah.sh --lalsuite-commit=a3a5a476d33f169b8749e2840c306a48df63c936 --pycbc-commit=b68832784969a47fe2658abffb3888ee06cd1be4 --with-extra-libs=file:///home/pycbc/build/composer_xe_2015.0.090.tar.gz --with-lal-data-path=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/11/share/lalsimulation
 
-changing the ``--lalsuite-commit`` and ``--pycbc-commit`` to the appropriate
-hashes for the release.
+changing the ``--lalsuite-commit``, ``--pycbc-commit``, and ``--with-lal-data-path`` options to the values for the release.
