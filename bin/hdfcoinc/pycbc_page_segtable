@@ -149,9 +149,9 @@ for segment_name in opts.segment_names:
 
     # put values into columns
     columns[0][1].append(segment_name)
-    columns[1][1].append(h1_len)
-    columns[2][1].append(l1_len)
-    columns[3][1].append(h1l1_len)
+    columns[1][1].append(float(h1_len))
+    columns[2][1].append(float(l1_len))
+    columns[3][1].append(float(h1l1_len))
 
 # cast columns into arrays
 keys = [numpy.array(key, dtype=type(key[0])) for key,_ in columns]
