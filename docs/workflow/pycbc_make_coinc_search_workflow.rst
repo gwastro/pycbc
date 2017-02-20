@@ -845,7 +845,7 @@ from the previous workflow.
 
 To do this, ``cd`` into the ``local-site-scratch/work`` directory of your
 failed workflow. For example, if you used ``--output-dir output`` when
-planning the workflow, the then run the command::
+planning the workflow, and then run the command::
 
     cd /path/to/workflow/output/local-site-scratch/work
 
