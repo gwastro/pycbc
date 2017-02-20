@@ -362,6 +362,8 @@ _linear_decompress_code = r"""
         sf = next_sf;
         next_sf = (double) sample_frequencies[ii+1];
         next_sfindex = (int) ceil(next_sf * inv_df);
+        if (next_sfindex > hlen)
+            next_sfindex = hlen;
         inv_sdf = 1./(next_sf - sf);
         this_amp = next_amp;
         next_amp = (double) amp[ii+1];
@@ -414,6 +416,9 @@ _linear_decompress_code = r"""
                 outptr += 2;
                 findex++;
             }
+            if (next_sfindex == hlen){
+            break;
+            }
         }
     }
 
@@ -441,7 +446,7 @@ _real_dtypes = {
 }
 
 def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
-                  f_lower=None, interpolation='linear'):
+                  f_lower=None, interpolation='inline_linear'):
     """Decompresses an FD waveform using the given amplitude, phase, and the
     frequencies at which they are sampled at.
 
@@ -464,15 +469,15 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         The frequency to start the decompression at. If None, will use whatever
         the lowest frequency is in sample_frequencies. All values at
         frequencies less than this will be 0 in the decompressed waveform.
-    interpolation : {'linear', str}
+    interpolation : {'inline_linear', str}
         The interpolation to use for the amplitude and phase. Default is
-        'linear'. If 'linear' a custom interpolater is used. Otherwise,
+        'inline_linear'. If 'inline_linear' a custom interpolater is used. Otherwise,
         ``scipy.interpolate.interp1d`` is used; for other options, see
         possible values for that function's ``kind`` argument.
 
     Returns
     -------
-    out : FrqeuencySeries
+    out : FrequencySeries
         If out was provided, writes to that array. Otherwise, a new
         FrequencySeries with the decompressed waveform.
     """
@@ -481,6 +486,11 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
             _precision_map[phase.dtype.name] != precision:
         raise ValueError("amp, phase, and sample_points must all have the "
             "same precision")
+    
+    sample_frequencies = numpy.array(sample_frequencies)
+    amp = numpy.array(amp)
+    phase = numpy.array(phase)
+
     if out is None:
         if df is None:
             raise ValueError("Either provide output memory or a df")
@@ -502,8 +512,10 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
             raise ValueError("f_lower is > than the maximum sample frequency")
         imin = int(numpy.searchsorted(sample_frequencies, f_lower))
     start_index = int(numpy.floor(f_lower/df))
+    if start_index >= hlen:
+        raise ValueError('requested f_lower >= largest frequency in out')
     # interpolate the amplitude and the phase
-    if interpolation == "linear":
+    if interpolation == "inline_linear":
         if precision == 'single':
             code = _linear_decompress_code32
         else:
@@ -520,16 +532,16 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
     else:
         # use scipy for fancier interpolation
         outfreq = out.sample_frequencies.numpy()
-        amp_interp = interpolate.interp1d(sample_frequencies.numpy(),
-                                          amp.numpy(), kind=interpolation,
+        amp_interp = interpolate.interp1d(sample_frequencies, amp,
+                                          kind=interpolation,
                                           bounds_error=False,
                                           fill_value=0.,
                                           assume_sorted=True)
-        phase_interp = interpolate.interp1d(sample_frequencies.numpy(),
-                                            phase.numpy(),
+        phase_interp = interpolate.interp1d(sample_frequencies, phase,
                                             kind=interpolation,
                                             bounds_error=False,
-                                            fill_value=0., assume_sorted=True)
+                                            fill_value=0.,
+                                            assume_sorted=True)
         A = amp_interp(outfreq)
         phi = phase_interp(outfreq)
         out.data[:] = A*numpy.cos(phi) + (1j)*A*numpy.sin(phi)
