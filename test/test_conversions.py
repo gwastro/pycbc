@@ -1,6 +1,6 @@
 import numpy
 from pycbc import coordinates
-from pycbc.inference import distributions
+from pycbc import distributions
 from pycbc import conversions
 import unittest
 from utils import simple_exit
