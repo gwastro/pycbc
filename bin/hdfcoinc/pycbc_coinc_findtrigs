@@ -126,8 +126,12 @@ class ReadByTemplate(object):
 
         if self.bank is not None:
             self.param = {}
-            for col in self.bank:
-                self.param[col] = self.bank[col][self.template_num]
+            if 'compressed_waveforms' in self.bank :
+                for col in self.bank.attrs['parameters']:
+                    self.param[col] = self.bank[col][self.template_num]
+            else :
+                for col in self.bank:
+                    self.param[col] = self.bank[col][self.template_num]
 
         # Calculate the trigger id by adding the relative offset in self.keep
         # to the absolute beginning index of this templates triggers stored
