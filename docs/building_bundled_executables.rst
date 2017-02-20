@@ -81,7 +81,7 @@ a git tag of the form ``vX.Y.Z`` (where X, Y, and Z are integers).
     as the **first** argument in the list of arguments.
 
 The minimal set of command line options required to build the ``pycbc_inspiral`` 
-bundle is typically the hash of the versions of LALSuite and PyCBC required::
+bundle is typically the hash of the versions of LALSuite and PyCBC::
 
     pycbc_build_eah.sh --lalsuite-commit=a2a5a476d33f169b8749e2840c306a48df63c936 --pycbc-commit=b68832784969a47fe2658abffb3888ee06cd1be4
 
