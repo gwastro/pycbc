@@ -257,8 +257,8 @@ for i in $*; do
             fi ;;
         --with-extra-libs=*) extra_libs="`echo $i|sed 's/^--with-extra-libs=//'`";;
         --with-extra-bank=*) extra_bank="$extra_bank `echo $i|sed 's/^--with-extra-bank=//'`";;
-        --with-extra-approximant=*) extra_approx="$extra_approx ${extra_approx}`echo $i|sed 's/^--with-extra-approx=//'` ";;
-        --with-lal-data-path=*) lal_data_path="`echo $i|sed 's/^--with-lal-data=//'`";;
+        --with-extra-approximant=*) extra_approx="$extra_approx ${extra_approx}`echo $i|sed 's/^--with-extra-approximant=//'` ";;
+        --with-lal-data-path=*) lal_data_path="`echo $i|sed 's/^--with-lal-data-path=//'`";;
         --help) echo -e "Options:\n$usage">&2; exit 0;;
         *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
     esac
