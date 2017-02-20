@@ -37,7 +37,7 @@ import pycbc.waveform
 import pycbc.pnutils
 import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
-from pycbc.types import zeros
+from pycbc.types import FrequencySeries, zeros
 import pycbc.io
 
 def sigma_cached(self, psd):
@@ -627,6 +627,7 @@ class FilterBank(TemplateBank):
                  load_compressed=True,
                  load_compressed_now=False,
                  low_frequency_cutoff=None,
+                 waveform_decompression_method=None,
                  **kwds):
         self.out = out
         self.dtype = dtype
@@ -637,6 +638,7 @@ class FilterBank(TemplateBank):
         self.delta_t = 1.0 / (self.N * self.delta_f)
         self.filter_length = filter_length
         self.max_template_length = max_template_length
+        self.waveform_decompression_method = waveform_decompression_method
 
         super(FilterBank, self).__init__(filename, approximant=approximant,
             parameters=parameters, load_compressed=load_compressed,
@@ -645,6 +647,8 @@ class FilterBank(TemplateBank):
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
 
     def __getitem__(self, index):
+        from pycbc.waveform.waveform import props
+        from pycbc.waveform import get_waveform_filter_length_in_time
         # Make new memory for templates if we aren't given output memory
         if self.out is None:
             tempout = zeros(self.filter_length, dtype=self.dtype)
@@ -675,11 +679,25 @@ class FilterBank(TemplateBank):
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
-        htilde = pycbc.waveform.get_waveform_filter(
-            tempout[0:self.filter_length], self.table[index],
-            approximant=approximant, f_lower=f_low, f_final=f_end,
-            delta_f=self.delta_f, delta_t=self.delta_t, distance=distance,
-            **self.extra_args)
+        if self.compressed_waveforms is not None :
+            # Create memory space for writing the decompressed waveform
+            if self.waveform_decompression_method is not None :
+                decompression_method = self.waveform_decompression_method
+            else :
+                decompression_method = self.compressed_waveforms[self.table.template_hash[index]].interpolation
+            logging.info("Decompressing waveform using %s", decompression_method)
+            decomp_scratch = FrequencySeries(tempout[0:self.filter_length], delta_f=self.delta_f, copy=False)
+            htilde = self.compressed_waveforms[self.table.template_hash[index]].decompress(out=decomp_scratch, f_lower=f_low, interpolation=decompression_method)
+            p = props(self.table[index])
+            p.pop('approximant')
+            htilde.chirp_length = get_waveform_filter_length_in_time(approximant, **p)
+            htilde.length_in_time = htilde.chirp_length
+        else :
+            htilde = pycbc.waveform.get_waveform_filter(
+                tempout[0:self.filter_length], self.table[index],
+                approximant=approximant, f_lower=f_low, f_final=f_end,
+                delta_f=self.delta_f, delta_t=self.delta_t, distance=distance,
+                **self.extra_args)
 
         # If available, record the total duration (which may
         # include ringdown) and the duration up to merger since they will be
