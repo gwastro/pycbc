@@ -39,7 +39,6 @@ extra_approx=""
 lal_data_path="."
 
 # defaults, possibly overwritten by OS-specific settings
-build_gcc=false
 build_ssl=false
 build_python=false
 fftw_flags=--enable-avx
@@ -305,7 +304,7 @@ aei="http://www.aei.mpg.de/~bema"
 
 # circumvent old certificate chains on old systems
 export GIT_SSL_NO_VERIFY=true
-wget_opts="-c --passive-ftp --no-check-certificate"
+wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
 export PIP_TRUSTED_HOST="pypi.python.org github.com"
 
 # use previously compiled scipy, lalsuite etc. if available
@@ -647,7 +646,9 @@ Libs: -L${libdir} -lhdf5' |
     if $build_swig; then
 	p=swig-3.0.7
 	echo -e "\\n\\n>> [`date`] building $p"
-	test -r $p.tar.gz || wget $wget_opts "$aei/$p.tar.gz"
+	test -r $p.tar.gz ||
+            wget $wget_opts "$aei/$p.tar.gz" ||
+            wget $wget_opts "$atlas/tarballs/$p.tar.gz"
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
