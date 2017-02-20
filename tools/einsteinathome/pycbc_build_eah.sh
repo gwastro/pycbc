@@ -203,6 +203,8 @@ usage="
 
     --no-pycbc-update               don't update local pycbc repo
 
+    --no-lalsuite-update            don't update local lalsuite repo
+
     --bema-testing                  use einsteinathome_testing branch of bema-ligo/pycbc repo
 
     --no-cleanup                    keep build directories after successful build for later inspection
@@ -226,6 +228,7 @@ for i in $*; do
         --force-debian4) ;;
         --print-env) ;;
         --no-pycbc-update) pycbc_branch="HEAD";;
+        --no-lalsuite-update) no_lalsuite_update=true;;
         --bema-testing)
             pycbc_branch=einsteinathome_testing
             pycbc_remote=bema-ligo;;
@@ -677,7 +680,9 @@ else
 
     # LALSUITE
     echo -e "\\n\\n>> [`date`] building lalsuite"
-    if test -d lalsuite/.git; then
+    if [ ".$no_lalsuite_update" != "." ]; then
+	cd lalsuite
+    elif test -d lalsuite/.git; then
         cd lalsuite
         git reset --hard HEAD
         if [ ".$lalsuite_branch" != ".HEAD" ]; then
