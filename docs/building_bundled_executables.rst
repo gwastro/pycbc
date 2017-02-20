@@ -59,12 +59,19 @@ The command-line arguments for the ``pycbc_build_eah.sh`` build script are:
 
 .. command-output:: pycbc_build_eah.sh --force-debian4 --help
 
+.. note::
+
+    Command line parsing is performed with shell syntax matching, not Python
+    argument parsing, so command line arguments must be given as
+    ``--option=argument`` with the option name spelled out in full and including
+    the ``=`` between the option and the argument.
+
 The build script creates the directories ``pycbc-sources`` and ``pycbc-build``
 in the directory that it is run from.  The build script creates the bundles in
 the directory ``pycbc-build/environment/dist/`` relative to the directory from
 which it run. The ``pycbc_inspiral`` executable will be named
-``pycbc_inspiral_osg`` or ``pycbc_inspiral_osg_TAG`` if the git commit matches
-a tag name ``TAG`` in the repository.
+``pycbc_inspiral_osg`` or ``pycbc_inspiral_osg_vX.Y.Z`` if the git commit matches
+a git tag of the form ``vX.Y.Z`` (where X, Y, and Z are integers).
 
 .. note::
 
@@ -112,13 +119,6 @@ The weave-compilation step can also be run with additional template banks by
 passing the argument::
 
     --with-extra-bank=/home/soumi.de/projects/cbc/SEOBNRROM-proj/testbank_TF2v4ROM.hdf
-
-.. note::
-
-    Command line parsing is performed with shell syntax matching, not Python
-    argument parsing, so command line arguments must be given as
-    ``--option=argument`` with the option name spelled out in full and including
-    the ``=`` betwwn the option and the argument.
 
 ===========================
 Building Releases for CVMFS
