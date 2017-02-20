@@ -80,8 +80,8 @@ a git tag of the form ``vX.Y.Z`` (where X, Y, and Z are integers).
     platform, pass the command-line argument ``--force-debian4`` to the script
     as the **first** argument in the list of arguments.
 
-The minimal set of command line options require to ``pycbc_inspiral`` is
-typically the hash of the versions of LALSuite and PyCBC required::
+The minimal set of command line options required to build the ``pycbc_inspiral`` 
+bundle is typically the hash of the versions of LALSuite and PyCBC::
 
     pycbc_build_eah.sh --lalsuite-commit=a2a5a476d33f169b8749e2840c306a48df63c936 --pycbc-commit=b68832784969a47fe2658abffb3888ee06cd1be4
 
@@ -94,11 +94,12 @@ The script executes ``pycbc_inspiral`` as part of the build process. This may
 require LAL data at build time. The LAL data can be given with the command
 line argument::
     
-    --with-lal-data=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/11/share/lalsimulation
+    --with-lal-data-path=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/11/share/lalsimulation
 
 The default command line arguments clone PyCBC from the standard GitHub
 repository.  If you would like to build a bundle using code from your own
-GitHub repository ior branch you can use the arguments::
+GitHub repository or branch you can use the arguments mentioned below. In this 
+case you would not need to specify a ``--pycbc-commit``::
 
     --pycbc-remote=soumide1102 --pycbc-branch=comp_wave_in_search
 
@@ -113,7 +114,7 @@ and bundle different waveform approximants, for example::
 To test with compressed waveform banks, you can provide the following option
 *after* all the other ``--with-extra-approximant`` arguments::
 
-    --with-extra-approx=--use-compressed-waveforms
+    --with-extra-approximant=--use-compressed-waveforms
 
 The weave-compilation step can also be run with additional template banks by
 passing the argument::
@@ -127,7 +128,6 @@ Building Releases for CVMFS
 To build a release of ``pycbc_inspiral`` for installation in CVMFS, run the
 script with the arguments::
 
-    pycbc_build_eah.sh --lalsuite-commit=a3a5a476d33f169b8749e2840c306a48df63c936 --pycbc-commit=b68832784969a47fe2658abffb3888ee06cd1be4 --with-extra-libs=file:///home/pycbc/build/composer_xe_2015.0.090.tar.gz
+    pycbc_build_eah.sh --lalsuite-commit=a3a5a476d33f169b8749e2840c306a48df63c936 --pycbc-commit=b68832784969a47fe2658abffb3888ee06cd1be4 --with-extra-libs=file:///home/pycbc/build/composer_xe_2015.0.090.tar.gz --with-lal-data-path=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/11/share/lalsimulation
 
-changing the ``--lalsuite-commit`` and ``--pycbc-commit`` to the appropriate
-hashes for the release.
+changing the ``--lalsuite-commit``, ``--pycbc-commit``, and ``--with-lal-data-path`` options to the values for the release.
