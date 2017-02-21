@@ -258,7 +258,7 @@ class TemplateBank(object):
 
             # inclination stored in xml alpha3 column
             names = list(self.table.dtype.names)
-            names = tuple([n if n != 'alpha3' else 'inclination' for n in names]) 
+            names = tuple([n if n != 'alpha3' else 'inclination' for n in names])
 
             # low frequency cutoff in xml alpha6 column
             names = tuple([n if n!= 'alpha6' else 'f_lower' for n in names])
@@ -463,30 +463,30 @@ class TemplateBank(object):
             indices_combined = np.concatenate(indices)
 
         indices_unique= np.unique(indices_combined)
-        self.table = self.table[indices_unique]   
+        self.table = self.table[indices_unique]
 
 
     def ensure_standard_filter_columns(self, low_frequency_cutoff=None):
         """ Initialize FilterBank common fields
-        
+
         Parameters
         ----------
         low_frequency_cutoff: {float, None}, Optional
             A low frequency cutoff which overrides any given within the
             template bank file.
         """
-        
+
         # Make sure we have a template duration field
         if not hasattr(self.table, 'template_duration'):
             self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                     dtype=numpy.float32), 'template_duration') 
+                                     dtype=numpy.float32), 'template_duration')
 
         # Make sure we have a f_lower field
         if low_frequency_cutoff is not None:
             if not hasattr(self.table, 'f_lower'):
                 vec = numpy.zeros(len(self.table), dtype=numpy.float32)
                 self.table = self.table.add_fields(vec, 'f_lower')
-            self.table['f_lower'][:] = low_frequency_cutoff        
+            self.table['f_lower'][:] = low_frequency_cutoff
 
         self.min_f_lower = min(self.table['f_lower'])
         if self.f_lower is None and self.min_f_lower == 0.:
@@ -495,7 +495,7 @@ class TemplateBank(object):
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, sample_rate, minimum_buffer,
                        approximant=None, increment=8, parameters=None,
-                       load_compressed=True, load_compressed_now=False, 
+                       load_compressed=True, load_compressed_now=False,
                        low_frequency_cutoff=None,
                        **kwds):
 
@@ -559,7 +559,7 @@ class LiveFilterBank(TemplateBank):
 
         approximant = self.approximant(index)
         f_end = self.end_frequency(index)
-        flow = self.table[index].f_lower        
+        flow = self.table[index].f_lower
 
         # Determine the length of time of the filter, rounded up to
         # nearest power of two
@@ -569,7 +569,7 @@ class LiveFilterBank(TemplateBank):
         p = props(self.table[index])
         p.pop('approximant')
         buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, **p)
-        
+
         tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
         flen = int(tlen / 2 + 1)
 
