@@ -209,7 +209,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         overlaps.
     precision : str
         The precision being used to generate and store the compressed waveform
-        points. 
+        points.
     decomp_scratch : {None, FrequencySeries}
         Optionally provide scratch space for decompressing the waveform. The
         provided frequency series must have the same `delta_f` and length
@@ -490,7 +490,7 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
             _precision_map[phase.dtype.name] != precision:
         raise ValueError("amp, phase, and sample_points must all have the "
             "same precision")
-    
+
     sample_frequencies = numpy.array(sample_frequencies)
     amp = numpy.array(amp)
     phase = numpy.array(phase)
@@ -736,7 +736,7 @@ class CompressedWaveform(object):
         The waveform is written to:
         `fp['[{root}/]compressed_waveforms/{template_hash}/{param}']`,
         where `param` is the `sample_points`, `amplitude`, and `phase`. The
-        `interpolation`, `tolerance`, `mismatch` and `precision` are saved 
+        `interpolation`, `tolerance`, `mismatch` and `precision` are saved
         to the group's attributes.
 
         Parameters
