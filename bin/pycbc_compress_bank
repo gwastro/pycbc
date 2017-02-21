@@ -40,9 +40,9 @@ from pycbc import filter
 
 
 parser = argparse.ArgumentParser(description=__description__)
-parser.add_argument("--bank-file", type=str,
+parser.add_argument("--bank-file", type=str, required=True,
                     help="Bank hdf file to load.")
-parser.add_argument("--output", type=str,
+parser.add_argument("--output", type=str, required=True,
                     help="The hdf file to save the templates and "
                     "compressed waveforms to.")
 parser.add_argument("--low-frequency-cutoff", type=float, required=True,
@@ -73,11 +73,11 @@ parser.add_argument("--tolerance", type=float, default=0.001,
                     "Points will be added to the compressed waveform "
                     "until its interpolation has a mismatch <= this value. "
                     "Default is 0.001.")
-parser.add_argument("--interpolation", type=str, default="linear",
+parser.add_argument("--interpolation", type=str, default="inline_linear",
                     help="The interpolation to use for decompressing the "
                     "waveforms for checking tolerance. Options are "
-                    "'linear', or any interpolation recognized by scipy's "
-                    "interp1d kind argument. Default is linear.")
+                    "'inline_linear', or any interpolation recognized by "
+                    "scipy's interp1d kind argument. Default is inline_linear.")
 parser.add_argument("--precision", type=str, choices=["double", "single"],
                     default="double",
                     help="What precision to generate and store the "
