@@ -1390,9 +1390,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 fseries_trimmed = fseries
 
             fseries_trimmed.psd = psd
-
             self.segments[delta_f] = fseries_trimmed
-
+            
         stilde = self.segments[delta_f]
         return stilde  
 
