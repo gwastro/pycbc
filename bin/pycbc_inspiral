@@ -20,6 +20,7 @@ import sys
 import logging, argparse, numpy, itertools
 import pycbc
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
+from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.filter import MatchedFilterControl, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.fft.fftw, pycbc.version
@@ -95,7 +96,8 @@ parser.add_argument("--cluster-window", type=float, default = -1,
 parser.add_argument("--maximization-interval", type=float, default=0,
                     help="Maximize triggers over the template bank (ms)")
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
-parser.add_argument("--chisq-snr-threshold", type=float, help="Minimum SNR to calculate the power chisq")
+parser.add_argument("--chisq-snr-threshold", type=float,
+                    help="Minimum SNR to calculate the power chisq")
 parser.add_argument("--chisq-bins", default=0, help=
                     "Number of frequency bins to use for power chisq. Specify"
                     " an integer for a constant number of bins, or a function "
@@ -173,7 +175,7 @@ fft.insert_fft_option_group(parser)
 pycbc.opt.insert_optimization_option_group(parser)
 pycbc.weave.insert_weave_option_group(parser)
 pycbc.inject.insert_injfilterrejector_option_group(parser)
-
+SingleDetSGChisq.insert_option_group(parser)
 opt = parser.parse_args()
 
 # Check that the values returned for the options make sense
@@ -216,19 +218,10 @@ with ctx:
         'chisq_dof'      : int,
         'bank_chisq'     : float32,
         'bank_chisq_dof' : int,
-        'cont_chisq'     : float32
+        'cont_chisq'     : float32,
                 }
-    out_vals = {
-        'time_index'     : None,
-        'snr'            : None,
-        'chisq'          : None,
-        'chisq_dof'      : None,
-        'bank_chisq'     : None,
-        'bank_chisq_dof' : None,
-        'cont_chisq'     : None
-               }
-
-
+    out_types.update(SingleDetSGChisq.returns)
+    out_vals = {key: None for key in out_types}
     names = sorted(out_vals.keys())
 
     if len(strain_segments.segment_slices) == 0:
@@ -275,6 +268,7 @@ with ctx:
                                           approximant=opt.approximant)
 
     power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins, opt.chisq_snr_threshold)
+
     autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride,
                                  opt.autochi_number_points,
                                  onesided=opt.autochi_onesided,
@@ -293,7 +287,9 @@ with ctx:
         dtype=complex64, phase_order=opt.order,
         taper=opt.taper_template, approximant=opt.approximant,
         out=template_mem, max_template_length=opt.max_template_length)
-
+        
+    sg_chisq = SingleDetSGChisq.from_cli(opt, bank, opt.chisq_bins)                                           
+                                             
     ntemplates = len(bank)
     nfilters = 0
 
@@ -350,6 +346,12 @@ with ctx:
             out_vals['chisq'], out_vals['chisq_dof'] = \
                   power_chisq.values(corr, snrv, norm, stilde.psd,
                                      idx+stilde.analyze.start, template)
+
+            out_vals['lat_chisq'] = sg_chisq.values(stilde, template, stilde.psd,
+                                          snrv, norm,
+                                          out_vals['chisq'],
+                                          out_vals['chisq_dof'],
+                                          idx+stilde.analyze.start)
 
             out_vals['cont_chisq'] = \
                   autochisq.values(snr, idx+stilde.analyze.start, template,
