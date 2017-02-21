@@ -108,7 +108,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
 
         # This is implemented slowly, so let's not call it often, OK?
         chisq = numpy.ones(len(snrv))
-        for i, snvri in enumerate(snrv):
+        for i, snrvi in enumerate(snrv):
             #Skip if newsnr too low
             snr = abs(snrvi * snr_norm)
             nsnr = newsnr(snr, bchisq[i] / bchisq_dof[i])
