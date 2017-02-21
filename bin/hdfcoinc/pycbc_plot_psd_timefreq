@@ -74,7 +74,7 @@ logging.info('Starting the plot PSD over time')
 
 reduction_function = { 'min' : numpy.min , 'max' : numpy.max , 'mean' : numpy.mean ,
                        'median' : numpy.median  }
-asd_median = asd_median = numpy.median( psds, axis = 0 )[kmin:] ** 0.5 * fac
+asd_median = numpy.median( psds, axis = 0 )[kmin:] ** 0.5 * fac
 # Select limits for the colorbar
 if opts.normalize:
     asdmin = 0.5
