@@ -79,7 +79,7 @@ parser.add_argument("--interpolation", type=str, default="inline_linear",
                     "'inline_linear', or any interpolation recognized by "
                     "scipy's interp1d kind argument. Default is inline_linear.")
 parser.add_argument("--precision", type=str, choices=["double", "single"],
-                    default="double",
+                    default="single",
                     help="What precision to generate and store the "
                     "waveforms with; default is double.")
 parser.add_argument("--force", action="store_true", default=False,
@@ -191,7 +191,7 @@ for ii in range(imin, imax):
     # compress
     hcompressed = compress.compress_waveform(
         htilde, sample_points, args.tolerance, args.interpolation,
-        decomp_scratch=decomp_scratch, psd=psd)
+        args.precision, decomp_scratch=decomp_scratch, psd=psd)
 
     # save results
     hcompressed.write_to_hdf(output, tmplt.template_hash)
