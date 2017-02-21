@@ -196,7 +196,9 @@ class SingleCoincForGraceDB(object):
             self.snr_series = {}
             self.snr_series_psd = {}
             for ifo in self.ifos + self.followup_ifos:
-                logging.info('Computing onsource SNR for %s, trigger time ~%.3f', ifo, subthreshold_sngl_time)
+                single_trig_time = coinc_results['foreground/%s/end_time' % ifo] if ifo in ifos else subthreshold_sngl_time
+                logging.info('Computing onsource SNR for %s, trigger time %.4f',
+                             ifo, single_trig_time)
                 stilde = data_readers[ifo].overwhitened_data(htilde.delta_f)
                 norm = 4.0 * htilde.delta_f / (htilde.sigmasq(stilde.psd) ** 0.5)
                 qtilde = zeros((len(htilde)-1)*2, dtype=htilde.dtype)
@@ -213,20 +215,13 @@ class SingleCoincForGraceDB(object):
                 snr = TimeSeries(snr, delta_t=delta_t,
                                  epoch=data_readers[ifo].start_time)
 
-                snr.save('%.3f-snr-%s.txt' % (subthreshold_sngl_time, ifo))
-
                 self.snr_series[ifo] = snr
                 self.snr_series_psd[ifo] = stilde.psd
 
-                # store the on-source slice of the series into the XML doc
-                if ifo in ifos:
-                    snr_onsource_time = coinc_results['foreground/%s/end_time' % ifo] - snr.start_time
-                else:
-                    snr_onsource_time = subthreshold_sngl_time - snr.start_time
                 # the window lasts half an Earth light travel time
                 # plus 10 ms to account for timing uncertainty
                 snr_onsource_dur = lal.REARTH_SI / lal.C_SI + 0.01
-                onsource_idx = int(float(snr_onsource_time) * snr.sample_rate)
+                onsource_idx = int(round(float(single_trig_time - snr.start_time) * snr.sample_rate))
                 if ifo in ifos and abs(abs(snr[onsource_idx]) - coinc_results['foreground/%s/snr' % ifo]) > 0.5:
                     raise RuntimeError('%s trigger SNR (%.1f) inconsistent with time series (%.1f)' % (ifo, coinc_results['foreground/%s/snr' % ifo], abs(snr[onsource_idx])))
                 onsource_start = onsource_idx - int(snr.sample_rate * snr_onsource_dur / 2)
