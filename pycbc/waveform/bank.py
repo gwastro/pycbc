@@ -628,6 +628,7 @@ class FilterBank(TemplateBank):
                  load_compressed_now=False,
                  low_frequency_cutoff=None,
                  waveform_decompression_method=None,
+                 waveform_decompression_precision=None,
                  **kwds):
         self.out = out
         self.dtype = dtype
@@ -639,6 +640,7 @@ class FilterBank(TemplateBank):
         self.filter_length = filter_length
         self.max_template_length = max_template_length
         self.waveform_decompression_method = waveform_decompression_method
+        self.waveform_decompression_precision = waveform_decompression_precision
 
         super(FilterBank, self).__init__(filename, approximant=approximant,
             parameters=parameters, load_compressed=load_compressed,
@@ -681,6 +683,17 @@ class FilterBank(TemplateBank):
         distance = 1.0 / DYN_RANGE_FAC
         if self.compressed_waveforms is not None :
             # Create memory space for writing the decompressed waveform
+            if self.waveform_decompression_precision is not None :
+                precision_from_bank_file = self.compressed_waveforms[self.table.template_hash[index]].precision
+                if self.waveform_decompression_precision != precision_from_bank_file :
+                    raise ValueError("The precision used to compress the "
+                                     "waveform was %s, whereas the precision "
+                                     "selected to decompress the waveform was "
+                                     "%s. Both of theses should be the same. "
+                                     "Therefore, use a bank with precision %s."
+                                     %(precision_from_bank_file,
+                                     self.waveform_decompression_precision,
+                                     self.waveform_decompression_precision))
             if self.waveform_decompression_method is not None :
                 decompression_method = self.waveform_decompression_method
             else :
