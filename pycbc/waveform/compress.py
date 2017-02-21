@@ -177,7 +177,7 @@ def vecdiff(htilde, hinterp, sample_points):
     return vecdiffs
 
 def compress_waveform(htilde, sample_points, tolerance, interpolation,
-                      decomp_scratch=None, psd=None):
+                      precision, decomp_scratch=None, psd=None):
     """Retrieves the amplitude and phase at the desired sample points, and adds
     frequency points in order to ensure that the interpolated waveform
     has a mismatch with the full waveform that is <= the desired tolerance. The
@@ -207,6 +207,9 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     interpolation : str
         The interpolation to use for decompressing the waveform when computing
         overlaps.
+    precision : str
+        The precision being used to generate and store the compressed waveform
+        points. 
     decomp_scratch : {None, FrequencySeries}
         Optionally provide scratch space for decompressing the waveform. The
         provided frequency series must have the same `delta_f` and length
@@ -292,7 +295,8 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
 
     return CompressedWaveform(sample_points, comp_amp, comp_phase,
                               interpolation=interpolation,
-                              tolerance=tolerance, mismatch=mismatch)
+                              tolerance=tolerance, mismatch=mismatch,
+                              precision=precision)
 
 
 _linear_decompress_code = r"""
@@ -567,6 +571,9 @@ class CompressedWaveform(object):
     mismatch : {None, float}
         The actual mismatch between the decompressed waveform (using the given
         `interpolation`) and the full waveform.
+    precision : {None, str}
+        The precision used to generate and store the compressed waveform amplitude
+        and phase points.
     load_to_memory : {True, bool}
         If `sample_points`, `amplitude`, and/or `phase` is an hdf dataset, they
         will be cached in memory the first time they are accessed. Default is
@@ -590,11 +597,13 @@ class CompressedWaveform(object):
     mismatch : {None, float}
         The mismatch between the decompressed waveform and the original
         waveform.
+    precision : {None, str}
+        The precision used to generate and store the compressed waveform points.
     """
 
     def __init__(self, sample_points, amplitude, phase,
                  interpolation=None, tolerance=None, mismatch=None,
-                 load_to_memory=True):
+                 precision=None, load_to_memory=True):
         self._sample_points = sample_points
         self._amplitude = amplitude
         self._phase = phase
@@ -617,6 +626,7 @@ class CompressedWaveform(object):
         self.interpolation = interpolation
         self.tolerance = tolerance
         self.mismatch = mismatch
+        self.precision = precision
 
     def _get(self, param):
         val = getattr(self, '_%s' %param)
@@ -725,8 +735,8 @@ class CompressedWaveform(object):
         The waveform is written to:
         `fp['[{root}/]compressed_waveforms/{template_hash}/{param}']`,
         where `param` is the `sample_points`, `amplitude`, and `phase`. The
-        `interpolation`, `tolerance`, and `mismatch` are saved to the group's
-        attributes.
+        `interpolation`, `tolerance`, `mismatch` and `precision` are saved 
+        to the group's attributes.
 
         Parameters
         ----------
@@ -749,6 +759,7 @@ class CompressedWaveform(object):
         fp[group].attrs['mismatch'] = self.mismatch
         fp[group].attrs['interpolation'] = self.interpolation
         fp[group].attrs['tolerance'] = self.tolerance
+        fp[group].attrs['precision'] = self.precision
 
     @classmethod
     def from_hdf(cls, fp, template_hash, root=None, load_to_memory=True,
@@ -797,5 +808,6 @@ class CompressedWaveform(object):
             interpolation=fp[group].attrs['interpolation'],
             tolerance=fp[group].attrs['tolerance'],
             mismatch=fp[group].attrs['mismatch'],
+            precision=fp[group].attrs['precision'],
             load_to_memory=load_to_memory)
 
