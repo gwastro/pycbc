@@ -4,7 +4,7 @@ import numpy
 import logging
 
 from pycbc.waveform.utils import apply_fseries_time_shift
-from pycbc.filter import sigma            
+from pycbc.filter import sigma
 from pycbc.waveform import sinegauss
 from pycbc.vetoes.chisq import SingleDetPowerChisq
 from pycbc.events import newsnr
@@ -29,10 +29,10 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         snr_threshold: float
             The threshold to calculate the sine-Gaussian chisq
         chisq_locations: list of strs
-            List of strings which detail where to place a sine-Gaussian. 
+            List of strings which detail where to place a sine-Gaussian.
             The format is 'region-boolean:q1-offset1,q2-offset2'.
             The offset is relative to the end frequency of the approximant.
-            The region is a boolean expresion such as 'mtotal>40' and indicates 
+            The region is a boolean expresion such as 'mtotal>40' and indicates
             where to apply this set of sine-Gaussians.
         """
         if snr_threshold:
@@ -61,8 +61,8 @@ class SingleDetSGChisq(SingleDetPowerChisq):
                  "The offset is relative to the end frequency of the approximant."
                  "The region is a boolean expresion such as 'mtotal>40' and indicates "
                  "where to apply this set of sine-Gaussians.")
-    
-    @classmethod    
+
+    @classmethod
     def from_cli(cls, args, bank, chisq_bins):
         return cls(bank, chisq_bins,
                    args.sgchisq_snr_threshold,
@@ -108,9 +108,9 @@ class SingleDetSGChisq(SingleDetPowerChisq):
 
         # This is implemented slowly, so let's not call it often, OK?
         chisq = numpy.ones(len(snrv))
-        for i in range(len(snrv)):
+        for i, snvri in enumerate(snrv):
             #Skip if newsnr too low
-            snr = abs(snrv[i] * snr_norm)
+            snr = abs(snrvi * snr_norm)
             nsnr = newsnr(snr, bchisq[i] / bchisq_dof[i])
             if nsnr < self.snr_threshold:
                 continue
@@ -153,7 +153,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
                                      low_frequency_cutoff=flow, 
                                      high_frequency_cutoff=fhigh)
                 #Calculate the SNR of the tile
-                gsnr = (gtem[kmin:kmax] * stilde_shift[kmin:kmax]).sum() 
+                gsnr = (gtem[kmin:kmax] * stilde_shift[kmin:kmax]).sum()
                 gsnr *= 4.0 * gtem.delta_f / gsigma
                 chisq[i] += abs(gsnr)**2.0
                 dof += 2
