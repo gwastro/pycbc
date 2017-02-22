@@ -133,10 +133,10 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             fstep = (bins[-2] - bins[-3])
             fpeak = (bins[-2] + fstep) * template.delta_f
             
-            # This is 90% of the Nyquist frequency of the template
+            # This is 90% of the Nyquist frequency of the data
             # This allows us to avoid issues near Nyquist due to resample
             # Filtering
-            fstop = len(template) * template.delta_f * 0.9
+            fstop = len(stilde) * stilde.delta_f * 0.9
             
             dof = 0
             # Calculate the sume of SNR^2 for the sine-Gaussians specified
