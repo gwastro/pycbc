@@ -121,7 +121,7 @@ if opts.z_var == 'density':
     norm = LogNorm()
     hb = ax.hexbin(x, y, norm=norm, vmin=1, **hexbin_style)
     fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
-elif opts.z_var in ['max(snr)', 'max(newsnr)']:
+elif opts.z_var in ['max(snr)', 'max(newsnr)', 'max(newsnr_sgveeto)']:
     cb_style = {}
     if opts.z_var == 'max(snr)':
         z = trigs.snr
