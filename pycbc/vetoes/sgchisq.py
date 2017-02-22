@@ -126,8 +126,8 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             qwindow = 50
             chisq[i] = 0
             
-            #Estimate the maximum frequency up to which the waveform has
-            #power by approximating power per frequency
+            # Estimate the maximum frequency up to which the waveform has
+            # power by approximating power per frequency
             # as constant over the last 2 chisq bins. We cannot use the final
             # chisq bin edge as it does not have to be where the waveform
             # terminates.
