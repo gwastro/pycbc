@@ -77,7 +77,7 @@ parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
 parser.add_argument("--sngl-stat", default="new_snr",
-                    choices=["snr", "snronchi", "effective_snr", "new_snr", "blue_snr"],
+                    choices=["snr", "snronchi", "effective_snr", "new_snr", "newsnr_sgveto"],
                     help="Function of SNR and chisq to perform fits with")
 parser.add_argument("--stat-factor", type=float,
                     help="Adjustable magic number used in some sngl "
