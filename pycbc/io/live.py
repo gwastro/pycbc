@@ -122,6 +122,7 @@ class SingleCoincForGraceDB(object):
             sngl = return_empty_sngl()
             sngl.event_id = lsctables.SnglInspiralID(sngl_id)
             sngl_event_id_map[ifo] = sngl.event_id
+            sngl.process_id = proc_id
             sngl.ifo = ifo
             for name in names:
                 val = coinc_results['foreground/%s/%s' % (ifo, name)]
