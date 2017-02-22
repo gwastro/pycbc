@@ -194,15 +194,15 @@ def newsnr(snr, reduced_x2, q=6., n=2.):
     else:
         return newsnr[0]
 
-def bluesnr(snr, bchisq, lchisq):
-    """ Combined SNR derived from NewSNR and Lat Chisq"""
+def bluesnr(snr, bchisq, sgchisq):
+    """ Combined SNR derived from NewSNR and Sine-Gaussian Chisq"""
     # Test function
     nsnr = newsnr(snr, bchisq)
     nsnr = numpy.array(nsnr, ndmin=1)
-    lchisq = numpy.array(lchisq, ndmin=1)
-    t = numpy.array(lchisq > 4, ndmin=1)
+    sgchisq = numpy.array(sgchisq, ndmin=1)
+    t = numpy.array(sgchisq > 4, ndmin=1)
     if len(t) > 0:
-        nsnr[t] = nsnr[t] / (lchisq[t] / 4.0) ** 0.5
+        nsnr[t] = nsnr[t] / (sgchisq[t] / 4.0) ** 0.5
 
     if len(nsnr) > 1:
         return nsnr
@@ -479,8 +479,8 @@ class EventManager(object):
 
             f['template_hash'] = th[tid]
 
-            if 'lat_chisq' in self.events.dtype.names:
-                f['lat_chisq'] = self.events['lat_chisq']
+            if 'sg_chisq' in self.events.dtype.names:
+                f['sg_chisq'] = self.events['sg_chisq']
 
         if self.opt.trig_start_time:
             f['search/start_time'] = numpy.array([self.opt.trig_start_time])

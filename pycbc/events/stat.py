@@ -64,7 +64,7 @@ def get_bluesnr(trigs):
         Array of newsnr values
     """
     dof = 2. * trigs['chisq_dof'] - 2.
-    bluesnr = events.bluesnr(trigs['snr'], trigs['chisq'] / dof, trigs['lat_chisq'])
+    bluesnr = events.bluesnr(trigs['snr'], trigs['chisq'] / dof, trigs['sg_chisq'])
     return numpy.array(bluesnr, ndmin=1, dtype=numpy.float32)
 
 

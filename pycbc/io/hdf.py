@@ -541,8 +541,8 @@ class SingleDetTriggers(object):
         return np.array(self.trigs['snr'])[self.mask]
 
     @property
-    def lchisq(self):
-        return np.array(self.trigs['lat_chisq'])[self.mask]
+    def sgchisq(self):
+        return np.array(self.trigs['sg_chisq'])[self.mask]
 
     @property
     def u_vals(self):
@@ -559,7 +559,7 @@ class SingleDetTriggers(object):
 
     @property
     def bluesnr(self):
-        return events.bluesnr(self.snr, self.rchisq, self.lchisq)
+        return events.bluesnr(self.snr, self.rchisq, self.sgchisq)
 
     def get_column(self, cname):
         if hasattr(self, cname):
@@ -789,7 +789,7 @@ class ForegroundTriggers(object):
 
         ligolw_utils.write_filename(outdoc, file_name)
 
-chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad', 'lat',
+chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad', 'sg',
                  'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']
 
 def get_chisq_from_file_choice(hdfile, chisq_choice):
@@ -812,8 +812,8 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         bank_chisq = f['bank_chisq'][:]
         bank_chisq_dof = f['bank_chisq_dof'][:]
         bank_chisq /= bank_chisq_dof
-    if chisq_choice == 'lat':
-        chisq = f['lat_chisq'][:]
+    if chisq_choice == 'sg':
+        chisq = f['sg_chisq'][:]
     elif chisq_choice == 'traditional':
         chisq = trad_chisq
     elif chisq_choice == 'cont':
