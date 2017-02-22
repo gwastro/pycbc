@@ -80,7 +80,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         psd: pycbc.types.Frequencyseries
             The power spectral density of the data
         snrv: numpy.ndarray
-            The peak unoralized complex SNR values
+            The peak unnormalized complex SNR values
         snr_norm: float
             The normalization factor for the snr
         bchisq: numpy.ndarray
