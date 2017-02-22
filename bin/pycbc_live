@@ -279,12 +279,6 @@ bank = waveform.LiveFilterBank(args.bank_file, sr, total_pad,
                        approximant=args.approximant,
                        increment=args.increment)
 
-# ifos used for primary analysis (only two at the moment)
-ifos = set(args.channel_name.keys())
-followup_ifos = set(args.followup_detectors)
-ifos -= followup_ifos
-ifos, followup_ifos = list(ifos), list(followup_ifos)
-
 evnt = LiveEventManager(args.output_path, 
                         use_date_prefix=args.day_hour_output_prefix, 
                         ifar_upload_threshold=args.ifar_upload_threshold, 
@@ -292,6 +286,17 @@ evnt = LiveEventManager(args.output_path,
                         gracedb_testing=not args.enable_production_gracedb_upload,
                        )
 
+# ifos used for primary analysis (only two at the moment)
+ifos = set(args.channel_name.keys())
+followup_ifos = set(args.followup_detectors)
+ifos -= followup_ifos
+ifos, followup_ifos = list(ifos), list(followup_ifos)
+
+# the root must also advance followup ifos, other threads don't need to
+if evnt.rank == 0:
+    advancing_ifos = ifos + followup_ifos
+else:
+    advancing_ifos = ifos
 
 # I'm not the root, so do some actually filtering.
 with ctx:
@@ -315,7 +320,7 @@ with ctx:
         maxlen = args.max_length
     data_reader = {}
     sngl_estimator = {}
-    for ifo in ifos + followup_ifos:
+    for ifo in advancing_ifos:
         state = '%s:%s' % (ifo, args.state_channel[ifo]) if args.state_channel else None
         dq ='%s:%s' % (ifo, args.data_quality_channel[ifo]) if args.data_quality_channel else None
 
@@ -371,7 +376,7 @@ with ctx:
         logging.info('%s: Analyzing up to %s', evnt.rank, data_end())
         results = {}
 
-        for ifo in ifos + followup_ifos:
+        for ifo in advancing_ifos:
             results[ifo] = False
             status = data_reader[ifo].advance(valid_pad, timeout=args.frame_read_timeout)
 
