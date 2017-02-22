@@ -125,11 +125,12 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             # central frequency
             qwindow = 50
             chisq[i] = 0
-            # Determine the final frequency of the waveform. We don't know this
-            # exactly so we make use of the chisq bins to estimate.
-            # The edge with a meaningful number is the second to last, so we
-            # do a linear approximation of the frequency change between bins
-            # to estimate the final frequency
+            
+            #Estimate the maximum frequency up to which the waveform has
+            #power by approximating power per frequency
+            # as constant over the last 2 chisq bins. We cannot use the final
+            # chisq bin edge as it does not have to be where the waveform
+            # terminates.
             fstep = (bins[-2] - bins[-3])
             fpeak = (bins[-2] + fstep) * template.delta_f
             
