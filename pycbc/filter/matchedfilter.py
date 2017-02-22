@@ -1486,8 +1486,70 @@ class LiveBatchMatchedFilter(object):
 
         return result, veto_info  
 
+def compute_followup_snr_series(data_reader, htilde, trig_time,
+                                duration=0.095):
+    """Given a StrainBuffer, a template frequency series and a trigger time,
+    compute a portion of the SNR time series centered on the trigger for its
+    sky localization and followup.
+
+    Parameters
+    ----------
+    data_reader : StrainBuffer
+        The StrainBuffer object to read strain data from.
+
+    htilde : FrequencySeries
+        The frequency series containing the template waveform.
+
+    trig_time : {float, lal.LIGOTimeGPS}
+        The trigger time.
+
+    duration : float (optional)
+        Duration of the computed SNR series in seconds. If omitted, it defaults
+        to twice the Earth light travel time plus 10 ms of timing uncertainty.
+
+    Returns
+    -------
+    snr : TimeSeries
+        The portion of SNR around the trigger.
+
+    psd : FrequencySeries
+        The noise PSD corresponding to the trigger time.
+    """
+    stilde = data_reader.overwhitened_data(htilde.delta_f)
+
+    norm = 4.0 * htilde.delta_f / (htilde.sigmasq(stilde.psd) ** 0.5)
+
+    qtilde = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
+    correlate(htilde, stilde, qtilde)
+    snr = qtilde * 0
+    ifft(qtilde, snr)
+
+    valid_end = int(len(qtilde) - data_reader.trim_padding)
+    valid_start = int(valid_end - data_reader.blocksize * data_reader.sample_rate)
+    snr = snr[slice(valid_start, valid_end)]
+    snr *= norm
+    snr = TimeSeries(snr, delta_t=1./data_reader.sample_rate,
+                     epoch=data_reader.start_time)
+
+    onsource_idx = int(round(float(trig_time - snr.start_time) * snr.sample_rate))
+
+    onsource_start = onsource_idx - int(snr.sample_rate * duration / 2)
+    # FIXME avoid clipping with better handling of past data
+    if onsource_start < 0:
+        logging.warn('Clipping start of followup SNR time series')
+        onsource_start = 0
+
+    onsource_end = onsource_idx + int(snr.sample_rate * duration / 2)
+    if onsource_end > len(snr):
+        logging.warn('Clipping end of followup SNR time series')
+        onsource_end = len(snr) - 1
+
+    onsource_slice = slice(onsource_start, onsource_end + 1)
+    return snr[onsource_slice], stilde.psd
+
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
            'matched_filter_core', 'correlate', 'MatchedFilterControl', 'LiveBatchMatchedFilter',
-           'MatchedFilterSkyMaxControl', 'compute_max_snr_over_sky_loc_stat']
+           'MatchedFilterSkyMaxControl', 'compute_max_snr_over_sky_loc_stat',
+           'compute_followup_snr_series']
 

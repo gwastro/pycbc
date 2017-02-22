@@ -10,9 +10,7 @@ from glue.ligolw import param as ligolw_param
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
-from pycbc.types import TimeSeries, zeros
-from pycbc.filter import correlate
-from pycbc.fft import ifft
+from pycbc.filter import compute_followup_snr_series
 
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats
@@ -39,6 +37,20 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     elem.appendChild(a)
     return elem
 
+def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
+    """Save an SNR time series into an XML document, in a format compatible
+    with BAYESTAR.
+    """
+    snr_lal = snr_series.lal()
+    snr_lal.name = 'snr'
+    snr_lal.sampleUnits = ''
+    snr_xml = _build_series(snr_lal, (u'Time', u'Time,Real,Imaginary'), None,
+                            'deltaT', 's')
+    snr_node = document.childNodes[-1].appendChild(snr_xml)
+    eid_param = ligolw_param.new_param(u'event_id', u'ilwd:char',
+                                       unicode(sngl_inspiral_id))
+    snr_node.appendChild(eid_param)
+
 def make_psd_xmldoc(psddict):
     Attributes = ligolw.sax.xmlreader.AttributesImpl
     xmldoc = ligolw.Document()
@@ -62,17 +74,19 @@ class SingleCoincForGraceDB(object):
         ifos: list of strs
             A list of the ifos pariticipating in this trigger
         coinc_results: dict of values
-            A dictionary of values. The format is define
-            in pycbc/events/coinc.py
-        and matches the on disk representation in the hdf file for this time.
+            A dictionary of values. The format is defined in
+            pycbc/events/coinc.py and matches the on disk representation
+            in the hdf file for this time.
         """
         self.ifos = ifos
+        if 'followup_ifos' in kwargs and kwargs['followup_ifos'] is not None:
+            self.followup_ifos = kwargs['followup_ifos']
+        else:
+            self.followup_ifos = []
         self.template_id = coinc_results['foreground/%s/template_id' % self.ifos[0]]
-        
+
         # remember if this should be marked as HWINJ
-        self.is_hardware_injection = False
-        if 'HWINJ' in coinc_results:
-            self.is_hardware_injection = True
+        self.is_hardware_injection = ('HWINJ' in coinc_results)
 
         # Set up the bare structure of the xml document
         outdoc = ligolw.Document()
@@ -113,16 +127,15 @@ class SingleCoincForGraceDB(object):
         sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
         coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
 
-        sngl_id = 0
         sngl_event_id_map = {}
-        for ifo in ifos:
-            names = [n.split('/')[-1] for n in coinc_results
-                     if 'foreground/%s' % ifo in n]
-            sngl_id += 1
-            sngl = return_empty_sngl()
+        sngl_populated = None
+        for sngl_id, ifo in enumerate(ifos + self.followup_ifos):
+            sngl = return_empty_sngl(nones=True)
             sngl.event_id = lsctables.SnglInspiralID(sngl_id)
             sngl_event_id_map[ifo] = sngl.event_id
             sngl.ifo = ifo
+            names = [n.split('/')[-1] for n in coinc_results
+                     if 'foreground/%s' % ifo in n]
             for name in names:
                 val = coinc_results['foreground/%s/%s' % (ifo, name)]
                 if name == 'end_time':
@@ -132,11 +145,14 @@ class SingleCoincForGraceDB(object):
                         setattr(sngl, name, val)
                     except AttributeError:
                         pass
-            sngl.mtotal, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(
-                    sngl.mass1, sngl.mass2)
-            sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
-                    sngl.mass1, sngl.mass2)
-            sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
+            if sngl.mass1 and sngl.mass2:
+                sngl.mtotal, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(
+                        sngl.mass1, sngl.mass2)
+                sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
+                        sngl.mass1, sngl.mass2)
+                sngl_populated = sngl
+            if sngl.snr:
+                sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
             sngl_inspiral_table.append(sngl)
 
             # Set up coinc_map entry
@@ -145,6 +161,18 @@ class SingleCoincForGraceDB(object):
             coinc_map_row.coinc_event_id = coinc_id
             coinc_map_row.event_id = sngl.event_id
             coinc_event_map_table.append(coinc_map_row)
+
+        # for subthreshold detectors, respect BAYESTAR's assumptions and checks
+        bayestar_check_fields = ('mass1 mass2 mtotal mchirp eta spin1x '
+                                 'spin1y spin1z spin2x spin2y spin2z').split()
+        subthreshold_sngl_time = numpy.mean(
+                [coinc_results['foreground/%s/end_time' % ifo]
+                 for ifo in ifos])
+        for sngl in sngl_inspiral_table:
+            if sngl.ifo in self.followup_ifos:
+                for bcf in bayestar_check_fields:
+                    setattr(sngl, bcf, getattr(sngl_populated, bcf))
+                sngl.set_end(lal.LIGOTimeGPS(subthreshold_sngl_time))
 
         outdoc.childNodes[0].appendChild(coinc_event_map_table)
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
@@ -157,63 +185,35 @@ class SingleCoincForGraceDB(object):
         coinc_inspiral_row.minimum_duration = 0.
         coinc_inspiral_row.set_ifos(ifos)
         coinc_inspiral_row.coinc_event_id = coinc_id
-        coinc_inspiral_row.mchirp = sngl.mchirp
-        coinc_inspiral_row.mass = sngl.mtotal
-        coinc_inspiral_row.end_time = sngl.end_time
-        coinc_inspiral_row.end_time_ns = sngl.end_time_ns
+        coinc_inspiral_row.mchirp = sngl_populated.mchirp
+        coinc_inspiral_row.mass = sngl_populated.mtotal
+        coinc_inspiral_row.end_time = sngl_populated.end_time
+        coinc_inspiral_row.end_time_ns = sngl_populated.end_time_ns
         coinc_inspiral_row.snr = coinc_results['foreground/stat']
         far = 1.0 / (lal.YRJUL_SI * coinc_results['foreground/ifar'])
         coinc_inspiral_row.combined_far = far
         coinc_inspiral_table.append(coinc_inspiral_row)
         outdoc.childNodes[0].appendChild(coinc_inspiral_table)
         self.outdoc = outdoc
-        self.time = sngl.get_end()
+        self.time = sngl_populated.get_end()
 
         # compute SNR time series
         self.upload_snr_series = kwargs['upload_snr_series']
         if self.upload_snr_series:
-            data_readers = kwargs['data_readers']
-            bank = kwargs['bank']
-            htilde = bank[self.template_id]
+            htilde = kwargs['bank'][self.template_id]
             self.snr_series = {}
             self.snr_series_psd = {}
-            for ifo in self.ifos:
-                stilde = data_readers[ifo].overwhitened_data(htilde.delta_f)
-                norm = 4.0 * htilde.delta_f / (htilde.sigmasq(stilde.psd) ** 0.5)
-                qtilde = zeros((len(htilde)-1)*2, dtype=htilde.dtype)
-                correlate(htilde, stilde, qtilde)
-                snr = qtilde * 0
-                ifft(qtilde, snr)
-
-                valid_end = int(len(qtilde) - data_readers[ifo].trim_padding)
-                valid_start = int(valid_end - data_readers[ifo].blocksize * data_readers[ifo].sample_rate)
-                seg = slice(valid_start, valid_end)
-                snr = snr[seg]
-                snr *= norm
-                delta_t = 1.0 / data_readers[ifo].sample_rate
-                start = data_readers[ifo].start_time
-                snr = TimeSeries(snr, delta_t=delta_t, epoch=start)
-                self.snr_series[ifo] = snr
-                self.snr_series_psd[ifo] = stilde.psd
-
-                # store the on-source slice of the series into the XML doc
-                snr_onsource_time = coinc_results['foreground/%s/end_time' % ifo] - snr.start_time
-                snr_onsource_dur = lal.REARTH_SI / lal.C_SI
-                onsource_idx = round(snr_onsource_time * snr.sample_rate)
-                onsource_start = onsource_idx - int(snr.sample_rate * snr_onsource_dur / 2)
-                onsource_end = onsource_idx + int(snr.sample_rate * snr_onsource_dur / 2)
-                onsource_slice = slice(onsource_start, onsource_end + 1)
-                snr_lal = snr[onsource_slice].lal()
-                snr_lal.name = 'snr'
-                snr_lal.sampleUnits = ''
-                snr_xml = _build_series(
-                        snr_lal, (u'Time', u'Time,Real,Imaginary'), None,
-                        'deltaT', 's')
-                snr_node = outdoc.childNodes[-1].appendChild(snr_xml)
-                eid_param = ligolw_param.new_param(
-                        u'event_id', u'ilwd:char',
-                        unicode(sngl_event_id_map[ifo]))
-                snr_node.appendChild(eid_param)
+            for ifo in self.ifos + self.followup_ifos:
+                if ifo in ifos:
+                    trig_time = coinc_results['foreground/%s/end_time' % ifo]
+                else:
+                    trig_time = subthreshold_sngl_time
+                self.snr_series[ifo], self.snr_series_psd[ifo] = \
+                        compute_followup_snr_series(
+                                kwargs['data_readers'][ifo], htilde,
+                                trig_time)
+                snr_series_to_xml(self.snr_series[ifo], outdoc,
+                                  sngl_event_id_map[ifo])
 
     def save(self, filename):
         """Write this trigger to gracedb compatible xml format
@@ -285,7 +285,7 @@ class SingleCoincForGraceDB(object):
 
         if self.upload_snr_series:
             snr_series_fname = fname + '.hdf'
-            for ifo in self.ifos:
+            for ifo in self.ifos + self.followup_ifos:
                 self.snr_series[ifo].save(snr_series_fname,
                                           group='%s/snr' % ifo)
                 self.snr_series_psd[ifo].save(snr_series_fname,

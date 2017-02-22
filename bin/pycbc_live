@@ -76,13 +76,15 @@ class LiveEventManager(object):
         else:
             raise TypeError("Not root process")
 
-    def check_coincs(self, ifos, coinc_results, psds, low_frequency_cutoff, data_readers, bank):
+    def check_coincs(self, ifos, coinc_results, psds, low_frequency_cutoff,
+                     data_readers, bank, followup_ifos=None):
         """ Save zerolag triggers to a coinc xml file """
         if 'foreground/ifar' in coinc_results: 
             ifar = coinc_results['foreground/ifar']
             event = SingleCoincForGraceDB(
                     ifos, coinc_results, data_readers=data_readers,
-                    bank=bank, upload_snr_series=args.upload_snr_series)
+                    bank=bank, upload_snr_series=args.upload_snr_series,
+                    followup_ifos=followup_ifos)
 
             time = int(coinc_results['foreground/%s/end_time' % ifos[0]])
             fname = os.path.join(self.path, 'coinc-%s.xml' % time)
@@ -236,6 +238,8 @@ parser.add_argument('--store-loudest-index', type=int, default=0)
 parser.add_argument('--max-psd-abort-distance', type=float, default=numpy.inf)
 parser.add_argument('--min-psd-abort-distance', type=float, default=-numpy.inf)
 parser.add_argument('--max-triggers-in-batch', type=int)
+parser.add_argument('--max-length', type=float,
+                    help='Maximum duration of templates, used to set the data buffer size')
 
 parser.add_argument('--enable-profiling', type=int, 
                     help="Dump out profiling information from an MPI process at"
@@ -275,13 +279,6 @@ bank = waveform.LiveFilterBank(args.bank_file, sr, total_pad,
                        approximant=args.approximant,
                        increment=args.increment)
 
-# ifos used for primary analysis (only two at the moment)
-ifos = args.channel_name.keys()
-followup_ifos = args.followup_detectors
-for ifo in ifos:
-    if ifo in followup_ifos:
-        ifos.pop()
-        
 evnt = LiveEventManager(args.output_path, 
                         use_date_prefix=args.day_hour_output_prefix, 
                         ifar_upload_threshold=args.ifar_upload_threshold, 
@@ -289,6 +286,17 @@ evnt = LiveEventManager(args.output_path,
                         gracedb_testing=not args.enable_production_gracedb_upload,
                        )
 
+# ifos used for primary analysis (only two at the moment)
+ifos = set(args.channel_name.keys())
+followup_ifos = set(args.followup_detectors)
+ifos -= followup_ifos
+ifos, followup_ifos = list(ifos), list(followup_ifos)
+
+# the root must also advance followup ifos, other threads don't need to
+if evnt.rank == 0:
+    advancing_ifos = ifos + followup_ifos
+else:
+    advancing_ifos = ifos
 
 # I'm not the root, so do some actually filtering.
 with ctx:
@@ -298,6 +306,7 @@ with ctx:
         pass
     maxlen = args.psd_segment_length * (args.psd_samples / 2 + 1)
     if evnt.rank > 0:
+        bank.table.sort(order='mchirp')
         waveforms = list(bank[evnt.rank-1::evnt.size-1])
         lengths = numpy.array([1.0 / waveform.delta_f for waveform in waveforms])
         psd_len = args.psd_segment_length * (args.psd_samples / 2 + 1)
@@ -307,9 +316,11 @@ with ctx:
                                      newsnr_threshold=args.newsnr_threshold,
                                      max_triggers_in_batch=args.max_triggers_in_batch,
                                      maxelements=args.max_batch_size)
+    if args.max_length is not None:
+        maxlen = args.max_length
     data_reader = {}
     sngl_estimator = {}
-    for ifo in ifos + followup_ifos:
+    for ifo in advancing_ifos:
         state = '%s:%s' % (ifo, args.state_channel[ifo]) if args.state_channel else None
         dq ='%s:%s' % (ifo, args.data_quality_channel[ifo]) if args.data_quality_channel else None
 
@@ -365,7 +376,7 @@ with ctx:
         logging.info('%s: Analyzing up to %s', evnt.rank, data_end())
         results = {}
 
-        for ifo in ifos:
+        for ifo in advancing_ifos:
             results[ifo] = False
             status = data_reader[ifo].advance(valid_pad, timeout=args.frame_read_timeout)
 
@@ -378,7 +389,11 @@ with ctx:
                     logging.info("PSD outside acceptable sensitivity %s - %s, have %s",
                                  args.min_psd_abort_distance, args.max_psd_abort_distance, dist)
                     status = False               
-    
+
+            if ifo in followup_ifos:
+                # we advanced the data and handled the PSD, that's it
+                continue
+
             if status is True:
                 logging.info('%s: Filtering: %s', evnt.rank, ifo)
                 if evnt.rank > 0:
@@ -410,13 +425,14 @@ with ctx:
                     for key in results[ifo]:
                         if len(results[ifo][key]) > 0:
                             results[ifo][key] = results[ifo][key][idx]
-        
+
             # Look for coincident triggers and do background estimation
             coinc_results = {}
             if args.enable_background_estimation:
                 coinc_results = estimator.add_singles(results, data_reader)
                 evnt.check_coincs(results.keys(), coinc_results,
-                                  psds, args.low_frequency_cutoff, data_reader, bank)
+                                  psds, args.low_frequency_cutoff, data_reader, bank,
+                                  followup_ifos=followup_ifos)
 
             # Check for singles if we don't have coinc time
             if args.enable_single_detector_background:

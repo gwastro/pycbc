@@ -10,7 +10,7 @@ from glue.ligolw.utils import process as ligolw_process
 from pycbc import pnutils
 from pycbc.tmpltbank.lambda_mapping import ethinca_order_from_string
 
-def return_empty_sngl():
+def return_empty_sngl(nones=False):
     """
     Function to create a SnglInspiral object where all columns are populated
     but all are set to values that test False (ie. strings to '', floats/ints
@@ -18,6 +18,11 @@ def return_empty_sngl():
     columns you don't care about, but which still need populating. NOTE: This
     will also produce a process_id and event_id with 0 values. For most
     applications these should be set to their correct values.
+
+    Parameters
+    ----------
+    nones : bool (False)
+        If True, just set all columns to None.
 
     Returns
     --------
@@ -27,19 +32,23 @@ def return_empty_sngl():
 
     sngl = lsctables.SnglInspiral()
     cols = lsctables.SnglInspiralTable.validcolumns
-    for entry in cols.keys():
-        if cols[entry] in ['real_4','real_8']:
-            setattr(sngl,entry,0.)
-        elif cols[entry] == 'int_4s':
-            setattr(sngl,entry,0)
-        elif cols[entry] == 'lstring':
-            setattr(sngl,entry,'')
-        elif entry == 'process_id':
-            sngl.process_id = ilwd.ilwdchar("process:process_id:0")
-        elif entry == 'event_id':
-            sngl.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
-        else:
-            raise ValueError("Column %s not recognized" %(entry) )
+    if nones:
+        for entry in cols:
+            setattr(sngl, entry, None)
+    else:
+        for entry in cols.keys():
+            if cols[entry] in ['real_4','real_8']:
+                setattr(sngl,entry,0.)
+            elif cols[entry] == 'int_4s':
+                setattr(sngl,entry,0)
+            elif cols[entry] == 'lstring':
+                setattr(sngl,entry,'')
+            elif entry == 'process_id':
+                sngl.process_id = ilwd.ilwdchar("process:process_id:0")
+            elif entry == 'event_id':
+                sngl.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
+            else:
+                raise ValueError("Column %s not recognized" %(entry) )
     return sngl
 
 def return_search_summary(start_time=0, end_time=0, nevents=0,
