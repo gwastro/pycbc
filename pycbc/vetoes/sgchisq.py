@@ -11,9 +11,9 @@ from pycbc.events import newsnr
 
 class SingleDetSGChisq(SingleDetPowerChisq):
     """Class that handles precomputation and memory management for efficiently
-    running the power chisq in a single detector inspiral analysis.
+    running the sine-Gaussian chisq
     """
-    returns = {'lat_chisq': numpy.float32}
+    returns = {'sg_chisq': numpy.float32}
     
     def __init__(self, bank, num_bins=0,
                        snr_threshold=None,
@@ -80,11 +80,11 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         psd: pycbc.types.Frequencyseries
             The power spectral density of the data
         snrv: numpy.ndarray
-            The peak unoralized complex SNR values
+            The peak unnormalized complex SNR values
         snr_norm: float
             The normalization factor for the snr
         bchisq: numpy.ndarray
-            The Bruce Allan power chisq values for these triggers
+            The Bruce Allen power chisq values for these triggers
         bchisq_dof: numpy.ndarray
             The degrees of freedom of the Bruce chisq
         indics: numpy.ndarray
@@ -121,14 +121,26 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             # Shift the time of interest to be centered on 0
             stilde_shift = apply_fseries_time_shift(stilde, -time)
 
+            # Only apply the sine-Gaussian in a +-50 Hz range around the 
+            # central frequency
             qwindow = 50
             chisq[i] = 0
-            #Find fpeak based on difference from beginning of last chisq
-            #point
-            fpeak = (bins[-2] * 2.0 - bins[-3]) * template.delta_f
-            fstop = len(template) * template.delta_f * 0.9
+            
+            # Estimate the maximum frequency up to which the waveform has
+            # power by approximating power per frequency
+            # as constant over the last 2 chisq bins. We cannot use the final
+            # chisq bin edge as it does not have to be where the waveform
+            # terminates.
+            fstep = (bins[-2] - bins[-3])
+            fpeak = (bins[-2] + fstep) * template.delta_f
+            
+            # This is 90% of the Nyquist frequency of the data
+            # This allows us to avoid issues near Nyquist due to resample
+            # Filtering
+            fstop = len(stilde) * stilde.delta_f * 0.9
+            
             dof = 0
-            # Calculate the sume of SNR^2 for the sine-Gaussians specified
+            # Calculate the sum of SNR^2 for the sine-Gaussians specified
             for descr in values:
                 # Get the q and frequency offset from the descriptor
                 q, offset = descr.split('-')
@@ -137,14 +149,15 @@ class SingleDetSGChisq(SingleDetPowerChisq):
                 flow = max(kmin * template.delta_f, fcen - qwindow)
                 fhigh = fcen + qwindow
 
-                # Don't go up to Nyquist
+                # If any sine-gaussian tile has an upper frequency near 
+                # nyquist return 1 instead.
                 if fhigh > fstop:
                     return numpy.ones(len(snrv))
 
                 kmin = int(flow / template.delta_f)
                 kmax = int(fhigh / template.delta_f)
 
-                #Calculate sing-gaussian tile
+                #Calculate sine-gaussian tile
                 gtem = sinegauss.fd_sine_gaussian(1.0, q, fcen, flow,
                                       len(template) * template.delta_f,
                                       template.delta_f).astype(numpy.complex64)
