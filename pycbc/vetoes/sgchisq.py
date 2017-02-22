@@ -148,14 +148,15 @@ class SingleDetSGChisq(SingleDetPowerChisq):
                 flow = max(kmin * template.delta_f, fcen - qwindow)
                 fhigh = fcen + qwindow
 
-                # Don't filter near Nyquist
+                # If any sine-gaussian tile has an upper frequency near 
+                # nyquist return 1 instead.
                 if fhigh > fstop:
                     return numpy.ones(len(snrv))
 
                 kmin = int(flow / template.delta_f)
                 kmax = int(fhigh / template.delta_f)
 
-                #Calculate sing-gaussian tile
+                #Calculate sine-gaussian tile
                 gtem = sinegauss.fd_sine_gaussian(1.0, q, fcen, flow,
                                       len(template) * template.delta_f,
                                       template.delta_f).astype(numpy.complex64)
