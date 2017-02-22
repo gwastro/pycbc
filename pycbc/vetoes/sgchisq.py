@@ -139,7 +139,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             fstop = len(stilde) * stilde.delta_f * 0.9
             
             dof = 0
-            # Calculate the sume of SNR^2 for the sine-Gaussians specified
+            # Calculate the sum of SNR^2 for the sine-Gaussians specified
             for descr in values:
                 # Get the q and frequency offset from the descriptor
                 q, offset = descr.split('-')
