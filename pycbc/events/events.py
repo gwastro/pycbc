@@ -194,7 +194,7 @@ def newsnr(snr, reduced_x2, q=6., n=2.):
     else:
         return newsnr[0]
 
-def bluesnr(snr, bchisq, sgchisq):
+def newsnr_sgveto(snr, bchisq, sgchisq):
     """ Combined SNR derived from NewSNR and Sine-Gaussian Chisq"""
     # Test function
     nsnr = newsnr(snr, bchisq)
@@ -742,7 +742,7 @@ class EventManagerMultiDet(EventManager):
                         f['gating/' + gate_type + '/pad'] = \
                                 numpy.array([g[2] for g in gating_info[gate_type]])
 
-__all__ = ['threshold_and_cluster', 'newsnr', 'effsnr', 'bluesnr',
+__all__ = ['threshold_and_cluster', 'newsnr', 'effsnr', 'newsnr_sgveto',
            'findchirp_cluster_over_window',
            'threshold', 'cluster_reduce', 'ThresholdCluster',
            'threshold_real_numpy',

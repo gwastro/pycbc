@@ -127,8 +127,8 @@ elif opts.z_var in ['max(snr)', 'max(newsnr)']:
         z = trigs.snr
     elif opts.z_var == 'max(newsnr)':
         z = trigs.newsnr
-    elif opts.z_var == 'max(bluesnr)':
-        z = trigs.bluesnr
+    elif opts.z_var == 'max(newsnr_sgveto)':
+        z = trigs.newsnr_sgveto
     z = z[mask]
     if z.max() / z.min() > 10:
         hexbin_style['norm'] = LogNorm()

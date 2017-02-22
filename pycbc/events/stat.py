@@ -48,9 +48,9 @@ def get_newsnr(trigs):
     newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / dof)
     return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
 
-def get_bluesnr(trigs):
+def get_newsnr_sgveto(trigs):
     """
-    Calculate bluesnr ('reweighted SNR') for a trigs object
+    Calculate newsnr re-weigthed by the sine-gaussian veto
 
     Parameters
     ----------
@@ -64,8 +64,8 @@ def get_bluesnr(trigs):
         Array of newsnr values
     """
     dof = 2. * trigs['chisq_dof'] - 2.
-    bluesnr = events.bluesnr(trigs['snr'], trigs['chisq'] / dof, trigs['sg_chisq'])
-    return numpy.array(bluesnr, ndmin=1, dtype=numpy.float32)
+    nsnr_sg = events.newsnr_sgveto(trigs['snr'], trigs['chisq'] / dof, trigs['sg_chisq'])
+    return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
 
 
 class Stat(object):
@@ -434,16 +434,15 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         # scale to resemble network SNR
         return cstat / (2.**0.5)
 
-class PhaseTDExpFitMultiStatistic(PhaseTDExpFitStatistic):
+class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
 
-    """Statistic combining exponential noise model with signal histogram PDF"""
+    """Statistic combining exponential noise model with signal histogram PDF
+       and adding the sine-Gaussian veto to the single detector ranking
+    """
 
     def __init__(self, files):
-        # read in both foreground PDF and background fit info
-        ExpFitCombinedSNR.__init__(self, files)
-        # need the self.single_dtype value from PhaseTDStatistic
-        PhaseTDStatistic.__init__(self, files)
-        self.get_newsnr = get_bluesnr
+        PhaseTDExpFitStatistic.__init__(self, files)
+        self.get_newsnr = get_newsnr_sgveto
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
@@ -479,7 +478,7 @@ statistic_dict = {
     'exp_fit_csnr': ExpFitCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
-    'phasetd_exp_fit_multi_stat': PhaseTDExpFitMultiStatistic
+    'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic
 }
 
 def get_statistic(stat):

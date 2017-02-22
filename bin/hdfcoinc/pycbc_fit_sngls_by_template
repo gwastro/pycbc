@@ -30,15 +30,16 @@ stat_dict = {
     "effective_snr" : events.effsnr,
     "snr"           : lambda snr, rchisq : snr,
     "snronchi"      : lambda snr, rchisq : snr / (rchisq ** 0.5),
-    "blue_snr"      : events.bluesnr,
+    "newsnr_sgveto"      : events.newsnr_sgveto,
 }
 
 def get_stat(statchoice, snr, rchisq, sgchisq, fac):
+    if statchoice not in stat_dict:
+        raise RuntimeError("Can't use --stat-factor with this statistic!")
+
     if fac is not None:
-        if statchoice not in ["new_snr", "effective_snr"]:
-            raise RuntimeError("Can't use --stat-factor with this statistic!")
         return stat_dict[statchoice](snr, rchisq, fac)
-    elif statchoice == 'blue_snr':
+    elif statchoice == 'newsnr_sgveto':
         return stat_dict[statchoice](snr, rchisq, sgchisq)
     else:
         return stat_dict[statchoice](snr, rchisq)
@@ -141,7 +142,7 @@ chisq_dof = trigf[args.ifo+'/chisq_dof'][:]
 rchisq = chisq / (2 * chisq_dof - 2)
 try:
     sgchisq = trigf[args.ifo+'/sg_chisq'][:]
-except:
+except KeyError:
     sgchisq = None
 
 del chisq
