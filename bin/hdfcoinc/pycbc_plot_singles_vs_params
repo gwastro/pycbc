@@ -61,7 +61,7 @@ parser.add_argument('--y-var', required=True,
                     help='Parameter to plot on the y-axis. Required')
 parser.add_argument('--z-var', required=True,
                     help='Quantity to plot on the color scale. Required',
-                    choices=['density', 'max(snr)', 'max(newsnr)'])
+                    choices=['density', 'max(snr)', 'max(newsnr)', 'max(newsnr_sgveto)'])
 parser.add_argument('--detector', required=True,
                     help='Detector. Required')
 parser.add_argument('--grid-size', type=int, default=80,
