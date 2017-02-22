@@ -86,9 +86,7 @@ class SingleCoincForGraceDB(object):
         self.template_id = coinc_results['foreground/%s/template_id' % self.ifos[0]]
 
         # remember if this should be marked as HWINJ
-        self.is_hardware_injection = False
-        if 'HWINJ' in coinc_results:
-            self.is_hardware_injection = True
+        self.is_hardware_injection = ('HWINJ' in coinc_results)
 
         # Set up the bare structure of the xml document
         outdoc = ligolw.Document()

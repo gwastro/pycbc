@@ -1536,12 +1536,12 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
     onsource_start = onsource_idx - int(snr.sample_rate * duration / 2)
     # FIXME avoid clipping with better handling of past data
     if onsource_start < 0:
-        logging.warn('Clipping start of %s SNR series', ifo)
+        logging.warn('Clipping start of followup SNR time series')
         onsource_start = 0
 
     onsource_end = onsource_idx + int(snr.sample_rate * duration / 2)
     if onsource_end > len(snr):
-        logging.warn('Clipping end of %s SNR series', ifo)
+        logging.warn('Clipping end of followup SNR time series')
         onsource_end = len(snr) - 1
 
     onsource_slice = slice(onsource_start, onsource_end + 1)
