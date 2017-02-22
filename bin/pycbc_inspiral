@@ -347,7 +347,7 @@ with ctx:
                   power_chisq.values(corr, snrv, norm, stilde.psd,
                                      idx+stilde.analyze.start, template)
 
-            out_vals['lat_chisq'] = sg_chisq.values(stilde, template, stilde.psd,
+            out_vals['sg_chisq'] = sg_chisq.values(stilde, template, stilde.psd,
                                           snrv, norm,
                                           out_vals['chisq'],
                                           out_vals['chisq_dof'],
