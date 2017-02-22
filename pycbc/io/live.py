@@ -10,9 +10,7 @@ from glue.ligolw import param as ligolw_param
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
-from pycbc.types import TimeSeries, zeros
-from pycbc.filter import correlate
-from pycbc.fft import ifft
+from pycbc.filter import compute_followup_snr_series
 
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats
@@ -38,6 +36,20 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     dim0.Scale = delta
     elem.appendChild(a)
     return elem
+
+def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
+    """Save an SNR time series into an XML document, in a format compatible
+    with BAYESTAR.
+    """
+    snr_lal = snr_series.lal()
+    snr_lal.name = 'snr'
+    snr_lal.sampleUnits = ''
+    snr_xml = _build_series(snr_lal, (u'Time', u'Time,Real,Imaginary'), None,
+                            'deltaT', 's')
+    snr_node = document.childNodes[-1].appendChild(snr_xml)
+    eid_param = ligolw_param.new_param(u'event_id', u'ilwd:char',
+                                       unicode(sngl_inspiral_id))
+    snr_node.appendChild(eid_param)
 
 def make_psd_xmldoc(psddict):
     Attributes = ligolw.sax.xmlreader.AttributesImpl
@@ -190,61 +202,20 @@ class SingleCoincForGraceDB(object):
         # compute SNR time series
         self.upload_snr_series = kwargs['upload_snr_series']
         if self.upload_snr_series:
-            data_readers = kwargs['data_readers']
             htilde = kwargs['bank'][self.template_id]
-            assert(abs(htilde.params['mass1'] - sngl_populated.mass1) < 0.1)
             self.snr_series = {}
             self.snr_series_psd = {}
             for ifo in self.ifos + self.followup_ifos:
-                single_trig_time = coinc_results['foreground/%s/end_time' % ifo] if ifo in ifos else subthreshold_sngl_time
-                logging.info('Computing onsource SNR for %s, trigger time %.4f',
-                             ifo, single_trig_time)
-                stilde = data_readers[ifo].overwhitened_data(htilde.delta_f)
-                norm = 4.0 * htilde.delta_f / (htilde.sigmasq(stilde.psd) ** 0.5)
-                qtilde = zeros((len(htilde)-1)*2, dtype=htilde.dtype)
-                correlate(htilde, stilde, qtilde)
-                snr = qtilde * 0
-                ifft(qtilde, snr)
-
-                valid_end = int(len(qtilde) - data_readers[ifo].trim_padding)
-                valid_start = int(valid_end - data_readers[ifo].blocksize * data_readers[ifo].sample_rate)
-                seg = slice(valid_start, valid_end)
-                snr = snr[seg]
-                snr *= norm
-                delta_t = 1.0 / data_readers[ifo].sample_rate
-                snr = TimeSeries(snr, delta_t=delta_t,
-                                 epoch=data_readers[ifo].start_time)
-
-                self.snr_series[ifo] = snr
-                self.snr_series_psd[ifo] = stilde.psd
-
-                # the window lasts half an Earth light travel time
-                # plus 10 ms to account for timing uncertainty
-                snr_onsource_dur = lal.REARTH_SI / lal.C_SI + 0.01
-                onsource_idx = int(round(float(single_trig_time - snr.start_time) * snr.sample_rate))
-                if ifo in ifos and abs(abs(snr[onsource_idx]) - coinc_results['foreground/%s/snr' % ifo]) > 0.5:
-                    raise RuntimeError('%s trigger SNR (%.1f) inconsistent with time series (%.1f)' % (ifo, coinc_results['foreground/%s/snr' % ifo], abs(snr[onsource_idx])))
-                onsource_start = onsource_idx - int(snr.sample_rate * snr_onsource_dur / 2)
-                # FIXME avoid clipping with better handling of past data
-                if onsource_start < 0:
-                    logging.warn('Clipping start of %s SNR series', ifo)
-                    onsource_start = 0
-                onsource_end = onsource_idx + int(snr.sample_rate * snr_onsource_dur / 2)
-                if onsource_end > len(snr):
-                    logging.warn('Clipping end of %s SNR series', ifo)
-                    onsource_end = len(snr) - 1
-                onsource_slice = slice(onsource_start, onsource_end + 1)
-                snr_lal = snr[onsource_slice].lal()
-                snr_lal.name = 'snr'
-                snr_lal.sampleUnits = ''
-                snr_xml = _build_series(
-                        snr_lal, (u'Time', u'Time,Real,Imaginary'), None,
-                        'deltaT', 's')
-                snr_node = outdoc.childNodes[-1].appendChild(snr_xml)
-                eid_param = ligolw_param.new_param(
-                        u'event_id', u'ilwd:char',
-                        unicode(sngl_event_id_map[ifo]))
-                snr_node.appendChild(eid_param)
+                if ifo in ifos:
+                    trig_time = coinc_results['foreground/%s/end_time' % ifo]
+                else:
+                    trig_time = subthreshold_sngl_time
+                self.snr_series[ifo], self.snr_series_psd[ifo] = \
+                        compute_followup_snr_series(
+                                kwargs['data_readers'][ifo], htilde,
+                                trig_time)
+                snr_series_to_xml(self.snr_series[ifo], outdoc,
+                                  sngl_event_id_map[ifo])
 
     def save(self, filename):
         """Write this trigger to gracedb compatible xml format
