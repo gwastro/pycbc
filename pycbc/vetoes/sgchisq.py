@@ -35,21 +35,20 @@ class SingleDetSGChisq(SingleDetPowerChisq):
             The region is a boolean expresion such as 'mtotal>40' and indicates
             where to apply this set of sine-Gaussians.
         """
-        if snr_threshold:
+        if snr_threshold is not None:
             self.do = True
             self.num_bins = num_bins
+            self.snr_threshold = snr_threshold
+            self.params = {}
+            for descr in chisq_locations:
+                region, values = descr.split(":")
+                mask = bank.table.parse_boolargs([(1, region), (0, 'else')])[0]
+                hashes = bank.table['template_hash'][mask.astype(bool)]
+                for h in hashes:
+                    self.params[h] = values
         else:
             self.do = False
-        
-        self.snr_threshold = snr_threshold
-        self.params = {}
-        for descr in chisq_locations:
-            region, values = descr.split(":")
-            mask = bank.table.parse_boolargs([(1, region), (0, 'else')])[0]
-            hashes = bank.table['template_hash'][mask.astype(bool)]
-            for h in hashes:
-                self.params[h] = values
-
+            
     @staticmethod
     def insert_option_group(parser):
         group = parser.add_argument_group("Sine-Gaussian Chisq")
@@ -96,12 +95,12 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         chisq: Array
             Chisq values, one for each sample index
         """
-        if template.params.template_hash not in self.params:
-            return numpy.ones(len(snrv))
-        
-        values = self.params[template.params.template_hash].split(',')
         if not self.do:
             return None
+
+        if template.params.template_hash not in self.params:
+            return numpy.ones(len(snrv))
+        values = self.params[template.params.template_hash].split(',')
         
         # Get the chisq bins to use as the frequency reference point
         bins = self.cached_chisq_bins(template, psd)
