@@ -48,6 +48,25 @@ def get_newsnr(trigs):
     newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / dof)
     return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
 
+def get_newsnr_sgveto(trigs):
+    """
+    Calculate newsnr re-weigthed by the sine-gaussian veto
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays
+        Dictionary holding single detector trigger information.
+    'chisq_dof', 'snr', and 'chisq' are required keys
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of newsnr values
+    """
+    dof = 2. * trigs['chisq_dof'] - 2.
+    nsnr_sg = events.newsnr_sgveto(trigs['snr'], trigs['chisq'] / dof, trigs['sg_chisq'])
+    return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
+
 
 class Stat(object):
 
@@ -299,6 +318,8 @@ class ExpFitStatistic(NewSNRStatistic):
         self.fits_by_tid = {}
         for i in self.ifos:
            self.fits_by_tid[i] = self.assign_fits(i)
+           
+        self.get_newsnr = get_newsnr
 
     def assign_fits(self, ifo):
         coeff_file = self.files[ifo+'-fit_coeffs']
@@ -329,7 +350,7 @@ class ExpFitStatistic(NewSNRStatistic):
         and rescale by the fitted coefficients alpha and lambda
         """
         alphai, lambdai, thresh = self.find_fits(trigs)
-        newsnr = get_newsnr(trigs)
+        newsnr = self.get_newsnr(trigs)
         # alphai is constant of proportionality between single-ifo newsnr and
         #  negative log noise likelihood in given template
         # lambdai is rate of trigs in given template compared to average
@@ -413,6 +434,15 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         # scale to resemble network SNR
         return cstat / (2.**0.5)
 
+class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
+
+    """Statistic combining exponential noise model with signal histogram PDF
+       and adding the sine-Gaussian veto to the single detector ranking
+    """
+
+    def __init__(self, files):
+        PhaseTDExpFitStatistic.__init__(self, files)
+        self.get_newsnr = get_newsnr_sgveto
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
@@ -448,6 +478,7 @@ statistic_dict = {
     'exp_fit_csnr': ExpFitCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
+    'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic
 }
 
 def get_statistic(stat):
