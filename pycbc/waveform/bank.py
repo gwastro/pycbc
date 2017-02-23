@@ -646,9 +646,42 @@ class FilterBank(TemplateBank):
             **kwds)
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
 
-    def __getitem__(self, index):
+    def get_decompressed_waveform(self, tempout, index, f_lower=None,
+                                  approximant=None):
+        """Returns a frequency domain decompressed waveform for the template
+        in the bank corresponding to the index taken in as an argument. The
+        decompressed waveform is obtained by interpolating in frequency space,
+        the amplitude and phase points for the compressed template that are
+        read in from the bank."""
+
         from pycbc.waveform.waveform import props
         from pycbc.waveform import get_waveform_filter_length_in_time
+        # Create memory space for writing the decompressed waveform
+        precision_from_bank_file = self.compressed_waveforms[self.table.template_hash[index]].precision
+        waveform_decompression_precision = tempout.precision
+        if waveform_decompression_precision != precision_from_bank_file :
+            raise ValueError("The precision used to compress the "
+                             "waveform was %s, whereas the precision "
+                             "selected to decompress the waveform was "
+                             "%s. Both of theses should be the same. "
+                             "Therefore, use a bank with precision %s."
+                             %(precision_from_bank_file,
+                             waveform_decompression_precision,
+                             waveform_decompression_precision))
+        if self.waveform_decompression_method is not None :
+            decompression_method = self.waveform_decompression_method
+        else :
+            decompression_method = self.compressed_waveforms[self.table.template_hash[index]].interpolation
+        logging.info("Decompressing waveform using %s", decompression_method)
+        decomp_scratch = FrequencySeries(tempout[0:self.filter_length], delta_f=self.delta_f, copy=False)
+        hdecomp = self.compressed_waveforms[self.table.template_hash[index]].decompress(out=decomp_scratch, f_lower=f_lower, interpolation=decompression_method)
+        p = props(self.table[index])
+        p.pop('approximant')
+        hdecomp.chirp_length = get_waveform_filter_length_in_time(approximant, **p)
+        hdecomp.length_in_time = hdecomp.chirp_length
+        return hdecomp
+
+    def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
         if self.out is None:
             tempout = zeros(self.filter_length, dtype=self.dtype)
@@ -670,7 +703,6 @@ class FilterBank(TemplateBank):
                                                   self.max_template_length)
         else:
             f_low = self.f_lower
-
         logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
 
         # Clear the storage memory
@@ -680,29 +712,8 @@ class FilterBank(TemplateBank):
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
         if self.compressed_waveforms is not None :
-            # Create memory space for writing the decompressed waveform
-            precision_from_bank_file = self.compressed_waveforms[self.table.template_hash[index]].precision
-            waveform_decompression_precision = tempout.precision
-            if waveform_decompression_precision != precision_from_bank_file :
-                raise ValueError("The precision used to compress the "
-                                 "waveform was %s, whereas the precision "
-                                 "selected to decompress the waveform was "
-                                 "%s. Both of theses should be the same. "
-                                 "Therefore, use a bank with precision %s."
-                                 %(precision_from_bank_file,
-                                 waveform_decompression_precision,
-                                 waveform_decompression_precision))
-            if self.waveform_decompression_method is not None :
-                decompression_method = self.waveform_decompression_method
-            else :
-                decompression_method = self.compressed_waveforms[self.table.template_hash[index]].interpolation
-            logging.info("Decompressing waveform using %s", decompression_method)
-            decomp_scratch = FrequencySeries(tempout[0:self.filter_length], delta_f=self.delta_f, copy=False)
-            htilde = self.compressed_waveforms[self.table.template_hash[index]].decompress(out=decomp_scratch, f_lower=f_low, interpolation=decompression_method)
-            p = props(self.table[index])
-            p.pop('approximant')
-            htilde.chirp_length = get_waveform_filter_length_in_time(approximant, **p)
-            htilde.length_in_time = htilde.chirp_length
+            htilde = self.get_decompressed_waveform(tempout, index, f_lower=f_low,
+                                                    approximant=approximant)
         else :
             htilde = pycbc.waveform.get_waveform_filter(
                 tempout[0:self.filter_length], self.table[index],
