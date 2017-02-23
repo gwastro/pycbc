@@ -656,9 +656,14 @@ class FilterBank(TemplateBank):
 
         from pycbc.waveform.waveform import props
         from pycbc.waveform import get_waveform_filter_length_in_time
-        # Create memory space for writing the decompressed waveform
+
+        # Get the precision used to generate the compressed template
         precision_from_bank_file = self.compressed_waveforms[self.table.template_hash[index]].precision
+
+        # Get the precision that would be used to generate the decompressed
+        # waveform
         waveform_decompression_precision = tempout.precision
+
         if waveform_decompression_precision != precision_from_bank_file :
             raise ValueError("The precision used to compress the "
                              "waveform was %s, whereas the precision "
@@ -668,12 +673,18 @@ class FilterBank(TemplateBank):
                              %(precision_from_bank_file,
                              waveform_decompression_precision,
                              waveform_decompression_precision))
+
+        # Get the interpolation method to be used to decompress the waveform
         if self.waveform_decompression_method is not None :
             decompression_method = self.waveform_decompression_method
         else :
             decompression_method = self.compressed_waveforms[self.table.template_hash[index]].interpolation
         logging.info("Decompressing waveform using %s", decompression_method)
+
+        # Create memory space for writing the decompressed waveform
         decomp_scratch = FrequencySeries(tempout[0:self.filter_length], delta_f=self.delta_f, copy=False)
+
+        # Get the decompressed waveform
         hdecomp = self.compressed_waveforms[self.table.template_hash[index]].decompress(out=decomp_scratch, f_lower=f_lower, interpolation=decompression_method)
         p = props(self.table[index])
         p.pop('approximant')
