@@ -40,10 +40,9 @@ stat_dict = {
 }
 
 def get_stat(statchoice, snr, rchisq, sgchisq, fac):
-    if statchoice not in stat_dict:
-        raise RuntimeError("Can't use --stat-factor with this statistic!")
-
     if fac is not None:
+        if statchoice not in ['new_snr', 'effective_snr']:
+            raise RuntimeError("Can't use --stat-factor with this statistic!")
         return stat_dict[statchoice](snr, rchisq, fac)
     elif statchoice == 'newsnr_sgveto':
         return stat_dict[statchoice](snr, rchisq, sgchisq)
