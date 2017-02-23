@@ -29,17 +29,19 @@ stat_dict = {
     "new_snr"       : events.newsnr,
     "effective_snr" : events.effsnr,
     "snr"           : lambda snr, rchisq : snr,
-    "snronchi"      : lambda snr, rchisq : snr / (rchisq ** 0.5)
+    "snronchi"      : lambda snr, rchisq : snr / (rchisq ** 0.5),
+    "newsnr_sgveto"      : events.newsnr_sgveto,
 }
 
-def get_stat(statchoice, snr, rchisq, fac):
+def get_stat(statchoice, snr, rchisq, sgchisq, fac):
     if fac is not None:
-        if statchoice not in ["new_snr", "effective_snr"]:
+        if statchoice not in ['new_snr', 'effective_snr']:
             raise RuntimeError("Can't use --stat-factor with this statistic!")
         return stat_dict[statchoice](snr, rchisq, fac)
+    elif statchoice == 'newsnr_sgveto':
+        return stat_dict[statchoice](snr, rchisq, sgchisq)
     else:
         return stat_dict[statchoice](snr, rchisq)
-
 #### MAIN ####
 
 parser = argparse.ArgumentParser(usage="",
@@ -73,7 +75,7 @@ parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
 parser.add_argument("--sngl-stat", default="new_snr",
-                    choices=["snr", "snronchi", "effective_snr", "new_snr"],
+                    choices=["snr", "snronchi", "effective_snr", "new_snr", "newsnr_sgveto"],
                     help="Function of SNR and chisq to perform fits with")
 parser.add_argument("--stat-factor", type=float,
                     help="Adjustable magic number used in some sngl "
@@ -137,14 +139,19 @@ templatef = h5py.File(args.bank_file, 'r')
 chisq = trigf[args.ifo+'/chisq'][:]
 chisq_dof = trigf[args.ifo+'/chisq_dof'][:]
 rchisq = chisq / (2 * chisq_dof - 2)
+try:
+    sgchisq = trigf[args.ifo+'/sg_chisq'][:]
+except KeyError:
+    sgchisq = None
+
 del chisq
 del chisq_dof
 snr = trigf[args.ifo+'/snr'][:]
 logging.info('Calculating stat values')
-stat = get_stat(args.sngl_stat, snr, rchisq, args.stat_factor)
+stat = get_stat(args.sngl_stat, snr, rchisq, sgchisq, args.stat_factor)
 del snr
 del rchisq
-
+del sgchisq
 # do first thresholding operation to reduce trigger numbers
 abovethresh = stat >= args.stat_threshold
 stat = stat[abovethresh]

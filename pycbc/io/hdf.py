@@ -408,6 +408,12 @@ class SingleDetTriggers(object):
             if len(self.snr) == 1:
                 stat = np.array([stat])
             self.stat_name = "Reweighted SNR"
+        elif ranking_statistic == "newsnr_sgveto":
+            stat = self.newsnr_sgveto
+            # newsnr doesn't return an array if len(stat) == 1
+            if len(self.snr) == 1:
+                stat = np.array([stat])
+            self.stat_name = "Reweighted SNR (+sgveto)"
         elif ranking_statistic == "snr":
             stat = self.snr
             self.stat_name = "SNR"
@@ -535,6 +541,10 @@ class SingleDetTriggers(object):
         return np.array(self.trigs['snr'])[self.mask]
 
     @property
+    def sgchisq(self):
+        return np.array(self.trigs['sg_chisq'])[self.mask]
+
+    @property
     def u_vals(self):
         return np.array(self.trigs['u_vals'])[self.mask]
 
@@ -546,6 +556,10 @@ class SingleDetTriggers(object):
     @property
     def newsnr(self):
         return events.newsnr(self.snr, self.rchisq)
+
+    @property
+    def newsnr_sgveto(self):
+        return events.newsnr_sgveto(self.snr, self.rchisq, self.sgchisq)
 
     def get_column(self, cname):
         if hasattr(self, cname):
@@ -775,7 +789,7 @@ class ForegroundTriggers(object):
 
         ligolw_utils.write_filename(outdoc, file_name)
 
-chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad',
+chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad', 'sg',
                  'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']
 
 def get_chisq_from_file_choice(hdfile, chisq_choice):
@@ -798,7 +812,9 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         bank_chisq = f['bank_chisq'][:]
         bank_chisq_dof = f['bank_chisq_dof'][:]
         bank_chisq /= bank_chisq_dof
-    if chisq_choice == 'traditional':
+    if chisq_choice == 'sg':
+        chisq = f['sg_chisq'][:]
+    elif chisq_choice == 'traditional':
         chisq = trad_chisq
     elif chisq_choice == 'cont':
         chisq = cont_chisq

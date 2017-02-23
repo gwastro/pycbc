@@ -61,7 +61,7 @@ parser.add_argument('--y-var', required=True,
                     help='Parameter to plot on the y-axis. Required')
 parser.add_argument('--z-var', required=True,
                     help='Quantity to plot on the color scale. Required',
-                    choices=['density', 'max(snr)', 'max(newsnr)'])
+                    choices=['density', 'max(snr)', 'max(newsnr)', 'max(newsnr_sgveto)'])
 parser.add_argument('--detector', required=True,
                     help='Detector. Required')
 parser.add_argument('--grid-size', type=int, default=80,
@@ -121,9 +121,14 @@ if opts.z_var == 'density':
     norm = LogNorm()
     hb = ax.hexbin(x, y, norm=norm, vmin=1, **hexbin_style)
     fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
-elif opts.z_var in ['max(snr)', 'max(newsnr)']:
+elif opts.z_var in ['max(snr)', 'max(newsnr)', 'max(newsnr_sgveto)']:
     cb_style = {}
-    z = trigs.snr if opts.z_var == 'max(snr)' else trigs.newsnr
+    if opts.z_var == 'max(snr)':
+        z = trigs.snr
+    elif opts.z_var == 'max(newsnr)':
+        z = trigs.newsnr
+    elif opts.z_var == 'max(newsnr_sgveto)':
+        z = trigs.newsnr_sgveto
     z = z[mask]
     if z.max() / z.min() > 10:
         hexbin_style['norm'] = LogNorm()
