@@ -30,10 +30,14 @@ waves.
 
 import os, sys, types, re, copy, numpy, inspect
 from pycbc_glue.ligolw import types as ligolw_types
-from pycbc import coordinates
+from pycbc import coordinates, conversions
 from pycbc.detector import Detector
 from pycbc.waveform import parameters
 from pycbc import cosmology
+
+# what functions are given to the eval in FieldArray's __getitem__:
+_numpy_function_lib = {_x: _y for _x,_y in numpy.__dict__.items()
+                       if isinstance(_y, numpy.ufunc) or isinstance(_y, float)}
 
 #
 # =============================================================================
@@ -715,7 +719,8 @@ class FieldArray(numpy.recarray):
 
     """
     _virtualfields = []
-    __persistent_attributes__ = ['name', 'id_maps', '_virtualfields']
+    _functionlib = {}
+    __persistent_attributes__ = ['name', '_virtualfields', '_functionlib']
 
     def __new__(cls, shape, name=None, zero=True, **kwargs):
         """Initializes a new empty array.
@@ -723,8 +728,9 @@ class FieldArray(numpy.recarray):
         obj = super(FieldArray, cls).__new__(cls, shape, **kwargs).view(
             type=cls)
         obj.name = name
-        obj.id_maps = None
         obj.__persistent_attributes__ = cls.__persistent_attributes__
+        obj._functionlib = cls._functionlib
+        obj._virtualfields = cls._virtualfields
         # zero out the array if desired
         if zero:
             default = default_empty(1, dtype=obj.dtype)
@@ -736,9 +742,8 @@ class FieldArray(numpy.recarray):
         """
         if obj is None:
             return
-        # copy persisitent attributes
-        [setattr(self, attr, getattr(obj, attr, None)) for attr in \
-            self.__persistent_attributes__]
+        # copy persistent attributes
+        self.__copy_attributes__(obj)
         # numpy has some issues with dtype field names that are unicode,
         # so we'll force them to strings here
         if obj.dtype.names is not None and \
@@ -817,8 +822,11 @@ class FieldArray(numpy.recarray):
             #item_dict.update({attr: getattr(self, attr) for attr in \
             #    set(dir(self)).intersection(itemvars)})
 
+            # add function library
+            if self._functionlib:
+                item_dict.update(self._functionlib)
             # add numpy functions
-            item_dict.update(numpy.__dict__)
+            item_dict.update(_numpy_function_lib)
             return eval(item, {"__builtins__": None}, item_dict)
 
     def __contains__(self, field):
@@ -878,14 +886,23 @@ class FieldArray(numpy.recarray):
         From: <http://stackoverflow.com/a/2954373/1366472>.
         """
         cls = type(self)
-        if not hasattr(cls, '__perinstance'):
-            cls = type(cls.__name__, (cls,), {})
-            cls.__perinstance = True
+        cls = type(cls.__name__, (cls,), dict(cls.__dict__))
         if isinstance(names, str) or isinstance(names, unicode):
             names = [names]
             methods = [methods]
         for name,method in zip(names, methods):
             setattr(cls, name, property(method))
+        return self.view(type=cls)
+
+    def del_attributes(self, names):
+        """Returns a view of self with the given attributes removed.
+        """
+        cls = type(self)
+        cls = type(cls.__name__, cls.__bases__, dict(cls.__dict__))
+        if isinstance(names, str) or isinstance(names, unicode):
+            names = [names]
+        for name in names:
+            delattr(cls, name)
         return self.view(type=cls)
 
     def add_virtualfields(self, names, methods):
@@ -902,6 +919,17 @@ class FieldArray(numpy.recarray):
         if out._virtualfields is None:
             out._virtualfields = []
         out._virtualfields.extend(names)
+        return out
+
+    def del_virtualfields(self, names):
+        """Returns a view of self with the given virtual fields removed.
+        """
+        if isinstance(names, str) or isinstance(names, unicode):
+            names = [names]
+        # remove the properties
+        out = self.del_attributes(names)
+        # remove the list of virtual fields
+        out._virtualfields = [f for f in self._virtualfields if f not in names]
         return out
 
     @classmethod
@@ -1094,6 +1122,13 @@ class FieldArray(numpy.recarray):
         else:
             vfs = tuple(self._virtualfields)
         return vfs
+
+    @property
+    def functionlib(self):
+        """Returns the library of functions that are available when calling
+        items.
+        """
+        return self._functionlib
 
     @property
     def fields(self):
@@ -1430,8 +1465,8 @@ class _FieldArrayWithDefaults(FieldArray):
         return dict(cls._staticfields.items() + add_fields.items())
         
 
-    def __new__(cls, shape, name=None, additional_fields=None, field_kwargs=None,
-            **kwargs):
+    def __new__(cls, shape, name=None, additional_fields=None,
+                field_kwargs=None, **kwargs):
         """The ``additional_fields`` should be specified in the same way as
         ``dtype`` is normally given to FieldArray. The ``field_kwargs`` are
         passed to the class's default_fields method as keyword arguments.
@@ -1543,10 +1578,13 @@ class _FieldArrayWithDefaults(FieldArray):
 # =============================================================================
 #
 
-# we'll vectorize TimeDelayFromEarthCenter for faster processing of end times
-def _time_delay_from_center(detector, ra, dec, tc):
-    return tc + detector.time_delay_from_earth_center(ra, dec, tc)
-time_delay_from_center = numpy.vectorize(_time_delay_from_center)
+# We'll include functions in various pycbc modules in WaveformArray's function
+# library. All modules used must have an __all__ list defined.
+_modules_for_functionlib = [conversions, coordinates]
+_waveformarray_functionlib = {_funcname : getattr(_mod, _funcname)
+                              for _mod in _modules_for_functionlib
+                              for _funcname in getattr(_mod, '__all__')}
+
 
 class WaveformArray(_FieldArrayWithDefaults):
     """
@@ -1621,13 +1659,15 @@ class WaveformArray(_FieldArrayWithDefaults):
             '$d_L$ (Mpc)'
 
     """
+    _functionlib = _waveformarray_functionlib
 
     _staticfields = (parameters.cbc_intrinsic_params +
                      parameters.extrinsic_params).dtype_dict
 
     _virtualfields = [
         parameters.mchirp, parameters.eta, parameters.mtotal,
-        parameters.q, parameters.m_p, parameters.m_s, parameters.chi_eff,
+        parameters.q, parameters.primary_mass, parameters.secondary_mass,
+        parameters.chi_eff,
         parameters.spin_px, parameters.spin_py, parameters.spin_pz,
         parameters.spin_sx, parameters.spin_sy, parameters.spin_sz,
         parameters.spin1_a, parameters.spin1_azimuthal, parameters.spin1_polar,
@@ -1635,157 +1675,112 @@ class WaveformArray(_FieldArrayWithDefaults):
         parameters.redshift]
 
     @property
-    def m_p(self):
-        """Returns the larger of self.mass1 and self.mass2 (p = primary)."""
-        out = numpy.zeros(self.shape, dtype=self.mass1.dtype)
-        out[:] = self.mass1
-        mask = self.mass1 < self.mass2
-        out[mask] = self.mass2[mask]
-        return out
+    def primary_mass(self):
+        """Returns the larger of self.mass1 and self.mass2."""
+        return conversions.primary_mass(self.mass1, self.mass2)
 
     @property
-    def m_s(self):
-        """Returns the smaller of self.mass1 and self.mass2 (s = secondary)."""
-        out = numpy.zeros(self.shape, dtype=self.mass2.dtype)
-        out[:] = self.mass2
-        mask = self.mass1 < self.mass2
-        out[mask] = self.mass1[mask]
-        return out
+    def secondary_mass(self):
+        """Returns the smaller of self.mass1 and self.mass2."""
+        return conversions.secondary_mass(self.mass1, self.mass)
 
     @property
     def mtotal(self):
         """Returns the total mass."""
-        return self.mass1 + self.mass2
+        return conversions.mtotal_from_mass1_mass2(self.mass1, self.mass2)
 
     @property
     def q(self):
         """Returns the mass ratio m1/m2, where m1 >= m2."""
-        return self.m_p / self.m_s
+        return conversions.q_from_mass1_mass2(self.mass1, self.mass2)
 
-    # FIXME: mchirp and eta functions should be added to pnutils as separate
-    # functions
     @property
     def eta(self):
         """Returns the symmetric mass ratio."""
-        return self.mass1*self.mass2 / (self.mass1 + self.mass2)**2.
+        return conversions.eta_from_mass1_mass2(self.mass1, self.mass2)
 
     @property
     def mchirp(self):
         """Returns the chirp mass."""
-        return self.eta**(3./5) * self.mtotal
+        return conversions.mchirp_from_mass1_mass2(self.mass1, self.mass2)
 
-    # FIXME: this should probably be moved to pnutils at some point
     @property
     def chi_eff(self):
         """Returns the effective spin."""
-        return (self.spin1z * self.mass1 + self.spin2z * self.mass2) / \
-                self.mtotal
+        return conversions.chi_eff(self.mass1, self.mass2, self.spin1z,
+                                   self.spin2z)
 
     @property
     def spin_px(self):
-        """Returns the x-component of the primary mass."""
-        out = numpy.zeros(self.shape, dtype=self.spin1x.dtype)
-        out[:] = self.spin1x
-        mask = self.mass1 < self.mass2
-        out[mask] = self.spin2x[mask]
-        return out
+        """Returns the x-component of the spin of the primary mass."""
+        return conversions.primary_spin(self.mass1, self.mass2, self.spin1x,
+                                        self.spin2x)
 
     @property
     def spin_py(self):
-        """Returns the y-component of the primary mass."""
-        out = numpy.zeros(self.shape, dtype=self.spin1y.dtype)
-        out[:] = self.spin1y
-        mask = self.mass1 < self.mass2
-        out[mask] = self.spin2y[mask]
-        return out
+        """Returns the y-component of the spin of the primary mass."""
+        return conversions.primary_spin(self.mass1, self.mass2, self.spin1y,
+                                        self.spin2y)
 
     @property
     def spin_pz(self):
-        """Returns the z-component of the secondary mass."""
-        out = numpy.zeros(self.shape, dtype=self.spin1z.dtype)
-        out[:] = self.spin1z
-        mask = self.mass1 < self.mass2
-        out[mask] = self.spin2z[mask]
-        return out
+        """Returns the z-component of the spin of the primary mass."""
+        return conversions.primary_spin(self.mass1, self.mass2, self.spin1z,
+                                        self.spin2z)
 
     @property
     def spin_sx(self):
-        """Returns the x-component of the secondary mass."""
-        out = numpy.zeros(self.shape, dtype=self.spin2x.dtype)
-        out[:] = self.spin2x
-        mask = self.mass1 < self.mass2
-        out[mask] = self.spin1x[mask]
-        return out
+        """Returns the x-component of the spin of the secondary mass."""
+        return conversions.secondary_spin(self.mass1, self.mass2, self.spin1x,
+                                        self.spin2x)
 
     @property
     def spin_sy(self):
-        """Returns the y-component of the secondary mass."""
-        out = numpy.zeros(self.shape, dtype=self.spin2y.dtype)
-        out[:] = self.spin2y
-        mask = self.mass1 < self.mass2
-        out[mask] = self.spin1y[mask]
-        return out
+        """Returns the y-component of the spin of the secondary mass."""
+        return conversions.secondary_spin(self.mass1, self.mass2, self.spin1y,
+                                        self.spin2y)
 
     @property
     def spin_sz(self):
-        """Returns the z-component of the secondary mass."""
-        out = numpy.zeros(self.shape, dtype=self.spin2z.dtype)
-        out[:] = self.spin2z
-        mask = self.mass1 < self.mass2
-        out[mask] = self.spin1z[mask]
-        return out
+        """Returns the z-component of the spin of the secondary mass."""
+        return conversions.secondary_spin(self.mass1, self.mass2, self.spin1z,
+                                        self.spin2z)
 
     @property
     def spin1_a(self):
         """Returns the dimensionless spin magnitude of mass 1."""
-        out = coordinates.cartesian_to_spherical_rho(
+        return coordinates.cartesian_to_spherical_rho(
                                     self.spin1x, self.spin1y, self.spin1z)
-        return out / self.mass1**2
 
     @property
     def spin1_azimuthal(self):
         """Returns the azimuthal spin angle of mass 1."""
-        # do not need to normalize by mass because it cancels
         return coordinates.cartesian_to_spherical_azimuthal(
                                      self.spin1x, self.spin1y)
 
     @property
     def spin1_polar(self):
         """Returns the polar spin angle of mass 1."""
-        # do not need to normalize by mass because it cancels
         return coordinates.cartesian_to_spherical_polar(
                                      self.spin1x, self.spin1y, self.spin1z)
 
     @property
     def spin2_a(self):
         """Returns the dimensionless spin magnitude of mass 2."""
-        out = coordinates.cartesian_to_spherical_rho(
+        return coordinates.cartesian_to_spherical_rho(
                                     self.spin1x, self.spin1y, self.spin1z)
-        return out / self.mass2**2
 
     @property
     def spin2_azimuthal(self):
         """Returns the azimuthal spin angle of mass 2."""
-        # do not need to normalize by mass because it cancels
         return coordinates.cartesian_to_spherical_azimuthal(
                                      self.spin2x, self.spin2y)
 
     @property
     def spin2_polar(self):
         """Returns the polar spin angle of mass 2."""
-        # do not need to normalize by mass because it cancels
         return coordinates.cartesian_to_spherical_polar(
                                      self.spin2x, self.spin2y, self.spin2z)
-
-    def det_tc(self, detector):
-        """Returns the coalesence time in the given detector."""
-        detector = Detector(detector)
-        return time_delay_from_center(detector, self.ra, self.dec, self.tc)
-
-    @property
-    def redshift(self):
-        """Returns the redshift."""
-        return cosmology.redshift(self.distance)
 
 
 __all__ = ['FieldArray', 'WaveformArray']
