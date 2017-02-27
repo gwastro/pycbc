@@ -34,7 +34,7 @@ from pycbc.conversions import _ensurearray, _formatreturn
 class _DistToZ(object):
     """Class to convert luminosity distance to redshift using the given
     cosmology.
-    
+
     Cosmological constants `h, om, ol, w0, w1, w2` may optionally be provided
     (see below). Otherwise, standard LambdaCDM will be used by default; see
     `LALCosmologyCalculator` for details.
@@ -50,7 +50,7 @@ class _DistToZ(object):
     This continues until a redshift can be found.
     
     Instances of this class can be called like a function on luminosity
-    distances, which will return the corresponding redshifts. 
+    distances, which will return the corresponding redshifts.
 
     Parameters
     ----------
