@@ -318,6 +318,7 @@ with ctx:
                                      maxelements=args.max_batch_size)
     if args.max_length is not None:
         maxlen = args.max_length
+    maxlen = int(maxlen)
     data_reader = {}
     sngl_estimator = {}
     for ifo in advancing_ifos:
