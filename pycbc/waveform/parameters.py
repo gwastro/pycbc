@@ -205,11 +205,11 @@ mtotal = Parameter("mtotal",
 q = Parameter("q",
                 dtype=float, label=r"$q$",
                 description="The mass ratio, m1/m2, where m1 >= m2.")
-m_p = Parameter("m_p",
-                dtype=float, label=r"$m_{\mathrm{pr}}$",
+primary_mass = Parameter("primary_mass",
+                dtype=float, label=r"$m_{1}$",
                 description="Mass of the primary object (in solar masses).")
-m_s = Parameter("m_s",
-                dtype=float, label=r"$m_{\mathrm{sc}}$",
+secondary_mass = Parameter("secondary_mass",
+                dtype=float, label=r"$m_{2}$",
                 description="Mass of the secondary object (in solar masses).")
 
 # derived parameters for component spins
