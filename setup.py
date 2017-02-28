@@ -257,6 +257,7 @@ def get_version_info():
                                                    vcs_info.build_date,
                                                    vcs_info.status))
             version = vcs_info.version
+            f.write('from pycbc._version import *')
 
     # If this is a release or another kind of source distribution of PyCBC
     except:

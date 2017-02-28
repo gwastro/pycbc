@@ -34,7 +34,7 @@ from pycbc.filter import sigma, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, \
                         MultiDetOptionAction, load_frequencyseries
 from glue.ligolw import lsctables
-import pycbc.full_version
+import pycbc.version
 
 
 class TimeIndependentPSD(object):
@@ -98,7 +98,7 @@ class TimeVaryingPSD(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", action=pycbc.full_version.Version)
+    parser.add_argument("--version", action=pycbc.version.Version)
     parser.add_argument('--input-file', '-i', dest='inj_xml', required=True,
                         help='Input LIGOLW file defining injections')
     parser.add_argument('--output-file', '-o', dest='out_file', required=True,

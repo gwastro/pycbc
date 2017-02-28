@@ -23,7 +23,6 @@ import argparse
 import inspect
 import subprocess
 
-
 def print_link(library):
     err_msg = "Could not execute runtime linker to determine\n" + \
               "shared library paths for library:\n  " + library + "\n"
