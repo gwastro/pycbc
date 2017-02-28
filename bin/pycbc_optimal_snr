@@ -98,8 +98,7 @@ class TimeVaryingPSD(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", action="version",
-                        version=pycbc.version.git_verbose_msg)
+    parser.add_argument("--version", action=pycbc.version.Version)
     parser.add_argument('--input-file', '-i', dest='inj_xml', required=True,
                         help='Input LIGOLW file defining injections')
     parser.add_argument('--output-file', '-o', dest='out_file', required=True,

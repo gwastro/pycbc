@@ -58,8 +58,7 @@ parser = argparse.ArgumentParser(usage="",
     description="Perform maximum-likelihood fits of single inspiral trigger"
                 "distributions to various functions")
 
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
+parser.add_argument("--version", action=pycbc.version.Version)
 parser.add_argument("-V", "--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
 parser.add_argument("--inputs", nargs="+",

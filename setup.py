@@ -250,12 +250,13 @@ def get_version_info():
                     'Id: %s\n'
                     'Builder: %s\n'
                     'Build date: %s\n'
-                    'Repository status is %s"""' %(vcs_info.branch,
+                    'Repository status is %s"""\n' %(vcs_info.branch,
                                                    vcs_info.tag,
                                                    vcs_info.hash,
                                                    vcs_info.builder,
                                                    vcs_info.build_date,
                                                    vcs_info.status))
+            f.write('from pycbc._version import *\n')
             version = vcs_info.version
 
     # If this is a release or another kind of source distribution of PyCBC
@@ -282,7 +283,8 @@ def get_version_info():
             f.write('git_builder = \'%s\'\n' % builder)
             f.write('git_build_date = \'%s\'\n' % build_date)
             f.write('git_verbose_msg = """Version: %s Release: %s \n'
-                    ' """' % (version, release))
+                    ' """\n' % (version, release))
+            f.write('from pycbc._version import *\n')
 
     from pycbc import version
     version = version.version
