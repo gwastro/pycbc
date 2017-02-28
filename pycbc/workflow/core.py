@@ -1715,6 +1715,7 @@ class SegFile(File):
             # Add using glue library to set all segment tables
             with ligolw_segments.LigolwSegments(outdoc, process) as xmlsegs:
                 xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name,
+                                                    version = 1,
                                                     valid = {ifo : vsegs})
         # write file
         if override_file_if_exists and \
