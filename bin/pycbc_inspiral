@@ -19,6 +19,7 @@
 import sys
 import logging, argparse, numpy, itertools
 import pycbc
+import pycbc.version
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.filter import MatchedFilterControl, make_frequency_series
@@ -47,8 +48,7 @@ tstart = time.time()
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
 
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--version', action=pycbc.version.Version)
 parser.add_argument("-V", "--verbose", action="store_true",
                   help="print extra debugging information", default=False )
 parser.add_argument("--update-progress",

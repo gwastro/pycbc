@@ -18,13 +18,14 @@
 a specific Nth loudest coincident event.
 """
 import sys, logging, argparse, numpy, pycbc, h5py
-from pycbc import vetoes, psd, waveform, version, strain, scheme, fft, filter
+from pycbc import vetoes, psd, waveform, strain, scheme, fft, filter
 from pycbc.io import WaveformArray
 from pycbc import events
 from pycbc.filter import resample_to_delta_t
 from pycbc.types import zeros, complex64
 from pycbc.types import complex_same_precision_as
 import pycbc.waveform.utils
+import pycbc.version
 
 def subtract_template(stilde, template, snr, trigger_time, flow):
     idx = int((trigger_time - snr.start_time) / snr.delta_t)
@@ -84,8 +85,7 @@ def select_segments(fname, anal_name, data_name, ifo, time, pad_data):
 
 parser = argparse.ArgumentParser(usage='',
     description="Single template gravitational-wave followup")
-parser.add_argument('--version', action='version', 
-                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--version', action=pycbc.version.Version) 
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--subtract-template', action='store_true')
 parser.add_argument("-V", "--verbose", action="store_true", 

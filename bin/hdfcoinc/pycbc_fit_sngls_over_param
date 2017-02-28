@@ -28,8 +28,7 @@ parser = argparse.ArgumentParser(usage="",
                 "parameter, to suppress random noise in the resulting "
                 "background model.")
 
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
+parser.add_argument("--version", action=pycbc.version.Version)
 parser.add_argument("-V", "--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
 parser.add_argument("--template-fit-file",
