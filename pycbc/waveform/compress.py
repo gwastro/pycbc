@@ -156,7 +156,7 @@ compression_algorithms = {
         'spa': spa_compression
         }
 
-def _vecdiff(htilde, hinterp, fmin, fmax, psd):
+def _vecdiff(htilde, hinterp, fmin, fmax, psd=None):
     return abs(filter.overlap_cplx(htilde, htilde,
                           low_frequency_cutoff=fmin,
                           high_frequency_cutoff=fmax,
@@ -173,7 +173,7 @@ def vecdiff(htilde, hinterp, sample_points, psd):
     vecdiffs = numpy.zeros(sample_points.size-1, dtype=float)
     for kk,thisf in enumerate(sample_points[:-1]):
         nextf = sample_points[kk+1]
-        vecdiffs[kk] = abs(_vecdiff(htilde, hinterp, thisf, nextf, psd))
+        vecdiffs[kk] = abs(_vecdiff(htilde, hinterp, thisf, nextf, psd=psd))
     return vecdiffs
 
 def compress_waveform(htilde, sample_points, tolerance, interpolation,
