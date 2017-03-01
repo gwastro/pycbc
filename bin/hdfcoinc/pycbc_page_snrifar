@@ -51,7 +51,7 @@ parser.add_argument('--trials-factor', type=int, default=1,
                     help='Trials factor to divide from p-value and '
                          'divide from IFAR to account for look-elsewhere '
                          'effect. [default=1]')
-parser.add_argument('--no-sigma-shading', action='store_true')
+parser.add_argument('--no-sigma-shading', action='store_false')
 parser.add_argument('--h-iter-inc-background', type=int, default=None,
                     help='Indicate which inclusive background and FARs of '
                          'foreground triggers to plot if there were any '
@@ -103,7 +103,7 @@ except KeyError:
     h_iterations = 0
 
 if h_inc_back_num is None:
-    h_inc_back_num = None
+    h_inc_back_num = 0
 
 if h_inc_back_num > h_iterations:
     raise ValueError('User requested inclusive background after '
@@ -125,14 +125,12 @@ try:
          cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
          # Correct the foreground ifars depending on the values calculated
          # under a particular inclusive background distribution.
-         if h_inc_back_num >= 0:
-             ifar_h_inc = f['foreground_h%s/ifar' % h_inc_back_num][:]
-             stat_h_inc = f['foreground_h%s/stat' % h_inc_back_num][:]
-             for i in range(0, len(ifar_h_inc)):
-                 orig_idx = numpy.where(cstat_fore == stat_h_inc[i])[0][0]
-                 if orig_idx is not None:
-                     cstat_rate[orig_idx] = 1.0 / ifar_h_inc[i] \
-                                            * args.trials_factor
+         ifar_h_inc = f['foreground_h%s/ifar' % h_inc_back_num][:]
+         stat_h_inc = f['foreground_h%s/stat' % h_inc_back_num][:]
+         for i in range(0, len(ifar_h_inc)):
+             orig_idx = numpy.where(cstat_fore == stat_h_inc[i])[0][0]
+             if orig_idx is not None:
+                 cstat_rate[orig_idx] = 1.0 / ifar_h_inc[i] * args.trials_factor
          cstat_rate = cstat_rate[ssort]
          cstat_fore = cstat_fore[ssort]
          cstat_fap = p_from_far(cstat_rate, foreground_livetime)
@@ -144,13 +142,8 @@ except:
 if cstat_fore is not None and len(cstat_fore) == 0:
     cstat_fore = None
 
-if h_inc_back_num > 0:
-    back_ifar = f['background_h%s/ifar' % h_inc_back_num][:]
-    cstat_back = f['background_h%s/stat' % h_inc_back_num][:]
-
-else :
-    back_ifar = f['background/ifar'][:]
-    cstat_back = f['background/stat'][:]
+back_ifar = f['background_h%s/ifar' % h_inc_back_num][:]
+cstat_back = f['background_h%s/stat' % h_inc_back_num][:]
 
 back_sort = cstat_back.argsort()
 cstat_back = cstat_back[back_sort]
@@ -224,7 +217,7 @@ if not args.closed_box:
             # Since there is only one background bin we can just remove
             # hierarchically removed triggers from highest ranking statistic
             # to lower ranking statistic.
-            for i in range(0, h_inc_back_num):
+            for i in range(h_inc_back_num):
                 rm_idx = cstat_fore.argmax()
                 cstat_fore_h_rm = numpy.append(cstat_fore_h_rm,
                                                cstat_fore[rm_idx])
@@ -335,7 +328,7 @@ else:
         pylab.ylabel('False Alarm Rate (yr$^{-1}$)')
     elif args.trials_factor >= 1:
         pylab.ylabel('Combined False Alarm Rate (yr$^{-1}$)')
-    ax2.set_ylabel('False Alarm Probability')
+    ax2.set_ylabel('p-value')
 
 pylab.xlabel(r'Coincident Ranking Statistic')
 pylab.yscale('log')
