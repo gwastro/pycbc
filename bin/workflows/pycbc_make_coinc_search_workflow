@@ -45,6 +45,10 @@ def symlink_path(f, path):
 def symlink_result(f, rdir_path):
     symlink_path(f, rdir[rdir_path])
 
+# Log to the screen until we know where the output file is
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+    level=logging.INFO)
+
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument('--workflow-name', default='my_unamed_run')
@@ -83,11 +87,12 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO,
                     filemode='w')
 
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
+logfile = logging.FileHandler(filename=wf_log_file.storage_path,mode='w')
+logfile.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s:%(levelname)s : %(message)s')
-console.setFormatter(formatter)
-logging.getLogger('').addHandler(console)
+logfile.setFormatter(formatter)
+logging.getLogger('').addHandler(logfile)
+logging.info("Created log file %s" % wf_log_file.storage_path)
 
 # put start / end time at top of summary page
 time = workflow.analysis_time

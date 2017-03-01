@@ -30,6 +30,9 @@ import datetime
 import lal, sys
 from pycbc.results import save_fig_with_metadata, two_column_layout
 
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+                    level=logging.INFO)
+
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
@@ -38,9 +41,6 @@ parser.add_argument("-d", "--output-dir", required=True,
                     help="Path to output directory.")
 pycbc.workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
-
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
-                    level=logging.INFO)
 
 container = pycbc.workflow.Workflow(args, args.workflow_name)
 workflow = pycbc.workflow.Workflow(args, args.workflow_name + '-main')
