@@ -114,6 +114,18 @@ def add_workflow_command_line_group(parser):
 
     where the value will be left as ''.
 
+    To remove a configuration option, use the command line argument
+
+    --config-delete section1:option1
+
+    which will delete option1 from [section1] or
+
+    --config-delete section1
+
+    to delete all of the options in [section1]
+
+    Deletes are implemented before overrides.
+
     This function returns an argparse OptionGroup to ensure these options are
     parsed correctly and can then be sent directly to initialize an
     WorkflowConfigParser.
@@ -131,7 +143,21 @@ def add_workflow_command_line_group(parser):
                                 "analysis.")
     workflowArgs.add_argument("--config-overrides", nargs="*", action='store',
                            metavar="SECTION:OPTION:VALUE",
-                           help="List of section,option,value combinations to add into the configuration file. Normally the gps start and end times might be provided this way, and user specific locations (ie. output directories). This can also be provided as SECTION:OPTION or SECTION:OPTION: both of which indicate that the corresponding value is left blank.")
+                           help="List of section,option,value combinations to "
+                           "add into the configuration file. Normally the gps "
+                           "start and end times might be provided this way, "
+                           "and user specific locations (ie. output directories). "
+                           "This can also be provided as SECTION:OPTION or "
+                           "SECTION:OPTION: both of which indicate that the "
+                           "corresponding value is left blank.")
+    workflowArgs.add_argument("--config-delete", nargs="*", action='store',
+                           metavar="SECTION:OPTION",
+                           help="List of section,option combinations to delete "
+                           "from the configuration file. This can also be "
+                           "provided as SECTION which deletes the enture section"
+                           " from the configuration file or SECTION:OPTION "
+                           "which deletes a specific option from a given "
+                           "section.")
 
 
 class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
@@ -139,7 +165,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
     This is a sub-class of glue.pipeline.DeepCopyableConfigParser, which lets
     us add a few additional helper features that are useful in workflows.
     """
-    def __init__(self, configFiles=None, overrideTuples=None, parsedFilePath=None):
+    def __init__(self, configFiles=None, overrideTuples=None, parsedFilePath=None, deleteTuples=None):
         """
         Initialize an WorkflowConfigParser. This reads the input configuration
         files, overrides values if necessary and performs the interpolation.
@@ -155,6 +181,10 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             pair is already present, it will be overwritten.
         parsedFilePath : Path, optional (default=None)
             If given, write the parsed .ini file back to disk at this location.
+        deleteTuples : List of (section, option) tuples
+            Delete the (section, option) pairs provided
+            in this list from provided .ini file(s). If the section only
+            is provided, the entire section will be deleted.
 
         Returns
         --------
@@ -183,11 +213,31 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # Populate shared options from the [sharedoptions] section
         self.populate_shared_sections()
 
+        # Do deletes from command line
+        for delete in deleteTuples:
+            if len(delete) == 1:
+                if self.remove_section(delete[0]) is False:
+                    raise ValueError("Cannot delete section %s, "
+                        "no such section in configuration." % delete )
+                else:
+                    logging.info("Deleting section %s from configuration",
+                                 delete[0])
+            elif len(delete) == 2:
+                if self.remove_option(delete[0],delete[1]) is False:
+                    raise ValueError("Cannot delete option %s from section %s,"
+                        " no such option in configuration." % delete )
+                else:
+                    logging.info("Deleting option %s from section %s in "
+                                 "configuration", delete[1], delete[0])
+            else:
+                raise ValueError("Deletes must be tuples of length 1 or 2. "
+                    "Got %s." % str(delete) )
+
         # Do overrides from command line
         for override in overrideTuples:
             if len(override) not in [2,3]:
                 errMsg = "Overrides must be tuples of length 2 or 3."
-                errMsg = "Got %s." %(str(override))
+                errMsg = "Got %s." % (str(override) )
                 raise ValueError(errMsg)
             section = override[0]
             option = override[1]
@@ -198,6 +248,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             if not self.has_section(section):
                 self.add_section(section)
             self.set(section, option, value)
+            logging.info("Overriding section %s option %s with value %s "
+                "in configuration.", section, option, value )
 
 
         # Check for any substitutions that can be made
@@ -239,6 +291,19 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # files and URLs to resolve
         if args.config_files:
             confFiles += args.config_files
+
+        # Identify the deletes
+        confDeletes = args.config_delete or []
+        # and parse them
+        parsedDeletes = []
+        for delete in confDeletes:
+            splitDelete = delete.split(":")
+            if len(splitDelete) > 2:
+                raise ValueError(
+                    "Deletes must be of format section:option "
+                    "or section. Cannot parse %s." % str(delete))
+            else:
+                parsedDeletes.append(tuple(splitDelete))
         
         # Identify the overrides
         confOverrides = args.config_overrides or []
@@ -258,9 +323,9 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             else:
                 raise ValueError(
                     "Overrides must be of format section:option:value "
-                    "or section:option. Cannot parse %s." % override)
+                    "or section:option. Cannot parse %s." % str(override))
 
-        return cls(confFiles, parsedOverrides) 
+        return cls(confFiles, parsedOverrides, None, parsedDeletes)
 
 
     def read_ini_file(self, cpFile):
