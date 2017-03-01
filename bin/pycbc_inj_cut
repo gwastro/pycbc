@@ -25,8 +25,6 @@ The two sets are stored into two separate output files.
 
 __author__ = "Stephen Fairhurst"
 __email__ = "stephen.fairhurst@ligo.org"
-__version__ = "0.0"
-__date__ = "31.10.2015"
 
 import argparse
 import logging
@@ -36,8 +34,10 @@ import pycbc.inject
 import glue.ligolw.utils
 from pycbc.types import MultiDetOptionAction
 from glue.ligolw import lsctables
+import pycbc.version
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action=pycbc.version.Version)
 parser.add_argument('--input', dest='inj_xml', required=True, help='Input LIGOLW injections file.')
 parser.add_argument('--output-missed', dest='output_missed', required=False,
                   help="Output LIGOLW file containing injections we expect to miss.")

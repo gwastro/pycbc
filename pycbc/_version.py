@@ -26,11 +26,14 @@ import subprocess
 def print_link(library):
     err_msg = "Could not execute runtime linker to determine\n" + \
               "shared library paths for library:\n  " + library + "\n"
+    FNULL = open(os.devnull, 'w')
     try:
-        link = subprocess.check_output(['ldd', library])
+        link = subprocess.check_output(['ldd', library],
+                                       stderr=FNULL)
     except OSError:
         try:
-            link = subprocess.check_output(['otool', '-L', library])
+            link = subprocess.check_output(['otool', '-L', library],
+                                           stderr=FNULL)
         except:
             link = err_msg
     except:
