@@ -220,7 +220,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                     raise ValueError("Cannot delete section %s, "
                         "no such section in configuration." % delete )
                 else:
-                    logging.info("Deleting section %s from configuration", 
+                    logging.info("Deleting section %s from configuration",
                                  delete[0])
             elif len(delete) == 2:
                 if self.remove_option(delete[0],delete[1]) is False:
@@ -325,7 +325,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                     "Overrides must be of format section:option:value "
                     "or section:option. Cannot parse %s." % str(override))
 
-        return cls(confFiles, parsedOverrides, None, parsedDeletes) 
+        return cls(confFiles, parsedOverrides, None, parsedDeletes)
 
 
     def read_ini_file(self, cpFile):
