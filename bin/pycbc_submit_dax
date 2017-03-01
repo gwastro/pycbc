@@ -252,7 +252,7 @@ if [ $NO_CREATE_PROXY == 0 ]; then
     fi
   done
   unset X509_USER_PROXY
-  ligo-proxy-init $LIGO_USER_NAME || exit 1
+  ligo-proxy-init -p $LIGO_USER_NAME || exit 1
 else
   if [ ! -z ${X509_USER_PROXY} ] ; then
     if [ -f ${X509_USER_PROXY} ] ; then
@@ -273,7 +273,7 @@ if [ ${RESULT} -eq 0 ] ; then
     grid-proxy-info
   else
     cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
-    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+    grid-proxy-init -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
     rm -f /tmp/x509up_u`id -u`.orig
     grid-proxy-info
   fi
