@@ -177,29 +177,12 @@ def get_code_version_numbers(cp):
            code_version_dict[exe_name] = "Using bundle downloaded from %s" % value
         else:
             try:
-                # FIXME: Replace with this version when python 2.7 is guaranteed
-                # version_output = subprocess.check_output([value, '--version'],
-                #                                         stderr=subprocess.STDOUT) 
-                # Start of legacy block
                 if value.startswith('file://'):
                     value = value[7:]
-                output, error, retcode = \
-                               check_output_error_and_retcode([value, '--version'])
-                if not retcode == 0:
-                    raise subprocess.CalledProcessError(retcode, '')
-                # End of legacy block
-                version_output = (output + error).replace('\n', ' ').split()
-                # Look for a version
-                if "Id:" in version_output:
-                    index = version_output.index("Id:") + 1
-                    version_string = 'Version is %s.' %(version_output[index],)
-                elif "LALApps:" in version_output:
-                    index = version_output.index("LALApps:") + 3
-                    version_string = 'Version (lalapps) is %s.' %(version_output[index],)
-                if version_string is None:
-                    version_string = "Cannot identify version string in output."
+                version_string = subprocess.check_output([value, '--version'],
+                                                        stderr=subprocess.STDOUT) 
             except subprocess.CalledProcessError:
-                version_string = "Executable fails on %s --version" %(value)
+                version_string = "Executable fails on %s --version" % (value)
             except OSError:
                 version_string = "Executable doesn't seem to exist(!)"
             code_version_dict[exe_name] = version_string
@@ -209,7 +192,7 @@ def write_code_versions(path, cp):
     code_version_dict = get_code_version_numbers(cp)
     html_text = ''
     for key,value in code_version_dict.items():
-        html_text+= '<li><b>%s</b>: %s </li>\n' %(key,value.replace('@', '&#64;'))
+        html_text+= '<li><b>%s</b>:<br><pre>%s</pre></li><hr><br><br>\n' %(key,value.replace('@', '&#64;'))
     kwds = {'render-function' : 'render_text',
             'title' : 'Version Information from Executables',
     }
