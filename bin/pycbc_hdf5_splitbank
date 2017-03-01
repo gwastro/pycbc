@@ -32,8 +32,8 @@ from numpy import random
 __author__  = "Soumi De <soumi.de@ligo.org>"
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument("--version", action=version,
-                    version=pycbc.version.git_verbose_msg) 
+parser.add_argument("--version", action="version",
+                  version=pycbc.version.git_verbose_msg)
 parser.add_argument("--bank-file", type=str,
                     help="Bank hdf file to load.")
 parser.add_argument('--templates-per-bank', type = int,
