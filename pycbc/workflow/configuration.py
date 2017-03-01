@@ -248,7 +248,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             if not self.has_section(section):
                 self.add_section(section)
             self.set(section, option, value)
-            logging.info("Overriding section %s option %s with value \'%s\' "
+            logging.info("Overriding section %s option %s with value %s "
                 "in configuration.", section, option, value )
 
 
