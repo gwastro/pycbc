@@ -1,4 +1,4 @@
-# Copyright (C) 2013  Ian Harry, Alex Nitz
+# Copyright (C) 2013, 2017  Ian Harry, Alex Nitz, Duncan Brown
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -1715,6 +1715,7 @@ class SegFile(File):
             # Add using glue library to set all segment tables
             with ligolw_segments.LigolwSegments(outdoc, process) as xmlsegs:
                 xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name,
+                                                    version = 1,
                                                     valid = {ifo : vsegs})
         # write file
         if override_file_if_exists and \
