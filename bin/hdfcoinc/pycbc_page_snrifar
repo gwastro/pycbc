@@ -286,8 +286,9 @@ if not args.closed_box:
                 pylab.scatter([r], [arr_end], marker='v', c='black',
                               edgecolors='white', lw=0.5, s=40, zorder=98) 
 
+            louder_pts = numpy.where(cstat_fore_h_rm > cstat_back.max())[0]
             if h_inc_back_num > 0:
-               for ii in range(0, len(cstat_fore_h_rm)):
+               for ii in louder_pts:
                    r = cstat_fore_h_rm[ii]
                    arr_start = cstat_rate_h_rm[ii]
                    # make the arrow length 1/15 the height of the plot
