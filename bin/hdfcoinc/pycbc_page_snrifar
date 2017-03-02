@@ -51,7 +51,7 @@ parser.add_argument('--trials-factor', type=int, default=1,
                     help='Trials factor to divide from p-value and '
                          'divide from IFAR to account for look-elsewhere '
                          'effect. [default=1]')
-parser.add_argument('--sigma-shading', action='store_false',
+parser.add_argument('--sigma-shading', action='store_true',
                     help='Use option --sigma-shading to include sigma '
                          'contours in the cumulative and non-cumulative '
                          'plots. If not given, defaults to no sigma '
@@ -239,7 +239,7 @@ if not args.closed_box:
                       marker=args.fg_marker, label='Foreground', zorder=100,
                       linewidth=0.5, edgecolors='white')
 
-        if args.cumulative and not args.sigma_shading:
+        if args.cumulative and args.sigma_shading:
             end = sigma_from_p(fap_end)
             sigmas = numpy.array([end, 4, 3, 2, 1])
             top = cstat_rate.max()
@@ -312,7 +312,7 @@ if not args.cumulative:
     # right axis
     anntx = plot_xmax - (plot_xmax - plot_xmin)/25.
     sigps = p_from_sigma(sigmas)
-    if not args.sigma_shading:
+    if args.sigma_shading:
         for ii,p in enumerate(sigps[:-1]):
             nextp = sigps[ii+1]
             pylab.axhspan(far_from_p(nextp, foreground_livetime, far_back.max()),
