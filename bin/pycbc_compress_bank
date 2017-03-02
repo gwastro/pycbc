@@ -106,13 +106,9 @@ fmax = args.sample_rate/2.
 
 # load the bank
 logging.info("loading bank")
-# set the dtype to use
-# FIXME: there really should be a function in pycbc.types that provides this
-# mapping
-if args.precision == "single":
-    dtype = numpy.complex64
-else:
-    dtype = numpy.complex128
+# we'll do everything in double precision; if single is desired, we'll
+# cast to single when saving the waveforms
+dtype = numpy.complex128
 # we'll just use dummy values for N, df for now
 bank = waveform.FilterBank(args.bank_file, 5, 0.25, dtype,
                            low_frequency_cutoff=fmin,
@@ -194,7 +190,8 @@ for ii in range(imin, imax):
         args.precision, decomp_scratch=decomp_scratch, psd=psd)
 
     # save results
-    hcompressed.write_to_hdf(output, tmplt.template_hash)
+    hcompressed.write_to_hdf(output, tmplt.template_hash,
+                             precision=args.precision)
 
 logging.info("finished")
 bank.filehandler.close()
