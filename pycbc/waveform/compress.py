@@ -166,7 +166,7 @@ def _vecdiff(htilde, hinterp, fmin, fmax, psd=None):
                           high_frequency_cutoff=fmax,
                           normalized=False, psd=psd))
 
-def vecdiff(htilde, hinterp, sample_points, psd):
+def vecdiff(htilde, hinterp, sample_points, psd=None):
     """Computes a statistic indicating between which sample points a waveform
     and the interpolated waveform differ the most.
     """
@@ -246,7 +246,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
                                    low_frequency_cutoff=fmin)
     if mismatch > tolerance:
         # we'll need the difference in the waveforms as a function of frequency
-        vecdiffs = vecdiff(htilde, hdecomp, sample_points, psd)
+        vecdiffs = vecdiff(htilde, hdecomp, sample_points, psd=psd)
 
     # We will find where in the frequency series the interpolated waveform
     # has the smallest overlap with the full waveform, add a sample point
@@ -283,7 +283,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         new_vecdiffs[minpt+2:] = vecdiffs[minpt+1:]
         new_vecdiffs[minpt:minpt+2] = vecdiff(htilde, hdecomp,
                                               sample_points[minpt:minpt+2],
-                                              psd)
+                                              psd=psd)
         vecdiffs = new_vecdiffs
         mismatch = 1. - filter.overlap(hdecomp, htilde, psd=psd,
                                        low_frequency_cutoff=fmin)
