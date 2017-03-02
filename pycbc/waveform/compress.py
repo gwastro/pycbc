@@ -512,7 +512,7 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         raise ValueError('requested f_lower >= largest frequency in out')
     # interpolate the amplitude and the phase
     if interpolation == "inline_linear":
-        if precision == 'single':
+        if out.precision == 'single':
             code = _linear_decompress_code32
         else:
             code = _linear_decompress_code
