@@ -257,7 +257,16 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         minpt = vecdiffs.argmax()
         # add a point at the frequency halfway between minpt and minpt+1
         add_freq = sample_points[[minpt, minpt+1]].mean()
-        addidx = int(add_freq/df)
+        addidx = int(round(add_freq/df))
+        # ensure that only new points are added
+        while addidx in sample_index:
+            addpt -= 1
+            try:
+                minpt = diffidx[addpt]
+            except IndexError:
+                raise ValueError("unable to compress to desired tolerance")
+            add_freq = sample_points[[minpt, minpt+1]].mean()
+            addidx = int(round(add_freq/df))
         new_index = numpy.zeros(sample_index.size+1, dtype=int)
         new_index[:minpt+1] = sample_index[:minpt+1]
         new_index[minpt+1] = addidx
