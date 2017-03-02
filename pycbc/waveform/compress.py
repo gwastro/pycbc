@@ -239,12 +239,9 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
                             out=decomp_scratch, df=outdf, f_lower=fmin,
                             interpolation=interpolation)
-    fmax_hdecomp = numpy.amax(hdecomp.sample_frequencies.numpy())
-    fmax_htilde = numpy.amax(htilde.sample_frequencies.numpy())
-    high_frequency_cutoff = min(fmax_hdecomp, fmax_htilde)
-    kmax = int(high_frequency_cutoff/df)
-    htilde = htilde[0:kmax]
-    hdecomp = hdecomp[0:kmax]
+    kmax = min(len(htilde), len(hdecomp))
+    htilde = htilde[:kmax]
+    hdecomp = hdecomp[:kmax]
     mismatch = 1. - filter.overlap(hdecomp, htilde, psd=psd,
                                    low_frequency_cutoff=fmin)
     if mismatch > tolerance:
@@ -275,12 +272,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
                                 out=decomp_scratch, df=outdf,
                                 f_lower=fmin, interpolation=interpolation)
-        fmax_hdecomp = numpy.amax(hdecomp.sample_frequencies.numpy())
-        fmax_htilde = numpy.amax(htilde.sample_frequencies.numpy())
-        high_frequency_cutoff = min(fmax_hdecomp, fmax_htilde)
-        kmax = int(high_frequency_cutoff/df)
-        htilde = htilde[0:kmax]
-        hdecomp = hdecomp[0:kmax]
+        hdecomp = hdecomp[:kmax]
         new_vecdiffs = numpy.zeros(vecdiffs.size+1)
         new_vecdiffs[:minpt] = vecdiffs[:minpt]
         new_vecdiffs[minpt+2:] = vecdiffs[minpt+1:]
@@ -422,7 +414,7 @@ _linear_decompress_code = r"""
             }
         }
         if (next_sfindex == hlen){
-        break;
+            break;
         }
     }
 
