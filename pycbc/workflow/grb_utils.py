@@ -265,6 +265,9 @@ def make_gating_node(workflow, datafind_files, outdir=None, tags=None):
     condition_strain_nodes = []
     condition_strain_outs = FileList([])
     for ifo in workflow.ifos:
+        ifo_channel_name = cp.get("workflow", str.lower(ifo)+"-channel-name")
+        cp.add_options_to_section("condition_strain", [("channel-name", \
+            ifo_channel_name)], overwrite_options=True)
         input_files = FileList([datafind_file for datafind_file in \
                                 datafind_files if datafind_file.ifo == ifo])
         condition_strain_jobs = condition_strain_class(cp, "condition_strain",
