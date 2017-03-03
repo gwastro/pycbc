@@ -169,7 +169,7 @@ for ii in range(imin, imax):
         psd = pycbc.psd.from_cli(args, length=psd_length, delta_f=df,
                                  low_frequency_cutoff=fmin,
                                  dyn_range_factor=pycbc.DYN_RANGE_FAC,
-                                 precision=args.precision)
+                                 precision='double')
         psd_dict[N] = psd
 
     # get the compressed sample points
