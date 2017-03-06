@@ -51,11 +51,6 @@ parser.add_argument('--trials-factor', type=int, default=1,
                     help='Trials factor to divide from p-value and '
                          'divide from IFAR to account for look-elsewhere '
                          'effect. [default=1]')
-parser.add_argument('--sigma-shading', action='store_true',
-                    help='Use option --sigma-shading to include sigma '
-                         'contours in the cumulative and non-cumulative '
-                         'plots. If not given, defaults to no sigma '
-                         'contours.')
 parser.add_argument('--h-iter-inc-background', type=int, default=None,
                     help='Indicate which inclusive background and FARs of '
                          'foreground triggers to plot if there were any '
@@ -239,38 +234,6 @@ if not args.closed_box:
                       marker=args.fg_marker, label='Foreground', zorder=100,
                       linewidth=0.5, edgecolors='white')
 
-        if args.cumulative and args.sigma_shading:
-            end = sigma_from_p(fap_end)
-            sigmas = numpy.array([end, 4, 3, 2, 1])
-            top = cstat_rate.max()
-            for i in range(len(sigmas) - 1):
-                if sigmas[i+1] > end:
-                    continue
-
-                p1 = p_from_sigma(sigmas[i])
-                p2 = p_from_sigma(sigmas[i+1])
-                                
-                #offset the shading so it is valid for the foreground beyond the first point
-                if cstat_fore is not None and len(cstat_fore):
-                    offset = numpy.interp(cstat_back, cstat_fore, cstat_rate - cstat_rate[-1])
-                else:
-                    offset = 0
-                    
-                low = far_back / p2 * args.trials_factor + offset
-                high = far_back / p1 * args.trials_factor + offset
-                pylab.fill_between(cstat_back, low, high,
-                                   linewidth=0, color=pylab.cm.Blues(sigmas[i] / 5.0), zorder=-1)
-
-                try:
-                    left = cstat_back[high < top].min()
-
-                    if sigmas[i] == end:
-                        pylab.text(left, top*1.05, r"\textbf{%1.1f $\sigma$}"  % sigmas[i], fontsize=8)
-                    else:
-                        pylab.text(left, top*1.05, r"\textbf{%1.0f $\sigma$}"  % sigmas[i], fontsize=8) 
-                except ValueError:
-                    logging.warn(" Can't find a place for the sigma labels ")
-
         if args.not_cumulative:
             # add arrows to any points > the loudest background
             louder_pts = numpy.where(cstat_fore > cstat_back.max())[0] 
@@ -312,18 +275,17 @@ if not args.cumulative:
     # right axis
     anntx = plot_xmax - (plot_xmax - plot_xmin)/25.
     sigps = p_from_sigma(sigmas)
-    if args.sigma_shading:
-        for ii,p in enumerate(sigps[:-1]):
-            nextp = sigps[ii+1]
-            pylab.axhspan(far_from_p(nextp, foreground_livetime, far_back.max()),
-                          far_from_p(p, foreground_livetime, far_back.max()),
-                          linewidth=0,
-                          color=pylab.cm.Blues(float(sigmas[ii+1]) / sigmas.size),
-                          alpha=0.3, zorder=-1) 
+    for ii,p in enumerate(sigps[:-1]):
+        nextp = sigps[ii+1]
+        pylab.axhspan(far_from_p(nextp, foreground_livetime, far_back.max()),
+                      far_from_p(p, foreground_livetime, far_back.max()),
+                      linewidth=0,
+                      color=pylab.cm.Blues(float(sigmas[ii+1]) / sigmas.size),
+                      alpha=0.3, zorder=-1) 
             # add sigma label
-            pylab.annotate('%1.0f$\sigma$' % sigmas[ii],
-                           (anntx, far_from_p(p, foreground_livetime,
-                            far_back.max())), zorder=100)
+        pylab.annotate('%1.0f$\sigma$' % sigmas[ii],
+                       (anntx, far_from_p(p, foreground_livetime,
+                       far_back.max())), zorder=100)
     pylab.sca(ax1)
     
 if args.cumulative:
