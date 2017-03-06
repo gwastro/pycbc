@@ -312,7 +312,7 @@ def get_td_qnm(template=None, taper=None, **kwargs):
         return hplus, hcross
 
     else:
-        taper_times = -numpy.arange(0, taper*tau, delta_t)
+        taper_times = -numpy.arange(delta_t, taper*tau, delta_t)
         taper_times.sort()
         window = len(taper_times)
         taper_hp = amp * numpy.exp(10*taper_times/tau) * \
