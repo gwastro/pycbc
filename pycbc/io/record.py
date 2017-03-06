@@ -33,6 +33,7 @@ from glue.ligolw import types as ligolw_types
 from pycbc import coordinates
 from pycbc.detector import Detector
 from pycbc.waveform import parameters
+from pycbc import cosmology
 
 #
 # =============================================================================
@@ -1630,7 +1631,8 @@ class WaveformArray(_FieldArrayWithDefaults):
         parameters.spin_px, parameters.spin_py, parameters.spin_pz,
         parameters.spin_sx, parameters.spin_sy, parameters.spin_sz,
         parameters.spin1_a, parameters.spin1_azimuthal, parameters.spin1_polar,
-        parameters.spin2_a, parameters.spin2_azimuthal, parameters.spin2_polar]
+        parameters.spin2_a, parameters.spin2_azimuthal, parameters.spin2_polar,
+        parameters.redshift]
 
     @property
     def m_p(self):
@@ -1779,6 +1781,11 @@ class WaveformArray(_FieldArrayWithDefaults):
         """Returns the coalesence time in the given detector."""
         detector = Detector(detector)
         return time_delay_from_center(detector, self.ra, self.dec, self.tc)
+
+    @property
+    def redshift(self):
+        """Returns the redshift."""
+        return cosmology.redshift(self.distance)
 
 
 __all__ = ['FieldArray', 'WaveformArray']

@@ -366,6 +366,9 @@ dec = Parameter("dec",
 polarization = Parameter("polarization",
                 dtype=float, default=None, label=r"$\psi$",
                 description="Polarization (rad).")
+redshift = Parameter("redshift",
+                dtype=float, default=None, label=r"$z$",
+                description="Redshift.")
 
 #
 #   Non mandatory flags with default values
