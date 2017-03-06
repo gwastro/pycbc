@@ -19,7 +19,7 @@
 import os, sys, argparse, logging, h5py, pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
-from pycbc.events import select_segments_by_definer
+from pycbc.events import select_segments_by_definer, background_bin_from_string
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
@@ -38,6 +38,10 @@ parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
+parser.add_argument('--background-bins', nargs='+', help='list of background bin format strings')
+parser.add_argument('--f-lower', type=float,
+                    help="Lower frequency cutoff for evaluating template duration. Should"
+                         " be equal to the lower cutoff used in inspiral jobs")
 parser.add_argument('--statmap-file',
                     help="HDF format clustered coincident trigger result file")
 parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOptionAction,
@@ -70,13 +74,30 @@ tmpltbank_file = to_file(args.bank_file)
 coinc_file = to_file(args.statmap_file)
 insp_segs = to_file(args.inspiral_segments)
 
+#this will  need to be moved
+#then make sure I store data for each bin and pass the arguments
+#then run workflow and it should work out well?
+bank = h5py.File(args.bank_file, 'r') #check later if this is even necessary
+bank.f_lower = args.f_lower
+
+if args.background_bins:
+    data = {'mass1': bank['mass1'][:], 'mass2': bank['mass2'][:],
+            'spin1z': bank['spin1z'][:], 'spin2z': bank['spin2z'][:],
+            'f_lower': args.f_lower}
+    locs_dict = pycbc.events.background_bin_from_string(args.background_bins, data)
+    print locs_dict #Dictionary of location indices indexed by a bin name.
+else:
+    locs_dict = {'Template Bank': numpy.arange(0, len(bank), 1)}
+
 single_triggers = []
 fsdt = {}
 insp_data_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
+#    print fname
     single_triggers.append(to_file(fname, ifo=ifo))
     fsdt[ifo] = h5py.File(args.single_detector_triggers[ifo], 'r')
+#    print fsdt[ifo]
     insp_data_seglists[ifo] = select_segments_by_definer\
         (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
          ifo=ifo)
@@ -84,11 +105,13 @@ for ifo in args.single_detector_triggers:
     #       being used to determine command-line options for other codes,
     #       please think if that code requires coalesced, or not, segments.
     insp_data_seglists[ifo].coalesce()
-    
+print insp_data_seglists[ifo].coalesce() 
+#add separation of triggers into mass bins here....
+
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
 stat = f['foreground/stat'][:]
-
+print num_events
 sorting = stat.argsort()[::-1]
 
 if len(stat) == 0:
@@ -102,6 +125,7 @@ if len(stat) < num_events:
     num_events = len(stat)
 
 stat = stat[sorting][0:num_events]
+print stat
 
 times = {f.attrs['detector_1']: f['foreground/time1'][:][sorting][0:num_events],
          f.attrs['detector_2']: f['foreground/time2'][:][sorting][0:num_events],
