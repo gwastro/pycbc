@@ -130,7 +130,9 @@ elif opts.z_var in ['max(snr)', 'max(newsnr)', 'max(newsnr_sgveto)']:
     elif opts.z_var == 'max(newsnr_sgveto)':
         z = trigs.newsnr_sgveto
     z = z[mask]
-    if z.max() / z.min() > 10:
+    min_z = z.min() if opts.min_z is None else opts.min_z
+    max_z = z.max() if opts.max_z is None else opts.max_z
+    if max_z / min_z > 10:
         hexbin_style['norm'] = LogNorm()
         cb_style['ticks'] = LogLocator(subs=range(10))
     hb = ax.hexbin(x, y, C=z, reduce_C_function=max, **hexbin_style)
