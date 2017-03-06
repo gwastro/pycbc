@@ -161,7 +161,7 @@ if len(indices) > 0:
                 tmplts.spin1z[tid], tmplts.spin2z[tid],
                 opts.f_low, approximant=bank.approximant(tid))
         if max_rank and rho == max_rank:
-            ax.plot(track_t, track_f, '-', color='#ff0000', zorder=3, lw=2)
+            ax.plot(track_t, track_f, '-', color='#0080ff', zorder=3, lw=2)
         else:
             ax.plot(track_t, track_f, '-', color='#0000ff', zorder=2, lw=0.5, alpha=0.5)
 
@@ -175,12 +175,12 @@ if len(indices) > 0:
             tc - center_time, tmplts.mass1[tid], tmplts.mass2[tid],
             tmplts.spin1z[tid], tmplts.spin2z[tid],
             opts.f_low, approximant=bank.approximant(tid))
-        ax.plot(track_t, track_f, '-', color='#00ff00', zorder=3, lw=2)
+        ax.plot(track_t, track_f, '-', color='#00f000', zorder=3, lw=2)
     else:
         interesting_trig_rank = None
 
     if max_rank:
-        title = '%s - loudest %d triggers by %s - max %s = %.2f (red curve)' \
+        title = '%s - loudest %d triggers by %s - max %s = %.2f (light blue curve)' \
             % (opts.channel_name, opts.num_loudest, opts.rank, opts.rank, max_rank)
     else:
         title = '%s - loudest %d triggers by %s' \
