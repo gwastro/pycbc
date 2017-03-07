@@ -4,13 +4,12 @@ addons:
     apt:
         packages:
             - libfftw3-dev 
-            - libhdf5-serial-dev 
             - liblapack-dev 
             - gfortran 
             - libgsl0-dev
 cache:
   directories:
-    - $HOME/inst
+    - $HOME/build
     - $HOME/.cache/pip
 install:
   - travis_retry ./tools/install_travis.sh
