@@ -43,6 +43,7 @@ build_ssl=false
 build_python=false
 fftw_flags=--enable-avx
 shared="--enable-shared"
+static="--enable-static"
 build_dlls=false
 rebase_dlls_before_pycbc=false
 build_lapack=true
@@ -477,7 +478,7 @@ else # if $BUILDDIRNAME-preinst.tgz
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
-	./configure $shared --enable-static --prefix="$PREFIX"
+	./configure $shared $static --prefix="$PREFIX"
 	make
 	make install
 	cd ..
@@ -494,16 +495,16 @@ else # if $BUILDDIRNAME-preinst.tgz
     tar -xzf $p.tar.gz
     cd $p
     if test ".$fftw_cflags" = "."; then
-        ./configure $shared --enable-static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+        ./configure $shared $static --prefix="$PREFIX" --enable-sse2 $fftw_flags
     else
-        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared --enable-static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared $static --prefix="$PREFIX" --enable-sse2 $fftw_flags
     fi
     make
     make install
     if test ".$fftw_cflags" = "."; then
-        ./configure $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
+        ./configure $shared $static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
     else
-        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
+        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared $static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
     fi
     make
     make install
@@ -544,7 +545,7 @@ Cflags: -I${includedir}' |
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
-	./configure $shared --enable-static --prefix="$PREFIX"
+	./configure $shared $static --prefix="$PREFIX"
 	make
 	make install
 	mkdir -p "$PREFIX/lib/pkgconfig"
@@ -571,7 +572,7 @@ Libs: -L${libdir} -lhdf5' |
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
-	./configure $shared --enable-static --prefix="$PREFIX"
+	./configure $shared $static --prefix="$PREFIX"
 	make
 	make install
 	cd ..
@@ -590,7 +591,7 @@ Libs: -L${libdir} -lhdf5' |
         rm -rf $p
         tar -xzf $p.tar.gz
         cd $p
-        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit $shared --enable-static --prefix="$PREFIX" # --disable-cxx11
+        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit $shared $static --prefix="$PREFIX" # --disable-cxx11
         sed -i~ '/^CXXSTD[A-Z]*FLAGS=/d' ./libraries/ldastoolsal/ldastoolsal*.pc
         make
         make -k install || true
@@ -617,7 +618,7 @@ Libs: -L${libdir} -lhdf5' |
                 echo 'libFrame_la_LDFLAGS += -no-undefined' >> $i
             done
         fi
-        ./configure $shared --enable-static --prefix="$PREFIX"
+        ./configure $shared $static --prefix="$PREFIX"
         make
         make install
         mkdir -p "$PREFIX/lib/pkgconfig"
@@ -639,7 +640,7 @@ Libs: -L${libdir} -lhdf5' |
 	    echo 'libmetaio_la_LDFLAGS += -no-undefined' >> $i
 	done
     fi
-    ./configure $shared --enable-static --prefix="$PREFIX"
+    ./configure $shared $static --prefix="$PREFIX"
     make
     make install
     cd ..
@@ -725,7 +726,7 @@ else
     rm -rf lalsuite-build
     mkdir lalsuite-build
     cd lalsuite-build
-    ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared --enable-static --prefix="$PREFIX" --disable-silent-rules \
+    ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
 	--enable-swig-python --disable-lalxml --disable-lalpulsar --disable-laldetchar --disable-lalstochastic --disable-lalinference \
 	--disable-lalapps --disable-pylal
     if $build_dlls; then
