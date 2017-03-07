@@ -108,6 +108,14 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8
     pyinstaller_lsb="--no-lsb"
     build_gating_tool=true
     appendix="_Linux64"
+elif grep -q "Ubuntu 12" /etc/issue ; then
+    link_gcc_version=4.6
+    gcc_path="/usr/bin"
+    build_ssl=true
+    build_python=true
+    pyinstaller_lsb="--no-lsb"
+    build_gating_tool=false
+    appendix="_Linux64"
 elif test "`uname -s`" = "Darwin" ; then # OSX
     echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
     export FC=gfortran-mp-4.8
