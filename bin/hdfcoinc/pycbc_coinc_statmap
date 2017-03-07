@@ -229,15 +229,6 @@ while numpy.any(fnlouder == 0):
     if (h_iterations == args.max_hier_removal): 
         break
 
-    # Write foreground trigger info before hierarchical removals for
-    # downstream codes.
-    if h_iterations == 0:
-        f['background_h%s/stat' % h_iterations] = back_stat 
-        f['background_h%s/ifar' % h_iterations] = sec_to_year(background_time / (back_cnum + 1))
-        f['foreground_h%s/stat' % h_iterations] = fore_stat
-        f['foreground_h%s/ifar' % h_iterations] = sec_to_year(ifar)
-        f['foreground_h%s/fap' % h_iterations] = fap
-
     # Add the iteration number of hierarchical removals done.
     h_iterations += 1
 
@@ -329,9 +320,6 @@ while numpy.any(fnlouder == 0):
     f.attrs['foreground_time_h%s' % h_iterations] = coinc_time
 
     if fore_locs.sum() > 0:
-        # Write ranking statistic to file just for downstream plotting code
-        f['foreground_h%s/stat' % h_iterations] = fore_stat
-
         ifar = background_time / (fnlouder + 1)
         fap = 1 - numpy.exp(- coinc_time / ifar)
 
