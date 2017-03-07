@@ -420,9 +420,9 @@ _linear_decompress_code = r"""
                 outptr += 2;
                 findex++;
             }
-            if (next_sfindex == hlen){
-            break;
-            }
+        }
+        if (next_sfindex == hlen){
+        break;
         }
     }
 
