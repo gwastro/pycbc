@@ -1,6 +1,14 @@
 #!/bin/bash
 
-set -v
+function exit_on_error {
+    if [ -f $LOG_FILE ] ; then
+        echo "--- Error or interrupt: dumping log file ----------------------" >&4
+        cat $LOG_FILE >&4
+    fi
+fi
+exit 1
+}
+trap exit_on_error ERR INT
 
 BUILD=${HOME}/build
 BUILDDIRNAME="pycbc-build"
@@ -14,72 +22,33 @@ export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/
 source ${BUILD}/pycbc-build/environment/etc/lalsuite-user-env.sh
 source ${BUILD}/pycbc-build/environment/bin/activate
 
+LOG_FILE=$(mktemp -t pycbc-test-log.XXXXXXXXXX)
+echo -e "\\n\\n>> [`date`] writing test log to $LOG_FILE"
+
+# make a copy of stdin and stdout and close them
+exec 3>&1-
+exec 4>&2-
+
+# open stdout as $LOG_FILE file for read and write.
+exec 1<>$LOG_FILE
+
+# redirect stderr to stdout
+exec 2>&1
+
+set -v
+
+RESULT=0
+
 # Using python setup.py test has two issues:
 #     Some tests fail for reasons not necessarily related to PyCBC
 #     Setup.py seems to returns 0 even when tests fail
 # So we rather run specific tests manually
-
-RESULT=0
-
-python test/test_array_lal.py
-test $? -ne 0 && RESULT=1
-
-python test/test_array.py
-test $? -ne 0 && RESULT=1
-
-#python test/test_autochisq.py
-#test $? -ne 0 && RESULT=1
-
-python test/test_chisq.py
-test $? -ne 0 && RESULT=1
-
-python test/test_conversions.py
-test $? -ne 0 && RESULT=1
-
-python test/test_correlate.py
-test $? -ne 0 && RESULT=1
-
-#python test/test_fft_unthreaded.py
-#test $? -ne 0 && RESULT=1
-
-python test/test_frame.py
-test $? -ne 0 && RESULT=1
-
-python test/test_frequencyseries.py
-test $? -ne 0 && RESULT=1
-
-python test/test_injection.py
-test $? -ne 0 && RESULT=1
-
-python test/test_matchedfilter.py
-test $? -ne 0 && RESULT=1
-
-python test/test_pnutils.py
-test $? -ne 0 && RESULT=1
-
-python test/test_psd.py
-test $? -ne 0 && RESULT=1
-
-python test/test_resample.py
-test $? -ne 0 && RESULT=1
-
-#python test/test_schemes.py
-#test $? -ne 0 && RESULT=1
-
-python test/test_threshold.py
-test $? -ne 0 && RESULT=1
-
-python test/test_timeseries.py
-test $? -ne 0 && RESULT=1
-
-python test/test_tmpltbank.py
-test $? -ne 0 && RESULT=1
-
-python test/test_spatmplt.py
-test $? -ne 0 && RESULT=1
-
-python test/test_inference.py
-test $? -ne 0 && RESULT=1
+find test -name '*.py' -print | egrep -v '(test_autochisq.py|test_fft_unthreaded.py|test_schemes.py)'
+do 
+    echo -e "\\n\\n>> [`date`] running unit test for $prog" >&3
+    python $prog
+    test $? -ne 0 && RESULT=1
+done
 
 # check that all executables that do not require
 # special environments can return a help message
