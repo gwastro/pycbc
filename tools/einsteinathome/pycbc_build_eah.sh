@@ -32,7 +32,7 @@ export FC=gfortran
 
 # compilation environment
 BUILDDIRNAME="pycbc-build"
-LOG_FILE=/tmp/$(mktemp -d -t pycbc-build-log.XXXXXXXXXX)
+LOG_FILE=/tmp/$(mktemp -t pycbc-build-log.XXXXXXXXXX)
 
 # defaults, possibly overwritten by command-line arguments
 cleanup=true # usually, build directories are removed after a successful build
