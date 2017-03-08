@@ -1069,13 +1069,25 @@ echo -e "\\n\\n>> [`date`] ENVIRONMENT ..."
 env
 echo -e "... ENVIRONMENT"
 
+if $silent_build ; then
+    # close stdin and stdout
+    exec 1>&-
+    exec 2>&-
+
+    # open stdout as $LOG_FILE file for read and write.
+    exec 1<>$LOG_FILE
+
+    # redirect stderr to stdout
+    exec 2>&1
+fi
+
 # TEST
-echo -e "\\n\\n>> [`date`] testing local executable"
+echo -e "\\n\\n>> [`date`] testing local executable" >&3
 cd $PREFIX
 ./bin/pycbc_inspiral --help
 
 # BUNDLE DIR
-echo -e "\\n\\n>> [`date`] building pyinstaller spec"
+echo -e "\\n\\n>> [`date`] building pyinstaller spec" >&3
 # create spec file
 if $use_pycbc_pyinstaller_hooks; then
     export NOW_BUILDING=NULL
@@ -1091,7 +1103,7 @@ if $verbose_pyinstalled_python; then
     sed -i~ 's%exe = EXE(pyz,%options = [ ("v", None, "OPTION"), ("W error", None, "OPTION") ]\
 exe = EXE(pyz, options,%' pycbc_inspiral.spec
 fi
-echo -e "\\n\\n>> [`date`] running pyinstaller"
+echo -e "\\n\\n>> [`date`] running pyinstaller" >&3
 pyinstaller pycbc_inspiral.spec
 
 cd dist/pycbc_inspiral
@@ -1116,12 +1128,12 @@ if test ".$appendix" = "._OSX64"; then
 fi
 
 # TEST BUNDLE
-echo -e "\\n\\n>> [`date`] testing"
+echo -e "\\n\\n>> [`date`] Testing pycbc_inspiral bundle" >&3
 ./pycbc_inspiral --help
 cd ..
 
 # build zip file from dir
-echo -e "\\n\\n>> [`date`] zip archive"
+echo -e "\\n\\n>> [`date`] Creating zip archive from directory" >&3
 zip -r pycbc_inspiral$appendix.zip pycbc_inspiral
 
 # if the executable is "pycbc_inspiral.exe", add a "XML soft link" "pycbc_inspiral" to the bundle for the wrapper
@@ -1138,7 +1150,7 @@ mkdir -p test
 cd test
 
 if $run_analysis; then
-echo -e "\\n\\n>> [`date`] running analysis"
+echo -e "\\n\\n>> [`date`] running analysis" >&3
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
 if check_md5 "$p" "$md5"; then
@@ -1244,21 +1256,6 @@ fi
 
 n_runs=${#bank_array[@]}
 
-if $silent_build ; then
-    LOG_FILE=$(mktemp -t pycbc-build-log.XXXXXXXXXX)
-    echo -e "\\n\\n>> [`date`] writing build logs to $LOG_FILE"
-
-    # close stdin and stdout
-    exec 1>&-
-    exec 2>&-
-
-    # open stdout as $LOG_FILE file for read and write.
-    exec 1<>$LOG_FILE
-
-    # redirect stderr to stdout
-    exec 2>&1
-fi
-
 for (( i=0; i<${n_runs}; i++ ))
 do
     rm -f H1-INSPIRAL-OUT.hdf
@@ -1309,28 +1306,20 @@ do
       --verbose 2>&1
 done
 
-if $silent_build ; then
-    # redirect stdout and stderr back to the screen
-    exec 1>&- 
-    exec 2>&- 
-    exec 1>&3
-    exec 2>&4
-fi
-
 # test for GW150914
-echo -e "\\n\\n>> [`date`] test for GW150914"
+echo -e "\\n\\n>> [`date`] test for GW150914" >&3
 python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRAL-OUT.hdf
 
 fi # if $run_analysis
 
 # zip weave cache
-echo -e "\\n\\n>> [`date`] zipping weave cache"
+echo -e "\\n\\n>> [`date`] zipping weave cache" >&3
 cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
 rm -f "$cache"
 # Fetch any extra libraries specified on the command line
 if [ ! -z ${extra_libs} ] ; then
   curl --ftp-pasv --insecure -o extra_libs.tar.gz ${extra_libs}
-  echo -e "\\n\\n>> [`date`] adding extra libraries from ${extra_libs}"
+  echo -e "\\n\\n>> [`date`] adding extra libraries from ${extra_libs}" >&3
   tar -C pycbc_inspiral/ -zxvf extra_libs.tar.gz
 fi
 # addin all ROM files to the cache would blow it up to >300MB, so for now add only the one
@@ -1342,7 +1331,7 @@ zip -r "$cache" pycbc_inspiral SEOBNRv2ChirpTimeSS.dat
 if $build_gating_tool; then
     # restore unpatched pyinstaller version
     if $patch_pyinstaller_bootloader; then
-        echo -e "\\n\\n>> [`date`] restore unpatched pyinstaller version"
+        echo -e "\\n\\n>> [`date`] restore unpatched pyinstaller version" >&3
         cd $SOURCE/pyinstaller
         xargs rm -f < installed-files.txt
         tar -xPzf ../pyinstaller-clean-installed.tar.gz
@@ -1351,7 +1340,7 @@ if $build_gating_tool; then
     export NOW_BUILDING=NULL
     cd "$ENVIRONMENT"
 
-    echo -e "\\n\\n>> [`date`] build pycbc_condition_strain bundle"
+    echo -e "\\n\\n>> [`date`] build pycbc_condition_strain bundle" >&3
     pyinstaller \
         --additional-hooks-dir $hooks/hooks \
         --runtime-hook $hooks/runtime-tkinter.py \
@@ -1359,14 +1348,14 @@ if $build_gating_tool; then
         --hidden-import=pkg_resources $hidden_imports \
         --onefile ./bin/pycbc_condition_strain
 
-    echo -e "\\n\\n>> [`date`] building pycbc_inspiral_osg pyinstaller onefile spec"
+    echo -e "\\n\\n>> [`date`] building pycbc_inspiral_osg pyinstaller onefile spec" >&3
     pyi-makespec \
         --additional-hooks-dir $hooks/hooks \
         --runtime-hook $hooks/runtime-tkinter.py \
         --hidden-import=pkg_resources $hidden_imports \
         --onefile ./bin/pycbc_inspiral --name pycbc_inspiral_osg
 
-    echo -e ">> [`date`] patching pyinstaller spec"
+    echo -e ">> [`date`] patching pyinstaller spec" >&3
     mv pycbc_inspiral_osg.spec pycbc_inspiral_osg.spec1
     ls $SOURCE/test/pycbc_inspiral/ |
         sed "s%.*%a.datas += [('&','$SOURCE/test/pycbc_inspiral/&','DATA')]%" > pycbc_inspiral_osg.spec2
@@ -1376,12 +1365,20 @@ if $build_gating_tool; then
     awk '/exe = EXE/ { while (getline l < "pycbc_inspiral_osg.spec2") {print l} }; {print}' \
         pycbc_inspiral_osg.spec1 > pycbc_inspiral_osg.spec
 
-    echo -e ">> [`date`] running pyinstaller"
+    echo -e ">> [`date`] running pyinstaller" >&3
     pyinstaller pycbc_inspiral_osg.spec
 
     if echo ".$pycbc_tag" | egrep '^\.v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
         mv dist/pycbc_inspiral_osg "dist/pycbc_inspiral_osg_$pycbc_tag"
     fi
+fi
+
+if $silent_build ; then
+    # redirect stdout and stderr back to the screen
+    exec 1>&-
+    exec 2>&-
+    exec 1>&3
+    exec 2>&4
 fi
 
 # remove lock
