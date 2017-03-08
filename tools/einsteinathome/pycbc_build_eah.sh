@@ -52,6 +52,8 @@ numpy_from="pip-install" # "tarball"
 scipy_from="pip-install" # "git"
 build_gsl=true
 build_swig=true
+build_pcre=false
+build_fftw=true
 build_framecpp=false
 build_preinst_before_lalsuite=true
 build_subprocess32=false
@@ -112,7 +114,11 @@ elif grep -q "Ubuntu 12" /etc/issue ; then
     link_gcc_version=4.6
     gcc_path="/usr/bin"
     build_ssl=true
+    build_gsl=false
+    build_lapack=false
+    build_fftw=true # XXX CHANGE TO FALSE FOR TRAVIS
     build_python=true
+    build_pcre=true
     pyinstaller_lsb="--no-lsb"
     build_gating_tool=false
     appendix="_Linux64"
@@ -494,30 +500,28 @@ else # if $BUILDDIRNAME-preinst.tgz
     fi
 
     # FFTW
-    p=fftw-3.3.5
-    echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz ||
-        wget $wget_opts $aei/$p.tar.gz ||
-        wget $wget_opts ftp://ftp.fftw.org/pub/fftw/$p.tar.gz
-    rm -rf $p
-    tar -xzf $p.tar.gz
-    cd $p
-    if test ".$fftw_cflags" = "."; then
-        ./configure $shared $static --prefix="$PREFIX" --enable-sse2 $fftw_flags
-    else
-        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared $static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+    if $build_fftw
+        p=fftw-3.3.5
+        echo -e "\\n\\n>> [`date`] building $p"
+        test -r $p.tar.gz ||
+            wget $wget_opts $aei/$p.tar.gz ||
+            wget $wget_opts ftp://ftp.fftw.org/pub/fftw/$p.tar.gz
+        rm -rf $p
+        tar -xzf $p.tar.gz
+        cd $p
+        if test ".$fftw_cflags" = "."; then
+            ./configure $shared $static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+        else
+            ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared $static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+        fi
+        make
+        make install
+        if test ".$fftw_cflags" = "."; then
+            ./configure $shared $static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
+        else
+            ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared $static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
+        fi
     fi
-    make
-    make install
-    if test ".$fftw_cflags" = "."; then
-        ./configure $shared $static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
-    else
-        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared $static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
-    fi
-    make
-    make install
-    cd ..
-    $cleanup && rm -rf $p
 
     # ZLIB
     p=zlib-1.2.8
@@ -664,6 +668,10 @@ Libs: -L${libdir} -lhdf5' |
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
+        if $build_pcre; then
+            test -r pcre-8.40.tar.gz || wget $wget_opts "https://ftp.pcre.org/pub/pcre/pcre-8.40.tar.gz"
+            ./Tools/pcre-build.sh
+        fi
 	./configure --prefix=$PREFIX --without-tcl --with-python --without-python3 --without-perl5 --without-octave \
             --without-scilab --without-java --without-javascript --without-gcj --without-android --without-guile \
             --without-mzscheme --without-ruby --without-php --without-ocaml --without-pike --without-chicken \
