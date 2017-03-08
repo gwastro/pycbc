@@ -17,8 +17,8 @@ function exit_on_error {
   rm -f "$PYCBC/lock"
   if $silent_build ; then
       if [ -f $LOG_FILE ] ; then
-          echo "--- Error or interrupt: dumping build log ---------------------" >&4
-          cat $LOG_FILE >&4
+          echo "--- Error or interrupt: dumping last 100 lines of log ---------" >&4
+          tail -n 100 $LOG_FILE >&4
           echo "---------------------------------------------------------------" >&4
           rm -f $LOG_FILE
       fi
