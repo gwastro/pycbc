@@ -39,11 +39,11 @@ extra_approx=""
 lal_data_path="."
 
 # defaults, possibly overwritten by OS-specific settings
-build_gcc=false
 build_ssl=false
 build_python=false
 fftw_flags=--enable-avx
 shared="--enable-shared"
+static="--disable-static"
 build_dlls=false
 rebase_dlls_before_pycbc=false
 build_lapack=true
@@ -204,6 +204,8 @@ usage="
 
     --no-pycbc-update               don't update local pycbc repo
 
+    --no-lalsuite-update            don't update local lalsuite repo
+
     --bema-testing                  use einsteinathome_testing branch of bema-ligo/pycbc repo
 
     --no-cleanup                    keep build directories after successful build for later inspection
@@ -227,6 +229,7 @@ for i in $*; do
         --force-debian4) ;;
         --print-env) ;;
         --no-pycbc-update) pycbc_branch="HEAD";;
+        --no-lalsuite-update) no_lalsuite_update=true;;
         --bema-testing)
             pycbc_branch=einsteinathome_testing
             pycbc_remote=bema-ligo;;
@@ -305,7 +308,7 @@ aei="http://www.aei.mpg.de/~bema"
 
 # circumvent old certificate chains on old systems
 export GIT_SSL_NO_VERIFY=true
-wget_opts="-c --passive-ftp --no-check-certificate"
+wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
 export PIP_TRUSTED_HOST="pypi.python.org github.com"
 
 # use previously compiled scipy, lalsuite etc. if available
@@ -475,7 +478,7 @@ else # if $BUILDDIRNAME-preinst.tgz
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
-	./configure $shared --enable-static --prefix="$PREFIX"
+	./configure $shared $static --prefix="$PREFIX"
 	make
 	make install
 	cd ..
@@ -492,16 +495,16 @@ else # if $BUILDDIRNAME-preinst.tgz
     tar -xzf $p.tar.gz
     cd $p
     if test ".$fftw_cflags" = "."; then
-        ./configure $shared --enable-static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+        ./configure $shared $static --prefix="$PREFIX" --enable-sse2 $fftw_flags
     else
-        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared --enable-static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared $static --prefix="$PREFIX" --enable-sse2 $fftw_flags
     fi
     make
     make install
     if test ".$fftw_cflags" = "."; then
-        ./configure $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
+        ./configure $shared $static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
     else
-        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
+        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared $static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
     fi
     make
     make install
@@ -542,7 +545,7 @@ Cflags: -I${includedir}' |
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
-	./configure $shared --enable-static --prefix="$PREFIX"
+	./configure $shared $static --prefix="$PREFIX"
 	make
 	make install
 	mkdir -p "$PREFIX/lib/pkgconfig"
@@ -569,7 +572,7 @@ Libs: -L${libdir} -lhdf5' |
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
-	./configure $shared --enable-static --prefix="$PREFIX"
+	./configure $shared $static --prefix="$PREFIX"
 	make
 	make install
 	cd ..
@@ -588,7 +591,7 @@ Libs: -L${libdir} -lhdf5' |
         rm -rf $p
         tar -xzf $p.tar.gz
         cd $p
-        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit $shared --enable-static --prefix="$PREFIX" # --disable-cxx11
+        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit $shared $static --prefix="$PREFIX" # --disable-cxx11
         sed -i~ '/^CXXSTD[A-Z]*FLAGS=/d' ./libraries/ldastoolsal/ldastoolsal*.pc
         make
         make -k install || true
@@ -615,7 +618,7 @@ Libs: -L${libdir} -lhdf5' |
                 echo 'libFrame_la_LDFLAGS += -no-undefined' >> $i
             done
         fi
-        ./configure $shared --enable-static --prefix="$PREFIX"
+        ./configure $shared $static --prefix="$PREFIX"
         make
         make install
         mkdir -p "$PREFIX/lib/pkgconfig"
@@ -637,7 +640,7 @@ Libs: -L${libdir} -lhdf5' |
 	    echo 'libmetaio_la_LDFLAGS += -no-undefined' >> $i
 	done
     fi
-    ./configure $shared --enable-static --prefix="$PREFIX"
+    ./configure $shared $static --prefix="$PREFIX"
     make
     make install
     cd ..
@@ -647,7 +650,9 @@ Libs: -L${libdir} -lhdf5' |
     if $build_swig; then
 	p=swig-3.0.7
 	echo -e "\\n\\n>> [`date`] building $p"
-	test -r $p.tar.gz || wget $wget_opts "$aei/$p.tar.gz"
+	test -r $p.tar.gz ||
+            wget $wget_opts "$aei/$p.tar.gz" ||
+            wget $wget_opts "$atlas/tarballs/$p.tar.gz"
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
@@ -676,7 +681,9 @@ else
 
     # LALSUITE
     echo -e "\\n\\n>> [`date`] building lalsuite"
-    if test -d lalsuite/.git; then
+    if [ ".$no_lalsuite_update" != "." ]; then
+	cd lalsuite
+    elif test -d lalsuite/.git; then
         cd lalsuite
         git reset --hard HEAD
         if [ ".$lalsuite_branch" != ".HEAD" ]; then
@@ -701,9 +708,38 @@ else
     echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
     sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
     if $build_dlls; then
+	git apply <<'EOF' || true
+From accb37091abbc8d8776edfb3484259f6059c4e25 Mon Sep 17 00:00:00 2001
+From: Karl Wette <karl.wette@ligo.org>
+Date: Mon, 6 Mar 2017 20:18:07 +0100
+Subject: [PATCH] SWIG: add Python libraries to linker flags
+
+- Some platforms require them, e.g. cygwin
+---
+ gnuscripts/lalsuite_swig.m4 | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/gnuscripts/lalsuite_swig.m4 b/gnuscripts/lalsuite_swig.m4
+index 831ff4a..2a2695e 100644
+--- a/gnuscripts/lalsuite_swig.m4
++++ b/gnuscripts/lalsuite_swig.m4
+@@ -493,6 +493,8 @@ sys.stdout.write(' -L' + cfg.get_python_lib())
+ sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
+ sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1))
+ sys.stdout.write(' -L' + cfg.get_config_var('LIBDIR'))
++sys.stdout.write(' -lpython%i.%i' % (sys.version_info.major, sys.version_info.minor))
++sys.stdout.write(' ' + cfg.get_config_var('LIBS'))
+ EOD`]
+     AS_IF([test $? -ne 0],[
+       AC_MSG_ERROR([could not determine Python linker flags])
+-- 
+2.7.4
+
+EOF
 	fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
 	    sed -n 's/.*lib_LTLIBRARIES *= *\(.*\).la/\1_la_LDFLAGS += -no-undefined/p' $i >> $i
 	done
+	sed -i~ 's/^cs_gamma_la_LDFLAGS = .*/& -no-undefined -lpython2.7/' lalburst/python/lalburst/Makefile.am
 	sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/;
              s/\(swiglal_python_la_LIBADD = .*\)$/\1 -lpython2.7/;
              s/swiglal_python\.la/libswiglal_python.la/g;
@@ -719,7 +755,7 @@ else
     rm -rf lalsuite-build
     mkdir lalsuite-build
     cd lalsuite-build
-    ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared --enable-static --prefix="$PREFIX" --disable-silent-rules \
+    ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
 	--enable-swig-python --disable-lalxml --disable-lalpulsar --disable-laldetchar --disable-lalstochastic --disable-lalinference \
 	--disable-lalapps --disable-pylal
     if $build_dlls; then
