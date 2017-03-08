@@ -133,7 +133,7 @@ elif grep -q "Ubuntu 12" /etc/issue ; then
     pyinstaller_lsb="--no-lsb"
     build_gating_tool=false
     appendix="_Linux64"
-    if test x$TRAVIS_OS_NAME = xLinux ; then
+    if test x$TRAVIS_OS_NAME = xlinux ; then
         build_fftw=false
         build_hdf5=false
         build_ssl=false
