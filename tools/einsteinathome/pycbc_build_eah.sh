@@ -16,11 +16,16 @@ check_md5() {
 function exit_on_error {
   rm -f "$PYCBC/lock"
   if $silent_build ; then
-    cat $LOG_FILE > /dev/stderr
+      if [ -f $LOG_FILE ] ; then
+          echo "--- Error or interrupt: dumping build log ---------------------" >&4
+          cat $LOG_FILE >&4
+          echo "---------------------------------------------------------------" >&4
+          rm -f $LOG_FILE
+      fi
   fi
   exit 1
 }
-trap exit_on_error ERR
+trap exit_on_error ERR INT
 
 echo -e ">> [`date`] Start $0 $*"
 
@@ -32,7 +37,6 @@ export FC=gfortran
 
 # compilation environment
 BUILDDIRNAME="pycbc-build"
-LOG_FILE=/tmp/$(mktemp -t pycbc-build-log.XXXXXXXXXX)
 
 # defaults, possibly overwritten by command-line arguments
 cleanup=true # usually, build directories are removed after a successful build
@@ -74,7 +78,7 @@ pyinstaller21_hacks=false # use hacks & workarounds necessary for PyInstaller <3
 use_pycbc_pyinstaller_hooks=true
 build_gating_tool=false
 run_analysis=true
-slient_build=false
+silent_build=false
 
 if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
@@ -287,7 +291,7 @@ for i in $*; do
         --with-extra-bank=*) extra_bank="$extra_bank `echo $i|sed 's/^--with-extra-bank=//'`";;
         --with-extra-approximant=*) extra_approx="${extra_approx}`echo $i|sed 's/^--with-extra-approximant=//'` ";;
         --with-lal-data-path=*) lal_data_path="`echo $i|sed 's/^--with-lal-data-path=//'`";;
-        --slient-build) silent_build=true;;
+        --silent-build) silent_build=true;;
         --help) echo -e "Options:\n$usage">&2; exit 0;;
         *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
     esac
@@ -338,15 +342,34 @@ export GIT_SSL_NO_VERIFY=true
 wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
 export PIP_TRUSTED_HOST="pypi.python.org github.com"
 
+if $silent_build ; then
+    LOG_FILE=$(mktemp -t pycbc-build-log.XXXXXXXXXX)
+    echo -e "\\n\\n>> [`date`] writing build logs to $LOG_FILE"
+
+    # make a copy of stdin and stdout and close them
+    exec 3>&1-
+    exec 4>&2-
+
+    # open stdout as $LOG_FILE file for read and write.
+    exec 1<>$LOG_FILE
+
+    # redirect stderr to stdout
+    exec 2>&1
+else
+    # make a copy of stdin and stdout
+    exec 3>&1
+    exec 4>&2
+fi
+
 # use previously compiled scipy, lalsuite etc. if available
 if test -r "$SOURCE/$BUILDDIRNAME-preinst.tgz" -o -r "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"; then
 
     rm -rf "$PYCBC"
     if test -r "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"; then
-        echo -e "\\n\\n>> [`date`] using $BUILDDIRNAME-preinst-lalsuite.tgz"
+        echo -e "\\n\\n>> [`date`] using $BUILDDIRNAME-preinst-lalsuite.tgz" >&3
         tar -xzf "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"
     else
-        echo -e "\\n\\n>> [`date`] using $BUILDDIRNAME-preinst.tgz"
+        echo -e "\\n\\n>> [`date`] using $BUILDDIRNAME-preinst.tgz" >&3
         tar -xzf "$SOURCE/$BUILDDIRNAME-preinst.tgz"
     fi
     # set up virtual environment
@@ -363,19 +386,6 @@ if test -r "$SOURCE/$BUILDDIRNAME-preinst.tgz" -o -r "$SOURCE/$BUILDDIRNAME-prei
 
 else # if $BUILDDIRNAME-preinst.tgz
 
-    if $silent_build ; then
-        # close STDOUT file descriptor
-        exec 1<&-
-        # close STDERR FD
-        exec 2<&-
-
-        # Open STDOUT as $LOG_FILE file for read and write.
-        exec 1<>$LOG_FILE
-
-        # Redirect STDERR to STDOUT
-        exec 2>&1
-    fi
-
     cd "$SOURCE"
 
     # OpenSSL
@@ -383,7 +393,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     # p=openssl-1.0.2e # compile error on pyOpenSSL 0.13:
     # pycbc/include/openssl/x509.h:751: note: previous declaration X509_REVOKED_ was here
 	p=openssl-1.0.1p
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts $aei/$p.tar.gz
 	rm -rf $p
 	tar -xzvf $p.tar.gz  &&
@@ -399,7 +409,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     if $build_python; then
 	v=2.7.10
 	p=Python-$v
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tgz || wget $wget_opts http://www.python.org/ftp/python/$v/$p.tgz
 	rm -rf $p
 	tar -xzf $p.tgz
@@ -412,9 +422,9 @@ else # if $BUILDDIRNAME-preinst.tgz
 	cd ..
 	$cleanup && rm -rf $p
 	python -m ensurepip
-	echo -e "\\n\\n>> [`date`] pip install --upgrade pip"
+	echo -e "\\n\\n>> [`date`] pip install --upgrade pip" >&3
 	pip install --upgrade pip
-	echo -e "\\n\\n>> [`date`] pip install virtualenv"
+	echo -e "\\n\\n>> [`date`] pip install virtualenv" >&3
 	pip install virtualenv
     fi
 
@@ -428,11 +438,11 @@ else # if $BUILDDIRNAME-preinst.tgz
 
     # pyOpenSSL-0.13
     if [ "$pyssl_from" = "pip-install" ] ; then
-	echo -e "\\n\\n>> [`date`] pip install pyOpenSSL==0.13"
+	echo -e "\\n\\n>> [`date`] pip install pyOpenSSL==0.13" >&3
 	pip install pyOpenSSL==0.13
     else
 	p=pyOpenSSL-0.13
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts "$pypi/source/p/pyOpenSSL/$p.tar.gz"
 	rm -rf $p
 	tar -xzf $p.tar.gz
@@ -448,7 +458,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     # LAPACK & BLAS
     if $build_lapack; then
 	p=lapack-3.6.0
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tgz || wget $wget_opts http://www.netlib.org/lapack/$p.tgz
 	rm -rf $p
 	tar -xzf $p.tgz
@@ -466,7 +476,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     # NUMPY
     if [ "$numpy_from" = "tarball" ]; then
 	p=numpy-1.9.3
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts $pypi/source/n/numpy/$p.tar.gz
 	rm -rf $p
 	tar -xzf $p.tar.gz 
@@ -476,22 +486,22 @@ else # if $BUILDDIRNAME-preinst.tgz
 	cd ..
 	$cleanup && rm -rf $p
     else
-	echo -e "\\n\\n>> [`date`] pip install numpy==1.9.3"
+	echo -e "\\n\\n>> [`date`] pip install numpy==1.9.3" >&3
 	pip install numpy==1.9.3
     fi
 
-    echo -e "\\n\\n>> [`date`] pip install nose"
+    echo -e "\\n\\n>> [`date`] pip install nose" >&3
     pip install nose
-    echo -e "\\n\\n>> [`date`] pip install Cython==0.23.2"
+    echo -e "\\n\\n>> [`date`] pip install Cython==0.23.2" >&3
     pip install Cython==0.23.2
 
     # SCIPY
     if [ "$scipy_from" = "pip-install" ] ; then
-	echo -e "\\n\\n>> [`date`] pip install scipy==0.16.0"
+	echo -e "\\n\\n>> [`date`] pip install scipy==0.16.0" >&3
 	pip install scipy==0.16.0
     else
 	p=scipy-0.16.0
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	if test -d scipy/.git; then
 	    cd scipy
 	else
@@ -508,14 +518,14 @@ else # if $BUILDDIRNAME-preinst.tgz
     fi
 
     # this test will catch scipy build errors that would not emerge before running pycbc_inspiral
-    echo -e "\\n\\n>> [`date`] Testing: python -c 'from scipy.io.wavfile import write as write_wav'"
+    echo -e "\\n\\n>> [`date`] Testing: python -c 'from scipy.io.wavfile import write as write_wav'" >&3
     python -c 'from scipy.io.wavfile import write as write_wav'
     # python -c 'import scipy; scipy.test(verbose=2);'
 
     # GSL
     if $build_gsl; then
 	p=gsl-1.16
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts ftp://ftp.fu-berlin.de/unix/gnu/gsl/$p.tar.gz
 	rm -rf $p
 	tar -xzf $p.tar.gz
@@ -530,7 +540,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     # FFTW
     if $build_fftw ; then
         p=fftw-3.3.5
-        echo -e "\\n\\n>> [`date`] building $p"
+        echo -e "\\n\\n>> [`date`] building $p" >&3
         test -r $p.tar.gz ||
             wget $wget_opts $aei/$p.tar.gz ||
             wget $wget_opts ftp://ftp.fftw.org/pub/fftw/$p.tar.gz
@@ -553,7 +563,7 @@ else # if $BUILDDIRNAME-preinst.tgz
 
     # ZLIB
     p=zlib-1.2.8
-    echo -e "\\n\\n>> [`date`] building $p"
+    echo -e "\\n\\n>> [`date`] building $p" >&3
     test -r $p.tar.gz || wget $wget_opts $aei/$p.tar.gz
     rm -rf $p
     tar -xzf $p.tar.gz
@@ -578,7 +588,7 @@ Cflags: -I${includedir}' |
     # HDF5
     if $build_hdf5; then
 	p=hdf5-1.8.13
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz ||
             wget $wget_opts $aei/$p.tar.gz ||
             wget $wget_opts https://support.hdfgroup.org/ftp/HDF5/releases/$p/src/$p.tar.gz
@@ -607,7 +617,7 @@ Libs: -L${libdir} -lhdf5' |
     # FREETYPE
     if $build_freetype; then
 	p=freetype-2.3.0
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts http://download.savannah.gnu.org/releases/freetype/freetype-old/$p.tar.gz
 	rm -rf $p
 	tar -xzf $p.tar.gz
@@ -619,14 +629,14 @@ Libs: -L${libdir} -lhdf5' |
 	$cleanup && rm -rf $p
     fi
 
-    echo -e "\\n\\n>> [`date`] pip install --upgrade distribute"
+    echo -e "\\n\\n>> [`date`] pip install --upgrade distribute" >&3
     pip install --upgrade distribute
 
     if $build_framecpp; then
 
         # FrameCPP
         p=ldas-tools-2.4.2
-        echo -e "\\n\\n>> [`date`] building $p"
+        echo -e "\\n\\n>> [`date`] building $p" >&3
         test -r $p.tar.gz || wget $wget_opts http://software.ligo.org/lscsoft/source/$p.tar.gz
         rm -rf $p
         tar -xzf $p.tar.gz
@@ -642,7 +652,7 @@ Libs: -L${libdir} -lhdf5' |
 
         # LIBFRAME / FrameL
         p=libframe-8.30
-        echo -e "\\n\\n>> [`date`] building $p"
+        echo -e "\\n\\n>> [`date`] building $p" >&3
         test -r $p.tar.gz || wget $wget_opts http://lappweb.in2p3.fr/virgo/FrameL/$p.tar.gz
         rm -rf $p
         tar -xzf $p.tar.gz
@@ -670,7 +680,7 @@ Libs: -L${libdir} -lhdf5' |
 
     # METAIO
     p=metaio-8.3.0
-    echo -e "\\n\\n>> [`date`] building $p"
+    echo -e "\\n\\n>> [`date`] building $p" >&3
     test -r $p.tar.gz || wget $wget_opts https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/$p.tar.gz
     rm -rf $p
     tar -xzf $p.tar.gz
@@ -689,7 +699,7 @@ Libs: -L${libdir} -lhdf5' |
     # SWIG
     if $build_swig; then
 	p=swig-3.0.7
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz ||
             wget $wget_opts "$aei/$p.tar.gz" ||
             wget $wget_opts "$atlas/tarballs/$p.tar.gz"
@@ -724,7 +734,7 @@ if test -r "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"; then
 else
 
     # LALSUITE
-    echo -e "\\n\\n>> [`date`] building lalsuite"
+    echo -e "\\n\\n>> [`date`] building lalsuite" >&3
     if [ ".$no_lalsuite_update" != "." ]; then
 	cd lalsuite
     elif test -d lalsuite/.git; then
@@ -749,7 +759,7 @@ else
             git checkout "$lalsuite_branch"
         fi
     fi
-    echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
+    echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`" >&3
     sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
     if $build_dlls; then
 	git apply <<'EOF' || true
@@ -815,7 +825,7 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
     cd ..
     $cleanup && rm -rf lalsuite-build
 
-    echo -e "\\n\\n>> [`date`] building $BUILDDIRNAME-preinst-lalsuite.tgz"
+    echo -e "\\n\\n>> [`date`] building $BUILDDIRNAME-preinst-lalsuite.tgz" >&3
     pushd "$PYCBC/.."
     tar -czf "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$BUILDDIRNAME"
     popd
@@ -823,9 +833,9 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
 fi # if $BUILDDIRNAME-preinst.tgz
 
 # Pegasus
-v=4.7.0
+v=4.7.4
 p=pegasus-python-source-$v
-echo -e "\\n\\n>> [`date`] building $p"
+echo -e "\\n\\n>> [`date`] building $p" >&3
 test -r $p.tar.gz ||
     wget $wget_opts "$aei/$p.tar.gz" ||
     wget $wget_opts http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz
@@ -834,7 +844,7 @@ pip install --no-deps $p.tar.gz
 # PyInstaller 9d0e0ad4 crashes with newer Jinja2,
 # so install this old version before it gets pulled in from PyCBC
 if $pyinstaller21_hacks; then
-    echo -e "\\n\\n>> [`date`] pip install Jinja2==2.8.1"
+    echo -e "\\n\\n>> [`date`] pip install Jinja2==2.8.1" >&3
     pip install Jinja2==2.8.1
 fi
 
@@ -842,7 +852,7 @@ fi
 # would be needed on old Linux with matplotlib>=2.0.0
 if $build_subprocess32; then
     p=subprocess32-3.2.7
-    echo -e "\\n\\n>> [`date`] building $p"
+    echo -e "\\n\\n>> [`date`] building $p" >&3
     test -r $p.tar.gz ||
         wget $wget_opts "$aei/$p.tar.gz" ||
         wget $wget_opts $pypi/b8/2f/49e53b0d0e94611a2dc624a1ad24d41b6d94d0f1b0a078443407ea2214c2/$p.tar.gz
@@ -859,16 +869,17 @@ fi
 # doing this here _might_ fix a recurring problem with fork+git+PyCBC
 # will be done again after building PyCBC
 if $rebase_dlls_before_pycbc; then
-    echo -e "\\n\\n>> [`date`] Rebasing DLLs"
+    echo -e "\\n\\n>> [`date`] Rebasing DLLs" >&3
     find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
     rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
 fi
 
 if $silent_build ; then
-    exec 1<&-
-    exec 2<&-
-    exec 1<>/dev/stderr
-    exec 2<>/dev/stdout
+    # redirect stdout and stderr back to the screen
+    exec 1>&- 
+    exec 2>&- 
+    exec 1>&3
+    exec 2>&4
 fi
 
 # PyCBC
@@ -1216,11 +1227,26 @@ fi
 
 n_runs=${#bank_array[@]}
 
+if $silent_build ; then
+    LOG_FILE=$(mktemp -t pycbc-build-log.XXXXXXXXXX)
+    echo -e "\\n\\n>> [`date`] writing build logs to $LOG_FILE"
+
+    # close stdin and stdout
+    exec 1>&-
+    exec 2>&-
+
+    # open stdout as $LOG_FILE file for read and write.
+    exec 1<>$LOG_FILE
+
+    # redirect stderr to stdout
+    exec 2>&1
+fi
+
 for (( i=0; i<${n_runs}; i++ ))
 do
     rm -f H1-INSPIRAL-OUT.hdf
-    echo -e "\\n\\n>> [`date`] pycbc_inspiral using --bank-file ${bank_array[$i]} --approximant ${approx_array[$i]}"
-    echo -e "\\n\\n>> [`date`] pycbc_inspiral using ROM data from $lal_data_path"
+    echo -e "\\n\\n>> [`date`] pycbc_inspiral using --bank-file ${bank_array[$i]} --approximant ${approx_array[$i]}" >&3
+    echo -e "\\n\\n>> [`date`] pycbc_inspiral using ROM data from $lal_data_path" >&3
     CPPFLAGS="$CPPFLAGS `python-config --includes`" \
     LAL_DATA_PATH="$lal_data_path" \
       NO_TMPDIR=1 \
@@ -1265,6 +1291,14 @@ do
       --bank-file ${bank_array[$i]} \
       --verbose 2>&1
 done
+
+if $silent_build ; then
+    # redirect stdout and stderr back to the screen
+    exec 1>&- 
+    exec 2>&- 
+    exec 1>&3
+    exec 2>&4
+fi
 
 # test for GW150914
 echo -e "\\n\\n>> [`date`] test for GW150914"
@@ -1335,5 +1369,10 @@ fi
 
 # remove lock
 rm -f "$PYCBC/lock"
+
+# remove log file
+if [ -f $LOG_FILE ] ; then
+    rm -f $LOG_FILE
+fi
 
 echo -e "\\n\\n>> [`date`] Success $0"
