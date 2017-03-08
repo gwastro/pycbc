@@ -502,7 +502,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     fi
 
     # FFTW
-    if $build_fftw
+    if $build_fftw ; then
         p=fftw-3.3.5
         echo -e "\\n\\n>> [`date`] building $p"
         test -r $p.tar.gz ||
