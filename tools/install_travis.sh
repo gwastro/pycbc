@@ -41,5 +41,8 @@ pip install 'setuptools==18.2' --upgrade
 # install pegasus
 pip install http://download.pegasus.isi.edu/pegasus/4.7.4/pegasus-python-source-4.7.4.tar.gz
 
+# install the segment database tools
+pip install git+https://github.com/ligovirgo/dqsegdb@clean_pip_install_1_4_1#egg=dqsegdb
+
 # re-install pycbc
 python setup.py install
