@@ -12,6 +12,8 @@ LOCAL=${PWD}
 # create working dir for build script
 BUILD=${HOME}/build
 mkdir -p ${BUILD}
+export PYTHONUSERBASE=${BUILD}/.local
+export XDG_CACHE_HOME=${BUILD}/.cache
 
 # run the einstein at home build and test script
 pushd ${BUILD}
@@ -29,8 +31,6 @@ export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:$libgfortran_
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 source ${BUILD}/pycbc-build/environment/etc/lalsuite-user-env.sh
 source ${BUILD}/pycbc-build/environment/bin/activate
-export PYTHONUSERBASE=${BUILD}/.local
-export XDG_CACHE_HOME=${BUILD}/.cache
 
 # update setuptools
 pip install --upgrade pip setuptools
