@@ -739,6 +739,7 @@ EOF
 	fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
 	    sed -n 's/.*lib_LTLIBRARIES *= *\(.*\).la/\1_la_LDFLAGS += -no-undefined/p' $i >> $i
 	done
+	sed -i~ 's/^cs_gamma_la_LDFLAGS = .*/& -no-undefined -lpython2.7/' lalburst/python/lalburst/Makefile.am
 	sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/;
              s/\(swiglal_python_la_LIBADD = .*\)$/\1 -lpython2.7/;
              s/swiglal_python\.la/libswiglal_python.la/g;
