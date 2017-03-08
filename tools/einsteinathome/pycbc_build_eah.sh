@@ -130,7 +130,7 @@ elif grep -q "Ubuntu 12" /etc/issue ; then
     build_ssl=true
     build_gsl=false
     build_lapack=false
-    build_fftw=true # XXX CHANGE TO FALSE FOR TRAVIS
+    build_fftw=false
     build_python=true
     build_pcre=true
     pyinstaller_lsb="--no-lsb"
@@ -418,9 +418,7 @@ else # if $BUILDDIRNAME-preinst.tgz
 	rm -rf $p
 	tar -xzf $p.tgz
 	cd $p
-	CPPFLAGS=-I/home/dbrown10/include LDFLAGS=-L/home/dbrown10/lib ./configure $shared --prefix="$PYTHON_PREFIX"
-# XXX FIX FOR TRAVIS
-	#./configure $shared --prefix="$PYTHON_PREFIX"
+	./configure $shared --prefix="$PYTHON_PREFIX"
 	make
 	make install
 	cd ..
