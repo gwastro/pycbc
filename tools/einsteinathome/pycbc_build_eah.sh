@@ -734,7 +734,7 @@ if test -r "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"; then
 else
 
     # LALSUITE
-    echo -e "\\n\\n>> [`date`] building lalsuite" >&3
+    echo -e "\\n\\n>> [`date`] Cloning lalsuite" >&3
     if [ ".$no_lalsuite_update" != "." ]; then
 	cd lalsuite
     elif test -d lalsuite/.git; then
@@ -804,11 +804,13 @@ EOF
     if $build_framecpp; then
 	shared="$shared --enable-framec --disable-framel"
     fi
+    echo -e "\\n\\n>> [`date`] Creating lalsuite configure scripts" >&3
     ./00boot
     cd ..
     rm -rf lalsuite-build
     mkdir lalsuite-build
     cd lalsuite-build
+    echo -e "\\n\\n>> [`date`] Configuring lalsuite" >&3
     ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
 	--enable-swig-python --disable-lalxml --disable-lalpulsar --disable-laldetchar --disable-lalstochastic --disable-lalinference \
 	--disable-lalapps --disable-pylal
@@ -817,7 +819,13 @@ EOF
 extern int setenv(const char *name, const char *value, int overwrite);
 extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
     fi
-    make
+    echo -e "\\n\\n>> [`date`] Building lalsuite" >&3
+    if $silent_build ; then
+        make 2>&1 | tee >(grep Entering >&3 1>&3 2>&3) 
+    else
+        make
+    fi
+    echo -e "\\n\\n>> [`date`] Installing lalsuite" >&3
     make install
     for i in $PREFIX/etc/*-user-env.sh; do
         source "$i"
