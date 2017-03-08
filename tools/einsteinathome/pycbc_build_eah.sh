@@ -378,7 +378,9 @@ else # if $BUILDDIRNAME-preinst.tgz
 	rm -rf $p
 	tar -xzf $p.tgz
 	cd $p
-	./configure $shared --prefix="$PYTHON_PREFIX"
+	CPPFLAGS=-I/home/dbrown10/include LDFLAGS=-L/home/dbrown10/lib ./configure $shared --prefix="$PYTHON_PREFIX"
+# XXX FIX FOR TRAVIS
+	#./configure $shared --prefix="$PYTHON_PREFIX"
 	make
 	make install
 	cd ..
