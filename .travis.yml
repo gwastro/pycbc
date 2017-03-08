@@ -8,6 +8,8 @@ addons:
             - gfortran 
             - libgsl0-dev
             - libsqlite3-dev
+            - libhdf5-serial-dev
+            - libssl-dev
 cache:
   directories:
     - $HOME/build

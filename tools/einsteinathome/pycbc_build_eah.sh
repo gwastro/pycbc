@@ -128,16 +128,20 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8
 elif grep -q "Ubuntu 12" /etc/issue ; then
     link_gcc_version=4.6
     gcc_path="/usr/bin"
-    build_ssl=true
-    build_gsl=false
-    build_lapack=false
-    build_fftw=false
     build_python=true
     build_pcre=true
     pyinstaller_lsb="--no-lsb"
     build_gating_tool=false
-    build_progress_fstab=false
     appendix="_Linux64"
+    if test x$TRAVIS_OS_NAME = xLinux ; then
+        build_fftw=false
+        build_hdf5=false
+        build_ssl=false
+        build_lapack=false
+        build_gsl=false
+        build_wrapper=false
+        build_progress_fstab=false
+    fi
 elif test "`uname -s`" = "Darwin" ; then # OSX
     echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
     export FC=gfortran-mp-4.8
