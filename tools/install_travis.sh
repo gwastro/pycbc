@@ -4,7 +4,8 @@ set -ev
 
 # determine the git branch and origin
 git branch -vvv
-PYCBC_MERGE_REF=`cut -f3 .git/FETCH_HEAD | cut -d " " -f1 | tr -d "'"`
+#PYCBC_MERGE_REF=`cut -f3 .git/FETCH_HEAD | cut -d " " -f1 | tr -d "'"`
+PYCBC_MERGE_REF="refs/pull/1505/merge"
 
 # store the travis test directory
 LOCAL=${PWD}
@@ -15,7 +16,7 @@ mkdir -p ${BUILD}
 
 # run the einstein at home build and test script
 pushd ${BUILD}
-${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=a2a5a476d33f169b8749e2840c306a48df63c936 --pycbc-fetch-ref ${PYCBC_MERGE_REF} --clean-pycbc --silent-build --no-analysis
+${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=a2a5a476d33f169b8749e2840c306a48df63c936 --pycbc-fetch-ref=${PYCBC_MERGE_REF} --clean-pycbc --silent-build --no-analysis
 popd
 
 # setup the pycbc environment to run the additional travis tests
