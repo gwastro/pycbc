@@ -43,6 +43,7 @@ cleanup=true # usually, build directories are removed after a successful build
 verbose_pyinstalled_python=false
 pycbc_branch=master
 pycbc_remote=ligo-cbc
+pycbc_fetch_ref=""
 scratch_pycbc=false
 libgfortran=libgfortran.so
 extra_libs=""
@@ -250,6 +251,8 @@ usage="
     --no-analysis                   for testing, don't run analysis, assume weave cache is already there
 
     --silent-build                  do not brint build messages unless there is an error
+
+    --pycbc-fetch-ref               fetch and use a specific reference for pycbc
 "
 
 # handle command-line arguments, possibly overriding above settings
@@ -271,6 +274,7 @@ for i in $*; do
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz";;
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
         --pycbc-commit=*) pycbc_commit="`echo $i|sed 's/^--pycbc-commit=//'`";;
+        --pycbc-fetch-ref=*) pycbc_fetch_ref="`echo $i|sed 's/^--pycbc-fetch-ref=//'`";;
         --clean-pycbc) scratch_pycbc=true;;
         --clean-weave-cache) rm -rf "$SOURCE/test/pycbc_inspiral";;
         --clean-sundays)
@@ -924,6 +928,11 @@ else
     git remote update
     git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
+if test "x$pycbc_fetch_ref" != "x" ; then
+    git fetch origin +${pycbc_fetch_ref}
+    git checkout FETCH_HEAD
+fi
+
 echo -e "[`date`] install pkgconfig beforehand"
 pip install `grep -w ^pkgconfig requirements.txt||echo pkgconfig==1.1.0`
 if $pyinstaller21_hacks; then
