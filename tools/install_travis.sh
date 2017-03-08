@@ -4,8 +4,7 @@ set -ev
 
 # determine the git branch and origin
 git branch -vvv
-#PYCBC_MERGE_REF=`cut -f3 .git/FETCH_HEAD | cut -d " " -f1 | tr -d "'"`
-PYCBC_MERGE_REF="refs/pull/1505/merge"
+PYCBC_MERGE_REF=`cut -f3 .git/FETCH_HEAD | cut -d " " -f1 | tr -d "'"`
 
 # store the travis test directory
 LOCAL=${PWD}
