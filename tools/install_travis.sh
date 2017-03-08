@@ -15,7 +15,7 @@ mkdir -p ${BUILD}
 
 # run the einstein at home build and test script
 pushd ${BUILD}
-${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=a2a5a476d33f169b8749e2840c306a48df63c936 --clean-pycbc --pycbc-commit=${PYCBC_MERGE_COMMIT}
+${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh --silent-build --lalsuite-commit=a2a5a476d33f169b8749e2840c306a48df63c936 --clean-pycbc
 popd
 
 # setup the pycbc environment to run the additional travis tests

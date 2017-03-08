@@ -13,7 +13,14 @@ check_md5() {
     test ".$2" != ".$md5s"
 }
 
-trap 'rm -f "$PYCBC/lock"; exit 1' ERR
+function exit_on_error {
+  rm -f "$PYCBC/lock"
+  if $silent_build ; then
+    cat $LOG_FILE > /dev/stderr
+  fi
+  exit 1
+}
+trap exit_on_error ERR
 
 echo -e ">> [`date`] Start $0 $*"
 
@@ -25,6 +32,7 @@ export FC=gfortran
 
 # compilation environment
 BUILDDIRNAME="pycbc-build"
+LOG_FILE=/tmp/$(mktemp -d -t pycbc-build-log.XXXXXXXXXX)
 
 # defaults, possibly overwritten by command-line arguments
 cleanup=true # usually, build directories are removed after a successful build
@@ -66,6 +74,7 @@ pyinstaller21_hacks=false # use hacks & workarounds necessary for PyInstaller <3
 use_pycbc_pyinstaller_hooks=true
 build_gating_tool=false
 run_analysis=true
+slient_build=false
 
 if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
@@ -235,6 +244,8 @@ usage="
     --verbose-python                run PyInstalled Python in verbose mode, showing imports
 
     --no-analysis                   for testing, don't run analysis, assume weave cache is already there
+
+    --silent-build                  do not brint build messages unless there is an error
 "
 
 # handle command-line arguments, possibly overriding above settings
@@ -276,10 +287,12 @@ for i in $*; do
         --with-extra-bank=*) extra_bank="$extra_bank `echo $i|sed 's/^--with-extra-bank=//'`";;
         --with-extra-approximant=*) extra_approx="${extra_approx}`echo $i|sed 's/^--with-extra-approximant=//'` ";;
         --with-lal-data-path=*) lal_data_path="`echo $i|sed 's/^--with-lal-data-path=//'`";;
+        --slient-build) silent_build=true;;
         --help) echo -e "Options:\n$usage">&2; exit 0;;
         *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
     esac
 done
+
 
 # compilation environment
 if [ ".$link_gcc_version" != "." ]; then
@@ -349,6 +362,19 @@ if test -r "$SOURCE/$BUILDDIRNAME-preinst.tgz" -o -r "$SOURCE/$BUILDDIRNAME-prei
     fi
 
 else # if $BUILDDIRNAME-preinst.tgz
+
+    if $silent_build ; then
+        # close STDOUT file descriptor
+        exec 1<&-
+        # close STDERR FD
+        exec 2<&-
+
+        # Open STDOUT as $LOG_FILE file for read and write.
+        exec 1<>$LOG_FILE
+
+        # Redirect STDERR to STDOUT
+        exec 2>&1
+    fi
 
     cd "$SOURCE"
 
@@ -836,6 +862,13 @@ if $rebase_dlls_before_pycbc; then
     echo -e "\\n\\n>> [`date`] Rebasing DLLs"
     find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
     rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
+fi
+
+if $silent_build ; then
+    exec 1<&-
+    exec 2<&-
+    exec 1<>/dev/stderr
+    exec 2<>/dev/stdout
 fi
 
 # PyCBC
