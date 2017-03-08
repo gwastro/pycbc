@@ -73,6 +73,7 @@ build_subprocess32=false
 build_hdf5=true
 build_freetype=true
 build_wrapper=false
+build_progress_fstab=true
 pyinstaller_version=v3.2.1 # 9d0e0ad4, v2.1 .. v3.2.1 -> git, 2.1 .. 3.2.1 -> pypi
 patch_pyinstaller_bootloader=true
 pyinstaller21_hacks=false # use hacks & workarounds necessary for PyInstaller <3.0
@@ -135,6 +136,7 @@ elif grep -q "Ubuntu 12" /etc/issue ; then
     build_pcre=true
     pyinstaller_lsb="--no-lsb"
     build_gating_tool=false
+    build_progress_fstab=false
     appendix="_Linux64"
 elif test "`uname -s`" = "Darwin" ; then # OSX
     echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
@@ -927,7 +929,7 @@ else
     git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
 if test "x$pycbc_fetch_ref" != "x" ; then
-    git fetch origin +${pycbc_fetch_ref}
+    git fetch $pycbc_remote +${pycbc_fetch_ref}
     git checkout FETCH_HEAD
 fi
 
@@ -1051,7 +1053,7 @@ if $build_wrapper; then
     gcc -o "$ENVIRONMENT/dist/progress$appendix" $SOURCE/pycbc/tools/einsteinathome/progress.c
     gcc -o "$ENVIRONMENT/dist/fstab" $SOURCE/pycbc/tools/einsteinathome/fstab.c
     gcc -DTEST_WIN32 -o "$ENVIRONMENT/dist/fstab_test" $SOURCE/pycbc/tools/einsteinathome/fstab.c
-else
+elif $build_progress_fstab ; then
     echo -e "\\n\\n>> [`date`] Building 'progress.exe' and 'fstab.exe'"
     if $build_dlls; then
         x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/progress$appendix.exe" $SOURCE/pycbc/tools/einsteinathome/progress.c
