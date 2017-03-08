@@ -514,7 +514,7 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         delta_f = float(df)
         inline(code, ['h', 'hlen', 'sflen', 'delta_f', 'sample_frequencies',
                       'amp', 'phase', 'start_index', 'imin'],
-               extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] +\
+               extra_compile_args=[WEAVE_FLAGS] +\
                                   omp_flags,
                libraries=omp_libs)
     else:
