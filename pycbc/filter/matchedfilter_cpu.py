@@ -53,7 +53,7 @@ def batch_correlate_execute(self, y):
     z = numpy.array(self.z.data, copy=False)
     y = numpy.array(y.data, copy=False)        
     inline(batch_correlator_code, ['x', 'y', 'z', 'size', 'num_vectors'],
-                extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags,
+                extra_compile_args=[WEAVE_FLAGS] + omp_flags,
                 libraries=omp_libs)
 
 support = """
@@ -94,7 +94,7 @@ def correlate_batch_inline(x, y, z):
     ya = numpy.array(y.ptr, copy=False)
     N = len(x) 
     inline(the_code, ['xa', 'ya', 'za', 'N'], 
-                    extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] + omp_flags,
+                    extra_compile_args=[WEAVE_FLAGS] + omp_flags,
                     support_code = support,
                     libraries=omp_libs
           )
