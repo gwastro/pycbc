@@ -2,11 +2,17 @@
 
 set -v
 
-INST=${HOME}/inst
-source ${INST}/etc/lal-user-env.sh
-export LD_LIBRARY_PATH=${INST}/lib:${INST}/lib64
-export PKG_CONFIG_PATH=${INST}/lib/pkgconfig:${PKG_CONFIG_PATH}
-export PATH=/usr/lib/ccache:${PATH}:${INST}/bin
+BUILD=${HOME}/build
+BUILDDIRNAME="pycbc-build"
+PYCBC="$BUILD/$BUILDDIRNAME"
+PYTHON_PREFIX="$PYCBC"
+ENVIRONMENT="$PYCBC/environment"
+PREFIX="$ENVIRONMENT"
+PATH="$PREFIX/bin:$PYTHON_PREFIX/bin:$PATH"
+export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:/usr/local/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+source ${BUILD}/pycbc-build/environment/etc/lalsuite-user-env.sh
+source ${BUILD}/pycbc-build/environment/bin/activate
 
 # Using python setup.py test has two issues:
 #     Some tests fail for reasons not necessarily related to PyCBC
