@@ -953,6 +953,17 @@ hooks="$PWD/tools/static"
 cd ..
 test -r "$PREFIX/etc/pycbc-user-env.sh" && source "$PREFIX/etc/pycbc-user-env.sh"
 
+if $silent_build ; then
+    # close stdin and stdout
+    exec 1>&-
+    exec 2>&-
+
+    # open stdout as $LOG_FILE file for read and write.
+    exec 1<>$LOG_FILE
+
+    # redirect stderr to stdout
+    exec 2>&1
+fi
 
 # clean dist directory
 rm -rf "$ENVIRONMENT/dist"
@@ -967,14 +978,14 @@ fi
 if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9][0-9]*$' > /dev/null; then
     # regular release version, get source tarball from pypi
     p=PyInstaller-$pyinstaller_version
-    echo -e "\\n\\n>> [`date`] building $p"
+    echo -e "\\n\\n>> [`date`] building $p" >&3
     test -r $p.tar.gz || wget $wget_opts "$pypi/source/P/PyInstaller/$p.tar.gz"
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
 else
     p=pyinstaller
-    echo -e "\\n\\n>> [`date`] building $p"
+    echo -e "\\n\\n>> [`date`] building $p" >&3
     if test -d pyinstaller/.git; then
         cd $p
         git remote update
@@ -1030,14 +1041,14 @@ test "$p" = "PyInstaller-$pyinstaller_version" && cleanup && rm -rf "$p"
 # from https://cygwin.com/ml/cygwin/2009-12/msg00168.html:
 # /bin/rebase -d -b 0x61000000 -o 0x20000 -v -T <file with list of dll and so files> > rebase.out
 if $build_dlls; then
-    echo -e "\\n\\n>> [`date`] Rebasing DLLs"
+    echo -e "\\n\\n>> [`date`] Rebasing DLLs" >&3
     find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
     rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
 fi
 
 if $build_wrapper; then
 # on Linux, build "progress" and "wrapper"
-    echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'progress', 'fstab' and 'fstab_test'"
+    echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'progress', 'fstab' and 'fstab_test'" >&3
     if test -d boinc/.git ; then
 	cd boinc
 	git pull
@@ -1050,7 +1061,7 @@ if $build_wrapper; then
 	./_autosetup
 	./configure LDFLAGS=-static-libgcc --disable-client --disable-manager --disable-server --enable-apps --disable-shared
     fi
-    echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
+    echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`" >&3
     make
     cp samples/wrapper/wrapper "$ENVIRONMENT/dist/wrapper$appendix"
     cd ..
@@ -1058,7 +1069,7 @@ if $build_wrapper; then
     gcc -o "$ENVIRONMENT/dist/fstab" $SOURCE/pycbc/tools/einsteinathome/fstab.c
     gcc -DTEST_WIN32 -o "$ENVIRONMENT/dist/fstab_test" $SOURCE/pycbc/tools/einsteinathome/fstab.c
 elif $build_progress_fstab ; then
-    echo -e "\\n\\n>> [`date`] Building 'progress.exe' and 'fstab.exe'"
+    echo -e "\\n\\n>> [`date`] Building 'progress.exe' and 'fstab.exe'" >&3
     if $build_dlls; then
         x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/progress$appendix.exe" $SOURCE/pycbc/tools/einsteinathome/progress.c
         x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/fstab$appendix.exe" $SOURCE/pycbc/tools/einsteinathome/fstab.c
@@ -1069,21 +1080,9 @@ elif $build_progress_fstab ; then
 fi
 
 # log environment
-echo -e "\\n\\n>> [`date`] ENVIRONMENT ..."
+echo -e "\\n\\n>> [`date`] ENVIRONMENT ..." >&3
 env
 echo -e "... ENVIRONMENT"
-
-if $silent_build ; then
-    # close stdin and stdout
-    exec 1>&-
-    exec 2>&-
-
-    # open stdout as $LOG_FILE file for read and write.
-    exec 1<>$LOG_FILE
-
-    # redirect stderr to stdout
-    exec 2>&1
-fi
 
 # TEST
 echo -e "\\n\\n>> [`date`] testing local executable" >&3
@@ -1148,13 +1147,21 @@ if $build_dlls; then
     zip ../pycbc_inspiral$appendix.zip pycbc_inspiral/pycbc_inspiral
 fi
 
+if $silent_build ; then
+    # redirect stdout and stderr back to the screen
+    exec 1>&-
+    exec 2>&-
+    exec 1>&3
+    exec 2>&4
+fi
+
 # run 10min self-test, build wave cache
 cd "$SOURCE"
 mkdir -p test
 cd test
 
 if $run_analysis; then
-echo -e "\\n\\n>> [`date`] running analysis" >&3
+echo -e "\\n\\n>> [`date`] running analysis"
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
 if check_md5 "$p" "$md5"; then
@@ -1263,8 +1270,8 @@ n_runs=${#bank_array[@]}
 for (( i=0; i<${n_runs}; i++ ))
 do
     rm -f H1-INSPIRAL-OUT.hdf
-    echo -e "\\n\\n>> [`date`] pycbc_inspiral using --bank-file ${bank_array[$i]} --approximant ${approx_array[$i]}" >&3
-    echo -e "\\n\\n>> [`date`] pycbc_inspiral using ROM data from $lal_data_path" >&3
+    echo -e "\\n\\n>> [`date`] pycbc_inspiral using --bank-file ${bank_array[$i]} --approximant ${approx_array[$i]}"
+    echo -e "\\n\\n>> [`date`] pycbc_inspiral using ROM data from $lal_data_path"
     CPPFLAGS="$CPPFLAGS `python-config --includes`" \
     LAL_DATA_PATH="$lal_data_path" \
       NO_TMPDIR=1 \
@@ -1311,13 +1318,25 @@ do
 done
 
 # test for GW150914
-echo -e "\\n\\n>> [`date`] test for GW150914" >&3
+echo -e "\\n\\n>> [`date`] test for GW150914"
 python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRAL-OUT.hdf
 
 fi # if $run_analysis
 
+if $silent_build ; then
+    # close stdin and stdout
+    exec 1>&-
+    exec 2>&-
+
+    # open stdout as $LOG_FILE file for read and write.
+    exec 1<>$LOG_FILE
+
+    # redirect stderr to stdout
+    exec 2>&1
+fi
+
 # zip weave cache
-echo -e "\\n\\n>> [`date`] zipping weave cache" >&3
+echo -e "\\n\\n>> [`date`] zipping weave cache"
 cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
 rm -f "$cache"
 # Fetch any extra libraries specified on the command line
