@@ -1319,7 +1319,7 @@ do
       --frame-files "$frames" \
       --approximant ${approx_array[$i]} \
       --bank-file ${bank_array[$i]} \
-      --verbose 2>&1 | awk '!/Filtering template|points above|power chisq|point chisq|Found chisq/ || NR % 20 == 0'
+      --verbose 2>&1 | awk '{if ((!/Filtering template|points above|power chisq|point chisq|Found chisq/) || (/Filtering template/ && NR % 20 == 0)) print}'
 done
 
 # test for GW150914
