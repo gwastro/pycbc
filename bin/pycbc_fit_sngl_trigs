@@ -24,7 +24,7 @@ import numpy as np
 from scipy.stats import kstest
 
 from pycbc import io, events, bin_utils
-from pycbc.events import trstats
+from pycbc.events import trigger_fits as trstats
 import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
