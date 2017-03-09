@@ -43,7 +43,7 @@ done
 for prog in `find ${PATH//:/ } -maxdepth 1 -name 'pycbc*' -print | egrep -v '(pycbc_fit_sngl_trigs|pycbc_live|pycbc_live_nagios_monitor|pycbc_make_grb_summary_page|pycbc_make_offline_grb_workflow|pycbc_mvsc_get_features|pycbc_upload_xml_to_gracedb)'`
 do
     echo -e ">> [`date`] running $prog --help"
-    $prog --help
+    $prog --help &> $LOG_FILE
     if test $? -ne 0 ; then
         RESULT=1
         echo -e "    FAILED!"
