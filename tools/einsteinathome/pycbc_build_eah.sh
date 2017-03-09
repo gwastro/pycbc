@@ -1319,7 +1319,7 @@ do
       --frame-files "$frames" \
       --approximant ${approx_array[$i]} \
       --bank-file ${bank_array[$i]} \
-      --verbose 2>&1 | awk '{if ((!/Filtering template|points above|power chisq|point chisq|Found chisq|generating SEOBNR|generating SPA/) || (/segment 1/ && NR % 100 == 0) || / 0: generating/ || / 1: generating/ ) print}'
+      --verbose 2>&1 | awk '{if ((!/Filtering template|points above|power chisq|point chisq|Found chisq|generating SEOBNR|generating SPA/) || (/segment 1/ && NR % 50 == 0) || / 0: generating/ || / 1: generating/ ) print}'
 done
 
 # test for GW150914
