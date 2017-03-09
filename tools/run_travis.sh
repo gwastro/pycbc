@@ -1,9 +1,9 @@
 #!/bin/bash
 
-echo -e "\\n\\n>> [`date`] Starting PyCBC test suite"
+echo -e "\\n>> [`date`] Starting PyCBC test suite"
 
 LOG_FILE=$(mktemp -t pycbc-test-log.XXXXXXXXXX)
-echo -e "\\n\\n>> [`date`] writing test log to $LOG_FILE"
+echo -e "\\n>> [`date`] writing test log to $LOG_FILE"
 
 function exit_on_error {
     echo "--- Error or interrupt ----------------------------------------" >&4
@@ -48,7 +48,7 @@ RESULT=0
 # So we rather run specific tests manually
 for prog in `find test -name '*.py' -print | egrep -v '(autochisq|bankveto|fft|schemes|long|lalsim|test_waveform)'`
 do 
-    echo -e "\\n\\n>> [`date`] running unit test for $prog" >&3
+    echo -e ">> [`date`] running unit test for $prog" >&3
     python $prog
     if test $? -ne 0 ; then
         RESULT=1
@@ -62,7 +62,7 @@ done
 # special environments can return a help message
 for prog in `find ${PATH//:/ } -maxdepth 1 -name 'pycbc*' -print | egrep -v '(pycbc_fit_sngl_trigs|pycbc_live|pycbc_live_nagios_monitor|pycbc_make_grb_summary_page|pycbc_make_offline_grb_workflow|pycbc_mvsc_get_features|pycbc_upload_xml_to_gracedb)'`
 do
-    echo -e "\\n\\n>> [`date`] running $prog --help" >&3
+    echo -e ">> [`date`] running $prog --help" >&3
     $prog --help
     if test $? -ne 0 ; then
         RESULT=1
