@@ -17,6 +17,7 @@ cache:
     - $HOME/.cache/pip
     - $HOME/build/.cache/pip
     - $HOME/build/pycbc-sources
+  timeout: 600
 before_cache:
     - rm -rf $HOME/pycbc-sources/lalsuite
     - rm -rf $HOME/pycbc-sources/pycbc
