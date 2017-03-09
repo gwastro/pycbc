@@ -1314,7 +1314,7 @@ do
       --frame-files "$frames" \
       --approximant ${approx_array[$i]} \
       --bank-file ${bank_array[$i]} \
-      --verbose 2>&1 | egrep -v '(Filtering template|points above|power chisq)'
+      --verbose 2>&1 | egrep -v '(Filtering template|points above|power chisq|point chisq|Found chisq)'
 done
 
 # test for GW150914
