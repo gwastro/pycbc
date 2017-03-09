@@ -12,8 +12,22 @@ addons:
             - libssl-dev
 cache:
   directories:
-    - $HOME/build
     - $HOME/.cache/pip
+    - $HOME/build/.cache/pip
+    - $HOME/build/pycbc-sources
+before_cache:
+    - rm -rf $HOME/pycbc-sources/lalsuite
+    - rm -rf $HOME/pycbc-sources/pycbc
+    - rm -rf $HOME/pycbc-sources/pyinstaller
+    - rm -rf $HOME/pycbc-sources/test
+    - rm -f $HOME/pycbc-sources/freetype-*.tar.gz
+    - rm -f $HOME/pycbc-sources/libframe-*.tar.gz
+    - rm -f $HOME/pycbc-sources/metaio-*.tar.gz
+    - rm -f $HOME/pycbc-sources/pegasus-python-source-*.tar.gz
+    - rm -f $HOME/pycbc-sources/Python-*.tgz
+    - rm -f $HOME/pycbc-sources/swig-*.tar.gz
+    - rm -f $HOME/pycbc-sources/zlib-*.tar.gz
+
 install:
   - travis_retry ./tools/install_travis.sh
 script:
