@@ -5,7 +5,6 @@ function exit_on_error {
         echo "--- Error or interrupt: dumping log file ----------------------" >&4
         cat $LOG_FILE >&4
     fi
-fi
 exit 1
 }
 trap exit_on_error ERR INT
