@@ -45,7 +45,7 @@ RESULT=0
 #     Some tests fail for reasons not necessarily related to PyCBC
 #     Setup.py seems to returns 0 even when tests fail
 # So we rather run specific tests manually
-find test -name '*.py' -print | egrep -v '(test_autochisq.py|test_fft_unthreaded.py|test_schemes.py)'
+for prog in `find test -name '*.py' -print | egrep -v '(autochisq|bankveto|fft|schemes|long)'`
 do 
     echo -e "\\n\\n>> [`date`] running unit test for $prog" >&3
     python $prog
