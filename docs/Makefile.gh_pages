@@ -7,7 +7,7 @@
 SPHINXOPTS    = -W
 SPHINXBUILD   = sphinx-build
 PAPER         =
-BUILDDIR      = ../../pycbc-gh-pages/latest
+BUILDDIR      = ../_gh-pages/latest
 PDFBUILDDIR   = /tmp
 PDF           = ../manual.pdf
 
