@@ -45,11 +45,16 @@ RESULT=0
 #     Some tests fail for reasons not necessarily related to PyCBC
 #     Setup.py seems to returns 0 even when tests fail
 # So we rather run specific tests manually
-for prog in `find test -name '*.py' -print | egrep -v '(autochisq|bankveto|fft|schemes|long)'`
+for prog in `find test -name '*.py' -print | egrep -v '(autochisq|bankveto|fft|schemes|long|lalsim)'`
 do 
     echo -e "\\n\\n>> [`date`] running unit test for $prog" >&3
     python $prog
-    test $? -ne 0 && RESULT=1
+    if test $? -ne 0 ; then
+        RESULT=1
+        echo -e "    FAILED!" >&3
+    else
+        echo -e "    Pass." >&3
+    fi
 done
 
 # check that all executables that do not require
@@ -58,7 +63,12 @@ for prog in `find ${PATH//:/ } -maxdepth 1 -name 'pycbc*' -print | egrep -v '(py
 do
     echo -e "\\n\\n>> [`date`] running $prog --help" >&3
     $prog --help
-    test $? -ne 0 && RESULT=1
+    if test $? -ne 0 ; then
+        RESULT=1
+        echo -e "    FAILED!" >&3
+    else
+        echo -e "    Pass." >&3
+    fi
 done
 
 exit ${RESULT}
