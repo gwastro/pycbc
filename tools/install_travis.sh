@@ -7,7 +7,7 @@ git branch -vvv
 if test x$TRAVIS_PULL_REQUEST = x ; then
     PYCBC_CODE="--pycbc-commit=${TRAVIS_COMMIT}"
 else
-    PYCBC_CODE="--pycbc-fetch-ref=/refs/pull/${TRAVIS_PULL_REQUEST}/merge"
+    PYCBC_CODE="--pycbc-fetch-ref=refs/pull/${TRAVIS_PULL_REQUEST}/merge"
 fi
 
 # set the lalsuite checkout to use
