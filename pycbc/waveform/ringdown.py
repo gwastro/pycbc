@@ -323,10 +323,10 @@ def get_td_qnm(template=None, taper=None, **kwargs):
         hplus = TimeSeries(zeros(window+kmax), delta_t=delta_t)
         hcross = TimeSeries(zeros(window+kmax), delta_t=delta_t)
         hplus.data[:window] = taper_hp
-        hplus.data[window:window+kmax] = hp
+        hplus.data[window:] = hp
         hplus._epoch = taper_times[0]
         hcross.data[:window] = taper_hc
-        hcross.data[window:window+kmax] = hc
+        hcross.data[window:] = hc
         hcross._epoch = taper_times[0]
 
         return hplus, hcross
@@ -489,8 +489,7 @@ def get_td_lm(template=None, taper=None, **kwargs):
     # Find maximum window size to create long enough output vector
     if taper is not None:
         taper_window = [int(taper*tau[n]/delta_t) + 1 for n in range(nmodes)]
-        max_window = max(taper_window)
-        kmax += max_window
+        kmax += max(taper_window)
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
