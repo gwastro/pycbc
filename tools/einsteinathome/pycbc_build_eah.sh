@@ -825,7 +825,7 @@ EOF
     cd lalsuite-build
     echo -e "\\n\\n>> [`date`] Configuring lalsuite" >&3
     ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
-	--enable-swig-python --disable-lalxml --disable-lalpulsar --disable-laldetchar --disable-lalstochastic --disable-lalinference \
+	--enable-swig-python --disable-lalxml --disable-laldetchar --disable-lalstochastic --disable-lalinference \
 	--disable-lalapps --disable-pylal
     if $build_dlls; then
 	echo '#include "/usr/include/stdlib.h"
