@@ -2,19 +2,6 @@
 
 echo -e "\\n\\n>> [`date`] Starting PyCBC test suite"
 
-LOG_FILE=$(mktemp -t pycbc-test-log.XXXXXXXXXX)
-echo -e "\\n\\n>> [`date`] writing test log to $LOG_FILE"
-
-function exit_on_error {
-    echo "--- Error or interrupt ----------------------------------------" >&4
-    if [ -f $LOG_FILE ] ; then
-        cat $LOG_FILE >&4
-    fi
-    echo "---------------------------------------------------------------" >&4
-exit 1
-}
-trap exit_on_error ERR INT
-
 BUILD=${HOME}/build
 BUILDDIRNAME="pycbc-build"
 PYCBC="$BUILD/$BUILDDIRNAME"
@@ -26,16 +13,6 @@ export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:/usr/local/li
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 source ${BUILD}/pycbc-build/environment/etc/lalsuite-user-env.sh
 source ${BUILD}/pycbc-build/environment/bin/activate
-
-# make a copy of stdin and stdout and close them
-exec 3>&1-
-exec 4>&2-
-
-# open stdout as $LOG_FILE file for read and write.
-exec 1<>$LOG_FILE
-
-# redirect stderr to stdout
-exec 2>&1
 
 set -v
 
