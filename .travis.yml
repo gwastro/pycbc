@@ -22,7 +22,7 @@ before_cache:
     - rm -rf $HOME/pycbc-sources/lalsuite
     - rm -rf $HOME/pycbc-sources/pycbc
     - rm -rf $HOME/pycbc-sources/pyinstaller
-    - rm -rf $HOME/pycbc-sources/test
+    - rm -rf $HOME/pycbc-sources/test/pycbc_inspiral
     - rm -f $HOME/pycbc-sources/libframe-*.tar.gz
     - rm -f $HOME/pycbc-sources/metaio-*.tar.gz
     - rm -f $HOME/pycbc-sources/pegasus-python-source-*.tar.gz
