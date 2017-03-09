@@ -72,7 +72,7 @@ else:
 if args.output_gates_file:
     logging.info('Writing output gates')
     with file(args.output_gates_file, 'wb') as gate_f:
-        for k, v in strain.gating_info.items():
+        for k, v in out_strain.gating_info.items():
             for t, w, p in v:
                 gate_f.write('%.4f %.2f %.2f\n' % (t, w, p))
 
