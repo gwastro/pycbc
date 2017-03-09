@@ -26,7 +26,7 @@ export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:/usr/local/li
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 source ${BUILD}/pycbc-build/environment/etc/lalsuite-user-env.sh
 source ${BUILD}/pycbc-build/environment/bin/activate
-export LAL_DATA_PATH=$HOME/pycbc-sources/test
+export LAL_DATA_PATH=$HOME/build/pycbc-sources/test
 
 # make a copy of stdin and stdout and close them
 exec 3>&1-
@@ -46,7 +46,7 @@ RESULT=0
 #     Some tests fail for reasons not necessarily related to PyCBC
 #     Setup.py seems to returns 0 even when tests fail
 # So we rather run specific tests manually
-for prog in `find test -name '*.py' -print | egrep -v '(autochisq|bankveto|fft|schemes|long|lalsim)'`
+for prog in `find test -name '*.py' -print | egrep -v '(autochisq|bankveto|fft|schemes|long|lalsim|test_waveform)'`
 do 
     echo -e "\\n\\n>> [`date`] running unit test for $prog" >&3
     python $prog
