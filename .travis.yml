@@ -4,14 +4,31 @@ addons:
     apt:
         packages:
             - libfftw3-dev 
-            - libhdf5-serial-dev 
             - liblapack-dev 
             - gfortran 
             - libgsl0-dev
+            - libsqlite3-dev
+            - libhdf5-serial-dev
+            - libssl-dev
+            - zlib1g-dev
+            - libfreetype6-dev
 cache:
   directories:
-    - $HOME/inst
     - $HOME/.cache/pip
+    - $HOME/build/.cache/pip
+    - $HOME/build/pycbc-sources
+  timeout: 600
+before_cache:
+    - rm -rf $HOME/pycbc-sources/lalsuite
+    - rm -rf $HOME/pycbc-sources/pycbc
+    - rm -rf $HOME/pycbc-sources/pyinstaller
+    - rm -rf $HOME/pycbc-sources/test/pycbc_inspiral
+    - rm -f $HOME/pycbc-sources/libframe-*.tar.gz
+    - rm -f $HOME/pycbc-sources/metaio-*.tar.gz
+    - rm -f $HOME/pycbc-sources/pegasus-python-source-*.tar.gz
+    - rm -f $HOME/pycbc-sources/Python-*.tgz
+    - rm -f $HOME/pycbc-sources/swig-*.tar.gz
+
 install:
   - travis_retry ./tools/install_travis.sh
 script:
