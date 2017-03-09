@@ -28,17 +28,8 @@ pushd ${BUILD}
 ${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh ${LALSUITE_CODE} ${PYCBC_CODE} --clean-pycbc --silent-build
 popd
 
-# setup the pycbc environment to run the additional travis tests
-BUILDDIRNAME="pycbc-build"
-PYCBC="$BUILD/$BUILDDIRNAME"
-PYTHON_PREFIX="$PYCBC"
-ENVIRONMENT="$PYCBC/environment"
-PREFIX="$ENVIRONMENT"
-PATH="$PREFIX/bin:$PYTHON_PREFIX/bin:$PATH"
-export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:/usr/local/lib:$LD_LIBRARY_PATH"
-export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
-source ${BUILD}/pycbc-build/environment/etc/lalsuite-user-env.sh
-source ${BUILD}/pycbc-build/environment/bin/activate
+# setup the pycbc environment to install the additional software needed
+. tools/travis_env.sh
 
 # update setuptools
 pip install --upgrade pip setuptools
