@@ -4,7 +4,7 @@ set -ev
 
 # determine the pycbc git branch and origin
 git branch -vvv
-if test x$TRAVIS_PULL_REQUEST = x ; then
+if test x$TRAVIS_PULL_REQUEST = "xfalse" ; then
     PYCBC_CODE="--pycbc-commit=${TRAVIS_COMMIT}"
 else
     PYCBC_CODE="--pycbc-fetch-ref=refs/pull/${TRAVIS_PULL_REQUEST}/merge"
