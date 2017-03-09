@@ -6,6 +6,9 @@ set -ev
 git branch -vvv
 PYCBC_MERGE_REF=`cut -f3 .git/FETCH_HEAD | cut -d " " -f1 | tr -d "'"`
 
+env | grep TRAVIS
+exit 1
+
 # store the travis test directory
 LOCAL=${PWD}
 
