@@ -72,6 +72,7 @@ build_preinst_before_lalsuite=true
 build_subprocess32=false
 build_hdf5=true
 build_freetype=true
+build_zlib=true
 build_wrapper=false
 build_progress_fstab=true
 pyinstaller_version=v3.2.1 # 9d0e0ad4, v2.1 .. v3.2.1 -> git, 2.1 .. 3.2.1 -> pypi
@@ -570,17 +571,18 @@ else # if $BUILDDIRNAME-preinst.tgz
     fi
 
     # ZLIB
-    p=zlib-1.2.8
-    echo -e "\\n\\n>> [`date`] building $p" >&3
-    test -r $p.tar.gz || wget $wget_opts $aei/$p.tar.gz
-    rm -rf $p
-    tar -xzf $p.tar.gz
-    cd $p
-    ./configure --prefix=$PREFIX
-    make
-    make install
-    mkdir -p "$PREFIX/lib/pkgconfig"
-    echo 'prefix=
+    if $build_zlib ; then
+        p=zlib-1.2.8
+        echo -e "\\n\\n>> [`date`] building $p" >&3
+        test -r $p.tar.gz || wget $wget_opts $aei/$p.tar.gz
+        rm -rf $p
+        tar -xzf $p.tar.gz
+        cd $p
+        ./configure --prefix=$PREFIX
+        make
+        make install
+        mkdir -p "$PREFIX/lib/pkgconfig"
+        echo 'prefix=
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
@@ -589,9 +591,10 @@ Description: zlib Compression Library
 Version: 1.2.3
 Libs: -L${libdir} -lz
 Cflags: -I${includedir}' |
-    sed "s%^prefix=.*%prefix=$PREFIX%;s/^Version: .*/Version: $p/;s/^Version: zlib-/Version: /" > "$PREFIX/lib/pkgconfig/zlib.pc"
-    cd ..
-    $cleanup && rm -rf $p
+        sed "s%^prefix=.*%prefix=$PREFIX%;s/^Version: .*/Version: $p/;s/^Version: zlib-/Version: /" > "$PREFIX/lib/pkgconfig/zlib.pc"
+        cd ..
+        $cleanup && rm -rf $p
+    fi
 
     # HDF5
     if $build_hdf5; then
