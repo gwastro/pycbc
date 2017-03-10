@@ -35,3 +35,10 @@ install:
   - travis_retry ./tools/install_travis.sh
 script:
   - ./tools/run_travis.sh
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  local_dir: _gh-pages
+  on:
+    branch: master

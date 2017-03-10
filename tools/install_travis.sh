@@ -55,5 +55,21 @@ SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2C
 # install the segment database tools
 pip install git+https://github.com/ligovirgo/dqsegdb@clean_pip_install_1_4_1#egg=dqsegdb
 
+# install the packges needed to build the documentation
+pip install "Sphinx>=1.4.2"
+pip install numpydoc
+pip install sphinx-rtd-theme
+pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
+
+# get library needed to build documentation
+wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
+url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/b3680bfb627a7350f29d31c7d91c4e09ff8a9fdc/x86_64/composer_xe_2015.0.090"
+p="libmkl_rt.so"
+pushd ${BUILD}/pycbc-sources
+test -r $p || wget $wget_opts ${url}/${p}
+cp -v $p $PREFIX/lib/$p
+chmod +x $PREFIX/lib/$p
+popd
+
 # re-install pycbc
 python setup.py install

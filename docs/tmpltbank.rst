@@ -408,11 +408,9 @@ Some notes on these options:
 Command line options: lalapps_cbc_sbank
 -----------------------------------------------
 
-The command line options read as follows
+The program lalapps_cbc_sbank is part of lalsuite and documentation and command line options are described in the documentation at http://software.ligo.org/docs/lalsuite/lalapps/lalapps__cbc__sbank_8py_source.html
 
-.. command-output:: lalapps_cbc_sbank --help
-
-Some notes on these options:
+Some notes on the command line options:
 
 * Using the `--iterative-match-df-max 8` option will greatly speed up the code by generating waveforms with a large frequency step and then iteratively lowering it until the calculated matches converge.
 * Using the `--cache-waveforms` option will greatly speed up the code by avoiding generating a waveform more than once. With this enabled memory usage can become a concern. If memory usage becomes high consider using the workflow generator.
