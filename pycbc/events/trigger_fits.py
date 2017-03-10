@@ -48,6 +48,7 @@ ks_stat, ks_pval = KS_test('exponential', snrs, alpha, thresh)
 from __future__ import division
 import numpy
 from scipy.stats import kstest
+from pycbc import pnutils
 
 fitalpha_dict = {
     'exponential' : lambda vals, thresh : 1. / (numpy.mean(vals) - thresh),
@@ -210,4 +211,52 @@ def KS_test(distr, vals, alpha, thresh=None):
     def cdf_fn(x):
         return 1 - cum_fndict[distr](x, alpha, thresh)
     return kstest(vals, cdf_fn)
+
+
+def get_masses(bank, tid):
+    """Helper function"""
+    m1 = bank['mass1'][:][tid]
+    m2 = bank['mass2'][:][tid]
+    s1z = bank['spin1z'][:][tid]
+    s2z = bank['spin2z'][:][tid]
+    return m1, m2, s1z, s2z
+
+
+def get_param(par, args, m1, m2, s1z, s2z):
+    """Helper function"""
+    if par == 'mchirp':
+        parvals, _ = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+    elif par == 'mtotal':
+        parvals = m1 + m2
+    elif par == 'template_duration':
+        # default to SEOBNRv4 duration function
+        parvals = pnutils.get_imr_duration(m1, m2, s1z, s2z, args.f_lower,
+                                           args.approximant or "SEOBNRv4")
+        if args.min_duration:
+            parvals += args.min_duration
+    elif par in pnutils.named_frequency_cutoffs.keys():
+        parvals = pnutils.frequency_cutoff_from_name(par, m1, m2, s1z, s2z)
+    else:
+        # try asking for a LALSimulation frequency function
+        parvals = pnutils.get_freq(par, m1, m2, s1z, s2z)
+    return parvals
+
+
+def which_bin(par, minpar, maxpar, nbins, log=False):
+    """
+    Returns the bin index in which the parameter value belongs (from 0 through
+    nbins-1) when dividing the range between minpar and maxpar equally into
+    nbins bins.
+    """
+    assert (par >= minpar and par <= maxpar)
+    if log:
+        par, minpar, maxpar = numpy.log(par), numpy.log(minpar), numpy.log(maxpar)
+    # par lies some fraction of the way between min and max
+    frac = float(par - minpar) / float(maxpar - minpar)
+    # binind then lies between 0 and nbins - 1
+    binind = int(frac * nbins)
+    # except for a corner case
+    if par == maxpar:
+        binind = nbins - 1
+    return binind
 
