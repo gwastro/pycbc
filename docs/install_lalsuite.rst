@@ -118,10 +118,14 @@ which should return the path to the installation under your virtual environment.
 
 If you are running a pipeline that uses the old LALApps programs ``lalapps_inspinj`` or ``lalapps_coh_PTF_inspiral`` then you can optionally build and install these by running the commands
 
+.. note::
+
+    On the AEI atlas cluster, the HDF5 libraries are installed in a non-stardard location so you will need to add ``-L/usr/lib/x86_64-linux-gnu/hdf5/serial`` to the ``LIBS`` variable before configuring lalapps.
+
 .. code-block:: bash
 
     cd $VIRTUAL_ENV/src/lalsuite/lalapps
-    LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic
+    LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic --disable-lalxml
     cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
     make
     cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
@@ -130,10 +134,6 @@ If you are running a pipeline that uses the old LALApps programs ``lalapps_inspi
     cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/ring
     make lalapps_coh_PTF_inspiral
     cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
-
-.. note::
-
-    On the AEI atlas cluster, the HDF5 libraries are installed in a non-stardard location so you will need to add ``-L/usr/lib/x86_64-linux-gnu/hdf5/serial`` to the ``LIBS`` variable before configuring lalapps.
 
 .. note::
 
