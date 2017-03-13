@@ -285,6 +285,7 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
 
 def create_marginalized_hist(ax, values, label, percentiles=None,
         color='k', fillcolor='gray', linecolor='navy', title=True,
+        expected_value=None, expected_color='red',
         rotated=False, plot_min=None, plot_max=None):
     """Plots a 1D marginalized histogram of the given param from the given
     samples.
@@ -340,6 +341,12 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
             ax.axhline(y=val, ls='dashed', color=linecolor, lw=2)
         else:
             ax.axvline(x=val, ls='dashed', color=linecolor, lw=2)
+    # plot expected
+    if expected_value is not None:
+        if rotated:
+            ax.axhline(expected_value, color=expected_color, lw=2)
+        else:
+            ax.axhline(expected_value, color=expected_color, lw=2)
     if title:
         values_med = numpy.median(values)
         values_min = values.min()
@@ -526,6 +533,8 @@ def create_multidim_plot(parameters, samples, labels=None,
             rotated = nparams == 2 and pi == nparams-1
             create_marginalized_hist(ax, samples[param], label=labels[param],
                 color='k', fillcolor='gray', linecolor='navy', title=True,
+                expected_value=expected_parameters[param],
+                expected_color=expected_parameters_color,
                 rotated=rotated, plot_min=mins[param], plot_max=maxs[param])
 
     # Off-diagonals...
