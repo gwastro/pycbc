@@ -531,9 +531,15 @@ def create_multidim_plot(parameters, samples, labels=None,
             # if only plotting 2 parameters and on the second parameter,
             # rotate the marginal plot
             rotated = nparams == 2 and pi == nparams-1
+            # see if there are expected values
+            if expected_parameters is not None:
+                try:
+                    expected_value = expected_parameters[param]
+                except KeyError:
+                    expected_value = None
             create_marginalized_hist(ax, samples[param], label=labels[param],
                 color='k', fillcolor='gray', linecolor='navy', title=True,
-                expected_value=expected_parameters[param],
+                expected_value=expected_value,
                 expected_color=expected_parameters_color,
                 rotated=rotated, plot_min=mins[param], plot_max=maxs[param])
 
