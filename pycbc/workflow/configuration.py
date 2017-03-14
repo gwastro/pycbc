@@ -195,6 +195,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             configFiles = []
         if overrideTuples is None:
             overrideTuples = []
+        if deleteTuples is None:
+            deleteTuples = []
         glue.pipeline.DeepCopyableConfigParser.__init__(self)
         
         # Enable case sensitive options
