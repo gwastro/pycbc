@@ -13,7 +13,19 @@ check_md5() {
     test ".$2" != ".$md5s"
 }
 
-trap 'rm -f "$PYCBC/lock"; exit 1' ERR
+function exit_on_error {
+  rm -f "$PYCBC/lock"
+  if $silent_build ; then
+      if [ -f $LOG_FILE ] ; then
+          echo "--- Error or interrupt: dumping last 100 lines of log ---------" >&4
+          tail -n 100 $LOG_FILE >&4
+          echo "---------------------------------------------------------------" >&4
+          rm -f $LOG_FILE
+      fi
+  fi
+  exit 1
+}
+trap exit_on_error ERR INT
 
 echo -e ">> [`date`] Start $0 $*"
 
@@ -31,6 +43,7 @@ cleanup=true # usually, build directories are removed after a successful build
 verbose_pyinstalled_python=false
 pycbc_branch=master
 pycbc_remote=ligo-cbc
+pycbc_fetch_ref=""
 scratch_pycbc=false
 libgfortran=libgfortran.so
 extra_libs=""
@@ -39,11 +52,11 @@ extra_approx=""
 lal_data_path="."
 
 # defaults, possibly overwritten by OS-specific settings
-build_gcc=false
 build_ssl=false
 build_python=false
 fftw_flags=--enable-avx
 shared="--enable-shared"
+static="--disable-static"
 build_dlls=false
 rebase_dlls_before_pycbc=false
 build_lapack=true
@@ -52,18 +65,23 @@ numpy_from="pip-install" # "tarball"
 scipy_from="pip-install" # "git"
 build_gsl=true
 build_swig=true
+build_pcre=false
+build_fftw=true
 build_framecpp=false
 build_preinst_before_lalsuite=true
 build_subprocess32=false
 build_hdf5=true
 build_freetype=true
+build_zlib=true
 build_wrapper=false
+build_progress_fstab=true
 pyinstaller_version=v3.2.1 # 9d0e0ad4, v2.1 .. v3.2.1 -> git, 2.1 .. 3.2.1 -> pypi
 patch_pyinstaller_bootloader=true
 pyinstaller21_hacks=false # use hacks & workarounds necessary for PyInstaller <3.0
 use_pycbc_pyinstaller_hooks=true
 build_gating_tool=false
 run_analysis=true
+silent_build=false
 
 if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
@@ -108,6 +126,25 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8
     pyinstaller_lsb="--no-lsb"
     build_gating_tool=true
     appendix="_Linux64"
+elif grep -q "Ubuntu 12" /etc/issue ; then
+    link_gcc_version=4.6
+    gcc_path="/usr/bin"
+    build_python=true
+    build_pcre=true
+    pyinstaller_lsb="--no-lsb"
+    build_gating_tool=false
+    appendix="_Linux64"
+    if test x$TRAVIS_OS_NAME = xlinux ; then
+        build_fftw=false
+        build_hdf5=false
+        build_ssl=false
+        build_lapack=false
+        build_gsl=false
+        build_freetype=false
+        build_zlib=false
+        build_wrapper=false
+        build_progress_fstab=false
+    fi
 elif test "`uname -s`" = "Darwin" ; then # OSX
     echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
     export FC=gfortran-mp-4.8
@@ -204,6 +241,8 @@ usage="
 
     --no-pycbc-update               don't update local pycbc repo
 
+    --no-lalsuite-update            don't update local lalsuite repo
+
     --bema-testing                  use einsteinathome_testing branch of bema-ligo/pycbc repo
 
     --no-cleanup                    keep build directories after successful build for later inspection
@@ -219,6 +258,10 @@ usage="
     --verbose-python                run PyInstalled Python in verbose mode, showing imports
 
     --no-analysis                   for testing, don't run analysis, assume weave cache is already there
+
+    --silent-build                  do not brint build messages unless there is an error
+
+    --pycbc-fetch-ref               fetch and use a specific reference for pycbc
 "
 
 # handle command-line arguments, possibly overriding above settings
@@ -227,6 +270,7 @@ for i in $*; do
         --force-debian4) ;;
         --print-env) ;;
         --no-pycbc-update) pycbc_branch="HEAD";;
+        --no-lalsuite-update) no_lalsuite_update=true;;
         --bema-testing)
             pycbc_branch=einsteinathome_testing
             pycbc_remote=bema-ligo;;
@@ -239,6 +283,7 @@ for i in $*; do
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz";;
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
         --pycbc-commit=*) pycbc_commit="`echo $i|sed 's/^--pycbc-commit=//'`";;
+        --pycbc-fetch-ref=*) pycbc_fetch_ref="`echo $i|sed 's/^--pycbc-fetch-ref=//'`";;
         --clean-pycbc) scratch_pycbc=true;;
         --clean-weave-cache) rm -rf "$SOURCE/test/pycbc_inspiral";;
         --clean-sundays)
@@ -259,10 +304,12 @@ for i in $*; do
         --with-extra-bank=*) extra_bank="$extra_bank `echo $i|sed 's/^--with-extra-bank=//'`";;
         --with-extra-approximant=*) extra_approx="${extra_approx}`echo $i|sed 's/^--with-extra-approximant=//'` ";;
         --with-lal-data-path=*) lal_data_path="`echo $i|sed 's/^--with-lal-data-path=//'`";;
+        --silent-build) silent_build=true;;
         --help) echo -e "Options:\n$usage">&2; exit 0;;
         *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
     esac
 done
+
 
 # compilation environment
 if [ ".$link_gcc_version" != "." ]; then
@@ -305,18 +352,37 @@ aei="http://www.aei.mpg.de/~bema"
 
 # circumvent old certificate chains on old systems
 export GIT_SSL_NO_VERIFY=true
-wget_opts="-c --passive-ftp --no-check-certificate"
+wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
 export PIP_TRUSTED_HOST="pypi.python.org github.com"
+
+if $silent_build ; then
+    LOG_FILE=$(mktemp -t pycbc-build-log.XXXXXXXXXX)
+    echo -e "\\n\\n>> [`date`] writing build logs to $LOG_FILE"
+
+    # make a copy of stdin and stdout and close them
+    exec 3>&1-
+    exec 4>&2-
+
+    # open stdout as $LOG_FILE file for read and write.
+    exec 1<>$LOG_FILE
+
+    # redirect stderr to stdout
+    exec 2>&1
+else
+    # make a copy of stdin and stdout
+    exec 3>&1
+    exec 4>&2
+fi
 
 # use previously compiled scipy, lalsuite etc. if available
 if test -r "$SOURCE/$BUILDDIRNAME-preinst.tgz" -o -r "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"; then
 
     rm -rf "$PYCBC"
     if test -r "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"; then
-        echo -e "\\n\\n>> [`date`] using $BUILDDIRNAME-preinst-lalsuite.tgz"
+        echo -e "\\n\\n>> [`date`] using $BUILDDIRNAME-preinst-lalsuite.tgz" >&3
         tar -xzf "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"
     else
-        echo -e "\\n\\n>> [`date`] using $BUILDDIRNAME-preinst.tgz"
+        echo -e "\\n\\n>> [`date`] using $BUILDDIRNAME-preinst.tgz" >&3
         tar -xzf "$SOURCE/$BUILDDIRNAME-preinst.tgz"
     fi
     # set up virtual environment
@@ -340,7 +406,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     # p=openssl-1.0.2e # compile error on pyOpenSSL 0.13:
     # pycbc/include/openssl/x509.h:751: note: previous declaration X509_REVOKED_ was here
 	p=openssl-1.0.1p
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts $aei/$p.tar.gz
 	rm -rf $p
 	tar -xzvf $p.tar.gz  &&
@@ -356,7 +422,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     if $build_python; then
 	v=2.7.10
 	p=Python-$v
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tgz || wget $wget_opts http://www.python.org/ftp/python/$v/$p.tgz
 	rm -rf $p
 	tar -xzf $p.tgz
@@ -367,9 +433,9 @@ else # if $BUILDDIRNAME-preinst.tgz
 	cd ..
 	$cleanup && rm -rf $p
 	python -m ensurepip
-	echo -e "\\n\\n>> [`date`] pip install --upgrade pip"
+	echo -e "\\n\\n>> [`date`] pip install --upgrade pip" >&3
 	pip install --upgrade pip
-	echo -e "\\n\\n>> [`date`] pip install virtualenv"
+	echo -e "\\n\\n>> [`date`] pip install virtualenv" >&3
 	pip install virtualenv
     fi
 
@@ -383,11 +449,11 @@ else # if $BUILDDIRNAME-preinst.tgz
 
     # pyOpenSSL-0.13
     if [ "$pyssl_from" = "pip-install" ] ; then
-	echo -e "\\n\\n>> [`date`] pip install pyOpenSSL==0.13"
+	echo -e "\\n\\n>> [`date`] pip install pyOpenSSL==0.13" >&3
 	pip install pyOpenSSL==0.13
     else
 	p=pyOpenSSL-0.13
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts "$pypi/source/p/pyOpenSSL/$p.tar.gz"
 	rm -rf $p
 	tar -xzf $p.tar.gz
@@ -403,7 +469,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     # LAPACK & BLAS
     if $build_lapack; then
 	p=lapack-3.6.0
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tgz || wget $wget_opts http://www.netlib.org/lapack/$p.tgz
 	rm -rf $p
 	tar -xzf $p.tgz
@@ -421,7 +487,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     # NUMPY
     if [ "$numpy_from" = "tarball" ]; then
 	p=numpy-1.9.3
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts $pypi/source/n/numpy/$p.tar.gz
 	rm -rf $p
 	tar -xzf $p.tar.gz 
@@ -431,22 +497,22 @@ else # if $BUILDDIRNAME-preinst.tgz
 	cd ..
 	$cleanup && rm -rf $p
     else
-	echo -e "\\n\\n>> [`date`] pip install numpy==1.9.3"
+	echo -e "\\n\\n>> [`date`] pip install numpy==1.9.3" >&3
 	pip install numpy==1.9.3
     fi
 
-    echo -e "\\n\\n>> [`date`] pip install nose"
+    echo -e "\\n\\n>> [`date`] pip install nose" >&3
     pip install nose
-    echo -e "\\n\\n>> [`date`] pip install Cython==0.23.2"
+    echo -e "\\n\\n>> [`date`] pip install Cython==0.23.2" >&3
     pip install Cython==0.23.2
 
     # SCIPY
     if [ "$scipy_from" = "pip-install" ] ; then
-	echo -e "\\n\\n>> [`date`] pip install scipy==0.16.0"
+	echo -e "\\n\\n>> [`date`] pip install scipy==0.16.0" >&3
 	pip install scipy==0.16.0
     else
 	p=scipy-0.16.0
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	if test -d scipy/.git; then
 	    cd scipy
 	else
@@ -463,19 +529,19 @@ else # if $BUILDDIRNAME-preinst.tgz
     fi
 
     # this test will catch scipy build errors that would not emerge before running pycbc_inspiral
-    echo -e "\\n\\n>> [`date`] Testing: python -c 'from scipy.io.wavfile import write as write_wav'"
+    echo -e "\\n\\n>> [`date`] Testing: python -c 'from scipy.io.wavfile import write as write_wav'" >&3
     python -c 'from scipy.io.wavfile import write as write_wav'
     # python -c 'import scipy; scipy.test(verbose=2);'
 
     # GSL
     if $build_gsl; then
 	p=gsl-1.16
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts ftp://ftp.fu-berlin.de/unix/gnu/gsl/$p.tar.gz
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
-	./configure $shared --enable-static --prefix="$PREFIX"
+	./configure $shared $static --prefix="$PREFIX"
 	make
 	make install
 	cd ..
@@ -483,43 +549,42 @@ else # if $BUILDDIRNAME-preinst.tgz
     fi
 
     # FFTW
-    p=fftw-3.3.5
-    echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz ||
-        wget $wget_opts $aei/$p.tar.gz ||
-        wget $wget_opts ftp://ftp.fftw.org/pub/fftw/$p.tar.gz
-    rm -rf $p
-    tar -xzf $p.tar.gz
-    cd $p
-    if test ".$fftw_cflags" = "."; then
-        ./configure $shared --enable-static --prefix="$PREFIX" --enable-sse2 $fftw_flags
-    else
-        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared --enable-static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+    if $build_fftw ; then
+        p=fftw-3.3.5
+        echo -e "\\n\\n>> [`date`] building $p" >&3
+        test -r $p.tar.gz ||
+            wget $wget_opts $aei/$p.tar.gz ||
+            wget $wget_opts ftp://ftp.fftw.org/pub/fftw/$p.tar.gz
+        rm -rf $p
+        tar -xzf $p.tar.gz
+        cd $p
+        if test ".$fftw_cflags" = "."; then
+            ./configure $shared $static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+        else
+            ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared $static --prefix="$PREFIX" --enable-sse2 $fftw_flags
+        fi
+        make
+        make install
+        if test ".$fftw_cflags" = "."; then
+            ./configure $shared $static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
+        else
+            ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared $static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
+        fi
     fi
-    make
-    make install
-    if test ".$fftw_cflags" = "."; then
-        ./configure $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
-    else
-        ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared --enable-static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
-    fi
-    make
-    make install
-    cd ..
-    $cleanup && rm -rf $p
 
     # ZLIB
-    p=zlib-1.2.8
-    echo -e "\\n\\n>> [`date`] building $p"
-    test -r $p.tar.gz || wget $wget_opts $aei/$p.tar.gz
-    rm -rf $p
-    tar -xzf $p.tar.gz
-    cd $p
-    ./configure --prefix=$PREFIX
-    make
-    make install
-    mkdir -p "$PREFIX/lib/pkgconfig"
-    echo 'prefix=
+    if $build_zlib ; then
+        p=zlib-1.2.8
+        echo -e "\\n\\n>> [`date`] building $p" >&3
+        test -r $p.tar.gz || wget $wget_opts $aei/$p.tar.gz
+        rm -rf $p
+        tar -xzf $p.tar.gz
+        cd $p
+        ./configure --prefix=$PREFIX
+        make
+        make install
+        mkdir -p "$PREFIX/lib/pkgconfig"
+        echo 'prefix=
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
@@ -528,21 +593,22 @@ Description: zlib Compression Library
 Version: 1.2.3
 Libs: -L${libdir} -lz
 Cflags: -I${includedir}' |
-    sed "s%^prefix=.*%prefix=$PREFIX%;s/^Version: .*/Version: $p/;s/^Version: zlib-/Version: /" > "$PREFIX/lib/pkgconfig/zlib.pc"
-    cd ..
-    $cleanup && rm -rf $p
+        sed "s%^prefix=.*%prefix=$PREFIX%;s/^Version: .*/Version: $p/;s/^Version: zlib-/Version: /" > "$PREFIX/lib/pkgconfig/zlib.pc"
+        cd ..
+        $cleanup && rm -rf $p
+    fi
 
     # HDF5
     if $build_hdf5; then
 	p=hdf5-1.8.13
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz ||
             wget $wget_opts $aei/$p.tar.gz ||
             wget $wget_opts https://support.hdfgroup.org/ftp/HDF5/releases/$p/src/$p.tar.gz
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
-	./configure $shared --enable-static --prefix="$PREFIX"
+	./configure $shared $static --prefix="$PREFIX"
 	make
 	make install
 	mkdir -p "$PREFIX/lib/pkgconfig"
@@ -564,31 +630,31 @@ Libs: -L${libdir} -lhdf5' |
     # FREETYPE
     if $build_freetype; then
 	p=freetype-2.3.0
-	echo -e "\\n\\n>> [`date`] building $p"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts http://download.savannah.gnu.org/releases/freetype/freetype-old/$p.tar.gz
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
-	./configure $shared --enable-static --prefix="$PREFIX"
+	./configure $shared $static --prefix="$PREFIX"
 	make
 	make install
 	cd ..
 	$cleanup && rm -rf $p
     fi
 
-    echo -e "\\n\\n>> [`date`] pip install --upgrade distribute"
+    echo -e "\\n\\n>> [`date`] pip install --upgrade distribute" >&3
     pip install --upgrade distribute
 
     if $build_framecpp; then
 
         # FrameCPP
         p=ldas-tools-2.4.2
-        echo -e "\\n\\n>> [`date`] building $p"
+        echo -e "\\n\\n>> [`date`] building $p" >&3
         test -r $p.tar.gz || wget $wget_opts http://software.ligo.org/lscsoft/source/$p.tar.gz
         rm -rf $p
         tar -xzf $p.tar.gz
         cd $p
-        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit $shared --enable-static --prefix="$PREFIX" # --disable-cxx11
+        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit $shared $static --prefix="$PREFIX" # --disable-cxx11
         sed -i~ '/^CXXSTD[A-Z]*FLAGS=/d' ./libraries/ldastoolsal/ldastoolsal*.pc
         make
         make -k install || true
@@ -599,7 +665,7 @@ Libs: -L${libdir} -lhdf5' |
 
         # LIBFRAME / FrameL
         p=libframe-8.30
-        echo -e "\\n\\n>> [`date`] building $p"
+        echo -e "\\n\\n>> [`date`] building $p" >&3
         test -r $p.tar.gz || wget $wget_opts http://lappweb.in2p3.fr/virgo/FrameL/$p.tar.gz
         rm -rf $p
         tar -xzf $p.tar.gz
@@ -615,7 +681,7 @@ Libs: -L${libdir} -lhdf5' |
                 echo 'libFrame_la_LDFLAGS += -no-undefined' >> $i
             done
         fi
-        ./configure $shared --enable-static --prefix="$PREFIX"
+        ./configure $shared $static --prefix="$PREFIX"
         make
         make install
         mkdir -p "$PREFIX/lib/pkgconfig"
@@ -627,7 +693,7 @@ Libs: -L${libdir} -lhdf5' |
 
     # METAIO
     p=metaio-8.3.0
-    echo -e "\\n\\n>> [`date`] building $p"
+    echo -e "\\n\\n>> [`date`] building $p" >&3
     test -r $p.tar.gz || wget $wget_opts https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/$p.tar.gz
     rm -rf $p
     tar -xzf $p.tar.gz
@@ -637,7 +703,7 @@ Libs: -L${libdir} -lhdf5' |
 	    echo 'libmetaio_la_LDFLAGS += -no-undefined' >> $i
 	done
     fi
-    ./configure $shared --enable-static --prefix="$PREFIX"
+    ./configure $shared $static --prefix="$PREFIX"
     make
     make install
     cd ..
@@ -646,11 +712,17 @@ Libs: -L${libdir} -lhdf5' |
     # SWIG
     if $build_swig; then
 	p=swig-3.0.7
-	echo -e "\\n\\n>> [`date`] building $p"
-	test -r $p.tar.gz || wget $wget_opts "$aei/$p.tar.gz"
+	echo -e "\\n\\n>> [`date`] building $p" >&3
+	test -r $p.tar.gz ||
+            wget $wget_opts "$aei/$p.tar.gz" ||
+            wget $wget_opts "$atlas/tarballs/$p.tar.gz"
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
+        if $build_pcre; then
+            test -r pcre-8.40.tar.gz || wget $wget_opts "https://ftp.pcre.org/pub/pcre/pcre-8.40.tar.gz"
+            ./Tools/pcre-build.sh
+        fi
 	./configure --prefix=$PREFIX --without-tcl --with-python --without-python3 --without-perl5 --without-octave \
             --without-scilab --without-java --without-javascript --without-gcj --without-android --without-guile \
             --without-mzscheme --without-ruby --without-php --without-ocaml --without-pike --without-chicken \
@@ -675,8 +747,10 @@ if test -r "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"; then
 else
 
     # LALSUITE
-    echo -e "\\n\\n>> [`date`] building lalsuite"
-    if test -d lalsuite/.git; then
+    echo -e "\\n\\n>> [`date`] Cloning lalsuite" >&3
+    if [ ".$no_lalsuite_update" != "." ]; then
+	cd lalsuite
+    elif test -d lalsuite/.git; then
         cd lalsuite
         git reset --hard HEAD
         if [ ".$lalsuite_branch" != ".HEAD" ]; then
@@ -698,12 +772,41 @@ else
             git checkout "$lalsuite_branch"
         fi
     fi
-    echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
+    echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`" >&3
     sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
     if $build_dlls; then
+	git apply <<'EOF' || true
+From accb37091abbc8d8776edfb3484259f6059c4e25 Mon Sep 17 00:00:00 2001
+From: Karl Wette <karl.wette@ligo.org>
+Date: Mon, 6 Mar 2017 20:18:07 +0100
+Subject: [PATCH] SWIG: add Python libraries to linker flags
+
+- Some platforms require them, e.g. cygwin
+---
+ gnuscripts/lalsuite_swig.m4 | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/gnuscripts/lalsuite_swig.m4 b/gnuscripts/lalsuite_swig.m4
+index 831ff4a..2a2695e 100644
+--- a/gnuscripts/lalsuite_swig.m4
++++ b/gnuscripts/lalsuite_swig.m4
+@@ -493,6 +493,8 @@ sys.stdout.write(' -L' + cfg.get_python_lib())
+ sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
+ sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1))
+ sys.stdout.write(' -L' + cfg.get_config_var('LIBDIR'))
++sys.stdout.write(' -lpython%i.%i' % (sys.version_info.major, sys.version_info.minor))
++sys.stdout.write(' ' + cfg.get_config_var('LIBS'))
+ EOD`]
+     AS_IF([test $? -ne 0],[
+       AC_MSG_ERROR([could not determine Python linker flags])
+-- 
+2.7.4
+
+EOF
 	fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
 	    sed -n 's/.*lib_LTLIBRARIES *= *\(.*\).la/\1_la_LDFLAGS += -no-undefined/p' $i >> $i
 	done
+	sed -i~ 's/^cs_gamma_la_LDFLAGS = .*/& -no-undefined -lpython2.7/' lalburst/python/lalburst/Makefile.am
 	sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/;
              s/\(swiglal_python_la_LIBADD = .*\)$/\1 -lpython2.7/;
              s/swiglal_python\.la/libswiglal_python.la/g;
@@ -714,20 +817,28 @@ else
     if $build_framecpp; then
 	shared="$shared --enable-framec --disable-framel"
     fi
+    echo -e "\\n\\n>> [`date`] Creating lalsuite configure scripts" >&3
     ./00boot
     cd ..
     rm -rf lalsuite-build
     mkdir lalsuite-build
     cd lalsuite-build
-    ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared --enable-static --prefix="$PREFIX" --disable-silent-rules \
-	--enable-swig-python --disable-lalxml --disable-lalpulsar --disable-laldetchar --disable-lalstochastic --disable-lalinference \
+    echo -e "\\n\\n>> [`date`] Configuring lalsuite" >&3
+    ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
+	--enable-swig-python --disable-lalxml --disable-laldetchar --disable-lalstochastic --disable-lalinference \
 	--disable-lalapps --disable-pylal
     if $build_dlls; then
 	echo '#include "/usr/include/stdlib.h"
 extern int setenv(const char *name, const char *value, int overwrite);
 extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
     fi
-    make
+    echo -e "\\n\\n>> [`date`] Building lalsuite" >&3
+    if $silent_build ; then
+        make 2>&1 | tee >(grep Entering >&3 1>&3 2>&3) 
+    else
+        make
+    fi
+    echo -e "\\n\\n>> [`date`] Installing lalsuite" >&3
     make install
     for i in $PREFIX/etc/*-user-env.sh; do
         source "$i"
@@ -735,7 +846,7 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
     cd ..
     $cleanup && rm -rf lalsuite-build
 
-    echo -e "\\n\\n>> [`date`] building $BUILDDIRNAME-preinst-lalsuite.tgz"
+    echo -e "\\n\\n>> [`date`] building $BUILDDIRNAME-preinst-lalsuite.tgz" >&3
     pushd "$PYCBC/.."
     tar -czf "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$BUILDDIRNAME"
     popd
@@ -743,9 +854,9 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
 fi # if $BUILDDIRNAME-preinst.tgz
 
 # Pegasus
-v=4.7.0
+v=4.7.4
 p=pegasus-python-source-$v
-echo -e "\\n\\n>> [`date`] building $p"
+echo -e "\\n\\n>> [`date`] building $p" >&3
 test -r $p.tar.gz ||
     wget $wget_opts "$aei/$p.tar.gz" ||
     wget $wget_opts http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz
@@ -754,7 +865,7 @@ pip install --no-deps $p.tar.gz
 # PyInstaller 9d0e0ad4 crashes with newer Jinja2,
 # so install this old version before it gets pulled in from PyCBC
 if $pyinstaller21_hacks; then
-    echo -e "\\n\\n>> [`date`] pip install Jinja2==2.8.1"
+    echo -e "\\n\\n>> [`date`] pip install Jinja2==2.8.1" >&3
     pip install Jinja2==2.8.1
 fi
 
@@ -762,7 +873,7 @@ fi
 # would be needed on old Linux with matplotlib>=2.0.0
 if $build_subprocess32; then
     p=subprocess32-3.2.7
-    echo -e "\\n\\n>> [`date`] building $p"
+    echo -e "\\n\\n>> [`date`] building $p" >&3
     test -r $p.tar.gz ||
         wget $wget_opts "$aei/$p.tar.gz" ||
         wget $wget_opts $pypi/b8/2f/49e53b0d0e94611a2dc624a1ad24d41b6d94d0f1b0a078443407ea2214c2/$p.tar.gz
@@ -779,9 +890,17 @@ fi
 # doing this here _might_ fix a recurring problem with fork+git+PyCBC
 # will be done again after building PyCBC
 if $rebase_dlls_before_pycbc; then
-    echo -e "\\n\\n>> [`date`] Rebasing DLLs"
+    echo -e "\\n\\n>> [`date`] Rebasing DLLs" >&3
     find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
     rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
+fi
+
+if $silent_build ; then
+    # redirect stdout and stderr back to the screen
+    exec 1>&- 
+    exec 2>&- 
+    exec 1>&3
+    exec 2>&4
 fi
 
 # PyCBC
@@ -818,6 +937,11 @@ else
     git remote update
     git checkout -b $pycbc_branch $pycbc_remote/$pycbc_branch
 fi
+if test "x$pycbc_fetch_ref" != "x" ; then
+    git fetch $pycbc_remote +${pycbc_fetch_ref}
+    git checkout FETCH_HEAD
+fi
+
 echo -e "[`date`] install pkgconfig beforehand"
 pip install `grep -w ^pkgconfig requirements.txt||echo pkgconfig==1.1.0`
 if $pyinstaller21_hacks; then
@@ -834,6 +958,17 @@ hooks="$PWD/tools/static"
 cd ..
 test -r "$PREFIX/etc/pycbc-user-env.sh" && source "$PREFIX/etc/pycbc-user-env.sh"
 
+if $silent_build ; then
+    # close stdin and stdout
+    exec 1>&-
+    exec 2>&-
+
+    # open stdout as $LOG_FILE file for read and write.
+    exec 1<>$LOG_FILE
+
+    # redirect stderr to stdout
+    exec 2>&1
+fi
 
 # clean dist directory
 rm -rf "$ENVIRONMENT/dist"
@@ -848,14 +983,14 @@ fi
 if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9][0-9]*$' > /dev/null; then
     # regular release version, get source tarball from pypi
     p=PyInstaller-$pyinstaller_version
-    echo -e "\\n\\n>> [`date`] building $p"
+    echo -e "\\n\\n>> [`date`] building $p" >&3
     test -r $p.tar.gz || wget $wget_opts "$pypi/source/P/PyInstaller/$p.tar.gz"
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
 else
     p=pyinstaller
-    echo -e "\\n\\n>> [`date`] building $p"
+    echo -e "\\n\\n>> [`date`] building $p" >&3
     if test -d pyinstaller/.git; then
         cd $p
         git remote update
@@ -911,14 +1046,14 @@ test "$p" = "PyInstaller-$pyinstaller_version" && cleanup && rm -rf "$p"
 # from https://cygwin.com/ml/cygwin/2009-12/msg00168.html:
 # /bin/rebase -d -b 0x61000000 -o 0x20000 -v -T <file with list of dll and so files> > rebase.out
 if $build_dlls; then
-    echo -e "\\n\\n>> [`date`] Rebasing DLLs"
+    echo -e "\\n\\n>> [`date`] Rebasing DLLs" >&3
     find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
     rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
 fi
 
 if $build_wrapper; then
 # on Linux, build "progress" and "wrapper"
-    echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'progress', 'fstab' and 'fstab_test'"
+    echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'progress', 'fstab' and 'fstab_test'" >&3
     if test -d boinc/.git ; then
 	cd boinc
 	git pull
@@ -931,15 +1066,15 @@ if $build_wrapper; then
 	./_autosetup
 	./configure LDFLAGS=-static-libgcc --disable-client --disable-manager --disable-server --enable-apps --disable-shared
     fi
-    echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
+    echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`" >&3
     make
     cp samples/wrapper/wrapper "$ENVIRONMENT/dist/wrapper$appendix"
     cd ..
     gcc -o "$ENVIRONMENT/dist/progress$appendix" $SOURCE/pycbc/tools/einsteinathome/progress.c
     gcc -o "$ENVIRONMENT/dist/fstab" $SOURCE/pycbc/tools/einsteinathome/fstab.c
     gcc -DTEST_WIN32 -o "$ENVIRONMENT/dist/fstab_test" $SOURCE/pycbc/tools/einsteinathome/fstab.c
-else
-    echo -e "\\n\\n>> [`date`] Building 'progress.exe' and 'fstab.exe'"
+elif $build_progress_fstab ; then
+    echo -e "\\n\\n>> [`date`] Building 'progress.exe' and 'fstab.exe'" >&3
     if $build_dlls; then
         x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/progress$appendix.exe" $SOURCE/pycbc/tools/einsteinathome/progress.c
         x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/fstab$appendix.exe" $SOURCE/pycbc/tools/einsteinathome/fstab.c
@@ -950,17 +1085,17 @@ else
 fi
 
 # log environment
-echo -e "\\n\\n>> [`date`] ENVIRONMENT ..."
+echo -e "\\n\\n>> [`date`] ENVIRONMENT ..." >&3
 env
 echo -e "... ENVIRONMENT"
 
 # TEST
-echo -e "\\n\\n>> [`date`] testing local executable"
+echo -e "\\n\\n>> [`date`] testing local executable" >&3
 cd $PREFIX
 ./bin/pycbc_inspiral --help
 
 # BUNDLE DIR
-echo -e "\\n\\n>> [`date`] building pyinstaller spec"
+echo -e "\\n\\n>> [`date`] building pyinstaller spec" >&3
 # create spec file
 if $use_pycbc_pyinstaller_hooks; then
     export NOW_BUILDING=NULL
@@ -976,7 +1111,7 @@ if $verbose_pyinstalled_python; then
     sed -i~ 's%exe = EXE(pyz,%options = [ ("v", None, "OPTION"), ("W error", None, "OPTION") ]\
 exe = EXE(pyz, options,%' pycbc_inspiral.spec
 fi
-echo -e "\\n\\n>> [`date`] running pyinstaller"
+echo -e "\\n\\n>> [`date`] running pyinstaller" >&3
 pyinstaller pycbc_inspiral.spec
 
 cd dist/pycbc_inspiral
@@ -1001,12 +1136,12 @@ if test ".$appendix" = "._OSX64"; then
 fi
 
 # TEST BUNDLE
-echo -e "\\n\\n>> [`date`] testing"
+echo -e "\\n\\n>> [`date`] Testing pycbc_inspiral bundle" >&3
 ./pycbc_inspiral --help
 cd ..
 
 # build zip file from dir
-echo -e "\\n\\n>> [`date`] zip archive"
+echo -e "\\n\\n>> [`date`] Creating zip archive from directory" >&3
 zip -r pycbc_inspiral$appendix.zip pycbc_inspiral
 
 # if the executable is "pycbc_inspiral.exe", add a "XML soft link" "pycbc_inspiral" to the bundle for the wrapper
@@ -1015,6 +1150,14 @@ if $build_dlls; then
     echo '<soft_link>pycbc_inspiral/pycbc_inspiral.exe<soft_link/>' > tmp/pycbc_inspiral/pycbc_inspiral
     cd tmp
     zip ../pycbc_inspiral$appendix.zip pycbc_inspiral/pycbc_inspiral
+fi
+
+if $silent_build ; then
+    # redirect stdout and stderr back to the screen
+    exec 1>&-
+    exec 2>&-
+    exec 1>&3
+    exec 2>&4
 fi
 
 # run 10min self-test, build wave cache
@@ -1144,6 +1287,8 @@ do
       "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" \
       --fixed-weave-cache \
       --sample-rate 2048 \
+      --sgchisq-snr-threshold 6.0 \
+      --sgchisq-locations 'mtotal>40:20-30,20-45,20-60,20-75,20-90,20-105,20-120' \
       --segment-end-pad 16 \
       --cluster-method window \
       --low-frequency-cutoff 30 \
@@ -1174,7 +1319,7 @@ do
       --frame-files "$frames" \
       --approximant ${approx_array[$i]} \
       --bank-file ${bank_array[$i]} \
-      --verbose 2>&1
+      --verbose 2>&1 | awk '{if ((!/Filtering template|points above|power chisq|point chisq|Found chisq|generating SEOBNR|generating SPA/) || (/segment 1/ && NR % 50 == 0) || / 0: generating/ || / 1: generating/ ) print}'
 done
 
 # test for GW150914
@@ -1183,6 +1328,18 @@ python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRA
 
 fi # if $run_analysis
 
+if $silent_build ; then
+    # close stdin and stdout
+    exec 1>&-
+    exec 2>&-
+
+    # open stdout as $LOG_FILE file for read and write.
+    exec 1<>$LOG_FILE
+
+    # redirect stderr to stdout
+    exec 2>&1
+fi
+
 # zip weave cache
 echo -e "\\n\\n>> [`date`] zipping weave cache"
 cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
@@ -1190,7 +1347,7 @@ rm -f "$cache"
 # Fetch any extra libraries specified on the command line
 if [ ! -z ${extra_libs} ] ; then
   curl --ftp-pasv --insecure -o extra_libs.tar.gz ${extra_libs}
-  echo -e "\\n\\n>> [`date`] adding extra libraries from ${extra_libs}"
+  echo -e "\\n\\n>> [`date`] adding extra libraries from ${extra_libs}" >&3
   tar -C pycbc_inspiral/ -zxvf extra_libs.tar.gz
 fi
 # addin all ROM files to the cache would blow it up to >300MB, so for now add only the one
@@ -1202,7 +1359,7 @@ zip -r "$cache" pycbc_inspiral SEOBNRv2ChirpTimeSS.dat
 if $build_gating_tool; then
     # restore unpatched pyinstaller version
     if $patch_pyinstaller_bootloader; then
-        echo -e "\\n\\n>> [`date`] restore unpatched pyinstaller version"
+        echo -e "\\n\\n>> [`date`] restore unpatched pyinstaller version" >&3
         cd $SOURCE/pyinstaller
         xargs rm -f < installed-files.txt
         tar -xPzf ../pyinstaller-clean-installed.tar.gz
@@ -1211,7 +1368,7 @@ if $build_gating_tool; then
     export NOW_BUILDING=NULL
     cd "$ENVIRONMENT"
 
-    echo -e "\\n\\n>> [`date`] build pycbc_condition_strain bundle"
+    echo -e "\\n\\n>> [`date`] build pycbc_condition_strain bundle" >&3
     pyinstaller \
         --additional-hooks-dir $hooks/hooks \
         --runtime-hook $hooks/runtime-tkinter.py \
@@ -1219,14 +1376,14 @@ if $build_gating_tool; then
         --hidden-import=pkg_resources $hidden_imports \
         --onefile ./bin/pycbc_condition_strain
 
-    echo -e "\\n\\n>> [`date`] building pycbc_inspiral_osg pyinstaller onefile spec"
+    echo -e "\\n\\n>> [`date`] building pycbc_inspiral_osg pyinstaller onefile spec" >&3
     pyi-makespec \
         --additional-hooks-dir $hooks/hooks \
         --runtime-hook $hooks/runtime-tkinter.py \
         --hidden-import=pkg_resources $hidden_imports \
         --onefile ./bin/pycbc_inspiral --name pycbc_inspiral_osg
 
-    echo -e ">> [`date`] patching pyinstaller spec"
+    echo -e ">> [`date`] patching pyinstaller spec" >&3
     mv pycbc_inspiral_osg.spec pycbc_inspiral_osg.spec1
     ls $SOURCE/test/pycbc_inspiral/ |
         sed "s%.*%a.datas += [('&','$SOURCE/test/pycbc_inspiral/&','DATA')]%" > pycbc_inspiral_osg.spec2
@@ -1236,7 +1393,7 @@ if $build_gating_tool; then
     awk '/exe = EXE/ { while (getline l < "pycbc_inspiral_osg.spec2") {print l} }; {print}' \
         pycbc_inspiral_osg.spec1 > pycbc_inspiral_osg.spec
 
-    echo -e ">> [`date`] running pyinstaller"
+    echo -e ">> [`date`] running pyinstaller" >&3
     pyinstaller pycbc_inspiral_osg.spec
 
     if echo ".$pycbc_tag" | egrep '^\.v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
@@ -1244,7 +1401,20 @@ if $build_gating_tool; then
     fi
 fi
 
+if $silent_build ; then
+    # redirect stdout and stderr back to the screen
+    exec 1>&-
+    exec 2>&-
+    exec 1>&3
+    exec 2>&4
+fi
+
 # remove lock
 rm -f "$PYCBC/lock"
+
+# remove log file
+if [ -f $LOG_FILE ] ; then
+    rm -f $LOG_FILE
+fi
 
 echo -e "\\n\\n>> [`date`] Success $0"
