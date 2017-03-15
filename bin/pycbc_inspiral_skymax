@@ -38,6 +38,9 @@ parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                     help="Cut triggers with NewSNR less than THRESHOLD")
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
+parser.add_argument("--enable-bank-start-frequency", action='store_true',
+                  help="Read the starting frequency of template waveforms"
+                       " from the template bank.")
 parser.add_argument("--max-template-length", type=float,
                   help="The maximum length of a template is seconds. The "
                        "starting frequency of the template is modified to "
@@ -244,12 +247,14 @@ with ctx:
                            gating_info=gwstrain.gating_info)
 
     logging.info("Read in template bank")
+    lfc = None if opt.enable_bank_start_frequency else flow
     bank = waveform.FilterBankSkyMax(opt.bank_file, flen,
-                    delta_f, flow, dtype=complex64, phase_order=opt.order,
+                    delta_f, complex64, phase_order=opt.order,
                     taper=opt.taper_template, approximant=opt.approximant,
                     out_plus=zeros(tlen, dtype=complex64),
                     out_cross=zeros(tlen, dtype=complex64),
-                    max_template_length=opt.max_template_length)
+                    max_template_length=opt.max_template_length,
+                    low_frequency_cutoff=lfc)
 
     for t_num, (hplus, hcross) in enumerate(bank):
         # FIXME: Here we need to store sigmasq for plus *and* cross. Derived

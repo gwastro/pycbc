@@ -513,7 +513,6 @@ class LiveFilterBank(TemplateBank):
         for i, p in enumerate(self.table):
             hash_value =  hash((p.mass1, p.mass2, p.spin1z, p.spin2z))
             self.hash_lookup[hash_value] = i
-        self.table.sort(order='mchirp')
 
     def round_up(self, num):
         """Determine the length to use for this waveform by rounding.
@@ -723,15 +722,16 @@ def find_variable_start_frequency(approximant, parameters, f_start, max_length,
 
 
 class FilterBankSkyMax(TemplateBank):
-    def __init__(self, filename, filter_length, delta_f, f_lower,
+    def __init__(self, filename, filter_length, delta_f,
                  dtype, out_plus=None, out_cross=None,
                  max_template_length=None, parameters=None,
                  load_compressed=True, load_compressed_now=False,
+                 low_frequency_cutoff=None,
                  **kwds):
         self.out_plus = out_plus
         self.out_cross = out_cross
         self.dtype = dtype
-        self.f_lower = f_lower
+        self.f_lower = low_frequency_cutoff
         self.filename = filename
         self.delta_f = delta_f
         self.N = (filter_length - 1 ) * 2
@@ -743,15 +743,7 @@ class FilterBankSkyMax(TemplateBank):
             load_compressed=True, load_compressed_now=False,
             **kwds)
 
-        # add a template duration field if it already doesn't exist
-        if not hasattr(self.table, 'template_duration'):
-            if dtype == numpy.complex64 or dtype == numpy.float32:
-                rdtype = numpy.float32
-            else:
-                rdtype = numpy.float64
-            self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                               dtype=rdtype),
-                                               'template_duration')
+        self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
@@ -806,6 +798,8 @@ class FilterBankSkyMax(TemplateBank):
         hcross = hcross.astype(self.dtype)
         hplus.f_lower = f_low
         hcross.f_lower = f_low
+        hplus.min_f_lower = self.min_f_lower
+        hcross.min_f_lower = self.min_f_lower
         hplus.end_frequency = f_end
         hcross.end_frequency = f_end
         hplus.end_idx = int(hplus.end_frequency / hplus.delta_f)

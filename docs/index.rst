@@ -83,6 +83,7 @@ To install PyCBC and get started, follow the links at:
    :maxdepth: 1
 
    install
+   building_bundled_executables
 
 Users who want to create and run scientific workflows to search for compact
 binaries should read the documentation in the links at:
@@ -93,7 +94,6 @@ binaries should read the documentation in the links at:
    workflow/pycbc_make_psd_estimation_workflow
    workflow/pycbc_make_coinc_search_workflow
    workflow/pygrb.rst
-   using_production_binaries
 
 Users who want to create and run parameter estimation workflows should read the
 documentation at:

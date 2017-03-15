@@ -1,14 +1,21 @@
+.. _installing_pycbc:
+
 ################
 Installing PyCBC
 ################
 
-There are three typical use cases for PyCBC:
+This document explains how to set up a virtual environment to install PyCBC
+either for development or use in a production analysis with a release. The
+code build will be a standard Python install which requires that the
+installation directory containing the Python libraries is accessible at
+runtime. Some executables also use weave for just-in-time compilation of code
+at runtime. These executables require a gcc and Python build environment on
+the execution machine.
 
-1. Installing a release of PyCBC from GitHub for an end user to run the tools.
-2. Installing an editable version from GitHub for development.
-3. Production LIGO astrophysical searches.
-
-This page documents the first two use cases. For production analysis, see :ref:`using_production_binaries`.
+If you wish to run PyCBC executables on a machine that does not have the
+required environment, then you must use PyInstaller to build bundled versions
+of the executables. Documentation on doing this is available on the page
+:ref:`building_bundled_executables`.
 
 .. note::
 
@@ -184,7 +191,7 @@ Next install the Pegasus WMS python libraries needed to build the workflows with
 
 .. code-block:: bash
 
-    pip install http://download.pegasus.isi.edu/pegasus/4.7.2/pegasus-python-source-4.7.2.tar.gz
+    pip install http://download.pegasus.isi.edu/pegasus/4.7.3/pegasus-python-source-4.7.3.tar.gz
 
 To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. Install the 1.4.1 pre-release of these tools, run the command:
 
@@ -287,7 +294,7 @@ To build the documentation from your virtual environment, first make sure that y
     pip install "Sphinx>=1.4.2"
     pip install numpydoc
     pip install sphinx-rtd-theme
-    pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git@pypi_release#egg=sphinxcontrib-programoutput
+    pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
     
 To generate the documentation, from the top level of the PyCBC source tree run
 
