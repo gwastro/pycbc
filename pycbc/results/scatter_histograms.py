@@ -338,15 +338,15 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     values = numpy.percentile(values, percentiles)
     for val in values:
         if rotated:
-            ax.axhline(y=val, ls='dashed', color=linecolor, lw=2)
+            ax.axhline(y=val, ls='dashed', color=linecolor, lw=2, zorder=3)
         else:
-            ax.axvline(x=val, ls='dashed', color=linecolor, lw=2)
+            ax.axvline(x=val, ls='dashed', color=linecolor, lw=2, zorder=3)
     # plot expected
     if expected_value is not None:
         if rotated:
-            ax.axhline(expected_value, color=expected_color, lw=2)
+            ax.axhline(expected_value, color=expected_color, lw=1.5, zorder=2)
         else:
-            ax.axvline(expected_value, color=expected_color, lw=2)
+            ax.axvline(expected_value, color=expected_color, lw=1.5, zorder=2)
     if title:
         values_med = numpy.median(values)
         values_min = values.min()
@@ -576,12 +576,12 @@ def create_multidim_plot(parameters, samples, labels=None,
 
         if expected_parameters is not None:
             try:
-                ax.axvline(expected_parameters[px], lw=2,
+                ax.axvline(expected_parameters[px], lw=1.5,
                            color=expected_parameters_color, zorder=5)
             except KeyError:
                 pass
             try:
-                ax.axhline(expected_parameters[py], lw=2,
+                ax.axhline(expected_parameters[py], lw=1.5,
                            color=expected_parameters_color, zorder=5)
             except KeyError:
                 pass
