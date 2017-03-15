@@ -288,8 +288,7 @@ with ctx:
 
     # save stilde
     if opts.save_stilde:
-        with 
-        (opts.output_file, "a") as fp:
+        with InferenceFile(opts.output_file, "a") as fp:
             fp.write_stilde(stilde_dict)
 
     # save strain if desired
