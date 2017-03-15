@@ -20,7 +20,7 @@ import lal
 import pycbc
 from pycbc.types import Array, float32, FrequencySeries
 from pycbc.waveform.spa_tmplt import spa_tmplt_precondition
-from sweave import inline
+from weave import inline
 
 support = """
     #include <stdio.h>
