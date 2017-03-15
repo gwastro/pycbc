@@ -537,6 +537,8 @@ def create_multidim_plot(parameters, samples, labels=None,
                     expected_value = expected_parameters[param]
                 except KeyError:
                     expected_value = None
+            else:
+                expected_value = None
             create_marginalized_hist(ax, samples[param], label=labels[param],
                 color='k', fillcolor='gray', linecolor='navy', title=True,
                 expected_value=expected_value,
