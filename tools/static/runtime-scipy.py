@@ -21,8 +21,8 @@ python_lib_dest = python_lib.split('.so')[0] + '.so'
 os.symlink(python_lib, python_lib_dest)
 
 # add the libaries to the include and library directories
-import scipy.weave.inline_tools
-scipy.weave.inline_tools.inline_real = scipy.weave.inline_tools.inline
+import weave.inline_tools
+weave.inline_tools.inline_real = weave.inline_tools.inline
 def inline(code,arg_names=None,local_dict=None, global_dict=None,
            force=0,
            compiler='',
@@ -46,7 +46,7 @@ def inline(code,arg_names=None,local_dict=None, global_dict=None,
            if global_dict is None:
                global_dict = call_frame.f_globals
 
-           return scipy.weave.inline_tools.inline_real(code,
+           return weave.inline_tools.inline_real(code,
                    arg_names, local_dict=local_dict, global_dict=global_dict,
                    force=force,
                    compiler=compiler,
@@ -58,8 +58,8 @@ def inline(code,arg_names=None,local_dict=None, global_dict=None,
                    auto_downcast=auto_downcast,
                    newarr_converter=newarr_converter,
                    **kw)
-scipy.weave.inline_tools.inline = inline
-scipy.weave.inline = inline
+weave.inline_tools.inline = inline
+weave.inline = inline
 
 
 

@@ -23,11 +23,12 @@
 """ Utilities for handling frequency compressed an unequally spaced frequency
 domain waveforms.
 """
+from __future__ import absolute_import
 import lalsimulation, lal, numpy, logging, h5py
 from pycbc import pnutils, filter
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
-from scipy.weave import inline
+from weave import inline
 from scipy import interpolate
 from pycbc.types import FrequencySeries, zeros, complex_same_precision_as, real_same_precision_as
 from pycbc.waveform import utils
