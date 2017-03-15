@@ -25,8 +25,8 @@
 """
 from __future__ import absolute_import
 import numpy as _np
-from array import common_kind, complex128, float64
-import aligned as _algn
+from pycbc.types.array import common_kind, complex128, float64
+from . import aligned as _algn
 from scipy.linalg import blas
 from weave import inline
 from pycbc.opt import omp_libs, omp_flags
