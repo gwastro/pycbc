@@ -11,7 +11,8 @@ http://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm
 I use a similar naming convention here, with minor simplifications to the
 twiddle factors.
 """
-import numpy, scipy.weave, ctypes, pycbc.types
+from __future__ import absolute_import
+import numpy, weave, ctypes, pycbc.types
 from pycbc import WEAVE_FLAGS
 from pycbc.libutils import get_ctypes_library
 
@@ -167,7 +168,7 @@ def second_phase(invec, indices, N1, N2):
             out[i] = val;
         }
     """
-    scipy.weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
+    weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
                       )
     return out
 
@@ -222,7 +223,7 @@ def fast_second_phase(invec, indices, N1, N2):
             out[i] = val;
         }
     """
-    scipy.weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
+    weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
                        extra_compile_args=[WEAVE_FLAGS])
     return out
 

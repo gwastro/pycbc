@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
+from __future__ import absolute_import
 from pycbc import WEAVE_FLAGS
 from pycbc.types import zeros, complex64, float32
-from scipy.weave import inline
+from weave import inline
 import numpy as _np
 import pycbc.opt
 from pycbc.opt import omp_support, omp_libs, omp_flags

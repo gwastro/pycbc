@@ -23,11 +23,12 @@
 #
 """Numpy based CPU backend for PyCBC Array
 """
+from __future__ import absolute_import
 import numpy as _np
 from array import common_kind, complex128, float64
 import aligned as _algn
 from scipy.linalg import blas
-from scipy.weave import inline
+from weave import inline
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from pycbc.types import real_same_precision_as

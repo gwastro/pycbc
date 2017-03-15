@@ -24,6 +24,7 @@
 """This modules defines functions for clustering and thresholding timeseries to
 produces event triggers
 """
+from __future__ import absolute_import
 import lal, numpy, copy, os.path
 
 from pycbc import WEAVE_FLAGS
@@ -129,7 +130,7 @@ def findchirp_cluster_over_window(times, values, window_length):
     """
     assert window_length > 0, 'Clustering window length is not positive'
 
-    from scipy.weave import inline
+    from weave import inline
     indices = numpy.zeros(len(times), dtype=int)
     tlen = len(times)
     k = numpy.zeros(1, dtype=int)

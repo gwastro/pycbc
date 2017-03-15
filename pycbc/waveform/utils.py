@@ -24,6 +24,7 @@
 #
 """This module contains convenience utilities for manipulating waveforms
 """
+from __future__ import absolute_import
 from pycbc.types import TimeSeries, FrequencySeries, Array, float32, float64, complex_same_precision_as, real_same_precision_as
 import lal
 import lalsimulation as sim
@@ -32,7 +33,7 @@ import numpy
 import copy
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
-from scipy.weave import inline
+from weave import inline
 
 def ceilpow2(n):
     """convenience function to determine a power-of-2 upper frequency limit"""

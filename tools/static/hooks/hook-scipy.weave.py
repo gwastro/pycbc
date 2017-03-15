@@ -17,8 +17,8 @@ from distutils.sysconfig import get_python_inc
 
 # IPython (tested with 0.13) requires the following files:
 #   ./site-packages/IPython/config/profile/README_STARTUP
-datas = collect_data_files('scipy.weave')
+datas = collect_data_files('weave')
 datas += collect_data_files('numpy.core')
 datas += [(get_python_inc(), 'include')]
 
-hiddenimports = collect_submodules('scipy.weave')
+hiddenimports = collect_submodules('weave')
