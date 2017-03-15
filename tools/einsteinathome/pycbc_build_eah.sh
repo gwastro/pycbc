@@ -5,6 +5,9 @@
 # FIXME/todo:
 #
 
+# make a pipe fail if any process fails
+set -o pipefail
+
 # check an md5 sum of a file, independent of platform
 # $1 file to check, $2 md5 checksum
 # returns 0 for fail, 1 for success(!)
