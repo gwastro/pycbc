@@ -51,7 +51,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
     nwalkers : int
         Number of walkers to use in sampler.
     processes : {None, int}
-        Numbfer of processes to use with multiprocessing. If None, all available
+        Number of processes to use with multiprocessing. If None, all available
         cores are used.
     burn_in_iterations : {None, int}
         Set the number of burn in iterations to use. If None,
