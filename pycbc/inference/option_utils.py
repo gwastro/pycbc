@@ -22,7 +22,7 @@ import logging
 from pycbc.io import InferenceFile
 import pycbc.inference.sampler
 from pycbc.inference import likelihood
-
+from pycbc.pool import choose_pool
 
 def add_sampler_option_group(parser):
     """Adds the options needed to set up an inference sampler.
@@ -41,8 +41,6 @@ def add_sampler_option_group(parser):
         help="Sampler class to use for finding posterior.")
     sampler_group.add_argument("--niterations", type=int, required=True,
         help="Number of iterations to perform after burn in.")
-    sampler_group.add_argument("--nprocesses", type=int, default=None,
-        help="Number of processes to use. If not given then use maximum.")
     # sampler-specific options
     sampler_group.add_argument("--nwalkers", type=int, default=None,
         help="Number of walkers to use in sampler. Required for MCMC "
@@ -68,11 +66,13 @@ def add_sampler_option_group(parser):
              "no updates will occur. To ensure that updates happen at equal "
              "intervals, make checkpoint-interval a multiple of "
              "update-interval.")
-
+    sampler_group.add_argument("--nprocesses", type=int, default=None,
+        help="Number of processes to use. If not given then use maximum.")
+    sampler_group.add_argument("--use-mpi", action='store_true', default=False,
+        help="Use MPI to parallelize the sampler")
     return sampler_group
 
-
-def sampler_from_cli(opts, likelihood_evaluator):
+def sampler_from_cli(opts, likelihood_evaluator, pool=None):
     """Parses the given command-line options to set up a sampler.
 
     Parameters
@@ -87,11 +87,25 @@ def sampler_from_cli(opts, likelihood_evaluator):
     pycbc.inference.sampler
         A sampler initialized based on the given arguments.
     """
+    # Used to help paralleize over multiple cores / MPI
+    if opts.nprocesses > 1:
+        likelihood._global_instance = likelihood_evaluator
+        likelihood_call = likelihood._call_global_likelihood
+    else:
+        likelihood_call = None
+
     sclass = pycbc.inference.sampler.samplers[opts.sampler]
     # check for consistency
     if opts.skip_burn_in and opts.min_burn_in is not None:
         raise ValueError("both skip-burn-in and min-burn-in specified")
-    return sclass.from_cli(opts, likelihood_evaluator)
+
+    pool = choose_pool(mpi=opts.use_mpi, processes=opts.nprocesses)
+
+    if pool is not None:
+        pool.count = opts.nprocesses
+
+    return sclass.from_cli(opts, likelihood_evaluator,
+                           pool=pool, likelihood_call=likelihood_call)
 
 
 def add_inference_results_option_group(parser):
@@ -273,6 +287,20 @@ def add_plot_posterior_option_group(parser):
     pgroup.add_argument('--maxs', nargs='+', metavar='PARAM:VAL', default=[],
                         help="Same as mins, but for the maximum values to "
                              "plot.")
+    # add expected parameters options
+    pgroup.add_argument('--expected-parameters', nargs='+', metavar='PARAM:VAL',
+                        default=[],
+                        help="Specify expected parameter values to plot. If "
+                             "provided, a cross will be plotted in each axis "
+                             "that an expected parameter is provided. "
+                             "Parameter names must be "
+                             "the same as the PARAM argument in --parameters "
+                             "(or, if no parameters are provided, the same as "
+                             "the parameter name specified in the variable "
+                             "args in the input file.")
+    pgroup.add_argument('--expected-parameters-color', default='r',
+                        help="What to color the expected-parameters cross. "
+                             "Default is red.")
     return pgroup
 
 
@@ -309,6 +337,32 @@ def plot_ranges_from_cli(opts):
             raise ValueError("option --maxs not specified correctly; see help")
         maxs[x[0]] = float(x[1])
     return mins, maxs
+
+
+def expected_parameters_from_cli(opts):
+    """Parses the --expected-parameters arguments from the `plot_posterior`
+    option group.
+
+    Parameters
+    ----------
+    opts : ArgumentParser
+        The parsed arguments from the command line.
+
+    Returns
+    -------
+    dict
+        Dictionary of parameter name -> expected value. Only parameters that
+        were specified in the --expected-parameters option will be included; if
+        no parameters were provided, will return an empty dictionary.
+    """
+    expected = {}
+    for x in opts.expected_parameters:
+        x = x.split(':')
+        if len(x) != 2:
+            raise ValueError("option --expected-paramters not specified "
+                             "correctly; see help")
+        expected[x[0]] = float(x[1])
+    return expected
 
 
 def add_scatter_option_group(parser):

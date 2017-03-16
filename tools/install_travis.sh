@@ -2,94 +2,74 @@
 
 set -ev
 
-LOCAL=${PWD}
-
-# working dir for downloaded dependencies
-SRC=${HOME}/src
-mkdir -p ${SRC}
-
-# install dir for dependencies
-INST=${HOME}/inst
-
-export LD_LIBRARY_PATH=${INST}/lib:${INST}/lib64
-export PKG_CONFIG_PATH=${INST}/lib/pkgconfig
-export PATH=/usr/lib/ccache:${PATH}:${INST}/bin
-
-# Update setuptools
-pip install --upgrade pip setuptools
-
-# Install needed version of numpy
-pip install 'numpy==1.9.3' --upgrade 
-
-if [ -f ${INST}/dep_install.done ]
-then
-    echo "Found cache of installed dependencies, using it"
+# determine the pycbc git branch and origin
+git branch -vvv
+if test x$TRAVIS_PULL_REQUEST = "xfalse" ; then
+    PYCBC_CODE="--pycbc-commit=${TRAVIS_COMMIT}"
 else
-
-    # install the version of swig that for some reason we have to use
-
-    cd ${SRC}
-    wget -q http://download.sourceforge.net/project/swig/swig/swig-2.0.11/swig-2.0.11.tar.gz
-    tar -xzf swig-2.0.11.tar.gz
-    cd swig-2.0.11
-    ./configure -q --prefix=${INST}
-    make -j
-    make install
-
-    # Install metaio
-
-    cd ${SRC}
-    wget -q https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/metaio-8.2.tar.gz
-    tar -xzf metaio-8.2.tar.gz
-    cd metaio-8.2
-    CPPFLAGS=-std=gnu99 ./configure -q --prefix=${INST}
-    make -j
-    make install
-
-    # install framel
-
-    cd ${SRC}
-    wget -q http://lappweb.in2p3.fr/virgo/FrameL/v8r26.tar.gz
-    tar -xzf v8r26.tar.gz
-    cd v8r26
-    autoreconf
-    ./configure -q --prefix=${INST}
-    make -j
-    make install
-
-    # Install lalsuite
-
-    cd ${SRC}
-    git clone -q https://github.com/lscsoft/lalsuite.git
-    cd lalsuite
-    # This sets the test release to https://versions.ligo.org/cgit/lalsuite/commit/?id=a2a5a476d33f169b8749e2840c306a48df63c936
-    git checkout a2a5a476d33f169b8749e2840c306a48df63c936
-
-    ./00boot
-    ./configure -q --prefix=${INST} --enable-swig-python \
-        --disable-lalstochastic --disable-lalinference --disable-laldetchar \
-        --disable-lalxml --disable-lalburst --disable-lalapps
-    make -j
-    make install
-
-    # run lalsimulation tests
-    cd lalsimulation
-    make check
-
-    touch ${INST}/dep_install.done
-
-    cd ${LOCAL}
+    PYCBC_CODE="--pycbc-fetch-ref=refs/pull/${TRAVIS_PULL_REQUEST}/merge"
 fi
 
-source ${INST}/etc/lal-user-env.sh
+# set the lalsuite checkout to use
+LALSUITE_CODE="--lalsuite-commit=a2a5a476d33f169b8749e2840c306a48df63c936"
+# LALSUITE_CODE="--lalsuite-commit=master" --clean-lalsuite
 
-# Scipy would be required to build scikit-learn but that does not work with travis currently
-#pip install 'scipy==0.16.0' --upgrade
+# store the travis test directory
+LOCAL=${PWD}
 
-# Install Pegasus
-pip install http://download.pegasus.isi.edu/pegasus/4.7.2/pegasus-python-source-4.7.2.tar.gz
+# create working dir for build script
+BUILD=${HOME}/build
+mkdir -p ${BUILD}
+export PYTHONUSERBASE=${BUILD}/.local
+export XDG_CACHE_HOME=${BUILD}/.cache
 
-# Needed by mock 
+# run the einstein at home build and test script
+pushd ${BUILD}
+${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh ${LALSUITE_CODE} ${PYCBC_CODE} --clean-pycbc --silent-build
+popd
+
+# setup the pycbc environment to run the additional travis tests
+BUILDDIRNAME="pycbc-build"
+PYCBC="$BUILD/$BUILDDIRNAME"
+PYTHON_PREFIX="$PYCBC"
+ENVIRONMENT="$PYCBC/environment"
+PREFIX="$ENVIRONMENT"
+PATH="$PREFIX/bin:$PYTHON_PREFIX/bin:$PATH"
+export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:/usr/local/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+source ${BUILD}/pycbc-build/environment/etc/lalsuite-user-env.sh
+source ${BUILD}/pycbc-build/environment/bin/activate
+
+# update setuptools
+pip install --upgrade pip setuptools
+
+# needed by mock 
 pip install 'setuptools==18.2' --upgrade
 
+# install pegasus
+pip install http://download.pegasus.isi.edu/pegasus/4.7.4/pegasus-python-source-4.7.4.tar.gz
+
+# install M2Crypto
+SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
+
+# install the segment database tools
+pip install git+https://github.com/ligovirgo/dqsegdb@clean_pip_install_1_4_1#egg=dqsegdb
+
+# install the packges needed to build the documentation
+pip install "Sphinx>=1.4.2"
+pip install numpydoc
+pip install sphinx-rtd-theme
+pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
+
+# get library needed to build documentation
+wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
+url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/b3680bfb627a7350f29d31c7d91c4e09ff8a9fdc/x86_64/composer_xe_2015.0.090"
+p="libmkl_rt.so"
+pushd ${BUILD}/pycbc-sources
+test -r $p || wget $wget_opts ${url}/${p}
+cp -v $p $PREFIX/lib/$p
+chmod +x $PREFIX/lib/$p
+popd
+
+# re-install pycbc
 python setup.py install
