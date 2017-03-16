@@ -508,10 +508,11 @@ else # if $BUILDDIRNAME-preinst.tgz
 	pip install numpy==1.9.3
     fi
 
-    echo -e "\\n\\n>> [`date`] pip install nose" >&3
-    pip install nose
-    echo -e "\\n\\n>> [`date`] pip install Cython==0.23.2" >&3
-    pip install Cython==0.23.2
+    echo -e "\\n\\n>> [`date`] pip install nose, Cython-0.23.2" >&3
+    pip install nose Cython==0.23.2
+
+    echo -e "\\n\\n>> [`date`] make sure dbhash and shelve exist" >&3
+    python -c "import dbhash, shelve"
 
     # SCIPY
     if [ "$scipy_from" = "pip-install" ] ; then
@@ -985,10 +986,10 @@ fi
 rm -rf "$ENVIRONMENT/dist"
 mkdir -p "$ENVIRONMENT/dist"
 
-# if the build machine has dbhash & shelve, scipy weave will use bsddb, so make sure these get added to the bundle(s)
-if python -c "import dbhash, shelve" 2>/dev/null; then
-    hidden_imports="$hidden_imports --hidden-import=dbhash --hidden-import=shelve"
-fi
+# if the build machine has dbhash & shelve, scipy weave will use bsddb
+# make sure these exist and get added to the bundle(s)
+python -c "import dbhash, shelve"
+hidden_imports="--hidden-import=dbhash --hidden-import=shelve"
 
 # PyInstaller
 if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9][0-9]*$' > /dev/null; then
