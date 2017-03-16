@@ -81,6 +81,8 @@ for p in parameters:
     if p not in maxs:
         maxs[p] = samples[p].max()
 
+expected_parameters = option_utils.expected_parameters_from_cli(opts)
+
 logging.info("Plotting")
 fig, axis_dict = create_multidim_plot(
                 parameters, samples, labels=labels,
@@ -94,7 +96,9 @@ fig, axis_dict = create_multidim_plot(
                     density_cmap=opts.density_cmap,
                     contour_color=opts.contour_color,
                     use_kombine=opts.use_kombine_kde,
-                mins=mins, maxs=maxs)
+                mins=mins, maxs=maxs,
+                expected_parameters=expected_parameters,
+                expected_parameters_color=opts.expected_parameters_color)
 
 # save
 fig.savefig(opts.output_file, bbox_inches='tight', dpi=200)
