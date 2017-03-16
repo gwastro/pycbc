@@ -30,11 +30,6 @@ def _far_from_p(p, livetime, max_far):
         return max_far
     return far
 
-def pretty_num(num):
-    exp = numpy.floor(numpy.log10(num))
-    val = num / 10.0 ** exp
-    return '%2.1fe%.0f' % (val, exp)
-
 far_from_p = numpy.vectorize(_far_from_p)
 
 pylab.rc('text', usetex=True)
@@ -124,12 +119,22 @@ try:
          cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
          # Correct the foreground ifars depending on the values calculated
          # under a particular inclusive background distribution.
-         ifar_h_inc = f['foreground_h%s/ifar' % h_inc_back_num][:]
-         stat_h_inc = f['foreground_h%s/stat' % h_inc_back_num][:]
-         for i in range(0, len(ifar_h_inc)):
+
+         try:
+             ifar_h_inc = f['foreground_h%s/ifar' % h_inc_back_num][:]
+         except KeyError:
+             ifar_h_inc = []
+
+         try:
+             stat_h_inc = f['foreground_h%s/stat' % h_inc_back_num][:]
+         except KeyError:
+             stat_h_inc = []
+
+         for i in range(len(ifar_h_inc)):
              orig_idx = numpy.where(cstat_fore == stat_h_inc[i])[0][0]
              if orig_idx is not None:
                  cstat_rate[orig_idx] = 1.0 / ifar_h_inc[i] * args.trials_factor
+
          cstat_rate = cstat_rate[ssort]
          cstat_fore = cstat_fore[ssort]
          cstat_fap = p_from_far(cstat_rate, foreground_livetime)
@@ -141,8 +146,16 @@ except:
 if cstat_fore is not None and len(cstat_fore) == 0:
     cstat_fore = None
 
-back_ifar = f['background_h%s/ifar' % h_inc_back_num][:]
-cstat_back = f['background_h%s/stat' % h_inc_back_num][:]
+# Make choosing the background backwards compatible
+try:
+    back_ifar = f['background_h%s/ifar' % h_inc_back_num][:]
+except KeyError:
+    back_ifar = f['background/ifar'][:]
+
+try:
+    cstat_back = f['background_h%s/stat' % h_inc_back_num][:]
+except KeyError:
+    cstat_back = f['background/stat'][:]
 
 back_sort = cstat_back.argsort()
 cstat_back = cstat_back[back_sort]
