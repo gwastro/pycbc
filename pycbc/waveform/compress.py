@@ -751,14 +751,18 @@ class CompressedWaveform(object):
             directory.
         precision : {None, str}
             Cast the saved parameters to the given precision before saving. If
-            None provided, will use whatever their current precision is.
+            None provided, will use whatever their current precision is. This
+            will raise an error if the parameters have single precision but the
+            requested precision is double.
         """
         if root is None:
             root = ''
         else:
             root = '%s/'%(root)
         if precision is None:
-            precision = 'single'
+            precision = self.precision
+        elif precision == 'double' and self.precision == 'single':
+            raise ValueError("cannot cast single precision to double")
         outdtype = _real_dtypes[precision]
         group = '%scompressed_waveforms/%s' %(root, str(template_hash))
         for param in ['amplitude', 'phase', 'sample_points']:
