@@ -130,7 +130,7 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8
     pyinstaller_lsb="--no-lsb"
     build_gating_tool=true
     appendix="_Linux64"
-elif grep -q "Ubuntu 12" /etc/issue ; then
+elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
     link_gcc_version=4.6
     gcc_path="/usr/bin"
     build_python=true
