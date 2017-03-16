@@ -30,6 +30,11 @@ from pycbc import filter
 from pycbc.types import Array
 import numpy
 
+# Used to manage a likelihood instance across multiple cores or MPI
+_global_instance = None
+def _call_global_likelihood(*args, **kwds):
+    return _global_instance(*args, **kwds)
+
 class _NoPrior(object):
     """Dummy class to just return 0 if no prior is provided in a
     likelihood generator.
@@ -40,7 +45,6 @@ class _NoPrior(object):
 
     def __call__(self, params):
         return 0.
-
 
 def snr_from_loglr(loglr):
     """Returns SNR computed from the given log likelihood ratio(s). This is

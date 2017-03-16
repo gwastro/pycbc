@@ -22,7 +22,7 @@ import logging
 from pycbc.io import InferenceFile
 import pycbc.inference.sampler
 from pycbc.inference import likelihood
-
+from pycbc.pool import choose_pool
 
 def add_sampler_option_group(parser):
     """Adds the options needed to set up an inference sampler.
@@ -41,8 +41,6 @@ def add_sampler_option_group(parser):
         help="Sampler class to use for finding posterior.")
     sampler_group.add_argument("--niterations", type=int, required=True,
         help="Number of iterations to perform after burn in.")
-    sampler_group.add_argument("--nprocesses", type=int, default=None,
-        help="Number of processes to use. If not given then use maximum.")
     # sampler-specific options
     sampler_group.add_argument("--nwalkers", type=int, default=None,
         help="Number of walkers to use in sampler. Required for MCMC "
@@ -68,11 +66,13 @@ def add_sampler_option_group(parser):
              "no updates will occur. To ensure that updates happen at equal "
              "intervals, make checkpoint-interval a multiple of "
              "update-interval.")
-
+    sampler_group.add_argument("--nprocesses", type=int, default=None,
+        help="Number of processes to use. If not given then use maximum.")
+    sampler_group.add_argument("--use-mpi", action='store_true', default=False,
+        help="Use MPI to parallelize the sampler")
     return sampler_group
 
-
-def sampler_from_cli(opts, likelihood_evaluator):
+def sampler_from_cli(opts, likelihood_evaluator, pool=None):
     """Parses the given command-line options to set up a sampler.
 
     Parameters
@@ -87,11 +87,25 @@ def sampler_from_cli(opts, likelihood_evaluator):
     pycbc.inference.sampler
         A sampler initialized based on the given arguments.
     """
+    # Used to help paralleize over multiple cores / MPI
+    if opts.nprocesses > 1:
+        likelihood._global_instance = likelihood_evaluator
+        likelihood_call = likelihood._call_global_likelihood
+    else:
+        likelihood_call = None
+
     sclass = pycbc.inference.sampler.samplers[opts.sampler]
     # check for consistency
     if opts.skip_burn_in and opts.min_burn_in is not None:
         raise ValueError("both skip-burn-in and min-burn-in specified")
-    return sclass.from_cli(opts, likelihood_evaluator)
+
+    pool = choose_pool(mpi=opts.use_mpi, processes=opts.nprocesses)
+
+    if pool is not None:
+        pool.count = opts.nprocesses
+
+    return sclass.from_cli(opts, likelihood_evaluator,
+                           pool=pool, likelihood_call=likelihood_call)
 
 
 def add_inference_results_option_group(parser):
