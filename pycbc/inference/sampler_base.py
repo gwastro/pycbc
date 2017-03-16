@@ -54,7 +54,7 @@ class _BaseSampler(object):
         self._lastclear = 0
 
     @classmethod
-    def from_cli(cls, opts, likelihood_evaluator):
+    def from_cli(cls, opts, likelihood_evaluator, pool=None, likelihood_call=None):
         """This function create an instance of this sampler from the given
         command-line options.
         """
