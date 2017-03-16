@@ -67,16 +67,22 @@ class KombineSampler(BaseMCMCSampler):
     name = "kombine"
 
     def __init__(self, likelihood_evaluator, nwalkers, transd=False,
-                 processes=None, min_burn_in=None, update_interval=None):
+                 min_burn_in=None, pool=None, likelihood_call=None,  
+                 update_interval=None):
+
         try:
             import kombine
         except ImportError:
             raise ImportError("kombine is not installed.")
 
+        if likelihood_call is None:
+            likelihood_call = likelihood_evaluator
+
         # construct sampler for use in KombineSampler
         ndim = len(likelihood_evaluator.waveform_generator.variable_args)
-        sampler = kombine.Sampler(nwalkers, ndim, likelihood_evaluator,
-                                  transd=transd, processes=processes)
+        sampler = kombine.Sampler(nwalkers, ndim, likelihood_call,
+                                  transd=transd, pool=pool,
+                                  processes=pool.count)
         # initialize
         super(KombineSampler, self).__init__(sampler, likelihood_evaluator,
                                              min_burn_in=min_burn_in)
@@ -84,7 +90,7 @@ class KombineSampler(BaseMCMCSampler):
         self.update_interval = update_interval
 
     @classmethod
-    def from_cli(cls, opts, likelihood_evaluator):
+    def from_cli(cls, opts, likelihood_evaluator, pool=None, likelihood_call=None):
         """Create an instance of this sampler from the given command-line
         options.
 
@@ -100,9 +106,8 @@ class KombineSampler(BaseMCMCSampler):
         KombineSampler
             A kombine sampler initialized based on the given arguments.
         """
-        return cls(likelihood_evaluator, opts.nwalkers,
-                   processes=opts.nprocesses, min_burn_in=opts.min_burn_in,
-                   update_interval=opts.update_interval)
+        return cls(likelihood_evaluator, opts.nwalkers, likelihood_call=likelihood_call,
+                   min_burn_in=opts.min_burn_in, pool=pool, update_interval=opts.update_interval)
 
     def run(self, niterations, **kwargs):
         """Advance the sampler for a number of samples.
