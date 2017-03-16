@@ -30,11 +30,6 @@ def _far_from_p(p, livetime, max_far):
         return max_far
     return far
 
-def pretty_num(num):
-    exp = numpy.floor(numpy.log10(num))
-    val = num / 10.0 ** exp
-    return '%2.1fe%.0f' % (val, exp)
-
 far_from_p = numpy.vectorize(_far_from_p)
 
 pylab.rc('text', usetex=True)
