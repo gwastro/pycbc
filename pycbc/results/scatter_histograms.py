@@ -285,6 +285,7 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
 
 def create_marginalized_hist(ax, values, label, percentiles=None,
         color='k', fillcolor='gray', linecolor='navy', title=True,
+        expected_value=None, expected_color='red',
         rotated=False, plot_min=None, plot_max=None):
     """Plots a 1D marginalized histogram of the given param from the given
     samples.
@@ -337,9 +338,15 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     values = numpy.percentile(values, percentiles)
     for val in values:
         if rotated:
-            ax.axhline(y=val, ls='dashed', color=linecolor, lw=2)
+            ax.axhline(y=val, ls='dashed', color=linecolor, lw=2, zorder=3)
         else:
-            ax.axvline(x=val, ls='dashed', color=linecolor, lw=2)
+            ax.axvline(x=val, ls='dashed', color=linecolor, lw=2, zorder=3)
+    # plot expected
+    if expected_value is not None:
+        if rotated:
+            ax.axhline(expected_value, color=expected_color, lw=1.5, zorder=2)
+        else:
+            ax.axvline(expected_value, color=expected_color, lw=1.5, zorder=2)
     if title:
         values_med = numpy.median(values)
         values_min = values.min()
@@ -379,7 +386,8 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
 
 
 def create_multidim_plot(parameters, samples, labels=None,
-                mins=None, maxs=None,
+                mins=None, maxs=None, expected_parameters=None,
+                expected_parameters_color='r',
                 plot_marginal=True,
                 plot_scatter=True,
                     zvals=None, show_colorbar=True, cbar_label=None,
@@ -405,6 +413,12 @@ def create_multidim_plot(parameters, samples, labels=None,
         Maximum value for the axis of each variable in `parameters`.
         If None, it will use the maximum of the corresponding variable in
         `samples`.
+    expected_parameters : {None, dict}, optional
+        Expected values of `parameters`, as a dictionary mapping parameter
+        names -> values. A cross will be plotted at the location of the
+        expected parameters on axes that plot any of the expected parameters.
+    expected_parameters_color : {'r', string}, optional
+        What color to make the expected parameters cross.
     plot_marginal : {True, bool}
         Plot the marginalized distribution on the diagonals. If False, the
         diagonal axes will be turned off.
@@ -517,8 +531,18 @@ def create_multidim_plot(parameters, samples, labels=None,
             # if only plotting 2 parameters and on the second parameter,
             # rotate the marginal plot
             rotated = nparams == 2 and pi == nparams-1
+            # see if there are expected values
+            if expected_parameters is not None:
+                try:
+                    expected_value = expected_parameters[param]
+                except KeyError:
+                    expected_value = None
+            else:
+                expected_value = None
             create_marginalized_hist(ax, samples[param], label=labels[param],
                 color='k', fillcolor='gray', linecolor='navy', title=True,
+                expected_value=expected_value,
+                expected_color=expected_parameters_color,
                 rotated=rotated, plot_min=mins[param], plot_max=maxs[param])
 
     # Off-diagonals...
@@ -549,6 +573,18 @@ def create_multidim_plot(parameters, samples, labels=None,
                     ymin=mins[py], ymax=maxs[py],
                     exclude_region=exclude_region, ax=ax,
                     use_kombine=use_kombine)
+
+        if expected_parameters is not None:
+            try:
+                ax.axvline(expected_parameters[px], lw=1.5,
+                           color=expected_parameters_color, zorder=5)
+            except KeyError:
+                pass
+            try:
+                ax.axhline(expected_parameters[py], lw=1.5,
+                           color=expected_parameters_color, zorder=5)
+            except KeyError:
+                pass
 
         ax.set_xlim(mins[px], maxs[px])
         ax.set_ylim(mins[py], maxs[py])

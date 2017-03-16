@@ -200,6 +200,10 @@ else:
 
 fp.close()
 
+# get expected parameters
+expected_parameters = option_utils.expected_parameters_from_cli(opts)
+expected_parameters_color = opts.expected_parameters_color
+
 logging.info('Choosing common characteristics for all figures')
 # Set common min and max for axis in all plots
 mins, maxs = option_utils.plot_ranges_from_cli(opts)
@@ -239,7 +243,9 @@ def _make_frame(frame):
                         plot_contours=opts.plot_contours,
                             density_cmap=opts.density_cmap,
                             contour_color=opts.contour_color,
-                            use_kombine=opts.use_kombine_kde)
+                            use_kombine=opts.use_kombine_kde,
+                        expected_parameters=expected_parameters,
+                        expected_parameters_color=expected_parameters_color)
 
     # Write sample number
     if show_colorbar:
