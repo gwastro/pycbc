@@ -1139,7 +1139,12 @@ fi
 # OSX doesn't have a GNU error C extension, so drop an "error.h" header
 # with a fake 'error' function somewhere for scipy wave to pick it up
 if test ".$appendix" = "._OSX64"; then
-    echo '#define error(status, errnum, errstr, ...) fprintf(stderr,"pycbc_inspiral: %d:%d:" errstr, status, errnum, ##__VA_ARGS__)' > scipy/weave/error.h
+    if test -d scipy/weave; then
+        f=scipy/weave/error.h
+    else
+        f=weave/error.h
+    fi
+    echo '#define error(status, errnum, errstr, ...) fprintf(stderr,"pycbc_inspiral: %d:%d:" errstr, status, errnum, ##__VA_ARGS__)' > $f
 fi
 
 # TEST BUNDLE
