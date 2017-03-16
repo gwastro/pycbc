@@ -66,6 +66,7 @@ build_lapack=true
 pyssl_from="tarball" # "pip-install"
 numpy_from="pip-install" # "tarball"
 scipy_from="pip-install" # "git"
+scipy_version=0.19.0
 build_gsl=true
 build_swig=true
 build_pcre=false
@@ -169,6 +170,7 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     build_dlls=true
     rebase_dlls_before_pycbc=false
     numpy_from="tarball" # "pip-install"
+    scipy_version=0.16.0
     scipy_from="git" # "pip-install"
     build_hdf5=false
     build_freetype=false
@@ -511,24 +513,24 @@ else # if $BUILDDIRNAME-preinst.tgz
 
     # SCIPY
     if [ "$scipy_from" = "pip-install" ] ; then
-	echo -e "\\n\\n>> [`date`] pip install scipy==0.16.0" >&3
-	pip install scipy==0.16.0
+	echo -e "\\n\\n>> [`date`] pip install scipy==$scipy_version" >&3
+	pip install scipy==$scipy_version
     else
-	p=scipy-0.16.0
-	echo -e "\\n\\n>> [`date`] building $p" >&3
-	if test -d scipy/.git; then
-	    cd scipy
-	else
-	    git clone https://github.com/scipy/scipy.git
-	    cd scipy
-	    git checkout v0.16.0
-	    git config user.name "Dummy"
-	    git config user.email "dummy@dummy.net"
-	    git cherry-pick 832baa20f0b5d521bcdf4784dda13695b44bb89f
-	fi
-	python setup.py build --fcompiler=$FC
-	python setup.py install --prefix=$PREFIX
-	cd ..
+        echo -e "\\n\\n>> [`date`] building scipy-$scipy_version from git" >&3
+        if test -d scipy/.git; then
+            rm -rf scipy
+        fi
+        git clone https://github.com/scipy/scipy.git
+        cd scipy
+        git checkout v$scipy_version
+        if test "v$scipy_version" = "v0.16.0"; then
+            git config user.name "Dummy"
+            git config user.email "dummy@dummy.net"
+            git cherry-pick 832baa20f0b5d521bcdf4784dda13695b44bb89f
+        fi
+        python setup.py build --fcompiler=$FC
+        python setup.py install --prefix=$PREFIX
+        cd ..
     fi
 
     # this test will catch scipy build errors that would not emerge before running pycbc_inspiral
