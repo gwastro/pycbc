@@ -393,6 +393,8 @@ if test -r "$SOURCE/$BUILDDIRNAME-preinst.tgz" -o -r "$SOURCE/$BUILDDIRNAME-prei
     # set up virtual environment
     unset PYTHONPATH
     source "$ENVIRONMENT/bin/activate"
+    echo -e "\\n\\n>> [`date`] pip install --upgrade pip" >&3
+    pip install --upgrade pip
     # workaround to make the virtualenv accept .pth files
     export PYTHONPATH="$PREFIX/lib/python2.7/site-packages:$PYTHONPATH"
     cd "$SOURCE"
