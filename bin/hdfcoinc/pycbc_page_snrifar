@@ -343,7 +343,7 @@ else:
     # Set the labels
     ax2.set_yticklabels(['$10^{%i}$' %(val) for val in pticks.astype(int)])
     # add minor ticks
-    N_minor_per_decade = 10.
+    N_minor_per_decade = 10
     pminorticks = numpy.zeros(N_minor_per_decade * (pticks.size-1))
     for ii,p in enumerate(10**pticks[:-1]):
         idx = ii*N_minor_per_decade
