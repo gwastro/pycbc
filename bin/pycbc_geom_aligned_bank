@@ -532,7 +532,8 @@ cp.write(temp_fp)
 temp_fp.close()
 
 opts.config_files=['temp.ini']
-opts.config_overrides=[]
+opts.config_overrides = []
+opts.config_delete = []
 
 # Now setup the workflow
 workflow = wf.Workflow(opts, opts.workflow_name)
