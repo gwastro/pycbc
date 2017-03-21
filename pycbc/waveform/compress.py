@@ -239,12 +239,9 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
     hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
                             out=decomp_scratch, df=outdf, f_lower=fmin,
                             interpolation=interpolation)
-    fmax_hdecomp = numpy.amax(hdecomp.sample_frequencies.numpy())
-    fmax_htilde = numpy.amax(htilde.sample_frequencies.numpy())
-    high_frequency_cutoff = min(fmax_hdecomp, fmax_htilde)
-    kmax = int(high_frequency_cutoff/df)
-    htilde = htilde[0:kmax]
-    hdecomp = hdecomp[0:kmax]
+    kmax = min(len(htilde), len(hdecomp))
+    htilde = htilde[:kmax]
+    hdecomp = hdecomp[:kmax]
     mismatch = 1. - filter.overlap(hdecomp, htilde, psd=psd,
                                    low_frequency_cutoff=fmin)
     if mismatch > tolerance:
@@ -260,7 +257,19 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         minpt = vecdiffs.argmax()
         # add a point at the frequency halfway between minpt and minpt+1
         add_freq = sample_points[[minpt, minpt+1]].mean()
-        addidx = int(add_freq/df)
+        addidx = int(round(add_freq/df))
+        # ensure that only new points are added
+        if addidx in sample_index:
+            diffidx = vecdiffs.argsort()
+            addpt = -1
+            while addidx in sample_index:
+                addpt -= 1
+                try:
+                    minpt = diffidx[addpt]
+                except IndexError:
+                    raise ValueError("unable to compress to desired tolerance")
+                add_freq = sample_points[[minpt, minpt+1]].mean()
+                addidx = int(round(add_freq/df))
         new_index = numpy.zeros(sample_index.size+1, dtype=int)
         new_index[:minpt+1] = sample_index[:minpt+1]
         new_index[minpt+1] = addidx
@@ -275,12 +284,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
                                 out=decomp_scratch, df=outdf,
                                 f_lower=fmin, interpolation=interpolation)
-        fmax_hdecomp = numpy.amax(hdecomp.sample_frequencies.numpy())
-        fmax_htilde = numpy.amax(htilde.sample_frequencies.numpy())
-        high_frequency_cutoff = min(fmax_hdecomp, fmax_htilde)
-        kmax = int(high_frequency_cutoff/df)
-        htilde = htilde[0:kmax]
-        hdecomp = hdecomp[0:kmax]
+        hdecomp = hdecomp[:kmax]
         new_vecdiffs = numpy.zeros(vecdiffs.size+1)
         new_vecdiffs[:minpt] = vecdiffs[:minpt]
         new_vecdiffs[minpt+2:] = vecdiffs[minpt+1:]
@@ -422,7 +426,7 @@ _linear_decompress_code = r"""
             }
         }
         if (next_sfindex == hlen){
-        break;
+            break;
         }
     }
 
@@ -520,7 +524,7 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         raise ValueError('requested f_lower >= largest frequency in out')
     # interpolate the amplitude and the phase
     if interpolation == "inline_linear":
-        if precision == 'single':
+        if out.precision == 'single':
             code = _linear_decompress_code32
         else:
             code = _linear_decompress_code
