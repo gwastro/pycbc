@@ -28,6 +28,7 @@ import numpy as np
 import h5py
 import pycbc
 import pycbc.inject
+import pycbc.pnutils
 import pycbc.psd
 import glue.ligolw.utils
 from pycbc.filter import sigma, make_frequency_series
@@ -107,8 +108,8 @@ if __name__ == '__main__':
                         help='Start frequency of matched-filter integration in Hz (default %(default)s)')
     parser.add_argument('--seg-length', type=float, default=256,
                         help='Segment duration in seconds (default %(default)s)')
-    parser.add_argument('--sample-rate', type=float, default=16384,
-                        help='Data sample rate in Hz (default %(default)s)')
+    parser.add_argument('--sample-rate', type=float,
+                        help='Data sample rate in Hz (default %(default)s). If none, choose dynamically.')
     parser.add_argument('--snr-columns', nargs='+', action=MultiDetOptionAction,
                         metavar='DETECTOR:COLUMN', required=True,
                         help='Defines in which column of the sim_inspiral table' \
@@ -127,6 +128,7 @@ if __name__ == '__main__':
                            help='Instead of time-independent PSDs, use time-varying '
                            'PSDs from the given HDF5 files and pick the appropriate '
                            'PSD for each injection')
+    parser.add_argument('--verbose', action='store_true')
     opts = parser.parse_args()
 
     detectors = opts.snr_columns.keys()
@@ -134,15 +136,19 @@ if __name__ == '__main__':
     if not opts.time_varying_psds:
         pycbc.psd.verify_psd_options_multi_ifo(opts, parser, detectors)
 
-    log_fmt = '%(asctime)s %(message)s'
-    log_date_fmt = '%Y-%m-%d %H:%M:%S'
-    logging.basicConfig(level=logging.INFO, format=log_fmt, datefmt=log_date_fmt)
-
+    pycbc.init_logging(opts.verbose)
+    fiducial_rate = 16384
     seg_len = opts.seg_length
-    sample_rate = opts.sample_rate
-    delta_t = 1. / sample_rate
+    if opts.sample_rate is not None:
+        sample_rate = opts.sample_rate
+        optimize_sample_rate = False
+    else:
+        sample_rate = fiducial_rate
+        optimize_sample_rate = True
+
     delta_f = 1. / seg_len
-    tlen = int(seg_len * sample_rate)
+    delta_t = 1. / sample_rate
+    tlen = int(seg_len / delta_t)
     flen = tlen / 2 + 1
     f_low = opts.f_low
 
@@ -170,13 +176,29 @@ if __name__ == '__main__':
     def get_injection(injections, det, injection_time, simulation_id):
         """ Do an injection from the injection XML file, specified by
         IFO and end time"""
-        # leave 4 s of padding at the end for possible ringdown
-        start_time = int(injection_time + 4. - seg_len)
-        strain = TimeSeries(zeros(tlen, dtype=float32), delta_t=delta_t,
+        global tlen, delta_t, sample_rate
+        if optimize_sample_rate:
+            estimate = (pycbc.pnutils.get_final_freq('SEOBNRv2', 1, 100, 1, 1) + 16 ) * 2.1
+            sample_rate = pycbc.pnutils.nearest_larger_binary_number(estimate)
+            delta_t = 1.0 / sample_rate
+            tlen = int(seg_len / delta_t)
+
+        while True:
+            # leave 4 s of padding at the end for possible ringdown
+            start_time = int(injection_time + 4. - seg_len)
+            strain = TimeSeries(zeros(tlen, dtype=float32), delta_t=delta_t,
                         epoch=start_time)
-        injections.apply(strain, det, distance_scale=1./pycbc.DYN_RANGE_FAC,
+            try:
+                injections.apply(strain, det, distance_scale=1./pycbc.DYN_RANGE_FAC,
                          simulation_ids=[simulation_id])
-        return make_frequency_series(strain)
+                return make_frequency_series(strain)
+            except RuntimeError as e:
+                sample_rate *= 2
+                if sample_rate > fiducial_rate:
+                    raise(e)
+                delta_t = 1.0 / sample_rate
+                tlen = int(seg_len / delta_t)
+                continue
 
     def compute_optimal_snr(inj, return_found=False):
         for det, column in opts.snr_columns.items():
@@ -195,8 +217,9 @@ if __name__ == '__main__':
                     continue
                 else:
                     raise
-            sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
+            sval = sigma(wave, psd=psd[:len(wave)], low_frequency_cutoff=f_low)
             setattr(inj, column, sval)
+            logging.info('%s: Calculated: %s, Sample Rate: %s', sval, inj.simulation_id, (len(wave)-1) * delta_f * 2)
 
             if return_found:
                 # No need to do any other dets if we just
@@ -208,31 +231,17 @@ if __name__ == '__main__':
 
         return inj
 
-    logging.info("Loading injections")
     injections = pycbc.inject.InjectionSet(opts.inj_xml)
     inj_table = sorted(injections.table, key=lambda x: x.geocent_end_time)
+    logging.info("Loaded injections, %s found", len(inj_table))
 
     out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
                                      columns=injections.table.columnnames)
 
-    # KLUDGE! Loop through the injections until we find one that 
-    # will be processed, in order to populate the weave cache.
-    # This is a short-term fix until the issues with
-    # https://github.com/ligo-cbc/pycbc/issues/501
-    # can be resolved.  This will wastefully run the first injection
-    # twice which could be avoided, but since this is a short-term
-    # kludge anyway I'd prefer to be minimally invasive.
-    # TODO: Remove this when 501 is resolved.
-    # FIXME: https://www.youtube.com/watch?v=DtRNg5uSKQ0
-    for inj in inj_table:
-        ignore, found = compute_optimal_snr(inj, True)
-        if found:
-            break
-
     logging.info('Starting workers')
     pool = multiprocessing.Pool(processes=opts.cores)
-
     proc_injs = pool.map(compute_optimal_snr, inj_table)
+
     for inj in proc_injs:
         out_sim_inspiral.append(inj)
 
