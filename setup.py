@@ -375,7 +375,6 @@ setup (
                'bin/pycbc_get_ffinal',
                'bin/pycbc_tmpltbank_to_chi_params',
                'bin/pycbc_bank_verification',
-               'bin/pycbc_run_sqlite',
                'bin/pycbc_inj_cut',
                'bin/pycbc_upload_xml_to_gracedb',
                'bin/pycbc_dark_vs_bright_injections',

@@ -1,0 +1,12 @@
+Metadata-Version: 1.1
+Name: PyCBC
+Version: 13cc30
+Summary: Gravitational wave CBC analysis toolkit
+Home-page: https://github.com/ligo-cbc/pycbc
+Author: Ligo Virgo Collaboration - PyCBC team
+Author-email: alex.nitz@ligo.org
+License: UNKNOWN
+Download-URL: https://github.com/ligo-cbc/pycbc/tarball/v13cc30
+Description: UNKNOWN
+Keywords: ligo,physics,gravity,signal processing
+Platform: UNKNOWN

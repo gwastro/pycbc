@@ -3,9 +3,9 @@
 # Copyright (C) 2014 Andrew Lundgren
 import sys
 import argparse
-import glue.ligolw.utils
-import glue.ligolw.table
-from glue.ligolw import ligolw, lsctables
+import pycbc_glue.ligolw.utils
+import pycbc_glue.ligolw.table
+from pycbc_glue.ligolw import ligolw, lsctables
 from itertools import cycle
 import pycbc.version
 
@@ -37,8 +37,8 @@ if args.output_files and args.output_dir:
 lsctables.use_in(LIGOLWContentHandler)
 
 # Read in input file
-xmldoc = glue.ligolw.utils.load_filename(args.input_file, verbose=True,
-                                         contenthandler=LIGOLWContentHandler)
+xmldoc = pycbc_glue.ligolw.utils.load_filename\
+    (args.input_file, verbose=True, contenthandler=LIGOLWContentHandler)
 tabletype = lsctables.SimInspiralTable
 allinjs = tabletype.get_table(xmldoc)
 
@@ -70,6 +70,6 @@ for idx, simtable in enumerate(new_inj_tables):
         out_path = args.output_dir + '/' + filename_pattern % idx
     else:
         out_path = args.output_files[idx]
-    glue.ligolw.utils.write_filename(xmldoc, out_path,
-                                     gz=out_path.endswith('gz'))
+    pycbc_glue.ligolw.utils.write_filename(xmldoc, out_path,
+                                           gz=out_path.endswith('gz'))
     xmlroot.removeChild(simtable)
