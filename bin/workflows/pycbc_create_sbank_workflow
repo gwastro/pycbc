@@ -412,4 +412,4 @@ for cycle_idx in range(num_cycles):
     seed_file = h5add_node.output_files[0]
     bins_inp_file = seed_file
 
-workflow.save(filename=args.dax_filename, output_map=args.map_filename)
+workflow.save(filename=args.dax_filename, output_map_path=args.map_filename)

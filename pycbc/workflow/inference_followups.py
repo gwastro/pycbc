@@ -98,7 +98,7 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
     node.add_opt("--workflow-name", name)
 
     # get output map name and use it for the output dir name
-    map_loc = node.output_files[1].name
+    map_file = node.output_files[1]
     node.add_opt("--output-dir", out_dir)
 
     # add this node to the workflow
@@ -109,7 +109,7 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
     fil = node.output_files[0]
     job = dax.DAX(fil)
     job.addArguments("--basename %s" % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_loc)
+    Workflow.set_job_properties(job, map_file)
     workflow._adag.addJob(job)
 
     # make dax a child of the inference workflow generator node
