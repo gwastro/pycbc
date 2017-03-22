@@ -602,7 +602,7 @@ bankverify_exe = BankVerification(workflow.cp, 'bankverify',
 bankverify_node = bankverify_exe.create_node(out_bank, workflow.analysis_time)
 workflow += bankverify_node
 
-workflow.save(filename=opts.dax_filename, output_map=opts.map_filename)
+workflow.save(filename=opts.dax_filename, output_map_path=opts.map_filename)
 
 logging.info("GENERATION SUCCESSFUL.")
 logging.info("Submit the resulting dax file to generate your template bank.")

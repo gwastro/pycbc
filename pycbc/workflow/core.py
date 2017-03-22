@@ -657,11 +657,12 @@ class Workflow(pegasus_workflow.Workflow):
         if staging_site:
             job.addArguments('--staging-site %s' % staging_site)
             
-    def save(self, filename=None, output_map=None, staging_site=None):
-        if output_map is None:
-            output_map = self.output_map
-            output_map_file = Pegasus.DAX3.File(os.path.basename(output_map))
-            output_map_file.addPFN(Pegasus.DAX3.PFN(output_map, 'local'))
+    def save(self, filename=None, output_map_path=None, staging_site=None):
+        if output_map_path is None:
+            output_map_path = self.output_map
+        output_map_file = Pegasus.DAX3.File(os.path.basename(output_map_path))
+        output_map_file.addPFN(Pegasus.DAX3.PFN(output_map_path, 'local'))
+        if self.in_workflow is not False:
             self.in_workflow._adag.addFile(output_map_file)
 
         staging_site = self.staging_site
@@ -680,7 +681,7 @@ class Workflow(pegasus_workflow.Workflow):
         super(Workflow, self).save(filename=filename)
         
         # add workflow storage locations to the output mapper
-        f = open(output_map, 'w')
+        f = open(output_map_path, 'w')
         for out in self._outputs:
             try:
                 f.write(out.output_map_str() + '\n')
