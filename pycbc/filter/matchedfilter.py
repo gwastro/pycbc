@@ -153,6 +153,7 @@ class MatchedFilterControl(object):
         self.tlen = tlen
         self.flen = self.tlen / 2 + 1
         self.delta_f = delta_f
+        self.delta_t = 1.0/(self.delta_f * self.tlen)
         self.dtype = dtype
         self.snr_threshold = snr_threshold
         self.flow = low_frequency_cutoff
@@ -225,7 +226,10 @@ class MatchedFilterControl(object):
             raise ValueError("Invalid downsample factor")
 
     def full_matched_filter_and_cluster_symm(self, segnum, template_norm, window, epoch=None):
-        """ Return the complex snr and normalization.
+        """ Returns the complex snr timeseries, normalization of the complex snr,
+        the correlation vector frequency series, the list of indices of the
+        triggers, and the snr values at the trigger locations. Returns empty
+        lists for these for points that are not above the threshold.
 
         Calculated the matched filter, threshold, and cluster.
 
@@ -256,16 +260,21 @@ class MatchedFilterControl(object):
         self.correlators[segnum].correlate()
         self.ifft.execute()
         snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
+        
+        if len(idx) == 0:
+            return [], [], [], [], []
 
         logging.info("%s points above threshold" % str(len(idx)))
 
-        delta_t = 1.0/(self.delta_f * self.tlen)
-        snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=delta_t, copy=False)
+        snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
         corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
         return snr, norm, corr, idx, snrv
 
     def full_matched_filter_and_cluster_fc(self, segnum, template_norm, window, epoch=None):
-        """ Return the complex snr and normalization.
+        """ Returns the complex snr timeseries, normalization of the complex snr,
+        the correlation vector frequency series, the list of indices of the
+        triggers, and the snr values at the trigger locations. Returns empty
+        lists for these for points that are not above the threshold.
 
         Calculated the matched filter, threshold, and cluster.
 
@@ -299,15 +308,20 @@ class MatchedFilterControl(object):
                                      self.snr_threshold / norm)
         idx, snrv = events.cluster_reduce(idx, snrv, window)
 
+        if len(idx) == 0:
+            return [], [], [], [], []
+
         logging.info("%s points above threshold" % str(len(idx)))
 
-        delta_t = 1.0/(self.delta_f * self.tlen)
-        snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=delta_t)
-        corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f)
+        snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
+        corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
         return snr, norm, corr, idx, snrv
 
     def full_matched_filter_thresh_only(self, segnum, template_norm, window, epoch=None):
-        """ Return the complex snr and normalization.
+        """ Returns the complex snr timeseries, normalization of the complex snr,
+        the correlation vector frequency series, the list of indices of the
+        triggers, and the snr values at the trigger locations. Returns empty
+        lists for these for points that are not above the threshold.
 
         Calculated the matched filter, threshold, and cluster.
 
@@ -341,15 +355,20 @@ class MatchedFilterControl(object):
         snrv, idx = events.threshold_only(self.snr_mem[self.segments[segnum].analyze],
                                           self.snr_threshold / norm)
 
-        logging.info("%s points above threshold" % str(len(idx)))
+        if len(idx) == 0:
+            return [], [], [], [], []
 
-        delta_t = 1.0/(self.delta_f * self.tlen)
-        snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=delta_t)
-        corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f)
+        logging.info("%s points above threshold" % str(len(idx)))
+        
+        snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
+        corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
         return snr, norm, corr, idx, snrv
 
     def heirarchical_matched_filter_and_cluster(self, segnum, template_norm, window):
-        """ Return the complex snr and normalization.
+        """ Returns the complex snr timeseries, normalization of the complex snr,
+        the correlation vector frequency series, the list of indices of the
+        triggers, and the snr values at the trigger locations. Returns empty
+        lists for these for points that are not above the threshold.
 
         Calculated the matched filter, threshold, and cluster.
 
