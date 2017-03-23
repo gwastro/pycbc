@@ -173,24 +173,24 @@ if __name__ == '__main__':
         for det in detectors:
             psds[det] = TimeIndependentPSD(psds[det].astype(float32))
 
-    def get_injection(injections, det, injection_time, simulation_id):
+    def get_injection(injections, det, inj):
         """ Do an injection from the injection XML file, specified by
         IFO and end time"""
         global tlen, delta_t, sample_rate
         if optimize_sample_rate:
-            estimate = (pycbc.pnutils.get_final_freq('SEOBNRv2', 1, 100, 1, 1) + 16 ) * 2.1
+            estimate = (pycbc.pnutils.get_final_freq('SEOBNRv2', inj.mass1, inj.mass2, inj.spin1z, inj.spin2z) + 16 ) * 2.1
             sample_rate = pycbc.pnutils.nearest_larger_binary_number(estimate)
             delta_t = 1.0 / sample_rate
             tlen = int(seg_len / delta_t)
 
         while True:
             # leave 4 s of padding at the end for possible ringdown
-            start_time = int(injection_time + 4. - seg_len)
+            start_time = int(inj.geocent_end_time + 4. - seg_len)
             strain = TimeSeries(zeros(tlen, dtype=float32), delta_t=delta_t,
                         epoch=start_time)
             try:
                 injections.apply(strain, det, distance_scale=1./pycbc.DYN_RANGE_FAC,
-                         simulation_ids=[simulation_id])
+                         simulation_ids=[inj.simulation_id])
                 return make_frequency_series(strain)
             except RuntimeError as e:
                 sample_rate *= 2
@@ -203,13 +203,11 @@ if __name__ == '__main__':
     def compute_optimal_snr(inj, return_found=False):
         for det, column in opts.snr_columns.items():
             # geocent time is robust to potentially incomplete sim tables
-            injection_time = inj.geocent_end_time
-            psd = psds[det](injection_time)
+            psd = psds[det](inj.geocent_end_time)
             if psd is None:
                 continue
             try:
-                wave = get_injection(injections, det, injection_time,
-                                     simulation_id=inj.simulation_id)
+                wave = get_injection(injections, det, inj)
             except Exception, e:
                 if opts.ignore_waveform_errors:
                     logging.warn('%s: waveform generation failed, skipping (%s)',
