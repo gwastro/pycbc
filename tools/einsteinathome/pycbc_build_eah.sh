@@ -1002,6 +1002,19 @@ hooks="$PWD/tools/static"
 cd ..
 test -r "$PREFIX/etc/pycbc-user-env.sh" && source "$PREFIX/etc/pycbc-user-env.sh"
 
+# on Windows, rebase DLLs
+# from https://cygwin.com/ml/cygwin/2009-12/msg00168.html:
+# /bin/rebase -d -b 0x61000000 -o 0x20000 -v -T <file with list of dll and so files> > rebase.out
+if $build_dlls; then
+    echo -e "\\n\\n>> [`date`] Rebasing DLLs" >&3
+    find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
+    rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
+fi
+
+# TEST
+echo -e "\\n\\n>> [`date`] testing local executable" >&3
+$PREFIX/bin/pycbc_inspiral --help
+
 if $silent_build ; then
     # close stdin and stdout
     exec 1>&-
@@ -1086,15 +1099,6 @@ python setup.py install --prefix="$PREFIX" --record installed-files.txt
 cd ..
 test "$p" = "PyInstaller-$pyinstaller_version" && cleanup && rm -rf "$p"
 
-# on Windows, rebase DLLs
-# from https://cygwin.com/ml/cygwin/2009-12/msg00168.html:
-# /bin/rebase -d -b 0x61000000 -o 0x20000 -v -T <file with list of dll and so files> > rebase.out
-if $build_dlls; then
-    echo -e "\\n\\n>> [`date`] Rebasing DLLs" >&3
-    find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
-    rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
-fi
-
 if $build_wrapper; then
 # on Linux, build "progress" and "wrapper"
     echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'progress', 'fstab' and 'fstab_test'" >&3
@@ -1133,10 +1137,7 @@ echo -e "\\n\\n>> [`date`] ENVIRONMENT ..." >&3
 env
 echo -e "... ENVIRONMENT"
 
-# TEST
-echo -e "\\n\\n>> [`date`] testing local executable" >&3
 cd $PREFIX
-./bin/pycbc_inspiral --help
 
 # BUNDLE DIR
 echo -e "\\n\\n>> [`date`] building pyinstaller spec" >&3
