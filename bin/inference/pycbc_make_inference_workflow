@@ -245,7 +245,7 @@ for subsection in cp.get_subsections(opts.prior_section):
                           tags=opts.tags + [subsection])
 
 # write dax
-workflow.save(filename=opts.output_file, output_map=opts.output_map)
+workflow.save(filename=opts.output_file)
 
 # write html well
 layout.two_column_layout(opts.output_dir, layouts)
