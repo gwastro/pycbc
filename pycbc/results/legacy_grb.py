@@ -35,7 +35,7 @@ import sys
 if not 'matplotlib.backends' in sys.modules:
     matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from glue import markup, segments
+from pycbc_glue import markup, segments
 from lal.gpstime import gps_to_utc, LIGOTimeGPS
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D

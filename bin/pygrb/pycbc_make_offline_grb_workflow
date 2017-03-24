@@ -33,7 +33,7 @@ import os
 import argparse
 import logging
 import pycbc.workflow as _workflow
-from glue.segments import segment, segmentlist, segmentlistdict
+from pycbc_glue.segments import segment, segmentlist, segmentlistdict
 from pycbc.results.legacy_grb import make_grb_segments_plot
 
 workflow_name = "pygrb_offline"
