@@ -179,6 +179,8 @@ if __name__ == '__main__':
         global tlen, delta_t, sample_rate
         if optimize_sample_rate:
             estimate = (pycbc.pnutils.get_final_freq('SEOBNRv2', inj.mass1, inj.mass2, inj.spin1z, inj.spin2z) + 16 ) * 2.1
+            # There's no reasonable power above 1 khz
+            estimate  = 2048 if estimate > 2048 else estimate
             sample_rate = pycbc.pnutils.nearest_larger_binary_number(estimate)
             delta_t = 1.0 / sample_rate
             tlen = int(seg_len / delta_t)
