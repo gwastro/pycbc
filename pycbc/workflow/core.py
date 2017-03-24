@@ -33,11 +33,11 @@ from itertools import combinations, groupby, permutations
 from operator import attrgetter
 import lal as lalswig
 import Pegasus.DAX3
-from glue import lal, segments
-from glue.ligolw import table, lsctables, ligolw
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import segments as ligolw_segments
-from glue.ligolw.utils import process as ligolw_process
+from pycbc_glue import lal, segments
+from pycbc_glue.ligolw import table, lsctables, ligolw
+from pycbc_glue.ligolw import utils as ligolw_utils
+from pycbc_glue.ligolw.utils import segments as ligolw_segments
+from pycbc_glue.ligolw.utils import process as ligolw_process
 from pycbc.workflow.configuration import WorkflowConfigParser, resolve_url
 from pycbc.workflow import pegasus_workflow
 

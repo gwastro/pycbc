@@ -1,5 +1,5 @@
 import pylab
-from glue.ligolw import table, utils, lsctables
+from pycbc_glue.ligolw import table, utils, lsctables
 from sys import argv
 import numpy
 

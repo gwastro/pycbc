@@ -223,7 +223,7 @@ def datafind_connection(server=None):
     """
     # import inside function to avoid adding M2Crypto
     # as a general PyCBC requirement
-    import glue.datafind
+    import pycbc_glue.datafind
 
     if server:
         datafind_server = server
@@ -239,7 +239,7 @@ def datafind_connection(server=None):
 
     # verify authentication options
     if not datafind_server.endswith("80"):
-        cert_file, key_file = glue.datafind.find_credential()
+        cert_file, key_file = pycbc_glue.datafind.find_credential()
     else:
         cert_file, key_file = None, None
 
@@ -252,10 +252,10 @@ def datafind_connection(server=None):
 
     # Open connection to the datafind server
     if cert_file and key_file:
-        connection = glue.datafind.GWDataFindHTTPSConnection(
+        connection = pycbc_glue.datafind.GWDataFindHTTPSConnection(
                 host=server, port=port, cert_file=cert_file, key_file=key_file)
     else:
-        connection = glue.datafind.GWDataFindHTTPConnection(
+        connection = pycbc_glue.datafind.GWDataFindHTTPConnection(
                 host=server, port=port)
     return connection
     

@@ -1,13 +1,13 @@
 #!/bin/env python
-import argparse, logging, pycbc.version, glue.segments, numpy
+import argparse, logging, pycbc.version, pycbc_glue.segments, numpy
 from dqsegdb.apicalls import dqsegdbQueryTimes as query
 from pycbc.workflow.segment import cat_to_veto_def_cat as convert_cat
 
 def sane(seg_list):
     """ Convert list of len two lists containing strs to segment list """
-    segs = glue.segments.segmentlist([])
+    segs = pycbc_glue.segments.segmentlist([])
     for seg in seg_list:
-        segs.append(glue.segments.segment(int(seg[0]), int(seg[1])))
+        segs.append(pycbc_glue.segments.segment(int(seg[0]), int(seg[1])))
     return segs
     
 def parse_veto_definer(veto_def_filename):
@@ -24,8 +24,9 @@ def parse_veto_definer(veto_def_filename):
             Returns a dictionary first indexed by ifo, then category level, and
             finally a list of veto definitions.
     """
-    from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
-    from glue.ligolw.ligolw import LIGOLWContentHandler as h; lsctables.use_in(h)
+    from pycbc_glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+    from pycbc_glue.ligolw.ligolw import LIGOLWContentHandler as h
+    lsctables.use_in(h)
     
     indoc = ligolw_utils.load_filename(veto_def_filename, False, contenthandler=h)
     veto_table = table.get_table(indoc, 'veto_definer')
@@ -61,7 +62,7 @@ def get_vetoes(veto_def, ifo, server, veto_name, start_default, end_default):
     """ Cycle through the veto name string and collect the vetoes for the
     selected categories. Return the final segment list
     """
-    veto_segments = glue.segments.segmentlist([])
+    veto_segments = pycbc_glue.segments.segmentlist([])
     for cat in veto_name:
         cat = convert_cat(cat)
         flags = veto_def[ifo][cat]
@@ -76,7 +77,7 @@ def get_vetoes(veto_def, ifo, server, veto_name, start_default, end_default):
                                   
             for rseg in raw_segs:
                 s, e = rseg[0] + flag['start_pad'], rseg[1] + flag['end_pad']
-                veto_segments.append(glue.segments.segment(s, e))
+                veto_segments.append(pycbc_glue.segments.segment(s, e))
     return veto_segments.coalesce()
     
 
@@ -130,8 +131,8 @@ for science_name in args.science_names:
                          'active', args.gps_start_time, args.gps_end_time)[0]['active'])
 
     #trim segments to the request time
-    request = glue.segments.segment(args.gps_start_time, args.gps_end_time)
-    segments = (glue.segments.segmentlist([request]) & segments)
+    request = pycbc_glue.segments.segment(args.gps_start_time, args.gps_end_time)
+    segments = (pycbc_glue.segments.segmentlist([request]) & segments)
 
     # apply cat 1 vetoes here
     logging.info('Found %ss of data' % abs(segments))
@@ -148,13 +149,13 @@ for science_name in args.science_names:
     logging.info('Found %ss after applying CAT1 vetoes' % abs(segments))
     # remove short segments, and account for filter padding
     logging.info('Removing segments shorter than %ss' % minimum_segment_length)
-    lsegments = glue.segments.segmentlist([])
+    lsegments = pycbc_glue.segments.segmentlist([])
     segments = segments.coalesce()
     for seg in segments:
         if abs(seg) >= minimum_segment_length:
             start = seg[0] + analysis_start_pad
             end = seg[1] - analysis_end_pad
-            lsegments.append(glue.segments.segment(start, end))
+            lsegments.append(pycbc_glue.segments.segment(start, end))
     segments = lsegments
     logging.info('Found %ss after applying removing padding / short segments' % abs(segments))
     

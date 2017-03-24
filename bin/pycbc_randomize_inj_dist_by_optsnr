@@ -10,13 +10,13 @@ import time
 from scipy import stats, special
 from argparse import ArgumentParser
 
-import glue.ligolw.utils
-import glue.ligolw.table
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
-from glue.ligolw import table
-from glue.ligolw.utils import process
+import pycbc_glue.ligolw.utils
+import pycbc_glue.ligolw.table
+from pycbc_glue.ligolw import ligolw
+from pycbc_glue.ligolw import lsctables
+from pycbc_glue.ligolw import utils
+from pycbc_glue.ligolw import table
+from pycbc_glue.ligolw.utils import process
 
 def r_uniform_in_volume(r1, r2, N):
     xi = numpy.random.uniform(0., 1., size=N)
@@ -150,8 +150,8 @@ if opts.verbose:
     print >> sys.stdout, "Cycling over injections..."
 
 # Read in input file
-xmldoc = glue.ligolw.utils.load_filename(opts.xml_file, verbose=True,
-                                         contenthandler=LIGOLWContentHandler)
+xmldoc = pycbc_glue.ligolw.utils.load_filename\
+    (opts.xml_file, verbose=True, contenthandler=LIGOLWContentHandler)
 tabletype = lsctables.SimInspiralTable
 injections = tabletype.get_table(xmldoc)
 
@@ -208,7 +208,8 @@ if opts.verbose:
     print >> sys.stdout, ""
     sys.stdout.flush()
 
-glue.ligolw.utils.write_filename(xmldoc, opts.output_file, gz=opts.output_file.endswith('gz'))
+pycbc_glue.ligolw.utils.write_filename(xmldoc, opts.output_file,
+                                       gz=opts.output_file.endswith('gz'))
 if opts.verbose:
     print >> sys.stdout, "Finished!"
 sys.exit(0)

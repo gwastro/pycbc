@@ -32,7 +32,7 @@ import os.path
 import h5py
 from copy import copy
 import numpy as np
-from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+from pycbc_glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 import pycbc.waveform
 import pycbc.pnutils
 import pycbc.waveform.compress

@@ -349,7 +349,7 @@ class FrequencySeries(Array):
             _numpy.savetxt(path, output)
         elif ext == '.xml' or path.endswith('.xml.gz'):
             from pylal import series as lalseries
-            from glue.ligolw import utils
+            from pycbc_glue.ligolw import utils
             assert(self.kind == 'real')
             output = self.lal()
             # When writing in this format we must *not* have the 0 values at

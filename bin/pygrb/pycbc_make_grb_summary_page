@@ -28,7 +28,7 @@ import random
 import string
 from pycbc.workflow.core import make_external_call
 from pycbc.results.legacy_grb import *
-from glue import markup
+from pycbc_glue import markup
 from pylal import grbsummary,rate,antenna,git_version
 from lal.gpstime import gps_to_utc,LIGOTimeGPS
 

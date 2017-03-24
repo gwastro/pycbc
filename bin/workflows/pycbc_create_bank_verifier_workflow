@@ -27,7 +27,7 @@ from __future__ import division
 import os
 import argparse
 
-from glue import segments
+from pycbc_glue import segments
 
 import pycbc.version
 import pycbc.workflow as wf

@@ -34,7 +34,7 @@ import sys
 if not 'matplotlib.backends' in sys.modules:
     matplotlib.use('agg')
 import pylab, mpld3, mpld3.plugins
-from glue.segments import segment
+from pycbc_glue.segments import segment
 
 def columns_from_file_list(file_list, columns, ifo, start, end):
     """ Return columns of information stored in single detector trigger

@@ -19,7 +19,7 @@
 
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, File
 from pycbc.workflow.core import SegFile
-from glue.segments import segmentlist
+from pycbc_glue.segments import segmentlist
 
 class CalcPSDExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS

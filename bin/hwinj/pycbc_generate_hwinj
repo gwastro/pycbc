@@ -17,11 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-import glue
-from glue.ligolw import ilwd
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
+import pycbc_glue
+from pycbc_glue.ligolw import ilwd
+from pycbc_glue.ligolw import ligolw
+from pycbc_glue.ligolw import lsctables
+from pycbc_glue.ligolw import utils
 import logging
 import numpy
 from pycbc import DYN_RANGE_FAC
@@ -244,9 +244,9 @@ opts_dict = convert_to_process_params_dict(opts)
 proc_id = utils.process.register_to_xmldoc(
                     outdoc, sys.argv[0], opts_dict,
                     comment="", ifos=[''.join(opts.instruments)],
-                    version=glue.git_version.id,
-                    cvs_repository=glue.git_version.branch,
-                    cvs_entry_time=glue.git_version.date).process_id
+                    version=pycbc_glue.git_version.id,
+                    cvs_repository=pycbc_glue.git_version.branch,
+                    cvs_entry_time=pycbc_glue.git_version.date).process_id
 
 # create sim_inspiral table
 sim_table = lsctables.New(lsctables.SimInspiralTable,

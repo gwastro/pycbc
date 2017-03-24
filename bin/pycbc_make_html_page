@@ -23,7 +23,7 @@ import random
 import shutil
 import zipfile
 import codecs
-from glue import segments
+from pycbc_glue import segments
 from jinja2 import Environment, FileSystemLoader
 from pycbc.results.render import get_embedded_config, render_workflow_html_template, setup_template_render
 from pycbc.workflow import segment

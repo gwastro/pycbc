@@ -7,7 +7,7 @@ import subprocess
 import glob
 import tempfile
 from optparse import OptionParser
-from glue.pipeline import CondorDAGJob, CondorDAGNode, CondorDAG, CondorJob
+from pycbc_glue.pipeline import CondorDAGJob, CondorDAGNode, CondorDAG, CondorJob
 
 
 class BaseJob(CondorDAGJob, CondorJob):
@@ -91,13 +91,13 @@ def mkdir(dir_name):
         pass
         
 def mc_min_max_from_sorted_file(fname):
-    from glue.ligolw import lsctables
-    from glue.ligolw.ligolw import LIGOLWContentHandler 
+    from pycbc_glue.ligolw import lsctables
+    from pycbc_glue.ligolw.ligolw import LIGOLWContentHandler
     class mycontenthandler(LIGOLWContentHandler):
         pass
     lsctables.use_in(mycontenthandler)
-    from glue.ligolw.utils import load_filename
-    from glue.ligolw.table import get_table
+    from pycbc_glue.ligolw.utils import load_filename
+    from pycbc_glue.ligolw.table import get_table
     from pycbc.pnutils import mass1_mass2_to_mchirp_eta
     try:
         t = get_table(load_filename(fname, False, contenthandler=mycontenthandler), "sngl_inspiral")
@@ -291,11 +291,11 @@ f = open("scripts/pycbc_banksim_collect_results", "w")
 f.write("""#!/usr/bin/env python
 from os.path import isfile
 from numpy import *
-from glue.ligolw import utils, table
+from pycbc_glue.ligolw import utils, table
 import glob
 
-from glue.ligolw.ligolw import LIGOLWContentHandler
-from glue.ligolw import lsctables
+from pycbc_glue.ligolw.ligolw import LIGOLWContentHandler
+from pycbc_glue.ligolw import lsctables
 class mycontenthandler(LIGOLWContentHandler):
     pass
 lsctables.use_in(mycontenthandler)

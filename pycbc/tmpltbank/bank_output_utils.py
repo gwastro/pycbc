@@ -1,12 +1,12 @@
 from __future__ import division
 import numpy
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import ilwd
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from pycbc_glue.ligolw import ligolw
+from pycbc_glue.ligolw import table
+from pycbc_glue.ligolw import lsctables
+from pycbc_glue.ligolw import ilwd
+from pycbc_glue.ligolw import utils as ligolw_utils
+from pycbc_glue.ligolw.utils import process as ligolw_process
 from pycbc import pnutils
 from pycbc.tmpltbank.lambda_mapping import ethinca_order_from_string
 

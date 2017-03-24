@@ -24,7 +24,7 @@ import matplotlib as mpl; mpl.use('Agg')
 import pylab
 import pycbc.results
 import pycbc.version
-from glue import segments
+from pycbc_glue import segments
 
 def calculate_time_slide_duration(ifo1_segments, ifo2_segments, offset=0):
    ''' Returns the amount of coincident time between two segmentlists.

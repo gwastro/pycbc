@@ -34,8 +34,8 @@ import numpy
 import pycbc
 import pycbc.inject
 import pycbc.tmpltbank.em_progenitors
-import glue.ligolw.utils
-from glue.ligolw import lsctables
+import pycbc_glue.ligolw.utils
+from pycbc_glue.ligolw import lsctables
 from random import sample
 from copy import deepcopy
 
@@ -171,17 +171,17 @@ llw_root.removeChild(injections.table)
 if opts.max_keep is not None and \
         len(out_sim_inspiral_bright) > int(opts.max_keep):
     llw_root.appendChild(out_sim_inspiral_bright_trimmed)
-    glue.ligolw.utils.write_filename(llw_doc, output_bright,
-                                     gz=output_bright.endswith('gz'))
+    pycbc_glue.ligolw.utils.write_filename(llw_doc, output_bright,
+                                           gz=output_bright.endswith('gz'))
     llw_root.removeChild(out_sim_inspiral_bright_trimmed)
     output_bright = output_bright.replace("POTENTIALLY_BRIGHT",
                                           "POTENTIALLY_BRIGHT_UNTRIMMED")
     logging.info(output_bright)
 llw_root.appendChild(out_sim_inspiral_bright)
-glue.ligolw.utils.write_filename(llw_doc, output_bright,
-                                 gz=output_bright.endswith('gz'))
+pycbc_glue.ligolw.utils.write_filename(llw_doc, output_bright,
+                                       gz=output_bright.endswith('gz'))
 llw_root.removeChild(out_sim_inspiral_bright)
 llw_root.appendChild(out_sim_inspiral_dim)
-glue.ligolw.utils.write_filename(llw_doc, output_dim,
-                                 gz=output_dim.endswith('gz'))
+pycbc_glue.ligolw.utils.write_filename(llw_doc, output_dim,
+                                       gz=output_dim.endswith('gz'))
 logging.info('Done')
