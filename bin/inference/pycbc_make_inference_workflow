@@ -24,7 +24,7 @@ import pycbc.workflow.inference_followups as inffu
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
-from glue import segments
+from pycbc_glue import segments
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
 from pycbc.workflow import WorkflowConfigParser
