@@ -35,7 +35,7 @@ import time
 import distutils.spawn
 import ConfigParser
 import itertools
-import glue.pipeline
+import pycbc_glue.pipeline
 
 def resolve_url(url, directory=None, permissions=None):
     """
@@ -160,7 +160,7 @@ def add_workflow_command_line_group(parser):
                            "section.")
 
 
-class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
+class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
     """
     This is a sub-class of glue.pipeline.DeepCopyableConfigParser, which lets
     us add a few additional helper features that are useful in workflows.
@@ -195,7 +195,9 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             configFiles = []
         if overrideTuples is None:
             overrideTuples = []
-        glue.pipeline.DeepCopyableConfigParser.__init__(self)
+        if deleteTuples is None:
+            deleteTuples = []
+        pycbc_glue.pipeline.DeepCopyableConfigParser.__init__(self)
         
         # Enable case sensitive options
         self.optionxform = str

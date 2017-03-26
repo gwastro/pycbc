@@ -259,14 +259,17 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         add_freq = sample_points[[minpt, minpt+1]].mean()
         addidx = int(round(add_freq/df))
         # ensure that only new points are added
-        while addidx in sample_index:
-            addpt -= 1
-            try:
-                minpt = diffidx[addpt]
-            except IndexError:
-                raise ValueError("unable to compress to desired tolerance")
-            add_freq = sample_points[[minpt, minpt+1]].mean()
-            addidx = int(round(add_freq/df))
+        if addidx in sample_index:
+            diffidx = vecdiffs.argsort()
+            addpt = -1
+            while addidx in sample_index:
+                addpt -= 1
+                try:
+                    minpt = diffidx[addpt]
+                except IndexError:
+                    raise ValueError("unable to compress to desired tolerance")
+                add_freq = sample_points[[minpt, minpt+1]].mean()
+                addidx = int(round(add_freq/df))
         new_index = numpy.zeros(sample_index.size+1, dtype=int)
         new_index[:minpt+1] = sample_index[:minpt+1]
         new_index[minpt+1] = addidx
@@ -531,7 +534,7 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         delta_f = float(df)
         inline(code, ['h', 'hlen', 'sflen', 'delta_f', 'sample_frequencies',
                       'amp', 'phase', 'start_index', 'imin'],
-               extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] +\
+               extra_compile_args=[WEAVE_FLAGS] +\
                                   omp_flags,
                libraries=omp_libs)
     else:

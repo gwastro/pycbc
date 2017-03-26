@@ -344,7 +344,7 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
     else:
         code = _apply_shift_code
     inline(code, ['out', 'phi', 'kmin', 'kmax'],
-           extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w']+omp_flags,
+           extra_compile_args=[WEAVE_FLAGS]+omp_flags,
            libraries=omp_libs)
     if copy:
         htilde = FrequencySeries(out, delta_f=htilde.delta_f, epoch=htilde.epoch,

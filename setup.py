@@ -64,7 +64,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'jinja2',
                       'mpld3>=0.3',
                       'pyRXP>=2.1.0',
-                      'pycbc-glue>=1.0.1',
+                      'pycbc-glue-obsolete==1.1.0',
                       'kombine',
                       'emcee>=2.2.0',
                       'corner>=2.0.1',
@@ -310,7 +310,8 @@ class build_gh_pages(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_call("cd docs; cp Makefile.gh_pages Makefile; cp conf_std.py conf.py; sphinx-apidoc "
+        subprocess.check_call("mkdir -p _gh-pages/latest && touch _gh-pages/.nojekyll && "
+                              "cd docs; cp Makefile.gh_pages Makefile; cp conf_std.py conf.py; sphinx-apidoc "
                               " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
@@ -374,7 +375,6 @@ setup (
                'bin/pycbc_get_ffinal',
                'bin/pycbc_tmpltbank_to_chi_params',
                'bin/pycbc_bank_verification',
-               'bin/pycbc_run_sqlite',
                'bin/pycbc_inj_cut',
                'bin/pycbc_upload_xml_to_gracedb',
                'bin/pycbc_dark_vs_bright_injections',
