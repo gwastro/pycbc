@@ -156,24 +156,24 @@ compression_algorithms = {
         'spa': spa_compression
         }
 
-def _vecdiff(htilde, hinterp, fmin, fmax):
+def _vecdiff(htilde, hinterp, fmin, fmax, psd=None):
     return abs(filter.overlap_cplx(htilde, htilde,
                           low_frequency_cutoff=fmin,
                           high_frequency_cutoff=fmax,
-                          normalized=False)
+                          normalized=False, psd=psd)
                 - filter.overlap_cplx(htilde, hinterp,
                           low_frequency_cutoff=fmin,
                           high_frequency_cutoff=fmax,
-                          normalized=False))
+                          normalized=False, psd=psd))
 
-def vecdiff(htilde, hinterp, sample_points):
+def vecdiff(htilde, hinterp, sample_points, psd=None):
     """Computes a statistic indicating between which sample points a waveform
     and the interpolated waveform differ the most.
     """
     vecdiffs = numpy.zeros(sample_points.size-1, dtype=float)
     for kk,thisf in enumerate(sample_points[:-1]):
         nextf = sample_points[kk+1]
-        vecdiffs[kk] = abs(_vecdiff(htilde, hinterp, thisf, nextf))
+        vecdiffs[kk] = abs(_vecdiff(htilde, hinterp, thisf, nextf, psd=psd))
     return vecdiffs
 
 def compress_waveform(htilde, sample_points, tolerance, interpolation,
@@ -246,7 +246,7 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
                                    low_frequency_cutoff=fmin)
     if mismatch > tolerance:
         # we'll need the difference in the waveforms as a function of frequency
-        vecdiffs = vecdiff(htilde, hdecomp, sample_points)
+        vecdiffs = vecdiff(htilde, hdecomp, sample_points, psd=psd)
 
     # We will find where in the frequency series the interpolated waveform
     # has the smallest overlap with the full waveform, add a sample point
@@ -259,14 +259,17 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         add_freq = sample_points[[minpt, minpt+1]].mean()
         addidx = int(round(add_freq/df))
         # ensure that only new points are added
-        while addidx in sample_index:
-            addpt -= 1
-            try:
-                minpt = diffidx[addpt]
-            except IndexError:
-                raise ValueError("unable to compress to desired tolerance")
-            add_freq = sample_points[[minpt, minpt+1]].mean()
-            addidx = int(round(add_freq/df))
+        if addidx in sample_index:
+            diffidx = vecdiffs.argsort()
+            addpt = -1
+            while addidx in sample_index:
+                addpt -= 1
+                try:
+                    minpt = diffidx[addpt]
+                except IndexError:
+                    raise ValueError("unable to compress to desired tolerance")
+                add_freq = sample_points[[minpt, minpt+1]].mean()
+                addidx = int(round(add_freq/df))
         new_index = numpy.zeros(sample_index.size+1, dtype=int)
         new_index[:minpt+1] = sample_index[:minpt+1]
         new_index[minpt+1] = addidx
@@ -286,7 +289,8 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         new_vecdiffs[:minpt] = vecdiffs[:minpt]
         new_vecdiffs[minpt+2:] = vecdiffs[minpt+1:]
         new_vecdiffs[minpt:minpt+2] = vecdiff(htilde, hdecomp,
-                                              sample_points[minpt:minpt+2])
+                                              sample_points[minpt:minpt+2],
+                                              psd=psd)
         vecdiffs = new_vecdiffs
         mismatch = 1. - filter.overlap(hdecomp, htilde, psd=psd,
                                        low_frequency_cutoff=fmin)
@@ -530,7 +534,7 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         delta_f = float(df)
         inline(code, ['h', 'hlen', 'sflen', 'delta_f', 'sample_frequencies',
                       'amp', 'phase', 'start_index', 'imin'],
-               extra_compile_args=[WEAVE_FLAGS + '-march=native -O3 -w'] +\
+               extra_compile_args=[WEAVE_FLAGS] +\
                                   omp_flags,
                libraries=omp_libs)
     else:
@@ -600,7 +604,7 @@ class CompressedWaveform(object):
         waveform.
     precision : {'double', str}
         The precision used to generate and store the compressed waveform
-        points. Options are 'double' or 'single'; default is 'double'.
+        points. Options are 'double' or 'single'; default is 'double
     """
 
     def __init__(self, sample_points, amplitude, phase,
@@ -772,7 +776,7 @@ class CompressedWaveform(object):
         fp[group].attrs['interpolation'] = self.interpolation
         fp[group].attrs['tolerance'] = self.tolerance
         fp[group].attrs['precision'] = precision
-
+        
     @classmethod
     def from_hdf(cls, fp, template_hash, root=None, load_to_memory=True,
                  load_now=False):

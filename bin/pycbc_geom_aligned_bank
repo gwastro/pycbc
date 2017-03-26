@@ -34,12 +34,12 @@ import logging
 import distutils.spawn
 import h5py
 from scipy import spatial
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import ilwd
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from pycbc_glue.ligolw import ligolw
+from pycbc_glue.ligolw import table
+from pycbc_glue.ligolw import lsctables
+from pycbc_glue.ligolw import ilwd
+from pycbc_glue.ligolw import utils as ligolw_utils
+from pycbc_glue.ligolw.utils import process as ligolw_process
 import pycbc
 import pycbc.psd
 import pycbc.strain
@@ -532,7 +532,8 @@ cp.write(temp_fp)
 temp_fp.close()
 
 opts.config_files=['temp.ini']
-opts.config_overrides=[]
+opts.config_overrides = []
+opts.config_delete = []
 
 # Now setup the workflow
 workflow = wf.Workflow(opts, opts.workflow_name)
@@ -601,7 +602,7 @@ bankverify_exe = BankVerification(workflow.cp, 'bankverify',
 bankverify_node = bankverify_exe.create_node(out_bank, workflow.analysis_time)
 workflow += bankverify_node
 
-workflow.save(filename=opts.dax_filename, output_map=opts.map_filename)
+workflow.save(filename=opts.dax_filename, output_map_path=opts.map_filename)
 
 logging.info("GENERATION SUCCESSFUL.")
 logging.info("Submit the resulting dax file to generate your template bank.")

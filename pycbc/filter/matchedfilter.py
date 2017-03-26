@@ -47,7 +47,7 @@ def _correlate_factory(x, y, z):
     return
 
 class BatchCorrelator(object):
-    """ Create a batch correlation engine 
+    """ Create a batch correlation engine
     """
     def __init__(self, xs, zs, size):
         """ Correlate x and y, store in z. Arrays need not be equal length, but
@@ -153,6 +153,7 @@ class MatchedFilterControl(object):
         self.tlen = tlen
         self.flen = self.tlen / 2 + 1
         self.delta_f = delta_f
+        self.delta_t = 1.0/(self.delta_f * self.tlen)
         self.dtype = dtype
         self.snr_threshold = snr_threshold
         self.flow = low_frequency_cutoff
@@ -179,21 +180,21 @@ class MatchedFilterControl(object):
                 self.matched_filter_and_cluster = self.full_matched_filter_and_cluster_fc
             else:
                 self.matched_filter_and_cluster = self.full_matched_filter_thresh_only
-                
+
             # Assuming analysis time is constant across templates and segments, also
             # delta_f is constant across segments.
-            self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh, 
-                                                      self.delta_f, self.tlen)   
-                                                      
+            self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh,
+                                                      self.delta_f, self.tlen)
+
             # Set up the correlation operations for each analysis segment
             corr_slice = slice(self.kmin, self.kmax)
-            self.correlators = []      
+            self.correlators = []
             for seg in self.segments:
-                corr = Correlator(self.htilde[corr_slice], 
-                                  seg[corr_slice], 
+                corr = Correlator(self.htilde[corr_slice],
+                                  seg[corr_slice],
                                   self.corr_mem[corr_slice])
                 self.correlators.append(corr)
-            
+
             # setup up the ifft we will do
             self.ifft = IFFT(self.corr_mem, self.snr_mem)
 
@@ -224,8 +225,11 @@ class MatchedFilterControl(object):
         else:
             raise ValueError("Invalid downsample factor")
 
-    def full_matched_filter_and_cluster_symm(self, segnum, template_norm, window):
-        """ Return the complex snr and normalization.
+    def full_matched_filter_and_cluster_symm(self, segnum, template_norm, window, epoch=None):
+        """ Returns the complex snr timeseries, normalization of the complex snr,
+        the correlation vector frequency series, the list of indices of the
+        triggers, and the snr values at the trigger locations. Returns empty
+        lists for these for points that are not above the threshold.
 
         Calculated the matched filter, threshold, and cluster.
 
@@ -256,15 +260,21 @@ class MatchedFilterControl(object):
         self.correlators[segnum].correlate()
         self.ifft.execute()
         snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
-
+        
         if len(idx) == 0:
             return [], [], [], [], []
 
         logging.info("%s points above threshold" % str(len(idx)))
-        return self.snr_mem, norm, self.corr_mem, idx, snrv
 
-    def full_matched_filter_and_cluster_fc(self, segnum, template_norm, window):
-        """ Return the complex snr and normalization.
+        snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
+        corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
+        return snr, norm, corr, idx, snrv
+
+    def full_matched_filter_and_cluster_fc(self, segnum, template_norm, window, epoch=None):
+        """ Returns the complex snr timeseries, normalization of the complex snr,
+        the correlation vector frequency series, the list of indices of the
+        triggers, and the snr values at the trigger locations. Returns empty
+        lists for these for points that are not above the threshold.
 
         Calculated the matched filter, threshold, and cluster.
 
@@ -302,10 +312,16 @@ class MatchedFilterControl(object):
             return [], [], [], [], []
 
         logging.info("%s points above threshold" % str(len(idx)))
-        return self.snr_mem, norm, self.corr_mem, idx, snrv
 
-    def full_matched_filter_thresh_only(self, segnum, template_norm, window):
-        """ Return the complex snr and normalization.
+        snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
+        corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
+        return snr, norm, corr, idx, snrv
+
+    def full_matched_filter_thresh_only(self, segnum, template_norm, window, epoch=None):
+        """ Returns the complex snr timeseries, normalization of the complex snr,
+        the correlation vector frequency series, the list of indices of the
+        triggers, and the snr values at the trigger locations. Returns empty
+        lists for these for points that are not above the threshold.
 
         Calculated the matched filter, threshold, and cluster.
 
@@ -343,12 +359,18 @@ class MatchedFilterControl(object):
             return [], [], [], [], []
 
         logging.info("%s points above threshold" % str(len(idx)))
-        return self.snr_mem, norm, self.corr_mem, idx, snrv
+        
+        snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
+        corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
+        return snr, norm, corr, idx, snrv
 
     def heirarchical_matched_filter_and_cluster(self, segnum, template_norm, window):
-        """ Return the complex snr and normalization. 
-    
-        Calculated the matched filter, threshold, and cluster. 
+        """ Returns the complex snr timeseries, normalization of the complex snr,
+        the correlation vector frequency series, the list of indices of the
+        triggers, and the snr values at the trigger locations. Returns empty
+        lists for these for points that are not above the threshold.
+
+        Calculated the matched filter, threshold, and cluster.
 
         Parameters
         ----------
@@ -364,9 +386,9 @@ class MatchedFilterControl(object):
         snr : TimeSeries
             A time series containing the complex snr at the reduced sample rate.
         norm : float
-            The normalization of the complex snr.  
+            The normalization of the complex snr.
         corrrelation: FrequencySeries
-            A frequency series containing the correlation vector. 
+            A frequency series containing the correlation vector.
         idx : Array
             List of indices of the triggers.
         snrv : Array
@@ -377,20 +399,20 @@ class MatchedFilterControl(object):
         stilde = self.segments[segnum]
 
         norm = (4.0 * stilde.delta_f) / sqrt(template_norm)
-        
-        correlate(htilde[self.kmin_red:self.kmax_red], 
-                  stilde[self.kmin_red:self.kmax_red], 
-                  self.corr_mem[self.kmin_red:self.kmax_red]) 
-                     
-        ifft(self.corr_mem, self.snr_mem)           
+
+        correlate(htilde[self.kmin_red:self.kmax_red],
+                  stilde[self.kmin_red:self.kmax_red],
+                  self.corr_mem[self.kmin_red:self.kmax_red])
+
+        ifft(self.corr_mem, self.snr_mem)
 
         if not hasattr(stilde, 'red_analyze'):
             stilde.red_analyze = \
                              slice(stilde.analyze.start/self.downsample_factor,
                                    stilde.analyze.stop/self.downsample_factor)
 
-        
-        idx_red, snrv_red = events.threshold(self.snr_mem[stilde.red_analyze], 
+
+        idx_red, snrv_red = events.threshold(self.snr_mem[stilde.red_analyze],
                                 self.snr_threshold / norm * self.upsample_threshold)
         if len(idx_red) == 0:
             return [], None, [], [], []
@@ -405,29 +427,29 @@ class MatchedFilterControl(object):
                    * self.downsample_factor
 
             idx = smear(idx, self.downsample_factor)
-            
+
             # cache transposed  versions of htilde and stilde
             if not hasattr(self.corr_mem_full, 'transposed'):
                 self.corr_mem_full.transposed = zeros(len(self.corr_mem_full), dtype=self.dtype)
-                
+
             if not hasattr(htilde, 'transposed'):
                 htilde.transposed = zeros(len(self.corr_mem_full), dtype=self.dtype)
                 htilde.transposed[self.kmin_full:self.kmax_full] = htilde[self.kmin_full:self.kmax_full]
                 htilde.transposed = fft_transpose(htilde.transposed)
-                
+
             if not hasattr(stilde, 'transposed'):
                 stilde.transposed = zeros(len(self.corr_mem_full), dtype=self.dtype)
                 stilde.transposed[self.kmin_full:self.kmax_full] = stilde[self.kmin_full:self.kmax_full]
-                stilde.transposed = fft_transpose(stilde.transposed)  
-                
-            correlate(htilde.transposed, stilde.transposed, self.corr_mem_full.transposed)      
-            snrv = pruned_c2cifft(self.corr_mem_full.transposed, self.inter_vec, idx, pretransposed=True)   
+                stilde.transposed = fft_transpose(stilde.transposed)
+
+            correlate(htilde.transposed, stilde.transposed, self.corr_mem_full.transposed)
+            snrv = pruned_c2cifft(self.corr_mem_full.transposed, self.inter_vec, idx, pretransposed=True)
             idx = idx - stilde.analyze.start
             idx2, snrv = events.threshold(Array(snrv, copy=False), self.snr_threshold / norm)
-      
+
             if len(idx2) > 0:
-                correlate(htilde[self.kmax_red:self.kmax_full], 
-                          stilde[self.kmax_red:self.kmax_full], 
+                correlate(htilde[self.kmax_red:self.kmax_full],
+                          stilde[self.kmax_red:self.kmax_full],
                           self.corr_mem_full[self.kmax_red:self.kmax_full])
                 idx, snrv = events.cluster_reduce(idx[idx2], snrv, window)
             else:
@@ -436,7 +458,7 @@ class MatchedFilterControl(object):
             logging.info("%s points at full rate and clustering" % len(idx))
             return self.snr_mem, norm, self.corr_mem_full, idx, snrv
         else:
-            raise ValueError("Invalid upsample method")            
+            raise ValueError("Invalid upsample method")
 
 class MatchedFilterSkyMaxControl(object):
     # FIXME: This seems much more simplistic than the aligned-spin class.
@@ -559,8 +581,8 @@ class MatchedFilterSkyMaxControl(object):
 
         if len(idx) == 0:
             return [], 0, 0, [], [], [], [], 0, 0, 0
-        logging.info("%s points above threshold" % str(len(idx)))            
- 
+        logging.info("%s points above threshold" % str(len(idx)))
+
 
         idx, snrv = events.cluster_reduce(idx, snrv, window)
         logging.info("%s clustered points" % str(len(idx)))
@@ -601,10 +623,10 @@ def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
         always overestimate SNR and then only calculate the proper, more
         expensive, statistic at points where the quick SNR is above thresh.
     hpsigmasq : float
-        The normalization factor (h+, h+). Default = None (=1, already 
+        The normalization factor (h+, h+). Default = None (=1, already
         normalized)
     hcsigmasq : float
-        The normalization factor (hx, hx). Default = None (=1, already 
+        The normalization factor (hx, hx). Default = None (=1, already
         normalized)
     out : TimeSeries (optional, default=None)
         If given, use this array to store the output.
@@ -658,7 +680,7 @@ def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
 
     hplus = hplus * hpnorm
     hcross = hcross * hcnorm
-  
+
 
     # Calculate and sanity check the denominator
     denom = 1 - hphccorr*hphccorr
@@ -678,7 +700,7 @@ def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
         err_msg += "Ian is reasonably certain this is physically impossible "
         err_msg += "so why are you seeing this?"
         raise ValueError(err_msg)
-  
+
     assert(len(hplus) == len(hcross))
 
     # Now the stuff where comp. cost may be a problem
@@ -690,10 +712,10 @@ def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
 
     sqroot = (hplus_magsq - hcross_magsq)**2
     sqroot += 4 * (hphccorr * hplus_magsq - rho_pluscross) * \
-                  (hphccorr * hcross_magsq - rho_pluscross) 
+                  (hphccorr * hcross_magsq - rho_pluscross)
     # Sometimes this can be less than 0 due to numeric imprecision, catch this.
     if (sqroot < 0).any():
-        indices = numpy.arange(len(sqroot))[sqroot < 0] 
+        indices = numpy.arange(len(sqroot))[sqroot < 0]
         # This should not be *much* smaller than 0 due to numeric imprecision
         if (sqroot[indices] < -0.0001).any():
             err_msg = "Square root has become negative. Something wrong here!"
@@ -761,12 +783,12 @@ def make_frequency_series(vec):
     """Return a frequency series of the input vector.
 
     If the input is a frequency series it is returned, else if the input
-    vector is a real time series it is fourier transformed and returned as a 
-    frequency series. 
-    
+    vector is a real time series it is fourier transformed and returned as a
+    frequency series.
+
     Parameters
     ----------
-    vector : TimeSeries or FrequencySeries  
+    vector : TimeSeries or FrequencySeries
 
     Returns
     -------
@@ -777,33 +799,33 @@ def make_frequency_series(vec):
         return vec
     if isinstance(vec, TimeSeries):
         N = len(vec)
-        n = N/2+1    
+        n = N/2+1
         delta_f = 1.0 / N / vec.delta_t
-        vectilde =  FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)), 
+        vectilde =  FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)),
                                     delta_f=delta_f, copy=False)
-        fft(vec, vectilde)   
+        fft(vec, vectilde)
         return vectilde
     else:
         raise TypeError("Can only convert a TimeSeries to a FrequencySeries")
 
 def sigmasq_series(htilde, psd=None, low_frequency_cutoff=None,
             high_frequency_cutoff=None):
-    """Return a cumulative sigmasq frequency series. 
+    """Return a cumulative sigmasq frequency series.
 
-    Return a frequency series containing the accumulated power in the input 
-    up to that frequency. 
-    
+    Return a frequency series containing the accumulated power in the input
+    up to that frequency.
+
     Parameters
     ----------
-    htilde : TimeSeries or FrequencySeries 
-        The input vector 
+    htilde : TimeSeries or FrequencySeries
+        The input vector
     psd : {None, FrequencySeries}, optional
         The psd used to weight the accumulated power.
     low_frequency_cutoff : {None, float}, optional
         The frequency to begin accumulating power. If None, start at the beginning
         of the vector.
     high_frequency_cutoff : {None, float}, optional
-        The frequency to stop considering accumulated power. If None, continue 
+        The frequency to stop considering accumulated power. If None, continue
         until the end of the input vector.
 
     Returns
@@ -812,23 +834,23 @@ def sigmasq_series(htilde, psd=None, low_frequency_cutoff=None,
         A frequency series containing the cumulative sigmasq.
     """
     htilde = make_frequency_series(htilde)
-    N = (len(htilde)-1) * 2 
+    N = (len(htilde)-1) * 2
     norm = 4.0 * htilde.delta_f
     kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
-                                   high_frequency_cutoff, htilde.delta_f, N)  
-   
-    sigma_vec = FrequencySeries(zeros(len(htilde), dtype=real_same_precision_as(htilde)), 
+                                   high_frequency_cutoff, htilde.delta_f, N)
+
+    sigma_vec = FrequencySeries(zeros(len(htilde), dtype=real_same_precision_as(htilde)),
                                 delta_f = htilde.delta_f, copy=False)
-    
+
     mag = htilde.squared_norm()
-    
+
     if psd is not None:
         mag /= psd
 
     sigma_vec[kmin:kmax] = mag[kmin:kmax].cumsum()
-        
+
     return sigma_vec*norm
-    
+
 
 def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
             high_frequency_cutoff=None):
@@ -839,7 +861,7 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
 
     Parameters
     ----------
-    htilde : TimeSeries or FrequencySeries 
+    htilde : TimeSeries or FrequencySeries
         The input vector containing a waveform.
     psd : {None, FrequencySeries}, optional
         The psd used to weight the accumulated power.
@@ -853,11 +875,11 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
     sigmasq: float
     """
     htilde = make_frequency_series(htilde)
-    N = (len(htilde)-1) * 2 
+    N = (len(htilde)-1) * 2
     norm = 4.0 * htilde.delta_f
     kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
-                                   high_frequency_cutoff, htilde.delta_f, N)  
-    ht = htilde[kmin:kmax] 
+                                   high_frequency_cutoff, htilde.delta_f, N)
+    ht = htilde[kmin:kmax]
 
     if psd:
         try:
@@ -869,7 +891,7 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
         sq = ht.inner(ht)
     else:
         sq = ht.weighted_inner(ht, psd[kmin:kmax])
-        
+
     return sq.real * norm
 
 def sigma(htilde, psd = None, low_frequency_cutoff=None,
@@ -878,7 +900,7 @@ def sigma(htilde, psd = None, low_frequency_cutoff=None,
 
     Parameters
     ----------
-    htilde : TimeSeries or FrequencySeries 
+    htilde : TimeSeries or FrequencySeries
         The input vector containing a waveform.
     psd : {None, FrequencySeries}, optional
         The psd used to weight the accumulated power.
@@ -892,7 +914,7 @@ def sigma(htilde, psd = None, low_frequency_cutoff=None,
     sigmasq: float
     """
     return sqrt(sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff))
-    
+
 def get_cutoff_indices(flow, fhigh, df, N):
     """
     Gets the indices of a frequency series at which to stop an overlap
@@ -925,24 +947,24 @@ def get_cutoff_indices(flow, fhigh, df, N):
         # int() truncates towards 0, so this is
         # equivalent to the floor of the float
         kmax = int((N + 1)/2.)
-        
+
     return kmin,kmax
-    
+
 # Workspace Memory for the matchedfilter
 _qtilde_t = None
 
 def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
                   high_frequency_cutoff=None, h_norm=None, out=None, corr_out=None):
-    """ Return the complex snr and normalization. 
-    
+    """ Return the complex snr and normalization.
+
     Return the complex snr, along with its associated normalization of the template,
-    matched filtered against the data. 
+    matched filtered against the data.
 
     Parameters
     ----------
-    template : TimeSeries or FrequencySeries 
+    template : TimeSeries or FrequencySeries
         The template waveform
-    data : TimeSeries or FrequencySeries 
+    data : TimeSeries or FrequencySeries
         The strain data to be filtered.
     psd : {FrequencySeries}, optional
         The noise weighting of the filter.
@@ -950,42 +972,42 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
         The frequency to begin the filter calculation. If None, begin at the
         first frequency after DC.
     high_frequency_cutoff : {None, float}, optional
-        The frequency to stop the filter calculation. If None, continue to the 
+        The frequency to stop the filter calculation. If None, continue to the
         the nyquist frequency.
     h_norm : {None, float}, optional
         The template normalization. If none, this value is calculated internally.
     out : {None, Array}, optional
-        An array to use as memory for snr storage. If None, memory is allocated 
+        An array to use as memory for snr storage. If None, memory is allocated
         internally.
     corr_out : {None, Array}, optional
-        An array to use as memory for correlation storage. If None, memory is allocated 
+        An array to use as memory for correlation storage. If None, memory is allocated
         internally. If provided, management of the vector is handled externally by the
-        caller. No zero'ing is done internally. 
+        caller. No zero'ing is done internally.
 
     Returns
     -------
     snr : TimeSeries
-        A time series containing the complex snr. 
+        A time series containing the complex snr.
     corrrelation: FrequencySeries
-        A frequency series containing the correlation vector. 
+        A frequency series containing the correlation vector.
     norm : float
-        The normalization of the complex snr.  
+        The normalization of the complex snr.
     """
     if corr_out is not None:
         _qtilde = corr_out
     else:
         global _qtilde_t
         _qtilde = _qtilde_t
-  
+
     htilde = make_frequency_series(template)
     stilde = make_frequency_series(data)
 
     if len(htilde) != len(stilde):
         raise ValueError("Length of template and data must match")
 
-    N = (len(stilde)-1) * 2   
+    N = (len(stilde)-1) * 2
     kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
-                                   high_frequency_cutoff, stilde.delta_f, N)   
+                                   high_frequency_cutoff, stilde.delta_f, N)
 
     if out is None:
         _q = zeros(N, dtype=complex_same_precision_as(data))
@@ -993,14 +1015,14 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
         _q = out
     else:
         raise TypeError('Invalid Output Vector: wrong length or dtype')
-        
+
     if corr_out:
         pass
     elif (_qtilde is None) or (len(_qtilde) != N) or _qtilde.dtype != data.dtype:
         _qtilde_t = _qtilde = zeros(N, dtype=complex_same_precision_as(data))
     else:
-        _qtilde.clear()         
-    
+        _qtilde.clear()
+
     correlate(htilde[kmin:kmax], stilde[kmin:kmax], _qtilde[kmin:kmax])
 
     if psd is not None:
@@ -1011,19 +1033,19 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
                 raise TypeError("PSD delta_f does not match data")
         else:
             raise TypeError("PSD must be a FrequencySeries")
-            
+
     ifft(_qtilde, _q)
-    
+
     if h_norm is None:
-        h_norm = sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff)     
+        h_norm = sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff)
 
     norm = (4.0 * stilde.delta_f) / sqrt( h_norm)
     delta_t = 1.0 / (N * stilde.delta_f)
-    
-    return (TimeSeries(_q, epoch=stilde._epoch, delta_t=delta_t, copy=False), 
-           FrequencySeries(_qtilde, epoch=stilde._epoch, delta_f=htilde.delta_f, copy=False), 
+
+    return (TimeSeries(_q, epoch=stilde._epoch, delta_t=delta_t, copy=False),
+           FrequencySeries(_qtilde, epoch=stilde._epoch, delta_f=htilde.delta_f, copy=False),
            norm)
-           
+
 def smear(idx, factor):
     """
     This function will take as input an array of indexes and return every
@@ -1050,7 +1072,7 @@ def smear(idx, factor):
         a = i - factor/2
         s += [idx + a]
     return numpy.unique(numpy.concatenate(s))
-           
+
 def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
                   high_frequency_cutoff=None, sigmasq=None):
     """ Return the complex snr.
@@ -1060,9 +1082,9 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
 
     Parameters
     ----------
-    template : TimeSeries or FrequencySeries 
+    template : TimeSeries or FrequencySeries
         The template waveform
-    data : TimeSeries or FrequencySeries 
+    data : TimeSeries or FrequencySeries
         The strain data to be filtered.
     psd : FrequencySeries
         The noise weighting of the filter.
@@ -1070,7 +1092,7 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
         The frequency to begin the filter calculation. If None, begin at the
         first frequency after DC.
     high_frequency_cutoff : {None, float}, optional
-        The frequency to stop the filter calculation. If None, continue to the 
+        The frequency to stop the filter calculation. If None, continue to the
         the nyquist frequency.
     sigmasq : {None, float}, optional
         The template normalization. If none, this value is calculated
@@ -1079,26 +1101,26 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     Returns
     -------
     snr : TimeSeries
-        A time series containing the complex snr. 
+        A time series containing the complex snr.
     """
     snr, corr, norm = matched_filter_core(template, data, psd=psd,
             low_frequency_cutoff=low_frequency_cutoff,
             high_frequency_cutoff=high_frequency_cutoff, h_norm=sigmasq)
     return snr * norm
-    
-_snr = None 
+
+_snr = None
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
           high_frequency_cutoff=None, v1_norm=None, v2_norm=None):
     """ Return the match between the two TimeSeries or FrequencySeries.
-    
-    Return the match between two waveforms. This is equivelant to the overlap 
-    maximized over time and phase. 
+
+    Return the match between two waveforms. This is equivelant to the overlap
+    maximized over time and phase.
 
     Parameters
     ----------
-    vec1 : TimeSeries or FrequencySeries 
+    vec1 : TimeSeries or FrequencySeries
         The input vector containing a waveform.
-    vec2 : TimeSeries or FrequencySeries 
+    vec2 : TimeSeries or FrequencySeries
         The input vector containing a waveform.
     psd : Frequency Series
         A power spectral density to weight the overlap.
@@ -1108,10 +1130,10 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
         The frequency to stop the match.
     v1_norm : {None, float}, optional
         The normalization of the first waveform. This is equivalent to its
-        sigmasq value. If None, it is internally calculated. 
+        sigmasq value. If None, it is internally calculated.
     v2_norm : {None, float}, optional
         The normalization of the second waveform. This is equivalent to its
-        sigmasq value. If None, it is internally calculated. 
+        sigmasq value. If None, it is internally calculated.
     Returns
     -------
     match: float
@@ -1131,16 +1153,16 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     if v2_norm is None:
         v2_norm = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
     return maxsnr * snr_norm / sqrt(v2_norm), max_id
-    
+
 def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
           high_frequency_cutoff=None, normalized=True):
     """ Return the overlap between the two TimeSeries or FrequencySeries.
 
     Parameters
     ----------
-    vec1 : TimeSeries or FrequencySeries 
+    vec1 : TimeSeries or FrequencySeries
         The input vector containing a waveform.
-    vec2 : TimeSeries or FrequencySeries 
+    vec2 : TimeSeries or FrequencySeries
         The input vector containing a waveform.
     psd : Frequency Series
         A power spectral density to weight the overlap.
@@ -1149,13 +1171,13 @@ def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
     high_frequency_cutoff : {None, float}, optional
         The frequency to stop the overlap.
     normalized : {True, boolean}, optional
-        Set if the overlap is normalized. If true, it will range from 0 to 1. 
+        Set if the overlap is normalized. If true, it will range from 0 to 1.
 
     Returns
     -------
     overlap: float
     """
-        
+
     return overlap_cplx(vec1, vec2, psd=psd, \
             low_frequency_cutoff=low_frequency_cutoff,\
             high_frequency_cutoff=high_frequency_cutoff,\
@@ -1167,9 +1189,9 @@ def overlap_cplx(vec1, vec2, psd=None, low_frequency_cutoff=None,
 
     Parameters
     ----------
-    vec1 : TimeSeries or FrequencySeries 
+    vec1 : TimeSeries or FrequencySeries
         The input vector containing a waveform.
-    vec2 : TimeSeries or FrequencySeries 
+    vec2 : TimeSeries or FrequencySeries
         The input vector containing a waveform.
     psd : Frequency Series
         A power spectral density to weight the overlap.
@@ -1178,7 +1200,7 @@ def overlap_cplx(vec1, vec2, psd=None, low_frequency_cutoff=None,
     high_frequency_cutoff : {None, float}, optional
         The frequency to stop the overlap.
     normalized : {True, boolean}, optional
-        Set if the overlap is normalized. If true, it will range from 0 to 1. 
+        Set if the overlap is normalized. If true, it will range from 0 to 1.
 
     Returns
     -------
@@ -1208,7 +1230,7 @@ def overlap_cplx(vec1, vec2, psd=None, low_frequency_cutoff=None,
 
 def quadratic_interpolate_peak(left, middle, right):
     """ Interpolate the peak and offset using a quadratic approximation
-    
+
     Parameters
     ----------
     left : numpy array
@@ -1217,11 +1239,11 @@ def quadratic_interpolate_peak(left, middle, right):
         Values at a relative bin value of [0]
     right : numpy array
         Values at a relative bin value of [1]
-    
+
     Returns
     -------
     bin_offset : numpy array
-        Array of bins offsets, each in the range [-1/2, 1/2] 
+        Array of bins offsets, each in the range [-1/2, 1/2]
     peak_values : numpy array
         Array of the estimated peak values at the interpolated offset
     """
@@ -1231,7 +1253,7 @@ def quadratic_interpolate_peak(left, middle, right):
 
 class LiveBatchMatchedFilter(object):
 
-    """Calculate SNR and signal consistency tests in a batched progression"""        
+    """Calculate SNR and signal consistency tests in a batched progression"""
 
     def __init__(self, templates, snr_threshold, chisq_bins,
                  maxelements=2**27,
@@ -1278,7 +1300,7 @@ class LiveBatchMatchedFilter(object):
         # Figure out how to chunk together the templates into groups to process
         _, counts = numpy.unique(durations, return_counts=True)
         tsamples = [(len(t) - 1) * 2 for t in templates]
-        grabs = maxelements / numpy.unique(tsamples) 
+        grabs = maxelements / numpy.unique(tsamples)
 
         chunks = numpy.array([])
         num = 0
@@ -1297,8 +1319,8 @@ class LiveBatchMatchedFilter(object):
         chunk_durations = [durations[i] for i in chunks[:-1]]
         self.chunk_tsamples = [tsamples[int(i)] for i in chunks[:-1]]
         samples = self.chunk_tsamples * self.chunks
- 
-        # Create workspace memory for correlate and snr      
+
+        # Create workspace memory for correlate and snr
         mem_ids = [(a, b) for a, b in zip(chunk_durations, self.chunks)]
         mem_types = set(zip(mem_ids, samples))
 
@@ -1331,7 +1353,7 @@ class LiveBatchMatchedFilter(object):
                 s += psize
                 e += psize
             self.corr.append(BatchCorrelator(tgroup, [t.cout for t in tgroup], len(tgroup[0])))
-            
+
 
     def set_data(self, data):
         """Set the data reader object to use"""
@@ -1362,44 +1384,44 @@ class LiveBatchMatchedFilter(object):
             veto_info += veto
 
         result = self.combine_results(results)
-        
+
         if self.max_triggers_in_batch:
             sort = result['snr'].argsort()[::-1][:self.max_triggers_in_batch]
             for key in result:
                 result[key] = result[key][sort]
-            
+
             tmp = veto_info
             veto_info = [tmp[i] for i in sort]
-        
+
         result = self._process_vetoes(result, veto_info)
         return result
 
     def _process_vetoes(self, results, veto_info):
-        """Calculate signal based vetoes"""            
+        """Calculate signal based vetoes"""
         chisq = numpy.array(numpy.zeros(len(veto_info)), numpy.float32, ndmin=1)
         dof = numpy.array(numpy.zeros(len(veto_info)), numpy.uint32, ndmin=1)
         results['chisq'] = chisq
         results['chisq_dof'] = dof
-        
+
         keep = []
-        for i, (snrv, norm, l, htilde, stilde) in enumerate(veto_info): 
+        for i, (snrv, norm, l, htilde, stilde) in enumerate(veto_info):
             correlate(htilde, stilde, htilde.cout)
             c, d = self.power_chisq.values(htilde.cout, snrv,
                                            norm, stilde.psd, [l], htilde)
             chisq[i] = c[0] / d[0]
             dof[i] = d[0]
-            
+
             if self.newsnr_threshold:
                 newsnr = events.newsnr(results['snr'][i], chisq[i])
                 if newsnr >= self.newsnr_threshold:
                     keep.append(i)
-                    
+
         if self.newsnr_threshold:
             keep = numpy.array(keep, dtype=numpy.uint32)
             for key in results:
                 results[key] = results[key][keep]
-                
-        return results 
+
+        return results
 
     def _process_batch(self):
         """Process only a single batch group of data"""
@@ -1410,13 +1432,13 @@ class LiveBatchMatchedFilter(object):
         psize = self.chunk_tsamples[self.block_id]
         mid = self.mids[self.block_id]
         stilde = self.data.overwhitened_data(tgroup[0].delta_f)
-        psd = stilde.psd 
+        psd = stilde.psd
 
         valid_end = int(psize - self.data.trim_padding)
         valid_start = int(valid_end - self.data.blocksize * self.data.sample_rate)
 
         seg = slice(valid_start, valid_end)
-        
+
         self.corr[self.block_id].execute(stilde)
         self.ifts[mid].execute()
 
@@ -1450,19 +1472,19 @@ class LiveBatchMatchedFilter(object):
             # If nothing is above threshold we can exit this template
             s = abs(snrv[0]) * norm
             if s < self.snr_threshold:
-                continue    
+                continue
 
-            time[i] += float(l - valid_start) / self.data.sample_rate            
+            time[i] += float(l - valid_start) / self.data.sample_rate
 
-            # We have an SNR so high that we will drop the entire analysis 
+            # We have an SNR so high that we will drop the entire analysis
             # of this chunk of time!
             if self.snr_abort_threshold is not None and s > self.snr_abort_threshold:
                 logging.info("We are seeing some *really* high SNRs, lets"
                              " assume they aren't signals and just give up")
                 return False, []
-     
+
             veto_info.append((snrv, norm, l, htilde, stilde))
-     
+
             snr[i] = snrv[0] * norm
             sigmasq[i] = sgm
             templates[i] = htilde.id
@@ -1470,11 +1492,11 @@ class LiveBatchMatchedFilter(object):
                 htilde.dict_params = {}
                 for key in tkeys:
                     htilde.dict_params[key] = htilde.params[key]
-            
-            for key in tkeys:            
+
+            for key in tkeys:
                 result[key].append(htilde.dict_params[key])
             i += 1
-        
+
         result['snr'] = abs(snr[0:i])
         result['coa_phase'] = numpy.angle(snr[0:i])
         result['end_time'] = time[0:i]
@@ -1484,10 +1506,72 @@ class LiveBatchMatchedFilter(object):
         for key in tkeys:
             result[key] = numpy.array(result[key])
 
-        return result, veto_info  
+        return result, veto_info
+
+def compute_followup_snr_series(data_reader, htilde, trig_time,
+                                duration=0.095):
+    """Given a StrainBuffer, a template frequency series and a trigger time,
+    compute a portion of the SNR time series centered on the trigger for its
+    sky localization and followup.
+
+    Parameters
+    ----------
+    data_reader : StrainBuffer
+        The StrainBuffer object to read strain data from.
+
+    htilde : FrequencySeries
+        The frequency series containing the template waveform.
+
+    trig_time : {float, lal.LIGOTimeGPS}
+        The trigger time.
+
+    duration : float (optional)
+        Duration of the computed SNR series in seconds. If omitted, it defaults
+        to twice the Earth light travel time plus 10 ms of timing uncertainty.
+
+    Returns
+    -------
+    snr : TimeSeries
+        The portion of SNR around the trigger.
+
+    psd : FrequencySeries
+        The noise PSD corresponding to the trigger time.
+    """
+    stilde = data_reader.overwhitened_data(htilde.delta_f)
+
+    norm = 4.0 * htilde.delta_f / (htilde.sigmasq(stilde.psd) ** 0.5)
+
+    qtilde = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
+    correlate(htilde, stilde, qtilde)
+    snr = qtilde * 0
+    ifft(qtilde, snr)
+
+    valid_end = int(len(qtilde) - data_reader.trim_padding)
+    valid_start = int(valid_end - data_reader.blocksize * data_reader.sample_rate)
+    snr = snr[slice(valid_start, valid_end)]
+    snr *= norm
+    snr = TimeSeries(snr, delta_t=1./data_reader.sample_rate,
+                     epoch=data_reader.start_time)
+
+    onsource_idx = int(round(float(trig_time - snr.start_time) * snr.sample_rate))
+
+    onsource_start = onsource_idx - int(snr.sample_rate * duration / 2)
+    # FIXME avoid clipping with better handling of past data
+    if onsource_start < 0:
+        logging.warn('Clipping start of followup SNR time series')
+        onsource_start = 0
+
+    onsource_end = onsource_idx + int(snr.sample_rate * duration / 2)
+    if onsource_end > len(snr):
+        logging.warn('Clipping end of followup SNR time series')
+        onsource_end = len(snr) - 1
+
+    onsource_slice = slice(onsource_start, onsource_end + 1)
+    return snr[onsource_slice], stilde.psd
 
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
            'matched_filter_core', 'correlate', 'MatchedFilterControl', 'LiveBatchMatchedFilter',
-           'MatchedFilterSkyMaxControl', 'compute_max_snr_over_sky_loc_stat']
+           'MatchedFilterSkyMaxControl', 'compute_max_snr_over_sky_loc_stat',
+           'compute_followup_snr_series']
 

@@ -1,150 +1,69 @@
 #!/bin/bash
 
-set -v
+echo -e "\\n>> [`date`] Starting PyCBC test suite"
 
-INST=${HOME}/inst
-source ${INST}/etc/lal-user-env.sh
-export LD_LIBRARY_PATH=${INST}/lib:${INST}/lib64
-export PKG_CONFIG_PATH=${INST}/lib/pkgconfig:${PKG_CONFIG_PATH}
-export PATH=/usr/lib/ccache:${PATH}:${INST}/bin
+LOG_FILE=$(mktemp -t pycbc-test-log.XXXXXXXXXX)
+
+BUILD=${HOME}/build
+BUILDDIRNAME="pycbc-build"
+PYCBC="$BUILD/$BUILDDIRNAME"
+PYTHON_PREFIX="$PYCBC"
+ENVIRONMENT="$PYCBC/environment"
+PREFIX="$ENVIRONMENT"
+PATH="$PREFIX/bin:$PYTHON_PREFIX/bin:$PATH"
+export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:/usr/local/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+source ${BUILD}/pycbc-build/environment/etc/lalsuite-user-env.sh
+source ${BUILD}/pycbc-build/environment/bin/activate
+export LAL_DATA_PATH=$HOME/build/pycbc-sources/test
+
+RESULT=0
 
 # Using python setup.py test has two issues:
 #     Some tests fail for reasons not necessarily related to PyCBC
 #     Setup.py seems to returns 0 even when tests fail
 # So we rather run specific tests manually
+for prog in `find test -name '*.py' -print | egrep -v '(autochisq|bankveto|fft|schemes|long|lalsim|test_waveform)'`
+do 
+    echo -e ">> [`date`] running unit test for $prog"
+    python $prog &> $LOG_FILE
+    if test $? -ne 0 ; then
+        RESULT=1
+        echo -e "    FAILED!"
+        echo -e "---------------------------------------------------------"
+        cat $LOG_FILE
+        echo -e "---------------------------------------------------------"
+    else
+        echo -e "    Pass."
+    fi
+done
 
-RESULT=0
+# check that all executables that do not require
+# special environments can return a help message
+for prog in `find ${PATH//:/ } -maxdepth 1 -name 'pycbc*' -print 2>/dev/null | egrep -v '(pycbc_live|pycbc_live_nagios_monitor|pycbc_make_grb_summary_page|pycbc_make_offline_grb_workflow|pycbc_mvsc_get_features|pycbc_upload_xml_to_gracedb)'`
+do
+    echo -e ">> [`date`] running $prog --help"
+    $prog --help &> $LOG_FILE
+    if test $? -ne 0 ; then
+        RESULT=1
+        echo -e "    FAILED!"
+        echo -e "---------------------------------------------------------"
+        cat $LOG_FILE
+        echo -e "---------------------------------------------------------"
+    else
+        echo -e "    Pass."
+    fi
+done
 
-python test/test_array_lal.py
-test $? -ne 0 && RESULT=1
+echo -e "\\n>> [`date`] Building documentation"
 
-python test/test_array.py
-test $? -ne 0 && RESULT=1
-
-#python test/test_autochisq.py
-#test $? -ne 0 && RESULT=1
-
-python test/test_chisq.py
-test $? -ne 0 && RESULT=1
-
-python test/test_conversions.py
-test $? -ne 0 && RESULT=1
-
-python test/test_correlate.py
-test $? -ne 0 && RESULT=1
-
-#python test/test_fft_unthreaded.py
-#test $? -ne 0 && RESULT=1
-
-python test/test_frame.py
-test $? -ne 0 && RESULT=1
-
-python test/test_frequencyseries.py
-test $? -ne 0 && RESULT=1
-
-python test/test_injection.py
-test $? -ne 0 && RESULT=1
-
-python test/test_matchedfilter.py
-test $? -ne 0 && RESULT=1
-
-python test/test_pnutils.py
-test $? -ne 0 && RESULT=1
-
-python test/test_psd.py
-test $? -ne 0 && RESULT=1
-
-python test/test_resample.py
-test $? -ne 0 && RESULT=1
-
-#python test/test_schemes.py
-#test $? -ne 0 && RESULT=1
-
-python test/test_threshold.py
-test $? -ne 0 && RESULT=1
-
-python test/test_timeseries.py
-test $? -ne 0 && RESULT=1
-
-python test/test_tmpltbank.py
-test $? -ne 0 && RESULT=1
-
-python test/test_spatmplt.py
-test $? -ne 0 && RESULT=1
-
-python test/test_inference.py
-test $? -ne 0 && RESULT=1
-
-# check for trivial failures of important executables
-
-function test_exec_help {
-    $1 --help > /dev/null
-    test $? -ne 0 && RESULT=1
-}
-
-test_exec_help pycbc_banksim
-test_exec_help pycbc_make_banksim
-test_exec_help pycbc_faithsim
-test_exec_help pycbc_make_faithsim
-
-#test_exec_help pycbc_coinc_time
-
-test_exec_help pycbc_inspiral
-test_exec_help pycbc_inspiral_skymax
-
-test_exec_help pycbc_geom_nonspinbank
-test_exec_help pycbc_aligned_stoch_bank
-test_exec_help pycbc_geom_aligned_bank
-test_exec_help pycbc_geom_aligned_2dstack
-test_exec_help pycbc_splitbank
-test_exec_help pycbc_bank_verification
-test_exec_help pycbc_tmpltbank_to_chi_params
-
-test_exec_help pycbc_strip_injections
-test_exec_help pycbc_coinc_bank2hdf
-test_exec_help pycbc_coinc_mergetrigs
-test_exec_help pycbc_coinc_findtrigs
-test_exec_help pycbc_coinc_hdfinjfind
-test_exec_help pycbc_coinc_statmap
-test_exec_help pycbc_coinc_statmap_inj
-test_exec_help pycbc_combine_statmap
-test_exec_help pycbc_distribute_background_bins
-test_exec_help pycbc_foreground_censor
-test_exec_help pycbc_plot_singles_vs_params
-test_exec_help pycbc_plot_singles_timefreq
-test_exec_help pycbc_page_snrchi
-test_exec_help pycbc_page_coinc_snrchi
-test_exec_help pycbc_page_sensitivity
-test_exec_help pycbc_page_foreground
-test_exec_help pycbc_page_foundmissed
-test_exec_help pycbc_page_ifar
-test_exec_help pycbc_page_injtable
-test_exec_help pycbc_page_segments
-#test_exec_help pycbc_page_segplot
-#test_exec_help pycbc_page_segtable
-test_exec_help pycbc_page_snrifar
-#test_exec_help pycbc_page_vetotable
-test_exec_help pycbc_plot_bank_bins
-test_exec_help pycbc_plot_hist
-test_exec_help pycbc_calculate_psd
-test_exec_help pycbc_merge_psds
-test_exec_help pycbc_plot_psd_file
-test_exec_help pycbc_plot_range
-test_exec_help pycbc_average_psd
-#test_exec_help pycbc_make_html_page
-test_exec_help pycbc_single_template
-test_exec_help pycbc_single_template_plot
-test_exec_help pycbc_optimal_snr
-test_exec_help pycbc_plot_gating
-test_exec_help pycbc_page_snglinfo
-test_exec_help pycbc_page_injinfo
-test_exec_help pycbc_plot_trigger_timeseries
-test_exec_help pycbc_generate_hwinj
-test_exec_help pycbc_stat_dtphase
-test_exec_help pycbc_condition_strain
-test_exec_help pycbc_plot_waveform
-test_exec_help pycbc_compress_bank
-
-test_exec_help pycbc_inference
+python setup.py build_gh_pages &> $LOG_FILE
+if test $? -ne 0 ; then
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+    cat $LOG_FILE
+    echo -e "---------------------------------------------------------"
+    RESULT=1
+fi
 
 exit ${RESULT}

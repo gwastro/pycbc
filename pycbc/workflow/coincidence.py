@@ -29,7 +29,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/coincidence.html
 
 import logging
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node, File
-from glue import segments
+from pycbc_glue import segments
 
 class PyCBCBank2HDFExecutable(Executable):
 

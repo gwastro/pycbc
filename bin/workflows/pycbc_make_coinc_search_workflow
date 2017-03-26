@@ -29,7 +29,8 @@ __program__ = "pycbc_make_coinc_search_workflow"
 import sys
 import socket
 import pycbc.events, pycbc.workflow as wf
-import os, argparse, ConfigParser, logging, glue.segments, numpy, lal, datetime
+import os, argparse, ConfigParser, logging, pycbc_glue.segments
+import numpy, lal, datetime
 from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.results.versioning import save_fig_with_metadata
 from pycbc.results.metadata import html_escape
@@ -44,6 +45,10 @@ def symlink_path(f, path):
 
 def symlink_result(f, rdir_path):
     symlink_path(f, rdir[rdir_path])
+
+# Log to the screen until we know where the output file is
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+    level=logging.INFO)
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__)
@@ -83,11 +88,12 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO,
                     filemode='w')
 
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
+logfile = logging.FileHandler(filename=wf_log_file.storage_path,mode='w')
+logfile.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s:%(levelname)s : %(message)s')
-console.setFormatter(formatter)
-logging.getLogger('').addHandler(console)
+logfile.setFormatter(formatter)
+logging.getLogger('').addHandler(logfile)
+logging.info("Created log file %s" % wf_log_file.storage_path)
 
 # put start / end time at top of summary page
 time = workflow.analysis_time
@@ -298,18 +304,18 @@ trig_generated_name = 'TRIGGERS_GENERATED'
 trig_generated_segs = {}
 data_analysed_name = 'DATA_ANALYSED'
 data_analysed_segs = {}
-insp_files_seg_dict = glue.segments.segmentlistdict()
+insp_files_seg_dict = pycbc_glue.segments.segmentlistdict()
 
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
-    trig_generated_segs[ifo] = glue.segments.segmentlist([\
+    trig_generated_segs[ifo] = pycbc_glue.segments.segmentlist([\
                                                      f.segment for f in files])
-    data_analysed_segs[ifo] = glue.segments.segmentlist([\
+    data_analysed_segs[ifo] = pycbc_glue.segments.segmentlist([\
                                         f.metadata['data_seg'] for f in files])
 
     # Remove duplicates from splitbank
-    trig_generated_segs[ifo] = glue.segments.segmentlist(
+    trig_generated_segs[ifo] = pycbc_glue.segments.segmentlist(
                                                  set(trig_generated_segs[ifo]))
-    data_analysed_segs[ifo] = glue.segments.segmentlist(
+    data_analysed_segs[ifo] = pycbc_glue.segments.segmentlist(
                                                   set(data_analysed_segs[ifo]))
 
     insp_files_seg_dict[ifo + ":" + trig_generated_name] = \
