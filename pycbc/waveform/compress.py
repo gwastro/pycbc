@@ -776,7 +776,7 @@ class CompressedWaveform(object):
         fp[group].attrs['interpolation'] = self.interpolation
         fp[group].attrs['tolerance'] = self.tolerance
         fp[group].attrs['precision'] = precision
-        
+
     @classmethod
     def from_hdf(cls, fp, template_hash, root=None, load_to_memory=True,
                  load_now=False):
