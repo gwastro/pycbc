@@ -197,13 +197,12 @@ assert(map_file.name.endswith('.map'))
 dax_job = dax.DAX(dax_file)
 dax_job.addArguments('--basename %s' % \
                      os.path.splitext(os.path.basename(dax_file.name))[0])
-wf.Workflow.set_job_properties(dax_job, map_file.name)
+wf.Workflow.set_job_properties(dax_job, map_file)
 
 # Tell the dax job that it needs some input files
 dax_job.uses(metadata_file, link=dax.Link.INPUT, register=False, transfer=True)
 dax_job.uses(intermediate_file, link=dax.Link.INPUT, register=False,
              transfer=True)
-dax_job.uses(map_file, link=dax.Link.INPUT, register=False, transfer=True)
 
 # And this output is used again so declare it. See notes at bottom!!!
 #dax_job.uses(geom_out_file, link=dax.Link.OUTPUT, register=False,
@@ -243,12 +242,7 @@ map_file = sbank_node.output_files[1]
 dax_job = dax.DAX(dax_file)
 dax_job.addArguments('--basename %s' % \
                      os.path.splitext(os.path.basename(dax_file.name))[0])
-wf.Workflow.set_job_properties(dax_job, map_file.name)
-
-#dax_job.uses(sbank_out_file_bbh, link=dax.Link.OUTPUT, register=False,
-#             transfer=False)
-dax_job.uses(map_file, link=dax.Link.INPUT, register=False,
-             transfer=False)
+wf.Workflow.set_job_properties(dax_job, map_file)
 
 workflow._adag.addJob(dax_job)
 dep = dax.Dependency(parent=sbank_node._dax_node, child=dax_job)
@@ -279,10 +273,8 @@ map_file = sbank_node.output_files[1]
 dax_job = dax.DAX(dax_file)
 dax_job.addArguments('--basename %s' % \
                      os.path.splitext(os.path.basename(dax_file.name))[0])
-wf.Workflow.set_job_properties(dax_job, map_file.name)
+wf.Workflow.set_job_properties(dax_job, map_file)
 
-dax_job.uses(map_file, link=dax.Link.INPUT, register=False,
-             transfer=True)
 
 workflow._adag.addJob(dax_job)
 dep = dax.Dependency(parent=sbank_node._dax_node, child=dax_job)

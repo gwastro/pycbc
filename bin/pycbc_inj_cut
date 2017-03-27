@@ -25,19 +25,19 @@ The two sets are stored into two separate output files.
 
 __author__ = "Stephen Fairhurst"
 __email__ = "stephen.fairhurst@ligo.org"
-__version__ = "0.0"
-__date__ = "31.10.2015"
 
 import argparse
 import logging
 import numpy
 import pycbc
 import pycbc.inject
-import glue.ligolw.utils
+import pycbc_glue.ligolw.utils
 from pycbc.types import MultiDetOptionAction
-from glue.ligolw import lsctables
+from pycbc_glue.ligolw import lsctables
+import pycbc.version
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action=pycbc.version.Version)
 parser.add_argument('--input', dest='inj_xml', required=True, help='Input LIGOLW injections file.')
 parser.add_argument('--output-missed', dest='output_missed', required=False,
                   help="Output LIGOLW file containing injections we expect to miss.")
@@ -98,7 +98,8 @@ llw_doc = injections.indoc
 llw_root = llw_doc.childNodes[0]
 llw_root.removeChild(injections.table)
 llw_root.appendChild(out_sim_inspiral_inject)
-glue.ligolw.utils.write_filename(llw_doc, output_inject, gz=output_inject.endswith('gz'))
+pycbc_glue.ligolw.utils.write_filename(llw_doc, output_inject,
+                                       gz=output_inject.endswith('gz'))
 
 if opts.output_missed:
     output_missed = opts.output_missed
@@ -109,6 +110,7 @@ if opts.output_missed:
     llw_root.appendChild(out_sim_inspiral_missed)
     logging.info('Storing them to %s.', output_missed)
 
-    glue.ligolw.utils.write_filename(llw_doc, output_missed, gz=output_missed.endswith('gz'))
+    pycbc_glue.ligolw.utils.write_filename(llw_doc, output_missed,
+                                           gz=output_missed.endswith('gz'))
 
 logging.info('Done')

@@ -194,6 +194,21 @@ def newsnr(snr, reduced_x2, q=6., n=2.):
     else:
         return newsnr[0]
 
+def newsnr_sgveto(snr, bchisq, sgchisq):
+    """ Combined SNR derived from NewSNR and Sine-Gaussian Chisq"""
+    # Test function
+    nsnr = newsnr(snr, bchisq)
+    nsnr = numpy.array(nsnr, ndmin=1)
+    sgchisq = numpy.array(sgchisq, ndmin=1)
+    t = numpy.array(sgchisq > 4, ndmin=1)
+    if len(t) > 0:
+        nsnr[t] = nsnr[t] / (sgchisq[t] / 4.0) ** 0.5
+
+    if len(nsnr) > 1:
+        return nsnr
+    else:
+        return nsnr[0]
+
 def effsnr(snr, reduced_x2, fac=250.):
     """Calculate the effective SNR statistic. See (S5y1 paper) for definition.
     Previous implementation in glue/ligolw/lsctables.py
@@ -464,6 +479,9 @@ class EventManager(object):
 
             f['template_hash'] = th[tid]
 
+            if 'sg_chisq' in self.events.dtype.names:
+                f['sg_chisq'] = self.events['sg_chisq']
+
         if self.opt.trig_start_time:
             f['search/start_time'] = numpy.array([self.opt.trig_start_time])
             search_start_time = float(self.opt.trig_start_time)
@@ -724,7 +742,7 @@ class EventManagerMultiDet(EventManager):
                         f['gating/' + gate_type + '/pad'] = \
                                 numpy.array([g[2] for g in gating_info[gate_type]])
 
-__all__ = ['threshold_and_cluster', 'newsnr', 'effsnr',
+__all__ = ['threshold_and_cluster', 'newsnr', 'effsnr', 'newsnr_sgveto',
            'findchirp_cluster_over_window',
            'threshold', 'cluster_reduce', 'ThresholdCluster',
            'threshold_real_numpy',

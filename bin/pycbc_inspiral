@@ -19,6 +19,7 @@
 import sys
 import logging, argparse, numpy, itertools
 import pycbc
+import pycbc.version
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.filter import MatchedFilterControl, make_frequency_series
@@ -47,8 +48,7 @@ tstart = time.time()
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
 
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--version', action=pycbc.version.Version)
 parser.add_argument("-V", "--verbose", action="store_true",
                   help="print extra debugging information", default=False )
 parser.add_argument("--update-progress",
@@ -194,7 +194,7 @@ ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
                            inj_filter_rejector=inj_filter_rejector)
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
-      
+
 
 with ctx:
     fft.from_cli(opt)
@@ -203,7 +203,7 @@ with ctx:
     flen = strain_segments.freq_len
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
-    
+
 
     logging.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
@@ -280,16 +280,16 @@ with ctx:
     logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
         seg /= seg.psd
-  
+
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
         low_frequency_cutoff=None if opt.enable_bank_start_frequency else flow,
         dtype=complex64, phase_order=opt.order,
         taper=opt.taper_template, approximant=opt.approximant,
         out=template_mem, max_template_length=opt.max_template_length)
-        
-    sg_chisq = SingleDetSGChisq.from_cli(opt, bank, opt.chisq_bins)                                           
-                                             
+
+    sg_chisq = SingleDetSGChisq.from_cli(opt, bank, opt.chisq_bins)
+
     ntemplates = len(bank)
     nfilters = 0
 
@@ -334,7 +334,10 @@ with ctx:
 
             nfilters = nfilters + 1
             snr, norm, corr, idx, snrv = \
-               matched_filter.matched_filter_and_cluster(s_num, template.sigmasq(stilde.psd), cluster_window)
+               matched_filter.matched_filter_and_cluster(s_num,
+                                                         template.sigmasq(stilde.psd),
+                                                         cluster_window,
+                                                         epoch=stilde._epoch)
 
             if not len(idx):
                 continue
@@ -347,7 +350,7 @@ with ctx:
                   power_chisq.values(corr, snrv, norm, stilde.psd,
                                      idx+stilde.analyze.start, template)
 
-            out_vals['lat_chisq'] = sg_chisq.values(stilde, template, stilde.psd,
+            out_vals['sg_chisq'] = sg_chisq.values(stilde, template, stilde.psd,
                                           snrv, norm,
                                           out_vals['chisq'],
                                           out_vals['chisq_dof'],

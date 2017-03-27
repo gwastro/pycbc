@@ -13,10 +13,10 @@ import optparse
 
 from pycbc import waveform
 
-from glue.ligolw import lsctables
-from glue.ligolw import utils
-from glue.ligolw import table
-from glue.ligolw.utils import process
+from pycbc_glue.ligolw import lsctables
+from pycbc_glue.ligolw import utils
+from pycbc_glue.ligolw import table
+from pycbc_glue.ligolw.utils import process
 
 def fstr(input):
     """

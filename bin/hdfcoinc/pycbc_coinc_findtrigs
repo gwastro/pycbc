@@ -72,7 +72,7 @@ class ReadByTemplate(object):
 
         # Determine the segments which define the boundaries of valid times
         # to use triggers
-        from glue.segments import segmentlist, segment
+        from pycbc_glue.segments import segmentlist, segment
         key = '%s/search/' % self.ifo
         s, e = self.file[key + 'start_time'][:], self.file[key + 'end_time'][:]
         self.segs = veto.start_end_to_segments(s, e).coalesce()

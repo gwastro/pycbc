@@ -32,7 +32,7 @@ import os.path
 import h5py
 from copy import copy
 import numpy as np
-from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+from pycbc_glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 import pycbc.waveform
 import pycbc.pnutils
 import pycbc.waveform.compress
@@ -513,7 +513,6 @@ class LiveFilterBank(TemplateBank):
         for i, p in enumerate(self.table):
             hash_value =  hash((p.mass1, p.mass2, p.spin1z, p.spin2z))
             self.hash_lookup[hash_value] = i
-        self.table.sort(order='mchirp')
 
     def round_up(self, num):
         """Determine the length to use for this waveform by rounding.

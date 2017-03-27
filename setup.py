@@ -64,7 +64,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'jinja2',
                       'mpld3>=0.3',
                       'pyRXP>=2.1.0',
-                      'pycbc-glue>=1.0.1',
+                      'pycbc-glue-obsolete==1.1.0',
                       'kombine',
                       'emcee>=2.2.0',
                       'corner>=2.0.1',
@@ -250,12 +250,13 @@ def get_version_info():
                     'Id: %s\n'
                     'Builder: %s\n'
                     'Build date: %s\n'
-                    'Repository status is %s"""' %(vcs_info.branch,
+                    'Repository status is %s"""\n' %(vcs_info.branch,
                                                    vcs_info.tag,
                                                    vcs_info.hash,
                                                    vcs_info.builder,
                                                    vcs_info.build_date,
                                                    vcs_info.status))
+            f.write('from pycbc._version import *\n')
             version = vcs_info.version
 
     # If this is a release or another kind of source distribution of PyCBC
@@ -282,7 +283,8 @@ def get_version_info():
             f.write('git_builder = \'%s\'\n' % builder)
             f.write('git_build_date = \'%s\'\n' % build_date)
             f.write('git_verbose_msg = """Version: %s Release: %s \n'
-                    ' """' % (version, release))
+                    ' """\n' % (version, release))
+            f.write('from pycbc._version import *\n')
 
     from pycbc import version
     version = version.version
@@ -308,7 +310,8 @@ class build_gh_pages(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_call("cd docs; cp Makefile.gh_pages Makefile; cp conf_std.py conf.py; sphinx-apidoc "
+        subprocess.check_call("mkdir -p _gh-pages/latest && touch _gh-pages/.nojekyll && "
+                              "cd docs; cp Makefile.gh_pages Makefile; cp conf_std.py conf.py; sphinx-apidoc "
                               " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
@@ -372,7 +375,6 @@ setup (
                'bin/pycbc_get_ffinal',
                'bin/pycbc_tmpltbank_to_chi_params',
                'bin/pycbc_bank_verification',
-               'bin/pycbc_run_sqlite',
                'bin/pycbc_inj_cut',
                'bin/pycbc_upload_xml_to_gracedb',
                'bin/pycbc_dark_vs_bright_injections',

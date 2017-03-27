@@ -4,7 +4,7 @@ try:
 except ImportError:
 	# pre 2.5.x
 	from pysqlite2 import dbapi2 as sqlite3
-from glue.ligolw import dbtables 
+from pycbc_glue.ligolw import dbtables
 from pylal import SnglInspiralUtils
 from pylal import db_thinca_rings
 from pylal import git_version
@@ -14,7 +14,7 @@ import glob
 import sys
 import numpy
 import pdb
-from glue import iterutils
+from pycbc_glue import iterutils
 
 __author__ = "Kari Hodge <kari.hodge@ligo.org>"
 __version__ = "git id %s" % git_version.id

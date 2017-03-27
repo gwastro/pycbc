@@ -32,7 +32,8 @@ Pillow==2.9.0
 pip==7.1.2
 psycopg2==2.6
 pyRXP==2.1.0
-pycbc-glue==0.9.8
+pycbc-glue-obsolete==1.1.0
+pycbc-glue==1.0.1
 pycbc-pylal==0.9.6
 Pygments==2.0.2
 pyOpenSSL==0.13
@@ -51,5 +52,6 @@ SQLAlchemy==0.8.0
 traceback2==1.4.0
 Werkzeug==0.9.3
 WTForms==1.0.3
-https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
 ligo-gracedb
+http://software.ligo.org/lscsoft/source/glue-1.53.0.tar.gz
+http://software.ligo.org/lscsoft/source/dqsegdb-1.4.0.tar.gz

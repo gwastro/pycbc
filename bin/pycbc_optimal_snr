@@ -29,11 +29,11 @@ import h5py
 import pycbc
 import pycbc.inject
 import pycbc.psd
-import glue.ligolw.utils
+import pycbc_glue.ligolw.utils
 from pycbc.filter import sigma, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, \
                         MultiDetOptionAction, load_frequencyseries
-from glue.ligolw import lsctables
+from pycbc_glue.ligolw import lsctables
 import pycbc.version
 
 
@@ -98,8 +98,7 @@ class TimeVaryingPSD(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", action="version",
-                        version=pycbc.version.git_verbose_msg)
+    parser.add_argument("--version", action=pycbc.version.Version)
     parser.add_argument('--input-file', '-i', dest='inj_xml', required=True,
                         help='Input LIGOLW file defining injections')
     parser.add_argument('--output-file', '-o', dest='out_file', required=True,
@@ -242,7 +241,7 @@ if __name__ == '__main__':
     llw_root = llw_doc.childNodes[0]
     llw_root.removeChild(injections.table)
     llw_root.appendChild(out_sim_inspiral)
-    glue.ligolw.utils.write_filename(
-        llw_doc, opts.out_file, gz=opts.out_file.endswith('gz'))
+    pycbc_glue.ligolw.utils.write_filename\
+        (llw_doc, opts.out_file, gz=opts.out_file.endswith('gz'))
 
     logging.info('Done')
