@@ -576,9 +576,9 @@ class CompressedWaveform(object):
     mismatch : {None, float}
         The actual mismatch between the decompressed waveform (using the given
         `interpolation`) and the full waveform.
-    precision : {None, str}
-        The precision used to generate and store the compressed waveform amplitude
-        and phase points.
+    precision : {'double', str}
+        The precision used to generate the compressed waveform's amplitude and
+        phase points. Default is 'double'.
     load_to_memory : {True, bool}
         If `sample_points`, `amplitude`, and/or `phase` is an hdf dataset, they
         will be cached in memory the first time they are accessed. Default is
