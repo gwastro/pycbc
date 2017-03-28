@@ -576,9 +576,9 @@ class CompressedWaveform(object):
     mismatch : {None, float}
         The actual mismatch between the decompressed waveform (using the given
         `interpolation`) and the full waveform.
-    precision : {None, str}
-        The precision used to generate and store the compressed waveform amplitude
-        and phase points.
+    precision : {'double', str}
+        The precision used to generate the compressed waveform's amplitude and
+        phase points. Default is 'double'.
     load_to_memory : {True, bool}
         If `sample_points`, `amplitude`, and/or `phase` is an hdf dataset, they
         will be cached in memory the first time they are accessed. Default is
@@ -602,13 +602,14 @@ class CompressedWaveform(object):
     mismatch : {None, float}
         The mismatch between the decompressed waveform and the original
         waveform.
-    precision : {None, str}
-        The precision used to generate and store the compressed waveform points.
+    precision : {'double', str}
+        The precision used to generate and store the compressed waveform
+        points. Options are 'double' or 'single'; default is 'double
     """
 
     def __init__(self, sample_points, amplitude, phase,
                  interpolation=None, tolerance=None, mismatch=None,
-                 precision=None, load_to_memory=True):
+                 precision='double', load_to_memory=True):
         self._sample_points = sample_points
         self._amplitude = amplitude
         self._phase = phase
@@ -734,7 +735,7 @@ class CompressedWaveform(object):
                              out=out, df=df, f_lower=f_lower,
                              interpolation=interpolation)
 
-    def write_to_hdf(self, fp, template_hash, root=None):
+    def write_to_hdf(self, fp, template_hash, root=None, precision=None):
         """Write the compressed waveform to the given hdf file handler.
 
         The waveform is written to:
@@ -753,18 +754,28 @@ class CompressedWaveform(object):
             Put the `compressed_waveforms` group in the given directory in the
             hdf file. If `None`, `compressed_waveforms` will be the root
             directory.
+        precision : {None, str}
+            Cast the saved parameters to the given precision before saving. If
+            None provided, will use whatever their current precision is. This
+            will raise an error if the parameters have single precision but the
+            requested precision is double.
         """
         if root is None:
             root = ''
         else:
             root = '%s/'%(root)
+        if precision is None:
+            precision = self.precision
+        elif precision == 'double' and self.precision == 'single':
+            raise ValueError("cannot cast single precision to double")
+        outdtype = _real_dtypes[precision]
         group = '%scompressed_waveforms/%s' %(root, str(template_hash))
         for param in ['amplitude', 'phase', 'sample_points']:
-            fp['%s/%s' %(group, param)] = self._get(param)
+            fp['%s/%s' %(group, param)] = self._get(param).astype(outdtype)
         fp[group].attrs['mismatch'] = self.mismatch
         fp[group].attrs['interpolation'] = self.interpolation
         fp[group].attrs['tolerance'] = self.tolerance
-        fp[group].attrs['precision'] = self.precision
+        fp[group].attrs['precision'] = precision
 
     @classmethod
     def from_hdf(cls, fp, template_hash, root=None, load_to_memory=True,
