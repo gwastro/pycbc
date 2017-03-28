@@ -158,7 +158,7 @@ for ii in range(imin, imax):
                          low_frequency_cutoff is zero. A non-zero value
                          is required.""")
     tmplt = bank.table[ii-imin]
-    kmax = htilde.end_idx
+    kmax = numpy.nonzero(abs(htilde))[0][-1]
     # Calculate psd if psd options are provided as input. The psd would
     # be used to compute the overlap between the full waveform and the
     # decompressed waveform.
