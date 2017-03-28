@@ -50,10 +50,10 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         pycbc.inference.likelihood module.
     nwalkers : int
         Number of walkers to use in sampler.
-    processes : {None, int}
-        Number of processes to use with multiprocessing. If None, all available
-        cores are used.
-    burn_in_iterations : {None, int}
+    pool : function with map, Optional
+        A provider of a map function that allows a function call to be run
+        over multiple sets of arguments and possibly maps them to cores/nodes/etc.
+    burn_in_iterations : {None, int}, Optional
         Set the number of burn in iterations to use. If None,
         `burn_in_ieterations` will be initialized to 0.
     """
@@ -264,10 +264,10 @@ class EmceePTSampler(BaseMCMCSampler):
         Number of temeratures to use in the sampler.
     nwalkers : int
         Number of walkers to use in sampler.
-    processes : {None, int}
-        Number of processes to use with multiprocessing. If None, all available
-        cores are used.
-    burn_in_iterations : {None, int}
+    pool : function with map, Optional
+        A provider of a map function that allows a function call to be run
+        over multiple sets of arguments and possibly maps them to cores/nodes/etc.
+    burn_in_iterations : {None, int}, Optional
         Set the number of burn in iterations to use. If None,
         `burn_in_ieterations` will be initialized to 0.
     """
@@ -284,13 +284,6 @@ class EmceePTSampler(BaseMCMCSampler):
         # construct the sampler: PTSampler needs the likelihood and prior
         # functions separately
         likelihood_evaluator.set_callfunc('loglikelihood')
-
-        # initialize the pool to use
-        if processes == 1:
-            pool = None
-        else:
-            pool = emcee.interruptible_pool.InterruptiblePool(
-                processes=processes)
 
         ndim = len(likelihood_evaluator.waveform_generator.variable_args)
         sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
