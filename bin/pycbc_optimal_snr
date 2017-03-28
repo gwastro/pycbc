@@ -217,7 +217,7 @@ if __name__ == '__main__':
                     continue
                 else:
                     raise
-            sval = sigma(wave, psd=psd[:len(wave)], low_frequency_cutoff=f_low)
+            sval = sigma(wave[:len(psd)], psd=psd[:len(wave)], low_frequency_cutoff=f_low)
             setattr(inj, column, sval)
             logging.info('%s: Calculated: %s, Sample Rate: %s', sval, inj.simulation_id, (len(wave)-1) * delta_f * 2)
 
