@@ -109,7 +109,7 @@ for segment_name in opts.segment_names:
                 # segments to the list and exit this for loop
                 # this is a for loop because the version of the flag may not
                 # be defined by the command line
-                if key.startswith(segment_flag):
+                if key == segment_flag or key.startswith(segment_flag+':'):
                     if not len(base_segs[ifo]) and name == names[0]:
                         base_segs[ifo] = seg_dict[key].coalesce()
                     else:
