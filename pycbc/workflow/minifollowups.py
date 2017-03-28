@@ -94,7 +94,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
 
     name = node.output_files[0].name
-    map_loc = node.output_files[1].name
+    map_file = node.output_files[1]
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
@@ -106,7 +106,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     
     job = dax.DAX(fil)
     job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_loc)
+    Workflow.set_job_properties(job, map_file)
     workflow._adag.addJob(job)
     dep = dax.Dependency(parent=node._dax_node, child=job)
     workflow._adag.addDependency(dep)
@@ -183,7 +183,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
 
     name = node.output_files[0].name
-    map_loc = node.output_files[1].name
+    map_file = node.output_files[1]
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
@@ -196,7 +196,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     job = dax.DAX(fil)
     job.addArguments('--basename %s' \
                      % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_loc)
+    Workflow.set_job_properties(job, map_file)
     workflow._adag.addJob(job)
     dep = dax.Dependency(parent=node._dax_node, child=job)
     workflow._adag.addDependency(dep)
@@ -268,7 +268,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
 
     name = node.output_files[0].name
-    map_loc = node.output_files[1].name
+    map_file = node.output_files[1]
     
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
@@ -280,7 +280,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     
     job = dax.DAX(fil)
     job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_loc)
+    Workflow.set_job_properties(job, map_file)
     workflow._adag.addJob(job)
     dep = dax.Dependency(parent=node._dax_node, child=job)
     workflow._adag.addDependency(dep)
