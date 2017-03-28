@@ -657,23 +657,6 @@ class FilterBank(TemplateBank):
         from pycbc.waveform.waveform import props
         from pycbc.waveform import get_waveform_filter_length_in_time
 
-        # Get the precision used to generate the compressed template
-        precision_from_bank_file = self.compressed_waveforms[self.table.template_hash[index]].precision
-
-        # Get the precision that would be used to generate the decompressed
-        # waveform
-        waveform_decompression_precision = tempout.precision
-
-        if waveform_decompression_precision != precision_from_bank_file :
-            raise ValueError("The precision used to compress the "
-                             "waveform was %s, whereas the precision "
-                             "selected to decompress the waveform was "
-                             "%s. Both of theses should be the same. "
-                             "Therefore, use a bank with precision %s."
-                             %(precision_from_bank_file,
-                             waveform_decompression_precision,
-                             waveform_decompression_precision))
-
         # Get the interpolation method to be used to decompress the waveform
         if self.waveform_decompression_method is not None :
             decompression_method = self.waveform_decompression_method
