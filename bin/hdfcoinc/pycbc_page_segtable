@@ -22,11 +22,11 @@ import logging
 import numpy
 import pycbc.results
 import sys
-from glue import segments
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import table
-from glue.ligolw import utils
+from pycbc_glue import segments
+from pycbc_glue.ligolw import ligolw
+from pycbc_glue.ligolw import lsctables
+from pycbc_glue.ligolw import table
+from pycbc_glue.ligolw import utils
 from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results import save_fig_with_metadata
 from pycbc.workflow import SegFile
@@ -109,7 +109,7 @@ for segment_name in opts.segment_names:
                 # segments to the list and exit this for loop
                 # this is a for loop because the version of the flag may not
                 # be defined by the command line
-                if key.startswith(segment_flag):
+                if key == segment_flag or key.startswith(segment_flag+':'):
                     if not len(base_segs[ifo]) and name == names[0]:
                         base_segs[ifo] = seg_dict[key].coalesce()
                     else:

@@ -27,7 +27,7 @@ import imp
 import argparse
 import numpy
 import h5py
-from glue.ligolw import utils, table
+from pycbc_glue.ligolw import utils, table
 import pycbc
 from pycbc import pnutils
 
@@ -36,8 +36,8 @@ __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
 __program__ = "pycbc_banksim_match_combine"
 
-from glue.ligolw.ligolw import LIGOLWContentHandler
-from glue.ligolw import lsctables
+from pycbc_glue.ligolw.ligolw import LIGOLWContentHandler
+from pycbc_glue.ligolw import lsctables
 class mycontenthandler(LIGOLWContentHandler):
     pass
 lsctables.use_in(mycontenthandler)

@@ -4,23 +4,23 @@ import subprocess
 import sys
 import glob
 import os
-from glue import lal
+from pycbc_glue import lal
 
 from optparse import OptionParser
 
-from glue.ligolw import dbtables
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import utils
+from pycbc_glue.ligolw import dbtables
+from pycbc_glue.ligolw import ligolw
+from pycbc_glue.ligolw import table
+from pycbc_glue.ligolw import lsctables
+from pycbc_glue.ligolw import utils
 from pylal import git_version
 from pylal import ligolw_cafe
 from pylal import mvsc_queries_snglstage
-from glue import pipeline
+from pycbc_glue import pipeline
 import ConfigParser
 import tempfile
 import string
-from glue import iterutils
+from pycbc_glue import iterutils
 
 parser = OptionParser(version = git_version.verbose_msg, usage = "%prog [options] [databases]")
 parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
