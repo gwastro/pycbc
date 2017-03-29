@@ -5,7 +5,7 @@ import logging, argparse, numpy, h5py, itertools, multiprocessing, time
 import pycbc, pycbc.psd, pycbc.strain, pycbc.events
 from pycbc.version import git_verbose_msg as version
 from pycbc.fft.fftw import set_measure_level
-from glue.segments import segmentlist
+from pycbc_glue.segments import segmentlist
 set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
