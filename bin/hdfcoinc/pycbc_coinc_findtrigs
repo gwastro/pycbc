@@ -126,8 +126,12 @@ class ReadByTemplate(object):
 
         if self.bank is not None:
             self.param = {}
-            for col in self.bank:
-                self.param[col] = self.bank[col][self.template_num]
+            if 'parameters' in self.bank.attrs :
+                for col in self.bank.attrs['parameters']:
+                    self.param[col] = self.bank[col][self.template_num]
+            else :
+                for col in self.bank:
+                    self.param[col] = self.bank[col][self.template_num]
 
         # Calculate the trigger id by adding the relative offset in self.keep
         # to the absolute beginning index of this templates triggers stored
@@ -184,7 +188,7 @@ time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
 if time_window >= args.timeslide_interval and args.timeslide_interval is not None:
     raise parser.error("The maximum time delay between detectors should be smaller "
                        "than the timeslide interval.")
-                       
+
 # slide = 0 significes don't do timeslides
 if args.timeslide_interval is None:
     args.timeslide_interval = 0
