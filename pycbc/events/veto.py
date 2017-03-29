@@ -3,8 +3,8 @@ segment.
 """
 import numpy, urlparse, os.path
 import lal
-from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
-from glue.segments import segment, segmentlist
+from pycbc_glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+from pycbc_glue.segments import segment, segmentlist
 
 
 def start_end_to_segments(start, end):
@@ -28,7 +28,7 @@ def start_end_from_segments(segment_file):
     start: numpy.ndarray
     end: numpy.ndarray
     """
-    from glue.ligolw.ligolw import LIGOLWContentHandler as h; lsctables.use_in(h)
+    from pycbc_glue.ligolw.ligolw import LIGOLWContentHandler as h; lsctables.use_in(h)
     indoc = ligolw_utils.load_filename(segment_file, False, contenthandler=h)
     segment_table  = table.get_table(indoc, lsctables.SegmentTable.tableName)
     start = numpy.array(segment_table.getColumnByName('start_time'))
@@ -107,7 +107,7 @@ def select_segments_by_definer(segment_file, segment_name=None, ifo=None):
     -------
     seg: list of segments
     """
-    from glue.ligolw.ligolw import LIGOLWContentHandler as h; lsctables.use_in(h)
+    from pycbc_glue.ligolw.ligolw import LIGOLWContentHandler as h; lsctables.use_in(h)
     indoc = ligolw_utils.load_filename(segment_file, False, contenthandler=h)
     segment_table  = table.get_table(indoc, 'segment')
 
@@ -202,7 +202,7 @@ def indices_outside_segments(times, segment_files, ifo=None, segment_name=None):
 def get_segment_definer_comments(xml_file, include_version=True):
     """Returns a dict with the comment column as the value for each segment"""
 
-    from glue.ligolw.ligolw import LIGOLWContentHandler as h
+    from pycbc_glue.ligolw.ligolw import LIGOLWContentHandler as h
     lsctables.use_in(h)
 
     # read segment definer table

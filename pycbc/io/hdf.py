@@ -9,12 +9,12 @@ import inspect
 
 from lal import LIGOTimeGPS, YRJUL_SI
 
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import ilwd
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from pycbc_glue.ligolw import ligolw
+from pycbc_glue.ligolw import table
+from pycbc_glue.ligolw import lsctables
+from pycbc_glue.ligolw import ilwd
+from pycbc_glue.ligolw import utils as ligolw_utils
+from pycbc_glue.ligolw.utils import process as ligolw_process
 
 from pycbc import version as pycbc_version
 from pycbc.tmpltbank import return_search_summary
