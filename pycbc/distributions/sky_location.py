@@ -17,6 +17,7 @@ This modules provides classes for evaluating uniform sky distributions in
 right acension and declination.
 """
 
+from pycbc.distributions import bounded
 from pycbc.distributions import angular
 from pycbc.distributions import uniform_angle
 
