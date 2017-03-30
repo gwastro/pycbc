@@ -17,6 +17,8 @@ This modules provides classes for evaluating uniform sky distributions in
 right acension and declination.
 """
 
+import numpy
+from ConfigParser import Error
 from pycbc.distributions import bounded
 from pycbc.distributions import angular
 from pycbc.distributions import uniform_angle
@@ -268,13 +270,16 @@ class UniformSolidAngle(bounded.BoundedDist):
                 azimuthal_angle) + "(%s)"%(', '.join(variable_args)))
 
         # get the bounds, if provided
-        polar_bounds = get_param_bounds_from_config(cp, section, tag,
-            polar_angle)
-        azimuthal_bounds = get_param_bounds_from_config(cp, section, tag,
-            azimuthal_angle)
+        polar_bounds = bounded.get_param_bounds_from_config(
+                                                   cp, section, tag,
+                                                   polar_angle)
+        azimuthal_bounds = bounded.get_param_bounds_from_config(
+                                                   cp, section, tag,
+                                                   azimuthal_angle)
 
         return cls(polar_angle=polar_angle, azimuthal_angle=azimuthal_angle,
-            polar_bounds=polar_bounds, azimuthal_bounds=azimuthal_bounds)
+                   polar_bounds=polar_bounds,
+                   azimuthal_bounds=azimuthal_bounds)
 
 
 class UniformSky(UniformSolidAngle):
