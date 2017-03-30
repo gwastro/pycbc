@@ -214,5 +214,5 @@ for num_event in range(num_events):
     layouts += list(layout.grouper(files, 2))
     num_event += 1
 
-workflow.save(filename=args.output_file, output_map=args.output_map)
+workflow.save(filename=args.output_file, output_map_path=args.output_map)
 layout.two_column_layout(args.output_dir, layouts)
