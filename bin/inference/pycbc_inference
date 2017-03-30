@@ -146,68 +146,10 @@ logging.info("Using seed %i" %(opts.seed))
 ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
 
-# get gates to apply
-gates = gate.gates_from_cli(opts)
-psd_gates = gate.psd_gates_from_cli(opts)
-
-# get strain time series
-strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
-                                         precision="double")
-# apply gates if not waiting to overwhiten
-if not opts.gate_overwhitened:
-    logging.info("Applying gates to strain data")
-    strain_dict = gate.apply_gates_to_td(strain_dict, gates)
-
-# get strain time series to use for PSD estimation
-# if user has not given the PSD time options then use same data as analysis
-if opts.psd_start_time and opts.psd_end_time:
-    logging.info("Will generate a different time series for PSD estimation")
-    psd_opts = opts
-    psd_opts.gps_start_time = psd_opts.psd_start_time
-    psd_opts.gps_end_time = psd_opts.psd_end_time
-    psd_strain_dict = strain.from_cli_multi_ifos(psd_opts, opts.instruments,
-                                                precision="double")
-    # apply any gates
-    logging.info("Applying gates to PSD data")
-    psd_strain_dict = gate.apply_gates_to_td(psd_strain_dict, psd_gates)
-
-elif opts.psd_start_time or opts.psd_end_time:
-    raise ValueError("Must give --psd-start-time and --psd-end-time")
-else:
-    psd_strain_dict = strain_dict
+# get the data and psd
+strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
 
 with ctx:
-
-    # FFT strain and save each of the length of the FFT, delta_f, and
-    # low frequency cutoff to a dict
-    logging.info("FFT strain")
-    stilde_dict = {}
-    length_dict = {}
-    delta_f_dict = {}
-    low_frequency_cutoff_dict = {}
-    for ifo in opts.instruments:
-        stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
-        length_dict[ifo] = len(stilde_dict[ifo])
-        delta_f_dict[ifo] = stilde_dict[ifo].delta_f
-        low_frequency_cutoff_dict[ifo] = opts.low_frequency_cutoff
-
-    # get PSD as frequency series
-    psd_dict = psd.from_cli_multi_ifos(opts, length_dict, delta_f_dict,
-                               low_frequency_cutoff_dict, opts.instruments,
-                               strain_dict=psd_strain_dict, precision="double")
-
-    # apply any gates to overwhitened data, if desired
-    if opts.gate_overwhitened and opts.gate is not None:
-        logging.info("Applying gates to overwhitened data")
-
-        # overwhiten the data
-        for ifo in gates:
-            stilde_dict[ifo] /= psd_dict[ifo]
-        stilde_dict = gate.apply_gates_to_fd(stilde_dict, gates)
-
-        # unwhiten the data for the likelihood generator
-        for ifo in gates:
-            stilde_dict[ifo] *= psd_dict[ifo]
 
     # read configuration file
     logging.info("Reading configuration file")
