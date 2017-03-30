@@ -14,8 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""
-This module contains standard options used for inference-related programs.
+"""This module contains standard options used for inference-related programs.
 """
 
 import logging
@@ -23,6 +22,17 @@ from pycbc.io import InferenceFile
 import pycbc.inference.sampler
 from pycbc.inference import likelihood
 from pycbc.pool import choose_pool
+from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
+from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
+from pycbc.gate import gates_from_cli, psd_gates_from_cli, apply_gates_to_td, \
+                       apply_gates_to_fd
+
+
+#-----------------------------------------------------------------------------
+#
+#                    Utilities for setting up a sampler
+#
+#-----------------------------------------------------------------------------
 
 def add_sampler_option_group(parser):
     """Adds the options needed to set up an inference sampler.
@@ -72,6 +82,7 @@ def add_sampler_option_group(parser):
         help="Use MPI to parallelize the sampler")
     return sampler_group
 
+
 def sampler_from_cli(opts, likelihood_evaluator, pool=None):
     """Parses the given command-line options to set up a sampler.
 
@@ -107,6 +118,103 @@ def sampler_from_cli(opts, likelihood_evaluator, pool=None):
     return sclass.from_cli(opts, likelihood_evaluator,
                            pool=pool, likelihood_call=likelihood_call)
 
+
+#-----------------------------------------------------------------------------
+#
+#                       Utilities for loading data
+#
+#-----------------------------------------------------------------------------
+
+def data_from_cli(opts):
+    """Loads the data needed for a likelihood evaluator from the given
+    command-line options. Gates specifed on the command line are also applied.
+
+    Parameters
+    ----------
+    opts : ArgumentParser parsed args
+        Argument options parsed from a command line string (the sort of thing
+        returned by `parser.parse_args`).
+
+    Returns
+    -------
+    strain_dict : dict
+        Dictionary of instruments -> `TimeSeries` strain.
+    stilde_dict : dict
+        Dictionary of instruments -> `FrequencySeries` strain.
+    psd_dict : dict
+        Dictionary of instruments -> `FrequencySeries` psds.
+    """
+    # get gates to apply
+    gates = gates_from_cli(opts)
+    psd_gates = psd_gates_from_cli(opts)
+
+    # get strain time series
+    strain_dict = strain_from_cli_multi_ifos(opts, opts.instruments,
+                                             precision="double")
+    # apply gates if not waiting to overwhiten
+    if not opts.gate_overwhitened:
+        logging.info("Applying gates to strain data")
+        strain_dict = apply_gates_to_td(strain_dict, gates)
+
+    # get strain time series to use for PSD estimation
+    # if user has not given the PSD time options then use same data as analysis
+    if opts.psd_start_time and opts.psd_end_time:
+        logging.info("Will generate a different time series for PSD "
+                     "estimation")
+        psd_opts = opts
+        psd_opts.gps_start_time = psd_opts.psd_start_time
+        psd_opts.gps_end_time = psd_opts.psd_end_time
+        psd_strain_dict = strain_from_cli_multi_ifos(psd_opts,
+                                                    opts.instruments,
+                                                    precision="double")
+        # apply any gates
+        logging.info("Applying gates to PSD data")
+        psd_strain_dict = apply_gates_to_td(psd_strain_dict, psd_gates)
+
+    elif opts.psd_start_time or opts.psd_end_time:
+        raise ValueError("Must give --psd-start-time and --psd-end-time")
+    else:
+        psd_strain_dict = strain_dict
+
+
+    # FFT strain and save each of the length of the FFT, delta_f, and
+    # low frequency cutoff to a dict
+    logging.info("FFT strain")
+    stilde_dict = {}
+    length_dict = {}
+    delta_f_dict = {}
+    low_frequency_cutoff_dict = {}
+    for ifo in opts.instruments:
+        stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
+        length_dict[ifo] = len(stilde_dict[ifo])
+        delta_f_dict[ifo] = stilde_dict[ifo].delta_f
+        low_frequency_cutoff_dict[ifo] = opts.low_frequency_cutoff
+
+    # get PSD as frequency series
+    psd_dict = psd_from_cli_multi_ifos(opts, length_dict, delta_f_dict,
+                               low_frequency_cutoff_dict, opts.instruments,
+                               strain_dict=psd_strain_dict, precision="double")
+
+    # apply any gates to overwhitened data, if desired
+    if opts.gate_overwhitened and opts.gate is not None:
+        logging.info("Applying gates to overwhitened data")
+        # overwhiten the data
+        for ifo in gates:
+            stilde_dict[ifo] /= psd_dict[ifo]
+        stilde_dict = apply_gates_to_fd(stilde_dict, gates)
+        # unwhiten the data for the likelihood generator
+        for ifo in gates:
+            stilde_dict[ifo] *= psd_dict[ifo]
+
+    return strain_dict, stilde_dict, psd_dict
+
+
+
+#-----------------------------------------------------------------------------
+#
+#                Utilities for loading and plotting results
+#
+#-----------------------------------------------------------------------------
 
 def add_inference_results_option_group(parser):
     """Adds the options used to call pycbc.inference.results_from_cli function
@@ -420,3 +528,11 @@ def add_density_option_group(parser):
                          "is to use scipy's gaussian_kde.")
 
     return density_group
+
+
+__all__ = ['add_sampler_option_group', 'sampler_from_cli', 'data_from_cli',
+           'add_inference_results_option_group', 'results_from_cli',
+           'get_zvalues', 'add_plot_posterior_option_group',
+           'plot_ranges_from_cli', 'expected_parameters_from_cli',
+           'add_scatter_option_group', 'add_density_option_group',
+           ]
