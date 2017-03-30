@@ -450,14 +450,13 @@ def get_fd_waveform(template=None, **kwargs):
             # convert the frequency function to a value
             input_params['f_final'] = pnutils.named_frequency_cutoffs[ffunc](
                 input_params)
+            # if the f_final is < f_lower, raise a NoWaveformError
+            if 'f_final' in input_params and (
+                    input_params['f_lower']+input_params['delta_f']
+                                        >= input_params['f_final']):
+                raise NoWaveformError("cannot generate waveform: f_lower >= f_final")
     except KeyError:
         pass
-
-    # if the f_final is < f_lower, raise a NoWaveformError
-    if 'f_final' in input_params and (
-            input_params['f_lower']+input_params['delta_f']
-            >= input_params['f_final']):
-        raise NoWaveformError("cannot generate waveform: f_lower >= f_final")
 
     return wav_gen[input_params['approximant']](**input_params)
 
