@@ -27,6 +27,7 @@ for parameter estimation.
 """
 
 from pycbc import filter
+from pycbc.waveform import NoWaveformError
 from pycbc.types import Array
 import numpy
 
@@ -530,11 +531,20 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         float
             The value of the log likelihood ratio evaluated at the given point.
         """
-        lr = 0
-        for det,h in self._waveform_generator.generate(*params).items():
+        lr = 0.
+        try:
+            wfs = self._waveform_generator.generate(*params)
+        except NoWaveformError:
+            # if no waveform was generated, just return 0
+            return lr
+        for det,h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
             kmax = min(len(h), self._kmax)
             # whiten the waveform
+            if self._kmin >= kmax:
+                # if the waveform terminates before the filtering low frequency
+                # cutoff, there is nothing to filter, so just go onto the next
+                continue
             h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
             lr += (
                 # <h, d>

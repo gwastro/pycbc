@@ -41,6 +41,12 @@ from spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_tmplt_precondition, spa_amplitude_factor, \
                       spa_length_in_time
 
+class NoWaveformError(Exception):
+    """This should be raised if generating a waveform would just result in all
+    zeros being returned, e.g., if a requested `f_final` is <= `f_lower`.
+    """
+    pass
+
 default_args = (parameters.fd_waveform_params.default_dict() + \
     parameters.td_waveform_params).default_dict()
 
@@ -437,6 +443,20 @@ def get_fd_waveform(template=None, **kwargs):
     for arg in fd_required_args:
         if arg not in input_params:
             raise ValueError("Please provide " + str(arg) )
+
+    try:
+        ffunc = input_params.pop('f_final_func')
+        if ffunc != '':
+            # convert the frequency function to a value
+            input_params['f_final'] = pnutils.named_frequency_cutoffs[ffunc](
+                input_params)
+            # if the f_final is < f_lower, raise a NoWaveformError
+            if 'f_final' in input_params and (
+                    input_params['f_lower']+input_params['delta_f']
+                                        >= input_params['f_final']):
+                raise NoWaveformError("cannot generate waveform: f_lower >= f_final")
+    except KeyError:
+        pass
 
     return wav_gen[input_params['approximant']](**input_params)
 
@@ -866,4 +886,5 @@ __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "waveform_norm_exists", "get_template_amplitude_norm",
            "get_waveform_filter_length_in_time", "get_sgburst_waveform",
            "print_sgburst_approximants", "sgburst_approximants",
-           "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter"]
+           "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter",
+           "NoWaveformError"]
