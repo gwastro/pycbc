@@ -147,3 +147,4 @@ class CosAngle(SinAngle):
     _domain = boundaries.Bounds(-numpy.pi/2., numpy.pi/2.,
         btype_min='closed', btype_max='closed', cyclic=False)
 
+
