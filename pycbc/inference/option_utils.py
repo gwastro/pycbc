@@ -125,6 +125,29 @@ def sampler_from_cli(opts, likelihood_evaluator, pool=None):
 #
 #-----------------------------------------------------------------------------
 
+def add_low_frequency_cutoff_opt(parser):
+    """Adds the low-frequency-cutoff option to the given parser."""
+    # FIXME: this just uses the same frequency cutoff for every instrument for
+    # now. We should allow for different frequency cutoffs to be used; that
+    # will require (minor) changes to the Likelihood class
+    parser.add_argument("--low-frequency-cutoff", type=float, required=True,
+                        help="Low frequency cutoff for each IFO.")
+
+
+def low_frequency_cutoff_from_cli(opts):
+    """Parses the low frequency cutoff from the given options.
+
+    Returns
+    -------
+    dict
+        Dictionary of instruments -> low frequency cutoff.
+    """
+    # FIXME: this just uses the same frequency cutoff for every instrument for
+    # now. We should allow for different frequency cutoffs to be used; that
+    # will require (minor) changes to the Likelihood class
+    return {ifo: opts.low_frequency_cutoff for ifo in opts.instruments}
+
+
 def data_from_cli(opts):
     """Loads the data needed for a likelihood evaluator from the given
     command-line options. Gates specifed on the command line are also applied.
@@ -183,12 +206,11 @@ def data_from_cli(opts):
     stilde_dict = {}
     length_dict = {}
     delta_f_dict = {}
-    low_frequency_cutoff_dict = {}
+    low_frequency_cutoff_dict = low_frequency_cutoff_from_cli(opts)
     for ifo in opts.instruments:
         stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
         length_dict[ifo] = len(stilde_dict[ifo])
         delta_f_dict[ifo] = stilde_dict[ifo].delta_f
-        low_frequency_cutoff_dict[ifo] = opts.low_frequency_cutoff
 
     # get PSD as frequency series
     psd_dict = psd_from_cli_multi_ifos(opts, length_dict, delta_f_dict,

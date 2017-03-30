@@ -54,8 +54,7 @@ parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
 # add data options
 parser.add_argument("--instruments", type=str, nargs="+", required=True,
                     help="IFOs, eg. H1 L1.")
-parser.add_argument("--low-frequency-cutoff", type=float, required=True,
-                    help="Low frequency cutoff for each IFO.")
+option_utils.add_low_frequency_cutoff_opt(parser)
 parser.add_argument("--psd-start-time", type=float, default=None,
                     help="Start time to use for PSD estimation if different "
                          "from analysis.")
@@ -149,6 +148,7 @@ fft.from_cli(opts)
 # get the data and psd
 logging.info("Loading data")
 strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
+low_frequency_cutoff_dict = option_utils.low_frequency_cutoff_from_cli(opts)
 
 with ctx:
 
@@ -205,7 +205,8 @@ with ctx:
 
     # construct class that will return the natural logarithm of likelihood
     likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](
-                        generator, stilde_dict, opts.low_frequency_cutoff,
+                        generator, stilde_dict,
+                        low_frequency_cutoff_dict.values()[0],
                         psds=psd_dict, prior=prior)
 
     # create sampler that will run
