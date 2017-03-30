@@ -17,6 +17,7 @@ This modules provides classes for evaluating uniform sky distributions in
 right acension and declination.
 """
 
+from pycbc.distributions import angular
 from pycbc.distributions import uniform_angle
 
 class UniformSky(uniform_angle.UniformSolidAngle):
@@ -27,7 +28,7 @@ class UniformSky(uniform_angle.UniformSolidAngle):
     ascension) for the azimuthal angle, instead of "theta" and "phi".
     """
     name = 'uniform_sky'
-    _polardistcls = uniform_angle.CosAngle
+    _polardistcls = angular.CosAngle
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
