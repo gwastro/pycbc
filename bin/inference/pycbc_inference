@@ -147,6 +147,7 @@ ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
 
 # get the data and psd
+logging.info("Loading data")
 strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
 
 with ctx:
@@ -200,7 +201,7 @@ with ctx:
                         epoch=stilde_dict.values()[0].epoch,
                         variable_args=variable_args,
                         detectors=opts.instruments,
-                        delta_f=delta_f_dict.values()[0], **static_args)
+                        delta_f=stilde_dict.values()[0], **static_args)
 
     # construct class that will return the natural logarithm of likelihood
     likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](
