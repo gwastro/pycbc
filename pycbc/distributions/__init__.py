@@ -23,7 +23,6 @@ from pycbc.distributions.gaussian import *
 from pycbc.distributions.power_law import *
 from pycbc.distributions.sky_location import *
 from pycbc.distributions.uniform import *
-from pycbc.distributions.uniform_angle import *
 
 # a dict of all available distributions
 distribs = {
