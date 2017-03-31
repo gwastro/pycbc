@@ -73,8 +73,8 @@ A simple workflow configuration file::
 
     [pegasus_profile-inference]
     ; pegasus profile for inference nodes
-    condor|universe = local
-    condor|request_memory = 150000
+    condor|request_memory = 20G
+    condor|request_cpus = 12
 
     [inference_acf]
     ; command line options use --help for more information
