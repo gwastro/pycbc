@@ -201,8 +201,12 @@ for num_event in range(num_events):
     if opts.frame_files:
         for ifo in workflow.ifos:
             for path in opts.frame_files[ifo]:
-                frame_files.append(wf.File(ifo, "FRAME", segments.segment(
-                                   gps_start_time, gps_end_time), file_url="file://"+path))
+                frame_file = wf.File(
+                                ifo, "FRAME",
+                                segments.segment(gps_start_time, gps_end_time),
+                                file_url="file://" + path)
+                frame_file.PFN(frame_file.storage_path, site="local")
+                frame_files.append(frame_file)
     else:
         frame_files, _, _, _ = wf.setup_datafind_workflow(workflow, seg_dict,
                                                          "datafind")
