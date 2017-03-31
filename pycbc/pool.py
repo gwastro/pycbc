@@ -29,6 +29,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
         _process_lock = multiprocessing.Lock()
         _numdone = multiprocessing.Value('i', 0)
         multiprocessing.pool.Pool.__init__(*args, **kwds)
+        self.
 
     def __len__(self):
         return len(self._pool)
@@ -47,6 +48,29 @@ class BroadcastPool(multiprocessing.pool.Pool):
         results = self.map(_lockstep_fcn, [(len(self), fcn, args)] * len(self))
         _numdone.value = 0
         return results
+
+    def map(self, func, items, chunksize=None):
+        """ Catch keyboard interuppts to allow the pool to exit cleanly.
+
+        Parameters
+        ----------
+        func: function
+            Function to call
+        items: list of tuples
+            Arguments to pass
+        chunksize: int, Optional
+            Number of calls for each process to handle at once
+        """
+        results = self.map_async(func, items, chunksize)
+        while True:
+            try:
+                return results.get(1800)
+            except TimeoutError:
+                pass
+            except KeyboardInterrupt:
+                self.terminate()
+                self.join()
+                raise KeyboardInterrupt
 
 def _dummy_broadcast(self, f, args):
     self.map(f, [args] * self.size)    
