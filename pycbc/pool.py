@@ -33,9 +33,10 @@ def _lockstep_fcn(values):
 _pools = []
 def _kill_pool(signum, frame):
     global _pools
-    for p in pools:
+    for p in _pools:
         p.terminate()
         p.join()
+signal.signal(signal.SIGTERM, _kill_pool)
 
 class BroadcastPool(multiprocessing.pool.Pool):
     """ Multiprocessing pool with a broadcast method
@@ -49,7 +50,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
         super(BroadcastPool, self).__init__(processes, noint, initargs, **kwds)
 
         # Gracefully shut down if the master process is being killed.
-        signal.signal(signal.SIGTERM, _kill_pool)
+
         global _pools
         _pools.append(self)
 
