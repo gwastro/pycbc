@@ -212,33 +212,15 @@ with ctx:
     # create sampler that will run
     sampler = option_utils.sampler_from_cli(opts, likelihood)
 
-    # save command line
+    # save command line and data, if desired
     with InferenceFile(opts.output_file, "w") as fp:
+        logging.info("Writing command line and data to output file")
         fp.write_command_line()
-
-    # save PSD
-    if opts.save_psd:
-        # apply dynamic range factor for saving PSDs since
-        # plotting code expects it
-        logging.info("Saving PSDs")
-        psd_dyn_dict = {}
-        for key,val in psd_dict.iteritems():
-             psd_dyn_dict[key] = types.FrequencySeries(
-                                        psd_dict[key] * pycbc.DYN_RANGE_FAC**2,
-                                        delta_f=psd_dict[key].delta_f)
-        with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_psd(psds=psd_dyn_dict,
-                          low_frequency_cutoff=low_frequency_cutoff_dict)
-
-    # save stilde
-    if opts.save_stilde:
-        with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_stilde(stilde_dict)
-
-    # save strain if desired
-    if opts.save_strain:
-        with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_strain(strain_dict)
+        fp.write_data_to_output(
+            strain_dict=strain_dict if opts.save_strain else None,
+            stilde_dict=stilde_dict if opts.save_stilde else None,
+            psd_dict=psd_dict if opts.save_psd else None,
+            low_frequency_cutoff_dict=low_frequency_cutoff_dict)
 
     # get distribution to draw from for each walker initial position
     logging.info("Setting walkers initial conditions for varying parameters")

@@ -27,7 +27,8 @@ inference samplers generate.
 
 import h5py
 import numpy
-from pycbc import pnutils
+from pycbc import pnutils, DYN_RANGE_FAC
+from pycbc.types import FrequencySeries
 from pycbc.waveform import parameters as wfparams
 import pycbc.inference.sampler
 import pycbc.inference.likelihood
@@ -297,6 +298,46 @@ class InferenceFile(h5py.File):
             psd_dim = self.create_dataset(key+"/psds/0",
                                           data=psds[key])
             psd_dim.attrs["delta_f"] = psds[key].delta_f
+
+    def write_data_to_output(self, strain_dict=None, stilde_dict=None,
+                             psd_dict=None, low_frequency_cutoff_dict=None):
+        """Writes the strain/stilde/psd.
+
+        Parameters
+        ----------
+        strain_dict : {None, dict}
+            A dictionary of strains. If None, no strain will be written.
+        stilde_dict : {None, dict}
+            A dictionary of stilde. If None, no stilde will be written.
+        psd_dict : {None, dict}
+            A dictionary of psds. If None, psds will be written.
+        low_freuency_cutoff_dict : {None, dict}
+            A dictionary of low frequency cutoffs used for each detector in
+            `psd_dict`; must be provided if `psd_dict` is not None.
+        """
+        # save PSD
+        if psd_dict is not None:
+            if low_frequency_cutoff_dict is None:
+                raise ValueError("must provide low_frequency_cutoff_dict if "
+                                 "saving psds to output")
+            # apply dynamic range factor for saving PSDs since
+            # plotting code expects it
+            psd_dyn_dict = {}
+            for key,val in psd_dict.iteritems():
+                 psd_dyn_dict[key] = FrequencySeries(
+                                            psd_dict[key] * DYN_RANGE_FAC**2,
+                                            delta_f=psd_dict[key].delta_f)
+            self.write_psd(psds=psd_dyn_dict,
+                         low_frequency_cutoff=low_frequency_cutoff_dict)
+
+        # save stilde
+        if stilde_dict is not None:
+            self.write_stilde(stilde_dict)
+
+        # save strain if desired
+        if strain_dict is not None:
+            self.write_strain(strain_dict)
+
 
     def write_command_line(self):
         """Writes command line to attributes.
