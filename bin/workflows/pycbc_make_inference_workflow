@@ -87,7 +87,7 @@ parser.add_argument("--prior-section", type=str, default="prior",
                          "that contains priors.")
 
 # input frame files
-parser.add_argument("--frames-files", nargs="+", default=None,
+parser.add_argument("--frame-files", nargs="+", default=None,
                     action=MultiDetOptionAction,
                     help="GWF frame files to use.")
 
@@ -195,8 +195,15 @@ for num_event in range(num_events):
     seg_dict = {ifo : segments.segmentlist([segments.segment(
                       gps_start_time, gps_end_time)]) for ifo in workflow.ifos}
 
-    # get frame files
-    datafind_files, _, _, _ = wf.setup_datafind_workflow(workflow, seg_dict,
+    # get frame files from command line or datafind server
+    frame_files = wf.FileList([])
+    if opts.frame_files:
+        for ifo in workflow.ifos:
+            frame_files += [wf.File(ifo, "FRAME", segments.segment(
+                                  gps_start_time, gps_end_time), file_url=path)
+                            for path in opts.frame_files[ifo]]
+    else:
+        frame_files, _, _, _ = wf.setup_datafind_workflow(workflow, seg_dict,
                                                          "datafind")
 
     # make node for running sampler
@@ -204,7 +211,7 @@ for num_event in range(num_events):
     node.add_opt("--instruments", " ".join(workflow.ifos))
     node.add_opt("--gps-start-time", gps_start_time)
     node.add_opt("--gps-end-time", gps_end_time)
-    node.add_multiifo_input_list_opt("--frame-files", datafind_files)
+    node.add_multiifo_input_list_opt("--frame-files", frame_files)
     node.add_opt("--channel-name", channel_names_str)
     node.add_input_opt("--config-file", config_file)
     analysis_time = segments.segment(gps_start_time, gps_end_time)
