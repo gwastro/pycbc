@@ -23,6 +23,9 @@ from pycbc.events import select_segments_by_definer, background_bin_from_string
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
+import numpy as np
+from pycbc import conversions
+#from conversions import mtotal_from_mass1_mass2, mchirp_from_mass1_mass2
 
 def to_file(path, ifo=None):
     fil = wdax.File(os.path.basename(path))
@@ -51,6 +54,8 @@ parser.add_argument('--inspiral-segments',
 parser.add_argument('--inspiral-data-read-name',
                     help="Name of inspiral segmentlist containing data read in "
                          "by each analysis job.")
+parser.add_argument('--out-file', type=str, required=True,
+                    help='Full path to output file')
 parser.add_argument('--inspiral-data-analyzed-name',
                     help="Name of inspiral segmentlist containing data "
                          "analyzed by each analysis job.")
@@ -63,6 +68,7 @@ args = parser.parse_args()
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
                     level=logging.INFO)
 
+outfile = h5py.File(args.out_file,'w')
 workflow = wf.Workflow(args, args.workflow_name)
 
 wf.makedir(args.output_dir)
@@ -90,7 +96,6 @@ for ifo in args.single_detector_triggers:
     #       being used to determine command-line options for other codes,
     #       please think if that code requires coalesced, or not, segments.
     insp_data_seglists[ifo].coalesce()
-print insp_data_seglists[ifo].coalesce() 
 
 bank_data = h5py.File(args.bank_file, 'r')
 bank_data.f_lower = args.f_lower
@@ -107,18 +112,53 @@ else:
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
 
-stat = f['foreground/stat'][:] #gives list of newSNRs of coinc triggers
-sorting = stat.argsort()[::-1] #gives the index sorting of each event
-stat = stat[sorting][:]
-print stat
+ustat = f['foreground/stat'][:] #gives list of newSNRs of coinc triggers
+sorting = ustat.argsort()[::-1] #gives the index sorting of each event
+stat = ustat[sorting][:]
+#print stat
 temp_id = f['foreground/template_id'][:] # gets template_ids
 temp_id = temp_id[sorting][:] #gets template_ids corresponding to sorted newSNR values
-print temp_id
+#print temp_id
 
-for mass_bin in locs_dict.values(): #outputs the three arrays of the three bins
+datacoinc = {'coinc/stat':stat}
+final_dict = {'bns':[], 'bulk':[], 'edge':[]}
+for val in temp_id:
+    m1 = np.array(bank_data['mass1'])
+    m2 = np.array(bank_data['mass2'])
+    mass1 = m1[val]
+    mass2 = m2[val]
+    mchirp = conversions.mchirp_from_mass1_mass2(mass1, mass2)
+    total_mass = conversions.mtotal_from_mass1_mass2(mass1,mass2)
+    eta = conversions.eta_from_mass1_mass2(mass1, mass2)
+    mass_ratio = conversions.q_from_mass1_mass2(mass1, mass2)
+    datacoinc['template/mass1'] = mass1
+    datacoinc['template/mass2'] = mass2
+    datacoinc['template/mchirp'] = mchirp
+    datacoinc['template/eta'] = eta
+    datacoinc['template/total_mass'] = total_mass
+    datacoinc['template/mass_ratio'] = mass_ratio
+    if mchirp <= 1.74:
+        final_dict['bns'].append(val)
+    elif total_mass <= 150:
+        final_dict['bulk'].append(val)
+    else: 
+        final_dict['edge'].append(val)
+
+datacoinc['coinc/ifar'] = np.array(f['foreground']['ifar'][:])#[[stat]]
+time1 = np.array(f['foreground']['time1'][:])#[[stat]]
+time2 = np.array(f['foreground']['time2'][:])#[[stat]]
+datacoinc['coinc/abs_time_delay'] = abs(time1 - time2)
+datacoinc['stat'] = np.array(stat[:])
+datacoinc['template_id'] = np.array(temp_id[:])
+
+for key in datacoinc.keys():
+    dset = outfile.create_dataset(key,data=datacoinc[key])#,compression='gzip')
+
+
+#for mass_bin in locs_dict.values(): #outputs the three arrays of the three bins
 #    sort = mass_bin.argsort()
-    sorted_bin = mass_bin[sorting][:]
-    print sorted_bin    
+#    sorted_bin = mass_bin[sorting][:]
+#    print sorted_bin    
 #    bank_temp_id = bank_data['template_id']
 
 if len(stat) == 0:
@@ -131,10 +171,10 @@ if len(stat) == 0:
 if len(stat) < num_events:
     num_events = len(stat)
 
-stat = stat[sorting][0:num_events]
-temp_id = temp_id[sorting][0:num_events]
-print stat #prints top 5 events in order
-print temp_id
+#stat = stat[sorting][0:num_events]
+#temp_id = temp_id[sorting][0:num_events]
+#print stat #prints top 5 events in order
+#print temp_id
 
 times = {f.attrs['detector_1']: f['foreground/time1'][:][sorting][0:num_events],
          f.attrs['detector_2']: f['foreground/time2'][:][sorting][0:num_events],
