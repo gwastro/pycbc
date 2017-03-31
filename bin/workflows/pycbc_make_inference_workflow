@@ -159,9 +159,10 @@ layouts = []
 # get channel names
 channel_names = {}
 for ifo in workflow.ifos:
-    channel_names[ifo] = workflow.cp.get_opt_tags("workflow",
-                                      "%s-channel-name"%ifo.lower(), "")
-channel_names_str = " ".join([key+":"+val for key,val in channel_names.iteritems()])
+    channel_names[ifo] = workflow.cp.get_opt_tags(
+                               "workflow", "%s-channel-name" % ifo.lower(), "")
+channel_names_str = " ".join([key + ":" + val for key, val in \
+                              channel_names.iteritems()])
 
 # loop over number of loudest events to be analyzed
 for num_event in range(num_events):
