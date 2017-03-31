@@ -36,7 +36,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
         _process_lock = multiprocessing.Lock()
         _numdone = multiprocessing.Value('i', 0)
         noint = functools.partial(_noint, initializer)
-        super(BroadcastPool, self).__init__(processes, noint, initargs, **kwargs)
+        super(BroadcastPool, self).__init__(processes, noint, initargs, **kwds)
 
     def __len__(self):
         return len(self._pool)
