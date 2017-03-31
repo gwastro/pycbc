@@ -2,8 +2,18 @@
 """
 from __future__ import absolute_import
 import multiprocessing.pool
+import functools
+from multiprocessing import TimeoutError
 import types
+import signal
+import atexit
 
+# Allow the pool to be interrupted, need to disable the children processes
+# from intercepting the keyboard interrupt
+def _noint(init, *args):
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    if init is not None:
+        return init(*args)
 
 _process_lock = None    
 _numdone = None    
@@ -20,16 +30,22 @@ def _lockstep_fcn(values):
         if _numdone.value == numrequired:
             return fcn(args)
 
+def _shutdown_pool(p):
+    p.terminate()
+    p.join()
+
 class BroadcastPool(multiprocessing.pool.Pool):
     """ Multiprocessing pool with a broadcast method
     """
-    def __init__(*args, **kwds):
+    def __init__(self, processes=None, initializer=None, initargs=(), **kwds):
         global _process_lock
         global _numdone
         _process_lock = multiprocessing.Lock()
         _numdone = multiprocessing.Value('i', 0)
-        multiprocessing.pool.Pool.__init__(*args, **kwds)
-
+        noint = functools.partial(_noint, initializer)
+        super(BroadcastPool, self).__init__(processes, noint, initargs, **kwds)
+        atexit.register(_shutdown_pool, self)
+        
     def __len__(self):
         return len(self._pool)
 
@@ -44,9 +60,32 @@ class BroadcastPool(multiprocessing.pool.Pool):
             The arguments for Pool.map
         """
         global _numdone
-        results = self.map(_lockstep_fcn, [(len(self), fcn, args)] * len(self))
+        results = self.map(lockstep_fcn, [(len(self), fcn, args)] * len(self))
         _numdone.value = 0
         return results
+
+    def map(self, func, items, chunksize=None):
+        """ Catch keyboard interuppts to allow the pool to exit cleanly.
+
+        Parameters
+        ----------
+        func: function
+            Function to call
+        items: list of tuples
+            Arguments to pass
+        chunksize: int, Optional
+            Number of calls for each process to handle at once
+        """
+        results = self.map_async(func, items, chunksize)
+        while True:
+            try:
+                return results.get(1800)
+            except TimeoutError:
+                pass
+            except KeyboardInterrupt:
+                self.terminate()
+                self.join()
+                raise KeyboardInterrupt
 
 def _dummy_broadcast(self, f, args):
     self.map(f, [args] * self.size)    
