@@ -207,38 +207,43 @@ for num_event in range(num_events):
     node.add_input_opt("--config-file", config_file)
     analysis_time = segments.segment(gps_start_time, gps_end_time)
     inference_file = node.new_output_file_opt(analysis_time, ".hdf",
-                                 "--output-file", tags=[str(num_event)])
+                                              "--output-file",
+                                              tags=[str(num_event)])
 
     # add node to workflow
     workflow += node
 
     # add file that prints information about the search event
     if workflow_options:
-        layouts += [mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
-                              coinc_file, num_event, 
-                              opts.output_dir, tags=opts.tags + [str(num_event)])]
+        layouts += [mini.make_coinc_info(workflow, single_triggers,
+                                         tmpltbank_file, coinc_file,
+                                         num_event, opts.output_dir,
+                                         tags=opts.tags + [str(num_event)])]
 
     # add files from posterior summary table for this event
-    layouts += [inffu.make_inference_summary_table(workflow, inference_file,
-                          opts.output_dir, variable_args=variable_args,
+    layouts += [inffu.make_inference_summary_table(
+                          workflow, inference_file, opts.output_dir,
+                          variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
 
     # add files from posterior corner plot for this event
-    layouts += [inffu.make_inference_posterior_plot(workflow, inference_file,
-                          opts.output_dir, variable_args=variable_args,
+    layouts += [inffu.make_inference_posterior_plot(
+                          workflow, inference_file, opts.output_dir,
+                          variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
 
     # get files from plotting acceptance rate plot for this event
-    rate_files = inffu.make_inference_acceptance_rate_plot(workflow,
-                          inference_file,  opts.output_dir,
+    rate_files = inffu.make_inference_acceptance_rate_plot(
+                          workflow, inference_file,  opts.output_dir,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])
 
     # get files from plotting PSD for this event
-    psd_file = wf.make_spectrum_plot(workflow, [inference_file], opts.output_dir,
-                          tags=opts.tags + [str(num_event)])
+    psd_file = wf.make_spectrum_plot(workflow, [inference_file],
+                                     opts.output_dir,
+                                     tags=opts.tags + [str(num_event)])
 
     # add a row to the HTML page with accpetance rate on the left
     # and the PSD plot on the right
@@ -246,8 +251,9 @@ for num_event in range(num_events):
 
     # add files from plotting parameter samples and autocorrelation
     # function for this event
-    files = inffu.make_inference_single_parameter_plots(workflow, inference_file,
-                          opts.output_dir, variable_args=variable_args,
+    files = inffu.make_inference_single_parameter_plots(
+                          workflow, inference_file, opts.output_dir,
+                          variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)]) 
     layouts += list(layout.grouper(files, 2))
@@ -256,7 +262,8 @@ for num_event in range(num_events):
 # do not add them to layouts so that they appear in the
 # additional files section
 for subsection in cp.get_subsections(opts.prior_section):
-    inffu.make_inference_prior_plot(workflow, config_file, opts.output_dir,
+    inffu.make_inference_prior_plot(
+                          workflow, config_file, opts.output_dir,
                           analysis_seg=workflow.analysis_time,
                           sections=[opts.prior_section + "-" + subsection],
                           tags=opts.tags + [subsection])
