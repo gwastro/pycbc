@@ -2,15 +2,15 @@
 """
 from __future__ import absolute_import
 import multiprocessing.pool
+import functools
 from multiprocessing import TimeoutError
 import types
 import signal
 
-def _noint(fcn, *args):
-    def wrapped(*args):
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        return fcn(*args)
-    return wrapped
+def _noint(init, *args):
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    if init is not None:
+        return init(*args)
 
 _process_lock = None    
 _numdone = None    
@@ -30,12 +30,13 @@ def _lockstep_fcn(values):
 class BroadcastPool(multiprocessing.pool.Pool):
     """ Multiprocessing pool with a broadcast method
     """
-    def __init__(*args, **kwds):
+    def __init__(self, processes=None, initializer=None, initargs=(), **kwds):
         global _process_lock
         global _numdone
         _process_lock = multiprocessing.Lock()
         _numdone = multiprocessing.Value('i', 0)
-        multiprocessing.pool.Pool.__init__(*args, **kwds)
+        noint = functools.partial(_noint, initializer)
+        super(Pool, self).__init__(processes, noint, initargs, **kwargs)
 
     def __len__(self):
         return len(self._pool)
@@ -51,7 +52,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
             The arguments for Pool.map
         """
         global _numdone
-        results = self.map(_noint(_lockstep_fcn), [(len(self), fcn, args)] * len(self))
+        results = self.map(lockstep_fcn, [(len(self), fcn, args)] * len(self))
         _numdone.value = 0
         return results
 
@@ -67,7 +68,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
         chunksize: int, Optional
             Number of calls for each process to handle at once
         """
-        results = self.map_async(_noint(func), items, chunksize)
+        results = self.map_async(func, items, chunksize)
         while True:
             try:
                 return results.get(1800)
