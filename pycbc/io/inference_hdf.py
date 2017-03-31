@@ -27,7 +27,7 @@ inference samplers generate.
 
 import h5py
 import numpy
-from pycbc import pnutils, DYN_RANGE_FAC
+from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries
 from pycbc.waveform import parameters as wfparams
 import pycbc.inference.sampler
@@ -324,11 +324,10 @@ class InferenceFile(h5py.File):
             # plotting code expects it
             psd_dyn_dict = {}
             for key,val in psd_dict.iteritems():
-                 psd_dyn_dict[key] = FrequencySeries(
-                                            psd_dict[key] * DYN_RANGE_FAC**2,
-                                            delta_f=psd_dict[key].delta_f)
+                 psd_dyn_dict[key] = FrequencySeries(val*DYN_RANGE_FAC**2,
+                                                     delta_f=val.delta_f)
             self.write_psd(psds=psd_dyn_dict,
-                         low_frequency_cutoff=low_frequency_cutoff_dict)
+                           low_frequency_cutoff=low_frequency_cutoff_dict)
 
         # save stilde
         if stilde_dict is not None:
