@@ -2,6 +2,7 @@
 """
 from __future__ import absolute_import
 import multiprocessing.pool
+from multiprocessing import TimeoutError
 import types
 import signal
 
