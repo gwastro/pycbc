@@ -182,8 +182,8 @@ for num_event in range(num_events):
                       gps_start_time, gps_end_time)]) for ifo in workflow.ifos}
 
     # get frame files
-    datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
-                  wf.setup_datafind_workflow(workflow, seg_dict, "datafind")
+    datafind_files, _, _, _ = wf.setup_datafind_workflow(workflow, seg_dict,
+                                                         "datafind")
 
     # make node for running sampler
     node = inference_exe.create_node()
