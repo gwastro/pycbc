@@ -79,6 +79,11 @@ parser.add_argument("--inference-config-file", type=str, required=True,
 parser.add_argument("--prior-section", type=str, default="prior",
     help="Name of the section in inference configuration file that contains priors.")
 
+# input frame files
+parser.add_argument("--frames-files", nargs="+", default=None,
+                    action=MultiDetOptionAction,
+                    help="GWF frame files to use.")
+
 # add option groups
 wf.add_workflow_command_line_group(parser)
 
