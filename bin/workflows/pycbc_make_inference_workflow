@@ -18,7 +18,10 @@
 """ Creates a DAX for a parameter estimation workflow.
 """
 
-import os, argparse, logging, h5py
+import argparse
+import h5py
+import logging
+import os
 import pycbc.workflow as wf
 import pycbc.workflow.inference_followups as inffu
 import pycbc.workflow.minifollowups as mini
@@ -44,40 +47,44 @@ parser = argparse.ArgumentParser(description=__doc__[1:])
 
 # version option
 parser.add_argument("--version", action="version",
-    version=pycbc.version.git_verbose_msg, 
-    help="Prints version information.")
+                    version=pycbc.version.git_verbose_msg, 
+                    help="Prints version information.")
 
 # workflow options
 parser.add_argument("--workflow-name", default="my_unamed_inference_run",
-    help="Name of the workflow to append in various places.")
+                    help="Name of the workflow to append in various places.")
 parser.add_argument("--tags", nargs="+", default=[],
-    help="Tags to apend in various places.")
+                    help="Tags to apend in various places.")
 parser.add_argument("--output-dir", default=None,
-    help="Path to output directory.")
+                    help="Path to output directory.")
 parser.add_argument("--output-map", required=True,
-    help="Path to output map file.")
+                    help="Path to output map file.")
 parser.add_argument("--output-file", required=True,
-    help="Path to DAX file.")
+                    help="Path to DAX file.")
 
 # input workflow file options
 parser.add_argument("--bank-file", default=None,
-    help="HDF format template bank file.")
+                    help="HDF format template bank file.")
 parser.add_argument("--statmap-file", default=None,
-    help="HDF format clustered coincident trigger result file.")
+                    help="HDF format clustered coincident trigger "
+                         "result file.")
 parser.add_argument("--single-detector-triggers", nargs="+", default=None,
-    action=MultiDetOptionAction,
-    help="HDF format merged single detector trigger files.")
+                    action=MultiDetOptionAction,
+                    help="HDF format merged single detector trigger files.")
 
 # analysis time option
 # only required if not using input workflow file options
 parser.add_argument("--gps-end-time", type=float, nargs="+", default=None,
-    help="Times to analyze. If given workflow files then this option is ignored.")
+                    help="Times to analyze. If given workflow files then "
+                         "this option is ignored.")
 
 # input configuration file options
 parser.add_argument("--inference-config-file", type=str, required=True,
-    help="workflow.WorkflowConfigParser parsable file with proir information.")
+                    help="workflow.WorkflowConfigParser parsable file with "
+                         "proir information.")
 parser.add_argument("--prior-section", type=str, default="prior",
-    help="Name of the section in inference configuration file that contains priors.")
+                    help="Name of the section in inference configuration file "
+                         "that contains priors.")
 
 # input frame files
 parser.add_argument("--frames-files", nargs="+", default=None,
