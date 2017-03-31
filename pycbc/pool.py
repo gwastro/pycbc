@@ -7,6 +7,8 @@ from multiprocessing import TimeoutError
 import types
 import signal
 
+# Allow the pool to be interrupted, need to disable the children processes
+# from intercepting the keyboard interrupt
 def _noint(init, *args):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     if init is not None:
@@ -27,6 +29,14 @@ def _lockstep_fcn(values):
         if _numdone.value == numrequired:
             return fcn(args)
 
+# Shut down each pool when getting a sigterm
+_pools = []
+def _kill_pool(signum, frame):
+    global _pools
+    for p in pools:
+        p.terminate()
+        p.join()
+
 class BroadcastPool(multiprocessing.pool.Pool):
     """ Multiprocessing pool with a broadcast method
     """
@@ -37,6 +47,11 @@ class BroadcastPool(multiprocessing.pool.Pool):
         _numdone = multiprocessing.Value('i', 0)
         noint = functools.partial(_noint, initializer)
         super(BroadcastPool, self).__init__(processes, noint, initargs, **kwds)
+
+        # Gracefully shut down if the master process is being killed.
+        signal.signal(signal.SIGTERM, _kill_pool)
+        global _pools
+        _pools.append(self)
 
     def __len__(self):
         return len(self._pool)
