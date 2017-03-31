@@ -29,7 +29,6 @@ class BroadcastPool(multiprocessing.pool.Pool):
         _process_lock = multiprocessing.Lock()
         _numdone = multiprocessing.Value('i', 0)
         multiprocessing.pool.Pool.__init__(*args, **kwds)
-        self.
 
     def __len__(self):
         return len(self._pool)
