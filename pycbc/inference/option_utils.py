@@ -550,11 +550,3 @@ def add_density_option_group(parser):
                          "is to use scipy's gaussian_kde.")
 
     return density_group
-
-
-__all__ = ['add_sampler_option_group', 'sampler_from_cli', 'data_from_cli',
-           'add_inference_results_option_group', 'results_from_cli',
-           'get_zvalues', 'add_plot_posterior_option_group',
-           'plot_ranges_from_cli', 'expected_parameters_from_cli',
-           'add_scatter_option_group', 'add_density_option_group',
-           ]
