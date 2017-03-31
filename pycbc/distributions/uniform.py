@@ -185,3 +185,6 @@ class Uniform(bounded.BoundedDist):
         """
         return super(Uniform, cls).from_config(cp, section, variable_args,
                      bounds_required=True)
+
+
+__all__ = ['Uniform']
