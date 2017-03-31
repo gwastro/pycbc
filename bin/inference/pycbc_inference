@@ -201,7 +201,7 @@ with ctx:
                         epoch=stilde_dict.values()[0].epoch,
                         variable_args=variable_args,
                         detectors=opts.instruments,
-                        delta_f=stilde_dict.values()[0], **static_args)
+                        delta_f=stilde_dict.values()[0].delta_f, **static_args)
 
     # construct class that will return the natural logarithm of likelihood
     likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](
