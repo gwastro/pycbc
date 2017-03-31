@@ -184,9 +184,6 @@ for num_event in range(num_events):
     # get frame files
     datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
                   wf.setup_datafind_workflow(workflow, seg_dict, "datafind")
-    keys, values = datafind_files.categorize_by_attr("ifo")
-    frame_dict = {ifo : flist for ifo, flist in zip(keys, values)}
-    channel_names = {ifo : ifo+":a" for ifo in workflow.ifos}
 
     # make node for running sampler
     node = inference_exe.create_node()
