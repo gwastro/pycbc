@@ -18,6 +18,7 @@
 """ Creates a DAX for a parameter estimation workflow.
 """
 
+import lal
 import os, argparse, logging, h5py
 import pycbc.workflow as wf
 import pycbc.workflow.inference_followups as inffu
@@ -140,17 +141,6 @@ else:
     times = dict([(ifo,opts.gps_end_time) for ifo in workflow.ifos])
     num_events = len(opts.gps_end_time)
 
-# get frame type and channel name as a dict with IFO as keys
-frame_types = {}
-channel_names = {}
-for ifo in workflow.ifos:
-    frame_types[ifo] = workflow.cp.get_opt_tags("workflow-datafind",
-                                      "datafind-%s-frame-type"%ifo.lower(), "")
-    channel_names[ifo] = workflow.cp.get_opt_tags("workflow",
-                                      "%s-channel-name"%ifo.lower(), "")
-frame_types_str = " ".join([key+":"+val for key,val in frame_types.iteritems()])
-channel_names_str = " ".join([key+":"+val for key,val in channel_names.iteritems()])
-
 # construct Executable for running sampler
 inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
                          out_dir=opts.output_dir)
@@ -167,6 +157,13 @@ variable_args.sort()
 # create a list that will contain all output files
 layouts = []
 
+# get channel names
+channel_names = {}
+for ifo in workflow.ifos:
+    channel_names[ifo] = workflow.cp.get_opt_tags("workflow",
+                                      "%s-channel-name"%ifo.lower(), "")
+channel_names_str = " ".join([key+":"+val for key,val in channel_names.iteritems()])
+
 # loop over number of loudest events to be analyzed
 for num_event in range(num_events):
 
@@ -180,12 +177,23 @@ for num_event in range(num_events):
     gps_start_time = int(avg_end_time) - seconds_before_time
     gps_end_time = int(avg_end_time) + seconds_after_time
 
+    # get dict of segments for each IFO
+    seg_dict = {ifo : segments.segmentlist([segments.segment(
+                      gps_start_time, gps_end_time)]) for ifo in workflow.ifos}
+
+    # get frame files
+    datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
+                  wf.setup_datafind_workflow(workflow, seg_dict, "datafind")
+    keys, values = datafind_files.categorize_by_attr("ifo")
+    frame_dict = {ifo : flist for ifo, flist in zip(keys, values)}
+    channel_names = {ifo : ifo+":a" for ifo in workflow.ifos}
+
     # make node for running sampler
     node = inference_exe.create_node()
     node.add_opt("--instruments", " ".join(workflow.ifos))
     node.add_opt("--gps-start-time", gps_start_time)
     node.add_opt("--gps-end-time", gps_end_time)
-    node.add_opt("--frame-type", frame_types_str)
+    node.add_multiifo_input_list_opt("--frame-files", datafind_files)
     node.add_opt("--channel-name", channel_names_str)
     node.add_input_opt("--config-file", config_file)
     analysis_time = segments.segment(gps_start_time, gps_end_time)
