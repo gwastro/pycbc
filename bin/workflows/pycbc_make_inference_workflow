@@ -209,7 +209,7 @@ for num_event in range(num_events):
                 frame_files.append(frame_file)
     else:
         frame_files, _, _, _ = wf.setup_datafind_workflow(workflow, seg_dict,
-                                                         "datafind")
+                                                          "datafind")
 
     # make node for running sampler
     node = inference_exe.create_node()
