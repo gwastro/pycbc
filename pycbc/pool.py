@@ -5,11 +5,16 @@ import multiprocessing.pool
 import types
 import signal
 
+def _noint(fcn, *args):
+    def wrapped(*args):
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        return fcn(*args)
+    return wrapped
+
 _process_lock = None    
 _numdone = None    
 def _lockstep_fcn(values):
     """ Wrapper to ensure that all processes execute together """
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
     global _numdone
     numrequired, fcn, args = values
     with _process_lock:
@@ -45,7 +50,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
             The arguments for Pool.map
         """
         global _numdone
-        results = self.map(_lockstep_fcn, [(len(self), fcn, args)] * len(self))
+        results = self.map(_noint(_lockstep_fcn), [(len(self), fcn, args)] * len(self))
         _numdone.value = 0
         return results
 
@@ -61,7 +66,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
         chunksize: int, Optional
             Number of calls for each process to handle at once
         """
-        results = self.map_async(func, items, chunksize)
+        results = self.map_async(_noint(func), items, chunksize)
         while True:
             try:
                 return results.get(1800)
