@@ -236,3 +236,4 @@ class UniformRadius(bounded.BoundedDist):
                                                        bounds_required=True)
 
 
+__all__ = ['UniformRadius']

@@ -234,3 +234,5 @@ class Gaussian(bounded.BoundedDist):
         return bounded.bounded_from_config(cls, cp, section, variable_args,
                                                   bounds_required=False)
 
+
+__all__ = ['Gaussian']

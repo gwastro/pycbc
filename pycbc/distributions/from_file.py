@@ -259,3 +259,5 @@ class FromFile(bounded.BoundedDist):
         return super(FromFile, cls).from_config(cp, section, variable_args,
                                                 bounds_required=False)
 
+
+__all__ = ['FromFile']
