@@ -129,10 +129,12 @@ if workflow_options:
         single_triggers.append( to_file(fname, ifo=ifo) )
 
     # get number of events to analyze
-    num_events = int(workflow.cp.get_opt_tags("workflow-inference", "num-events", ""))
+    num_events = int(workflow.cp.get_opt_tags("workflow-inference",
+                                              "num-events", ""))
 
     # get detection statistic from statmap file
-    # if less events that requested to analyze in config file then analyze all events
+    # if less events that requested to analyze in config file
+    # then analyze all events
     f = h5py.File(opts.statmap_file, "r")
     stat = f["foreground/stat"][:]
     if len(stat) < num_events:
