@@ -321,9 +321,9 @@ class InferenceFile(h5py.File):
             self[group.format(ifo=ifo)] = psds[ifo]
             self[group.format(ifo=ifo)].attrs['delta_f'] = psds[ifo].delta_f
 
-    def write_data_to_output(self, strain_dict=None, stilde_dict=None,
-                             psd_dict=None, low_frequency_cutoff_dict=None,
-                             group=None):
+    def write_data(self, strain_dict=None, stilde_dict=None,
+                   psd_dict=None, low_frequency_cutoff_dict=None,
+                   group=None):
         """Writes the strain/stilde/psd.
 
         Parameters

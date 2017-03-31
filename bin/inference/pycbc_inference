@@ -216,11 +216,10 @@ with ctx:
     with InferenceFile(opts.output_file, "w") as fp:
         logging.info("Writing command line and data to output file")
         fp.write_command_line()
-        fp.write_data_to_output(
-            strain_dict=strain_dict if opts.save_strain else None,
-            stilde_dict=stilde_dict if opts.save_stilde else None,
-            psd_dict=psd_dict if opts.save_psd else None,
-            low_frequency_cutoff_dict=low_frequency_cutoff_dict)
+        fp.write_data(strain_dict=strain_dict if opts.save_strain else None,
+                      stilde_dict=stilde_dict if opts.save_stilde else None,
+                      psd_dict=psd_dict if opts.save_psd else None,
+                      low_frequency_cutoff_dict=low_frequency_cutoff_dict)
 
     # get distribution to draw from for each walker initial position
     logging.info("Setting walkers initial conditions for varying parameters")
