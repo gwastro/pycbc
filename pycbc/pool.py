@@ -3,12 +3,13 @@
 from __future__ import absolute_import
 import multiprocessing.pool
 import types
-
+import signal
 
 _process_lock = None    
 _numdone = None    
 def _lockstep_fcn(values):
     """ Wrapper to ensure that all processes execute together """
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     global _numdone
     numrequired, fcn, args = values
     with _process_lock:
