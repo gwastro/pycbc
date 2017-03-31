@@ -18,7 +18,6 @@
 """ Creates a DAX for a parameter estimation workflow.
 """
 
-import lal
 import os, argparse, logging, h5py
 import pycbc.workflow as wf
 import pycbc.workflow.inference_followups as inffu
