@@ -238,9 +238,6 @@ Generate the workflow
 
 To generate a workflow you will need your configuration files. We set the following enviroment variables for this example::
 
-    # remove proxy from env
-    unset X509_USER_PROXY
-
     # name of the workflow
     WORKFLOW_NAME="r1"
 
@@ -299,6 +296,5 @@ Finally plan and submit the workflow with::
 
     # submit workflow
     pycbc_submit_dax --dax ${WORKFLOW_NAME}.dax \
-        --accounting-group ligo.dev.o2.cbc.explore.test \
-        --no-create-proxy
+        --accounting-group ligo.dev.o2.cbc.explore.test
 
