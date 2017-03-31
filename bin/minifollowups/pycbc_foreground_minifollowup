@@ -100,6 +100,7 @@ for ifo in args.single_detector_triggers:
 bank_data = h5py.File(args.bank_file, 'r')
 bank_data.f_lower = args.f_lower
 
+# separate data bank into bns, bulk, and edge 
 if args.background_bins:
     data = {'mass1': bank_data['mass1'][:], 'mass2': bank_data['mass2'][:],
             'spin1z': bank_data['spin1z'][:], 'spin2z': bank_data['spin2z'][:],
@@ -112,14 +113,15 @@ else:
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
 
+# sort statmap file by loudest SNR and their corresponding template ids
 ustat = f['foreground/stat'][:] #gives list of newSNRs of coinc triggers
 sorting = ustat.argsort()[::-1] #gives the index sorting of each event
 stat = ustat[sorting][:]
-#print stat
 temp_id = f['foreground/template_id'][:] # gets template_ids
 temp_id = temp_id[sorting][:] #gets template_ids corresponding to sorted newSNR values
-#print temp_id
 
+# make new dictionary (final_dict) that will hold the trigger information by bin by loudest SNR
+# also make hdf output file that contains all of the information sorted by loudest SNR
 datacoinc = {'coinc/stat':stat}
 final_dict = {'bns':[], 'bulk':[], 'edge':[]}
 for val in temp_id:
@@ -131,6 +133,7 @@ for val in temp_id:
     total_mass = conversions.mtotal_from_mass1_mass2(mass1,mass2)
     eta = conversions.eta_from_mass1_mass2(mass1, mass2)
     mass_ratio = conversions.q_from_mass1_mass2(mass1, mass2)
+    # cast all inspiral information into python dictionary
     datacoinc['template/mass1'] = mass1
     datacoinc['template/mass2'] = mass2
     datacoinc['template/mchirp'] = mchirp
@@ -144,15 +147,15 @@ for val in temp_id:
     else: 
         final_dict['edge'].append(val)
 
-datacoinc['coinc/ifar'] = np.array(f['foreground']['ifar'][:])#[[stat]]
-time1 = np.array(f['foreground']['time1'][:])#[[stat]]
-time2 = np.array(f['foreground']['time2'][:])#[[stat]]
+datacoinc['coinc/ifar'] = np.array(f['foreground']['ifar'][:])
+time1 = np.array(f['foreground']['time1'][:])
+time2 = np.array(f['foreground']['time2'][:])
 datacoinc['coinc/abs_time_delay'] = abs(time1 - time2)
 datacoinc['stat'] = np.array(stat[:])
 datacoinc['template_id'] = np.array(temp_id[:])
 
 for key in datacoinc.keys():
-    dset = outfile.create_dataset(key,data=datacoinc[key])#,compression='gzip')
+    dset = outfile.create_dataset(key,data=datacoinc[key])
 
 
 #for mass_bin in locs_dict.values(): #outputs the three arrays of the three bins
@@ -184,11 +187,6 @@ tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][:][sorting][0:num_eve
         }
 
 #bank_data = h5py.File(args.bank_file, 'r')
-
-#add separation of triggers into mass bins here....
-#then make sure I store data for each bin and pass the arguments
-#then run workflow and it should work out well?
-
 
 # loop over number of loudest events to be followed up
 for num_event in range(num_events):
