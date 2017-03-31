@@ -30,7 +30,7 @@ def _lockstep_fcn(values):
         if _numdone.value == numrequired:
             return fcn(args)
 
-_shutdown_pool(p):
+def _shutdown_pool(p):
     p.terminate()
     p.join()
 
