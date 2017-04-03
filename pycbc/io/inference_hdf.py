@@ -27,7 +27,8 @@ inference samplers generate.
 
 import h5py
 import numpy
-from pycbc import pnutils
+from pycbc import DYN_RANGE_FAC
+from pycbc.types import FrequencySeries
 from pycbc.waveform import parameters as wfparams
 import pycbc.inference.sampler
 import pycbc.inference.likelihood
@@ -253,35 +254,50 @@ class InferenceFile(h5py.File):
                 return parameter
         return label
 
-    def write_strain(self, strain_dict):
+    def write_strain(self, strain_dict, group=None):
         """Writes strain for each IFO to file.
 
         Parameters
         -----------
         strain : {dict, FrequencySeries}
             A dict of FrequencySeries where the key is the IFO.
+        group : {None, str}
+            The group to write the strain to. If None, will write to the top
+            level.
         """
-        group = "{ifo}/strain"
+        subgroup = "{ifo}/strain"
+        if group is None:
+            group = subgroup 
+        else:
+            group = '/'.join([group, subgroup])
         for ifo,strain in strain_dict.items():
             self[group.format(ifo=ifo)] = strain
             self[group.format(ifo=ifo)].attrs['delta_t'] = strain.delta_t
-            self[group.format(ifo=ifo)].attrs['start_time'] = float(strain.start_time)
+            self[group.format(ifo=ifo)].attrs['start_time'] = \
+                float(strain.start_time)
 
-    def write_stilde(self, stilde_dict):
+    def write_stilde(self, stilde_dict, group=None):
         """Writes stilde for each IFO to file.
 
         Parameters
         -----------
         stilde : {dict, FrequencySeries}
             A dict of FrequencySeries where the key is the IFO.
+        group : {None, str}
+            The group to write the strain to. If None, will write to the top
+            level.
         """
-        group = "{ifo}/stilde"
+        subgroup = "{ifo}/stilde"
+        if group is None:
+            group = subgroup 
+        else:
+            group = '/'.join([group, subgroup])
         for ifo,stilde in stilde_dict.items():
             self[group.format(ifo=ifo)] = stilde
             self[group.format(ifo=ifo)].attrs['delta_f'] = stilde.delta_f
             self[group.format(ifo=ifo)].attrs['epoch'] = float(stilde.epoch)
 
-    def write_psd(self, psds, low_frequency_cutoff):
+    def write_psd(self, psds, low_frequency_cutoff, group=None):
         """Writes PSD for each IFO to file.
 
         Parameters
@@ -291,12 +307,63 @@ class InferenceFile(h5py.File):
         low_frequency_cutoff : {dict, float}
             A dict of the low-frequency cutoff where the key is the IFO. The
             minimum value will be stored as an attr in the File.
+        group : {None, str}
+            The group to write the strain to. If None, will write to the top
+            level.
         """
+        subgroup = "{ifo}/psds/0"
+        if group is None:
+            group = subgroup 
+        else:
+            group = '/'.join([group, subgroup])
         self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())
-        for key in psds.keys():
-            psd_dim = self.create_dataset(key+"/psds/0",
-                                          data=psds[key])
-            psd_dim.attrs["delta_f"] = psds[key].delta_f
+        for ifo in psds:
+            self[group.format(ifo=ifo)] = psds[ifo]
+            self[group.format(ifo=ifo)].attrs['delta_f'] = psds[ifo].delta_f
+
+    def write_data(self, strain_dict=None, stilde_dict=None,
+                   psd_dict=None, low_frequency_cutoff_dict=None,
+                   group=None):
+        """Writes the strain/stilde/psd.
+
+        Parameters
+        ----------
+        strain_dict : {None, dict}
+            A dictionary of strains. If None, no strain will be written.
+        stilde_dict : {None, dict}
+            A dictionary of stilde. If None, no stilde will be written.
+        psd_dict : {None, dict}
+            A dictionary of psds. If None, psds will be written.
+        low_freuency_cutoff_dict : {None, dict}
+            A dictionary of low frequency cutoffs used for each detector in
+            `psd_dict`; must be provided if `psd_dict` is not None.
+        group : {None, str}
+            The group to write the strain to. If None, will write to the top
+            level.
+        """
+        # save PSD
+        if psd_dict is not None:
+            if low_frequency_cutoff_dict is None:
+                raise ValueError("must provide low_frequency_cutoff_dict if "
+                                 "saving psds to output")
+            # apply dynamic range factor for saving PSDs since
+            # plotting code expects it
+            psd_dyn_dict = {}
+            for key,val in psd_dict.iteritems():
+                 psd_dyn_dict[key] = FrequencySeries(val*DYN_RANGE_FAC**2,
+                                                     delta_f=val.delta_f)
+            self.write_psd(psds=psd_dyn_dict,
+                           low_frequency_cutoff=low_frequency_cutoff_dict,
+                           group=group)
+
+        # save stilde
+        if stilde_dict is not None:
+            self.write_stilde(stilde_dict, group=group)
+
+        # save strain if desired
+        if strain_dict is not None:
+            self.write_strain(strain_dict, group=group)
+
 
     def write_command_line(self):
         """Writes command line to attributes.
