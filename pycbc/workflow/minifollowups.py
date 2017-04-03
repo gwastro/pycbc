@@ -167,6 +167,8 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     exe = Executable(workflow.cp, 'singles_minifollowup',
                      ifos=curr_ifo, out_dir=dax_output, tags=tags)
 
+    wikifile = curr_ifo + '_'.join(tags) + 'loudest_table.txt'
+
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
     node.add_input_opt('--bank-file', tmpltbank_file)
@@ -175,6 +177,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     node.add_opt('--inspiral-data-read-name', insp_data_name)
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
     node.add_opt('--instrument', curr_ifo)
+    node.add_opt('--wiki-file', wikifile)
     if veto_file is not None:
         assert(veto_segment_name is not None)
         node.add_input_opt('--veto-file', veto_file)
@@ -652,3 +655,10 @@ def create_noop_node():
     exe.add_pfn(pfn)
     node = wdax.Node(exe)
     return node
+
+def add_wiki_row(outfile, cols):
+    """
+    Adds a wiki-formatted row to an output file from a list or a numpy array.
+    """
+    with open(outfile, 'a') as f:
+        f.write('||%s||\n' % '||'.join(map(str,cols)))
