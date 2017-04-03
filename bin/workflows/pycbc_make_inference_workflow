@@ -18,7 +18,10 @@
 """ Creates a DAX for a parameter estimation workflow.
 """
 
-import os, argparse, logging, h5py
+import argparse
+import h5py
+import logging
+import os
 import pycbc.workflow as wf
 import pycbc.workflow.inference_followups as inffu
 import pycbc.workflow.minifollowups as mini
@@ -27,6 +30,7 @@ import pycbc.version
 from pycbc_glue import segments
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
+from pycbc.types import MultiDetOptionAppendAction
 from pycbc.workflow import WorkflowConfigParser
 
 def to_file(path, ifo=None):
@@ -44,40 +48,49 @@ parser = argparse.ArgumentParser(description=__doc__[1:])
 
 # version option
 parser.add_argument("--version", action="version",
-    version=pycbc.version.git_verbose_msg, 
-    help="Prints version information.")
+                    version=pycbc.version.git_verbose_msg, 
+                    help="Prints version information.")
 
 # workflow options
 parser.add_argument("--workflow-name", default="my_unamed_inference_run",
-    help="Name of the workflow to append in various places.")
+                    help="Name of the workflow to append in various places.")
 parser.add_argument("--tags", nargs="+", default=[],
-    help="Tags to apend in various places.")
+                    help="Tags to apend in various places.")
 parser.add_argument("--output-dir", default=None,
-    help="Path to output directory.")
+                    help="Path to output directory.")
 parser.add_argument("--output-map", required=True,
-    help="Path to output map file.")
+                    help="Path to output map file.")
 parser.add_argument("--output-file", required=True,
-    help="Path to DAX file.")
+                    help="Path to DAX file.")
 
 # input workflow file options
 parser.add_argument("--bank-file", default=None,
-    help="HDF format template bank file.")
+                    help="HDF format template bank file.")
 parser.add_argument("--statmap-file", default=None,
-    help="HDF format clustered coincident trigger result file.")
+                    help="HDF format clustered coincident trigger "
+                         "result file.")
 parser.add_argument("--single-detector-triggers", nargs="+", default=None,
-    action=MultiDetOptionAction,
-    help="HDF format merged single detector trigger files.")
+                    action=MultiDetOptionAction,
+                    help="HDF format merged single detector trigger files.")
 
 # analysis time option
 # only required if not using input workflow file options
 parser.add_argument("--gps-end-time", type=float, nargs="+", default=None,
-    help="Times to analyze. If given workflow files then this option is ignored.")
+                    help="Times to analyze. If given workflow files then "
+                         "this option is ignored.")
 
 # input configuration file options
 parser.add_argument("--inference-config-file", type=str, required=True,
-    help="workflow.WorkflowConfigParser parsable file with proir information.")
+                    help="workflow.WorkflowConfigParser parsable file with "
+                         "proir information.")
 parser.add_argument("--prior-section", type=str, default="prior",
-    help="Name of the section in inference configuration file that contains priors.")
+                    help="Name of the section in inference configuration file "
+                         "that contains priors.")
+
+# input frame files
+parser.add_argument("--frame-files", nargs="+", default=None,
+                    action=MultiDetOptionAppendAction,
+                    help="GWF frame files to use.")
 
 # add option groups
 wf.add_workflow_command_line_group(parser)
@@ -117,10 +130,12 @@ if workflow_options:
         single_triggers.append( to_file(fname, ifo=ifo) )
 
     # get number of events to analyze
-    num_events = int(workflow.cp.get_opt_tags("workflow-inference", "num-events", ""))
+    num_events = int(workflow.cp.get_opt_tags("workflow-inference",
+                                              "num-events", ""))
 
     # get detection statistic from statmap file
-    # if less events that requested to analyze in config file then analyze all events
+    # if less events that requested to analyze in config file
+    # then analyze all events
     f = h5py.File(opts.statmap_file, "r")
     stat = f["foreground/stat"][:]
     if len(stat) < num_events:
@@ -181,52 +196,68 @@ for num_event in range(num_events):
     seg_dict = {ifo : segments.segmentlist([segments.segment(
                       gps_start_time, gps_end_time)]) for ifo in workflow.ifos}
 
-    # get frame files
-    datafind_files, _, _, _ = wf.setup_datafind_workflow(workflow, seg_dict,
-                                                         "datafind")
+    # get frame files from command line or datafind server
+    frame_files = wf.FileList([])
+    if opts.frame_files:
+        for ifo in workflow.ifos:
+            for path in opts.frame_files[ifo]:
+                frame_file = wf.File(
+                                ifo, "FRAME",
+                                segments.segment(gps_start_time, gps_end_time),
+                                file_url="file://" + path)
+                frame_file.PFN(frame_file.storage_path, site="local")
+                frame_files.append(frame_file)
+    else:
+        frame_files, _, _, _ = wf.setup_datafind_workflow(workflow, seg_dict,
+                                                          "datafind")
 
     # make node for running sampler
     node = inference_exe.create_node()
     node.add_opt("--instruments", " ".join(workflow.ifos))
     node.add_opt("--gps-start-time", gps_start_time)
     node.add_opt("--gps-end-time", gps_end_time)
-    node.add_multiifo_input_list_opt("--frame-files", datafind_files)
+    node.add_multiifo_input_list_opt("--frame-files", frame_files)
     node.add_opt("--channel-name", channel_names_str)
     node.add_input_opt("--config-file", config_file)
     analysis_time = segments.segment(gps_start_time, gps_end_time)
     inference_file = node.new_output_file_opt(analysis_time, ".hdf",
-                                 "--output-file", tags=[str(num_event)])
+                                              "--output-file",
+                                              tags=[str(num_event)])
 
     # add node to workflow
     workflow += node
 
     # add file that prints information about the search event
     if workflow_options:
-        layouts += [mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
-                              coinc_file, num_event, 
-                              opts.output_dir, tags=opts.tags + [str(num_event)])]
+        layouts += [mini.make_coinc_info(workflow, single_triggers,
+                                         tmpltbank_file, coinc_file,
+                                         num_event, opts.output_dir,
+                                         tags=opts.tags + [str(num_event)])]
 
     # add files from posterior summary table for this event
-    layouts += [inffu.make_inference_summary_table(workflow, inference_file,
-                          opts.output_dir, variable_args=variable_args,
+    layouts += [inffu.make_inference_summary_table(
+                          workflow, inference_file, opts.output_dir,
+                          variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
 
     # add files from posterior corner plot for this event
-    layouts += [inffu.make_inference_posterior_plot(workflow, inference_file,
-                          opts.output_dir, variable_args=variable_args,
+    layouts += [inffu.make_inference_posterior_plot(
+                          workflow, inference_file, opts.output_dir,
+                          variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
 
     # get files from plotting acceptance rate plot for this event
-    rate_files = inffu.make_inference_acceptance_rate_plot(workflow,
-                          inference_file,  opts.output_dir,
+    rate_files = inffu.make_inference_acceptance_rate_plot(
+                          workflow, inference_file,  opts.output_dir,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])
 
     # get files from plotting PSD for this event
-    psd_file = wf.make_spectrum_plot(workflow, [inference_file], opts.output_dir,
-                          tags=opts.tags + [str(num_event)])
+    psd_file = wf.make_spectrum_plot(workflow, [inference_file],
+                                     opts.output_dir,
+                                     tags=opts.tags + [str(num_event)])
 
     # add a row to the HTML page with accpetance rate on the left
     # and the PSD plot on the right
@@ -234,8 +265,9 @@ for num_event in range(num_events):
 
     # add files from plotting parameter samples and autocorrelation
     # function for this event
-    files = inffu.make_inference_single_parameter_plots(workflow, inference_file,
-                          opts.output_dir, variable_args=variable_args,
+    files = inffu.make_inference_single_parameter_plots(
+                          workflow, inference_file, opts.output_dir,
+                          variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)]) 
     layouts += list(layout.grouper(files, 2))
@@ -244,7 +276,8 @@ for num_event in range(num_events):
 # do not add them to layouts so that they appear in the
 # additional files section
 for subsection in cp.get_subsections(opts.prior_section):
-    inffu.make_inference_prior_plot(workflow, config_file, opts.output_dir,
+    inffu.make_inference_prior_plot(
+                          workflow, config_file, opts.output_dir,
                           analysis_seg=workflow.analysis_time,
                           sections=[opts.prior_section + "-" + subsection],
                           tags=opts.tags + [subsection])
