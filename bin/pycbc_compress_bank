@@ -156,11 +156,7 @@ for ii in range(imin, imax):
     # generate the waveform
     htilde = bank[ii-imin]
     tmplt = bank.table[ii-imin]
-    if args.low_frequency_cutoff:
-        fmin=args.low_frequency_cutoff
-        bank.f_lower = fmin
-    else:
-        fmin=tmplt.f_lower
+    fmin=tmplt.f_lower
     kmin = int(numpy.ceil(fmin / df))
     if numpy.abs(htilde[kmin]) == 0:
         raise ValueError("""The amplitude of the waveform at the
