@@ -45,9 +45,14 @@ parser.add_argument("--bank-file", type=str, required=True,
 parser.add_argument("--output", type=str, required=True,
                     help="The hdf file to save the templates and "
                     "compressed waveforms to.")
-parser.add_argument("--low-frequency-cutoff", type=float, required=True,
+parser.add_argument("--low-frequency-cutoff", type=float, default=None,
                     help="The low frequency cutoff to use for generating "
-                    "the waveforms (Hz).")
+                    "the waveforms (Hz). If this is not provided, the code "
+                    "will look for a low frequency cutoff corressponding "
+                    "to each template stored in the bank. If a "
+                    "--low-frequency-cutoff is provided and the bank stores "
+                    "a low frequency cutoff for each template as well, the "
+                    "former is used to generate the waveforms.")
 # add approximant arg
 pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument("--sample-rate", type=int, required=True,
@@ -101,7 +106,6 @@ pycbc.init_logging(args.verbose)
 if args.psd_model or args.psd_file or args.asd_file :
     psd.verify_psd_options(args, parser)
 
-fmin = args.low_frequency_cutoff
 fmax = args.sample_rate/2.
 
 # load the bank
@@ -111,7 +115,7 @@ logging.info("loading bank")
 dtype = numpy.complex128
 # we'll just use dummy values for N, df for now
 bank = waveform.FilterBank(args.bank_file, 5, 0.25, dtype,
-                           low_frequency_cutoff=fmin,
+                           low_frequency_cutoff=args.low_frequency_cutoff,
                            approximant=args.approximant)
 templates = bank.table
 if args.tmplt_index is not None:
@@ -125,8 +129,8 @@ else:
 logging.info("getting needed dfs")
 # we'll ensure that the there are atleast 2 samples in a waveform
 seg_lens = 4*numpy.array([max(4./args.sample_rate,
-    2**numpy.ceil(numpy.log2(compress.rough_time_estimate(m1, m2, fmin))))
-    for m1,m2 in zip(templates.mass1, templates.mass2)])
+    2**numpy.ceil(numpy.log2(compress.rough_time_estimate(m1, m2, flow))))
+    for m1,m2,flow in zip(templates.mass1, templates.mass2, templates.f_lower)])
 
 # generate output file
 logging.info("writing template info to output")
@@ -147,17 +151,17 @@ for ii in range(imin, imax):
     bank.delta_f = df
     bank.N = N
     bank.filter_length = N/2 + 1
-    bank.f_lower = fmin
-    bank.kmin = int(bank.f_lower / df)
     # scratch space
     decomp_scratch = FrequencySeries(numpy.zeros(N, dtype=dtype), delta_f=df)
     # generate the waveform
     htilde = bank[ii-imin]
-    if numpy.abs(htilde[bank.kmin]) == 0:
+    tmplt = bank.table[ii-imin]
+    fmin=tmplt.f_lower
+    kmin = int(numpy.ceil(fmin / df))
+    if numpy.abs(htilde[kmin]) == 0:
         raise ValueError("""The amplitude of the waveform at the
                          low_frequency_cutoff is zero. A non-zero value
                          is required.""")
-    tmplt = bank.table[ii-imin]
     kmax = numpy.nonzero(abs(htilde))[0][-1]
     # Calculate psd if psd options are provided as input. The psd would
     # be used to compute the overlap between the full waveform and the
