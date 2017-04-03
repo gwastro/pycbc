@@ -39,11 +39,17 @@ from pycbc.gate import gates_from_cli, psd_gates_from_cli, apply_gates_to_td, \
 def convert_liststring_to_list(lstring):
     """Checks if an argument of the configuration file is a string of a list
     and returns the corresponding list (of strings).
+
+    The argument is considered to be a list if it starts with '[' and ends
+    with ']'. List elements should be comma separated. For example, passing
+    `'[foo bar, cat]'` will result in `['foo bar', 'cat']` being returned. If
+    the argument does not start and end with '[' and ']', the argument will
+    just be returned as is.
     """
     if lstring[0]=='[' and lstring[-1]==']':
-        lvalue = [str(lstring[1:-1].split(',')[n].strip().strip("'"))
+        lstring = [str(lstring[1:-1].split(',')[n].strip().strip("'"))
                       for n in range(len(lstring[1:-1].split(',')))]
-    return lvalue
+    return lstring
 
 
 def add_config_opts_to_parser(parser):
@@ -111,16 +117,16 @@ def read_args_from_config(cp, section_group=None):
     static_args = dict([(key,cp.get_opt_tags(
         "{}static_args".format(section_prefix), key, []))
         for key in cp.options("{}static_args".format(section_prefix))])
+    # try converting values to float
     for key,val in static_args.iteritems():
         try:
+            # the following will raise a ValueError if it cannot be cast to
+            # float (as we would expect for string arguments)
             static_args[key] = float(val)
-            continue
-        except:
-            pass
-        try:
+        except ValueError:
+            # try converting to a list of strings; this function will just
+            # return val if it does not begin (end) with [ (])
             static_args[key] = convert_liststring_to_list(val) 
-        except:
-            pass
 
     return variable_args, static_args
 
