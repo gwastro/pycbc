@@ -17,6 +17,7 @@ This modules provides classes for evaluating angular distributions.
 """
 
 import numpy
+from ConfigParser import Error
 from pycbc.distributions import boundaries
 from pycbc.distributions import bounded
 from pycbc.distributions import uniform
