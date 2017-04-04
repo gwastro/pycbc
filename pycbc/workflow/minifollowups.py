@@ -655,10 +655,3 @@ def create_noop_node():
     exe.add_pfn(pfn)
     node = wdax.Node(exe)
     return node
-
-def add_wiki_row(outfile, cols):
-    """
-    Adds a wiki-formatted row to an output file from a list or a numpy array.
-    """
-    with open(outfile, 'a') as f:
-        f.write('||%s||\n' % '||'.join(map(str,cols)))

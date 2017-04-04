@@ -37,6 +37,13 @@ def to_file(path, ifo=None):
     fil.PFN(path, 'local')
     return fil
 
+def add_wiki_row(outfile, cols):
+    """
+    Adds a wiki-formatted row to an output file from a list or a numpy array.
+    """
+    with open(outfile, 'a') as f:
+        f.write('||%s||\n' % '||'.join(map(str,cols)))
+
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg) 
 parser.add_argument('--workflow-name', default='my_unamed_run')
@@ -94,7 +101,7 @@ wf.makedir(args.output_dir)
 if args.wiki_file:
     # initialize a wiki table and add the column headers
     wiki_file = os.path.join(args.output_dir, args.wiki_file)
-    mini.add_wiki_row(wiki_file, ['GPS time', 'UTC time', 'newSNR', 'SNR', 
+    add_wiki_row(wiki_file, ['GPS time', 'UTC time', 'newSNR', 'SNR', 
                       'm1', 'm2', 's1', 's2', 'duration', 'omega', 'notes', 
                       'veto'])
 
@@ -207,7 +214,7 @@ for num_event in range(num_events):
         pass
 
     if wiki_file:
-        mini.add_wiki_row(wiki_file, [time, 
+        add_wiki_row(wiki_file, [time, 
                           str(datetime.datetime(*GPSToUTC(int(time))[0:6])),
                           trigs.stat[num_event], trigs.snr[num_event],
                           curr_params['mass1'], curr_params['mass2'],
