@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Collin Capano, Alex Nitz
+# Copyright (C) 2016  Collin Capano, Alex Nitz, Christopher Biwer
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -30,8 +30,9 @@ import waveform
 import ringdown
 from pycbc import coordinates
 from pycbc import filter
+from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
-from pycbc.waveform.utils import apply_fd_time_shift
+from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries
 from pycbc.detector import Detector
 from pycbc import pnutils
 import lal as _lal
@@ -357,6 +358,18 @@ class TDomainCBCGenerator(BaseCBCGenerator):
         super(TDomainCBCGenerator, self).__init__(waveform.get_td_waveform,
             variable_args=variable_args, **frozen_params)
 
+    def _postgenerate(self, res):
+        """Applies a taper if it is in current params.
+        """
+        hp, hc = res
+        try:
+            hp = taper_timeseries(hp, tapermethod=self.current_params['taper'])
+            hc = taper_timeseries(hc, tapermethod=self.current_params['taper'])
+        except KeyError:
+            pass
+        return hp, hc
+
+
 class FDomainRingdownGenerator(BaseGenerator):
     """Uses ringdown.get_fd_qnm as a generator function to create frequency-
     domain ringdown waveforms in the radiation frame; i.e., with no detector response
@@ -548,8 +561,16 @@ class FDomainDetFrameGenerator(object):
         rfparams = dict([(param, self.current_params[param])
             for param in self.rframe_generator.variable_args])
         hp, hc = self.rframe_generator.generate_from_kwargs(**rfparams)
-        hp = filter.make_frequency_series(hp)
-        hc = filter.make_frequency_series(hc)
+        if isinstance(hp, TimeSeries):
+            df = self.current_params['delta_f']
+            hp = hp.to_frequencyseries(delta_f=df)
+            hc = hc.to_frequencyseries(delta_f=df)
+            # time-domain waveforms will not be shifted so that the peak amp
+            # happens at the end of the time series (as they are for f-domain),
+            # so we add an additional shift to account for it
+            tshift = 1./df - abs(hp._epoch)
+        else:
+            tshift = 0.
         hp._epoch = hc._epoch = self._epoch
         h = {}
         if 'tc' in self.current_params:
@@ -568,9 +589,9 @@ class FDomainDetFrameGenerator(object):
                 # apply the time shift
                 tc = self.current_params['tc'] + \
                     det.time_delay_from_earth_center(self.current_params['ra'],
-                                                     self.current_params['dec'],
-                                                     self.current_params['tc'])
-                h[detname] = apply_fd_time_shift(thish, tc, kmin=kmin, copy=False)
+                         self.current_params['dec'], self.current_params['tc'])
+                h[detname] = apply_fd_time_shift(thish, tc+tshift, kmin=kmin,
+                                                 copy=False)
         else:
             # no detector response, just use the + polarization
             if 'tc' in self.current_params:
@@ -579,8 +600,9 @@ class FDomainDetFrameGenerator(object):
             h['RF'] = hp
         return h
 
+
 def select_waveform_generator(approximant):
-    """ Returns the single-IFO generator for the approximant.
+    """Returns the single-IFO generator for the approximant.
 
     Parameters
     ----------
