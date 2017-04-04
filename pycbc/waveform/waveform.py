@@ -47,6 +47,12 @@ class NoWaveformError(Exception):
     """
     pass
 
+# If this is set to True, waveform generation codes will try to regenerate
+# waveforms with known failure conditions to try to avoid the failure. For 
+# example SEOBNRv3 waveforms would be regenerated with double the sample rate.
+# If this is set to False waveform failures will always raise exceptions
+fail_tolerant_waveform_generation = True
+
 default_args = (parameters.fd_waveform_params.default_dict() + \
     parameters.td_waveform_params).default_dict()
 
@@ -61,7 +67,6 @@ _lalsim_td_approximants = {}
 _lalsim_fd_approximants = {}
 _lalsim_enum = {}
 _lalsim_sgburst_approximants = {}
-
 
 def _check_lal_pars(p):
     """ Create a laldict object from the dictionary of waveform parameters
@@ -108,6 +113,7 @@ def _check_lal_pars(p):
     return lal_pars
 
 def _lalsim_td_waveform(**p):
+    global fail_tolerant_waveform_generation
     lal_pars = _check_lal_pars(p)
     #nonGRparams can be straightforwardly added if needed, however they have to
     # be invoked one by one
@@ -124,6 +130,8 @@ def _lalsim_td_waveform(**p):
                lal_pars,
                _lalsim_enum[p['approximant']])
     except:
+        if not fail_tolerant_waveform_generation:
+            raise
         # For some cases failure modes can occur. Here we add waveform-specific
         # instructions to try to work with waveforms that are known to fail.
         if p['approximant'] == 'SEOBNRv3':
