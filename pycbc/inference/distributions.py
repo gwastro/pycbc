@@ -1672,6 +1672,12 @@ class UniformRadius(_BoundedDist):
                                                        variable_args,
                                                        bounds_required=True)
 
+class UniformSquareRoot(UniformRadius):
+    r""" A uniform distribution in square root.
+    """
+    name = "uniform_square_root"
+    dim = 0.5
+
 distribs = {
     Uniform.name : Uniform,
     UniformAngle.name : UniformAngle,
@@ -1680,6 +1686,7 @@ distribs = {
     UniformSolidAngle.name : UniformSolidAngle,
     UniformSky.name : UniformSky,
     UniformRadius.name : UniformRadius,
+    UniformSquareRoot.name : UniformSquareRoot,
     Gaussian.name : Gaussian,
     FromFile.name : FromFile,
 }
