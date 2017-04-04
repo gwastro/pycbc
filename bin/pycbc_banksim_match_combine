@@ -30,6 +30,7 @@ import h5py
 from pycbc_glue.ligolw import utils, table
 import pycbc
 from pycbc import pnutils
+from pycbc.waveform import TemplateBank
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
@@ -105,8 +106,8 @@ for val in trig_par_list:
 for idx, row in enumerate(res): 
     outstr = ""
     if row['bank'] not in btables:
-        indoc = utils.load_filename(row['bank'], False, contenthandler=mycontenthandler)
-        btables[row['bank']] = table.get_table(indoc, "sngl_inspiral") 
+        temp_bank = TemplateBank(row['bank'])
+        btables[row['bank']] = temp_bank.table
 
     if row['sim'] not in itables:
         indoc = utils.load_filename(row['sim'], False, contenthandler=mycontenthandler)
@@ -118,7 +119,12 @@ for idx, row in enumerate(res):
     for val in trig_par_list:
         trig_params[val][idx] = row[val]
     for val in bank_par_list:
-        bank_params[val][idx] = getattr(bt, val)
+        try:
+            bank_params[val][idx] = getattr(bt, val)
+        except AttributeError:
+            # If not present set to 0.
+            # For example spin1x is not always stored in aligned-spin banks
+            bank_params[val][idx] = 0.
     for val in inj_par_list:
         inj_params[val][idx] = getattr(it, val)
 
