@@ -377,6 +377,8 @@ redshift = Parameter("redshift",
 #
 #   Non mandatory flags with default values
 #
+taper = Parameter("taper", dtype=str, default='TAPER_NONE',
+                description="Apply a taper to a time domain waveform.")
 frame_axis = Parameter("frame_axis",
                 dtype=int, default=0,
                 description="Allow to choose among orbital_l, view and total_j")
@@ -437,7 +439,7 @@ fd_waveform_params = cbc_rframe_params + ParameterList([delta_f]) + \
     common_gen_equal_sampled_params + ParameterList([f_final, f_final_func])
 
 # the following are parameters needed to generate a TD waveform
-td_waveform_params = cbc_rframe_params + ParameterList([delta_t]) + \
+td_waveform_params = cbc_rframe_params + ParameterList([delta_t, taper]) + \
     common_gen_equal_sampled_params + ParameterList([numrel_data]) + \
     flags_generation_params
 
