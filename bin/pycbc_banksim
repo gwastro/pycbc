@@ -197,15 +197,6 @@ parser.add_argument("--use-sky-location", action='store_true',
                          "North pole of a non-rotating Earth rather than overhead")
 
 #Filtering Settings
-parser.add_argument('--filter-low-frequency-cutoff', metavar='FREQ', type=float,
-                    required=True, help='low frequency cutoff of matched filter')
-parser.add_argument('--filter-low-freq-cutoff-column', metavar='NAME', type=str,
-                    help='If given, use a per-template low-frequency cutoff '
-                         'from column NAME of the template table instead of '
-                         'the value given via --filter-low-frequency-cutoff. '
-                         'Signals are still normalized using '
-                         '--filter-low-frequency-cutoff and the value in '
-                         'column NAME must be larger than or equal to it.')
 parser.add_argument("--filter-sample-rate", type=float, required=True,
                     help="Filter sample rate [Hz]")
 parser.add_argument("--filter-signal-length", type=int, required=True,
