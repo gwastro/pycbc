@@ -30,7 +30,7 @@ waves.
 
 import os, sys, types, re, copy, numpy, inspect
 from pycbc_glue.ligolw import types as ligolw_types
-from pycbc import coordinates, conversions
+from pycbc import coordinates, conversions, cosmology
 from pycbc.detector import Detector
 from pycbc.waveform import parameters
 from pycbc import cosmology
@@ -1558,7 +1558,7 @@ class _FieldArrayWithDefaults(FieldArray):
 
 # We'll include functions in various pycbc modules in WaveformArray's function
 # library. All modules used must have an __all__ list defined.
-_modules_for_functionlib = [conversions, coordinates]
+_modules_for_functionlib = [conversions, coordinates, cosmology]
 _waveformarray_functionlib = {_funcname : getattr(_mod, _funcname)
                               for _mod in _modules_for_functionlib
                               for _funcname in getattr(_mod, '__all__')}
