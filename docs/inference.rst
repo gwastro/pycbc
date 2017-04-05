@@ -114,7 +114,7 @@ An example configuration file (named ``inference.ini``) is::
     ; coalescence time prior
     name = uniform
     min-tc = 1126259461.8
-    max-tc= 1126259462.2
+    max-tc = 1126259462.2
 
     [prior-mchirp]
     name = uniform
@@ -304,8 +304,8 @@ With a minor change to the ``tc`` prior, you can reuse ``inference.ini`` from th
     [prior-tc]
     ; coalescence time prior
     name = uniform
-    min-tc = 1126259461.8
-    max-tc= 1126259462.2
+    min-tc = 1126259462.32
+    max-tc = 1126259462.52
 
 Then run::
 
