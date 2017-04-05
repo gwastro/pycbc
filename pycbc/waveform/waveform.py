@@ -48,7 +48,7 @@ class NoWaveformError(Exception):
     pass
 
 # If this is set to True, waveform generation codes will try to regenerate
-# waveforms with known failure conditions to try to avoid the failure. For 
+# waveforms with known failure conditions to try to avoid the failure. For
 # example SEOBNRv3 waveforms would be regenerated with double the sample rate.
 # If this is set to False waveform failures will always raise exceptions
 fail_tolerant_waveform_generation = True
@@ -113,7 +113,7 @@ def _check_lal_pars(p):
     return lal_pars
 
 def _lalsim_td_waveform(**p):
-    global fail_tolerant_waveform_generation
+    fail_tolerant_waveform_generation
     lal_pars = _check_lal_pars(p)
     #nonGRparams can be straightforwardly added if needed, however they have to
     # be invoked one by one
@@ -129,7 +129,7 @@ def _lalsim_td_waveform(**p):
                float(p['delta_t']), float(p['f_lower']), float(p['f_ref']),
                lal_pars,
                _lalsim_enum[p['approximant']])
-    except:
+    except RuntimeError:
         if not fail_tolerant_waveform_generation:
             raise
         # For some cases failure modes can occur. Here we add waveform-specific
@@ -137,7 +137,7 @@ def _lalsim_td_waveform(**p):
         if p['approximant'] == 'SEOBNRv3':
             # In this case we'll try doubling the sample time and trying again
             # Don't want to get stuck in a loop though!
-            if not 'delta_t_orig' in p:
+            if 'delta_t_orig' not in p:
                 p['delta_t_orig'] = p['delta_t']
             p['delta_t'] = p['delta_t'] / 2.
             if p['delta_t_orig'] / p['delta_t'] > 9:
