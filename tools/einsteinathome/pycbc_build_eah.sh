@@ -1292,20 +1292,23 @@ n_runs=${#bank_array[@]}
 for (( i=0; i<${n_runs}; i++ ))
 do
     rm -f H1-INSPIRAL-OUT.hdf
-    echo -e "\\n\\n>> [`date`] pycbc_inspiral using --bank-file ${bank_array[$i]} --approximant ${approx_array[$i]}"
-    echo -e "\\n\\n>> [`date`] pycbc_inspiral using ROM data from $lal_data_path"
-    CPPFLAGS="$CPPFLAGS `python-config --includes`" \
-    LAL_DATA_PATH="$lal_data_path" \
+    echo "\
+>> [`date`] pycbc_inspiral using
+>>   --bank-file ${bank_array[$i]}
+>>   --approximant ${approx_array[$i]}
+>>   ROM data from $lal_data_path"
+    export \
+      CPPFLAGS="$CPPFLAGS `python-config --includes`" \
+      LAL_DATA_PATH="$lal_data_path" \
       NO_TMPDIR=1 \
       INITIAL_LOG_LEVEL=10 \
       LEVEL2_CACHE_SIZE=8192 \
       WEAVE_FLAGS='-O3 -march=core2 -w' \
-      FIXED_WEAVE_CACHE="$PWD/pycbc_inspiral" \
-      "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" \
-      --fixed-weave-cache \
+      FIXED_WEAVE_CACHE="$PWD/pycbc_inspiral"
+    args="--fixed-weave-cache \
       --sample-rate 2048 \
       --sgchisq-snr-threshold 6.0 \
-      --sgchisq-locations 'mtotal>40:20-30,20-45,20-60,20-75,20-90,20-105,20-120' \
+      --sgchisq-locations mtotal>40:20-30,20-45,20-60,20-75,20-90,20-105,20-120 \
       --segment-end-pad 16 \
       --cluster-method window \
       --low-frequency-cutoff 30 \
@@ -1328,15 +1331,21 @@ do
       --psd-estimation median \
       --strain-high-pass 20 \
       --order -1 \
-      --chisq-bins "1.75*(get_freq('fSEOBNRv2Peak',params.mass1,params.mass2,params.spin1z,params.spin2z)-60.)**0.5" \
+      --chisq-bins 1.75*(get_freq('fSEOBNRv2Peak',params.mass1,params.mass2,params.spin1z,params.spin2z)-60.)**0.5 \
       --channel-name H1:LOSC-STRAIN \
       --gps-start-time 1126259078 \
       --gps-end-time 1126259846 \
       --output H1-INSPIRAL-OUT.hdf \
-      --frame-files "$frames" \
+      --frame-files $frames \
       --approximant ${approx_array[$i]} \
       --bank-file ${bank_array[$i]} \
-      --verbose 2>&1 | awk '{if ((!/Filtering template|points above|power chisq|point chisq|Found chisq|generating SEOBNR|generating SPA/) || (/segment 1/ && NR % 50 == 0) || / 0: generating/ || / 1: generating/ ) print}'
+      --verbose"
+    if $silent_build; then
+        "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" $args 2>&1|
+          awk '{if ((!/Filtering template|points above|power chisq|point chisq|Found chisq|generating SEOBNR|generating SPA/) || (/segment 1/ && NR % 50 == 0) || / 0: generating/ || / 1: generating/ ) print}'
+    else
+        "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" $args
+    fi
 done
 
 # test for GW150914

@@ -25,6 +25,7 @@ import numpy
 import pycbc
 import pycbc.opt
 import pycbc.weave
+from pycbc import distributions
 from pycbc import fft
 from pycbc import gate
 from pycbc import inference
@@ -54,8 +55,7 @@ parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
 # add data options
 parser.add_argument("--instruments", type=str, nargs="+", required=True,
                     help="IFOs, eg. H1 L1.")
-parser.add_argument("--low-frequency-cutoff", type=float, required=True,
-                    help="Low frequency cutoff for each IFO.")
+option_utils.add_low_frequency_cutoff_opt(parser)
 parser.add_argument("--psd-start-time", type=float, default=None,
                     help="Start time to use for PSD estimation if different "
                          "from analysis.")
@@ -146,68 +146,12 @@ logging.info("Using seed %i" %(opts.seed))
 ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
 
-# get gates to apply
-gates = gate.gates_from_cli(opts)
-psd_gates = gate.psd_gates_from_cli(opts)
-
-# get strain time series
-strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
-                                         precision="double")
-# apply gates if not waiting to overwhiten
-if not opts.gate_overwhitened:
-    logging.info("Applying gates to strain data")
-    strain_dict = gate.apply_gates_to_td(strain_dict, gates)
-
-# get strain time series to use for PSD estimation
-# if user has not given the PSD time options then use same data as analysis
-if opts.psd_start_time and opts.psd_end_time:
-    logging.info("Will generate a different time series for PSD estimation")
-    psd_opts = opts
-    psd_opts.gps_start_time = psd_opts.psd_start_time
-    psd_opts.gps_end_time = psd_opts.psd_end_time
-    psd_strain_dict = strain.from_cli_multi_ifos(psd_opts, opts.instruments,
-                                                precision="double")
-    # apply any gates
-    logging.info("Applying gates to PSD data")
-    psd_strain_dict = gate.apply_gates_to_td(psd_strain_dict, psd_gates)
-
-elif opts.psd_start_time or opts.psd_end_time:
-    raise ValueError("Must give --psd-start-time and --psd-end-time")
-else:
-    psd_strain_dict = strain_dict
+# get the data and psd
+logging.info("Loading data")
+strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
+low_frequency_cutoff_dict = option_utils.low_frequency_cutoff_from_cli(opts)
 
 with ctx:
-
-    # FFT strain and save each of the length of the FFT, delta_f, and
-    # low frequency cutoff to a dict
-    logging.info("FFT strain")
-    stilde_dict = {}
-    length_dict = {}
-    delta_f_dict = {}
-    low_frequency_cutoff_dict = {}
-    for ifo in opts.instruments:
-        stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
-        length_dict[ifo] = len(stilde_dict[ifo])
-        delta_f_dict[ifo] = stilde_dict[ifo].delta_f
-        low_frequency_cutoff_dict[ifo] = opts.low_frequency_cutoff
-
-    # get PSD as frequency series
-    psd_dict = psd.from_cli_multi_ifos(opts, length_dict, delta_f_dict,
-                               low_frequency_cutoff_dict, opts.instruments,
-                               strain_dict=psd_strain_dict, precision="double")
-
-    # apply any gates to overwhitened data, if desired
-    if opts.gate_overwhitened and opts.gate is not None:
-        logging.info("Applying gates to overwhitened data")
-
-        # overwhiten the data
-        for ifo in gates:
-            stilde_dict[ifo] /= psd_dict[ifo]
-        stilde_dict = gate.apply_gates_to_fd(stilde_dict, gates)
-
-        # unwhiten the data for the likelihood generator
-        for ifo in gates:
-            stilde_dict[ifo] *= psd_dict[ifo]
 
     # read configuration file
     logging.info("Reading configuration file")
@@ -240,10 +184,10 @@ with ctx:
 
     # get prior distribution for each variable parameter
     logging.info("Setting up priors for each parameter")
-    distributions = inference.read_distributions_from_config(cp, "prior")
+    dists = distributions.read_distributions_from_config(cp, "prior")
 
     # construct class that will return the prior
-    prior = inference.PriorEvaluator(variable_args, *distributions)
+    prior = inference.PriorEvaluator(variable_args, *dists)
 
     # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
@@ -258,43 +202,25 @@ with ctx:
                         epoch=stilde_dict.values()[0].epoch,
                         variable_args=variable_args,
                         detectors=opts.instruments,
-                        delta_f=delta_f_dict.values()[0], **static_args)
+                        delta_f=stilde_dict.values()[0].delta_f, **static_args)
 
     # construct class that will return the natural logarithm of likelihood
     likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](
-                        generator, stilde_dict, opts.low_frequency_cutoff,
+                        generator, stilde_dict,
+                        low_frequency_cutoff_dict.values()[0],
                         psds=psd_dict, prior=prior)
 
     # create sampler that will run
     sampler = option_utils.sampler_from_cli(opts, likelihood)
 
-    # save command line
+    # save command line and data, if desired
     with InferenceFile(opts.output_file, "w") as fp:
+        logging.info("Writing command line and data to output file")
         fp.write_command_line()
-
-    # save PSD
-    if opts.save_psd:
-        # apply dynamic range factor for saving PSDs since
-        # plotting code expects it
-        logging.info("Saving PSDs")
-        psd_dyn_dict = {}
-        for key,val in psd_dict.iteritems():
-             psd_dyn_dict[key] = types.FrequencySeries(
-                                        psd_dict[key] * pycbc.DYN_RANGE_FAC**2,
-                                        delta_f=psd_dict[key].delta_f)
-        with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_psd(psds=psd_dyn_dict,
-                          low_frequency_cutoff=low_frequency_cutoff_dict)
-
-    # save stilde
-    if opts.save_stilde:
-        with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_stilde(stilde_dict)
-
-    # save strain if desired
-    if opts.save_strain:
-        with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_strain(strain_dict)
+        fp.write_data(strain_dict=strain_dict if opts.save_strain else None,
+                      stilde_dict=stilde_dict if opts.save_stilde else None,
+                      psd_dict=psd_dict if opts.save_psd else None,
+                      low_frequency_cutoff_dict=low_frequency_cutoff_dict)
 
     # get distribution to draw from for each walker initial position
     logging.info("Setting walkers initial conditions for varying parameters")
@@ -302,14 +228,14 @@ with ctx:
     # check if user wants to use different distributions than prior for setting
     # walkers initial positions
     if len(cp.get_subsections("initial")):
-        initial_distributions = inference.read_distributions_from_config(cp,
-            section="initial")
+        initial_dists = distributions.read_distributions_from_config(
+                                                         cp, section="initial")
     else:
-        initial_distributions = inference.read_distributions_from_config(cp,
-            section="prior")
+        initial_dists = distributions.read_distributions_from_config(
+                                                         cp, section="prior")
 
     # set the initial positions
-    sampler.set_p0(initial_distributions)
+    sampler.set_p0(initial_dists)
 
     # setup checkpointing
     if opts.checkpoint_interval:

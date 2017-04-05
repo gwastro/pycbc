@@ -701,6 +701,9 @@ def convert_cachelist_to_filelist(datafindcache_list):
                     currFile.PFN(frame.url.replace(
                         'file:///cvmfs/oasis.opensciencegrid.org/',
                         'gsiftp://red-gridftp.unl.edu/user/'), site='osg')
+                    currFile.PFN(frame.url.replace(
+                        'file:///cvmfs/oasis.opensciencegrid.org/',
+                        'gsiftp://ldas-grid.ligo.caltech.edu/hdfs/'), site='osg')
             else:
                 currFile.PFN(frame.url, site='notlocal')
             datafind_filelist.append(currFile)
