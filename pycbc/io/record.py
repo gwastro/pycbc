@@ -894,17 +894,6 @@ class FieldArray(numpy.recarray):
             setattr(cls, name, property(method))
         return self.view(type=cls)
 
-    def del_attributes(self, names):
-        """Returns a view of self with the given attributes removed.
-        """
-        cls = type(self)
-        cls = type(cls.__name__, cls.__bases__, dict(cls.__dict__))
-        if isinstance(names, str) or isinstance(names, unicode):
-            names = [names]
-        for name in names:
-            delattr(cls, name)
-        return self.view(type=cls)
-
     def add_virtualfields(self, names, methods):
         """Returns a view of this array with the given methods added as virtual
         fields. Specifically, the given methods are added using add_properties
@@ -919,17 +908,6 @@ class FieldArray(numpy.recarray):
         if out._virtualfields is None:
             out._virtualfields = []
         out._virtualfields.extend(names)
-        return out
-
-    def del_virtualfields(self, names):
-        """Returns a view of self with the given virtual fields removed.
-        """
-        if isinstance(names, str) or isinstance(names, unicode):
-            names = [names]
-        # remove the properties
-        out = self.del_attributes(names)
-        # remove the list of virtual fields
-        out._virtualfields = [f for f in self._virtualfields if f not in names]
         return out
 
     @classmethod
