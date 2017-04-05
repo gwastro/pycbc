@@ -12,6 +12,7 @@ addons:
             - libssl-dev
             - zlib1g-dev
             - libfreetype6-dev
+            - libdb4.8-dev
 cache:
   directories:
     - $HOME/.cache/pip
