@@ -1647,8 +1647,7 @@ class WaveformArray(_FieldArrayWithDefaults):
         parameters.spin_px, parameters.spin_py, parameters.spin_pz,
         parameters.spin_sx, parameters.spin_sy, parameters.spin_sz,
         parameters.spin1_a, parameters.spin1_azimuthal, parameters.spin1_polar,
-        parameters.spin2_a, parameters.spin2_azimuthal, parameters.spin2_polar,
-        parameters.redshift]
+        parameters.spin2_a, parameters.spin2_azimuthal, parameters.spin2_polar]
 
     @property
     def primary_mass(self):
@@ -1757,11 +1756,6 @@ class WaveformArray(_FieldArrayWithDefaults):
         """Returns the polar spin angle of mass 2."""
         return coordinates.cartesian_to_spherical_polar(
                                      self.spin2x, self.spin2y, self.spin2z)
-
-    @property
-    def redshift(self):
-        """Returns the redshift, assuming standard cosmology."""
-        return cosmology.redshift(self.distance)
 
 
 __all__ = ['FieldArray', 'WaveformArray']
