@@ -155,7 +155,7 @@ class InferenceFile(h5py.File):
         parameters : (list of) strings
             The parameter(s) to retrieve. A parameter can be the name of any
             field in `samples_group`, a virtual field or method of
-            `WaveformArray` (as long as the file contains the necessary fields
+            `FieldArray` (as long as the file contains the necessary fields
             to derive the virtual field or method), and/or a function of
             these.
         \**kwargs :
@@ -164,9 +164,9 @@ class InferenceFile(h5py.File):
 
         Returns
         -------
-        WaveformArray
+        FieldArray
             Samples for the given parameters, as an instance of a
-            WaveformArray.
+            FieldArray.
         """
         # get the appropriate sampler class
         sclass = pycbc.inference.sampler.samplers[self.sampler_name]

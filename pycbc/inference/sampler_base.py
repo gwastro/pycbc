@@ -27,7 +27,7 @@ packages for parameter estimation.
 """
 
 import numpy
-from pycbc.io import WaveformArray, FieldArray
+from pycbc.io import FieldArray, FieldArray
 from pycbc.filter import autocorrelation
 
 #
@@ -591,7 +591,7 @@ class BaseMCMCSampler(_BaseSampler):
         parameters : (list of) strings
             The parameter(s) to retrieve. A parameter can be the name of any
             field in `fp[fp.samples_group]`, a virtual field or method of
-            `WaveformArray` (as long as the file contains the necessary fields
+            `FieldArray` (as long as the file contains the necessary fields
             to derive the virtual field or method), and/or a function of
             these.
         thin_start : int
@@ -622,20 +622,20 @@ class BaseMCMCSampler(_BaseSampler):
         array_class : {None, array class}
             The type of array to return. The class must have a `from_kwargs`
             class method and a `parse_parameters` method. If None, will return
-            a WaveformArray.
+            a FieldArray.
 
         Returns
         -------
         array_class
             Samples for the given parameters, as an instance of a the given
-            `array_class` (`WaveformArray` if `array_class` is None).
+            `array_class` (`FieldArray` if `array_class` is None).
         """
         # get the group to load from
         if samples_group is None:
             samples_group = fp.samples_group
         # get the type of array class to use
         if array_class is None:
-            array_class = WaveformArray
+            array_class = FieldArray
         # get the names of fields needed for the given parameters
         possible_fields = dict([[str(name), float]
                                for name in fp[fp.samples_group].keys()])
@@ -770,8 +770,8 @@ class BaseMCMCSampler(_BaseSampler):
 
         Returns
         -------
-        WaveformArray
-            An nwalkers-long `WaveformArray` containing the acl for each walker
+        FieldArray
+            An nwalkers-long `FieldArray` containing the acl for each walker
             and each variable argument, with the variable arguments as fields.
         """
         acls = {}
@@ -788,7 +788,7 @@ class BaseMCMCSampler(_BaseSampler):
                 acl = autocorrelation.calculate_acl(samples)
                 these_acls.append(min(acl, samples.size))
             acls[param] = numpy.array(these_acls, dtype=int)
-        return WaveformArray.from_kwargs(**acls)
+        return FieldArray.from_kwargs(**acls)
 
     @staticmethod
     def write_acls(fp, acls):
@@ -804,7 +804,7 @@ class BaseMCMCSampler(_BaseSampler):
         ----------
         fp : InferenceFile
             An open file handler to write the samples to.
-        acls : WaveformArray
+        acls : FieldArray
             An array of autocorrelation lengths (the sort of thing returned by
             `compute_acls`).
 
@@ -840,8 +840,8 @@ class BaseMCMCSampler(_BaseSampler):
 
         Returns
         -------
-        WaveformArray
-            An nwalkers-long `WaveformArray` containing the acl for each walker
+        FieldArray
+            An nwalkers-long `FieldArray` containing the acl for each walker
             and each variable argument, with the variable arguments as fields.
         """
         group = fp.samples_group + '/{param}/walker{wi}'
@@ -851,4 +851,4 @@ class BaseMCMCSampler(_BaseSampler):
             arrays[param] = numpy.array([
                 fp[group.format(param=param, wi=wi)].attrs['acl']
                 for wi in widx])
-        return WaveformArray.from_kwargs(**arrays)
+        return FieldArray.from_kwargs(**arrays)

@@ -28,7 +28,7 @@ packages for parameter estimation.
 
 import numpy
 from pycbc.inference.sampler_base import BaseMCMCSampler
-from pycbc.io import WaveformArray, FieldArray
+from pycbc.io import FieldArray, FieldArray
 from pycbc.filter import autocorrelation
 
 #
@@ -759,7 +759,7 @@ class EmceePTSampler(BaseMCMCSampler):
         parameters : (list of) strings
             The parameter(s) to retrieve. A parameter can be the name of any
             field in `fp[fp.samples_group]`, a virtual field or method of
-            `WaveformArray` (as long as the file contains the necessary fields
+            `FieldArray` (as long as the file contains the necessary fields
             to derive the virtual field or method), and/or a function of
             these.
         thin_start : int
@@ -795,20 +795,20 @@ class EmceePTSampler(BaseMCMCSampler):
         array_class : {None, array class}
             The type of array to return. The class must have a `from_kwargs`
             class method and a `parse_parameters` method. If None, will return
-            a WaveformArray.
+            a FieldArray.
 
         Returns
         -------
         array_class
             Samples for the given parameters, as an instance of a the given
-            `array_class` (`WaveformArray` if `array_class` is None).
+            `array_class` (`FieldArray` if `array_class` is None).
         """
         # get the group to load from
         if samples_group is None:
             samples_group = fp.samples_group
         # get the type of array class to use
         if array_class is None:
-            array_class = WaveformArray
+            array_class = FieldArray
         # get the names of fields needed for the given parameters
         possible_fields = dict([[str(name), float]
                                for name in fp[fp.samples_group].keys()])
@@ -903,8 +903,8 @@ class EmceePTSampler(BaseMCMCSampler):
 
         Returns
         -------
-        WaveformArray
-            An ntemps x nwalkers `WaveformArray` containing the acl for each
+        FieldArray
+            An ntemps x nwalkers `FieldArray` containing the acl for each
             walker and temp for each variable argument, with the variable
             arguments as fields.
         """
@@ -925,7 +925,7 @@ class EmceePTSampler(BaseMCMCSampler):
                     acl = autocorrelation.calculate_acl(samples)
                     these_acls[tk, wi] = int(min(acl, samples.size))
             acls[param] = these_acls
-        return WaveformArray.from_kwargs(**acls)
+        return FieldArray.from_kwargs(**acls)
 
     @staticmethod
     def write_acls(fp, acls):
@@ -943,7 +943,7 @@ class EmceePTSampler(BaseMCMCSampler):
         ----------
         fp : InferenceFile
             An open file handler to write the samples to.
-        acls : WaveformArray
+        acls : FieldArray
             An array of autocorrelation lengths (the sort of thing returned by
             `compute_acls`).
 
@@ -990,8 +990,8 @@ class EmceePTSampler(BaseMCMCSampler):
 
         Returns
         -------
-        WaveformArray
-            An ntemps x nwalkers `WaveformArray` containing the acls for
+        FieldArray
+            An ntemps x nwalkers `FieldArray` containing the acls for
             every temp and walker, with the variable arguments as fields.
         """
         group = fp.samples_group + '/{param}/temp{tk}/walker{wi}'
@@ -1003,7 +1003,7 @@ class EmceePTSampler(BaseMCMCSampler):
                 [fp[group.format(param=param, tk=tk, wi=wi)].attrs['acl']
                     for wi in widx]
                 for tk in tidx])
-        return WaveformArray.from_kwargs(**arrays)
+        return FieldArray.from_kwargs(**arrays)
 
     @classmethod
     def calculate_logevidence(cls, fp, thin_start=None, thin_end=None,
