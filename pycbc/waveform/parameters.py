@@ -289,6 +289,10 @@ f_final = Parameter("f_final",
                 description="The ending frequency of the waveform. The "
                             "default (0) indicates that the choice is made by "
                             "the respective approximant.")
+f_final_func = Parameter("f_final_func",
+                dtype=str, default="", label=None,
+                description="Use the given frequency function to compute f_final "
+                            "based on the parameters of the waveform.")
 f_ref = Parameter("f_ref",
                 dtype=float, default=0, label=r"$f_{\mathrm{ref}}$ (Hz)",
                 description="The reference frequency.")
@@ -430,7 +434,7 @@ common_gen_equal_sampled_params = ParameterList([f_lower]) + \
 
 # the following are parameters needed to generate an FD waveform
 fd_waveform_params = cbc_rframe_params + ParameterList([delta_f]) + \
-    common_gen_equal_sampled_params + ParameterList([f_final])
+    common_gen_equal_sampled_params + ParameterList([f_final, f_final_func])
 
 # the following are parameters needed to generate a TD waveform
 td_waveform_params = cbc_rframe_params + ParameterList([delta_t]) + \

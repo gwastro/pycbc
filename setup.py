@@ -435,7 +435,7 @@ setup (
                'bin/pygrb/pycbc_make_offline_grb_workflow',
                'bin/pygrb/pycbc_make_grb_summary_page',
                'bin/pycbc_condition_strain',
-               'bin/inference/pycbc_make_inference_workflow',
+               'bin/workflows/pycbc_make_inference_workflow',
                'bin/inference/pycbc_inference',
                'bin/inference/pycbc_inference_plot_acceptance_rate',
                'bin/inference/pycbc_inference_plot_acf',
@@ -462,6 +462,7 @@ setup (
                ],
     packages = [
                'pycbc',
+               'pycbc.distributions',
                'pycbc.fft',
                'pycbc.types',
                'pycbc.filter',

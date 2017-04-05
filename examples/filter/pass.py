@@ -20,7 +20,7 @@ ts = pycbc.filter.highpass(ts, 30.0)
 pylab.plot(ts.sample_times, ts, label='Highpassed')
 
 # Suppress the high frequencies
-ts = pycbc.filter.highpass(ts, 1000.0)
+ts = pycbc.filter.lowpass_fir(ts, 1000.0, 8)
 pylab.plot(ts.sample_times, ts, label='Highpassed + Lowpassed')
 
 pylab.legend()
