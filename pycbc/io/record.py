@@ -460,6 +460,14 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
 #
 # =============================================================================
 #
+
+# We'll include functions in various pycbc modules in FieldArray's function
+# library. All modules used must have an __all__ list defined.
+_modules_for_functionlib = [conversions, coordinates, cosmology]
+_fieldarray_functionlib = {_funcname : getattr(_mod, _funcname)
+                              for _mod in _modules_for_functionlib
+                              for _funcname in getattr(_mod, '__all__')}
+
 class FieldArray(numpy.recarray):
     """
     Subclass of numpy.recarray that adds additional functionality.
@@ -719,7 +727,7 @@ class FieldArray(numpy.recarray):
 
     """
     _virtualfields = []
-    _functionlib = {}
+    _functionlib = _fieldarray_functionlib
     __persistent_attributes__ = ['name', '_virtualfields', '_functionlib']
 
     def __new__(cls, shape, name=None, zero=True, **kwargs):
@@ -1556,14 +1564,6 @@ class _FieldArrayWithDefaults(FieldArray):
 # =============================================================================
 #
 
-# We'll include functions in various pycbc modules in WaveformArray's function
-# library. All modules used must have an __all__ list defined.
-_modules_for_functionlib = [conversions, coordinates, cosmology]
-_waveformarray_functionlib = {_funcname : getattr(_mod, _funcname)
-                              for _mod in _modules_for_functionlib
-                              for _funcname in getattr(_mod, '__all__')}
-
-
 class WaveformArray(_FieldArrayWithDefaults):
     """
     A FieldArray with some default fields and properties commonly used
@@ -1637,10 +1637,131 @@ class WaveformArray(_FieldArrayWithDefaults):
             '$d_L$ (Mpc)'
 
     """
-    _functionlib = _waveformarray_functionlib
-
     _staticfields = (parameters.cbc_intrinsic_params +
                      parameters.extrinsic_params).dtype_dict
+
+    _virtualfields = [
+        parameters.mchirp, parameters.eta, parameters.mtotal,
+        parameters.q, parameters.primary_mass, parameters.secondary_mass,
+        parameters.chi_eff,
+        parameters.spin_px, parameters.spin_py, parameters.spin_pz,
+        parameters.spin_sx, parameters.spin_sy, parameters.spin_sz,
+        parameters.spin1_a, parameters.spin1_azimuthal, parameters.spin1_polar,
+        parameters.spin2_a, parameters.spin2_azimuthal, parameters.spin2_polar,
+        parameters.redshift]
+
+    @property
+    def primary_mass(self):
+        """Returns the larger of self.mass1 and self.mass2."""
+        return conversions.primary_mass(self.mass1, self.mass2)
+
+    @property
+    def secondary_mass(self):
+        """Returns the smaller of self.mass1 and self.mass2."""
+        return conversions.secondary_mass(self.mass1, self.mass)
+
+    @property
+    def mtotal(self):
+        """Returns the total mass."""
+        return conversions.mtotal_from_mass1_mass2(self.mass1, self.mass2)
+
+    @property
+    def q(self):
+        """Returns the mass ratio m1/m2, where m1 >= m2."""
+        return conversions.q_from_mass1_mass2(self.mass1, self.mass2)
+
+    @property
+    def eta(self):
+        """Returns the symmetric mass ratio."""
+        return conversions.eta_from_mass1_mass2(self.mass1, self.mass2)
+
+    @property
+    def mchirp(self):
+        """Returns the chirp mass."""
+        return conversions.mchirp_from_mass1_mass2(self.mass1, self.mass2)
+
+    @property
+    def chi_eff(self):
+        """Returns the effective spin."""
+        return conversions.chi_eff(self.mass1, self.mass2, self.spin1z,
+                                   self.spin2z)
+
+    @property
+    def spin_px(self):
+        """Returns the x-component of the spin of the primary mass."""
+        return conversions.primary_spin(self.mass1, self.mass2, self.spin1x,
+                                        self.spin2x)
+
+    @property
+    def spin_py(self):
+        """Returns the y-component of the spin of the primary mass."""
+        return conversions.primary_spin(self.mass1, self.mass2, self.spin1y,
+                                        self.spin2y)
+
+    @property
+    def spin_pz(self):
+        """Returns the z-component of the spin of the primary mass."""
+        return conversions.primary_spin(self.mass1, self.mass2, self.spin1z,
+                                        self.spin2z)
+
+    @property
+    def spin_sx(self):
+        """Returns the x-component of the spin of the secondary mass."""
+        return conversions.secondary_spin(self.mass1, self.mass2, self.spin1x,
+                                        self.spin2x)
+
+    @property
+    def spin_sy(self):
+        """Returns the y-component of the spin of the secondary mass."""
+        return conversions.secondary_spin(self.mass1, self.mass2, self.spin1y,
+                                        self.spin2y)
+
+    @property
+    def spin_sz(self):
+        """Returns the z-component of the spin of the secondary mass."""
+        return conversions.secondary_spin(self.mass1, self.mass2, self.spin1z,
+                                        self.spin2z)
+
+    @property
+    def spin1_a(self):
+        """Returns the dimensionless spin magnitude of mass 1."""
+        return coordinates.cartesian_to_spherical_rho(
+                                    self.spin1x, self.spin1y, self.spin1z)
+
+    @property
+    def spin1_azimuthal(self):
+        """Returns the azimuthal spin angle of mass 1."""
+        return coordinates.cartesian_to_spherical_azimuthal(
+                                     self.spin1x, self.spin1y)
+
+    @property
+    def spin1_polar(self):
+        """Returns the polar spin angle of mass 1."""
+        return coordinates.cartesian_to_spherical_polar(
+                                     self.spin1x, self.spin1y, self.spin1z)
+
+    @property
+    def spin2_a(self):
+        """Returns the dimensionless spin magnitude of mass 2."""
+        return coordinates.cartesian_to_spherical_rho(
+                                    self.spin1x, self.spin1y, self.spin1z)
+
+    @property
+    def spin2_azimuthal(self):
+        """Returns the azimuthal spin angle of mass 2."""
+        return coordinates.cartesian_to_spherical_azimuthal(
+                                     self.spin2x, self.spin2y)
+
+    @property
+    def spin2_polar(self):
+        """Returns the polar spin angle of mass 2."""
+        return coordinates.cartesian_to_spherical_polar(
+                                     self.spin2x, self.spin2y, self.spin2z)
+
+    @property
+    def redshift(self):
+        """Returns the redshift, assuming standard cosmology."""
+        return cosmology.redshift(self.distance)
 
 
 __all__ = ['FieldArray', 'WaveformArray']
