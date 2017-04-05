@@ -11,7 +11,7 @@ else
 fi
 
 # set the lalsuite checkout to use
-LALSUITE_CODE="--lalsuite-commit=a2a5a476d33f169b8749e2840c306a48df63c936"
+LALSUITE_CODE="--lalsuite-commit=539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
 # LALSUITE_CODE="--lalsuite-commit=master" --clean-lalsuite
 
 # store the travis test directory

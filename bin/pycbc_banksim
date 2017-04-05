@@ -37,6 +37,7 @@ from pycbc.filter import match, sigmasq, resample_to_delta_t
 from math import ceil, log
 import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain, pycbc.version
 from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
+from pycbc.waveform import TemplateBank
 
 def update_progress(progress):
     bar = '#' * (int(progress*100)/2) + ' ' * (50-int(progress*100)/2)
@@ -142,21 +143,6 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
 
     return make_padded_frequency_series(hvec, filter_N, delta_f=delta_f)
 
-
-def filter_low_freq_cutoff(options, template_params):
-    """Parse CLI options related to the filter low-frequency cutoff, do basic
-    sanity checks and return the cutoff."""
-    if options.filter_low_freq_cutoff_column:
-        f_lower = getattr(template_params, options.filter_low_freq_cutoff_column)
-    else:
-        f_lower = options.filter_low_frequency_cutoff
-    if f_lower < options.template_start_frequency or \
-            f_lower < options.signal_start_frequency or \
-            f_lower < options.filter_low_frequency_cutoff:
-        raise ValueError('Invalid low-frequency cutoff %f' % f_lower)
-    return f_lower
-
-
 aprs = sorted(list(set(td_approximants() + fd_approximants())))
 
 #File output Settings
@@ -213,13 +199,6 @@ parser.add_argument("--use-sky-location", action='store_true',
 #Filtering Settings
 parser.add_argument('--filter-low-frequency-cutoff', metavar='FREQ', type=float,
                     required=True, help='low frequency cutoff of matched filter')
-parser.add_argument('--filter-low-freq-cutoff-column', metavar='NAME', type=str,
-                    help='If given, use a per-template low-frequency cutoff '
-                         'from column NAME of the template table instead of '
-                         'the value given via --filter-low-frequency-cutoff. '
-                         'Signals are still normalized using '
-                         '--filter-low-frequency-cutoff and the value in '
-                         'column NAME must be larger than or equal to it.')
 parser.add_argument("--filter-sample-rate", type=float, required=True,
                     help="Filter sample rate [Hz]")
 parser.add_argument("--filter-signal-length", type=int, required=True,
@@ -297,12 +276,8 @@ else:
 ctx = pycbc.scheme.from_cli(options)
 
 logging.info('Reading template bank')
-indoc = ligolw_utils.load_filename(options.bank_file, False,
-                                   contenthandler=mycontenthandler)
-try :
-    template_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName) 
-except ValueError:
-    template_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+temp_bank = TemplateBank(options.bank_file)
+template_table = temp_bank.table
 logging.info("  %d templates", len(template_table))
 
 logging.info('Reading simulation list')
@@ -357,7 +332,10 @@ with ctx:
         if options.verbose:
             update_progress(float(index+1)/len(template_table))
 
-        f_lower = filter_low_freq_cutoff(options, template_params)
+        f_lower = template_params.f_lower
+        # If not set fall back on filter low-freq cutoff
+        if f_lower < 0.000001:
+            f_lower = options.filter_low_frequency_cutoff
 
         h_norm = htilde = None
         for stilde, s_norm, matches, signal_params in signals:
@@ -369,9 +347,17 @@ with ctx:
 
             # Generate htilde if we haven't already done so
             if htilde is None:
-                this_approximant = options.template_approximant
-                if options.total_mass_divide is not None and (template_params.mass1+template_params.mass2) >= options.total_mass_divide:
-                    this_approximant = options.highmass_approximant
+                # FIXME: I would like to remove the approximant options and
+                #        have this entirely controlled by the template bank.
+                #        However, while we are still using the high-mass divide
+                #        in XML banks, this must be retained.
+                try:
+                    this_approximant = template_params['approximant']
+                except:
+                    this_approximant = options.template_approximant
+                    if options.total_mass_divide is not None and (template_params.mass1+template_params.mass2) >= options.total_mass_divide:
+                        this_approximant = options.highmass_approximant
+
                 htilde = get_waveform(this_approximant,
                                       options.template_phase_order,
                                       options.template_amplitude_order,
