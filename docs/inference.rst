@@ -299,7 +299,15 @@ An example of running ``pycbc_inference`` to analyze the injection in fake data:
 GW150914 example
 ----------------
 
-You can reuse ``inference.ini`` from the previous example to analyze a signal in real data::
+With a minor change to the ``tc`` prior, you can reuse ``inference.ini`` from the previous example to analyze the data containing GW150914. Change the ``[prior-tc]`` section to::
+
+    [prior-tc]
+    ; coalescence time prior
+    name = uniform
+    min-tc = 1126259461.8
+    max-tc= 1126259462.2
+
+Then run::
 
     # trigger parameters
     TRIGGER_TIME=1126259462.0
@@ -328,7 +336,6 @@ You can reuse ``inference.ini`` from the previous example to analyze a signal in
     OUTPUT_PATH=inference.hdf
     SEGLEN=8
     IFOS="H1 L1"
-    STRAIN="H1:aLIGOZeroDetHighPower L1:aLIGOZeroDetHighPower"
     SAMPLE_RATE=2048
     F_HIGHPASS=20
     F_MIN=30.
