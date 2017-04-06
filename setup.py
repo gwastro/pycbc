@@ -56,7 +56,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'argparse>=1.3.0',
                       'decorator>=3.4.2',
                       'scipy>=0.13.0',
-                      'weave>=0.16.0-dev',
+                      'http://github.com/ligo-cbc/weave/archive/v0.16.0-dev.tar.gz#egg=weave-0.16.0-dev',
                       'unittest2',
                       'matplotlib>=1.3.1',
                       'numpy>=1.6.4',
@@ -70,8 +70,6 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'emcee>=2.2.0',
                       'corner>=2.0.1',
                       ]
-
-dependency_links = ['http://github.com/ligo-cbc/weave/archive/v0.16.0-dev.tar.gz#egg=weave-0.16.0-dev']
 
 #FIXME Remove me when we bump to h5py > 2.5
 try:
