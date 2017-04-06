@@ -374,7 +374,7 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
                 node.add_opt('--spin1z',"%.6f" % params['spin1z'])
                 node.add_opt('--spin2z',"%.6f" % params['spin2z'])
                 node.add_opt('--low-frequency-cutoff',
-                             "%.6f" % params['flower'])
+                             "%.6f" % params['f_lower'])
                 # Is this precessing?
                 if params.has_key('u_vals') or \
                                              params.has_key('u_vals_%s' % ifo):
