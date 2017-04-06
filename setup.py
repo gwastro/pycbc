@@ -71,7 +71,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'corner>=2.0.1',
                       ]
 
-dependency_links = ['http://github.com/ligo-cbc/weave.git#egg=weave-0.16.0-dev']
+dependency_links = ['http://github.com/ligo-cbc/weave/archive/v0.16.0-dev.tar.gz#egg=weave-0.16.0-dev']
 
 #FIXME Remove me when we bump to h5py > 2.5
 try:
