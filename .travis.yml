@@ -37,9 +37,15 @@ install:
 script:
   - ./tools/run_travis.sh
 deploy:
-  provider: pages
-  skip_cleanup: true
-  github_token: $GITHUB_TOKEN
-  local_dir: _gh-pages
-  on:
-    branch: master
+  - provider: pages
+    skip_cleanup: true
+    github_token: $GITHUB_TOKEN
+    local_dir: _gh-pages
+    on:
+      branch: master
+  - provider: pypi
+    user: duncan-brown
+    password: $PYPI_TOKEN
+    on:
+      tags: true
+
