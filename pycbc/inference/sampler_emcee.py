@@ -28,7 +28,7 @@ packages for parameter estimation.
 
 import numpy
 from pycbc.inference.sampler_base import BaseMCMCSampler
-from pycbc.io import FieldArray, FieldArray
+from pycbc.io import FieldArray
 from pycbc.filter import autocorrelation
 
 #

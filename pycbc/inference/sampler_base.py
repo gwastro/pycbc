@@ -27,7 +27,7 @@ packages for parameter estimation.
 """
 
 import numpy
-from pycbc.io import FieldArray, FieldArray
+from pycbc.io import FieldArray
 from pycbc.filter import autocorrelation
 
 #
