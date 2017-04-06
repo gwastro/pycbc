@@ -1388,6 +1388,34 @@ class FieldArray(numpy.recarray):
                 other.astype(new_dt)
                 ).view(type=self.__class__)
 
+    @classmethod
+    def parse_parameters(cls, parameters, possible_fields):
+        """Parses a list of parameters to get the list of fields needed in
+        order to evaluate those parameters.
+
+        Parameters
+        ----------
+        parameters : (list of) string(s)
+            The list of desired parameters. These can be (functions of) fields
+            or virtual fields.
+        possible_fields : (list of) string(s)
+            The list of possible fields.
+
+        Returns
+        -------
+        list :
+            The list of names of the fields that are needed in order to
+            evaluate the given parameters.
+        """
+        if isinstance(possible_fields, str) or \
+                isinstance(possible_fields, unicode):
+            possible_fields = [possible_fields]
+        possible_fields = map(str, possible_fields)
+        # we'll just use float as the dtype, as we just need this for names
+        arr = cls(1, dtype=zip(possible_fields,
+                               len(possible_fields)*[float]))
+        # try to perserve order
+        return list(get_needed_fieldnames(arr, parameters))
 
 def _isstring(dtype):
     """Given a numpy dtype, determines whether it is a string. Returns True
