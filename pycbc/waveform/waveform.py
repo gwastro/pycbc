@@ -35,7 +35,7 @@ from pycbc.fft import fft
 from pycbc import pnutils
 from pycbc.waveform import utils as wfutils
 from pycbc.waveform import parameters
-from pycbc.filter import interpolate_complex_frequency
+from pycbc.filter import interpolate_complex_frequency, resample_to_delta_t
 import pycbc
 from spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_tmplt_precondition, spa_amplitude_factor, \
@@ -46,6 +46,12 @@ class NoWaveformError(Exception):
     zeros being returned, e.g., if a requested `f_final` is <= `f_lower`.
     """
     pass
+
+# If this is set to True, waveform generation codes will try to regenerate
+# waveforms with known failure conditions to try to avoid the failure. For
+# example SEOBNRv3 waveforms would be regenerated with double the sample rate.
+# If this is set to False waveform failures will always raise exceptions
+fail_tolerant_waveform_generation = True
 
 default_args = (parameters.fd_waveform_params.default_dict() + \
     parameters.td_waveform_params).default_dict()
@@ -61,7 +67,6 @@ _lalsim_td_approximants = {}
 _lalsim_fd_approximants = {}
 _lalsim_enum = {}
 _lalsim_sgburst_approximants = {}
-
 
 def _check_lal_pars(p):
     """ Create a laldict object from the dictionary of waveform parameters
@@ -108,10 +113,12 @@ def _check_lal_pars(p):
     return lal_pars
 
 def _lalsim_td_waveform(**p):
+    fail_tolerant_waveform_generation
     lal_pars = _check_lal_pars(p)
     #nonGRparams can be straightforwardly added if needed, however they have to
     # be invoked one by one
-    hp1, hc1 = lalsimulation.SimInspiralChooseTDWaveform(
+    try:
+        hp1, hc1 = lalsimulation.SimInspiralChooseTDWaveform(
                float(pnutils.solar_mass_to_kg(p['mass1'])),
                float(pnutils.solar_mass_to_kg(p['mass2'])),
                float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
@@ -122,6 +129,26 @@ def _lalsim_td_waveform(**p):
                float(p['delta_t']), float(p['f_lower']), float(p['f_ref']),
                lal_pars,
                _lalsim_enum[p['approximant']])
+    except RuntimeError:
+        if not fail_tolerant_waveform_generation:
+            raise
+        # For some cases failure modes can occur. Here we add waveform-specific
+        # instructions to try to work with waveforms that are known to fail.
+        if p['approximant'] == 'SEOBNRv3':
+            # In this case we'll try doubling the sample time and trying again
+            # Don't want to get stuck in a loop though!
+            if 'delta_t_orig' not in p:
+                p['delta_t_orig'] = p['delta_t']
+            p['delta_t'] = p['delta_t'] / 2.
+            if p['delta_t_orig'] / p['delta_t'] > 9:
+                raise
+            hp, hc = _lalsim_td_waveform(**p)
+            p['delta_t'] = p['delta_t_orig']
+            hp = resample_to_delta_t(hp, hp.delta_t*2)
+            hc = resample_to_delta_t(hc, hc.delta_t*2)
+            return hp, hc
+        raise
+
     #lal.DestroyDict(lal_pars)
 
     hp = TimeSeries(hp1.data.data[:], delta_t=hp1.deltaT, epoch=hp1.epoch)
