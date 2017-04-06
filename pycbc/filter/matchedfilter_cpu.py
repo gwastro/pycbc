@@ -21,10 +21,11 @@
 #
 # =============================================================================
 #
+from __future__ import absolute_import
 import numpy
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
-from scipy.weave import inline
+from weave import inline
 from .simd_correlate import default_segsize, corr_parallel_code, corr_support
 from .matchedfilter import _BaseCorrelator
 
