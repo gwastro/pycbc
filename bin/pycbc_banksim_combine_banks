@@ -27,17 +27,16 @@ import argparse
 import logging
 from numpy import *
 import pycbc
+import pycbc.version
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
-__version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
 __program__ = "pycbc_banksim_combine_banks"
 
 # Read command line options
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 
-parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument('--version', action=pycbc.version.Version)
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="verbose output")
 parser.add_argument("-I", "--input-files", nargs='+',
