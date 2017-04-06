@@ -24,6 +24,7 @@
 #
 """PyCBC contains a toolkit for CBC gravitational wave analysis
 """
+from __future__ import absolute_import
 import subprocess, os, sys, tempfile
 import logging
 import signal
@@ -31,10 +32,10 @@ import signal
 # We need to allow a try/except here to allow for importing during install
 # of pycbc, where we can't guarantee that scipy is installed yet.
 try:
-    import scipy.weave.inline_tools
+    import weave.inline_tools
     from . import weave as pycbc_weave
-    scipy.weave.inline_tools._compile_function = scipy.weave.inline_tools.compile_function
-    scipy.weave.inline_tools.compile_function = pycbc_weave.pycbc_compile_function
+    weave.inline_tools._compile_function = weave.inline_tools.compile_function
+    weave.inline_tools.compile_function = pycbc_weave.pycbc_compile_function
 except:
     pass
 

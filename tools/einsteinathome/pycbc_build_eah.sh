@@ -66,6 +66,7 @@ build_lapack=true
 pyssl_from="tarball" # "pip-install"
 numpy_from="pip-install" # "tarball"
 scipy_from="pip-install" # "git"
+scipy_version=0.16.0
 build_gsl=true
 build_swig=true
 build_pcre=false
@@ -129,7 +130,7 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8
     pyinstaller_lsb="--no-lsb"
     build_gating_tool=true
     appendix="_Linux64"
-elif grep -q "Ubuntu 12" /etc/issue ; then
+elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
     link_gcc_version=4.6
     gcc_path="/usr/bin"
     build_python=true
@@ -169,6 +170,7 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     build_dlls=true
     rebase_dlls_before_pycbc=false
     numpy_from="tarball" # "pip-install"
+    scipy_version=0.16.0
     scipy_from="git" # "pip-install"
     build_hdf5=false
     build_freetype=false
@@ -391,6 +393,8 @@ if test -r "$SOURCE/$BUILDDIRNAME-preinst.tgz" -o -r "$SOURCE/$BUILDDIRNAME-prei
     # set up virtual environment
     unset PYTHONPATH
     source "$ENVIRONMENT/bin/activate"
+    echo -e "\\n\\n>> [`date`] pip install --upgrade pip" >&3
+    pip install --upgrade pip
     # workaround to make the virtualenv accept .pth files
     export PYTHONPATH="$PREFIX/lib/python2.7/site-packages:$PYTHONPATH"
     cd "$SOURCE"
@@ -504,31 +508,32 @@ else # if $BUILDDIRNAME-preinst.tgz
 	pip install numpy==1.9.3
     fi
 
-    echo -e "\\n\\n>> [`date`] pip install nose" >&3
-    pip install nose
-    echo -e "\\n\\n>> [`date`] pip install Cython==0.23.2" >&3
-    pip install Cython==0.23.2
+    echo -e "\\n\\n>> [`date`] pip install nose, Cython-0.23.2" >&3
+    pip install nose Cython==0.23.2
+
+    echo -e "\\n\\n>> [`date`] make sure dbhash and shelve exist" >&3
+    python -c "import dbhash, shelve"
 
     # SCIPY
     if [ "$scipy_from" = "pip-install" ] ; then
-	echo -e "\\n\\n>> [`date`] pip install scipy==0.16.0" >&3
-	pip install scipy==0.16.0
+	echo -e "\\n\\n>> [`date`] pip install scipy==$scipy_version" >&3
+	pip install scipy==$scipy_version
     else
-	p=scipy-0.16.0
-	echo -e "\\n\\n>> [`date`] building $p" >&3
-	if test -d scipy/.git; then
-	    cd scipy
-	else
-	    git clone https://github.com/scipy/scipy.git
-	    cd scipy
-	    git checkout v0.16.0
-	    git config user.name "Dummy"
-	    git config user.email "dummy@dummy.net"
-	    git cherry-pick 832baa20f0b5d521bcdf4784dda13695b44bb89f
-	fi
-	python setup.py build --fcompiler=$FC
-	python setup.py install --prefix=$PREFIX
-	cd ..
+        echo -e "\\n\\n>> [`date`] building scipy-$scipy_version from git" >&3
+        if test -d scipy/.git; then
+            rm -rf scipy
+        fi
+        git clone https://github.com/scipy/scipy.git
+        cd scipy
+        git checkout v$scipy_version
+        if test "v$scipy_version" = "v0.16.0"; then
+            git config user.name "Dummy"
+            git config user.email "dummy@dummy.net"
+            git cherry-pick 832baa20f0b5d521bcdf4784dda13695b44bb89f
+        fi
+        python setup.py build --fcompiler=$FC
+        python setup.py install --prefix=$PREFIX
+        cd ..
     fi
 
     # this test will catch scipy build errors that would not emerge before running pycbc_inspiral
@@ -981,10 +986,10 @@ fi
 rm -rf "$ENVIRONMENT/dist"
 mkdir -p "$ENVIRONMENT/dist"
 
-# if the build machine has dbhash & shelve, scipy weave will use bsddb, so make sure these get added to the bundle(s)
-if python -c "import dbhash, shelve" 2>/dev/null; then
-    hidden_imports="$hidden_imports --hidden-import=dbhash --hidden-import=shelve"
-fi
+# if the build machine has dbhash & shelve, scipy weave will use bsddb
+# make sure these exist and get added to the bundle(s)
+python -c "import dbhash, shelve"
+hidden_imports="--hidden-import=dbhash --hidden-import=shelve"
 
 # PyInstaller
 if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9][0-9]*$' > /dev/null; then
@@ -1139,7 +1144,12 @@ fi
 # OSX doesn't have a GNU error C extension, so drop an "error.h" header
 # with a fake 'error' function somewhere for scipy wave to pick it up
 if test ".$appendix" = "._OSX64"; then
-    echo '#define error(status, errnum, errstr, ...) fprintf(stderr,"pycbc_inspiral: %d:%d:" errstr, status, errnum, ##__VA_ARGS__)' > scipy/weave/error.h
+    if test -d scipy/weave; then
+        f=scipy/weave/error.h
+    else
+        f=weave/error.h
+    fi
+    echo '#define error(status, errnum, errstr, ...) fprintf(stderr,"pycbc_inspiral: %d:%d:" errstr, status, errnum, ##__VA_ARGS__)' > $f
 fi
 
 # TEST BUNDLE

@@ -14,12 +14,13 @@
 #  along with with program; see the file COPYING. If not, write to the
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
+from __future__ import absolute_import
 import numpy
 import lal
 import pycbc
 from pycbc.types import Array, float32, FrequencySeries
 from pycbc.waveform.spa_tmplt import spa_tmplt_precondition
-from scipy.weave import inline
+from weave import inline
 
 support = """
     #include <stdio.h>

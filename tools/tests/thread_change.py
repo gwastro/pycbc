@@ -21,7 +21,7 @@
 
 import argparse
 from pycbc import scheme
-from scipy import weave
+import weave
 
 test_support_code = """
 #include <omp.h>
