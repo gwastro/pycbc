@@ -490,16 +490,17 @@ class FieldArray(numpy.recarray):
     Some additional features:
 
     * **Arbitrary functions**:
+
       You can retrive functions on fields in the same manner that you access
-      individual fields. For example, if you have an FieldArray ``x`` with
-      fields ``a`` and ``b``, you can access each field with ``x['a'], x['b']``.
-      You can also do ``x['a*b/(a+b)**2.']``, ``x[cos(a)*sin(b)]``, etc. Boolean
-      operations are also possible, e.g., ``x['(a < 3) & (b < 2)']``. Syntax
-      for functions is python, and any numpy ufunc can be used to operate
-      on the fields. Note that while fields may be accessed as
-      attributes (e.g, field ``a`` can be accessed via ``x['a']`` or ``x.a``),
-      functions on multiple fields may not (``x.a+b`` does not work, for obvious
-      reasons).
+      individual fields. For example, if you have a FieldArray ``x`` with
+      fields ``a`` and ``b``, you can access each field with
+      ``x['a'], x['b']``.  You can also do ``x['a*b/(a+b)**2.']``,
+      ``x[cos(a)*sin(b)]``, etc. Boolean operations are also possible, e.g.,
+      ``x['(a < 3) & (b < 2)']``. Syntax for functions is python. Any numpy
+      ufunc, as well as all functions listed in the functionlib attribute, may
+      be used. Note that while fields may be accessed as attributes (e.g,
+      field ``a`` can be accessed via ``x['a']`` or ``x.a``), functions on
+      multiple fields may not (``x.a+b`` does not work, for obvious reasons).
 
     * **Subfields and '.' indexing**:
       Structured arrays, which are the base class for recarrays and, by
@@ -566,6 +567,14 @@ class FieldArray(numpy.recarray):
 
     The fields property returns the names of both fields and virtual fields.
 
+    .. note:: It can happen that a field, virtual field, or function in the
+    functionlib have that same name. In that case, precedence is: field,
+    virtual field, function. For example, if a function called 'foo' is in the
+    function library, and a virtual field is added call 'foo', then `a['foo']`
+    will return the virtual field rather than the function. Likewise, if the
+    array is initialized with a field called `foo`, or a field with that name
+    is added, `a['foo']` will return that field rather than the virtual field
+    and/or the function.
 
     Parameters
     ----------
@@ -736,9 +745,10 @@ class FieldArray(numpy.recarray):
         obj = super(FieldArray, cls).__new__(cls, shape, **kwargs).view(
             type=cls)
         obj.name = name
-        obj.__persistent_attributes__ = cls.__persistent_attributes__
-        obj._functionlib = cls._functionlib
-        obj._virtualfields = cls._virtualfields
+        obj.__persistent_attributes__ = [a
+            for a in cls.__persistent_attributes__]
+        obj._functionlib = {f: func for f,func in cls._functionlib.items()}
+        obj._virtualfields = [f for f in cls._virtualfields]
         # zero out the array if desired
         if zero:
             default = default_empty(1, dtype=obj.dtype)
@@ -747,17 +757,22 @@ class FieldArray(numpy.recarray):
 
     def __array_finalize__(self, obj):
         """Default values are set here.
+
+        See <https://docs.scipy.org/doc/numpy/user/basics.subclassing.html> for
+        details.
         """
         if obj is None:
             return
         # copy persistent attributes
-        self.__copy_attributes__(obj)
+        try:
+            obj.__copy_attributes__(self)
+        except AttributeError:
+            pass
         # numpy has some issues with dtype field names that are unicode,
         # so we'll force them to strings here
-        if obj.dtype.names is not None and \
-                any( \
-                isinstance(name, unicode) for name in obj.dtype.names):
-            obj.dtype.names = map(str, obj.dtype.names)
+        if self.dtype.names is not None and \
+                any(isinstance(name, unicode) for name in obj.dtype.names):
+            self.dtype.names = map(str, self.dtype.names)
 
     def __copy_attributes__(self, other, default=None):
         """Copies the values of all of the attributes listed in
@@ -807,34 +822,27 @@ class FieldArray(numpy.recarray):
         try:
             return self.__getsubitem__(item)
         except ValueError:
-            # arg isn't a simple argument of row, so we'll have to eval it
+            #
+            #   arg isn't a simple argument of row, so we'll have to eval it
+            #
+            # get the function library
+            item_dict = dict(_numpy_function_lib.items())
+            item_dict.update(self._functionlib)
             # get the set of fields & attributes we will need
-            #itemvars = get_fields_from_arg(item)
             itemvars = get_vars_from_arg(item)
+            # pull out any other needed attributes
+            itemvars = get_fields_from_arg(item)
+            d = {attr: getattr(self, attr)
+                for attr in set(dir(self)).intersection(itemvars)}
+            item_dict.update(d)
             # pull out the fields: note, by getting the parent fields, we
             # also get the sub fields name
-            item_dict = dict([ [fn,
-                super(FieldArray, self).__getitem__(fn)] \
-                for fn in set(self.fieldnames).intersection(itemvars)])
-
+            item_dict.update({fn: super(FieldArray, self).__getitem__(fn) \
+                for fn in set(self.fieldnames).intersection(itemvars)})
             # add any aliases
-            for alias, name in self.aliases.items():
-                if name in item_dict:
-                    item_dict[alias] = item_dict[name]
-
-            # pull out any attributes needed
-            itemvars = get_fields_from_arg(item)
-            item_dict.update(dict([[attr, getattr(self, attr)] for attr in \
-                set(dir(self)).intersection(itemvars)]))
-            # FIXME: Replace above with following once we switch to 2.7
-            #item_dict.update({attr: getattr(self, attr) for attr in \
-            #    set(dir(self)).intersection(itemvars)})
-
-            # add function library
-            if self._functionlib:
-                item_dict.update(self._functionlib)
-            # add numpy functions
-            item_dict.update(_numpy_function_lib)
+            item_dict.update({alias: item_dict[name]
+                              for alias,name in self.aliases.items()
+                              if name in item_dict})
             return eval(item, {"__builtins__": None}, item_dict)
 
     def __contains__(self, field):
@@ -917,6 +925,43 @@ class FieldArray(numpy.recarray):
             out._virtualfields = []
         out._virtualfields.extend(names)
         return out
+
+    def add_functions(self, names, functions):
+        """Adds the given functions to the function library.
+
+        Functions are added to this instance of the array; all copies of
+        and slices of this array will also have the new functions included.
+
+        Parameters
+        ----------
+        names : (list of) string(s)
+            Name or list of names of the functions.
+        functions : (list of) function(s)
+            The function(s) to call.
+        """
+        if isinstance(names, str) or isinstance(names, unicode):
+            names = [names]
+            functions = [functions]
+        if len(functions) != len(names):
+            raise ValueError("number of provided names must be same as number "
+                             "of functions")
+        self._functionlib.update(dict(zip(names, functions)))
+
+    def del_functions(self, names):
+        """Removes the specified function names from the function library.
+
+        Functions are removed from this instance of the array; all copies
+        and slices of this array will also have the functions removed.
+
+        Parameters
+        ----------
+        names : (list of) string(s)
+            Name or list of names of the functions to remove.
+        """
+        if isinstance(names, str) or isinstance(names, unicode):
+            names = [names]
+        for name in names:
+            self._functionlib.pop(name)
 
     @classmethod
     def from_arrays(cls, arrays, name=None, **kwargs):
