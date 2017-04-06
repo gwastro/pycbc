@@ -637,10 +637,8 @@ class BaseMCMCSampler(_BaseSampler):
         if array_class is None:
             array_class = FieldArray
         # get the names of fields needed for the given parameters
-        possible_fields = dict([[str(name), float]
-                               for name in fp[fp.samples_group].keys()])
-        loadfields = array_class.parse_parameters(
-            parameters, possible_fields=possible_fields)
+        possible_fields = fp[fp.samples_group].keys()
+        loadfields = array_class.parse_parameters(parameters, possible_fields)
         return cls._read_fields(fp, samples_group, loadfields, array_class,
                                 thin_start=thin_start,
                                 thin_interval=thin_interval, thin_end=thin_end,
