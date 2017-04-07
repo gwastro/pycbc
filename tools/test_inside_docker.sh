@@ -22,7 +22,6 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   ln -s /usr/bin/g++ /usr/bin/g++-4.4.7
   ln -s /usr/bin/gcc /usr/bin/gcc-4.4.7
   ln -s /usr/bin/gfortran /usr/bin/gfortran-4.4.7
-  yum -q -y install ant asciidoc fop docbook-style-xsl.noarch R-devel
 
   # create working dir for build script
   BUILD=/pycbc/build
