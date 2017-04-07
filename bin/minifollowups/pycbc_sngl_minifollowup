@@ -197,6 +197,7 @@ for num_event in range(num_events):
     curr_params['mass2'] = trigs.mass2[num_event]
     curr_params['spin1z'] = trigs.spin1z[num_event]
     curr_params['spin2z'] = trigs.spin2z[num_event]
+    curr_params['f_lower'] = trigs.f_lower[num_event]
     curr_params[args.instrument + '_end_time'] = time
     # don't require precessing template info if not present
     try:

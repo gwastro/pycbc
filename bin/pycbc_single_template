@@ -121,6 +121,10 @@ parser.add_argument("--spin1z", type=float, default=0,
 parser.add_argument("--spin2z", type=float, default=0,
                   help="The aligned pin of the second component object. "
                       "Do not use if using --use-params-of-closest-injection.")
+parser.add_argument("--template-start-frequency", type=float, default=None,
+                  help="If given, use this as a start frequency for "
+                       "generating the template. If not given the "
+                       "--low-frequency-cutoff is used.")
 # Optional arguments for precessing templates
 parser.add_argument("--spin1x", type=float, default=0,
                   help="The non-aligned spin of the first component object. "
@@ -216,6 +220,9 @@ if not opt.use_params_of_closest_injection:
 with ctx:
     fft.from_cli(opt)
     flow = opt.low_frequency_cutoff
+    template_flow = opt.template_start_frequency
+    if template_flow is None:
+        template_flow = flow
     flen = strain_segments.freq_len
     delta_f = strain_segments.delta_f
 
@@ -273,7 +280,7 @@ with ctx:
                                     template=row[0],
                                     inclination=opt.inclination,
                                     taper=opt.taper_template, 
-                                    f_lower=flow, delta_f=delta_f,
+                                    f_lower=template_flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t,
                                     distance = 1.0/pycbc.DYN_RANGE_FAC)
         else:
@@ -283,7 +290,7 @@ with ctx:
                                     approximant=approximant,
                                     inclination=opt.inclination,
                                     taper=opt.taper_template,
-                                    f_lower=flow, delta_f=delta_f,
+                                    f_lower=template_flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)
             template = tc.multiply_and_add(tp, opt.u_val)
 
@@ -347,7 +354,7 @@ with ctx:
                                     
         if opt.subtract_template:
             stilde = subtract_template(stilde, template,
-                                snr, opt.trigger_time, opt.low_frequency_cutoff)
+                                       snr, opt.trigger_time, flow)
             snr, corr, norm = filter.matched_filter_core(template, stilde, 
                                 psd=stilde.psd,
                                 low_frequency_cutoff=flow)

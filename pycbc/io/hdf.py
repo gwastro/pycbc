@@ -494,6 +494,11 @@ class SingleDetTriggers(object):
         return np.array(self.bank['inclination'])[self.template_id]
 
     @property
+    def f_lower(self):
+        self.checkbank('f_lower')
+        return np.array(self.bank['f_lower'])[self.template_id]
+
+    @property
     def mtotal(self):
         return self.mass1 + self.mass2
 
