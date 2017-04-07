@@ -18,11 +18,11 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
 
   # install requirements into docker container
-  yum install -y gcc gcc-c++ gcc-gfortran python-devel pcre-devel autoconf automake make tar gzip zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel wget curl
+  yum install -q -y gcc gcc-c++ gcc-gfortran python-devel pcre-devel autoconf automake make tar gzip zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel wget curl
   ln -s /usr/bin/g++ /usr/bin/g++-4.4.7
   ln -s /usr/bin/gcc /usr/bin/gcc-4.4.7
   ln -s /usr/bin/gfortran /usr/bin/gfortran-4.4.7
-  yum -y install ant asciidoc fop docbook-style-xsl.noarch R-devel
+  yum -q -y install ant asciidoc fop docbook-style-xsl.noarch R-devel
 
   # create working dir for build script
   BUILD=/pycbc/build
@@ -43,17 +43,17 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   yum clean all
   yum makecache 
   yum update
-  yum -y install lscsoft-backports-config
-  yum -y install lscsoft-epel-config
+  yum -q -y install lscsoft-backports-config
+  yum -q -y install lscsoft-epel-config
   curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
   yum clean all
   yum makecache
   yum update
-  yum -y install lscsoft-ius-config
+  yum -q -y install lscsoft-ius-config
   yum clean all
   yum makecache
-  yum -y install git2u-all
-  yum -y install lscsoft-all
+  yum -q -y install git2u-all
+  yum --debuglevel=1 -y install lscsoft-all
 
   rpm --nodeps -e `rpm -qa | grep lal`
 
@@ -80,7 +80,8 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   git checkout ${LALSUITE_CODE}
   ./00boot
   ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalapps
-  make -j 32 install
+  make 2>&1 | grep Entering
+  make install
   echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh' >> ${VIRTUAL_ENV}/bin/activate
   deactivate
 
