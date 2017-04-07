@@ -706,7 +706,7 @@ Libs: -L${libdir} -lhdf5' |
     # METAIO
     p=metaio-8.3.0
     echo -e "\\n\\n>> [`date`] building $p" >&3
-    test -r $p.tar.gz || wget $wget_opts https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/$p.tar.gz
+    test -r $p.tar.gz || wget $wget_opts http://software.ligo.org/lscsoft/source/$p.tar.gz
     rm -rf $p
     tar -xzf $p.tar.gz
     cd $p
