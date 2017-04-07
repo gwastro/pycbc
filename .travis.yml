@@ -1,25 +1,27 @@
 language: python
 sudo: false
-addons:
-    apt:
-        packages:
-            - libfftw3-dev 
-            - liblapack-dev 
-            - gfortran 
-            - libgsl0-dev
-            - libsqlite3-dev
-            - libhdf5-serial-dev
-            - libssl-dev
-            - zlib1g-dev
-            - libfreetype6-dev
-            - libdb4.8-dev
 
 env:
   matrix:
   - OS_TYPE=ubuntu OS_VERSION=12
+    addons:
+      apt:
+        packages:
+          - libfftw3-dev 
+          - liblapack-dev 
+          - gfortran 
+          - libgsl0-dev
+          - libsqlite3-dev
+          - libhdf5-serial-dev
+          - libssl-dev
+          - zlib1g-dev
+          - libfreetype6-dev
+          - libdb4.8-dev
 
 matrix:
   include:
+    - env: OS_TYPE=ubuntu OS_VERSION=12
+
     - env: OS_TYPE=centos OS_VERSION=6
       sudo: required
       services:
