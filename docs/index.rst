@@ -123,6 +123,7 @@ short code snippets below.
 .. toctree::
    :maxdepth: 2
 
+   gw150914
    frame
    psd
    noise
