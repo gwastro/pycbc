@@ -33,11 +33,10 @@ from pycbc_glue.ligolw import types as ligolw_types
 from pycbc import coordinates, conversions, cosmology
 from pycbc.detector import Detector
 from pycbc.waveform import parameters
-from pycbc import cosmology
 
 # what functions are given to the eval in FieldArray's __getitem__:
 _numpy_function_lib = {_x: _y for _x,_y in numpy.__dict__.items()
-                       if isinstance(_y, numpy.ufunc) or isinstance(_y, float)}
+                       if isinstance(_y, (numpy.ufunc, float))}
 
 #
 # =============================================================================
@@ -224,7 +223,7 @@ def get_needed_fieldnames(arr, names):
     # we'll need the class that the array is an instance of to evaluate some 
     # things
     cls = arr.__class__
-    if isinstance(names, str) or isinstance(names, unicode):
+    if isinstance(names, (str, unicode)):
         names = [names]
     # parse names for variables, incase some of them are functions of fields
     parsed_names = set([])
@@ -385,7 +384,7 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
         arrays = [arrays]
     # set the names
     if names is not None:
-        if isinstance(names, str) or isinstance(names, unicode):
+        if isinstance(names, (str, unicode)):
             names = [names]
         # check if any names are subarray names; if so, we have to add them
         # separately
@@ -890,7 +889,7 @@ class FieldArray(numpy.recarray):
         """Adds the given method(s) as instance method(s) of self. The
         method(s) must take `self` as a first argument.
         """
-        if isinstance(names, str) or isinstance(names, unicode):
+        if isinstance(names, (str, unicode)):
             names = [names]
             methods = [methods]
         for name,method in zip(names, methods):
@@ -903,7 +902,7 @@ class FieldArray(numpy.recarray):
         """
         cls = type(self)
         cls = type(cls.__name__, (cls,), dict(cls.__dict__))
-        if isinstance(names, str) or isinstance(names, unicode):
+        if isinstance(names, (str, unicode)):
             names = [names]
             methods = [methods]
         for name,method in zip(names, methods):
@@ -917,7 +916,7 @@ class FieldArray(numpy.recarray):
         are properties that are assumed to operate on one or more of self's
         fields, thus returning an array of values.
         """
-        if isinstance(names, str) or isinstance(names, unicode):
+        if isinstance(names, (str, unicode)):
             names = [names]
             methods = [methods]
         out = self.add_properties(names, methods)
@@ -939,7 +938,7 @@ class FieldArray(numpy.recarray):
         functions : (list of) function(s)
             The function(s) to call.
         """
-        if isinstance(names, str) or isinstance(names, unicode):
+        if isinstance(names, (str, unicode)):
             names = [names]
             functions = [functions]
         if len(functions) != len(names):
@@ -958,7 +957,7 @@ class FieldArray(numpy.recarray):
         names : (list of) string(s)
             Name or list of names of the functions to remove.
         """
-        if isinstance(names, str) or isinstance(names, unicode):
+        if isinstance(names, (str, unicode)):
             names = [names]
         for name in names:
             self._functionlib.pop(name)
@@ -1133,7 +1132,7 @@ class FieldArray(numpy.recarray):
         """
         if fields is None:
             fields = self.fieldnames
-        if isinstance(fields, str) or isinstance(fields, unicode):
+        if isinstance(fields, (str, unicode)):
             fields = [fields]
         return numpy.stack([self[f] for f in fields], axis=axis)
 
@@ -1407,8 +1406,7 @@ class FieldArray(numpy.recarray):
             The list of names of the fields that are needed in order to
             evaluate the given parameters.
         """
-        if isinstance(possible_fields, str) or \
-                isinstance(possible_fields, unicode):
+        if isinstance(possible_fields, (str, unicode)):
             possible_fields = [possible_fields]
         possible_fields = map(str, possible_fields)
         # we'll just use float as the dtype, as we just need this for names
@@ -1439,7 +1437,7 @@ def fields_from_names(fields, names=None):
 
     if names is None:
         return fields
-    if isinstance(names, str) or isinstance(names, unicode):
+    if isinstance(names, (str, unicode)):
         names = [names]
     aliases_to_names = aliases_from_fields(fields)
     names_to_aliases = dict(zip(aliases_to_names.values(),
@@ -1538,7 +1536,7 @@ class _FieldArrayWithDefaults(FieldArray):
             **field_kwargs)
         if 'names' in kwargs:
             names = kwargs.pop('names')
-            if isinstance(names, str) or isinstance(names, unicode):
+            if isinstance(names, (str, unicode)):
                 names = [names]
             # evaluate the names to figure out what base fields are needed
             # to do this, we'll create a small default instance of self (since
@@ -1581,7 +1579,7 @@ class _FieldArrayWithDefaults(FieldArray):
         new array : instance of this array
             A copy of this array with the field added.
         """
-        if isinstance(names, str) or isinstance(names, unicode):
+        if isinstance(names, (str, unicode)):
             names = [names]
         default_fields = self.default_fields(include_virtual=False, **kwargs)
         # parse out any virtual fields
