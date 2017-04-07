@@ -120,7 +120,7 @@ elif test ".$1" = ".--force-debian4" ||
     $pyinstaller21_hacks || build_subprocess32=true
     build_gating_tool=true
     appendix="_Linux64"
-elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8 (Carbon)" ]] ; then # SL6
+elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8 (Carbon)" ]] || [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux CERN SLC release 6.8 (Carbon)" ]] ; then # SL6
     echo -e "\\n\\n>> [`date`] Using Scientific Linux release 6.8 (Carbon) settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
     link_gcc_version=4.4.7
