@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# just exit if we are running centos
+os_name=${1}
+os_version=${2}
+if [ "x${os_name}" = "xcentos" ] ; then
+  echo -e "\\n>> [`date`] CentOS matrix, exiting with status 0"
+  exit 0
+fi
+
 echo -e "\\n>> [`date`] Starting PyCBC test suite"
 
 LOG_FILE=$(mktemp -t pycbc-test-log.XXXXXXXXXX)

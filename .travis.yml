@@ -1,5 +1,5 @@
 language: python
-sudo: false
+sudo: required
 addons:
     apt:
         packages:
@@ -13,29 +13,34 @@ addons:
             - zlib1g-dev
             - libfreetype6-dev
             - libdb4.8-dev
-cache:
-  directories:
-    - $HOME/.cache/pip
-    - $HOME/build/.cache/pip
-    - $HOME/build/pycbc-sources
-  timeout: 600
-before_cache:
-    - rm -rf $HOME/pycbc-sources/lalsuite
-    - rm -rf $HOME/pycbc-sources/pycbc
-    - rm -rf $HOME/pycbc-sources/pyinstaller
-    - rm -rf $HOME/pycbc-sources/test/pycbc_inspiral
-    - rm -f $HOME/pycbc-sources/test/lal-data-r7.tar.gz
-    - rm -f $HOME/pycbc-sources/test/H1-INSPIRAL-OUT.hdf
-    - rm -f $HOME/pycbc-sources/libframe-*.tar.gz
-    - rm -f $HOME/pycbc-sources/metaio-*.tar.gz
-    - rm -f $HOME/pycbc-sources/pegasus-python-source-*.tar.gz
-    - rm -f $HOME/pycbc-sources/Python-*.tgz
-    - rm -f $HOME/pycbc-sources/swig-*.tar.gz
+
+services:
+  - docker
+
+env:
+  matrix:
+  - OS_TYPE=ubuntu OS_VERSION=12
+
+matrix:
+  include:
+    - env: OS_TYPE=centos OS_VERSION=6
+      sudo: required
+    - env: OS_TYPE=centos OS_VERSION=7
+      sudo: required
+
+
+before_install:
+  - if [ "x$TRAVIS_TAG" != "x" && "$OS_TYPE" == "centos" ] ; then sudo apt-get update; echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null ; sudo service docker restart ; sleep 5; sudo docker pull centos:centos${OS_VERSION} ; fi
+
 
 install:
-  - travis_retry ./tools/install_travis.sh
+  - travis_retry ./tools/install_travis.sh $OS_TYPE $OS_VERSION
+
+
 script:
-  - ./tools/run_travis.sh
+  - ./tools/run_travis.sh $OS_TYPE $OS_VERSION
+
+
 deploy:
   - provider: pages
     skip_cleanup: true
@@ -49,3 +54,23 @@ deploy:
     on:
       tags: true
 
+
+before_cache:
+    - rm -rf $HOME/pycbc-sources/lalsuite
+    - rm -rf $HOME/pycbc-sources/pycbc
+    - rm -rf $HOME/pycbc-sources/pyinstaller
+    - rm -rf $HOME/pycbc-sources/test/pycbc_inspiral
+    - rm -f $HOME/pycbc-sources/test/lal-data-r7.tar.gz
+    - rm -f $HOME/pycbc-sources/test/H1-INSPIRAL-OUT.hdf
+    - rm -f $HOME/pycbc-sources/libframe-*.tar.gz
+    - rm -f $HOME/pycbc-sources/metaio-*.tar.gz
+    - rm -f $HOME/pycbc-sources/pegasus-python-source-*.tar.gz
+    - rm -f $HOME/pycbc-sources/Python-*.tgz
+    - rm -f $HOME/pycbc-sources/swig-*.tar.gz
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/build/.cache/pip
+    - $HOME/build/pycbc-sources
+  timeout: 600

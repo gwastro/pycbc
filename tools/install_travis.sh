@@ -2,6 +2,14 @@
 
 set -ev
 
+# just exit if we are running centos
+os_name=${1}
+os_version=${2}
+if [ "x${os_name}" = "xcentos" ] ; then
+  echo -e "\\n>> [`date`] CentOS matrix, exiting with status 0"
+  exit 0
+fi
+
 # determine the pycbc git branch and origin
 git branch -vvv
 if test x$TRAVIS_PULL_REQUEST = "xfalse" ; then
