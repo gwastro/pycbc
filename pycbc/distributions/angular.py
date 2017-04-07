@@ -24,15 +24,22 @@ from pycbc.distributions import uniform
 
 
 class UniformAngle(uniform.Uniform):
-    """A uniform distribution in which the dependent variable is cyclic between
+    """A uniform distribution in which the dependent variable is between
     `[0,2pi)`.
     
+    The domain of the distribution may optionally be made cyclic using the
+    `cyclic_domain` parameter.
+
     Bounds may be provided to limit the range for which the pdf has support.
     If provided, the parameter bounds are initialized as multiples of pi,
     while the stored bounds are in radians.
 
     Parameters
     ----------
+    cyclic_domain : {False, bool}
+        If True, cyclic bounds on [0, 2pi) are applied to all values when
+        evaluating the pdf. This is done prior to any additional bounds
+        specified for a parameter are applied. Default is False.
     \**params :
         The keyword arguments should provide the names of parameters and
         (optionally) their corresponding bounds, as either
@@ -41,24 +48,31 @@ class UniformAngle(uniform.Uniform):
         be passed; in that case, the domain bounds will be used.
 
     Attributes
-    ----------------
+    ----------
     name : 'uniform_angle'
         The name of this distribution.
     params : list of strings
         The list of parameter names.
     bounds : dict
         A dictionary of the parameter names and their bounds, in radians.
+    domain : boundaries.Bounds
+        The domain of the distribution.
 
     Notes
     ------
     For more information, see Uniform.
     """
     name = 'uniform_angle'
-    # _domain is a bounds instance used apply the cyclic conditions; this is
-    # applied first, before any bounds specified in the initialization are used
-    _domain = boundaries.Bounds(0., 2*numpy.pi, cyclic=True)
 
-    def __init__(self, **params):
+    _domainbounds = (0, 2*numpy.pi)
+
+    def __init__(self, cyclic_domain=False, **params):
+        # _domain is a bounds instance used to apply cyclic conditions; this is
+        # applied first, before any bounds specified in the initialization
+        # are used
+        self._domain = boundaries.Bounds(self._domainbounds[0],
+            self._domainbounds[1], cyclic=cyclic_domain)
+
         for p,bnds in params.items():
             if bnds is None:
                 bnds = self._domain
@@ -79,6 +93,11 @@ class UniformAngle(uniform.Uniform):
             # update
             params[p] = bnds
         super(UniformAngle, self).__init__(**params)
+
+    @property
+    def domain(self):
+        """Returns the domain of the distribution."""
+        return self._domain
 
     def apply_boundary_conditions(self, **kwargs):
         """Maps values to be in [0, 2pi) (the domain) first, before applying
@@ -125,8 +144,12 @@ class UniformAngle(uniform.Uniform):
         UniformAngle
             A distribution instance from the pycbc.inference.prior module.
         """
+        # we'll retrieve the setting for cyclic_domain directly
+        additional_opts = {'cyclic_domain': cp.has_option_tag(section,
+                                            'cyclic_domain', variable_args)}
         return bounded.bounded_from_config(cls, cp, section, variable_args,
-                                           bounds_required=False)
+                                           bounds_required=False,
+                                           additional_opts=additional_opts)
 
 
 class SinAngle(UniformAngle):
@@ -154,7 +177,7 @@ class SinAngle(UniformAngle):
         be passed; in that case, the domain bounds will be used.
 
     Attributes
-    ----------------
+    ----------
     name : 'sin_angle'
         The name of this distribution.
     params : list of strings
@@ -166,10 +189,14 @@ class SinAngle(UniformAngle):
     _func = numpy.cos
     _dfunc = numpy.sin
     _arcfunc = numpy.arccos
-    # _domain applies the reflection off of 0, pi
-    _domain = boundaries.Bounds(0, numpy.pi,
-        btype_min='closed', btype_max='closed', cyclic=False)
+    _domainbounds = (0, numpy.pi)
 
+    def __init__(self, **params):
+        super(SinAngle, self).__init__(**params)
+        # replace the domain
+        self._domain = boundaries.Bounds(self._domainbounds[0],
+            self._domainbounds[1], btype_min='closed', btype_max='closed',
+            cyclic=False)
 
     def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
@@ -253,8 +280,7 @@ class CosAngle(SinAngle):
     _func = numpy.sin
     _dfunc = numpy.cos
     _arcfunc = numpy.arcsin
-    _domain = boundaries.Bounds(-numpy.pi/2., numpy.pi/2.,
-        btype_min='closed', btype_max='closed', cyclic=False)
+    _domainbounds = (-numpy.pi/2, numpy.pi/2)
 
 
 class UniformSolidAngle(bounded.BoundedDist):
@@ -278,9 +304,14 @@ class UniformSolidAngle(bounded.BoundedDist):
         azimuthal angle will vary from 0 to 2pi. The
         bounds should be specified as factors of pi. For example, to limit
         the distribution to the one hemisphere, set `azimuthal_bounds=(0,1)`.
+    azimuthal_cyclic_domain : {False, bool}
+        Make the domain of the azimuthal angle be cyclic; i.e., azimuthal
+        values are constrained to be in [0, 2pi) using cyclic boundaries prior
+        to applying any other boundary conditions and prior to evaluating the
+        pdf. Default is False.
 
     Attributes
-    ----------------
+    ----------
     name : 'uniform_solidangle'
         The name of the distribution.
     bounds : dict
@@ -304,11 +335,13 @@ class UniformSolidAngle(bounded.BoundedDist):
 
     def __init__(self, polar_angle=_default_polar_angle,
                  azimuthal_angle=_default_azimuthal_angle,
-                 polar_bounds=None, azimuthal_bounds=None):
+                 polar_bounds=None, azimuthal_bounds=None,
+                 azimuthal_cyclic_domain=False):
         self._polardist = self._polardistcls(**{
             polar_angle: polar_bounds}) 
         self._azimuthaldist = self._azimuthaldistcls(**{
-            azimuthal_angle: azimuthal_bounds})
+            azimuthal_angle: azimuthal_bounds,
+            'cyclic_domain': azimuthal_cyclic_domain})
         self._polar_angle = polar_angle
         self._azimuthal_angle = azimuthal_angle
         self._bounds = dict(self._polardist.bounds.items() +
@@ -511,9 +544,14 @@ class UniformSolidAngle(bounded.BoundedDist):
                                                    cp, section, tag,
                                                    azimuthal_angle)
 
+        # see if the a cyclic domain is desired for the azimuthal angle
+        azimuthal_cyclic_domain = cp.has_option_tag(section,
+            'azimuthal_cyclic_domain', tag)
+
         return cls(polar_angle=polar_angle, azimuthal_angle=azimuthal_angle,
                    polar_bounds=polar_bounds,
-                   azimuthal_bounds=azimuthal_bounds)
+                   azimuthal_bounds=azimuthal_bounds,
+                   azimuthal_cyclic_domain=azimuthal_cyclic_domain)
 
 
 __all__ = ['UniformAngle', 'SinAngle', 'CosAngle', 'UniformSolidAngle']
