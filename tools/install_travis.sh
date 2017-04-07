@@ -1,6 +1,7 @@
 #!/bin/bash -v
 
 echo -e "\\n>> [`date`] SSH Test"
+env
 echo -e ${OASIS_TOKEN}
 mkdir -p ${HOME}/.ssh
 echo ${OASIS_TOKEN} > ${HOME}/.ssh/id_rsa
