@@ -12,7 +12,7 @@ echo -e "\\n>> [`date`] Release tag is ${TRAVIS_TAG}"
 echo -e "\\n>> [`date`] Using PyCBC code ${PYCBC_CODE}"
 echo -e "\\n>> [`date`] Using lalsuite code ${LALSUITE_CODE}"
 
-cat /etc/issue
+cat /etc/redhat-release
 
 if [ "x${OS_VERSION}" == "x6" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
@@ -39,6 +39,23 @@ fi
 
 if [ "x${OS_VERSION}" == "x7" ] ; then
   echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
+
+  rpm -ivh http://software.ligo.org/lscsoft/scientific/7.2/x86_64/production/lscsoft-production-config-1.3-1.el7.noarch.rpm
+  yum clean all
+  yum makecache 
+  yum update
+  yum -y install lscsoft-backports-config
+  yum -y install lscsoft-epel-config
+  curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
+  yum clean all
+  yum makecache
+  yum update
+  yum -y install lscsoft-ius-config
+  yum clean all
+  yum makecache
+  yum -y install git2u-all
+  yum -y install lscsoft-all
+
   TRAVIS_TAG="vX.Y.Z"
   CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_7/virtualenv
   mkdir -p ${CVMFS_PATH}
