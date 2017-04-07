@@ -1,7 +1,11 @@
 #!/bin/bash
 
 if [ "x${OS_NAME}" = "xcentos" ] ; then
+  set -e
+  echo -e "\\n>> [`date`] Starting CentOS Docker container"
   sudo docker run --rm=true -v `pwd`:/pycbc:rw centos:centos${OS_VERSION} /bin/bash -c "bash -xe /pycbc/tools/test_inside_docker.sh ${OS_VERSION} ${TRAVIS_TAG} ${PYCBC_CODE} ${LALSUITE_CODE}"
+  echo -e "\\n>> [`date`] CentOS Docker exited"
+  exit 0
 fi
 
 echo -e "\\n>> [`date`] Starting PyCBC test suite"
