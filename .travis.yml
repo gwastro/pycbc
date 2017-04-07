@@ -14,9 +14,6 @@ addons:
             - libfreetype6-dev
             - libdb4.8-dev
 
-services:
-  - docker
-
 env:
   matrix:
   - OS_TYPE=ubuntu OS_VERSION=12
@@ -25,9 +22,12 @@ matrix:
   include:
     - env: OS_TYPE=centos OS_VERSION=6
       sudo: required
+      services:
+        - docker
     - env: OS_TYPE=centos OS_VERSION=7
       sudo: required
-
+      services:
+        - docker
 
 before_install:
   - if [ "x$TRAVIS_TAG" != "x" && "$OS_TYPE" == "centos" ] ; then sudo apt-get update; echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null ; sudo service docker restart ; sleep 5; sudo docker pull centos:centos${OS_VERSION} ; fi
