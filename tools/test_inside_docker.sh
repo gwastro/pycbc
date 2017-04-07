@@ -4,15 +4,26 @@ set -e
 
 OS_VERSION=${1}
 TRAVIS_TAG=${2}
-PYCBC_CODE=${3}
-LALSUITE_CODE=${4}
+TRAVIS_PULL_REQUEST=${3}
+TRAVIS_COMMIT=${4}
+
+# determine the pycbc git branch and origin
+pushd /pycbc
+git branch -vvv
+if test x$TRAVIS_PULL_REQUEST = "xfalse" ; then
+    PYCBC_CODE="--pycbc-commit=${TRAVIS_COMMIT}"
+else
+    PYCBC_CODE="--pycbc-fetch-ref=refs/pull/${TRAVIS_PULL_REQUEST}/merge"
+fi
+
+# set the lalsuite checkout to use
+LALSUITE_CODE="--lalsuite-commit=539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
+popd
 
 echo -e "\\n>> [`date`] Inside CentOS ${OS_VERSION}"
 echo -e "\\n>> [`date`] Release tag is ${TRAVIS_TAG}"
 echo -e "\\n>> [`date`] Using PyCBC code ${PYCBC_CODE}"
 echo -e "\\n>> [`date`] Using lalsuite code ${LALSUITE_CODE}"
-
-cat /etc/redhat-release
 
 if [ "x${OS_VERSION}" == "x6" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"

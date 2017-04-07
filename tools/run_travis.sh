@@ -5,7 +5,7 @@ if [ "x${OS_NAME}" != "xubuntu" ] ; then
   echo -e "\\n>> [`date`] Starting ${OS_NAME} ${OS_VERSION} docker container"
   if [ "x${OS_NAME}" == "xcentos" ] ; then DOCKER_IMG="centos:centos${OS_VERSION}" ; fi
   if [ "x${OS_NAME}" == "xscientific" ] ; then DOCKER_IMG="cern/slc${OS_VERSION}-base" ; fi
-  sudo docker run --rm=true -v `pwd`:/pycbc:rw ${DOCKER_IMG} /bin/bash -c "bash -xe /pycbc/tools/test_inside_docker.sh ${OS_VERSION} ${TRAVIS_TAG} ${PYCBC_CODE} ${LALSUITE_CODE}"
+  sudo docker run --rm=true -v `pwd`:/pycbc:rw ${DOCKER_IMG} /bin/bash -c "bash -xe /pycbc/tools/test_inside_docker.sh ${OS_VERSION} ${TRAVIS_TAG} ${TRAVIS_PULL_REQUEST} ${TRAVIS_COMMIT}"
   echo -e "\\n>> [`date`] CentOS Docker exited"
   exit 0
 fi
