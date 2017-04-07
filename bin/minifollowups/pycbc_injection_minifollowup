@@ -218,6 +218,7 @@ for num_event in range(num_events):
         curr_params['mass2'] = hd_sngl.mass2
         curr_params['spin1z'] = hd_sngl.spin1z
         curr_params['spin2z'] = hd_sngl.spin2z
+        curr_params['f_lower'] = hd_sngl.f_lower
         # don't require precessing template info if not present
         try:
             curr_params['spin1x'] = hd_sngl.spin1x

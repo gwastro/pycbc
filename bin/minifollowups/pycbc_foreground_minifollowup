@@ -145,6 +145,7 @@ for num_event in range(num_events):
     params['mass2'] = bank_data['mass2'][bank_id]
     params['spin1z'] = bank_data['spin1z'][bank_id]
     params['spin2z'] = bank_data['spin2z'][bank_id]
+    params['f_lower'] = bank_data['f_lower'][bank_id]
     # don't require precessing template info if not present
     try:
         params['spin1x'] = bank_data['spin1x'][bank_id]
