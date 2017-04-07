@@ -18,7 +18,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
 
   # install requirements into docker container
-  yum install -q -y gcc gcc-c++ gcc-gfortran python-devel pcre-devel autoconf automake make tar gzip zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel wget curl
+  yum install -q -y gcc gcc-c++ gcc-gfortran python-devel pcre-devel autoconf automake tar zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel wget db4-devel
   ln -s /usr/bin/g++ /usr/bin/g++-4.4.7
   ln -s /usr/bin/gcc /usr/bin/gcc-4.4.7
   ln -s /usr/bin/gfortran /usr/bin/gfortran-4.4.7
