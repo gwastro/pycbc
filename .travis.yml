@@ -21,8 +21,6 @@ env:
 
 matrix:
   include:
-    - env: OS_TYPE=ubuntu OS_VERSION=12
-
     - env: OS_TYPE=centos OS_VERSION=6
       sudo: required
       services:
