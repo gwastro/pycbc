@@ -15,7 +15,7 @@ LALSUITE_CODE="--lalsuite-commit=539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
 # LALSUITE_CODE="--lalsuite-commit=master" --clean-lalsuite
 
 # just exit if we are running centos
-if [ "x${OS_NAME}" = "xcentos" ] ; then
+if [ "x${OS_NAME}" != "xubuntu" ] ; then
   echo -e "\\n>> [`date`] CentOS build matrix for PYCBC_CODE=${PYCBC_CODE} LALSUITE_CODE=${LALSUITE_CODE}"
   export PYCBC_CODE LALSUITE_CODE
   exit 0
