@@ -2,14 +2,6 @@
 
 set -ev
 
-# just exit if we are running centos
-os_name=${1}
-os_version=${2}
-if [ "x${os_name}" = "xcentos" ] ; then
-  echo -e "\\n>> [`date`] CentOS matrix, exiting with status 0"
-  exit 0
-fi
-
 # determine the pycbc git branch and origin
 git branch -vvv
 if test x$TRAVIS_PULL_REQUEST = "xfalse" ; then
@@ -21,6 +13,13 @@ fi
 # set the lalsuite checkout to use
 LALSUITE_CODE="--lalsuite-commit=539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
 # LALSUITE_CODE="--lalsuite-commit=master" --clean-lalsuite
+
+# just exit if we are running centos
+if [ "x${OS_NAME}" = "xcentos" ] ; then
+  echo -e "\\n>> [`date`] CentOS build matrix for PYCBC_CODE=${PYCBC_CODE} LALSUITE_CODE=${LALSUITE_CODE}"
+  export PYCBC_CODE LALSUITE_CODE
+  exit 0
+fi
 
 # store the travis test directory
 LOCAL=${PWD}

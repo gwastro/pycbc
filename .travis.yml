@@ -17,29 +17,29 @@ addons:
 
 env:
   matrix:
-  - OS_TYPE=ubuntu OS_VERSION=12
+  - OS_NAME=ubuntu OS_VERSION=12
 
 matrix:
   include:
-    - env: OS_TYPE=centos OS_VERSION=6
+    - env: OS_NAME=centos OS_VERSION=6
       sudo: required
       services:
         - docker
-    - env: OS_TYPE=centos OS_VERSION=7
+    - env: OS_NAME=centos OS_VERSION=7
       sudo: required
       services:
         - docker
 
 before_install:
-  - if [ "x$TRAVIS_TAG" != "x" && "$OS_TYPE" == "centos" ] ; then sudo apt-get update; echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null ; sudo service docker restart ; sleep 5; sudo docker pull centos:centos${OS_VERSION} ; fi
+  - if [ "x$TRAVIS_TAG" != "x" && "$OS_NAME" == "centos" ] ; then sudo apt-get update; echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null ; sudo service docker restart ; sleep 5; sudo docker pull centos:centos${OS_VERSION} ; fi
 
 
 install:
-  - travis_retry ./tools/install_travis.sh $OS_TYPE $OS_VERSION
+  - travis_retry ./tools/install_travis.sh $OS_NAME $OS_VERSION
 
 
 script:
-  - ./tools/run_travis.sh $OS_TYPE $OS_VERSION
+  - ./tools/run_travis.sh $OS_NAME $OS_VERSION
 
 
 deploy:

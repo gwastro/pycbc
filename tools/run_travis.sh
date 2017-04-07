@@ -1,11 +1,7 @@
 #!/bin/bash
 
-# just exit if we are running centos
-os_name=${1}
-os_version=${2}
-if [ "x${os_name}" = "xcentos" ] ; then
-  echo -e "\\n>> [`date`] CentOS matrix, exiting with status 0"
-  exit 0
+if [ "x${OS_NAME}" = "xcentos" ] ; then
+  sudo docker run --rm=true -v `pwd`:/pycbc:rw centos:centos${OS_VERSION} /bin/bash -c "bash -xe /pycbc/tools/test_inside_docker.sh ${OS_VERSION} ${TRAVIS_TAG} ${PYCBC_CODE} ${LALSUITE_CODE}"
 fi
 
 echo -e "\\n>> [`date`] Starting PyCBC test suite"
