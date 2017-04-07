@@ -33,7 +33,7 @@ before_cache:
     - rm -f $HOME/pycbc-sources/swig-*.tar.gz
 
 install:
-  - travis_retry ./tools/install_travis.sh
+  - travis_retry ./tools/install_travis.sh $OASIS_TOKEN
 script:
   - ./tools/run_travis.sh
 deploy:

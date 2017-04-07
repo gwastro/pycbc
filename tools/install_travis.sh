@@ -1,8 +1,8 @@
 #!/bin/bash -v
 
 echo -e "\\n>> [`date`] SSH Test"
-env
-echo -e ${OASIS_TOKEN}
+OASIS_TOKEN=${1}
+echo $OASIS_TOKEN
 mkdir -p ${HOME}/.ssh
 echo ${OASIS_TOKEN} > ${HOME}/.ssh/id_rsa
 chmod 600 ${HOME}/.ssh/id_rsa
