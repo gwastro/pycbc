@@ -21,7 +21,7 @@ env:
 
 matrix:
   include:
-    - env: OS_NAME=centos OS_VERSION=6
+    - env: OS_NAME=scientific OS_VERSION=6
       sudo: required
       services:
         - docker
@@ -31,7 +31,8 @@ matrix:
         - docker
 
 before_install:
-  - if [ "x$TRAVIS_TAG" != "x" && "$OS_NAME" == "centos" ] ; then sudo apt-get update; echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null ; sudo service docker restart ; sleep 5; sudo docker pull centos:centos${OS_VERSION} ; fi
+  - if [ "x${OS_NAME}" == "xcentos" ] ; then sudo docker pull centos:centos${OS_VERSION} ; fi
+  - if [ "x${OS_NAME}" == "xscientific" ] ; then sudo docker pull cern:slc${OS_VERSION}-base ; fi
 
 
 install:

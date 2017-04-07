@@ -12,6 +12,8 @@ echo -e "\\n>> [`date`] Release tag is ${TRAVIS_TAG}"
 echo -e "\\n>> [`date`] Using PyCBC code ${PYCBC_CODE}"
 echo -e "\\n>> [`date`] Using lalsuite code ${LALSUITE_CODE}"
 
+cat /etc/issue
+
 if [ "x${OS_VERSION}" == "x6" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
 
