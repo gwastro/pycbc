@@ -31,6 +31,20 @@ fi
 
 if [ "x${OS_VERSION}" == "x7" ] ; then
   echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
+  TRAVIS_TAG="vX.Y.Z"
+  CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_7/virtualenv
+  mkdir -p ${CVMFS_PATH}
+  VENV_PATH=${CVMFS_PATH}/pycbc-${TRAVIS_TAG}
+  pip install virtualenv
+  virtualenv ${VENV_PATH}
+  echo 'export PYTHONUSERBASE=${VIRTUAL_ENV}/.local' >> ${VENV_PATH}/bin/activate
+  echo 'export XDG_CACHE_HOME=${VIRTUAL_ENV}/.cache' >> ${VENV_PATH}/bin/activate
+  source ${VENV_PATH}/bin/activate
+  pip install --upgrade pip
+  pip install six packaging appdirs
+  pip install --upgrade setuptools
+
+  deactivate
 fi 
 
 echo -e "\\n>> [`date`] CentOS Docker script exiting"
