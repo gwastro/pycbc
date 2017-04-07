@@ -1,7 +1,8 @@
-#!/bin/bash
+#!/bin/bash -v
 
+echo -e "\\n>> [`date`] SSH Test"
+echo -e ${OASIS_TOKEN}
 mkdir -p ${HOME}/.ssh
-echo ${OASIS_TOKEN}
 echo ${OASIS_TOKEN} > ${HOME}/.ssh/id_rsa
 chmod 600 ${HOME}/.ssh/id_rsa
 ssh -o StrictHostKeyChecking=no ouser.ligo@oasis-login.opensciencegrid.org "ls -al"
