@@ -1,0 +1,20 @@
+###################################################
+Signal Processing with GW150914
+###################################################
+
+Here are some interesting examples of how to process LIGO data using GW150914
+as an example.
+
+=====================================
+Plotting the whitened strain
+=====================================
+
+.. plot:: ../examples/gw150914/gw150914_shape.py
+   :include-source:
+
+==============================================
+Calculate the signal-to-noise
+==============================================
+
+.. plot:: ../examples/gw150914/gw150914_h1_snr.py
+   :include-source:
