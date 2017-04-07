@@ -1,5 +1,11 @@
 #!/bin/bash
 
+mkdir -p ${HOME}/.ssh
+echo ${OASIS_TOKEN} > ${HOME}/.ssh/id_rsa
+chmod 600 ${HOME}/.ssh/id_rsa
+ssh -o StrictHostKeyChecking=no ouser.ligo@oasis-login.opensciencegrid.org "ls -al"
+exit 0
+
 set -ev
 
 # determine the pycbc git branch and origin
