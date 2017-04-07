@@ -76,7 +76,7 @@ cp = WorkflowConfigParser(opts.config_files)
 # and add distributions to list
 logging.info("Constructing prior")
 variable_args = []
-distributions = []
+dists = []
 for sec in opts.sections:
     section = sec.split("-")[0]
     subsec = sec.split("-")[1:]
@@ -89,18 +89,18 @@ for sec in opts.sections:
         dist = distributions.distribs[name].from_config(
                                             cp, section, subsection)
         variable_args += dist.params
-        distributions.append( dist )
+        dists.append(dist)
 variable_args = sorted(variable_args)
 ndim = len(variable_args)
 
 # construct class that will return draws from the prior
-prior = inference.PriorEvaluator(variable_args, *distributions)
+prior = inference.PriorEvaluator(variable_args, *dists)
 
 # get all points in space to calculate PDF
 logging.info("Getting grid of points")
 vals = numpy.zeros(shape=(ndim,opts.bins))
 bounds = [{}] * ndim
-for dist in distributions:
+for dist in dists:
     for param in dist.params:
         idx = variable_args.index(param)
         step = float(dist.bounds[param][1]-dist.bounds[param][0]) / opts.bins
@@ -113,7 +113,7 @@ logging.info("Calculating PDF")
 pdf = []
 for pt in pts:
     pt_dict = dict([(param,pt[j]) for j,param in enumerate(variable_args)])
-    pdf.append( sum([dist.pdf(**pt_dict) for dist in distributions]) )
+    pdf.append(sum([dist.pdf(**pt_dict) for dist in dists]))
 pdf = numpy.array(pdf)
 
 # check if only one parameter to plot PDF
