@@ -32,7 +32,7 @@ matrix:
 
 before_install:
   - if [ "x${OS_NAME}" == "xcentos" ] ; then sudo docker pull centos:centos${OS_VERSION} ; fi
-  - if [ "x${OS_NAME}" == "xscientific" ] ; then sudo docker pull cern:slc${OS_VERSION}-base ; fi
+  - if [ "x${OS_NAME}" == "xscientific" ] ; then sudo docker pull cern/slc${OS_VERSION}-base ; fi
 
 
 install:
