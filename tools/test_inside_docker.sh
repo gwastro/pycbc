@@ -20,6 +20,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   # install requirements into docker container
   yum install -y gcc gcc-c++ gcc-gfortran python-devel pcre-devel autoconf automake make zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel wget curl
   ln -s /usr/bin/g++ /usr/bin/g++-4.4.7
+  ln -s /usr/bin/gcc /usr/bin/gcc-4.4.7
   ln -s /usr/bin/gfortran /usr/bin/gfortran-4.4.7
   yum -y install ant asciidoc fop docbook-style-xsl.noarch R-devel
 
@@ -54,7 +55,7 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   yum -y install git2u-all
   yum -y install lscsoft-all
 
-  rpm --nodeps -e `rpm -qa | grep lal | tr \\n " "`
+  rpm --nodeps -e `rpm -qa | grep lal`
 
   TRAVIS_TAG="vX.Y.Z"
   CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_7/virtualenv
