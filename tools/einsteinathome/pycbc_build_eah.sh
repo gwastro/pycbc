@@ -77,6 +77,7 @@ build_subprocess32=false
 build_hdf5=true
 build_freetype=true
 build_zlib=true
+build_pegasus=true
 build_wrapper=false
 build_progress_fstab=true
 pyinstaller_version=v3.2.1 # 9d0e0ad4, v2.1 .. v3.2.1 -> git, 2.1 .. 3.2.1 -> pypi
@@ -127,6 +128,7 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8
     gcc_path="/usr/bin"
     build_ssl=true
     build_python=true
+    build_pegasus=false
     pyinstaller_lsb="--no-lsb"
     build_gating_tool=true
     appendix="_Linux64"
@@ -866,14 +868,15 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
 fi # if $BUILDDIRNAME-preinst.tgz
 
 # Pegasus
-v=4.7.4
-p=pegasus-python-source-$v
-echo -e "\\n\\n>> [`date`] building $p" >&3
-test -r $p.tar.gz ||
-    wget $wget_opts "$aei/$p.tar.gz" ||
-    wget $wget_opts http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz
-pip install --upgrade setuptools
-pip install --no-deps $p.tar.gz
+if $build_pegasus ; then
+    v=4.7.4
+    p=pegasus-python-source-$v
+    echo -e "\\n\\n>> [`date`] building $p" >&3
+    test -r $p.tar.gz ||
+      wget $wget_opts "$aei/$p.tar.gz" ||
+      wget $wget_opts http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz
+    pip install --no-deps $p.tar.gz
+fi
 
 # PyInstaller 9d0e0ad4 crashes with newer Jinja2,
 # so install this old version before it gets pulled in from PyCBC
