@@ -62,10 +62,22 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   export PYTHONUSERBASE=${BUILD}/.local
   export XDG_CACHE_HOME=${BUILD}/.cache
 
+  # get library needed to build documentation
+  wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
+  primary_url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/b3680bfb627a7350f29d31c7d91c4e09ff8a9fdc/x86_64/composer_xe_2015.0.090"
+  secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown/x86_64/composer_xe_2015.0.090"
+  p="composer_xe_2015.0.090.tar.gz"
+  pushd /pycbc
+  set +e
+  test -r $p || wget $wget_opts ${primary_url}/${p}
+  set -e
+  test -r $p || wget $wget_opts ${secondary_url}/${p}
+  popd
+
   # run the einstein at home build and test script
   echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
   pushd ${BUILD}
-  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --silent-build --build-minimal-lalsuite
+  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --silent-build --build-minimal-lalsuite --with-extra-libs=file://pycbc/composer_xe_2015.0.090.tar.gz
   popd
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
