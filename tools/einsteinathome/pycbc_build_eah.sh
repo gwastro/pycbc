@@ -974,17 +974,17 @@ hooks="$PWD/tools/static"
 cd ..
 test -r "$PREFIX/etc/pycbc-user-env.sh" && source "$PREFIX/etc/pycbc-user-env.sh"
 
-#if $silent_build ; then
-#    # close stdin and stdout
-#    exec 1>&-
-#    exec 2>&-
-#
-#    # open stdout as $LOG_FILE file for read and write.
-#    exec 1<>$LOG_FILE
-#
-#    # redirect stderr to stdout
-#    exec 2>&1
-#fi
+if $silent_build ; then
+    # close stdin and stdout
+    exec 1>&-
+    exec 2>&-
+
+    # open stdout as $LOG_FILE file for read and write.
+    exec 1<>$LOG_FILE
+
+    # redirect stderr to stdout
+    exec 2>&1
+fi
 
 # clean dist directory
 rm -rf "$ENVIRONMENT/dist"
@@ -1171,18 +1171,6 @@ if $build_dlls; then
     echo '<soft_link>pycbc_inspiral/pycbc_inspiral.exe<soft_link/>' > tmp/pycbc_inspiral/pycbc_inspiral
     cd tmp
     zip ../pycbc_inspiral$appendix.zip pycbc_inspiral/pycbc_inspiral
-fi
-
-if $silent_build ; then
-    # close stdin and stdout
-    exec 1>&-
-    exec 2>&-
-
-    # open stdout as $LOG_FILE file for read and write.
-    exec 1<>$LOG_FILE
-
-    # redirect stderr to stdout
-    exec 2>&1
 fi
 
 if $silent_build ; then
