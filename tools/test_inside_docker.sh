@@ -64,6 +64,7 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   yum clean all
   yum makecache
   yum --debuglevel=1 -y install lscsoft-all
+  yum install -q -y zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel db4-devel
 
   rpm --nodeps -e `rpm -qa | grep lal`
 
