@@ -18,13 +18,13 @@ else
 fi
 
 # set the lalsuite checkout to use
-LALSUITE_CODE="--lalsuite-commit=539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
+LALSUITE_HASH="539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
 popd
 
 echo -e "\\n>> [`date`] Inside CentOS ${OS_VERSION}"
 echo -e "\\n>> [`date`] Release tag is ${TRAVIS_TAG}"
 echo -e "\\n>> [`date`] Using PyCBC code ${PYCBC_CODE}"
-echo -e "\\n>> [`date`] Using lalsuite code ${LALSUITE_CODE}"
+echo -e "\\n>> [`date`] Using lalsuite hash ${LALSUITE_HASH}"
 
 if [ "x${OS_VERSION}" == "x6" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
@@ -43,7 +43,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
 
   # run the einstein at home build and test script
   pushd ${BUILD}
-  /pycbc/tools/einsteinathome/pycbc_build_eah.sh ${LALSUITE_CODE} ${PYCBC_CODE} --silent-build
+  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --silent-build
   popd
 fi
 
@@ -87,7 +87,7 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   cd ${VIRTUAL_ENV}/src
   git clone https://github.com/lscsoft/lalsuite.git
   cd ${VIRTUAL_ENV}/src/lalsuite
-  git checkout ${LALSUITE_CODE}
+  git checkout ${LALSUITE_HASH}
   ./00boot
   ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalapps
   make -j 2 2>&1 | grep Entering
