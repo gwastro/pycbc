@@ -64,7 +64,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
 
   # get library needed to build documentation
   wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
-  primary_url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/b3680bfb627a7350f29d31c7d91c4e09ff8a9fdc/x86_64/composer_xe_2015.0.090"
+  primary_url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/03f2048c770492f66f80528493fd6cecded63769/x86_64/composer_xe_2015.0.090"
   secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown/x86_64/composer_xe_2015.0.090"
   p="composer_xe_2015.0.090.tar.gz"
   pushd /pycbc
@@ -78,6 +78,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
   pushd ${BUILD}
   /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --silent-build --build-minimal-lalsuite --with-extra-libs=file://pycbc/composer_xe_2015.0.090.tar.gz
+  find . -name "pycbc_inspiral_osg*" -print
   popd
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
