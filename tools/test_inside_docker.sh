@@ -80,7 +80,7 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   pip install six packaging appdirs
   pip install --upgrade setuptools
 
-  pip install "numpy>=1.6.4" unittest2 python-cjson Cython decorator
+  pip install "numpy>=1.6.4" "h5py>=2.5" unittest2 python-cjson Cython decorator
   SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
 
   mkdir -p ${VIRTUAL_ENV}/src
