@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/bash -v
+
+exit 0
 
 set -ev
 
