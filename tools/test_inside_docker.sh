@@ -14,9 +14,6 @@ for i in $*; do
 done
 
 # determine the pycbc git branch and origin
-yum -q -y install git
-pushd /pycbc
-git branch -vvv
 if test x$TRAVIS_PULL_REQUEST = "xfalse" ; then
     PYCBC_CODE="--pycbc-commit=${TRAVIS_COMMIT}"
 else
@@ -42,7 +39,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
 
   # install requirements into docker container
-  yum install -q -y gcc gcc-c++ gcc-gfortran python-devel pcre-devel autoconf automake tar zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel wget db4-devel
+  yum install -q -y gcc gcc-c++ gcc-gfortran python-devel pcre-devel autoconf automake tar zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel wget db4-devel git
   ln -s /usr/bin/g++ /usr/bin/g++-4.4.7
   ln -s /usr/bin/gcc /usr/bin/gcc-4.4.7
   ln -s /usr/bin/gfortran /usr/bin/gfortran-4.4.7
@@ -54,6 +51,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   export XDG_CACHE_HOME=${BUILD}/.cache
 
   # run the einstein at home build and test script
+  echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
   pushd ${BUILD}
   /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --silent-build
   popd
@@ -62,22 +60,24 @@ fi
 if [ "x${OS_VERSION}" == "x7" ] ; then
   echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
 
+  echo -e "\\n>> [`date`] Installing LDG RPMs"
   rpm -ivh http://software.ligo.org/lscsoft/scientific/7.2/x86_64/production/lscsoft-production-config-1.3-1.el7.noarch.rpm
-  yum clean all
-  yum makecache 
-  yum update
+  yum clean all &>/dev/null
+  yum makecache  &>/dev/null
+  yum update &>/dev/null
   yum -q -y install lscsoft-backports-config
   yum -q -y install lscsoft-epel-config
   curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
-  yum clean all
-  yum makecache
-  yum update
+  yum clean all &>/dev/null
+  yum makecache &>/dev/null
+  yum update &>/dev/null
   yum -q -y install lscsoft-ius-config
-  yum clean all
-  yum makecache
-  yum --debuglevel=1 -y install lscsoft-all
+  yum clean all &>/dev/null
+  yum makecache &>/dev/null
+  yum --debuglevel=1 -y install git2u-all lscsoft-all
   yum install -q -y zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel db4-devel
 
+  echo -e "\\n>> [`date`] Removing LAL RPMs"
   rpm --nodeps -e `rpm -qa | grep lal`
 
   if [ "x$TRAVIS_TAG" == "x" ] ; then
@@ -97,13 +97,19 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   echo 'export XDG_CACHE_HOME=${VIRTUAL_ENV}/.cache' >> ${VENV_PATH}/bin/activate
   source ${VENV_PATH}/bin/activate
 
+  echo -e "\\n>> [`date`] Upgrading pip and setuptools"
   pip install --upgrade pip
   pip install six packaging appdirs
   pip install --upgrade setuptools
 
+  echo -e "\\n>> [`date`] Installing base python packages required to build lalsuite"
   pip install "numpy>=1.6.4" "h5py>=2.5" unittest2 python-cjson Cython decorator
+  echo -e "\\n>> [`date`] Installing scipy"
+  pip install "scipy>=0.13.0" &>/dev/null
+  echo -e "\\n>> [`date`] Installing M2Crypto"
   SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
 
+  echo -e "\\n>> [`date`] Installing LAL"
   mkdir -p ${VIRTUAL_ENV}/src
   cd ${VIRTUAL_ENV}/src
   git clone https://github.com/lscsoft/lalsuite.git
@@ -116,11 +122,12 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh' >> ${VIRTUAL_ENV}/bin/activate
   deactivate
 
+  echo -e "\\n>> [`date`] Installing LALApps"
   source ${VENV_PATH}/bin/activate
   cd $VIRTUAL_ENV/src/lalsuite/lalapps
-  LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic
+  LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
-  make -j 2
+  make -j 2 2>&1 | grep Entering
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
   make lalapps_inspinj
   cp lalapps_inspinj $VIRTUAL_ENV/bin
@@ -128,15 +135,21 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   make lalapps_coh_PTF_inspiral
   cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
 
+  echo -e "\\n>> [`date`] Installing Pegasus and DQSegDB"
   pip install http://download.pegasus.isi.edu/pegasus/4.7.4/pegasus-python-source-4.7.4.tar.gz
-  pip install git+https://github.com/ligovirgo/dqsegdb@clean_pip_install_1_4_1#egg=dqsegdb
+  pip install dqsegdb
 
+  echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
+  pip install 'matplotlib==1.5.3'
+
+  echo -e "\\n>> [`date`] Installing PyCBC and dependencies"
   cd /pycbc
   python setup.py install
 
+  echo -e "\\n>> [`date`] Installing PyCBC PyLAL"
   pip install pycbc-pylal
 
-  pip install 'matplotlib==1.5.3'
+  echo -e "\\n>> [`date`] Installing ipython and jupyter"
   pip install ipython
   pip install jupyter
 
