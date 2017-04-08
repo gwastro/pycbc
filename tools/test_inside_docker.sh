@@ -8,7 +8,7 @@ TRAVIS_PULL_REQUEST=${3}
 TRAVIS_COMMIT=${4}
 
 # determine the pycbc git branch and origin
-yum -y install git
+yum -q -y install git
 pushd /pycbc
 git branch -vvv
 if test x$TRAVIS_PULL_REQUEST = "xfalse" ; then
