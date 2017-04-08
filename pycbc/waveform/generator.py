@@ -32,10 +32,13 @@ from pycbc import coordinates
 from pycbc import filter
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
-from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries
+from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries, \
+    frequency_from_polarizations
 from pycbc.detector import Detector
 from pycbc import pnutils
 import lal as _lal
+import numpy
+from scipy import signal
 
 #
 #   Pregenerator functions for generator
@@ -251,7 +254,7 @@ class BaseCBCGenerator(BaseGenerator):
     """
     possible_args = set(parameters.td_waveform_params +
                         parameters.fd_waveform_params +
-                        ['taper'])
+                        ['taper', 't_final', 'taper_duration'])
     def __init__(self, generator, variable_args=(), **frozen_params):
         super(BaseCBCGenerator, self).__init__(generator,
             variable_args=variable_args, **frozen_params)
@@ -364,6 +367,21 @@ class TDomainCBCGenerator(BaseCBCGenerator):
     def __init__(self, variable_args=(), **frozen_params):
         super(TDomainCBCGenerator, self).__init__(waveform.get_td_waveform,
             variable_args=variable_args, **frozen_params)
+        self.use_end_taper = ('t_final' in variable_args or
+                              't_final' in self.frozen_params or
+                              'f_final' in variable_args or
+                              'f_final' in self.frozen_params or
+                              'f_final_func' in variable_args or
+                              'f_final_func' in self.frozen_params)
+        self.taper_size = self.window = None
+        if self.use_end_taper:
+            # construct the windowing function
+            if 'taper_duration' not in self.frozen_params:
+                raise ValueError('must provide a taper duration if using '
+                                 't_final, f_final, or f_final_func')
+            self.taper_size = int(self.frozen_params['taper_duration'] /
+                                  self.frozen_params['delta_t'])
+            self.window = signal.hann(2*self.taper_size)[self.taper_size:]
 
     def _postgenerate(self, res):
         """Applies a taper if it is in current params.
@@ -374,7 +392,35 @@ class TDomainCBCGenerator(BaseCBCGenerator):
             hc = taper_timeseries(hc, tapermethod=self.current_params['taper'])
         except KeyError:
             pass
+        if self.use_end_taper:
+            self.apply_end_taper(hp, hc)
         return hp, hc
+
+    def apply_end_taper(self, hp, hc):
+        # cut the waveform off at a specific frequency, if desired
+        endidx = len(hp)
+        if 'f_final_func' in self.current_params:
+            ffunc = self.current_params['f_final_func']
+            self.current_params['f_final'] = \
+                pnutils.named_frequency_cutoffs[ffunc](self.current_params)
+        if 'f_final' in self.current_params:
+            # estimate frequency as a function of time
+            foft = frequency_from_polarizations(hp, hc)
+            endidx = numpy.searchsorted(foft,
+                self.current_params['f_final'])
+        # evaluate taper time
+        if 't_final' in self.current_params:
+            # epoch gives time until coalescence time
+            tfinal = self.current_params['t_final'] - hp.start_time
+            tendidx = int(numpy.ceil(tfinal/hp.delta_t))
+            # pick t or f final, whichever comes first
+            endidx = max(min(tendidx, endidx), 0)
+        startidx = max(0, endidx - self.taper_size)
+        getlen = endidx - startidx
+        hp.data[startidx:endidx] *= self.window[-getlen:]
+        hp.data[endidx:] = 0.
+        hc.data[startidx:endidx] *= self.window[-getlen:]
+        hc.data[endidx:] = 0.
 
 
 class FDomainRingdownGenerator(BaseGenerator):
@@ -421,7 +467,8 @@ class FDomainMultiModeRingdownGenerator(BaseGenerator):
 
     """
     def __init__(self, variable_args=(), **frozen_params):
-        super(FDomainMultiModeRingdownGenerator, self).__init__(ringdown.get_fd_lm_allmodes,
+        super(FDomainMultiModeRingdownGenerator, self).__init__(
+            ringdown.get_fd_lm_allmodes,
             variable_args=variable_args, **frozen_params)
 
 class FDomainDetFrameGenerator(object):
