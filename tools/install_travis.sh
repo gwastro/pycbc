@@ -53,10 +53,7 @@ pip install http://download.pegasus.isi.edu/pegasus/4.7.4/pegasus-python-source-
 SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
 
 # install the segment database tools
-pip install git+https://github.com/ligovirgo/dqsegdb@clean_pip_install_1_4_1#egg=dqsegdb
-# FIXME: For now dqsegdb needs a glue, which it does not declare. Please remove
-#        when no longer needed.
-pip install pycbc-glue
+pip install dqsegdb
 
 # install the packges needed to build the documentation
 pip install "Sphinx>=1.4.2"
