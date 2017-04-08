@@ -75,15 +75,23 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
 
   rpm --nodeps -e `rpm -qa | grep lal`
 
-  TRAVIS_TAG="vX.Y.Z"
+  if [ "x$TRAVIS_TAG" == "x" ] ; then
+    TRAVIS_TAG="latest"
+    RSYNC_OPTIONS="--delete"
+  else
+    RSYNC_OPTIONS=""
+  fi
+
   CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_7/virtualenv
   mkdir -p ${CVMFS_PATH}
+
   VENV_PATH=${CVMFS_PATH}/pycbc-${TRAVIS_TAG}
   pip install virtualenv
   virtualenv ${VENV_PATH}
   echo 'export PYTHONUSERBASE=${VIRTUAL_ENV}/.local' >> ${VENV_PATH}/bin/activate
   echo 'export XDG_CACHE_HOME=${VIRTUAL_ENV}/.cache' >> ${VENV_PATH}/bin/activate
   source ${VENV_PATH}/bin/activate
+
   pip install --upgrade pip
   pip install six packaging appdirs
   pip install --upgrade setuptools
@@ -143,7 +151,8 @@ EOF
   deactivate
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
-    rsync --rsh=ssh -ravz ${CVMFS_PATH}/ pycbc@sugwg-test1.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/
+    echo -e "\\n>> [`date`] Deploying virtual environment ${CVMFS_PATH}"
+    rsync --rsh=ssh $RSYNC_OPTIONS -ravz ${CVMFS_PATH}/ pycbc@sugwg-test1.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/
     ssh pycbc@sugwg-test1.phy.syr.edu "ls -al /home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv"
   fi
 fi 
