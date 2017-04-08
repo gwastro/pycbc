@@ -141,6 +141,11 @@ export LAL_DATA_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-ext
 EOF
 
   deactivate
+
+  if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
+    rsync --rsh=ssh -ravz ${CVMFS_PATH}/ pycbc@sugwg-test1.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/
+    ssh pycbc@sugwg-test1.phy.syr.edu "ls -al /home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv"
+  fi
 fi 
 
 echo -e "\\n>> [`date`] CentOS Docker script exiting"
