@@ -8,7 +8,7 @@ if [ "x${OS_NAME}" != "xubuntu" ] ; then
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     cp -R ~/.ssh .
   fi
-  sudo docker run --rm=true -v `pwd`:/pycbc:rw ${DOCKER_IMG} /bin/bash -c "bash -xe /pycbc/tools/test_inside_docker.sh --os-version=${OS_VERSION} --pull-request=${TRAVIS_PULL_REQUEST} --commit=${TRAVIS_COMMIT} --secure=${TRAVIS_SECURE_ENV_VARS} --tag=${TRAVIS_TAG}"
+  sudo docker run --rm=true -v `pwd`:/pycbc:rw ${DOCKER_IMG} /bin/bash -c "bash /pycbc/tools/test_inside_docker.sh --os-version=${OS_VERSION} --pull-request=${TRAVIS_PULL_REQUEST} --commit=${TRAVIS_COMMIT} --secure=${TRAVIS_SECURE_ENV_VARS} --tag=${TRAVIS_TAG}"
   echo -e "\\n>> [`date`] CentOS Docker exited"
   exit 0
 fi
