@@ -83,7 +83,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     BUNDLE_DEST=/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_6/bundle/${TRAVIS_TAG}
     echo -e "\\n>> [`date`] Deploying pycbc_inspiral bundle to ${CVMFS_PATH}"
-    ssh -v pycbc@sugwg-test1.phy.syr.edu "mkdir -p ${BUNDLE_DEST}"
+    ssh pycbc@sugwg-test1.phy.syr.edu "mkdir -p ${BUNDLE_DEST}"
     scp -v ${BUILD}/pycbc-build/environment/dist/pycbc_inspiral_osg* pycbc@sugwg-test1.phy.syr.edu:${BUNDLE_DEST}/pycbc_inspiral
   fi
 fi
@@ -194,7 +194,7 @@ EOF
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     echo -e "\\n>> [`date`] Deploying virtual environment ${VENV_PATH}"
-    ssh -v pycbc@sugwg-test1.phy.syr.edu "mkdir -p /home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}"
+    ssh pycbc@sugwg-test1.phy.syr.edu "mkdir -p /home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}"
     rsync --progress --rsh=ssh $RSYNC_OPTIONS -raz ${VENV_PATH}/ pycbc@sugwg-test1.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/
   fi
 fi 
