@@ -104,8 +104,8 @@ class UniformRadius(bounded.BoundedDist):
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
 
-    Class Attributes
-    ----------------
+    Attributes
+    ----------
     name : 'uniform_radius'
         The name of this distribution.
     dim : int
