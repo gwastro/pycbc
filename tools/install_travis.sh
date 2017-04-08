@@ -1,6 +1,12 @@
 #!/bin/bash
 
-set -ev
+set -e
+
+# just exit if we are running centos
+if [ "x${OS_NAME}" != "xubuntu" ] ; then
+  echo -e "\\n>> [`date`] CentOS build ${0} exiting"
+  exit 0
+fi
 
 # determine the pycbc git branch and origin
 git branch -vvv
@@ -12,7 +18,8 @@ fi
 
 # set the lalsuite checkout to use
 LALSUITE_CODE="--lalsuite-commit=539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
-# LALSUITE_CODE="--lalsuite-commit=master" --clean-lalsuite
+
+echo -e "\\n>> [`date`] Ubuntu build"
 
 # store the travis test directory
 LOCAL=${PWD}

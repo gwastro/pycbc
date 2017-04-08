@@ -1,5 +1,18 @@
 #!/bin/bash
 
+if [ "x${OS_NAME}" != "xubuntu" ] ; then
+  set -e
+  echo -e "\\n>> [`date`] Starting ${OS_NAME} ${OS_VERSION} docker container"
+  if [ "x${OS_NAME}" == "xcentos" ] ; then DOCKER_IMG="centos:centos${OS_VERSION}" ; fi
+  if [ "x${OS_NAME}" == "xscientific" ] ; then DOCKER_IMG="cern/slc${OS_VERSION}-base" ; fi
+  if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
+    cp -R ~/.ssh .
+  fi
+  sudo docker run --rm=true -v `pwd`:/pycbc:rw ${DOCKER_IMG} /bin/bash -c "bash /pycbc/tools/docker_build_dist.sh --os-version=${OS_VERSION} --pull-request=${TRAVIS_PULL_REQUEST} --commit=${TRAVIS_COMMIT} --secure=${TRAVIS_SECURE_ENV_VARS} --tag=${TRAVIS_TAG}"
+  echo -e "\\n>> [`date`] CentOS Docker exited"
+  exit 0
+fi
+
 echo -e "\\n>> [`date`] Starting PyCBC test suite"
 
 LOG_FILE=$(mktemp -t pycbc-test-log.XXXXXXXXXX)
