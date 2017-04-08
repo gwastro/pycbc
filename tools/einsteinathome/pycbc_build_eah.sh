@@ -872,6 +872,7 @@ echo -e "\\n\\n>> [`date`] building $p" >&3
 test -r $p.tar.gz ||
     wget $wget_opts "$aei/$p.tar.gz" ||
     wget $wget_opts http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz
+pip install --upgrade setuptools
 pip install --no-deps $p.tar.gz
 
 # PyInstaller 9d0e0ad4 crashes with newer Jinja2,
