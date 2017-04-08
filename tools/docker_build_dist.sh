@@ -49,7 +49,9 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
 
   # install requirements into docker container
-  yum install -q -y gcc gcc-c++ gcc-gfortran python-devel pcre-devel autoconf automake tar zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel wget db4-devel git bzip2 zip
+  yum install -q -y gcc gcc-c++ gcc-gfortran python-devel pcre-devel autoconf automake tar \
+      zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel wget db4-devel git \
+      bzip2 zip python-devel fftw-devel openssl-devel gsl-devel lapack-devel freetype-devel
   ln -s /usr/bin/g++ /usr/bin/g++-4.4.7
   ln -s /usr/bin/gcc /usr/bin/gcc-4.4.7
   ln -s /usr/bin/gfortran /usr/bin/gfortran-4.4.7
@@ -63,7 +65,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   # run the einstein at home build and test script
   echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
   pushd ${BUILD}
-  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --silent-build
+  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --silent-build --build-minimal-lalsuite
   popd
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
