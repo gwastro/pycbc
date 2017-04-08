@@ -2,6 +2,11 @@
 
 echo -e "\\n>> [`date`] Starting PyCBC test suite"
 echo -e "\\n>> [`date`] SSH Test"
+
+ls -al ~/.ssh
+ls -al ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa
+
 ssh -o StrictHostKeyChecking=no ouser.ligo@oasis-login.opensciencegrid.org "ls -al"
 exit 0
 
