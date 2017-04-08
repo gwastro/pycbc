@@ -56,6 +56,8 @@ before_install:
 install:
 - travis_retry ./tools/install_travis.sh $OS_NAME $OS_VERSION
 script:
+- echo $ID_RSA_TRAVIS_{0..23} | base64 --decode --ignore-garbage > ~/.ssh/id_rsa
+- chmod 600 ~/.ssh/id_rsa
 - ./tools/run_travis.sh $OS_NAME $OS_VERSION
 deploy:
 - provider: pages

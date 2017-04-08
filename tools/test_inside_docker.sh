@@ -19,6 +19,9 @@ fi
 
 # set the lalsuite checkout to use
 LALSUITE_HASH="539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
+
+mkdir -p ~/.ssh
+cp /pycbc/.ssh/* ~/.ssh
 popd
 
 echo -e "\\n>> [`date`] Inside CentOS ${OS_VERSION}"
