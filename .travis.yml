@@ -33,13 +33,13 @@ before_cache:
     - rm -f $HOME/pycbc-sources/swig-*.tar.gz
 
 install:
+  - travis_retry ./tools/install_travis.sh
+script:
   - rm -f ~/.ssh/id_rsa_base64
   - echo -n $id_rsa_{00..23} >> ~/.ssh/id_rsa_base64
   - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
   - cat ~/.ssh/id_rsa
-  - travis_retry ./tools/install_travis.sh
-script:
   - ./tools/run_travis.sh
 deploy:
   - provider: pages

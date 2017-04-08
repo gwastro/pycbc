@@ -1,7 +1,5 @@
 #!/bin/bash -v
 
-echo -e "\\n>> [`date`] SSH Test"
-ssh -o StrictHostKeyChecking=no ouser.ligo@oasis-login.opensciencegrid.org "ls -al"
 exit 0
 
 set -ev
