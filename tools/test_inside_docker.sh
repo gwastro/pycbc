@@ -8,6 +8,7 @@ TRAVIS_PULL_REQUEST=${3}
 TRAVIS_COMMIT=${4}
 
 # determine the pycbc git branch and origin
+yum -q -y install git2u-all || yum -q -y install git
 pushd /pycbc
 git branch -vvv
 if test x$TRAVIS_PULL_REQUEST = "xfalse" ; then
@@ -62,7 +63,6 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   yum -q -y install lscsoft-ius-config
   yum clean all
   yum makecache
-  yum -q -y install git2u-all
   yum --debuglevel=1 -y install lscsoft-all
 
   rpm --nodeps -e `rpm -qa | grep lal`
