@@ -846,7 +846,7 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
     fi
     echo -e "\\n\\n>> [`date`] Building lalsuite" >&3
     if $silent_build ; then
-        make 2>&1 | tee >(grep Entering >&3 1>&3 2>&3) 
+        make -j 2 2>&1 | tee >(grep Entering >&3 1>&3 2>&3) 
     else
         make
     fi
