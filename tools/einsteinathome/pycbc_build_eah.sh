@@ -1173,21 +1173,13 @@ if $build_dlls; then
     zip ../pycbc_inspiral$appendix.zip pycbc_inspiral/pycbc_inspiral
 fi
 
-if $silent_build ; then
-    # redirect stdout and stderr back to the screen
-    exec 1>&-
-    exec 2>&-
-    exec 1>&3
-    exec 2>&4
-fi
-
 # run 10min self-test, build wave cache
 cd "$SOURCE"
 mkdir -p test
 cd test
 
 if $run_analysis; then
-echo -e "\\n\\n>> [`date`] running analysis"
+echo -e "\\n\\n>> [`date`] running analysis" >&3
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
 if check_md5 "$p" "$md5"; then
@@ -1254,7 +1246,6 @@ if $failed; then
     roms=`tar -zxvf $p`
 fi
 
-
 #fb5ec108c69f9e424813de104731370c  H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz
 p="H1L1-SBANK_FOR_GW150914ER10.xml.gz"
 md5="c24f5513d3066b4f637daffb6aa20fec"
@@ -1292,6 +1283,14 @@ if ! test -z "$extra_approx" || ! test -z "$extra_bank" ; then
 fi
 
 n_runs=${#bank_array[@]}
+
+if $silent_build ; then
+    # redirect stdout and stderr back to the screen
+    exec 1>&-
+    exec 2>&-
+    exec 1>&3
+    exec 2>&4
+fi
 
 for (( i=0; i<${n_runs}; i++ ))
 do
