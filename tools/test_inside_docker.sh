@@ -6,6 +6,7 @@ OS_VERSION=${1}
 TRAVIS_TAG=${2}
 TRAVIS_PULL_REQUEST=${3}
 TRAVIS_COMMIT=${4}
+TRAVIS_SECURE_ENV_VARS=${5}
 
 # determine the pycbc git branch and origin
 yum -q -y install git
@@ -16,13 +17,16 @@ if test x$TRAVIS_PULL_REQUEST = "xfalse" ; then
 else
     PYCBC_CODE="--pycbc-fetch-ref=refs/pull/${TRAVIS_PULL_REQUEST}/merge"
 fi
+popd
 
 # set the lalsuite checkout to use
 LALSUITE_HASH="539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
 
-mkdir -p ~/.ssh
-cp /pycbc/.ssh/* ~/.ssh
-popd
+if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
+  mkdir -p ~/.ssh
+  cp /pycbc/.ssh/* ~/.ssh
+  chmod 600 ~/.ssh/id_rsa
+fi
 
 echo -e "\\n>> [`date`] Inside CentOS ${OS_VERSION}"
 echo -e "\\n>> [`date`] Release tag is ${TRAVIS_TAG}"
