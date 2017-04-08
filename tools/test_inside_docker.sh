@@ -19,7 +19,6 @@ if test x$TRAVIS_PULL_REQUEST = "xfalse" ; then
 else
     PYCBC_CODE="--pycbc-fetch-ref=refs/pull/${TRAVIS_PULL_REQUEST}/merge"
 fi
-popd
 
 # set the lalsuite checkout to use
 LALSUITE_HASH="539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
