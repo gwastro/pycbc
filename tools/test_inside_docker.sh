@@ -2,11 +2,16 @@
 
 set -e
 
-OS_VERSION=${1}
-TRAVIS_TAG=${2}
-TRAVIS_PULL_REQUEST=${3}
-TRAVIS_COMMIT=${4}
-TRAVIS_SECURE_ENV_VARS=${5}
+for i in $*; do
+  case $i in
+    --os-version=*) OS_VERSION="`echo $i|sed 's/^--os-version=//'`";;
+    --pull-request=*) TRAVIS_PULL_REQUEST="`echo $i|sed 's/^--pull-request=//'`";;
+    --commit=*) TRAVIS_COMMIT="`echo $i|sed 's/^--commit=//'`";;
+    --secure=*) TRAVIS_SECURE_ENV_VARS="`echo $i|sed 's/^--secure=//'`";;
+    --tag=*) TRAVIS_TAG="`echo $i|sed 's/^--tag=//'`";;
+    *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
+  esac
+done
 
 # determine the pycbc git branch and origin
 yum -q -y install git
