@@ -90,7 +90,7 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   git checkout ${LALSUITE_CODE}
   ./00boot
   ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalapps
-  make 2>&1 | grep Entering
+  make -j 2 2>&1 | grep Entering
   make install
   echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh' >> ${VIRTUAL_ENV}/bin/activate
   deactivate
@@ -99,7 +99,7 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   cd $VIRTUAL_ENV/src/lalsuite/lalapps
   LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
-  make
+  make -j 2
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
   make lalapps_inspinj
   cp lalapps_inspinj $VIRTUAL_ENV/bin
