@@ -12,7 +12,6 @@ jinja2
 mpld3>=0.3
 pyRXP>=2.1.0
 pycbc-glue-obsolete==1.1.0
-pycbc-glue==1.0.1
 weave
 
 # Needed for Parameter Estimation Tasks
