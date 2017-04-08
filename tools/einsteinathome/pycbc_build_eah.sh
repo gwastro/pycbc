@@ -73,10 +73,12 @@ build_pcre=false
 build_fftw=true
 build_framecpp=false
 build_preinst_before_lalsuite=true
+build_minimal_lalsuite=false
 build_subprocess32=false
 build_hdf5=true
 build_freetype=true
 build_zlib=true
+build_pegasus=true
 build_wrapper=false
 build_progress_fstab=true
 pyinstaller_version=v3.2.1 # 9d0e0ad4, v2.1 .. v3.2.1 -> git, 2.1 .. 3.2.1 -> pypi
@@ -127,8 +129,30 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8
     gcc_path="/usr/bin"
     build_ssl=true
     build_python=true
+    build_pegasus=false
     pyinstaller_lsb="--no-lsb"
     build_gating_tool=true
+    appendix="_Linux64"
+elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux CERN SLC release 6.8 (Carbon)" ]] ; then # SL6
+    echo -e "\\n\\n>> [`date`] Using Scientific Linux CERN SLC release 6.8 (Carbon) settings"
+    test ".$LC_ALL" = "." && export LC_ALL="$LANG"
+    link_gcc_version=4.4.7
+    gcc_path="/usr/bin"
+    build_ssl=false
+    build_python=true
+    build_pegasus=false
+    build_fftw=false
+    build_gsl=false
+    build_hdf5=false
+    build_ssl=false
+    build_lapack=false
+    build_gsl=false
+    build_freetype=false
+    build_zlib=false
+    build_wrapper=false
+    build_progress_fstab=false
+    pyinstaller_lsb="--no-lsb"
+    build_gating_tool=false
     appendix="_Linux64"
 elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
     link_gcc_version=4.6
@@ -229,6 +253,8 @@ usage="
 
     --clean-lalsuite                checkout and build lalsuite from scratch
 
+    --build-minimal-lalsuite        build as little of lalsuite as possible to make pycbc_inspiral
+
     --clean-sundays                 perform a clean-lalsuite build on sundays
 
     --clean-pycbc                   check out pycbc git repo from scratch
@@ -276,6 +302,7 @@ for i in $*; do
         --print-env) ;;
         --no-pycbc-update) pycbc_branch="HEAD";;
         --no-lalsuite-update) no_lalsuite_update=true;;
+        --build-minimal-lalsuite) build_minimal_lalsuite=true;;
         --bema-testing)
             pycbc_branch=einsteinathome_testing
             pycbc_remote=bema-ligo;;
@@ -836,9 +863,16 @@ EOF
     mkdir lalsuite-build
     cd lalsuite-build
     echo -e "\\n\\n>> [`date`] Configuring lalsuite" >&3
+    if $build_minimal_lalsuite ; then
     ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
 	--enable-swig-python --disable-lalxml --disable-laldetchar --disable-lalstochastic --disable-lalinference \
+        --disable-lalburst --disable-lalinspiral --disable-lalpulsar \
 	--disable-lalapps --disable-pylal
+    else
+        ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
+            --enable-swig-python --disable-lalxml --disable-laldetchar --disable-lalstochastic --disable-lalinference \
+	    --disable-lalapps --disable-pylal
+    fi
     if $build_dlls; then
 	echo '#include "/usr/include/stdlib.h"
 extern int setenv(const char *name, const char *value, int overwrite);
@@ -846,7 +880,7 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
     fi
     echo -e "\\n\\n>> [`date`] Building lalsuite" >&3
     if $silent_build ; then
-        make 2>&1 | tee >(grep Entering >&3 1>&3 2>&3) 
+        make -j 2 2>&1 | tee >(grep Entering >&3 1>&3 2>&3) 
     else
         make
     fi
@@ -866,13 +900,15 @@ extern int unsetenv(const char *name);' > lalsimulation/src/stdlib.h
 fi # if $BUILDDIRNAME-preinst.tgz
 
 # Pegasus
-v=4.7.4
-p=pegasus-python-source-$v
-echo -e "\\n\\n>> [`date`] building $p" >&3
-test -r $p.tar.gz ||
-    wget $wget_opts "$aei/$p.tar.gz" ||
-    wget $wget_opts http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz
-pip install --no-deps $p.tar.gz
+if $build_pegasus ; then
+    v=4.7.4
+    p=pegasus-python-source-$v
+    echo -e "\\n\\n>> [`date`] building $p" >&3
+    test -r $p.tar.gz ||
+      wget $wget_opts "$aei/$p.tar.gz" ||
+      wget $wget_opts http://download.pegasus.isi.edu/pegasus/$v/$p.tar.gz
+    pip install --no-deps $p.tar.gz
+fi
 
 # PyInstaller 9d0e0ad4 crashes with newer Jinja2,
 # so install this old version before it gets pulled in from PyCBC
@@ -1169,21 +1205,13 @@ if $build_dlls; then
     zip ../pycbc_inspiral$appendix.zip pycbc_inspiral/pycbc_inspiral
 fi
 
-if $silent_build ; then
-    # redirect stdout and stderr back to the screen
-    exec 1>&-
-    exec 2>&-
-    exec 1>&3
-    exec 2>&4
-fi
-
 # run 10min self-test, build wave cache
 cd "$SOURCE"
 mkdir -p test
 cd test
 
 if $run_analysis; then
-echo -e "\\n\\n>> [`date`] running analysis"
+echo -e "\\n\\n>> [`date`] running analysis" >&3
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
 if check_md5 "$p" "$md5"; then
@@ -1250,7 +1278,6 @@ if $failed; then
     roms=`tar -zxvf $p`
 fi
 
-
 #fb5ec108c69f9e424813de104731370c  H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz
 p="H1L1-SBANK_FOR_GW150914ER10.xml.gz"
 md5="c24f5513d3066b4f637daffb6aa20fec"
@@ -1288,6 +1315,14 @@ if ! test -z "$extra_approx" || ! test -z "$extra_bank" ; then
 fi
 
 n_runs=${#bank_array[@]}
+
+if $silent_build ; then
+    # redirect stdout and stderr back to the screen
+    exec 1>&-
+    exec 2>&-
+    exec 1>&3
+    exec 2>&4
+fi
 
 for (( i=0; i<${n_runs}; i++ ))
 do
