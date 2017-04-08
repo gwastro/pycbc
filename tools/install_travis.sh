@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ev
+set -e
 
 # just exit if we are running centos
 if [ "x${OS_NAME}" != "xubuntu" ] ; then
