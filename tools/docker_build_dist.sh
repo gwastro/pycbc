@@ -118,7 +118,9 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   yum makecache &>/dev/null
   yum --debuglevel=1 -y install git2u-all lscsoft-all
   yum install -q -y zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel db4-devel
-  yum install -q -y ligo-proxy-utils
+  rpm -Uvh https://repo.grid.iu.edu/osg/3.3/osg-3.3-el7-release-latest.rpm
+  yum clean all &>/dev/null
+  yum install -q -y globus-gsi-cert-utils-progs gsi-openssh-clients osg-ca-certs ligo-proxy-utils
 
   echo -e "\\n>> [`date`] Removing LAL RPMs"
   yum -y -q remove "*lal*"
