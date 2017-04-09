@@ -131,6 +131,7 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   echo 'export PYTHONUSERBASE=${VIRTUAL_ENV}/.local' >> ${VENV_PATH}/bin/activate
   echo 'export XDG_CACHE_HOME=${HOME}/cvmfs-pycbc-${TRAVIS_TAG}/.cache' >> ${VENV_PATH}/bin/activate
   source ${VENV_PATH}/bin/activate
+  mkdir -p ${VIRTUAL_ENV}/.local
   echo -e "[easy_install]\\nzip_ok = false\\n" > ~/.pydistutils.cfg
   echo -e "[easy_install]\\nzip_ok = false\\n" > ${VIRTUAL_ENV}/.local/.pydistutils.cfg
   
