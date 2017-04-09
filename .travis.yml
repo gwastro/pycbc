@@ -54,10 +54,13 @@ before_install:
 - if [ "x${OS_NAME}" == "xcentos" ] ; then sudo docker pull centos:centos${OS_VERSION} ; fi
 - if [ "x${OS_NAME}" == "xscientific" ] ; then sudo docker pull cern/slc${OS_VERSION}-base ; fi
 install:
+- touch ~/.ssh/id_rsa ~/.ssh/ldg_user ~/.ssh/ldg_token
+- chmod 600 ~/.ssh/id_rsa ~/.ssh/ldg_user ~/.ssh/ldg_token
 - echo $ID_RSA_TRAVIS_{0..23} | base64 --decode --ignore-garbage > ~/.ssh/id_rsa
-- chmod 600 ~/.ssh/id_rsa
 - echo -e "Host sugwg-test1.phy.syr.edu\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 - echo -e "Host oasis-login.opensciencegrid.org\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+- echo $LDG_USER > ~/.ssh/ldg_user
+- echo $LDG_TOKEN > ~/.ssh/ldg_token
 - travis_retry ./tools/install_travis.sh $OS_NAME $OS_VERSION
 script:
 - ./tools/run_travis.sh $OS_NAME $OS_VERSION
