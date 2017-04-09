@@ -62,18 +62,43 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   export PYTHONUSERBASE=${BUILD}/.local
   export XDG_CACHE_HOME=${BUILD}/.cache
 
+  # get library needed to build documentation
+  wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30 --no-verbose"
+  primary_url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/03f2048c770492f66f80528493fd6cecded63769/x86_64/composer_xe_2015.0.090"
+  secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown/x86_64/composer_xe_2015.0.090"
+  p="composer_xe_2015.0.090.tar.gz"
+  pushd /pycbc
+  set +e
+  test -r $p || wget $wget_opts ${primary_url}/${p}
+  set -e
+  test -r $p || wget $wget_opts ${secondary_url}/${p}
+  popd
+
   # run the einstein at home build and test script
   echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
   pushd ${BUILD}
-  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --silent-build --build-minimal-lalsuite
-  popd
+  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --silent-build --build-minimal-lalsuite --with-extra-libs=file:///pycbc/composer_xe_2015.0.090.tar.gz
+  find . -name "pycbc_inspiral*" -print
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
-    BUNDLE_DEST=/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_6/bundle/${TRAVIS_TAG}
-    echo -e "\\n>> [`date`] Deploying pycbc_inspiral bundle to ${CVMFS_PATH}"
-    ssh -v pycbc@sugwg-test1.phy.syr.edu "mkdir -p ${BUNDLE_DEST}"
-    scp -v ${BUILD}/pycbc-build/environment/dist/pycbc_inspiral_osg* pycbc@sugwg-test1.phy.syr.edu:${BUNDLE_DEST}/pycbc_inspiral
+    echo -e "\\n>> [`date`] Deploying pycbc_inspiral bundle"
+    if [ "x${TRAVIS_TAG}" == "xlatest" ] ; then
+      PYCBC_INSPIRAL_SUFFIX="_osg"
+      BUNDLE_DEST=/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_6/bundle/${TRAVIS_TAG}
+      echo -e "\\n>> [`date`] Deploying pycbc_inspiral${PYCBC_INSPIRAL_SUFFIX} to sugwg-test1.phy.syr.edu"
+      ssh pycbc@sugwg-test1.phy.syr.edu "mkdir -p ${BUNDLE_DEST}"
+      scp -v ${BUILD}/pycbc-build/environment/dist/pycbc_inspiral${PYCBC_INSPIRAL_SUFFIX} pycbc@sugwg-test1.phy.syr.edu:${BUNDLE_DEST}/pycbc_inspiral
+    else
+      PYCBC_INSPIRAL_SUFFIX="_osg_${TRAVIS_TAG}"
+      BUNDLE_DEST=/home/login/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_6/bundle/${TRAVIS_TAG}
+      echo -e "\\n>> [`date`] Deploying pycbc_inspiral${PYCBC_INSPIRAL_SUFFIX} to CVMFS"
+      ssh ouser.ligo@oasis-login.opensciencegrid.org "mkdir -p ${BUNDLE_DEST}"
+      scp -v ${BUILD}/pycbc-build/environment/dist/pycbc_inspiral${PYCBC_INSPIRAL_SUFFIX} ouser.ligo@oasis-login.opensciencegrid.org:${BUNDLE_DEST}/pycbc_inspiral
+      ssh ouser.ligo@oasis-login.opensciencegrid.org osg-oasis-update
+    fi
+    echo -e "\\n>> [`date`] pycbc_inspiral deployment complete"
   fi
+  popd
 fi
 
 if [ "x${OS_VERSION}" == "x7" ] ; then
@@ -182,8 +207,17 @@ EOF
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     echo -e "\\n>> [`date`] Deploying virtual environment ${VENV_PATH}"
-    ssh -v pycbc@sugwg-test1.phy.syr.edu "mkdir -p /home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}"
-    rsync --rsh=ssh $RSYNC_OPTIONS -ravz ${VENV_PATH}/ pycbc@sugwg-test1.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/
+    if [ "x${TRAVIS_TAG}" == "xlatest" ] ; then
+      echo -e "\\n>> [`date`] Deploying master to sugwg-test1.phy.syr.edu"
+      ssh pycbc@sugwg-test1.phy.syr.edu "mkdir -p /home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}"
+      rsync --progress --rsh=ssh $RSYNC_OPTIONS -raz ${VENV_PATH}/ pycbc@sugwg-test1.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/
+    else
+      echo -e "\\n>> [`date`] Deploying release ${TRAVIS_TAG} to CVMFS"
+      ssh ouser.ligo@oasis-login.opensciencegrid.org "mkdir -p /home/login/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}"
+      rsync --progress --rsh=ssh $RSYNC_OPTIONS -raz ${VENV_PATH}/ ouser.ligo@oasis-login.opensciencegrid.org:/home/login/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/
+      ssh ouser.ligo@oasis-login.opensciencegrid.org osg-oasis-update
+    fi
+    echo -e "\\n>> [`date`] virtualenv deployment complete"
   fi
 fi 
 
