@@ -63,7 +63,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   export XDG_CACHE_HOME=${BUILD}/.cache
 
   # get library needed to build documentation
-  wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
+  wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30 --no-verbose"
   primary_url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/03f2048c770492f66f80528493fd6cecded63769/x86_64/composer_xe_2015.0.090"
   secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown/x86_64/composer_xe_2015.0.090"
   p="composer_xe_2015.0.090.tar.gz"
