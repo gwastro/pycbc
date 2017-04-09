@@ -120,7 +120,7 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   yum install -q -y zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel db4-devel
 
   echo -e "\\n>> [`date`] Removing LAL RPMs"
-  rpm --nodeps -e `rpm -qa | grep lal`
+  yum -y -q remove "*lal*"
 
   CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_7/virtualenv
   mkdir -p ${CVMFS_PATH}
@@ -129,9 +129,11 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   pip install virtualenv
   virtualenv ${VENV_PATH}
   echo 'export PYTHONUSERBASE=${VIRTUAL_ENV}/.local' >> ${VENV_PATH}/bin/activate
-  echo 'export XDG_CACHE_HOME=${VIRTUAL_ENV}/.cache' >> ${VENV_PATH}/bin/activate
+  echo 'export XDG_CACHE_HOME=${HOME}/cvmfs-pycbc-${TRAVIS_TAG}/.cache' >> ${VENV_PATH}/bin/activate
   source ${VENV_PATH}/bin/activate
-
+  echo -e "[easy_install]\\nzip_ok = false\\n" > ~/.pydistutils.cfg
+  echo -e "[easy_install]\\nzip_ok = false\\n" > ${VIRTUAL_ENV}/.local/.pydistutils.cfg
+  
   echo -e "\\n>> [`date`] Upgrading pip and setuptools"
   pip install --upgrade pip
   pip install six packaging appdirs
@@ -203,6 +205,10 @@ EOF
 
   deactivate
 
+  echo -e "\\n>> [`date`] Setting virtual environment permissions for deployment"
+  find ${VENV_PATH} -type d -exec chmod go+rx {} \;
+  chmod -R go+r ${VENV_PATH}
+  
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     echo -e "\\n>> [`date`] Deploying virtual environment ${VENV_PATH}"
     if [ "x${TRAVIS_TAG}" == "xlatest" ] ; then
