@@ -7,7 +7,7 @@ echo -e "\\n>> [`date`] Testing pycbc_make_coinc_search_workflow"
 TRAVIS_TAG=${1}
 
 if [ "x${TRAVIS_TAG}" == "x" ] ; then
-  echo -e "\\n>> [`date`] Error: TRAVIS_TAG was not passed to script or is enpty"
+  echo -e "\\n>> [`date`] Error: TRAVIS_TAG was not passed to script or is empty"
   exit 1
 fi
 
@@ -35,8 +35,8 @@ patch -p0 ligo-proxy-init 1>/dev/null <<EOF
 EOF
 
 unset X509_USER_PROXY
-export LIGO_TOKEN=`cat ~/.ssh/ligo_token`
-LIGO_USER=`cat ~/.ssh/ligo_user`
+export LIGO_TOKEN=`cat ~/.ssh/ldg_token`
+LIGO_USER=`cat ~/.ssh/ldg_user`
 ./ligo-proxy-init -p ${LIGO_USER} 1>/dev/null
 unset LIGO_TOKEN LIGO_USER
 
