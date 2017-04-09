@@ -42,6 +42,7 @@ unset LIGO_TOKEN LIGO_USER
 UUID=`uuidgen`
 WORKFLOW_NAME=test-workflow-$UUID
 OUTPUT_PATH=`pwd`/public_html/test_workflow/${WORKFLOW_NAME}
+export LIGO_DATAFIND_SERVER="datafind.ligo.org:443"
 
 mkdir $WORKFLOW_NAME
 pushd $WORKFLOW_NAME
