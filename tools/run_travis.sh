@@ -100,9 +100,9 @@ fi
 
 ls -alrt
 
-ls _gh-pages/latest -alrt
+ls _gh-pages/latest/html -alrt
 
-ls _gh-pages/latest/_downloads -alrt
+ls _gh-pages/latest/html/_downloads -alrt
 
 ls docs -alrt
 
