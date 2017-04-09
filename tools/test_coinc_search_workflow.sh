@@ -13,7 +13,6 @@ fi
 
 echo -e "\\n>> [`date`] Entering virtual environment pycbc-${TRAVIS_TAG}"
 source /cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/bin/activate
-export XDG_CACHE_HOME=${HOME}/pycbc-${TRAVIS_TAG}/.cache
 
 echo -e "\\n>> [`date`] Cloning pycbc-config git repository"
 test -r pycbc-config || git clone --depth 1 git@code.pycbc.phy.syr.edu:ligo-cbc/pycbc-config.git
