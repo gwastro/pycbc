@@ -207,11 +207,13 @@ EOF
 
   deactivate
 
-  echo -e "\\n>> [`date`] Running test_coinc_search_workflow.sh"
-  mkdir -p /pycbc/workflow-test
-  pushd /pycbc/workflow-test
-  /pycbc/tools/test_coinc_search_workflow.sh ${TRAVIS_TAG}
-  popd
+  if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
+    echo -e "\\n>> [`date`] Running test_coinc_search_workflow.sh"
+    mkdir -p /pycbc/workflow-test
+    pushd /pycbc/workflow-test
+    /pycbc/tools/test_coinc_search_workflow.sh ${TRAVIS_TAG}
+    popd
+  fi
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     echo -e "\\n>> [`date`] Setting virtual environment permissions for deployment"
