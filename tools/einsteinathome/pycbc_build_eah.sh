@@ -152,7 +152,7 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux CERN SLC re
     build_wrapper=false
     build_progress_fstab=false
     pyinstaller_lsb="--no-lsb"
-    build_gating_tool=false
+    build_gating_tool=true
     appendix="_Linux64"
 elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
     link_gcc_version=4.6
@@ -1389,17 +1389,17 @@ python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRA
 
 fi # if $run_analysis
 
-#if $silent_build ; then
-#    # close stdin and stdout
-#    exec 1>&-
-#    exec 2>&-
-#
-#    # open stdout as $LOG_FILE file for read and write.
-#    exec 1<>$LOG_FILE
-#
-#    # redirect stderr to stdout
-#    exec 2>&1
-#fi
+if $silent_build ; then
+    # close stdin and stdout
+    exec 1>&-
+    exec 2>&-
+
+    # open stdout as $LOG_FILE file for read and write.
+    exec 1<>$LOG_FILE
+
+    # redirect stderr to stdout
+    exec 2>&1
+fi
 
 # zip weave cache
 echo -e "\\n\\n>> [`date`] zipping weave cache"
