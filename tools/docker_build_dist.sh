@@ -77,7 +77,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   # run the einstein at home build and test script
   echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
   pushd ${BUILD}
-  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --silent-build --build-minimal-lalsuite --with-extra-libs=file://pycbc/composer_xe_2015.0.090.tar.gz
+  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --silent-build --build-minimal-lalsuite --with-extra-libs=file:///pycbc/composer_xe_2015.0.090.tar.gz
   find . -name "pycbc_inspiral_osg*" -print
   popd
 
