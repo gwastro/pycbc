@@ -203,6 +203,10 @@ EOF
 
   deactivate
 
+  echo -e "\\n>> [`date`] Setting virtual environment permissions for deployment"
+  find ${VENV_PATH} -type d -exec chmod go+rx {} \;
+  chmod -R go+r ${VENV_PATH}
+  
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     echo -e "\\n>> [`date`] Deploying virtual environment ${VENV_PATH}"
     if [ "x${TRAVIS_TAG}" == "xlatest" ] ; then
