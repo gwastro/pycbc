@@ -120,7 +120,7 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   yum install -q -y zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel db4-devel
 
   echo -e "\\n>> [`date`] Removing LAL RPMs"
-  rpm --nodeps -e `rpm -qa | grep lal`
+  yum -y -q remove "*lal*"
 
   CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_7/virtualenv
   mkdir -p ${CVMFS_PATH}
