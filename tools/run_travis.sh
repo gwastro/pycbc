@@ -100,10 +100,10 @@ fi
 
 ls -alrt
 
-ls _gh_pages/latest
+ls _gh-pages/latest -alrt
 
-ls _gh_pages/latest/_downloads
+ls _gh-pages/latest/_downloads -alrt
 
-ls docs
+ls docs -alrt
 
 exit ${RESULT}
