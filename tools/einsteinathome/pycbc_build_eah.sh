@@ -152,7 +152,7 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux CERN SLC re
     build_wrapper=false
     build_progress_fstab=false
     pyinstaller_lsb="--no-lsb"
-    build_gating_tool=false
+    build_gating_tool=true
     appendix="_Linux64"
 elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
     link_gcc_version=4.6
