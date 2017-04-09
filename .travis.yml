@@ -61,6 +61,7 @@ install:
 - echo -e "Host oasis-login.opensciencegrid.org\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 - echo $LDG_USER > ~/.ssh/ldg_user
 - echo $LDG_TOKEN > ~/.ssh/ldg_token
+- chmod 600 ~/.ssh/id_rsa ~/.ssh/ldg_user ~/.ssh/ldg_token
 - travis_retry ./tools/install_travis.sh $OS_NAME $OS_VERSION
 script:
 - ./tools/run_travis.sh $OS_NAME $OS_VERSION
