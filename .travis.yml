@@ -81,20 +81,23 @@ deploy:
     tags: true
     condition: $PYCBC_CONTAINER = build_and_test
 before_cache:
-- rm -rf $HOME/pycbc-sources/lalsuite
-- rm -rf $HOME/pycbc-sources/pycbc
-- rm -rf $HOME/pycbc-sources/pyinstaller
-- rm -rf $HOME/pycbc-sources/test/pycbc_inspiral
-- rm -f $HOME/pycbc-sources/test/lal-data-r7.tar.gz
-- rm -f $HOME/pycbc-sources/test/H1-INSPIRAL-OUT.hdf
-- rm -f $HOME/pycbc-sources/libframe-*.tar.gz
-- rm -f $HOME/pycbc-sources/metaio-*.tar.gz
-- rm -f $HOME/pycbc-sources/pegasus-python-source-*.tar.gz
-- rm -f $HOME/pycbc-sources/Python-*.tgz
-- rm -f $HOME/pycbc-sources/swig-*.tar.gz
+- rm -rf $HOME/build/pycbc-sources/lalsuite
+- rm -rf $HOME/build/pycbc-sources/pycbc
+- rm -rf $HOME/build/pycbc-sources/pyinstaller
+- rm -rf $HOME/build/pycbc-sources/test/pycbc_inspiral
+- rm -f $HOME/build/pycbc-sources/test/lal-data-r7.tar.gz
+- rm -f $HOME/build/pycbc-sources/test/H1-INSPIRAL-OUT.hdf
+- rm -f $HOME/build/pycbc-sources/libframe-*.tar.gz
+- rm -f $HOME/build/pycbc-sources/metaio-*.tar.gz
+- rm -f $HOME/build/pycbc-sources/pegasus-python-source-*.tar.gz
+- rm -f $HOME/build/pycbc-sources/Python-*.tgz
+- rm -f $HOME/build/pycbc-sources/swig-*.tar.gz
+- ls -al $HOME/build/pycbc-sources
+- ls -al $HOME/build/pycbc-sources/test
 cache:
   directories:
   - $HOME/.cache/pip
   - $HOME/build/.cache/pip
   - $HOME/build/pycbc-sources
+  - $HOME/docker-cache
   timeout: 600

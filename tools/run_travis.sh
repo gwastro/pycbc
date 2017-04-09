@@ -8,8 +8,21 @@ if [ "x${OS_NAME}" != "xubuntu" ] ; then
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     cp -R ~/.ssh .
   fi
-  sudo docker run --rm=true -v `pwd`:/pycbc:rw ${DOCKER_IMG} /bin/bash -c "bash /pycbc/tools/docker_build_dist.sh --os-version=${OS_VERSION} --pull-request=${TRAVIS_PULL_REQUEST} --commit=${TRAVIS_COMMIT} --secure=${TRAVIS_SECURE_ENV_VARS} --tag=${TRAVIS_TAG}"
+  mkdir -p build/pycbc-sources
+  if [ -f $HOME/docker-cache/pycbc-build-preinst.tgz ] ; then
+    cp $HOME/docker-cache/pycbc-build-preinst.tgz build/pycbc-sources
+  fi
+  if [ -f $HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz ] ; then
+    cp $HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz build/pycbc-sources
+  fi
+  sudo docker run --name buildvm -v `pwd`:/pycbc:rw ${DOCKER_IMG} /bin/bash -c "bash /pycbc/tools/docker_build_dist.sh --os-version=${OS_VERSION} --pull-request=${TRAVIS_PULL_REQUEST} --commit=${TRAVIS_COMMIT} --secure=${TRAVIS_SECURE_ENV_VARS} --tag=${TRAVIS_TAG}"
   echo -e "\\n>> [`date`] CentOS Docker exited"
+  if [ "x${OS_NAME}" == "xscientific" ] ; then
+    echo -e "\\n>> [`date`] Caching E@H build environment"
+    mkdir -p $HOME/docker-cache
+    sudo docker cp buildvm:/pycbc/build/pycbc-sources/pycbc-build-preinst.tgz $HOME/docker-cache/pycbc-build-preinst.tgz
+    sudo docker cp buildvm:/pycbc/build/pycbc-sources/pycbc-build-preinst-lalsuite.tgz $HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz
+  fi
   exit 0
 fi
 
