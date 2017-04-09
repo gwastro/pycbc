@@ -129,7 +129,7 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   pip install virtualenv
   virtualenv ${VENV_PATH}
   echo 'export PYTHONUSERBASE=${VIRTUAL_ENV}/.local' >> ${VENV_PATH}/bin/activate
-  echo 'export XDG_CACHE_HOME=${VIRTUAL_ENV}/.cache' >> ${VENV_PATH}/bin/activate
+  echo 'export XDG_CACHE_HOME=${HOME}/cvmfs-pycbc-${TRAVIS_TAG}/.cache' >> ${VENV_PATH}/bin/activate
   source ${VENV_PATH}/bin/activate
   echo -e "[easy_install]\\nzip_ok = false\\n" > ~/.pydistutils.cfg
   echo -e "[easy_install]\\nzip_ok = false\\n" > ${VIRTUAL_ENV}/.local/.pydistutils.cfg
