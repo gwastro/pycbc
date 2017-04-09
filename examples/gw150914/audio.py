@@ -1,10 +1,8 @@
 from pycbc.frame import read_frame
-from pycbc.filter import highpass_fir, lowpass_fir, matched_filter
-from pycbc.waveform import get_fd_waveform
+from pycbc.filter import highpass_fir, lowpass_fir
 from pycbc.psd import welch, interpolate
 from pycbc.types import TimeSeries
 import urllib
-import pylab
 
 # Read data and remove low frequency content
 fname = 'H-H1_LOSC_4_V2-1126259446-32.gwf'
