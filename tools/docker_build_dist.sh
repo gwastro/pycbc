@@ -78,16 +78,14 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
   pushd ${BUILD}
   /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --silent-build --build-minimal-lalsuite --with-extra-libs=file:///pycbc/composer_xe_2015.0.090.tar.gz
-  find . -name "pycbc_inspiral*" -print
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     echo -e "\\n>> [`date`] Deploying pycbc_inspiral bundle"
     if [ "x${TRAVIS_TAG}" == "xlatest" ] ; then
-      PYCBC_INSPIRAL_SUFFIX="_osg"
       BUNDLE_DEST=/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_6/bundle/${TRAVIS_TAG}
-      echo -e "\\n>> [`date`] Deploying pycbc_inspiral${PYCBC_INSPIRAL_SUFFIX} to sugwg-test1.phy.syr.edu"
+      echo -e "\\n>> [`date`] Deploying pycbc_inspiral bundle to sugwg-test1.phy.syr.edu"
       ssh pycbc@sugwg-test1.phy.syr.edu "mkdir -p ${BUNDLE_DEST}"
-      scp ${BUILD}/pycbc-build/environment/dist/pycbc_inspiral${PYCBC_INSPIRAL_SUFFIX} pycbc@sugwg-test1.phy.syr.edu:${BUNDLE_DEST}/pycbc_inspiral
+      scp ${BUILD}/pycbc-build/environment/dist/pycbc_inspiral_osg* pycbc@sugwg-test1.phy.syr.edu:${BUNDLE_DEST}/pycbc_inspiral
     else
       PYCBC_INSPIRAL_SUFFIX="_osg_${TRAVIS_TAG}"
       BUNDLE_DEST=/home/login/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_6/bundle/${TRAVIS_TAG}
