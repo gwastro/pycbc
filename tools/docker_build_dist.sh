@@ -120,7 +120,8 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   yum install -q -y zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel db4-devel
   rpm -Uvh https://repo.grid.iu.edu/osg/3.3/osg-3.3-el7-release-latest.rpm
   yum clean all &>/dev/null
-  yum install -q -y globus-gsi-cert-utils-progs gsi-openssh-clients osg-ca-certs ligo-proxy-utils
+  yum install -q -y globus-gsi-cert-utils-progs gsi-openssh-clients osg-ca-certs ligo-proxy-utils fetch-crl
+  fetch-crl
 
   echo -e "\\n>> [`date`] Removing LAL RPMs"
   yum -y -q remove "*lal*"
