@@ -67,11 +67,13 @@ deploy:
   local_dir: _gh-pages
   on:
     branch: master
+    condition: $PYCBC_CONTAINER = build_and_test
 - provider: pypi
   user: duncan-brown
   password: $PYPI_TOKEN
   on:
     tags: true
+    condition: $PYCBC_CONTAINER = build_and_test
 before_cache:
 - rm -rf $HOME/pycbc-sources/lalsuite
 - rm -rf $HOME/pycbc-sources/pycbc
