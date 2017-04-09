@@ -1389,17 +1389,17 @@ python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRA
 
 fi # if $run_analysis
 
-if $silent_build ; then
-    # close stdin and stdout
-    exec 1>&-
-    exec 2>&-
-
-    # open stdout as $LOG_FILE file for read and write.
-    exec 1<>$LOG_FILE
-
-    # redirect stderr to stdout
-    exec 2>&1
-fi
+#if $silent_build ; then
+#    # close stdin and stdout
+#    exec 1>&-
+#    exec 2>&-
+#
+#    # open stdout as $LOG_FILE file for read and write.
+#    exec 1<>$LOG_FILE
+#
+#    # redirect stderr to stdout
+#    exec 2>&1
+#fi
 
 # zip weave cache
 echo -e "\\n\\n>> [`date`] zipping weave cache"
