@@ -58,7 +58,7 @@ pycbc_make_coinc_search_workflow \
   ${CONFIG_PATH}/O2/pipeline/injections.ini \
   ${CONFIG_PATH}/O2/pipeline/plotting.ini \
 --config-overrides \
-  "workflow:datafind-check-frames-exist:warn" \
+  "workflow-datafind:datafind-check-frames-exist:warn" \
   "workflow:start-time:$((1126259462 - 1800))" \
   "workflow:end-time:$((1126259462 + 1800))" \
   "results_page:output-path:${OUTPUT_PATH}" \

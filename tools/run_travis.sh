@@ -23,6 +23,7 @@ if [ "x${OS_NAME}" != "xubuntu" ] ; then
   if [ "x${OS_NAME}" == "xscientific" ] ; then
     echo -e "\\n>> [`date`] Caching E@H build environment"
     mkdir -p $HOME/docker-cache
+    mkdir -p $HOME/docker-cache/test
     sudo docker cp buildvm:/pycbc/build/pycbc-sources/pycbc-build-preinst.tgz $HOME/docker-cache/pycbc-build-preinst.tgz
     sudo docker cp buildvm:/pycbc/build/pycbc-sources/pycbc-build-preinst-lalsuite.tgz $HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz
     sudo docker cp buildvm:/pycbc/build/pycbc-sources/test/H1L1-SBANK_FOR_GW150914ER10.xml.gz $HOME/docker-cache/test/H1L1-SBANK_FOR_GW150914ER10.xml.gz
