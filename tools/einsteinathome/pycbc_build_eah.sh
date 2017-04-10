@@ -339,7 +339,7 @@ for i in $*; do
         --with-extra-bank=*) extra_bank="$extra_bank `echo $i|sed 's/^--with-extra-bank=//'`";;
         --with-extra-approximant=*) extra_approx="${extra_approx}`echo $i|sed 's/^--with-extra-approximant=//'` ";;
         --with-lal-data-path=*) lal_data_path="`echo $i|sed 's/^--with-lal-data-path=//'`";;
-        --processing-scheme=*) processing_scheme="`echo $i|sed 's/^--processing-scheme=//'`";;
+        --processing-scheme=*) processing_scheme="--processing-scheme `echo $i|sed 's/^--processing-scheme=//'`";;
         --silent-build) silent_build=true;;
         --help) echo -e "Options:\n$usage">&2; exit 0;;
         *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
