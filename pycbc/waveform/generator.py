@@ -242,7 +242,16 @@ class BaseGenerator(object):
 class BaseCBCGenerator(BaseGenerator):
     """Adds ability to convert from various derived parameters to parameters
     needed by the waveform generators.
+
+    Attributes
+    ----------
+    possible_args : set
+        The set of names of arguments that may be used in the `variable_args`
+        or `frozen_params`.
     """
+    possible_args = set(parameters.td_waveform_params +
+                        parameters.fd_waveform_params +
+                        ['taper'])
     def __init__(self, generator, variable_args=(), **frozen_params):
         super(BaseCBCGenerator, self).__init__(generator,
             variable_args=variable_args, **frozen_params)
@@ -258,10 +267,8 @@ class BaseCBCGenerator(BaseGenerator):
                 self._add_pregenerate(func)
                 params_used.update(func.input_params)
         # check that there are no unused parameters
-        all_waveform_input_args = set(parameters.td_waveform_params +
-                                      parameters.fd_waveform_params)
         unused_args = all_args.difference(params_used) \
-                              .difference(all_waveform_input_args)
+                              .difference(self.possible_args)
         if len(unused_args):
             raise ValueError("The following args are not being used: "
                              "{opts}".format(opts=unused_args))
