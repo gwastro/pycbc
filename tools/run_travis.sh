@@ -3,8 +3,8 @@
 if [ "x${OS_NAME}" != "xubuntu" ] ; then
   set -e
   echo -e "\\n>> [`date`] Starting ${OS_NAME} ${OS_VERSION} docker container"
-  if [ "x${OS_NAME}" == "xcentos" ] ; then DOCKER_IMG="centos:centos${OS_VERSION}" ; fi
-  if [ "x${OS_NAME}" == "xscientific" ] ; then DOCKER_IMG="cern/slc${OS_VERSION}-base" ; fi
+  if [ "x${OS_NAME}" == "xcentos" ] ; then DOCKER_IMG="pycbc/ldg-el7" ; fi
+  if [ "x${OS_NAME}" == "xscientific" ] ; then DOCKER_IMG="pycbc/sl6-travis" ; fi
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     cp -R ~/.ssh .
   fi

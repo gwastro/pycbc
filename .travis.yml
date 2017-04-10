@@ -51,8 +51,8 @@ matrix:
     services:
     - docker
 before_install:
-- if [ "x${OS_NAME}" == "xcentos" ] ; then sudo docker pull centos:centos${OS_VERSION} ; fi
-- if [ "x${OS_NAME}" == "xscientific" ] ; then sudo docker pull cern/slc${OS_VERSION}-base ; fi
+- if [ "x${OS_NAME}" == "xcentos" ] ; then sudo docker pull pycbc/ldg-el7; fi
+- if [ "x${OS_NAME}" == "xscientific" ] ; then sudo docker pull pycbc/sl6-travis ; fi
 install:
 - touch ~/.ssh/id_rsa ~/.ssh/ldg_user ~/.ssh/ldg_token
 - chmod 600 ~/.ssh/id_rsa ~/.ssh/ldg_user ~/.ssh/ldg_token
