@@ -22,6 +22,12 @@ if [ "x${OS_NAME}" != "xubuntu" ] ; then
     mkdir -p $HOME/docker-cache
     sudo docker cp buildvm:/pycbc/build/pycbc-sources/pycbc-build-preinst.tgz $HOME/docker-cache/pycbc-build-preinst.tgz
     sudo docker cp buildvm:/pycbc/build/pycbc-sources/pycbc-build-preinst-lalsuite.tgz $HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz
+    sudo docker cp buildvm:/pycbc/build/pycbc-sources/test/H1L1-SBANK_FOR_GW150914ER10.xml.gz $HOME/docker-cache/test/H1L1-SBANK_FOR_GW150914ER10.xml.gz
+    sudo docker cp buildvm:/pycbc/build/pycbc-sources/test/H-H1_LOSC_4_V1-1126257414-4096.gwf $HOME/docker-cache/test/H-H1_LOSC_4_V1-1126257414-4096.gwf
+    ROM_FILES=$(docker run -i -a stdout ${DOCKER_IMG} /bin/bash -c "find /pycbc/build/pycbc-sources/test -name 'SEOB*'")
+    for file in $ROM_FILES; do
+      sudo docker cp buildvm:${file} $HOME/docker-cache/test
+    done
   fi
   exit 0
 fi
