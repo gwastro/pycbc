@@ -62,7 +62,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   export PYTHONUSERBASE=${BUILD}/.local
   export XDG_CACHE_HOME=${BUILD}/.cache
 
-  # get library needed to build documentation
+  # get library to build optimized pycbc_inspiral bundle
   wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30 --no-verbose"
   primary_url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/03f2048c770492f66f80528493fd6cecded63769/x86_64/composer_xe_2015.0.090"
   secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown/x86_64/composer_xe_2015.0.090"
@@ -118,6 +118,9 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   yum makecache &>/dev/null
   yum --debuglevel=1 -y install git2u-all lscsoft-all
   yum install -q -y zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel db4-devel
+  rpm -Uvh https://repo.grid.iu.edu/osg/3.3/osg-3.3-el7-release-latest.rpm
+  yum clean all &>/dev/null
+  yum install -q -y globus-gsi-cert-utils-progs gsi-openssh-clients osg-ca-certs ligo-proxy-utils
 
   echo -e "\\n>> [`date`] Removing LAL RPMs"
   yum -y -q remove "*lal*"
@@ -206,11 +209,19 @@ EOF
 
   deactivate
 
-  echo -e "\\n>> [`date`] Setting virtual environment permissions for deployment"
-  find ${VENV_PATH} -type d -exec chmod go+rx {} \;
-  chmod -R go+r ${VENV_PATH}
-  
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
+    echo -e "\\n>> [`date`] Running test_coinc_search_workflow.sh"
+    mkdir -p /pycbc/workflow-test
+    pushd /pycbc/workflow-test
+    /pycbc/tools/test_coinc_search_workflow.sh ${TRAVIS_TAG}
+    popd
+  fi
+
+  if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
+    echo -e "\\n>> [`date`] Setting virtual environment permissions for deployment"
+    find ${VENV_PATH} -type d -exec chmod go+rx {} \;
+    chmod -R go+r ${VENV_PATH}
+  
     echo -e "\\n>> [`date`] Deploying virtual environment ${VENV_PATH}"
     if [ "x${TRAVIS_TAG}" == "xlatest" ] ; then
       echo -e "\\n>> [`date`] Deploying master to sugwg-test1.phy.syr.edu"
