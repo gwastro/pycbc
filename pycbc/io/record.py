@@ -566,14 +566,16 @@ class FieldArray(numpy.recarray):
 
     The fields property returns the names of both fields and virtual fields.
 
-    .. note:: It can happen that a field, virtual field, or function in the
-    functionlib have that same name. In that case, precedence is: field,
-    virtual field, function. For example, if a function called 'foo' is in the
-    function library, and a virtual field is added call 'foo', then `a['foo']`
-    will return the virtual field rather than the function. Likewise, if the
-    array is initialized with a field called `foo`, or a field with that name
-    is added, `a['foo']` will return that field rather than the virtual field
-    and/or the function.
+    .. note::
+    
+        It can happen that a field, virtual field, or function in the
+        functionlib have that same name. In that case, precedence is: field,
+        virtual field, function. For example, if a function called 'foo' is in
+        the function library, and a virtual field is added call 'foo', then
+        `a['foo']` will return the virtual field rather than the function.
+        Likewise, if the array is initialized with a field called `foo`, or a
+        field with that name is added, `a['foo']` will return that field
+        rather than the virtual field and/or the function.
 
     Parameters
     ----------
