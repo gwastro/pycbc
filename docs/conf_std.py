@@ -256,13 +256,6 @@ intersphinx_mapping = {'http://docs.python.org/': None}
 
 napoleon_use_ivar = False
 
-# Ensure that __init__ gets documented for classes ... Not sure why this isn't
-# done by default ...
-def skip(app, what, name, obj, skip, options):
-    if name == "__init__":
-        return False
-    return skip
-
 def setup(app):
     app.connect("autodoc-skip-member", skip)
 
