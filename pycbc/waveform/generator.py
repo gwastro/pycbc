@@ -573,11 +573,6 @@ class FDomainDetFrameGenerator(object):
             tshift = 0.
         hp._epoch = hc._epoch = self._epoch
         h = {}
-        if 'tc' in self.current_params:
-            try:
-                kmin = int(self.current_params['f_lower']/hp.delta_f)
-            except KeyError:
-                kmin = 0
         if self.detector_names != ['RF']:
             for detname, det in self.detectors.items():
                 # apply detector response function
@@ -590,13 +585,12 @@ class FDomainDetFrameGenerator(object):
                 tc = self.current_params['tc'] + \
                     det.time_delay_from_earth_center(self.current_params['ra'],
                          self.current_params['dec'], self.current_params['tc'])
-                h[detname] = apply_fd_time_shift(thish, tc+tshift, kmin=kmin,
-                                                 copy=False)
+                h[detname] = apply_fd_time_shift(thish, tc+tshift, copy=False)
         else:
             # no detector response, just use the + polarization
             if 'tc' in self.current_params:
-                hp = apply_fd_time_shift(hp, self.current_params['tc'],
-                            kmin=kmin, copy=False)
+                hp = apply_fd_time_shift(hp, self.current_params['tc']+tshift,
+                                         copy=False)
             h['RF'] = hp
         return h
 
