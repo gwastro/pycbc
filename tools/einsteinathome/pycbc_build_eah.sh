@@ -52,6 +52,7 @@ libgfortran=libgfortran.so
 extra_libs=""
 extra_bank=""
 extra_approx=""
+processing_scheme=""
 lal_data_path="."
 
 # defaults, possibly overwritten by OS-specific settings
@@ -286,6 +287,8 @@ usage="
 
     --with-lal-data-path=<path>     run test job using ROM data from <path>
 
+    --processing-scheme=<scheme>    run test job using processing scheme <scheme>
+
     --verbose-python                run PyInstalled Python in verbose mode, showing imports
 
     --no-analysis                   for testing, don't run analysis, assume weave cache is already there
@@ -336,6 +339,7 @@ for i in $*; do
         --with-extra-bank=*) extra_bank="$extra_bank `echo $i|sed 's/^--with-extra-bank=//'`";;
         --with-extra-approximant=*) extra_approx="${extra_approx}`echo $i|sed 's/^--with-extra-approximant=//'` ";;
         --with-lal-data-path=*) lal_data_path="`echo $i|sed 's/^--with-lal-data-path=//'`";;
+        --processing-scheme=*) processing_scheme="--processing-scheme `echo $i|sed 's/^--processing-scheme=//'`";;
         --silent-build) silent_build=true;;
         --help) echo -e "Options:\n$usage">&2; exit 0;;
         *) echo -e "unknown option '$i', valid are:\n$usage">&2; exit 1;;
@@ -1290,6 +1294,13 @@ if check_md5 "$p" "$md5"; then
     fi
 fi
 
+# Fetch any extra libraries specified on the command line
+if [ ! -z ${extra_libs} ] ; then
+  echo -e "\\n\\n>> [`date`] installing extra libraries from ${extra_libs} to $PREFIX/lib" >&3
+  curl --ftp-pasv --insecure -o extra_libs.tar.gz ${extra_libs}
+  tar -C $PREFIX/lib -zxvf extra_libs.tar.gz
+fi
+
 if $build_framecpp; then
     export LAL_FRAME_LIBRARY=FrameC
 else
@@ -1340,7 +1351,7 @@ do
       LEVEL2_CACHE_SIZE=8192 \
       WEAVE_FLAGS='-O3 -march=core2 -w' \
       FIXED_WEAVE_CACHE="$PWD/pycbc_inspiral"
-    args="--fixed-weave-cache \
+    args="--fixed-weave-cache ${processing_scheme} \
       --sample-rate 2048 \
       --sgchisq-snr-threshold 6.0 \
       --sgchisq-locations mtotal>40:20-30,20-45,20-60,20-75,20-90,20-105,20-120 \
@@ -1407,8 +1418,7 @@ cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
 rm -f "$cache"
 # Fetch any extra libraries specified on the command line
 if [ ! -z ${extra_libs} ] ; then
-  curl --ftp-pasv --insecure -o extra_libs.tar.gz ${extra_libs}
-  echo -e "\\n\\n>> [`date`] adding extra libraries from ${extra_libs}" >&3
+  echo -e "\\n\\n>> [`date`] adding extra libraries from ${extra_libs} to bundle" >&3
   tar -C pycbc_inspiral/ -zxvf extra_libs.tar.gz
 fi
 # addin all ROM files to the cache would blow it up to >300MB, so for now add only the one
