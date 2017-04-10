@@ -18,6 +18,9 @@ echo -e "\\n>> [`date`] Cloning pycbc-config git repository"
 test -r pycbc-config || git clone --depth 1 git@code.pycbc.phy.syr.edu:ligo-cbc/pycbc-config.git
 CONFIG_PATH="file://`pwd`/pycbc-config"
 
+test -r veto-definitions || git clone --depth 1 git@code.pycbc.phy.syr.edu:detchar/veto-definitions.git
+VETO_PATH="file://`pwd`/veto-definitions"
+
 echo -e "\\n>> [`date`] Building test workflow $WORKFLOWNAME"
 cp `which ligo-proxy-init` .
 patch -p0 ligo-proxy-init 1>/dev/null <<EOF
@@ -76,8 +79,8 @@ pycbc_make_coinc_search_workflow \
   "workflow-segments:segments-final-veto-group:12H" \
   "workflow-segments:segments-veto-groups:" \
   "datafind:urltype:file" \
-  "workflow-segments:segments-veto-definer-url:https://code.pycbc.phy.syr.edu/detchar/veto-definitions/download/ab97b33a92faed58dbade5135932989d0664886a/cbc/O1/H1L1-CBC_VETO_DEFINER_C02_O1_1126051217-11203200.xml" \
-  "workflow-tmpltbank:tmpltbank-pregenerated-bank:https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/41676894561059629eb5715673d7e6dea7a76865/ER8/bank/H1L1-UBERBANK_MAXM100_NS0p05_ER8HMPSD-1126033217-223200.xml.gz" \
+  "workflow-segments:segments-veto-definer-url:${VETO_PATH}/cbc/O1/H1L1-CBC_VETO_DEFINER_C02_O1_1126051217-11203200.xml" \
+  "workflow-tmpltbank:tmpltbank-pregenerated-bank:${CONFIG_PATH}/O1/bank/H1L1-UBERBANK_MAXM100_NS0p05_ER8HMPSD-1126033217-223200.xml.gz" \
   "inspiral:low-frequency-cutoff:30" \
   "s-mchirp:bins:0.8 1.74 8.07 14.92 21.77 100" \
   "s-mtotal:bins:2 4 27.25 51.5 75.75 100" \
