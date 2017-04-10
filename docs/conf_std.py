@@ -30,7 +30,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
           'sphinx.ext.intersphinx', 'sphinx.ext.coverage', 
               'sphinx.ext.viewcode', 
             'sphinxcontrib.programoutput',
-         'numpydoc',           'matplotlib.sphinxext.mathmpl',
+         'sphinx.ext.napoleon',           'matplotlib.sphinxext.mathmpl',
           'matplotlib.sphinxext.only_directives',
           'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary']
 
@@ -256,8 +256,10 @@ intersphinx_mapping = {'http://docs.python.org/': None}
 
 # Fix for WARNING: toctree references unknown document
 # http://stackoverflow.com/questions/12206334/sphinx-autosummary-toctree-contains-reference-to-nonexisting-document-warnings
-numpydoc_show_class_members = False
-numpydoc_class_members_toctree = False
+#numpydoc_show_class_members = False
+#numpydoc_class_members_toctree = False
+
+napoleon_use_ivar = False
 
 # Ensure that __init__ gets documented for classes ... Not sure why this isn't
 # done by default ...
