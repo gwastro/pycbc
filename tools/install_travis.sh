@@ -63,7 +63,7 @@ SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2C
 pip install dqsegdb
 
 # install the packges needed to build the documentation
-pip install "Sphinx>=1.4.8"
+pip install "Sphinx>=1.4.2"
 pip install numpydoc
 pip install sphinx-rtd-theme
 pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput

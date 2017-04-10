@@ -28,14 +28,13 @@ Here we'll make a frequency shifted and slowed version of GW150914 as
 it can be heard in the Hanford data. 
 
 .. literalinclude:: ../examples/gw150914/audio.py
-.. program-output:: python ../examples/gw150914/audio.py
 
-:download:`The audio <test.wav>`
+:download:`The audio <resources/gw150914_h1_chirp.wav>`
 
 Note, google chrome may not play wav files correctly, please download to listen.
 
 .. raw:: html
     
-    <audio controls><source src='_downloads/test.wav' type='audio/wav'</audio>
+    <audio controls><source src='_downloads/gw150914_h1_chirp.wav' type='audio/wav'</audio>
 
 
