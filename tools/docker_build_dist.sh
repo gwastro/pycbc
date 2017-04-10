@@ -162,6 +162,12 @@ if [ "x${OS_VERSION}" == "x7" ] ; then
   echo -e "\\n>> [`date`] Installing PyCBC PyLAL"
   pip install pycbc-pylal
 
+  echo -e "\\n>> [`date`] Installing modules needed to build documentation"
+  pip install "Sphinx>=1.4.2"
+  pip install numpydoc
+  pip install sphinx-rtd-theme
+  pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
+
   echo -e "\\n>> [`date`] Installing ipython and jupyter"
   pip install ipython
   pip install jupyter
