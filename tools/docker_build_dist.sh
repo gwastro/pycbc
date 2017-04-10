@@ -48,14 +48,6 @@ fi
 if [ "x${OS_VERSION}" == "x6" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
 
-  # install requirements into docker container
-  yum install --debuglevel=1 -y gcc gcc-c++ gcc-gfortran python-devel pcre-devel autoconf automake \
-      zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel wget db4-devel git \
-      bzip2 zip python-devel fftw-devel openssl-devel gsl-devel lapack-devel freetype-devel tar
-  ln -s /usr/bin/g++ /usr/bin/g++-4.4.7
-  ln -s /usr/bin/gcc /usr/bin/gcc-4.4.7
-  ln -s /usr/bin/gfortran /usr/bin/gfortran-4.4.7
-
   # create working dir for build script
   BUILD=/pycbc/build
   mkdir -p ${BUILD}
@@ -101,26 +93,6 @@ fi
 
 if [ "x${OS_VERSION}" == "x7" ] ; then
   echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
-
-  echo -e "\\n>> [`date`] Installing LDG RPMs"
-  rpm -ivh http://software.ligo.org/lscsoft/scientific/7.2/x86_64/production/lscsoft-production-config-1.3-1.el7.noarch.rpm
-  yum clean all &>/dev/null
-  yum makecache  &>/dev/null
-  yum update &>/dev/null
-  yum -q -y install lscsoft-backports-config
-  yum -q -y install lscsoft-epel-config
-  curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
-  yum clean all &>/dev/null
-  yum makecache &>/dev/null
-  yum update &>/dev/null
-  yum -q -y install lscsoft-ius-config
-  yum clean all &>/dev/null
-  yum makecache &>/dev/null
-  yum --debuglevel=1 -y install git2u-all lscsoft-all
-  yum install -q -y zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel db4-devel patch
-  rpm -Uvh https://repo.grid.iu.edu/osg/3.3/osg-3.3-el7-release-latest.rpm
-  yum clean all &>/dev/null
-  yum install -q -y globus-gsi-cert-utils-progs gsi-openssh-clients osg-ca-certs ligo-proxy-utils
 
   echo -e "\\n>> [`date`] Removing LAL RPMs"
   yum -y -q remove "*lal*"

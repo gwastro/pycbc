@@ -3,13 +3,35 @@
 if [ "x${OS_NAME}" != "xubuntu" ] ; then
   set -e
   echo -e "\\n>> [`date`] Starting ${OS_NAME} ${OS_VERSION} docker container"
-  if [ "x${OS_NAME}" == "xcentos" ] ; then DOCKER_IMG="centos:centos${OS_VERSION}" ; fi
-  if [ "x${OS_NAME}" == "xscientific" ] ; then DOCKER_IMG="cern/slc${OS_VERSION}-base" ; fi
+  if [ "x${OS_NAME}" == "xcentos" ] ; then DOCKER_IMG="pycbc/ldg-el7" ; fi
+  if [ "x${OS_NAME}" == "xscientific" ] ; then DOCKER_IMG="pycbc/sl6-travis" ; fi
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     cp -R ~/.ssh .
   fi
-  sudo docker run --rm=true -v `pwd`:/pycbc:rw ${DOCKER_IMG} /bin/bash -c "bash /pycbc/tools/docker_build_dist.sh --os-version=${OS_VERSION} --pull-request=${TRAVIS_PULL_REQUEST} --commit=${TRAVIS_COMMIT} --secure=${TRAVIS_SECURE_ENV_VARS} --tag=${TRAVIS_TAG}"
+  mkdir -p build/pycbc-sources
+  if [ -f "$HOME/docker-cache/pycbc-build-preinst.tgz" ] ; then
+    cp $HOME/docker-cache/pycbc-build-preinst.tgz build/pycbc-sources
+  fi
+  if [ -f "$HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz" ] ; then
+    cp $HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz build/pycbc-sources
+  fi
+  if [ -f "$HOME/docker-cache/test" ] ; then
+    cp -a $HOME/docker-cache/test build/pycbc-sources/test
+  fi
+  sudo docker run --name buildvm -v `pwd`:/pycbc:rw ${DOCKER_IMG} /bin/bash -c "bash /pycbc/tools/docker_build_dist.sh --os-version=${OS_VERSION} --pull-request=${TRAVIS_PULL_REQUEST} --commit=${TRAVIS_COMMIT} --secure=${TRAVIS_SECURE_ENV_VARS} --tag=${TRAVIS_TAG}"
   echo -e "\\n>> [`date`] CentOS Docker exited"
+  if [ "x${OS_NAME}" == "xscientific" ] ; then
+    echo -e "\\n>> [`date`] Caching E@H build environment"
+    mkdir -p $HOME/docker-cache
+    sudo docker cp buildvm:/pycbc/build/pycbc-sources/pycbc-build-preinst.tgz $HOME/docker-cache/pycbc-build-preinst.tgz
+    sudo docker cp buildvm:/pycbc/build/pycbc-sources/pycbc-build-preinst-lalsuite.tgz $HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz
+    sudo docker cp buildvm:/pycbc/build/pycbc-sources/test/H1L1-SBANK_FOR_GW150914ER10.xml.gz $HOME/docker-cache/test/H1L1-SBANK_FOR_GW150914ER10.xml.gz
+    sudo docker cp buildvm:/pycbc/build/pycbc-sources/test/H-H1_LOSC_4_V1-1126257414-4096.gwf $HOME/docker-cache/test/H-H1_LOSC_4_V1-1126257414-4096.gwf
+    ROM_FILES=$(docker run -i -a stdout ${DOCKER_IMG} /bin/bash -c "find /pycbc/build/pycbc-sources/test -name 'SEOB*'")
+    for file in $ROM_FILES; do
+      sudo docker cp buildvm:${file} $HOME/docker-cache/test
+    done
+  fi
   exit 0
 fi
 
