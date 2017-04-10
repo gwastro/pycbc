@@ -590,8 +590,8 @@ def select_waveform_generator(approximant):
     generator
         A waveform generator object.
 
-    Example
-    -------
+    Examples
+    --------
     Get a list of available approximants:
     >>> from pycbc import waveform
     >>> waveform.fd_approximants()

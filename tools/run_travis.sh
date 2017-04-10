@@ -98,4 +98,12 @@ if test $? -ne 0 ; then
     RESULT=1
 fi
 
+ls -alrt
+
+ls _gh-pages/latest/html -alrt
+
+ls _gh-pages/latest/html/_downloads -alrt
+
+ls docs -alrt
+
 exit ${RESULT}
