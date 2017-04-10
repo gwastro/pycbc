@@ -296,19 +296,33 @@ To build the documentation from your virtual environment, first make sure that y
     pip install sphinx-rtd-theme
     pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
     
-To generate the documentation, from the top level of the PyCBC source tree run
+To generate the documentation and push it to your personal GitHub pages, first create a branch names ``gh-pages``, if you do not already have one. Follow the `GitHub branch <https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/>`_ instructions to do this.
+
+To build and publish the documentation, run the following commands from the
+top-level of your PyCBC source tree, replacing ``github-username`` with your
+GitHub user name:
 
 .. code-block:: bash
 
-    python setup.py build_docs
-    
-This will build the documentation in the directory docs/_build/html which can be copied to a web-accessible directory. For example
+    git clone git@github.com:github-username/pycbc.git _gh-pages
+    cd _gh-pages
+    git checkout gh-pages
+    git rm -rf *
+    git commit -a -m "flush documentation"
+    cd ..
+    python setup.py build_gh_pages
+    cd _gh-pages
+    git add --all
+    git commit -a -m "documentation update"
+    git push origin gh-pages
 
-.. code-block:: bash
+The documentation will then be visible at http://github-username.github.io/pycbc/latest/html where ``github-username`` should be replaced with your GitHub username.
 
-    cp -a docs/_build/html/ ~/public_html/pycbc-docs
-    
-will copy the documentation to a directory called ``pycbc-docs`` under your public html pages.
+.. note::
+
+    Be careful with the ``git rm -rf *`` command as if you run it in the wrong
+    directory you can delete the contents of your git repository. If you do
+    this by accident, you can use ``git reset`` to undo the commit.
 
 To maintain the documentation under GitHub project pages, see
 
