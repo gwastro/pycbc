@@ -9,11 +9,14 @@ if [ "x${OS_NAME}" != "xubuntu" ] ; then
     cp -R ~/.ssh .
   fi
   mkdir -p build/pycbc-sources
-  if [ -f $HOME/docker-cache/pycbc-build-preinst.tgz ] ; then
+  if [ -f "$HOME/docker-cache/pycbc-build-preinst.tgz" ] ; then
     cp $HOME/docker-cache/pycbc-build-preinst.tgz build/pycbc-sources
   fi
-  if [ -f $HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz ] ; then
+  if [ -f "$HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz" ] ; then
     cp $HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz build/pycbc-sources
+  fi
+  if [ -f "$HOME/docker-cache/test" ] ; then
+    cp -a $HOME/docker-cache/test build/pycbc-sources/test
   fi
   sudo docker run --name buildvm -v `pwd`:/pycbc:rw ${DOCKER_IMG} /bin/bash -c "bash /pycbc/tools/docker_build_dist.sh --os-version=${OS_VERSION} --pull-request=${TRAVIS_PULL_REQUEST} --commit=${TRAVIS_COMMIT} --secure=${TRAVIS_SECURE_ENV_VARS} --tag=${TRAVIS_TAG}"
   echo -e "\\n>> [`date`] CentOS Docker exited"
