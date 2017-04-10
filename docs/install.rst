@@ -292,7 +292,6 @@ To build the documentation from your virtual environment, first make sure that y
 .. code-block:: bash
 
     pip install "Sphinx>=1.4.2"
-    pip install numpydoc
     pip install sphinx-rtd-theme
     pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
     
