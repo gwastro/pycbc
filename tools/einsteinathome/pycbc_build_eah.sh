@@ -1294,6 +1294,13 @@ if check_md5 "$p" "$md5"; then
     fi
 fi
 
+# Fetch any extra libraries specified on the command line
+if [ ! -z ${extra_libs} ] ; then
+  echo -e "\\n\\n>> [`date`] installing extra libraries from ${extra_libs} to $PREFIX/lib" >&3
+  curl --ftp-pasv --insecure -o extra_libs.tar.gz ${extra_libs}
+  tar -C $PREFIX/lib -zxvf extra_libs.tar.gz
+fi
+
 if $build_framecpp; then
     export LAL_FRAME_LIBRARY=FrameC
 else
@@ -1411,8 +1418,7 @@ cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
 rm -f "$cache"
 # Fetch any extra libraries specified on the command line
 if [ ! -z ${extra_libs} ] ; then
-  curl --ftp-pasv --insecure -o extra_libs.tar.gz ${extra_libs}
-  echo -e "\\n\\n>> [`date`] adding extra libraries from ${extra_libs}" >&3
+  echo -e "\\n\\n>> [`date`] adding extra libraries from ${extra_libs} to bundle" >&3
   tar -C pycbc_inspiral/ -zxvf extra_libs.tar.gz
 fi
 # addin all ROM files to the cache would blow it up to >300MB, so for now add only the one
