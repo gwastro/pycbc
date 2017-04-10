@@ -119,11 +119,11 @@ sorting = ustat.argsort()[::-1] #gives the index sorting of each event
 stat = ustat[sorting][:]
 temp_id = f['foreground/template_id'][:] # gets template_ids
 temp_id = temp_id[sorting][:] #gets template_ids corresponding to sorted newSNR values
-
 # make new dictionary (final_dict) that will hold the trigger information by bin by loudest SNR
 # also make hdf output file that contains all of the information sorted by loudest SNR
 datacoinc = {'coinc/stat':stat}
 final_dict = {'bns':[], 'bulk':[], 'edge':[]}
+mass1arr = []; mass2arr = []; mchirparr = []; etaarr = []; total_massarr = []; mass_ratioarr = [];
 for val in temp_id:
     m1 = np.array(bank_data['mass1'])
     m2 = np.array(bank_data['mass2'])
@@ -134,22 +134,30 @@ for val in temp_id:
     eta = conversions.eta_from_mass1_mass2(mass1, mass2)
     mass_ratio = conversions.q_from_mass1_mass2(mass1, mass2)
     # cast all inspiral information into python dictionary
-    datacoinc['template/mass1'] = mass1
-    datacoinc['template/mass2'] = mass2
-    datacoinc['template/mchirp'] = mchirp
-    datacoinc['template/eta'] = eta
-    datacoinc['template/total_mass'] = total_mass
-    datacoinc['template/mass_ratio'] = mass_ratio
+    mass1arr.append(mass1)
+    mass2arr.append(mass2)
+    mchirparr.append(mchirp)
+    etaarr.append(eta)
+    total_massarr.append(total_mass)
+    mass_ratioarr.append(mass_ratio)
     if mchirp <= 1.74:
         final_dict['bns'].append(val)
     elif total_mass <= 150:
         final_dict['bulk'].append(val)
     else: 
         final_dict['edge'].append(val)
+#sort stuff in final datacoinc
+print mass1arr[:]
+datacoinc['template/mass1'] = np.array(mass1arr[:])
+datacoinc['template/mass2'] = np.array(mass2arr[:])
+datacoinc['template/mchirp'] = np.array(mchirparr[:])
+datacoinc['template/eta'] = np.array(etaarr[:])
+datacoinc['template/total_mass'] = np.array(total_massarr[:])
+datacoinc['template/mass_ratio'] = np.array(mass_ratioarr[:])
 
-datacoinc['coinc/ifar'] = np.array(f['foreground']['ifar'][:])
-time1 = np.array(f['foreground']['time1'][:])
-time2 = np.array(f['foreground']['time2'][:])
+datacoinc['coinc/ifar'] = np.array(f['foreground']['ifar'][:][sorting][:])
+time1 = np.array(f['foreground']['time1'][:])[sorting][:]
+time2 = np.array(f['foreground']['time2'][:][sorting][:])
 datacoinc['coinc/abs_time_delay'] = abs(time1 - time2)
 datacoinc['stat'] = np.array(stat[:])
 datacoinc['template_id'] = np.array(temp_id[:])
@@ -179,13 +187,24 @@ if len(stat) < num_events:
 #print stat #prints top 5 events in order
 #print temp_id
 
-times = {f.attrs['detector_1']: f['foreground/time1'][:][sorting][0:num_events],
-         f.attrs['detector_2']: f['foreground/time2'][:][sorting][0:num_events],
-        }
-tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][:][sorting][0:num_events],
-         f.attrs['detector_2']: f['foreground/trigger_id2'][:][sorting][0:num_events],
-        }
+#for sngle_bin in final_dict.values():
+#need to indent lines
 
+for sngl_bin in final_dict.values():
+    top_ids = sngl_bin[0:num_events]
+    print top_ids
+    ind = np.where(temp_id == top_ids)
+    print  
+    #f['foreground/time1'][:]
+
+times = {f.attrs['detector_1']: f['foreground/time1'][0:num_events],
+         f.attrs['detector_2']: f['foreground/time2'][0:num_events],
+        }
+tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][0:num_events],
+         f.attrs['detector_2']: f['foreground/trigger_id2'][0:num_events],
+        }
+print times
+print tids
 #bank_data = h5py.File(args.bank_file, 'r')
 
 # loop over number of loudest events to be followed up
