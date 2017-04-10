@@ -324,7 +324,7 @@ The documentation will then be visible at http://github-username.github.io/pycbc
     directory you can delete the contents of your git repository. If you do
     this by accident, you can use ``git reset`` to undo the commit.
 
-To maintain the documentation under GitHub project pages, see
+For more details on building and maintaining the documentation under GitHub project pages, see
 
 .. toctree::
     :maxdepth: 1
