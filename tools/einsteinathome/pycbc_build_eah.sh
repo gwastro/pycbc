@@ -867,16 +867,8 @@ EOF
     mkdir lalsuite-build
     cd lalsuite-build
     echo -e "\\n\\n>> [`date`] Configuring lalsuite" >&3
-    if $build_minimal_lalsuite ; then
     ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
-	--enable-swig-python --disable-lalxml --disable-laldetchar --disable-lalstochastic --disable-lalinference \
-        --disable-lalburst --disable-lalinspiral --disable-lalpulsar \
-	--disable-lalapps --disable-pylal
-    else
-        ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
-            --enable-swig-python --disable-lalxml --disable-laldetchar --disable-lalstochastic --disable-lalinference \
-	    --disable-lalapps --disable-pylal
-    fi
+        --disable-all-lal --enable-lalframe --enable-lalmetaio --enable-lalsimulation --enable-swig-python
     if $build_dlls; then
 	echo '#include "/usr/include/stdlib.h"
 extern int setenv(const char *name, const char *value, int overwrite);
