@@ -4,7 +4,7 @@ set -e
 
 for i in $*; do
   case $i in
-    --os-version=*) OS_VERSION="`echo $i|sed 's/^--os-version=//'`";;
+    --pycbc-container=*) PYCBC_CONTAINER="`echo $i|sed 's/^--pycbc-container=//'`";;
     --pull-request=*) TRAVIS_PULL_REQUEST="`echo $i|sed 's/^--pull-request=//'`";;
     --commit=*) TRAVIS_COMMIT="`echo $i|sed 's/^--commit=//'`";;
     --secure=*) TRAVIS_SECURE_ENV_VARS="`echo $i|sed 's/^--secure=//'`";;
@@ -30,7 +30,7 @@ else
   RSYNC_OPTIONS=""
 fi
 
-echo -e "\\n>> [`date`] Inside CentOS ${OS_VERSION}"
+echo -e "\\n>> [`date`] Inside container ${PYCBC_CONTAINER}"
 echo -e "\\n>> [`date`] Release tag is ${TRAVIS_TAG}"
 echo -e "\\n>> [`date`] Using PyCBC code ${PYCBC_CODE}"
 echo -e "\\n>> [`date`] Using lalsuite hash ${LALSUITE_HASH}"
@@ -45,7 +45,7 @@ if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
   chmod 600 ~/.ssh/id_rsa
 fi
 
-if [ "x${OS_VERSION}" == "x6" ] ; then
+if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
 
   # create working dir for build script
@@ -91,7 +91,7 @@ if [ "x${OS_VERSION}" == "x6" ] ; then
   popd
 fi
 
-if [ "x${OS_VERSION}" == "x7" ] ; then
+if [ "x${PYCBC_CONTAINER}" == "xpycbc_virtualenv" ] ; then
   echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
 
   echo -e "\\n>> [`date`] Removing LAL RPMs"

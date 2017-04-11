@@ -2,12 +2,6 @@
 
 set -e
 
-# just exit if we are running centos
-if [ "x${OS_NAME}" != "xubuntu" ] ; then
-  echo -e "\\n>> [`date`] CentOS build ${0} exiting"
-  exit 0
-fi
-
 # determine the pycbc git branch and origin
 git branch -vvv
 if test x$TRAVIS_PULL_REQUEST = "xfalse" ; then
