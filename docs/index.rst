@@ -45,9 +45,9 @@ PyCBC Project Goals
 
 The goals of the PyCBC project are to:
 
-- Provide tools for building gravitational-wave search workflows for CBCs
-- Create a flexible, extensible production code for CBC analysis that can be released for the public
-- Enable simple, easy and transparent access for various many-core architectures like GPUs
+- Provide tools for building gravitational-wave search and parameter estimation workflows for CBCs.
+- Create a flexible, extensible production code for CBC analysis that can be released for the public.
+- Enable simple, easy and transparent access for various many-core architectures like GPUs.
 
 =======================================
 Use of PyCBC in Scientific Publications
