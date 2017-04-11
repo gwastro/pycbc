@@ -825,48 +825,24 @@ else
         fi
     fi
     echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`" >&3
+    # fix typo in ltmain
     sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
     if $build_dlls; then
-	git apply <<'EOF' || true
-From accb37091abbc8d8776edfb3484259f6059c4e25 Mon Sep 17 00:00:00 2001
-From: Karl Wette <karl.wette@ligo.org>
-Date: Mon, 6 Mar 2017 20:18:07 +0100
-Subject: [PATCH] SWIG: add Python libraries to linker flags
-
-- Some platforms require them, e.g. cygwin
----
- gnuscripts/lalsuite_swig.m4 | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/gnuscripts/lalsuite_swig.m4 b/gnuscripts/lalsuite_swig.m4
-index 831ff4a..2a2695e 100644
---- a/gnuscripts/lalsuite_swig.m4
-+++ b/gnuscripts/lalsuite_swig.m4
-@@ -493,6 +493,8 @@ sys.stdout.write(' -L' + cfg.get_python_lib())
- sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
- sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1))
- sys.stdout.write(' -L' + cfg.get_config_var('LIBDIR'))
-+sys.stdout.write(' -lpython%i.%i' % (sys.version_info.major, sys.version_info.minor))
-+sys.stdout.write(' ' + cfg.get_config_var('LIBS'))
- EOD`]
-     AS_IF([test $? -ne 0],[
-       AC_MSG_ERROR([could not determine Python linker flags])
--- 
-2.7.4
-
-EOF
-	fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
-	    sed -n 's/.*lib_LTLIBRARIES *= *\(.*\).la/\1_la_LDFLAGS += -no-undefined/p' $i >> $i
-	done
-	sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/;
-             s/\(swiglal_python_la_LIBADD = .*\)$/\1 -lpython2.7/;
-             s/swiglal_python\.la/libswiglal_python.la/g;
+        # add "-no-undefined" to the LDFLAGS of all "la" libraries
+        fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
+            sed -n 's/.*lib_LTLIBRARIES *= *\(.*\).la/\1_la_LDFLAGS += -no-undefined/p' $i >> $i
+        done
+        # fix library name mangling for Cygwin library naming "cygLIB.dll" instead of "libLIB.so"
+        sed -i~ 's/swiglal_python\.la/libswiglal_python.la/g;
              s/swiglal_python_la/libswiglal_python_la/g;
              s/mv -f swiglal_python/mv -f cygswiglal_python/;' gnuscripts/lalsuite_swig.am
-	shared="$shared --enable-win32-dll"
+        # configure with --enable-win32-dll
+        shared="$shared --enable-win32-dll"
+        export EXTRA_SWIG_PYTHON_LDFLAGS="-no-undefined -lpython2.7"
     fi
+    # if we are using FrameCPP, enable it (and disable FrameLib) for LALFrame
     if $build_framecpp; then
-	shared="$shared --enable-framec --disable-framel"
+        shared="$shared --enable-framec --disable-framel"
     fi
     echo -e "\\n\\n>> [`date`] Creating lalsuite configure scripts" >&3
     ./00boot
