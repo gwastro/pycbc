@@ -260,3 +260,4 @@ suppress_warnings = ['image.nonlocal_uri']
 
 def setup(app):
     app.add_javascript('typed.min.js')
+    app.add_stylesheet('terminal.css')

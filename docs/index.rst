@@ -9,6 +9,23 @@ PyCBC documentation
 
 PyCBC is a python toolkit for analysis of data from gravitational-wave laser interferometer detectors with the goal of detecting and studying signals from compact binary coalescences (CBCs).
 
+.. raw:: html
+
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function(){
+            Typed.new(".element", {
+                strings: ["^500docker pull pycbc/pycbc-el7:v1.7.0<br>$ ^500docker run -it pycbc/pycbc-el7:v1.7.0 /bin/bash -l<br>&#40;pycbc-software&#41;&#91;pycbc@37184573e664 &#126;&#93;$ ^500python<br>Python 2.7.5 &#40;default, Nov  6 2016, 00:28:07&#41;<br>&#91;GCC 4.8.5 20150623 &#40;Red Hat 4.8.5-11&#41;&#93; on linux2<br>&gt;&gt;&gt; ^500import pycbc.version<br>&gt;&gt;&gt; ^500print pycbc.version.git_tag<br>v1.7.0<br>&gt;&gt;&gt; ^500import lal.git_version<br>&gt;&gt;&gt; ^500print lal.git_version.id<br>539c8700af92eb6dd00e0e91b9dbaf5bae51f004<br>&gt;&gt;&gt; "],
+                typeSpeed: 0
+            });
+        });
+    </script>
+    <div class="text-editor-wrap">
+        <div class="title-bar"><span class="title">pycbc &mdash; bash &mdash; 80x<span class="terminal-height">25</span></span></div>
+        <div class="text-body">
+            $ <span class="element"></span>
+        </div>
+    </div>
+
 The goals of the PyCBC project are to:
 
 - Provide tools for building gravitational-wave search workflows for CBCs
