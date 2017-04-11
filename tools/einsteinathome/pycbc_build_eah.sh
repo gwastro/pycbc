@@ -826,7 +826,8 @@ else
     fi
     echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`" >&3
     # fix typo in ltmain
-    sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
+    # only helpful if something goes wrong, normally not needed
+    # sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
     if $build_dlls; then
         # add "-no-undefined" to the LDFLAGS of all "la" libraries
         fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
