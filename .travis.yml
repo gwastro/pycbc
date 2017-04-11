@@ -65,6 +65,7 @@ install:
     chmod 600 ~/.ssh/id_rsa ~/.ssh/ldg_user ~/.ssh/ldg_token ;
     echo $ID_RSA_TRAVIS_{0..23} | base64 --decode --ignore-garbage > ~/.ssh/id_rsa ;
     echo -e "Host sugwg-test1.phy.syr.edu\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config ;
+    echo -e "Host sugwg-condor.phy.syr.edu\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config ;
     echo -e "Host oasis-login.opensciencegrid.org\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config ;
     echo -e "Host code.pycbc.phy.syr.edu\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config ;
     echo $LDG_USER > ~/.ssh/ldg_user ;
@@ -75,7 +76,7 @@ script:
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
     ./tools/travis_build_and_test.sh ;
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
-    docker run --cidfile docker.cid -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc "cd /pycbc; python setup.py install; mkdir -p ~/pycbc-software/lal-data; mkdir -p ~/src; cd ~/src ; git clone https://github.com/ligo-cbc/pycbc.git; cd" ;
+    docker run --cidfile docker.cid -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc "cd /pycbc; python setup.py install; mkdir -p ~/pycbc-software/share/lal-data; mkdir -p ~/src; cd ~/src ; git clone https://github.com/ligo-cbc/pycbc.git; cd" ;
     TMP_CONTAINER_ID=$(cat docker.cid) ;
     if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
       if [ "x${TRAVIS_TAG}"  == "x" ] ; 
@@ -83,8 +84,8 @@ script:
       else 
         LAL_EXTRA_TAG="11" ;
       fi;
-      docker exec $TMP_CONTAINER_ID /bin/bash -lc "rsync -ravz pycbc@sugwg-condor.phy.syr.edu:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/${LAL_EXTRA_TAG}/share/lalsimulation /home/pycbc/pycbc-software/lal-data/"
-      docker exec $TMP_CONTAINER_ID /bin/bash -lc 'echo "export LAL_DATA_PATH=/home/pycbc/pycbc-software/lal-data/" >> /home/pycbc/.bashrc'
+      docker exec $TMP_CONTAINER_ID /bin/bash -lc "rsync -ravz pycbc@sugwg-condor.phy.syr.edu:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/${LAL_EXTRA_TAG}/share/lalsimulation /home/pycbc/pycbc-software/share/lal-data/"
+      docker exec $TMP_CONTAINER_ID /bin/bash -lc 'echo "export LAL_DATA_PATH=/home/pycbc/pycbc-software/share/lal-data/" >> /home/pycbc/.bashrc'
     fi ;
     docker commit $TMP_CONTAINER_ID $DOCKER_IMG ;
   else
