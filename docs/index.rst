@@ -9,7 +9,9 @@ PyCBC documentation
 
 PyCBC is a software package used to explore astrophysical sources of gravitational waves. It contains algorithms that can detect signals using LIGO and measure the astrophysical parameters of detected sources. PyCBC was used in the first direct detection of gravitational waves (GW150914) and is used in the ongoing analysis of LIGO and Virgo data.
 
-The easiest way to start using PyCBC is to install one of our `Docker containers <https://hub.docker.com/u/pycbc/>`_. Install the `Docker Community Edition <https://www.docker.com/community-edition>`_ for your `Mac <https://store.docker.com/editions/community/docker-ce-desktop-mac?tab=description>`_ or `Windows <https://store.docker.com/editions/community/docker-ce-desktop-windows?tab=description>`_ desktop, then type the commands shown below. Docker CE installations for `Linux platforms <https://www.docker.com/community-edition#/download>`_ are also available.
+The easiest way to start using PyCBC is to install one of our `Docker containers <https://hub.docker.com/u/pycbc/>`_. First, install the `Docker Community Edition <https://www.docker.com/community-edition>`_ for your `Mac <https://store.docker.com/editions/community/docker-ce-desktop-mac?tab=description>`_ or `Windows <https://store.docker.com/editions/community/docker-ce-desktop-windows?tab=description>`_ desktop. Docker CE installations for `Linux platforms <https://www.docker.com/community-edition#/download>`_ are also available.
+
+After installing and starting Docker, type the commands below to download and run a PyCBC container. This example downloads the ``v1.7.0`` release in a container. To get the current version of the code from the `GitHub master branch <https://github.com/ligo-cbc/pycbc>`_ replace the string ``v1.7.0`` with ``latest``. The container includes all of the required software and dependencies to run PyCBC, including a compatible version of LALSuite.
 
 .. raw:: html
 
@@ -158,6 +160,13 @@ short code snippets below.
 =============================
 Documentation for Developers
 =============================
+
+Documentation on building stand-alone bundled executables with PyInstaller is available at:
+
+.. toctree::
+   :maxdepth: 1
+
+   building_bundled_executables
 
 PyCBC developers should read the pages below which explain how to write
 documentation, develop the code, and create releases:
