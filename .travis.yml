@@ -82,7 +82,7 @@ script:
     ./tools/docker_build_and_test.sh ;
   fi
 after_success:
-  - if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
+  - if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] && [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
       docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" ;
       if [ "x${TRAVIS_TAG}"  == "x" ] ; then
         docker tag ${DOCKER_IMG} ${DOCKER_IMG}:latest ;
