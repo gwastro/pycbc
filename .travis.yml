@@ -79,11 +79,11 @@ script:
     docker run --cidfile docker.cid -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc "cd /pycbc; python setup.py install; mkdir -p ~/pycbc-software/share/lal-data; mkdir -p ~/src; cd ~/src ; git clone https://github.com/ligo-cbc/pycbc.git; cd" ;
     TMP_CONTAINER_ID=$(cat docker.cid) ;
     if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
-      if [ "x${TRAVIS_TAG}"  == "x" ] ; 
-        then LAL_EXTRA_TAG="" ; 
+      if [ "x${TRAVIS_TAG}"  == "x" ] ; then
+        LAL_EXTRA_TAG="" ; 
       else 
         LAL_EXTRA_TAG="11" ;
-      fi;
+      fi ;
       docker exec $TMP_CONTAINER_ID /bin/bash -lc "rsync -ravz pycbc@sugwg-condor.phy.syr.edu:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/${LAL_EXTRA_TAG}/share/lalsimulation /home/pycbc/pycbc-software/share/lal-data/"
       docker exec $TMP_CONTAINER_ID /bin/bash -lc 'echo "export LAL_DATA_PATH=/home/pycbc/pycbc-software/share/lal-data/" >> /home/pycbc/.bashrc'
     fi ;
