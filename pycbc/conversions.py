@@ -571,5 +571,13 @@ __all__ = ['primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'eta_from_tau0_tau3', 'mass1_from_tau0_tau3',
            'mass2_from_tau0_tau3', 'chi_eff', 'chi_a', 'chi_p', 'primary_spin',
            'secondary_spin', 'xi1', 'xi2', 'chi_perp_from_spin1x_spin2x',
+           'chi_perp_from_mass1_mass2_xi2', 'chi_perp_from_spin2x_spin2y',
+           'chi_p_from_xi1_xi2', 'phi1_from_phi_a_phi_s',
+           'phi2_from_phi_a_phi_s', 'phi1_from_spin1x_spin1y',
+           'phi2_from_spin2x_spin2y', 'spin1z_from_mass1_mass2_chi_eff_chi_a',
+           'spin2z_from_mass1_mass2_chi_eff_chi_a',
+           'spin1x_from_xi1_phi_a_phi_s', 'spin1y_from_xi1_phi_a_phi_s',
+           'spin2x_from_mass1_mass2_xi2_phi_a_phi_s',
+           'spin2y_from_mass1_mass2_xi2_phi_a_phi_s',
            'chirp_distance', 'det_tc'
           ]
