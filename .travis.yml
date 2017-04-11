@@ -75,8 +75,8 @@ script:
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
     ./tools/travis_build_and_test.sh ;
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
-    docker run -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -c "cd /pycbc; python setup.py install; mkdir -p ~/src; cd ~/src ; git clone https://github.com/ligo-cbc/pycbc.git; cd" ;
-    TMP_CONTAINER_ID=$(docker inspect --format="{{.Id}}") ;
+    docker run --cidfile docker.cid -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc "cd /pycbc; python setup.py install; mkdir -p ~/src; cd ~/src ; git clone https://github.com/ligo-cbc/pycbc.git; cd" ;
+    TMP_CONTAINER_ID=$(cat docker.cid) ;
     docker commit $TMP_CONTAINER_ID $DOCKER_IMG ;
   else
     ./tools/docker_build_and_test.sh ;
@@ -85,11 +85,11 @@ after_success:
   - if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
       docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" ;
       if [ "x${TRAVIS_TAG}"  == "x" ] ; then
-        docker tag ${DOCKER_IMG} pycbc/${DOCKER_IMG}:latest ;
-        docker push pycbc/${DOCKER_IMG}:latest ;
+        docker tag ${DOCKER_IMG} ${DOCKER_IMG}:latest ;
+        docker push ${DOCKER_IMG}:latest ;
       else
-        docker tag ${DOCKER_IMG} pycbc/${DOCKER_IMG}:${TRAVIS_TAG} ;
-        docker push pycbc/${DOCKER_IMG}:${TRAVIS_TAG} ;
+        docker tag ${DOCKER_IMG} ${DOCKER_IMG}:${TRAVIS_TAG} ;
+        docker push ${DOCKER_IMG}:${TRAVIS_TAG} ;
       fi ;
     fi
 deploy:
