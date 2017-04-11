@@ -782,11 +782,28 @@ def compute_u_val_for_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
     an amplitude and the ratio of F+ and Fx, encoded in a variable called u.
     Here we return the value of u for the given indices.
 
-    NOT YET IMPLEMENTED
-    """
-    # FIXME: Actually write this!!
-    return numpy.ones(len(indices)), numpy.ones(len(indices))
     
+    """
+    #Defining some intermediate variables (gamma hat is the one defined in Harry+16)
+        
+    gamma_hat = numpy.real(hplus*numpy.conj(hcross))
+    hplus_magsq = numpy.real(hplus) * numpy.real(hplus)
+    hcross_magsq = numpy.real(hcross) * numpy.real(hcross)
+      
+    hpluscross_sq_diff = hplus_magsq - hcross_magsq
+    I_rhoplus_gamma_term = (hphccorr*hplus_magsq - gamma_hat)
+   
+    #I think we have to choose the '+' root here, right? 
+    
+    u_val_numerator = - (hpluscross_sq_diff) + numpy.sqrt(hpluscross_sq_diff**2 -4*I_rhoplus_gamma_term* (gamma_hat - hphccorr*hcross_magsq))
+    u_val_denominator = 2*I_rhoplus_gamma_term
+
+    u_val = u_val_numerator / u_val_denominator
+
+
+    # FIXME: Need to test this!!!
+    # return numpy.ones(len(indices)), numpy.ones(len(indices))
+    return u_val
 
 class MatchedFilterSkyMaxControl(object):
     # FIXME: This seems much more simplistic than the aligned-spin class.
