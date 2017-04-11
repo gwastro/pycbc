@@ -163,8 +163,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_virtualenv" ] ; then
   pip install pycbc-pylal
 
   echo -e "\\n>> [`date`] Installing modules needed to build documentation"
-  pip install "Sphinx>=1.4.2"
-  pip install numpydoc
+  pip install "Sphinx>=1.5.0"
   pip install sphinx-rtd-theme
   pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
 

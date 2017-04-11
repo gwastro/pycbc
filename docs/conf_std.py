@@ -256,7 +256,4 @@ intersphinx_mapping = {'http://docs.python.org/': None}
 
 napoleon_use_ivar = False
 
-def setup(app):
-    app.connect("autodoc-skip-member", skip)
-
 suppress_warnings = ['image.nonlocal_uri']
