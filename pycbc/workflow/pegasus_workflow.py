@@ -311,7 +311,7 @@ class Workflow(object):
         
         Parameters
         ----------
-        node : Node
+        node : pycbc.workflow.pegasus_workflow.Node
             A node that should be executed as part of this workflow.
         """
         node._finalize()

@@ -24,8 +24,7 @@ http://download.pegasus.isi.edu/pegasus/4.7.3/pegasus-python-source-4.7.3.tar.gz
 git+https://github.com/ligovirgo/dqsegdb@clean_pip_install_1_4_1#egg=dqsegdb
 
 # For building documentation
-Sphinx>=1.4.2
-numpydoc
+Sphinx>=1.5.0
 sphinx-rtd-theme
 git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
 

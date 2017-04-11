@@ -587,7 +587,7 @@ def select_waveform_generator(approximant):
 
     Returns
     -------
-    generator
+    generator : (PyCBC generator instance)
         A waveform generator object.
 
     Examples

@@ -563,7 +563,7 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
         The time of the trigger being followed up.
     out_dir: str
         Location of directory to output to
-    veto_file: File (optional, default=None)
+    veto_file: pycbc.workflow.core.File (optional, default=None)
         If given use this file to veto triggers to determine the loudest event.
         FIXME: Veto files *should* be provided a definer argument and not just
         assume that all segments should be read.
