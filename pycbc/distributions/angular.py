@@ -267,13 +267,13 @@ class UniformSolidAngle(bounded.BoundedDist):
         The name of the polar angle.
     azimuthal_angle : {'phi', str}
         The name of the azimuthal angle.
-    polar_bounds : {None, (min, max)}
+    polar_bounds : {None, tuple}
         Limit the polar angle to the given bounds. If None provided, the polar
         angle will vary from 0 (the north pole) to pi (the south pole). The
         bounds should be specified as factors of pi. For example, to limit
         the distribution to the northern hemisphere, set
         `polar_bounds=(0,0.5)`.
-    azimuthal_bounds : {None, (min, max)}
+    azimuthal_bounds : {None, tuple}
         Limit the azimuthal angle to the given bounds. If None provided, the
         azimuthal angle will vary from 0 to 2pi. The
         bounds should be specified as factors of pi. For example, to limit
