@@ -77,6 +77,15 @@ script:
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
     docker run --cidfile docker.cid -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc "cd /pycbc; python setup.py install; mkdir -p ~/src; cd ~/src ; git clone https://github.com/ligo-cbc/pycbc.git; cd" ;
     TMP_CONTAINER_ID=$(cat docker.cid) ;
+    if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
+      if [ "x${TRAVIS_TAG}"  == "x" ] ; 
+        then LAL_EXTRA_TAG="" ; 
+      else 
+        LAL_EXTRA_TAG="-r 11" ;
+      fi;
+      docker exec $TMP_CONTAINER_ID /bin/bash -lc svn --username=$LDG_USER --password=$LDG_TOKEN co $LAL_EXTRA_TAG https://svn.ligo.caltech.edu/svn/lalsuite-extra/data/lalsimulation src/lal-data ;
+      docker exec $TMP_CONTAINER_ID /bin/bash -lc 'echo "export LAL_DATA_PATH=/home/pycbc/src/lal-data" >> /home/pycbc/.bashrc'
+    fi ;
     docker commit $TMP_CONTAINER_ID $DOCKER_IMG ;
   else
     ./tools/docker_build_and_test.sh ;
