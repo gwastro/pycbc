@@ -711,9 +711,6 @@ class Array(object):
     @_memoize_single
     @_returntype
     def _getslice(self, index):
-        if index.step is not None:
-            raise ValueError("Step size not supported for slicing")
-        
         return self._return(self._data[index])
     
     @_convert
