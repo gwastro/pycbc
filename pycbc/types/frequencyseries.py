@@ -115,6 +115,17 @@ class FrequencySeries(Array):
     sample_frequencies = property(get_sample_frequencies,
                                   doc="Array of the sample frequencies.")
 
+    def __getitem__(self, index):
+        if index.step is not None:
+            new_delta_f = self._delta_f * index.step
+        else:
+            new_delta_f = self._delta_f
+        
+        return FrequencySeries(Array.__getitem__(self, index),
+                               delta_f=new_delta_f,
+                               epoch=self._epoch,
+                               copy=False)
+
     def __eq__(self,other):
         """
         This is the Python special method invoked whenever the '=='
