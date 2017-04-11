@@ -7,7 +7,11 @@
 PyCBC documentation
 ###################
 
-PyCBC is a software package used to explore astrophysical sources of gravitational waves. It contains algorithms that can detect signals using LIGO and measure the astrophysical parameters of detected sources. PyCBC was used in the first direct detection of gravitational waves (GW150914) and is used in the ongoing analysis of LIGO and Virgo data.
+PyCBC is a software package used to explore astrophysical sources of gravitational waves. It contains algorithms that can detect signals using LIGO and measure the astrophysical parameters of detected sources. PyCBC was used in the first direct detection of gravitational waves (GW150914) and is used in the ongoing analysis of LIGO and Virgo data.  The goals of the PyCBC project are to:
+
+- Provide tools for building gravitational-wave search and parameter estimation workflows for CBCs.
+- Create a flexible, extensible production code for CBC analysis that can be released for the public.
+- Enable simple, easy and transparent access for various many-core architectures like GPUs.
 
 The easiest way to start using PyCBC is to install one of our `Docker containers <https://hub.docker.com/u/pycbc/>`_. First, install the `Docker Community Edition <https://www.docker.com/community-edition>`_ for your `Mac <https://store.docker.com/editions/community/docker-ce-desktop-mac?tab=description>`_ or `Windows <https://store.docker.com/editions/community/docker-ce-desktop-windows?tab=description>`_ desktop. Docker CE installations for `Linux platforms <https://www.docker.com/community-edition#/download>`_ are also available.
 
@@ -38,16 +42,6 @@ Full installation instructions for users who want to install and develop PyCBC a
    :maxdepth: 1
 
    install
-
-===================
-PyCBC Project Goals
-===================
-
-The goals of the PyCBC project are to:
-
-- Provide tools for building gravitational-wave search and parameter estimation workflows for CBCs.
-- Create a flexible, extensible production code for CBC analysis that can be released for the public.
-- Enable simple, easy and transparent access for various many-core architectures like GPUs.
 
 =======================================
 Use of PyCBC in Scientific Publications
