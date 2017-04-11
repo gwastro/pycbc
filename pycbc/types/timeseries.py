@@ -94,26 +94,25 @@ class TimeSeries(Array):
             if self._epoch != other._epoch:
                 raise ValueError('different epoch')
 
-    def __getitem__(self, index):
-        if isinstance(index, slice):
-            # Set the new epoch---note that index.start may also be None
-            if self._epoch is None:
-                new_epoch = None
-            elif index.start is None:
-                new_epoch = self._epoch
-            else:
-                if index.start < 0:
-                    raise ValueError('Negative start index not supported')
-                new_epoch = self._epoch + index.start * self._delta_t
-
-            if index.step is not None:
-                new_delta_t = self._delta_t * index.step
-            else:
-                new_delta_t = self._delta_t
-            
-            return TimeSeries(Array.__getitem__(self, index), new_delta_t, new_epoch, copy=False)
+    def _getslice(self, index):
+        # Set the new epoch---note that index.start may also be None
+        if self._epoch is None:
+            new_epoch = None
+        elif index.start is None:
+            new_epoch = self._epoch
         else:
-            return Array.__getitem__(self, index)
+            if index.start < 0:
+                raise ValueError('Negative start index not supported')
+            new_epoch = self._epoch + index.start * self._delta_t
+
+        if index.step is not None:
+            new_delta_t = self._delta_t * index.step
+        else:
+            new_delta_t = self._delta_t
+        
+        return TimeSeries(Array._getslice(self, index), new_delta_t,
+                          new_epoch, copy=False)
+
 
     def prepend_zeros(self, num):
         """Prepend num zeros onto the beginning of this TimeSeries. Update also
