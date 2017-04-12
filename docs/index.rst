@@ -28,7 +28,7 @@ PyCBC is a software package used to explore astrophysical sources of gravitation
     <br>
     <br>
 
-To use If you use PyCBC in your scientific publications or projects, we ask that you acknowlege our work by citing the papers described on the page:
+For more details, see `Running PyCBC under Docker`_ below. If you use PyCBC in your scientific publications or projects, we ask that you acknowlege our work by citing the papers described on the page:
 
 .. toctree::
    :maxdepth: 1
