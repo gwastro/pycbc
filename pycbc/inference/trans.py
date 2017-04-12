@@ -91,7 +91,7 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
                                                    maps[a], maps[az], maps[po])
         return cls.format_output(maps, {a : a_val, az : az_val, po : po_val})
 
-class SphericalSpin2ToCartesianSpin2(BaseConversion):
+class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
     """ Converts spin1x, spin1y, and spin1z to spin1_a, spin1_azimuthal,
     and spin1_polar.
     """
