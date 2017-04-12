@@ -13,47 +13,37 @@ class BaseConversion(object):
     inputs = set([])
     outputs = set([])
 
-    @staticmethod
-    def _convert(maps):
+    @classmethod
+    def convert(cls, maps):
         raise NotImplementedError("Not added.")
 
     @classmethod
-    def convert(cls, maps):
-        """ Converts.
+    def convert_inverse(cls, maps):
+        raise NotImplementedError("Not added.")
 
-        Parameters
-        ----------
-        maps : {dict, WaveformArray}
-            A mapping object.
-
-        Returns
-        -------
-        maps : {dict, WaveformArray}
-            Same type as input.
+    @staticmethod
+    def format_output(inputs, maps):
+        """ Convert inverse.
         """
 
-        # do conversion and get dict
-        new_fields = cls._convert(maps)
-
         # if input is WaveformArray then return WaveformArray
-        if isinstance(maps, record.WaveformArray):
-            keys = new_fields.keys()
-            values = [new_fields[key] for key in new_fields]
-            maps = maps.add_fields(values, keys)
-            return maps
+        if isinstance(inputs, record.WaveformArray):
+            keys = maps.keys()
+            values = [maps[key] for key in maps]
+            inputs = inputs.add_fields(values, keys)
+            return inputs
 
         # if input is dict then return dict
-        elif isinstance(maps, dict):
-            return new_fields
+        elif isinstance(inputs, dict):
+            return inputs.update(maps)
 
         # else error
         else:
             raise TypeError("Input type must be WaveformArray or dict.")
 
-    def convert_inverse(self, maps):
-        raise NotImplementedError("Not added.")
-
     def inverse(self):
+        """ Inverse conversion of the class name.
+        """
         self.inputs, self.outputs = self.outputs, self.inputs
         self.convert, self.convert_inverse = self.convert_inverse, self.convert
 
@@ -63,16 +53,17 @@ class MchirpQToMass1Mass2(BaseConversion):
     inputs = set([parameters.mchirp, parameters.q])
     outputs = set([parameters.mass1, parameters.mass2])
 
-    @staticmethod
-    def _convert(maps):
+    @classmethod
+    def convert(cls, maps):
         mass1 = conversions.mass1_from_mchirp_q(maps[parameters.mchirp],
                                                 maps[parameters.q])
         mass2 = conversions.mass2_from_mchirp_q(maps[parameters.mchirp],
                                                 maps[parameters.q])
-        return {parameters.mass1 : mass1, parameters.mass2 : mass2}
+        return cls.format_output(
+                    maps, {parameters.mass1 : mass1, parameters.mass2 : mass2})
 
-    @staticmethod
-    def convert_inverse(maps):
+    @classmethod
+    def convert_inverse(cls, maps):
         mchirp = conversions.mchirp_from_mchirp_q(maps[parameters.mchirp],
                                                   maps[parameters.q])
         m_p = conversions.primary_mass(maps[parameters.mass1],
@@ -80,7 +71,8 @@ class MchirpQToMass1Mass2(BaseConversion):
         m_s = conversions.secondary_mass(maps[parameters.mass1],
                                          maps[parameters.mass2])
         q = m_p / m_s
-        return {parameters.mchirp : mchirp, parameters.q : q}
+        return cls.format_output(
+                    maps, {parameters.mchirp : mchirp, parameters.q : q})
 
 class SphericalSpin1ToCartesianSpin1(BaseConversion):
     """ Converts spin1x, spin1y, and spin1z to spin1_a, spin1_azimuthal,
@@ -92,14 +84,12 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
     outputs = set([parameters.spin1x, parameters.spin1y, parameters.spin1z])
 
     @classmethod
-    def _convert(cls, maps):
+    def convert(cls, maps):
         out = {}
         a, az, po = cls.ordered_inputs
-        if set([a, az, po]).issubset(set(maps.keys())):
-            a_val, az_val, po_val = coordinates.spherical_to_cartesian(
+        a_val, az_val, po_val = coordinates.spherical_to_cartesian(
                                                    maps[a], maps[az], maps[po])
-            out.update({a : a_val, az : az_val, po : po_val})
-        return out
+        return cls.format_output(maps, {a : a_val, az : az_val, po : po_val})
 
 class SphericalSpin2ToCartesianSpin2(BaseConversion):
     """ Converts spin1x, spin1y, and spin1z to spin1_a, spin1_azimuthal,
@@ -117,8 +107,8 @@ class MassSpinToCartesianSpin(BaseConversion):
     inputs = set([])
     outputs = set([])
 
-    @staticmethod
-    def _convert(maps):
+    @classmethod
+    def convert(cls, maps):
         spin1x = conversions.spin1x_from_xi1_phi_a_phi_s(
                                maps["xi1"], maps["phi_a"], maps["phi_s"])
         spin1y = conversions.spin1y_from_xi1_phi_a_phi_s(
@@ -135,8 +125,10 @@ class MassSpinToCartesianSpin(BaseConversion):
         spin2z = conversions.spin2z_from_mass1_mass2_chi_eff_chi_a(
                                maps["mass1"], maps["mass2"],
                                maps["chi_eff"], maps["chi_a"])
-        return {"spin1x" : spin1x, "spin1y" : spin1y, "spin1z" : spin1z,
-                "spin2x" : spin2x, "spin2y" : spin2y, "spin2z" : spin2z}
+        return cls.format_output(
+                    maps, {"spin1x" : spin1x, "spin1y" : spin1y,
+                           "spin1z" : spin1z, "spin2x" : spin2x,
+                           "spin2y" : spin2y, "spin2z" : spin2z})
 
 # list of all Conversions
 converts = [MchirpQToMass1Mass2, SphericalSpin1ToCartesianSpin1,
