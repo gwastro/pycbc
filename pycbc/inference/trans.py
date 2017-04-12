@@ -30,43 +30,58 @@ class MchirpQToMass1Mass2(object):
 
     @staticmethod
     def convert(**kwargs):
-        mass1 = conversions.mass1_from_mchirp_q(kwargs["mchirp"], kwargs["q"])
-        mass2 = conversions.mass2_from_mchirp_q(kwargs["mchirp"], kwargs["q"])
+        mass1 = conversions.mass1_from_mchirp_q(kwargs[parameters.mchirp],
+                                                kwargs[parameters.q])
+        mass2 = conversions.mass2_from_mchirp_q(kwargs[parameters.mchirp],
+                                                kwargs[parameters.q])
         return {"mass1" : mass1, "mass2" : mass2}
 
     @staticmethod
     def convert_inverse(**kwargs):
-        mchirp = conversions.mchirp_from_mchirp_q(kwargs["mchirp"], kwargs["q"])
-        m_p = conversions.primary_mass(kwargs["mass1"], kwargs["mass2"])
-        m_s = conversions.secondary_mass(kwargs["mass1"], kwargs["mass2"])
+        mchirp = conversions.mchirp_from_mchirp_q(kwargs[parameters.mchirp],
+                                                  kwargs[parameters.q])
+        m_p = conversions.primary_mass(kwargs[parameters.mass1],
+                                       kwargs[parameters.mass2])
+        m_s = conversions.secondary_mass(kwargs[parameters.mass1],
+                                         kwargs[parameters.mass2])
         q = m_p / m_s
         return {"mchirp" : mchirp, "q" : q}
 
-class SphericalSpinToCartesianSpin(object):
+class SphericalSpin1ToCartesianSpin1(object):
     """ Converts spin1x, spin1y, spin1z, spin2x, spin2y, and spin2z to
     a_1, spin1_azimuthal, spin1_polar, a_2, spin2_azimuthal, and spin2_polar.
     """
 
-    inputs = set([])
-    outputs = set([])
+    ordered_inputs = [parameters.spin1_a, parameters.spin1_azimuthal,
+                  parameters.spin1_polar]
+    inputs = set(ordered_inputs)
+    outputs = set([parameters.spin1x, parameters.spin1y, parameters.spin1z])
 
-    @staticmethod
-    def convert(**kwargs):
+    @classmethod
+    def convert(cls, **kwargs):
         out = {}
-        parameters = [["a_1", "spin1_azimuthal", "spin1_polar"],
-                      ["a_2", "spin2_azimuthal", "spin2_polar"]]
-        for a, az, po in parameters:
-            if set([a, az, po]).issubset(set(kwargs.keys())):
-                a_val, az_val, po_val = \
-                     coordinates.spherical_to_cartesian(kwargs[a],
-                                                        kwargs[az],
-                                                        kwargs[po])
-                out.update({a : a_val, az : az_val, po : po_val})
+        a, az, po = cls.ordered_inputs
+        if set([a, az, po]).issubset(set(kwargs.keys())):
+            a_val, az_val, po_val = \
+                 coordinates.spherical_to_cartesian(kwargs[a],
+                                                    kwargs[az],
+                                                    kwargs[po])
+            out.update({a : a_val, az : az_val, po : po_val})
         return out
 
     @staticmethod
     def convert_inverse(**kwargs):
         raise NotImplementedError("Not added.")
+
+class SphericalSpin2ToCartesianSpin2(object):
+    """ Converts spin1x, spin1y, spin1z, spin2x, spin2y, and spin2z to
+    a_1, spin1_azimuthal, spin1_polar, a_2, spin2_azimuthal, and spin2_polar.
+    """
+
+    ordered_inputs = [parameters.spin2_a, parameters.spin2_azimuthal,
+                  parameters.spin2_polar]
+    inputs = set(ordered_inputs)
+    outputs = set([parameters.spin2x, parameters.spin2y, parameters.spin2z])
 
 class MassSpinToCartesianSpin(object):
     """ Converts mass1, mass2, chi_eff, chi_a, xi1, xi2, phi_a, and phi_s to
@@ -101,11 +116,25 @@ class MassSpinToCartesianSpin(object):
     def convert_inverse(**kwargs):
         raise NotImplementedError("Not added.")
 
-converts = [MchirpQToMass1Mass2, SphericalSpinToCartesianSpin,
+# list of all Conversions
+converts = [MchirpQToMass1Mass2, SphericalSpin1ToCartesianSpin1,
+            SphericalSpin2ToCartesianSpin2,
             MassSpinToCartesianSpin]
 
-def convert(sampling_params):
-    """ Converts from sampling parameters to base parameters for plotting.
+def add_base_parameters(sampling_params):
+    """ Adds a standard set of base parameters to the WaveformArray for
+    plotting. Standard set of base parameters includes mass1, mass2,
+    spin1x, spin1y, spin1z, spin2x, spin2y, and spin2z.
+
+    Parameters
+    ----------
+    sampling_params : WaveformArray
+        WaveformArray to add new fields.
+
+    Returns
+    -------
+    WaveformArray
+       WaveformArray with new fields.
     """
 
     # use dict
@@ -114,8 +143,8 @@ def convert(sampling_params):
 
     # convert mchirp and q sampling to base parameters
     current_params = set(sampling_params.fieldnames)
-    test_params = set(["mchirp", "q"])
-    if test_params.issubset(current_params):
+    if (MchirpQToMass1Mass2.inputs.issubset(current_params) and
+            not MchirpQToMass1Mass2.outputs.issubset(current_params)):
         new_fields = MchirpQToMass1Mass2.convert(**params_dict)
         keys = new_fields.keys()
         values = [new_fields[key] for key in new_fields]
@@ -124,11 +153,22 @@ def convert(sampling_params):
 
     # convert spherical spins sampling to base parameters
     current_params = set(sampling_params.fieldnames)
-    test_params1 = set(["a_1", "spin1_azimuthal", "spin1_polar"])
-    test_params2 = set(["a_2", "spin2_azimuthal", "spin2_polar"])
-    if (test_params1.issubset(current_params) or
-            test_params2.issubset(current_params)):
-        new_fields = SphericalSpinToCartesianSpin.convert(**params_dict)
+    test_params = set(["spin1_a", "spin1_azimuthal", "spin1_polar"])
+    if (SphericalSpin1ToCartesianSpin1.inputs.issubset(current_params) and
+            not SphericalSpin1ToCartesianSpin1.outputs.issubset(current_params)):
+        new_fields = SphericalSpin1ToCartesianSpin1.convert(**params_dict)
+        keys = new_fields.keys()
+        values = [new_fields[key] for key in new_fields]
+        sampling_params = sampling_params.add_fields(values, keys)
+        params_dict.update(new_fields)
+
+    # FIXME: reused
+    # convert spherical spins sampling to base parameters
+    current_params = set(sampling_params.fieldnames)
+    test_params = set(["spin2_a", "spin2_azimuthal", "spin2_polar"])
+    if (SphericalSpin2ToCartesianSpin2.inputs.issubset(current_params) and
+            not SphericalSpin2ToCartesianSpin2.outputs.issubset(current_params)):
+        new_fields = SphericalSpin2ToCartesianSpin2.convert(**params_dict)
         keys = new_fields.keys()
         values = [new_fields[key] for key in new_fields]
         sampling_params = sampling_params.add_fields(values, keys)
