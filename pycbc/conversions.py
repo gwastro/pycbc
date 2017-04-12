@@ -388,11 +388,13 @@ def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     return chi_p_from_xi1_xi2(xi1, xi2)
 
 def phi_a(spin1x, spin1y, spin2x, spin2y):
+    """ Returns the angle between the in-plane perpendicular spins."""
     phi1 = phi1_from_spin1x_spin1y(spin1x, spin1y)
     phi2 = phi2_from_spin2x_spin2y(spin2x, spin2y)
     return phi1 - phi2
 
 def phi_s(spin1x, spin1y, spin2x, spin2y):
+    """ Returns the sum of the in-plane perpendicular spins."""
     phi1 = phi1_from_spin1x_spin1y(spin1x, spin1y)
     phi2 = phi2_from_spin2x_spin2y(spin2x, spin2y)
     return phi1 + phi2
@@ -425,7 +427,39 @@ def secondary_spin(mass1, mass2, spin1, spin2):
     ss[mask] = spin1[mask]
     return _formatreturn(ss)
 
-def primary_xi(spinx, spiny):
+def primary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
+    """Returns the effective precession spin argument for the larger mass.
+    """
+    spinx = primary_spin(mass1, mass2, spin1x, spin2x)
+    spiny = secondary_spin(mass1, mass2, spin1y, spin2y)
+    return chi_perp_from_spin1x_spin1y(spinx, spiny)
+
+def secondary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
+    """Returns the effective precession spin argument for the smaller mass.
+    """
+    q = q_from_mass1_mass2(mass1, mass2)
+    a1 = 2 + 3 * q / 2
+    a2 = 2 + 3 / (2 * q)
+    spinx = primary_spin(mass1, mass2, spin1x, spin2x)
+    spiny = secondary_spin(mass1, mass2, spin1y, spin2y)
+    return a1 / (q**2 * a2) * chi_perp_from_spin1x_spin1y(spinx, spiny)
+
+def xi1_from_spin1x_spin1y(spinx, spiny):
+    """Returns the effective precession spin argument for the larger mass.
+    This function assumes its given spins of the primary mass.
+    """
+    return chi_perp_from_spin1x_spin1y(spinx, spiny)
+
+def xi2_from_mass1_mass2_spin2x_spin2y(mass1, mass2, spinx, spiny):
+    """Returns the effective precession spin argument for the smaller mass.
+    This function assumes its given spins of the secondary mass.
+    """
+    q = q_from_mass1_mass2(mass1, mass2)
+    a1 = 2 + 3 * q / 2
+    a2 = 2 + 3 / (2 * q)
+    return a1 / (q**2 * a2) * chi_perp_from_spin1x_spin1y(spinx, spiny)
+
+def xi_from_spin1x(spinx, spiny):
     """Returns the effective precession spin argument for the larger mass.
     """
     return chi_perp_from_spin1x_spin1y(spinx, spiny)
