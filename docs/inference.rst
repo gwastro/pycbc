@@ -164,9 +164,7 @@ An example configuration file (named ``inference.ini``) is::
 
     [prior-inclination]
     ; inclination prior
-    name = uniform_angle
-    min-inclination = 0
-    max-inclination = 1
+    name = sin_angle
 
     [prior-ra+dec]
     ; sky position prior
