@@ -14,43 +14,43 @@ class BaseConversion(object):
     outputs = set([])
 
     @staticmethod
-    def _convert(arr):
+    def _convert(maps):
         raise NotImplementedError("Not added.")
 
     @classmethod
-    def convert(cls, arr):
+    def convert(cls, maps):
         """ Converts.
 
         Parameters
         ----------
-        arr : {dict, WaveformArray}
+        maps : {dict, WaveformArray}
             A mapping object.
 
         Returns
         -------
-        arr : {dict, WaveformArray}
+        maps : {dict, WaveformArray}
             Same type as input.
         """
 
         # do conversion and get dict
-        new_fields = cls._convert(arr)
+        new_fields = cls._convert(maps)
 
         # if input is WaveformArray then return WaveformArray
-        if isinstance(arr, record.WaveformArray):
+        if isinstance(maps, record.WaveformArray):
             keys = new_fields.keys()
             values = [new_fields[key] for key in new_fields]
-            arr = arr.add_fields(values, keys)
-            return arr
+            maps = maps.add_fields(values, keys)
+            return maps
 
         # if input is dict then return dict
-        elif isinstance(arr, dict):
+        elif isinstance(maps, dict):
             return new_fields
 
         # else error
         else:
             raise TypeError("Input type must be WaveformArray or dict.")
 
-    def convert_inverse(self, arr):
+    def convert_inverse(self, maps):
         raise NotImplementedError("Not added.")
 
     def inverse(self):
@@ -64,21 +64,21 @@ class MchirpQToMass1Mass2(BaseConversion):
     outputs = set([parameters.mass1, parameters.mass2])
 
     @staticmethod
-    def _convert(arr):
-        mass1 = conversions.mass1_from_mchirp_q(arr[parameters.mchirp],
-                                                arr[parameters.q])
-        mass2 = conversions.mass2_from_mchirp_q(arr[parameters.mchirp],
-                                                arr[parameters.q])
+    def _convert(maps):
+        mass1 = conversions.mass1_from_mchirp_q(maps[parameters.mchirp],
+                                                maps[parameters.q])
+        mass2 = conversions.mass2_from_mchirp_q(maps[parameters.mchirp],
+                                                maps[parameters.q])
         return {parameters.mass1 : mass1, parameters.mass2 : mass2}
 
     @staticmethod
-    def convert_inverse(arr):
-        mchirp = conversions.mchirp_from_mchirp_q(arr[parameters.mchirp],
-                                                  arr[parameters.q])
-        m_p = conversions.primary_mass(arr[parameters.mass1],
-                                       arr[parameters.mass2])
-        m_s = conversions.secondary_mass(arr[parameters.mass1],
-                                         arr[parameters.mass2])
+    def convert_inverse(maps):
+        mchirp = conversions.mchirp_from_mchirp_q(maps[parameters.mchirp],
+                                                  maps[parameters.q])
+        m_p = conversions.primary_mass(maps[parameters.mass1],
+                                       maps[parameters.mass2])
+        m_s = conversions.secondary_mass(maps[parameters.mass1],
+                                         maps[parameters.mass2])
         q = m_p / m_s
         return {parameters.mchirp : mchirp, parameters.q : q}
 
@@ -92,14 +92,12 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
     outputs = set([parameters.spin1x, parameters.spin1y, parameters.spin1z])
 
     @classmethod
-    def _convert(cls, arr):
+    def _convert(cls, maps):
         out = {}
         a, az, po = cls.ordered_inputs
-        if set([a, az, po]).issubset(set(arr.keys())):
-            a_val, az_val, po_val = \
-                 coordinates.spherical_to_cartesian(arr[a],
-                                                    arr[az],
-                                                    arr[po])
+        if set([a, az, po]).issubset(set(maps.keys())):
+            a_val, az_val, po_val = coordinates.spherical_to_cartesian(
+                                                   maps[a], maps[az], maps[po])
             out.update({a : a_val, az : az_val, po : po_val})
         return out
 
@@ -120,23 +118,23 @@ class MassSpinToCartesianSpin(BaseConversion):
     outputs = set([])
 
     @staticmethod
-    def _convert(arr):
+    def _convert(maps):
         spin1x = conversions.spin1x_from_xi1_phi_a_phi_s(
-                               arr["xi1"], arr["phi_a"], arr["phi_s"])
+                               maps["xi1"], maps["phi_a"], maps["phi_s"])
         spin1y = conversions.spin1y_from_xi1_phi_a_phi_s(
-                               arr["xi1"], arr["phi_a"], arr["phi_s"])
+                               maps["xi1"], maps["phi_a"], maps["phi_s"])
         spin1z = conversions.spin1z_from_mass1_mass2_chi_eff_chi_a(
-                               arr["mass1"], arr["mass2"],
-                               arr["chi_eff"], arr["chi_a"])
+                               maps["mass1"], maps["mass2"],
+                               maps["chi_eff"], maps["chi_a"])
         spin2x = conversions.spin2x_from_mass1_mass2_xi2_phi_a_phi_s(
-                               arr["mass1"], arr["mass2"], arr["xi2"],
-                               arr["phi_a"], arr["phi_s"])
+                               maps["mass1"], maps["mass2"], maps["xi2"],
+                               maps["phi_a"], maps["phi_s"])
         spin2y = conversions.spin2y_from_mass1_mass2_xi2_phi_a_phi_s(
-                               arr["mass1"], arr["mass2"], arr["xi2"],
-                               arr["phi_a"], arr["phi_s"])
+                               maps["mass1"], maps["mass2"], maps["xi2"],
+                               maps["phi_a"], maps["phi_s"])
         spin2z = conversions.spin2z_from_mass1_mass2_chi_eff_chi_a(
-                               arr["mass1"], arr["mass2"],
-                               arr["chi_eff"], arr["chi_a"])
+                               maps["mass1"], maps["mass2"],
+                               maps["chi_eff"], maps["chi_a"])
         return {"spin1x" : spin1x, "spin1y" : spin1y, "spin1z" : spin1z,
                 "spin2x" : spin2x, "spin2y" : spin2y, "spin2z" : spin2z}
 
