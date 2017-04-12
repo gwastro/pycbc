@@ -85,8 +85,8 @@ script:
         LAL_EXTRA_TAG="-r 11" ;
       fi ;
       docker start $TMP_CONTAINER_ID ;
-      docker exec $TMP_CONTAINER_ID /bin/bash -lc "svn --username=${LDG_USER} --password=${LDG_TOKEN} co ${LAL_EXTRA_TAG} https://svn.ligo.caltech.edu/svn/lalsuite-extra/data/lalsimulation /home/pycbc/pycbc-software/share/lal-data/" ;
-      docker exec $TMP_CONTAINER_ID /bin/bash -lc 'echo "export LAL_DATA_PATH=/home/pycbc/pycbc-software/share/lal-data/" >> /home/pycbc/.bash_profile' ;
+      docker exec -it $TMP_CONTAINER_ID /bin/bash -lc "svn --no-auth-cache --username=${LDG_USER} --password=${LDG_TOKEN} co ${LAL_EXTRA_TAG} https://svn.ligo.caltech.edu/svn/lalsuite-extra/data/lalsimulation /home/pycbc/pycbc-software/share/lal-data/" ;
+      docker exec -it $TMP_CONTAINER_ID /bin/bash -lc 'echo "export LAL_DATA_PATH=/home/pycbc/pycbc-software/share/lal-data/" >> /home/pycbc/.bash_profile' ;
       docker stop $TMP_CONTAINER_ID ;
     fi ;
     docker commit $TMP_CONTAINER_ID $DOCKER_IMG ;
