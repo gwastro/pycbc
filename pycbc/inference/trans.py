@@ -80,25 +80,26 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
     """
     ordered_inputs = [parameters.spin1_a, parameters.spin1_azimuthal,
                       parameters.spin1_polar]
+    ordered_outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
     inputs = set(ordered_inputs)
-    outputs = set([parameters.spin1x, parameters.spin1y, parameters.spin1z])
+    outputs = set(ordered_outputs)
 
     @classmethod
     def convert(cls, maps):
-        out = {}
         a, az, po = cls.ordered_inputs
-        a_val, az_val, po_val = coordinates.spherical_to_cartesian(
-                                                   maps[a], maps[az], maps[po])
-        return cls.format_output(maps, {a : a_val, az : az_val, po : po_val})
+        data = coordinates.spherical_to_cartesian(maps[a], maps[az], maps[po])
+        out = {param : val for param, val in zip(ordered_outputs, data}
+        return cls.format_output(maps, out)
 
 class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
     """ Converts spin1x, spin1y, and spin1z to spin1_a, spin1_azimuthal,
     and spin1_polar.
     """
     ordered_inputs = [parameters.spin2_a, parameters.spin2_azimuthal,
-                  parameters.spin2_polar]
+                      parameters.spin2_polar]
+    ordered_outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
     inputs = set(ordered_inputs)
-    outputs = set([parameters.spin2x, parameters.spin2y, parameters.spin2z])
+    outputs = set(ordered_output)
 
 class MassSpinToCartesianSpin(BaseConversion):
     """ Converts mass1, mass2, chi_eff, chi_a, xi1, xi2, phi_a, and phi_s to
