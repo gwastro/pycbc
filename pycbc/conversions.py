@@ -366,7 +366,7 @@ def chi_eff(mass1, mass2, spin1z, spin2z):
     return (spin1z * mass1 + spin2z * mass2) / (mass1 + mass2)
 
 def chi_a(mass1, mass2, spin1z, spin2z):
-    """Returns the aligned mass-weighted spin difference from mass1, mass2,
+    """ Returns the aligned mass-weighted spin difference from mass1, mass2,
     spin1z, and spin2z.
     """
     m_p = primary_mass(mass1, mass2)
@@ -588,7 +588,7 @@ __all__ = ['primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'tau3_from_mass1_mass2', 'mtotal_from_tau0_tau3',
            'eta_from_tau0_tau3', 'mass1_from_tau0_tau3',
            'mass2_from_tau0_tau3', 'chi_eff', 'chi_a', 'chi_p', 'primary_spin',
-           'secondary_spin', 'xi1', 'xi2', 'chi_perp_from_spin1x_spin2x',
+           'secondary_spin',
            'chi_perp_from_mass1_mass2_xi2', 'chi_perp_from_spin2x_spin2y',
            'chi_p_from_xi1_xi2', 'phi1_from_phi_a_phi_s',
            'phi2_from_phi_a_phi_s', 'phi1_from_spin1x_spin1y',
