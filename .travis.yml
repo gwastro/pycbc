@@ -76,20 +76,23 @@ script:
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
     ./tools/travis_build_and_test.sh ;
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
-    docker run --cidfile docker.cid -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc "cd /pycbc; python setup.py install; mkdir -p ~/pycbc-software/share/lal-data; mkdir -p ~/src; cd ~/src ; git clone https://github.com/ligo-cbc/pycbc.git; cd" ;
+    docker run --name pycbc_inst --cidfile docker.cid -d -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc 'tail -f /dev/null' ;
+    sleep 10 ;
+    docker ps -a ;
     TMP_CONTAINER_ID=$(cat docker.cid) ;
+    docker exec -it pycbc_inst /bin/bash -lc "cd /pycbc; python setup.py install; mkdir -p ~/pycbc-software/share/lal-data; mkdir -p ~/src; cd ~/src ; git clone https://github.com/ligo-cbc/pycbc.git; cd" ;
     if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
       if [ "x${TRAVIS_TAG}"  == "x" ] ; then
         LAL_EXTRA_TAG="" ; 
       else 
         LAL_EXTRA_TAG="-r 11" ;
       fi ;
-      docker start $TMP_CONTAINER_ID ;
-      sleep 30 ;
-      docker exec -it $TMP_CONTAINER_ID /bin/bash -lc "svn --no-auth-cache --username=${LDG_USER} --password=${LDG_TOKEN} co ${LAL_EXTRA_TAG} https://svn.ligo.caltech.edu/svn/lalsuite-extra/data/lalsimulation /home/pycbc/pycbc-software/share/lal-data/" ;
-      docker exec -it $TMP_CONTAINER_ID /bin/bash -lc 'echo "export LAL_DATA_PATH=/home/pycbc/pycbc-software/share/lal-data/" >> /home/pycbc/.bash_profile' ;
-      docker stop $TMP_CONTAINER_ID ;
+      docker exec -it pycbc_inst /bin/bash -lc "svn --no-auth-cache --username=${LDG_USER} --password=${LDG_TOKEN} co ${LAL_EXTRA_TAG} https://svn.ligo.caltech.edu/svn/lalsuite-extra/data/lalsimulation /home/pycbc/pycbc-software/share/lal-data/" ;
+      docker exec -it pycbc_inst /bin/bash -lc 'echo "export LAL_DATA_PATH=/home/pycbc/pycbc-software/share/lal-data/" >> /home/pycbc/.bash_profile' ;
     fi ;
+    sleep 10 ;
+    docker stop pycbc_inst ;
+    docker ps -a ;
     docker commit $TMP_CONTAINER_ID $DOCKER_IMG ;
   else
     ./tools/docker_build_and_test.sh ;
