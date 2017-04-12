@@ -460,7 +460,20 @@ def results_from_cli(opts, load_samples=True, walkers=None):
     return fp, parameters, labels, samples
 
 
-def add_base_parameters(parameters, labels, samples):
+def add_base_parameters(samples):
+    """ Adds a standard set of base parameters to the WaveformArray for
+    plotting. For set of base parameters see pycbc.inference.trans module.
+
+    Parameters
+    ----------
+    samples : WaveformArray
+        WaveformArray to add new fields.
+
+    Returns
+    -------
+    WaveformArray
+       WaveformArray with new fields.
+    """
     return trans.convert(samples)
 
 def get_zvalues(fp, arg, likelihood_stats):
