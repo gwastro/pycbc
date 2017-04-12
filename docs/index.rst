@@ -3,15 +3,18 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+===============
+Getting Started
+===============
 
-If you have `Docker <https://www.docker.com/community-edition>`_ installed, you can get started using PyCBC with just two commands:
+PyCBC is a software package used to explore astrophysical sources of gravitational waves. It contains algorithms that can detect coalescing compact binaries and measure the astrophysical parameters of detected sources. PyCBC was used in the `first direct detection of gravitational waves (GW150914) by LIGO <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.116.061102>`_ and is used in the ongoing analysis of LIGO and Virgo data.  If you have `Docker <https://www.docker.com/community-edition>`_ installed, you can get started using PyCBC with just two commands:
 
 .. raw:: html
 
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function(){
             Typed.new(".element", {
-                strings: ["^500docker pull pycbc/pycbc-el7:v1.7.0<br>$ ^500docker run -it pycbc/pycbc-el7:v1.7.0 /bin/bash -l<br>&#40;pycbc-software&#41;&#91;pycbc@37184573e664 &#126;&#93;$ ^500python<br>Python 2.7.5 &#40;default, Nov  6 2016, 00:28:07&#41;<br>&#91;GCC 4.8.5 20150623 &#40;Red Hat 4.8.5-11&#41;&#93; on linux2<br>&gt;&gt;&gt; ^500import pycbc.version<br>&gt;&gt;&gt; ^500print pycbc.version.git_tag<br>v1.7.0<br>&gt;&gt;&gt; ^500import lal.git_version<br>&gt;&gt;&gt; ^500print lal.git_version.id<br>539c8700af92eb6dd00e0e91b9dbaf5bae51f004<br>&gt;&gt;&gt; "],
+                 strings: ["^500<strong>docker pull pycbc/pycbc-el7:latest</strong><br>$ ^500<strong>docker run -it pycbc/pycbc-el7:latest /bin/bash -l</strong><br>&#40;pycbc-software&#41;&#91;pycbc@37184573e664 &#126;&#93;$ ^500<strong>python</strong><br>Python 2.7.5 &#40;default, Nov  6 2016, 00:28:07&#41;<br>&#91;GCC 4.8.5 20150623 &#40;Red Hat 4.8.5-11&#41;&#93; on linux2<br>&gt;&gt;&gt; ^500<strong>import pycbc.version</strong><br>&gt;&gt;&gt; ^500<strong>print pycbc.version.git_tag</strong><br>v1.7.0<br>&gt;&gt;&gt; ^500<strong>import lal.git_version</strong><br>&gt;&gt;&gt; ^500<strong>print lal.git_version.id</strong><br>539c8700af92eb6dd00e0e91b9dbaf5bae51f004<br>&gt;&gt;&gt; "],
                 typeSpeed: 0
             });
         });
@@ -25,26 +28,35 @@ If you have `Docker <https://www.docker.com/community-edition>`_ installed, you 
     <br>
     <br>
 
-If you use PyCBC in your scientific publications or projects, we ask that you acknowlege our work using the citations at
+To use If you use PyCBC in your scientific publications or projects, we ask that you acknowlege our work by citing the papers described on the page:
 
 .. toctree::
    :maxdepth: 1
 
    credit
 
-===============
-Getting Started
-===============
+===========
+About PyCBC
+===========
 
-PyCBC is a software package used to explore astrophysical sources of gravitational waves. It contains algorithms that can detect coalescing compact binaries and measure the astrophysical parameters of detected sources. PyCBC was used in the `first direct detection of gravitational waves (GW150914) by LIGO <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.116.061102>`_ and is used in the ongoing analysis of LIGO and Virgo data.  The goals of the PyCBC project are to:
+The goals of the PyCBC project are:
 
 - Provide reliable and robust tools for building gravitational-wave search and parameter estimation workflows for CBCs.
 - Create a flexible, extensible production code for CBC analysis that can be released for the public.
 - Enable simple, easy and transparent access for various many-core architectures like GPUs.
 
+==========================
+Running PyCBC under Docker
+==========================
+
 The easiest way to start using PyCBC is to install one of our `Docker containers <https://hub.docker.com/u/pycbc/>`_. First, install the `Docker Community Edition <https://www.docker.com/community-edition>`_ for your `Mac <https://store.docker.com/editions/community/docker-ce-desktop-mac?tab=description>`_ or `Windows <https://store.docker.com/editions/community/docker-ce-desktop-windows?tab=description>`_ desktop. Docker CE installations for `Linux platforms <https://www.docker.com/community-edition#/download>`_ are also available.
 
-After installing and starting Docker, type the commands in the window above to download and run a PyCBC container. This example downloads the ``v1.7.0`` release in a container. To get the current version of the code from the `GitHub master branch <https://github.com/ligo-cbc/pycbc>`_ replace the string ``v1.7.0`` with ``latest``. The container includes all of the required software and dependencies to run PyCBC, including a compatible version of LALSuite.
+After installing and starting Docker, type the commands::
+
+    docker pull pycbc/pycbc-el7:v1.7.0
+    docker run -it pycbc/pycbc-el7:v1.7.0 /bin/bash -l
+
+ in the window above to download and run a PyCBC container. This example downloads the ``v1.7.0`` release in a container. To get the current version of the code from the `GitHub master branch <https://github.com/ligo-cbc/pycbc>`_ replace the string ``v1.7.0`` with ``latest``. The container includes all of the required software and dependencies to run PyCBC, including a compatible version of LALSuite.
 
 If you want to run a docker container with graphics for making plots, you can
 start a container that runs an SSH daemon and connect to that.  If do not
@@ -71,9 +83,9 @@ Full installation instructions for users who want to install and develop PyCBC a
 
    install
 
-=========================
+=======================
 Documentation for Users
-=========================
+=======================
 
 Users who want to create and run scientific workflows to search for compact
 binaries should read the documentation in the links at:
