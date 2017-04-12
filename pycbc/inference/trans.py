@@ -4,6 +4,7 @@
 import numpy
 from pycbc import conversions
 from pycbc import coordinates
+from pycbc.io import record
 from pycbc.waveform import parameters
 
 class BaseConversion(object):
@@ -11,8 +12,17 @@ class BaseConversion(object):
     inputs = set([])
     outputs = set([])
 
-    def convert(self, **kwargs):
+    def _convert(self, **kwargs):
         raise NotImplementedError("Not added.")
+
+    @classmethod
+    def convert(cls, kwargs):
+        if isinstance(kwargs, record.WaveformArray):
+            new_fields = cls._convert(kwargs)
+            keys = new_fields.keys()
+            values = [new_fields[key] for key in new_fields]
+            kwargs = kwargs.add_fields(values, keys)
+        return kwargs
 
     def convert_inverse(self, **kwargs):
         raise NotImplementedError("Not added.")
@@ -21,7 +31,7 @@ class BaseConversion(object):
         self.inputs, self.outputs = self.outputs, self.inputs
         self.convert, self.convert_inverse = self.convert_inverse, self.convert
 
-class MchirpQToMass1Mass2(object):
+class MchirpQToMass1Mass2(BaseConversion):
     """ Converts mchirp and q to mass1 and mass2.
     """
 
@@ -29,7 +39,7 @@ class MchirpQToMass1Mass2(object):
     outputs = set([parameters.mass1, parameters.mass2])
 
     @staticmethod
-    def convert(**kwargs):
+    def _convert(kwargs):
         mass1 = conversions.mass1_from_mchirp_q(kwargs[parameters.mchirp],
                                                 kwargs[parameters.q])
         mass2 = conversions.mass2_from_mchirp_q(kwargs[parameters.mchirp],
@@ -37,7 +47,7 @@ class MchirpQToMass1Mass2(object):
         return {"mass1" : mass1, "mass2" : mass2}
 
     @staticmethod
-    def convert_inverse(**kwargs):
+    def convert_inverse(kwargs):
         mchirp = conversions.mchirp_from_mchirp_q(kwargs[parameters.mchirp],
                                                   kwargs[parameters.q])
         m_p = conversions.primary_mass(kwargs[parameters.mass1],
@@ -47,7 +57,7 @@ class MchirpQToMass1Mass2(object):
         q = m_p / m_s
         return {"mchirp" : mchirp, "q" : q}
 
-class SphericalSpin1ToCartesianSpin1(object):
+class SphericalSpin1ToCartesianSpin1(BaseConversion):
     """ Converts spin1x, spin1y, spin1z, spin2x, spin2y, and spin2z to
     a_1, spin1_azimuthal, spin1_polar, a_2, spin2_azimuthal, and spin2_polar.
     """
@@ -58,7 +68,7 @@ class SphericalSpin1ToCartesianSpin1(object):
     outputs = set([parameters.spin1x, parameters.spin1y, parameters.spin1z])
 
     @classmethod
-    def convert(cls, **kwargs):
+    def _convert(cls, kwargs):
         out = {}
         a, az, po = cls.ordered_inputs
         if set([a, az, po]).issubset(set(kwargs.keys())):
@@ -73,7 +83,7 @@ class SphericalSpin1ToCartesianSpin1(object):
     def convert_inverse(**kwargs):
         raise NotImplementedError("Not added.")
 
-class SphericalSpin2ToCartesianSpin2(object):
+class SphericalSpin2ToCartesianSpin2(BaseConversion):
     """ Converts spin1x, spin1y, spin1z, spin2x, spin2y, and spin2z to
     a_1, spin1_azimuthal, spin1_polar, a_2, spin2_azimuthal, and spin2_polar.
     """
@@ -83,7 +93,7 @@ class SphericalSpin2ToCartesianSpin2(object):
     inputs = set(ordered_inputs)
     outputs = set([parameters.spin2x, parameters.spin2y, parameters.spin2z])
 
-class MassSpinToCartesianSpin(object):
+class MassSpinToCartesianSpin(BaseConversion):
     """ Converts mass1, mass2, chi_eff, chi_a, xi1, xi2, phi_a, and phi_s to
     spin1x, spin1y, spin1z, spin2x, spin2y, and spin2z.
     """
@@ -92,7 +102,7 @@ class MassSpinToCartesianSpin(object):
     outputs = set([])
 
     @staticmethod
-    def convert(**kwargs):
+    def _convert(kwargs):
         spin1x = conversions.spin1x_from_xi1_phi_a_phi_s(
                                kwargs["xi1"], kwargs["phi_a"], kwargs["phi_s"])
         spin1y = conversions.spin1y_from_xi1_phi_a_phi_s(
@@ -137,19 +147,11 @@ def add_base_parameters(sampling_params):
        WaveformArray with new fields.
     """
 
-    # use dict
-    params_dict = {param : sampling_params[param]
-                   for param in sampling_params.fieldnames}
-
     # convert mchirp and q sampling to base parameters
     current_params = set(sampling_params.fieldnames)
     if (MchirpQToMass1Mass2.inputs.issubset(current_params) and
             not MchirpQToMass1Mass2.outputs.issubset(current_params)):
-        new_fields = MchirpQToMass1Mass2.convert(params_dict)
-        keys = new_fields.keys()
-        values = [new_fields[key] for key in new_fields]
-        sampling_params = sampling_params.add_fields(values, keys)
-        params_dict.update(new_fields)
+        sampling_params = MchirpQToMass1Mass2.convert(sampling_params)
 
     # convert spherical spins sampling to base parameters
     for converter in [SphericalSpin1ToCartesianSpin1,
@@ -157,20 +159,12 @@ def add_base_parameters(sampling_params):
         current_params = set(sampling_params.fieldnames)
         if (converter.inputs.issubset(current_params) and
                 not converter.outputs.issubset(current_params)):
-            new_fields = converter.convert(params_dict)
-            keys = new_fields.keys()
-            values = [new_fields[key] for key in new_fields]
-            sampling_params = sampling_params.add_fields(values, keys)
-            params_dict.update(new_fields)
+            sampling_params = converter.convert(sampling_params)
 
     # convert mass-spin sampling to base parameters
     current_params = set(sampling_params.fieldnames)
     if (MassSpinToCartesianSpin.inputs.issubset(current_params) and
             not MassSpinToCartesianSpin.outputs.issubset(current_params)):
-        new_fields = MassSpinToCartesianSpin.convert(params_dict)
-        keys = new_fields.keys()
-        values = [new_fields[key] for key in new_fields]
-        sampling_params = sampling_params.add_fields(values, keys)
-        params_dict.update(new_fields)
+        sampling_params = MassSpinToCartesianSpin.convert(sampling_params)
 
     return sampling_params
