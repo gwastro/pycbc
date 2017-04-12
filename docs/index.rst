@@ -3,87 +3,86 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-###################
-PyCBC documentation
-###################
+===============
+Getting Started
+===============
 
-PyCBC is a python toolkit for analysis of data from gravitational-wave laser interferometer detectors with the goal of detecting and studying signals from compact binary coalescences (CBCs).
+PyCBC is a software package used to explore astrophysical sources of gravitational waves. It contains algorithms that can detect coalescing compact binaries and measure the astrophysical parameters of detected sources. PyCBC was used in the `first direct detection of gravitational waves (GW150914) by LIGO <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.116.061102>`_ and is used in the ongoing analysis of LIGO and Virgo data.  If you have `Docker <https://www.docker.com/community-edition>`_ installed, you can get started using PyCBC with just two commands:
 
-The goals of the PyCBC project are to:
+.. raw:: html
 
-- Provide tools for building gravitational-wave search workflows for CBCs
-- Create a flexible, extensible production code for CBC analysis that can be released for the public
-- Enable simple, easy and transparent access for various many-core architectures like GPUs
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function(){
+            Typed.new(".element", {
+                strings: ["^500<strong>docker pull pycbc/pycbc-el7:latest</strong><br>$ ^500<strong>docker run -it pycbc/pycbc-el7:latest /bin/bash -l</strong><br>&#40;pycbc-software&#41;&#91;pycbc@37184573e664 &#126;&#93;$ ^500<strong>python</strong><br>Python 2.7.5 &#40;default, Nov  6 2016, 00:28:07&#41;<br>&#91;GCC 4.8.5 20150623 &#40;Red Hat 4.8.5-11&#41;&#93; on linux2<br>&gt;&gt;&gt; ^500<strong>execfile&#40;&quot;/home/pycbc/src/pycbc/examples/waveform/match_waveform.py&quot;&#41;</strong><br>^1000The match is: 0.953<br>&gt;&gt;&gt; ^500<strong>from pycbc.waveform import td_approximants</strong><br>&gt;&gt;&gt; ^500<strong>print td_approximants&#40;&#41;&#91;20:24&#93;</strong><br>['SEOBNRv3', 'SEOBNRv2', 'SpinTaylorT1', 'SEOBNRv4']<br>&gt;&gt;&gt; "],
+                typeSpeed: 0
+            });
+        });
+    </script>
+    <div class="text-editor-wrap">
+        <div class="title-bar"><span class="title">pycbc &mdash; bash &mdash; 80x<span class="terminal-height">25</span></span></div>
+        <div class="text-body">
+            $ <span class="element"></span>
+        </div>
+    </div>
+    <br>
+    <br>
 
-=======================================
-Use of PyCBC in Scientific Publications
-=======================================
+For more details, see `Running PyCBC under Docker`_ below. If you use PyCBC in your scientific publications or projects, we ask that you acknowlege our work by citing the papers described on the page:
 
-If you use any code from PyCBC in a scientific publication, then we ask that
-it is cited in the following way:
+.. toctree::
+   :maxdepth: 1
 
-::
+   credit
 
-    These results were generating using the PyCBC software package
-    \cite{Canton:2014ena,Usman:2015kfa,pycbc-software}
+===========
+About PyCBC
+===========
 
-For the citation ``pycbc-software``,  please use a bibtex entry and DOI for the
-appropriate release of the PyCBC software (or the latest available release).
-A bibtex key and DOI for each release is avaliable from `Zenodo <http://zenodo.org/>`_.
-A key for the latest release is available at:
+The goals of the PyCBC project are:
 
-.. image:: https://zenodo.org/badge/31596861.svg
-   :target: https://zenodo.org/badge/latestdoi/31596861
+- Provide reliable and robust tools for building gravitational-wave search and parameter estimation workflows for CBCs.
+- Create a flexible, extensible production code for CBC analysis that can be released for the public.
+- Enable simple, easy and transparent access for various many-core architectures like GPUs.
 
-Bibtex keys for the citations ``Canton:2014ena`` and ``Usman:2015kfa`` are::
+==========================
+Running PyCBC under Docker
+==========================
 
-    @article{Canton:2014ena,
-      author         = "Dal Canton, Tito and others",
-      title          = "{Implementing a search for aligned-spin neutron
-                        star-black hole systems with advanced ground based
-                        gravitational wave detectors}",
-      journal        = "Phys. Rev.",
-      volume         = "D90",
-      year           = "2014",
-      number         = "8",
-      pages          = "082004",
-      doi            = "10.1103/PhysRevD.90.082004",
-      eprint         = "1405.6731",
-      archivePrefix  = "arXiv",
-      primaryClass   = "gr-qc",
-      reportNumber   = "LIGO-P1400053",
-      SLACcitation   = "%%CITATION = ARXIV:1405.6731;%%"
-    }
+The easiest way to start using PyCBC is to install one of our `Docker containers <https://hub.docker.com/u/pycbc/>`_. First, install the `Docker Community Edition <https://www.docker.com/community-edition>`_ for your `Mac <https://store.docker.com/editions/community/docker-ce-desktop-mac?tab=description>`_ or `Windows <https://store.docker.com/editions/community/docker-ce-desktop-windows?tab=description>`_ desktop. Docker CE installations for `Linux platforms <https://www.docker.com/community-edition#/download>`_ are also available.
 
-    @article{Usman:2015kfa,
-      author         = "Usman, Samantha A. and others",
-      title          = "{The PyCBC search for gravitational waves from compact
-                        binary coalescence}",
-      journal        = "Class. Quant. Grav.",
-      volume         = "33",
-      year           = "2016",
-      number         = "21",
-      pages          = "215004",
-      doi            = "10.1088/0264-9381/33/21/215004",
-      eprint         = "1508.02357",
-      archivePrefix  = "arXiv",
-      primaryClass   = "gr-qc",
-      reportNumber   = "LIGO-P1500086",
-      SLACcitation   = "%%CITATION = ARXIV:1508.02357;%%"
-    }
+After installing and starting Docker, type the commands::
 
+    docker pull pycbc/pycbc-el7:latest
+    docker run -it pycbc/pycbc-el7:latest /bin/bash -l
 
-=========================
-Documentation for Users
-=========================
+to download and run a PyCBC container. This example downloads current version of the code from the `GitHub master branch. <https://github.com/ligo-cbc/pycbc>`_ Replace the string ``latest`` with one of the `PyCBC release tags <https://github.com/ligo-cbc/pycbc/releases>`_ (e.g. ``v1.7.0``) to install a container containing a released version of PyCBC. The container includes all of the required software and dependencies to run PyCBC, including a compatible version of LALSuite.
 
-To install PyCBC and get started, follow the links at:
+If you want to run a docker container with graphics for making plots, you can start a container that runs an SSH daemon and connect to that.  If do not already have a personal ssh public/private key, first create one with the command::
+
+    ssh-keygen -t rsa
+    cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+    chmod 600 ~/.ssh/authorized_keys
+
+Now start the docker container with::
+
+    docker run --name pycbc -d -P -v ${HOME}/.ssh:/home/pycbc/.ssh -t pycbc/pycbc-el7 tail -f /dev/null i   
+    docker exec -u root -it pycbc /usr/bin/pycbc-sshd
+
+And then you can connect to it with the command::
+
+    ssh -Y pycbc@127.0.0.1 -p `docker port pycbc 22 | awk -F: '{print $NF}'`
+
+Full installation instructions for users who want to install and develop PyCBC are available at:
 
 .. toctree::
    :maxdepth: 1
 
    install
-   building_bundled_executables
+
+=======================
+Documentation for Users
+=======================
 
 Users who want to create and run scientific workflows to search for compact
 binaries should read the documentation in the links at:
@@ -134,6 +133,13 @@ short code snippets below.
 =============================
 Documentation for Developers
 =============================
+
+Documentation on building stand-alone bundled executables with PyInstaller is available at:
+
+.. toctree::
+   :maxdepth: 1
+
+   building_bundled_executables
 
 PyCBC developers should read the pages below which explain how to write
 documentation, develop the code, and create releases:
