@@ -5,7 +5,7 @@
 .text-editor-wrap {
   display: block;
   margin: auto;
-  max-width: 620px;
+  max-width: 640px;
   border-radius: 10px;
   box-shadow: rgba(0, 0, 0, 0.8) 0px 5px 10px;
   clear: both;
@@ -28,13 +28,13 @@
   box-shadow: inset rgba(255, 255, 255, 0.7) 0px 1px 1px;
   border-bottom: #6a6a6a 1px solid; }
 .text-body {
-  height: 300px;
+  height: 200px;
   background-color: rgba(0, 0, 0, 0.85);
   padding: 10px;
   color: #f0f0f0;
   text-shadow: #000 0px 1px 0px;
   font-family: "Consolas", "Courier New", "Courier";
-  font-size: 0.9em;
+  font-size: 0.85em;
   line-height: 1.2em;
   font-weight: 500;
   text-align: left;

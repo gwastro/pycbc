@@ -14,7 +14,7 @@ PyCBC is a software package used to explore astrophysical sources of gravitation
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function(){
             Typed.new(".element", {
-                 strings: ["^500<strong>docker pull pycbc/pycbc-el7:latest</strong><br>$ ^500<strong>docker run -it pycbc/pycbc-el7:latest /bin/bash -l</strong><br>&#40;pycbc-software&#41;&#91;pycbc@37184573e664 &#126;&#93;$ ^500<strong>python</strong><br>Python 2.7.5 &#40;default, Nov  6 2016, 00:28:07&#41;<br>&#91;GCC 4.8.5 20150623 &#40;Red Hat 4.8.5-11&#41;&#93; on linux2<br>&gt;&gt;&gt; ^500<strong>import pycbc.version</strong><br>&gt;&gt;&gt; ^500<strong>print pycbc.version.git_tag</strong><br>v1.7.0<br>&gt;&gt;&gt; ^500<strong>import lal.git_version</strong><br>&gt;&gt;&gt; ^500<strong>print lal.git_version.id</strong><br>539c8700af92eb6dd00e0e91b9dbaf5bae51f004<br>&gt;&gt;&gt; "],
+                strings: ["^500<strong>docker pull pycbc/pycbc-el7:latest</strong><br>$ ^500<strong>docker run -it pycbc/pycbc-el7:latest /bin/bash -l</strong><br>&#40;pycbc-software&#41;&#91;pycbc@37184573e664 &#126;&#93;$ ^500<strong>python</strong><br>Python 2.7.5 &#40;default, Nov  6 2016, 00:28:07&#41;<br>&#91;GCC 4.8.5 20150623 &#40;Red Hat 4.8.5-11&#41;&#93; on linux2<br>&gt;&gt;&gt; ^500<strong>execfile&#40;&quot;/home/pycbc/src/pycbc/examples/waveform/match_waveform.py&quot;&#41;</strong><br>^1000The match is: 0.953<br>&gt;&gt;&gt; ^500<strong>from pycbc.waveform import td_approximants</strong><br>&gt;&gt;&gt; ^500<strong>print td_approximants&#40;&#41;&#91;20:24&#93;</strong><br>['SEOBNRv3', 'SEOBNRv2', 'SpinTaylorT1', 'SEOBNRv4']<br>&gt;&gt;&gt; "],
                 typeSpeed: 0
             });
         });
@@ -53,15 +53,12 @@ The easiest way to start using PyCBC is to install one of our `Docker containers
 
 After installing and starting Docker, type the commands::
 
-    docker pull pycbc/pycbc-el7:v1.7.0
-    docker run -it pycbc/pycbc-el7:v1.7.0 /bin/bash -l
+    docker pull pycbc/pycbc-el7:latest
+    docker run -it pycbc/pycbc-el7:latest /bin/bash -l
 
- in the window above to download and run a PyCBC container. This example downloads the ``v1.7.0`` release in a container. To get the current version of the code from the `GitHub master branch <https://github.com/ligo-cbc/pycbc>`_ replace the string ``v1.7.0`` with ``latest``. The container includes all of the required software and dependencies to run PyCBC, including a compatible version of LALSuite.
+to download and run a PyCBC container. This example downloads current version of the code from the `GitHub master branch. <https://github.com/ligo-cbc/pycbc>`_ Replace the string ``latest`` with one of the `PyCBC release tags <https://github.com/ligo-cbc/pycbc/releases>`_ (e.g. ``v1.7.0``) to install a container containing a released version of PyCBC. The container includes all of the required software and dependencies to run PyCBC, including a compatible version of LALSuite.
 
-If you want to run a docker container with graphics for making plots, you can
-start a container that runs an SSH daemon and connect to that.  If do not
-already have a personal ssh public/private key, first create one with the
-command::
+If you want to run a docker container with graphics for making plots, you can start a container that runs an SSH daemon and connect to that.  If do not already have a personal ssh public/private key, first create one with the command::
 
     ssh-keygen -t rsa
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
