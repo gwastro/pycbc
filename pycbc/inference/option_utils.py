@@ -301,7 +301,7 @@ def results_from_cli(opts, load_samples=True, walkers=None):
     load_samples : {True, bool}
         Load samples from the results file using the parameters, thin_start,
         and thin_interval specified in the options. The samples are returned
-        as a WaveformArray instance.
+        as a FieldArray instance.
     walkers : {None, (list of) int}
         If loading samples, the walkers to load from. If None, will load from
         all walkers.
@@ -314,8 +314,8 @@ def results_from_cli(opts, load_samples=True, walkers=None):
         List of the parameters to use, parsed from the parameters option.
     labels : list
         List of labels to associate with the parameters.
-    samples : {None, WaveformArray}
-        If load_samples, the samples as a WaveformArray; otherwise, None.
+    samples : {None, FieldArray}
+        If load_samples, the samples as a FieldArray; otherwise, None.
     """
     logging.info("Reading input file")
     fp = InferenceFile(opts.input_file, "r")
