@@ -48,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'PyCBC'
-copyright = u'2017, Alexander Nitz'
+copyright = u'2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
