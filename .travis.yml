@@ -70,7 +70,7 @@ install:
     echo -e "Host code.pycbc.phy.syr.edu\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config ;
     echo $LDG_USER > ~/.ssh/ldg_user ;
     echo $LDG_TOKEN > ~/.ssh/ldg_token ;
-    chmod 600 ~/.ssh/id_rsa ~/.ssh/ldg_user ~/.ssh/ldg_token ;
+    chmod 600 ~/.ssh/id_rsa ~/.ssh/config ~/.ssh/ldg_user ~/.ssh/ldg_token ;
   fi
 script:
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
@@ -80,6 +80,7 @@ script:
     sleep 10 ;
     docker ps -a ;
     TMP_CONTAINER_ID=$(cat docker.cid) ;
+    docker exec -it pycbc_inst /bin/bash -lc "id; ls -ad ~/.ssh; ls -al ~/.ssh/"
     docker exec -it pycbc_inst /bin/bash -lc "cd /pycbc; python setup.py install; mkdir -p ~/pycbc-software/share/lal-data; mkdir -p ~/src; cd ~/src ; git clone https://github.com/ligo-cbc/pycbc.git; cd" ;
     if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
       LAL_EXTRA_TAG="11" ; 
