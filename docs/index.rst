@@ -7,7 +7,14 @@
 Getting Started
 ===============
 
-PyCBC is a software package used to explore astrophysical sources of gravitational waves. It contains algorithms that can detect coalescing compact binaries and measure the astrophysical parameters of detected sources. PyCBC was used in the `first direct detection of gravitational waves (GW150914) by LIGO <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.116.061102>`_ and is used in the ongoing analysis of LIGO and Virgo data.  If you have `Docker <https://www.docker.com/community-edition>`_ installed, you can get started using PyCBC with just two commands:
+PyCBC is a software package used to explore astrophysical sources of gravitational waves. It contains algorithms that can detect coalescing compact binaries and measure the astrophysical parameters of detected sources. PyCBC was used in the `first direct detection of gravitational waves (GW150914) by LIGO <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.116.061102>`_ and is used in the ongoing analysis of LIGO and Virgo data.  If you use PyCBC in your scientific publications or projects, we ask that you acknowlege our work by citing the papers described on the page:
+
+.. toctree::
+   :maxdepth: 1
+
+   credit
+
+If you have `Docker <https://www.docker.com/community-edition>`_ installed, you can get started using PyCBC with just two commands:
 
 .. raw:: html
 
@@ -28,12 +35,12 @@ PyCBC is a software package used to explore astrophysical sources of gravitation
     <br>
     <br>
 
-For more details, see `Running PyCBC under Docker`_ below. If you use PyCBC in your scientific publications or projects, we ask that you acknowlege our work by citing the papers described on the page:
+For more details, including instructions on starting a container that can display graphics, see:
 
 .. toctree::
    :maxdepth: 1
 
-   credit
+   docker
 
 ===========
 About PyCBC
@@ -44,34 +51,6 @@ The goals of the PyCBC project are:
 - Provide reliable and robust tools for building gravitational-wave search and parameter estimation workflows for CBCs.
 - Create a flexible, extensible production code for CBC analysis that can be released for the public.
 - Enable simple, easy and transparent access for various many-core architectures like GPUs.
-
-==========================
-Running PyCBC under Docker
-==========================
-
-The easiest way to start using PyCBC is to install one of our `Docker containers <https://hub.docker.com/u/pycbc/>`_. First, install the `Docker Community Edition <https://www.docker.com/community-edition>`_ for your `Mac <https://store.docker.com/editions/community/docker-ce-desktop-mac?tab=description>`_ or `Windows <https://store.docker.com/editions/community/docker-ce-desktop-windows?tab=description>`_ desktop. Docker CE installations for `Linux platforms <https://www.docker.com/community-edition#/download>`_ are also available.
-
-After installing and starting Docker, type the commands::
-
-    docker pull pycbc/pycbc-el7:latest
-    docker run -it pycbc/pycbc-el7:latest /bin/bash -l
-
-to download and run a PyCBC container. This example downloads current version of the code from the `GitHub master branch. <https://github.com/ligo-cbc/pycbc>`_ Replace the string ``latest`` with one of the `PyCBC release tags <https://github.com/ligo-cbc/pycbc/releases>`_ (e.g. ``v1.7.0``) to install a container containing a released version of PyCBC. The container includes all of the required software and dependencies to run PyCBC, including a compatible version of LALSuite.
-
-If you want to run a docker container with graphics for making plots, you can start a container that runs an SSH daemon and connect to that.  If do not already have a personal ssh public/private key, first create one with the command::
-
-    ssh-keygen -t rsa
-    cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-    chmod 600 ~/.ssh/authorized_keys
-
-Now start the docker container with::
-
-    docker run --name pycbc -d -P -v ${HOME}/.ssh:/home/pycbc/.ssh -t pycbc/pycbc-el7 tail -f /dev/null i   
-    docker exec -u root -it pycbc /usr/bin/pycbc-sshd
-
-And then you can connect to it with the command::
-
-    ssh -Y pycbc@127.0.0.1 -p `docker port pycbc 22 | awk -F: '{print $NF}'`
 
 Full installation instructions for users who want to install and develop PyCBC are available at:
 
