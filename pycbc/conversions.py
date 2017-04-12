@@ -389,14 +389,14 @@ def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
 
 def phi_a(spin1x, spin1y, spin2x, spin2y):
     """ Returns the angle between the in-plane perpendicular spins."""
-    phi1 = phi1_from_spin1x_spin1y(spin1x, spin1y)
-    phi2 = phi2_from_spin2x_spin2y(spin2x, spin2y)
+    phi1 = phi_from_spinx_spiny(spin1x, spin1y)
+    phi2 = phi_from_spinx_spiny(spin2x, spin2y)
     return phi1 - phi2
 
 def phi_s(spin1x, spin1y, spin2x, spin2y):
     """ Returns the sum of the in-plane perpendicular spins."""
-    phi1 = phi1_from_spin1x_spin1y(spin1x, spin1y)
-    phi2 = phi2_from_spin2x_spin2y(spin2x, spin2y)
+    phi1 = phi_from_spinx_spiny(spin1x, spin1y)
+    phi2 = phi_from_spinx_spiny(spin2x, spin2y)
     return phi1 + phi2
 
 def primary_spin(mass1, mass2, spin1, spin2):
@@ -510,15 +510,10 @@ def phi2_from_phi_a_phi_s(phi_a, phi_s):
     """
     return (phi_s - phi_a) / 2.0
 
-def phi1_from_spin1x_spin1y(spin1x, spin1y):
+def phi_from_spinx_spiny(spin1x, spin1y):
     """Returns phi1 for primary mass.
     """
     return numpy.arctan(spin1y / spin1x)
-
-def phi2_from_spin2x_spin2y(spin2x, spin2y):
-    """Returns phi2 for secondary mass.
-    """
-    return phi1_from_spin1x_spin1y(spin2x, spin2y)
 
 def spin1z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
     """Returns spin1z.
@@ -620,8 +615,8 @@ __all__ = ['primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'secondary_spin',
            'chi_perp_from_mass1_mass2_xi2',
            'chi_p_from_xi1_xi2', 'phi1_from_phi_a_phi_s',
-           'phi2_from_phi_a_phi_s', 'phi1_from_spin1x_spin1y',
-           'phi2_from_spin2x_spin2y', 'spin1z_from_mass1_mass2_chi_eff_chi_a',
+           'phi2_from_phi_a_phi_s', 'phi_from_spinx_spiny',
+           'spin1z_from_mass1_mass2_chi_eff_chi_a',
            'spin2z_from_mass1_mass2_chi_eff_chi_a',
            'spin1x_from_xi1_phi_a_phi_s', 'spin1y_from_xi1_phi_a_phi_s',
            'spin2x_from_mass1_mass2_xi2_phi_a_phi_s',
