@@ -76,7 +76,7 @@ script:
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
     ./tools/travis_build_and_test.sh ;
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
-    docker run --name pycbc_inst --cidfile docker.cid -d -v ${HOME}/.ssh:/home/pycbc/.ssh:ro -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc 'tail -f /dev/null' ;
+    docker run --name pycbc_inst --cidfile docker.cid -d -v ~/.ssh:/home/pycbc/.ssh -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc 'tail -f /dev/null' ;
     sleep 10 ;
     docker ps -a ;
     TMP_CONTAINER_ID=$(cat docker.cid) ;
