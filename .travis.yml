@@ -80,7 +80,7 @@ script:
     sleep 10 ;
     docker ps -a ;
     TMP_CONTAINER_ID=$(cat docker.cid) ;
-    travis_retry docker exec -it pycbc_inst /bin/bash -lc "cd /pycbc; python setup.py install; exit $?"
+    travis_retry docker exec -it pycbc_inst /bin/bash -lc "cd /pycbc; python setup.py install; exit $?" ;
     travis_retry docker exec -it pycbc_inst /bin/bash -lc "mkdir -p ~/src; cd ~/src ; git clone https://github.com/ligo-cbc/pycbc.git; exit $?" ;
     if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
       LAL_EXTRA_TAG="11" ; 
