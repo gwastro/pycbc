@@ -145,45 +145,32 @@ def add_base_parameters(sampling_params):
     current_params = set(sampling_params.fieldnames)
     if (MchirpQToMass1Mass2.inputs.issubset(current_params) and
             not MchirpQToMass1Mass2.outputs.issubset(current_params)):
-        new_fields = MchirpQToMass1Mass2.convert(**params_dict)
+        new_fields = MchirpQToMass1Mass2.convert(params_dict)
         keys = new_fields.keys()
         values = [new_fields[key] for key in new_fields]
         sampling_params = sampling_params.add_fields(values, keys)
         params_dict.update(new_fields)
 
     # convert spherical spins sampling to base parameters
-    current_params = set(sampling_params.fieldnames)
-    test_params = set(["spin1_a", "spin1_azimuthal", "spin1_polar"])
-    if (SphericalSpin1ToCartesianSpin1.inputs.issubset(current_params) and
-            not SphericalSpin1ToCartesianSpin1.outputs.issubset(current_params)):
-        new_fields = SphericalSpin1ToCartesianSpin1.convert(**params_dict)
-        keys = new_fields.keys()
-        values = [new_fields[key] for key in new_fields]
-        sampling_params = sampling_params.add_fields(values, keys)
-        params_dict.update(new_fields)
-
-    # FIXME: reused
-    # convert spherical spins sampling to base parameters
-    current_params = set(sampling_params.fieldnames)
-    test_params = set(["spin2_a", "spin2_azimuthal", "spin2_polar"])
-    if (SphericalSpin2ToCartesianSpin2.inputs.issubset(current_params) and
-            not SphericalSpin2ToCartesianSpin2.outputs.issubset(current_params)):
-        new_fields = SphericalSpin2ToCartesianSpin2.convert(**params_dict)
-        keys = new_fields.keys()
-        values = [new_fields[key] for key in new_fields]
-        sampling_params = sampling_params.add_fields(values, keys)
-        params_dict.update(new_fields)
+    for converter in [SphericalSpin1ToCartesianSpin1,
+                      SphericalSpin2ToCartesianSpin2]:
+        current_params = set(sampling_params.fieldnames)
+        if (converter.inputs.issubset(current_params) and
+                not converter.outputs.issubset(current_params)):
+            new_fields = converter.convert(params_dict)
+            keys = new_fields.keys()
+            values = [new_fields[key] for key in new_fields]
+            sampling_params = sampling_params.add_fields(values, keys)
+            params_dict.update(new_fields)
 
     # convert mass-spin sampling to base parameters
     current_params = set(sampling_params.fieldnames)
-    test_params = set(["chi_eff", "chi_a", "xi1", "xi2", "phi_s", "phi_a"])
-    if test_params.issubset(current_params):
-        new_fields = MassSpinToCartesianSpin.convert(**params_dict)
+    if (MassSpinToCartesianSpin.inputs.issubset(current_params) and
+            not MassSpinToCartesianSpin.outputs.issubset(current_params)):
+        new_fields = MassSpinToCartesianSpin.convert(params_dict)
         keys = new_fields.keys()
         values = [new_fields[key] for key in new_fields]
         sampling_params = sampling_params.add_fields(values, keys)
         params_dict.update(new_fields)
 
     return sampling_params
-
-
