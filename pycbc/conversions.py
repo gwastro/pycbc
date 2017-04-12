@@ -432,7 +432,7 @@ def primary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """
     spinx = primary_spin(mass1, mass2, spin1x, spin2x)
     spiny = secondary_spin(mass1, mass2, spin1y, spin2y)
-    return chi_perp_from_spin1x_spin1y(spinx, spiny)
+    return chi_perp_from_spinx_spiny(spinx, spiny)
 
 def secondary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Returns the effective precession spin argument for the smaller mass.
@@ -442,13 +442,13 @@ def secondary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     a2 = 2 + 3 / (2 * q)
     spinx = primary_spin(mass1, mass2, spin1x, spin2x)
     spiny = secondary_spin(mass1, mass2, spin1y, spin2y)
-    return a1 / (q**2 * a2) * chi_perp_from_spin1x_spin1y(spinx, spiny)
+    return a1 / (q**2 * a2) * chi_perp_from_spinx_spiny(spinx, spiny)
 
 def xi1_from_spin1x_spin1y(spinx, spiny):
     """Returns the effective precession spin argument for the larger mass.
     This function assumes its given spins of the primary mass.
     """
-    return chi_perp_from_spin1x_spin1y(spinx, spiny)
+    return chi_perp_from_spinx_spiny(spinx, spiny)
 
 def xi2_from_mass1_mass2_spin2x_spin2y(mass1, mass2, spinx, spiny):
     """Returns the effective precession spin argument for the smaller mass.
@@ -457,12 +457,12 @@ def xi2_from_mass1_mass2_spin2x_spin2y(mass1, mass2, spinx, spiny):
     q = q_from_mass1_mass2(mass1, mass2)
     a1 = 2 + 3 * q / 2
     a2 = 2 + 3 / (2 * q)
-    return a1 / (q**2 * a2) * chi_perp_from_spin1x_spin1y(spinx, spiny)
+    return a1 / (q**2 * a2) * chi_perp_from_spinx_spiny(spinx, spiny)
 
 def xi_from_spin1x(spinx, spiny):
     """Returns the effective precession spin argument for the larger mass.
     """
-    return chi_perp_from_spin1x_spin1y(spinx, spiny)
+    return chi_perp_from_spinx_spiny(spinx, spiny)
 
 def secondary_xi(mass1, mass2, spinx, spiny):
     """Returns the effective precession spin argument for the smaller mass.
@@ -470,17 +470,12 @@ def secondary_xi(mass1, mass2, spinx, spiny):
     q = q_from_mass1_mass2(mass1, mass2)
     a1 = 2 + 3 * q / 2
     a2 = 2 + 3 / (2 * q)
-    return a1 / (q**2 * a2) * chi_perp_from_spin1x_spin1y(spinx, spiny)
+    return a1 / (q**2 * a2) * chi_perp_from_spinx_spiny(spinx, spiny)
 
-def chi_perp_from_spin1x_spin1y(spin1x, spin1y):
+def chi_perp_from_spinx_spiny(spin1x, spin1y):
     """Returns the in-plane spin from spin1x and spin1y.
     """
     return numpy.sqrt(spin1x**2 + spin1y**2)
-
-def chi_perp_from_spin2x_spin2y(spin2x, spin2y):
-    """Returns the in-plane spin from spin2x and spin2y.
-    """
-    return chi_perp_from_spin1x_spin1y(spin2x, spin2y)
 
 def chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2):
     """Returns the in-plane spin from mass1, mass2, and xi2 for the
@@ -623,7 +618,7 @@ __all__ = ['primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'eta_from_tau0_tau3', 'mass1_from_tau0_tau3',
            'mass2_from_tau0_tau3', 'chi_eff', 'chi_a', 'chi_p', 'primary_spin',
            'secondary_spin',
-           'chi_perp_from_mass1_mass2_xi2', 'chi_perp_from_spin2x_spin2y',
+           'chi_perp_from_mass1_mass2_xi2',
            'chi_p_from_xi1_xi2', 'phi1_from_phi_a_phi_s',
            'phi2_from_phi_a_phi_s', 'phi1_from_spin1x_spin1y',
            'phi2_from_spin2x_spin2y', 'spin1z_from_mass1_mass2_chi_eff_chi_a',
