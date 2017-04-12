@@ -24,6 +24,8 @@ To start a Docker container on Mac OS X that can display graphics on Mac OS X, y
 In the Xquartz preferences, make sure that ``Allow connections from network clients`` is checked, as shown below:
 
 .. image:: resources/xquartz_pref.png
+      :width: 400 px
+      :align: center
 
 Next, enable Docker to connect to your X11 server by running the commands::
 
