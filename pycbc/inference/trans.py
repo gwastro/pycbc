@@ -108,28 +108,41 @@ def convert(sampling_params):
     """ Converts from sampling parameters to base parameters for plotting.
     """
 
+    # use dict
+    params_dict = {param : sampling_params[param]
+                   for param in sampling_params.fieldnames}
+
     # convert mchirp and q sampling to base parameters
-    current_params = set(sampling_params.keys())
+    current_params = set(sampling_params.fieldnames)
     test_params = set(["mchirp", "q"])
     if test_params.issubset(current_params):
-        sampling_params.update(
-                    MchirpQToMass1Mass2.convert(**sampling_params))
+        new_fields = MchirpQToMass1Mass2.convert(**params_dict)
+        keys = new_fields.keys()
+        values = [new_fields[key] for key in new_fields]
+        sampling_params = sampling_params.add_fields(values, keys)
+        params_dict.update(new_fields)
 
     # convert spherical spins sampling to base parameters
-    current_params = set(sampling_params.keys())
+    current_params = set(sampling_params.fieldnames)
     test_params1 = set(["a_1", "spin1_azimuthal", "spin1_polar"])
     test_params2 = set(["a_2", "spin2_azimuthal", "spin2_polar"])
     if (test_params1.issubset(current_params) or
             test_params2.issubset(current_params)):
-        sampling_params.update(
-                    SphericalSpinToCartesianSpin.convert(**sampling_params))
+        new_fields = SphericalSpinToCartesianSpin.convert(**params_dict)
+        keys = new_fields.keys()
+        values = [new_fields[key] for key in new_fields]
+        sampling_params = sampling_params.add_fields(values, keys)
+        params_dict.update(new_fields)
 
     # convert mass-spin sampling to base parameters
-    current_params = set(sampling_params.keys())
+    current_params = set(sampling_params.fieldnames)
     test_params = set(["chi_eff", "chi_a", "xi1", "xi2", "phi_s", "phi_a"])
     if test_params.issubset(current_params):
-        sampling_params.update(
-                    MassSpinToCartesianSpin.convert(**sampling_params))
+        new_fields = MassSpinToCartesianSpin.convert(**params_dict)
+        keys = new_fields.keys()
+        values = [new_fields[key] for key in new_fields]
+        sampling_params = sampling_params.add_fields(values, keys)
+        params_dict.update(new_fields)
 
     return sampling_params
 
