@@ -128,7 +128,8 @@ def make_throughput_plot(workflow, insp_files, out_dir, tags=None):
     workflow += node
 
 def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir,
-                          singles=None, extension='.html', tags=None):
+                          singles=None, h_rm_num=None, extension='.html',
+                          tags=None):
     if tags is None:
         tags = []
     makedir(out_dir)
@@ -139,6 +140,11 @@ def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir,
     node.add_input_opt('--trigger-file', trig_file)
     if singles is not None:
         node.add_input_list_opt('--single-detector-triggers', singles)
+
+    # Hierarchical removal section if needed
+    if h_rm_num is not None:
+        node.add_input_list_opt('--h-num-iterations', h_rm_num)
+
     node.new_output_file_opt(bank_file.segment, extension, '--output-file')
     workflow += node
     return node.output_files[0]
@@ -317,7 +323,7 @@ def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None,
         files += node.output_files
     return files
 
-def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
+def make_snrratehist_plot(workflow, bg_file, h_rm_num=None, out_dir, closed_box=False,
                          tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
@@ -328,12 +334,16 @@ def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
     if closed_box:
         node.add_opt('--closed-box')
 
+    # Hierarchical removal option
+    if h_rm_num is not None:
+        node.add_opt('--h-iter-inc-background', h_rm_num)
+
     node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
     workflow += node
     return node.output_files[0]
 
 def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
-                     cumulative=True, tags=None):
+                     cumulative=True, h_rm_num=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_snrifar', ifos=workflow.ifos,
@@ -345,6 +355,10 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
 
     if not cumulative:
         node.add_opt('--not-cumulative')
+
+    # Hierarchical removal option
+    if h_rm_num is not None:
+        node.add_opt('--h-iter-inc-background', h_rm_num)
 
     node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
     workflow += node
