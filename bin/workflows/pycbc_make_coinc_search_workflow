@@ -175,7 +175,7 @@ bank_plot = [(wf.make_template_plot(workflow, hdfbank[0],
 
 # setup the injection files
 inj_files, inj_tags = wf.setup_injection_workflow(workflow,
-                                                     output_dir="inj_files")
+                                                  output_dir="inj_files")
 
 ######################## Setup the FULL DATA run ##############################
 tag = output_dir = "full_data"
@@ -198,11 +198,11 @@ statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
 # setup coinc for the filtering jobs
 full_insps = insps
 bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, statfiles,
-                               cum_veto_files, veto_names,
-                               output_dir, tags=ctags)
+                                   cum_veto_files, veto_names,
+                                   output_dir, tags=ctags)
 final_bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, statfiles,
-                               final_veto_file, final_veto_name,
-                               output_dir, tags=ctags)
+                                         final_veto_file, final_veto_name,
+                                         output_dir, tags=ctags)
 final_bg_file = final_bg_files[0][0]
 bin_files = final_bg_files[0][1]
 
@@ -215,17 +215,19 @@ all_snrifar = []
 for bg_file, bg_bins in (bg_files + final_bg_files):
     for bg_bin in bg_bins:
         snrifar = wf.make_snrifar_plot(workflow, bg_bin,
-                         rdir['coincident_triggers'],
-                         closed_box=True, tags=bg_bin.tags + ['closed'])
+                                       rdir['coincident_triggers'],
+                                       closed_box=True,
+                                       tags=bg_bin.tags + ['closed'])
         all_snrifar.append(snrifar)
         if bg_file == final_bg_file:
             closed_snrifar.append(snrifar)
 
 results_page = []
 results_aux_page = []
+results_h_rm_page = []
 closed_box_ifars = []
 for bin_file in bin_files:
-    # Open box
+    # Opened box
     snrifar = wf.make_snrifar_plot(workflow, bin_file,
                                    rdir['open_box_result'],
                                    tags=bin_file.tags)
@@ -240,20 +242,46 @@ for bin_file in bin_files:
     results_page += [(snrifar, ratehist, snrifar_ifar)]
 
     snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
-                    rdir['open_box_result'],
-                    cumulative=False, tags=bin_file.tags + ['ifar'])
+                                        rdir['open_box_result'],
+                                        cumulative=False,
+                                        tags=bin_file.tags + ['ifar'])
     ifar_ob = wf.make_ifar_plot(workflow, bin_file,
-                    rdir['open_box_result/significance'],
-                    tags=bin_file.tags + ['open_box'])
+                                rdir['open_box_result/significance'],
+                                tags=bin_file.tags + ['open_box'])
     # Closed box
     ifar_cb = wf.make_ifar_plot(workflow, bin_file,
-                    rdir['coincident_triggers'],
-                    tags=bin_file.tags + ['closed_box'])
+                                rdir['coincident_triggers'],
+                                tags=bin_file.tags + ['closed_box'])
     closed_box_ifars.append(ifar_cb)
 
     symlink_result(snrifar, 'open_box_result/significance')
     symlink_result(ratehist, 'open_box_result/significance')
     results_aux_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
+
+    # Create Hierarchical Removal plots
+    # How can you make this work with more than one bin?
+    if(h_rm_num > 0 and len(bin_files) == 1):
+        for i in range(0, h_num_rm + 1):
+            snrifar = wf.make_snrifar_plot(workflow, bin_file,
+                                           rdir['open_box_result/hierarchical_removal'],
+                                           h_rm_num = i 
+                                           tags=bin_file.tags)
+            ratehist = wf.make_snrratehist_plot(workflow, bin_file,
+                                                rdir['open_box_result/hierarchical_removal'],
+                                                h_rm_num = i,
+                                                tags=bin_file.tags)
+            snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
+                                                rdir['open_box_result/hierarchical_removal'],
+                                                h_rm_num = i,
+                                                cumulative=False,
+                                                tags=bin_file.tags + ['ifar'])
+            table_h_rm = wf.make_foreground_table(workflow, final_bg_file,
+                                                  hdfbank[0], tag,
+                                                  rdir['open_box_result/hierarchical_removal'],
+                                                  singles=insp, h_rm_num = i,
+                                                  extension='.html',
+                                                  tags=["html"])
+            results_h_rm_page += [(snrifar, ratehist), (snrifar_ifar)]
 
 layout.group_layout(rdir['coincident_triggers'],
                     closed_box_ifars + all_snrifar + [bank_plot[0][0]])
@@ -265,11 +293,23 @@ table = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['open_box_result'], singles=insps,
                     extension='.html', tags=["html"])
 
+if(h_rm_num > 0):
+    for i in range(0, h_num_rm + 1):
+        table_h_rm = wf.make_foreground_table(workflow, final_bg_file,
+                                              hdfbank[0], tag,
+                                              rdir['open_box_result/hierarchical_removal'],
+                                              singles=insp, h_rm_num = i,
+                                              extension='.html',
+                                              tags=["html"])
+        results_h_rm_page += [(table_h_rm,)]
+        symlink_result(table_h_rm, 'open_box_result/hierarchical_removal'])
+
 results_page += [(table,)]
 results_aux_page += [(table,)]
 symlink_result(table, 'open_box_result/significance')
 layout.two_column_layout(rdir['open_box_result'], results_page)
 layout.two_column_layout(rdir['open_box_result/significance'], results_aux_page)
+layout.two_column_layout(rdir['open_bot_result/hierarchical_removal'], results_h_rm_page)
 
 fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['open_box_result'], singles=insps,
