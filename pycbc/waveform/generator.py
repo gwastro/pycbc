@@ -514,13 +514,7 @@ class FDomainDetFrameGenerator(object):
     location_args = set(['tc', 'ra', 'dec', 'polarization'])
 
     def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
-                 variable_args=(), **frozen_params):
-        self.use_end_taper = ('t_final' in variable_args or
-                              't_final' in self.frozen_params or
-                              'f_final' in variable_args or
-                              'f_final' in self.frozen_params or
-                              'f_final_func' in variable_args or
-                              'f_final_func' in self.frozen_params)
+                 taper=None, variable_args=(), **frozen_params):
         # initialize frozen & current parameters:
         self.current_params = frozen_params.copy()
         self._static_args = frozen_params.copy()
@@ -554,6 +548,11 @@ class FDomainDetFrameGenerator(object):
         else:
             self.detectors = {'RF': None}
         self.detector_names = sorted(self.detectors.keys())
+        self.taper = taper
+        if taper is not None:
+            self.returns_whitened = taper.taper_whitened
+        else:
+            self.returns_whitened = False
 
     def set_epoch(self, epoch):
         """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
@@ -598,6 +597,9 @@ class FDomainDetFrameGenerator(object):
                             self.current_params['polarization'],
                             self.current_params['tc'])
                 thish = fp*hp + fc*hc
+                if self.taper is not None:
+                    self.taper(thish, copy=False, ifo=detname,
+                               params=self.current_params)
                 # apply the time shift
                 tc = self.current_params['tc'] + \
                     det.time_delay_from_earth_center(self.current_params['ra'],
@@ -608,6 +610,8 @@ class FDomainDetFrameGenerator(object):
             if 'tc' in self.current_params:
                 hp = apply_fd_time_shift(hp, self.current_params['tc']+tshift,
                                          copy=False)
+            if self.taper is not None:
+                self.taper(hp, copy=False, params=self.current_params)
             h['RF'] = hp
         return h
 
