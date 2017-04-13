@@ -141,10 +141,7 @@ class MchirpQToMass1Mass2(BaseConversion):
         >>> from pycbc.waveform import parameters
         >>> cl = sampling_conversions.MchirpQToMass1Mass2()
         >>> cl.convert({parameters.mchirp : numpy.array([10.]), parameters.q : numpy.array([2.])})
-            {'mass1': array([ 16.4375183]),
-             'mass2': array([ 8.21875915]),
-             'mchirp': array([ 10.]),
-             'q': array([ 2.])}
+            {'mass1': array([ 16.4375183]), 'mass2': array([ 8.21875915]), 'mchirp': array([ 10.]), 'q': array([ 2.])}
 
         Returns
         -------
@@ -180,10 +177,7 @@ class MchirpQToMass1Mass2(BaseConversion):
         >>> cl = sampling_conversions.MchirpQToMass1Mass2()
         >>> cl.inverse()
         >>> cl.convert({parameters.mass1 : numpy.array([16.4]), parameters.mass2 : numpy.array([8.2])})
-            {'mass1': array([ 16.4]),
-             'mass2': array([ 8.2]),
-             'mchirp': array([ 9.97717521]),
-             'q': 2.0}
+            {'mass1': array([ 16.4]), 'mass2': array([ 8.2]), 'mchirp': array([ 9.97717521]), 'q': 2.0}
 
         Returns
         -------
@@ -228,12 +222,8 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
         >>> from pycbc.waveform import parameters
         >>> cl = sampling_conversions.SphericalSpin1ToCartesianSpin1()
         >>> cl.convert({parameters.spin1_a : numpy.array([0.1]), parameters.spin1_azimuthal : numpy.array([0.1]), parameters.spin1_polar : numpy.array([0.1])})
-            {'spin1_a': array([ 0.1]),
-             'spin1_azimuthal': array([ 0.1]),
-             'spin1_polar': array([ 0.1]),
-             'spin2x': array([ 0.00993347]),
-             'spin2y': array([ 0.00099667]),
-             'spin2z': array([ 0.09950042])}
+            {'spin1_a': array([ 0.1]), 'spin1_azimuthal': array([ 0.1]), 'spin1_polar': array([ 0.1]),
+             'spin2x': array([ 0.00993347]), 'spin2y': array([ 0.00099667]), 'spin2z': array([ 0.09950042])}
 
         Returns
         -------
@@ -282,20 +272,9 @@ class MassSpinToCartesianSpin(BaseConversion):
         >>> from pycbc.waveform import parameters
         >>> cl = sampling_conversions.MassSpinToCartesianSpin()
         >>> cl.convert({parameters.mass1 : numpy.array([10]), parameters.mass2 : numpy.array([10]), "chi_eff" : numpy.array([0.1]), "chi_a" : numpy.array([0.1]), "xi1" : numpy.array([0.1]), "xi2" : numpy.array([0.1]), "phi_a" : numpy.array([0.1]), "phi_s" : numpy.array([0.1])})
-            {'chi_a': array([ 0.1]),
-             'chi_eff': array([ 0.1]),
-             'mass1': array([10]),
-             'mass2': array([10]),
-             'phi_a': array([ 0.1]),
-             'phi_s': array([ 0.1]),
-             'spin1x': array([ 0.09950042]),
-             'spin1y': array([ 0.00998334]),
-             'spin1z': array([ 0.]),
-             'spin2x': array([ 0.1]),
-             'spin2y': array([ 0.]),
-             'spin2z': array([ 0.2]),
-             'xi1': array([ 0.1]),
-             'xi2': array([ 0.1])}
+            {'chi_a': array([ 0.1]), 'chi_eff': array([ 0.1]), 'mass1': array([10]), 'mass2': array([10]), 'phi_a': array([ 0.1]),
+             'phi_s': array([ 0.1]), 'spin1x': array([ 0.09950042]), 'spin1y': array([ 0.00998334]), 'spin1z': array([ 0.]),
+             'spin2x': array([ 0.1]), 'spin2y': array([ 0.]), 'spin2z': array([ 0.2]), 'xi1': array([ 0.1]), 'xi2': array([ 0.1])}
 
         Returns
         -------
