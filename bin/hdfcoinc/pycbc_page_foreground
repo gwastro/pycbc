@@ -1,9 +1,17 @@
 #!/usr/bin/python
-""" Make table of the foreground coincident events
 """
-import sys
+Make table of the foreground coincident events. Also includes ability to 
+write IFAR foregrounds for intermediary hierarchical removal steps.
+"""
 import argparse
+import h5py, logging, numpy
+from pycbc.io import hdf
+import h5py, numpy, logging
+from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+import pycbc.results, pycbc.results.followup
+from pycbc.results.versioning import save_fig_with_metadata
 import pycbc.version
+import sys
 
 parser = argparse.ArgumentParser()
 # General required options
@@ -15,12 +23,35 @@ parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 parser.add_argument('--foreground-tag')
 parser.add_argument('--num-coincs-to-write', type=int)
+parser.add_argument('--h-num-iterations', type=int, default=None,
+                    help='Indicate which FARs and FAPs (FANs) to write '
+                         'based on the number of hierarchical removals done. '
+                         'Choosing None defaults to giving the FANs after '
+                         'all hierarchical removals were done depending on '
+                         'previous configuration choices. Choosing 0 selects '
+                         'writing the FANs prior to any hierarchical '
+                         'removals. Choosing 1 means writing the FANs after '
+                         'doing 1 hierarchical removal. The program will '
+                         'fail if the user selects a number above the number '
+                         'of hierarchical removals done. [default=None]')
 args = parser.parse_args()
 
-import h5py, numpy, logging, pycbc.results, pycbc.results.followup
-from pycbc.results.versioning import save_fig_with_metadata
-from pycbc.pnutils import mass1_mass2_to_mchirp_eta
-from pycbc.io import hdf
+f = h5py.File(args.trigger_file, 'r')
+
+# Parse which inclusive background to use for the plotting
+h_num_rm = args.h_num_iterations
+
+try:
+    h_iterations = f.attrs['hierarchical_removal_iterations']
+except KeyError:
+    h_iterations = None
+
+#if h_num_rm is None:
+#    h_num_rm = 0
+
+if h_num_rm > h_iterations:
+    raise ValueError('User requested FANs after %s hierarchical removals. '
+                     'This many removals were not done.' % h_num_rm)
 
 if args.verbose:
     log_level = logging.INFO
@@ -31,32 +62,97 @@ if args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
         err_msg = "If creating xml files must provide the single detector "
         err_msg += "trigger lists with --single-detector-triggers."
         raise ValueError(err_msg)
-    
+
 fortrigs = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
-                       sngl_files=args.single_detector_triggers,
-                       n_loudest=args.num_coincs_to_write)
+                                  sngl_files=args.single_detector_triggers,
+                                  n_loudest=args.num_coincs_to_write)
 
 if args.output_file.endswith('.html'):
     ifar = fortrigs.get_coincfile_array('ifar')
-    ifar_exc = fortrigs.get_coincfile_array('ifar_exc') 
     fap = fortrigs.get_coincfile_array('fap')
-    fap_exc = fortrigs.get_coincfile_array('fap_exc')
     stat = fortrigs.get_coincfile_array('stat')
     time1 = fortrigs.get_coincfile_array('time1')
     time2 = fortrigs.get_coincfile_array('time2')
+
+    ifar_exc = fortrigs.get_coincfile_array('ifar_exc')
+    fap_exc = fortrigs.get_coincfile_array('fap_exc')
 
     mass1 = fortrigs.get_bankfile_array('mass1')
     mass2 = fortrigs.get_bankfile_array('mass2')
     spin1z = fortrigs.get_bankfile_array('spin1z')
     spin2z = fortrigs.get_bankfile_array('spin2z')
 
+    # Output the corrected IFARs after h_num_rm hierarchical removals
+    # HACK: fortrigs.get_coincfile_array only accesses f['foreground']
+    #       but not f['foreground_hX'] which we need to do here.
+    if h_num_rm >= 0:
+
+        # HACK: The inclusive IFAR and inclusive FAP need to be rewritten to
+        #       and the list of foreground triggers won't match the original
+        #       placement of parameters for a trigger after a hierarchical
+        #       removal. This will place everything correctly. In the future
+        #       rewrite the method for ForegroundTriggers and store all values
+        #       to foreground_h, that way it doesn't get complicated later.
+
+        idx_sort = numpy.argsort(stat)
+
+        # Remove the last element of time1_orig sorted by lowest stat
+        # to highest stat for that trigger.
+        id_list=[]
+        list_len = len(stat)-1
+        for i in range(0, h_num_rm):
+            idx_rm = idx_sort[list_len - i]
+            id_list.append(idx_rm)
+
+        # Sort in descending order, we need to remove the large indices first
+        # to avoid mismatch in index deleting.
+        id_list = sorted(id_list, key=int, reverse=True)
+
+        time1 = numpy.delete(time1, id_list)
+        time2 = numpy.delete(time2, id_list)
+
+        stat = numpy.delete(stat, id_list)
+        ifar = numpy.delete(ifar, id_list)
+        fap = numpy.delete(fap, id_list)
+        ifar_exc = numpy.delete(ifar_exc, id_list)
+        fap_exc = numpy.delete(fap_exc, id_list)
+
+        mass1 = numpy.delete(mass1, id_list)
+        mass2 = numpy.delete(mass2, id_list)
+        spin1z = numpy.delete(spin1z, id_list)
+        spin2z = numpy.delete(spin2z, id_list)
+
+        # Regenerate the list of inclusive ifar and fap from stat in coinc
+        # file and as recovered by fortrigs.get_coincfile_array
+        stat_hrm = f['foreground_h%s/stat' % h_num_rm][:]
+        ifar_hrm = f['foreground_h%s/ifar' % h_num_rm][:]
+        fap_hrm = f['foreground_h%s/fap' % h_num_rm][:]
+
+        # Find the map between stat and stat_hrm. Store it in id_list
+        id_list = []
+        for i in range(len(stat)):
+            for j in range(len(stat_hrm)):
+                if(stat[i] == stat_hrm[j]):
+                    id_list.append(j)
+
+        # id_list should be the same length as stat minus any hierarchical
+        # removals. Rewrite the values of ifar
+        for i in range(0, len(id_list)):
+            ifar[i] = ifar_hrm[id_list[i]]
+            fap[i] = fap_hrm[id_list[i]]
+
     mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
 
+    # There seems to be a bug in (time2-time1)*1000, finding the millisecond
+    # difference between the two times in H1 and L1.
     columns = [ifar_exc, ifar, fap_exc, fap, stat,  time1,
                (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z]
-    names = ['Exc. IFAR (YR)', 'Inc. IFAR (YR)', 'Exc. FAP.', 'Inc. FAP',
-             'Ranking Statistic', 'End Time', 'Time Diff. (ms)', 'mchirp', 'm1',
-             'm2', 's1z', 's2z']
+
+    # Not supposed to use FAP anymore, nomenclature is p-value. Should be
+    # fixed consistently accross PyCBC.
+    names = ['Exc. IFAR (YR)', 'Inc. IFAR (YR)', 'Exc. P-value.',
+             'Inc. P-value', 'Ranking Statistic', 'End Time',
+             'Time Diff. (ms)', 'mchirp', 'm1','m2', 's1z', 's2z']
     format_strings = ['#.###E0', '#.###E0', '#.##E0', '#.##E0', '##.###',
                       None, '##.##', '##.##', '##.##',
                       '##.##', '##.##', '##.##']
