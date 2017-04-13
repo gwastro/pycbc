@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """
 Make table of the foreground coincident events. Also includes ability to 
-write IFAR foregrounds for intermediary hierarchical removal steps.
+write FANs for intermediary hierarchical removal steps.
 """
 import argparse
 import h5py, logging, numpy
