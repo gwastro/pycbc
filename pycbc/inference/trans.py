@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Christopher M. Biwer
+# Copyright (C) 2017  Christopher M. Biwer
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -75,7 +75,8 @@ class BaseConversion(object):
         """ Inverse conversion of the class name.
         """
         self._inputs, self._outputs = self._outputs, self._inputs
-        self.convert, self.convert_inverse = self.convert_inverse, self.convert
+        self._convert, self._convert_inverse = \
+                                      self._convert_inverse, self._convert
 
 class MchirpQToMass1Mass2(BaseConversion):
     """ Converts mchirp and q to mass1 and mass2.
