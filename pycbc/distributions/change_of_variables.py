@@ -25,6 +25,14 @@ from pycbc.distributions import uniform
 class UniformChangeOfVariables(uniform.Uniform):
     """ Class for sampling uniform in one set of parameters (eg. mchirp, q)
     such that its uniform in another set of parameters.
+
+    To add a new transformation, you need to add the input and output
+    parameters in the transformation to UniformChangeOfVariables.mappings,
+    add a function that computes the jacobian to
+    UniformChangeOfVariables.jacobian, add a function that converts from input
+    to output parameters to UniformChangeOfVariables.convert, and add a
+    function that computes the limits of the output parameters in the
+    transformation.
     """
 
     name = "uniform_change_of_variables"
@@ -129,6 +137,10 @@ class UniformChangeOfVariables(uniform.Uniform):
         return self.limits[self.mapping](self, **kwargs)
 
     def _pdf(self, **kwargs):
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored.
+        """
         jacobian = 1.0 / self.jacobian(**kwargs)
         to_params = self.convert(**kwargs)
         return jacobian * self.to_dist.pdf(**to_params) \
@@ -146,6 +158,41 @@ class UniformChangeOfVariables(uniform.Uniform):
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
+        """ Returns a distribution based on a configuration file. The
+        parameters for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
+
+        Boundary arguments should be provided in the same way as described in
+        `get_param_bounds_from_config`. As an example, this uses the jacobian
+        for mchirp and q to mass1 and mass2:
+
+        .. code-block:: ini
+
+            [prior-mchirp+q]
+            name = uniform_change_of_variables
+            min-mchirp = 10.
+            max-mchirp = 20.
+            min-q = 1.
+            max-q = 5.
+            to-params = mass1+mass2
+
+        Parameters
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        variable_args : str
+            The names of the parameters for this distribution, separated by
+            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
+
+        Returns
+        -------
+        UniformChangeOfVariables
+            A distribution instance from the pycbc.distribution subpackage.
+        """
         to_params = cp.get_opt_tags(section + "-" + variable_args,
                                     "to-params", []).split("+")
         return bounded.bounded_from_config(
