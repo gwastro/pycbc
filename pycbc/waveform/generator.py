@@ -709,6 +709,11 @@ class FDomainDetFrameGenerator(object):
 def select_waveform_generator(approximant):
     """Returns the single-IFO generator for the approximant.
 
+    Note: some approximants are both time-domain and frequency-domain
+    (e.g., IMRPhenomD). In this caes, the frequency-domain version is used. To
+    force the time-domain version to be used, add `:TD` to the end of the
+    approximant name.
+
     Parameters
     ----------
     approximant : str
@@ -732,9 +737,16 @@ def select_waveform_generator(approximant):
     Get generator object:
     >>> waveform.select_waveform_generator(waveform.fd_approximants()[0])
     """
+    # check if we are forcing time-domain
+    if approximant.endswith(':TD'):
+        approximant = approximant[:-3]
+        if approximant[:-3] not in waveform.td_approximants():
+            raise ValueError(":TD added to approximant name, but the "
+                             "approximant is not a time-domain approximant")
+        return TDomainCBCGenerator
 
     # check if frequency-domain CBC waveform
-    if approximant in waveform.fd_approximants():
+    elif approximant in waveform.fd_approximants():
         return FDomainCBCGenerator
 
     # check if time-domain CBC waveform
