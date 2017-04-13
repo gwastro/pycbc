@@ -55,8 +55,7 @@ class BaseConversion(object):
         """
         raise NotImplementedError("Not added.")
 
-    @classmethod
-    def convert(cls, old_maps):
+    def convert(self, old_maps):
         """ Convert inputs to outputs. This function accepts either
         a WaveformArray or dict. It will return the same output type as the
         input mapping object. Internally it calls _convert.
@@ -71,8 +70,8 @@ class BaseConversion(object):
         {WaveformArray, dict}
             Mapping object with new keys.
         """
-        new_maps = cls._convert(old_maps)
-        return cls.format_output(old_maps, new_maps)
+        new_maps = self._convert(old_maps)
+        return self.format_output(old_maps, new_maps)
 
     @staticmethod
     def format_output(old_maps, new_maps):
@@ -101,7 +100,9 @@ class BaseConversion(object):
 
         # if input is dict then return dict
         elif isinstance(old_maps, dict):
-            return old_maps.update(new_maps)
+            out = old_maps.copy()
+            out.update(new_maps)
+            return out
 
         # else error
         else:
@@ -124,6 +125,33 @@ class MchirpQToMass1Mass2(BaseConversion):
 
     @classmethod
     def _convert(cls, maps):
+        """ This function converts from chirp mass and mass ratio to component
+        masses.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Examples
+        --------
+        Convert a dict of numpy.array:
+
+        >>> import numpy
+        >>> from pycbc.inference import sampling_conversions
+        >>> from pycbc.waveform import parameters
+        >>> cl = sampling_conversions.MchirpQToMass1Mass2()
+        >>> cl.convert({parameters.mchirp : numpy.array([10.]), parameters.q : numpy.array([2.])})
+            {'mass1': array([ 16.4375183]),
+             'mass2': array([ 8.21875915]),
+             'mchirp': array([ 10.]),
+             'q': array([ 2.])}
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of converted values.
+        """
         out = {}
         out[parameters.mass1] = conversions.mass1_from_mchirp_q(
                                                 maps[parameters.mchirp],
@@ -135,15 +163,43 @@ class MchirpQToMass1Mass2(BaseConversion):
 
     @classmethod
     def _convert_inverse(cls, maps):
+        """ This function converts from component masses to chirp mass and mass
+        ratio.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Examples
+        --------
+        Convert a dict of numpy.array:
+
+        >>> import numpy
+        >>> from pycbc.inference import sampling_conversions
+        >>> from pycbc.waveform import parameters
+        >>> cl = sampling_conversions.MchirpQToMass1Mass2()
+        >>> cl.inverse()
+        >>> cl.convert({parameters.mass1 : numpy.array([16.4]), parameters.mass2 : numpy.array([8.2])})
+            {'mass1': array([ 16.4]),
+             'mass2': array([ 8.2]),
+             'mchirp': array([ 9.97717521]),
+             'q': 2.0}
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of converted values.
+        """
         out = {}
         out[parameters.mchirp] = \
-                 conversions.mchirp_from_mchirp_q(maps[parameters.mchirp],
-                                                  maps[parameters.q])
+                 conversions.mchirp_from_mass1_mass2(maps[parameters.mass1],
+                                                     maps[parameters.mass2])
         m_p = conversions.primary_mass(maps[parameters.mass1],
                                        maps[parameters.mass2])
         m_s = conversions.secondary_mass(maps[parameters.mass1],
                                          maps[parameters.mass2])
-        out[parmeters.q] = m_p / m_s
+        out[parameters.q] = m_p / m_s
         return out
 
 class SphericalSpin1ToCartesianSpin1(BaseConversion):
@@ -157,9 +213,37 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
 
     @classmethod
     def _convert(cls, maps):
-        a, az, po = cls.ordered_inputs
+        """ This function converts from spherical to cartesian spins.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Examples
+        --------
+        Convert a dict of numpy.array:
+
+        >>> import numpy
+        >>> from pycbc.inference import sampling_conversions
+        >>> from pycbc.waveform import parameters
+        >>> cl = sampling_conversions.SphericalSpin1ToCartesianSpin1()
+        >>> cl.convert({parameters.spin1_a : numpy.array([0.1]), parameters.spin1_azimuthal : numpy.array([0.1]), parameters.spin1_polar : numpy.array([0.1])})
+            {'spin1_a': array([ 0.1]),
+             'spin1_azimuthal': array([ 0.1]),
+             'spin1_polar': array([ 0.1]),
+             'spin2x': array([ 0.00993347]),
+             'spin2y': array([ 0.00099667]),
+             'spin2z': array([ 0.09950042])}
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of converted values.
+        """
+        a, az, po = cls._inputs
         data = coordinates.spherical_to_cartesian(maps[a], maps[az], maps[po])
-        out = {param : val for param, val in zip(ordered_outputs, data)}
+        out = {param : val for param, val in zip(cls._outputs, data)}
         return out
 
 class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
@@ -183,6 +267,42 @@ class MassSpinToCartesianSpin(BaseConversion):
 
     @classmethod
     def _convert(cls, maps):
+        """ This function converts from spherical to cartesian spins.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Examples
+        --------
+        Convert a dict of numpy.array:
+
+        >>> import numpy
+        >>> from pycbc.inference import sampling_conversions
+        >>> from pycbc.waveform import parameters
+        >>> cl = sampling_conversions.MassSpinToCartesianSpin()
+        >>> cl.convert({parameters.mass1 : numpy.array([10]), parameters.mass2 : numpy.array([10]), "chi_eff" : numpy.array([0.1]), "chi_a" : numpy.array([0.1]), "xi1" : numpy.array([0.1]), "xi2" : numpy.array([0.1]), "phi_a" : numpy.array([0.1]), "phi_s" : numpy.array([0.1])})
+            {'chi_a': array([ 0.1]),
+             'chi_eff': array([ 0.1]),
+             'mass1': array([10]),
+             'mass2': array([10]),
+             'phi_a': array([ 0.1]),
+             'phi_s': array([ 0.1]),
+             'spin1x': array([ 0.09950042]),
+             'spin1y': array([ 0.00998334]),
+             'spin1z': array([ 0.]),
+             'spin2x': array([ 0.1]),
+             'spin2y': array([ 0.]),
+             'spin2z': array([ 0.2]),
+             'xi1': array([ 0.1]),
+             'xi2': array([ 0.1])}
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of converted values.
+        """
         out = {}
         out[parameters.spin1x] = conversions.spin1x_from_xi1_phi_a_phi_s(
                                maps["xi1"], maps["phi_a"], maps["phi_s"])
@@ -214,6 +334,29 @@ class DistanceToRedshift(BaseConversion):
 
     @classmethod
     def _convert(cls, maps):
+        """ This function converts from distance to redshift.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Examples
+        --------
+        Convert a dict of numpy.array:
+
+        >>> import numpy
+        >>> from pycbc.inference import sampling_conversions
+        >>> from pycbc.waveform import parameters
+        >>> cl = sampling_conversions.DistanceToRedshift()
+        >>> cl.convert({parameters.distance : numpy.array([1000])})
+            {'distance': array([1000]), 'redshift': 0.19650987609144363}
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of converted values.
+        """
         out = {parameters.redshift : cosmology.redshift(maps["distance"])}
         return out
 
