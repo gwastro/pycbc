@@ -1,9 +1,26 @@
-""" Convert sampling parameters to a set of base parameters.
+# Copyright (C) 2016  Christopher M. Biwer
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+This modules provides classes and functions for convert sampling parameters
+to a set of base parameters.
 """
 
 import numpy
 from pycbc import conversions
 from pycbc import coordinates
+from pycbc import cosmology
 from pycbc.io import record
 from pycbc.waveform import parameters
 
@@ -88,25 +105,28 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
     def convert(cls, maps):
         a, az, po = cls.ordered_inputs
         data = coordinates.spherical_to_cartesian(maps[a], maps[az], maps[po])
-        out = {param : val for param, val in zip(ordered_outputs, data}
+        out = {param : val for param, val in zip(ordered_outputs, data)}
         return cls.format_output(maps, out)
 
 class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
-    """ Converts spin1x, spin1y, and spin1z to spin1_a, spin1_azimuthal,
-    and spin1_polar.
+    """ Converts spin2x, spin2y, and spin2z to spin2_a, spin2_azimuthal,
+    and spin2_polar.
     """
     ordered_inputs = [parameters.spin2_a, parameters.spin2_azimuthal,
                       parameters.spin2_polar]
     ordered_outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
     inputs = set(ordered_inputs)
-    outputs = set(ordered_output)
+    outputs = set(ordered_outputs)
 
 class MassSpinToCartesianSpin(BaseConversion):
     """ Converts mass1, mass2, chi_eff, chi_a, xi1, xi2, phi_a, and phi_s to
     spin1x, spin1y, spin1z, spin2x, spin2y, and spin2z.
     """
-    inputs = set([])
-    outputs = set([])
+    # mass-spin parameters not in pycbc.waveform.parameters yet
+    inputs = set(["mass1", "mass2", "chi_eff", "chi_a", "xi1", "xi2",
+                  "phi_a", "phi_s"])
+    outputs = set([parameters.spin1x, parameters.spin1y, parameters.spin1z,
+                   parameters.spin2x, parameters.spin2y, parameters.spin2z])
 
     @classmethod
     def convert(cls, maps):
@@ -115,21 +135,21 @@ class MassSpinToCartesianSpin(BaseConversion):
         spin1y = conversions.spin1y_from_xi1_phi_a_phi_s(
                                maps["xi1"], maps["phi_a"], maps["phi_s"])
         spin1z = conversions.spin1z_from_mass1_mass2_chi_eff_chi_a(
-                               maps["mass1"], maps["mass2"],
+                               maps[parameters.mass1], maps[parameters.mass2],
                                maps["chi_eff"], maps["chi_a"])
         spin2x = conversions.spin2x_from_mass1_mass2_xi2_phi_a_phi_s(
-                               maps["mass1"], maps["mass2"], maps["xi2"],
-                               maps["phi_a"], maps["phi_s"])
+                               maps[parameters.mass1], maps[parameters.mass2],
+                               maps["xi2"], maps["phi_a"], maps["phi_s"])
         spin2y = conversions.spin2y_from_mass1_mass2_xi2_phi_a_phi_s(
-                               maps["mass1"], maps["mass2"], maps["xi2"],
-                               maps["phi_a"], maps["phi_s"])
+                               maps[parameters.mass1], maps[parameters.mass2],
+                               maps["xi2"], maps["phi_a"], maps["phi_s"])
         spin2z = conversions.spin2z_from_mass1_mass2_chi_eff_chi_a(
-                               maps["mass1"], maps["mass2"],
+                               maps[parameters.mass1], maps[parameters.mass2],
                                maps["chi_eff"], maps["chi_a"])
-        return cls.format_output(
-                    maps, {"spin1x" : spin1x, "spin1y" : spin1y,
-                           "spin1z" : spin1z, "spin2x" : spin2x,
-                           "spin2y" : spin2y, "spin2z" : spin2z})
+        out = {parameters.spin1x : spin1x, parameters.spin1y : spin1y,
+               parameters.spin1z : spin1z, parameters.spin2x : spin2x,
+               parameters.spin2y : spin2y, parameters.spin2z : spin2z}
+        return cls.format_output(maps, out)
 
 class DistanceToRedshift(BaseConversion):
     """ Converts distance to redshift.
