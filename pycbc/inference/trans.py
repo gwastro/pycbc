@@ -27,8 +27,16 @@ from pycbc.waveform import parameters
 class BaseConversion(object):
     """ Base class.
     """
-    inputs = set([])
-    outputs = set([])
+    _inputs = set([])
+    _outputs = set([])
+
+    @property
+    def inputs(cls):
+        return set(cls._inputs)
+
+    @property
+    def outputs(cls):
+        return set(cls._outputs)
 
     @classmethod
     def convert(cls, maps):
@@ -45,7 +53,7 @@ class BaseConversion(object):
 
         # if input is WaveformArray then return WaveformArray
         if isinstance(old_maps, record.WaveformArray):
-            keys = maps.keys()
+            keys = new_maps.keys()
             values = [new_maps[key] for key in keys]
             old_maps = old_maps.add_fields(values, keys)
             return old_maps
@@ -61,14 +69,14 @@ class BaseConversion(object):
     def inverse(self):
         """ Inverse conversion of the class name.
         """
-        self.inputs, self.outputs = self.outputs, self.inputs
+        self._inputs, self._outputs = self._outputs, self._inputs
         self.convert, self.convert_inverse = self.convert_inverse, self.convert
 
 class MchirpQToMass1Mass2(BaseConversion):
     """ Converts mchirp and q to mass1 and mass2.
     """
-    inputs = set([parameters.mchirp, parameters.q])
-    outputs = set([parameters.mass1, parameters.mass2])
+    _inputs = [parameters.mchirp, parameters.q]
+    _outputs = [parameters.mass1, parameters.mass2]
 
     @classmethod
     def convert(cls, maps):
@@ -98,11 +106,9 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
     """ Converts spin1x, spin1y, and spin1z to spin1_a, spin1_azimuthal,
     and spin1_polar.
     """
-    ordered_inputs = [parameters.spin1_a, parameters.spin1_azimuthal,
-                      parameters.spin1_polar]
-    ordered_outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
-    inputs = set(ordered_inputs)
-    outputs = set(ordered_outputs)
+    _inputs = [parameters.spin1_a, parameters.spin1_azimuthal,
+               parameters.spin1_polar]
+    _outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
 
     @classmethod
     def convert(cls, maps):
@@ -115,21 +121,19 @@ class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
     """ Converts spin2x, spin2y, and spin2z to spin2_a, spin2_azimuthal,
     and spin2_polar.
     """
-    ordered_inputs = [parameters.spin2_a, parameters.spin2_azimuthal,
-                      parameters.spin2_polar]
-    ordered_outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
-    inputs = set(ordered_inputs)
-    outputs = set(ordered_outputs)
+    _inputs = [parameters.spin2_a, parameters.spin2_azimuthal,
+               parameters.spin2_polar]
+    _outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
 
 class MassSpinToCartesianSpin(BaseConversion):
     """ Converts mass1, mass2, chi_eff, chi_a, xi1, xi2, phi_a, and phi_s to
     spin1x, spin1y, spin1z, spin2x, spin2y, and spin2z.
     """
     # mass-spin parameters not in pycbc.waveform.parameters yet
-    inputs = set(["mass1", "mass2", "chi_eff", "chi_a", "xi1", "xi2",
-                  "phi_a", "phi_s"])
-    outputs = set([parameters.spin1x, parameters.spin1y, parameters.spin1z,
-                   parameters.spin2x, parameters.spin2y, parameters.spin2z])
+    _inputs = ["mass1", "mass2", "chi_eff", "chi_a", "xi1", "xi2",
+               "phi_a", "phi_s"]
+    _outputs = [parameters.spin1x, parameters.spin1y, parameters.spin1z,
+                parameters.spin2x, parameters.spin2y, parameters.spin2z]
 
     @classmethod
     def convert(cls, maps):
@@ -159,8 +163,8 @@ class MassSpinToCartesianSpin(BaseConversion):
 class DistanceToRedshift(BaseConversion):
     """ Converts distance to redshift.
     """
-    inputs = set([parameters.distance])
-    outputs = set([parameters.redshift])
+    _inputs = [parameters.distance]
+    _outputs = [parameters.redshift]
 
     @classmethod
     def convert(cls, maps):
@@ -169,8 +173,8 @@ class DistanceToRedshift(BaseConversion):
 
 # list of all Conversions
 converts = [MchirpQToMass1Mass2, SphericalSpin1ToCartesianSpin1,
-            SphericalSpin2ToCartesianSpin2,
-            MassSpinToCartesianSpin]
+            SphericalSpin2ToCartesianSpin2, MassSpinToCartesianSpin,
+            DistanceToRedshift]
 
 def add_base_parameters(sampling_params):
     """ Adds a standard set of base parameters to the WaveformArray for
@@ -187,31 +191,10 @@ def add_base_parameters(sampling_params):
     WaveformArray
        WaveformArray with new fields.
     """
-
-    # convert mchirp and q sampling to base parameters
-    current_params = set(sampling_params.fieldnames)
-    if (MchirpQToMass1Mass2.inputs.issubset(current_params) and
-            not MchirpQToMass1Mass2.outputs.issubset(current_params)):
-        sampling_params = MchirpQToMass1Mass2.convert(sampling_params)
-
-    # convert spherical spins sampling to base parameters
-    for converter in [SphericalSpin1ToCartesianSpin1,
-                      SphericalSpin2ToCartesianSpin2]:
+    converters = [converter() for converter in converts]
+    for converter in converters:
         current_params = set(sampling_params.fieldnames)
         if (converter.inputs.issubset(current_params) and
                 not converter.outputs.issubset(current_params)):
             sampling_params = converter.convert(sampling_params)
-
-    # convert mass-spin sampling to base parameters
-    current_params = set(sampling_params.fieldnames)
-    if (MassSpinToCartesianSpin.inputs.issubset(current_params) and
-            not MassSpinToCartesianSpin.outputs.issubset(current_params)):
-        sampling_params = MassSpinToCartesianSpin.convert(sampling_params)
-
-    # convert distance sampling to base parameters
-    current_params = set(sampling_params.fieldnames)
-    if (DistanceToRedshift.inputs.issubset(current_params) and
-            not DistanceToRedshift.outputs.issubset(current_params)):
-        sampling_params = DistanceToRedshift.convert(sampling_params)
-
     return sampling_params
