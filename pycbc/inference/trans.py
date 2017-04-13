@@ -131,6 +131,17 @@ class MassSpinToCartesianSpin(BaseConversion):
                            "spin1z" : spin1z, "spin2x" : spin2x,
                            "spin2y" : spin2y, "spin2z" : spin2z})
 
+class DistanceToRedshift(BaseConversion):
+    """ Converts distance to redshift.
+    """
+    inputs = set([parameters.distance])
+    outputs = set([parameters.redshift])
+
+    @classmethod
+    def convert(cls, maps):
+        out = {parameters.redshift : cosmology.redshift(maps["distance"])}
+        return cls.format_output(maps, out)
+
 # list of all Conversions
 converts = [MchirpQToMass1Mass2, SphericalSpin1ToCartesianSpin1,
             SphericalSpin2ToCartesianSpin2,
@@ -139,7 +150,7 @@ converts = [MchirpQToMass1Mass2, SphericalSpin1ToCartesianSpin1,
 def add_base_parameters(sampling_params):
     """ Adds a standard set of base parameters to the WaveformArray for
     plotting. Standard set of base parameters includes mass1, mass2,
-    spin1x, spin1y, spin1z, spin2x, spin2y, and spin2z.
+    spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, and redshift.
 
     Parameters
     ----------
@@ -171,5 +182,11 @@ def add_base_parameters(sampling_params):
     if (MassSpinToCartesianSpin.inputs.issubset(current_params) and
             not MassSpinToCartesianSpin.outputs.issubset(current_params)):
         sampling_params = MassSpinToCartesianSpin.convert(sampling_params)
+
+    # convert distance sampling to base parameters
+    current_params = set(sampling_params.fieldnames)
+    if (DistanceToRedshift.inputs.issubset(current_params) and
+            not DistanceToRedshift.outputs.issubset(current_params)):
+        sampling_params = DistanceToRedshift.convert(sampling_params)
 
     return sampling_params
