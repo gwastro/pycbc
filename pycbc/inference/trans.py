@@ -25,36 +25,72 @@ from pycbc.io import record
 from pycbc.waveform import parameters
 
 class BaseConversion(object):
-    """ Base class.
+    """ A base class for converting between two sets of parameters.
     """
     _inputs = set([])
     _outputs = set([])
 
     @property
-    def inputs(cls):
-        return set(cls._inputs)
+    def inputs(self):
+        """ Returns a set of input parameters.
+        """
+        return set(self._inputs)
 
     @property
-    def outputs(cls):
-        return set(cls._outputs)
+    def outputs(self):
+        """ Returns a set of output parameters.
+        """
+        return set(self._outputs)
 
     @classmethod
     def _convert(cls, maps):
+        """ This function converts from inputs to outputs.
+        """
         raise NotImplementedError("Not added.")
 
     @classmethod
     def _convert_inverse(cls, maps):
+        """ The inverse conversions of _convert. This function converts from
+        outputs to inputs.
+        """
         raise NotImplementedError("Not added.")
 
     @classmethod
     def convert(cls, old_maps):
-        """ Convert inverse.
+        """ Convert inputs to outputs. This function accepts either
+        a WaveformArray or dict. It will return the same output type as the
+        input mapping object. Internally it calls _convert.
+
+        Parameters
+        ----------
+        old_maps : {WaveformArray, dict}
+            Mapping object to add new keys.
+
+        Returns
+        -------
+        {WaveformArray, dict}
+            Mapping object with new keys.
         """
         new_maps = cls._convert(old_maps)
         return cls.format_output(old_maps, new_maps)
 
     @staticmethod
     def format_output(old_maps, new_maps):
+        """ This function takes the returned dict from _convert and converts
+        it to the same datatype as the input to _convert.
+
+        Parameters
+        ----------
+        old_maps : {WaveformArray, dict}
+            The mapping object to add new maps to.
+        new_maps : dict
+            A dict with key as parameter name and value is numpy.array.
+
+        Returns
+        -------
+        {WaveformArray, dict}
+            The old_maps object with new keys from new_maps.
+        """
 
         # if input is WaveformArray then return WaveformArray
         if isinstance(old_maps, record.WaveformArray):
@@ -72,14 +108,16 @@ class BaseConversion(object):
             raise TypeError("Input type must be WaveformArray or dict.")
 
     def inverse(self):
-        """ Inverse conversion of the class name.
+        """ Inverts the conversions being done. Inputs become outputs and
+        vice versa. The function convert will now call the inverse
+        transformation.
         """
         self._inputs, self._outputs = self._outputs, self._inputs
         self._convert, self._convert_inverse = \
                                       self._convert_inverse, self._convert
 
 class MchirpQToMass1Mass2(BaseConversion):
-    """ Converts mchirp and q to mass1 and mass2.
+    """ Converts chirp mass and mass ratio to component masses.
     """
     _inputs = [parameters.mchirp, parameters.q]
     _outputs = [parameters.mass1, parameters.mass2]
@@ -109,8 +147,9 @@ class MchirpQToMass1Mass2(BaseConversion):
         return out
 
 class SphericalSpin1ToCartesianSpin1(BaseConversion):
-    """ Converts spin1x, spin1y, and spin1z to spin1_a, spin1_azimuthal,
-    and spin1_polar.
+    """ Converts spherical spin parameters (magnitude and two angles) to
+    catesian spin parameters. This class only converts spsins for the first
+    component mass.
     """
     _inputs = [parameters.spin1_a, parameters.spin1_azimuthal,
                parameters.spin1_polar]
@@ -124,16 +163,17 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
         return out
 
 class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
-    """ Converts spin2x, spin2y, and spin2z to spin2_a, spin2_azimuthal,
-    and spin2_polar.
+    """ Converts spherical spin parameters (magnitude and two angles) to
+    catesian spin parameters. This class only converts spsins for the second
+    component mass.
     """
     _inputs = [parameters.spin2_a, parameters.spin2_azimuthal,
                parameters.spin2_polar]
     _outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
 
 class MassSpinToCartesianSpin(BaseConversion):
-    """ Converts mass1, mass2, chi_eff, chi_a, xi1, xi2, phi_a, and phi_s to
-    spin1x, spin1y, spin1z, spin2x, spin2y, and spin2z.
+    """ Converts component masses, and mass-weighted spin parameters
+    (eg. effective spin) to cartesian spin coordinates.
     """
     # mass-spin parameters not in pycbc.waveform.parameters yet
     _inputs = ["mass1", "mass2", "chi_eff", "chi_a", "xi1", "xi2",
@@ -183,19 +223,23 @@ converts = [MchirpQToMass1Mass2, SphericalSpin1ToCartesianSpin1,
             DistanceToRedshift]
 
 def add_base_parameters(sampling_params):
-    """ Adds a standard set of base parameters to the WaveformArray for
-    plotting. Standard set of base parameters includes mass1, mass2,
-    spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, and redshift.
+    """ Adds a standard set of base parameters to a mapping object
+    (ie. WaveformArray or dict). The standard set of base parameters includes
+    mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, and redshift.
+
+    This function loop over all Conversion classes in this module and sees if
+    the conversions is required. If it is required, then the new keys are
+    added.
 
     Parameters
     ----------
-    sampling_params : WaveformArray
-        WaveformArray to add new fields.
+    sampling_params : {WaveformArray, dict}
+        Mapping object to add new keys.
 
     Returns
     -------
-    WaveformArray
-       WaveformArray with new fields.
+    sampling_params : {WaveformArray, dict}
+       Mapping object with new fields.
     """
     converters = [converter() for converter in converts]
     for converter in converters:
