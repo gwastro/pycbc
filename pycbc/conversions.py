@@ -457,7 +457,7 @@ def xi2_from_mass1_mass2_spin2x_spin2y(mass1, mass2, spin2x, spin2y):
     return a1 / (q**2 * a2) * chi_perp_from_spinx_spiny(spin2x, spin2y)
 
 def chi_perp_from_spinx_spiny(spinx, spiny):
-    """Returns the in-plane spin from spin1x and spin1y.
+    """Returns the in-plane spin from the x/y components of the spin.
     """
     return numpy.sqrt(spinx**2 + spiny**2)
 
@@ -495,7 +495,7 @@ def phi2_from_phi_a_phi_s(phi_a, phi_s):
     return (phi_s - phi_a) / 2.0
 
 def phi_from_spinx_spiny(spinx, spiny):
-    """Returns phi1 for primary mass.
+    """Returns the angle between the x-component axis and the in-plane spin.
     """
     return numpy.arctan(spiny / spinx)
 
