@@ -73,18 +73,15 @@ if args.output_file.endswith('.html'):
     stat = fortrigs.get_coincfile_array('stat')
     time1 = fortrigs.get_coincfile_array('time1')
     time2 = fortrigs.get_coincfile_array('time2')
-
     ifar_exc = fortrigs.get_coincfile_array('ifar_exc')
     fap_exc = fortrigs.get_coincfile_array('fap_exc')
-
     mass1 = fortrigs.get_bankfile_array('mass1')
     mass2 = fortrigs.get_bankfile_array('mass2')
     spin1z = fortrigs.get_bankfile_array('spin1z')
     spin2z = fortrigs.get_bankfile_array('spin2z')
 
-    # Output the corrected IFARs after h_num_rm hierarchical removals
-    # HACK: fortrigs.get_coincfile_array only accesses f['foreground']
-    #       but not f['foreground_hX'] which we need to do here.
+    # These values will need to be corrected if hierarchical removals were
+    # done.
     if h_num_rm >= 0:
 
         # HACK: The inclusive IFAR and inclusive FAP need to be rewritten to
