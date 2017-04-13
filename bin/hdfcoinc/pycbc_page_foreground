@@ -46,9 +46,6 @@ try:
 except KeyError:
     h_iterations = None
 
-#if h_num_rm is None:
-#    h_num_rm = 0
-
 if h_num_rm > h_iterations:
     raise ValueError('User requested FANs after %s hierarchical removals. '
                      'This many removals were not done.' % h_num_rm)
