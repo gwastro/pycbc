@@ -691,16 +691,25 @@ Libs: -L${libdir} -lhdf5' |
     if $build_framecpp; then
 
         # FrameCPP
-        p=ldas-tools-2.4.2
+        p=ldas-tools-al-2.5.6
         echo -e "\\n\\n>> [`date`] building $p" >&3
         test -r $p.tar.gz || wget $wget_opts http://software.ligo.org/lscsoft/source/$p.tar.gz
         rm -rf $p
         tar -xzf $p.tar.gz
         cd $p
-        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit $shared $static --prefix="$PREFIX" # --disable-cxx11
-        sed -i~ '/^CXXSTD[A-Z]*FLAGS=/d' ./libraries/ldastoolsal/ldastoolsal*.pc
+        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit --disable-warnings-as-errors $shared $static --prefix="$PREFIX" # --disable-cxx11
         make
-        make -k install || true
+        make install
+        cd ..
+        $cleanup && rm -rf $p
+        p=ldas-tools-framecpp-2.5.5
+        test -r $p.tar.gz || wget $wget_opts http://software.ligo.org/lscsoft/source/$p.tar.gz
+        rm -rf $p
+        tar -xzf $p.tar.gz
+        cd $p
+        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit --disable-warnings-as-errors $shared $static --prefix="$PREFIX" # --disable-cxx11
+        make
+        make install
         cd ..
         $cleanup && rm -rf $p
 
@@ -816,7 +825,9 @@ else
         fi
     fi
     echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`" >&3
-    sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
+    # fix typo in ltmain
+    # only helpful if something goes wrong, normally not needed
+    # sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
     if $build_dlls; then
 	git apply <<'EOF' || true
 From accb37091abbc8d8776edfb3484259f6059c4e25 Mon Sep 17 00:00:00 2001
@@ -849,7 +860,6 @@ EOF
 	fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
 	    sed -n 's/.*lib_LTLIBRARIES *= *\(.*\).la/\1_la_LDFLAGS += -no-undefined/p' $i >> $i
 	done
-	sed -i~ 's/^cs_gamma_la_LDFLAGS = .*/& -no-undefined -lpython2.7/' lalburst/python/lalburst/Makefile.am
 	sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/;
              s/\(swiglal_python_la_LIBADD = .*\)$/\1 -lpython2.7/;
              s/swiglal_python\.la/libswiglal_python.la/g;
@@ -860,8 +870,10 @@ EOF
     if $build_framecpp; then
 	shared="$shared --enable-framec --disable-framel"
     fi
-    echo -e "\\n\\n>> [`date`] Creating lalsuite configure scripts" >&3
-    ./00boot
+    if [ ! -x configure ]; then
+        echo -e "\\n\\n>> [`date`] Creating lalsuite configure scripts" >&3
+        ./00boot
+    fi
     cd ..
     rm -rf lalsuite-build
     mkdir lalsuite-build
@@ -1002,6 +1014,19 @@ hooks="$PWD/tools/static"
 cd ..
 test -r "$PREFIX/etc/pycbc-user-env.sh" && source "$PREFIX/etc/pycbc-user-env.sh"
 
+# on Windows, rebase DLLs
+# from https://cygwin.com/ml/cygwin/2009-12/msg00168.html:
+# /bin/rebase -d -b 0x61000000 -o 0x20000 -v -T <file with list of dll and so files> > rebase.out
+if $build_dlls; then
+    echo -e "\\n\\n>> [`date`] Rebasing DLLs" >&3
+    find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
+    rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
+fi
+
+# TEST
+echo -e "\\n\\n>> [`date`] testing local executable" >&3
+$PREFIX/bin/pycbc_inspiral --help
+
 if $silent_build ; then
     # close stdin and stdout
     exec 1>&-
@@ -1086,15 +1111,6 @@ python setup.py install --prefix="$PREFIX" --record installed-files.txt
 cd ..
 test "$p" = "PyInstaller-$pyinstaller_version" && cleanup && rm -rf "$p"
 
-# on Windows, rebase DLLs
-# from https://cygwin.com/ml/cygwin/2009-12/msg00168.html:
-# /bin/rebase -d -b 0x61000000 -o 0x20000 -v -T <file with list of dll and so files> > rebase.out
-if $build_dlls; then
-    echo -e "\\n\\n>> [`date`] Rebasing DLLs" >&3
-    find "$ENVIRONMENT" -name \*.dll > "$PREFIX/dlls.txt"
-    rebase -d -b 0x61000000 -o 0x20000 -v -T "$PREFIX/dlls.txt"
-fi
-
 if $build_wrapper; then
 # on Linux, build "progress" and "wrapper"
     echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'progress', 'fstab' and 'fstab_test'" >&3
@@ -1133,10 +1149,7 @@ echo -e "\\n\\n>> [`date`] ENVIRONMENT ..." >&3
 env
 echo -e "... ENVIRONMENT"
 
-# TEST
-echo -e "\\n\\n>> [`date`] testing local executable" >&3
 cd $PREFIX
-./bin/pycbc_inspiral --help
 
 # BUNDLE DIR
 echo -e "\\n\\n>> [`date`] building pyinstaller spec" >&3
