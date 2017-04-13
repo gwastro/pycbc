@@ -66,12 +66,12 @@ fortrigs = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
 
 if args.output_file.endswith('.html'):
     ifar = fortrigs.get_coincfile_array('ifar')
+    ifar_exc = fortrigs.get_coincfile_array('ifar_exc')
     fap = fortrigs.get_coincfile_array('fap')
+    fap_exc = fortrigs.get_coincfile_array('fap_exc')
     stat = fortrigs.get_coincfile_array('stat')
     time1 = fortrigs.get_coincfile_array('time1')
     time2 = fortrigs.get_coincfile_array('time2')
-    ifar_exc = fortrigs.get_coincfile_array('ifar_exc')
-    fap_exc = fortrigs.get_coincfile_array('fap_exc')
     mass1 = fortrigs.get_bankfile_array('mass1')
     mass2 = fortrigs.get_bankfile_array('mass2')
     spin1z = fortrigs.get_bankfile_array('spin1z')
