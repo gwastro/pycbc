@@ -613,59 +613,69 @@ class FDomainDetFrameGenerator(object):
 
 
 class TDomainTaper(object):
-    def __init__(self, start_taper_function=None, end_taper_function=None,
-                 start_taper_duration=None, end_taper_duration=None,
-                 start_taper_time=None, end_taper_time=None,
-                 start_taper_frequency=None, end_taper_frequency=None,
-                 start_taper_freqfunc=None, end_taper_freqfunc=None,
+    def __init__(self, left_taper=None, right_taper=None,
+                 left_taper_duration=None, right_taper_duration=None,
+                 left_taper_time=None, right_taper_time=None,
+                 left_taper_frequency=None, right_taper_frequency=None,
+                 left_taper_freqfunc=None, right_taper_freqfunc=None,
                  taper_whitened=False, psds=None):
         if taper_whitened and not (taper_whitened == 1 or taper_whitened == 2):
             raise ValueError("taper_whitened must be either False (taper "
                              "before whitening), 1 (taper after whitening) "
                              "or 2 (taper after overwhitening)")
-        if start_taper_function == 'lal':
-            if start_taper_duration is not None:
+        if left_taper == 'lal':
+            if left_taper_duration is not None:
                 raise ValueError("The lal taper function does not take a "
                                  "duration")
-            if start_taper_time is not None or \
-                    start_taper_frequency is not None or \
-                    start_taper_freqfunc is not None:
+            if left_taper_time is not None or \
+                    left_taper_frequency is not None or \
+                    left_taper_freqfunc is not None:
                 raise ValueError("The lal taper function does not take a "
                                  "start time or frequency")
-        elif start_taper_function is not None and start_taper_duration is None:
+        elif left_taper is not None and left_taper_duration is None:
             raise ValueError("Non-lal taper functions require a duration")
-        self.start_taper_function = start_taper_function
-        self.start_taper_duration = start_taper_duration
-        self.start_taper_time = start_taper_time
-        self.start_taper_frequency = start_taper_frequency
-        self.start_taper_freqfunc = start_taper_freqfunc
-        if end_taper_function == 'lal':
-            if end_taper_duration is not None:
+        elif left_taper is not None and (left_taper_time is None and
+                                         left_taper_frequency is None and
+                                         left_taper_freqfunc is None):
+            raise ValueError("Non-lal taper functions require either a taper "
+                             "time, taper frequency, or frequency function")
+        self.left_taper = left_taper
+        self.left_taper_duration = left_taper_duration
+        self.left_taper_time = left_taper_time
+        self.left_taper_frequency = left_taper_frequency
+        self.left_taper_freqfunc = left_taper_freqfunc
+        if right_taper == 'lal':
+            if right_taper_duration is not None:
                 raise ValueError("The lal taper function does not take a "
                                  "duration")
-            if start_taper_time is not None or \
-                    start_taper_frequency is not None or \
-                    start_taper_freqfunc is not None:
+            if left_taper_time is not None or \
+                    left_taper_frequency is not None or \
+                    left_taper_freqfunc is not None:
                 raise ValueError("The lal taper function does not take a "
                                  "end time or frequency")
-        elif end_taper_function is not None and end_taper_duration is None:
+        elif right_taper is not None and right_taper_duration is None:
             raise ValueError("Non-lal taper functions require a duration")
-        self.end_taper_function = end_taper_function
-        self.end_taper_duration = end_taper_duration
-        self.end_taper_time = end_taper_time
-        self.end_taper_frequency = end_taper_frequency
-        self.end_taper_freqfunc = end_taper_freqfunc
+        elif right_taper is not None and (right_taper_time is None and
+                                          right_taper_frequency is None and
+                                          right_taper_freqfunc is None):
+            raise ValueError("Non-lal taper functions require either a taper "
+                             "time, taper frequency, or frequency function")
+        self.right_taper = right_taper
+        self.right_taper_duration = right_taper_duration
+        self.right_taper_time = right_taper_time
+        self.right_taper_frequency = right_taper_frequency
+        self.right_taper_freqfunc = right_taper_freqfunc
         self.taper_whitened = taper_whitened
-        self.start_window = {}
-        self.end_window = {}
+        self.left_window = {}
+        self.right_window = {}
         self.psds = psds
         self.asds = {}
         if self.taper_whitened:
             if psds is None:
                 raise ValueError("must provide a psd if tapering "
                                 "(over-)whitened waveform")
-            if taper_start_function == 'lal' and taper_end_function == 'lal':
-                raise ValueError("both start and end use lal tapering, but "
+            if left_taper == 'lal' and right_taper == 'lal':
+                raise ValueError("both left and right use lal tapering, but "
                                  "lal tapering cannot be done on whitened "
                                  "waveforms")
             self.whkmin = {}
@@ -680,25 +690,25 @@ class TDomainTaper(object):
                 self.whkmin[ifo] = nzidx[0]
                 self.whkmax[ifo] = nzidx[-1] + 1
 
-    def get_start_window(self, delta_t):
-        taper_size = int(self.start_taper_duration / delta_t)
+    def get_left_window(self, delta_t):
+        taper_size = int(self.left_taper_duration / delta_t)
         try:
-            return self.start_window[taper_size]
+            return self.left_window[taper_size]
         except KeyError:
             # generate the window at this dt
-            win = signal.get_window(self.start_taper_function, 2*taper_size)
-            self.start_window[taper_size] = win[:taper_size]
-            return self.start_window[taper_size]
+            win = signal.get_window(self.left_taper, 2*taper_size)
+            self.left_window[taper_size] = win[:taper_size]
+            return self.left_window[taper_size]
 
-    def get_end_window(self, delta_t):
-        taper_size = int(self.end_taper_duration / delta_t)
+    def get_right_window(self, delta_t):
+        taper_size = int(self.right_taper_duration / delta_t)
         try:
-            return self.end_window[taper_size]
+            return self.right_window[taper_size]
         except KeyError:
             # generate the window at this dt
-            win = signal.get_window(self.end_taper_function, 2*taper_size)
-            self.end_window[taper_size] = win[taper_size:]
-            return self.end_window[taper_size]
+            win = signal.get_window(self.right_taper, 2*taper_size)
+            self.right_window[taper_size] = win[taper_size:]
+            return self.right_window[taper_size]
 
     def whiten_waveform(htilde, ifo):
         if self.taper_whitened == 1:
@@ -723,14 +733,14 @@ class TDomainTaper(object):
             hf = None
             return_f = False
         # lal taper function needs to be applied before whitening
-        if self.start_taper_function == 'lal' or \
-                self.end_taper_function == 'lal':
+        if self.left_taper == 'lal' or \
+                self.right_taper == 'lal':
             if ht is None:
                 ht = hf.to_timeseries()
             tmeth = ''
-            if self.start_taper_function == 'lal':
+            if self.left_taper == 'lal':
                 tmeth = 'start'
-            if self.end_taper_function == 'lal':
+            if self.right_taper == 'lal':
                 tmeth = ''.join([tmeth, 'end'])
             ht = taper_timeseries(ht, tapermethod=tmeth)
             hf = None
@@ -752,60 +762,60 @@ class TDomainTaper(object):
         # 
         #   left taper
         #
-        start_time = self.start_taper_time
-        start_freq = self.start_taper_frequency
-        if self.start_taper_freqfunc is not None:
+        left_time = self.left_taper_time
+        left_freq = self.left_taper_frequency
+        if self.left_taper_freqfunc is not None:
             if params is None:
                 raise ValueError("must provide waveform parameters for the "
-                                 "frequency function to use for the start")
-            start_freq = pnutils.named_frequency_cutoffs[
-                self.start_taper_freqfunc](params)
+                                 "frequency function to use for the left")
+            left_freq = pnutils.named_frequency_cutoffs[
+                self.left_taper_freqfunc](params)
         t_of_f = None
-        if start_freq is not None:
+        if left_freq is not None:
             # need frequencyseries version to get f(t)
             if hf is None:
                 hf = ht.to_frequencyseries()
             t_of_f = time_from_frequencyseries(hf,
                 sample_frequencies=sample_frequencies)
-            t = t_of_f[int(start_freq / hf.delta_f)]
-            if start_time is None:
-                start_time = t
+            t = t_of_f[int(left_freq / hf.delta_f)]
+            if left_time is None:
+                left_time = t
             else:
-                start_time = max(t, start_time)
+                left_time = max(t, left_time)
         # apply
-        if start_time is not None:
-            win = self.get_start_window(ht.delta_t)
-            endidx = min(int(numpy.ceil(start_time / ht.delta_t)), len(ht))
+        if left_time is not None:
+            win = self.get_left_window(ht.delta_t)
+            endidx = min(int(numpy.ceil(left_time / ht.delta_t)), len(ht))
             startidx = max(endidx - len(win), 0)
             ht.data[startidx:endidx] *= win[-(endidx-startidx):]
             ht.data[:startidx] = 0.
         #
         #   right taper
         #
-        end_time = self.end_taper_time
-        end_freq = self.end_taper_frequency
-        if self.end_taper_freqfunc is not None:
+        right_time = self.right_taper_time
+        right_freq = self.right_taper_frequency
+        if self.right_taper_freqfunc is not None:
             if params is None:
                 raise ValueError("must provide waveform parameters for the "
-                                 "frequency function to use for the end")
-            end_freq = pnutils.named_frequency_cutoffs[
-                self.end_taper_freqfunc](params)
-        if end_freq is not None:
+                                 "frequency function to use for the right")
+            right_freq = pnutils.named_frequency_cutoffs[
+                self.right_taper_freqfunc](params)
+        if right_freq is not None:
             # need frequencyseries version to get f(t)
             if hf is None:
                 hf = ht.to_frequencyseries()
             if t_of_f is None:
                 t_of_f = time_from_frequencyseries(hf,
                     sample_frequencies=sample_frequencies)
-            t = t_of_f[int(numpy.ceil(end_freq / hf.delta_f))]
-            if end_time is None:
-                end_time = t
+            t = t_of_f[int(numpy.ceil(right_freq / hf.delta_f))]
+            if right_time is None:
+                right_time = t
             else:
-                end_time = min(t, end_time)
+                right_time = min(t, right_time)
         # apply
-        if end_time is not None:
-            win = self.get_end_window(ht.delta_t)
-            endidx = min(int(end_time / ht.delta_t), len(ht))
+        if right_time is not None:
+            win = self.get_right_window(ht.delta_t)
+            endidx = min(int(right_time / ht.delta_t), len(ht))
             startidx = max(endidx - len(win), 0)
             ht.data[startidx:endidx] *= win[:endidx-startidx]
             ht.data[endidx:] = 0.
