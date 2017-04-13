@@ -419,7 +419,7 @@ To get all samples for ``distance`` from the first walker you can do::
     print samples.distance
 
 The function ``InferenceFile.read_samples`` includes the options to thin the samples.
-By default the function will return samples beginning at the end of the burn-in to the last written sample, and will use the autocorrelation length (ACL) calcualted by ``pycbc_inference`` to select the indepdedent samples.
+By default the function will return samples beginning at the end of the burn-in to the last written sample, and will use the autocorrelation length (ACL) calculated by ``pycbc_inference`` to select the indepdedent samples.
 You can supply ``thin_start``, ``thin_end``, and ``thin_interval`` to override this. To read all samples you would do::
 
     samples = fp.read_samples("distance", walkers=0, thin_start=0, thin_end=-1, thin_interval=1)
@@ -427,7 +427,7 @@ You can supply ``thin_start``, ``thin_end``, and ``thin_interval`` to override t
 
 Some standard parameters that are derived from the variable arguments (listed via ``fp.variable_args``) can also be retrieved. For example, if ``fp.variable_args`` includes ``mass1`` and ``mass2``, then you can retrieve the chirp mass with::
 
-   samples = samples = fp.read_samples("mchirp")
+   samples = fp.read_samples("mchirp")
    print samples.mchirp
 
 In this case, ``fp.read_samples`` will retrieve ``mass1`` and ``mass2`` (since they are needed to compute chirp mass); ``samples.mchirp`` then returns an array of the chirp mass computed from ``mass1`` and ``mass2``.
@@ -495,10 +495,12 @@ There are also options for thinning the chains of samples from the command line,
     INPUT_FILE=inference.hdf
     OUTPUT_FILE=scatter.png
     pycbc_inference_plot_posterior \
-        --iteration ${ITER} \
         --input-file ${INPUT_FILE} \
         --output-file ${OUTPUT_FILE} \
         --plot-scatter \
+        --thin-start ${THIN_START} \
+        --thin-interval ${THIN_INTERVAL} \
+        --thin-end ${THIN_END} \
         --plot-marginal \
         --z-arg logplr \
         --parameters "ra*12/pi:$\alpha$ (h)" \
