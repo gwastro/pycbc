@@ -437,12 +437,9 @@ def primary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
 def secondary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Returns the effective precession spin argument for the smaller mass.
     """
-    q = q_from_mass1_mass2(mass1, mass2)
-    a1 = 2 + 3 * q / 2
-    a2 = 2 + 3 / (2 * q)
     spinx = primary_spin(mass1, mass2, spin1x, spin2x)
     spiny = secondary_spin(mass1, mass2, spin1y, spin2y)
-    return a1 / (q**2 * a2) * chi_perp_from_spinx_spiny(spinx, spiny)
+    return xi2_from_mass1_mass2_spin2x_spin2y(spinx, spiny)
 
 def xi1_from_spin1x_spin1y(spinx, spiny):
     """Returns the effective precession spin argument for the larger mass.
