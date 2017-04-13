@@ -254,8 +254,7 @@ class BaseCBCGenerator(BaseGenerator):
     """
     possible_args = set(parameters.td_waveform_params +
                         parameters.fd_waveform_params +
-                        ['taper', 't_final', 'taper_duration',
-                         'taper_function', 'taper_whitened', 'psd'])
+                        ['t_final'])
     def __init__(self, generator, variable_args=(), **frozen_params):
         super(BaseCBCGenerator, self).__init__(generator,
             variable_args=variable_args, **frozen_params)
@@ -365,8 +364,10 @@ class TDomainCBCGenerator(BaseCBCGenerator):
          <pycbc.types.timeseries.TimeSeries at 0x116ac6950>)
 
     """
-    def __init__(self, variable_args=(), taper_whitened=False, psd=None,
-                 **frozen_params):
+    def __init__(self, taper=None,
+                 taper_function=None, taper_function_param=None,
+                 taper_duration=None, taper_whitened=False, psd=None,
+                 variable_args=(), **frozen_params):
         super(TDomainCBCGenerator, self).__init__(waveform.get_td_waveform,
             variable_args=variable_args, **frozen_params)
         self.use_end_taper = ('t_final' in variable_args or
@@ -375,11 +376,7 @@ class TDomainCBCGenerator(BaseCBCGenerator):
                               'f_final' in self.frozen_params or
                               'f_final_func' in variable_args or
                               'f_final_func' in self.frozen_params)
-        try:
-            taper_method = self.frozen_params['taper']
-            self.use_start_taper = 'start' in taper_method.lower()
-        except KeyError:
-            self.use_start_taper = False
+        self.taper = taper
         self.taper_size = self.window = None
         if taper_whitened and not (taper_whitened == 1 or taper_whitened == 2):
             raise ValueError("taper_whitened must be either False (taper "
@@ -388,20 +385,20 @@ class TDomainCBCGenerator(BaseCBCGenerator):
         self.taper_whitened = taper_whitened
         self.psd = psd
         self.asd = None
-        if self.use_end_taper or self.use_start_taper:
+        if self.use_end_taper:
             # construct the windowing function
-            if 'taper_duration' not in self.frozen_params:
+            if taper_duration is None:
                 raise ValueError('must provide a taper duration if using '
                                  't_final, f_final, or f_final_func')
-            self.taper_size = int(self.frozen_params['taper_duration'] /
+            self.taper_size = int(taper_duration /
                                   self.frozen_params['delta_t'])
-            try:
-                taper_function = self.frozen_params['taper_function']
-            except:
-                taper_function = 'hann'
-            win = getattr(signal, taper_function)(2*self.taper_size)
+            if taper_function is None:
+                raise ValueError("must provide a taper function if using "
+                                 "t_final, f_final, or f_final_func")
+            if taper_function_param is not None:
+                taper_function = (taper_function, taper_function_param)
+            win = signal.get_window(taper_function, 2*self.taper_size)
             self.window = win[self.taper_size:]
-            self.window_start = win[:self.taper_size]
             if self.taper_whitened:
                 if psd is None:
                     raise ValueError("must provide a psd if tapering "
@@ -421,13 +418,10 @@ class TDomainCBCGenerator(BaseCBCGenerator):
         hp, hc = res
         if self.use_end_taper:
             startidx, endidx = self.get_end_taper_range(hp, hc)
-        try:
-            hp = taper_timeseries(hp, tapermethod=self.current_params['taper'])
-            hc = taper_timeseries(hc, tapermethod=self.current_params['taper'])
-        except KeyError:
-            pass
-        if (self.use_start_taper or self.use_end_taper) and \
-                self.taper_whitened:
+        if self.taper is not None:
+            hp = taper_timeseries(hp, tapermethod=self.taper)
+            hc = taper_timeseries(hc, tapermethod=self.taper)
+        if self.use_end_taper and self.taper_whitened:
             hp = hp.to_frequencyseries(delta_f=self.psd.delta_f)
             if self.taper_whitened == 1:
                 hp[self.whkmin:self.whkmax] /= \
@@ -449,19 +443,9 @@ class TDomainCBCGenerator(BaseCBCGenerator):
             hc.data[:self.whkmin] = 0.
             hc.data[self.whkmax:] = 0.
             hc = hc.to_timeseries()
-        if self.use_start_taper:
-            self.apply_start_taper(hp, hc)
         if self.use_end_taper:
             self.apply_end_taper(hp, hc, startidx, endidx)
         return hp, hc
-
-    def apply_start_taper(self, hp, hc):
-        startidx = min(numpy.nonzero(hp.data)[0][0],
-                       numpy.nonzero(hc.data)[0][0])
-        endidx = min(len(hp), self.taper_size+startidx)
-        getlen = endidx - startidx
-        hp.data[startidx:endidx] *= self.window_start[:getlen]
-        hc.data[startidx:endidx] *= self.window_start[:getlen]
 
     def get_end_taper_range(self, hp, hc):
         endidx = len(hp)
