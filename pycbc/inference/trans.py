@@ -39,17 +39,22 @@ class BaseConversion(object):
         return set(cls._outputs)
 
     @classmethod
-    def convert(cls, maps):
+    def _convert(cls, maps):
         raise NotImplementedError("Not added.")
 
     @classmethod
-    def convert_inverse(cls, maps):
+    def _convert_inverse(cls, maps):
         raise NotImplementedError("Not added.")
+
+    @classmethod
+    def convert(cls, old_maps):
+        """ Convert inverse.
+        """
+        new_maps = cls._convert(old_maps)
+        return cls.format_output(old_maps, new_maps)
 
     @staticmethod
     def format_output(old_maps, new_maps):
-        """ Convert inverse.
-        """
 
         # if input is WaveformArray then return WaveformArray
         if isinstance(old_maps, record.WaveformArray):
@@ -79,7 +84,7 @@ class MchirpQToMass1Mass2(BaseConversion):
     _outputs = [parameters.mass1, parameters.mass2]
 
     @classmethod
-    def convert(cls, maps):
+    def _convert(cls, maps):
         out = {}
         out[parameters.mass1] = conversions.mass1_from_mchirp_q(
                                                 maps[parameters.mchirp],
@@ -87,10 +92,10 @@ class MchirpQToMass1Mass2(BaseConversion):
         out[parameters.mass2] = conversions.mass2_from_mchirp_q(
                                                 maps[parameters.mchirp],
                                                 maps[parameters.q])
-        return cls.format_output(maps, out)
+        return out
 
     @classmethod
-    def convert_inverse(cls, maps):
+    def _convert_inverse(cls, maps):
         out = {}
         out[parameters.mchirp] = \
                  conversions.mchirp_from_mchirp_q(maps[parameters.mchirp],
@@ -100,7 +105,7 @@ class MchirpQToMass1Mass2(BaseConversion):
         m_s = conversions.secondary_mass(maps[parameters.mass1],
                                          maps[parameters.mass2])
         out[parmeters.q] = m_p / m_s
-        return cls.format_output(maps, out)
+        return out
 
 class SphericalSpin1ToCartesianSpin1(BaseConversion):
     """ Converts spin1x, spin1y, and spin1z to spin1_a, spin1_azimuthal,
@@ -111,11 +116,11 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
     _outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
 
     @classmethod
-    def convert(cls, maps):
+    def _convert(cls, maps):
         a, az, po = cls.ordered_inputs
         data = coordinates.spherical_to_cartesian(maps[a], maps[az], maps[po])
         out = {param : val for param, val in zip(ordered_outputs, data)}
-        return cls.format_output(maps, out)
+        return out
 
 class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
     """ Converts spin2x, spin2y, and spin2z to spin2_a, spin2_azimuthal,
@@ -136,7 +141,7 @@ class MassSpinToCartesianSpin(BaseConversion):
                 parameters.spin2x, parameters.spin2y, parameters.spin2z]
 
     @classmethod
-    def convert(cls, maps):
+    def _convert(cls, maps):
         out = {}
         out[parameters.spin1x] = conversions.spin1x_from_xi1_phi_a_phi_s(
                                maps["xi1"], maps["phi_a"], maps["phi_s"])
@@ -158,7 +163,7 @@ class MassSpinToCartesianSpin(BaseConversion):
                          conversions.spin2z_from_mass1_mass2_chi_eff_chi_a(
                                maps[parameters.mass1], maps[parameters.mass2],
                                maps["chi_eff"], maps["chi_a"])
-        return cls.format_output(maps, out)
+        return out
 
 class DistanceToRedshift(BaseConversion):
     """ Converts distance to redshift.
@@ -167,9 +172,9 @@ class DistanceToRedshift(BaseConversion):
     _outputs = [parameters.redshift]
 
     @classmethod
-    def convert(cls, maps):
+    def _convert(cls, maps):
         out = {parameters.redshift : cosmology.redshift(maps["distance"])}
-        return cls.format_output(maps, out)
+        return out
 
 # list of all Conversions
 converts = [MchirpQToMass1Mass2, SphericalSpin1ToCartesianSpin1,
