@@ -160,10 +160,7 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
 
     [prior-inclination]
     ; how to construct prior distribution
-    name = uniform_angle
-    ; inclination between 0 and pi
-    min-inclination = 0
-    max-inclination = 1
+    name = sin_angle
 
     [prior-ra+dec]
     ; how to construct prior distribution
