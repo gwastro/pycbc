@@ -455,7 +455,10 @@ class TDomainCBCGenerator(BaseCBCGenerator):
                 pnutils.named_frequency_cutoffs[ffunc](self.current_params)
         if 'f_final' in self.current_params:
             # estimate frequency as a function of time
-            foft = abs(frequency_from_polarizations(hp, hc))
+            # we'll drop the first point since it can be off due to the first
+            # points in the waveform being zero. Also, we'll take the abs in
+            # case hp, and hc are flipped around due to a face-away signal.
+            foft = abs(frequency_from_polarizations(hp, hc))[1:]
             endidx = numpy.where(foft.data >= self.current_params['f_final']
                                 )[0][0]
         # evaluate taper time
