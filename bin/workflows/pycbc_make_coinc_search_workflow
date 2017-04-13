@@ -225,15 +225,22 @@ results_page = []
 results_aux_page = []
 closed_box_ifars = []
 for bin_file in bin_files:
+    # Open box
     snrifar = wf.make_snrifar_plot(workflow, bin_file,
-                    rdir['open_box_result'], tags=bin_file.tags)
+                                   rdir['open_box_result'],
+                                   tags=bin_file.tags)
     ratehist = wf.make_snrratehist_plot(workflow, bin_file,
-                    rdir['open_box_result'], tags=bin_file.tags)
+                                        rdir['open_box_result'],
+                                        tags=bin_file.tags)
+    snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
+                                        rdir['open_box_result'],
+                                        cumulative=False,
+                                        tags=bin_file.tags + ['ifar'])
 
-    results_page += [(snrifar, ratehist)]
+    results_page += [(snrifar, ratehist, snrifar_ifar)]
 
     snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
-                    rdir['open_box_result/significance'],
+                    rdir['open_box_result'],
                     cumulative=False, tags=bin_file.tags + ['ifar'])
     ifar_ob = wf.make_ifar_plot(workflow, bin_file,
                     rdir['open_box_result/significance'],
