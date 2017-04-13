@@ -30,10 +30,10 @@ import waveform
 import ringdown
 from pycbc import coordinates
 from pycbc import filter
-from pycbc.types import TimeSeries
+from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.waveform import parameters
 from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries, \
-    frequency_from_polarizations
+    time_from_frequencyseries
 from pycbc.detector import Detector
 from pycbc import pnutils
 import lal as _lal
@@ -364,120 +364,20 @@ class TDomainCBCGenerator(BaseCBCGenerator):
          <pycbc.types.timeseries.TimeSeries at 0x116ac6950>)
 
     """
-    def __init__(self, taper=None,
-                 taper_function=None, taper_function_param=None,
-                 taper_duration=None, taper_whitened=False, psd=None,
-                 variable_args=(), **frozen_params):
+    def __init__(self, taper=None, variable_args=(), **frozen_params):
         super(TDomainCBCGenerator, self).__init__(waveform.get_td_waveform,
             variable_args=variable_args, **frozen_params)
-        self.use_end_taper = ('t_final' in variable_args or
-                              't_final' in self.frozen_params or
-                              'f_final' in variable_args or
-                              'f_final' in self.frozen_params or
-                              'f_final_func' in variable_args or
-                              'f_final_func' in self.frozen_params)
         self.taper = taper
-        self.taper_size = self.window = None
-        if taper_whitened and not (taper_whitened == 1 or taper_whitened == 2):
-            raise ValueError("taper_whitened must be either False (taper "
-                             "before whitening), 1 (taper after whitening) "
-                             "or 2 (taper after overwhitening)")
-        self.taper_whitened = taper_whitened
-        self.psd = psd
-        self.asd = None
-        if self.use_end_taper:
-            # construct the windowing function
-            if taper_duration is None:
-                raise ValueError('must provide a taper duration if using '
-                                 't_final, f_final, or f_final_func')
-            self.taper_size = int(taper_duration /
-                                  self.frozen_params['delta_t'])
-            if taper_function is None:
-                raise ValueError("must provide a taper function if using "
-                                 "t_final, f_final, or f_final_func")
-            if taper_function_param is not None:
-                taper_function = (taper_function, taper_function_param)
-            win = signal.get_window(taper_function, 2*self.taper_size)
-            self.window = win[self.taper_size:]
-            if self.taper_whitened:
-                if psd is None:
-                    raise ValueError("must provide a psd if tapering "
-                                    "(over-)whitened waveform")
-                if self.taper_whitened == 1:
-                    self.asd = psd**0.5
-                    nzidx = numpy.nonzero(self.asd.data)[0]
-                else:
-                    nzidx = numpy.nonzero(self.psd.data)[0]
-                self.whkmin = nzidx[0]
-                self.whkmax = nzidx[-1] + 1
             
 
     def _postgenerate(self, res):
         """Applies a taper if it is in current params.
         """
         hp, hc = res
-        if self.use_end_taper:
-            startidx, endidx = self.get_end_taper_range(hp, hc)
         if self.taper is not None:
             hp = taper_timeseries(hp, tapermethod=self.taper)
             hc = taper_timeseries(hc, tapermethod=self.taper)
-        if self.use_end_taper and self.taper_whitened:
-            hp = hp.to_frequencyseries(delta_f=self.psd.delta_f)
-            if self.taper_whitened == 1:
-                hp[self.whkmin:self.whkmax] /= \
-                    self.asd[self.whkmin:self.whkmax]
-            else:
-                hp[self.whkmin:self.whkmax] /= \
-                    self.psd[self.whkmin:self.whkmax]
-            hp.data[:self.whkmin] = 0.
-            hp.data[self.whkmax:] = 0.
-            hp = hp.to_timeseries()
-            # hc
-            hc = hc.to_frequencyseries(delta_f=self.psd.delta_f)
-            if self.taper_whitened == 1:
-                hc[self.whkmin:self.whkmax] /= \
-                    self.asd[self.whkmin:self.whkmax]
-            else:
-                hc[self.whkmin:self.whkmax] /= \
-                    self.psd[self.whkmin:self.whkmax]
-            hc.data[:self.whkmin] = 0.
-            hc.data[self.whkmax:] = 0.
-            hc = hc.to_timeseries()
-        if self.use_end_taper:
-            self.apply_end_taper(hp, hc, startidx, endidx)
         return hp, hc
-
-    def get_end_taper_range(self, hp, hc):
-        endidx = len(hp)
-        if 'f_final_func' in self.current_params:
-            ffunc = self.current_params['f_final_func']
-            self.current_params['f_final'] = \
-                pnutils.named_frequency_cutoffs[ffunc](self.current_params)
-        if 'f_final' in self.current_params:
-            # estimate frequency as a function of time
-            # we'll drop the first point since it can be off due to the first
-            # points in the waveform being zero. Also, we'll take the abs in
-            # case hp, and hc are flipped around due to a face-away signal.
-            foft = abs(frequency_from_polarizations(hp, hc))[1:]
-            endidx = numpy.where(foft.data >= self.current_params['f_final']
-                                )[0][0]
-        # evaluate taper time
-        if 't_final' in self.current_params:
-            # epoch gives time until coalescence time
-            tfinal = self.current_params['t_final'] - hp.start_time
-            tendidx = int(numpy.ceil(tfinal/hp.delta_t))
-            # pick t or f final, whichever comes first
-            endidx = max(min(tendidx, endidx), 0)
-        startidx = max(0, endidx - self.taper_size)
-        return startidx, endidx
-
-    def apply_end_taper(self, hp, hc, startidx, endidx):
-        # cut the waveform off at a specific frequency, if desired
-        getlen = endidx - startidx
-        hp.data[startidx:endidx] *= self.window[-getlen:]
-        hp.data[endidx:] = 0.
-        hc.data[startidx:endidx] *= self.window[-getlen:]
-        hc.data[endidx:] = 0.
 
 
 class FDomainRingdownGenerator(BaseGenerator):
@@ -614,7 +514,13 @@ class FDomainDetFrameGenerator(object):
     location_args = set(['tc', 'ra', 'dec', 'polarization'])
 
     def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
-            variable_args=(), **frozen_params):
+                 variable_args=(), **frozen_params):
+        self.use_end_taper = ('t_final' in variable_args or
+                              't_final' in self.frozen_params or
+                              'f_final' in variable_args or
+                              'f_final' in self.frozen_params or
+                              'f_final_func' in variable_args or
+                              'f_final_func' in self.frozen_params)
         # initialize frozen & current parameters:
         self.current_params = frozen_params.copy()
         self._static_args = frozen_params.copy()
@@ -704,6 +610,214 @@ class FDomainDetFrameGenerator(object):
                                          copy=False)
             h['RF'] = hp
         return h
+
+
+class TDomainTaper(object):
+    def __init__(self, start_taper_function=None, end_taper_function=None,
+                 start_taper_duration=None, end_taper_duration=None,
+                 start_taper_time=None, end_taper_time=None,
+                 start_taper_frequency=None, end_taper_frequency=None,
+                 start_taper_freqfunc=None, end_taper_freqfunc=None,
+                 taper_whitened=False, psds=None):
+        if taper_whitened and not (taper_whitened == 1 or taper_whitened == 2):
+            raise ValueError("taper_whitened must be either False (taper "
+                             "before whitening), 1 (taper after whitening) "
+                             "or 2 (taper after overwhitening)")
+        if start_taper_function == 'lal':
+            if start_taper_duration is not None:
+                raise ValueError("The lal taper function does not take a "
+                                 "duration")
+            if start_taper_time is not None or \
+                    start_taper_frequency is not None or \
+                    start_taper_freqfunc is not None:
+                raise ValueError("The lal taper function does not take a "
+                                 "start time or frequency")
+        elif start_taper_function is not None and start_taper_duration is None:
+            raise ValueError("Non-lal taper functions require a duration")
+        self.start_taper_function = start_taper_function
+        self.start_taper_duration = start_taper_duration
+        self.start_taper_time = start_taper_time
+        self.start_taper_frequency = start_taper_frequency
+        self.start_taper_freqfunc = start_taper_freqfunc
+        if end_taper_function == 'lal':
+            if end_taper_duration is not None:
+                raise ValueError("The lal taper function does not take a "
+                                 "duration")
+            if start_taper_time is not None or \
+                    start_taper_frequency is not None or \
+                    start_taper_freqfunc is not None:
+                raise ValueError("The lal taper function does not take a "
+                                 "end time or frequency")
+        elif end_taper_function is not None and end_taper_duration is None:
+            raise ValueError("Non-lal taper functions require a duration")
+        self.end_taper_function = end_taper_function
+        self.end_taper_duration = end_taper_duration
+        self.end_taper_time = end_taper_time
+        self.end_taper_frequency = end_taper_frequency
+        self.end_taper_freqfunc = end_taper_freqfunc
+        self.taper_whitened = taper_whitened
+        self.start_window = {}
+        self.end_window = {}
+        self.psds = psds
+        self.asds = {}
+        if self.taper_whitened:
+            if psds is None:
+                raise ValueError("must provide a psd if tapering "
+                                "(over-)whitened waveform")
+            if taper_start_function == 'lal' and taper_end_function == 'lal':
+                raise ValueError("both start and end use lal tapering, but "
+                                 "lal tapering cannot be done on whitened "
+                                 "waveforms")
+            self.whkmin = {}
+            self.whkmax = {}
+            for ifo,psd in psds.items():
+                if self.taper_whitened == 1:
+                    asd = psd**0.5
+                    self.asds[ifo] = asd 
+                    nzidx = numpy.nonzero(asd.data)[0]
+                else:
+                    nzidx = numpy.nonzero(psd.data)[0]
+                self.whkmin[ifo] = nzidx[0]
+                self.whkmax[ifo] = nzidx[-1] + 1
+
+    def get_start_window(self, delta_t):
+        taper_size = int(self.start_taper_duration / delta_t)
+        try:
+            return self.start_window[taper_size]
+        except KeyError:
+            # generate the window at this dt
+            win = signal.get_window(self.start_taper_function, 2*taper_size)
+            self.start_window[taper_size] = win[:taper_size]
+            return self.start_window[taper_size]
+
+    def get_end_window(self, delta_t):
+        taper_size = int(self.end_taper_duration / delta_t)
+        try:
+            return self.end_window[taper_size]
+        except KeyError:
+            # generate the window at this dt
+            win = signal.get_window(self.end_taper_function, 2*taper_size)
+            self.end_window[taper_size] = win[taper_size:]
+            return self.end_window[taper_size]
+
+    def whiten_waveform(htilde, ifo):
+        if self.taper_whitened == 1:
+            htilde[self.whkmin:self.whkmax] /= \
+                self.asds[ifo][self.whkmin:self.whkmax]
+        else:
+            htilde[self.whkmin:self.whkmax] /= \
+                self.psds[ifo][self.whkmin:self.whkmax]
+        htilde.data[:self.whkmin] = 0.
+        htilde.data[self.whkmax:] = 0.
+
+    def apply_taper(self, h, copy=True,
+                    ifo=None, params=None, sample_frequencies=None):
+        if copy:
+            h = 1*h
+        if isinstance(h, FrequencySeries):
+            ht = None
+            hf = h
+            return_f = True
+        else:
+            ht = h
+            hf = None
+            return_f = False
+        # lal taper function needs to be applied before whitening
+        if self.start_taper_function == 'lal' or \
+                self.end_taper_function == 'lal':
+            if ht is None:
+                ht = hf.to_timeseries()
+            tmeth = ''
+            if self.start_taper_function == 'lal':
+                tmeth = 'start'
+            if self.end_taper_function == 'lal':
+                tmeth = ''.join([tmeth, 'end'])
+            ht = taper_timeseries(ht, tapermethod=tmeth)
+            hf = None
+            if tmeth == 'startend':
+                # just return, since there's nothing else to do
+                if return_f:
+                    return ht.to_frequencyseries()
+                else:
+                    return ht
+        if self.taper_whitened:
+            if ifo is None:
+                raise ValueError("must provide an ifo to whiten with")
+            if hf is None:
+                hf = ht.to_frequencyseries(delta_f=self.psds[ifo].delta_f)
+            self.whiten_waveform(hf, ifo)
+            ht = hf.to_timeseries()
+        elif ht is None:
+            ht = hf.to_timeseries()
+        # 
+        #   left taper
+        #
+        start_time = self.start_taper_time
+        start_freq = self.start_taper_frequency
+        if self.start_taper_freqfunc is not None:
+            if params is None:
+                raise ValueError("must provide waveform parameters for the "
+                                 "frequency function to use for the start")
+            start_freq = pnutils.named_frequency_cutoffs[
+                self.start_taper_freqfunc](params)
+        t_of_f = None
+        if start_freq is not None:
+            # need frequencyseries version to get f(t)
+            if hf is None:
+                hf = ht.to_frequencyseries()
+            t_of_f = time_from_frequencyseries(hf,
+                sample_frequencies=sample_frequencies)
+            t = t_of_f[int(start_freq / hf.delta_f)]
+            if start_time is None:
+                start_time = t
+            else:
+                start_time = max(t, start_time)
+        # apply
+        if start_time is not None:
+            win = self.get_start_window(ht.delta_t)
+            endidx = min(int(numpy.ceil(start_time / ht.delta_t)), len(ht))
+            startidx = max(endidx - len(win), 0)
+            ht.data[startidx:endidx] *= win[-(endidx-startidx):]
+            ht.data[:startidx] = 0.
+        #
+        #   right taper
+        #
+        end_time = self.end_taper_time
+        end_freq = self.end_taper_frequency
+        if self.end_taper_freqfunc is not None:
+            if params is None:
+                raise ValueError("must provide waveform parameters for the "
+                                 "frequency function to use for the end")
+            end_freq = pnutils.named_frequency_cutoffs[
+                self.end_taper_freqfunc](params)
+        if end_freq is not None:
+            # need frequencyseries version to get f(t)
+            if hf is None:
+                hf = ht.to_frequencyseries()
+            if t_of_f is None:
+                t_of_f = time_from_frequencyseries(hf,
+                    sample_frequencies=sample_frequencies)
+            t = t_of_f[int(numpy.ceil(end_freq / hf.delta_f))]
+            if end_time is None:
+                end_time = t
+            else:
+                end_time = min(t, end_time)
+        # apply
+        if end_time is not None:
+            win = self.get_end_window(ht.delta_t)
+            endidx = min(int(end_time / ht.delta_t), len(ht))
+            startidx = max(endidx - len(win), 0)
+            ht.data[startidx:endidx] *= win[:endidx-startidx]
+            ht.data[endidx:] = 0.
+        #
+        #   Return
+        #
+        if return_f:
+            return ht.to_frequencyseries()
+        else:
+            return ht
+
+    __call__ = apply_taper
 
 
 def select_waveform_generator(approximant):
