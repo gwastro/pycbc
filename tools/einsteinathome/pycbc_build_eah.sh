@@ -825,7 +825,9 @@ else
         fi
     fi
     echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`" >&3
-    sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
+    # fix typo in ltmain
+    # only helpful if something goes wrong, normally not needed
+    # sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
     if $build_dlls; then
 	git apply <<'EOF' || true
 From accb37091abbc8d8776edfb3484259f6059c4e25 Mon Sep 17 00:00:00 2001
