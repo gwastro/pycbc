@@ -195,14 +195,13 @@ with ctx:
     generator_function = generator.select_waveform_generator(
                                                     static_args["approximant"])
 
-    # construct instance that will call single IFO waveform generator
-    # and apply the antenna pattern and timing offsets
-    generator = generator.FDomainDetFrameGenerator(
-                        generator_function,
-                        epoch=stilde_dict.values()[0].epoch,
-                        variable_args=variable_args,
-                        detectors=opts.instruments,
-                        delta_f=stilde_dict.values()[0].delta_f, **static_args)
+    # construct class that will generate waveforms
+    generator = waveform.FDomainDetFrameGenerator(
+                       generator_function, epoch=stilde_dict.values()[0].epoch,
+                       variable_args=variable_args, detectors=opts.instruments,
+                       delta_f=stilde_dict.values()[0].delta_f,
+                       delta_t=strain_dict.values()[0].delta_t,
+                       **static_args)
 
     # construct class that will return the natural logarithm of likelihood
     likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](
