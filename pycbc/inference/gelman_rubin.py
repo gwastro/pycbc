@@ -101,7 +101,7 @@ def gelman_rubin(chains, auto_burn_in=True):
     for i, chain_cov in enumerate(chains_covs):
         var[:, i] = numpy.diag(chain_cov)
 
-    # get means
+    # get mean of means
     # this will have shape (nparameters)
     mu_hat = numpy.mean(means, axis=1)
 
@@ -129,7 +129,7 @@ def gelman_rubin(chains, auto_burn_in=True):
     # this will have shape (nparameters)
     dof = (2. * v**2) / var_v
 
-    # more degrees of freedom
+    # more degrees of freedom factors
     # this will have shape (nparameters)
     df_adj = (dof + 3.) / (dof + 1.)
     b_dof = nchains - 1
