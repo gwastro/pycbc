@@ -49,6 +49,7 @@ A simple workflow configuration file::
     inference_samples = ${which:pycbc_inference_plot_samples}
     inference_table = ${which:pycbc_inference_table_summary}
     plot_spectrum = ${which:pycbc_plot_psd_file}
+    results_page = ${which:pycbc_make_html_page}
 
     [datafind]
     ; datafind options
@@ -104,6 +105,10 @@ A simple workflow configuration file::
 
     [plot_spectrum]
     ; command line options use --help for more information
+
+    [results_page]
+    ; command line options use --help for more information
+    analysis-title = "PyCBC Inference Test"
 
 ============================
 Inference configuration file
@@ -245,6 +250,11 @@ To generate a workflow you will need your configuration files. We set the follow
     CONFIG_PATH=workflow.ini
     INFERENCE_CONFIG_PATH=inference.ini
 
+Specify a directory to save the HTML pages::
+
+    # directory that will be populated with HTML pages
+    HTML_DIR=${HOME}/public_html/inference_test
+
 If you want to run on the loudest triggers from a PyCBC coincident search workflow then run::
 
     # run workflow generator on triggers from workflow
@@ -260,7 +270,9 @@ If you want to run on the loudest triggers from a PyCBC coincident search workfl
         --config-overrides workflow:start-time:${WORKFLOW_START_TIME} \
                            workflow:end-time:${WORKFLOW_END_TIME} \
                            workflow-inference:data-seconds-before-trigger:8 \
-                           workflow-inference:data-seconds-after-trigger:8
+                           workflow-inference:data-seconds-after-trigger:8 \
+                           results_page:output-path:${HTML_DIR} \
+                           results_page:analysis-subtitle:${WORKFLOW_NAME}
 
 Where ``${BANK_FILE}`` is the path to the template bank HDF file, ``${STATMAP_FILE}`` is the path to the combined statmap HDF file, ``${SNGL_H1_PATHS}`` and ``${SNGL_L1_PATHS}`` are the paths to the merged single-detector HDF files,  and ``${WORKFLOW_START_TIME}`` and ``${WORKFLOW_END_TIME}`` are the start and end time of the coincidence workflow.
 
@@ -279,7 +291,10 @@ Else you can run from a specific GPS end time with the ``--gps-end-time`` option
                            workflow-inference:data-seconds-before-trigger:2 \
                            workflow-inference:data-seconds-after-trigger:2 \
                            inference:psd-start-time:$((${GPS_END_TIME}-300)) \
-                           inference:psd-end-time:$((${GPS_END_TIME}+1748))
+                           inference:psd-end-time:$((${GPS_END_TIME}+1748)) \
+                           results_page:output-path:${HTML_DIR} \
+                           results_page:analysis-subtitle:${WORKFLOW_NAME}
+
 
 Where ``${GPS_END_TIME}`` is the GPS end time of the trigger.
 
