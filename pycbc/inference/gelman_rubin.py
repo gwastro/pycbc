@@ -55,6 +55,11 @@ def gelman_rubin(chains):
         for each chain. Each chain has shape (nparameters, niterations).
     """
 
+def gelman_rubin(chains, auto_burn_in=True):
+    """ chains is a list of numpy.array, ie. [chain1, chain2].
+    each chain is shape (nparameters, niterations)
+    """
+
     # remove first have of samples
     # this will have shape (nchains, nparameters, niterations)
     if auto_burn_in:
@@ -69,6 +74,8 @@ def gelman_rubin(chains):
     # calculate the covariance matrix for each chain
     # this will have shape (nchains, nparameters, nparameters)
     chains_covs = numpy.array([numpy.cov(chain) for chain in chains])
+    if nparameters == 1:
+        chains_covs = chains_covs.reshape((nchains, 1, 1))
 
     # calculate W
     # this will have shape (nparameters, nparameters)
@@ -76,6 +83,8 @@ def gelman_rubin(chains):
     for i, row in enumerate(chains_covs[0]):
         for j, _ in enumerate(row):
             w[i, j] = numpy.mean(chains_covs[:, i, j])
+    if nparameters == 1:
+        w = w.reshape((1, 1))
 
     # calculate B
     # this will have shape (nparameters, nparameters)
@@ -83,6 +92,8 @@ def gelman_rubin(chains):
     for i, chain in enumerate(chains):
         means[:, i] = numpy.mean(chain, axis=1).transpose()
     b = niterations * numpy.cov(means)
+    if nparameters == 1:
+        b = b.reshape((1, 1))
 
     # get diagonal elements of W and B
     # these will have shape (nparameters)
@@ -139,12 +150,5 @@ def gelman_rubin(chains):
     # this will have shape (nparameters)
     psrf = r2_estimate * df_adj
 
-    print v
-    print var_v
-    print dof
-    print r2_fixed
-    print r2_random
-
     return psrf
-
 
