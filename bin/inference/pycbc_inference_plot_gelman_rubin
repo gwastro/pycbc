@@ -19,6 +19,7 @@
 
 import argparse
 import logging
+from pycbc import results
 from pycbc.inference import gelman_rubin
 from pycbc.inference import option_utils
 import matplotlib.pyplot as plt
@@ -38,6 +39,14 @@ parser.add_argument("--output-file", type=str, required=True,
 parser.add_argument("--walkers", type=int, nargs="+", default=None,
                     help="Specific walkers to plot. Default is plot "
                          "all walkers.")
+parser.add_argument("--hline", type=float, default=None,
+                    help="Plots a horizontal line.")
+parser.add_argument("--segment-start", type=int, required=True,
+                    help="Index in chain to start calculation.")
+parser.add_argument("--segment-end", type=int, required=True,
+                    help="Index in chain to end calculation.")
+parser.add_argument("--segment-step", type=int, required=True,
+                    help="Step size in chain to next calculation.")
 
 # add results group
 option_utils.add_inference_results_option_group(parser)
@@ -61,13 +70,15 @@ fp, params, labels, _ = option_utils.results_from_cli(
                                          opts, load_samples=False,
                                          walkers=None)
 
-# get walkers to plot
+# if use wants specific walkers
 walkers = range(fp.nwalkers) if opts.walkers is None else opts.walkers
-nwalkers = len(walkers)
+
+# create Figure
+fig = plt.figure()
 
 # loop over parameters
 stats = []
-for param in params:
+for param, label in zip(params, labels):
     logging.info("Plotting parameter %s", param)
 
     # get samples for each chain
@@ -77,12 +88,35 @@ for param in params:
 
     # calculate the Gelman-Rubin convergence diagnostic statistic
     chains = [chain.reshape(1, len(chain)) for chain in chains]
-    starts, ends, stats = gelman_rubin.walk(
-                                chains, 50, 39999, 1000)
+    starts, ends, stats = gelman_rubin.walk(chains, opts.segment_start,
+                                            opts.segment_end,
+                                            opts.segment_step)
+#                                chains, 50, 39999, 1000)
 
     # plot
-    plt.plot(ends, stats[0, :])
+    plt.plot(ends, stats[0, :], label=label)
 
-plt.show()
+# format plot
+plt.ylabel("Potential Scale Reduction Factor")
+plt.xlabel("Iteration")
 
-print stats
+# plot horizontal line
+if opts.hline:
+    plt.hlines(opts.hline, 0, ends[-1], linestyles="dashed")
+
+# save figure with meta-data
+caption_kwargs = {
+    "parameters" : ", ".join(labels),
+}
+caption = """The Gelman-Rubin convergence diagnostic statistic for {parameters}
+read from the input file.""".format(**caption_kwargs)
+title = "Gelman-Rubin Convergence for {parameters}".format(**caption_kwargs)
+results.save_fig_with_metadata(fig, opts.output_file,
+                               cmd=" ".join(sys.argv),
+                               title=title,
+                               caption=caption)
+plt.close()
+
+# exit
+fp.close()
+logging.info("Done")
