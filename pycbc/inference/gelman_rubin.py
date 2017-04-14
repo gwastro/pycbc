@@ -103,12 +103,11 @@ def gelman_rubin(chains):
     # this will have shape (nparameters)
     s = numpy.var(var, axis=1)
 
-    # FIXME: hardcoded for two chains
     # get factors in variance of V calculation
     # this will have shape (nparameters)
     k = 2 * b_diag**2 / (nchains - 1)
-    mid_term = numpy.cov(var, means**2)[3:6,0:3].T
-    end_term = numpy.cov(var, means)[3:6,0:3].T
+    mid_term = numpy.cov(var, means**2)[nparameters:2 * nparameters, 0:nparameters].T
+    end_term = numpy.cov(var, means)[nparameters:2 * nparameters, 0:nparameters].T
     wb = niterations / nchains * numpy.diag(mid_term - 2 * mu_hat * end_term)
 
     # get V
