@@ -60,7 +60,7 @@ def walk(chains, start, end, step):
     # loop over end indexes and calculate statistic
     for i, e in enumerate(ends):
         tmp = chains[:,:,0:e]
-        stats[:, i] = gelman2.gelman_rubin(tmp)
+        stats[:, i] = gelman_rubin(tmp)
 
     return starts, ends, stats
 

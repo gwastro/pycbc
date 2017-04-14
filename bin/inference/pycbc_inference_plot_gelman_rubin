@@ -21,6 +21,7 @@ import argparse
 import logging
 from pycbc.inference import gelman_rubin
 from pycbc.inference import option_utils
+import matplotlib.pyplot as plt
 import sys
 
 # command line usage
@@ -75,6 +76,13 @@ for param in params:
                               thin_end=opts.thin_end)[param] for i in walkers]
 
     # calculate the Gelman-Rubin convergence diagnostic statistic
-    stats.append(gelman_rubin.gelman_rubin(chains))
+    chains = [chain.reshape(1, len(chain)) for chain in chains]
+    starts, ends, stats = gelman_rubin.walk(
+                                chains, 50, 39999, 1000)
+
+    # plot
+    plt.plot(ends, stats[0, :])
+
+plt.show()
 
 print stats
