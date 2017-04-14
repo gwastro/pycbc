@@ -53,6 +53,14 @@ def gelman_rubin(chains, auto_burn_in=True):
     chains : iterable
         An iterable of numpy.array instances that contain the samples
         for each chain. Each chain has shape (nparameters, niterations).
+    auto_burn_in : bool
+        If True, then only use later half of samples provided.
+
+    Returns
+    -------
+    psrf : numpy.array
+        A numpy.array of shape (nparameters) that has the point estimates of
+        the potential scale reduction factor.
     """
 
     # remove first have of samples
