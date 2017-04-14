@@ -45,7 +45,7 @@ def gelman_rubin_walk(x, seg_length, seg_stride, end_idx, seg_start=0):
 
     return numpy.array(starts), numpy.array(ends), numpy.array(stats)
 
-def gelman_rubin(chains):
+def gelman_rubin(chains, auto_burn_in=True):
     """ Calculates the univariate Gelman-Rubin convergence statistic.
 
     Parameters
@@ -53,11 +53,6 @@ def gelman_rubin(chains):
     chains : iterable
         An iterable of numpy.array instances that contain the samples
         for each chain. Each chain has shape (nparameters, niterations).
-    """
-
-def gelman_rubin(chains, auto_burn_in=True):
-    """ chains is a list of numpy.array, ie. [chain1, chain2].
-    each chain is shape (nparameters, niterations)
     """
 
     # remove first have of samples
