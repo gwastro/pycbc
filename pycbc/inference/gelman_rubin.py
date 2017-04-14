@@ -18,38 +18,134 @@ diagnostic statistic.
 
 import numpy
 
+def gelman_rubin_walk(x, seg_length, seg_stride, end_idx, seg_start=0):
+
+    # lists to hold statistic and end index
+    stats = []
+    ends = []
+
+    # get the beginning of all segments
+    starts = numpy.arange(seg_start, end_idx, seg_stride)
+
+    # loop over all segments
+    for start in starts:
+
+        # find the end of the first segment
+        x_start_end = int(start + seg_length)
+
+        # get first segment
+        #x_start = [xx[start:x_start_end] for xx in x]
+        x_start = [xx[0:x_start_end] for xx in x]
+
+        # compute statistic
+        stats.append((gelman_rubin(x_start)))
+
+        # store end of first segment
+        ends.append(x_start_end)
+
+    return numpy.array(starts), numpy.array(ends), numpy.array(stats)
+
 def gelman_rubin(chains):
-    """ Calculates the Gelman-Rubin convergence statistic.
+    """ Calculates the univariate Gelman-Rubin convergence statistic.
 
     Parameters
     ----------
     chains : iterable
         An iterable of numpy.array instances that contain the samples
-        for each chain.
+        for each chain. Each chain has shape (nparameters, niterations).
     """
 
-    # calculate mean of each chain
-    chains_means = numpy.array([chain.mean() for chain in chains])
+    # remove first have of samples
+    # this will have shape (nchains, nparameters, niterations)
+    if auto_burn_in:
+        _, _, niterations = numpy.array(chains).shape
+        chains = numpy.array([chain[:, niterations / 2 + 1:]
+                              for chain in chains])
 
-    # calculate overall mean
-    overall_mean = chains_means.mean()
+    # get number of chains, parameters, and iterations
+    chains = numpy.array(chains)
+    nchains, nparameters, niterations = chains.shape
 
-    # calculate variance of each chain
-    chains_vars = numpy.array([chain.var() for chain in chains])
+    # calculate the covariance matrix for each chain
+    # this will have shape (nchains, nparameters, nparameters)
+    chains_covs = numpy.array([numpy.cov(chain) for chain in chains])
 
-    # calculate the between-chain variance
-    n = len(chains[0])
-    m = len(chains)
-    b = n / (m - 1.0) * sum([(chain_mean - overall_mean)**2
-                             for chain_mean in chains_means])
+    # calculate W
+    # this will have shape (nparameters, nparameters)
+    w = numpy.zeros(chains_covs[0].shape)
+    for i, row in enumerate(chains_covs[0]):
+        for j, _ in enumerate(row):
+            w[i, j] = numpy.mean(chains_covs[:, i, j])
 
-    # calculate the within-chain variance
-    w = 1.0 / m * sum([chain_var for chain_var in chains_vars])
+    # calculate B
+    # this will have shape (nparameters, nparameters)
+    means = numpy.zeros((nparameters, nchains))
+    for i, chain in enumerate(chains):
+        means[:, i] = numpy.mean(chain, axis=1).transpose()
+    b = niterations * numpy.cov(means)
 
-    # calculate the pooled variance
-    v = (n - 1.0) / m * w + (m + 1.0) / (m * n) * b
+    # get diagonal elements of W and B
+    # these will have shape (nparameters)
+    w_diag = numpy.diag(w)
+    b_diag = numpy.diag(b)
 
-    # calculate the potential scale reduction factor
-    psrf = numpy.sqrt(v / w)
+    # get variance for each chain
+    # this will have shape (nparameters, nchains)
+    var = numpy.zeros((nparameters, nchains))
+    for i, chain_cov in enumerate(chains_covs):
+        var[:, i] = numpy.diag(chain_cov)
+
+    # get means
+    # this will have shape (nparameters)
+    mu_hat = numpy.mean(means, axis=1)
+
+    # get variance of variance
+    # this will have shape (nparameters)
+    s = numpy.var(var, axis=1)
+
+    # FIXME: hardcoded for two chains
+    # get factors in variance of V calculation
+    # this will have shape (nparameters)
+    k = 2 * b_diag**2 / (nchains - 1)
+    mid_term = numpy.cov(var, means**2)[3:6,0:3].T
+    end_term = numpy.cov(var, means)[3:6,0:3].T
+    wb = niterations / nchains * numpy.diag(mid_term - 2 * mu_hat * end_term)
+
+    # get V
+    # this will have shape (nparameters)
+    v = (niterations - 1.) * w_diag / niterations + (1. + 1. / nchains) * b_diag / niterations
+
+    # get variance of V
+    # this will have shape (nparameters)
+    var_v = ((niterations - 1.)**2 * s + (1. + 1. / nchains)**2 * k + \
+             2. * (niterations - 1.) * (1. + 1. / nchains) * wb) / niterations**2
+
+    # get degrees of freedom
+    # this will have shape (nparameters)
+    dof = (2. * v**2) / var_v
+
+    # more degrees of freedom
+    # this will have shape (nparameters)
+    df_adj = (dof + 3.) / (dof + 1.)
+    b_dof = nchains - 1
+    w_dof = (2. * w_diag**2) / s
+
+    # estimate R
+    # this will have shape (nparameters)
+    r2_fixed = (niterations - 1.) / niterations
+    r2_random = (1. + 1. / nchains) * (1. / niterations) * (b_diag / w_diag)
+    r2_estimate = numpy.sqrt(r2_fixed + r2_random)
+
+    # PSRF
+    # this will have shape (nparameters)
+    psrf = r2_estimate * df_adj
+
+    print v
+    print var_v
+    print dof
+    print r2_fixed
+    print r2_random
 
     return psrf
+
+
