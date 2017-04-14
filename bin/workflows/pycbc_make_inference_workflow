@@ -22,6 +22,7 @@ import argparse
 import h5py
 import logging
 import os
+import Pegasus.DAX3 as dax
 import pycbc.workflow as wf
 import pycbc.workflow.inference_followups as inffu
 import pycbc.workflow.minifollowups as mini
@@ -110,7 +111,11 @@ if not workflow_options and not (opts.gps_end_time != None):
     raise ValueError("Must use either workflow options or --gps-end-time")
 
 # create workflow
-workflow = wf.Workflow(opts, opts.workflow_name)
+container = wf.Workflow(opts, opts.workflow_name)
+
+# create sub-workflows
+workflow = wf.Workflow(opts, opts.workflow_name + "-main")
+finalize_workflow = wf.Workflow(opts, opts.workflow_name + "-finalization")
 
 # create output directory
 wf.makedir(opts.output_dir)
@@ -282,8 +287,21 @@ for subsection in cp.get_subsections(opts.prior_section):
                           sections=[opts.prior_section + "-" + subsection],
                           tags=opts.tags + [subsection])
 
+# make html pages
+wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
+                         opts.output_dir))
+
+# add sub-workflows to workflow
+container += workflow
+container += finalize_workflow
+
+# make finalize sub-workflow depend on main sub-workflow
+dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
+container._adag.addDependency(dep)
+
 # write dax
-workflow.save(filename=opts.output_file, output_map_path=opts.output_map)
+container.save(filename=opts.output_file, output_map_path=opts.output_map)
 
 # write html well
 layout.two_column_layout(opts.output_dir, layouts)
+
