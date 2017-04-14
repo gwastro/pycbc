@@ -32,7 +32,7 @@ A simple workflow configuration file::
     datafind-method = AT_RUNTIME_SINGLE_FRAMES
     datafind-check-segment-gaps = raise_error
     datafind-check-frames-exist = raise_error
-    datafind-check-segment-summary = warn
+    datafind-check-segment-summary = no_test
 
     [workflow-inference]
     ; how the workflow generator should setup inference nodes
