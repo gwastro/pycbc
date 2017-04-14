@@ -18,32 +18,51 @@ diagnostic statistic.
 
 import numpy
 
-def gelman_rubin_walk(x, seg_length, seg_stride, end_idx, seg_start=0):
+def walk(chains, start, end, step):
+    """ Calculates Gelman-Rubin conervergence statistic along chains of data.
+    This function will advance along the chains and calculate the
+    statistic for each step.
 
-    # lists to hold statistic and end index
-    stats = []
-    ends = []
+    Parameters
+    ----------
+    chains : iterable
+        An iterable of numpy.array instances that contain the samples
+        for each chain. Each chain has shape (nparameters, niterations).
+    start : float
+        Start index of blocks to calculate all statistics.
+    end : float
+        Last index of blocks to calculate statistics.
+    step : float
+        Step size to take for next block.
 
-    # get the beginning of all segments
-    starts = numpy.arange(seg_start, end_idx, seg_stride)
+    Returns
+    -------
+    starts : numpy.array
+        1-D array of start indexes of calculations.
+    ends : numpy.array
+        1-D array of end indexes of caluclations.
+    stats : numpy.array
+        Array with convergence statistic. It has
+        shape (nparameters, ncalculations).
+    """
 
-    # loop over all segments
-    for start in starts:
+    # get number of chains, parameters, and iterations
+    chains = numpy.array(chains)
+    nchains, nparameters, niterations = chains.shape
 
-        # find the end of the first segment
-        x_start_end = int(start + seg_length)
+    # get end index of blocks
+    ends = numpy.arange(start, end, step)
+    stats = numpy.zeros((nparameters, len(ends)))
 
-        # get first segment
-        #x_start = [xx[start:x_start_end] for xx in x]
-        x_start = [xx[0:x_start_end] for xx in x]
+    # get start index of blocks
+    starts = numpy.array(len(ends) * [start])
 
-        # compute statistic
-        stats.append((gelman_rubin(x_start)))
+    # loop over end indexes and calculate statistic
+    for i, e in enumerate(ends):
+        tmp = chains[:,:,0:e]
+        stats[:, i] = gelman2.gelman_rubin(tmp)
 
-        # store end of first segment
-        ends.append(x_start_end)
-
-    return numpy.array(starts), numpy.array(ends), numpy.array(stats)
+    return starts, ends, stats
 
 def gelman_rubin(chains, auto_burn_in=True):
     """ Calculates the univariate Gelman-Rubin convergence statistic.
