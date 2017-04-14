@@ -248,4 +248,45 @@ class TDomainTaper(object):
 
     __call__ = apply_taper
 
+    @classmethod
+    def from_config(cls, cp, section='taper', psds=None):
+        opts = {}
+        # parse the whitening
+        if cp.has_option(section, 'taper-whitened'):
+            taper_whitened = cp.get(section, 'taper-whitened')
+            try:
+                taper_whitened = int(taper_whitened)
+            except ValueError:
+                raise ValueError("taper-whitened must be either 0 (no "
+                                 "whitening), 1 (whiten), or 2 (overwhiten)")
+            opts['taper_whitened'] = taper_whitened
+            opts['psds'] = psds
+        # get everything else
+        for opt in cp.options(section):
+            if opt == 'taper-whitened':
+                continue
+            val = cp.get(section, opt)
+            try:
+                val = float(val)
+            except ValueError:
+                pass
+            opts[opt.replace('-', '_')] = val
+        # if taper parameters were provided, add to the appropriate taper opt
+        taper_param = opts.pop('left_taper_param', None)
+        if taper_param is not None:
+            try:
+                opts['left_taper'] = (opts['left_taper'], taper_param)
+            except KeyError:
+                raise ValueError("left_taper_param provided, but no "
+                                 "left_taper")
+        taper_param = opts.pop('right_taper_param', None)
+        if taper_param is not None:
+            try:
+                opts['right_taper'] = (opts['right_taper'], taper_param)
+            except KeyError:
+                raise ValueError("right_taper_param provided, but no "
+                                 "right_taper")
+        return cls(**opts)
+
+
 __all__ = ['TDomainTaper']
