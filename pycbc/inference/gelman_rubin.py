@@ -159,8 +159,6 @@ def gelman_rubin(chains, auto_burn_in=True):
     # more degrees of freedom factors
     # this will have shape (nparameters)
     df_adj = (dof + 3.) / (dof + 1.)
-    b_dof = nchains - 1
-    w_dof = (2. * w_diag**2) / s
 
     # estimate R
     # this will have shape (nparameters)
