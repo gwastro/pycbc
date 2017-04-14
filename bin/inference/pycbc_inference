@@ -35,18 +35,7 @@ from pycbc import strain
 from pycbc import types
 from pycbc.io.inference_hdf import InferenceFile
 from pycbc.waveform import generator
-from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import option_utils
-
-def convert_liststring_to_list(lstring):
-    """ Checks if an argument of the configuration file is a string of a list
-    and returns the corresponding list (of strings)
-    """
-    if lstring[0]=='[' and lstring[-1]==']':
-        lvalue = [str(lstring[1:-1].split(',')[n].strip().strip("'"))
-                      for n in range(len(lstring[1:-1].split(',')))]
-    return lvalue
-
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -75,13 +64,7 @@ parser.add_argument("--seed", type=int, default=0,
 option_utils.add_sampler_option_group(parser)
 
 # add config options
-parser.add_argument("--config-files", type=str, nargs="+", required=True,
-                    help="A file parsable by "
-                         "pycbc.workflow.WorkflowConfigParser.")
-parser.add_argument("--config-overrides", type=str, nargs="+", default=None,
-                    metavar="SECTION:OPTION:VALUE",
-                    help="List of section:option:value combinations to add "
-                         "into the configuration file.")
+option_utils.add_config_opts_to_parser(parser)
 
 # output options
 parser.add_argument("--output-file", type=str, required=True,
@@ -154,33 +137,10 @@ low_frequency_cutoff_dict = option_utils.low_frequency_cutoff_from_cli(opts)
 with ctx:
 
     # read configuration file
-    logging.info("Reading configuration file")
-    if opts.config_overrides is not None:
-        overrides = [override.split(":") for override in opts.config_overrides]
-    else:
-        overrides = None
-    cp = WorkflowConfigParser(opts.config_files, overrides)
+    cp = option_utils.config_parser_from_cli(opts)
 
-    # sanity check that each parameter in [variable_args] has a priors section
-    variable_args = cp.options("variable_args")
-    subsections = cp.get_subsections("prior")
-    tags = numpy.concatenate([tag.split("+") for tag in subsections])
-    if not any(param in tags for param in variable_args):
-        raise KeyError("You are missing a priors section in the config file.")
-
-    # get parameters that do not change in sampler
-    static_args = dict([(key,cp.get_opt_tags("static_args",key,[])) \
-                                         for key in cp.options("static_args")])
-    for key,val in static_args.iteritems():
-        try:
-            static_args[key] = float(val)
-            continue
-        except:
-            pass
-        try:
-            static_args[key] = convert_liststring_to_list(val) 
-        except:
-            pass
+    # get the vairable and static arguments from the config file
+    variable_args, static_args = option_utils.read_args_from_config(cp)
 
     # get prior distribution for each variable parameter
     logging.info("Setting up priors for each parameter")
