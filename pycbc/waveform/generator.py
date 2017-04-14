@@ -32,8 +32,7 @@ from pycbc import coordinates
 from pycbc import filter
 from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.waveform import parameters
-from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries, \
-    time_from_frequencyseries
+from pycbc.waveform.utils import apply_fd_time_shift
 from pycbc.detector import Detector
 from pycbc import pnutils
 import lal as _lal
@@ -374,8 +373,8 @@ class TDomainCBCGenerator(BaseCBCGenerator):
         """
         hp, hc = res
         if self.taper is not None:
-            hp = taper_timeseries(hp, tapermethod=self.taper)
-            hc = taper_timeseries(hc, tapermethod=self.taper)
+            self.taper(hp, copy=False)
+            self.taper(hc, copy=False)
         return hp, hc
 
 
