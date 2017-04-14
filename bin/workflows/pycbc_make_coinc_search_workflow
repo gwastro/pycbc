@@ -31,6 +31,7 @@ import socket
 import pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging, pycbc_glue.segments
 import numpy, lal, datetime
+import Pegasus.DAX3 as dax
 from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.results.versioning import save_fig_with_metadata
 from pycbc.results.metadata import html_escape
@@ -650,7 +651,6 @@ wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
 container += workflow
 container += finalize_workflow
 
-import Pegasus.DAX3 as dax
 dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
 container._adag.addDependency(dep)
 
