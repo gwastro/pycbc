@@ -284,8 +284,9 @@ def make_inference_1d_posterior_plots(
     files = FileList([])
     for parameter in parameters:
         files += make_inference_posterior_plot(
-                    workflow, inference_file, output_dir, parameters=parameter,
-                    analysis_seg=analysis_seg, tags=tags)
+                    workflow, inference_file, output_dir,
+                    parameters=[parameter], analysis_seg=analysis_seg,
+                    tags=tags + [parameter])
     return files
 
 def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
