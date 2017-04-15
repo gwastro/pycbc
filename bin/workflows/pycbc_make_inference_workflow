@@ -300,33 +300,34 @@ for num_event in range(num_events):
                                          num_event, opts.output_dir,
                                          tags=opts.tags + [str(num_event)])]
 
-    # file for posterior summary table for this event
+    # files for posteriors summary subsection
+    base = "posteriors"
     summ_file = inffu.make_inference_summary_table(
-                          workflow, inference_file, rdir["posteriors"],
+                          workflow, inference_file, rdir[base],
                           variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])
-
-    # file for large posterior corner plot for this event
     post_file = inffu.make_inference_posterior_plot(
-                          workflow, inference_file, rdir["posteriors"],
+                          workflow, inference_file, rdir[base],
                           variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])
+    layout.group_layout(rdir[base], [summ_file, post_file])
 
-    # add table and large posterior plot to HTML well
-    layout.group_layout(rdir["posteriors"], [summ_file, post_file])
-
-    # get files from plotting acceptance rate plot for this event
+    # files for samples acceptance_rate subsection
+    base = "samples/acceptance_rate"
     rate_files = inffu.make_inference_acceptance_rate_plot(
-                          workflow, inference_file,  rdir["samples"],
+                          workflow, inference_file, rdir[base],
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])
+    layout.group_layout(rdir[base], rates_files)
 
-    # get files from plotting PSD for this event
+    # files for detector_sensitivity summary subsection
+    base = "detector_sensitivity"
     psd_file = wf.make_spectrum_plot(workflow, [inference_file],
-                                     rdir["detector_sensitivity"],
+                                     rdir[base],
                                      tags=opts.tags + [str(num_event)])
+    layout.group_layout(rdir[base], [psd_file])
 
     # add a row to the HTML page with accpetance rate on the left
     # and the PSD plot on the right
