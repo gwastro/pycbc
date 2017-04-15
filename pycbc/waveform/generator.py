@@ -32,7 +32,8 @@ from pycbc import coordinates
 from pycbc import filter
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
-from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries
+from pycbc.waveform.utils import apply_fd_time_shift
+from pycbc.window import laltaper_timeseries as taper_timeseries
 from pycbc.detector import Detector
 from pycbc import pnutils
 import lal as _lal
