@@ -256,7 +256,7 @@ channel_names_str = " ".join([key + ":" + val for key, val in \
 plot_parameters = {}
 for option in workflow.cp.options("workflow-inference"):
     if option.startswith("plot-1d-"):
-        group = option.strip("plot-1d-")
+        group = option.replace("plot-1d-", "").replace("-", "_")
         plot_parameters[group] = workflow.cp.get_opt_tag(
                                 "workflow", option, "inference").split(" ")
 all_parameters = [param for group in plot_parameters.values()
