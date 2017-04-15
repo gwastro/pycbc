@@ -157,6 +157,14 @@ if not workflow_options and not (opts.gps_end_time != None):
 # typecast str from command line to File instances
 config_file = to_file(opts.inference_config_file)
 
+# sections for output HTML pages
+rdir = layout.SectionNumber("results",
+                            ["detectors", "priors", "posteriors",
+                             "sampler", "convergence", "workflow"])
+
+wf.makedir(rdir.base)
+wf.makedir(rdir['workflow'])
+
 # if using workflow files to find analysis times
 if workflow_options:
 
