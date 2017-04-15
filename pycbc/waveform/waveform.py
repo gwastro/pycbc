@@ -29,6 +29,7 @@ waveforms.
 import lal, lalsimulation, numpy, copy
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import real_same_precision_as, complex_same_precision_as
+from pycbc.window import laltaper_timeseries as taper_timeseries
 import pycbc.scheme as _scheme
 import inspect
 from pycbc.fft import fft
@@ -726,7 +727,7 @@ def get_waveform_filter(out, template=None, **kwargs):
         # taper the time series hp if required
         if ('taper' in input_params.keys() and \
             input_params['taper'] is not None):
-            hp = wfutils.taper_timeseries(hp, input_params['taper'],
+            hp = taper_timeseries(hp, input_params['taper'],
                                           return_lal=False)
         return td_waveform_to_fd_waveform(hp, out=out)
 
@@ -821,9 +822,9 @@ def get_two_pol_waveform_filter(outplus, outcross, template, **kwargs):
         # taper the time series hp if required
         if ('taper' in input_params.keys() and \
             input_params['taper'] is not None):
-            hp = wfutils.taper_timeseries(hp, input_params['taper'],
+            hp = taper_timeseries(hp, input_params['taper'],
                                           return_lal=False)
-            hc = wfutils.taper_timeseries(hc, input_params['taper'],
+            hc = taper_timeseries(hc, input_params['taper'],
                                           return_lal=False)
         # total duration of the waveform
         tmplt_length = len(hp) * hp.delta_t
