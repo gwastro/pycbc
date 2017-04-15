@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt
 import pycbc
 from pycbc import results
 from pycbc.inference import option_utils
+from pycbc.inference import sampling_conversions
 import sys
 
 # command line usage
@@ -70,9 +71,13 @@ for i, arg in enumerate(parameters):
     for j in range(fp.nwalkers):
 
         # plot each walker as a different line on the subplot
-        y = fp.read_samples(arg, walkers=j, thin_start=opts.thin_start,
+        file_parameters = sampling_conversions.get_parameters_set(
+                                                 parameters, fp.variable_args)
+        y = fp.read_samples(file_parameters, walkers=j,
+                            thin_start=opts.thin_start,
                             thin_interval=opts.thin_interval,
                             thin_end=opts.thin_end)
+        y = sampling_conversions.add_base_parameters(y)
         axs[i].plot(y[arg], alpha=0.25)
 
         # y-axis label
