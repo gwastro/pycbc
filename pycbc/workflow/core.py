@@ -711,9 +711,9 @@ class Workflow(pegasus_workflow.Workflow):
         ini_file_path = os.path.join(output_dir, fname)
         with open(ini_file_path, "wb") as fp:
             cp.write(fp)
-        ini_file = wf.FileList([wf.File(self.ifos, "",
-                                        self.analysis_time,
-                                        file_url="file://" + ini_file_path)])
+        ini_file = FileList([File(self.ifos, "",
+                                  self.analysis_time,
+                                  file_url="file://" + ini_file_path)])
         return ini_file
 
 class Node(pegasus_workflow.Node):
