@@ -131,11 +131,11 @@ log_file_html = wf.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     filename=log_file_txt.storage_path,
                     level=logging.INFO, filemode="w")
-logfile = logging.FileHandler(filename=log_file_txt.storage_path, mode="w")
-logfile.setLevel(logging.INFO)
+log_file = logging.FileHandler(filename=log_file_txt.storage_path, mode="w")
+log_file.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s:%(levelname)s : %(message)s")
-logfile.setFormatter(formatter)
-logging.getLogger("").addHandler(logfile)
+log_file.setFormatter(formatter)
+logging.getLogger("").addHandler(log_file)
 logging.info("Created log file %s" % log_file_txt.storage_path)
 
 # sanity check that user is either using workflow or command line
@@ -382,14 +382,14 @@ layout.single_layout(base, prior_ini)
 
 # close the log and flush to the html file
 logging.shutdown()
-with open (log_file_txt.storage_path, "r") as logfile:
-    logdata = logfile.read()
+with open (log_file_txt.storage_path, "r") as log_file:
+    log_data = log_file.read()
 log_str = """
 <p>Workflow generation script created workflow in output directory: %s</p>
 <p>Workflow name is: %s</p>
 <p>Workflow generation script run on host: %s</p>
 <pre>%s</pre>
-""" % (os.getcwd(), opts.workflow_name, socket.gethostname(), logdata)
+""" % (os.getcwd(), opts.workflow_name, socket.gethostname(), log_data)
 kwds = {"title" : "Workflow Generation Log",
         "caption" : "Log of the workflow script %s" % sys.argv[0],
         "cmd" : " ".join(sys.argv)}
