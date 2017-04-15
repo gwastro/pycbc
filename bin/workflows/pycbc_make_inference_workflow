@@ -47,6 +47,16 @@ def to_file(path, ifo=None):
     fil.PFN(path, "local")
     return fil
 
+def symlink_path(f, path):
+    """ Symlinks a path.
+    """
+    if f is None:
+        return
+    try:
+        os.symlink(f.storage_path, os.path.join(path, f.name))
+    except OSError:
+        pass
+
 # command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
 
@@ -369,11 +379,13 @@ for subsection in cp.get_subsections(opts.prior_section):
                           analysis_seg=workflow.analysis_time,
                           sections=[opts.prior_section + "-" + subsection],
                           tags=opts.tags + [subsection])
-layout.two_column_layout(rdir[base], prior_files)
+layout.group_layout(rdir[base], prior_files)
 
 # files for overall summary section
 summ_files = summ_files + coinc_table_files if workflow_options else []
 summ_files = post_table_files + post_files
+for summ_file in summ_files:
+    symlink_path(summ_file, rdir.base)
 layout.single_layout(rdir.base, summ_files)
 
 # create versioning HTML pages
