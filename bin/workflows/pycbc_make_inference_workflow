@@ -130,8 +130,7 @@ log_file_html = wf.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
 # switch saving log to file
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     filename=log_file_txt.storage_path,
-                    level=logging.INFO,
-                    filemode="w")
+                    level=logging.INFO, filemode="w")
 logfile = logging.FileHandler(filename=log_file_txt.storage_path, mode="w")
 logfile.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s:%(levelname)s : %(message)s")
