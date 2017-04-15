@@ -362,15 +362,14 @@ for num_event in range(num_events):
 
 # files for priors summary section
 base = "priors"
-layouts = []
+prior_files = []
 for subsection in cp.get_subsections(opts.prior_section):
-    prior_files = inffu.make_inference_prior_plot(
+    prior_files += inffu.make_inference_prior_plot(
                           workflow, config_file, rdir[base],
                           analysis_seg=workflow.analysis_time,
                           sections=[opts.prior_section + "-" + subsection],
                           tags=opts.tags + [subsection])
-    layouts += list(layout.grouper(prior_files, 2))
-layout.two_column_layout(rdir[base], layouts)
+layout.two_column_layout(rdir[base], prior_files)
 
 # files for overall summary section
 summ_files = summ_files + coinc_table_files if workflow_options else []
