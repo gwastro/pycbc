@@ -123,6 +123,14 @@ wf.makedir(opts.output_dir)
 # typecast str from command line to File instances
 config_file = to_file(opts.inference_config_file)
 
+# sections for output HTML pages
+rdir = layout.SectionNumber("results",
+                            ["detectors", "priors", "posteriors",
+                             "sampler", "convergence", "workflow"])
+
+wf.makedir(rdir.base)
+wf.makedir(rdir['workflow'])
+
 # if using workflow files to find analysis times
 if workflow_options:
 
@@ -162,7 +170,7 @@ else:
 
 # construct Executable for running sampler
 inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
-                         out_dir=opts.output_dir)
+                              out_dir=opts.output_dir)
 
 # get plotting parameters
 cp = WorkflowConfigParser([opts.inference_config_file])
@@ -241,27 +249,27 @@ for num_event in range(num_events):
 
     # add files from posterior summary table for this event
     layouts += [inffu.make_inference_summary_table(
-                          workflow, inference_file, opts.output_dir,
+                          workflow, inference_file, rdir["posteriors"],
                           variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
 
     # add files from posterior corner plot for this event
     layouts += [inffu.make_inference_posterior_plot(
-                          workflow, inference_file, opts.output_dir,
+                          workflow, inference_file, rdir["posteriors"],
                           variable_args=variable_args,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])]
 
     # get files from plotting acceptance rate plot for this event
     rate_files = inffu.make_inference_acceptance_rate_plot(
-                          workflow, inference_file,  opts.output_dir,
+                          workflow, inference_file,  rdir["sampler"],
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])
 
     # get files from plotting PSD for this event
     psd_file = wf.make_spectrum_plot(workflow, [inference_file],
-                                     opts.output_dir,
+                                     rdir["detectors"],
                                      tags=opts.tags + [str(num_event)])
 
     # add a row to the HTML page with accpetance rate on the left
@@ -282,14 +290,14 @@ for num_event in range(num_events):
 # additional files section
 for subsection in cp.get_subsections(opts.prior_section):
     inffu.make_inference_prior_plot(
-                          workflow, config_file, opts.output_dir,
+                          workflow, config_file, rdir["priors"],
                           analysis_seg=workflow.analysis_time,
                           sections=[opts.prior_section + "-" + subsection],
                           tags=opts.tags + [subsection])
 
 # make html pages
-wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
-                         opts.output_dir))
+wf.make_results_web_page(finalize_workflow,
+                         os.path.join(os.getcwd(), rdir.base))
 
 # add sub-workflows to workflow
 container += workflow
