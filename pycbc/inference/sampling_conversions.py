@@ -370,3 +370,32 @@ def add_base_parameters(sampling_params):
                 not converter.outputs.issubset(current_params)):
             sampling_params = converter.convert(sampling_params)
     return sampling_params
+
+def get_parameters_set(requested_params, variable_args):
+    """ Determines if any additional parameters from the InferenceFile are
+    needed to get derived parameters that user has asked for.
+
+    Parameters
+    ----------
+    requested_params : list
+        List of parameters that user wants.
+    variable_args : list
+        List of parameters that InferenceFile has.
+
+    Returns
+    -------
+    out : list
+        List of parameters that user should read from InferenceFile.
+    """
+    requested_params = set(requested_params)
+    converters = [converter() for converter in converts]
+    for converter in converters:
+        if (converter.outputs in variable_args or 
+                converter.outputs.isdisjoint(requested_params)):
+            continue
+        intersect = converter.outputs.intersection(requested_params)
+        if len(intersect) < 1:
+            continue
+        requested_params.update(converter.inputs)
+    return requested_params
+
