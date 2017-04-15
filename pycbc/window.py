@@ -137,6 +137,14 @@ class TimeDomainWindow(object):
     either of the later two, a psd or dictionary of psds must be provided on
     initialization to use for whitening.
 
+    .. note::
+        LAL tapering cannot be applied to whitened data, as the whitening will
+        mess up the function's ability to find the first/last two cycles. For
+        this reason, if lal tapering is requested on either side, whitening
+        will be done after the lal taper is applied. If lal tapering is
+        requested for both sides, then a ValueError will be raised if
+        `window_whitened` is not False.
+
     Instances of this class may be called as a function; the `apply_window`
     method is called in that case.
 
@@ -174,21 +182,32 @@ class TimeDomainWindow(object):
         time of the window occurs after (before) the end (start) of the data,
         such that the entire data segment would be zeroed.
 
-    Example
-    -------
+    Examples
+    --------
     Create a window that uses a 5 second Hann window on the left and a 4
     second Kaiser window with `beta = 8` on the right:
 
+    >>> from pycbc import window
     >>> windowts = window.TimeDomainWindow(left_taper='hann', right_taper=('kaiser', 8.), left_taper_duration=5., right_taper_duration=4.)
 
     Create a 16s time series of ones, and apply the above window to it,
     starting at 2s and ending at 15s:
 
+    >>> from pycbc import types
     >>> ts = types.TimeSeries(numpy.ones(16), delta_t=1.)
     >>> windowts(ts, left_time=2., right_time=15.).data
     ArrayWithAligned([ 0.,  0.,  0.,  0.0954915,  0.3454915, 0.6545085,
                        0.9045085,  1.,  1.,  1., 1.,  1.,  0.78875245,
                        0.36897272,  0.08273982,  0. ])
+
+    Over-whiten and window a CBC waveform using a lal taper on the left and
+    a 10ms kaiser taper ending 20ms before coalescence on the right:
+
+    >>> from pycbc import psd, waveform
+    >>> hp, _ = waveform.get_td_waveform(approximant='SEOBNRv4', mass1=40., mass2=30., delta_t=1./2048, f_lower=15.)
+    >>> aligopsd = psd.aLIGOZeroDetHighPower(4*2048/2+1, 1./4, 10.)
+    >>> windowts = window.TimeDomainWindow(left_taper='lal', right_taper=('kaiser', 8), right_taper_duration=0.01, window_whitened=2, psds=aligopsd)
+    >>> hp = windowts(hp, right_time=-0.02)
 
     See Also
     --------
@@ -222,6 +241,9 @@ class TimeDomainWindow(object):
         self.window_whitened = window_whitened
         self.left_window = {}
         self.right_window = {}
+        self._psds = None
+        self._invpsds = {}
+        self._invasds = {}
         self.set_psds(psds)
         if self.window_whitened:
             if psds is None:
@@ -235,27 +257,26 @@ class TimeDomainWindow(object):
     def set_psds(self, psds):
         """Sets the psds attribute and calculates the inverse."""
         self._psds = psds
-        self._invasds = None
+        self._invasds.clear()
+        self._invpsds.clear()
         if psds is not None:
             # temporarily suppress numpy divide by 0 warning
             numpysettings = numpy.seterr(divide='ignore')
             if not isinstance(psds, dict):
-                psds = {None: psds}
-            for ifo,psd in psds.items():
+                self._psds = {None: psds}
+            for ifo,psd in self._psds.items():
+                mask = psd.data == 0.
                 invpsd = 1./psd
-                mask = numpy.isinf(_invpsd)
-                invpsd[mask] = 0.
+                invpsd.data[mask] = 0.
                 self._invpsds[ifo] = invpsd
             numpy.seterr(**numpysettings)
-        else:
-            self._invpsds = None
 
     @property
     def psds(self):
         """Returns the psds attribute."""
         return self._psds
 
-    def whiten_waveform(htilde, ifo=None, copy=False):
+    def whiten_waveform(self, htilde, ifo=None, copy=False):
         """Whitens the given frequency domain data.
 
         If `window_whitened` = 1, the data will be divided by the ASD. If 2,
