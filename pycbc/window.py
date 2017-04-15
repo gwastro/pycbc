@@ -587,4 +587,5 @@ class TimeDomainWindow(object):
         return cls(**opts)
 
 
-__all__ = ['TimeDomainWindow', 'WindowBoundsError']
+__all__ = ['TimeDomainWindow', 'WindowBoundsError', 'laltaper_timeseries',
+           'laltaper_map', 'laltaper_func_map']
