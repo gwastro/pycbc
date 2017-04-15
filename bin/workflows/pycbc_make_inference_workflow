@@ -159,11 +159,43 @@ config_file = to_file(opts.inference_config_file)
 
 # sections for output HTML pages
 rdir = layout.SectionNumber("results",
-                            ["detectors", "priors", "posteriors",
-                             "sampler", "convergence", "workflow"])
+                            ["detector_sensitivity", "priors", "posteriors",
+                             "samples", "convergence", "workflow"])
 
 wf.makedir(rdir.base)
 wf.makedir(rdir['workflow'])
+
+# create file for workflow log
+wf_log_file = wf.File(workflow.ifos, "workflow-log", workflow.analysis_time,
+                      extension=".txt",
+                      directory=rdir["workflow"])
+
+# Create the final log file
+log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
+                                           extension='.html',
+                                           directory=rdir['workflow'])
+
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+                    filename=wf_log_file.storage_path,
+                    level=logging.INFO,
+                    filemode='w')
+
+logfile = logging.FileHandler(filename=wf_log_file.storage_path,mode='w')
+logfile.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s:%(levelname)s : %(message)s')
+logfile.setFormatter(formatter)
+logging.getLogger('').addHandler(logfile)
+logging.info("Created log file %s" % wf_log_file.storage_path)
+
+# sanity check that user is either using workflow or command line
+workflow_options = opts.bank_file != None \
+                   and opts.statmap_file != None \
+                   and opts.single_detector_triggers != None
+if not workflow_options and not (opts.gps_end_time != None):
+    raise ValueError("Must use either workflow options or --gps-end-time")
+
+# typecast str from command line to File instances
+config_file = to_file(opts.inference_config_file)
 
 # if using workflow files to find analysis times
 if workflow_options:
