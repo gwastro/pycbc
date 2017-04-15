@@ -103,8 +103,8 @@ wf.add_workflow_command_line_group(parser)
 opts = parser.parse_args()
 
 # log to terminal until we know where the path to log output file
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
-                    level=logging.INFO)
+log_format = "%(asctime)s:%(levelname)s : %(message)s"
+logging.basicConfig(format=log_format, level=logging.INFO)
 
 # create workflow and sub-workflows
 container = wf.Workflow(opts, opts.workflow_name)
@@ -128,12 +128,11 @@ log_file_html = wf.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
                         extension=".html", directory=rdir["workflow"])
 
 # switch saving log to file
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
-                    filename=log_file_txt.storage_path,
-                    level=logging.INFO, filemode="w")
+logging.basicConfig(format=log_format, level=logging.INFO,
+                    filename=log_file_txt.storage_path, filemode="w")
 log_file = logging.FileHandler(filename=log_file_txt.storage_path, mode="w")
 log_file.setLevel(logging.INFO)
-formatter = logging.Formatter("%(asctime)s:%(levelname)s : %(message)s")
+formatter = logging.Formatter(log_format)
 log_file.setFormatter(formatter)
 logging.getLogger("").addHandler(log_file)
 logging.info("Created log file %s" % log_file_txt.storage_path)
@@ -250,9 +249,11 @@ for num_event in range(num_events):
     # set GPS times for reading in data around the event
     avg_end_time = sum([end_times[num_event] \
                           for end_times in times.values()]) / len(times.keys())
-    seconds_before_time = int(workflow.cp.get_opt_tags("workflow-inference",
+    seconds_before_time = int(workflow.cp.get_opt_tags(
+                                            "workflow-inference",
                                             "data-seconds-before-trigger", ""))
-    seconds_after_time = int(workflow.cp.get_opt_tags("workflow-inference",
+    seconds_after_time = int(workflow.cp.get_opt_tags(
+                                            "workflow-inference",
                                             "data-seconds-after-trigger", ""))
     gps_start_time = int(avg_end_time) - seconds_before_time
     gps_end_time = int(avg_end_time) + seconds_after_time
@@ -299,19 +300,22 @@ for num_event in range(num_events):
                                          num_event, opts.output_dir,
                                          tags=opts.tags + [str(num_event)])]
 
-    # add files from posterior summary table for this event
-    layouts += [inffu.make_inference_summary_table(
+    # file for posterior summary table for this event
+    summ_file = inffu.make_inference_summary_table(
                           workflow, inference_file, rdir["posteriors"],
                           variable_args=variable_args,
                           analysis_seg=analysis_time,
-                          tags=opts.tags + [str(num_event)])]
+                          tags=opts.tags + [str(num_event)])
 
-    # add files from posterior corner plot for this event
-    layouts += [inffu.make_inference_posterior_plot(
+    # file for large posterior corner plot for this event
+    post_file = inffu.make_inference_posterior_plot(
                           workflow, inference_file, rdir["posteriors"],
                           variable_args=variable_args,
                           analysis_seg=analysis_time,
-                          tags=opts.tags + [str(num_event)])]
+                          tags=opts.tags + [str(num_event)])
+
+    # add table and large posterior plot to HTML well
+    layout.group_layout(rdir["posteriors"], [summ_file, post_file])
 
     # get files from plotting acceptance rate plot for this event
     rate_files = inffu.make_inference_acceptance_rate_plot(
@@ -337,9 +341,7 @@ for num_event in range(num_events):
                           tags=opts.tags + [str(num_event)]) 
     layouts += list(layout.grouper(files, 2))
 
-# add files from prior plots for this event
-# do not add them to layouts so that they appear in the
-# additional files section
+# files from prior plots for this event
 for subsection in cp.get_subsections(opts.prior_section):
     inffu.make_inference_prior_plot(
                           workflow, config_file, rdir["priors"],
