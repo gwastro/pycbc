@@ -30,7 +30,7 @@ lsctables.use_in(mycontenthandler)
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta, f_SchwarzISCO
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
-from pycbc.waveform.utils import taper_timeseries
+from pycbc.window import laltaper_timeseries as taper_timeseries
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
 from pycbc.filter import match, sigmasq, resample_to_delta_t

@@ -28,8 +28,8 @@ This modules provides classes and functions for tapering waveforms.
 import numpy
 from scipy import signal
 from pycbc import pnutils
-from pycbc.types import TimeSeries, FrequencySeries
-from pycbc.waveform.utils import taper_timeseries, time_from_frequencyseries
+from pycbc.types import Array, TimeSeries, FrequencySeries
+from pycbc.waveform.utils import time_from_frequencyseries
 
 class TDomainTaper(object):
     def __init__(self, left_taper=None, right_taper=None,
@@ -116,7 +116,7 @@ class TDomainTaper(object):
         except KeyError:
             # generate the window at this dt
             win = signal.get_window(self.left_taper, 2*taper_size)
-            self.left_window[taper_size] = win[:taper_size]
+            self.left_window[taper_size] = Array(win[:taper_size])
             return self.left_window[taper_size]
 
     def get_right_window(self, delta_t):
@@ -126,7 +126,7 @@ class TDomainTaper(object):
         except KeyError:
             # generate the window at this dt
             win = signal.get_window(self.right_taper, 2*taper_size)
-            self.right_window[taper_size] = win[taper_size:]
+            self.right_window[taper_size] = Array(win[taper_size:])
             return self.right_window[taper_size]
 
     def whiten_waveform(htilde, ifo):
