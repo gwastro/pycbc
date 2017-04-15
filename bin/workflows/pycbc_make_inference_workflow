@@ -103,7 +103,7 @@ wf.add_workflow_command_line_group(parser)
 opts = parser.parse_args()
 
 # Log to the screen until we know where the output file is
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
     level=logging.INFO)
 
 # create workflow
@@ -121,8 +121,9 @@ rdir = layout.SectionNumber("results",
                             ["detector_sensitivity", "priors", "posteriors",
                              "samples", "workflow"])
 
+# make results directories
 wf.makedir(rdir.base)
-wf.makedir(rdir['workflow'])
+wf.makedir(rdir["workflow"])
 
 # create file for workflow log
 wf_log_file = wf.File(workflow.ifos, "workflow-log", workflow.analysis_time,
@@ -130,20 +131,20 @@ wf_log_file = wf.File(workflow.ifos, "workflow-log", workflow.analysis_time,
                       directory=rdir["workflow"])
 
 # Create the final log file
-log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
-                                           extension='.html',
-                                           directory=rdir['workflow'])
+log_file_html = wf.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
+                                           extension=".html",
+                                           directory=rdir["workflow"])
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     filename=wf_log_file.storage_path,
                     level=logging.INFO,
-                    filemode='w')
+                    filemode="w")
 
-logfile = logging.FileHandler(filename=wf_log_file.storage_path,mode='w')
+logfile = logging.FileHandler(filename=wf_log_file.storage_path, mode="w")
 logfile.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s:%(levelname)s : %(message)s')
+formatter = logging.Formatter("%(asctime)s:%(levelname)s : %(message)s")
 logfile.setFormatter(formatter)
-logging.getLogger('').addHandler(logfile)
+logging.getLogger("").addHandler(logfile)
 logging.info("Created log file %s" % wf_log_file.storage_path)
 
 # sanity check that user is either using workflow or command line
@@ -165,7 +166,7 @@ if workflow_options:
     single_triggers = []
     for ifo in opts.single_detector_triggers:
         fname = opts.single_detector_triggers[ifo]
-        single_triggers.append( to_file(fname, ifo=ifo) )
+        single_triggers.append(to_file(fname, ifo=ifo))
 
     # get number of events to analyze
     num_events = int(workflow.cp.get_opt_tags("workflow-inference",
@@ -361,8 +362,8 @@ log_str = """
 <p>Workflow generation script run on host: %s</p>
 <pre>%s</pre>
 """ % (os.getcwd(), opts.workflow_name, socket.gethostname(), logdata)
-kwds = { 'title' : 'Workflow Generation Log',
-         'caption' : "Log of the workflow script %s" % sys.argv[0],
-         'cmd' :' '.join(sys.argv), }
+kwds = {"title" : "Workflow Generation Log",
+        "caption" : "Log of the workflow script %s" % sys.argv[0],
+        "cmd" : " ".join(sys.argv)}
 results.save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
 layout.single_layout(rdir["workflow"], ([log_file_html]))
