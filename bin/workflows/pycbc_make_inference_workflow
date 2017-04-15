@@ -242,11 +242,6 @@ inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
 cp = WorkflowConfigParser([opts.inference_config_file])
 variable_args = cp.options("variable_args")
 
-# add derived mass parameters if mass1 and mass2 in [variable_args]
-if "mass1" in variable_args and "mass2" in variable_args:
-    variable_args += ["mchirp", "eta"]
-variable_args.sort()
-
 # create a list that will contain all output files
 layouts = []
 
