@@ -57,17 +57,17 @@ class BaseConversion(object):
 
     def convert(self, old_maps):
         """ Convert inputs to outputs. This function accepts either
-        a WaveformArray or dict. It will return the same output type as the
+        a FieldArray or dict. It will return the same output type as the
         input mapping object. Internally it calls _convert.
 
         Parameters
         ----------
-        old_maps : {WaveformArray, dict}
+        old_maps : {FieldArray, dict}
             Mapping object to add new keys.
 
         Returns
         -------
-        {WaveformArray, dict}
+        {FieldArray, dict}
             Mapping object with new keys.
         """
         new_maps = self._convert(old_maps)
@@ -80,19 +80,19 @@ class BaseConversion(object):
 
         Parameters
         ----------
-        old_maps : {WaveformArray, dict}
+        old_maps : {FieldArray, dict}
             The mapping object to add new maps to.
         new_maps : dict
             A dict with key as parameter name and value is numpy.array.
 
         Returns
         -------
-        {WaveformArray, dict}
+        {FieldArray, dict}
             The old_maps object with new keys from new_maps.
         """
 
-        # if input is WaveformArray then return WaveformArray
-        if isinstance(old_maps, record.WaveformArray):
+        # if input is FieldArray then return FieldArray
+        if isinstance(old_maps, record.FieldArray):
             keys = new_maps.keys()
             values = [new_maps[key] for key in keys]
             old_maps = old_maps.add_fields(values, keys)
@@ -106,7 +106,7 @@ class BaseConversion(object):
 
         # else error
         else:
-            raise TypeError("Input type must be WaveformArray or dict.")
+            raise TypeError("Input type must be FieldArray or dict.")
 
     def inverse(self):
         """ Inverts the conversions being done. Inputs become outputs and
@@ -346,7 +346,7 @@ converts = [MchirpQToMass1Mass2, SphericalSpin1ToCartesianSpin1,
 
 def add_base_parameters(sampling_params):
     """ Adds a standard set of base parameters to a mapping object
-    (ie. WaveformArray or dict). The standard set of base parameters includes
+    (ie. FieldArray or dict). The standard set of base parameters includes
     mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, and redshift.
 
     This function loop over all Conversion classes in this module and sees if
@@ -355,12 +355,12 @@ def add_base_parameters(sampling_params):
 
     Parameters
     ----------
-    sampling_params : {WaveformArray, dict}
+    sampling_params : {FieldArray, dict}
         Mapping object to add new keys.
 
     Returns
     -------
-    sampling_params : {WaveformArray, dict}
+    sampling_params : {FieldArray, dict}
        Mapping object with new fields.
     """
     converters = [converter() for converter in converts]
