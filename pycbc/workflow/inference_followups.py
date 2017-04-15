@@ -224,8 +224,8 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
 
     return node.output_files
 
-def make_inference_posterior_plot(workflow, inference_file, output_dir,
-                    variable_args=None,
+def make_inference_posterior_plot(
+                    workflow, inference_file, output_dir, parameters=None,
                     name="inference_posterior", analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
 
@@ -237,8 +237,8 @@ def make_inference_posterior_plot(workflow, inference_file, output_dir,
         The file with posterior samples.
     output_dir: str
         The directory to store result plots and files.
-    variable_args : list
-        A list of parameters to use instead of [variable_args].
+    parameters : list
+        A list of parameters to plot.
     name: str
         The name in the [executables] section of the configuration file
         to use.
@@ -270,12 +270,23 @@ def make_inference_posterior_plot(workflow, inference_file, output_dir,
     # add command line options
     node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-    node.add_opt("--parameters", " ".join(variable_args))
+    node.add_opt("--parameters", " ".join(parameters))
 
     # add node to workflow
     workflow += node
 
     return node.output_files
+
+def make_inference_1d_posterior_plots(
+                    workflow, inference_file, output_dir, parameters=None,
+                    analysis_seg=None, tags=None):
+    parameters = [] if parameters is None else parameters
+    files = FileList([])
+    for parameter in parameters:
+        files += make_inference_posterior_plot(
+                    workflow, inference_file, output_dir, parameters=parameter,
+                    analysis_seg=analysis_seg, tags=tags)
+    return files
 
 def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
                     name="inference_rate", analysis_seg=None, tags=None):
