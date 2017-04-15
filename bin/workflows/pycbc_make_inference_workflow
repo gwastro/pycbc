@@ -160,7 +160,7 @@ config_file = to_file(opts.inference_config_file)
 # sections for output HTML pages
 rdir = layout.SectionNumber("results",
                             ["detector_sensitivity", "priors", "posteriors",
-                             "samples", "convergence", "workflow"])
+                             "samples", "workflow"])
 
 wf.makedir(rdir.base)
 wf.makedir(rdir['workflow'])
