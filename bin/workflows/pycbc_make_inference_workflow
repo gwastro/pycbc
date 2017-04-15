@@ -163,7 +163,7 @@ rdir = layout.SectionNumber("results",
                              "samples", "workflow"])
 
 wf.makedir(rdir.base)
-wf.makedir(rdir['workflow'])
+wf.makedir(rdir["workflow"])
 
 # create file for workflow log
 wf_log_file = wf.File(workflow.ifos, "workflow-log", workflow.analysis_time,
@@ -171,20 +171,20 @@ wf_log_file = wf.File(workflow.ifos, "workflow-log", workflow.analysis_time,
                       directory=rdir["workflow"])
 
 # Create the final log file
-log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
-                                           extension='.html',
-                                           directory=rdir['workflow'])
+log_file_html = wf.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
+                                           extension=".html",
+                                           directory=rdir["workflow"])
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     filename=wf_log_file.storage_path,
                     level=logging.INFO,
-                    filemode='w')
+                    filemode="w")
 
-logfile = logging.FileHandler(filename=wf_log_file.storage_path,mode='w')
+logfile = logging.FileHandler(filename=wf_log_file.storage_path, mode="w")
 logfile.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s:%(levelname)s : %(message)s')
+formatter = logging.Formatter("%(asctime)s:%(levelname)s : %(message)s")
 logfile.setFormatter(formatter)
-logging.getLogger('').addHandler(logfile)
+logging.getLogger("").addHandler(logfile)
 logging.info("Created log file %s" % wf_log_file.storage_path)
 
 # sanity check that user is either using workflow or command line
