@@ -382,7 +382,7 @@ for subsection in cp.get_subsections(opts.prior_section):
 layout.group_layout(rdir[base], prior_files)
 
 # files for overall summary section
-summ_files = summ_files + coinc_table_files if workflow_options else []
+summ_files = coinc_table_files if workflow_options else []
 summ_files = post_table_files + post_files
 for summ_file in summ_files:
     symlink_path(summ_file, rdir.base)
