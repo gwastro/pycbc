@@ -19,10 +19,13 @@
 import os, sys, argparse, logging, h5py, pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
-from pycbc.events import select_segments_by_definer
+from pycbc.events import select_segments_by_definer, background_bin_from_string
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
+import numpy as np
+from pycbc import conversions
+#from conversions import mtotal_from_mass1_mass2, mchirp_from_mass1_mass2
 
 def to_file(path, ifo=None):
     fil = wdax.File(os.path.basename(path))
@@ -38,6 +41,10 @@ parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
+parser.add_argument('--background-bins', nargs='+', help='list of background bin format strings')
+parser.add_argument('--f-lower', type=float,
+                    help="Lower frequency cutoff for evaluating template duration. Should"
+                         " be equal to the lower cutoff used in inspiral jobs")
 parser.add_argument('--statmap-file',
                     help="HDF format clustered coincident trigger result file")
 parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOptionAction,
@@ -47,6 +54,8 @@ parser.add_argument('--inspiral-segments',
 parser.add_argument('--inspiral-data-read-name',
                     help="Name of inspiral segmentlist containing data read in "
                          "by each analysis job.")
+parser.add_argument('--out-file', type=str, required=True,
+                    help='Full path to output file')
 parser.add_argument('--inspiral-data-analyzed-name',
                     help="Name of inspiral segmentlist containing data "
                          "analyzed by each analysis job.")
@@ -59,6 +68,7 @@ args = parser.parse_args()
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
                     level=logging.INFO)
 
+outfile = h5py.File(args.out_file,'w')
 workflow = wf.Workflow(args, args.workflow_name)
 
 wf.makedir(args.output_dir)
@@ -75,8 +85,10 @@ fsdt = {}
 insp_data_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
+#    print fname
     single_triggers.append(to_file(fname, ifo=ifo))
     fsdt[ifo] = h5py.File(args.single_detector_triggers[ifo], 'r')
+#    print fsdt[ifo]
     insp_data_seglists[ifo] = select_segments_by_definer\
         (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
          ifo=ifo)
@@ -84,12 +96,81 @@ for ifo in args.single_detector_triggers:
     #       being used to determine command-line options for other codes,
     #       please think if that code requires coalesced, or not, segments.
     insp_data_seglists[ifo].coalesce()
-    
+
+bank_data = h5py.File(args.bank_file, 'r')
+bank_data.f_lower = args.f_lower
+
+# separate data bank into bns, bulk, and edge 
+if args.background_bins:
+    data = {'mass1': bank_data['mass1'][:], 'mass2': bank_data['mass2'][:],
+            'spin1z': bank_data['spin1z'][:], 'spin2z': bank_data['spin2z'][:],
+            'f_lower': args.f_lower}
+    locs_dict = pycbc.events.background_bin_from_string(args.background_bins, data)
+    print locs_dict #Dictionary of location indices indexed by a bin name.
+else:
+    locs_dict = {'Template Bank': numpy.arange(0, len(bank_data), 1)}
+
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
-stat = f['foreground/stat'][:]
 
-sorting = stat.argsort()[::-1]
+# sort statmap file by loudest SNR and their corresponding template ids
+ustat = f['foreground/stat'][:] #gives list of newSNRs of coinc triggers
+sorting = ustat.argsort()[::-1] #gives the index sorting of each event
+stat = ustat[sorting][:]
+temp_id = f['foreground/template_id'][:] # gets template_ids
+temp_id = temp_id[sorting][:] #gets template_ids corresponding to sorted newSNR values
+# make new dictionary (final_dict) that will hold the trigger information by bin by loudest SNR
+# also make hdf output file that contains all of the information sorted by loudest SNR
+datacoinc = {'coinc/stat':stat}
+final_dict = {'bns':[], 'bulk':[], 'edge':[]}
+mass1arr = []; mass2arr = []; mchirparr = []; etaarr = []; total_massarr = []; mass_ratioarr = [];
+for val in temp_id:
+    m1 = np.array(bank_data['mass1'])
+    m2 = np.array(bank_data['mass2'])
+    mass1 = m1[val]
+    mass2 = m2[val]
+    mchirp = conversions.mchirp_from_mass1_mass2(mass1, mass2)
+    total_mass = conversions.mtotal_from_mass1_mass2(mass1,mass2)
+    eta = conversions.eta_from_mass1_mass2(mass1, mass2)
+    mass_ratio = conversions.q_from_mass1_mass2(mass1, mass2)
+    # cast all inspiral information into python dictionary
+    mass1arr.append(mass1)
+    mass2arr.append(mass2)
+    mchirparr.append(mchirp)
+    etaarr.append(eta)
+    total_massarr.append(total_mass)
+    mass_ratioarr.append(mass_ratio)
+    if mchirp <= 1.74:
+        final_dict['bns'].append(val)
+    elif total_mass <= 150:
+        final_dict['bulk'].append(val)
+    else: 
+        final_dict['edge'].append(val)
+#sort stuff in final datacoinc
+print mass1arr[:]
+datacoinc['template/mass1'] = np.array(mass1arr[:])
+datacoinc['template/mass2'] = np.array(mass2arr[:])
+datacoinc['template/mchirp'] = np.array(mchirparr[:])
+datacoinc['template/eta'] = np.array(etaarr[:])
+datacoinc['template/total_mass'] = np.array(total_massarr[:])
+datacoinc['template/mass_ratio'] = np.array(mass_ratioarr[:])
+
+datacoinc['coinc/ifar'] = np.array(f['foreground']['ifar'][:][sorting][:])
+time1 = np.array(f['foreground']['time1'][:])[sorting][:]
+time2 = np.array(f['foreground']['time2'][:][sorting][:])
+datacoinc['coinc/abs_time_delay'] = abs(time1 - time2)
+datacoinc['stat'] = np.array(stat[:])
+datacoinc['template_id'] = np.array(temp_id[:])
+
+for key in datacoinc.keys():
+    dset = outfile.create_dataset(key,data=datacoinc[key])
+
+
+#for mass_bin in locs_dict.values(): #outputs the three arrays of the three bins
+#    sort = mass_bin.argsort()
+#    sorted_bin = mass_bin[sorting][:]
+#    print sorted_bin    
+#    bank_temp_id = bank_data['template_id']
 
 if len(stat) == 0:
     # There are no triggers, make no-op job and exit
@@ -101,16 +182,30 @@ if len(stat) == 0:
 if len(stat) < num_events:
     num_events = len(stat)
 
-stat = stat[sorting][0:num_events]
+#stat = stat[sorting][0:num_events]
+#temp_id = temp_id[sorting][0:num_events]
+#print stat #prints top 5 events in order
+#print temp_id
 
-times = {f.attrs['detector_1']: f['foreground/time1'][:][sorting][0:num_events],
-         f.attrs['detector_2']: f['foreground/time2'][:][sorting][0:num_events],
-        }
-tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][:][sorting][0:num_events],
-         f.attrs['detector_2']: f['foreground/trigger_id2'][:][sorting][0:num_events],
-        }
+#for sngle_bin in final_dict.values():
+#need to indent lines
 
-bank_data = h5py.File(args.bank_file, 'r')
+for sngl_bin in final_dict.values():
+    top_ids = sngl_bin[0:num_events]
+    print top_ids
+    ind = np.where(temp_id == top_ids)
+    print  
+    #f['foreground/time1'][:]
+
+times = {f.attrs['detector_1']: f['foreground/time1'][0:num_events],
+         f.attrs['detector_2']: f['foreground/time2'][0:num_events],
+        }
+tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][0:num_events],
+         f.attrs['detector_2']: f['foreground/trigger_id2'][0:num_events],
+        }
+print times
+print tids
+#bank_data = h5py.File(args.bank_file, 'r')
 
 # loop over number of loudest events to be followed up
 for num_event in range(num_events):
