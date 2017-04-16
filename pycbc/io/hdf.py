@@ -837,4 +837,3 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         err_msg="Do not recognized --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)
     return chisq
-
