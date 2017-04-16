@@ -16,7 +16,9 @@ from pycbc_glue.ligolw import ilwd
 from pycbc_glue.ligolw import utils as ligolw_utils
 from pycbc_glue.ligolw.utils import process as ligolw_process
 
+from pycbc import types
 from pycbc import version as pycbc_version
+from pycbc.events import coinc
 from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, pnutils
@@ -840,6 +842,27 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
 
 def loudest_triggers_from_cli(opts, coinc_parameters=None,
                               sngl_parameters=None, bank_parameters=None):
+    """ Parses the CLI options related to find the loudest coincident or
+    single detector triggers.
+
+    Parameters
+    ----------
+    opts : object
+        Result of parsing the CLI with OptionParser.
+    coinc_parameters : list
+        List of datasets in statmap file to retrieve.
+    sngl_parameters : list
+        List of datasets in single-detector trigger files to retrieve.
+    bank_parameters : list
+        List of datasets in template bank file to retrieve.
+
+    Results
+    -------
+    bin_names : dict
+        A list of bin names.
+    bin_results : dict
+        A list of dict holding trigger data data.
+    """
 
     # list to hold trigger data
     bin_results = []
@@ -919,8 +942,8 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
             bin_idx = np.in1d(template_hash,
                               bank_data["template_hash"][bins_idx[bin_name]])
 
-            # sort by newSNR
-            stats = sngls.newsnr
+            # sort by detection statistic
+            stats = sngls.stat
             sorting = stats[bin_idx].argsort()[::-1]
 
             # get indices for sorted detection statistic in bin
@@ -936,8 +959,42 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
             # append results
             bin_results.append(data)
 
+    # else did not supply enough command line options
     else:
         raise ValueError("Must have --bank-file and --sngl-trigger-files")
 
     return bin_names, bin_results
+
+def insert_loudest_triggers_option_group(parser, coinc_options=True):
+    """ Add options to the optparser object for selecting templates in bins.
+
+    Parameters
+    -----------
+    parser : object
+        OptionParser instance.
+    """
+    opt_group = coinc.insert_bank_bins_option_group(parser)
+    opt_group.title = "Options for finding loudest triggers."
+    if coinc_options:
+        opt_group.add_argument("--statmap-file", default=None,
+                               help="HDF format clustered coincident trigger "
+                                    "result file.")
+        opt_group.add_argument("--statmap-group", default="foreground",
+                               help="Name of group in statmap file to "
+                                    "get triggers.")
+    opt_group.add_argument("--sngl-trigger-files", nargs="+", default=None,
+                           action=types.MultiDetOptionAction,
+                           help="HDF format merged single detector "
+                                "trigger files.")
+    opt_group.add_argument("--veto-file", default=None,
+                           help="XML file with segment_definer and "
+                                "segment table.")
+    opt_group.add_argument("--veto-segment-name", default=None,
+                           help="Name of segment to use as veto in "
+                                 "XML file's segment_definer table.")
+    opt_group.add_argument("--search-n-loudest", type=int, default=None,
+                           help="Number of triggers to search over.")
+    opt_group.add_argument("--n-loudest", type=int, default=None,
+                           help="Number of triggers to return in results.")
+    return opt_group
 
