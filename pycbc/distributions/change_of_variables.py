@@ -53,10 +53,10 @@ class UniformChangeOfVariables(uniform.Uniform):
         _to_params = self.to_params_bounds()
 
         # get Uniform distribution for from-parameters
-        self.from_dist = Uniform(**_from_params)
+        self.from_dist = uniform.Uniform(**_from_params)
 
         # get Uniform distribution for to-parameters
-        self.to_dist = Uniform(**_to_params)
+        self.to_dist = uniform.Uniform(**_to_params)
 
     def mass1_mass2_from_mchirp_q_jacobian(**kwargs):
         """ Returns the Jacobian of mass1 and mass2 from chirp mass
