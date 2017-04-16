@@ -841,8 +841,10 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
 def loudest_triggers_from_cli(opts, coinc_parameters=None,
                               sngl_parameters=None, bank_parameters=None):
 
+    # list to hold trigger data
     bin_results = []
 
+    # list of IFOs
     ifos = opts.sngl_trigger_files.keys()
 
     # get indices of bins in template bank
@@ -852,15 +854,15 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
     # if taking triggers from statmap file
     if opts.statmap_file and opts.bank_file and opts.sngl_trigger_files:
 
+        # loop over each bin
         for i, bin_name in enumerate(bin_names):
-
             data = {}
 
             # get template has and detection statistic for coincident events
             statmap = ForegroundTriggers(
                                  opts.statmap_file, opts.bank_file,
                                  sngl_files=opts.sngl_trigger_files.values(),
-                                 n_loudest=opts.statmap_n_loudest,
+                                 n_loudest=opts.search_n_loudest,
                                  group=opts.statmap_group)
             template_hash = statmap.get_bankfile_array("template_hash")
             stat = statmap.get_coincfile_array("stat")
@@ -874,21 +876,25 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
 
             # get variables for n-th loudest triggers
             for p in coinc_parameters:
-                data[p] = statmap.get_coincfile_array(p)[bin_idx][sorting][:opts.n_loudest]
+                arr = statmap.get_coincfile_array(p)
+                data[p] = arr[bin_idx][sorting][:opts.n_loudest]
             for p in sngl_parameters:
                 for ifo in ifos:
-                    data["/".join([ifo, p])] = \
-                          statmap.get_snglfile_array_dict(p)[ifo][bin_idx][sorting][:opts.n_loudest]
+                    key = "/".join([ifo, p])
+                    arr = statmap.get_snglfile_array_dict(p)[ifo]
+                    data[key] = arr[bin_idx][sorting][:opts.n_loudest]
             for p in bank_parameters:
-                data[p] = statmap.get_bankfile_array(p)[bin_idx][sorting][:opts.n_loudest]
+                arr = statmap.get_bankfile_array(p)
+                data[p] = arr[bin_idx][sorting][:opts.n_loudest]
 
+            # append results
             bin_results.append(data)
 
     # if taking triggers from single detector file
     elif opts.bank_file and opts.sngl_trigger_files:
 
+        # loop over each bin
         for i, bin_name in enumerate(bin_names):
-
             data = {}
 
             # only use one IFO
@@ -903,7 +909,8 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
                                        opts.veto_segment_name, None, ifo)
 
             # cluster
-            n_loudest = opts.statmap_n_loudest if opts.statmap_n_loudest else len(sngls.template_id)
+            n_loudest = opts.search_n_loudest \
+                           if opts.search_n_loudest else len(sngls.template_id)
             sngls.mask_to_n_loudest_clustered_events(n_loudest=n_loudest)
             template_hash = \
                   sngls.bank["template_hash"][:][sngls.template_id]
@@ -912,16 +919,21 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
             bin_idx = np.in1d(template_hash,
                               bank_data["template_hash"][bins_idx[bin_name]])
 
-            # sort by statistic
+            # sort by newSNR
             stats = sngls.newsnr
             sorting = stats[bin_idx].argsort()[::-1]
 
             # get indices for sorted detection statistic in bin
             for p in sngl_parameters:
-                data["/".join([ifo, p])] = sngls.get_column(p)[bin_idx][sorting][:opts.n_loudest]
+                key = "/".join([ifo, p])
+                arr = sngls.get_column(p)
+                data[key] = arr[bin_idx][sorting][:opts.n_loudest]
             for p in bank_parameters:
-                data[p] = sngls.bank[p][:][sngls.template_id][bin_idx][sorting][:opts.n_loudest]
+                arr = sngls.bank[p][:]
+                data[p] = \
+                      arr[sngls.template_id][bin_idx][sorting][:opts.n_loudest]
 
+            # append results
             bin_results.append(data)
 
     else:
