@@ -901,18 +901,20 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
             sngls =  SingleDetTriggers(opts.sngl_trigger_files[ifo],
                                        opts.bank_file, opts.veto_file,
                                        opts.veto_segment_name, None, ifo)
+
+            # cluster
+            n_loudest = opts.statmap_n_loudest if opts.statmap_n_loudest else len(sngls.template_id)
+            sngls.mask_to_n_loudest_clustered_events(n_loudest=n_loudest)
             template_hash = \
                   sngls.bank["template_hash"][:][sngls.template_id]
-            stats = sngls.newsnr
 
             # get indices of triggers in bin
             bin_idx = np.in1d(template_hash,
                               bank_data["template_hash"][bins_idx[bin_name]])
 
             # sort by statistic
+            stats = sngls.newsnr
             sorting = stats[bin_idx].argsort()[::-1]
-
-            print len(bin_idx), len(stats), len(template_hash), len(sngls.template_id)
 
             # get indices for sorted detection statistic in bin
             for p in sngl_parameters:
