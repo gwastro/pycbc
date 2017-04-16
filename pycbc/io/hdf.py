@@ -837,3 +837,93 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         err_msg="Do not recognized --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)
     return chisq
+
+def loudest_triggers_from_cli(opts, coinc_parameters=None,
+                              sngl_parameters=None, bank_parameters=None):
+
+    bin_results = []
+
+    ifos = opts.sngl_trigger_files.keys()
+
+    # get indices of bins in template bank
+    bins_idx, bank_data = events.bank_bins_from_cli(opts, ifos=ifos)
+    bin_names = bins_idx.keys()
+
+    # if taking triggers from statmap file
+    if opts.statmap_file and opts.bank_file and opts.sngl_trigger_files:
+
+        for i, bin_name in enumerate(bin_names):
+
+            data = {}
+
+            # get template has and detection statistic for coincident events
+            statmap = ForegroundTriggers(
+                                 opts.statmap_file, opts.bank_file,
+                                 sngl_files=opts.sngl_trigger_files.values(),
+                                 n_loudest=opts.statmap_n_loudest,
+                                 group=opts.statmap_group)
+            template_hash = statmap.get_bankfile_array("template_hash")
+            stat = statmap.get_coincfile_array("stat")
+
+            # get indices of triggers in bin
+            bin_idx = np.in1d(template_hash,
+                              bank_data["template_hash"][bins_idx[bin_name]])
+
+            # get indices for sorted detection statistic in bin
+            sorting = stat[bin_idx].argsort()[::-1]
+
+            # get variables for n-th loudest triggers
+            for p in coinc_parameters:
+                data[p] = statmap.get_coincfile_array(p)[bin_idx][sorting][:opts.n_loudest]
+            for p in sngl_parameters:
+                for ifo in ifos:
+                    data["/".join([ifo, p])] = \
+                          statmap.get_snglfile_array_dict(p)[ifo][bin_idx][sorting][:opts.n_loudest]
+            for p in bank_parameters:
+                data[p] = statmap.get_bankfile_array(p)[bin_idx][sorting][:opts.n_loudest]
+
+            bin_results.append(data)
+
+    # if taking triggers from single detector file
+    elif opts.bank_file and opts.sngl_trigger_files:
+
+        for i, bin_name in enumerate(bin_names):
+
+            data = {}
+
+            # only use one IFO
+            if len(opts.sngl_trigger_files.keys()) == 1:
+                ifo = opts.sngl_trigger_files.keys()[0]
+            else:
+                raise ValueError("Too many IFOs")
+
+            # get newSNR as statistic from single detector files
+            sngls =  SingleDetTriggers(opts.sngl_trigger_files[ifo],
+                                       opts.bank_file, opts.veto_file,
+                                       opts.veto_segment_name, None, ifo)
+            template_hash = \
+                  sngls.bank["template_hash"][:][sngls.template_id]
+            stats = sngls.newsnr
+
+            # get indices of triggers in bin
+            bin_idx = np.in1d(template_hash,
+                              bank_data["template_hash"][bins_idx[bin_name]])
+
+            # sort by statistic
+            sorting = stats[bin_idx].argsort()[::-1]
+
+            print len(bin_idx), len(stats), len(template_hash), len(sngls.template_id)
+
+            # get indices for sorted detection statistic in bin
+            for p in sngl_parameters:
+                data["/".join([ifo, p])] = sngls.get_column(p)[bin_idx][sorting][:opts.n_loudest]
+            for p in bank_parameters:
+                data[p] = sngls.bank[p][:][sngls.template_id][bin_idx][sorting][:opts.n_loudest]
+
+            bin_results.append(data)
+
+    else:
+        raise ValueError("Must have --bank-file and --sngl-trigger-files")
+
+    return bin_names, bin_results
+
