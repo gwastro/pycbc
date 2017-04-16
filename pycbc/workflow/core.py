@@ -688,7 +688,34 @@ class Workflow(pegasus_workflow.Workflow):
             except ValueError:
                 # There was no storage path
                 pass
-    
+
+    def save_config(self, fname, output_dir, cp=None):
+        """ Writes configuration file to disk and returns a pycbc.workflow.File
+        instance for the configuration file.
+
+        Parameters
+        -----------
+        fname : string
+            The filename of the configuration file written to disk.
+        output_dir : string
+            The directory where the file is written to disk.
+        cp : ConfigParser object
+            The ConfigParser object to write. If None then uses self.cp.
+
+        Returns
+        -------
+        FileList
+            The FileList object with the configuration file.
+        """
+        cp = self.cp if cp is None else cp
+        ini_file_path = os.path.join(output_dir, fname)
+        with open(ini_file_path, "wb") as fp:
+            cp.write(fp)
+        ini_file = FileList([File(self.ifos, "",
+                                  self.analysis_time,
+                                  file_url="file://" + ini_file_path)])
+        return ini_file
+
 class Node(pegasus_workflow.Node):
     def __init__(self, executable):
         super(Node, self).__init__(executable)

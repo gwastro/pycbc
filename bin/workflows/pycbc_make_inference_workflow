@@ -342,15 +342,17 @@ container.save(filename=opts.output_file, output_map_path=opts.output_map)
 # write html well
 layout.two_column_layout(rdir.base, layouts)
 
-# save global config file to results directory
+# save workflow configuration file
 base = rdir["workflow/configuration"]
 wf.makedir(base)
-ini_file_path = os.path.join(base, "configuration.ini")
-with open(ini_file_path, "wb") as ini_fh:
-    container.cp.write(ini_fh)
-ini_file = wf.FileList([wf.File(workflow.ifos, "", workflow.analysis_time,
-                        file_url="file://" + ini_file_path)])
-layout.single_layout(base, ini_file)
+wf_ini = workflow.save_config("workflow.ini", base, container.cp)
+layout.single_layout(base, wf_ini)
+
+# save prior configuration file
+base = rdir["priors/configuration"]
+wf.makedir(base)
+prior_ini = workflow.save_config("priors.ini", base, cp)
+layout.single_layout(base, prior_ini)
 
 # close the log and flush to the html file
 logging.shutdown()
