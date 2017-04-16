@@ -837,3 +837,58 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         err_msg="Do not recognized --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)
     return chisq
+
+def bank_bins_from_cli(opts, ifos=None):
+    """ Parses the CLI options related to binning templates in the bank.
+
+    Parameters
+    ----------
+    opts : object
+        Result of parsing the CLI with OptionParser.
+    ifos : list
+        List of IFOs.
+
+    Results
+    -------
+    bins_idx : dict
+        A dict with bin names as key and an array of their indices as value.
+    bank : dict
+        A dict of the datasets from the bank file.
+    """
+    bank = {}
+    fp = h5py.File(opts.bank_file)
+    for key in fp.keys():
+        bank[key] = fp[key][:]
+    bank["f_lower"] = float(opts.f_lower) if opts.f_lower else None
+    if opts.template_bins:
+        bins_idx = events.background_bin_from_string(
+                                               opts.template_bins, bank)
+    else:
+        bins_idx = {"all" : numpy.arange(0, len(bank[fp.keys()[0]]))}
+    fp.close()
+    return bins_idx, bank
+
+def insert_bank_bins_option_group(parser):
+    """ Add options to the optparser object for selecting templates in bins.
+
+    Parameters
+    -----------
+    parser : object
+        OptionParser instance.
+    """
+    bins_group = parser.add_argument_group(
+                                 "Options for selecting templates in bins.")
+    bins_group.add_argument("--bank-bins", nargs="+", default=None,
+                            help="Ordered list of mass bin upper boundaries. "
+                                 "An ordered list of type-boundary pairs, "
+                                 "applied sequentially. Must provide a name "
+                                 "(can be any unique string for tagging "
+                                 "purposes), the parameter to bin "
+                                 "on, and the membership condition via "
+                                 "'lt' / 'gt' operators. "
+                                 "Ex. name1:component:lt2 name2:total:lt15")
+    bins_group.add_argument("--bank-file", default=None,
+                            help="HDF format template bank file.")
+    bins_group.add_argument("--f-lower", default=None,
+                            help="Low frequency cutoff in Hz.")
+    return bins_group
