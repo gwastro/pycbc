@@ -24,6 +24,7 @@
 """ This modules contains functions for calculating and manipulating
 coincident triggers.
 """
+import h5py
 import numpy, logging, pycbc.pnutils, copy, lal
 
 def background_bin_from_string(background_bins, data):
@@ -115,8 +116,7 @@ def bank_bins_from_cli(opts, ifos=None):
         bank[key] = fp[key][:]
     bank["f_lower"] = float(opts.f_lower) if opts.f_lower else None
     if opts.template_bins:
-        bins_idx = events.background_bin_from_string(
-                                               opts.template_bins, bank)
+        bins_idx = background_bin_from_string(opts.template_bins, bank)
     else:
         bins_idx = {"all" : numpy.arange(0, len(bank[fp.keys()[0]]))}
     fp.close()
