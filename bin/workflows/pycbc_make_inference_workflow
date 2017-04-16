@@ -241,9 +241,6 @@ inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
 # read inference configuration file
 cp = WorkflowConfigParser([opts.inference_config_file])
 
-# create a list that will contain all output files
-layouts = []
-
 # get channel names
 channel_names = {}
 for ifo in workflow.ifos:
