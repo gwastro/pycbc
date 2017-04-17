@@ -316,34 +316,34 @@ class MassSpinToCartesianSpin(BaseConversion):
     @classmethod
     def _convert_inverse(cls, maps):
         out["chi_eff"] = conversions.chi_eff(
-                               maps[parameters.mass1], maps[parameters.mass2,
-                               maps[parameters.spin1z], maps[parameters.spin2z)
+                              maps[parameters.mass1], maps[parameters.mass2],
+                              maps[parameters.spin1z], maps[parameters.spin2z])
         out["chi_a"] = conversions.chi_a(
-                               maps[parameters.mass1], maps[parameters.mass2,
-                               maps[parameters.spin1x], maps[parameters.spin1y,
-                               maps[parameters.spin2x], maps[parameters.spin2y)
+                              maps[parameters.mass1], maps[parameters.mass2],
+                              maps[parameters.spin1x], maps[parameters.spin1y],
+                              maps[parameters.spin2x], maps[parameters.spin2y])
         out["xi1"] = conversions.primary_xi(
-                               maps[parameters.mass1], maps[parameters.mass2,
-                               maps[parameters.spin1x], maps[parameters.spin1y,
-                               maps[parameters.spin2x], maps[parameters.spin2y)
+                              maps[parameters.mass1], maps[parameters.mass2],
+                              maps[parameters.spin1x], maps[parameters.spin1y],
+                              maps[parameters.spin2x], maps[parameters.spin2y])
         out["xi2"] = conversions.secondary_xi(
-                               maps[parameters.mass1], maps[parameters.mass2,
-                               maps[parameters.spin1x], maps[parameters.spin1y,
-                               maps[parameters.spin2x], maps[parameters.spin2y)
+                              maps[parameters.mass1], maps[parameters.mass2],
+                              maps[parameters.spin1x], maps[parameters.spin1y],
+                              maps[parameters.spin2x], maps[parameters.spin2y])
         out["phi_a"] = conversions.phi_a(
-                               maps[parameters.spin1x], maps[parameters.spin1y],
-                               maps[parameters.spin2x], maps[parameters.spin2y])
+                              maps[parameters.spin1x], maps[parameters.spin1y],
+                              maps[parameters.spin2x], maps[parameters.spin2y])
         out["phi_s"] = conversions.phi_s(
-                               maps[parameters.spin1x], maps[parameters.spin1y],
-                               maps[parameters.spin2x], maps[parameters.spin2y])
-       return out
+                              maps[parameters.spin1x], maps[parameters.spin1y],
+                              maps[parameters.spin2x], maps[parameters.spin2y])
+        return out
 
 class Xi1Xi2ToChiP(BaseConversion):
     _inputs = ["x1", "x2"]
     _outputs = ["chi_p"]
     @classmethod
     def _convert(cls, maps):
-
+        return {}
 
 class DistanceToRedshift(BaseConversion):
     """ Converts distance to redshift.
