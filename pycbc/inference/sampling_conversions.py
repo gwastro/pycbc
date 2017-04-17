@@ -441,8 +441,14 @@ def add_base_parameters(sampling_params, v):
     sampling_params : {FieldArray, dict}
        Mapping object with new fields.
     """
+    print "FIELDNAMES", sampling_params.fieldnames
     # convert sampling parameters into base parameters
     for converter in to_base_converters:
+        current_params = set(sampling_params.fieldnames)
+        if (converter.inputs.issubset(current_params) and
+                not converter.outputs.issubset(current_params)):
+            sampling_params = converter.convert(sampling_params)
+    for converter in from_base_converters:
         current_params = set(sampling_params.fieldnames)
         if (converter.inputs.issubset(current_params) and
                 not converter.outputs.issubset(current_params)):
@@ -466,6 +472,18 @@ def get_parameters_set(requested_params, variable_args):
         List of parameters that user should read from InferenceFile.
     """
     requested_params = set(requested_params)
+
+    # if asking for a derived parameter add base parameters to request
+    for converter in from_base_converters:#_converters_from_base_parameters():
+        if (converter.outputs in variable_args or
+                converter.outputs.isdisjoint(requested_params)):
+            continue
+        intersect = converter.outputs.intersection(requested_params)
+        if len(intersect) < 1 or intersect.issubset(converter.inputs):
+            continue
+        print "USED", converter
+        requested_params.update(converter.inputs)
+    # if asking for a base parameter add sampling parameters to request
     for converter in to_base_converters:
         if (converter.outputs in variable_args or 
                 converter.outputs.isdisjoint(requested_params)):
@@ -473,6 +491,8 @@ def get_parameters_set(requested_params, variable_args):
         intersect = converter.outputs.intersection(requested_params)
         if len(intersect) < 1 or intersect.issubset(converter.inputs):
             continue
-        requested_params.update(converter.inputs)
+        if converter.inputs.issubset(set(variable_args)):
+            requested_params.update(converter.inputs)
+    print "REQUEST", requested_params
     return requested_params
 
