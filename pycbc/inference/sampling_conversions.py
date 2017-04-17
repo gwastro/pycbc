@@ -265,8 +265,8 @@ class MassSpinToCartesianSpin(BaseConversion):
     (eg. effective spin) to cartesian spin coordinates.
     """
     # mass-spin parameters not in pycbc.waveform.parameters yet
-    _inputs = [parameters.mass1, parameters.mass2, "chi_eff", "chi_a",
-               "xi1", "xi2", "phi_a", "phi_s"]
+    _inputs = [parameters.mass1, parameters.mass2, parameters.chi_eff,
+               "chi_a", "xi1", "xi2", "phi_a", "phi_s"]
     _outputs = [parameters.mass1, parameters.mass2,
                 parameters.spin1x, parameters.spin1y, parameters.spin1z,
                 parameters.spin2x, parameters.spin2y, parameters.spin2z]
@@ -323,7 +323,7 @@ class MassSpinToCartesianSpin(BaseConversion):
 
     @classmethod
     def _convert_inverse(cls, maps):
-        out["chi_eff"] = conversions.chi_eff(
+        out[parmeters.chi_eff] = conversions.chi_eff(
                               maps[parameters.mass1], maps[parameters.mass2],
                               maps[parameters.spin1z], maps[parameters.spin2z])
         out["chi_a"] = conversions.chi_a(
@@ -506,5 +506,6 @@ def get_parameters_set(requested_params, variable_args):
             continue
         if converter.inputs.issubset(set(variable_args)):
             requested_params.update(converter.inputs)
+    print requested_params
     return requested_params
 
