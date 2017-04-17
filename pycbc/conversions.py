@@ -379,12 +379,8 @@ def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Returns the effective precession spin from mass1, mass2, spin1x,
     spin1y, spin2x, and spin2y.
     """
-    spinx_p = primary_spin(mass1, mass2, spin1x, spin2x)
-    spiny_p = primary_spin(mass1, mass2, spin1y, spin2y)
-    spinx_s = secondary_spin(mass1, mass2, spin1x, spin2x)
-    spiny_s = secondary_spin(mass1, mass2, spin1y, spin2y)
-    xi1 = secondary_xi(mass1, mass2, spinx_s, spiny_s)
-    xi2 = primary_xi(spinx_p, spiny_p)
+    xi1 = secondary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y)
+    xi2 = primary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y)
     return chi_p_from_xi1_xi2(xi1, xi2)
 
 def phi_a(spin1x, spin1y, spin2x, spin2y):
@@ -437,9 +433,7 @@ def primary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
 def secondary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Returns the effective precession spin argument for the smaller mass.
     """
-    spinx = primary_spin(mass1, mass2, spin1x, spin2x)
-    spiny = secondary_spin(mass1, mass2, spin1y, spin2y)
-    return xi2_from_mass1_mass2_spin2x_spin2y(spinx, spiny)
+    return xi2_from_mass1_mass2_spin2x_spin2y(mass1, mass2, spin2x, spin2y)
 
 def xi1_from_spin1x_spin1y(spin1x, spin1y):
     """Returns the effective precession spin argument for the larger mass.
