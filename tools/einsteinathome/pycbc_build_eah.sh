@@ -74,7 +74,6 @@ build_pcre=false
 build_fftw=true
 build_framecpp=false
 build_preinst_before_lalsuite=true
-build_minimal_lalsuite=false
 build_subprocess32=false
 build_hdf5=true
 build_freetype=true
@@ -254,8 +253,6 @@ usage="
 
     --clean-lalsuite                checkout and build lalsuite from scratch
 
-    --build-minimal-lalsuite        build as little of lalsuite as possible to make pycbc_inspiral
-
     --clean-sundays                 perform a clean-lalsuite build on sundays
 
     --clean-pycbc                   check out pycbc git repo from scratch
@@ -305,7 +302,6 @@ for i in $*; do
         --print-env) ;;
         --no-pycbc-update) pycbc_branch="HEAD";;
         --no-lalsuite-update) no_lalsuite_update=true;;
-        --build-minimal-lalsuite) build_minimal_lalsuite=true;;
         --bema-testing)
             pycbc_branch=einsteinathome_testing
             pycbc_remote=bema-ligo;;
