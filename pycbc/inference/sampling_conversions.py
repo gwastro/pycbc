@@ -456,7 +456,7 @@ def add_base_parameters(sampling_params):
                  str(sampling_params.fieldnames))
     return sampling_params
 
-def get_parameters_set(requested_params, variable_args):
+def get_parameters_set(requested_params, variable_args, valid_params=None):
     """ Determines if any additional parameters from the InferenceFile are
     needed to get derived parameters that user has asked for.
 
@@ -484,6 +484,11 @@ def get_parameters_set(requested_params, variable_args):
         eqn = opt.split(":")[0]
         new_params += s.split(" ")
     requested_params = set(requested_params + new_params)
+
+    # can pass a list of valid parameters to remove garbage parameters
+    # from parsing above
+    valid_params = set(valid_params) if valid_params else requested_params
+    requested_params = requested_params.intersection(valid_params)
 
     # if asking for a base parameter add sampling parameters to request
     for converter in to_base_converters:
