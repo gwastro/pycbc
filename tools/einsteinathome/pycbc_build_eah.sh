@@ -74,7 +74,6 @@ build_pcre=false
 build_fftw=true
 build_framecpp=false
 build_preinst_before_lalsuite=true
-build_minimal_lalsuite=false
 build_subprocess32=false
 build_hdf5=true
 build_freetype=true
@@ -139,15 +138,13 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux CERN SLC re
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
     link_gcc_version=4.4.7
     gcc_path="/usr/bin"
-    build_ssl=false
     build_python=true
+    build_hdf5=true
     build_pegasus=false
     build_fftw=false
     build_gsl=false
-    build_hdf5=false
     build_ssl=false
     build_lapack=false
-    build_gsl=false
     build_freetype=false
     build_zlib=false
     build_wrapper=false
@@ -254,8 +251,6 @@ usage="
 
     --clean-lalsuite                checkout and build lalsuite from scratch
 
-    --build-minimal-lalsuite        build as little of lalsuite as possible to make pycbc_inspiral
-
     --clean-sundays                 perform a clean-lalsuite build on sundays
 
     --clean-pycbc                   check out pycbc git repo from scratch
@@ -305,7 +300,6 @@ for i in $*; do
         --print-env) ;;
         --no-pycbc-update) pycbc_branch="HEAD";;
         --no-lalsuite-update) no_lalsuite_update=true;;
-        --build-minimal-lalsuite) build_minimal_lalsuite=true;;
         --bema-testing)
             pycbc_branch=einsteinathome_testing
             pycbc_remote=bema-ligo;;
@@ -880,7 +874,7 @@ EOF
     cd lalsuite-build
     echo -e "\\n\\n>> [`date`] Configuring lalsuite" >&3
     ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
-        --disable-all-lal --enable-lalframe --enable-lalmetaio --enable-lalsimulation --enable-swig-python
+        --disable-all-lal --enable-lalframe --enable-lalmetaio --enable-lalsimulation --enable-lalinspiral --enable-lalpulsar --enable-swig-python
     if $build_dlls; then
 	echo '#include "/usr/include/stdlib.h"
 extern int setenv(const char *name, const char *value, int overwrite);
