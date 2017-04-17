@@ -211,7 +211,7 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
     """
     _inputs = [parameters.spin1_a, parameters.spin1_azimuthal,
                parameters.spin1_polar]
-    _outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
+    _outputs = [parameters.spin1x, parameters.spin1y, parameters.spin1z]
 
     @classmethod
     def _convert(cls, maps):
@@ -401,8 +401,7 @@ class BaseToPrecessionMassSpin(BaseConversion):
         return {"chi_p" : conversions.chi_p(
                       maps[parameters.mass1], maps[parameters.mass2],
                       maps[parameters.spin1x], maps[parameters.spin1y],
-                      maps[parameters.spin1z], maps[parameters.spin2x],
-                      maps[parameters.spin2y], maps[parameters.spin2z])}
+                      maps[parameters.spin2x], maps[parameters.spin2y])}
 
 # list of all Conversions to/from base parameters
 to_base_converters = [
@@ -485,6 +484,17 @@ def get_parameters_set(requested_params, variable_args):
         eqn = opt.split(":")[0]
         new_params += s.split(" ")
     requested_params = set(requested_params + new_params)
+
+    # if asking for a base parameter add sampling parameters to request
+    for converter in to_base_converters:
+        if (converter.outputs in variable_args or
+                converter.outputs.isdisjoint(requested_params)):
+            continue
+        intersect = converter.outputs.intersection(requested_params)
+        if len(intersect) < 1 or intersect.issubset(converter.inputs):
+            continue
+        if converter.inputs.issubset(set(variable_args)):
+            requested_params.update(converter.inputs)
 
     # if asking for a derived parameter add base parameters to request
     for converter in from_base_converters:
