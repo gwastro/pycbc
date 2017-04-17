@@ -194,77 +194,75 @@ for sngl_bin in final_dict.values():
     top_ids = sngl_bin[0:num_events]
     print top_ids
     ind = np.where(temp_id == top_ids)
-    print  
-    #f['foreground/time1'][:]
 
-times = {f.attrs['detector_1']: f['foreground/time1'][0:num_events],
-         f.attrs['detector_2']: f['foreground/time2'][0:num_events],
-        }
-tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][0:num_events],
-         f.attrs['detector_2']: f['foreground/trigger_id2'][0:num_events],
-        }
-print times
-print tids
+    times = {f.attrs['detector_1']: f['foreground/time1'][0:num_events],
+             f.attrs['detector_2']: f['foreground/time2'][0:num_events],
+            }
+    tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][0:num_events],
+             f.attrs['detector_2']: f['foreground/trigger_id2'][0:num_events],
+            }
+    print times
+    print tids
 #bank_data = h5py.File(args.bank_file, 'r')
 
 # loop over number of loudest events to be followed up
-for num_event in range(num_events):
-    files = wf.FileList([])
+    for num_event in range(num_events):
+        files = wf.FileList([])
     
-    ifo_times = '%s:%s %s:%s' % (times.keys()[0], times[times.keys()[0]][num_event],
-                                 times.keys()[1], times[times.keys()[1]][num_event])
+        ifo_times = '%s:%s %s:%s' % (times.keys()[0], times[times.keys()[0]][num_event],
+                                     times.keys()[1], times[times.keys()[1]][num_event])
 
-    ifo_tids = '%s:%s %s:%s' % (tids.keys()[0], tids[tids.keys()[0]][num_event],
-                                 tids.keys()[1], tids[tids.keys()[1]][num_event])
+        ifo_tids = '%s:%s %s:%s' % (tids.keys()[0], tids[tids.keys()[0]][num_event],
+                                     tids.keys()[1], tids[tids.keys()[1]][num_event])
     
-    bank_id = f['foreground/template_id'][:][sorting][num_event]
+        bank_id = f['foreground/template_id'][:][sorting][num_event]
     
-    layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
-                              coinc_file, args.output_dir, n_loudest=num_event, 
-                              tags=args.tags + [str(num_event)]),)        
-    files += mini.make_trigger_timeseries(workflow, single_triggers,
-                              ifo_times, args.output_dir, special_tids=ifo_tids,
-                              tags=args.tags + [str(num_event)])
+        layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
+                                  coinc_file, args.output_dir, n_loudest=num_event, 
+                                  tags=args.tags + [str(num_event)]),)        
+        files += mini.make_trigger_timeseries(workflow, single_triggers,
+                                  ifo_times, args.output_dir, special_tids=ifo_tids,
+                                  tags=args.tags + [str(num_event)])
     
-    params = {}                          
-    for ifo in times:
-        params['%s_end_time' % ifo] = times[ifo][num_event]
+        params = {}                          
+        for ifo in times:
+            params['%s_end_time' % ifo] = times[ifo][num_event]
+            try:
+                # Only present for precessing case
+                params['u_vals_%s'%ifo] = \
+                                     fsdt[ifo][ifo]['u_vals'][tids[ifo][num_event]]
+            except:
+                pass
+
+        params['mass1'] = bank_data['mass1'][bank_id]
+        params['mass2'] = bank_data['mass2'][bank_id]
+        params['spin1z'] = bank_data['spin1z'][bank_id]
+        params['spin2z'] = bank_data['spin2z'][bank_id]
+        # don't require precessing template info if not present
         try:
-            # Only present for precessing case
-            params['u_vals_%s'%ifo] = \
-                                 fsdt[ifo][ifo]['u_vals'][tids[ifo][num_event]]
-        except:
+            params['spin1x'] = bank_data['spin1x'][bank_id]
+            params['spin1y'] = bank_data['spin1y'][bank_id]
+            params['spin2x'] = bank_data['spin2x'][bank_id]
+            params['spin2y'] = bank_data['spin2y'][bank_id]
+            params['inclination'] = bank_data['inclination'][bank_id]
+        except KeyError:
             pass
 
-    params['mass1'] = bank_data['mass1'][bank_id]
-    params['mass2'] = bank_data['mass2'][bank_id]
-    params['spin1z'] = bank_data['spin1z'][bank_id]
-    params['spin2z'] = bank_data['spin2z'][bank_id]
-    # don't require precessing template info if not present
-    try:
-        params['spin1x'] = bank_data['spin1x'][bank_id]
-        params['spin1y'] = bank_data['spin1y'][bank_id]
-        params['spin2x'] = bank_data['spin2x'][bank_id]
-        params['spin2y'] = bank_data['spin2y'][bank_id]
-        params['inclination'] = bank_data['inclination'][bank_id]
-    except KeyError:
-        pass
-
-    files += mini.make_single_template_plots(workflow, insp_segs,
-                                    args.inspiral_data_read_name,
-                                    args.inspiral_data_analyzed_name,  params,
-                                    args.output_dir,
+        files += mini.make_single_template_plots(workflow, insp_segs,
+                                        args.inspiral_data_read_name,
+                                        args.inspiral_data_analyzed_name,  params,
+                                        args.output_dir,
+                                        tags=args.tags + [str(num_event)])
+    
+        for single in single_triggers:
+            time = times[single.ifo][num_event]
+            files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
+                                    time, args.output_dir,
+                                    data_segments=insp_data_seglists[single.ifo],
                                     tags=args.tags + [str(num_event)])
     
-    for single in single_triggers:
-        time = times[single.ifo][num_event]
-        files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
-                                time, args.output_dir,
-                                data_segments=insp_data_seglists[single.ifo],
-                                tags=args.tags + [str(num_event)])
-    
-    layouts += list(layout.grouper(files, 2))
-    num_event += 1
+        layouts += list(layout.grouper(files, 2))
+        num_event += 1
 
-workflow.save(filename=args.output_file, output_map=args.output_map)
-layout.two_column_layout(args.output_dir, layouts)
+    workflow.save(filename=args.output_file, output_map=args.output_map)
+    layout.two_column_layout(args.output_dir, layouts)
