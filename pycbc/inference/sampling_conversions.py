@@ -473,10 +473,21 @@ def get_parameters_set(requested_params, variable_args):
     out : list
         List of parameters that user should read from InferenceFile.
     """
-    requested_params = set(requested_params)
+
+    # try to parse any equations by putting all strings together
+    # this will get some garbage but ensures all alphanumeric/underscored
+    # parameter names are added
+    new_params = []
+    for opt in requested_params:
+        s = ""
+        for ch in opt:
+            s += ch if ch.isalnum() or ch == "_" else " "
+        eqn = opt.split(":")[0]
+        new_params += s.split(" ")
+    requested_params = set(requested_params + new_params)
 
     # if asking for a derived parameter add base parameters to request
-    for converter in from_base_converters:#_converters_from_base_parameters():
+    for converter in from_base_converters:
         if (converter.outputs in variable_args or
                 converter.outputs.isdisjoint(requested_params)):
             continue
@@ -484,6 +495,7 @@ def get_parameters_set(requested_params, variable_args):
         if len(intersect) < 1 or intersect.issubset(converter.inputs):
             continue
         requested_params.update(converter.inputs)
+
     # if asking for a base parameter add sampling parameters to request
     for converter in to_base_converters:
         if (converter.outputs in variable_args or 
