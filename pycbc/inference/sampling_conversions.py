@@ -17,6 +17,7 @@ This modules provides classes and functions for converting sampling parameters
 to a set of base parameters.
 """
 
+import logging
 import numpy
 from pycbc import conversions
 from pycbc import coordinates
@@ -422,7 +423,7 @@ def _converters_from_base_parameters():
         tmp_converters.append(converter)
     return tmp_converters + from_base_converters
 
-def add_base_parameters(sampling_params, v):
+def add_base_parameters(sampling_params):
     """ Adds a standard set of base parameters to a mapping object
     (ie. FieldArray or dict). The standard set of base parameters includes
     mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, and redshift.
@@ -441,7 +442,6 @@ def add_base_parameters(sampling_params, v):
     sampling_params : {FieldArray, dict}
        Mapping object with new fields.
     """
-    print "FIELDNAMES", sampling_params.fieldnames
     # convert sampling parameters into base parameters
     for converter in to_base_converters:
         current_params = set(sampling_params.fieldnames)
@@ -453,6 +453,8 @@ def add_base_parameters(sampling_params, v):
         if (converter.inputs.issubset(current_params) and
                 not converter.outputs.issubset(current_params)):
             sampling_params = converter.convert(sampling_params)
+    logging.info("Found the following parameters in InferenceFile: %s",
+                 str(sampling_params.fieldnames))
     return sampling_params
 
 def get_parameters_set(requested_params, variable_args):
@@ -481,7 +483,6 @@ def get_parameters_set(requested_params, variable_args):
         intersect = converter.outputs.intersection(requested_params)
         if len(intersect) < 1 or intersect.issubset(converter.inputs):
             continue
-        print "USED", converter
         requested_params.update(converter.inputs)
     # if asking for a base parameter add sampling parameters to request
     for converter in to_base_converters:
@@ -493,6 +494,5 @@ def get_parameters_set(requested_params, variable_args):
             continue
         if converter.inputs.issubset(set(variable_args)):
             requested_params.update(converter.inputs)
-    print "REQUEST", requested_params
     return requested_params
 
