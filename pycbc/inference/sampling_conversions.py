@@ -95,7 +95,14 @@ class BaseConversion(object):
         if isinstance(old_maps, record.FieldArray):
             keys = new_maps.keys()
             values = [new_maps[key] for key in keys]
-            old_maps = old_maps.add_fields(values, keys)
+            for key, vals in zip(keys, values):
+                try:
+                    old_maps = old_maps.add_fields([vals], [key])
+                except ValueError:
+                    if numpy.all(old_maps[key] == vals):
+                        continue
+                    else:
+                        old_maps[key] = vals
             return old_maps
 
         # if input is dict then return dict
@@ -257,8 +264,8 @@ class MassSpinToCartesianSpin(BaseConversion):
     (eg. effective spin) to cartesian spin coordinates.
     """
     # mass-spin parameters not in pycbc.waveform.parameters yet
-    _inputs = ["mass1", "mass2", "chi_eff", "chi_a", "xi1", "xi2",
-               "phi_a", "phi_s"]
+    _inputs = [parameters.mass1, parameters.mass2, "chi_eff", "chi_a",
+               "xi1", "xi2", "phi_a", "phi_s"]
     _outputs = [parameters.mass1, parameters.mass2,
                 parameters.spin1x, parameters.spin1y, parameters.spin1z,
                 parameters.spin2x, parameters.spin2y, parameters.spin2z]
@@ -338,13 +345,6 @@ class MassSpinToCartesianSpin(BaseConversion):
                               maps[parameters.spin2x], maps[parameters.spin2y])
         return out
 
-class Xi1Xi2ToChiP(BaseConversion):
-    _inputs = ["x1", "x2"]
-    _outputs = ["chi_p"]
-    @classmethod
-    def _convert(cls, maps):
-        return {}
-
 class DistanceToRedshift(BaseConversion):
     """ Converts distance to redshift.
     """
@@ -376,15 +376,53 @@ class DistanceToRedshift(BaseConversion):
             A dict with key as parameter name and value as numpy.array or float
             of converted values.
         """
-        out = {parameters.redshift : cosmology.redshift(maps["distance"])}
+        out = {parameters.redshift : cosmology.redshift(
+                                                    maps[parameters.distance])}
         return out
 
-# list of all Conversions
-converts = [MchirpQToMass1Mass2, SphericalSpin1ToCartesianSpin1,
-            SphericalSpin2ToCartesianSpin2, MassSpinToCartesianSpin,
-            DistanceToRedshift]
+class BaseToAlignedMassSpin(BaseConversion):
+    _inputs = [parameters.mass1, parameters.mass2,
+               parameters.spin1z, parameters.spin2z]
+    _outputs = [parameters.chi_eff]
+    @classmethod
+    def _convert(cls, maps):
+        return {parameters.chi_eff : conversions.chi_eff(
+                             maps[parameters.mass1], maps[parameters.mass2],
+                             maps[parameters.spin1z], maps[parameters.spin2z])}
 
-def add_base_parameters(sampling_params):
+class BaseToPrecessionMassSpin(BaseConversion):
+    _inputs = [parameters.mass1, parameters.mass2,
+               parameters.spin1x, parameters.spin1y, parameters.spin1z,
+               parameters.spin2x, parameters.spin2y, parameters.spin2z]
+    _outputs = ["chi_p"]
+    @classmethod
+    def _convert(cls, maps):
+        return {"chi_p" : conversions.chi_p(
+                      maps[parameters.mass1], maps[parameters.mass2],
+                      maps[parameters.spin1x], maps[parameters.spin1y],
+                      maps[parameters.spin1z], maps[parameters.spin2x],
+                      maps[parameters.spin2y], maps[parameters.spin2z])}
+
+# list of all Conversions to/from base parameters
+to_base_converters = [
+    MchirpQToMass1Mass2(), SphericalSpin1ToCartesianSpin1(),
+    SphericalSpin2ToCartesianSpin2(), MassSpinToCartesianSpin(),
+    DistanceToRedshift(),
+]
+from_base_converters = [
+    BaseToAlignedMassSpin(), BaseToPrecessionMassSpin(),
+]
+converters = to_base_converters + from_base_converters
+
+def _converters_from_base_parameters():
+    # get list of all conversions available from base parameters
+    tmp_converters = []
+    for converter in to_base_converters:
+        converter.inverse()
+        tmp_converters.append(converter)
+    return tmp_converters + from_base_converters
+
+def add_base_parameters(sampling_params, v):
     """ Adds a standard set of base parameters to a mapping object
     (ie. FieldArray or dict). The standard set of base parameters includes
     mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, and redshift.
@@ -403,8 +441,8 @@ def add_base_parameters(sampling_params):
     sampling_params : {FieldArray, dict}
        Mapping object with new fields.
     """
-    converters = [converter() for converter in converts]
-    for converter in converters:
+    # convert sampling parameters into base parameters
+    for converter in to_base_converters:
         current_params = set(sampling_params.fieldnames)
         if (converter.inputs.issubset(current_params) and
                 not converter.outputs.issubset(current_params)):
@@ -428,13 +466,12 @@ def get_parameters_set(requested_params, variable_args):
         List of parameters that user should read from InferenceFile.
     """
     requested_params = set(requested_params)
-    converters = [converter() for converter in converts]
-    for converter in converters:
+    for converter in to_base_converters:
         if (converter.outputs in variable_args or 
                 converter.outputs.isdisjoint(requested_params)):
             continue
         intersect = converter.outputs.intersection(requested_params)
-        if len(intersect) < 1:
+        if len(intersect) < 1 or intersect.issubset(converter.inputs):
             continue
         requested_params.update(converter.inputs)
     return requested_params
