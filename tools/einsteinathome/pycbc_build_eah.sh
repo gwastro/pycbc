@@ -138,15 +138,13 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux CERN SLC re
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
     link_gcc_version=4.4.7
     gcc_path="/usr/bin"
-    build_ssl=false
     build_python=true
+    build_hdf5=true
     build_pegasus=false
     build_fftw=false
     build_gsl=false
-    build_hdf5=false
     build_ssl=false
     build_lapack=false
-    build_gsl=false
     build_freetype=false
     build_zlib=false
     build_wrapper=false
