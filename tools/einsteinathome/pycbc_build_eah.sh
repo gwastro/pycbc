@@ -1400,18 +1400,6 @@ python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRA
 
 fi # if $run_analysis
 
-if $silent_build ; then
-    # close stdin and stdout
-    exec 1>&-
-    exec 2>&-
-
-    # open stdout as $LOG_FILE file for read and write.
-    exec 1<>$LOG_FILE
-
-    # redirect stderr to stdout
-    exec 2>&1
-fi
-
 # zip weave cache
 echo -e "\\n\\n>> [`date`] zipping weave cache"
 cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
@@ -1470,14 +1458,6 @@ if $build_gating_tool; then
     if echo ".$pycbc_tag" | egrep '^\.v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
         mv dist/pycbc_inspiral_osg "dist/pycbc_inspiral_osg_$pycbc_tag"
     fi
-fi
-
-if $silent_build ; then
-    # redirect stdout and stderr back to the screen
-    exec 1>&-
-    exec 2>&-
-    exec 1>&3
-    exec 2>&4
 fi
 
 # remove lock
