@@ -17,6 +17,7 @@ This modules provides classes and functions for converting sampling parameters
 to a set of base parameters.
 """
 
+import copy
 import logging
 import numpy
 from pycbc import conversions
@@ -100,10 +101,7 @@ class BaseConversion(object):
                 try:
                     old_maps = old_maps.add_fields([vals], [key])
                 except ValueError:
-                    if numpy.all(old_maps[key] == vals):
-                        continue
-                    else:
-                        old_maps[key] = vals
+                    old_maps[key] = vals
             return old_maps
 
         # if input is dict then return dict
@@ -246,6 +244,18 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
 
     @classmethod
     def _convert_inverse(cls, maps):
+        """ This function converts from cartesian to spherical spins.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of converted values.
+        """
         sx, sy, sz = cls._inputs
         data = coordinates.cartesian_to_spherical(maps[sx], maps[sy], maps[sz])
         out = {param : val for param, val in zip(cls._outputs, data)}
@@ -259,92 +269,6 @@ class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
     _inputs = [parameters.spin2_a, parameters.spin2_azimuthal,
                parameters.spin2_polar]
     _outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
-
-class MassSpinToCartesianSpin(BaseConversion):
-    """ Converts component masses, and mass-weighted spin parameters
-    (eg. effective spin) to cartesian spin coordinates.
-    """
-    # mass-spin parameters not in pycbc.waveform.parameters yet
-    _inputs = [parameters.mass1, parameters.mass2, parameters.chi_eff,
-               "chi_a", "xi1", "xi2", "phi_a", "phi_s"]
-    _outputs = [parameters.mass1, parameters.mass2,
-                parameters.spin1x, parameters.spin1y, parameters.spin1z,
-                parameters.spin2x, parameters.spin2y, parameters.spin2z]
-
-    @classmethod
-    def _convert(cls, maps):
-        """ This function converts from spherical to cartesian spins.
-
-        Parameters
-        ----------
-        maps : a mapping object
-
-        Examples
-        --------
-        Convert a dict of numpy.array:
-
-        >>> import numpy
-        >>> from pycbc.inference import sampling_conversions
-        >>> from pycbc.waveform import parameters
-        >>> cl = sampling_conversions.MassSpinToCartesianSpin()
-        >>> cl.convert({parameters.mass1 : numpy.array([10]), parameters.mass2 : numpy.array([10]), "chi_eff" : numpy.array([0.1]), "chi_a" : numpy.array([0.1]), "xi1" : numpy.array([0.1]), "xi2" : numpy.array([0.1]), "phi_a" : numpy.array([0.1]), "phi_s" : numpy.array([0.1])})
-            {'chi_a': array([ 0.1]), 'chi_eff': array([ 0.1]), 'mass1': array([10]), 'mass2': array([10]), 'phi_a': array([ 0.1]),
-             'phi_s': array([ 0.1]), 'spin1x': array([ 0.09950042]), 'spin1y': array([ 0.00998334]), 'spin1z': array([ 0.]),
-             'spin2x': array([ 0.1]), 'spin2y': array([ 0.]), 'spin2z': array([ 0.2]), 'xi1': array([ 0.1]), 'xi2': array([ 0.1])}
-
-        Returns
-        -------
-        out : dict
-            A dict with key as parameter name and value as numpy.array or float
-            of converted values.
-        """
-        out = {}
-        out[parameters.spin1x] = conversions.spin1x_from_xi1_phi_a_phi_s(
-                               maps["xi1"], maps["phi_a"], maps["phi_s"])
-        out[parameters.spin1y] = conversions.spin1y_from_xi1_phi_a_phi_s(
-                               maps["xi1"], maps["phi_a"], maps["phi_s"])
-        out[parameters.spin1z] = \
-                         conversions.spin1z_from_mass1_mass2_chi_eff_chi_a(
-                               maps[parameters.mass1], maps[parameters.mass2],
-                               maps["chi_eff"], maps["chi_a"])
-        out[parameters.spin2x] = \
-                         conversions.spin2x_from_mass1_mass2_xi2_phi_a_phi_s(
-                               maps[parameters.mass1], maps[parameters.mass2],
-                               maps["xi2"], maps["phi_a"], maps["phi_s"])
-        out[parameters.spin2y] = \
-                         conversions.spin2y_from_mass1_mass2_xi2_phi_a_phi_s(
-                               maps[parameters.mass1], maps[parameters.mass2],
-                               maps["xi2"], maps["phi_a"], maps["phi_s"])
-        out[parameters.spin2z] = \
-                         conversions.spin2z_from_mass1_mass2_chi_eff_chi_a(
-                               maps[parameters.mass1], maps[parameters.mass2],
-                               maps["chi_eff"], maps["chi_a"])
-        return out
-
-    @classmethod
-    def _convert_inverse(cls, maps):
-        out[parmeters.chi_eff] = conversions.chi_eff(
-                              maps[parameters.mass1], maps[parameters.mass2],
-                              maps[parameters.spin1z], maps[parameters.spin2z])
-        out["chi_a"] = conversions.chi_a(
-                              maps[parameters.mass1], maps[parameters.mass2],
-                              maps[parameters.spin1x], maps[parameters.spin1y],
-                              maps[parameters.spin2x], maps[parameters.spin2y])
-        out["xi1"] = conversions.primary_xi(
-                              maps[parameters.mass1], maps[parameters.mass2],
-                              maps[parameters.spin1x], maps[parameters.spin1y],
-                              maps[parameters.spin2x], maps[parameters.spin2y])
-        out["xi2"] = conversions.secondary_xi(
-                              maps[parameters.mass1], maps[parameters.mass2],
-                              maps[parameters.spin1x], maps[parameters.spin1y],
-                              maps[parameters.spin2x], maps[parameters.spin2y])
-        out["phi_a"] = conversions.phi_a(
-                              maps[parameters.spin1x], maps[parameters.spin1y],
-                              maps[parameters.spin2x], maps[parameters.spin2y])
-        out["phi_s"] = conversions.phi_s(
-                              maps[parameters.spin1x], maps[parameters.spin1y],
-                              maps[parameters.spin2x], maps[parameters.spin2y])
-        return out
 
 class DistanceToRedshift(BaseConversion):
     """ Converts distance to redshift.
@@ -381,12 +305,40 @@ class DistanceToRedshift(BaseConversion):
                                                     maps[parameters.distance])}
         return out
 
-class BaseToAlignedMassSpin(BaseConversion):
-    _inputs = [parameters.mass1, parameters.mass2,
+class AlignedMassSpinToCartesianSpin(BaseConversion):
+    _inputs = [parameters.mass1, parameters.mass2, parameters.chi_eff, "chi_a"]
+    _outputs = [parameters.mass1, parameters.mass2,
                parameters.spin1z, parameters.spin2z]
-    _outputs = [parameters.chi_eff, "chi_a"]
+
     @classmethod
     def _convert(cls, maps):
+        out = {}
+        out[parameters.spin1z] = \
+                         conversions.spin1z_from_mass1_mass2_chi_eff_chi_a(
+                               maps[parameters.mass1], maps[parameters.mass2],
+                               maps[parameters.chi_eff], maps["chi_a"])
+
+        out[parameters.spin2z] = \
+                         conversions.spin2z_from_mass1_mass2_chi_eff_chi_a(
+                               maps[parameters.mass1], maps[parameters.mass2],
+                               maps[parameters.chi_eff], maps["chi_a"])
+        return out
+
+    @classmethod
+    def _convert_inverse(cls, maps):
+        """ This function converts from component masses and cartesian spins to
+        mass-weighted spin parameters aligned with the angular momentum.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of converted values.
+        """
         out = {
             parameters.chi_eff : conversions.chi_eff(
                              maps[parameters.mass1], maps[parameters.mass2],
@@ -397,30 +349,88 @@ class BaseToAlignedMassSpin(BaseConversion):
         }
         return out
 
-class BaseToPrecessionMassSpin(BaseConversion):
+class PrecessionMassSpinToCartesianSpin(BaseConversion):
     _inputs = [parameters.mass1, parameters.mass2,
-               parameters.spin1x, parameters.spin1y, parameters.spin1z,
-               parameters.spin2x, parameters.spin2y, parameters.spin2z]
-    _outputs = ["chi_p"]
+               "xi1", "xi2", "phi_a", "phi_s"]
+    _outputs = [parameters.mass1, parameters.mass2,
+                parameters.spin1x, parameters.spin1y,
+                parameters.spin2x, parameters.spin2y]
+
     @classmethod
     def _convert(cls, maps):
-        return {"chi_p" : conversions.chi_p(
-                      maps[parameters.mass1], maps[parameters.mass2],
-                      maps[parameters.spin1x], maps[parameters.spin1y],
-                      maps[parameters.spin2x], maps[parameters.spin2y])}
+        out = {}
+        out[parameters.spin1x] = conversions.spin1x_from_xi1_phi_a_phi_s(
+                               maps["xi1"], maps["phi_a"], maps["phi_s"])
+        out[parameters.spin1y] = conversions.spin1y_from_xi1_phi_a_phi_s(
+                               maps["xi1"], maps["phi_a"], maps["phi_s"])
+        out[parameters.spin2x] = \
+                         conversions.spin2x_from_mass1_mass2_xi2_phi_a_phi_s(
+                               maps[parameters.mass1], maps[parameters.mass2],
+                               maps["xi2"], maps["phi_a"], maps["phi_s"])
+        out[parameters.spin2y] = \
+                         conversions.spin2y_from_mass1_mass2_xi2_phi_a_phi_s(
+                               maps[parameters.mass1], maps[parameters.mass2],
+                               maps["xi2"], maps["phi_a"], maps["phi_s"])
+        return out
+
+    @classmethod
+    def _convert_inverse(cls, maps):
+        """ This function converts from component masses and cartesian spins to
+        mass-weighted spin parameters perpendicular with the angular momentum.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of converted values.
+        """
+        out["xi1"] = conversions.primary_xi(
+                             maps[parameters.mass1], maps[parameters.mass2],
+                             maps[parameters.spin1x], maps[parameters.spin1y],
+                             maps[parameters.spin2x], maps[parameters.spin2y])
+        out["xi2"] = conversions.secondary_xi(
+                             maps[parameters.mass1], maps[parameters.mass2],
+                             maps[parameters.spin1x], maps[parameters.spin1y],
+                             maps[parameters.spin2x], maps[parameters.spin2y])
+        out["phi_a"] = conversions.phi_a(
+                             maps[parameters.spin1x], maps[parameters.spin1y],
+                             maps[parameters.spin2x], maps[parameters.spin2y])
+        out["phi_s"] = conversions.phi_s(
+                             maps[parameters.spin1x], maps[parameters.spin1y],
+                             maps[parameters.spin2x], maps[parameters.spin2y])
+        return out
+
+class ChiPToCartesianSpin(BaseConversion):
+    _inputs = ["chi_p"]
+    _outputs = [parameters.mass1, parameters.mass2,
+                parameters.spin1x, parameters.spin1y,
+                parameters.spin2x, parameters.spin2y]
+
+    @classmethod
+    def _convert_inverse(cls, maps):
+        out = {}
+        out["chi_p"] = conversions.chi_p(
+                             maps[parameters.mass1], maps[parameters.mass2],
+                             maps[parameters.spin1x], maps[parameters.spin1y],
+                             maps[parameters.spin2x], maps[parameters.spin2y])
+        return out
 
 # list of all Conversions to/from base parameters
 to_base_converters = [
-    MchirpQToMass1Mass2(), SphericalSpin1ToCartesianSpin1(),
-    SphericalSpin2ToCartesianSpin2(), MassSpinToCartesianSpin(),
-    DistanceToRedshift(),
+    MchirpQToMass1Mass2(), DistanceToRedshift(),
+    SphericalSpin1ToCartesianSpin1(), SphericalSpin2ToCartesianSpin2(),
+    AlignedMassSpinToCartesianSpin(), PrecessionMassSpinToCartesianSpin(),
+    ChiPToCartesianSpin(),
 ]
-from_base_converters = [
-    BaseToAlignedMassSpin(), BaseToPrecessionMassSpin(),
-]
-converters = to_base_converters + from_base_converters
+from_base_converters = copy.deepcopy(to_base_converters)
+for c in from_base_converters: c.inverse()
+all_converters = from_base_converters + to_base_converters
 
-def add_base_parameters(sampling_params):
+def add_base_parameters(sampling_params, variable_args, converters=None):
     """ Adds a standard set of base parameters to a mapping object
     (ie. FieldArray or dict). The standard set of base parameters includes
     mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, and redshift.
@@ -433,23 +443,32 @@ def add_base_parameters(sampling_params):
     ----------
     sampling_params : {FieldArray, dict}
         Mapping object to add new keys.
+    converters : list
+        List of BaseConversions instances to check.
 
     Returns
     -------
     sampling_params : {FieldArray, dict}
        Mapping object with new fields.
     """
+    for converter in converters:
+        try:
+            sampling_params = converter.convert(sampling_params)
+        except:
+            continue
+    return sampling_params
+
     # convert sampling parameters into base parameters
-    for converter in to_base_converters:
+    converters = all_converters if converters is None else converters
+    for converter in converters:
         current_params = set(sampling_params.fieldnames)
         if (converter.inputs.issubset(current_params) and
                 not converter.outputs.issubset(current_params)):
-            sampling_params = converter.convert(sampling_params)
-    for converter in from_base_converters:
-        current_params = set(sampling_params.fieldnames)
-        if (converter.inputs.issubset(current_params) and
-                not converter.outputs.issubset(current_params)):
-            sampling_params = converter.convert(sampling_params)
+            try:
+                sampling_params = converter.convert(sampling_params)
+            except NotImplementedError:
+                print "Error", converter
+                continue
     logging.info("Found the following parameters in InferenceFile: %s",
                  str(sampling_params.fieldnames))
     return sampling_params
@@ -458,17 +477,23 @@ def get_parameters_set(requested_params, variable_args, valid_params=None):
     """ Determines if any additional parameters from the InferenceFile are
     needed to get derived parameters that user has asked for.
 
+    First it will try to add any base parameters that are required to calculate
+    the derived parameters. Then it will add any sampling parameters that are
+    required to calculate the base parameters needed.
+
     Parameters
     ----------
     requested_params : list
         List of parameters that user wants.
     variable_args : list
         List of parameters that InferenceFile has.
+    valid_params : list
+        List of parameters that can be accepted.
 
     Returns
     -------
-    out : list
-        List of parameters that user should read from InferenceFile.
+    requested_params : list
+        Updated list of parameters that user wants.
     """
 
     # try to parse any equations by putting all strings together
@@ -488,22 +513,69 @@ def get_parameters_set(requested_params, variable_args, valid_params=None):
         valid_params = set(valid_params)
         requested_params = requested_params.intersection(valid_params)
 
-    # if asking for a base parameter add sampling parameters to request
-    requested_parameters = _add_parameters_from_converters(
-                     requested_params, variable_args, to_base_converters)
+    print "initial_request", requested_params
 
-    # if asking for a derived parameter add base parameters to request
-    requested_parameters = _add_parameters_from_converters(
-                     requested_params, variable_args, from_base_converters)
+    new_base_c = []
+    for converter in from_base_converters:
+        if (converter.outputs.issubset(variable_args) or
+                converter.outputs.isdisjoint(requested_params)):
+            continue
+        intersect = converter.outputs.intersection(requested_params)
+        if len(intersect) < 1 or intersect.issubset(converter.inputs):
+            continue
+        requested_params.update(converter.inputs)
+        new_base_c.append(converter)
 
-    # if asking for a base parameter add sampling parameters to request
-    requested_parameters = _add_parameters_from_converters(
-                     requested_params, variable_args, to_base_converters)
+    to_base_c = []
+#    for converter in to_base_converters:
+#        if (converter.outputs.issubset(variable_args) or
+#                converter.outputs.isdisjoint(requested_params)):
+#            continue
+#        intersect = converter.outputs.intersection(requested_params)
+#        if len(intersect) < 1 or intersect.issubset(converter.inputs):
+#            continue
+#        requested_params.update(converter.inputs)
+#        to_base_c.append(converter)
 
-    return requested_params
+    samp_c = []
+    for converter in to_base_converters:
+        if converter.inputs.issubset(variable_args) and len(converter.outputs.intersection(requested_params)) > 0:
+            requested_params.update(converter.inputs)
+            samp_c.append(converter)
+
+    print "REQUESTED", requested_params
+
+    return list(requested_params), samp_c + new_base_c + to_base_c
+
+    # first try to add any base parameters that are used to calculate
+    # the requested parameters
+#    cs = _add_parameters_from_converters(
+#                     requested_params, variable_args, from_base_converters)
+
+    # second try to add any sampling parameters that are used to calculate
+    # the base parameters needed
+#    cs += _add_parameters_from_converters(
+#                     requested_params, variable_args, to_base_converters)
+
+#    return requested_params, cs
 
 def _add_parameters_from_converters(requested_params, variable_args,
                                     converters_list):
+    """ For a list of BaseConversion instance checks if outputs are requested
+    by the user. If a subset of the outputs are requested, then add the inputs
+    to requested parameters.
+
+    Parameters
+    ----------
+    requested_params : set
+        List of parameters that user wants.
+    variable_args : list
+        List of parameters that InferenceFile has.
+    converters_list : list
+        List of BaseConversions instances to check.
+    """
+
+    cs = []
     for converter in converters_list:
         if (converter.outputs in variable_args or
                 converter.outputs.isdisjoint(requested_params)):
@@ -512,4 +584,17 @@ def _add_parameters_from_converters(requested_params, variable_args,
         if len(intersect) < 1 or intersect.issubset(converter.inputs):
             continue
         requested_params.update(converter.inputs)
-    return requested_params
+        cs.append(converter)
+    return cs
+
+def use_cs(samples, cs):
+    print "fieldnames", samples.fieldnames
+    for c in cs:
+        try:
+            print "doing", c
+            samples = c.convert(samples)
+            print "added", c.outputs, c
+        except NotImplementedError:
+            print "failed", c.outputs, c
+            continue
+    return samples
