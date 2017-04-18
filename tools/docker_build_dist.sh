@@ -61,9 +61,9 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   pushd /pycbc
   for p in "x86_64/composer_xe_2015.0.090/composer_xe_2015.0.090.tar.gz" "bank-files/testbank_TF2v4ROM.hdf" ; do
     set +e
-    test -r $p || wget $wget_opts ${primary_url}/${p}
+    test -r `basename $p` || wget $wget_opts ${primary_url}/${p}
     set -e
-    test -r $p || wget $wget_opts ${secondary_url}/${p}
+    test -r `basename $p` || wget $wget_opts ${secondary_url}/${p}
   done
   popd
 
