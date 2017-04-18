@@ -173,10 +173,15 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_virtualenv" ] ; then
 
 cat << EOF >> $VIRTUAL_ENV/bin/activate
 
-# If a suitable MKL exists, set it up
+# if a suitable MKL exists, set it up
 if [ -f /opt/intel/composer_xe_2015/mkl/bin/mklvars.sh ] ; then
+  # location on syracuse cluster
   . /opt/intel/composer_xe_2015/mkl/bin/mklvars.sh intel64
+elif [ -f /opt/intel/2015/composer_xe_2015/mkl/bin/mklvars.sh ] ; then
+  # location on atlas cluster
+  . /opt/intel/2015/composer_xe_2015/mkl/bin/mklvars.sh
 elif [ -f /ldcg/intel/2017u0/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh ] ; then
+  # location on cit cluster
   . /ldcg/intel/2017u0/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh intel64
 fi
 
