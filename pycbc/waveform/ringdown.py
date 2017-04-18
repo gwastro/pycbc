@@ -238,6 +238,35 @@ def lm_deltaf(mass, spin, modes):
 
     return min(df.values())
 
+# Functions for tapering #######################################################
+
+def apply_taper(delta_t, taper, f_0, tau, amp, phi):
+    """Return tapering window.
+    """
+
+    # Times of tapering do not include t=0
+    taper_times = -numpy.arange(delta_t, taper*tau, delta_t)
+    taper_times.sort()
+    taper_hp = amp * numpy.exp(10*taper_times/tau) * \
+                     numpy.cos(two_pi*f_0*taper_times + phi)
+    taper_hc = amp * numpy.exp(10*taper_times/tau) * \
+                     numpy.sin(two_pi*f_0*taper_times + phi)
+
+    return taper_hp, taper_hc, len(taper_times), taper_times[0]
+
+def taper_shift(waveform, output):
+    """Add waveform to output with waveform shifted accordingly (for tapering
+    multi-mode ringdowns)
+    """
+
+    if len(waveform) == len(output):
+        output.data += waveform.data
+        output._epoch = waveform._epoch
+    else:
+        output.data[len(output)-len(waveform):] += waveform.data
+
+    return output
+
 # Functions to generate ringdown waveforms ####################################
 
 def get_td_qnm(template=None, taper=None, **kwargs):
@@ -303,7 +332,8 @@ def get_td_qnm(template=None, taper=None, **kwargs):
     hp = amp * numpy.exp(-times/tau) * numpy.cos(two_pi*f_0*times + phi)
     hc = amp * numpy.exp(-times/tau) * numpy.sin(two_pi*f_0*times + phi)
 
-    if taper is None:
+    # If size of tapering window is less than delta_t, do not apply taper.
+    if taper is None or delta_t > taper*tau:
         hplus = TimeSeries(zeros(kmax), delta_t=delta_t)
         hcross = TimeSeries(zeros(kmax), delta_t=delta_t)
         hplus.data[:kmax] = hp
@@ -312,23 +342,16 @@ def get_td_qnm(template=None, taper=None, **kwargs):
         return hplus, hcross
 
     else:
-        # Times of tapering do not include t=0
-        taper_times = -numpy.arange(delta_t, taper*tau, delta_t)
-        taper_times.sort()
-        taper_window = len(taper_times)
-        taper_hp = amp * numpy.exp(10*taper_times/tau) * \
-                         numpy.cos(two_pi*f_0*taper_times + phi)
-        taper_hc = amp * numpy.exp(10*taper_times/tau) * \
-                         numpy.sin(two_pi*f_0*taper_times + phi)
-
+        taper_hp, taper_hc, taper_window, start = apply_taper(delta_t, taper,
+                                                        f_0, tau, amp, phi)
         hplus = TimeSeries(zeros(taper_window+kmax), delta_t=delta_t)
         hcross = TimeSeries(zeros(taper_window+kmax), delta_t=delta_t)
         hplus.data[:taper_window] = taper_hp
         hplus.data[taper_window:] = hp
-        hplus._epoch = taper_times[0]
+        hplus._epoch = start
         hcross.data[:taper_window] = taper_hc
         hcross.data[taper_window:] = hc
-        hcross._epoch = taper_times[0]
+        hcross._epoch = start
 
         return hplus, hcross
 
@@ -491,9 +514,8 @@ def get_td_lm(template=None, taper=None, **kwargs):
     # Different overtones will have different tapering window-size
     # Find maximum window size to create long enough output vector
     if taper is not None:
-        # Times of tapering do not include t=0
-        taper_window = [int(taper*tau[n]/delta_t) - 1 for n in range(nmodes)]
-        kmax += max(taper_window)
+        taper_window = int(taper*max(tau)/delta_t)
+        kmax += taper_window
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
@@ -503,15 +525,12 @@ def get_td_lm(template=None, taper=None, **kwargs):
                             tau=tau[n], phi=phis['%d%d%d' %(l,m,n)],
                             amp=amps['%d%d%d' %(l,m,n)],
                             delta_t=delta_t, t_final=t_final)
-        # Shift waveforms that have smaller tapering window
-        if len(hplus) == len(outplus):
+        if taper is None:
             outplus.data += hplus.data
-            outplus._epoch = hplus._epoch
             outcross.data += hcross.data
-            outcross._epoch = hcross._epoch
         else:
-            outplus.data[len(outplus)-len(hplus):] += hplus.data
-            outcross.data[len(outplus)-len(hplus):] += hcross.data
+            outplus = taper_shift(hplus, outplus)
+            outcross = taper_shift(hcross, outcross)
 
     return outplus, outcross
 
@@ -661,8 +680,7 @@ def get_td_lm_allmodes(template=None, taper=None, **kwargs):
     # Different overtones will have different tapering window-size
     # Find maximum window size to create long enough output vector
     if taper is not None:
-        # Times of tapering do not include t=0
-        taper_window = int(taper*max(tau.values())/delta_t) - 1
+        taper_window = int(taper*max(tau.values())/delta_t)
         kmax += taper_window
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
@@ -671,15 +689,12 @@ def get_td_lm_allmodes(template=None, taper=None, **kwargs):
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
         hplus, hcross = get_td_lm(taper=taper, l=l, m=m, nmodes=nmodes,
                              delta_t=delta_t, t_final=t_final, **input_params)
-        # Shift waveforms that have smaller tapering window
-        if len(hplus) == len(outplus):
+        if taper is None:
             outplus.data += hplus.data
-            outplus._epoch = hplus._epoch
             outcross.data += hcross.data
-            outcross._epoch = hcross._epoch
         else:
-            outplus.data[len(outplus)-len(hplus):] += hplus.data
-            outcross.data[len(outplus)-len(hplus):] += hcross.data
+            outplus = taper_shift(hplus, outplus)
+            outcross = taper_shift(hcross, outcross)
 
     return outplus, outcross
 
