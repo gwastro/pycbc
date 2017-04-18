@@ -384,12 +384,18 @@ class DistanceToRedshift(BaseConversion):
 class BaseToAlignedMassSpin(BaseConversion):
     _inputs = [parameters.mass1, parameters.mass2,
                parameters.spin1z, parameters.spin2z]
-    _outputs = [parameters.chi_eff]
+    _outputs = [parameters.chi_eff, "chi_a"]
     @classmethod
     def _convert(cls, maps):
-        return {parameters.chi_eff : conversions.chi_eff(
+        out = {
+            parameters.chi_eff : conversions.chi_eff(
                              maps[parameters.mass1], maps[parameters.mass2],
-                             maps[parameters.spin1z], maps[parameters.spin2z])}
+                             maps[parameters.spin1z], maps[parameters.spin2z]),
+            "chi_a" : conversions.chi_a(
+                             maps[parameters.mass1], maps[parameters.mass2],
+                             maps[parameters.spin1z], maps[parameters.spin2z]),
+        }
+        return out
 
 class BaseToPrecessionMassSpin(BaseConversion):
     _inputs = [parameters.mass1, parameters.mass2,
@@ -413,14 +419,6 @@ from_base_converters = [
     BaseToAlignedMassSpin(), BaseToPrecessionMassSpin(),
 ]
 converters = to_base_converters + from_base_converters
-
-def _converters_from_base_parameters():
-    # get list of all conversions available from base parameters
-    tmp_converters = []
-    for converter in to_base_converters:
-        converter.inverse()
-        tmp_converters.append(converter)
-    return tmp_converters + from_base_converters
 
 def add_base_parameters(sampling_params):
     """ Adds a standard set of base parameters to a mapping object
@@ -504,8 +502,9 @@ def get_parameters_set(requested_params, variable_args, valid_params=None):
 
     return requested_params
 
-def _add_parameters_from_converters(requested_params, variable_args, converters):
-    for converter in converters:
+def _add_parameters_from_converters(requested_params, variable_args,
+                                    converters_list):
+    for converter in converters_list:
         if (converter.outputs in variable_args or
                 converter.outputs.isdisjoint(requested_params)):
             continue
