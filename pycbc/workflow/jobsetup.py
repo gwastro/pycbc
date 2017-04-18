@@ -716,7 +716,7 @@ class PyCBCInspiralExecutable(Executable):
         super(PyCBCInspiralExecutable, self).__init__(cp, exe_name, None, ifo,
                                                       out_dir, tags=tags)
         self.cp = cp
-        self.set_memory(2000)
+        self.set_memory(1920)
         self.injection_file = injection_file
         self.ext = '.hdf'
 
