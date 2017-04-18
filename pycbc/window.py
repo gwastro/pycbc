@@ -393,12 +393,31 @@ class TimeDomainWindow(object):
             if side == 'right' and endidx < len(ht):
                 ht[endidx:] = 0.
 
-    def apply_window(self, h, left_time=None, right_time=None, ifo=None,
-                    copy=True):
+    def apply_window(self, h, left_time=None, right_time=None, break_time=0,
+                     ifo=None, copy=True):
         """Applies the window at the given times.
 
+        The provided left and right times should be the number of seconds from
+        the start of the data segment to apply the tapers.  The input data,
+        `h`, may be either a `TimeSeries` or `FrequencySeries`.  If the
+        latter, the data will be transformed to the time domain before
+        applying the tapers, then transformed back to a FrequencySeries before
+        returning.
+
+        Frequency-domain data (or time-domain data that was transformed from
+        the frequency domain) treats time on loop, making it ambigous where in
+        the array the start/end of the data occurs. For example, frequency
+        domain waveforms will have the ringdown portion wrapped around to the
+        beginning of the time series. To clear the ambiguity, a `break_time`
+        option is provided to specify where in the time series the
+        beginning/end is. The left and right times are measured from this
+        point.
+
         If `window_whitened` is 1 or 2, the data will be whitened accordingly
-        before applying the window.
+        before applying the window. If `h` is a FrequencySeries, this means
+        `h` will be whitened before transforming to the time domain. If `h`
+        is a TimeSeries, the data will be transformed to the frequency domain,
+        whitened, then transformed back to the time domain.
 
         If `left_taper` and `right_taper` are both None, this just returns
         (a copy of) the data.
@@ -408,22 +427,28 @@ class TimeDomainWindow(object):
         h : TimeSeries or FrequencySeries
             The data to to apply the window to.
         left_time : float
-            The time at which to start the left taper. This must be provided
-            if `left_taper` is not None or 'lal'; otherwise, this must be None
-            (the default). If the time is before the start time / epoch of the
-            data, only the amount of the taper that overlaps the data will be
-            applied. If the entire taper occurs before the start of the data,
-            no left taper will be applied.  If the entire left taper occurs
-            after the end of the data, a WindowBoundsError is raised.
+            The time at which to start the left taper, in number of seconds
+            from the start of the data segment. This must be provided if
+            `left_taper` is not None or 'lal'; otherwise, this must be None
+            (the default). If the time is negative (i.e., before the start of
+            the data), only the amount of the taper that overlaps the data
+            will be applied. If the entire taper occurs before the start of
+            the data, no left taper will be applied.  If the entire left taper
+            occurs after the end of the data, a WindowBoundsError is raised.
         right_time : float
-            The time at which to end the right taper. This must be provided if
+            The time at which to end the right taper, in number of seconds
+            from the start of the data segment. This must be provided if
             `right_taper` is not None or 'lal'; otherwise, this must be None
-            (the default). If the time is after the end time of the data (if h
-            is a `FrequencySeries`, this means `h.epoch + 1/h.delta_f`), only
-            the amount of the taper that overlaps the data will be applied. If
-            the entire taper occurs after the end of th data, no right taper
-            will be applied. If the entire right taper occurs before the start
-            of the data, a WindowBoundsError is raised.
+            (the default). If the time is after the end of the data (if h is a
+            `FrequencySeries`, this means `1/h.delta_f`; otherwise
+            `len(h)*h.delta_t`), only the amount of the taper that overlaps
+            the data will be applied. If the entire taper occurs after the end
+            of the data, no right taper will be applied. If `right_time < 0`
+            (the entire right taper occurs before the start of the data), a
+            WindowBoundsError is raised.
+        break_time : float, optional
+            The number of seconds into the data segment to consider the start
+            of the data. Default is 0.
         ifo : None, optional
             Must be provided if `window_whitened` is 1 or 2 and `psds` is a
             dictionary of psds.
@@ -439,36 +464,49 @@ class TimeDomainWindow(object):
             `window_whitened` is 1 or 2, the returned data will be
             (over-)whitened.
         """
-        # check that a time wasn't specified for lal tapers
-        if (left_time is not None and self.left_taper == 'lal') or (
-                right_time is not None and self.right_taper == 'lal'):
-            raise ValueError("lal tapers do not require a time")
+        # check times
+        if left_time is not None:
+            # check that a time wasn't specified for lal tapers
+            if self.left_taper == 'lal':
+                raise ValueError("lal tapers do not require a time")
+            # check that we won't be left with all zeros
+            if isinstance(h, FrequencySeries):
+                end_time = 1./h.delta_f
+            else:
+                end_time = len(h)*h.delta_t
+            if left_time >= end_time:
+                raise WindowBoundsError("start of left taper occurs after the "
+                                        "end of the data")
+        # ditto for right
+        if right_time is not None:
+            # check that a time wasn't specified for lal tapers
+            if self.right_taper == 'lal':
+                raise ValueError("lal tapers do not require a time")
+            # check that we won't be left with all zeros
+            if right_time < 0:
+                raise WindowBoundsError("end of the right taper occurs before "
+                                        "the start of the data")
         if copy:
             h = 1*h
         if isinstance(h, FrequencySeries):
             ht = None
             hf = h
             return_f = True
-            start_time = float(hf.epoch)
-            end_time = start_time + 1./hf.delta_f
         else:
             ht = h
             hf = None
             return_f = False
-            start_time = float(ht.start_time)
-            end_time = start_time + len(ht)*ht.delta_t
-        # check that we won't be left with all zeros
-        if left_time is not None and left_time >= end_time:
-            raise WindowBoundsError("start of left taper occurs after the end "
-                                   "of the data")
-        if right_time is not None and right_time <= start_time:
-            raise WindowBoundsError("end of the right taper occurs before the "
-                                   "start of the data")
+        rollback = 0
         # lal taper function needs to be applied before whitening
-        if self.left_taper == 'lal' or \
-                self.right_taper == 'lal':
+        if self.left_taper == 'lal' or self.right_taper == 'lal':
             if ht is None:
                 ht = hf.to_timeseries()
+            if break_time:
+                break_indx = -int(break_time/ht.delta_t)
+                ht.roll(break_indx)
+                rollback = -break_indx
+                # set break time to 0, so don't roll again
+                break_time = 0
             tmeth = ''
             if self.left_taper == 'lal':
                 tmeth = 'start'
@@ -478,6 +516,8 @@ class TimeDomainWindow(object):
             hf = None
             if tmeth == 'startend':
                 # just return, since there's nothing else to do
+                if rollback:
+                    ht.roll(rollback)
                 if return_f:
                     return ht.to_frequencyseries()
                 else:
@@ -499,6 +539,11 @@ class TimeDomainWindow(object):
             ht = hf.to_timeseries()
         elif ht is None:
             ht = hf.to_timeseries()
+        # roll if break time is not at the beginning
+        if break_time:
+            break_indx = -int(break_time/ht.delta_t)
+            ht.roll(break_indx)
+            rollback = -break_indx
         # 
         #   apply left taper
         #
@@ -506,7 +551,6 @@ class TimeDomainWindow(object):
             if right_time is not None and right_time <= left_time:
                 raise ValueError("right_time must be > left_time")
             win = self.get_left_window(ht.delta_t)
-            left_time = left_time - float(ht.start_time)
             startidx = int(left_time / ht.delta_t)
             endidx = startidx + len(win)
             # we don't have to worry about the startidx being > len(ht), since
@@ -518,7 +562,6 @@ class TimeDomainWindow(object):
         #
         if right_time is not None:
             win = self.get_right_window(ht.delta_t)
-            right_time = right_time - float(ht.start_time)
             endidx = int(numpy.ceil(right_time / ht.delta_t))
             startidx = endidx - len(win)
             # we don't have to worry about the endidx being < 0, since
@@ -528,6 +571,8 @@ class TimeDomainWindow(object):
         #
         #   Return
         #
+        if rollback:
+            ht.roll(rollback)
         if return_f:
             return ht.to_frequencyseries()
         else:
