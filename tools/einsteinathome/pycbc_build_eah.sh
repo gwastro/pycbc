@@ -67,7 +67,7 @@ build_lapack=true
 pyssl_from="tarball" # "pip-install"
 numpy_from="pip-install" # "tarball"
 scipy_from="pip-install" # "git"
-scipy_version=0.16.0
+scipy_version=0.19.0
 build_gsl=true
 build_swig=true
 build_pcre=false
@@ -192,8 +192,6 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     build_dlls=true
     rebase_dlls_before_pycbc=false
     numpy_from="tarball" # "pip-install"
-    scipy_version=0.16.0
-    scipy_from="git" # "pip-install"
     build_hdf5=false
     build_freetype=false
     build_gsl=false
