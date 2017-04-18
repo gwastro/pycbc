@@ -122,8 +122,8 @@ elif test ".$1" = ".--force-debian4" ||
     $pyinstaller21_hacks || build_subprocess32=true
     build_gating_tool=true
     appendix="_Linux64"
-elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8 (Carbon)" ]] ; then # SL6
-    echo -e "\\n\\n>> [`date`] Using Scientific Linux release 6.8 (Carbon) settings"
+elif grep -q "Scientific Linux release 6" /etc/redhat-release 2>/dev/null; then # SL6
+    echo -e "\\n\\n>> [`date`] Using Scientific Linux release 6 (Carbon) settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
     link_gcc_version=4.4.7
     gcc_path="/usr/bin"
@@ -133,8 +133,8 @@ elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux release 6.8
     pyinstaller_lsb="--no-lsb"
     build_gating_tool=true
     appendix="_Linux64"
-elif [[ v`cat /etc/redhat-release 2>/dev/null` == v"Scientific Linux CERN SLC release 6.8 (Carbon)" ]] ; then # SL6
-    echo -e "\\n\\n>> [`date`] Using Scientific Linux CERN SLC release 6.8 (Carbon) settings"
+elif grep -q "Scientific Linux CERN SLC release 6" /etc/redhat-release 2>/dev/null; then # SL6
+    echo -e "\\n\\n>> [`date`] Using Scientific Linux CERN SLC release 6 (Carbon) settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
     link_gcc_version=4.4.7
     gcc_path="/usr/bin"
