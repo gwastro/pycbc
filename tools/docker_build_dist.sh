@@ -56,20 +56,21 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
 
   # get library to build optimized pycbc_inspiral bundle
   wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30 --no-verbose"
-  primary_url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/03f2048c770492f66f80528493fd6cecded63769/x86_64/composer_xe_2015.0.090"
-  secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown/x86_64/composer_xe_2015.0.090"
-  p="composer_xe_2015.0.090.tar.gz"
+  primary_url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/03f2048c770492f66f80528493fd6cecded63769"
+  secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown"
   pushd /pycbc
-  set +e
-  test -r $p || wget $wget_opts ${primary_url}/${p}
-  set -e
-  test -r $p || wget $wget_opts ${secondary_url}/${p}
+  for p in "x86_64/composer_xe_2015.0.090/composer_xe_2015.0.090.tar.gz" "bank-files/testbank_TF2v4ROM.hdf" ; do
+    set +e
+    test -r $p || wget $wget_opts ${primary_url}/${p}
+    set -e
+    test -r $p || wget $wget_opts ${secondary_url}/${p}
+  done
   popd
 
   # run the einstein at home build and test script
   echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
   pushd ${BUILD}
-  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --with-extra-libs=file:///pycbc/composer_xe_2015.0.090.tar.gz --processing-scheme=mkl
+  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --with-extra-approximant='SPAtmplt:mtotal<4' --with-extra-approximant='SEOBNRv4_ROM:else'  --with-extra-approximant=--use-compressed-waveforms --with-extra-libs=file:///pycbc/composer_xe_2015.0.090.tar.gz --processing-scheme=mkl
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     echo -e "\\n>> [`date`] Deploying pycbc_inspiral bundle"
