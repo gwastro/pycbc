@@ -485,24 +485,27 @@ def get_parameters_set(requested_params, variable_args, valid_params=None):
         new_params += s.split(" ")
     requested_params = set(requested_params + new_params)
 
-    # can pass a list of valid parameters to remove garbage parameters
-    # from parsing above
-    valid_params = set(valid_params) if valid_params else requested_params
-    requested_params = requested_params.intersection(valid_params)
+    # can pass a list of valid parameters to remove garbage from parsing above
+    if valid_params:
+        valid_params = set(valid_params)
+        requested_params = requested_params.intersection(valid_params)
 
     # if asking for a base parameter add sampling parameters to request
-    for converter in to_base_converters:
-        if (converter.outputs in variable_args or
-                converter.outputs.isdisjoint(requested_params)):
-            continue
-        intersect = converter.outputs.intersection(requested_params)
-        if len(intersect) < 1 or intersect.issubset(converter.inputs):
-            continue
-        if converter.inputs.issubset(set(variable_args)):
-            requested_params.update(converter.inputs)
+    requested_parameters = _add_parameters_from_converters(
+                     requested_params, variable_args, to_base_converters)
 
     # if asking for a derived parameter add base parameters to request
-    for converter in from_base_converters:
+    requested_parameters = _add_parameters_from_converters(
+                     requested_params, variable_args, from_base_converters)
+
+    # if asking for a base parameter add sampling parameters to request
+    requested_parameters = _add_parameters_from_converters(
+                     requested_params, variable_args, to_base_converters)
+
+    return requested_params
+
+def _add_parameters_from_converters(requested_params, variable_args, converters):
+    for converter in converters:
         if (converter.outputs in variable_args or
                 converter.outputs.isdisjoint(requested_params)):
             continue
@@ -510,17 +513,4 @@ def get_parameters_set(requested_params, variable_args, valid_params=None):
         if len(intersect) < 1 or intersect.issubset(converter.inputs):
             continue
         requested_params.update(converter.inputs)
-
-    # if asking for a base parameter add sampling parameters to request
-    for converter in to_base_converters:
-        if (converter.outputs in variable_args or 
-                converter.outputs.isdisjoint(requested_params)):
-            continue
-        intersect = converter.outputs.intersection(requested_params)
-        if len(intersect) < 1 or intersect.issubset(converter.inputs):
-            continue
-        if converter.inputs.issubset(set(variable_args)):
-            requested_params.update(converter.inputs)
-    print requested_params
     return requested_params
-
