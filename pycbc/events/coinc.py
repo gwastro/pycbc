@@ -24,7 +24,6 @@
 """ This modules contains functions for calculating and manipulating
 coincident triggers.
 """
-import h5py
 import numpy, logging, pycbc.pnutils, copy, lal
 
 def background_bin_from_string(background_bins, data):
@@ -92,60 +91,6 @@ def background_bin_from_string(background_bins, data):
         bins[name] = locs
 
     return bins
-
-def bank_bins_from_cli(opts, ifos=None):
-    """ Parses the CLI options related to binning templates in the bank.
-
-    Parameters
-    ----------
-    opts : object
-        Result of parsing the CLI with OptionParser.
-    ifos : list
-        List of IFOs.
-
-    Results
-    -------
-    bins_idx : dict
-        A dict with bin names as key and an array of their indices as value.
-    bank : dict
-        A dict of the datasets from the bank file.
-    """
-    bank = {}
-    fp = h5py.File(opts.bank_file)
-    for key in fp.keys():
-        bank[key] = fp[key][:]
-    bank["f_lower"] = float(opts.f_lower) if opts.f_lower else None
-    if opts.bank_bins:
-        bins_idx = background_bin_from_string(opts.bank_bins, bank)
-    else:
-        bins_idx = {"all" : numpy.arange(0, len(bank[fp.keys()[0]]))}
-    fp.close()
-    return bins_idx, bank
-
-def insert_bank_bins_option_group(parser):
-    """ Add options to the optparser object for selecting templates in bins.
-
-    Parameters
-    -----------
-    parser : object
-        OptionParser instance.
-    """
-    bins_group = parser.add_argument_group(
-                                 "Options for selecting templates in bins.")
-    bins_group.add_argument("--bank-bins", nargs="+", default=None,
-                            help="Ordered list of mass bin upper boundaries. "
-                                 "An ordered list of type-boundary pairs, "
-                                 "applied sequentially. Must provide a name "
-                                 "(can be any unique string for tagging "
-                                 "purposes), the parameter to bin "
-                                 "on, and the membership condition via "
-                                 "'lt' / 'gt' operators. "
-                                 "Ex. name1:component:lt2 name2:total:lt15")
-    bins_group.add_argument("--bank-file", default=None,
-                            help="HDF format template bank file.")
-    bins_group.add_argument("--f-lower", default=None,
-                            help="Low frequency cutoff in Hz.")
-    return bins_group
 
 def calculate_n_louder(bstat, fstat, dec, skip_background=False):
     """ Calculate for each foreground event the number of background events
