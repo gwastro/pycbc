@@ -207,7 +207,15 @@ class TimeDomainWindow(object):
     >>> hp, _ = waveform.get_td_waveform(approximant='SEOBNRv4', mass1=40., mass2=30., delta_t=1./2048, f_lower=15.)
     >>> aligopsd = psd.aLIGOZeroDetHighPower(4*2048/2+1, 1./4, 10.)
     >>> windowts = window.TimeDomainWindow(left_taper='lal', right_taper=('kaiser', 8), right_taper_duration=0.01, window_whitened=2, psds=aligopsd)
-    >>> hp = windowts(hp, right_time=-0.02)
+    >>> hp = windowts(hp, right_time=len(hp)*hp.delta_t-0.02)
+
+    Apply the same taper to a frequency-domain waveform. Note that we have to
+    supply a `break_time` indicating the start of the data series to account
+    for the wrap around of the waveform:
+
+    >>> hp, _ = waveform.get_fd_waveform(approximant='IMRPhenomD', mass1=40., mass2=30., delta_f=1./4, f_lower=15.)
+    >>> break_time = 1.
+    >>> hp = windowts(hp, right_time=1./hp.delta_f-break_time-0.02, break_time=break_time)
 
     See Also
     --------
