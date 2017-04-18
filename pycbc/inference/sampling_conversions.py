@@ -306,12 +306,27 @@ class DistanceToRedshift(BaseConversion):
         return out
 
 class AlignedMassSpinToCartesianSpin(BaseConversion):
+    """ Converts mass-weighted spins to cartesian z-axis spins.
+    """
     _inputs = [parameters.mass1, parameters.mass2, parameters.chi_eff, "chi_a"]
     _outputs = [parameters.mass1, parameters.mass2,
                parameters.spin1z, parameters.spin2z]
 
     @classmethod
     def _convert(cls, maps):
+        """ This function converts from aligned mass-weighted spins to
+        cartesian spins aligned along the z-axis.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of converted values.
+        """
         out = {}
         out[parameters.spin1z] = \
                          conversions.spin1z_from_mass1_mass2_chi_eff_chi_a(
@@ -350,6 +365,8 @@ class AlignedMassSpinToCartesianSpin(BaseConversion):
         return out
 
 class PrecessionMassSpinToCartesianSpin(BaseConversion):
+    """ Converts mass-weighted spins to cartesian x-y plane spins.
+    """
     _inputs = [parameters.mass1, parameters.mass2,
                "xi1", "xi2", "phi_a", "phi_s"]
     _outputs = [parameters.mass1, parameters.mass2,
@@ -358,6 +375,19 @@ class PrecessionMassSpinToCartesianSpin(BaseConversion):
 
     @classmethod
     def _convert(cls, maps):
+        """ This function converts from mass-weighted spins to caretsian spins
+        in the x-y plane.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of converted values.
+        """
         out = {}
         out[parameters.spin1x] = conversions.spin1x_from_xi1_phi_a_phi_s(
                                maps["xi1"], maps["phi_a"], maps["phi_s"])
@@ -405,6 +435,8 @@ class PrecessionMassSpinToCartesianSpin(BaseConversion):
         return out
 
 class ChiPToCartesianSpin(BaseConversion):
+    """ Converts chi_p to cartesian spins.
+    """
     _inputs = ["chi_p"]
     _outputs = [parameters.mass1, parameters.mass2,
                 parameters.spin1x, parameters.spin1y,
@@ -412,6 +444,30 @@ class ChiPToCartesianSpin(BaseConversion):
 
     @classmethod
     def _convert_inverse(cls, maps):
+        """ This function converts from component masses and caretsian spins
+        to chi_p.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Examples
+        --------
+        Convert a dict of numpy.array:
+
+        >>> import numpy
+        >>> from pycbc.inference import sampling_conversions
+        >>> from pycbc.waveform import parameters
+        >>> cl = sampling_conversions.DistanceToRedshift()
+        >>> cl.convert({parameters.distance : numpy.array([1000])})
+            {'distance': array([1000]), 'redshift': 0.19650987609144363}
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of converted values.
+        """
         out = {}
         out["chi_p"] = conversions.chi_p(
                              maps[parameters.mass1], maps[parameters.mass2],
@@ -430,50 +486,7 @@ from_base_converters = copy.deepcopy(to_base_converters)
 for c in from_base_converters: c.inverse()
 all_converters = from_base_converters + to_base_converters
 
-def add_base_parameters(sampling_params, variable_args, converters=None):
-    """ Adds a standard set of base parameters to a mapping object
-    (ie. FieldArray or dict). The standard set of base parameters includes
-    mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, and redshift.
-
-    This function loop over all Conversion classes in this module and sees if
-    the conversions is required. If it is required, then the new keys are
-    added.
-
-    Parameters
-    ----------
-    sampling_params : {FieldArray, dict}
-        Mapping object to add new keys.
-    converters : list
-        List of BaseConversions instances to check.
-
-    Returns
-    -------
-    sampling_params : {FieldArray, dict}
-       Mapping object with new fields.
-    """
-    for converter in converters:
-        try:
-            sampling_params = converter.convert(sampling_params)
-        except:
-            continue
-    return sampling_params
-
-    # convert sampling parameters into base parameters
-    converters = all_converters if converters is None else converters
-    for converter in converters:
-        current_params = set(sampling_params.fieldnames)
-        if (converter.inputs.issubset(current_params) and
-                not converter.outputs.issubset(current_params)):
-            try:
-                sampling_params = converter.convert(sampling_params)
-            except NotImplementedError:
-                print "Error", converter
-                continue
-    logging.info("Found the following parameters in InferenceFile: %s",
-                 str(sampling_params.fieldnames))
-    return sampling_params
-
-def get_parameters_set(requested_params, variable_args, valid_params=None):
+def get_conversions(requested_params, variable_args, valid_params=None):
     """ Determines if any additional parameters from the InferenceFile are
     needed to get derived parameters that user has asked for.
 
@@ -494,6 +507,8 @@ def get_parameters_set(requested_params, variable_args, valid_params=None):
     -------
     requested_params : list
         Updated list of parameters that user wants.
+    all_c : list
+        List of BaseConversions to apply.
     """
 
     # try to parse any equations by putting all strings together
@@ -513,9 +528,9 @@ def get_parameters_set(requested_params, variable_args, valid_params=None):
         valid_params = set(valid_params)
         requested_params = requested_params.intersection(valid_params)
 
-    print "initial_request", requested_params
-
-    new_base_c = []
+    # find all the conversions for the requested derived parameters
+    # calculated from base parameters
+    from_base_c = []
     for converter in from_base_converters:
         if (converter.outputs.issubset(variable_args) or
                 converter.outputs.isdisjoint(requested_params)):
@@ -524,77 +539,41 @@ def get_parameters_set(requested_params, variable_args, valid_params=None):
         if len(intersect) < 1 or intersect.issubset(converter.inputs):
             continue
         requested_params.update(converter.inputs)
-        new_base_c.append(converter)
+        from_base_c.append(converter)
 
+    # find all the conversions for the required base parameters
+    # calculated from sampling parameters
     to_base_c = []
-#    for converter in to_base_converters:
-#        if (converter.outputs.issubset(variable_args) or
-#                converter.outputs.isdisjoint(requested_params)):
-#            continue
-#        intersect = converter.outputs.intersection(requested_params)
-#        if len(intersect) < 1 or intersect.issubset(converter.inputs):
-#            continue
-#        requested_params.update(converter.inputs)
-#        to_base_c.append(converter)
-
-    samp_c = []
     for converter in to_base_converters:
-        if converter.inputs.issubset(variable_args) and len(converter.outputs.intersection(requested_params)) > 0:
+        if (converter.inputs.issubset(variable_args) and
+                len(converter.outputs.intersection(requested_params)) > 0):
             requested_params.update(converter.inputs)
-            samp_c.append(converter)
+            to_base_c.append(converter)
 
-    print "REQUESTED", requested_params
+    # get list of conversions that converts sampling parameters to the base
+    # parameters and then converts base parameters to the derived parameters
+    all_c = to_base_c + from_base_c
 
-    return list(requested_params), samp_c + new_base_c + to_base_c
+    return list(requested_params), all_c
 
-    # first try to add any base parameters that are used to calculate
-    # the requested parameters
-#    cs = _add_parameters_from_converters(
-#                     requested_params, variable_args, from_base_converters)
-
-    # second try to add any sampling parameters that are used to calculate
-    # the base parameters needed
-#    cs += _add_parameters_from_converters(
-#                     requested_params, variable_args, to_base_converters)
-
-#    return requested_params, cs
-
-def _add_parameters_from_converters(requested_params, variable_args,
-                                    converters_list):
-    """ For a list of BaseConversion instance checks if outputs are requested
-    by the user. If a subset of the outputs are requested, then add the inputs
-    to requested parameters.
+def apply_conversions(samples, cs):
+    """ Applies a list of BaseConversion instances on a mapping object.
 
     Parameters
     ----------
-    requested_params : set
-        List of parameters that user wants.
-    variable_args : list
-        List of parameters that InferenceFile has.
-    converters_list : list
-        List of BaseConversions instances to check.
+    samples : {FieldArray, dict}
+        Mapping object to apply conversions to.
+    cs : list
+        List of BaseConversion instances to apply.
+
+    Returns
+    -------
+    samples : {FieldArray, dict}
+        Mapping object with conversions applied. Same type as input.
     """
-
-    cs = []
-    for converter in converters_list:
-        if (converter.outputs in variable_args or
-                converter.outputs.isdisjoint(requested_params)):
-            continue
-        intersect = converter.outputs.intersection(requested_params)
-        if len(intersect) < 1 or intersect.issubset(converter.inputs):
-            continue
-        requested_params.update(converter.inputs)
-        cs.append(converter)
-    return cs
-
-def use_cs(samples, cs):
-    print "fieldnames", samples.fieldnames
     for c in cs:
         try:
-            print "doing", c
             samples = c.convert(samples)
-            print "added", c.outputs, c
         except NotImplementedError:
-            print "failed", c.outputs, c
             continue
     return samples
