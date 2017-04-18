@@ -376,6 +376,7 @@ pypi="https://pypi.python.org/packages"
 gitlab="https://gitlab.aei.uni-hannover.de/einsteinathome"
 atlas="https://www.atlas.aei.uni-hannover.de/~bema"
 albert="http://albert.phys.uwm.edu/download"
+duncan="https://www.atlas.aei.uni-hannover.de/~dbrown"
 aei="http://www.aei.mpg.de/~bema"
 
 # circumvent old certificate chains on old systems
@@ -1245,33 +1246,35 @@ while read f md5; do
 	roms="$f $roms"
     fi
 done <<EOF
-SEOBNRv2ChirpTimeSS.dat               7b7dbadacc3f565fb2c8e6971df2ab74
-SEOBNRv2ROM_DS_sub1_Amp_ciall.dat     f82ddc5dc0b6fdc75122e767bd5e78c8
-SEOBNRv2ROM_DS_sub1_AmpPrefac_ci.dat  62afa5351d6b775ac33cb4d898f0016b
-SEOBNRv2ROM_DS_sub1_Bamp_bin.dat      a6829fa05437cc0aad81e3f8dae839cc
-SEOBNRv2ROM_DS_sub1_Bphase_bin.dat    98ea14b01e729d15ff666caa25afaed6
-SEOBNRv2ROM_DS_sub1_Phase_ciall.dat   b41f0f7fbaf8be1d1848de7ee702bc67
-SEOBNRv2ROM_DS_sub2_Amp_ciall.dat     20ee260c870109766a6f048e20c7e10f
-SEOBNRv2ROM_DS_sub2_AmpPrefac_ci.dat  96c384617edd8375ceaa03f9b7456467
-SEOBNRv2ROM_DS_sub2_Bamp_bin.dat      67d4f206fe19104fbc98b923b37318bb
-SEOBNRv2ROM_DS_sub2_Bphase_bin.dat    d0bf97b4e17b5c9a7cfd222aaaafd742
-SEOBNRv2ROM_DS_sub2_Phase_ciall.dat   c2ea5d296fee01abe16c0dd9e5f71f04
-SEOBNRv2ROM_DS_sub3_Amp_ciall.dat     412953726ca4bc72a810b27b810831c7
-SEOBNRv2ROM_DS_sub3_AmpPrefac_ci.dat  4d5378935a7fba5e96f671581bce99fb
-SEOBNRv2ROM_DS_sub3_Bamp_bin.dat      31f48cb651a60837a3e99ee050aa9bc2
-SEOBNRv2ROM_DS_sub3_Bphase_bin.dat    727d31f6dc678aba8539817c8d0ae930
-SEOBNRv2ROM_DS_sub3_Phase_ciall.dat   d0e1601c7cf4bd727d03e6cf7d2f722b
-SEOBNRv2ROM_SS_Amp_ciall.dat          e6c243f76609cada55612cfe53f82e41
-SEOBNRv2ROM_SS_AmpPrefac_ci.dat       08186a21682d2e73cb00a3ef35aa5c9c
-SEOBNRv2ROM_SS_Bamp_bin.dat           1ef7953a977a1fb551f59585c5d63d7a
-SEOBNRv2ROM_SS_Bphase_bin.dat         b5923860bf021e6a2a23d743e5724bee
-SEOBNRv2ROM_SS_Phase_ciall.dat        2947032d0ad7ffde9704e24bf9e676f5
+SEOBNRv2ChirpTimeSS.dat                  7b7dbadacc3f565fb2c8e6971df2ab74
+SEOBNRv2ROM_DS_sub1_AmpPrefac_ci.dat     62afa5351d6b775ac33cb4d898f0016b
+SEOBNRv2ROM_DS_sub1_Amp_ciall.dat        f82ddc5dc0b6fdc75122e767bd5e78c8
+SEOBNRv2ROM_DS_sub1_Bamp_bin.dat         a6829fa05437cc0aad81e3f8dae839cc
+SEOBNRv2ROM_DS_sub1_Bphase_bin.dat       98ea14b01e729d15ff666caa25afaed6
+SEOBNRv2ROM_DS_sub1_Phase_ciall.dat      b41f0f7fbaf8be1d1848de7ee702bc67
+SEOBNRv2ROM_DS_sub2_AmpPrefac_ci.dat     96c384617edd8375ceaa03f9b7456467
+SEOBNRv2ROM_DS_sub2_Amp_ciall.dat        20ee260c870109766a6f048e20c7e10f
+SEOBNRv2ROM_DS_sub2_Bamp_bin.dat         67d4f206fe19104fbc98b923b37318bb
+SEOBNRv2ROM_DS_sub2_Bphase_bin.dat       d0bf97b4e17b5c9a7cfd222aaaafd742
+SEOBNRv2ROM_DS_sub2_Phase_ciall.dat      c2ea5d296fee01abe16c0dd9e5f71f04
+SEOBNRv2ROM_DS_sub3_AmpPrefac_ci.dat     4d5378935a7fba5e96f671581bce99fb
+SEOBNRv2ROM_DS_sub3_Amp_ciall.dat        412953726ca4bc72a810b27b810831c7
+SEOBNRv2ROM_DS_sub3_Bamp_bin.dat         31f48cb651a60837a3e99ee050aa9bc2
+SEOBNRv2ROM_DS_sub3_Bphase_bin.dat       727d31f6dc678aba8539817c8d0ae930
+SEOBNRv2ROM_DS_sub3_Phase_ciall.dat      d0e1601c7cf4bd727d03e6cf7d2f722b
+SEOBNRv2ROM_SS_AmpPrefac_ci.dat          08186a21682d2e73cb00a3ef35aa5c9c
+SEOBNRv2ROM_SS_Amp_ciall.dat             e6c243f76609cada55612cfe53f82e41
+SEOBNRv2ROM_SS_Bamp_bin.dat              1ef7953a977a1fb551f59585c5d63d7a
+SEOBNRv2ROM_SS_Bphase_bin.dat            b5923860bf021e6a2a23d743e5724bee
+SEOBNRv2ROM_SS_Phase_ciall.dat           2947032d0ad7ffde9704e24bf9e676f5
+SEOBNRv4ROM_v2.0.hdf5                    256f33aecada770b871750227fa87749
 EOF
 if $failed; then
-    p="lal-data-r7.tar.gz"
-    md5="8e72ced90c82691f16e1c1ac33be18d7"
+    p="lal-data-r11.tar.gz"
+    md5="d4009ac3328fa55b654c9fafc1006a5c"
     rm -f "$p"
-    wget $wget_opts "$albert/$p"
+    # FIXME: @bema-ligo switch this to albert
+    wget $wget_opts "$duncan/$p"
     if check_md5 "$p" "$md5"; then
         echo "can't download $p - md5 mismatch"
         exit 1
@@ -1305,7 +1308,7 @@ else
 fi
 
 gw150914_bank=$p
-gw150914_approx='SPAtmplt:mtotal<4 SEOBNRv2_ROM_DoubleSpin:else'
+gw150914_approx='SPAtmplt:mtotal<4 SEOBNRv4_ROM:mtotal<20 SEOBNRv2_ROM_DoubleSpin:else'
 bank_array=( "$gw150914_bank" )
 approx_array=( "$gw150914_approx" )
 
