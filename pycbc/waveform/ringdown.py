@@ -312,21 +312,22 @@ def get_td_qnm(template=None, taper=None, **kwargs):
         return hplus, hcross
 
     else:
+        # Times of tapering do not include t=0
         taper_times = -numpy.arange(delta_t, taper*tau, delta_t)
         taper_times.sort()
-        window = len(taper_times)
+        taper_window = len(taper_times)
         taper_hp = amp * numpy.exp(10*taper_times/tau) * \
                          numpy.cos(two_pi*f_0*taper_times + phi)
         taper_hc = amp * numpy.exp(10*taper_times/tau) * \
                          numpy.sin(two_pi*f_0*taper_times + phi)
 
-        hplus = TimeSeries(zeros(window+kmax), delta_t=delta_t)
-        hcross = TimeSeries(zeros(window+kmax), delta_t=delta_t)
-        hplus.data[:window] = taper_hp
-        hplus.data[window:] = hp
+        hplus = TimeSeries(zeros(taper_window+kmax), delta_t=delta_t)
+        hcross = TimeSeries(zeros(taper_window+kmax), delta_t=delta_t)
+        hplus.data[:taper_window] = taper_hp
+        hplus.data[taper_window:] = hp
         hplus._epoch = taper_times[0]
-        hcross.data[:window] = taper_hc
-        hcross.data[window:] = hc
+        hcross.data[:taper_window] = taper_hc
+        hcross.data[taper_window:] = hc
         hcross._epoch = taper_times[0]
 
         return hplus, hcross
@@ -403,7 +404,7 @@ def get_fd_qnm(template=None, **kwargs):
         time_shift = numpy.exp(-1j * two_pi * freqs * t_0) 
         norm *= time_shift
 
-    # Anallytical expression for the Fourier transform of the ringdown (damped sinusoid)
+    # Analytical expression for the Fourier transform of the ringdown (damped sinusoid)
     hp_tilde = norm * ( (1 + 2j * pi * freqs * tau) * numpy.cos(phi)
                                - two_pi * f_0 * tau * numpy.sin(phi) )
     hc_tilde = norm * ( (1 + 2j * pi * freqs * tau) * numpy.sin(phi)
@@ -431,6 +432,8 @@ def get_td_lm(template=None, taper=None, **kwargs):
         The abrupt turn on of the ringdown can cause issues on the waveform
         when doing the fourier transform to the frequency domain. Setting
         taper will add a rapid ringup with timescale tau/10.
+        Each overtone will have a different taper depending on its tau, the
+        final taper being the superposition of all the tapers.
     final_mass : float
         Mass of the final black hole.
     final_spin : float
@@ -488,7 +491,8 @@ def get_td_lm(template=None, taper=None, **kwargs):
     # Different overtones will have different tapering window-size
     # Find maximum window size to create long enough output vector
     if taper is not None:
-        taper_window = [int(taper*tau[n]/delta_t) + 1 for n in range(nmodes)]
+        # Times of tapering do not include t=0
+        taper_window = [int(taper*tau[n]/delta_t) - 1 for n in range(nmodes)]
         kmax += max(taper_window)
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
@@ -600,6 +604,8 @@ def get_td_lm_allmodes(template=None, taper=None, **kwargs):
         The abrupt turn on of the ringdown can cause issues on the waveform
         when doing the fourier transform to the frequency domain. Setting
         taper will add a rapid ringup with timescale tau/10.
+        Each mode and overtone will have a different taper depending on its tau,
+        the final taper being the superposition of all the tapers.
     final_mass : float
         Mass of the final black hole.
     final_spin : float
@@ -652,10 +658,12 @@ def get_td_lm_allmodes(template=None, taper=None, **kwargs):
 
     kmax = int(t_final / delta_t) + 1
     f_0, tau = get_lm_f0tau_allmodes(final_mass, final_spin, lmns)
+    # Different overtones will have different tapering window-size
+    # Find maximum window size to create long enough output vector
     if taper is not None:
-        taper_times = -numpy.arange(0, taper*max(tau), delta_t)
-        taper_times.sort()
-        kmax += len(taper_times)
+        # Times of tapering do not include t=0
+        taper_window = int(taper*max(tau.values())/delta_t) - 1
+        kmax += taper_window
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
@@ -663,8 +671,15 @@ def get_td_lm_allmodes(template=None, taper=None, **kwargs):
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
         hplus, hcross = get_td_lm(taper=taper, l=l, m=m, nmodes=nmodes,
                              delta_t=delta_t, t_final=t_final, **input_params)
-        outplus.data += hplus.data
-        outcross.data += hcross.data
+        # Shift waveforms that have smaller tapering window
+        if len(hplus) == len(outplus):
+            outplus.data += hplus.data
+            outplus._epoch = hplus._epoch
+            outcross.data += hcross.data
+            outcross._epoch = hcross._epoch
+        else:
+            outplus.data[len(outplus)-len(hplus):] += hplus.data
+            outcross.data[len(outplus)-len(hplus):] += hcross.data
 
     return outplus, outcross
 
