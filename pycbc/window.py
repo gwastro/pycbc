@@ -433,7 +433,7 @@ class TimeDomainWindow(object):
         Parameters
         ----------
         h : TimeSeries or FrequencySeries
-            The data to to apply the window to.
+            The data to apply the window to.
         left_time : float
             The time at which to start the left taper, in number of seconds
             from the start of the data segment. This must be provided if
@@ -462,7 +462,7 @@ class TimeDomainWindow(object):
             dictionary of psds.
         copy : bool, optional
             Whether to copy the data before applying the window/whitening. If
-            False, the taper will be applied in place. Default is False.
+            False, the taper will be applied in place. Default is True.
 
         Returns
         -------
