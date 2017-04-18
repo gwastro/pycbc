@@ -206,6 +206,11 @@ EOF
       rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ pycbc@sugwg-test1.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/
     else
       echo -e "\\n>> [`date`] Deploying release ${TRAVIS_TAG} to CVMFS"
+      # store copy on sugwg with the lalsuite source
+      ssh pycbc@sugwg-test1.phy.syr.edu "mkdir -p /home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}"
+      rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ pycbc@sugwg-test1.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/
+      # remove lalsuite source and deploy on cvmfs
+      rm -rf ${VENV_PATH}/src/lalsuite
       ssh ouser.ligo@oasis-login.opensciencegrid.org "mkdir -p /home/login/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}"
       rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ ouser.ligo@oasis-login.opensciencegrid.org:/home/login/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/
       ssh ouser.ligo@oasis-login.opensciencegrid.org osg-oasis-update
