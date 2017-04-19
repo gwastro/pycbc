@@ -645,63 +645,6 @@ class BaseMCMCSampler(_BaseSampler):
                                 iteration=iteration, walkers=walkers,
                                 flatten=flatten)
 
-    @classmethod
-    def read_likelihood_stats(cls, fp, thin_start=None, thin_interval=None,
-                              thin_end=None, iteration=None, walkers=None,
-                              flatten=True, stats_group=None,
-                              array_class=None):
-        """Reads the likelihood stats from the given file.
-
-        Parameters
-        -----------
-        fp : InferenceFile
-            An open file handler to read the stats from.
-        thin_start : int
-            Index of the sample to begin returning stats. Default is to read
-            stats after burn in. To start from the beginning set thin_start
-            to 0.
-        thin_interval : int
-            Interval to accept every i-th sample. Default is to use the
-            `fp.acl`. If `fp.acl` is not set, then use all stats
-            (set thin_interval to 1).
-        thin_end : int
-            Index of the last sample to read. If not given then
-            `fp.niterations` is used.
-        iteration : int
-            Get a single iteration. If provided, will override the
-            `thin_{start/interval/end}` arguments.
-        walkers : {None, (list of) int}
-            The walker index (or a list of indices) to retrieve. If None,
-            stats from all walkers will be obtained.
-        flatten : {True, bool}
-            The returned array will be one dimensional, with all desired
-            stats from all desired walkers concatenated together. If False,
-            the returned array will have dimension requested walkers
-            x requested iterations.
-        stats_group : {None, str}
-            The group in `fp` from which to retrieve the stats. If
-            None, searches in `fp.stats_group`.
-        array_class : {None, array class}
-            The type of array to return. The class must have a `from_kwargs`
-            class method. If None, will return a FieldArray.
-
-        Returns
-        -------
-        array_class
-            The likelihood stats, as an instance of a the given
-            `array_class` (`FieldArray` if `array_class` is None).
-        """
-        if stats_group is None:
-            stats_group = fp.stats_group
-        if array_class is None:
-            array_class = FieldArray
-        fields = fp[stats_group].keys()
-        return cls._read_fields(fp, stats_group, fields, array_class,
-                                thin_start=thin_start,
-                                thin_interval=thin_interval,
-                                thin_end=thin_end, iteration=iteration,
-                                walkers=walkers, flatten=flatten)
-
     @staticmethod
     def read_acceptance_fraction(fp, thin_start=None, thin_interval=None,
                                  thin_end=None, iteration=None):
