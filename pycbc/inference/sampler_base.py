@@ -299,6 +299,77 @@ class BaseMCMCSampler(_BaseSampler):
         fp.attrs["nwalkers"] = self.nwalkers
         fp.attrs['burn_in_iterations'] = self.burn_in_iterations
 
+    def _write_samples_group(self, fp, samples_group, parameters, samples,
+                             start_iteration=0, end_iteration=None,
+                             max_iterations=None):
+        """Writes samples to the given file.
+
+        Results are written to: `fp[samples_group/{vararg}/walker{i}]`, where
+        `{vararg}` is the name of a variable arg, and `{i}` is the index of
+        a walker.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            A file handler to an open inference file.
+        start_iteration : {0, int}
+            Write results starting from the given iteration.
+        end_iteration : {None, int}
+            Write results up to the given iteration.
+        max_iterations : {None, int}
+            If samples have not previously been written to the file, a new
+            dataset will be created. By default, the size of this dataset will
+            be whatever the length of the sampler's chain is at this point. If
+            you intend to run more iterations, set this value to that size so
+            that the array in the file will be large enough to accomodate
+            future data.
+        samples_group : str
+            Name of samples group to write.
+        """
+
+        # due to clearing memory, there can be a difference between indices in
+        # memory and on disk
+        nwalkers, niterations, _ = samples.shape
+        niterations += self._lastclear
+        fa = start_iteration # file start index
+        if end_iteration is None:
+            end_iteration = niterations
+        fb = end_iteration # file end index
+        ma = fa - self._lastclear # memory start index
+        mb = fb - self._lastclear # memory end index
+
+        if max_iterations is not None and max_iterations < niterations:
+            raise IndexError("The provided max size is less than the "
+                             "number of iterations")
+        elif max_iterations is None:
+            max_iterations = niterations
+
+        # map sample values to the values that were actually passed to the
+        # waveform generator and prior evaluator
+        samples = numpy.array(
+            self.likelihood_evaluator._prior.apply_boundary_conditions(
+            samples.transpose(2,0,1))).transpose(1,2,0)
+
+        group = samples_group + '/{name}/walker{wi}'
+
+        # loop over number of dimensions
+        widx = numpy.arange(nwalkers)
+        for pi, param in enumerate(parameters):
+            # loop over number of walkers
+            for wi in widx:
+                dataset_name = group.format(name=param, wi=wi)
+                try:
+                    if fb > fp[dataset_name].size:
+                        # resize the dataset
+                        fp[dataset_name].resize(fb, axis=0)
+                    fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
+                except KeyError:
+                    # dataset doesn't exist yet
+                    fp.create_dataset(dataset_name, (fb,),
+                                      maxshape=(max_iterations,),
+                                      dtype=samples.dtype)
+                    fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
+
     def write_chain(self, fp, start_iteration=0, end_iteration=None,
                     max_iterations=None):
         """Writes the samples from the current chain to the given file. Results
@@ -321,52 +392,21 @@ class BaseMCMCSampler(_BaseSampler):
             you intend to run more iterations, set this value to that size so
             that the array in the file will be large enough to accomodate
             future data.
+        samples_group : str
+            Name of samples group to write.
         """
-        # chain is nwalkers x niterations x ndim
+
+        # chain is a nwalkers x niterations x ndim array
         samples = self.chain
-        nwalkers, niterations, _ = samples.shape
+        parameters = fp.variable_args
+        samples_group = fp.samples_group
 
-        # due to clearing memory, there can be a difference between indices in
-        # memory and on disk
-        niterations += self._lastclear
-        fa = start_iteration # file start index
-        if end_iteration is None:
-            end_iteration = niterations
-        fb = end_iteration # file end index
-        ma = fa - self._lastclear # memory start index
-        mb = fb - self._lastclear # memory end index
-
-        if max_iterations is not None and max_iterations < niterations:
-            raise IndexError("The provided max size is less than the "
-                             "number of iterations")
-        elif max_iterations is None:
-            max_iterations = niterations
-
-        # map sample values to the values that were actually passed to the
-        # waveform generator and prior evaluator
-        samples = numpy.array(
-            self.likelihood_evaluator._prior.apply_boundary_conditions(
-            samples.transpose(2,0,1))).transpose(1,2,0)
-
-        group = fp.samples_group + '/{name}/walker{wi}'
-
-        # loop over number of dimensions
-        widx = numpy.arange(nwalkers)
-        for pi, param in enumerate(self.variable_args):
-            # loop over number of walkers
-            for wi in widx:
-                dataset_name = group.format(name=param, wi=wi)
-                try:
-                    if fb > fp[dataset_name].size:
-                        # resize the dataset
-                        fp[dataset_name].resize(fb, axis=0)
-                    fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
-                except KeyError:
-                    # dataset doesn't exist yet
-                    fp.create_dataset(dataset_name, (fb,),
-                                      maxshape=(max_iterations,),
-                                      dtype=samples.dtype)
-                    fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
+        # write data
+        self._write_samples_group(
+                         self, fp, samples_group, parameters, samples,
+                         start_iteration=start_iteration,
+                         end_iteration=end_iteration,
+                         max_iterations=max_iterations)
 
 
     def write_likelihood_stats(self, fp, start_iteration=0, end_iteration=None,
@@ -399,6 +439,26 @@ class BaseMCMCSampler(_BaseSampler):
             The stats that were written, as a FieldArray. If there were no
             stats, returns None.
         """
+        # likelihood_stats is a nwalkers x niterations array
+        samples = self.likelihood_stats
+        if samples is None:
+            return None
+        nwalkers, niterations = samples.shape
+        samples = samples.reshape((nwalkers, niterations, 1))
+
+        # get samples_group and parameters
+        samples_group = fp.stats_group
+        parameters = stats.fieldnames
+
+        # write data
+        self._write_samples_group(
+                         self, fp, samples_group, parameters, samples,
+                         start_iteration=start_iteration,
+                         end_iteration=end_iteration,
+                         max_iterations=max_iterations)
+
+        return stats
+
         # stats is an nwalkers x niterations array
         stats = self.likelihood_stats
         if stats is None:
