@@ -333,16 +333,14 @@ def setup_background_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
     statmap_files = FileList([])
 
     # Check to see if the user wants to do hierarchical removal of loud triggers
-    try :
+    if wf.cp.has_option_tags('workflow-coincidence', 'hierarchical-removals-per-bin', tags=[tag]):
         h_num_rm = workflow.cp.get_opt_tags('workflow-coincidence', 'hierarchical-removal-per-bin', tags).split(' ')
-        h_num_rm = [x for x in h_num_rm if x != '']
-    except ConfigParser.Error:
-        h_num_rm = None
+      #  h_num_rm = [x for x in h_num_rm if x != '']
 
     for i, coinc_file in enumerate(bins_node.output_files):
         statnode = statmap_exe.create_node(FileList([coinc_file]), tags=tags + ['BIN_%s' % i])
         # Add hierarchical removal option if required!
-        if(h_num_rm is not None and h_num_rm[i]!=0):
+        if(h_num_rm[i] is not None and h_num_rm[i]!=0):
             statnode.add_opt('--max-hier-removal', h_num_rm)
         workflow += statnode
         statmap_files.append(statnode.output_files[0])
@@ -486,6 +484,8 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                                          
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
+
+    
 
     statmap_files = []
     for veto_file, veto_name in zip(veto_files, veto_names):
