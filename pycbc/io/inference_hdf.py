@@ -193,7 +193,9 @@ class InferenceFile(h5py.File):
             array are the names of the stats that are in the `likelihood_stats`
             group.
         """
-        return read_samples(parameters, samples_group=fp.stats_group, **kwargs)
+        parameters = self[self.stats_group].keys()
+        return self.read_samples(
+                          parameters, samples_group=self.stats_group, **kwargs)
 
     def read_acceptance_fraction(self, **kwargs):
         """Returns the acceptance fraction that was written to the file.
