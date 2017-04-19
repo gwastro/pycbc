@@ -56,29 +56,29 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
 
   # get library to build optimized pycbc_inspiral bundle
   wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30 --no-verbose"
-  primary_url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/03f2048c770492f66f80528493fd6cecded63769/x86_64/composer_xe_2015.0.090"
-  secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown/x86_64/composer_xe_2015.0.090"
-  p="composer_xe_2015.0.090.tar.gz"
+  primary_url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/03f2048c770492f66f80528493fd6cecded63769"
+  secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown"
   pushd /pycbc
-  set +e
-  test -r $p || wget $wget_opts ${primary_url}/${p}
-  set -e
-  test -r $p || wget $wget_opts ${secondary_url}/${p}
+  for p in "x86_64/composer_xe_2015.0.090/composer_xe_2015.0.090.tar.gz" "bank-files/testbank_TF2v4ROM.hdf" ; do
+    set +e
+    test -r `basename $p` || wget $wget_opts ${primary_url}/${p}
+    set -e
+    test -r `basename $p` || wget $wget_opts ${secondary_url}/${p}
+  done
   popd
 
   # run the einstein at home build and test script
   echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
   pushd ${BUILD}
-  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --with-extra-libs=file:///pycbc/composer_xe_2015.0.090.tar.gz --processing-scheme=mkl
+  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --with-extra-approximant='SPAtmplt:mtotal<4' --with-extra-approximant='SEOBNRv4_ROM:else'  --with-extra-approximant=--use-compressed-waveforms --with-extra-libs=file:///pycbc/composer_xe_2015.0.090.tar.gz --processing-scheme=mkl --with-extra-bank=/pycbc/testbank_TF2v4ROM.hdf
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     echo -e "\\n>> [`date`] Deploying pycbc_inspiral bundle"
+    BUNDLE_DEST=/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_6/bundle/${TRAVIS_TAG}
+    echo -e "\\n>> [`date`] Deploying pycbc_inspiral bundle to sugwg-condor.phy.syr.edu"
+    ssh pycbc@sugwg-condor.phy.syr.edu "mkdir -p ${BUNDLE_DEST}"
+    scp ${BUILD}/pycbc-build/environment/dist/pycbc_inspiral_osg* pycbc@sugwg-condor.phy.syr.edu:${BUNDLE_DEST}/pycbc_inspiral
     if [ "x${TRAVIS_TAG}" == "xlatest" ] ; then
-      BUNDLE_DEST=/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_6/bundle/${TRAVIS_TAG}
-      echo -e "\\n>> [`date`] Deploying pycbc_inspiral bundle to sugwg-test1.phy.syr.edu"
-      ssh pycbc@sugwg-test1.phy.syr.edu "mkdir -p ${BUNDLE_DEST}"
-      scp ${BUILD}/pycbc-build/environment/dist/pycbc_inspiral_osg* pycbc@sugwg-test1.phy.syr.edu:${BUNDLE_DEST}/pycbc_inspiral
-    else
       PYCBC_INSPIRAL_SUFFIX="_osg_${TRAVIS_TAG}"
       BUNDLE_DEST=/home/login/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_6/bundle/${TRAVIS_TAG}
       echo -e "\\n>> [`date`] Deploying pycbc_inspiral${PYCBC_INSPIRAL_SUFFIX} to CVMFS"
@@ -173,10 +173,15 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_virtualenv" ] ; then
 
 cat << EOF >> $VIRTUAL_ENV/bin/activate
 
-# If a suitable MKL exists, set it up
+# if a suitable MKL exists, set it up
 if [ -f /opt/intel/composer_xe_2015/mkl/bin/mklvars.sh ] ; then
+  # location on syracuse cluster
   . /opt/intel/composer_xe_2015/mkl/bin/mklvars.sh intel64
+elif [ -f /opt/intel/2015/composer_xe_2015/mkl/bin/mklvars.sh ] ; then
+  # location on atlas cluster
+  . /opt/intel/2015/composer_xe_2015/mkl/bin/mklvars.sh
 elif [ -f /ldcg/intel/2017u0/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh ] ; then
+  # location on cit cluster
   . /ldcg/intel/2017u0/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh intel64
 fi
 
@@ -200,12 +205,13 @@ EOF
     chmod -R go+r ${VENV_PATH}
   
     echo -e "\\n>> [`date`] Deploying virtual environment ${VENV_PATH}"
+    echo -e "\\n>> [`date`] Deploying virtual environment to sugwg-condor.phy.syr.edu"
+    ssh pycbc@sugwg-condor.phy.syr.edu "mkdir -p /home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}"
+    rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ pycbc@sugwg-condor.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/
     if [ "x${TRAVIS_TAG}" == "xlatest" ] ; then
-      echo -e "\\n>> [`date`] Deploying master to sugwg-test1.phy.syr.edu"
-      ssh pycbc@sugwg-test1.phy.syr.edu "mkdir -p /home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}"
-      rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ pycbc@sugwg-test1.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/
-    else
       echo -e "\\n>> [`date`] Deploying release ${TRAVIS_TAG} to CVMFS"
+      # remove lalsuite source and deploy on cvmfs
+      rm -rf ${VENV_PATH}/src/lalsuite
       ssh ouser.ligo@oasis-login.opensciencegrid.org "mkdir -p /home/login/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}"
       rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ ouser.ligo@oasis-login.opensciencegrid.org:/home/login/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/
       ssh ouser.ligo@oasis-login.opensciencegrid.org osg-oasis-update
