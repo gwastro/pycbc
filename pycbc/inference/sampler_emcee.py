@@ -508,12 +508,15 @@ class EmceePTSampler(BaseMCMCSampler):
             arrays.append(fp[group.format(tk=tk)][wmask])
         return numpy.vstack(arrays)
 
-    def write_chain(self, fp, start_iteration=0, end_iteration=None,
-                    max_iterations=None):
-        """Writes the samples from the current chain to the given file. Results
-        are written to: `fp[fp.samples_group/{vararg}/temp{k}/walker{i}]`,
-        where `{vararg}` is the name of a variable arg, `{k}` is a temperature
-        index (smaller = colder), and `{i}` is the index of a walker.
+    def _write_samples_group(self, fp, samples_group, parameters, samples,
+                             start_iteration=0, end_iteration=None,
+                             max_iterations=None,
+                             apply_boundary_conditions=False):
+        """Writes samples to the given file.
+
+        Results are written to: `fp[samples_group/{vararg}/walker{i}]`, where
+        `{vararg}` is the name of a variable arg, and `{i}` is the index of
+        a walker.
 
         Parameters
         -----------
@@ -530,13 +533,13 @@ class EmceePTSampler(BaseMCMCSampler):
             you intend to run more iterations, set this value to that size so
             that the array in the file will be large enough to accomodate
             future data.
+        samples_group : str
+            Name of samples group to write.
         """
-        # chain is ntemps x nwalkers x niterations x ndim
-        samples = self.chain
-        ntemps, nwalkers, niterations, _ = samples.shape
 
         # due to clearing memory, there can be a difference between indices in
         # memory and on disk
+        ntemps, nwalkers, niterations, _ = samples.shape
         niterations += self._lastclear
         fa = start_iteration # file start index
         if end_iteration is None:
@@ -553,11 +556,12 @@ class EmceePTSampler(BaseMCMCSampler):
 
         # map sample values to the values that were actually passed to the
         # waveform generator and prior evaluator
-        samples = numpy.array(
-            self.likelihood_evaluator._prior.apply_boundary_conditions(
-            samples.transpose(3,0,1,2))).transpose(1,2,3,0)
+        if apply_boundary_conditions:
+            samples = numpy.array(
+                self.likelihood_evaluator._prior.apply_boundary_conditions(
+                    samples.transpose(3,0,1,2))).transpose(1,2,3,0)
 
-        group = fp.samples_group + '/{name}/temp{tk}/walker{wi}'
+        group = samples_group + '/{name}/temp{tk}/walker{wi}'
 
         # create indices for faster sub-looping
         widx = numpy.arange(nwalkers)
@@ -582,7 +586,6 @@ class EmceePTSampler(BaseMCMCSampler):
                                           dtype=samples.dtype)
                         fp[dataset_name][fa:fb] = samples[tk, wi, ma:mb, pi]
 
-
     def write_likelihood_stats(self, fp, start_iteration=0, end_iteration=None,
                                max_iterations=None):
         """Writes the given likelihood array to the given file. Results are
@@ -602,51 +605,23 @@ class EmceePTSampler(BaseMCMCSampler):
         max_iterations : {None, int}
             See `write_chain` for details.
         """
-        lls = self.likelihood_stats
-        ntemps, nwalkers, niterations = lls.shape
+        # likelihood_stats is a ntemps x nwalkers x niterations array
+        samples = self.likelihood_stats
+        parameters = samples.fieldnames
+        if samples is None:
+            return None
+        nwalkers, niterations = samples.shape
+        samples = samples.reshape((ntemps, nwalkers, niterations, 1))
+        samples_group = fp.stats_group
 
-        # due to clearing memory, there can be a difference between indices in
-        # memory and on disk
-        niterations += self._lastclear
-        fa = start_iteration # file start index
-        if end_iteration is None:
-            end_iteration = niterations
-        fb = end_iteration # file end index
-        ma = fa - self._lastclear # memory start index
-        mb = fb - self._lastclear # memory end index
+        # write data
+        self._write_samples_group(
+                         fp, samples_group, parameters, samples,
+                         start_iteration=start_iteration,
+                         end_iteration=end_iteration,
+                         max_iterations=max_iterations)
 
-        if max_iterations is not None and max_iterations < niterations:
-            raise IndexError("The provided max size is less than the "
-                             "number of iterations")
-        elif max_iterations is None:
-            max_iterations = niterations
-
-        group = fp.stats_group + '/{field}/temp{tk}/walker{wi}'
-
-        # create indices for faster sub-looping
-        widx = numpy.arange(nwalkers)
-        tidx = numpy.arange(ntemps)
-
-        # loop over stats
-        for stat in lls.fieldnames:
-            arr = lls[stat]
-            # loop over temps
-            for tk in tidx:
-                # loop over number of walkers
-                for wi in widx:
-                    dataset_name = group.format(field=stat, tk=tk, wi=wi)
-                    try:
-                        if fb > fp[dataset_name].size:
-                            # resize the dataset
-                            fp[dataset_name].resize(fb, axis=0)
-                        fp[dataset_name][fa:fb] = arr[tk, wi, ma:mb]
-                    except KeyError:
-                        # dataset doesn't exist yet
-                        fp.create_dataset(dataset_name, (fb,),
-                                          maxshape=(max_iterations,),
-                                          dtype=arr.dtype)
-                        fp[dataset_name][fa:fb] = arr[tk, wi, ma:mb]
-
+        return stats
 
     def write_results(self, fp, start_iteration=0, end_iteration=None,
                       max_iterations=None):

@@ -301,7 +301,8 @@ class BaseMCMCSampler(_BaseSampler):
 
     def _write_samples_group(self, fp, samples_group, parameters, samples,
                              start_iteration=0, end_iteration=None,
-                             max_iterations=None):
+                             max_iterations=None,
+                             apply_boundary_conditions=False):
         """Writes samples to the given file.
 
         Results are written to: `fp[samples_group/{vararg}/walker{i}]`, where
@@ -346,9 +347,10 @@ class BaseMCMCSampler(_BaseSampler):
 
         # map sample values to the values that were actually passed to the
         # waveform generator and prior evaluator
-        samples = numpy.array(
-            self.likelihood_evaluator._prior.apply_boundary_conditions(
-            samples.transpose(2,0,1))).transpose(1,2,0)
+        if apply_boundary_conditions:
+            samples = numpy.array(
+                self.likelihood_evaluator._prior.apply_boundary_conditions(
+                    samples.transpose(2,0,1))).transpose(1,2,0)
 
         group = samples_group + '/{name}/walker{wi}'
 
@@ -403,11 +405,11 @@ class BaseMCMCSampler(_BaseSampler):
 
         # write data
         self._write_samples_group(
-                         self, fp, samples_group, parameters, samples,
+                         fp, samples_group, parameters, samples,
                          start_iteration=start_iteration,
                          end_iteration=end_iteration,
-                         max_iterations=max_iterations)
-
+                         max_iterations=max_iterations,
+                         apply_boundary_conditions=True)
 
     def write_likelihood_stats(self, fp, start_iteration=0, end_iteration=None,
                                max_iterations=None):
@@ -441,66 +443,21 @@ class BaseMCMCSampler(_BaseSampler):
         """
         # likelihood_stats is a nwalkers x niterations array
         samples = self.likelihood_stats
+        parameters = samples.fieldnames
         if samples is None:
             return None
         nwalkers, niterations = samples.shape
         samples = samples.reshape((nwalkers, niterations, 1))
-
-        # get samples_group and parameters
         samples_group = fp.stats_group
-        parameters = stats.fieldnames
 
         # write data
         self._write_samples_group(
-                         self, fp, samples_group, parameters, samples,
+                         fp, samples_group, parameters, samples,
                          start_iteration=start_iteration,
                          end_iteration=end_iteration,
                          max_iterations=max_iterations)
 
         return stats
-
-        # stats is an nwalkers x niterations array
-        stats = self.likelihood_stats
-        if stats is None:
-            return None
-        nwalkers, niterations = stats.shape
-        fields = stats.fieldnames
-
-        # due to clearing memory, there can be a difference between indices in
-        # memory and on disk
-        niterations += self._lastclear
-        fa = start_iteration # file start index
-        if end_iteration is None:
-            end_iteration = niterations
-        fb = end_iteration # file end index
-        ma = fa - self._lastclear # memory start index
-        mb = fb - self._lastclear # memory end index
-
-        group = fp.stats_group + '/{param}/walker{wi}'
-
-        if max_iterations is not None and max_iterations < niterations:
-            raise IndexError("The provided max size is less than the "
-                             "number of iterations")
-        elif max_iterations is None:
-            max_iterations = niterations
-
-        for param in fields:
-            # loop over number of walkers
-            for wi in range(nwalkers):
-                dataset_name = group.format(param=param, wi=wi)
-                try:
-                    if fb > fp[dataset_name].size:
-                        # resize the dataset
-                        fp[dataset_name].resize(fb, axis=0)
-                    fp[dataset_name][fa:fb] = stats[param][wi, ma:mb]
-                except KeyError:
-                    # dataset doesn't exist yet
-                    fp.create_dataset(dataset_name, (fb,),
-                                      maxshape=(max_iterations,),
-                                      dtype=stats[param].dtype)
-                    fp[dataset_name][fa:fb] = stats[param][wi, ma:mb]
-        return stats
-
 
     def write_acceptance_fraction(self, fp, start_iteration=0,
                                   end_iteration=None, max_iterations=None):
