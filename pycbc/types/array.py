@@ -614,6 +614,7 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def squared_norm(self):
         """ Return the elementwise squared norm of the array """
+        return
 
     @_returntype
     @_checkother
@@ -624,6 +625,7 @@ class Array(object):
         Self is modified in place and returned as output.
         Precisions of inputs must match.
         """
+        return
 
     @_vrcheckother
     @_convert
@@ -631,6 +633,7 @@ class Array(object):
     def inner(self, other):
         """ Return the inner product of the array with complex conjugation.
         """
+        return
 
     @_vrcheckother
     @_convert
@@ -638,11 +641,13 @@ class Array(object):
     def vdot(self, other):
         """ Return the inner product of the array with complex conjugation.
         """
+        return
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def clear(self): 
         """ Clear out the values of the array. """
+        return
 
     @_vrcheckother
     @_convert
@@ -650,30 +655,35 @@ class Array(object):
     def weighted_inner(self, other, weight):
         """ Return the inner product of the array with complex conjugation.
         """
+        return
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def sum(self):
         """ Return the sum of the the array. """
+        return
 
     @_returntype
     @_convert
     @schemed(BACKEND_PREFIX)
     def cumsum(self):
         """ Return the cumulative sum of the the array. """
-     
+        return     
+
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def max(self):
         """ Return the maximum value in the array. """
+        return
             
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def max_loc(self):
         """Return the maximum value in the array along with the index location """
-
+        return
+    
     @_convert
     @schemed(BACKEND_PREFIX)
     def abs_arg_max(self):
@@ -683,30 +693,35 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def abs_max_loc(self):
         """Return the maximum elementwise norm in the array along with the index location"""
-
+        return
+    
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def min(self):
         """ Return the maximum value in the array. """ 
+        return
         
     @_returnarray
     @_convert
     @schemed(BACKEND_PREFIX)
     def take(self, indices):
         """ Return the values at the given indices. """                           
+        return
 
     @_convert
     @_vcheckother
     @schemed(BACKEND_PREFIX)
     def dot(self, other):
         """ Return the dot product"""
+        return
     
     @schemed(BACKEND_PREFIX)
     def _getvalue(self, index):
         """Helper function to return a single value from an array. May be very
            slow if the memory is on a gpu.
         """
+        return
 
     @_memoize_single
     @_returntype
@@ -834,6 +849,7 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def ptr(self):
         """ Returns a pointer to the memory of this array """
+        return
         
     @property
     def itemsize(self):
@@ -855,7 +871,8 @@ class Array(object):
     @_convert
     @schemed(BACKEND_PREFIX)
     def numpy(self):
-        """ Returns a Numpy Array that contains this data """     
+        """ Returns a Numpy Array that contains this data """   
+        return  
     
     @_convert
     def lal(self):
