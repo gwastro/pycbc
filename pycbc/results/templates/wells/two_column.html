@@ -11,11 +11,16 @@
             <!-- two file case -->
             {% if len(filelist) == 2 %}
                 <div class="col-md-6" style="padding-top:20px;">
+                <a name="A{{i}}"></a>
                 {% raw %}
                     {% if path_exists('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}') %}
                         {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}') %}
-                            {% if cp.has_option('{% endraw %}{{filelist[0].name}}{% raw %}', 'title') %}
-                                <p class="text-center" style="font-size:18px;"><b>{% endraw %}A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[0].name}}{% raw %}', 'title')}}</b></p>
+                            {% if cp.has_option('{% endraw %}{{filelist[0].name}}{% raw %}', 'title') %}{% endraw %}
+                                <p class="text-center" style="font-size:18px;">
+                                    <a href="#A{{i}}">
+                                    <b>A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[0].name}}{% raw %}', 'title')}}</b>
+                                    </a>
+                                </p>
                             {% endif %}
                             {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}' , '') }}
                     {% endif %}
@@ -24,11 +29,16 @@
                 {% set i = i + 1 %}
                 <div class="col-md-6" style="padding-top:20px;">
                 {% if filelist[1] != None %}
+                    <a name="A{{i}}"></a>
                     {% raw %}
                     {% if path_exists('{% endraw %}{{dir}}/{{filelist[1].name}}{% raw %}') %}
                         {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[1].name}}{% raw %}') %}
-                            {% if cp.has_option('{% endraw %}{{filelist[1].name}}{% raw %}', 'title') %}
-                                <p class="text-center" style="font-size:18px;"><b>{% endraw %}A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[1].name}}{% raw %}', 'title')}}</b></p>
+                            {% if cp.has_option('{% endraw %}{{filelist[1].name}}{% raw %}', 'title') %}{% endraw %}
+                                <p class="text-center" style="font-size:18px;">
+                                    <a href="#A{{i}}">
+                                    <b>A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[1].name}}{% raw %}', 'title')}}</b></p>
+                                    </a>
+                                </p>
                             {% endif %}
                             {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[1].name}}{% raw %}' , '') }}
                     {% endif %}
@@ -40,11 +50,16 @@
             <!-- one file case -->
             {% if len(filelist) == 1 %}
                 <div class="col-md-12" style="padding-top:20px;">
+                <a name="A{{i}}"></a>
                     {% raw %}
                     {% if path_exists('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}') %}
                         {% set cp = get_embedded_config('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}') %}
-                            {% if cp.has_option('{% endraw %}{{filelist[0].name}}{% raw %}', 'title') %}
-                                <p class="text-center" style="font-size:18px;"><b>{% endraw %}A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[0].name}}{% raw %}', 'title')}}</b></p>
+                            {% if cp.has_option('{% endraw %}{{filelist[0].name}}{% raw %}', 'title') %}{% endraw %}
+                                <p class="text-center" style="font-size:18px;">
+                                    <a href="#A{{i}}">
+                                    <b>A{{i}}. {% raw %}{{cp.get('{% endraw %}{{filelist[0].name}}{% raw %}', 'title')}}</b></p>
+                                    </a>
+                                </p>
                             {% endif %}
                             {{ setup_template_render('{% endraw %}{{dir}}/{{filelist[0].name}}{% raw %}' , '') }}
                     {% endif %}
