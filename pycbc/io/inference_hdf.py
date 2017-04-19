@@ -147,7 +147,7 @@ class InferenceFile(h5py.File):
         """
         return self.attrs["log_evidence"], self.attrs["dlog_evidence"]
 
-    def read_samples(self, parameters, **kwargs):
+    def read_samples(self, parameters, samples_group=None, **kwargs):
         """Reads samples from the file.
 
         Parameters
@@ -158,6 +158,8 @@ class InferenceFile(h5py.File):
             `FieldArray` (as long as the file contains the necessary fields
             to derive the virtual field or method), and/or a function of
             these.
+        samples_group : str
+            Group in HDF InferenceFile that parameters belong to.
         \**kwargs :
             The rest of the keyword args are passed to the sampler's
             `read_samples` method.
@@ -169,8 +171,11 @@ class InferenceFile(h5py.File):
             FieldArray.
         """
         # get the appropriate sampler class
+        samples_group = samples_group if samples_group \
+                             else InferenceFile.samples_group
         sclass = pycbc.inference.sampler.samplers[self.sampler_name]
-        return sclass.read_samples(self, parameters, **kwargs)
+        return sclass.read_samples(self, parameters,
+                                   samples_group=samples_group, **kwargs)
 
     def read_likelihood_stats(self, **kwargs):
         """Reads likelihood stats from self.
