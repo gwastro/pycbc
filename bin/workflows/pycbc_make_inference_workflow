@@ -340,7 +340,7 @@ container._adag.addDependency(dep)
 container.save(filename=opts.output_file, output_map_path=opts.output_map)
 
 # write html well
-layout.two_column_layout(rdir.base, layouts)
+layout.two_column_layout(rdir.base, layouts, subtitle="Hello world!")
 
 # save workflow configuration file
 base = rdir["workflow/configuration"]
