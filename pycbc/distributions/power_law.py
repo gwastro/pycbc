@@ -20,10 +20,9 @@ probability density function is a power law.
 import numpy
 from pycbc.distributions import bounded
 
-class UniformRadius(bounded.BoundedDist):
+class UniformPowerLaw(bounded.BoundedDist):
     r"""
-    For a uniform distribution in volume using spherical coordinates, this
-    is the distriubtion to use for the radius. The parameters are
+    For a uniform distribution in power law. The parameters are
     independent of each other. Instances of this class can be called like
     a function. By default, logpdf will be called, but this can be changed
     by setting the class's __call__ method to its pdf method.
@@ -122,10 +121,10 @@ class UniformRadius(bounded.BoundedDist):
     lognorm : float
         The log of the normalization.
     """
-    name = 'uniform_radius'
-    dim = 3
-    def __init__(self, **params):
-        super(UniformRadius, self).__init__(**params)
+    name = "uniform_power_law"
+    def __init__(self, dim=None, **params):
+        super(UniformPowerLaw, self).__init__(**params)
+        self.dim = dim
         self._norm = 1.0
         self._lognorm = 0.0
         for p in self._params:
@@ -231,9 +230,19 @@ class UniformRadius(bounded.BoundedDist):
         Uniform
             A distribution instance from the pycbc.inference.prior module.
         """
-        return super(UniformRadius, cls).from_config(cp, section,
+        return super(UniformPowerLaw, cls).from_config(cp, section,
                                                        variable_args,
                                                        bounds_required=True)
 
 
-__all__ = ['UniformRadius']
+class UniformRadius(UniformPowerLaw):
+    """ For a uniform distribution in volume using spherical coordinates, this
+-   is the distriubtion to use for the radius.
+
+    For more details see UniformPowerLaw.
+    """
+    name = "uniform_radius"
+    def __init__(self, dim=3, **params):
+        super(UniformRadius, self).__init__(dim=3, **params)
+
+__all__ = ["UniformPowerLaw", "UniformRadius"]
