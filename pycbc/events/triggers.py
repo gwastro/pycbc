@@ -48,15 +48,13 @@ def insert_bank_bins_option_group(parser):
                             help="Low frequency cutoff in Hz.")
     return bins_group
 
-def bank_bins_from_cli(opts, ifos=None):
+def bank_bins_from_cli(opts):
     """ Parses the CLI options related to binning templates in the bank.
 
     Parameters
     ----------
     opts : object
         Result of parsing the CLI with OptionParser.
-    ifos : list
-        List of IFOs.
 
     Results
     -------
@@ -141,14 +139,14 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
     ifos = opts.sngl_trigger_files.keys()
 
     # get indices of bins in template bank
-    bins_idx, bank_data = bank_bins_from_cli(opts, ifos=ifos)
+    bins_idx, bank_data = bank_bins_from_cli(opts)
     bin_names = bins_idx.keys()
 
     # if taking triggers from statmap file
     if opts.statmap_file and opts.bank_file and opts.sngl_trigger_files:
 
         # loop over each bin
-        for i, bin_name in enumerate(bin_names):
+        for bin_name in bin_names:
             data = {}
 
             # get template has and detection statistic for coincident events
@@ -187,7 +185,7 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
     elif opts.bank_file and opts.sngl_trigger_files:
 
         # loop over each bin
-        for i, bin_name in enumerate(bin_names):
+        for bin_name in bin_names:
             data = {}
 
             # only use one IFO
