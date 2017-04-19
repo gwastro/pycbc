@@ -43,7 +43,7 @@ OVERWHITENED = 2
 # =============================================================================
 #
 
-# map between tapering string in sim_inspiral table or inspiral 
+# map between tapering string in sim_inspiral table or inspiral
 # code option and lalsimulation constants
 laltaper_map = {
     'TAPER_NONE'    : None,
@@ -62,7 +62,7 @@ laltaper_func_map = {
 
 def laltaper_timeseries(tsdata, tapermethod=None, return_lal=False):
     """
-    Taper either or both ends of a time series using wrapped 
+    Taper either or both ends of a time series using wrapped
     LALSimulation functions
 
     Parameters
@@ -74,7 +74,7 @@ def laltaper_timeseries(tsdata, tapermethod=None, return_lal=False):
         'TAPER_STARTEND', 'start', 'end', 'startend') - NB 'TAPER_NONE' will
         not change the series!
     return_lal : Boolean
-        If True, return a wrapped LAL time series object, else return a 
+        If True, return a wrapped LAL time series object, else return a
         PyCBC time series.
     """
     if tapermethod is None:
@@ -83,7 +83,7 @@ def laltaper_timeseries(tsdata, tapermethod=None, return_lal=False):
     if tapermethod not in laltaper_map.keys():
         raise ValueError("Unknown tapering method %s, valid methods are %s" % \
                          (tapermethod, ", ".join(laltaper_map.keys())))
-    if not tsdata.dtype in (float32, float64):
+    if tsdata.dtype not in (float32, float64):
         raise TypeError("Strain dtype must be float32 or float64, not "
                     + str(tsdata.dtype))
     taper_func = laltaper_func_map[tsdata.dtype]
@@ -91,7 +91,7 @@ def laltaper_timeseries(tsdata, tapermethod=None, return_lal=False):
     ts_lal = tsdata.astype(tsdata.dtype).lal()
     if laltaper_map[tapermethod] is not None:
         taper_func(ts_lal.data, laltaper_map[tapermethod])
-    if return_lal == True:
+    if return_lal:
         return ts_lal
     else:
         return TimeSeries(ts_lal.data.data[:], delta_t=ts_lal.deltaT,
@@ -120,7 +120,7 @@ class TimeDomainWindow(object):
     along with a taper duration for each. Tapers are applied such that the
     left taper ramps up to 1 and the right taper ramps down from 1, with zeros
     before/after.
-    
+
     Available taper functions are `lal` or any window recognized by
     `scipy.signal.get_window`. If `lal`, the tapering function in
     LALSimulation is used. This taper does not use a time or a location.
@@ -320,7 +320,7 @@ class TimeDomainWindow(object):
             wh = self._invpsds[ifo]
         else:
             raise ValueError("window_whitened set to {}".format(
-                             window_whitened))
+                             self.window_whitened))
         kmax = len(htilde)
         # we can't whiten the waveform if it has frequencies outside of what
         # the psd has
@@ -552,7 +552,7 @@ class TimeDomainWindow(object):
             break_indx = -int(break_time/ht.delta_t)
             ht.roll(break_indx)
             rollback = -break_indx
-        # 
+        #
         #   apply left taper
         #
         if left_time is not None:
