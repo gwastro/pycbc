@@ -92,7 +92,6 @@ def background_bin_from_string(background_bins, data):
 
     return bins
 
-
 def calculate_n_louder(bstat, fstat, dec, skip_background=False):
     """ Calculate for each foreground event the number of background events
     that are louder than it.
