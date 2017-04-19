@@ -441,13 +441,12 @@ class BaseMCMCSampler(_BaseSampler):
             The stats that were written, as a FieldArray. If there were no
             stats, returns None.
         """
-        # likelihood_stats is a nwalkers x niterations array
+        # likelihood_stats is a nwalkers x niterations FieldArray
         samples = self.likelihood_stats
         parameters = samples.fieldnames
         if samples is None:
             return None
-        nwalkers, niterations = samples.shape
-        samples = samples.reshape((nwalkers, niterations, 1))
+        samples = samples.to_array(axis=-1)
         samples_group = fp.stats_group
 
         # write data
@@ -457,7 +456,7 @@ class BaseMCMCSampler(_BaseSampler):
                          end_iteration=end_iteration,
                          max_iterations=max_iterations)
 
-        return stats
+        return samples
 
     def write_acceptance_fraction(self, fp, start_iteration=0,
                                   end_iteration=None, max_iterations=None):
