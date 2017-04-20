@@ -18,7 +18,7 @@
 import os.path
 from itertools import izip_longest
 
-def two_column_layout(path, cols):
+def two_column_layout(path, cols, **kwargs):
     """ Make a well layout in a two column format
     
     Parameters
@@ -32,9 +32,9 @@ def two_column_layout(path, cols):
     """
     path = os.path.join(os.getcwd(), path, 'well.html')
     from pycbc.results.render import render_workflow_html_template
-    render_workflow_html_template(path, 'two_column.html', cols)
+    render_workflow_html_template(path, 'two_column.html', cols, **kwargs)
 
-def single_layout(path, files):
+def single_layout(path, files, **kwargs):
     """ Make a well layout in  single column format
     
     path: str
@@ -42,7 +42,7 @@ def single_layout(path, files):
     files: list of pycbc.workflow.core.Files
         This list of images to show in order within the well layout html file.
     """
-    two_column_layout(path, [(f,) for f in files])
+    two_column_layout(path, [(f,) for f in files], **kwargs)
 
 def grouper(iterable, n, fillvalue=None):
     """ Group items into chunks of n length
@@ -50,7 +50,7 @@ def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return izip_longest(*args, fillvalue=fillvalue)
     
-def group_layout(path, files):
+def group_layout(path, files, **kwargs):
     """ Make a well layout in chunks of two from a list of files
     
     path: str
@@ -60,7 +60,7 @@ def group_layout(path, files):
         Every two are placed on the same row.
     """
     if len(files) > 0:
-        two_column_layout(path, list(grouper(files, 2)))      
+        two_column_layout(path, list(grouper(files, 2)), **kwargs)      
  
 class SectionNumber(object):
     """ Class to help with numbering sections in an output page.
