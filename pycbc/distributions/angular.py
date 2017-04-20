@@ -333,10 +333,13 @@ class UniformSolidAngle(bounded.BoundedDist):
     _default_polar_angle = 'theta'
     _default_azimuthal_angle = 'phi'
 
-    def __init__(self, polar_angle=_default_polar_angle,
-                 azimuthal_angle=_default_azimuthal_angle,
+    def __init__(self, polar_angle=None, azimuthal_angle=None,
                  polar_bounds=None, azimuthal_bounds=None,
                  azimuthal_cyclic_domain=False):
+        if polar_angle is None:
+            polar_angle = self._default_polar_angle
+        if azimuthal_angle is None:
+            azimuthal_angle = self._default_azimuthal_angle
         self._polardist = self._polardistcls(**{
             polar_angle: polar_bounds}) 
         self._azimuthaldist = self._azimuthaldistcls(**{
