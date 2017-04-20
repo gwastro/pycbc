@@ -594,8 +594,8 @@ class ForegroundTriggers(object):
     @property
     def sort_arr(self):
         if self._sort_arr is None:
-            ifar = self.coinc_file.get_column('ifar')
-            sorting = ifar.argsort()[::-1]
+            stat = self.coinc_file.get_column('stat')
+            sorting = stat.argsort()[::-1]
             if self.n_loudest:
                 sorting = sorting[:self.n_loudest]
             self._sort_arr = sorting
@@ -648,15 +648,20 @@ class ForegroundTriggers(object):
             return_dict[ifo] = curr
         return return_dict
 
-    def ignore_n_loudest(self, n_loudest):
+    def ignore_n_loudest(self, num_ignore):
         # A function to return the coinc foreground trigger statistics
-        # quieter in ranking statistic than the N loudest triggers (n_loudest)
+        # quieter in ranking statistic than the N loudest triggers (num_ignore)
 
-        # Remove n loudest from coinc file
+        # ForegroundTriggers is sorted by largest ifar upon initialization
+        # So just return the triggers between num_ignore and self.n_loudest
 
-        # Remove n loudest from bank file
-
-        # Remove n loudest from single file
+        # But we removed based on largest stat, so we need to be consistent
+ 
+        stat = self.coinc_file.get_column('stat')
+        sorting = stat.argsort()[::-1]
+        sorting = sorting[num_ignore:self.n_loudest]
+        self._sort_arr = sorting
+        return self._sort_arr
 
     def to_coinc_xml_object(self, file_name):
         # FIXME: This function will only work with two ifos!!
