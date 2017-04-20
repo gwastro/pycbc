@@ -676,7 +676,7 @@ def get_td_lm_allmodes(template=None, taper=None, **kwargs):
         t_final = lm_tfinal(final_mass, final_spin, lmns)
 
     kmax = int(t_final / delta_t) + 1
-    f_0, tau = get_lm_f0tau_allmodes(final_mass, final_spin, lmns)
+    _, tau = get_lm_f0tau_allmodes(final_mass, final_spin, lmns)
     # Different overtones will have different tapering window-size
     # Find maximum window size to create long enough output vector
     if taper is not None:
