@@ -5,6 +5,10 @@ html, body {
     background-color:#EEEEEE;
 }
 
+p.subtitle{
+    font-size : 18px;
+}
+
 /* add some space to the left upon inserting a caret */
 .caret{
     margin-left : 4px;
@@ -84,3 +88,4 @@ font-size:16px;
 .footer-custom {
     padding : 25px;
 }
+
