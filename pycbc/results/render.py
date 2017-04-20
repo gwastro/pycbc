@@ -28,7 +28,7 @@ from pycbc.results import unescape_table
 from pycbc.results.metadata import save_html_with_metadata
 from pycbc.workflow.core import SegFile, makedir
 
-def render_workflow_html_template(filename, subtemplate, filelists):
+def render_workflow_html_template(filename, subtemplate, filelists, **kwargs):
     """ Writes a template given inputs from the workflow generator. Takes
     a list of tuples. Each tuple is a pycbc File object. Also the name of the
     subtemplate to render and the filename of the output.
@@ -51,6 +51,7 @@ def render_workflow_html_template(filename, subtemplate, filelists):
     subtemplate = env.get_template(subtemplate)
     context = {'filelists' : filelists,
                'dir' : dirnam}
+    context.update(kwargs)
     output = subtemplate.render(context)
 
     # save as html page
