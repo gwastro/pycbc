@@ -1,7 +1,7 @@
 #!/usr/bin/python
 """
 Make table of the foreground coincident events. Also includes ability to 
-write FANs for intermediary hierarchical removal steps.
+write FARs and p-values for intermediary hierarchical removal steps.
 """
 import argparse
 import h5py, logging, numpy
@@ -23,14 +23,14 @@ parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 parser.add_argument('--foreground-tag')
 parser.add_argument('--num-coincs-to-write', type=int)
-parser.add_argument('--h-num-iterations', type=int, default=None,
-                    help='Indicate which FARs and FAPs (FANs) to write '
+parser.add_argument('--hierarchical-rm-iterations', type=int, default=None,
+                    help='Indicate which FARs to write to the table '
                          'based on the number of hierarchical removals done. '
-                         'Choosing None defaults to giving the FANs after '
+                         'Choosing None defaults to giving the FARs after '
                          'all hierarchical removals were done depending on '
                          'previous configuration choices. Choosing 0 selects '
-                         'writing the FANs prior to any hierarchical '
-                         'removals. Choosing 1 means writing the FANs after '
+                         'writing the FARs prior to any hierarchical '
+                         'removals. Choosing 1 means writing the FARs after '
                          'doing 1 hierarchical removal. The program will '
                          'fail if the user selects a number above the number '
                          'of hierarchical removals done. [default=None]')
@@ -39,7 +39,7 @@ args = parser.parse_args()
 f = h5py.File(args.trigger_file, 'r')
 
 # Parse which inclusive background to use for the plotting
-h_num_rm = args.h_num_iterations
+h_num_rm = args.hierarchical_rm_iterations
 
 try:
     h_iterations = f.attrs['hierarchical_removal_iterations']
