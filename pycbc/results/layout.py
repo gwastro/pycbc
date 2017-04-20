@@ -42,7 +42,7 @@ def single_layout(path, files, **kwargs):
     files: list of pycbc.workflow.core.Files
         This list of images to show in order within the well layout html file.
     """
-    two_column_layout(path, [(f, **kwargs) for f in files])
+    two_column_layout(path, [(f,) for f in files], **kwargs)
 
 def grouper(iterable, n, fillvalue=None):
     """ Group items into chunks of n length
