@@ -69,7 +69,7 @@ if args.output_file.endswith('.html'):
     # particular stage of hierarchical removals (h_num_rm), remove that
     # number of loudest triggers by stat from the list of triggers.
     if h_num_rm >= 0:
-        fortrigs.ignore_n_loudest(h_num_rm)
+        fortrigs.ignore_x_loudest(h_num_rm)
 
     ifar = fortrigs.get_coincfile_array('ifar')
     ifar_exc = fortrigs.get_coincfile_array('ifar_exc')
@@ -91,8 +91,6 @@ if args.output_file.endswith('.html'):
         stat_hrm = f['foreground_h%s/stat' % h_num_rm][:]
         ifar_hrm = f['foreground_h%s/ifar' % h_num_rm][:]
         fap_hrm = f['foreground_h%s/fap' % h_num_rm][:]
-
-        fortrigs.ignore_n_loudest(h_num_rm)
 
         # Find the map between stat and stat_hrm.
         idx_list = []

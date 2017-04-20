@@ -648,7 +648,7 @@ class ForegroundTriggers(object):
             return_dict[ifo] = curr
         return return_dict
 
-    def ignore_n_loudest(self, num_ignore):
+    def ignore_x_loudest(self, num_ignore):
         # A function to return the coinc foreground trigger statistics
         # quieter in ranking statistic than the N loudest triggers (num_ignore)
 
