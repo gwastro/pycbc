@@ -65,6 +65,12 @@ fortrigs = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
                                   n_loudest=args.num_coincs_to_write)
 
 if args.output_file.endswith('.html'):
+    # If hierarchical removals were done and the user wants to look at a
+    # particular stage of hierarchical removals (h_num_rm), remove that
+    # number of loudest triggers by stat from the list of triggers.
+    if h_num_rm >= 0:
+        fortrigs.ignore_n_loudest(h_num_rm)
+
     ifar = fortrigs.get_coincfile_array('ifar')
     ifar_exc = fortrigs.get_coincfile_array('ifar_exc')
     fap = fortrigs.get_coincfile_array('fap')
@@ -77,63 +83,29 @@ if args.output_file.endswith('.html'):
     spin1z = fortrigs.get_bankfile_array('spin1z')
     spin2z = fortrigs.get_bankfile_array('spin2z')
 
-    # These values will need to be corrected if hierarchical removals were
-    # done.
+    # Write the correct false alarm rates and other significance values
+    # to the table after h_num_rm hierarchical removals
     if h_num_rm >= 0:
-
-        # HACK: The inclusive IFAR and inclusive FAP need to be rewritten to
-        #       and the list of foreground triggers won't match the original
-        #       placement of parameters for a trigger after a hierarchical
-        #       removal. This will place everything correctly. In the future
-        #       rewrite the method for ForegroundTriggers and store all values
-        #       to foreground_h, that way it doesn't get complicated later.
-
-        idx_sort = numpy.argsort(stat)
-
-        # Remove the last element of time1_orig sorted by lowest stat
-        # to highest stat for that trigger.
-        id_list=[]
-        list_len = len(stat)-1
-        for i in range(0, h_num_rm):
-            idx_rm = idx_sort[list_len - i]
-            id_list.append(idx_rm)
-
-        # Sort in descending order, we need to remove the large indices first
-        # to avoid mismatch in index deleting.
-        id_list = sorted(id_list, key=int, reverse=True)
-
-        time1 = numpy.delete(time1, id_list)
-        time2 = numpy.delete(time2, id_list)
-
-        stat = numpy.delete(stat, id_list)
-        ifar = numpy.delete(ifar, id_list)
-        fap = numpy.delete(fap, id_list)
-        ifar_exc = numpy.delete(ifar_exc, id_list)
-        fap_exc = numpy.delete(fap_exc, id_list)
-
-        mass1 = numpy.delete(mass1, id_list)
-        mass2 = numpy.delete(mass2, id_list)
-        spin1z = numpy.delete(spin1z, id_list)
-        spin2z = numpy.delete(spin2z, id_list)
-
         # Regenerate the list of inclusive ifar and fap from stat in coinc
         # file and as recovered by fortrigs.get_coincfile_array
         stat_hrm = f['foreground_h%s/stat' % h_num_rm][:]
         ifar_hrm = f['foreground_h%s/ifar' % h_num_rm][:]
         fap_hrm = f['foreground_h%s/fap' % h_num_rm][:]
 
-        # Find the map between stat and stat_hrm. Store it in id_list
-        id_list = []
+        fortrigs.ignore_n_loudest(h_num_rm)
+
+        # Find the map between stat and stat_hrm.
+        idx_list = []
         for i in range(len(stat)):
             for j in range(len(stat_hrm)):
                 if(stat[i] == stat_hrm[j]):
-                    id_list.append(j)
+                    idx_list.append(j)
 
-        # id_list should be the same length as stat minus any hierarchical
-        # removals. Rewrite the values of ifar
-        for i in range(0, len(id_list)):
-            ifar[i] = ifar_hrm[id_list[i]]
-            fap[i] = fap_hrm[id_list[i]]
+        # idx_list should be the same length as stat minus any hierarchical
+        # removals. Rewrite the significance values
+        for i in range(len(idx_list)):
+            ifar[i] = ifar_hrm[idx_list[i]]
+            fap[i] = fap_hrm[idx_list[i]]
 
     mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
 
@@ -142,8 +114,8 @@ if args.output_file.endswith('.html'):
 
     # Not supposed to use FAP anymore, nomenclature is p-value. Should be
     # fixed consistently accross PyCBC.
-    names = ['Exc. IFAR (YR)', 'Inc. IFAR (YR)', 'Exc. P-value.',
-             'Inc. P-value', 'Ranking Statistic', 'End Time',
+    names = ['Exc. IFAR (YR)', 'Inc. IFAR (YR)', 'Exc. FAP',
+             'Inc. FAP', 'Ranking Statistic', 'End Time',
              'Time Diff. (ms)', 'mchirp', 'm1','m2', 's1z', 's2z']
     format_strings = ['#.###E0', '#.###E0', '#.##E0', '#.##E0', '##.###',
                       None, '##.##', '##.##', '##.##',
