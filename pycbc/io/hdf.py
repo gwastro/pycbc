@@ -648,6 +648,16 @@ class ForegroundTriggers(object):
             return_dict[ifo] = curr
         return return_dict
 
+    def ignore_n_loudest(self, n_loudest):
+        # A function to return the coinc foreground trigger statistics
+        # quieter in ranking statistic than the N loudest triggers (n_loudest)
+
+        # Remove n loudest from coinc file
+
+        # Remove n loudest from bank file
+
+        # Remove n loudest from single file
+
     def to_coinc_xml_object(self, file_name):
         # FIXME: This function will only work with two ifos!!
 
