@@ -995,10 +995,13 @@ echo -e "[`date`] install pkgconfig beforehand"
 pip install `grep -w ^pkgconfig requirements.txt||echo pkgconfig==1.1.0`
 if $pyinstaller21_hacks; then
     echo -e "[`date`] install six and matplotlib beforehand"
-    pip install `grep -w ^six requirements.txt||echo six==1.9.0`
+    pip install `grep -w ^six requirements.txt||echo 'six>=1.9.0'`
     pip install `grep ^matplotlib== requirements.txt||echo matplotlib==1.4.3`
-    echo -e "[`date`] downgrade setuptools"
-    pip install --upgrade `grep -w ^setuptools requirements.txt`
+    p="`grep -w ^setuptools requirements.txt||true`"
+    if test ".$p" != "."; then
+        echo -e "[`date`] downgrade setuptools"
+        pip install --upgrade $p
+    fi
 fi
 echo -e "[`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
 pycbc_tag="`git describe --tags --exact-match HEAD 2>/dev/null||true`"
