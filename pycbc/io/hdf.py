@@ -593,6 +593,7 @@ class ForegroundTriggers(object):
 
     @property
     def sort_arr(self):
+        # Sort by ranking statistic
         if self._sort_arr is None:
             stat = self.coinc_file.get_column('stat')
             sorting = stat.argsort()[::-1]
@@ -650,13 +651,7 @@ class ForegroundTriggers(object):
 
     def ignore_x_loudest(self, num_ignore):
         # A function to return the coinc foreground trigger statistics
-        # quieter in ranking statistic than the N loudest triggers (num_ignore)
-
-        # ForegroundTriggers is sorted by largest ifar upon initialization
-        # So just return the triggers between num_ignore and self.n_loudest
-
-        # But we removed based on largest stat, so we need to be consistent
- 
+        # quieter in ranking statistic than the x loudest triggers (num_ignore)
         stat = self.coinc_file.get_column('stat')
         sorting = stat.argsort()[::-1]
         sorting = sorting[num_ignore:self.n_loudest]
