@@ -593,10 +593,9 @@ class ForegroundTriggers(object):
 
     @property
     def sort_arr(self):
-        # Sort by ranking statistic
         if self._sort_arr is None:
-            stat = self.coinc_file.get_column('stat')
-            sorting = stat.argsort()[::-1]
+            ifar = self.coinc_file.get_column('ifar')
+            sorting = ifar.argsort()[::-1]
             if self.n_loudest:
                 sorting = sorting[:self.n_loudest]
             self._sort_arr = sorting
