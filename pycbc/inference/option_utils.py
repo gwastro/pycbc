@@ -360,6 +360,10 @@ def add_inference_results_option_group(parser):
     # required options
     results_reading_group.add_argument("--input-file", type=str, required=True,
         help="Path to input HDF file.")
+    results_reading_group.add_argument(
+        "--parameters-group", type=str, default=InferenceFile.samples_group,
+        choices=[InferenceFile.samples_group, InferenceFile.stats_group],
+        help="Group in the HDF InferenceFile to look for parameters.")
     results_reading_group.add_argument("--parameters", type=str, nargs="+",
         metavar="PARAM[:LABEL]",
         help="Name of parameters to plot. If none provided will load all of "
@@ -447,7 +451,8 @@ def results_from_cli(opts, load_samples=True, walkers=None):
         samples = fp.read_samples(
             file_parameters, walkers=walkers,
             thin_start=opts.thin_start, thin_interval=opts.thin_interval,
-            thin_end=opts.thin_end, iteration=opts.iteration)
+            thin_end=opts.thin_end, iteration=opts.iteration,
+            samples_group=opts.parameters_group)
         # add a parameters not included in file
         samples = sampling_conversions.apply_conversions(samples, cs)
     else:
