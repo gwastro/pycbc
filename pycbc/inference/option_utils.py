@@ -23,6 +23,7 @@ from pycbc.io import InferenceFile
 from pycbc.workflow import WorkflowConfigParser
 import pycbc.inference.sampler
 from pycbc.inference import likelihood
+from pycbc.inference import sampling_conversions
 from pycbc.pool import choose_pool
 from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
@@ -420,10 +421,12 @@ def results_from_cli(opts, load_samples=True, walkers=None):
     samples : {None, FieldArray}
         If load_samples, the samples as a FieldArray; otherwise, None.
     """
+
     logging.info("Reading input file")
     fp = InferenceFile(opts.input_file, "r")
     parameters = fp.variable_args if opts.parameters is None \
                  else opts.parameters
+
     # load the labels
     labels = []
     for ii,p in enumerate(parameters):
@@ -433,13 +436,23 @@ def results_from_cli(opts, load_samples=True, walkers=None):
         else:
             label = fp.read_label(p)
         labels.append(label)
+
+    # load the samples
     if load_samples:
         logging.info("Loading samples")
-        samples = fp.read_samples(parameters, walkers=walkers,
+        # check if need extra parameters for a non-sampling parameter
+        file_parameters, cs = sampling_conversions.get_conversions(
+                                                 parameters, fp.variable_args)
+        # read samples from file
+        samples = fp.read_samples(
+            file_parameters, walkers=walkers,
             thin_start=opts.thin_start, thin_interval=opts.thin_interval,
             thin_end=opts.thin_end, iteration=opts.iteration)
+        # add a parameters not included in file
+        samples = sampling_conversions.apply_conversions(samples, cs)
     else:
         samples = None
+
     return fp, parameters, labels, samples
 
 
