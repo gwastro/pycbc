@@ -168,6 +168,7 @@ elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
         build_gsl=false
         build_freetype=false
         build_zlib=false
+	build_python=false
         build_wrapper=false
         build_progress_fstab=false
     fi
