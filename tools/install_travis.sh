@@ -15,6 +15,9 @@ LALSUITE_CODE="--lalsuite-commit=539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
 
 echo -e "\\n>> [`date`] Ubuntu build"
 
+env | grep TRAVIS
+exit 1
+
 # store the travis test directory
 LOCAL=${PWD}
 
