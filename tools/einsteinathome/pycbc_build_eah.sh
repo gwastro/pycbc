@@ -858,11 +858,7 @@ EOF
 	fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
 	    sed -n 's/.*lib_LTLIBRARIES *= *\(.*\).la/\1_la_LDFLAGS += -no-undefined/p' $i >> $i
 	done
-	sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/;
-             s/\(swiglal_python_la_LIBADD = .*\)$/\1 -lpython2.7/;
-             s/swiglal_python\.la/libswiglal_python.la/g;
-             s/swiglal_python_la/libswiglal_python_la/g;
-             s/mv -f swiglal_python/mv -f cygswiglal_python/;' gnuscripts/lalsuite_swig.am
+	sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/' gnuscripts/lalsuite_swig.am
 	shared="$shared --enable-win32-dll"
     fi
     if $build_framecpp; then
