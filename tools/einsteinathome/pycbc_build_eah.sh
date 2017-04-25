@@ -257,6 +257,9 @@ usage="
 
     --lalsuite-commit=<commit>      specify a commit (or tag or branch) of lalsuite to build from
 
+    --blessed-lalsuite              get the lalsuite commit to build from
+                                    https://github.com/ligo-cbc/pycbc/releases/latest
+
     --pycbc-commit=<commit>         specify a commit or tag of pycbc to build from (specifying a
                                     branch will only work reliably in conjunction with --clean-pycbc)
 
@@ -309,6 +312,8 @@ for i in $*; do
         --clean) rm -rf "$HOME/.cache" "$HOME/Library/Caches/pip" "$SOURCE/$BUILDDIRNAME-preinst.tgz" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$PYCBC";;
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz";;
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
+        --blessed-lalsuite) lalsuite_branch=`wget -O- https://github.com/ligo-cbc/pycbc/releases/latest 2>/dev/null|
+            awk -F'>' '(p==0) && /This release has been tested against LALSuite with the hash:/ {p=1}; (p==1) && /<code>[0-9a-f]*$/{print $NF; p=2}'`;;
         --pycbc-commit=*) pycbc_commit="`echo $i|sed 's/^--pycbc-commit=//'`";;
         --pycbc-fetch-ref=*) pycbc_fetch_ref="`echo $i|sed 's/^--pycbc-fetch-ref=//'`";;
         --clean-pycbc) scratch_pycbc=true;;
