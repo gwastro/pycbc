@@ -859,7 +859,8 @@ EOF
 	    sed -n 's/.*lib_LTLIBRARIES *= *\(.*\).la/\1_la_LDFLAGS += -no-undefined/p' $i >> $i
 	done
 	sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/' gnuscripts/lalsuite_swig.am
-	shared="$shared --enable-win32-dll"
+        rm -f configure # force running ./00boot if lalsuite was patched before 'make' triggers it
+        shared="$shared --enable-win32-dll"
     fi
     if $build_framecpp; then
 	shared="$shared --enable-framec --disable-framel"
