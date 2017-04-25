@@ -313,7 +313,11 @@ for i in $*; do
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz";;
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
         --blessed-lalsuite) lalsuite_branch=`wget -O- https://github.com/ligo-cbc/pycbc/releases/latest 2>/dev/null|
-            awk -F'>' '(p==0) && /This release has been tested against LALSuite with the hash:/ {p=1}; (p==1) && /<code>[0-9a-f]*$/{print $NF; p=2}'`;;
+            awk -F'>' '(p==0) && /This release has been tested against LALSuite with the hash:/ {p=1}; (p==1) && /<code>[0-9a-f]*$/{print $NF; p=2}'`;
+            if ! echo "0$lalsuite_branch"|egrep '^[0-9a-f]*$' >/dev/null; then
+                echo "ERROR: blessed LALSuite version couldn't be determined";
+                exit 1;
+            fi;;
         --pycbc-commit=*) pycbc_commit="`echo $i|sed 's/^--pycbc-commit=//'`";;
         --pycbc-fetch-ref=*) pycbc_fetch_ref="`echo $i|sed 's/^--pycbc-fetch-ref=//'`";;
         --clean-pycbc) scratch_pycbc=true;;
