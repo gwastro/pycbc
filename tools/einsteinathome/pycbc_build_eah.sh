@@ -1096,8 +1096,11 @@ if $patch_pyinstaller_bootloader && $build_onefile_bundles; then
 fi
 
 # patch PyInstaller to find the Python library on Cygwin
-if $build_dlls && $pyinstaller21_hacks; then
-    sed -i~ "s|'libpython%d%d.dll'|'libpython%d.%d.dll'|" `find PyInstaller -name bindepend.py`
+# This needs to be applied to compat.py for all PyI versions < 3.1.2
+if $build_dlls; then
+    if ! git log --pretty=oneline --abbrev-commit|grep "^e8c08c" >/dev/null; then
+        sed -i~ "s|'libpython%d%d.dll'|'libpython%d.%d.dll'|" `find PyInstaller -name bindepend.py -or -name compat.py`
+    fi
 fi
 
 # build bootloader (in any case: for Cygwin it wasn't precompiled, for Linux it was patched)
