@@ -85,7 +85,7 @@ pyinstaller_version=v3.2.1 # 9d0e0ad4, v2.1 .. v3.2.1 -> git, 2.1 .. 3.2.1 -> py
 patch_pyinstaller_bootloader=true
 pyinstaller21_hacks=false # use hacks & workarounds necessary for PyInstaller <3.0
 use_pycbc_pyinstaller_hooks=true
-build_gating_tool=false
+build_onefile_bundles=false
 run_analysis=true
 silent_build=false
 
@@ -120,7 +120,7 @@ elif test ".$1" = ".--force-debian4" ||
     build_ssl=true
     pyinstaller_lsb="--no-lsb"
     $pyinstaller21_hacks || build_subprocess32=true
-    build_gating_tool=true
+    build_onefile_bundles=true
     appendix="_Linux64"
 elif grep -q "Scientific Linux release 6" /etc/redhat-release 2>/dev/null; then # SL6
     echo -e "\\n\\n>> [`date`] Using Scientific Linux release 6 (Carbon) settings"
@@ -131,7 +131,7 @@ elif grep -q "Scientific Linux release 6" /etc/redhat-release 2>/dev/null; then 
     build_python=true
     build_pegasus=false
     pyinstaller_lsb="--no-lsb"
-    build_gating_tool=true
+    build_onefile_bundles=true
     appendix="_Linux64"
 elif grep -q "Scientific Linux CERN SLC release 6" /etc/redhat-release 2>/dev/null; then # SL6
     echo -e "\\n\\n>> [`date`] Using Scientific Linux CERN SLC release 6 (Carbon) settings"
@@ -150,7 +150,7 @@ elif grep -q "Scientific Linux CERN SLC release 6" /etc/redhat-release 2>/dev/nu
     build_wrapper=false
     build_fstab=false
     pyinstaller_lsb="--no-lsb"
-    build_gating_tool=true
+    build_onefile_bundles=true
     appendix="_Linux64"
 elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
     link_gcc_version=4.6
@@ -158,7 +158,7 @@ elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
     build_python=true
     build_pcre=true
     pyinstaller_lsb="--no-lsb"
-    build_gating_tool=false
+    build_onefile_bundles=false
     appendix="_Linux64"
     if test x$TRAVIS_OS_NAME = xlinux ; then
         build_fftw=false
@@ -1083,7 +1083,7 @@ else
 fi
 
 # if we are to patch pyinstaller, save an unpatched version for later use
-if $patch_pyinstaller_bootloader && $build_gating_tool; then
+if $patch_pyinstaller_bootloader && $build_onefile_bundles; then
     python setup.py install --prefix="$PREFIX" --record installed-files.txt
     rm -f ../pyinstaller-clean-installed.tar ../pyinstaller-clean-installed.tar.gz
     xargs tar -rPf ../pyinstaller-clean-installed.tar < installed-files.txt
@@ -1418,7 +1418,7 @@ fi
 zip -r "$cache" pycbc_inspiral SEOBNRv2ChirpTimeSS.dat
 
 # build additional PyInstaller "onefile" bundles (with unpatched PyInstaller bootloader)
-if $build_gating_tool; then
+if $build_onefile_bundles; then
     # restore unpatched pyinstaller version
     if $patch_pyinstaller_bootloader; then
         echo -e "\\n\\n>> [`date`] restore unpatched pyinstaller version" >&3
