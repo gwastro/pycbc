@@ -1158,25 +1158,31 @@ cd $PREFIX
 # BUNDLE DIR
 echo -e "\\n\\n>> [`date`] building pyinstaller spec" >&3
 # don't use UPX with PyInstaller 2.x
-$pyinstaller21_hacks && upx="--noupx"
+if $pyinstaller21_hacks; then
+    upx="--noupx"
+elif $build_dlls; then
+    ext=".exe"
+fi
 # create spec file
 if $use_pycbc_pyinstaller_hooks; then
     export NOW_BUILDING=NULL
     export PYCBC_HOOKS_DIR="$hooks"
-    pyi-makespec $upx --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
+    pyi-makespec $upx --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
 else
     # find hidden imports (pycbc CPU modules)
     hidden_imports=`find $PREFIX/lib/python2.7/site-packages/pycbc/ -name '*_cpu.py' | sed 's%.*/site-packages/%%;s%\.py$%%;s%/%.%g;s%^% --hidden-import=%' | tr -d '\012'`
-    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
+    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
 fi
 # patch spec file to add "-v" to python interpreter options
 if $verbose_pyinstalled_python; then
     sed -i~ 's%exe = EXE(pyz,%options = [ ("v", None, "OPTION"), ("W error", None, "OPTION") ]\
-exe = EXE(pyz, options,%' pycbc_inspiral.spec
+exe = EXE(pyz, options,%' pycbc_inspiral$ext.spec
 fi
 echo -e "\\n\\n>> [`date`] running pyinstaller" >&3
-pyinstaller $upx pycbc_inspiral.spec
+pyinstaller $upx pycbc_inspiral$ext.spec
 
+test ".$ext" != "." &&
+    mv dist/pycbc_inspiral$ext dist/pycbc_inspiral
 cd dist/pycbc_inspiral
 
 # fix some libraries manually
