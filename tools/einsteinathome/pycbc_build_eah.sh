@@ -1079,6 +1079,9 @@ else
         git checkout 3.0 # workaround for misnamed tag
     else
         git checkout $pyinstaller_version
+        if test "$pyinstaller_version" = "develop"; then
+            git pull
+        fi
     fi
 fi
 
@@ -1104,6 +1107,7 @@ if $patch_pyinstaller_bootloader; then
     sed -i~ 's/ pid *= *fork()/ pid = 0/' */pyi_utils.c
 fi
 if echo "$pyinstaller_version" | grep '3\.' > /dev/null ||
+   test ".$pyinstaller_version" = ".develop" ||
    test ".$pyinstaller_version" = ".HEAD"
 then
     test "$appendix" = "_OSX64" &&
