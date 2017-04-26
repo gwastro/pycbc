@@ -80,7 +80,7 @@ build_freetype=true
 build_zlib=true
 build_pegasus=true
 build_wrapper=false
-build_progress_fstab=true
+build_fstab=true
 pyinstaller_version=v3.2.1 # 9d0e0ad4, v2.1 .. v3.2.1 -> git, 2.1 .. 3.2.1 -> pypi
 patch_pyinstaller_bootloader=true
 pyinstaller21_hacks=false # use hacks & workarounds necessary for PyInstaller <3.0
@@ -148,7 +148,7 @@ elif grep -q "Scientific Linux CERN SLC release 6" /etc/redhat-release 2>/dev/nu
     build_freetype=false
     build_zlib=false
     build_wrapper=false
-    build_progress_fstab=false
+    build_fstab=false
     pyinstaller_lsb="--no-lsb"
     build_gating_tool=true
     appendix="_Linux64"
@@ -169,7 +169,7 @@ elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
         build_freetype=false
         build_zlib=false
         build_wrapper=false
-        build_progress_fstab=false
+        build_fstab=false
     fi
 elif test "`uname -s`" = "Darwin" ; then # OSX
     echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
@@ -1118,8 +1118,8 @@ cd ..
 test "$p" = "PyInstaller-$pyinstaller_version" && cleanup && rm -rf "$p"
 
 if $build_wrapper; then
-# on Linux, build "progress" and "wrapper"
-    echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'progress', 'fstab' and 'fstab_test'" >&3
+# on Linux, build "wrapper"
+    echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'fstab' and 'fstab_test'" >&3
     if test -d boinc/.git ; then
 	cd boinc
 	git pull
@@ -1136,16 +1136,13 @@ if $build_wrapper; then
     make
     cp samples/wrapper/wrapper "$ENVIRONMENT/dist/wrapper$appendix"
     cd ..
-    gcc -o "$ENVIRONMENT/dist/progress$appendix" $SOURCE/pycbc/tools/einsteinathome/progress.c
     gcc -o "$ENVIRONMENT/dist/fstab" $SOURCE/pycbc/tools/einsteinathome/fstab.c
     gcc -DTEST_WIN32 -o "$ENVIRONMENT/dist/fstab_test" $SOURCE/pycbc/tools/einsteinathome/fstab.c
-elif $build_progress_fstab ; then
-    echo -e "\\n\\n>> [`date`] Building 'progress.exe' and 'fstab.exe'" >&3
+elif $build_fstab ; then
+    echo -e "\\n\\n>> [`date`] Building 'fstab.exe'" >&3
     if $build_dlls; then
-        x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/progress$appendix.exe" $SOURCE/pycbc/tools/einsteinathome/progress.c
         x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/fstab$appendix.exe" $SOURCE/pycbc/tools/einsteinathome/fstab.c
     else
-        gcc -o "$ENVIRONMENT/dist/progress$appendix" $SOURCE/pycbc/tools/einsteinathome/progress.c
         gcc -o "$ENVIRONMENT/dist/fstab$appendix" $SOURCE/pycbc/tools/einsteinathome/fstab.c
     fi
 fi
