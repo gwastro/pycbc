@@ -250,6 +250,17 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
                                     max_iterations=max_iterations)
         self.write_acceptance_fraction(fp)
 
+# This is needed for two reason
+# 1) pools freeze state when created and so classes *cannot be updated*
+# 2) methods cannot be pickled. 
+class _callable(object):
+    """ Create a callable function from an instance and method name"""
+    def __init__(self, instance, method_name):
+        self.instance = instance
+        self.method_name = method_name
+
+    def __call__(self, *args, **kwds):
+        return getattr(self.instance, self.method_name)(*args, **kwds)
 
 class EmceePTSampler(BaseMCMCSampler):
     """This class is used to construct a parallel-tempered MCMC sampler from
@@ -283,11 +294,9 @@ class EmceePTSampler(BaseMCMCSampler):
 
         # construct the sampler: PTSampler needs the likelihood and prior
         # functions separately
-        likelihood_evaluator.set_callfunc('loglikelihood')
-
         ndim = len(likelihood_evaluator.waveform_generator.variable_args)
         sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-                                  likelihood_evaluator,
+                                  _callable(likelihood_evaluator, 'loglikelihood'),
                                   likelihood_evaluator._prior,
                                   pool=pool)
         # initialize
