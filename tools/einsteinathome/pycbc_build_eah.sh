@@ -1108,6 +1108,7 @@ if echo "$pyinstaller_version" | grep '3\.' > /dev/null ||
 then
     test "$appendix" = "_OSX64" &&
         sed -i~ /-Wdeclaration-after-statement/d wscript
+    pip install future
     python waf distclean configure $pyinstaller_lsb all
 else
     python waf configure $pyinstaller_lsb build install
