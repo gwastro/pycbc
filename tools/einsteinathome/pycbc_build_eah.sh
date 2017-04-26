@@ -1109,16 +1109,13 @@ cd bootloader
 if $patch_pyinstaller_bootloader; then
     sed -i~ 's/ pid *= *fork()/ pid = 0/' */pyi_utils.c
 fi
-if echo "$pyinstaller_version" | grep '3\.' > /dev/null ||
-   test ".$pyinstaller_version" = ".develop" ||
-   test ".$pyinstaller_version" = ".HEAD"
-then
+if $pyinstaller21_hacks; then
+    python waf configure $pyinstaller_lsb build install
+else
     test "$appendix" = "_OSX64" &&
         sed -i~ /-Wdeclaration-after-statement/d wscript
     pip install future
     python waf distclean configure $pyinstaller_lsb all
-else
-    python waf configure $pyinstaller_lsb build install
 fi
 cd ..
 python setup.py install --prefix="$PREFIX" --record installed-files.txt
