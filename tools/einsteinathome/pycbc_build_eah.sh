@@ -868,10 +868,12 @@ EOF
         rm -f configure # force running ./00boot if lalsuite was patched before 'make' triggers it
         shared="$shared --enable-win32-dll"
     fi
+    # if we are using FrameCPP, enable it (and disable FrameLib) for LALFrame
     if $build_framecpp; then
-	shared="$shared --enable-framec --disable-framel"
+        shared="$shared --enable-framec --disable-framel"
     fi
     if [ ! -x configure ]; then
+        git clean -xdff
         echo -e "\\n\\n>> [`date`] Creating lalsuite configure scripts" >&3
         ./00boot
     fi
