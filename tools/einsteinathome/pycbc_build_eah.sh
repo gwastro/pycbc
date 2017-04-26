@@ -80,12 +80,12 @@ build_freetype=true
 build_zlib=true
 build_pegasus=true
 build_wrapper=false
-build_progress_fstab=true
+build_fstab=true
 pyinstaller_version=v3.2.1 # 9d0e0ad4, v2.1 .. v3.2.1 -> git, 2.1 .. 3.2.1 -> pypi
 patch_pyinstaller_bootloader=true
 pyinstaller21_hacks=false # use hacks & workarounds necessary for PyInstaller <3.0
 use_pycbc_pyinstaller_hooks=true
-build_gating_tool=false
+build_onefile_bundles=false
 run_analysis=true
 silent_build=false
 
@@ -120,7 +120,7 @@ elif test ".$1" = ".--force-debian4" ||
     build_ssl=true
     pyinstaller_lsb="--no-lsb"
     $pyinstaller21_hacks || build_subprocess32=true
-    build_gating_tool=true
+    build_onefile_bundles=true
     appendix="_Linux64"
 elif grep -q "Scientific Linux release 6" /etc/redhat-release 2>/dev/null; then # SL6
     echo -e "\\n\\n>> [`date`] Using Scientific Linux release 6 (Carbon) settings"
@@ -131,7 +131,7 @@ elif grep -q "Scientific Linux release 6" /etc/redhat-release 2>/dev/null; then 
     build_python=true
     build_pegasus=false
     pyinstaller_lsb="--no-lsb"
-    build_gating_tool=true
+    build_onefile_bundles=true
     appendix="_Linux64"
 elif grep -q "Scientific Linux CERN SLC release 6" /etc/redhat-release 2>/dev/null; then # SL6
     echo -e "\\n\\n>> [`date`] Using Scientific Linux CERN SLC release 6 (Carbon) settings"
@@ -148,9 +148,9 @@ elif grep -q "Scientific Linux CERN SLC release 6" /etc/redhat-release 2>/dev/nu
     build_freetype=false
     build_zlib=false
     build_wrapper=false
-    build_progress_fstab=false
+    build_fstab=false
     pyinstaller_lsb="--no-lsb"
-    build_gating_tool=true
+    build_onefile_bundles=true
     appendix="_Linux64"
 elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
     link_gcc_version=4.6
@@ -158,7 +158,7 @@ elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
     build_python=true
     build_pcre=true
     pyinstaller_lsb="--no-lsb"
-    build_gating_tool=false
+    build_onefile_bundles=false
     appendix="_Linux64"
     if test x$TRAVIS_OS_NAME = xlinux ; then
         build_fftw=false
@@ -169,7 +169,7 @@ elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
         build_freetype=false
         build_zlib=false
         build_wrapper=false
-        build_progress_fstab=false
+        build_fstab=false
     fi
 elif test "`uname -s`" = "Darwin" ; then # OSX
     echo -e "\\n\\n>> [`date`] Using OSX 10.7 settings"
@@ -257,6 +257,9 @@ usage="
 
     --lalsuite-commit=<commit>      specify a commit (or tag or branch) of lalsuite to build from
 
+    --blessed-lalsuite              get the lalsuite commit to build from
+                                    https://github.com/ligo-cbc/pycbc/releases/latest
+
     --pycbc-commit=<commit>         specify a commit or tag of pycbc to build from (specifying a
                                     branch will only work reliably in conjunction with --clean-pycbc)
 
@@ -309,6 +312,12 @@ for i in $*; do
         --clean) rm -rf "$HOME/.cache" "$HOME/Library/Caches/pip" "$SOURCE/$BUILDDIRNAME-preinst.tgz" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$PYCBC";;
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz";;
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
+        --blessed-lalsuite) lalsuite_branch=`wget -O- https://github.com/ligo-cbc/pycbc/releases/latest 2>/dev/null|
+            awk -F'>' '(p==0) && /This release has been tested against LALSuite with the hash:/ {p=1}; (p==1) && /<code>[0-9a-f]*$/{print $NF; p=2}'`;
+            if ! echo "0$lalsuite_branch"|egrep '^[0-9a-f]*$' >/dev/null; then
+                echo "ERROR: blessed LALSuite version couldn't be determined";
+                exit 1;
+            fi;;
         --pycbc-commit=*) pycbc_commit="`echo $i|sed 's/^--pycbc-commit=//'`";;
         --pycbc-fetch-ref=*) pycbc_fetch_ref="`echo $i|sed 's/^--pycbc-fetch-ref=//'`";;
         --clean-pycbc) scratch_pycbc=true;;
@@ -792,10 +801,11 @@ if test -r "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"; then
 else
 
     # LALSUITE
-    echo -e "\\n\\n>> [`date`] Cloning lalsuite" >&3
     if [ ".$no_lalsuite_update" != "." ]; then
+        echo -e "\\n\\n>> [`date`] Not updating lalsuite" >&3
 	cd lalsuite
     elif test -d lalsuite/.git; then
+        echo -e "\\n\\n>> [`date`] Updating lalsuite" >&3
         cd lalsuite
         git reset --hard HEAD
         if [ ".$lalsuite_branch" != ".HEAD" ]; then
@@ -810,6 +820,7 @@ else
             git checkout "$lalsuite_branch"
         fi
     else
+        echo -e "\\n\\n>> [`date`] Cloning lalsuite" >&3
         git clone git://versions.ligo.org/lalsuite.git
         cd lalsuite
         git remote add gitlab $gitlab/lalsuite.git
@@ -853,17 +864,16 @@ EOF
 	fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
 	    sed -n 's/.*lib_LTLIBRARIES *= *\(.*\).la/\1_la_LDFLAGS += -no-undefined/p' $i >> $i
 	done
-	sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/;
-             s/\(swiglal_python_la_LIBADD = .*\)$/\1 -lpython2.7/;
-             s/swiglal_python\.la/libswiglal_python.la/g;
-             s/swiglal_python_la/libswiglal_python_la/g;
-             s/mv -f swiglal_python/mv -f cygswiglal_python/;' gnuscripts/lalsuite_swig.am
-	shared="$shared --enable-win32-dll"
+	sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/' gnuscripts/lalsuite_swig.am
+        rm -f configure # force running ./00boot if lalsuite was patched before 'make' triggers it
+        shared="$shared --enable-win32-dll"
     fi
+    # if we are using FrameCPP, enable it (and disable FrameLib) for LALFrame
     if $build_framecpp; then
-	shared="$shared --enable-framec --disable-framel"
+        shared="$shared --enable-framec --disable-framel"
     fi
     if [ ! -x configure ]; then
+        git clean -xdff
         echo -e "\\n\\n>> [`date`] Creating lalsuite configure scripts" >&3
         ./00boot
     fi
@@ -995,10 +1005,13 @@ echo -e "[`date`] install pkgconfig beforehand"
 pip install `grep -w ^pkgconfig requirements.txt||echo pkgconfig==1.1.0`
 if $pyinstaller21_hacks; then
     echo -e "[`date`] install six and matplotlib beforehand"
-    pip install `grep -w ^six requirements.txt||echo six==1.9.0`
+    pip install `grep -w ^six requirements.txt||echo 'six>=1.9.0'`
     pip install `grep ^matplotlib== requirements.txt||echo matplotlib==1.4.3`
-    echo -e "[`date`] downgrade setuptools"
-    pip install --upgrade `grep -w ^setuptools requirements.txt`
+    p="`grep -w ^setuptools requirements.txt||true`"
+    if test ".$p" != "."; then
+        echo -e "[`date`] downgrade setuptools"
+        pip install --upgrade $p
+    fi
 fi
 echo -e "[`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
 pycbc_tag="`git describe --tags --exact-match HEAD 2>/dev/null||true`"
@@ -1070,7 +1083,7 @@ else
 fi
 
 # if we are to patch pyinstaller, save an unpatched version for later use
-if $patch_pyinstaller_bootloader && $build_gating_tool; then
+if $patch_pyinstaller_bootloader && $build_onefile_bundles; then
     python setup.py install --prefix="$PREFIX" --record installed-files.txt
     rm -f ../pyinstaller-clean-installed.tar ../pyinstaller-clean-installed.tar.gz
     xargs tar -rPf ../pyinstaller-clean-installed.tar < installed-files.txt
@@ -1105,8 +1118,8 @@ cd ..
 test "$p" = "PyInstaller-$pyinstaller_version" && cleanup && rm -rf "$p"
 
 if $build_wrapper; then
-# on Linux, build "progress" and "wrapper"
-    echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'progress', 'fstab' and 'fstab_test'" >&3
+# on Linux, build "wrapper"
+    echo -e "\\n\\n>> [`date`] Building 'BOINC wrapper', 'fstab' and 'fstab_test'" >&3
     if test -d boinc/.git ; then
 	cd boinc
 	git pull
@@ -1123,16 +1136,13 @@ if $build_wrapper; then
     make
     cp samples/wrapper/wrapper "$ENVIRONMENT/dist/wrapper$appendix"
     cd ..
-    gcc -o "$ENVIRONMENT/dist/progress$appendix" $SOURCE/pycbc/tools/einsteinathome/progress.c
     gcc -o "$ENVIRONMENT/dist/fstab" $SOURCE/pycbc/tools/einsteinathome/fstab.c
     gcc -DTEST_WIN32 -o "$ENVIRONMENT/dist/fstab_test" $SOURCE/pycbc/tools/einsteinathome/fstab.c
-elif $build_progress_fstab ; then
-    echo -e "\\n\\n>> [`date`] Building 'progress.exe' and 'fstab.exe'" >&3
+elif $build_fstab ; then
+    echo -e "\\n\\n>> [`date`] Building 'fstab.exe'" >&3
     if $build_dlls; then
-        x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/progress$appendix.exe" $SOURCE/pycbc/tools/einsteinathome/progress.c
         x86_64-w64-mingw32-gcc -o "$ENVIRONMENT/dist/fstab$appendix.exe" $SOURCE/pycbc/tools/einsteinathome/fstab.c
     else
-        gcc -o "$ENVIRONMENT/dist/progress$appendix" $SOURCE/pycbc/tools/einsteinathome/progress.c
         gcc -o "$ENVIRONMENT/dist/fstab$appendix" $SOURCE/pycbc/tools/einsteinathome/fstab.c
     fi
 fi
@@ -1146,15 +1156,17 @@ cd $PREFIX
 
 # BUNDLE DIR
 echo -e "\\n\\n>> [`date`] building pyinstaller spec" >&3
+# don't use UPX with PyInstaller 2.x
+$pyinstaller21_hacks && upx="--noupx"
 # create spec file
 if $use_pycbc_pyinstaller_hooks; then
     export NOW_BUILDING=NULL
     export PYCBC_HOOKS_DIR="$hooks"
-    pyi-makespec --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
+    pyi-makespec $upx --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
 else
     # find hidden imports (pycbc CPU modules)
     hidden_imports=`find $PREFIX/lib/python2.7/site-packages/pycbc/ -name '*_cpu.py' | sed 's%.*/site-packages/%%;s%\.py$%%;s%/%.%g;s%^% --hidden-import=%' | tr -d '\012'`
-    pyi-makespec $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
+    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
 fi
 # patch spec file to add "-v" to python interpreter options
 if $verbose_pyinstalled_python; then
@@ -1162,7 +1174,7 @@ if $verbose_pyinstalled_python; then
 exe = EXE(pyz, options,%' pycbc_inspiral.spec
 fi
 echo -e "\\n\\n>> [`date`] running pyinstaller" >&3
-pyinstaller pycbc_inspiral.spec
+pyinstaller $upx pycbc_inspiral.spec
 
 cd dist/pycbc_inspiral
 
@@ -1406,7 +1418,7 @@ fi
 zip -r "$cache" pycbc_inspiral SEOBNRv2ChirpTimeSS.dat
 
 # build additional PyInstaller "onefile" bundles (with unpatched PyInstaller bootloader)
-if $build_gating_tool; then
+if $build_onefile_bundles; then
     # restore unpatched pyinstaller version
     if $patch_pyinstaller_bootloader; then
         echo -e "\\n\\n>> [`date`] restore unpatched pyinstaller version" >&3
