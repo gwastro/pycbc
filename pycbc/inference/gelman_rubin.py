@@ -65,7 +65,13 @@ def walk(chains, start, end, step):
     return starts, ends, stats
 
 def gelman_rubin(chains, auto_burn_in=True):
-    """ Calculates the univariate Gelman-Rubin convergence statistic.
+    """ Calculates the univariate Gelman-Rubin convergence statistic
+    which compares the evolution of multiple chains in a Markov-Chain Monte
+    Carlo process and computes their difference to determine their convergence.
+    The between-chain and within-chain variances are computed for each sampling
+    parameter, and a weighted combination of the two is used to determine the
+    convergence. As the chains converge, the point scale reduction factor
+    should go to 1.
 
     Parameters
     ----------
@@ -82,7 +88,7 @@ def gelman_rubin(chains, auto_burn_in=True):
         the potential scale reduction factor.
     """
 
-    # remove first have of samples
+    # remove first half of samples
     # this will have shape (nchains, nparameters, niterations)
     if auto_burn_in:
         _, _, niterations = numpy.array(chains).shape
@@ -99,7 +105,7 @@ def gelman_rubin(chains, auto_burn_in=True):
     if nparameters == 1:
         chains_covs = chains_covs.reshape((nchains, 1, 1))
 
-    # calculate W
+    # calculate W the within-chain variance
     # this will have shape (nparameters, nparameters)
     w = numpy.zeros(chains_covs[0].shape)
     for i, row in enumerate(chains_covs[0]):
@@ -108,7 +114,7 @@ def gelman_rubin(chains, auto_burn_in=True):
     if nparameters == 1:
         w = w.reshape((1, 1))
 
-    # calculate B
+    # calculate B the between-chain variance
     # this will have shape (nparameters, nparameters)
     means = numpy.zeros((nparameters, nchains))
     for i, chain in enumerate(chains):
@@ -132,9 +138,13 @@ def gelman_rubin(chains, auto_burn_in=True):
     # this will have shape (nparameters)
     mu_hat = numpy.mean(means, axis=1)
 
-    # get variance of variance
+    # get variance of variances
     # this will have shape (nparameters)
     s = numpy.var(var, axis=1)
+
+    # get V the combined variance of all chains
+    # this will have shape (nparameters)
+    v = (niterations - 1.) * w_diag / niterations + (1. + 1. / nchains) * b_diag / niterations
 
     # get factors in variance of V calculation
     # this will have shape (nparameters)
@@ -142,10 +152,6 @@ def gelman_rubin(chains, auto_burn_in=True):
     mid_term = numpy.cov(var, means**2)[nparameters:2 * nparameters, 0:nparameters].T
     end_term = numpy.cov(var, means)[nparameters:2 * nparameters, 0:nparameters].T
     wb = niterations / nchains * numpy.diag(mid_term - 2 * mu_hat * end_term)
-
-    # get V
-    # this will have shape (nparameters)
-    v = (niterations - 1.) * w_diag / niterations + (1. + 1. / nchains) * b_diag / niterations
 
     # get variance of V
     # this will have shape (nparameters)
@@ -164,11 +170,11 @@ def gelman_rubin(chains, auto_burn_in=True):
     # this will have shape (nparameters)
     r2_fixed = (niterations - 1.) / niterations
     r2_random = (1. + 1. / nchains) * (1. / niterations) * (b_diag / w_diag)
-    r2_estimate = numpy.sqrt(r2_fixed + r2_random)
+    r2_estimate = r2_fixed + r2_random
 
-    # PSRF
+    # calculate PSRF the potential scale reduction factor
     # this will have shape (nparameters)
-    psrf = r2_estimate * df_adj
+    psrf = numpy.sqrt(r2_estimate * df_adj)
 
     return psrf
 
