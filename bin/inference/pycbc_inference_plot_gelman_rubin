@@ -99,6 +99,7 @@ for param, label in zip(params, labels):
 # format plot
 plt.ylabel("Potential Scale Reduction Factor")
 plt.xlabel("Iteration")
+plt.legend(labelspacing=0.2)
 
 # plot horizontal line
 if opts.hline:
