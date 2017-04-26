@@ -801,10 +801,11 @@ if test -r "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"; then
 else
 
     # LALSUITE
-    echo -e "\\n\\n>> [`date`] Cloning lalsuite" >&3
     if [ ".$no_lalsuite_update" != "." ]; then
+        echo -e "\\n\\n>> [`date`] Not updating lalsuite" >&3
 	cd lalsuite
     elif test -d lalsuite/.git; then
+        echo -e "\\n\\n>> [`date`] Updating lalsuite" >&3
         cd lalsuite
         git reset --hard HEAD
         if [ ".$lalsuite_branch" != ".HEAD" ]; then
@@ -819,6 +820,7 @@ else
             git checkout "$lalsuite_branch"
         fi
     else
+        echo -e "\\n\\n>> [`date`] Cloning lalsuite" >&3
         git clone git://versions.ligo.org/lalsuite.git
         cd lalsuite
         git remote add gitlab $gitlab/lalsuite.git
