@@ -1164,10 +1164,9 @@ cd $PREFIX
 
 # BUNDLE DIR
 echo -e "\\n\\n>> [`date`] building pyinstaller spec" >&3
-# don't use UPX with PyInstaller 2.x
-if $pyinstaller21_hacks; then
-    upx="--noupx"
-elif $build_dlls; then
+# don't use UPX with PyInstaller
+upx="--noupx"
+if $build_dlls && ! $pyinstaller21_hacks; then
     ext=".exe"
 fi
 # create spec file
