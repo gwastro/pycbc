@@ -196,8 +196,8 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     build_freetype=false
     build_gsl=false
     build_swig=false
-    pyinstaller_version=9d0e0ad4
-    pyinstaller21_hacks=true
+#    pyinstaller_version=develop # HEAD # 9d0e0ad4
+#    pyinstaller21_hacks=true
     patch_pyinstaller_bootloader=false
     appendix="_Windows64"
 else
@@ -1079,6 +1079,9 @@ else
         git checkout 3.0 # workaround for misnamed tag
     else
         git checkout $pyinstaller_version
+        if test "$pyinstaller_version" = "develop"; then
+            git pull
+        fi
     fi
 fi
 
@@ -1093,8 +1096,11 @@ if $patch_pyinstaller_bootloader && $build_onefile_bundles; then
 fi
 
 # patch PyInstaller to find the Python library on Cygwin
-if $build_dlls && $pyinstaller21_hacks; then
-    sed -i~ "s|'libpython%d%d.dll'|'libpython%d.%d.dll'|" `find PyInstaller -name bindepend.py`
+# This needs to be applied to compat.py for all PyI versions < 3.1.2
+if $build_dlls; then
+    if ! git log --pretty=oneline --abbrev-commit|grep "^e8c08c" >/dev/null; then
+        sed -i~ "s|'libpython%d%d.dll'|'libpython%d.%d.dll'|" `find PyInstaller -name bindepend.py -or -name compat.py`
+    fi
 fi
 
 # build bootloader (in any case: for Cygwin it wasn't precompiled, for Linux it was patched)
@@ -1103,14 +1109,13 @@ cd bootloader
 if $patch_pyinstaller_bootloader; then
     sed -i~ 's/ pid *= *fork()/ pid = 0/' */pyi_utils.c
 fi
-if echo "$pyinstaller_version" | grep '3\.' > /dev/null ||
-   test ".$pyinstaller_version" = ".HEAD"
-then
+if $pyinstaller21_hacks; then
+    python waf configure $pyinstaller_lsb build install
+else
     test "$appendix" = "_OSX64" &&
         sed -i~ /-Wdeclaration-after-statement/d wscript
+    pip install future
     python waf distclean configure $pyinstaller_lsb all
-else
-    python waf configure $pyinstaller_lsb build install
 fi
 cd ..
 python setup.py install --prefix="$PREFIX" --record installed-files.txt
@@ -1156,26 +1161,31 @@ cd $PREFIX
 
 # BUNDLE DIR
 echo -e "\\n\\n>> [`date`] building pyinstaller spec" >&3
-# don't use UPX with PyInstaller 2.x
-$pyinstaller21_hacks && upx="--noupx"
+# don't use UPX with PyInstaller
+upx="--noupx"
+if $build_dlls && ! $pyinstaller21_hacks; then
+    ext=".exe"
+fi
 # create spec file
 if $use_pycbc_pyinstaller_hooks; then
     export NOW_BUILDING=NULL
     export PYCBC_HOOKS_DIR="$hooks"
-    pyi-makespec $upx --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
+    pyi-makespec $upx --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
 else
     # find hidden imports (pycbc CPU modules)
     hidden_imports=`find $PREFIX/lib/python2.7/site-packages/pycbc/ -name '*_cpu.py' | sed 's%.*/site-packages/%%;s%\.py$%%;s%/%.%g;s%^% --hidden-import=%' | tr -d '\012'`
-    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir ./bin/pycbc_inspiral
+    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
 fi
 # patch spec file to add "-v" to python interpreter options
 if $verbose_pyinstalled_python; then
     sed -i~ 's%exe = EXE(pyz,%options = [ ("v", None, "OPTION"), ("W error", None, "OPTION") ]\
-exe = EXE(pyz, options,%' pycbc_inspiral.spec
+exe = EXE(pyz, options,%' pycbc_inspiral$ext.spec
 fi
 echo -e "\\n\\n>> [`date`] running pyinstaller" >&3
-pyinstaller $upx pycbc_inspiral.spec
+pyinstaller $upx pycbc_inspiral$ext.spec
 
+test ".$ext" != "." &&
+    mv dist/pycbc_inspiral$ext dist/pycbc_inspiral
 cd dist/pycbc_inspiral
 
 # fix some libraries manually
