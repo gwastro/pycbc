@@ -82,7 +82,9 @@ for param, label in zip(params, labels):
     logging.info("Plotting parameter %s", param)
 
     # get samples for each chain
-    chains = [fp.read_samples(param, walkers=i, thin_start=opts.thin_start,
+    chains = [fp.read_samples(param, walkers=i,
+                              samples_group=opts.parameters_group,
+                              thin_start=opts.thin_start,
                               thin_interval=opts.thin_interval,
                               thin_end=opts.thin_end)[param] for i in walkers]
 
@@ -91,7 +93,6 @@ for param, label in zip(params, labels):
     starts, ends, stats = gelman_rubin.walk(chains, opts.segment_start,
                                             opts.segment_end,
                                             opts.segment_step)
-#                                chains, 50, 39999, 1000)
 
     # plot
     plt.plot(ends, stats[0, :], label=label)
