@@ -224,8 +224,8 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
 
     return node.output_files
 
-def make_inference_posterior_plot(workflow, inference_file, output_dir,
-                    variable_args=None,
+def make_inference_posterior_plot(
+                    workflow, inference_file, output_dir, parameters=None,
                     name="inference_posterior", analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
 
@@ -237,8 +237,8 @@ def make_inference_posterior_plot(workflow, inference_file, output_dir,
         The file with posterior samples.
     output_dir: str
         The directory to store result plots and files.
-    variable_args : list
-        A list of parameters to use instead of [variable_args].
+    parameters : list
+        A list of parameters to plot.
     name: str
         The name in the [executables] section of the configuration file
         to use.
@@ -270,12 +270,51 @@ def make_inference_posterior_plot(workflow, inference_file, output_dir,
     # add command line options
     node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-    node.add_opt("--parameters", " ".join(variable_args))
+    node.add_opt("--parameters", " ".join(parameters))
 
     # add node to workflow
     workflow += node
 
     return node.output_files
+
+def make_inference_1d_posterior_plots(
+                    workflow, inference_file, output_dir, parameters=None,
+                    analysis_seg=None, tags=None):
+    parameters = [] if parameters is None else parameters
+    files = FileList([])
+    for parameter in parameters:
+        files += make_inference_posterior_plot(
+                    workflow, inference_file, output_dir,
+                    parameters=[parameter], analysis_seg=analysis_seg,
+                    tags=tags + [parameter])
+    return files
+
+def make_inference_samples_plot(
+                    workflow, inference_file, output_dir, parameters=None,
+                    name="inference_samples", analysis_seg=None, tags=None):
+    # default values
+    tags = [] if tags is None else tags
+    analysis_seg = workflow.analysis_time \
+                       if analysis_seg is None else analysis_seg
+
+    # make the directory that will contain the output files
+    makedir(output_dir)
+
+    # make a node for plotting the posterior as a corner plot
+    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                      out_dir=output_dir, universe="local",
+                      tags=tags).create_node()
+
+    # add command line options
+    node.add_input_opt("--input-file", inference_file)
+    node.new_output_file_opt(analysis_seg, ".png", "--output-file")
+    node.add_opt("--parameters", " ".join(parameters))
+
+    # add node to workflow
+    workflow += node
+
+    return node.output_files
+
 
 def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
                     name="inference_rate", analysis_seg=None, tags=None):
@@ -325,93 +364,3 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
 
     return node.output_files
 
-def make_inference_single_parameter_plots(workflow, inference_file, output_dir,
-                    variable_args=None, samples_name="inference_samples",
-                    acf_name="inference_acf", acl_name="inference_acl",
-                    analysis_seg=None, tags=None):
-    """ Sets up single-parameter plots for inference workflow.
-
-    Parameters
-    ----------
-    workflow: pycbc.workflow.Workflow
-        The core workflow instance we are populating
-    inference_file: pycbc.workflow.File
-        The file with posterior samples.
-    output_dir: str
-        The directory to store result plots and files.
-    variable_args : list
-        A list of parameters to use instead of [variable_args].
-    samples_name: str
-        The name in the [executables] section of the configuration file
-        to use for the plot that shows all samples.
-    acf_name: str
-        The name in the [executables] section of the configuration file
-        to use for the autocorrelation function plot.
-    acl_name: str
-        The name in the [executables] section of the configuration file
-        to use for the autocorrelation length histogram.
-    analysis_segs: {None, glue.segments.Segment}
-       The segment this job encompasses. If None then use the total analysis
-       time from the workflow.
-    tags: {None, optional}
-        Tags to add to the inference executables.
-
-    Returns
-    -------
-    files: pycbc.workflow.FileList
-        A list of result and output files. 
-    """
-
-    # default values
-    tags = [] if tags is None else tags
-    analysis_seg = workflow.analysis_time \
-                       if analysis_seg is None else analysis_seg
-
-    # make the directory that will contain the output files
-    makedir(output_dir)
-
-    # list of all output files
-    files = FileList()
-
-    # make a set of plots for each parameter
-    for arg in variable_args:
-
-        # plot posterior distribution
-        corner_files = make_inference_posterior_plot(workflow, inference_file,
-                          output_dir, variable_args=[arg],
-                          analysis_seg=analysis_seg, tags=tags + [arg])
-
-        # make a node for plotting all the samples for each walker
-        samples_node = PlotExecutable(workflow.cp, samples_name,
-                          ifos=workflow.ifos, out_dir=output_dir,
-                          tags=tags + [arg]).create_node()
-        samples_node.add_input_opt("--input-file", inference_file)
-        samples_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-        samples_node.add_opt("--parameters", arg)
-
-        # make node for plotting the autocorrelation function for each walker
-        acf_node = PlotExecutable(workflow.cp, acf_name, ifos=workflow.ifos,
-                          out_dir=output_dir, tags=tags + [arg]).create_node()
-        acf_node.add_input_opt("--input-file", inference_file)
-        acf_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-        acf_node.add_opt("--parameters", arg)
-
-        # make node for plotting the autocorrelation function for each walker
-        acl_node = PlotExecutable(workflow.cp, acl_name, ifos=workflow.ifos,
-                          out_dir=output_dir, tags=tags + [arg]).create_node()
-        acl_node.add_input_opt("--input-file", inference_file)
-        acl_node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-        acl_node.add_opt("--parameters", arg)
-
-        # add nodes to workflow
-        workflow += samples_node
-        workflow += acf_node
-        workflow += acl_node
-
-        # add files to output files list
-        files += corner_files
-        files += samples_node.output_files
-        files += acf_node.output_files
-        files += acl_node.output_files
-
-    return files
