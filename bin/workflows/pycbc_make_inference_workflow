@@ -47,6 +47,16 @@ def to_file(path, ifo=None):
     fil.PFN(path, "local")
     return fil
 
+def symlink_path(f, path):
+    """ Symlinks a path.
+    """
+    if f is None:
+        return
+    try:
+        os.symlink(f.storage_path, os.path.join(path, f.name))
+    except OSError:
+        pass
+
 # command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
 
@@ -102,26 +112,56 @@ wf.add_workflow_command_line_group(parser)
 # parser command line
 opts = parser.parse_args()
 
-# Log to the screen until we know where the output file is
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
-    level=logging.INFO)
+# log to terminal until we know where the path to log output file
+log_format = "%(asctime)s:%(levelname)s : %(message)s"
+logging.basicConfig(format=log_format, level=logging.INFO)
 
-# create workflow
+# create workflow and sub-workflows
 container = wf.Workflow(opts, opts.workflow_name)
-
-# create sub-workflows
 workflow = wf.Workflow(opts, opts.workflow_name + "-main")
 finalize_workflow = wf.Workflow(opts, opts.workflow_name + "-finalization")
-
-# create output directory
-wf.makedir(opts.output_dir)
 
 # sections for output HTML pages
 rdir = layout.SectionNumber("results",
                             ["detector_sensitivity", "priors", "posteriors",
                              "samples", "workflow"])
 
-# make results directories
+# make data output and results directories
+wf.makedir(opts.output_dir)
+wf.makedir(rdir.base)
+wf.makedir(rdir["workflow"])
+
+# create files for workflow log
+log_file_txt = wf.File(workflow.ifos, "workflow-log", workflow.analysis_time,
+                      extension=".txt", directory=rdir["workflow"])
+log_file_html = wf.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
+                        extension=".html", directory=rdir["workflow"])
+
+# switch saving log to file
+logging.basicConfig(format=log_format, level=logging.INFO,
+                    filename=log_file_txt.storage_path, filemode="w")
+log_file = logging.FileHandler(filename=log_file_txt.storage_path, mode="w")
+log_file.setLevel(logging.INFO)
+formatter = logging.Formatter(log_format)
+log_file.setFormatter(formatter)
+logging.getLogger("").addHandler(log_file)
+logging.info("Created log file %s" % log_file_txt.storage_path)
+
+# sanity check that user is either using workflow or command line
+workflow_options = opts.bank_file != None \
+                   and opts.statmap_file != None \
+                   and opts.single_detector_triggers != None
+if not workflow_options and not (opts.gps_end_time != None):
+    raise ValueError("Must use either workflow options or --gps-end-time")
+
+# typecast str from command line to File instances
+config_file = to_file(opts.inference_config_file)
+
+# sections for output HTML pages
+rdir = layout.SectionNumber("results",
+                            ["detector_sensitivity", "priors", "posteriors",
+                             "samples", "workflow"])
+
 wf.makedir(rdir.base)
 wf.makedir(rdir["workflow"])
 
@@ -198,17 +238,8 @@ else:
 inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
                               out_dir=opts.output_dir)
 
-# get plotting parameters
+# read inference configuration file
 cp = WorkflowConfigParser([opts.inference_config_file])
-variable_args = cp.options("variable_args")
-
-# add derived mass parameters if mass1 and mass2 in [variable_args]
-if "mass1" in variable_args and "mass2" in variable_args:
-    variable_args += ["mchirp", "eta"]
-variable_args.sort()
-
-# create a list that will contain all output files
-layouts = []
 
 # get channel names
 channel_names = {}
@@ -218,15 +249,27 @@ for ifo in workflow.ifos:
 channel_names_str = " ".join([key + ":" + val for key, val in \
                               channel_names.iteritems()])
 
+# figure out what parameters user wants to plot from workflow configuration
+plot_parameters = {}
+for option in workflow.cp.options("workflow-inference"):
+    if option.startswith("plot-1d-"):
+        group = option.replace("plot-1d-", "").replace("-", "_")
+        plot_parameters[group] = workflow.cp.get_opt_tag(
+                                "workflow", option, "inference").split(" ")
+all_parameters = [param for group in plot_parameters.values()
+                  for param in group]
+
 # loop over number of loudest events to be analyzed
 for num_event in range(num_events):
 
     # set GPS times for reading in data around the event
     avg_end_time = sum([end_times[num_event] \
                           for end_times in times.values()]) / len(times.keys())
-    seconds_before_time = int(workflow.cp.get_opt_tags("workflow-inference",
+    seconds_before_time = int(workflow.cp.get_opt_tags(
+                                            "workflow-inference",
                                             "data-seconds-before-trigger", ""))
-    seconds_after_time = int(workflow.cp.get_opt_tags("workflow-inference",
+    seconds_after_time = int(workflow.cp.get_opt_tags(
+                                            "workflow-inference",
                                             "data-seconds-after-trigger", ""))
     gps_start_time = int(avg_end_time) - seconds_before_time
     gps_end_time = int(avg_end_time) + seconds_after_time
@@ -266,67 +309,88 @@ for num_event in range(num_events):
     # add node to workflow
     workflow += node
 
-    # add file that prints information about the search event
+    # files that prints information about the search event
     if workflow_options:
-        layouts += [mini.make_coinc_info(workflow, single_triggers,
+        coinc_table_files = [mini.make_coinc_info(workflow, single_triggers,
                                          tmpltbank_file, coinc_file,
-                                         num_event, opts.output_dir,
+                                         num_event, rdir.base,
                                          tags=opts.tags + [str(num_event)])]
 
-    # add files from posterior summary table for this event
-    layouts += [inffu.make_inference_summary_table(
-                          workflow, inference_file, rdir["posteriors"],
-                          variable_args=variable_args,
-                          analysis_seg=analysis_time,
-                          tags=opts.tags + [str(num_event)])]
-
-    # add files from posterior corner plot for this event
-    layouts += [inffu.make_inference_posterior_plot(
-                          workflow, inference_file, rdir["posteriors"],
-                          variable_args=variable_args,
-                          analysis_seg=analysis_time,
-                          tags=opts.tags + [str(num_event)])]
-
-    # get files from plotting acceptance rate plot for this event
-    rate_files = inffu.make_inference_acceptance_rate_plot(
-                          workflow, inference_file,  rdir["samples"],
+    # files for posteriors summary subsection
+    base = "posteriors"
+    post_table_files = inffu.make_inference_summary_table(
+                          workflow, inference_file, rdir[base],
+                          variable_args=all_parameters,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])
-
-    # get files from plotting PSD for this event
-    psd_file = wf.make_spectrum_plot(workflow, [inference_file],
-                                     rdir["detector_sensitivity"],
-                                     tags=opts.tags + [str(num_event)])
-
-    # add a row to the HTML page with accpetance rate on the left
-    # and the PSD plot on the right
-    layouts += list(layout.grouper(rate_files+[psd_file], 2))
-
-    # add files from plotting parameter samples and autocorrelation
-    # function for this event
-    files = inffu.make_inference_single_parameter_plots(
-                          workflow, inference_file, rdir["samples"],
-                          variable_args=variable_args,
+    post_files = inffu.make_inference_posterior_plot(
+                          workflow, inference_file, rdir[base],
+                          parameters=all_parameters,
                           analysis_seg=analysis_time,
-                          tags=opts.tags + [str(num_event)]) 
-    layouts += list(layout.grouper(files, 2))
+                          tags=opts.tags + [str(num_event)])
+    layout.single_layout(rdir[base], post_table_files + post_files)
 
-# add files from prior plots for this event
-# do not add them to layouts so that they appear in the
-# additional files section
+    # files for posteriors 1d_posteriors subsection
+    groups = plot_parameters.keys()
+    groups.sort()
+    for group in groups:
+        parameters = plot_parameters[group]
+        base = "posteriors/1d_{}_posteriors".format(group)
+        post_1d_files = inffu.make_inference_1d_posterior_plots(
+                          workflow, inference_file, rdir[base],
+                          parameters=parameters,
+                          analysis_seg=analysis_time,
+                          tags=opts.tags + [str(num_event)])
+        layout.group_layout(rdir[base], post_1d_files)
+
+    # files for samples summary subsection
+    base = "samples"
+    samples_files = []
+    for parameter in all_parameters:
+        samples_files += inffu.make_inference_samples_plot(
+                          workflow, inference_file, rdir[base],
+                          parameters=[parameter], analysis_seg=analysis_time,
+                          tags=opts.tags + [str(num_event), parameter])
+    layout.group_layout(rdir[base], samples_files)
+
+    # files for samples acceptance_rate subsection
+    base = "samples/acceptance_rate"
+    acceptance_files = inffu.make_inference_acceptance_rate_plot(
+                          workflow, inference_file, rdir[base],
+                          analysis_seg=analysis_time,
+                          tags=opts.tags + [str(num_event)])
+    layout.single_layout(rdir[base], acceptance_files)
+
+    # files for detector_sensitivity summary subsection
+    base = "detector_sensitivity"
+    psd_file = wf.make_spectrum_plot(workflow, [inference_file], rdir[base],
+                                     tags=opts.tags + [str(num_event)])
+    layout.single_layout(rdir[base], [psd_file])
+
+# files for priors summary section
+base = "priors"
+prior_files = []
 for subsection in cp.get_subsections(opts.prior_section):
-    inffu.make_inference_prior_plot(
-                          workflow, config_file, rdir["priors"],
+    prior_files += inffu.make_inference_prior_plot(
+                          workflow, config_file, rdir[base],
                           analysis_seg=workflow.analysis_time,
                           sections=[opts.prior_section + "-" + subsection],
                           tags=opts.tags + [subsection])
+layout.group_layout(rdir[base], prior_files)
 
-# make html pages
+# files for overall summary section
+summ_files = coinc_table_files if workflow_options else []
+summ_files = post_table_files + post_files
+for summ_file in summ_files:
+    symlink_path(summ_file, rdir.base)
+layout.single_layout(rdir.base, summ_files)
+
+# create versioning HTML pages
+results.create_versioning_page(rdir["workflow/version"], container.cp)
+
+# create node for making HTML pages
 wf.make_results_web_page(finalize_workflow,
                          os.path.join(os.getcwd(), rdir.base))
-
-# create versioning information
-results.create_versioning_page(rdir["workflow/version"], container.cp)
 
 # add sub-workflows to workflow
 container += workflow
@@ -338,9 +402,6 @@ container._adag.addDependency(dep)
 
 # write dax
 container.save(filename=opts.output_file, output_map_path=opts.output_map)
-
-# write html well
-layout.two_column_layout(rdir.base, layouts)
 
 # save workflow configuration file
 base = rdir["workflow/configuration"]
@@ -356,14 +417,14 @@ layout.single_layout(base, prior_ini)
 
 # close the log and flush to the html file
 logging.shutdown()
-with open (wf_log_file.storage_path, "r") as logfile:
-    logdata = logfile.read()
+with open (log_file_txt.storage_path, "r") as log_file:
+    log_data = log_file.read()
 log_str = """
 <p>Workflow generation script created workflow in output directory: %s</p>
 <p>Workflow name is: %s</p>
 <p>Workflow generation script run on host: %s</p>
 <pre>%s</pre>
-""" % (os.getcwd(), opts.workflow_name, socket.gethostname(), logdata)
+""" % (os.getcwd(), opts.workflow_name, socket.gethostname(), log_data)
 kwds = {"title" : "Workflow Generation Log",
         "caption" : "Log of the workflow script %s" % sys.argv[0],
         "cmd" : " ".join(sys.argv)}

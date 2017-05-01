@@ -37,12 +37,13 @@ A simple workflow configuration file::
     [workflow-inference]
     ; how the workflow generator should setup inference nodes
     num-events = 1
+    plot-1d-mass = mass1 mass2 mchirp q
+    plot-1d-orientation = ra dec tc polarization inclination coa_phase
+    plot-1d-distance = distance redshift
 
     [executables]
     ; paths to executables to use in workflow
     inference = ${which:pycbc_inference}
-    inference_acf = ${which:pycbc_inference_plot_acf}
-    inference_acl = ${which:pycbc_inference_plot_acl}
     inference_posterior = ${which:pycbc_inference_plot_posterior}
     inference_prior = ${which:pycbc_inference_plot_prior}
     inference_rate = ${which:pycbc_inference_plot_acceptance_rate}
@@ -76,14 +77,6 @@ A simple workflow configuration file::
     ; pegasus profile for inference nodes
     condor|request_memory = 20G
     condor|request_cpus = 12
-
-    [inference_acf]
-    ; command line options use --help for more information
-    ymax = 1.1
-    ymin = -1.1
-
-    [inference_acl]
-    ; command line options use --help for more information
 
     [inference_posterior]
     ; command line options use --help for more information
