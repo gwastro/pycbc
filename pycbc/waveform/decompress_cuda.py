@@ -309,7 +309,11 @@ class CUDALinearInterpolate(object):
         pycbc.scheme.mgr.state.context.synchronize()
         return
 
-def cuda_linear_interp(output, flow, freqs, amps, phases):
+def inline_linear_interp(amps, phases, freqs, output, df, flow, imin, start_index):
+    # Note that imin and start_index are ignored in the GPU code; they are only
+    # needed for CPU.
+    if output.precision == 'double':
+        raise NotImplementedError("Double precision linear interpolation not currently supported on CUDA scheme")
     flow = numpy.float32(flow)
     texlen = numpy.int32(len(freqs))
     fmax = numpy.float32(freqs[texlen-1])
@@ -323,7 +327,7 @@ def cuda_linear_interp(output, flow, freqs, amps, phases):
     phases_gpu.bind_to_texref_ext(ptex, allow_offset=False)
     fn1 = fn1.prepared_call
     fn2 = fn2.prepared_call
-    df = numpy.float32(output.delta_f)
+    df = numpy.float32(df)
     g_out = output.data.gpudata
     lower = zeros(nb, dtype=numpy.int32).data.gpudata
     upper = zeros(nb, dtype=numpy.int32).data.gpudata

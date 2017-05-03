@@ -32,6 +32,7 @@ from pycbc.weave import inline
 from scipy import interpolate
 from pycbc.types import FrequencySeries, zeros, complex_same_precision_as, real_same_precision_as
 from pycbc.waveform import utils
+from pycbc.scheme import schemed
 
 def rough_time_estimate(m1, m2, flow, fudge_length=1.1, fudge_min=0.02):
     """ A very rough estimate of the duration of the waveform.
@@ -465,6 +466,11 @@ _real_dtypes = {
     'double': numpy.float64
 }
 
+@schemed("pycbc.waveform.decompress_")
+def inline_linear_interp(amp, phase, sample_frequencies, output,
+                         df, f_lower, imin, start_index):
+    return
+
 def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
                   f_lower=None, interpolation='inline_linear'):
     """Decompresses an FD waveform using the given amplitude, phase, and the
@@ -507,10 +513,6 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         raise ValueError("amp, phase, and sample_points must all have the "
             "same precision")
 
-    sample_frequencies = numpy.array(sample_frequencies)
-    amp = numpy.array(amp)
-    phase = numpy.array(phase)
-
     if out is None:
         if df is None:
             raise ValueError("Either provide output memory or a df")
@@ -539,21 +541,14 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         raise ValueError('requested f_lower >= largest frequency in out')
     # interpolate the amplitude and the phase
     if interpolation == "inline_linear":
-        if out.precision == 'single':
-            code = _linear_decompress_code32
-        else:
-            code = _linear_decompress_code
-        # use custom interpolation
-        sflen = len(sample_frequencies) # pylint:disable=unused-variable
-        h = numpy.array(out.data, copy=False) # pylint:disable=unused-variable
-        delta_f = float(df) # pylint:disable=unused-variable
-        inline(code, ['h', 'hlen', 'delta_f', 'sample_frequencies', 'sflen',
-                      'amp', 'phase', 'kmin', 'imin'],
-               extra_compile_args=[WEAVE_FLAGS] +\
-                                  omp_flags,
-               libraries=omp_libs)
+        # Call the scheme-dependent function
+        inline_linear_interp(amp, phase, sample_frequencies, out,
+                             df, f_lower, imin, start_index)
     else:
         # use scipy for fancier interpolation
+        sample_frequencies = numpy.array(sample_frequencies)
+        amp = numpy.array(amp)
+        phase = numpy.array(phase)
         outfreq = out.sample_frequencies.numpy()
         amp_interp = interpolate.interp1d(sample_frequencies, amp,
                                           kind=interpolation,
