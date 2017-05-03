@@ -322,6 +322,12 @@ def query_and_read_frame(frame_type, channels, start_time, end_time):
     >>> ts = query_and_read_frame('H1_LDAS_C02_L2', 'H1:LDAS-STRAIN', 
     >>>                               968995968, 968995968+2048)
     """
+    # Allows compatibility with our standard tools
+    # We may want to place this into a higher level frame getting tool
+    if frame_type == 'LOSC':
+        from pycbc.frame.losc import read_frame_losc
+        return read_frame_losc(channels, start_time, end_time)
+    
     logging.info('querying datafind server')
     paths = frame_paths(frame_type, int(start_time), int(end_time))
     logging.info('found files: %s' % (' '.join(paths)))
