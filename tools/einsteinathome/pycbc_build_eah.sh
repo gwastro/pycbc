@@ -294,6 +294,11 @@ usage="
     --pycbc-fetch-ref               fetch and use a specific reference for pycbc
 "
 
+# circumvent old certificate chains on old systems
+wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
+export GIT_SSL_NO_VERIFY=true
+export PIP_TRUSTED_HOST="pypi.python.org github.com"
+
 # handle command-line arguments, possibly overriding above settings
 for i in $*; do
     case $i in
@@ -312,10 +317,10 @@ for i in $*; do
         --clean) rm -rf "$HOME/.cache" "$HOME/Library/Caches/pip" "$SOURCE/$BUILDDIRNAME-preinst.tgz" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$PYCBC";;
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz";;
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
-        --blessed-lalsuite) lalsuite_branch=`wget -O- https://github.com/ligo-cbc/pycbc/releases/latest 2>/dev/null|
+        --blessed-lalsuite) lalsuite_branch=`wget $wget_opts -O- https://github.com/ligo-cbc/pycbc/releases/latest |
             awk -F'>' '(p==0) && /This release has been tested against LALSuite with the hash:/ {p=1}; (p==1) && /<code>[0-9a-f]*$/{print $NF; p=2}'`;
             if ! echo "0$lalsuite_branch"|egrep '^[0-9a-f]*$' >/dev/null; then
-                echo "ERROR: blessed LALSuite version couldn't be determined";
+                echo "ERROR: blessed LALSuite version couldn't be determined" >&2
                 exit 1;
             fi;;
         --pycbc-commit=*) pycbc_commit="`echo $i|sed 's/^--pycbc-commit=//'`";;
@@ -332,7 +337,7 @@ for i in $*; do
                 now=`date +%s`
                 d2_ago=`expr $now - 172800` # two days ago
                 if [  $last_build -le $d2_ago ]; then # last 'clean-sundays' build was two days ago or older
-                    rm -rf "$HOME/.cache" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"
+                    rm -rf "$HOME/.cache" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$SOURCE/lalsuite/configure"
                     echo $now > "$SOURCE/last_sunday_build"
                 fi
             fi ;;
@@ -387,11 +392,6 @@ atlas="https://www.atlas.aei.uni-hannover.de/~bema"
 albert="http://albert.phys.uwm.edu/download"
 duncan="https://www.atlas.aei.uni-hannover.de/~dbrown"
 aei="http://www.aei.mpg.de/~bema"
-
-# circumvent old certificate chains on old systems
-export GIT_SSL_NO_VERIFY=true
-wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
-export PIP_TRUSTED_HOST="pypi.python.org github.com"
 
 if $silent_build ; then
     LOG_FILE=$(mktemp -t pycbc-build-log.XXXXXXXXXX)
