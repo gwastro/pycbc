@@ -331,7 +331,7 @@ def positive_float(s):
     err_msg = "must be a positive number, not %r" % s
     try:
         value = float(s)
-    except ValueError, e:
+    except ValueError:
         raise argparse.ArgumentTypeError(err_msg)
     if value <= 0:
         raise argparse.ArgumentTypeError(err_msg)
@@ -346,7 +346,7 @@ def nonnegative_float(s):
     err_msg = "must be either positive or zero, not %r" % s
     try:
         value = float(s)
-    except ValueError, e:
+    except ValueError:
         raise argparse.ArgumentTypeError(err_msg)
     if value < 0:
         raise argparse.ArgumentTypeError(err_msg)
