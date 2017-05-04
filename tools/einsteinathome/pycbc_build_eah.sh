@@ -337,7 +337,7 @@ for i in $*; do
                 now=`date +%s`
                 d2_ago=`expr $now - 172800` # two days ago
                 if [  $last_build -le $d2_ago ]; then # last 'clean-sundays' build was two days ago or older
-                    rm -rf "$HOME/.cache" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz"
+                    rm -rf "$HOME/.cache" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$SOURCE/lalsuite/configure"
                     echo $now > "$SOURCE/last_sunday_build"
                 fi
             fi ;;
