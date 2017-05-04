@@ -60,7 +60,7 @@ def load_html_metadata(filename):
     data = open(filename, 'r').read()
 
     if 'pycbc-meta' in data:
-        print "LOADING HTML FILE %s" % filename
+        print("LOADING HTML FILE %s" % filename)
     parser.feed(data)
     cp = ConfigParser.ConfigParser(parser.metadata)
     cp.add_section(os.path.basename(filename))

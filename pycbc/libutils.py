@@ -19,6 +19,8 @@ This module provides a simple interface for loading a shared library via ctypes,
 allowing it to be specified in an OS-independent way and searched for preferentially
 according to the paths that pkg-config specifies.
 """
+
+from __future__ import print_function
 import os, fnmatch, ctypes, commands, sys, subprocess
 from ctypes.util import find_library
 from collections import deque
@@ -42,7 +44,7 @@ def pkg_config(pkg_libraries):
         if os.system('pkg-config --exists %s 2>/dev/null' % pkg) == 0:
             pass
         else:
-            print "Could not find library {0}".format(pkg)
+            print("Could not find library {0}".format(pkg))
             sys.exit(1)
 
     # Get the pck-config flags
@@ -91,7 +93,8 @@ def pkg_config_libdirs(packages):
         FNULL = open(os.devnull, 'w')
         subprocess.check_call(["pkg-config", "--version"], stdout=FNULL, close_fds=True)
     except:
-        print >>sys.stderr, "PyCBC.libutils: pkg-config call failed, setting NO_PKGCONFIG=1"
+        print("PyCBC.libutils: pkg-config call failed, setting NO_PKGCONFIG=1",
+              file=sys.stderr)
         os.environ['NO_PKGCONFIG'] = "1"
         return []
 

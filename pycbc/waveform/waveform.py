@@ -254,23 +254,23 @@ cuda_fd = dict(_lalsim_fd_approximants.items() + _cuda_fd_approximants.items())
 def print_td_approximants():
     print("LalSimulation Approximants")
     for approx in _lalsim_td_approximants.keys():
-        print "  " + approx
+        print("  " + approx)
     print("CUDA Approximants")
     for approx in _cuda_td_approximants.keys():
-        print "  " + approx
+        print("  " + approx)
 
 def print_fd_approximants():
     print("LalSimulation Approximants")
     for approx in _lalsim_fd_approximants.keys():
-        print "  " + approx
+        print("  " + approx)
     print("CUDA Approximants")
     for approx in _cuda_fd_approximants.keys():
-        print "  " + approx
+        print("  " + approx)
 
 def print_sgburst_approximants():
     print("LalSimulation Approximants")
     for approx in _lalsim_sgburst_approximants.keys():
-        print "  " + approx
+        print("  " + approx)
 
 def td_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available time domain approximants for
