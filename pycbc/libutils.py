@@ -21,7 +21,7 @@ according to the paths that pkg-config specifies.
 """
 
 from __future__ import print_function
-import os, fnmatch, ctypes, commands, sys, subprocess
+import os, fnmatch, ctypes, subprocess, sys, subprocess
 from ctypes.util import find_library
 from collections import deque
 
@@ -51,7 +51,7 @@ def pkg_config(pkg_libraries):
     if len(pkg_libraries)>0 :
         # PKG_CONFIG_ALLOW_SYSTEM_CFLAGS explicitly lists system paths.
         # On system-wide LAL installs, this is needed for swig to find lalswig.i
-        for token in commands.getoutput("PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags %s" % ' '.join(pkg_libraries)).split():
+        for token in subprocess.getoutput("PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags %s" % ' '.join(pkg_libraries)).split():
             if token.startswith("-l"):
                 libraries.append(token[2:])
             elif token.startswith("-L"):
@@ -104,7 +104,7 @@ def pkg_config_libdirs(packages):
             raise ValueError("Package {0} cannot be found on the pkg-config search path".format(pkg))
 
     libdirs = []
-    for token in commands.getoutput("PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {0}".format(' '.join(packages))).split():
+    for token in subprocess.getoutput("PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {0}".format(' '.join(packages))).split():
         if token.startswith("-L"):
             libdirs.append(token[2:])
     return libdirs
