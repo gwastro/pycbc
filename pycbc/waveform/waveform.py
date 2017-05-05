@@ -312,6 +312,8 @@ def get_obj_attrs(obj):
             for slot in obj.__slots__:
                 if hasattr(obj, slot):
                     pr[slot] = getattr(obj, slot)
+        elif isinstance(obj, dict):
+            pr = obj.copy()
         else:
             for name in dir(obj):
                 try:
