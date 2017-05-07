@@ -20,9 +20,9 @@ This modules contains functions for getting data from the LOSC
 _losc_url = "https://losc.ligo.org/archive/links/%s/%s/%s/%s/json/"
 
 def _get_run(time):
-    if time > 815011213 and time < 875318414:
+    if 815011213 < time < 875318414:
         return 'S5'
-    elif time > 930787215 and time < 971568015:
+    elif 930787215 < time < 971568015:
         return 'S6'
     else:
         raise ValueError('Time %s not available in a public dataset' % time)

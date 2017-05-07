@@ -71,6 +71,7 @@ _fr_type_map = {
 }
 
 def _read_channel(channel, stream, start, duration):
+    """ Get channel using lalframe """
     channel_type = lalframe.FrStreamGetTimeSeriesType(channel, stream)
     read_func = _fr_type_map[channel_type][0]
     d_type = _fr_type_map[channel_type][1]
@@ -99,7 +100,7 @@ def locations_to_cache(locations):
             dir_name, file_name = os.path.split(file_path)
             base_name, file_extension = os.path.splitext(file_name)
 
-            if file_extension == ".lcf" or file_extension == ".cache":
+            if file_extension in [".lcf", ".cache"]:
                 cache = lal.CacheImport(file_path)
             elif file_extension == ".gwf": 
                 cache = lalframe.FrOpen(dir_name, file_name).cache
@@ -229,7 +230,7 @@ def datafind_connection(server=None):
         datafind_server = server
     else:
         # Get the server name from the environment
-        if os.environ.has_key("LIGO_DATAFIND_SERVER"):
+        if 'LIGO_DATAFIND_SERVER' in os.environ:
             datafind_server = os.environ["LIGO_DATAFIND_SERVER"]
         else:
             err = "Trying to obtain the ligo datafind server url from "
@@ -362,8 +363,8 @@ def write_frame(location, channels, timeseries):
         timeseries = [timeseries]
 
     # check that timeseries have the same start and end time
-    gps_start_times = set([series.start_time for series in timeseries])
-    gps_end_times = set([series.end_time for series in timeseries])
+    gps_start_times = {series.start_time for series in timeseries}
+    gps_end_times = {series.end_time for series in timeseries}
     if len(gps_start_times) != 1 or len(gps_end_times) != 1:
         raise ValueError("Start and end times of TimeSeries must be identical.")
 
@@ -451,7 +452,8 @@ class DataBuffer(object):
         stream = lalframe.FrStreamCacheOpen(cache)
         self.stream = stream
 
-    def _retrieve_metadata(self, stream, channel_name):
+    @staticmethod
+    def _retrieve_metadata(stream, channel_name):
         """Retrieve basic metadata by reading the first file in the cache
     
         Parameters
