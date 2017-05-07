@@ -277,6 +277,7 @@ flow = args.low_frequency_cutoff
 
 if args.round_start_time:
     args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time 
+    logging.info('Starting from: %s', args.start_time)
 
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk
