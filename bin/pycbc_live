@@ -255,6 +255,10 @@ parser.add_argument('--upload-snr-series', action='store_true', default=False)
 parser.add_argument('--followup-detectors', default=[], nargs='*',
                     help='List of detectors to use as followup')
 parser.add_argument('--enable-single-detector-background', action='store_true', default=False)
+parser.add_argument('--round-start-time', type=int,
+                    help="Round up the start time to the nearest multiple of X"
+                         " seconds. This is useful for forcing agreement "
+                         " with frame file production.")
 
 scheme.insert_processing_option_group(parser)
 LiveSingleFarThreshold.insert_args(parser)
@@ -270,6 +274,10 @@ ctx = scheme.from_cli(args)
 
 sr = args.sample_rate
 flow = args.low_frequency_cutoff
+
+if args.round_start_time:
+    args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time 
+    logging.info('Starting from: %s', args.start_time)
 
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk
