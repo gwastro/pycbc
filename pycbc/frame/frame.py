@@ -71,6 +71,7 @@ _fr_type_map = {
 }
 
 def _read_channel(channel, stream, start, duration):
+    """ Get channel using lalframe """
     channel_type = lalframe.FrStreamGetTimeSeriesType(channel, stream)
     read_func = _fr_type_map[channel_type][0]
     d_type = _fr_type_map[channel_type][1]
@@ -99,7 +100,7 @@ def locations_to_cache(locations):
             dir_name, file_name = os.path.split(file_path)
             base_name, file_extension = os.path.splitext(file_name)
 
-            if file_extension == ".lcf" or file_extension == ".cache":
+            if file_extension in [".lcf", ".cache"]:
                 cache = lal.CacheImport(file_path)
             elif file_extension == ".gwf": 
                 cache = lalframe.FrOpen(dir_name, file_name).cache
@@ -229,7 +230,7 @@ def datafind_connection(server=None):
         datafind_server = server
     else:
         # Get the server name from the environment
-        if os.environ.has_key("LIGO_DATAFIND_SERVER"):
+        if 'LIGO_DATAFIND_SERVER' in os.environ:
             datafind_server = os.environ["LIGO_DATAFIND_SERVER"]
         else:
             err = "Trying to obtain the ligo datafind server url from "
@@ -322,6 +323,12 @@ def query_and_read_frame(frame_type, channels, start_time, end_time):
     >>> ts = query_and_read_frame('H1_LDAS_C02_L2', 'H1:LDAS-STRAIN', 
     >>>                               968995968, 968995968+2048)
     """
+    # Allows compatibility with our standard tools
+    # We may want to place this into a higher level frame getting tool
+    if frame_type == 'LOSC':
+        from pycbc.frame.losc import read_frame_losc
+        return read_frame_losc(channels, start_time, end_time)
+    
     logging.info('querying datafind server')
     paths = frame_paths(frame_type, int(start_time), int(end_time))
     logging.info('found files: %s' % (' '.join(paths)))
@@ -356,8 +363,8 @@ def write_frame(location, channels, timeseries):
         timeseries = [timeseries]
 
     # check that timeseries have the same start and end time
-    gps_start_times = set([series.start_time for series in timeseries])
-    gps_end_times = set([series.end_time for series in timeseries])
+    gps_start_times = {series.start_time for series in timeseries}
+    gps_end_times = {series.end_time for series in timeseries}
     if len(gps_start_times) != 1 or len(gps_end_times) != 1:
         raise ValueError("Start and end times of TimeSeries must be identical.")
 
@@ -445,7 +452,8 @@ class DataBuffer(object):
         stream = lalframe.FrStreamCacheOpen(cache)
         self.stream = stream
 
-    def _retrieve_metadata(self, stream, channel_name):
+    @staticmethod
+    def _retrieve_metadata(stream, channel_name):
         """Retrieve basic metadata by reading the first file in the cache
     
         Parameters
@@ -614,30 +622,6 @@ class DataBuffer(object):
                 time.sleep(1)
                 return self.attempt_advance(blocksize, timeout=timeout)
 
-# Status flags for the calibration state vector
-HOFT_OK = 1
-SCIENCE_INTENT = 2
-SCIENCE_QUALITY = 4
-HOFT_PROD = 8
-FILTERS_OK = 16
-NO_STOCH_HW_INJ = 32
-NO_CBC_HW_INJ = 64
-NO_BURST_HW_INJ = 128
-NO_DETCHAR_HW_INJ = 256
-KAPPA_A_OK = 512
-KAPPA_PU_OK = 1024
-KAPPA_TST_OK = 2048
-KAPPA_C_OK = 4096
-FCC_OK = 8192
-NO_GAP = 16384
-NO_HWINJ = NO_STOCH_HW_INJ | NO_CBC_HW_INJ | \
-           NO_BURST_HW_INJ | NO_DETCHAR_HW_INJ
-
-# O2 Low-Latency DQ vector definition
-# If the bit is 0 then we should veto
-OMC_DCPD_ADC_OVERFLOW = 2
-ETMY_ESD_DAC_OVERFLOW = 4
-
 class StatusBuffer(DataBuffer):
 
     """ Read state vector information from a frame file """
@@ -646,7 +630,7 @@ class StatusBuffer(DataBuffer):
                        channel_name,
                        start_time,
                        max_buffer=2048,
-                       valid_mask=HOFT_OK | SCIENCE_INTENT,
+                       valid_mask=3,
                        force_update_cache=False,
                        increment_update_cache=None):
         """ Create a rolling buffer of status data from a frame
