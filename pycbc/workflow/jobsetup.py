@@ -569,7 +569,7 @@ class JobSegmenter(object):
         if compatibility_mode and (self.valid_length != abs(self.valid_chunk)):
             errMsg = "In compatibility mode the template bank and matched-"
             errMsg += "filter jobs must read in the same amount of data."
-            print self.valid_length, self.valid_chunk
+            print(self.valid_length, self.valid_chunk)
             raise ValueError(errMsg)
         elif compatibility_mode and len(data_lengths) > 1:
             raise ValueError("Cannot enable compatibility mode tiling with "

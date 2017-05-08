@@ -78,5 +78,5 @@ class Version(argparse.Action):
         except ImportError:
             version_str += "\nLALSimulation not installed in environment\n"
 
-        print version_str
+        print(version_str)
         sys.exit(0)

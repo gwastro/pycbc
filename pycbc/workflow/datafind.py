@@ -29,6 +29,7 @@ documentation for this function can be found here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html
 """
 
+from __future__ import print_function
 import os, copy
 import urlparse
 import logging
@@ -950,8 +951,8 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     for entry in dfCache:
         start = str(int(entry.segment[0]))
         duration = str(int(abs(entry.segment)))
-        print >> fP, "%s %s %s %s %s" \
-            %(entry.observatory, entry.description, start, duration, entry.url)
+        print("%s %s %s %s %s" \
+              % (entry.observatory, entry.description, start, duration, entry.url), file=fP)
         entry.segment = segments.segment(int(entry.segment[0]), int(entry.segment[1]))
 
     fP.close()

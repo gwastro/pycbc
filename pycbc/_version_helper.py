@@ -20,7 +20,6 @@
 
 __author__ = 'Adam Mercer <adam.mercer@ligo.org>'
 
-import exceptions
 import os
 import time
 import subprocess
@@ -41,7 +40,7 @@ class GitInfo(object):
         build_date = None
 
 
-class GitInvocationError(exceptions.LookupError):
+class GitInvocationError(LookupError):
     pass
 
 

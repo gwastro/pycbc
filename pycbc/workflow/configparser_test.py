@@ -22,7 +22,7 @@ def parse_workflow_ini_file(cpFile,parsed_filepath=None):
     """    
     # First read the .ini file
     cp = read_ini_file(cpFile)
-    print cp.sections()
+    print(cp.sections())
 
     # Check for any substitutions that can be made
     # FIXME: The python 3 version of ConfigParser can do this automatically
@@ -34,11 +34,11 @@ def parse_workflow_ini_file(cpFile,parsed_filepath=None):
 
     # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
     cp = split_multi_sections(cp)
-    print cp.sections()  
+    print(cp.sections())
 
     # Check for duplicate options in sub-sections
     sanity_check_subsections(cp)
-    print cp.sections()
+    print(cp.sections())
 
     # Dump parsed .ini file if needed
     if parsed_filepath:

@@ -185,12 +185,12 @@ def compile(source, name):
            "--compiler-options", "'-fPIC'", 
            "-o", obj_file, 
            "-c", src_file] 
-    print " ".join(cmd)
+    print(" ".join(cmd))
     subprocess.check_call(cmd)
     
     cmd = ["nvcc", "-shared", "-ccbin", "g++", "-m64", 
        "-o", lib_file, obj_file, "-lcufft_static", "-lculibos"]  
-    print " ".join(cmd)
+    print(" ".join(cmd))
     
     subprocess.check_call(cmd)
     
