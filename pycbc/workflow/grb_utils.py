@@ -27,6 +27,8 @@ This library code contains functions and classes that are used in the
 generation of pygrb workflows. For details about pycbc.workflow see here:
 http://ligo-cbc.github.io/pycbc/latest/html/workflow.html
 """
+
+from __future__ import print_function
 import sys
 import os
 import shutil
@@ -185,7 +187,7 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
             elif entry == 'event_id':
                 row.event_id = ilwd.ilwdchar("external_trigger:event_id:0")
             else:
-                print >> sys.stderr, "Column %s not recognized" %(entry)
+                print("Column %s not recognized" %(entry), file=sys.stderr)
                 raise ValueError
 
     # Save file

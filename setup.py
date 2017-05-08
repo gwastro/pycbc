@@ -18,6 +18,9 @@
 """
 setup.py file for PyCBC package
 """
+
+from __future__ import print_function
+
 import os, fnmatch, sys, subprocess, shutil
 
 from trace import fullmodname
@@ -39,7 +42,7 @@ from distutils.version import LooseVersion
 try:
     import numpy.version
     if LooseVersion(numpy.version.version) < LooseVersion("1.6.4"):
-        print (" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
+        print(" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
               " We found version %s already installed. Please update \n"
               " to a more recent version and then retry PyCBC  \n"
               " installation. \n"
@@ -107,13 +110,13 @@ class clean(_clean):
         for f in self.clean_files:
             try:
                 os.unlink(f)
-                print 'removed {0}'.format(f)
+                print('removed {0}'.format(f))
             except:
                 pass
 
         for fol in self.clean_folders:
             shutil.rmtree(fol, ignore_errors=True)
-            print 'removed {0}'.format(fol)
+            print('removed {0}'.format(fol))
 
 class install(_install):
     def run(self):
@@ -127,11 +130,12 @@ class install(_install):
                      "creating %s" % filename)
 
         env_file = open(filename, 'w')
-        print >> env_file, "# Source this file to access PyCBC"
-        print >> env_file, "PATH=" + self.install_scripts + ":$PATH"
-        print >> env_file, "PYTHONPATH=" + self.install_libbase + ":$PYTHONPATH"
-        print >> env_file, "export PYTHONPATH"
-        print >> env_file, "export PATH"
+        print("# Source this file to access PyCBC", file=env_file)
+        print("PATH=" + self.install_scripts + ":$PATH", file=env_file)
+        print("PYTHONPATH=" + self.install_libbase + ":$PYTHONPATH",
+              file=env_file)
+        print("export PYTHONPATH", file=env_file)
+        print("export PATH", file=env_file)
         env_file.close()
 
         _install.run(self)
@@ -186,7 +190,7 @@ class TestBase(Command):
             test_results.append(result_str)
 
         for test in test_results:
-            print test
+            print(test)
 
 class test(Command):
     def has_cuda(self):

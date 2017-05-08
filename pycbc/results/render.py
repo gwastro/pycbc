@@ -133,7 +133,7 @@ def render_default(path, cp):
                 #        for now I just coalesce.
                 seg_dict = wf_file.return_union_seglist()
             except Exception as e:
-                print 'No segment table found in', path, ':', e
+                print('No segment table found in %s : %s' % (path, e))
 
     # render template
     template_dir = pycbc.results.__path__[0] + '/templates/files'

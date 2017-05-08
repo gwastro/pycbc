@@ -117,7 +117,7 @@ def insert_base_bank_options(parser):
         err_msg = "must be a number between 0 and 1 excluded, not %r" % s
         try:
             value = float(s)
-        except ValueError, e:
+        except ValueError:
             raise argparse.ArgumentTypeError(err_msg)
         if value <= 0 or value >= 1:
             raise argparse.ArgumentTypeError(err_msg)
@@ -757,8 +757,8 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
             # And this is the bad case
             err_msg = "The maximum eta provided is not possible given "
             err_msg += "restrictions on component masses."
-            print m1_at_min_m2, m2_at_min_m1, m1_at_max_m2, m2_at_max_m1
-            print opts.min_mass1, opts.max_mass1, opts.min_mass2, opts.max_mass2
+            print(m1_at_min_m2, m2_at_min_m1, m1_at_max_m2, m2_at_max_m1)
+            print(opts.min_mass1, opts.max_mass1, opts.min_mass2, opts.max_mass2)
             raise ValueError(err_msg)
         # Update min_tot_mass if needed
         if min_tot_mass > opts.min_total_mass:

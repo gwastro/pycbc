@@ -25,7 +25,10 @@
 """Classes to define common parameters used for waveform generation.
 """
 
-from UserList import UserList
+try:
+    from collections import UserList
+except ImportError:
+    from UserList import UserList
 
 #
 # =============================================================================
