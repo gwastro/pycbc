@@ -358,6 +358,7 @@ setup (
                'bin/pycbc_banksim_match_combine',
                'bin/pycbc_faithsim',
                'bin/pycbc_inspiral',
+               'bin/pycbc_brute_bank',
                'bin/pycbc_inspiral_skymax',
                'bin/pycbc_live',
                'bin/pycbc_live_nagios_monitor',
