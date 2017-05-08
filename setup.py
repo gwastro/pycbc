@@ -477,6 +477,7 @@ setup (
                'pycbc.io',
                'pycbc.inference',
                'pycbc.inject',
+               'pycbc.frame',
                ],
      package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
 	             'pycbc.results': find_package_data('pycbc/results'),
