@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # Copyright (C) 2012 Alex Nitz, Andrew Miller, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it

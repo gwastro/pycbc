@@ -1,27 +1,29 @@
 #!/usr/bin/env python
+""""Generate a bank of templates using a brute force stochastic method.
+"""
 import numpy, h5py, logging, argparse, numpy.random, sys
 import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.pnutils
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--output-file',
+parser.add_argument('--output-file', required=True,
     help='Output file name for template bank.')
 parser.add_argument('--input-file',
     help='Bank to use as a starting point.')
-parser.add_argument('--params',
-    help='list of paramters to use', nargs='+')
-parser.add_argument('--min',
+parser.add_argument('--params', required=True,
+    help='list of paramaters to use', nargs='+')
+parser.add_argument('--min', required=True,
     help='list of the minimum parameter values', nargs='+', type=float)
-parser.add_argument('--max',
+parser.add_argument('--max',  required=True,
     help='list of the maximum parameter values', nargs='+', type=float)
-parser.add_argument('--approximant', 
+parser.add_argument('--approximant',  required=True,
     help='The waveform approximant to place')
-parser.add_argument('--minimal-match', type=float)
-parser.add_argument('--buffer-length', type=float,
+parser.add_argument('--minimal-match', default=0.97, type=float)
+parser.add_argument('--buffer-length', default=2, type=float,
     help='size of waveform buffer in seconds')
-parser.add_argument('--sample-rate', type=int,
+parser.add_argument('--sample-rate', default=2048, type=int,
     help='sample rate in seconds')
-parser.add_argument('--low-frequency-cutoff', type=float)
+parser.add_argument('--low-frequency-cutoff', default=20.0, type=float)
 parser.add_argument('--enable-sigma-bound', action='store_true')
 parser.add_argument('--tau0-threshold', type=float)
 parser.add_argument('--permissive', action='store_true',
@@ -46,6 +48,9 @@ class Shrinker(object):
         return l
 
 class TriangleBank(object):
+    """ A bank of templates that uses the triangle inequality to estimate
+    matches based on prior ones.
+    """
     def __init__(self, p=None):
         self.waveforms = p if p is not None else []
 
@@ -134,7 +139,7 @@ class TriangleBank(object):
             if m > mmax:
                 mmax = m     
 
-    def round(self, gen, params, threshold):
+    def check_params(self, gen, params, threshold):
         num_tried = 0
         num_added = 0
         for i in range(len(params.values()[0])):
@@ -206,7 +211,7 @@ bank = TriangleBank()
 if args.input_file:
     f = h5py.File(args.input_file, 'r')
     params = {k: f[k][:] for k in f}
-    bank, _ = bank.round(gen, params, args.minimal_match)
+    bank, _ = bank.check_params(gen, params, args.minimal_match)
 
 while conv > tolerance:
     r += 1
@@ -222,7 +227,7 @@ while conv > tolerance:
             params[k] = params[k][l]
 
     blen = len(bank)
-    bank, conv = bank.round(gen, params, args.minimal_match)
+    bank, conv = bank.check_params(gen, params, args.minimal_match)
     logging.info("Round: %s Size: %s conv: %s added: %s",
                  r, len(bank), conv, len(bank) - blen)
 
