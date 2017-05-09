@@ -671,7 +671,10 @@ class FilterBank(TemplateBank):
         hdecomp = self.compressed_waveforms[self.table.template_hash[index]].decompress(out=decomp_scratch, f_lower=f_lower, interpolation=decompression_method)
         p = props(self.table[index])
         p.pop('approximant')
-        hdecomp.chirp_length = get_waveform_filter_length_in_time(approximant, **p)
+        if hasattr(self.table, 'template_duration'):
+            hdecomp.chirp_length=self.table.template_duration[index]
+        else :
+            hdecomp.chirp_length = get_waveform_filter_length_in_time(approximant, **p)
         hdecomp.length_in_time = hdecomp.chirp_length
         return hdecomp
 
