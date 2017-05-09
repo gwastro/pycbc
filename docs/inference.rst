@@ -305,7 +305,21 @@ With a minor change to the ``tc`` prior, you can reuse ``inference.ini`` from th
     min-tc = 1126259462.32
     max-tc = 1126259462.52
 
-Then run::
+Next, you need to obtain the real LIGO data containing GW150914. If you are
+a LIGO member and are running on a LIGO Data Grid cluster, set the following
+environment variable::
+
+    FRAMES="H1:H1_HOFT_C02 L1:L1_HOFT_C02"
+
+If you are not a LIGO member, or are not running on a LIGO Data Grid cluster,
+set the following instead::
+
+    FRAMES="LOSC"
+
+This will cause the needed frame files to be downloaded from the LIGO Open
+Science Center (https://losc.ligo.org).
+
+Now run::
 
     # trigger parameters
     TRIGGER_TIME=1126259462.42
@@ -326,7 +340,6 @@ Then run::
     PSD_DATA_LEN=1024
 
     # frame type and channel
-    FRAMES="H1:H1_HOFT_C02 L1:L1_HOFT_C02"
     CHANNELS="H1:H1:DCS-CALIB_STRAIN_C02 L1:L1:DCS-CALIB_STRAIN_C02"
 
     # sampler parameters
