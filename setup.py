@@ -69,7 +69,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'mpld3>=0.3',
                       'pyRXP>=2.1.0',
                       'pycbc-glue-obsolete==1.1.0',
-                      'kombine',
+                      'kombine==0.8.1',
                       'emcee>=2.2.0',
                       'corner>=2.0.1',
                       ]
