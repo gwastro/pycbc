@@ -248,6 +248,9 @@ An example of running ``pycbc_inference`` to analyze the injection in fake data:
     N_ITERATIONS=12000
     N_CHECKPOINT=1000
     PROCESSING_SCHEME=cpu
+
+    # the following sets the number of cores to use; adjust as needed to
+    # your computer's capabilities
     NPROCS=12
 
     # get coalescence time as an integer
@@ -316,7 +319,7 @@ set the following instead::
 
     FRAMES="LOSC"
 
-This will cause the needed frame files to be downloaded from the LIGO Open
+This will instruct the code to download the frame files from the LIGO Open
 Science Center (https://losc.ligo.org).
 
 Now run::
@@ -355,6 +358,9 @@ Now run::
     N_ITERATIONS=12000
     N_CHECKPOINT=1000
     PROCESSING_SCHEME=cpu
+
+    # the following sets the number of cores to use; adjust as needed to
+    # your computer's capabilities
     NPROCS=12
 
     # get coalescence time as an integer
