@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # Copyright (C) 2012 Alex Nitz, Andrew Miller, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -371,11 +371,12 @@ setup (
                'bin/pycbc_splitbank',
                'bin/pycbc_hdf5_splitbank',
                'bin/pycbc_split_inspinj',
-               'bin/pycbc_geom_aligned_2dstack',
-               'bin/pycbc_geom_aligned_bank',
-               'bin/pycbc_geom_nonspinbank',
-               'bin/pycbc_aligned_bank_cat',
-               'bin/pycbc_aligned_stoch_bank',
+               'bin/bank/pycbc_brute_bank',
+               'bin/bank/pycbc_geom_aligned_2dstack',
+               'bin/bank/pycbc_geom_aligned_bank',
+               'bin/bank/pycbc_geom_nonspinbank',
+               'bin/bank/pycbc_aligned_bank_cat',
+               'bin/bank/pycbc_aligned_stoch_bank',
                'bin/pycbc_make_faithsim',
                'bin/pycbc_get_ffinal',
                'bin/pycbc_tmpltbank_to_chi_params',
