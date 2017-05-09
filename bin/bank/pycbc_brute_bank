@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""""Generate a bank of templates using a brute force stochastic method.
+"""Generate a bank of templates using a brute force stochastic method.
 """
 import numpy, h5py, logging, argparse, numpy.random, sys
 import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.pnutils
