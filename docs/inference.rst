@@ -308,19 +308,28 @@ With a minor change to the ``tc`` prior, you can reuse ``inference.ini`` from th
     min-tc = 1126259462.32
     max-tc = 1126259462.52
 
-Next, you need to obtain the real LIGO data containing GW150914. If you are
-a LIGO member and are running on a LIGO Data Grid cluster, set the following
-environment variable::
+Next, you need to obtain the real LIGO data containing GW150914. Do one of
+the following:
 
-    FRAMES="H1:H1_HOFT_C02 L1:L1_HOFT_C02"
+* **If you are a LIGO member and are running on a LIGO Data Grid cluster:**
+  you can use the LIGO data server to automatically obtain the frame files.
+  Simply set the following environment variables::
 
-If you are not a LIGO member, or are not running on a LIGO Data Grid cluster,
-set the following instead::
+    FRAMES="--frame-type H1:H1_HOFT_C02 L1:L1_HOFT_C02"
+    CHANNELS="H1:H1:DCS-CALIB_STRAIN_C02 L1:L1:DCS-CALIB_STRAIN_C02"
 
-    FRAMES="LOSC"
+* **If you are not a LIGO member, or are not running on a LIGO Data Grid
+  cluster:** you need to obtain the data from the
+  `LIGO Open Science Center <https://losc.ligo.org>`_. First run the following
+  commands to download the needed frame files to your working directory::
 
-This will instruct the code to download the frame files from the LIGO Open
-Science Center (https://losc.ligo.org).
+    wget https://losc.ligo.org/s/events/GW150914/H-H1_LOSC_4_V2-1126257414-4096.gwf
+    wget https://losc.ligo.org/s/events/GW150914/L-L1_LOSC_4_V2-1126257414-4096.gwf
+
+  Then set the following enviornment variables::
+
+    FRAMES="--frame-files H1:H-H1_LOSC_4_V2-1126257414-4096.gwf L1:L-L1_LOSC_4_V2-1126257414-4096.gwf"
+    CHANNELS="H1:LOSC-STRAIN L1:LOSC-STRAIN"
 
 Now run::
 
@@ -341,9 +350,6 @@ Now run::
     PSD_SEG_LEN=8
     PSD_STRIDE=4
     PSD_DATA_LEN=1024
-
-    # frame type and channel
-    CHANNELS="H1:H1:DCS-CALIB_STRAIN_C02 L1:L1:DCS-CALIB_STRAIN_C02"
 
     # sampler parameters
     CONFIG_PATH=inference.ini
@@ -386,7 +392,7 @@ Now run::
         --gps-start-time ${GPS_START_TIME} \
         --gps-end-time ${GPS_END_TIME} \
         --channel-name ${CHANNELS} \
-        --frame-type ${FRAMES} \
+        ${FRAMES} \
         --strain-high-pass ${F_HIGHPASS} \
         --pad-data ${PAD_DATA} \
         --psd-estimation ${PSD_ESTIMATION} \
