@@ -644,7 +644,7 @@ class FieldArray(numpy.recarray):
     Create an array with subfields:
 
     >>> x = FieldArray(4, dtype=[('foo', [('cat', float), ('hat', int)]), ('bar', float)])
-    >>> x.all_fieldnames
+    >>> x.fieldnames
         ['foo.cat', 'foo.hat', 'bar']
 
     Load from a list of arrays (in this case, from an hdf5 file):
@@ -782,6 +782,18 @@ class FieldArray(numpy.recarray):
         [setattr(other, attr, copy.deepcopy(getattr(self, attr, default))) \
             for attr in self.__persistent_attributes__]
 
+    def __getattribute__(self, attr):
+        """Allows fields to be accessed as attributes.
+        """
+        # first try to get the attribute
+        try:
+            return numpy.ndarray.__getattribute__(self, attr)
+        except AttributeError as e:
+            # might be a field, try to retrive it using getitem
+            if attr in self.fields:
+                return self.__getitem__(attr)
+            # otherwise, unrecognized
+            raise AttributeError(e)
 
     def __setitem__(self, item, values):
         """Wrap's recarray's setitem to allow attribute-like indexing when
@@ -800,20 +812,29 @@ class FieldArray(numpy.recarray):
             # now try again
             return super(FieldArray, self).__setitem__(item, values)
 
+    def __getbaseitem__(self, item):
+        """Gets an item assuming item is either an index or a fieldname.
+        """
+        # We cast to ndarray to avoid calling array_finalize, which can be slow
+        out = self.view(numpy.ndarray)[item]
+        # cast back to an instance of self if there are more than one field and
+        # element
+        if out.size > 1 and out.dtype.fields is not None:
+            out = out.view(type(self))
+        return out
 
     def __getsubitem__(self, item):
         """Gets a subfield using `field.subfield` notation.
         """
         try:
-            return super(FieldArray, self).__getitem__(item)
+            return self.__getbaseitem__(item)
         except ValueError as err:
             subitems = item.split('.')
             if len(subitems) > 1:
-                return super(FieldArray, self).__getitem__(subitems[0]
+                return self.__getbaseitem__(subitems[0]
                     ).__getsubitem__('.'.join(subitems[1:]))
             else:
-                raise ValueError(err.message)
-
+                raise ValueError(err)
 
     def __getitem__(self, item):
         """Wraps recarray's  `__getitem__` so that math functions on fields and
@@ -838,7 +859,7 @@ class FieldArray(numpy.recarray):
             item_dict.update(d)
             # pull out the fields: note, by getting the parent fields, we
             # also get the sub fields name
-            item_dict.update({fn: super(FieldArray, self).__getitem__(fn) \
+            item_dict.update({fn: self.__getbaseitem__(fn) \
                 for fn in set(self.fieldnames).intersection(itemvars)})
             # add any aliases
             item_dict.update({alias: item_dict[name]
