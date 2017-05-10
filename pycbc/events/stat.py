@@ -316,9 +316,11 @@ class ExpFitStatistic(NewSNRStatistic):
             raise RuntimeError("None of the statistic files has the required "
                                "attribute called {ifo}-fit_coeffs !")
         self.fits_by_tid = {}
+        self.alphamax = {}
         for i in self.ifos:
-           self.fits_by_tid[i] = self.assign_fits(i)
-           
+            self.fits_by_tid[i] = self.assign_fits(i)
+            self.get_ref_vals(i)
+
         self.get_newsnr = get_newsnr
 
     def assign_fits(self, ifo):
@@ -331,6 +333,9 @@ class ExpFitStatistic(NewSNRStatistic):
         tid_sort = numpy.argsort(template_id)
         return {'alpha':alphas[tid_sort], 'lambda':lambdas[tid_sort],
                 'thresh':coeff_file.attrs['stat_threshold']}
+
+    def get_ref_vals(self, ifo):
+        self.alphamax[ifo] = self.fits_by_tid[ifo]['alpha'].max()
 
     def find_fits(self, trigs):
         """Get fit coeffs for a specific ifo and template id"""
@@ -389,6 +394,12 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         # for low-mass templates the exponential slope alpha \approx 6
         self.alpharef = 6.
 
+    def use_alphamax(self):
+        # take reference slope as the harmonic mean of individual ifo slopes
+        inv_alphas = [1./self.alphamax[i] for i in self.ifos]
+        self.alpharef = (sum(inv_alphas)/len(inv_alphas))**-1
+        print self.alpharef
+
     def single(self, trigs):
         logr_n = self.lognoiserate(trigs)
         _, _, thresh = self.find_fits(trigs)
@@ -434,6 +445,7 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         # scale to resemble network SNR
         return cstat / (2.**0.5)
 
+
 class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
 
     """Statistic combining exponential noise model with signal histogram PDF
@@ -443,6 +455,7 @@ class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
     def __init__(self, files):
         PhaseTDExpFitStatistic.__init__(self, files)
         self.get_newsnr = get_newsnr_sgveto
+
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
