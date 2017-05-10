@@ -134,8 +134,7 @@ seg_lens = 4*numpy.array([max(4./args.sample_rate,
 
 # generate output file
 logging.info("writing template info to output")
-output = bank.write_to_hdf(args.output, force=args.force,
-    skip_fields='template_duration')
+output = bank.write_to_hdf(args.output, force=args.force)
 
 # get the compressed sample points for each template
 logging.info("getting compressed amplitude and phase")
@@ -157,6 +156,8 @@ for ii in range(imin, imax):
     htilde = bank[ii-imin]
     tmplt = bank.table[ii-imin]
     fmin=tmplt.f_lower
+    template_duration=htilde.chirp_length
+    output['template_duration'][ii-imin]=template_duration
     kmin = int(numpy.ceil(fmin / df))
     if numpy.abs(htilde[kmin]) == 0:
         raise ValueError("""The amplitude of the waveform at the

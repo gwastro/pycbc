@@ -411,7 +411,7 @@ class TemplateBank(object):
         if 'approximant' not in self.table.fieldnames:
             raise ValueError("approximant not found in input file and no "
                 "approximant was specified on initialization")
-        return self.table["approximant"][index]
+        return self.table[index]["approximant"]
 
     def __len__(self):
         return len(self.table)
@@ -486,7 +486,7 @@ class TemplateBank(object):
             if not hasattr(self.table, 'f_lower'):
                 vec = numpy.zeros(len(self.table), dtype=numpy.float32)
                 self.table = self.table.add_fields(vec, 'f_lower')
-            self.table['f_lower'][:] = low_frequency_cutoff
+            self.table[:]['f_lower'] = low_frequency_cutoff
 
         self.min_f_lower = min(self.table['f_lower'])
         if self.f_lower is None and self.min_f_lower == 0.:
@@ -657,21 +657,30 @@ class FilterBank(TemplateBank):
         from pycbc.waveform.waveform import props
         from pycbc.waveform import get_waveform_filter_length_in_time
 
+        table_idx = self.table[index]
+        tmplt_hash = table_idx.template_hash
+
         # Get the interpolation method to be used to decompress the waveform
         if self.waveform_decompression_method is not None :
             decompression_method = self.waveform_decompression_method
         else :
-            decompression_method = self.compressed_waveforms[self.table.template_hash[index]].interpolation
+            decompression_method = self.compressed_waveforms[tmplt_hash].interpolation
         logging.info("Decompressing waveform using %s", decompression_method)
 
         # Create memory space for writing the decompressed waveform
         decomp_scratch = FrequencySeries(tempout[0:self.filter_length], delta_f=self.delta_f, copy=False)
 
         # Get the decompressed waveform
-        hdecomp = self.compressed_waveforms[self.table.template_hash[index]].decompress(out=decomp_scratch, f_lower=f_lower, interpolation=decompression_method)
+        hdecomp = self.compressed_waveforms[tmplt_hash].decompress(out=decomp_scratch, f_lower=f_lower, interpolation=decompression_method)
         p = props(self.table[index])
         p.pop('approximant')
-        hdecomp.chirp_length = get_waveform_filter_length_in_time(approximant, **p)
+        try:
+            tmpltdur = table_idx.template_duration
+        except AttributeError:
+            tmpltdur = None
+        if tmpltdur is None:
+            tmpltdur = get_waveform_filter_length_in_time(approximant, **p)
+        hdecomp.chirp_length = tmpltdur
         hdecomp.length_in_time = hdecomp.chirp_length
         return hdecomp
 
