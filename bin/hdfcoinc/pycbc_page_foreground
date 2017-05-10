@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#/usr/bin/python
 """
 Make table of the foreground coincident events. Also includes ability to 
 write FARs and p-values for intermediary hierarchical removal steps.
@@ -86,24 +86,25 @@ if args.output_file.endswith('.html'):
     # Write the correct false alarm rates and other significance values
     # to the table after h_num_rm hierarchical removals
     if h_num_rm >= 0:
-        # Regenerate the list of inclusive ifar and fap from stat in coinc
-        # file and as recovered by fortrigs.get_coincfile_array
-        stat_hrm = f['foreground_h%s/stat' % h_num_rm][:]
+        # Regenerate the list of inclusive ifar and fap from foreground
+        # trigger id's from fortrigs.get_coincfile_array and stat file
+        trig_id1_table = fortrigs.get_coincfile_array('trigger_id1')
+
+        trig_id1_hrm = f['foreground_h%s/trigger_id1' % h_num_rm][:]
+        trig_id2_hrm = f['foreground_h%s/trigger_id2' % h_num_rm][:]
+
         ifar_hrm = f['foreground_h%s/ifar' % h_num_rm][:]
         fap_hrm = f['foreground_h%s/fap' % h_num_rm][:]
 
-        # Find the map between stat and stat_hrm.
-        idx_list = []
-        for i in range(len(stat)):
-            for j in range(len(stat_hrm)):
-                if(stat[i] == stat_hrm[j]):
-                    idx_list.append(j)
+        idx1_list = []
+        for i in range(len(trig_id1_table)):
+             for j in range(len(trig_id1_hrm)):
+                 if trig_id1_table[i] == trig_id1_hrm[j]:
+                     idx1_list.append(j)
 
-        # idx_list should be the same length as stat minus any hierarchical
-        # removals. Rewrite the significance values
-        for i in range(len(idx_list)):
-            ifar[i] = ifar_hrm[idx_list[i]]
-            fap[i] = fap_hrm[idx_list[i]]
+        for k in range(len(idx1_list)):
+            ifar[k] = ifar_hrm[idx1_list[k]]
+            fap[k] = fap_hrm[idx1_list[k]]
 
     mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
 
