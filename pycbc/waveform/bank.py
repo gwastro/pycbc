@@ -676,7 +676,7 @@ class FilterBank(TemplateBank):
         except AttributeError:
             tmpltdur = None
         if tmpltdur is None:
-            tmpltudr = get_waveform_filter_length_in_time(approximant, **p)
+            tmpltdur = get_waveform_filter_length_in_time(approximant, **p)
         hdecomp.chirp_length = tmpltdur
         hdecomp.length_in_time = hdecomp.chirp_length
         return hdecomp
