@@ -248,6 +248,9 @@ An example of running ``pycbc_inference`` to analyze the injection in fake data:
     N_ITERATIONS=12000
     N_CHECKPOINT=1000
     PROCESSING_SCHEME=cpu
+
+    # the following sets the number of cores to use; adjust as needed to
+    # your computer's capabilities
     NPROCS=12
 
     # get coalescence time as an integer
@@ -305,7 +308,30 @@ With a minor change to the ``tc`` prior, you can reuse ``inference.ini`` from th
     min-tc = 1126259462.32
     max-tc = 1126259462.52
 
-Then run::
+Next, you need to obtain the real LIGO data containing GW150914. Do one of
+the following:
+
+* **If you are a LIGO member and are running on a LIGO Data Grid cluster:**
+  you can use the LIGO data server to automatically obtain the frame files.
+  Simply set the following environment variables::
+
+    FRAMES="--frame-type H1:H1_HOFT_C02 L1:L1_HOFT_C02"
+    CHANNELS="H1:H1:DCS-CALIB_STRAIN_C02 L1:L1:DCS-CALIB_STRAIN_C02"
+
+* **If you are not a LIGO member, or are not running on a LIGO Data Grid
+  cluster:** you need to obtain the data from the
+  `LIGO Open Science Center <https://losc.ligo.org>`_. First run the following
+  commands to download the needed frame files to your working directory::
+
+    wget https://losc.ligo.org/s/events/GW150914/H-H1_LOSC_4_V2-1126257414-4096.gwf
+    wget https://losc.ligo.org/s/events/GW150914/L-L1_LOSC_4_V2-1126257414-4096.gwf
+
+  Then set the following enviornment variables::
+
+    FRAMES="--frame-files H1:H-H1_LOSC_4_V2-1126257414-4096.gwf L1:L-L1_LOSC_4_V2-1126257414-4096.gwf"
+    CHANNELS="H1:LOSC-STRAIN L1:LOSC-STRAIN"
+
+Now run::
 
     # trigger parameters
     TRIGGER_TIME=1126259462.42
@@ -325,10 +351,6 @@ Then run::
     PSD_STRIDE=4
     PSD_DATA_LEN=1024
 
-    # frame type and channel
-    FRAMES="H1:H1_HOFT_C02 L1:L1_HOFT_C02"
-    CHANNELS="H1:H1:DCS-CALIB_STRAIN_C02 L1:L1:DCS-CALIB_STRAIN_C02"
-
     # sampler parameters
     CONFIG_PATH=inference.ini
     OUTPUT_PATH=inference.hdf
@@ -342,6 +364,9 @@ Then run::
     N_ITERATIONS=12000
     N_CHECKPOINT=1000
     PROCESSING_SCHEME=cpu
+
+    # the following sets the number of cores to use; adjust as needed to
+    # your computer's capabilities
     NPROCS=12
 
     # get coalescence time as an integer
@@ -367,7 +392,7 @@ Then run::
         --gps-start-time ${GPS_START_TIME} \
         --gps-end-time ${GPS_END_TIME} \
         --channel-name ${CHANNELS} \
-        --frame-type ${FRAMES} \
+        ${FRAMES} \
         --strain-high-pass ${F_HIGHPASS} \
         --pad-data ${PAD_DATA} \
         --psd-estimation ${PSD_ESTIMATION} \
@@ -394,11 +419,6 @@ Then run::
         --save-psd \
         --save-stilde \
         --force
-
-To get data we used ``--frame-type`` which will query the LIGO Data
-Replicator (LDR) server to locate the frame files for us. You can also
-use ``--frame-files`` or ``--frame-cache`` if you have a list or LAL cache
-file of frames you wish to use.
 
 ----------------------------------------------------
 HDF output file handler (``pycbc.io.InferenceFile``)
