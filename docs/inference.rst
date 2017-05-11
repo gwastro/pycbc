@@ -420,11 +420,6 @@ Now run::
         --save-stilde \
         --force
 
-To get data we used ``--frame-type`` which will query the LIGO Data
-Replicator (LDR) server to locate the frame files for us. You can also
-use ``--frame-files`` or ``--frame-cache`` if you have a list or LAL cache
-file of frames you wish to use.
-
 ----------------------------------------------------
 HDF output file handler (``pycbc.io.InferenceFile``)
 ----------------------------------------------------
