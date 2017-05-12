@@ -220,9 +220,8 @@ if not opt.use_params_of_closest_injection:
 with ctx:
     fft.from_cli(opt)
     flow = opt.low_frequency_cutoff
-    template_flow = opt.template_start_frequency
-    if template_flow is None:
-        template_flow = flow
+    # don't want a template f_lower that is None or 0.0
+    template_flow = opt.template_start_frequency or flow
     flen = strain_segments.freq_len
     delta_f = strain_segments.delta_f
 
