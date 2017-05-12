@@ -19,11 +19,11 @@
 
 import logging
 import numpy
+from pycbc import transforms
 from pycbc.io import InferenceFile
 from pycbc.workflow import WorkflowConfigParser
 import pycbc.inference.sampler
 from pycbc.inference import likelihood
-from pycbc.inference import sampling_conversions
 from pycbc.pool import choose_pool
 from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
@@ -445,7 +445,7 @@ def results_from_cli(opts, load_samples=True, walkers=None):
     if load_samples:
         logging.info("Loading samples")
         # check if need extra parameters for a non-sampling parameter
-        file_parameters, cs = sampling_conversions.get_conversions(
+        file_parameters, cs = transforms.get_conversions(
                                                  parameters, fp.variable_args)
         # read samples from file
         samples = fp.read_samples(
@@ -454,7 +454,7 @@ def results_from_cli(opts, load_samples=True, walkers=None):
             thin_end=opts.thin_end, iteration=opts.iteration,
             samples_group=opts.parameters_group)
         # add a parameters not included in file
-        samples = sampling_conversions.apply_conversions(samples, cs)
+        samples = transforms.apply_conversions(samples, cs)
     else:
         samples = None
 
