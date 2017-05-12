@@ -63,7 +63,9 @@ parser.add_argument("--samples-file", default=None,
                     help="Use an iteration from an InferenceFile as the "
                          "initial proposal distribution. The same "
                          "number of walkers and the same [variable_args] "
-                         "section in the configuration file should be used.")
+                         "section in the configuration file should be used. "
+                         "The priors must allow encompass the initial "
+                         "positions from the InferenceFile being read.")
 parser.add_argument("--samples-file-iteration", type=int, default=None,
                     help="Index of the iteration to use from InferenceFile "
                          "for setting initial positions of walkers.")
@@ -194,11 +196,11 @@ with ctx:
     # or else use the prior distributions to set initial positions
     logging.info("Setting walkers initial conditions for varying parameters")
     if opts.samples_file:
-        logging.info("Used iteration %i from %s",
-                     opts.sample_file_iteration, opts.samples_file)
         with InferenceFile(opts.samples_file, "r") as fp:
             iteration = opts.samples_file_iteration \
-                          if opts.sample_file_iteration else fp.niterations - 1
+                        if opts.samples_file_iteration else fp.niterations - 1
+            logging.info("Initial positions taken from iteration %i in %s",
+                         iteration, opts.samples_file)
             p0 = fp.read_samples(sampler.variable_args, iteration=iteration)
         initial_dists = None
     elif len(cp.get_subsections("initial")):
