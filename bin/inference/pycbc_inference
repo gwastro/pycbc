@@ -250,7 +250,7 @@ with ctx:
             logging.info("Writing results to file")
             sampler.write_results(fp, start_iteration=start,
                                   end_iteration=end,
-                                  max_iterations=opts.niterations+n_burnin)
+                                  max_iterations=opts.niterations + n_burnin)
 
             if not opts.checkpoint_fast or end == opts.niterations:
 
