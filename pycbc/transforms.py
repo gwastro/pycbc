@@ -75,6 +75,32 @@ class BaseConversion(object):
         new_maps = self._convert(old_maps)
         return self.format_output(old_maps, new_maps)
 
+    def _jacobian(self, maps):
+        """ The Jacobian for the inputs to outputs transformation.
+        """
+        raise NotImplementedError("Jacobian transform not implemented.")
+
+    def _jacobian_inverse(self, maps):
+        """ The Jacobian for the outputs to inputs transformation.
+        """
+        raise NotImplementedError("Jacobian transform not implemented.")
+
+    def jacobian(self, maps):
+        """ The Jacobian for the transformation.
+
+        Parameters
+        ----------
+        maps : mapping object
+            A mapping object (eg. dict or FieldArray) with parameter name as
+            the key and the parameter's value as the value.
+
+        Returns
+        -------
+        float
+            The Jacobian.
+        """
+        return self._jacobian(maps)
+
     @staticmethod
     def format_output(old_maps, new_maps):
         """ This function takes the returned dict from _convert and converts
@@ -116,12 +142,17 @@ class BaseConversion(object):
 
     def inverse(self):
         """ Inverts the conversions being done. Inputs become outputs and
-        vice versa. The function convert will now call the inverse
-        transformation.
+        vice versa. The functions ``convert`` and ``jacobian`` will now call
+        the inverse transformation.
         """
+        # swap input and output parameter sets
         self._inputs, self._outputs = self._outputs, self._inputs
+        # swap functions for converting to and from parameters
         self._convert, self._convert_inverse = \
                                       self._convert_inverse, self._convert
+        # swap functions for computing Jacobians
+        self._jacobian, self._jacobian_inverse = \
+                                      self._jacobian_inverse, self._jacobian
 
 class MchirpQToMass1Mass2(BaseConversion):
     """ Converts chirp mass and mass ratio to component masses.
