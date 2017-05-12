@@ -18,7 +18,7 @@
 
 import sys
 import logging
-from numpy import complex64, float32
+from numpy import complex64, float32, array
 from argparse import ArgumentParser
 from pycbc_glue.ligolw import utils as ligolw_utils
 from pycbc_glue.ligolw import table, lsctables
@@ -28,6 +28,7 @@ class mycontenthandler(LIGOLWContentHandler):
 lsctables.use_in(mycontenthandler)
 
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta, f_SchwarzISCO
+from pycbc.pnutils import mass1_mass2_to_tau0_tau3
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
 from pycbc.waveform.utils import taper_timeseries
@@ -222,6 +223,14 @@ parser.add_argument("--mchirp-window", type=str, metavar="FRACTION",
                          "comma separated numbers to have different bounds "
                          "above and below the signal's, with below bound "
                          "listed first.")
+parser.add_argument("--tau0-window", type=float, metavar="TIME", default=None,
+                    help="Ignore templates whose Newtonian order chirp time "
+                         "(tau0) varies from the signals by more than the "
+                         "supplied amount. If option is not provided no "
+                         "window on tau0 is used. The "
+                         "filter-low-frequency-cutoff is used to calculate "
+                         "the value of tau0 for all cases.")
+
 options = parser.parse_args()
 
 pycbc.init_logging(options.verbose)
@@ -235,27 +244,28 @@ if options.total_mass_divide and options.highmass_approximant is None:
     parser.error("You must provide a highmass-approximant if you want total-mass-divide.")
 
 if options.mchirp_window is None:
-    def outside_mchirp_window(template, signal):
+    def outside_mchirp_window(template_mchirp, signal_mchirp):
         return False
 elif ',' in options.mchirp_window:
     # asymmetric chirp mass window
     mchirp_window_lower = float(options.mchirp_window.split(",")[0])
     mchirp_window_upper = float(options.mchirp_window.split(",")[1])
-    def outside_mchirp_window(template, signal):
-        template_mchirp, _ = mass1_mass2_to_mchirp_eta(template.mass1,
-                                                       template.mass2)
-        signal_mchirp, _ = mass1_mass2_to_mchirp_eta(signal.mass1, signal.mass2)
+    def outside_mchirp_window(template_mchirp, signal_mchirp):
         delta = (template_mchirp - signal_mchirp) / signal_mchirp
         return delta > mchirp_window_upper or -delta > mchirp_window_lower
 else:
     # symmetric chirp mass window
     mchirp_window = float(options.mchirp_window)
-    def outside_mchirp_window(template, signal):
-        template_mchirp, _ = mass1_mass2_to_mchirp_eta(template.mass1,
-                                                       template.mass2)
-        signal_mchirp, _ = mass1_mass2_to_mchirp_eta(signal.mass1, signal.mass2)
+    def outside_mchirp_window(template_mchirp, signal_mchirp):
         return abs(signal_mchirp - template_mchirp) > \
                 (mchirp_window * signal_mchirp)
+
+if options.tau0_window is None:
+    def outside_tau0_window(template_tau0, signal_tau0, window):
+        return False
+else:
+    def outside_tau0_window(template_tau0, signal_tau0, window):
+        return abs(signal_tau0 - template_tau0) > window
 
 # If we are going to use h(t) to estimate a PSD we need h(t)
 if options.psd_estimation:
@@ -307,6 +317,9 @@ with ctx:
     logging.info("Pregenerating Signals")
 
     signals = []
+    # Used for getting mchirp/tau0 later
+    sig_m1 = []
+    sig_m2 = []
     for index, signal_params in enumerate(signal_table):
         if options.verbose:
             update_progress(float(index+1)/len(signal_table))
@@ -325,9 +338,29 @@ with ctx:
                          low_frequency_cutoff=options.filter_low_frequency_cutoff)
         stilde /= psd
         signals.append((stilde, s_norm, [], signal_params))
+        sig_m1.append(signal_params.mass1)
+        sig_m2.append(signal_params.mass2)
+    sig_m1 = array(sig_m1)
+    sig_m2 = array(sig_m2)
+    sig_tau0, _ = mass1_mass2_to_tau0_tau3(sig_m1, sig_m2,
+                                           options.filter_low_frequency_cutoff)
+    sig_mchirp, _ = mass1_mass2_to_mchirp_eta(sig_m1, sig_m2)
+
+    logging.info("Calculating Mchirp and Tau0")
+    template_m1 = []
+    template_m2 = []
+    for template_params in template_table:
+        template_m1.append(template_params.mass1)
+        template_m2.append(template_params.mass2)
+    template_m1 = array(template_m1)
+    template_m2 = array(template_m2)
+    template_tau0, _ = mass1_mass2_to_tau0_tau3(template_m1, template_m2,
+                                                options.filter_low_frequency_cutoff)
+    template_mchirp, _ = mass1_mass2_to_mchirp_eta(template_m1, template_m2)
 
     logging.info("Calculating Overlaps")
 
+    flow_warned = False
     for index, template_params in enumerate(template_table):
         if options.verbose:
             update_progress(float(index+1)/len(template_table))
@@ -336,12 +369,25 @@ with ctx:
         # If not set fall back on filter low-freq cutoff
         if f_lower < 0.000001:
             f_lower = options.filter_low_frequency_cutoff
+        if f_lower < options.filter_low_frequency_cutoff:
+            # Not entirely clear what to do here?
+            if not flow_warned:
+                logging.warn("Template's flower is smaller than "
+                             "--filter-low-frequency-cutoff. Raising flower "
+                             "of template to match.")
+                flow_warned=True
+            f_lower = options.filter_low_frequency_cutoff
 
         h_norm = htilde = None
-        for stilde, s_norm, matches, signal_params in signals:
+        for sidx, (stilde, s_norm, matches, signal_params) in enumerate(signals):
             # Check if we need to look at this
-            if stilde is None or \
-                    outside_mchirp_window(template_params, signal_params):
+            check_logic = stilde is None
+            check_logic |= outside_tau0_window(template_tau0[index],
+                                               sig_tau0[sidx],
+                                               options.tau0_window)
+            check_logic |= outside_mchirp_window(template_mchirp[index],
+                                                 sig_mchirp[sidx])
+            if check_logic:
                 matches.append(0)
                 continue
 
