@@ -47,7 +47,7 @@ class InferenceFile(h5py.File):
     """
     samples_group = 'samples'
     stats_group = 'likelihood_stats'
-    state_group = 'state'
+    sampler_group = 'sampler_states'
 
     def __init__(self, path, mode=None, **kwargs):
         super(InferenceFile, self).__init__(path, mode, **kwargs)
@@ -261,12 +261,13 @@ class InferenceFile(h5py.File):
         return label
 
     def read_random_state(self, group=None):
-        group = self.state_group if group is None else group
-        arr = self[group]
-        s = self[group].attrs["s"]
-        pos = self[group].attrs["pos"]
-        has_gauss = self[group].attrs["has_gauss"]
-        cached_gauss = self[group].attrs["cached_gauss"]
+        group = self.sampler_group if group is None else group
+        dataset_name = "/".join([group, "random_state"])
+        arr = self[dataset_name][:]
+        s = self[dataset_name].attrs["s"]
+        pos = self[dataset_name].attrs["pos"]
+        has_gauss = self[dataset_name].attrs["has_gauss"]
+        cached_gauss = self[dataset_name].attrs["cached_gauss"]
         return s, arr, pos, has_gauss, cached_gauss
 
     def write_strain(self, strain_dict, group=None):
@@ -391,13 +392,17 @@ class InferenceFile(h5py.File):
         self.attrs["cmd"] = " ".join(sys.argv)
 
     def write_random_state(self, group=None):
-        group = self.state_group if group is None else group
+        group = self.sampler_group if group is None else group
+        dataset_name = "/".join([group, "random_state"])
         s, arr, pos, has_gauss, cached_gauss = numpy.random.get_state()
-        self[group] = arr
-        self[group].attrs["s"] = s
-        self[group].attrs["pos"] = pos
-        self[group].attrs["has_gauss"] = has_gauss
-        self[group].attrs["cached_gauss"] = cached_gauss
+        if group in self:
+            self[dataset_name][:] = arr
+        else:
+            self[dataset_name] = arr
+        self[dataset_name].attrs["s"] = s
+        self[dataset_name].attrs["pos"] = pos
+        self[dataset_name].attrs["has_gauss"] = has_gauss
+        self[dataset_name].attrs["cached_gauss"] = cached_gauss
 
     def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
         """Formats a slice using the given arguments that can be used to

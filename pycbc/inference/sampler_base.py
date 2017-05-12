@@ -820,3 +820,4 @@ class BaseMCMCSampler(_BaseSampler):
                 fp[group.format(param=param, wi=wi)].attrs['acl']
                 for wi in widx])
         return FieldArray.from_kwargs(**arrays)
+
