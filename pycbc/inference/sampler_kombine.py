@@ -250,3 +250,23 @@ class KombineSampler(BaseMCMCSampler):
             else:
                 fp[dataset_name] = kde.data
 
+    def set_state_from_file(self, fp):
+        try:
+            import kombine
+        except ImportError:
+            raise ImportError("kombine is not installed.")
+        dataset_name = "/".join([fp.sampler_group, "clustered_kde"])
+        clustered_kde = kombine.clustered_kde.ClusteredKDE(
+                                           fp[dataset_name][:],
+                                           fp[dataset_name].attrs["nclusters"])
+        clustered_kde._assignments = fp[dataset_name].attrs["assignments"]
+        clustered_kde._centroids = fp[dataset_name].attrs["centroids"]
+        clustered_kde.logweights = fp[dataset_name].attrs["logweights"]
+        clustered_kde._mean = fp[dataset_name].attrs["mean"]
+        clustered_kde._std = fp[dataset_name].attrs["std"]
+        clustered_kde._kdes = []
+        for i in range(clustered_kde.nclusters):
+            dataset_name = "/".join([fp.sampler_group, "kde" + str(i)])
+            clustered_kde._kdes.append(
+                                kombine.clustered_kde.KDE(fp[dataset_name][:]))
+        self._sampler._kde = clustered_kde
