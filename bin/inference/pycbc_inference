@@ -60,10 +60,13 @@ parser.add_argument("--seed", type=int, default=0,
                     help="Seed to use for the random number generator that "
                          "initially distributes the walkers. Default is 0.")
 parser.add_argument("--samples-file", default=None,
-                    help="Use last iteration of an InferenceFile as the "
+                    help="Use an iteration from an InferenceFile as the "
                          "initial proposal distribution. The same "
                          "number of walkers and the same [variable_args] "
                          "section in the configuration file should be used.")
+parser.add_argument("--samples-file-iteration", type=int, default=None,
+                    help="Index of the iteration to use from InferenceFile "
+                         "for setting initial positions of walkers.")
 
 # add sampler options
 option_utils.add_sampler_option_group(parser)
@@ -191,10 +194,12 @@ with ctx:
     # or else use the prior distributions to set initial positions
     logging.info("Setting walkers initial conditions for varying parameters")
     if opts.samples_file:
-        logging.info("Used last iteration from %s", opts.samples_file)
+        logging.info("Used iteration %i from %s",
+                     opts.sample_file_iteration, opts.samples_file)
         with InferenceFile(opts.samples_file, "r") as fp:
-            p0 = fp.read_samples(sampler.variable_args,
-                                 iteration=fp.niterations - 1)
+            iteration = opts.samples_file_iteration \
+                          if opts.sample_file_iteration else fp.niterations - 1
+            p0 = fp.read_samples(sampler.variable_args, iteration=iteration)
         initial_dists = None
     elif len(cp.get_subsections("initial")):
         initial_dists = distributions.read_distributions_from_config(
