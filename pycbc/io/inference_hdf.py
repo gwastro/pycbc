@@ -261,6 +261,18 @@ class InferenceFile(h5py.File):
         return label
 
     def read_random_state(self, group=None):
+        """ Reads the state of the random number generator from the file.
+
+        Parameters
+        ----------
+        group : str
+            Name of group to read random state from.
+
+        Returns
+        -------
+        tuple
+            A tuple with 5 elements that can be passed to numpy.set_state.
+        """
         group = self.sampler_group if group is None else group
         dataset_name = "/".join([group, "random_state"])
         arr = self[dataset_name][:]
@@ -392,6 +404,13 @@ class InferenceFile(h5py.File):
         self.attrs["cmd"] = " ".join(sys.argv)
 
     def write_random_state(self, group=None):
+        """ Writes the state of the random number generator from the file.
+
+        Parameters
+        ----------
+        group : str
+            Name of group to read random state to.
+        """
         group = self.sampler_group if group is None else group
         dataset_name = "/".join([group, "random_state"])
         s, arr, pos, has_gauss, cached_gauss = numpy.random.get_state()
