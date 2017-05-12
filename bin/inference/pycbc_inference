@@ -59,6 +59,11 @@ parser.add_argument("--likelihood-evaluator", required=True,
 parser.add_argument("--seed", type=int, default=0,
                     help="Seed to use for the random number generator that "
                          "initially distributes the walkers. Default is 0.")
+parser.add_argument("--samples-file", default=None,
+                    help="Use last iteration of an InferenceFile as the "
+                         "initial proposal distribution. The same "
+                         "number of walkers and the same [variable_args] "
+                         "section in the configuration file should be used.")
 
 # add sampler options
 option_utils.add_sampler_option_group(parser)
@@ -181,20 +186,25 @@ with ctx:
                       psd_dict=psd_dict if opts.save_psd else None,
                       low_frequency_cutoff_dict=low_frequency_cutoff_dict)
 
-    # get distribution to draw from for each walker initial position
+    # set the walkers initial positions from a pre-existing InferenceFile
+    # or a specific initial distribution listed in the configuration file
+    # or else use the prior distributions to set initial positions
     logging.info("Setting walkers initial conditions for varying parameters")
-
-    # check if user wants to use different distributions than prior for setting
-    # walkers initial positions
-    if len(cp.get_subsections("initial")):
+    if opts.samples_file:
+        logging.info("Used last iteration from %s", opts.samples_file)
+        with InferenceFile(opts.samples_file, "r") as fp:
+            p0 = fp.read_samples(sampler.variable_args,
+                                 iteration=fp.niterations - 1)
+        initial_dists = None
+    elif len(cp.get_subsections("initial")):
         initial_dists = distributions.read_distributions_from_config(
                                                          cp, section="initial")
+        p0 = None
     else:
         initial_dists = distributions.read_distributions_from_config(
                                                          cp, section="prior")
-
-    # set the initial positions
-    sampler.set_p0(initial_dists)
+        p0 = None
+    sampler.set_p0(initial_dists, samples=p0)
 
     # setup checkpointing
     if opts.checkpoint_interval:
@@ -216,7 +226,7 @@ with ctx:
 
     intervals = numpy.array(intervals)
 
-    # check if user wants to skip the burn in
+    # check if user wants to burn in
     if not opts.skip_burn_in:
         logging.info("Burn in")
         sampler.burn_in()
