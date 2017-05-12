@@ -237,6 +237,10 @@ while numpy.any(fnlouder == 0):
         f['foreground_h%s/stat' % h_iterations] = fore_stat
         f['foreground_h%s/ifar' % h_iterations] = sec_to_year(ifar)
         f['foreground_h%s/fap' % h_iterations] = fap
+        trig_id1 = all_trigs.trigger_id1[fore_locs]
+        trig_id2 = all_trigs.trigger_id2[fore_locs]
+        f['foreground_h%s/trigger_id1' % h_iterations] = trig_id1
+        f['foreground_h%s/trigger_id2' % h_iterations] = trig_id2
 
     # Add the iteration number of hierarchical removals done.
     h_iterations += 1
@@ -249,6 +253,7 @@ while numpy.any(fnlouder == 0):
 
     # Find the index of the loud foreground trigger to remove next. And find
     # the index in the list of original foreground triggers.
+
     rm_trig_idx = numpy.where(all_trigs.stat[:] == fore_stat[max_stat_idx])[0][0]
     orig_fore_idx = numpy.where(orig_fore_stat == fore_stat[max_stat_idx])[0][0]
 
@@ -339,10 +344,16 @@ while numpy.any(fnlouder == 0):
         f['foreground_h%s/fap' % h_iterations] = fap
 
         # Update ifar and fap for other foreground triggers
-        for i in range(0, len(ifar)):
+        for i in range(len(ifar)):
             orig_fore_idx = numpy.where(orig_fore_stat == fore_stat[i])[0][0]
             f['foreground/ifar'][orig_fore_idx] = sec_to_year(ifar[i])
             f['foreground/fap'][orig_fore_idx] = fap[i]
+
+        # Save trigger ids for foreground triggers for downstream plotting code
+        trig_id1 = all_trigs.trigger_id1[fore_locs]
+        trig_id2 = all_trigs.trigger_id2[fore_locs]
+        f['foreground_h%s/trigger_id1' % h_iterations] = trig_id1
+        f['foreground_h%s/trigger_id2' % h_iterations] = trig_id2
 
 # Write to file how many hierarchical removals were implemented.
 f.attrs['hierarchical_removal_iterations'] = h_iterations
