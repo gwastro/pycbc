@@ -97,7 +97,7 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
     for item in list:
         # Here we convert the moments into a form easier to use here
         Js = {}
-        for i in xrange(-1,18):
+        for i in xrange(-7,18):
             Js[i] = metricParams.moments['J%d'%(i)][item]
 
         logJs = {}
@@ -234,7 +234,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
     # Do all the J moments
     moments = {}
     moments['I7'] = I7
-    for i in xrange(-1,18):
+    for i in xrange(-7,18):
         funct = lambda x: x**((-i+7)/3.)
         moments['J%d' %(i)] = calculate_moment(new_f, new_amp, \
                                 metricParams.fLow, metricParams.fUpper, \
