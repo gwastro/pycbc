@@ -123,7 +123,7 @@ pycbc.init_logging(opts.verbose)
 
 # set the seed
 numpy.random.seed(opts.seed)
-logging.info("Using seed %i" %(opts.seed))
+logging.info("Using seed %i", opts.seed)
 
 # get scheme
 ctx = scheme.from_cli(opts)
@@ -206,7 +206,7 @@ with ctx:
         # determine if there is a small bit at the end
         remainder = opts.niterations % opts.checkpoint_interval
         if remainder:
-            intervals += [intervals[-1]+remainder]
+            intervals += [intervals[-1] + remainder]
         else:
             intervals += [opts.niterations]
 
@@ -221,10 +221,11 @@ with ctx:
         logging.info("Burn in")
         sampler.burn_in()
         n_burnin = sampler.burn_in_iterations
-        logging.info("Used %i burn in samples" % n_burnin)
+        logging.info("Used %i burn in samples", n_burnin)
         with InferenceFile(opts.output_file, "a") as fp:
             # write the burn in results
-            sampler.write_results(fp, max_iterations=opts.niterations+n_burnin)
+            sampler.write_results(fp,
+                                  max_iterations=opts.niterations + n_burnin)
     else:
         n_burnin = 0
 
