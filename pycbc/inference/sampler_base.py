@@ -821,3 +821,12 @@ class BaseMCMCSampler(_BaseSampler):
                 for wi in widx])
         return FieldArray.from_kwargs(**arrays)
 
+    def write_state(self, fp):
+        """ Saves the state of the sampler in a file.
+        """
+        raise NotImplementedError("Writing state to file not implemented.")
+
+    def set_state_from_file(self, fp):
+        """ Sets the state of the sampler back to the instance saved in a file.
+        """
+        raise NotImplementedError("Reading state from file not implemented.")
