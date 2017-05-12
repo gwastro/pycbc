@@ -131,9 +131,16 @@ if os.path.exists(opts.output_file) and not opts.force:
 # setup log
 pycbc.init_logging(opts.verbose)
 
-# set the seed
-numpy.random.seed(opts.seed)
-logging.info("Using seed %i", opts.seed)
+# set the random state
+if opts.samples_file:
+    with InferenceFile(opts.samples_file, "r") as fp:
+        numpy.random.set_state(fp.read_random_state())
+    logging.info("Using random state from %s", opts.samples_file)
+    if opts.seed:
+        logging.warn("Option --seed ignored")
+else:
+    numpy.random.seed(opts.seed)
+    logging.info("Using seed %i", opts.seed)
 
 # get scheme
 ctx = scheme.from_cli(opts)
@@ -268,6 +275,8 @@ with ctx:
             sampler.write_results(fp, start_iteration=start,
                                   end_iteration=end,
                                   max_iterations=opts.niterations + n_burnin)
+            logging.info("Writing random state")
+            fp.write_random_state()
 
             if not opts.checkpoint_fast or end == opts.niterations:
 

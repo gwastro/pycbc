@@ -47,6 +47,7 @@ class InferenceFile(h5py.File):
     """
     samples_group = 'samples'
     stats_group = 'likelihood_stats'
+    state_group = 'state'
 
     def __init__(self, path, mode=None, **kwargs):
         super(InferenceFile, self).__init__(path, mode, **kwargs)
@@ -259,6 +260,15 @@ class InferenceFile(h5py.File):
                 return parameter
         return label
 
+    def read_random_state(self, group=None):
+        group = self.state_group if group is None else group
+        arr = self[group]
+        s = self[group].attrs["s"]
+        pos = self[group].attrs["pos"]
+        has_gauss = self[group].attrs["has_gauss"]
+        cached_gauss = self[group].attrs["cached_gauss"]
+        return s, arr, pos, has_gauss, cached_gauss
+
     def write_strain(self, strain_dict, group=None):
         """Writes strain for each IFO to file.
 
@@ -379,6 +389,15 @@ class InferenceFile(h5py.File):
             The parsed command line instance.
         """
         self.attrs["cmd"] = " ".join(sys.argv)
+
+    def write_random_state(self, group=None):
+        group = self.state_group if group is None else group
+        s, arr, pos, has_gauss, cached_gauss = numpy.random.get_state()
+        self[group] = arr
+        self[group].attrs["s"] = s
+        self[group].attrs["pos"] = pos
+        self[group].attrs["has_gauss"] = has_gauss
+        self[group].attrs["cached_gauss"] = cached_gauss
 
     def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
         """Formats a slice using the given arguments that can be used to
