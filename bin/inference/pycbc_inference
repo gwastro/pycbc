@@ -233,15 +233,15 @@ with ctx:
     intervals += n_burnin
 
     # loop over number of checkpoints
-    for i,start in enumerate(intervals[:-1]):
+    for i, start in enumerate(intervals[:-1]):
 
-        end = intervals[i+1]
+        end = intervals[i + 1]
 
         # run sampler and set initial values to None so that sampler
         # picks up from where it left off next call
-        logging.info("Running sampler for %i to %i out of %i iterations"%(
-            start-n_burnin, end-n_burnin, opts.niterations))
-        sampler.run(end-start)
+        logging.info("Running sampler for %i to %i out of %i iterations",
+                     start - n_burnin, end - n_burnin, opts.niterations)
+        sampler.run(end - start)
 
         # write new samples
         with InferenceFile(opts.output_file, "a") as fp:
