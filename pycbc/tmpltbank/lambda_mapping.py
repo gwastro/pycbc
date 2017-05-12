@@ -79,6 +79,10 @@ def generate_mapping(order):
     mapping['Lambda7'] = 7
     if order == 'threePointFivePN':
         return mapping
+    if order == 'tidalTesting':
+        mapping['Lambda10'] = 8
+        mapping['Lambda12'] = 9
+        return mapping
     raise ValueError("Order %s is not understood." %(order))
 
 # Override doc so the PN orders are added automatically to online docs
@@ -148,7 +152,9 @@ def ethinca_order_from_string(order):
                            "calculation! Valid orders: "+
                            str(get_ethinca_orders().keys()))
 
-def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
+def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order,
+                         quadparam1=None, quadparam2=None, lambda1=None,
+                         lambda2=None):
     """
     Take a set of masses and spins and convert to the various lambda
     coordinates that describe the orbital phase. Accepted PN orders are:
@@ -193,12 +199,29 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
         mass2 = numpy.array([mass2])
         spin1z = numpy.array([spin1z])
         spin2z = numpy.array([spin2z])
+        if quadparam1 is not None:
+            quadparam1 = numpy.array([quadparam1])
+        if quadparam2 is not None:
+            quadparam2 = numpy.array([quadparam2])
+        if lambda1 is not None:
+            lambda1 = numpy.array([lambda1])
+        if lambda2 is not None:
+            lambda2 = numpy.array([lambda2])
         num_points = 1
     lal_pars = CreateDict()
+
     phasing_vs = numpy.zeros([num_points, 13])
     phasing_vlogvs = numpy.zeros([num_points, 13])
     phasing_vlogvsqs = numpy.zeros([num_points, 13])
     for i in xrange(num_points):
+        if quadparam1 is not None:
+            lalsimulation.SimInspiralWaveformParamsInsertdQuadMon1(lal_pars, quadparam1[i] - 1)
+        if quadparam2 is not None:
+            lalsimulation.SimInspiralWaveformParamsInsertdQuadMon2(lal_pars, quadparam2[i] - 1)
+        if lambda1 is not None:
+            lalsimulation.SimInspiralWaveformParamsInsertTidalLambda1(lal_pars, lambda1[i])
+        if lambda2 is not None:
+            lalsimulation.SimInspiralWaveformParamsInsertTidalLambda1(lal_pars, lambda2[i])
         phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
                             mass1[i], mass2[i], spin1z[i], spin2z[i], lal_pars)
         phasing_vs[i] = phasing.v
@@ -335,4 +358,4 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
 get_chirp_params_old.__doc__ = \
     get_chirp_params_old.__doc__.format(pycbcValidOrdersHelpDescriptions)
 
-get_chirp_params = get_chirp_params_old
+get_chirp_params = get_chirp_params_new
