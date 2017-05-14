@@ -29,6 +29,7 @@ from pycbc import WEAVE_FLAGS
 from weave import inline
 from scipy import interpolate
 from pycbc.types import FrequencySeries, zeros, complex_same_precision_as, real_same_precision_as
+import numpy
 
 _linear_decompress_code = r"""
     #include <math.h>
