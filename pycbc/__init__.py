@@ -29,16 +29,6 @@ import subprocess, os, sys, tempfile
 import logging
 import signal
 
-# We need to allow a try/except here to allow for importing during install
-# of pycbc, where we can't guarantee that scipy is installed yet.
-try:
-    import weave.inline_tools
-    from . import weave as pycbc_weave
-    weave.inline_tools._compile_function = weave.inline_tools.compile_function
-    weave.inline_tools.compile_function = pycbc_weave.pycbc_compile_function
-except:
-    pass
-
 try:
     # This will fail when pycbc is imported during the build process,
     # before version.py has been generated.
