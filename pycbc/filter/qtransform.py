@@ -54,6 +54,10 @@ from matplotlib.pyplot import specgram
 __author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+def _get_indices(dur):
+    half = int((int(dur) - 1.) / 2.)
+    return np.arange(-half, half + 1)
+
 def get_window(dur, indices, f0, qprime, Q, sampling):
     """Generate the bi-square window for this row
     Returns
