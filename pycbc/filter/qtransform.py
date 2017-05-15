@@ -54,6 +54,13 @@ from matplotlib.pyplot import specgram
 __author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+def deltam():
+    """Fractional mismatch between neighbouring tiles
+    :type: `float`
+    """
+    mismatch = 0.2
+    return 2 * (mismatch / 3.) ** (1/2.)
+
 def main():
     #Get Current time
     cur_time = datetime.datetime.now()
