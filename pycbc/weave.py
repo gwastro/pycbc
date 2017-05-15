@@ -22,7 +22,9 @@ import os.path, sys
 import logging
 import shutil, atexit, signal
 import fcntl
-import pycbc
+import weave.inline_tools as inline_tools
+
+_compile_function = inline_tools.compile_function
 
 ## Blatently taken from weave to implement a crude file locking scheme
 def pycbc_compile_function(code,arg_names,local_dict,global_dict,
@@ -37,7 +39,6 @@ def pycbc_compile_function(code,arg_names,local_dict,global_dict,
                      **kw):
     """ Dummy wrapper around scipy weave compile to implement file locking
     """
-    from weave.inline_tools import _compile_function
     headers = [] if headers is None else headers
     lockfile_dir = os.environ['PYTHONCOMPILED']
     lockfile_name = os.path.join(lockfile_dir, 'code_lockfile')
@@ -60,6 +61,7 @@ def pycbc_compile_function(code,arg_names,local_dict,global_dict,
 
     return func
 
+inline_tools.compile_function = pycbc_compile_function
 
 def insert_weave_option_group(parser):
     """
