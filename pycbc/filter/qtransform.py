@@ -26,6 +26,11 @@
 
 """
 This module retrives a timeseries and then calculates the q-transform of that time series
+
+Example
+-------
+    $ python q-transform.py -s 4096 -u test -o /Users/pycbc_qtransform
+
 """
 
 from math import pi, ceil, log, exp
@@ -56,23 +61,82 @@ __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 def padding(window_size, dur, f0, Q):
     """The `(left, right)` padding required for the IFFT
-    :type: `tuple` of `int`
+
+    Parameters
+    ----------
+    window_size: int
+        Size of window
+    dur: int
+        Duration of timeseries in seconds
+    f0: int
+        Central frequency
+    Q: int
+        q value
+
+    Returns
+    -------
+    tuple
+       Number of values padded to the edges of each axis. 
+ 
     """
+
     pad = n_tiles(dur,f0,Q) - window_size
     return (int((pad - 1)/2.), int((pad + 1)/2.))
 
 def get_data_indices(dur, f0, indices):
     """Returns the index array of interesting frequencies for this row
+
+    Parameters
+    ----------
+    dur: int
+        Duration of timeseries in seconds
+    f0: int
+        Central frequency
+    indices: numpy.ndarray
+        window indices for fft 
+
+    Returns
+    -------
+    numpy.ndarray
+        Returns index array of interesting frequencies for this row
+
     """
     return np.round(indices + 1 +
                        f0 * dur).astype(int)
 
 def _get_indices(dur):
+    """ Windows indices for fft
+    
+    Paramters
+    ---------
+    dur: int
+        Duration of timeseries in seconds
+
+    Returns
+    -------
+    numpy.ndarray
+        Window indices for fft using total duration of segment
+
+    """
     half = int((int(dur) - 1.) / 2.)
     return np.arange(-half, half + 1)
 
 def get_window(dur, indices, f0, qprime, Q, sampling):
     """Generate the bi-square window for this row
+ 
+    Paramters
+    ---------
+    dur: int
+        Duration of timeseries in seconds
+    f0: int
+        Central frequency
+    qprime: int
+        Normalized Q `(q/sqrt(11))
+    Q: int
+        q value
+    sampling: int
+        sampling frequency of timeseries
+
     Returns
     -------
     window : `numpy.ndarray`
@@ -90,7 +154,18 @@ def get_window(dur, indices, f0, qprime, Q, sampling):
 
 def n_tiles(dur,f0,Q):
     """The number of tiles in this row 
+    
+    Parameters
+    ----------
+    dur: int
+        Duration of timeseries in seconds
+    f0: int
+        Central frequency
+    Q: int
+        q value
 
+    Returns
+    -------
     :type: 'int'
     """
 
@@ -99,11 +174,27 @@ def n_tiles(dur,f0,Q):
 
 def next_power_of_two(x):
     """Return the smallest power of two greater than or equal to `x`
+
+    Paramters:
+    x: float
+        Total cummulative mismatch divided by the fractional mismatch between tiles
+
+    Returns
+    -------
+    :type: 'int'
+
     """
     return 2**(ceil(log(x, 2)))
 
 def deltam():
     """Fractional mismatch between neighbouring tiles
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
     :type: `float`
     """
     mismatch = 0.2
