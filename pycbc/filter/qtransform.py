@@ -54,6 +54,15 @@ from matplotlib.pyplot import specgram
 __author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+def n_tiles(dur,f0,Q):
+    """The number of tiles in this row 
+
+    :type: 'int'
+    """
+
+    tcum_mismatch = dur * 2 * pi * f0 / Q
+    return next_power_of_two(tcum_mismatch / deltam())
+
 def next_power_of_two(x):
     """Return the smallest power of two greater than or equal to `x`
     """
