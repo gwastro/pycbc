@@ -54,6 +54,11 @@ from matplotlib.pyplot import specgram
 __author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+def next_power_of_two(x):
+    """Return the smallest power of two greater than or equal to `x`
+    """
+    return 2**(ceil(log(x, 2)))
+
 def deltam():
     """Fractional mismatch between neighbouring tiles
     :type: `float`
