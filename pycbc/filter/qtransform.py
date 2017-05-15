@@ -54,6 +54,12 @@ from matplotlib.pyplot import specgram
 __author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+def get_data_indices(dur, f0, indices):
+    """Returns the index array of interesting frequencies for this row
+    """
+    return np.round(indices + 1 +
+                       f0 * dur).astype(int)
+
 def _get_indices(dur):
     half = int((int(dur) - 1.) / 2.)
     return np.arange(-half, half + 1)
