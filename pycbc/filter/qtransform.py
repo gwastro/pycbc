@@ -54,6 +54,23 @@ from matplotlib.pyplot import specgram
 __author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+def get_window(dur, indices, f0, qprime, Q, sampling):
+    """Generate the bi-square window for this row
+    Returns
+    -------
+    window : `numpy.ndarray`
+    """
+    # real frequencies
+    wfrequencies = indices / dur
+
+    # dimensionless frequencies
+    xfrequencies = wfrequencies * qprime / f0
+
+    # normalize and generate bi-square window
+    norm = n_tiles(dur,f0,Q) / (dur * sampling) * (
+        315 * qprime / (128 * f0)) ** (1/2.)
+    return (1 - xfrequencies ** 2) ** 2 * norm
+
 def n_tiles(dur,f0,Q):
     """The number of tiles in this row 
 
