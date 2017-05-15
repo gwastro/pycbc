@@ -54,6 +54,13 @@ from matplotlib.pyplot import specgram
 __author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+def padding(window_size, dur, f0, Q):
+    """The `(left, right)` padding required for the IFFT
+    :type: `tuple` of `int`
+    """
+    pad = n_tiles(dur,f0,Q) - window_size
+    return (int((pad - 1)/2.), int((pad + 1)/2.))
+
 def get_data_indices(dur, f0, indices):
     """Returns the index array of interesting frequencies for this row
     """
