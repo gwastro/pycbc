@@ -182,8 +182,3 @@ def deltam():
     mismatch = 0.2
     return 2 * (mismatch / 3.) ** (1/2.)
 
-def main():
-    return None
-
-if __name__ == '__main__':
-    main()
