@@ -36,7 +36,7 @@ Example
 from math import pi, ceil, log, exp
 import numpy as np
 from pycbc.types.timeseries import FrequencySeries, TimeSeries
-from ../strain  import next_power_of_2
+from pycbc.strain  import next_power_of_2
 import os, sys
 from pycbc.filter import highpass_fir, matched_filter
 from pycbc.waveform import get_fd_waveform
