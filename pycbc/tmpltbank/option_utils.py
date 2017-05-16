@@ -1204,29 +1204,3 @@ def check_ethinca_against_bank_params(ethincaParams, metricParams):
         if ethincaParams.pnOrder is None:
             ethincaParams.pnOrder = metricParams.pnOrder
     else: pass
-
-def check_ethinca_against_bank_opts(opts, parser):
-    """
-    Cross-check the ethinca and bank layout metric options.
-    The Params-level function 'check_ethinca_against_bank_params' is 
-    preferred to this function since it operates directly on the Params
-    objects which are passed to the ethinca metric calculation, and can 
-    change their attributes if desired.
-
-    Parameters
-    ----------
-    opts : argparse.Values instance
-        Result of parsing the input options with OptionParser
-    parser : object
-        The OptionParser instance.
-    """
-    if ethincaParams.doEthinca:
-        if opts.f0 != opts.f_low:
-            parser.error("If calculating ethinca metric, f0 and f-low "
-                         "must be equal!")
-        if opts.ethinca_f_low is not None and (
-                opts.ethinca_f_low != opts.f_low):
-            parser.error("Ethinca metric calculation does not currently "
-                         "support a f-low value different from the bank "
-                         "metric!")
-    else: pass
