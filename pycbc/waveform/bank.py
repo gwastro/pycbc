@@ -26,7 +26,6 @@
 This module provides classes that describe banks of waveforms
 """
 import types
-import numpy
 import logging
 import os.path
 import h5py
@@ -337,8 +336,8 @@ class TemplateBank(object):
                        'spin2x', 'spin2y', 'spin2z',]
 
         fields = [f for f in hash_fields if f in fields]
-        template_hash = numpy.array([hash(v) for v in zip(*[self.table[p]
-                                    for p in fields])])
+        template_hash = np.array([hash(v) for v in zip(*[self.table[p]
+                                  for p in fields])])
         self.table = self.table.add_fields(template_hash, 'template_hash')
 
     def write_to_hdf(self, filename, start_index=None, stop_index=None,
@@ -431,7 +430,7 @@ class TemplateBank(object):
             approximant = 'TaylorF2'
         if cached_mem is None:
             wav_len = int(max_freq / delta_f) + 1
-            cached_mem = zeros(wav_len, dtype=numpy.complex64)
+            cached_mem = zeros(wav_len, dtype=np.complex64)
         htilde = pycbc.waveform.get_waveform_filter(
             cached_mem, self.table[t_num], approximant=approximant,
             f_lower=low_frequency_cutoff, f_final=max_freq, delta_f=delta_f,
@@ -478,13 +477,13 @@ class TemplateBank(object):
 
         # Make sure we have a template duration field
         if not hasattr(self.table, 'template_duration'):
-            self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                     dtype=numpy.float32), 'template_duration')
+            self.table = self.table.add_fields(np.zeros(len(self.table),
+                                     dtype=np.float32), 'template_duration')
 
         # Make sure we have a f_lower field
         if low_frequency_cutoff is not None:
             if not hasattr(self.table, 'f_lower'):
-                vec = numpy.zeros(len(self.table), dtype=numpy.float32)
+                vec = np.zeros(len(self.table), dtype=np.float32)
                 self.table = self.table.add_fields(vec, 'f_lower')
             self.table['f_lower'][:] = low_frequency_cutoff
 
@@ -530,7 +529,7 @@ class LiveFilterBank(TemplateBank):
         the discreteness of the rounding.
         """
         inc = self.increment
-        size = numpy.ceil(num / self.sample_rate / inc) * self.sample_rate * inc
+        size = np.ceil(num / self.sample_rate / inc) * self.sample_rate * inc
         return size
 
     def getslice(self, sindex):
@@ -584,7 +583,7 @@ class LiveFilterBank(TemplateBank):
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
         htilde = pycbc.waveform.get_waveform_filter(
-            zeros(flen, dtype=numpy.complex64), self.table[index],
+            zeros(flen, dtype=np.complex64), self.table[index],
             approximant=approximant, f_lower=flow, f_final=f_end,
             delta_f=delta_f, delta_t=1.0/self.sample_rate, distance=distance,
             **self.extra_args)
@@ -600,7 +599,7 @@ class LiveFilterBank(TemplateBank):
 
         self.table[index].template_duration = template_duration
 
-        htilde = htilde.astype(numpy.complex64)
+        htilde = htilde.astype(np.complex64)
         htilde.f_lower = flow
         htilde.min_f_lower = self.min_f_lower
         htilde.end_idx = int(f_end / htilde.delta_f)
