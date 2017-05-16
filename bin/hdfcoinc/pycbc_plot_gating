@@ -98,4 +98,8 @@ mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14, fmt='10.1f')
 mpld3.plugins.connect(fig, mpld3.plugins.BoxZoom())
 mpld3.plugins.connect(fig, MPLSlide())
 mpld3.plugins.connect(fig, mpld3.plugins.Reset())
-mpld3.save_html(fig, open(args.output_file, 'wb'))
+output_file = open(args.output_file, 'wb')
+try:
+    mpld3.save_html(fig, output_file)
+except TypeError:
+    output_file.write("<p>No gates to plot</p>")
