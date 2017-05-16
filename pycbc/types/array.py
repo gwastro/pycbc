@@ -28,7 +28,7 @@ This modules provides a device independent Array class based on PyCUDA and Numpy
 
 BACKEND_PREFIX="pycbc.types.array_"
 
-import logging, h5py
+import h5py
 import os as _os
 
 from decorator import decorator
