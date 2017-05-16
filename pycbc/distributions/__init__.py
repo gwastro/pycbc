@@ -18,6 +18,7 @@ probability density function of distributions.
 """
 
 from pycbc.distributions.angular import *
+from pycbc.distributions.change_of_variables import *
 from pycbc.distributions.from_file import *
 from pycbc.distributions.gaussian import *
 from pycbc.distributions.power_law import *
@@ -34,6 +35,7 @@ distribs = {
     UniformAngle.name : UniformAngle,
     CosAngle.name : CosAngle,
     SinAngle.name : SinAngle,
+    UniformChangeOfVariables.name : UniformChangeOfVariables,
     UniformSolidAngle.name : UniformSolidAngle,
     UniformSky.name : UniformSky,
 }
