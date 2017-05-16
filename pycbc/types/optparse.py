@@ -61,8 +61,9 @@ class MultiDetOptionAction(argparse.Action):
             raise ValueError('nargs for append actions must be > 0; if arg '
                              'strings are not supplying the value to append, '
                              'the append const action may be more appropriate')
-        if const is not None and nargs != OPTIONAL:
-            raise ValueError('nargs must be %r to supply const' % OPTIONAL)
+        if const is not None and nargs != argparse.OPTIONAL:
+            raise ValueError('nargs must be %r to supply const' 
+                             % argparse.OPTIONAL)
         super(MultiDetOptionAction, self).__init__(
             option_strings=option_strings,
             dest=dest,

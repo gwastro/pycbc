@@ -33,7 +33,7 @@ from __future__ import division
 import os, logging
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import (select_matchedfilter_class,
-        select_tmpltbank_class, sngl_ifo_job_setup, multi_ifo_job_setup,
+        select_tmpltbank_class, sngl_ifo_job_setup,
         multi_ifo_coherent_job_setup)
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
@@ -313,12 +313,5 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                                      parents=tmplt_banks)
     else:
         # Select the appropriate class
-        exe_class = select_matchedfilter_class(match_fltr_exe)
-        job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
-                                 out_dir=output_dir,
-                                 injection_file=injection_file,
-                                 tags=tags)
-        multi_ifo_job_setup(workflow, inspiral_outs, job_instance,
-                            science_segs, datafind_outs, output_dir,
-                            parents=tmplt_banks)
+        raise ValueError("Not currently supported.")
     return inspiral_outs
