@@ -30,12 +30,13 @@ import waveform
 import ringdown
 from pycbc import coordinates
 from pycbc import filter
-from pycbc.types import TimeSeries
+from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.waveform import parameters
-from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries
+from pycbc.waveform.utils import apply_fd_time_shift
 from pycbc.detector import Detector
 from pycbc import pnutils
 import lal as _lal
+import numpy
 
 #
 #   Pregenerator functions for generator
@@ -251,7 +252,7 @@ class BaseCBCGenerator(BaseGenerator):
     """
     possible_args = set(parameters.td_waveform_params +
                         parameters.fd_waveform_params +
-                        ['taper'])
+                        ['t_final'])
     def __init__(self, generator, variable_args=(), **frozen_params):
         super(BaseCBCGenerator, self).__init__(generator,
             variable_args=variable_args, **frozen_params)
@@ -361,19 +362,19 @@ class TDomainCBCGenerator(BaseCBCGenerator):
          <pycbc.types.timeseries.TimeSeries at 0x116ac6950>)
 
     """
-    def __init__(self, variable_args=(), **frozen_params):
+    def __init__(self, taper=None, variable_args=(), **frozen_params):
         super(TDomainCBCGenerator, self).__init__(waveform.get_td_waveform,
             variable_args=variable_args, **frozen_params)
+        self.taper = taper
+            
 
     def _postgenerate(self, res):
         """Applies a taper if it is in current params.
         """
         hp, hc = res
-        try:
-            hp = taper_timeseries(hp, tapermethod=self.current_params['taper'])
-            hc = taper_timeseries(hc, tapermethod=self.current_params['taper'])
-        except KeyError:
-            pass
+        if self.taper is not None:
+            self.taper(hp, copy=False)
+            self.taper(hc, copy=False)
         return hp, hc
 
 
@@ -421,7 +422,8 @@ class FDomainMultiModeRingdownGenerator(BaseGenerator):
 
     """
     def __init__(self, variable_args=(), **frozen_params):
-        super(FDomainMultiModeRingdownGenerator, self).__init__(ringdown.get_fd_lm_allmodes,
+        super(FDomainMultiModeRingdownGenerator, self).__init__(
+            ringdown.get_fd_lm_allmodes,
             variable_args=variable_args, **frozen_params)
 
 class FDomainDetFrameGenerator(object):
@@ -510,7 +512,7 @@ class FDomainDetFrameGenerator(object):
     location_args = set(['tc', 'ra', 'dec', 'polarization'])
 
     def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
-            variable_args=(), **frozen_params):
+                 taper=None, variable_args=(), **frozen_params):
         # initialize frozen & current parameters:
         self.current_params = frozen_params.copy()
         self._static_args = frozen_params.copy()
@@ -544,6 +546,11 @@ class FDomainDetFrameGenerator(object):
         else:
             self.detectors = {'RF': None}
         self.detector_names = sorted(self.detectors.keys())
+        self.taper = taper
+        if taper is not None:
+            self.returns_whitened = taper.taper_whitened
+        else:
+            self.returns_whitened = False
 
     def set_epoch(self, epoch):
         """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
@@ -588,6 +595,9 @@ class FDomainDetFrameGenerator(object):
                             self.current_params['polarization'],
                             self.current_params['tc'])
                 thish = fp*hp + fc*hc
+                if self.taper is not None:
+                    self.taper(thish, copy=False, ifo=detname,
+                               params=self.current_params)
                 # apply the time shift
                 tc = self.current_params['tc'] + \
                     det.time_delay_from_earth_center(self.current_params['ra'],
@@ -598,12 +608,19 @@ class FDomainDetFrameGenerator(object):
             if 'tc' in self.current_params:
                 hp = apply_fd_time_shift(hp, self.current_params['tc']+tshift,
                                          copy=False)
+            if self.taper is not None:
+                self.taper(hp, copy=False, params=self.current_params)
             h['RF'] = hp
         return h
 
 
 def select_waveform_generator(approximant):
     """Returns the single-IFO generator for the approximant.
+
+    Note: some approximants are both time-domain and frequency-domain
+    (e.g., IMRPhenomD). In this caes, the frequency-domain version is used. To
+    force the time-domain version to be used, add `:TD` to the end of the
+    approximant name.
 
     Parameters
     ----------
@@ -628,9 +645,16 @@ def select_waveform_generator(approximant):
     Get generator object:
     >>> waveform.select_waveform_generator(waveform.fd_approximants()[0])
     """
+    # check if we are forcing time-domain
+    if approximant.endswith(':TD'):
+        approximant = approximant[:-3]
+        if approximant[:-3] not in waveform.td_approximants():
+            raise ValueError(":TD added to approximant name, but the "
+                             "approximant is not a time-domain approximant")
+        return TDomainCBCGenerator
 
     # check if frequency-domain CBC waveform
-    if approximant in waveform.fd_approximants():
+    elif approximant in waveform.fd_approximants():
         return FDomainCBCGenerator
 
     # check if time-domain CBC waveform
