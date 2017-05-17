@@ -87,7 +87,7 @@ def get_data_indices(dur, f0, indices):
 def _get_indices(dur):
     """ Windows indices for fft
     
-    Paramters
+    Parameters
     ---------
     dur: int
         Duration of timeseries in seconds
@@ -98,13 +98,13 @@ def _get_indices(dur):
         Window indices for fft using total duration of segment
 
     """
-    half = int((int(dur) - 1.) / 2.)
+    half = int((int(dur) - 1.) / 2.)  # ported from Duncan Macleod's GWPY qtransform.py script
     return np.arange(-half, half + 1)
 
 def get_window(dur, indices, f0, qprime, Q, sampling):
     """Generate the bi-square window for this row
  
-    Paramters
+    Parameters
     ---------
     dur: int
         Duration of timeseries in seconds
@@ -130,8 +130,8 @@ def get_window(dur, indices, f0, qprime, Q, sampling):
     xfrequencies = wfrequencies * qprime / f0
 
     # normalize and generate bi-square window
-    norm = n_tiles(dur,f0,Q) / (dur * sampling) * (
-        315 * qprime / (128 * f0)) ** (1/2.)
+    norm = n_tiles(dur,f0,Q) / (dur * sampling) * (  
+        315 * qprime / (128 * f0)) ** (1/2.) # ported from Duncan Macleod's GWPY qtransform.py
     return (1 - xfrequencies ** 2) ** 2 * norm
 
 def n_tiles(dur, f0, Q):
@@ -151,7 +151,7 @@ def n_tiles(dur, f0, Q):
     :type: 'int'
     """
 
-    tcum_mismatch = dur * 2 * pi * f0 / Q
+    tcum_mismatch = dur * 2 * pi * f0 / Q  # ported from Duncan Macleod's GWPY qtransform.py
     return next_power_of_2(tcum_mismatch / deltam())
 
 def deltam():
