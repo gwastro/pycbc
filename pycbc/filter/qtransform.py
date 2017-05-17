@@ -98,7 +98,7 @@ def _get_indices(dur):
         Window indices for fft using total duration of segment
 
     """
-    half = int((int(dur) - 1.) / 2.)  # ported from https://github.com/gwpy/gwpy/blob/master/gwpy/signal/qtransform.py
+    half = int((int(dur) - 1.) / 2.)  
     return np.arange(-half, half + 1)
 
 def get_window(dur, indices, f0, qprime, Q, sampling):
@@ -130,8 +130,9 @@ def get_window(dur, indices, f0, qprime, Q, sampling):
     xfrequencies = wfrequencies * qprime / f0
 
     # normalize and generate bi-square window
+    # ported from https://github.com/gwpy/gwpy/blob/master/gwpy/signal/qtransform.py
     norm = n_tiles(dur,f0,Q) / (dur * sampling) * (  
-        315 * qprime / (128 * f0)) ** (1/2.) # ported from https://github.com/gwpy/gwpy/blob/master/gwpy/signal/qtransform.py
+        315 * qprime / (128 * f0)) ** (1/2.) 
     return (1 - xfrequencies ** 2) ** 2 * norm
 
 def n_tiles(dur, f0, Q):
@@ -151,7 +152,8 @@ def n_tiles(dur, f0, Q):
     :type: 'int'
     """
 
-    tcum_mismatch = dur * 2 * pi * f0 / Q  # ported from https://github.com/gwpy/gwpy/blob/master/gwpy/signal/qtransform.py
+    # ported from https://github.com/gwpy/gwpy/blob/master/gwpy/signal/qtransform.py
+    tcum_mismatch = dur * 2 * pi * f0 / Q  
     return next_power_of_2(tcum_mismatch / deltam())
 
 def deltam():
