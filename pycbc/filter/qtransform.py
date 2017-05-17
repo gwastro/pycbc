@@ -40,7 +40,7 @@ __author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 def padding(window_size, dur, f0, Q):
-    """The `(left, right)` padding required for the IFFT
+    """The (left, right) padding required for the IFFT
 
     Parameters
     ----------
@@ -113,7 +113,7 @@ def get_window(dur, indices, f0, qprime, Q, sampling):
     f0: int
         Central frequency
     qprime: int
-        Normalized Q `(q/sqrt(11))
+        Normalized Q (q/sqrt(11))
     Q: int
         q value
     sampling: int
@@ -121,7 +121,7 @@ def get_window(dur, indices, f0, qprime, Q, sampling):
 
     Returns
     -------
-    window : `numpy.ndarray`
+    window : numpy.ndarray
     """
     # real frequencies
     wfrequencies = indices / dur
@@ -165,7 +165,7 @@ def deltam():
 
     Returns
     -------
-    :type: `float`
+    :type: 'float'
     """
     mismatch = 0.2
     return 2 * (mismatch / 3.) ** (1/2.)
