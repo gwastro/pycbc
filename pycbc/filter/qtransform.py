@@ -33,24 +33,9 @@ Example
 
 """
 
-from math import pi, ceil, log, exp
+from math import pi
 import numpy as np
-from pycbc.types.timeseries import FrequencySeries, TimeSeries
 from pycbc.strain  import next_power_of_2
-import os, sys
-from pycbc.filter import highpass_fir, matched_filter
-from pycbc.waveform import get_fd_waveform
-from pycbc.psd import welch, interpolate
-from pycbc.fft import ifft
-from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
-from numpy import fft as npfft
-
-from matplotlib import use
-use('Agg')
-from matplotlib import pyplot as plt
-from matplotlib.colors import BoundaryNorm
-from matplotlib.ticker import MaxNLocator
-from matplotlib.pyplot import specgram
 
 __author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -124,6 +109,8 @@ def get_window(dur, indices, f0, qprime, Q, sampling):
     ---------
     dur: int
         Duration of timeseries in seconds
+    indices: numpy.ndarray
+        Window indices
     f0: int
         Central frequency
     qprime: int
