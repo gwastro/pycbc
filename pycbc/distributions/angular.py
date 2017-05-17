@@ -123,9 +123,31 @@ class UniformAngle(uniform.Uniform):
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
-        """Returns a distribution based on a configuration file. The parameters
-        for the distribution are retrieved from the section titled
-        "[`section`-`variable_args`]" in the config file.
+        """Returns a distribution based on a configuration file.
+
+        The parameters for the distribution are retrieved from the section
+        titled "[`section`-`variable_args`]" in the config file. By default,
+        only the name of the distribution (`uniform_angle`) needs to be
+        specified. This will results in a uniform prior on `[0, 2pi)`. To
+        make the domain cyclic, add `cyclic_domain =`. To specify boundaries
+        that are not `[0, 2pi)`, add `(min|max)-var` arguments, where `var`
+        is the name of the variable.
+
+        For example, this will initialize a variable called `theta` with a
+        uniform distribution on `[0, 2pi)` without cyclic boundaries:
+
+        .. code-block:: ini
+
+            [{section}-theta]
+            name = uniform_angle
+
+        This will make the domain cyclic on `[0, 2pi)`:
+
+        .. code-block:: ini
+
+            [{section}-theta]
+            name = uniform_angle
+            cyclic_domain =
 
         Parameters
         ----------
@@ -465,9 +487,10 @@ class UniformSolidAngle(bounded.BoundedDist):
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
-        """Returns a distribution based on a configuration file. The section
-        must have the names of the polar and azimuthal angles in the tag part
-        of the section header. For example:
+        """Returns a distribution based on a configuration file.
+
+        The section must have the names of the polar and azimuthal angles in
+        the tag part of the section header. For example:
 
         .. code-block:: ini
 
@@ -502,6 +525,9 @@ class UniformSolidAngle(bounded.BoundedDist):
 
         This will return a distribution that is uniform in the upper
         hemisphere.
+
+        By default, the domain of the azimuthal angle is `[0, 2pi)`. To make
+        this domain cyclic, add `azimuthal_cyclic_domain =`.
 
         Parameters
         ----------
