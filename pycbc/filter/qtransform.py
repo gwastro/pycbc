@@ -1,5 +1,4 @@
 # Copyright (C) 2017  Hunter A. Gabbard
-# Most of this is a port of Duncan Macleod's GWPY qtransform.py script
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -135,7 +134,7 @@ def get_window(dur, indices, f0, qprime, Q, sampling):
         315 * qprime / (128 * f0)) ** (1/2.)
     return (1 - xfrequencies ** 2) ** 2 * norm
 
-def n_tiles(dur,f0,Q):
+def n_tiles(dur, f0, Q):
     """The number of tiles in this row 
     
     Parameters
