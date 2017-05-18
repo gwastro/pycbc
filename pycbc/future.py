@@ -54,7 +54,7 @@ def zpk2sos(z, p, k, pairing='nearest'):
     """
 
     import numpy as np
-    from numpy import zeros
+    from numpy import zeros, array
     from scipy.signal import zpk2tf, lfilter
 
     valid_pairings = ['nearest', 'keep_odd']
@@ -158,7 +158,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     """
 
     import numpy as np
-    from numpy import atleast_1d, atleast_2d, array
+    from numpy import atleast_1d, atleast_2d, array, zeros_like
     from scipy.signal import lfilter
 
     x = np.asarray(x)
@@ -174,7 +174,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     use_zi = zi is not None
     if use_zi:
         zi = np.asarray(zi)
-        e_zi_shape = list(x.shape)
+        x_zi_shape = list(x.shape)
         x_zi_shape[axis] = 2
         x_zi_shape = tuple([n_sections] + x_zi_shape)
         if zi.shape != x_zi_shape:
@@ -230,9 +230,9 @@ def _cplxreal(z, tol=None):
 
     # Find runs of (approximately) the same real part
     same_real = np.diff(zp.real) <= tol * abs(zp[:-1])
-    diffs = numpy.diff(concatenate(([0], same_real, [0])))
-    run_starts = numpy.where(diffs > 0)[0]
-    run_stops = numpy.where(diffs < 0)[0]
+    diffs = np.diff(concatenate(([0], same_real, [0])))
+    run_starts = np.where(diffs > 0)[0]
+    run_stops = np.where(diffs < 0)[0]
 
     # Sort each run by their imaginary parts
     for i in range(len(run_starts)):

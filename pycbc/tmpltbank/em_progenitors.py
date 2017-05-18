@@ -443,7 +443,7 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
     # Sanity checks
     if not (eta>0. and eta<=0.25 and abs(chi)<=1):
         print('The BH spin magnitude must be <=1 and eta must be between 0 and 0.25')
-        print('This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}\n'.format(ns_b_mass, eta, chi, incl))
+        print('This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}\n'.format(ns_g_mass, eta, chi, incl))
         raise Exception('Unphysical parameters!')
 
     # Binary mass ratio define to be > 1
@@ -668,7 +668,7 @@ def generate_em_constraint_data(mNS_min, mNS_max, delta_mNS, sBH_min, sBH_max, d
     # making sure maxima and minima are included
     mNS_nsamples = complex(0,int(np.ceil((mNS_max-mNS_min)/delta_mNS)+1))
     sBH_nsamples = complex(0,int(np.ceil((sBH_max-sBH_min)/delta_sBH)+1))
-    mNS_vec, sBH_vec = np.mgrid[mNS_min:mNS_max:mNS_nsamples, sBH_min:sBH_max:sBH_nsamples]
+    mNS_vec, sBH_vec = np.mgrid[mNS_min:mNS_max:mNS_nsamples, sBH_min:sBH_max:sBH_nsamples] # pylint:disable=invalid-slice-index
     mNS_locations = np.array(mNS_vec[:,0])
     sBH_locations = np.array(sBH_vec[0])
     mNS_sBH_grid = zip(mNS_vec.ravel(), sBH_vec.ravel())
