@@ -38,8 +38,8 @@ from pycbc.detector import Detector
 from pycbc import pnutils
 import lal as _lal
 
-# a list of all generator functions
-generator_functions = transforms.all_converters
+# a list of all classes with generator functions
+generator_classes = transforms.all_converters
 
 #
 #   Generator for CBC waveforms
@@ -172,10 +172,10 @@ class BaseCBCGenerator(BaseGenerator):
         # of the functions that do conversions and adds to list of pregenerate
         # functions if it is needed
         params_used = set([])
-        for func in generator_functions:
-            if set(func.inputs).issubset(all_args):
-                self._add_pregenerate(func)
-                params_used.update(func.inputs)
+        for cls in generator_classes:
+            if set(cls.inputs).issubset(all_args):
+                self._add_pregenerate(cls.convert)
+                params_used.update(cls.inputs)
         # check that there are no unused parameters
         unused_args = all_args.difference(params_used) \
                               .difference(self.possible_args)
