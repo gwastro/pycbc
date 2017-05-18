@@ -71,6 +71,27 @@ class ChangeOfVariables(bounded.BoundedDist):
         return self._transform.jacobian(**kwargs) \
                                + self._prior_dist.logpdf(**prior_dist_params)
 
+    def rvs(self, size=1, param=None):
+        """Gives a set of random values drawn from this distribution.
+
+        Parameters
+        ----------
+        size : {1, int}
+            The number of values to generate; default is 1.
+        param : {None, string}
+            If provided, will just return values for the given parameter.
+            Otherwise, returns random values for each parameter.
+
+        Returns
+        -------
+        structured array
+            The random values in a numpy structured array. If a param was
+            specified, the array will only have an element corresponding to the
+            given parameter. Otherwise, the array will have an element for each
+            parameter in self's params.
+        """
+        return self._sampling_dist.rvs(size=size, param=param)
+
     @classmethod
     def from_config(cls, cp, section, variable_args):
         """Returns a distribution based on a configuration file. The parameters
