@@ -306,7 +306,7 @@ class Bounds(object):
         except KeyError:
             raise ValueError("unrecognized btype_max {}".format(btype_max))
         # store cyclic conditions
-        self._cyclic = cyclic
+        self._cyclic = bool(cyclic)
         # store reflection conditions; we'll vectorize them here so that they
         # can be used with arrays
         if self._min.name == 'reflected' and self._max.name == 'reflected':

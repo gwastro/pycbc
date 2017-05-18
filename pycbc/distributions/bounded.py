@@ -114,7 +114,7 @@ def get_param_bounds_from_config(cp, section, tag, param):
 
 
 def bounded_from_config(cls, cp, section, variable_args,
-        bounds_required=False):
+        bounds_required=False, additional_opts=None):
     """Returns a bounded distribution based on a configuration file. The
     parameters for the distribution are retrieved from the section titled
     "[`section`-`variable_args`]" in the config file.
@@ -138,6 +138,11 @@ def bounded_from_config(cls, cp, section, variable_args,
        parameter set to None. Even if bounds are not required, a
        ValueError will be raised if only one bound is provided; i.e.,
        either both bounds need to provided or no bounds.
+    additional_opts : {None, dict}
+        Provide additional options to be passed to the distribution class;
+        should be a dictionary specifying option -> value. If an option is
+        provided that also exists in the config file, the value provided will
+        be used instead of being read from the file.
 
     Returns
     -------
@@ -147,13 +152,17 @@ def bounded_from_config(cls, cp, section, variable_args,
     tag = variable_args
     variable_args = variable_args.split(VARARGS_DELIM)
 
+    if additional_opts is None:
+        additional_opts = {}
+
     # list of args that are used to construct distribution
     special_args = ["name"] + \
         ['min-{}'.format(arg) for arg in variable_args] + \
         ['max-{}'.format(arg) for arg in variable_args] + \
         ['btype-min-{}'.format(arg) for arg in variable_args] + \
         ['btype-max-{}'.format(arg) for arg in variable_args] + \
-        ['cyclic-{}'.format(arg) for arg in variable_args]
+        ['cyclic-{}'.format(arg) for arg in variable_args] + \
+        additional_opts.keys()
 
     # get a dict with bounds as value
     dist_args = {}
@@ -177,6 +186,8 @@ def bounded_from_config(cls, cp, section, variable_args,
             pass
         # add option
         dist_args.update({key:val})
+
+    dist_args.update(additional_opts)
 
     # construction distribution and add to list
     return cls(**dist_args)
