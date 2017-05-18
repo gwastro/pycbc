@@ -138,9 +138,9 @@ class MchirpQToMass1Mass2(BaseConversion):
         Convert a dict of numpy.array:
 
         >>> import numpy
-        >>> from pycbc.inference import sampling_conversions
+        >>> from pycbc import transforms
         >>> from pycbc.waveform import parameters
-        >>> cl = sampling_conversions.MchirpQToMass1Mass2()
+        >>> cl = transforms.MchirpQToMass1Mass2()
         >>> cl.convert({parameters.mchirp : numpy.array([10.]), parameters.q : numpy.array([2.])})
             {'mass1': array([ 16.4375183]), 'mass2': array([ 8.21875915]), 'mchirp': array([ 10.]), 'q': array([ 2.])}
 
@@ -173,9 +173,9 @@ class MchirpQToMass1Mass2(BaseConversion):
         Convert a dict of numpy.array:
 
         >>> import numpy
-        >>> from pycbc.inference import sampling_conversions
+        >>> from pycbc import transforms
         >>> from pycbc.waveform import parameters
-        >>> cl = sampling_conversions.MchirpQToMass1Mass2()
+        >>> cl = transforms.MchirpQToMass1Mass2()
         >>> cl.inverse()
         >>> cl.convert({parameters.mass1 : numpy.array([16.4]), parameters.mass2 : numpy.array([8.2])})
             {'mass1': array([ 16.4]), 'mass2': array([ 8.2]), 'mchirp': array([ 9.97717521]), 'q': 2.0}
@@ -227,9 +227,9 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
         Convert a dict of numpy.array:
 
         >>> import numpy
-        >>> from pycbc.inference import sampling_conversions
+        >>> from pycbc import transforms
         >>> from pycbc.waveform import parameters
-        >>> cl = sampling_conversions.SphericalSpin1ToCartesianSpin1()
+        >>> cl = transforms.SphericalSpin1ToCartesianSpin1()
         >>> cl.convert({parameters.spin1_a : numpy.array([0.1]), parameters.spin1_azimuthal : numpy.array([0.1]), parameters.spin1_polar : numpy.array([0.1])})
             {'spin1_a': array([ 0.1]), 'spin1_azimuthal': array([ 0.1]), 'spin1_polar': array([ 0.1]),
              'spin2x': array([ 0.00993347]), 'spin2y': array([ 0.00099667]), 'spin2z': array([ 0.09950042])}
@@ -292,9 +292,9 @@ class DistanceToRedshift(BaseConversion):
         Convert a dict of numpy.array:
 
         >>> import numpy
-        >>> from pycbc.inference import sampling_conversions
+        >>> from pycbc import transforms
         >>> from pycbc.waveform import parameters
-        >>> cl = sampling_conversions.DistanceToRedshift()
+        >>> cl = transforms.DistanceToRedshift()
         >>> cl.convert({parameters.distance : numpy.array([1000])})
             {'distance': array([1000]), 'redshift': 0.19650987609144363}
 
@@ -459,9 +459,9 @@ class ChiPToCartesianSpin(BaseConversion):
         Convert a dict of numpy.array:
 
         >>> import numpy
-        >>> from pycbc.inference import sampling_conversions
+        >>> from pycbc import transforms
         >>> from pycbc.waveform import parameters
-        >>> cl = sampling_conversions.DistanceToRedshift()
+        >>> cl = transforms.DistanceToRedshift()
         >>> cl.convert({parameters.distance : numpy.array([1000])})
             {'distance': array([1000]), 'redshift': 0.19650987609144363}
 
