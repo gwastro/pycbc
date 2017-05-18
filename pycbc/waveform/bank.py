@@ -415,28 +415,6 @@ class TemplateBank(object):
     def __len__(self):
         return len(self.table)
 
-    def generate_with_delta_f_and_max_freq(self, t_num, max_freq, delta_f,
-                                           low_frequency_cutoff=None,
-                                           cached_mem=None):
-        """Generate the template with index t_num using custom length."""
-        approximant = self.approximant(t_num)
-        # Don't want to use INTERP waveforms in here
-        if approximant.endswith('_INTERP'):
-            approximant = approximant.replace('_INTERP', '')
-        # Using SPAtmplt here is bad as the stored cbrt and logv get
-        # recalculated as we change delta_f values. Fall back to TaylorF2
-        # in lalsimulation.
-        if approximant == 'SPAtmplt':
-            approximant = 'TaylorF2'
-        if cached_mem is None:
-            wav_len = int(max_freq / delta_f) + 1
-            cached_mem = zeros(wav_len, dtype=np.complex64)
-        htilde = pycbc.waveform.get_waveform_filter(
-            cached_mem, self.table[t_num], approximant=approximant,
-            f_lower=low_frequency_cutoff, f_final=max_freq, delta_f=delta_f,
-            distance=1./DYN_RANGE_FAC, delta_t=1./(2.*max_freq))
-        return htilde
-
     def template_thinning(self, inj_filter_rejector):
         """Remove templates from bank that are far from all injections."""
         if not inj_filter_rejector.enabled or \
@@ -646,7 +624,7 @@ class FilterBank(TemplateBank):
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
 
     def get_decompressed_waveform(self, tempout, index, f_lower=None,
-                                  approximant=None):
+                                  approximant=None, df=None):
         """Returns a frequency domain decompressed waveform for the template
         in the bank corresponding to the index taken in as an argument. The
         decompressed waveform is obtained by interpolating in frequency space,
@@ -663,8 +641,13 @@ class FilterBank(TemplateBank):
             decompression_method = self.compressed_waveforms[self.table.template_hash[index]].interpolation
         logging.info("Decompressing waveform using %s", decompression_method)
 
+        if df is not None :
+            delta_f = df
+        else :
+            delta_f = self.delta_f
+
         # Create memory space for writing the decompressed waveform
-        decomp_scratch = FrequencySeries(tempout[0:self.filter_length], delta_f=self.delta_f, copy=False)
+        decomp_scratch = FrequencySeries(tempout[0:self.filter_length], delta_f=delta_f, copy=False)
 
         # Get the decompressed waveform
         hdecomp = self.compressed_waveforms[self.table.template_hash[index]].decompress(out=decomp_scratch, f_lower=f_lower, interpolation=decompression_method)
@@ -679,6 +662,34 @@ class FilterBank(TemplateBank):
         hdecomp.chirp_length = tmpltdur
         hdecomp.length_in_time = hdecomp.chirp_length
         return hdecomp
+
+    def generate_with_delta_f_and_max_freq(self, t_num, max_freq, delta_f,
+                                           low_frequency_cutoff=None,
+                                           cached_mem=None):
+        """Generate the template with index t_num using custom length."""
+        approximant = self.approximant(t_num)
+        # Don't want to use INTERP waveforms in here
+        if approximant.endswith('_INTERP'):
+            approximant = approximant.replace('_INTERP', '')
+        # Using SPAtmplt here is bad as the stored cbrt and logv get
+        # recalculated as we change delta_f values. Fall back to TaylorF2
+        # in lalsimulation.
+        if approximant == 'SPAtmplt':
+            approximant = 'TaylorF2'
+        if cached_mem is None:
+            wav_len = int(max_freq / delta_f) + 1
+            cached_mem = zeros(wav_len, dtype=numpy.complex64)
+        if self.compressed_waveforms is not None :
+            htilde = self.get_decompressed_waveform(cached_mem, t_num,
+                                                    f_lower=low_frequency_cutoff,
+                                                    approximant=approximant,
+                                                    df=delta_f)
+        else :
+            htilde = pycbc.waveform.get_waveform_filter(
+                cached_mem, self.table[t_num], approximant=approximant,
+                f_lower=low_frequency_cutoff, f_final=max_freq, delta_f=delta_f,
+                distance=1./DYN_RANGE_FAC, delta_t=1./(2.*max_freq))
+        return htilde
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
@@ -712,7 +723,7 @@ class FilterBank(TemplateBank):
         distance = 1.0 / DYN_RANGE_FAC
         if self.compressed_waveforms is not None :
             htilde = self.get_decompressed_waveform(tempout, index, f_lower=f_low,
-                                                    approximant=approximant)
+                                                    approximant=approximant, df=None)
         else :
             htilde = pycbc.waveform.get_waveform_filter(
                 tempout[0:self.filter_length], self.table[index],
