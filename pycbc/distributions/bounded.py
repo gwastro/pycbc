@@ -174,16 +174,19 @@ def bounded_from_config(cls, cp, section, variable_args,
         dist_args[param] = bounds
 
     # add any additional options that user put in that section
-    for key in cp.options( "-".join([section,tag]) ):
+    for key in cp.options("-".join([section, tag])):
+
         # ignore options that are already included
         if key in special_args:
             continue
+
         # check if option can be cast as a float
-        val = cp.get_opt_tag("prior", key, tag)
+        val = cp.get_opt_tag(section, key, tag)
         try:
             val = float(val)
         except ValueError:
             pass
+
         # add option
         dist_args.update({key:val})
 
