@@ -50,5 +50,23 @@ class ChangeOfVariables(bounded.BoundedDist):
         return self._prior_dist.logpdf(**prior_dist_params)
 
     @classmethod
-    def from_config(self, **kwargs):
+    def from_config(cls, cp, section, variable_args):
+
+        # import mapping for Distributions
+        # cannot be a top-level import because of circular dependencies
+        from pycbc.distributions import distribs
+
+        print variable_args
+
+        sampling_name = cp.get_opt_tag(section, "sampling-name", variable_args)
+
+        cp.add_section("-".join(["cov"])
+
+        sampling_dist = bounded.bounded_from_config(
+                                    distribs[sampling_name], cp, section,
+                                    variable_args, additional_opts=None)
+
+        # get Distributions
+        sampling_dist = distribs[cp.get_opt_tag("prior", key, "")]
+        prior_dist = distribs["prior_name"]
         return 0
