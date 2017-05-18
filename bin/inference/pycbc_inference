@@ -66,9 +66,6 @@ parser.add_argument("--samples-file", default=None,
                          "section in the configuration file should be used. "
                          "The priors must allow encompass the initial "
                          "positions from the InferenceFile being read.")
-parser.add_argument("--samples-file-iteration", type=int, default=None,
-                    help="Index of the iteration to use from InferenceFile "
-                         "for setting initial positions of walkers.")
 
 # add sampler options
 option_utils.add_sampler_option_group(parser)
@@ -197,8 +194,7 @@ with ctx:
     logging.info("Setting walkers initial conditions for varying parameters")
     if opts.samples_file:
         with InferenceFile(opts.samples_file, "r") as fp:
-            iteration = opts.samples_file_iteration \
-                        if opts.samples_file_iteration else fp.niterations - 1
+            iteration = fp.niterations - 1
             logging.info("Initial positions taken from iteration %i in %s",
                          iteration, opts.samples_file)
             p0 = fp.read_samples(sampler.variable_args, iteration=iteration)
