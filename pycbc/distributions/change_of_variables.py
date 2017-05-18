@@ -18,6 +18,7 @@ a change of variables.
 """
 
 import numpy
+from pycbc import transforms
 from pycbc.distributions import bounded
 
 class ChangeOfVariables(bounded.BoundedDist):
@@ -60,7 +61,7 @@ class ChangeOfVariables(bounded.BoundedDist):
         # used by internally by ChangeOfVariables
         restricted_opts = ["parameters"]
 
-        # get name of Distributions and Transform
+        # get name of Distributions and Transformation
         sampling_name = cp.get_opt_tag(section, "sampling-name", variable_args)
         prior_name = cp.get_opt_tag(section, "prior-name", variable_args)
         transform_name = cp.get_opt_tag(
@@ -98,4 +99,9 @@ class ChangeOfVariables(bounded.BoundedDist):
                                distribs[prior_name], cp,
                                cov_section, prior_opts["parameters"])
 
-        return 0
+        # create Transformation
+        for converter in transforms.all_converters:
+            if converter.name == transform_name:
+                transform = converter()
+
+        return cls(sampling_dist, prior_dist, transform)
