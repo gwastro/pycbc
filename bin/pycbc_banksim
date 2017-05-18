@@ -229,7 +229,8 @@ parser.add_argument("--tau0-window", type=float, metavar="TIME", default=None,
                          "supplied amount. If option is not provided no "
                          "window on tau0 is used. The "
                          "filter-low-frequency-cutoff is used to calculate "
-                         "the value of tau0 for all cases.")
+                         "the value of tau0 for all cases. Provided in units "
+                         "of seconds.")
 
 options = parser.parse_args()
 
@@ -347,13 +348,8 @@ with ctx:
     sig_mchirp, _ = mass1_mass2_to_mchirp_eta(sig_m1, sig_m2)
 
     logging.info("Calculating Mchirp and Tau0")
-    template_m1 = []
-    template_m2 = []
-    for template_params in template_table:
-        template_m1.append(template_params.mass1)
-        template_m2.append(template_params.mass2)
-    template_m1 = array(template_m1)
-    template_m2 = array(template_m2)
+    template_m1 = array([tp.mass1 for tp in template_table])
+    template_m2 = array([tp.mass2 for tp in template_table])
     template_tau0, _ = mass1_mass2_to_tau0_tau3(template_m1, template_m2,
                                                 options.filter_low_frequency_cutoff)
     template_mchirp, _ = mass1_mass2_to_mchirp_eta(template_m1, template_m2)
