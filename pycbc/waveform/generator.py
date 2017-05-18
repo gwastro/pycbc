@@ -228,7 +228,7 @@ class BaseGenerator(object):
         def dostuff(self):
             for func in self._pregenerate_functions:
                 func(self)
-            res = generate_func(self)
+            res = generate_func(self) # pylint:disable=not-callable
             return self._postgenerate(res)
         return dostuff
 

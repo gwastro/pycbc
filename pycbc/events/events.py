@@ -76,7 +76,7 @@ class ThresholdCluster(object):
     """
     def __new__(cls, *args, **kwargs):
         real_cls = _threshold_cluster_factory(*args, **kwargs)
-        return real_cls(*args, **kwargs)
+        return real_cls(*args, **kwargs) # pylint:disable=not-callable
 
 # The class below should serve as the parent for all schemed classes.
 # The intention is that this class serves simply as the location for

@@ -200,17 +200,17 @@ class Array(object):
         if badh in self._saved:
             return self._saved[badh]
 
-        res = fn(self, arg)
+        res = fn(self, arg) # pylint:disable=not-callable
         self._saved[badh] = res      
         return res
                    
     @decorator
     def _returnarray(fn, self, *args):
-        return Array(fn(self, *args), copy=False)
+        return Array(fn(self, *args), copy=False) # pylint:disable=not-callable
 
     @decorator
     def _returntype(fn, self, *args):
-        ary = fn(self,*args)
+        ary = fn(self,*args) # pylint:disable=not-callable
         if ary is NotImplemented:
             return NotImplemented
         return self._return(ary)
@@ -240,7 +240,7 @@ class Array(object):
             else:
                 return NotImplemented
 
-        return fn(self, *nargs)
+        return fn(self, *nargs) # pylint:disable=not-callable
     
     @decorator  
     def _vcheckother(fn, self, *args):
@@ -258,7 +258,7 @@ class Array(object):
             else:
                 raise TypeError('array argument required')                    
 
-        return fn(self,*nargs)
+        return fn(self,*nargs) # pylint:disable=not-callable
         
     @decorator  
     def _vrcheckother(fn, self,*args):
@@ -275,7 +275,7 @@ class Array(object):
             else:
                 raise TypeError('array argument required')                    
 
-        return fn(self, *nargs)
+        return fn(self, *nargs) # pylint:disable=not-callable
 
     @decorator
     def _icheckother(fn, self, other):
@@ -299,7 +299,7 @@ class Array(object):
         else:
             return NotImplemented
 
-        return fn(self, other)
+        return fn(self, other) # pylint:disable=not-callable
 
     def _typecheck(self, other):
         """ Additional typechecking for other. Placeholder for use by derived

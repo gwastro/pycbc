@@ -34,7 +34,7 @@ import numpy
 # Used to manage a likelihood instance across multiple cores or MPI
 _global_instance = None
 def _call_global_likelihood(*args, **kwds):
-    return _global_instance(*args, **kwds)
+    return _global_instance(*args, **kwds) # pylint:disable=not-callable
 
 class _NoPrior(object):
     """Dummy class to just return 0 if no prior is provided in a
