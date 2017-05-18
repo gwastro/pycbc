@@ -226,10 +226,9 @@ class TemplateBank(object):
     table : WaveformArray
         An instance of a WaveformArray containing all of the information about
         the parameters of the bank.
-    compressed_waveforms : {None, dict}
-        If compressed waveforms are present in the (hdf) file, a dictionary
-        of those waveforms. Keys are the template hashes, values are
-        `CompressedWaveform` instances.
+    check_compressed_waveforms : {False, bool}
+        If compressed waveforms are present in the (hdf) file, save True,
+        else False .
     parameters : tuple
         The parameters loaded from the input file. Same as `table.fieldnames`.
     indoc : {None, xmldoc}
@@ -244,8 +243,10 @@ class TemplateBank(object):
     def __init__(self, filename, approximant=None, parameters=None,
             load_compressed=True, load_compressed_now=False,
             **kwds):
+        self.load_compressed = load_compressed
+        self.load_compressed_now = load_compressed_now
+        self.check_compressed_waveforms = False
         ext = os.path.basename(filename)
-        self.compressed_waveforms = None
         if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
             self.filehandler = None
             self.indoc = ligolw_utils.load_filename(
@@ -294,12 +295,8 @@ class TemplateBank(object):
             for key in data:
                 self.table[key] = data[key]
             # add the compressed waveforms, if they exist
-            if load_compressed and 'compressed_waveforms' in f:
-                self.compressed_waveforms = {}
-                for tmplt_hash in self.table['template_hash']:
-                    self.compressed_waveforms[tmplt_hash] = \
-                        pycbc.waveform.compress.CompressedWaveform.from_hdf(f,
-                            tmplt_hash, load_now=load_compressed_now)
+            if self.load_compressed and 'compressed_waveforms' in f:
+                self.check_compressed_waveforms = True
         else:
             raise ValueError("Unsupported template bank file extension %s" %(
                 ext))
@@ -381,10 +378,12 @@ class TemplateBank(object):
         write_tbl = self.table[start_index:stop_index]
         for p in parameters:
             f[p] = write_tbl[p]
-        if self.compressed_waveforms is not None:
+        if self.check_compressed_waveforms:
             for tmplt_hash in write_tbl.template_hash:
-                self.compressed_waveforms[tmplt_hash].write_to_hdf(
-                                                        f, tmplt_hash)
+                compressed_waveform = pycbc.waveform.compress.CompressedWaveform.from_hdf(
+                                        self.filehandler, tmplt_hash,
+                                        load_now=self.load_compressed_now)
+                compressed_waveform.write_to_hdf(f, tmplt_hash)
         return f
 
     def end_frequency(self, index):
@@ -632,12 +631,20 @@ class FilterBank(TemplateBank):
 
         from pycbc.waveform.waveform import props
         from pycbc.waveform import get_waveform_filter_length_in_time
+       
+        # Get the template hash corresponding to the template index taken in as argument
+        tmplt_hash = self.table.template_hash[index]
+
+        # Read the compressed waveform from the bank file
+        compressed_waveform = pycbc.waveform.compress.CompressedWaveform.from_hdf(
+                                self.filehandler, tmplt_hash,
+                                load_now=self.load_compressed_now)
 
         # Get the interpolation method to be used to decompress the waveform
         if self.waveform_decompression_method is not None :
             decompression_method = self.waveform_decompression_method
         else :
-            decompression_method = self.compressed_waveforms[self.table.template_hash[index]].interpolation
+            decompression_method = compressed_waveform.interpolation
         logging.info("Decompressing waveform using %s", decompression_method)
 
         if df is not None :
@@ -649,7 +656,7 @@ class FilterBank(TemplateBank):
         decomp_scratch = FrequencySeries(tempout[0:self.filter_length], delta_f=delta_f, copy=False)
 
         # Get the decompressed waveform
-        hdecomp = self.compressed_waveforms[self.table.template_hash[index]].decompress(out=decomp_scratch, f_lower=f_lower, interpolation=decompression_method)
+        hdecomp = compressed_waveform.decompress(out=decomp_scratch, f_lower=f_lower, interpolation=decompression_method)
         p = props(self.table[index])
         p.pop('approximant')
         try:
@@ -678,7 +685,7 @@ class FilterBank(TemplateBank):
         if cached_mem is None:
             wav_len = int(max_freq / delta_f) + 1
             cached_mem = zeros(wav_len, dtype=np.complex64)
-        if self.compressed_waveforms is not None :
+        if self.check_compressed_waveforms :
             htilde = self.get_decompressed_waveform(cached_mem, t_num,
                                                     f_lower=low_frequency_cutoff,
                                                     approximant=approximant,
@@ -720,7 +727,7 @@ class FilterBank(TemplateBank):
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
-        if self.compressed_waveforms is not None :
+        if self.check_compressed_waveforms :
             htilde = self.get_decompressed_waveform(tempout, index, f_lower=f_low,
                                                     approximant=approximant, df=None)
         else :
