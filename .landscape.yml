@@ -10,7 +10,7 @@ ignore-patterns:
 pylint:
   disable:
   - too-many-arguments
-  - too-many-local-variables
+  - too-many-locals
   - too-many-branches
 
 pyflakes:
