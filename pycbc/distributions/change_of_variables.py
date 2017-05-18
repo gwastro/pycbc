@@ -60,7 +60,9 @@ class ChangeOfVariables(bounded.BoundedDist):
         from pycbc.distributions import distribs
 
         # a list of restricted options in the configuration file section
-        # used by internally by ChangeOfVariables
+        # used internally by ChangeOfVariables
+        # these options to do get transcribed to the new sections in the
+        # configuration file that are created by from_config
         restricted_opts = ["parameters"]
 
         # get name of Distributions and Transformation
