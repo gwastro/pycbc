@@ -58,7 +58,7 @@ def losc_frame_json(ifo, start_time, end_time):
     
     try:
         return json.loads(urllib.urlopen(url).read())
-    except Exception as err:
+    except Exception:
         raise ValueError('Failed to find gwf files for '
             'ifo=%s, run=%s, between %s-%s' % (ifo, run, start_time, end_time))
            
@@ -115,7 +115,7 @@ def read_frame_losc(channels, start_time, end_time):
     fnames = {ifo:[] for ifo in ifos}
     for ifo in ifos:
         for url in urls[ifo]:
-            fname, meta = urllib.urlretrieve(url)
+            fname, _ = urllib.urlretrieve(url)
             fnames[ifo].append(fname)
     
     ts = [read_frame(fnames[channel[0:2]], channel,

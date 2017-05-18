@@ -1103,7 +1103,7 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     snr : TimeSeries
         A time series containing the complex snr.
     """
-    snr, corr, norm = matched_filter_core(template, data, psd=psd,
+    snr, _, norm = matched_filter_core(template, data, psd=psd,
             low_frequency_cutoff=low_frequency_cutoff,
             high_frequency_cutoff=high_frequency_cutoff, h_norm=sigmasq)
     return snr * norm
@@ -1147,7 +1147,7 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     global _snr
     if _snr is None or _snr.dtype != htilde.dtype or len(_snr) != N:
         _snr = zeros(N,dtype=complex_same_precision_as(vec1))
-    snr, corr, snr_norm = matched_filter_core(htilde,stilde,psd,low_frequency_cutoff,
+    snr, _, snr_norm = matched_filter_core(htilde,stilde,psd,low_frequency_cutoff,
                              high_frequency_cutoff, v1_norm, out=_snr)
     maxsnr, max_id = snr.abs_max_loc()
     if v2_norm is None:

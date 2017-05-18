@@ -147,7 +147,6 @@ def write_summary(page, args, ifos, skyError=None, ipn=False, ipnError=False):
         td2 = []
         td3 = []
         timedelay = {}
-        deltat = []
         search_file = '../../../S5IPN_GRB%s_search_180deg.txt' % args.grb_name
         for line in open(search_file):
             ra.append(line.split()[0])
@@ -233,7 +232,6 @@ def write_antenna(page, args, seg_plot=None, grid=False, ipn=False):
                                                 ifo)
                 antenna_ifo[ifo].append(round(f_q,3))
         dectKeys = antenna_ifo.keys()
-        newList=[]
 
         for elements in range(len(antenna_ifo.values()[0])):
             newDict={}
@@ -727,7 +725,7 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
 
     xmin, xmax = fig.axes[-1].get_xaxis().get_view_interval()
     ymin, ymax = fig.axes[-1].get_yaxis().get_view_interval()
-    fig.axes[-1].add_artist(Line2D((xmin, xmax), (ymin, ymin), color='black',
+    fig.axes[-1].add_artist(Line2D((xmin, xmax), (ymin, ymax), color='black',
                                 linewidth=2))
     fig.axes[-1].set_xlabel('GPS Time')
 

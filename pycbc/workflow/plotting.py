@@ -239,7 +239,6 @@ def make_veto_table(workflow, out_dir, vetodef_file=None, tags=None):
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'page_vetotable', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
-    vetodef_files = list(vetodef_file)
     node.add_input_opt('--veto-definer-file', vdf_file)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node

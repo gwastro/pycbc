@@ -912,8 +912,8 @@ class Array(object):
         elif ext == '.hdf':
             key = 'data' if group is None else group
             f = h5py.File(path)
-            ds = f.create_dataset(key, data=self.numpy(), compression='gzip',
-                                  compression_opts=9, shuffle=True)
+            f.create_dataset(key, data=self.numpy(), compression='gzip',
+                             compression_opts=9, shuffle=True)
         else:
             raise ValueError('Path must end with .npy, .txt, or .hdf')
            

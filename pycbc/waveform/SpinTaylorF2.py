@@ -290,7 +290,7 @@ def spintaylorf2(**kwds):
     psiJ_C =psiJ + psi + lal.PI/4.
 
     #####Calculate the Coefficients#####
-    quadparam = 1.
+    #quadparam = 1.
     gamma0 = mass1*chi/mass2
     #Calculate the spin corrections
     # FIXME should use pycbc's function, but sigma has different expression

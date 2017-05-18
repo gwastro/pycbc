@@ -68,7 +68,7 @@ def pkg_config(pkg_libraries):
 def pkg_config_header_strings(pkg_libraries):
     """ Returns a list of header strings that could be passed to a compiler
     """
-    libs, lib_dirs, header_dirs = pkg_config(pkg_libraries)
+    _, lib_dirs, header_dirs = pkg_config(pkg_libraries)
   
     header_strings = []
 

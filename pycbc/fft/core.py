@@ -172,7 +172,7 @@ def _check_inv_args(invec, itype, outvec, otype, nbatch, size):
 
 class _BaseFFT(object):
     def __init__(self, invec, outvec, nbatch, size):
-        prec, itype, otype = _check_fft_args(invec, outvec)
+        _, itype, otype = _check_fft_args(invec, outvec)
         _check_fwd_args(invec, itype, outvec, otype, nbatch, size)
         self.forward = True
         self.invec = invec
@@ -225,7 +225,7 @@ class _BaseFFT(object):
 
 class _BaseIFFT(object):
     def __init__(self, invec, outvec, nbatch, size):
-        prec, itype, otype = _check_fft_args(invec, outvec)
+        _, itype, otype = _check_fft_args(invec, outvec)
         _check_inv_args(invec, itype, outvec, otype, nbatch, size)
         self.forward = False
         self.invec = invec

@@ -68,9 +68,9 @@ def abs_arg_max(self):
         return _np.argmax(self.data)
     else:
         data = _np.array(self._data,
-                         copy=False).view(real_same_precision_as(self))
+                         copy=False).view(real_same_precision_as(self)) # pylint:disable=unused-variable
         loc = _np.array([0])
-        N = len(self)
+        N = len(self) # pylint:disable=unused-variable
         inline(code_abs_arg_max, ['data', 'loc', 'N'], libraries=omp_libs,
                extra_compile_args=code_flags)
         return loc[0]
@@ -127,10 +127,10 @@ total[0] = value;
 
 
 def inner_inline_real(self, other):
-    x = _np.array(self._data, copy=False)
-    y = _np.array(other, copy=False)
+    x = _np.array(self._data, copy=False) # pylint:disable=unused-variable
+    y = _np.array(other, copy=False) # pylint:disable=unused-variable
     total = _np.array([0.], dtype=float64)
-    N = len(self)
+    N = len(self) # pylint:disable=unused-variable
     inline(inner_code, ['x', 'y', 'total', 'N'], libraries=omp_libs,
            extra_compile_args=code_flags)
     return total[0]
@@ -168,7 +168,6 @@ def multiply_and_add(self, other, mult_fac):
     # Sanity checking should have already be done. But we don't know if
     # mult_fac and add_fac are arrays or scalars.
     inpt = _np.array(self.data, copy=False)
-    N = len(inpt)
     # For some reason, _checkother decorator returns other.data so we don't
     # take .data here
     other = _np.array(other, copy=False)

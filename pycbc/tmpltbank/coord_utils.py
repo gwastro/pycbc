@@ -224,7 +224,7 @@ def get_random_mass(numPoints, massRangeParams):
     # only systems that can yield (at least) the desired remnant
     # disk mass and that pass the mass and spin range cuts.
     else:
-        ns_sequence, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
+        _, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
 
         # Generate EM constraint surface: minumum eta as a function of BH spin
         # and NS mass required to produce an EM counterpart
@@ -515,17 +515,11 @@ def get_point_distance(point1, point2, metricParams, fUpper):
     aMass2 = point1[1]
     aSpin1 = point1[2]
     aSpin2 = point1[3]
-    try:
-        leng = len(aMass1)
-        aArray = True
-    except:
-        aArray = False
 
     bMass1 = point2[0]
     bMass2 = point2[1]
     bSpin1 = point2[2]
     bSpin2 = point2[3]
-    bArray = False
 
     aXis = get_cov_params(aMass1, aMass2, aSpin1, aSpin2, metricParams, fUpper)
 

@@ -703,12 +703,12 @@ class MaxOnlyObject(object):
         self.verbose = verbose
 
     def execute(self):
-        inarr = self.inarr
-        mval = self.mval
-        norm = self.norm
-        mloc = self.mloc
-        nstart = self.nstart
-        howmany = self.howmany
+        inarr = self.inarr # pylint:disable=unused-variable
+        mval = self.mval # pylint:disable=unused-variable
+        norm = self.norm # pylint:disable=unused-variable
+        mloc = self.mloc # pylint:disable=unused-variable
+        nstart = self.nstart # pylint:disable=unused-variable
+        howmany = self.howmany # pylint:disable=unused-variable
         inline(self.code, ['inarr', 'mval', 'norm', 'mloc', 'nstart', 'howmany'],
                extra_compile_args = [WEAVE_FLAGS],
                #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
@@ -742,12 +742,12 @@ class WindowedMaxObject(object):
 
     def execute(self):
         inarr = self.inarr
-        arrlen = self.arrlen
-        cvals = self.cvals
-        norms = self.norms
-        locs = self.locs
-        winsize = self.winsize
-        startoffset = self.startoffset
+        arrlen = self.arrlen # pylint:disable=unused-variable
+        cvals = self.cvals # pylint:disable=unused-variable
+        norms = self.norms # pylint:disable=unused-variable
+        locs = self.locs # pylint:disable=unused-variable
+        winsize = self.winsize # pylint:disable=unused-variable
+        startoffset = self.startoffset # pylint:disable=unused-variable
         inline(self.code, ['inarr', 'arrlen', 'cvals', 'norms', 'locs', 'winsize', 'startoffset'],
                extra_compile_args = [WEAVE_FLAGS],
                #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
@@ -795,12 +795,12 @@ class ThreshClusterObject(object):
         self.verbose = verbose
 
     def execute(self, thresh):
-        series = self.series
-        slen = self.slen
-        values = self.values
-        locs = self.locs
-        window = self.window
-        segsize = self.segsize
+        series = self.series # pylint:disable=unused-variable
+        slen = self.slen # pylint:disable=unused-variable
+        values = self.values # pylint:disable=unused-variable
+        locs = self.locs # pylint:disable=unused-variable
+        window = self.window # pylint:disable=unused-variable
+        segsize = self.segsize # pylint:disable=unused-variable
         nthr = inline(self.code, ['series', 'slen', 'values', 'locs', 'thresh', 'window', 'segsize'],
                       extra_compile_args = [WEAVE_FLAGS] + omp_flags,
                       #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],

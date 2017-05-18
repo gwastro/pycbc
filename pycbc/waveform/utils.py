@@ -338,8 +338,8 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
     be sampled at equal frequency intervals.
     """
     out = numpy.array(htilde.data, copy=copy)
-    phi = -2 * numpy.pi * dt * htilde.delta_f
-    kmax = len(htilde)
+    phi = -2 * numpy.pi * dt * htilde.delta_f # pylint:disable=unused-variable
+    kmax = len(htilde) # pylint:disable=unused-variable
     if htilde.precision == 'single':
         code = _apply_shift_code32
     else:

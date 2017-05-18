@@ -315,9 +315,6 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     """
     if tags is None:
         tags = []
-    cp = workflow.cp
-    ifos = science_segs.keys()
-    job_tag = curr_exe_job.name.upper()
     data_seg, job_valid_seg = curr_exe_job.get_valid_times()
     curr_out_files = FileList([])
     if 'IPN' in datafind_outs[-1].description \

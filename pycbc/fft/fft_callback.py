@@ -226,7 +226,7 @@ def c2c_correlate_ifft(htilde, stilde, outvec):
         fn, pfn = get_fn_plan(callback=full_corr, parameters = [("void*", "htilde")])
         plan = pfn(len(outvec), int(htilde.data.gpudata))
         _plans[key] = (fn, plan, int(htilde.data.gpudata))
-    fn, plan, h = _plans[key]
+    fn, plan, _ = _plans[key]
     hparam.htilde = htilde.data.gpudata
     fn(plan, int(stilde.data.gpudata), int(outvec.data.gpudata), ctypes.pointer(hparam))
 
@@ -248,7 +248,7 @@ def c2c_half_correlate_ifft(htilde, stilde, outvec):
                               out_callback=zero_out)
         plan = pfn(len(outvec), int(htilde.data.gpudata))
         _plans[key] = (fn, plan, int(htilde.data.gpudata))
-    fn, plan, h = _plans[key]
+    fn, plan, _ = _plans[key]
     hparam_zeros.htilde = htilde.data.gpudata
     hparam_zeros.in_kmax = htilde.end_idx
     hparam_zeros.out_kmin = stilde.analyze.start

@@ -421,9 +421,9 @@ ccorrf_simd(htilde, stilde, qtilde, (int64_t) arrlen);
 
 def correlate_simd(ht, st, qt):
     htilde = _np.array(ht.data, copy = False).view(dtype = float32)
-    stilde = _np.array(st.data, copy = False).view(dtype = float32)
-    qtilde = _np.array(qt.data, copy = False).view(dtype = float32)
-    arrlen = len(htilde)
+    stilde = _np.array(st.data, copy = False).view(dtype = float32) # pylint:disable=unused-variable
+    qtilde = _np.array(qt.data, copy = False).view(dtype = float32) # pylint:disable=unused-variable
+    arrlen = len(htilde) # pylint:disable=unused-variable
     inline(corr_simd_code, ['htilde', 'stilde', 'qtilde', 'arrlen'],
            extra_compile_args = [WEAVE_FLAGS],
            #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
@@ -454,10 +454,10 @@ else:
 
 def correlate_parallel(ht, st, qt):
     htilde = _np.array(ht.data, copy = False)
-    stilde = _np.array(st.data, copy = False)
-    qtilde = _np.array(qt.data, copy = False)
-    arrlen = len(htilde)
-    segsize = default_segsize
+    stilde = _np.array(st.data, copy = False) # pylint:disable=unused-variable
+    qtilde = _np.array(qt.data, copy = False) # pylint:disable=unused-variable
+    arrlen = len(htilde) # pylint:disable=unused-variable
+    segsize = default_segsize # pylint:disable=unused-variable
     inline(corr_parallel_code, ['htilde', 'stilde', 'qtilde', 'arrlen', 'segsize'],
            extra_compile_args = [WEAVE_FLAGS] + omp_flags, libraries = omp_libs,
            #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],

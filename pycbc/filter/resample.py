@@ -286,7 +286,6 @@ def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right')
         A new FrequencySeries that has been interpolated.
     """
     new_n = int( (len(series)-1) * series.delta_f / delta_f + 1)
-    samples = numpy.arange(0, new_n) * delta_f
     old_N = int( (len(series)-1) * 2 )
     new_N = int( (new_n - 1) * 2 )
     time_series = TimeSeries(zeros(old_N), delta_t =1.0/(series.delta_f*old_N),
