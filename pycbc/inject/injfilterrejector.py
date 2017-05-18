@@ -293,7 +293,7 @@ class InjFilterRejector(object):
                 # Generate short waveform
                 htilde = bank.generate_with_delta_f_and_max_freq(
                     t_num, self.coarsematch_fmax, self.coarsematch_deltaf,
-                    low_frequency_cutoff=self.f_lower,
+                    low_frequency_cutoff=bank.table[t_num].f_lower,
                     cached_mem=self._short_template_mem)
                 self._short_template_id = t_num
                 self._short_template_wav = htilde
