@@ -188,10 +188,10 @@ class Array(object):
                     self._data = ArrayWithAligned(_numpy.array(initial_array, 
                                                                dtype=dtype, ndmin=1))
             elif _scheme_matches_base_array(initial_array):
-                self._data = _copy_base_array(initial_array)
+                self._data = _copy_base_array(initial_array) # pylint:disable=assignment-from-no-return
             else:
                 initial_array = _numpy.array(initial_array, dtype=dtype, ndmin=1)
-                self._data = _to_device(initial_array)
+                self._data = _to_device(initial_array) # pylint:disable=assignment-from-no-return
      
     @decorator
     def _memoize_single(fn, self, arg):
