@@ -67,8 +67,8 @@ def abs_arg_max(self):
     if self.kind == 'real':
         return _np.argmax(self.data)
     else:
-        data = _np.array(self._data,
-                         copy=False).view(real_same_precision_as(self)) # pylint:disable=unused-variable
+        data = _np.array(self._data, # pylint:disable=unused-variable
+                         copy=False).view(real_same_precision_as(self))
         loc = _np.array([0])
         N = len(self) # pylint:disable=unused-variable
         inline(code_abs_arg_max, ['data', 'loc', 'N'], libraries=omp_libs,

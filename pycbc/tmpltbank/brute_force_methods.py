@@ -485,7 +485,7 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, req_match, \
 
     for _ in xrange(numIterations):
         # Evaluate extrema of the xi direction specified
-        totmass, eta, spin1z, spin2z, mass1, mass2, new_xis = \
+        totmass, eta, spin1z, spin2z, _, _, new_xis = \
             get_mass_distribution([bestChirpmass,bestMasses[1],bestMasses[2],
                                    bestMasses[3]],
                                   scaleFactor, massRangeParams, metricParams,

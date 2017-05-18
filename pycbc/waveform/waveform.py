@@ -710,7 +710,7 @@ def get_waveform_filter(out, template=None, **kwargs):
         wav_gen = fd_wav[type(_scheme.mgr.state)]
 
         duration = get_waveform_filter_length_in_time(**input_params)
-        hp, hc = wav_gen[input_params['approximant']](duration=duration,
+        hp, _ = wav_gen[input_params['approximant']](duration=duration,
                                                return_hc=False, **input_params)
 
         hp.resize(n)
@@ -721,8 +721,6 @@ def get_waveform_filter(out, template=None, **kwargs):
         return hp
 
     elif input_params['approximant'] in td_approximants(_scheme.mgr.state):
-        # N: number of time samples required
-        N = (n-1)*2
         wav_gen = td_wav[type(_scheme.mgr.state)]
         hp, hc = wav_gen[input_params['approximant']](**input_params)
         # taper the time series hp if required

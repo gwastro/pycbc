@@ -741,7 +741,7 @@ class WindowedMaxObject(object):
         self.verbose = verbose
 
     def execute(self):
-        inarr = self.inarr
+        inarr = self.inarr # pylint:disable=unused-variable
         arrlen = self.arrlen # pylint:disable=unused-variable
         cvals = self.cvals # pylint:disable=unused-variable
         norms = self.norms # pylint:disable=unused-variable
