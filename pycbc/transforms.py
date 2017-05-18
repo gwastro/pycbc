@@ -568,17 +568,18 @@ def get_conversions(requested_params, variable_args, valid_params=None):
             continue
         requested_params.update(converter.inputs)
         from_base_c.append(converter)
-        variable_args += converter.outputs
+        variable_args += list(converter.outputs)
 
     # find all the conversions for the required base parameters
     # calculated from sampling parameters
     to_base_c = []
     for converter in to_base_converters:
+        print "testing converter", converter.name, converter.inputs, variable_args, converter.inputs.issubset(variable_args), len(converter.outputs.intersection(requested_params)) > 0
         if (converter.inputs.issubset(variable_args) and
                 len(converter.outputs.intersection(requested_params)) > 0):
             requested_params.update(converter.inputs)
             to_base_c.append(converter)
-            variable_args += converter.outputs
+            variable_args += list(converter.outputs)
 
     # get list of conversions that converts sampling parameters to the base
     # parameters and then converts base parameters to the derived parameters

@@ -171,11 +171,12 @@ class BaseCBCGenerator(BaseGenerator):
         # compare a set of all args of the generator to the input parameters
         # of the functions that do conversions and adds to list of pregenerate
         # functions if it is needed
-        params_used = set([])
-        for cls in generator_classes:
-            if set(cls.inputs).issubset(all_args):
-                self._add_pregenerate(cls.convert)
-                params_used.update(cls.inputs)
+        params_used, cs = transforms.get_conversions(list(self.possible_args), variable_args)
+        print "WWWWW", list(self.possible_args)
+        print "QQQQQ", variable_args
+        print "XXXXX", [c.name for c in cs]
+        for c in cs:
+            self._add_pregenerate(c.convert)
         # check that there are no unused parameters
         unused_args = all_args.difference(params_used) \
                               .difference(self.possible_args)
