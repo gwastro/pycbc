@@ -30,9 +30,7 @@ from pycbc.waveform import bank
 # xml file (and what they are called in the xml file)
 default_parameters = [
     "mass1", "mass2",
-    "spin1x", "spin1y", "spin1z",
-    "spin2x", "spin2y", "spin2z",
-    "inclination:alpha3",
+    "spin1z", "spin2z",
     "f_lower:alpha6",
     ]
 
@@ -59,12 +57,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--bank-file', required=True,
-                    help="The bank xml file to load. Must end in '.xml[.gz]' "
-                         "and must contain a SnglInspiral table.")
+                    help="The bank file to load. Must end in '.xml[.gz]' "
+                         "and must contain a SnglInspiral table or must end "
+                         "in .hdf/.h5 and contain template bank parameters.")
 parser.add_argument('--output-file', required=True,
                     help="The ouput file name. Must end in '.hdf'.")
 parser.add_argument("--parameters", metavar="parameter[:xml_column]",
-                    nargs="+", default=default_parameters,
+                    nargs="+", default=None,
                     help="The parameters to load from the xml file and to "
                          "write to the hdf file. The given name will be the "
                          "dataset's name in the hdf file. If this is "
@@ -72,6 +71,7 @@ parser.add_argument("--parameters", metavar="parameter[:xml_column]",
                          "provide the column name after a colon, e.g., "
                          "'inclination:alpha3'. Otherwise, the given name "
                          "will assumed to be the same as the column name. "
+                         "Not used with HDF input files. "
                          "Default is '%s'." %(' '.join(default_parameters)))
 # add the ability to specify the approximant to use
 bank.add_approximant_arg(parser,
@@ -89,8 +89,15 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 # parse the parameters
-outnames, columns = parse_parameters(args.parameters)
-name_map = dict(zip(columns, outnames))
+if args.bank_file.endswith(('.xml','.xml.gz','.xmlgz')) or \
+        args.parameters is not None:
+    if args.parameters is None:
+        args.parameters = default_parameters
+    outnames, columns = parse_parameters(args.parameters)
+    name_map = dict(zip(columns, outnames))
+else:
+    columns=None
+    name_map=None
 
 # load the file
 logging.info("Loading %s" %(args.bank_file))
@@ -98,13 +105,14 @@ bankf = bank.TemplateBank(args.bank_file, approximant=args.approximant,
                           parameters=columns)
 
 # rename the columns to the outnames
-params = list(bankf.table.fieldnames)
-for ii,p in enumerate(params):
-    try:
-        params[ii] = name_map[p]
-    except KeyError:
-        pass
-bankf.table.dtype.names = tuple(params)
+if name_map is not None:
+    params = list(bankf.table.fieldnames)
+    for ii,p in enumerate(params):
+        try:
+            params[ii] = name_map[p]
+        except KeyError:
+            pass
+    bankf.table.dtype.names = tuple(params)
 
 # compute the hash
 logging.info("Getting template hashes")
