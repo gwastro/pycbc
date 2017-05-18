@@ -6,3 +6,13 @@ ignore-patterns:
     - test/*
     - docs/*
     - tools/*
+
+pylint:
+  disable:
+  - too-many-arguments
+  - too-many-local-variables
+  - too-many-branches
+
+mccabe:
+  disable:
+  - MC0001

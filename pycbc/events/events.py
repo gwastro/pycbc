@@ -39,14 +39,14 @@ from . import coinc
 def threshold(series, value):
     """Return list of values and indices values over threshold in series.
     """
-    return
+    return None, None
     
 @schemed("pycbc.events.threshold_")
 def threshold_only(series, value):
     """Return list of values and indices whose values in series are
        larger (in absolute value) than value
     """
-    return
+    return None, None
 
 #FIXME: This should be under schemed, but I don't understand that yet!
 def threshold_real_numpy(series, value):
@@ -76,7 +76,7 @@ class ThresholdCluster(object):
     """
     def __new__(cls, *args, **kwargs):
         real_cls = _threshold_cluster_factory(*args, **kwargs)
-        return real_cls(*args, **kwargs)
+        return real_cls(*args, **kwargs) # pylint:disable=not-callable
 
 # The class below should serve as the parent for all schemed classes.
 # The intention is that this class serves simply as the location for

@@ -238,7 +238,7 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
     if ymax is None:
         ymax = ysamples.max()
     npts = 100
-    X, Y = numpy.mgrid[xmin:xmax:complex(0,npts), ymin:ymax:complex(0,npts)]
+    X, Y = numpy.mgrid[xmin:xmax:complex(0,npts), ymin:ymax:complex(0,npts)] # pylint:disable=invalid-slice-index
     pos = numpy.vstack([X.ravel(), Y.ravel()])
     if use_kombine:
         Z = numpy.exp(kde(pos.T).reshape(X.shape))
