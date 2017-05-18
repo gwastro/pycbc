@@ -131,32 +131,26 @@ An example configuration file (named ``inference.ini``) is::
     min-spin1_a = 0.0
     max-spin1_a = 0.9
 
-    [prior-spin1_azimuthal]
-    name = uniform
-    min-spin1_azimuthal = 0.
-    max-spin1_azimuthal = 6.283185307179586
-
-    [prior-spin1_polar]
-    name = sin_angle
+    [prior-spin1_polar+spin1_azimuthal]
+    name = uniform_solidangle
+    polar-angle = spin1_polar
+    azimuthal-angle = spin1_azimuthal
 
     [prior-spin2_a]
     name = uniform
     min-spin2_a = 0.0
     max-spin2_a = 0.9
 
-    [prior-spin2_azimuthal]
-    name = uniform
-    min-spin2_azimuthal = 0.
-    max-spin2_azimuthal = 6.283185307179586
-
-    [prior-spin2_polar]
-    name = sin_angle
+    [prior-spin2_polar+spin2_azimuthal]
+    name = uniform_solidangle
+    polar-angle = spin2_polar
+    azimuthal-angle = spin2_azimuthal
 
     [prior-distance]
     ; distance prior
     name = uniform
     min-distance = 10
-    max-distance = 500
+    max-distance = 1000
 
     [prior-coa_phase]
     ; coalescence phase prior
