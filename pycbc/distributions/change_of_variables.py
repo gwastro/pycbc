@@ -25,8 +25,17 @@ class ChangeOfVariables(bounded.BoundedDist):
     """ Class for sampling in one set of parameters and using a Jacobian
     transform to another set of parameters to calculate the
     probability density function.
-    """
 
+    Examples
+    --------
+    How to initialize a chirp mass and mass ratio to component mass instance:
+        >> from pycbc import transforms
+        >> from pycbc import distributions
+        >> mchirp_q_dist = distributions.Uniform(mchirp=(7, 40), q=(1, 10))
+        >> mass1_mass2_dist = distributions.Uniform(mass1=(8, 46), mass2=(2, 46))
+        >> cov_dist = distributions.ChangeOfVariables(mchirp_q_dist, mass1_mass2_dist,
+                                                      transforms.MchirpQToMass1Mass2)
+    """
     name = "change_of_variables"
 
     def __init__(self, sampling_dist, prior_dist, transform):
@@ -43,17 +52,48 @@ class ChangeOfVariables(bounded.BoundedDist):
         return self._sampling_dist.params
 
     def pdf(self, **kwargs):
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored. Any boundary conditions are applied to the values before the
+        pdf is evaluated.
+        """
         prior_dist_params = self._transform.convert(kwargs)
         return self._transform.jacobian(**kwargs) \
                                * self._prior_dist.pdf(**prior_dist_params)
 
     def logpdf(self, **kwargs):
+        """Returns the log of the pdf at the given values. The keyword
+        arguments must contain all of parameters in self's params.
+        Unrecognized arguments are ignored. Any boundary conditions are
+        applied to the values before the pdf is evaluated.
+        """
         prior_dist_params = self._transform.convert(kwargs)
         return self._transform.jacobian(**kwargs) \
                                + self._prior_dist.logpdf(**prior_dist_params)
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
+        """Returns a distribution based on a configuration file. The parameters
+        for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
+
+        Parameters
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        variable_args : str
+            The names of the parameters for this distribution, separated by
+            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
+
+        Returns
+        -------
+        ChangeOfVariable
+            A ChangeOfVariable distribution instance.
+        """
 
         # import mapping for Distributions
         # cannot be a top-level import because of circular dependencies
@@ -109,3 +149,5 @@ class ChangeOfVariables(bounded.BoundedDist):
                 transform = converter
 
         return cls(sampling_dist, prior_dist, transform)
+
+__all__ = [ChangeOfVariables]
