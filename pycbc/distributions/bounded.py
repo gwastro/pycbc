@@ -174,7 +174,7 @@ def bounded_from_config(cls, cp, section, variable_args,
         dist_args[param] = bounds
 
     # add any additional options that user put in that section
-    for key in cp.options( "-".join([section,tag]) ):
+    for key in cp.options("-".join([section, tag])):
 
         # ignore options that are already included
         if key in special_args:
