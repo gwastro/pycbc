@@ -157,12 +157,10 @@ class ChangeOfVariables(bounded.BoundedDist):
             cp.add_options_to_section(sec, sec_opts)
 
         # create Distributions
-        sampling_dist = bounded.bounded_from_config(
-                               distribs[sampling_name], cp,
-                               cov_section, sampling_opts["parameters"])
-        prior_dist = bounded.bounded_from_config(
-                               distribs[prior_name], cp,
-                               cov_section, prior_opts["parameters"])
+        sampling_dist = distribs[sampling_name].from_config(
+                           cp, cov_section, sampling_opts["parameters"])
+        prior_dist = distribs[prior_name].from_config(
+                           cp, cov_section, prior_opts["parameters"])
 
         # create Transformation
         for converter in transforms.all_converters:
