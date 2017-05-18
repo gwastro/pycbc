@@ -772,10 +772,11 @@ class CompressedWaveform(object):
         group = '%scompressed_waveforms/%s' %(root, str(template_hash))
         for param in ['amplitude', 'phase', 'sample_points']:
             fp['%s/%s' %(group, param)] = self._get(param).astype(outdtype)
-        fp[group].attrs['mismatch'] = self.mismatch
-        fp[group].attrs['interpolation'] = self.interpolation
-        fp[group].attrs['tolerance'] = self.tolerance
-        fp[group].attrs['precision'] = precision
+        fp_group = fp[group]
+        fp_group.attrs['mismatch'] = self.mismatch
+        fp_group.attrs['interpolation'] = self.interpolation
+        fp_group.attrs['tolerance'] = self.tolerance
+        fp_group.attrs['precision'] = precision
 
     @classmethod
     def from_hdf(cls, fp, template_hash, root=None, load_to_memory=True,
@@ -813,17 +814,18 @@ class CompressedWaveform(object):
         else:
             root = '%s/'%(root)
         group = '%scompressed_waveforms/%s' %(root, str(template_hash))
-        sample_points = fp[group]['sample_points']
-        amp = fp[group]['amplitude']
-        phase = fp[group]['phase']
+        fp_group = fp[group]
+        sample_points = fp_group['sample_points']
+        amp = fp_group['amplitude']
+        phase = fp_group['phase']
         if load_now:
             sample_points = sample_points[:]
             amp = amp[:]
             phase = phase[:]
         return cls(sample_points, amp, phase,
-            interpolation=fp[group].attrs['interpolation'],
-            tolerance=fp[group].attrs['tolerance'],
-            mismatch=fp[group].attrs['mismatch'],
-            precision=fp[group].attrs['precision'],
+            interpolation=fp_group.attrs['interpolation'],
+            tolerance=fp_group.attrs['tolerance'],
+            mismatch=fp_group.attrs['mismatch'],
+            precision=fp_group.attrs['precision'],
             load_to_memory=load_to_memory)
 
