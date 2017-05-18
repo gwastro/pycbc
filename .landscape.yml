@@ -13,6 +13,10 @@ pylint:
   - too-many-local-variables
   - too-many-branches
 
+pyflakes:
+  disable:
+  - F841
+
 mccabe:
   disable:
   - MC0001
