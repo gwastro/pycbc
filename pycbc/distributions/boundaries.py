@@ -319,9 +319,9 @@ class Bounds(object):
             self._reflect = _pass
 
     def __repr__(self):
-        return "<Bounds " + " ".join(
-                   map(str, ["min =", self._min, "max =", self._max,
-                             "cyclic =", self._cyclic])) + ">"
+        return str(self.__class__)[:-1] + " " + " ".join(
+                   map(str, ["min", self._min, "max", self._max,
+                             "cyclic", self._cyclic])) + ">"
 
     @property
     def min(self):
