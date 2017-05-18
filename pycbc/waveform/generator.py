@@ -30,6 +30,7 @@ import waveform
 import ringdown
 from pycbc import coordinates
 from pycbc import filter
+from pycbc import transform
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
 from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries
@@ -124,12 +125,13 @@ def generator_spin_spherical_to_spin_cartesian(generator):
 
 
 # a list of all generator functions
-generator_functions = [
-    generator_mchirp_eta_to_mass1_mass2,
-    generator_mtotal_eta_to_mass1_mass2,
-    generator_mchirp_q_to_mass1_mass2,
-    generator_spin_spherical_to_spin_cartesian,
-]
+#generator_functions = [
+#    generator_mchirp_eta_to_mass1_mass2,
+#    generator_mtotal_eta_to_mass1_mass2,
+#    generator_mchirp_q_to_mass1_mass2,
+#    generator_spin_spherical_to_spin_cartesian,
+#]
+generator_functions = transforms.all_converters
 
 #
 #   Generator for CBC waveforms
@@ -263,9 +265,9 @@ class BaseCBCGenerator(BaseGenerator):
         # functions if it is needed
         params_used = set([])
         for func in generator_functions:
-            if set(func.input_params).issubset(all_args):
+            if set(func.inputs).issubset(all_args):
                 self._add_pregenerate(func)
-                params_used.update(func.input_params)
+                params_used.update(func.inputs)
         # check that there are no unused parameters
         unused_args = all_args.difference(params_used) \
                               .difference(self.possible_args)
