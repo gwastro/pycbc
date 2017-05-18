@@ -42,8 +42,8 @@ __author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 def qtransform(data, Q, f0, sampling, normalized):
+    """Calculate the energy 'TimeSeries' for the given fseries
 
-    """
     Parameters
     ----------
     data: 'LIGO gwf frame file'
@@ -57,29 +57,35 @@ def qtransform(data, Q, f0, sampling, normalized):
         sampling frequency of channel
     normalized:
         normalize output tile energies 
+
+    Returns
+    -------
+    energy: '~pycbc.types.aligned.ArrayWithAligned'
+        A 'TimeSeries' of the complex energy from the Q-transform of 
+        this tile against the data.
     """
 
-    #Q-transform data for each (Q, frequency) tile
+    # q-transform data for each (Q, frequency) tile
 
-    #Initialize parameters
+    # initialize parameters
     qprime = Q / 11**(1/2.)
     dur = int(len(data)) / sampling
     fseries = TimeSeries.to_frequencyseries(data)
 
-    #Window fft
+    # window fft
     window_size = 2 * int(f0 / qprime * dur) + 1
 
-    #Get indices
+    # get indices
     indices = _get_indices(dur)
 
-    #Apply window to fft
+    # apply window to fft
     windowed = fseries[get_data_indices(dur, f0, indices)] * get_window(dur, indices, f0, qprime, Q, sampling)
 
     # pad data, move negative frequencies to the end, and IFFT
     padded = np.pad(windowed, padding(window_size, dur, f0, Q), mode='constant')
     wenergy = npfft.ifftshift(padded)
 
-    # return a `TimeSeries`
+    # return a 'TimeSeries'
     wenergy = FrequencySeries(wenergy, delta_f=sampling)
     tdenergy = FrequencySeries.to_timeseries(wenergy)
     cenergy = TimeSeries(tdenergy,
