@@ -44,11 +44,13 @@ class ChangeOfVariables(bounded.BoundedDist):
 
     def pdf(self, **kwargs):
         prior_dist_params = self._transform.convert(kwargs)
-        return self._prior_dist.pdf(**prior_dist_params)
+        return self._transform.jacobian(**kwargs) \
+                               * self._prior_dist.pdf(**prior_dist_params)
 
     def logpdf(self, **kwargs):
         prior_dist_params = self._transform.convert(kwargs)
-        return self._prior_dist.logpdf(**prior_dist_params)
+        return self._transform.jacobian(**kwargs) \
+                               + self._prior_dist.logpdf(**prior_dist_params)
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
@@ -102,6 +104,6 @@ class ChangeOfVariables(bounded.BoundedDist):
         # create Transformation
         for converter in transforms.all_converters:
             if converter.name == transform_name:
-                transform = converter()
+                transform = converter
 
         return cls(sampling_dist, prior_dist, transform)
