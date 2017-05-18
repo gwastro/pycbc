@@ -56,17 +56,46 @@ class ChangeOfVariables(bounded.BoundedDist):
         # cannot be a top-level import because of circular dependencies
         from pycbc.distributions import distribs
 
-        print variable_args
+        # a list of restricted options in the configuration file section
+        # used by internally by ChangeOfVariables
+        restricted_opts = ["parameters"]
 
+        # get name of Distributions and Transform
         sampling_name = cp.get_opt_tag(section, "sampling-name", variable_args)
+        prior_name = cp.get_opt_tag(section, "prior-name", variable_args)
+        transform_name = cp.get_opt_tag(
+                                    section, "transform-name", variable_args)
 
-        cp.add_section("-".join(["cov"])
+        # get options that need to be passed to Distributions
+        sampling_opts = {}
+        prior_opts = {}
+        for opt in cp.options("-".join([section, variable_args])):
+            if opt.startswith("sampling-"):
+               stripped_opt_name = opt.split("sampling-")[1]
+               sampling_opts[stripped_opt_name] = cp.get_opt_tag(
+                                                   section, opt, variable_args)
+            elif opt.startswith("prior-"):
+               stripped_opt_name = opt.split("prior-")[1]
+               prior_opts[stripped_opt_name] = cp.get_opt_tag(
+                                                   section, opt, variable_args)
 
+        # create a new section in configuration file for new Distributions
+        cov_section = "changeofvariable"
+        sampling_section = "-".join([cov_section, sampling_opts["parameters"]])
+        prior_section = "-".join([cov_section, prior_opts["parameters"]])
+        for sec, opts in zip([sampling_section, prior_section],
+                             [sampling_opts, prior_opts]):
+            cp.add_section(sec)
+            sec_opts = [(key, val) for key, val in opts.items()
+                        if key not in restricted_opts]
+            cp.add_options_to_section(sec, sec_opts)
+
+        # create Distributions
         sampling_dist = bounded.bounded_from_config(
-                                    distribs[sampling_name], cp, section,
-                                    variable_args, additional_opts=None)
+                               distribs[sampling_name], cp,
+                               cov_section, sampling_opts["parameters"])
+        prior_dist = bounded.bounded_from_config(
+                               distribs[prior_name], cp,
+                               cov_section, prior_opts["parameters"])
 
-        # get Distributions
-        sampling_dist = distribs[cp.get_opt_tag("prior", key, "")]
-        prior_dist = distribs["prior_name"]
         return 0
