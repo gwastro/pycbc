@@ -678,7 +678,7 @@ class FilterBank(TemplateBank):
             approximant = 'TaylorF2'
         if cached_mem is None:
             wav_len = int(max_freq / delta_f) + 1
-            cached_mem = zeros(wav_len, dtype=numpy.complex64)
+            cached_mem = zeros(wav_len, dtype=np.complex64)
         if self.compressed_waveforms is not None :
             htilde = self.get_decompressed_waveform(cached_mem, t_num,
                                                     f_lower=low_frequency_cutoff,
