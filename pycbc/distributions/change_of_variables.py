@@ -42,33 +42,27 @@ class ChangeOfVariables(bounded.BoundedDist):
         self._sampling_dist = sampling_dist
         self._prior_dist = prior_dist
         self._transform = transform
+        self._bounds = self._sampling_dist._bounds
+        self._params = self._sampling_dist._params
 
-    @property
-    def bounds(self):
-        return self._sampling_dist.bounds
-
-    @property
-    def params(self):
-        return self._sampling_dist.params
-
-    def pdf(self, **kwargs):
+    def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
         contain all of parameters in self's params. Unrecognized arguments are
         ignored. Any boundary conditions are applied to the values before the
         pdf is evaluated.
         """
         prior_dist_params = self._transform.convert(kwargs)
-        return self._transform.jacobian(**kwargs) \
+        return self._transform.jacobian(kwargs) \
                                * self._prior_dist.pdf(**prior_dist_params)
 
-    def logpdf(self, **kwargs):
+    def _logpdf(self, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params.
         Unrecognized arguments are ignored. Any boundary conditions are
         applied to the values before the pdf is evaluated.
         """
         prior_dist_params = self._transform.convert(kwargs)
-        return self._transform.jacobian(**kwargs) \
+        return self._transform.jacobian(kwargs) \
                                + self._prior_dist.logpdf(**prior_dist_params)
 
     def rvs(self, size=1, param=None):
@@ -151,6 +145,8 @@ class ChangeOfVariables(bounded.BoundedDist):
         prior_section = "-".join([cov_section, prior_opts["parameters"]])
         for sec, opts in zip([sampling_section, prior_section],
                              [sampling_opts, prior_opts]):
+            if cp.has_section(sec):
+                cp.remove_section(sec)
             cp.add_section(sec)
             sec_opts = [(key, val) for key, val in opts.items()
                         if key not in restricted_opts]
@@ -169,4 +165,4 @@ class ChangeOfVariables(bounded.BoundedDist):
 
         return cls(sampling_dist, prior_dist, transform)
 
-__all__ = [ChangeOfVariables]
+__all__ = ["ChangeOfVariables"]
