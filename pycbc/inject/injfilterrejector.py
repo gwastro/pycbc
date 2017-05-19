@@ -278,7 +278,7 @@ class InjFilterRejector(object):
                 step_size = int(self.coarsematch_deltaf / segment.psd.delta_f)
                 max_idx = int(self.coarsematch_fmax / segment.psd.delta_f) + 1
                 red_psd_data = curr_psd[:max_idx:step_size]
-                red_psd = FrequencySeries(red_psd_data, copy=False,
+                red_psd = FrequencySeries(red_psd_data, #copy=False,
                                           delta_f=self.coarsematch_deltaf)
                 self._short_psd_storage[id(curr_psd)] = red_psd
 
