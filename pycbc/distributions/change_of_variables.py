@@ -29,12 +29,12 @@ class ChangeOfVariables(bounded.BoundedDist):
     Examples
     --------
     How to initialize a chirp mass and mass ratio to component mass instance:
-        >> from pycbc import transforms
-        >> from pycbc import distributions
-        >> mchirp_q_dist = distributions.Uniform(mchirp=(7, 40), q=(1, 10))
-        >> mass1_mass2_dist = distributions.Uniform(mass1=(8, 46), mass2=(2, 46))
-        >> cov_dist = distributions.ChangeOfVariables(mchirp_q_dist, mass1_mass2_dist,
-                                                      transforms.MchirpQToMass1Mass2)
+
+    >>> from pycbc import transforms
+    >>> from pycbc import distributions
+    >>> mchirp_q_dist = distributions.Uniform(mchirp=(7, 40), q=(1, 10))
+    >>> mass1_mass2_dist = distributions.Uniform(mass1=(8, 46), mass2=(2, 46))
+    >>> cov_dist = distributions.ChangeOfVariables(mchirp_q_dist, mass1_mass2_dist, transforms.MchirpQToMass1Mass2)
     """
     name = "change_of_variables"
 
