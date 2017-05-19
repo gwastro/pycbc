@@ -60,8 +60,8 @@ class PriorEvaluator(object):
         A list of functions to test if parameter values obey multi-dimensional
         constraints.
 
-    Example
-    -------
+    Examples
+    --------
     An example of creating a prior with constraint that total mass must
     be below 30.
 
