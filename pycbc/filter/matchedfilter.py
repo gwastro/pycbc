@@ -1512,7 +1512,12 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
                                 duration=0.095):
     """Given a StrainBuffer, a template frequency series and a trigger time,
     compute a portion of the SNR time series centered on the trigger for its
-    sky localization and followup.
+    rapid sky localization and followup.
+
+    If the trigger time is too close to the boundary of the valid data segment
+    the SNR series is calculated anyway and might be slightly contaminated by
+    filter and wrap-around effects. For reasonable durations this will only
+    affect a small fraction of the triggers and probably in a negligible way.
 
     Parameters
     ----------
@@ -1539,7 +1544,7 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
     """
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
-    norm = 4.0 * htilde.delta_f / (htilde.sigmasq(stilde.psd) ** 0.5)
+    norm = 4.0 * htilde.delta_f * htilde.sigmasq(stilde.psd) ** (-0.5)
 
     qtilde = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
     correlate(htilde, stilde, qtilde)
@@ -1548,26 +1553,22 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
 
     valid_end = int(len(qtilde) - data_reader.trim_padding)
     valid_start = int(valid_end - data_reader.blocksize * data_reader.sample_rate)
+
+    half_dur_samples = int(data_reader.sample_rate * duration / 2)
+    valid_start -= half_dur_samples
+    valid_end += half_dur_samples
+    if valid_start < 0 or valid_end > len(snr)-1:
+        raise ValueError('Requested SNR duration ({0} s) too long'.format(duration))
+
     snr = snr[slice(valid_start, valid_end)]
-    snr *= norm
-    snr = TimeSeries(snr, delta_t=1./data_reader.sample_rate,
-                     epoch=data_reader.start_time)
+    snr_dt = 1. / data_reader.sample_rate
+    snr_epoch = data_reader.start_time - half_dur_samples * snr_dt
+    snr = TimeSeries(snr, delta_t=snr_dt, epoch=snr_epoch)
 
     onsource_idx = int(round(float(trig_time - snr.start_time) * snr.sample_rate))
-
-    onsource_start = onsource_idx - int(snr.sample_rate * duration / 2)
-    # FIXME avoid clipping with better handling of past data
-    if onsource_start < 0:
-        logging.warn('Clipping start of followup SNR time series')
-        onsource_start = 0
-
-    onsource_end = onsource_idx + int(snr.sample_rate * duration / 2)
-    if onsource_end > len(snr):
-        logging.warn('Clipping end of followup SNR time series')
-        onsource_end = len(snr) - 1
-
-    onsource_slice = slice(onsource_start, onsource_end + 1)
-    return snr[onsource_slice], stilde.psd
+    onsource_slice = slice(onsource_idx - half_dur_samples,
+                           onsource_idx + half_dur_samples + 1)
+    return snr[onsource_slice] * norm, stilde.psd
 
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
