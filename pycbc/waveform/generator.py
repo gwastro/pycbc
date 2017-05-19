@@ -172,9 +172,6 @@ class BaseCBCGenerator(BaseGenerator):
         # of the functions that do conversions and adds to list of pregenerate
         # functions if it is needed
         params_used, cs = transforms.get_conversions(list(self.possible_args), variable_args)
-        print "WWWWW", list(self.possible_args)
-        print "QQQQQ", variable_args
-        print "XXXXX", [c.name for c in cs]
         for c in cs:
             self._add_pregenerate(c.convert)
         # check that there are no unused parameters
