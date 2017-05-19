@@ -679,7 +679,7 @@ def generate_em_constraint_data(mNS_min, mNS_max, delta_mNS, sBH_min, sBH_max, d
     # Until a numpy v>=1.7 is available everywhere, we have to use a silly
     # vectorization of find_em_constraint_data_point and pass to it a bunch of
     # constant arguments as vectors with one entry repeated several times
-    eos_name_vec=[eos_name for i in range(len(mNS_vec))]
+    eos_name_vec=[eos_name for _ in range(len(mNS_vec))]
     eos_name_vec=np.array(eos_name_vec)
     threshold_vec=np.empty(len(mNS_vec))
     threshold_vec.fill(threshold)

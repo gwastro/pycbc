@@ -67,8 +67,6 @@ def autochisq_from_precomputed(sn, corr_sn, hautocorr, indices,
     """
     Nsnr = len(sn)
 
-    indx = np.array([])
-
     achisq = np.zeros(len(indices))
     num_points_all = int(Nsnr/stride)
     if num_points is None:
@@ -235,14 +233,14 @@ class SingleDetAutoChisq(object):
                 logging.info("Calculating autocorrelation")
 
                 if not self.reverse_template:
-                    Pt, _Ptilde, P_norm = matched_filter_core(htilde,
+                    Pt, _, P_norm = matched_filter_core(htilde,
                               htilde, psd=psd,
                               low_frequency_cutoff=low_frequency_cutoff,
                               high_frequency_cutoff=high_frequency_cutoff)
                     Pt = Pt * (1./ Pt[0])
                     self._autocor = Array(Pt, copy=True)
                 else:
-                    Pt, _Ptilde, P_norm = matched_filter_core(htilde.conj(),
+                    Pt, _, P_norm = matched_filter_core(htilde.conj(),
                               htilde, psd=psd,
                               low_frequency_cutoff=low_frequency_cutoff,
                               high_frequency_cutoff=high_frequency_cutoff)
@@ -260,7 +258,7 @@ class SingleDetAutoChisq(object):
             sn = sn*norm
             if self.reverse_template:
                 assert(stilde is not None)
-                asn, acor, ahnrm = matched_filter_core(htilde.conj(), stilde,
+                asn, _, ahnrm = matched_filter_core(htilde.conj(), stilde,
                                  low_frequency_cutoff=low_frequency_cutoff,
                                  high_frequency_cutoff=high_frequency_cutoff,
                                  h_norm=template.sigmasq(psd))

@@ -132,7 +132,7 @@ def convert_to_sngl_inspiral_table(params, proc_id):
             setattr(tmplt, colname, value)
         tmplt.mtotal, tmplt.eta = pnutils.mass1_mass2_to_mtotal_eta(
             tmplt.mass1, tmplt.mass2)
-        tmplt.mchirp, junk = pnutils.mass1_mass2_to_mchirp_eta(
+        tmplt.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
             tmplt.mass1, tmplt.mass2)
         tmplt.template_duration = 0 # FIXME
         tmplt.event_id = sngl_inspiral_table.get_next_id()
@@ -390,6 +390,5 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
     outdoc.childNodes[0].appendChild(search_summary_table)
 
     # write the xml doc to disk
-    proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
     ligolw_utils.write_filename(outdoc, outputFile,
                                 gz=outputFile.endswith('.gz'))

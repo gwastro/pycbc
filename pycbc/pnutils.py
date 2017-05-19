@@ -135,7 +135,7 @@ def tau0_tau3_to_mass1_mass2(tau0, tau3, f_lower):
 
 def mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(mass1, mass2,
                                                   spin1z, spin2z):
-    M, eta = mass1_mass2_to_mtotal_eta(mass1, mass2)
+    _, eta = mass1_mass2_to_mtotal_eta(mass1, mass2)
     # get_beta_sigma_from_aligned_spins() takes
     # the spin of the heaviest body first
     heavy_spin = numpy.where(mass2 <= mass1, spin1z, spin2z)
@@ -640,7 +640,7 @@ def meco_velocity(m1, m2, chi1, chi2):
     v : float
         Velocity (dimensionless)
     """
-    energy0, energy2, energy3, energy4, energy5, energy6 = \
+    _, energy2, energy3, energy4, energy5, energy6 = \
         _energy_coeffs(m1, m2, chi1, chi2)
     def eprime(v):
         return 2. + v * v * (4.*energy2 + v * (5.*energy3 \
@@ -667,7 +667,6 @@ def _dtdv_coeffs(m1, m2, chi1, chi2):
     sigmaqm = 81.*m1*m1*chi1*chi1/(16.*mtot*mtot) \
             + 81.*m2*m2*chi2*chi2/(16.*mtot*mtot)
 
-    energy0 = -0.5*eta
     dtdv0 = 1. # FIXME: Wrong but doesn't matter for now.
     dtdv2 = (1./336.) * (743. + 924.*eta)
     dtdv3 = -4. * lal.PI + beta
@@ -680,7 +679,7 @@ def _dtdv_coeffs(m1, m2, chi1, chi2):
     return (dtdv0, dtdv2, dtdv3, dtdv4, dtdv5, dtdv6, dtdv6log, dtdv7)    
 
 def _dtdv_cutoff_velocity(m1, m2, chi1, chi2):
-    dtdv0, dtdv2, dtdv3, dtdv4, dtdv5, dtdv6, dtdv6log, dtdv7 = _dtdv_coeffs(m1, m2, chi1, chi2)
+    _, dtdv2, dtdv3, dtdv4, dtdv5, dtdv6, dtdv6log, dtdv7 = _dtdv_coeffs(m1, m2, chi1, chi2)
 
     def dtdv_func(v):
         x = dtdv7
@@ -722,7 +721,7 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
     s1z = s1z * m1M * m1M
     s2z = s2z * m2M * m2M
       
-    mchirp, eta = mass1_mass2_to_mchirp_eta(m1, m2)
+    _, eta = mass1_mass2_to_mchirp_eta(m1, m2)
 
     ecof = numpy.zeros(phase_order+1)
     # Orbital terms
@@ -750,7 +749,7 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
     ESS2 = 1.0 / eta
     EQM2s1 = qmdef1/2.0/m1M/m1M
     EQM2s1L = -qmdef1*3.0/2.0/m1M/m1M
-    EQM2s2 = qmdef2/2.0/m2M/m2M
+    #EQM2s2 = qmdef2/2.0/m2M/m2M
     EQM2s2L = -qmdef2*3.0/2.0/m2M/m2M
     
     ESO25s1 = 11.0 - 61.0*eta/9.0 + (dm/m1M) * (-3.0 + 10.*eta/3.0)
@@ -773,7 +772,7 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
     
 def energy(v, mass1, mass2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
     ecof = energy_coefficients(mass1, mass2, s1z, s2z, phase_order, spin_order)
-    mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
+    _, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
     amp = - (1.0/2.0) * eta
     e = 0.0
     for i in numpy.arange(0, len(ecof), 1):

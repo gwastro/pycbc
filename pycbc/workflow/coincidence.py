@@ -287,7 +287,7 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None
     for ifo, insp_group in zip(ifos,  insp_groups):
         trig2hdf_exe = PyCBCTrig2HDFExecutable(workflow.cp, 'trig2hdf',
                                        ifos=ifo, out_dir=out_dir, tags=tags)
-        segs, insp_bundles = insp_group.categorize_by_attr('segment')
+        _, insp_bundles = insp_group.categorize_by_attr('segment')
         for insps in  insp_bundles:
             trig2hdf_node =  trig2hdf_exe.create_node(insps, hdfbank[0])
             workflow.add_node(trig2hdf_node)

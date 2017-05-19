@@ -175,7 +175,7 @@ def lm_tfinal(mass, spin, modes):
     at which the amplitude falls to 1/1000 of the peak amplitude
     """
 
-    f_0, tau = get_lm_f0tau_allmodes(mass, spin, modes)
+    _, tau = get_lm_f0tau_allmodes(mass, spin, modes)
     t_max = {}
     for lmn in modes:
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
@@ -229,7 +229,7 @@ def lm_deltaf(mass, spin, modes):
     1/1000 of the peak amplitude.
     """
 
-    f_0, tau = get_lm_f0tau_allmodes(mass, spin, modes)
+    _, tau = get_lm_f0tau_allmodes(mass, spin, modes)
     df = {}
     for lmn in modes:
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])

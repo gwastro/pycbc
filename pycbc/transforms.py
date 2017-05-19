@@ -527,7 +527,6 @@ def get_conversions(requested_params, variable_args, valid_params=None):
         s = ""
         for ch in opt:
             s += ch if ch.isalnum() or ch == "_" else " "
-        eqn = opt.split(":")[0]
         new_params += s.split(" ")
     requested_params = set(requested_params + new_params)
 

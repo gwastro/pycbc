@@ -126,14 +126,13 @@ def render_default(path, cp):
 
     if path.endswith('.xml') or path.endswith('.xml.gz'):
         # segment or veto file return a segmentslistdict instance
-        with open(path, 'r') as xmlfile:
-            try:
-                wf_file = SegFile.from_segment_xml(path)
-                # FIXME: This is a dictionary, but the code wants a segmentlist
-                #        for now I just coalesce.
-                seg_dict = wf_file.return_union_seglist()
-            except Exception as e:
-                print('No segment table found in %s : %s' % (path, e))
+        try:
+            wf_file = SegFile.from_segment_xml(path)
+            # FIXME: This is a dictionary, but the code wants a segmentlist
+            #        for now I just coalesce.
+            wf_file.return_union_seglist()
+        except Exception as e:
+            print('No segment table found in %s : %s' % (path, e))
 
     # render template
     template_dir = pycbc.results.__path__[0] + '/templates/files'

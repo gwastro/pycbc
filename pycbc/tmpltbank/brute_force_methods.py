@@ -477,16 +477,15 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, req_match, \
 
     # Setup
     xi_size = len(xis)
-    origMasses = copy.deepcopy(bestMasses)
     bestChirpmass = bestMasses[0] * (bestMasses[1])**(3./5.)
     if find_minimum:
         xiextrema = 10000000000
     else:
         xiextrema = -100000000000
 
-    for i in xrange(numIterations):
+    for _ in xrange(numIterations):
         # Evaluate extrema of the xi direction specified
-        totmass, eta, spin1z, spin2z, mass1, mass2, new_xis = \
+        totmass, eta, spin1z, spin2z, _, _, new_xis = \
             get_mass_distribution([bestChirpmass,bestMasses[1],bestMasses[2],
                                    bestMasses[3]],
                                   scaleFactor, massRangeParams, metricParams,
@@ -495,7 +494,6 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, req_match, \
         for j in xrange(1, xi_size):
             cDist += (new_xis[j] - xis[j])**2
         redCDist = cDist[cDist < req_match]
-        redXis = (new_xis[direction_num])[cDist < req_match]
         if len(redCDist):
             if not find_minimum:
                 new_xis[direction_num][cDist > req_match] = -10000000
@@ -512,8 +510,6 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, req_match, \
                 bestMasses[1] = eta[idx]
                 bestMasses[2] = spin1z[idx]
                 bestMasses[3] = spin2z[idx]
-                m1 = mass1[idx]
-                m2 = mass2[idx]
                 bestChirpmass = bestMasses[0] * (bestMasses[1])**(3./5.)
     return xiextrema
 

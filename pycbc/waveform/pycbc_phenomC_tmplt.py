@@ -169,10 +169,6 @@ def imrphenomc_tmplt(**kwds):
     spin1z = float128(kwds['spin1z'])
     spin2z = float128(kwds['spin2z'])
 
-    # phi0, tC are taken to be 0 in the paper, sec V-A, first paragraph.
-    psi0 = 0. #float128(kwds['phi0'])
-    tC= 0. #-1.0 / delta_f 
-
     if 'out' in kwds:
         out = kwds['out']
     else:

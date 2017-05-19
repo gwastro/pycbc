@@ -67,8 +67,7 @@ def check_output_error_and_retcode(*popenargs, **kwargs):
     return output, error, retcode
 
 def check_output(*popenargs, **kwargs):
-    output, unused_error, unused_retcode = \
-                           check_output_error_and_retcode(*popenargs, **kwargs)
+    output, _, _ = check_output_error_and_retcode(*popenargs, **kwargs)
     return output
 
 ###############################################################################
@@ -1385,10 +1384,8 @@ class FileList(list):
         
         # Sort the files
 
-        for ix, currFile in enumerate(self):
+        for currFile in self:
             segExtent = currFile.segment_list.extent()
-            segExtStart = float(segExtent[0])
-            segExtEnd = float(segExtent[1])
             startIdx = (segExtent[0] - startTime) / step
             endIdx = (segExtent[1] - startTime) / step
             # Add some small rounding here
@@ -1593,7 +1590,7 @@ class SegFile(File):
             ifo_list.sort()
         if valid_segment is None:
             if seg_summ_dict and \
-                    numpy.any([len(v) for k, v in seg_summ_dict.items()]):
+                    numpy.any([len(v) for _, v in seg_summ_dict.items()]):
                 # Only come here if seg_summ_dict is supplied and it is
                 # not empty.
                 valid_segment = seg_summ_dict.extent_all()
@@ -1634,9 +1631,9 @@ class SegFile(File):
         """
         # load xmldocument and SegmentDefTable and SegmentTables
         fp = open(xml_file, 'r')
-        xmldoc, digest = ligolw_utils.load_fileobj(fp,
-                                            gz=xml_file.endswith(".gz"),
-                                            contenthandler=ContentHandler)
+        xmldoc, _ = ligolw_utils.load_fileobj(fp,
+                                              gz=xml_file.endswith(".gz"),
+                                              contenthandler=ContentHandler)
 
         seg_def_table = table.get_table(xmldoc,
                                         lsctables.SegmentDefTable.tableName)

@@ -427,7 +427,6 @@ class TemplateBank(object):
         threshold = inj_filter_rejector.chirp_time_window
         m1= self.table['mass1']
         m2= self.table['mass2']
-        thinning_bank = []
         tau0_temp, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, fref)
         indices = []
 
@@ -716,7 +715,7 @@ class FilterBank(TemplateBank):
         logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
 
         # Clear the storage memory
-        poke  = tempout.data
+        poke  = tempout.data # pylint:disable=unused-variable
         tempout.clear()
 
         # Get the waveform filter
@@ -825,8 +824,8 @@ class FilterBankSkyMax(TemplateBank):
         logging.info('%s: generating %s from %s Hz', index, approximant, f_low)
 
         # What does this do???
-        poke1 = tempoutplus.data
-        poke2 = tempoutcross.data
+        poke1 = tempoutplus.data # pylint:disable=unused-variable
+        poke2 = tempoutcross.data # pylint:disable=unused-variable
 
         # Clear the storage memory
         tempoutplus.clear()

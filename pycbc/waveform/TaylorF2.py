@@ -123,7 +123,6 @@ def taylorf2(**kwds):
     """ Return a TaylorF2 waveform using CUDA to generate the phase and amplitude
     """
     # Pull out the input arguments
-    f_lower = kwds['f_lower']
     delta_f = kwds['delta_f']
     distance = kwds['distance']
     mass1 = kwds['mass1']

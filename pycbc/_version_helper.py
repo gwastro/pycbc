@@ -29,15 +29,15 @@ import distutils.version
 
 class GitInfo(object):
     def __init__(self):
-        date = None
-        hash = None
-        branch = None
-        tag = None
-        author = None
-        committer = None
-        status = None
-        builder = None
-        build_date = None
+        self.date = None
+        self.hash = None
+        self.branch = None
+        self.tag = None
+        self.author = None
+        self.committer = None
+        self.status = None
+        self.builder = None
+        self.build_date = None
 
 
 class GitInvocationError(LookupError):
