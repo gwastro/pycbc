@@ -420,22 +420,32 @@ class PrecessionMassSpinToCartesianSpin(BaseConversion):
                            m_p, m_s, xi_s, maps["phi_a"], maps["phi_s"])
 
         # map parameters from primary/secondary to indices
-        mass1 = conversions._ensure_array(maps["mass1"])
-        mass2 = conversions._ensure_array(maps["mass2"])
-        mask_mass1_gte_mass2 = mass1 >= mass2
-        mask_mass1_lt_mass2 = mass1 < mass2
-        out[parameters.spin1x] = numpy.concatenate(
+        if isinstance(m_p, numpy.ndarray):
+            mass1, mass2 = map(numpy.array, [maps["mass1"], maps["mass2"]])
+            mask_mass1_gte_mass2 = mass1 >= mass2
+            mask_mass1_lt_mass2 = mass1 < mass2
+            out[parameters.spin1x] = numpy.concatenate(
                                         spinx_p[mask_mass1_gte_mass2],
                                         spinx_s[mask_mass1_lt_mass2])
-        out[parameters.spin1y] = numpy.concatenate(
+            out[parameters.spin1y] = numpy.concatenate(
                                         spiny_p[mask_mass1_gte_mass2], 
                                         spiny_s[mask_mass1_lt_mass2])
-        out[parameters.spin2x] = numpy.concatenate(
+            out[parameters.spin2x] = numpy.concatenate(
                                         spinx_p[mask_mass1_lt_mass2], 
                                         spinx_s[mask_mass1_gte_mass2])
-        out[parameters.spin2y] = numpy.concatenate(
+            out[parameters.spin2y] = numpy.concatenate(
                                         spinx_p[mask_mass1_lt_mass2], 
                                         spinx_s[mask_mass1_gte_mass2])
+        elif maps["mass1"] > maps["mass2"]:
+            out[parameters.spin1x] = spinx_p
+            out[parameters.spin1y] = spiny_p
+            out[parameters.spin2x] = spinx_s
+            out[parameters.spin2y] = spiny_s
+        else:
+            out[parameters.spin1x] = spinx_s
+            out[parameters.spin1y] = spiny_s
+            out[parameters.spin2x] = spinx_p
+            out[parameters.spin2y] = spiny_p
 
         return self.format_output(maps, out)
 
@@ -580,7 +590,7 @@ def get_conversions(requested_params, variable_args, valid_params=None):
             continue
         requested_params.update(converter.inputs)
         from_base_c.append(converter)
-        if 0:
+        if 1:
             variable_args.update(converter.outputs)
 
     # find all the conversions for the required base parameters
@@ -591,7 +601,7 @@ def get_conversions(requested_params, variable_args, valid_params=None):
                 len(converter.outputs.intersection(requested_params)) > 0):
             requested_params.update(converter.inputs)
             to_base_c.append(converter)
-            if 0:
+            if 1:
                 variable_args.update(converter.outputs)
 
     # get list of conversions that converts sampling parameters to the base
