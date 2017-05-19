@@ -223,7 +223,7 @@ class BaseMCMCSampler(_BaseSampler):
     def pos(self):
         return self._pos
 
-    def set_p0(self, prior_distributions):
+    def set_p0(self, prior_distributions, samples=None):
         """Sets the initial position of the walkers.
 
         Parameters
@@ -231,19 +231,31 @@ class BaseMCMCSampler(_BaseSampler):
         prior_distributions : list
             A list of priors to retrieve random values from (the sort of
             thing returned by `prior.read_distributions_from_config`).
+        samples : FieldArray
+            A FieldArray where each field has size (1,) for the initial
+            position.
 
         Returns
         -------
         p0 : array
             An nwalkers x ndim array of the initial positions that were set.
         """
+        # create a (nwalker, ndim) array for initial positions
+        nwalkers = self.nwalkers
+        ndim = len(self.variable_args)
+        p0 = numpy.ones((nwalkers, ndim))
+
+        # if samples are given then those as initial poistions
+        if samples is not None:
+            for i, param in enumerate(self.variable_args):
+                p0[:, i] = samples[param]
+            self._p0 = p0
+            return p0
+
         # loop over all walkers and then parameters
         # find the distribution that has that parameter in it and draw a
         # random value from the distribution
-        nwalkers = self.nwalkers
-        ndim = len(self.variable_args)
         pmap = dict([[param, k] for k, param in enumerate(self.variable_args)])
-        p0 = numpy.ones((nwalkers, ndim))
         for dist in prior_distributions:
             ps = dist.rvs(size=nwalkers)
             for param in dist.params:
@@ -500,7 +512,6 @@ class BaseMCMCSampler(_BaseSampler):
                               dtype=acf.dtype)
             fp[dataset_name][start_iteration:end_iteration] = \
                 acf[start_iteration:end_iteration]
-
 
     def write_results(self, fp, start_iteration=0, end_iteration=None,
                       max_iterations=None):
@@ -809,3 +820,13 @@ class BaseMCMCSampler(_BaseSampler):
                 fp[group.format(param=param, wi=wi)].attrs['acl']
                 for wi in widx])
         return FieldArray.from_kwargs(**arrays)
+
+    def write_state(self, fp):
+        """ Saves the state of the sampler in a file.
+        """
+        raise NotImplementedError("Writing state to file not implemented.")
+
+    def set_state_from_file(self, fp):
+        """ Sets the state of the sampler back to the instance saved in a file.
+        """
+        raise NotImplementedError("Reading state from file not implemented.")

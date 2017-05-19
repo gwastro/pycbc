@@ -372,7 +372,7 @@ class EmceePTSampler(BaseMCMCSampler):
         # emcee returns ntemps x nwalkers x niterations
         return self._sampler.lnprobability
 
-    def set_p0(self, prior_distributions):
+    def set_p0(self, prior_distributions, samples=None):
         """Sets the initial position of the walkers.
 
         Parameters
@@ -380,6 +380,9 @@ class EmceePTSampler(BaseMCMCSampler):
         prior_distributions : list
             A list of priors to retrieve random values from (the sort of
             thing returned by `prior.read_distributions_from_config`).
+        samples : FieldArray
+            A FieldArray where each field has size (1,) for the initial
+            position.
 
         Returns
         -------
@@ -387,14 +390,21 @@ class EmceePTSampler(BaseMCMCSampler):
             An ntemps x nwalkers x ndim array of the initial positions that
             were set.
         """
-        # loop over all walkers and then parameters
-        # find the distribution that has that parameter in it and draw a
-        # random value from the distribution
+        # create a (ntemps, nwalkers, ndim) array for initial positions
         ntemps = self.ntemps
         nwalkers = self.nwalkers
         ndim = len(self.variable_args)
-        pmap = dict([[param, k] for k, param in enumerate(self.variable_args)])
         p0 = numpy.ones((ntemps, nwalkers, ndim))
+
+        # if samples are given then use those as initial poistions
+        if samples is not None:
+            raise NotImplementedError("Cannot set initial positions from "
+                                      "InferenceFile with emcee sampler.")
+
+        # loop over all walkers and then parameters
+        # find the distribution that has that parameter in it and draw a
+        # random value from the distribution
+        pmap = dict([[param, k] for k, param in enumerate(self.variable_args)])
         for dist in prior_distributions:
             ps = dist.rvs(size=ntemps*nwalkers).reshape(ntemps, nwalkers)
             for param in dist.params:

@@ -528,7 +528,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
 
         Returns
         -------
-        float
+        numpy.float64
             The value of the log likelihood ratio evaluated at the given point.
         """
         lr = 0.
@@ -552,7 +552,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
                 # - <h, h>/2.
                 - 0.5*h[self._kmin:kmax].inner(h[self._kmin:kmax]).real
                 )
-        return lr
+        return numpy.float64(lr)
 
     def loglikelihood(self, params):
         r"""Computes the log likelihood of the paramaters,

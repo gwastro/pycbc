@@ -59,6 +59,13 @@ parser.add_argument("--likelihood-evaluator", required=True,
 parser.add_argument("--seed", type=int, default=0,
                     help="Seed to use for the random number generator that "
                          "initially distributes the walkers. Default is 0.")
+parser.add_argument("--samples-file", default=None,
+                    help="Use an iteration from an InferenceFile as the "
+                         "initial proposal distribution. The same "
+                         "number of walkers and the same [variable_args] "
+                         "section in the configuration file should be used. "
+                         "The priors must allow encompass the initial "
+                         "positions from the InferenceFile being read.")
 
 # add sampler options
 option_utils.add_sampler_option_group(parser)
@@ -121,9 +128,9 @@ if os.path.exists(opts.output_file) and not opts.force:
 # setup log
 pycbc.init_logging(opts.verbose)
 
-# set the seed
+# set seed
 numpy.random.seed(opts.seed)
-logging.info("Using seed %i" %(opts.seed))
+logging.info("Using seed %i", opts.seed)
 
 # get scheme
 ctx = scheme.from_cli(opts)
@@ -181,20 +188,26 @@ with ctx:
                       psd_dict=psd_dict if opts.save_psd else None,
                       low_frequency_cutoff_dict=low_frequency_cutoff_dict)
 
-    # get distribution to draw from for each walker initial position
+    # set the walkers initial positions from a pre-existing InferenceFile
+    # or a specific initial distribution listed in the configuration file
+    # or else use the prior distributions to set initial positions
     logging.info("Setting walkers initial conditions for varying parameters")
-
-    # check if user wants to use different distributions than prior for setting
-    # walkers initial positions
-    if len(cp.get_subsections("initial")):
+    if opts.samples_file:
+        with InferenceFile(opts.samples_file, "r") as fp:
+            iteration = fp.niterations - 1
+            logging.info("Initial positions taken from iteration %i in %s",
+                         iteration, opts.samples_file)
+            p0 = fp.read_samples(sampler.variable_args, iteration=iteration)
+        initial_dists = None
+    elif len(cp.get_subsections("initial")):
         initial_dists = distributions.read_distributions_from_config(
                                                          cp, section="initial")
+        p0 = None
     else:
         initial_dists = distributions.read_distributions_from_config(
                                                          cp, section="prior")
-
-    # set the initial positions
-    sampler.set_p0(initial_dists)
+        p0 = None
+    sampler.set_p0(initial_dists, samples=p0)
 
     # setup checkpointing
     if opts.checkpoint_interval:
@@ -206,7 +219,7 @@ with ctx:
         # determine if there is a small bit at the end
         remainder = opts.niterations % opts.checkpoint_interval
         if remainder:
-            intervals += [intervals[-1]+remainder]
+            intervals += [intervals[-1] + remainder]
         else:
             intervals += [opts.niterations]
 
@@ -216,15 +229,16 @@ with ctx:
 
     intervals = numpy.array(intervals)
 
-    # check if user wants to skip the burn in
+    # check if user wants to burn in
     if not opts.skip_burn_in:
         logging.info("Burn in")
         sampler.burn_in()
         n_burnin = sampler.burn_in_iterations
-        logging.info("Used %i burn in samples" % n_burnin)
+        logging.info("Used %i burn in samples", n_burnin)
         with InferenceFile(opts.output_file, "a") as fp:
             # write the burn in results
-            sampler.write_results(fp, max_iterations=opts.niterations+n_burnin)
+            sampler.write_results(fp,
+                                  max_iterations=opts.niterations + n_burnin)
     else:
         n_burnin = 0
 
@@ -232,16 +246,23 @@ with ctx:
     # increase the intervals to account for the burn in
     intervals += n_burnin
 
-    # loop over number of checkpoints
-    for i,start in enumerate(intervals[:-1]):
+    # if getting samples from file then put sampler and random number generator
+    # back in its former state
+    if opts.samples_file:
+        with InferenceFile(opts.samples_file, "r") as fp:
+            sampler.set_state_from_file(fp)
+            numpy.random.set_state(fp.read_random_state())
 
-        end = intervals[i+1]
+    # loop over number of checkpoints
+    for i, start in enumerate(intervals[:-1]):
+
+        end = intervals[i + 1]
 
         # run sampler and set initial values to None so that sampler
         # picks up from where it left off next call
-        logging.info("Running sampler for %i to %i out of %i iterations"%(
-            start-n_burnin, end-n_burnin, opts.niterations))
-        sampler.run(end-start)
+        logging.info("Running sampler for %i to %i out of %i iterations",
+                     start - n_burnin, end - n_burnin, opts.niterations)
+        sampler.run(end - start)
 
         # write new samples
         with InferenceFile(opts.output_file, "a") as fp:
@@ -249,7 +270,10 @@ with ctx:
             logging.info("Writing results to file")
             sampler.write_results(fp, start_iteration=start,
                                   end_iteration=end,
-                                  max_iterations=opts.niterations+n_burnin)
+                                  max_iterations=opts.niterations + n_burnin)
+            logging.info("Writing state to file")
+            fp.write_random_state()
+            sampler.write_state(fp)
 
             if not opts.checkpoint_fast or end == opts.niterations:
 

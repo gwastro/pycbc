@@ -47,6 +47,7 @@ class InferenceFile(h5py.File):
     """
     samples_group = 'samples'
     stats_group = 'likelihood_stats'
+    sampler_group = 'sampler_states'
 
     def __init__(self, path, mode=None, **kwargs):
         super(InferenceFile, self).__init__(path, mode, **kwargs)
@@ -259,6 +260,28 @@ class InferenceFile(h5py.File):
                 return parameter
         return label
 
+    def read_random_state(self, group=None):
+        """ Reads the state of the random number generator from the file.
+
+        Parameters
+        ----------
+        group : str
+            Name of group to read random state from.
+
+        Returns
+        -------
+        tuple
+            A tuple with 5 elements that can be passed to numpy.set_state.
+        """
+        group = self.sampler_group if group is None else group
+        dataset_name = "/".join([group, "random_state"])
+        arr = self[dataset_name][:]
+        s = self[dataset_name].attrs["s"]
+        pos = self[dataset_name].attrs["pos"]
+        has_gauss = self[dataset_name].attrs["has_gauss"]
+        cached_gauss = self[dataset_name].attrs["cached_gauss"]
+        return s, arr, pos, has_gauss, cached_gauss
+
     def write_strain(self, strain_dict, group=None):
         """Writes strain for each IFO to file.
 
@@ -379,6 +402,26 @@ class InferenceFile(h5py.File):
             The parsed command line instance.
         """
         self.attrs["cmd"] = " ".join(sys.argv)
+
+    def write_random_state(self, group=None):
+        """ Writes the state of the random number generator from the file.
+
+        Parameters
+        ----------
+        group : str
+            Name of group to read random state to.
+        """
+        group = self.sampler_group if group is None else group
+        dataset_name = "/".join([group, "random_state"])
+        s, arr, pos, has_gauss, cached_gauss = numpy.random.get_state()
+        if group in self:
+            self[dataset_name][:] = arr
+        else:
+            self[dataset_name] = arr
+        self[dataset_name].attrs["s"] = s
+        self[dataset_name].attrs["pos"] = pos
+        self[dataset_name].attrs["has_gauss"] = has_gauss
+        self[dataset_name].attrs["cached_gauss"] = cached_gauss
 
     def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
         """Formats a slice using the given arguments that can be used to

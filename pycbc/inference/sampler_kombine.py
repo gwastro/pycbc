@@ -224,3 +224,70 @@ class KombineSampler(BaseMCMCSampler):
             self._currentblob = self._sampler.blobs[-1]
         self.burn_in_iterations = self.niterations
         return p, post, q
+
+    def write_state(self, fp):
+        """ Saves the state of the sampler in a file.
+
+        Parameters
+        ----------
+        fp : InferenceFile
+            File to store sampler state.
+        """
+
+        # save clustered KDE data
+        subgroup = "clustered_kde"
+        dataset_name ="/".join([fp.sampler_group, subgroup])
+        clustered_kde = self._sampler._kde
+        if dataset_name in fp:
+            fp[dataset_name][:] = clustered_kde.data
+        else:
+            fp[dataset_name] = clustered_kde.data
+        fp[dataset_name].attrs["nclusters"] = clustered_kde.nclusters
+        fp[dataset_name].attrs["assignments"] = clustered_kde._assignments
+        fp[dataset_name].attrs["centroids"] = clustered_kde.centroids
+        fp[dataset_name].attrs["logweights"] = clustered_kde._logweights
+        fp[dataset_name].attrs["mean"] = clustered_kde._mean
+        fp[dataset_name].attrs["std"] = clustered_kde._std
+
+        # save individual KDE data
+        for i, kde in enumerate(clustered_kde._kdes):
+            dataset_name = "/".join([fp.sampler_group, "kde" + str(i)])
+            if dataset_name in fp:
+                fp[dataset_name][:] = kde.data
+            else:
+                fp[dataset_name] = kde.data
+
+    def set_state_from_file(self, fp):
+        """ Sets the state of the sampler back to the instance saved in a file.
+
+        Parameters
+        ----------
+        fp : InferenceFile
+            File with sampler state stored.
+        """
+
+        try:
+            import kombine
+        except ImportError:
+            raise ImportError("kombine is not installed.")
+
+        # create a ClusteredKDE
+        dataset_name = "/".join([fp.sampler_group, "clustered_kde"])
+        clustered_kde = kombine.clustered_kde.ClusteredKDE(
+                                           fp[dataset_name][:],
+                                           fp[dataset_name].attrs["nclusters"])
+        clustered_kde._assignments = fp[dataset_name].attrs["assignments"]
+        clustered_kde._centroids = fp[dataset_name].attrs["centroids"]
+        clustered_kde.logweights = fp[dataset_name].attrs["logweights"]
+        clustered_kde._mean = fp[dataset_name].attrs["mean"]
+        clustered_kde._std = fp[dataset_name].attrs["std"]
+
+        # add KDEs
+        clustered_kde._kdes = []
+        for i in range(clustered_kde.nclusters):
+            dataset_name = "/".join([fp.sampler_group, "kde" + str(i)])
+            clustered_kde._kdes.append(
+                                kombine.clustered_kde.KDE(fp[dataset_name][:]))
+
+        # overwrite ClusteredKDE in Sampler instance
+        self._sampler._kde = clustered_kde
