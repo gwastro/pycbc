@@ -102,7 +102,6 @@ class MchirpQToMass1Mass2(BaseTransform):
     """ Converts chirp mass and mass ratio to component masses.
     """
     name = "mchirp_q_to_mass1_mass2"
-    inverse = Mass1Mass2ToMchirpQ
     _inputs = [parameters.mchirp, parameters.q]
     _outputs = [parameters.mass1, parameters.mass2]
 
@@ -197,6 +196,8 @@ class Mass1Mass2ToMchirpQ(MchirpQToMass1Mass2):
     jacobian = inverse.inverse_jacobian
     inverse_jacobian = inverse.jacobian
 
+MchirpQToMass1Mass2.inverse = Mass1Mass2ToMchirpQ
+
 
 class SphericalSpin1ToCartesianSpin1(BaseTransform):
     """ Converts spherical spin parameters (magnitude and two angles) to
@@ -204,7 +205,6 @@ class SphericalSpin1ToCartesianSpin1(BaseTransform):
     component mass.
     """
     name = "spherical_spin_1_to_cartesian_spin_1"
-    name_inverse = CartesianSpin1ToSphericalSpin1.name
     _inputs = [parameters.spin1_a, parameters.spin1_azimuthal,
                parameters.spin1_polar]
     _outputs = [parameters.spin1x, parameters.spin1y, parameters.spin1z]
@@ -271,13 +271,15 @@ class CartesianSpin1ToSphericalSpin1(SphericalSpin1ToCartesianSpin1):
     inverse_jacobian = inverse.jacobian
 
 
+SphericalSpin1ToCartesianSpin1.inverse = CartesianSpin1ToSphericalSpin1
+
+
 class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
     """ Converts spherical spin parameters (magnitude and two angles) to
     catesian spin parameters. This class only transforms spsins for the second
     component mass.
     """
     name = "spherical_spin_2_to_cartesian_spin_2"
-    inverse = CartesianSpin2ToSphericalSpin2
     _inputs = [parameters.spin2_a, parameters.spin2_azimuthal,
                parameters.spin2_polar]
     _outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
@@ -294,6 +296,9 @@ class CartesianSpin2ToSphericalSpin2(SphericalSpin2ToCartesianSpin2):
     inverse_transform = inverse.transform
     jacobian = inverse.inverse_jacobian
     inverse_jacobian = inverse.jacobian
+
+
+SphericalSpin2ToCartesianSpin2.inverse = CartesianSpin2ToSphericalSpin2
 
 
 class DistanceToRedshift(BaseTransform):
@@ -337,7 +342,6 @@ class AlignedMassSpinToCartesianSpin(BaseTransform):
     """ Converts mass-weighted spins to cartesian z-axis spins.
     """
     name = "aligned_mass_spin_to_cartesian_spin"
-    inverse = CartesianSpinToAlignedMassSpin
     _inputs = [parameters.mass1, parameters.mass2, parameters.chi_eff, "chi_a"]
     _outputs = [parameters.mass1, parameters.mass2,
                parameters.spin1z, parameters.spin2z]
@@ -405,11 +409,13 @@ class CartesianSpinToAlignedMassSpin(AlignedMassSpinToCartesianSpin):
     inverse_jacobian = inverse.jacobian
 
 
+AlignedMassSpinToCartesianSpin.inverse = CartesianSpinToAlignedMassSpin
+
+
 class PrecessionMassSpinToCartesianSpin(BaseTransform):
     """ Converts mass-weighted spins to cartesian x-y plane spins.
     """
     name = "precession_mass_spin_to_cartesian_spin"
-    name_inverse = "cartesian_spin_to_precession_mass_spin"
     _inputs = [parameters.mass1, parameters.mass2,
                "xi1", "xi2", "phi_a", "phi_s"]
     _outputs = [parameters.mass1, parameters.mass2,
@@ -490,11 +496,13 @@ class CartesianSpinToPrecessionMassSpin(PrecessionMassSpinToCartesianSpin):
     inverse_jacobian = inverse.jacobian
 
 
+PrecessionMassSpinToCartesianSpin.inverse = CartesianSpinToPrecessionMassSpin
+
+
 class ChiPToCartesianSpin(BaseTransform):
     """Converts chi_p to cartesian spins.
     """
     name = "chi_p_to_cartesian_spin"
-    inverse = CartesianSpinToChiP
     _inputs = ["chi_p"]
     _outputs = [parameters.mass1, parameters.mass2,
                 parameters.spin1x, parameters.spin1y,
@@ -544,6 +552,9 @@ class CartesianSpinToChiP(ChiPToCartesianSpin):
     inverse_transform = inverse.transform
     jacobian = inverse.inverse_jacobian
     inverse_jacobian = inverse.jacobian
+
+
+ChiPToCartesianSpin.inverse = CartesianSpinToChiP
 
 
 # dictionary of all transforms
