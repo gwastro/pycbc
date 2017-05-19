@@ -210,7 +210,7 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
     catesian spin parameters. This class only converts spsins for the first
     component mass.
     """
-    _name = "sphercal_spin_1_to_cartesian_spin_1"
+    _name = "spherical_spin_1_to_cartesian_spin_1"
     _name_inverse = "cartesian_spin_1_to_spherical_spin_1"
     _inputs = [parameters.spin1_a, parameters.spin1_azimuthal,
                parameters.spin1_polar]
@@ -396,18 +396,37 @@ class PrecessionMassSpinToCartesianSpin(BaseConversion):
             of converted values.
         """
         out = {}
-        out[parameters.spin1x] = conversions.spin1x_from_xi1_phi_a_phi_s(
+
+        # convention of conversions.py is that mass1 > mass2
+        if maps["mass1"] > maps["mass2"]:
+            out[parameters.spin1x] = conversions.spin1x_from_xi1_phi_a_phi_s(
                                maps["xi1"], maps["phi_a"], maps["phi_s"])
-        out[parameters.spin1y] = conversions.spin1y_from_xi1_phi_a_phi_s(
+            out[parameters.spin1y] = conversions.spin1y_from_xi1_phi_a_phi_s(
                                maps["xi1"], maps["phi_a"], maps["phi_s"])
-        out[parameters.spin2x] = \
+            out[parameters.spin2x] = \
                          conversions.spin2x_from_mass1_mass2_xi2_phi_a_phi_s(
                                maps[parameters.mass1], maps[parameters.mass2],
                                maps["xi2"], maps["phi_a"], maps["phi_s"])
-        out[parameters.spin2y] = \
+            out[parameters.spin2y] = \
                          conversions.spin2y_from_mass1_mass2_xi2_phi_a_phi_s(
                                maps[parameters.mass1], maps[parameters.mass2],
                                maps["xi2"], maps["phi_a"], maps["phi_s"])
+
+        # if mass2 > mass1 then you have to switch the set of functions
+        else:
+            out[parameters.spin1x] = conversions.spin2x_from_xi2_phi_a_phi_s(
+                               maps["xi1"], maps["phi_a"], maps["phi_s"])
+            out[parameters.spin1y] = conversions.spin2y_from_xi2_phi_a_phi_s(
+                               maps["xi1"], maps["phi_a"], maps["phi_s"])
+            out[parameters.spin2x] = \
+                         conversions.spin1x_from_mass1_mass2_xi1_phi_a_phi_s(
+                               maps[parameters.mass1], maps[parameters.mass2],
+                               maps["xi2"], maps["phi_a"], maps["phi_s"])
+            out[parameters.spin2y] = \
+                         conversions.spin1y_from_mass1_mass2_xi1_phi_a_phi_s(
+                               maps[parameters.mass1], maps[parameters.mass2],
+                               maps["xi2"], maps["phi_a"], maps["phi_s"])
+
         return self.format_output(maps, out)
 
     def _convert_inverse(self, maps):
@@ -434,6 +453,7 @@ class PrecessionMassSpinToCartesianSpin(BaseConversion):
                              maps[parameters.spin1x], maps[parameters.spin1y],
                              maps[parameters.spin2x], maps[parameters.spin2y])
         out["phi_a"] = conversions.phi_a(
+                             maps[parameters.mass1], maps[parameters.mass2],
                              maps[parameters.spin1x], maps[parameters.spin1y],
                              maps[parameters.spin2x], maps[parameters.spin2y])
         out["phi_s"] = conversions.phi_s(
