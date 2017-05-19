@@ -574,7 +574,6 @@ def get_conversions(requested_params, variable_args, valid_params=None):
     # calculated from sampling parameters
     to_base_c = []
     for converter in to_base_converters:
-        print "testing converter", converter.name, converter.inputs, variable_args, converter.inputs.issubset(variable_args), len(converter.outputs.intersection(requested_params)) > 0
         if (converter.inputs.issubset(variable_args) and
                 len(converter.outputs.intersection(requested_params)) > 0):
             requested_params.update(converter.inputs)
