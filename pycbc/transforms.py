@@ -590,8 +590,6 @@ def get_conversions(requested_params, variable_args, valid_params=None):
             continue
         requested_params.update(converter.inputs)
         from_base_c.append(converter)
-        if 1:
-            variable_args.update(converter.outputs)
 
     # find all the conversions for the required base parameters
     # calculated from sampling parameters
@@ -601,8 +599,7 @@ def get_conversions(requested_params, variable_args, valid_params=None):
                 len(converter.outputs.intersection(requested_params)) > 0):
             requested_params.update(converter.inputs)
             to_base_c.append(converter)
-            if 1:
-                variable_args.update(converter.outputs)
+            variable_args.update(converter.outputs)
 
     # get list of conversions that converts sampling parameters to the base
     # parameters and then converts base parameters to the derived parameters
