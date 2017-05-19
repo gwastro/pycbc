@@ -203,7 +203,7 @@ class SphericalSpin1ToCartesianSpin1(BaseTransform):
     catesian spin parameters. This class only transforms spsins for the first
     component mass.
     """
-    name = "sphercal_spin_1_to_cartesian_spin_1"
+    name = "spherical_spin_1_to_cartesian_spin_1"
     name_inverse = CartesianSpin1ToSphericalSpin1.name
     _inputs = [parameters.spin1_a, parameters.spin1_azimuthal,
                parameters.spin1_polar]
@@ -546,19 +546,40 @@ class CartesianSpinToChiP(ChiPToCartesianSpin):
     inverse_jacobian = inverse.jacobian
 
 
-# list of all Conversions to/from base parameters
-to_base_converters = [
+# dictionary of all transforms
+transforms = {
+    MchirpQToMass1Mass2.name : MchirpQToMass1Mass2,
+    Mass1Mass2ToMchirpQ.name : Mass1Mass2ToMchirpQ,
+    SphericalSpin1ToCartesianSpin1.name : SphericalSpin1ToCartesianSpin1,
+    CartesianSpin1ToSphericalSpin1.name : CartesianSpin1ToSphericalSpin1,
+    SphericalSpin2ToCartesianSpin2.name : SphericalSpin2ToCartesianSpin2,
+    CartesianSpin2ToSphericalSpin2.name : CartesianSpin2ToSphericalSpin2,
+    DistanceToRedshift.name : DistanceToRedshift,
+    AlignedMassSpinToCartesianSpin.name : AlignedMassSpinToCartesianSpin,
+    CartesianSpinToAlignedMassSpin.name : CartesianSpinToAlignedMassSpin,
+    PrecessionMassSpinToCartesianSpin.name : PrecessionMassSpinToCartesianSpin,
+    CartesianSpinToPrecessionMassSpin.name : CartesianSpinToPrecessionMassSpin,
+    ChiPToCartesianSpin.name : ChiPToCartesianSpin,
+    CartesianSpinToChiP.name : CartesianSpinToChiP,
+}
+
+# standard transforms: these are transforms that do not require input
+# arguments; they are typically used in CBC parameter estimation to transform
+# to coordinates understood by the waveform generator
+standard_transforms = [
     MchirpQToMass1Mass2(), DistanceToRedshift(),
     SphericalSpin1ToCartesianSpin1(), SphericalSpin2ToCartesianSpin2(),
     AlignedMassSpinToCartesianSpin(), PrecessionMassSpinToCartesianSpin(),
     ChiPToCartesianSpin(),
 ]
-from_base_converters = copy.deepcopy(to_base_converters)
-for c in from_base_converters: c.inverse()
-all_converters = from_base_converters + to_base_converters
+standard_inverse_transforms = [_t.inverse()
+                               for _t in standard_transforms
+                               if _t.inverse is not None]
+all_standard_transforms = standard_transforms + standard_inverse_transforms
 
-def get_conversions(requested_params, variable_args, valid_params=None):
-    """ Determines if any additional parameters from the InferenceFile are
+def get_standard_transforms(requested_params, variable_args,
+                            valid_params=None):
+    """Determines if any additional parameters from the InferenceFile are
     needed to get derived parameters that user has asked for.
 
     First it will try to add any base parameters that are required to calculate
@@ -602,7 +623,7 @@ def get_conversions(requested_params, variable_args, valid_params=None):
     # find all the conversions for the requested derived parameters
     # calculated from base parameters
     from_base_c = []
-    for converter in from_base_converters:
+    for converter in standard_transforms:
         if (converter.outputs.issubset(variable_args) or
                 converter.outputs.isdisjoint(requested_params)):
             continue
@@ -615,7 +636,7 @@ def get_conversions(requested_params, variable_args, valid_params=None):
     # find all the conversions for the required base parameters
     # calculated from sampling parameters
     to_base_c = []
-    for converter in to_base_converters:
+    for converter in standard_inverse_transforms:
         if (converter.inputs.issubset(variable_args) and
                 len(converter.outputs.intersection(requested_params)) > 0):
             requested_params.update(converter.inputs)
@@ -627,13 +648,13 @@ def get_conversions(requested_params, variable_args, valid_params=None):
 
     return list(requested_params), all_c
 
-def apply_conversions(samples, cs):
-    """ Applies a list of BaseTransform instances on a mapping object.
+def apply_transforms_to_samples(samples, cs):
+    """Applies a list of BaseTransform instances on a mapping object.
 
     Parameters
     ----------
     samples : {FieldArray, dict}
-        Mapping object to apply conversions to.
+        Mapping object to apply transforms to.
     cs : list
         List of BaseTransform instances to apply.
 
