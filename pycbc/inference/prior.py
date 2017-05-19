@@ -26,6 +26,8 @@ This modules provides classes and functions for evaluating the prior
 for parameter estimation.
 """
 
+import numpy
+
 class PriorEvaluator(object):
     """
     Callable class that calculates the prior.
@@ -97,6 +99,6 @@ class PriorEvaluator(object):
         """ Evalualate prior for parameters.
         """
         params = dict(zip(self.variable_args, params))
-        return sum([d(**params) for d in self.distributions])
+        return numpy.float64(sum([d(**params) for d in self.distributions]))
 
 
