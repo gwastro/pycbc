@@ -26,8 +26,8 @@ from pycbc import cosmology
 from pycbc.io import record
 from pycbc.waveform import parameters
 
-class BaseConversion(object):
-    """ A base class for converting between two sets of parameters.
+class BaseTransform(object):
+    """A base class for transforming between two sets of parameters.
     """
     _name = None
     _name_inverse = None
@@ -119,7 +119,7 @@ class BaseConversion(object):
             self.convert = self._convert
             self.jacobian = self._jacobian
 
-class MchirpQToMass1Mass2(BaseConversion):
+class MchirpQToMass1Mass2(BaseTransform):
     """ Converts chirp mass and mass ratio to component masses.
     """
     _name = "mchirp_q_to_mass1_mass2"
@@ -205,7 +205,7 @@ class MchirpQToMass1Mass2(BaseConversion):
         tmp = self._convert(maps)
         return maps["mchirp"] / tmp["mass2"]**2
 
-class SphericalSpin1ToCartesianSpin1(BaseConversion):
+class SphericalSpin1ToCartesianSpin1(BaseTransform):
     """ Converts spherical spin parameters (magnitude and two angles) to
     catesian spin parameters. This class only converts spsins for the first
     component mass.
@@ -275,7 +275,7 @@ class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
                parameters.spin2_polar]
     _outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
 
-class DistanceToRedshift(BaseConversion):
+class DistanceToRedshift(BaseTransform):
     """ Converts distance to redshift.
     """
     _name = "distance_to_redshift"
@@ -311,7 +311,7 @@ class DistanceToRedshift(BaseConversion):
                                                     maps[parameters.distance])}
         return self.format_output(maps, out)
 
-class AlignedMassSpinToCartesianSpin(BaseConversion):
+class AlignedMassSpinToCartesianSpin(BaseTransform):
     """ Converts mass-weighted spins to cartesian z-axis spins.
     """
     _name = "aligned_mass_spin_to_cartesian_spin"
@@ -370,7 +370,7 @@ class AlignedMassSpinToCartesianSpin(BaseConversion):
         }
         return self.format_output(maps, out)
 
-class PrecessionMassSpinToCartesianSpin(BaseConversion):
+class PrecessionMassSpinToCartesianSpin(BaseTransform):
     """ Converts mass-weighted spins to cartesian x-y plane spins.
     """
     _name = "precession_mass_spin_to_cartesian_spin"
@@ -441,7 +441,7 @@ class PrecessionMassSpinToCartesianSpin(BaseConversion):
                              maps[parameters.spin2x], maps[parameters.spin2y])
         return self.format_output(maps, out)
 
-class ChiPToCartesianSpin(BaseConversion):
+class ChiPToCartesianSpin(BaseTransform):
     """ Converts chi_p to cartesian spins.
     """
     _name = "chi_p_to_cartesian_spin"
@@ -516,7 +516,7 @@ def get_conversions(requested_params, variable_args, valid_params=None):
     requested_params : list
         Updated list of parameters that user wants.
     all_c : list
-        List of BaseConversions to apply.
+        List of BaseTransforms to apply.
     """
 
     # try to parse any equations by putting all strings together
@@ -565,14 +565,14 @@ def get_conversions(requested_params, variable_args, valid_params=None):
     return list(requested_params), all_c
 
 def apply_conversions(samples, cs):
-    """ Applies a list of BaseConversion instances on a mapping object.
+    """ Applies a list of BaseTransform instances on a mapping object.
 
     Parameters
     ----------
     samples : {FieldArray, dict}
         Mapping object to apply conversions to.
     cs : list
-        List of BaseConversion instances to apply.
+        List of BaseTransform instances to apply.
 
     Returns
     -------
