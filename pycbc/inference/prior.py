@@ -62,7 +62,7 @@ class PriorEvaluator(object):
 
     Example
     -------
-    An example of creating a prior with constraint that componenet masses must
+    An example of creating a prior with constraint that total mass must
     be below 30.
 
     >>> from pycbc.inference import distributions
