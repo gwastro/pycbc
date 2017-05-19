@@ -17,7 +17,10 @@ This modules provides classes for evaluating angular distributions.
 """
 
 import numpy
-from ConfigParser import Error
+try:
+    from ConfigParser import Error
+except ImportError:
+    from configparser import Error
 from pycbc.distributions import boundaries
 from pycbc.distributions import bounded
 from pycbc.distributions import uniform
@@ -369,8 +372,8 @@ class UniformSolidAngle(bounded.BoundedDist):
             'cyclic_domain': azimuthal_cyclic_domain})
         self._polar_angle = polar_angle
         self._azimuthal_angle = azimuthal_angle
-        self._bounds = dict(self._polardist.bounds.items() +
-                            self._azimuthaldist.bounds.items())
+        self._bounds = self._polardist.bounds.copy()
+        self._bounds.update(self._azimuthaldist.bounds)
         self._params = sorted(self._bounds.keys())
 
 
