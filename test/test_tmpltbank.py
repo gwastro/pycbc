@@ -249,10 +249,10 @@ class TmpltbankTestClass(unittest.TestCase):
                     pass
                 else:
                     err_msg = "Minimum total mass changed unexpectedly."
-                    print self.min_total_mass, curr_min_mass
-                    print self.min_mass1, self.min_mass2, min_comp_mass
-                    print min_eta, self.min_eta, self.max_eta
-                    print min_chirp_mass, self.min_chirp_mass
+                    print(self.min_total_mass, curr_min_mass)
+                    print(self.min_mass1, self.min_mass2, min_comp_mass)
+                    print(min_eta, self.min_eta, self.max_eta)
+                    print(min_chirp_mass, self.min_chirp_mass)
                     self.fail(err_msg)
             if not self.max_total_mass == curr_max_mass:
                 max_comp_mass = self.max_mass1 + self.max_mass2

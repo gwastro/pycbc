@@ -102,8 +102,8 @@ def parse_args_all_schemes(feature_str):
 
     _scheme_dict = { 'cpu': 'CPU', 'cuda': 'CUDA'}
 
-    print 72*'='
-    print "Running {0} unit tests for {1}:".format(_scheme_dict[_scheme],feature_str)
+    print(72*'=')
+    print("Running {0} unit tests for {1}:".format(_scheme_dict[_scheme],feature_str))
 
     return [_scheme,_context]
 
@@ -129,8 +129,8 @@ def parse_args_cpu_only(feature_str):
     # a GPU scheme.  So if we get here we're on the CPU, and should print out our message
     # and return.
 
-    print 72*'='
-    print "Running {0} unit tests for {1}:".format('CPU', feature_str)
+    print(72*'=')
+    print("Running {0} unit tests for {1}:".format('CPU', feature_str))
 
     return
 

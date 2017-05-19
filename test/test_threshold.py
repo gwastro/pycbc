@@ -50,14 +50,14 @@ class TestThreshold(unittest.TestCase):
         self.threshold = 1.3
         self.locs, self.vals = trusted_threshold(self.series, self.threshold) 
         self.tolerance = 1e-6
-        print len(self.locs), len(self.vals)
+        print(len(self.locs), len(self.vals))
         
     def test_threshold(self):
         with self.context:
             locs, vals = threshold(self.series, self.threshold)
             self.assertTrue((locs == self.locs).all())
             self.assertTrue((vals == self.vals).all())
-            print len(locs), len(vals)
+            print(len(locs), len(vals))
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestThreshold))
 

@@ -74,7 +74,7 @@ class TestSPAtmplt(unittest.TestCase):
                             o =  overlap(hp, hpr)
                             self.assertAlmostEqual(1.0, o, places=4)
 
-                            print "checked m1: %s m2:: %s s1z: %s s2z: %s] overlap = %s, diff = %s" % (m1, m2, s1, s2, o, diff)
+                            print("checked m1: %s m2:: %s s1z: %s s2z: %s] overlap = %s, diff = %s" % (m1, m2, s1, s2, o, diff))
 
 
 suite = unittest.TestSuite()

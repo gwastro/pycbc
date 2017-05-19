@@ -80,8 +80,8 @@ parser.add_option('--tidal-order', type = int, default=-1, help = "[default: %de
                 
 (opt, args) = parser.parse_args()
 
-print 72*'='
-print "Running {0} unit tests for {1}:".format('CPU', "Lalsimulation Waveforms")
+print(72*'=')
+print("Running {0} unit tests for {1}:".format('CPU', "Lalsimulation Waveforms"))
 
 import matplotlib
 if not opt.show_plots:
