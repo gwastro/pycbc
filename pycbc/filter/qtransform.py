@@ -41,7 +41,7 @@ from numpy import fft as npfft
 __author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-def qtransform(data, Q, f0, sampling, normalized):
+def qtransform(data, Q, f0, normalized=True):
     """Calculate the energy 'TimeSeries' for the given fseries
 
     Parameters
@@ -69,7 +69,7 @@ def qtransform(data, Q, f0, sampling, normalized):
 
     # initialize parameters
     qprime = Q / 11**(1/2.)
-    dur = int(len(data)) / sampling
+    dur = data.duration
     fseries = TimeSeries.to_frequencyseries(data)
 
     # window fft
@@ -79,14 +79,14 @@ def qtransform(data, Q, f0, sampling, normalized):
     indices = _get_indices(dur)
 
     # apply window to fft
-    windowed = fseries[get_data_indices(dur, f0, indices)] * get_window(dur, indices, f0, qprime, Q, sampling)
+    windowed = fseries[get_data_indices(dur, f0, indices)] * get_window(dur, indices, f0, qprime, Q, fseries.delta_f)
 
     # pad data, move negative frequencies to the end, and IFFT
     padded = np.pad(windowed, padding(window_size, dur, f0, Q), mode='constant')
     wenergy = npfft.ifftshift(padded)
 
     # return a 'TimeSeries'
-    wenergy = FrequencySeries(wenergy, delta_f=sampling)
+    wenergy = FrequencySeries(wenergy, delta_f=fseries.delta_f)
     tdenergy = FrequencySeries.to_timeseries(wenergy)
     cenergy = TimeSeries(tdenergy,
                          delta_t=1, copy=False)
