@@ -19,7 +19,6 @@ _process_lock = None
 _numdone = None    
 def _lockstep_fcn(values):
     """ Wrapper to ensure that all processes execute together """
-    global _numdone
     numrequired, fcn, args = values
     with _process_lock:
         _numdone.value += 1
@@ -59,8 +58,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
         args: tuple
             The arguments for Pool.map
         """
-        global _numdone
-        results = self.map(lockstep_fcn, [(len(self), fcn, args)] * len(self))
+        results = self.map(_lockstep_fcn, [(len(self), fcn, args)] * len(self))
         _numdone.value = 0
         return results
 
