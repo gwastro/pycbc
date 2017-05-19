@@ -144,7 +144,7 @@ def default_strlen(strlen=None):
         _default_types_status['default_strlen'] = strlen
         # update the typeDicts as needed
         lstring_as_obj(_default_types_status['lstring_as_obj'])
-        set_ilwd_as_int(_default_types_status['ilwd_as_int'])
+        ilwd_as_int(_default_types_status['ilwd_as_int'])
     return _default_types_status['default_strlen']
 
 # set the defaults
