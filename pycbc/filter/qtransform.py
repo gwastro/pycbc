@@ -35,9 +35,71 @@ Example
 from math import pi
 import numpy as np
 from pycbc.strain  import next_power_of_2
+from pycbc.types.timeseries import FrequencySeries, TimeSeries
+from numpy import fft as npfft
 
 __author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+def qtransform(data, Q, f0, normalized=True):
+    """Calculate the energy 'TimeSeries' for the given fseries
+
+    Parameters
+    ----------
+    data: 'LIGO gwf frame file'
+        raw time-series data set
+    normalized: 'bool', optional
+        normalize the energy of the output, if 'False' the output
+        is the complex '~numpy.fft.ifft' output of the Q-tranform
+    f0:
+        central frequency
+    sampling:
+        sampling frequency of channel
+    normalized:
+        normalize output tile energies 
+
+    Returns
+    -------
+    energy: '~pycbc.types.aligned.ArrayWithAligned'
+        A 'TimeSeries' of the complex energy from the Q-transform of 
+        this tile against the data.
+    """
+
+    # q-transform data for each (Q, frequency) tile
+
+    # initialize parameters
+    qprime = Q / 11**(1/2.)
+    dur = data.duration
+    fseries = TimeSeries.to_frequencyseries(data)
+
+    # window fft
+    window_size = 2 * int(f0 / qprime * dur) + 1
+
+    # get indices
+    indices = _get_indices(dur)
+
+    # apply window to fft
+    windowed = fseries[get_data_indices(dur, f0, indices)] * get_window(dur, indices, f0, qprime, Q, fseries.delta_f)
+
+    # pad data, move negative frequencies to the end, and IFFT
+    padded = np.pad(windowed, padding(window_size, dur, f0, Q), mode='constant')
+    wenergy = npfft.ifftshift(padded)
+
+    # return a 'TimeSeries'
+    wenergy = FrequencySeries(wenergy, delta_f=fseries.delta_f)
+    tdenergy = FrequencySeries.to_timeseries(wenergy)
+    cenergy = TimeSeries(tdenergy,
+                         delta_t=1, copy=False)
+    if normalized:
+        energy = type(cenergy)(
+            cenergy.real() ** 2. + cenergy.imag() ** 2.,
+            delta_t=1, copy=False)
+        meanenergy = energy.numpy().mean()
+        result = energy / meanenergy
+    else:
+        result = cenergy
+
+    return result
 
 def padding(window_size, dur, f0, Q):
     """The (left, right) padding required for the IFFT
