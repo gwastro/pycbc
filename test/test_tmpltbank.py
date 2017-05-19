@@ -133,7 +133,7 @@ class TmpltbankTestClass(unittest.TestCase):
         self.ethincaFreqStep = 10.
 
         self.segLen = 1./self.deltaF
-        self.psdSize = int(self.segLen * self.sampleRate) / 2. + 1
+        self.psdSize = int(self.segLen * self.sampleRate / 2.) + 1
 
         self.psd = pycbc.psd.from_txt('%sZERO_DET_high_P.txt' %(self.dataDir),\
                 self.psdSize, self.deltaF, self.f_low, is_asd_file=True)

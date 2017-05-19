@@ -24,23 +24,19 @@
 """
 These are the unittests for the pycbc.waveform module
 """
-import sys
 import pycbc
 import unittest
-from pycbc.types import *
-from pycbc.scheme import *
-from pycbc.filter import *
-from pycbc.waveform import *
-import pycbc.fft
 import numpy
 from numpy import sqrt, cos, sin
+from pycbc.scheme import CPUScheme
+from pycbc.waveform import td_approximants, fd_approximants, get_td_waveform, get_fd_waveform
 from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Waveform")
 
 failing_wfs = ['PhenSpinTaylor', 'PhenSpinTaylorRD', 'EccentricTD',
               'SpinDominatedWf', 'EOBNRv2HM_ROM', 'EOBNRv2_ROM', 'EccentricFD',
-              'NR_hdf5']
+              'NR_hdf5', 'TEOBResum_ROM', 'Lackey_Tidal_2013_SEOBNRv2_ROM']
 
 class TestWaveform(unittest.TestCase):
     def setUp(self,*args):
