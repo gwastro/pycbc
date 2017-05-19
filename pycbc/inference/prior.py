@@ -27,6 +27,7 @@ for parameter estimation.
 """
 
 import numpy
+from pycbc.io import record
 
 class PriorEvaluator(object):
     """
@@ -132,4 +133,31 @@ class PriorEvaluator(object):
                 return -numpy.inf
         return sum([d(**params) for d in self.distributions])
 
+    def rvs(self, size=1):
+        """ Rejection samples the prior parameter space.
+        """
+
+        # create output FieldArray
+        out = record.FieldArray(size, dtype=[(arg, float)
+                                    for arg in self.variable_args])
+
+        # loop until enough samples accepted
+        n = 0
+        while n < size:
+
+            # draw samples
+            samples = {}
+            for dist in self.distributions:
+                draw = dist.rvs(1)
+                for param in dist.params:
+                     samples[param] = draw[param][0]
+            vals = numpy.array([samples[arg] for arg in self.variable_args])
+
+            # determine if all parameter values are in prior space
+            # if they are then add to output
+            if self(vals) > -numpy.inf:
+                 out[n] = vals
+                 n += 1
+
+        return out
 
