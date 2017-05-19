@@ -38,34 +38,32 @@ class BaseTransform(object):
         self.name = self._name
         self.inputs = set(self._inputs)
         self.outputs = set(self._outputs)
-        self.convert = self._convert
-        self.jacobian = self._jacobian
 
-    def _convert(self, maps):
+    def convert(self, maps):
         """ This function converts from inputs to outputs.
         """
         raise NotImplementedError("Not added.")
 
-    def _convert_inverse(self, maps):
-        """ The inverse conversions of _convert. This function converts from
+    def convert_inverse(self, maps):
+        """ The inverse conversions of convert. This function converts from
         outputs to inputs.
         """
         raise NotImplementedError("Not added.")
 
-    def _jacobian(self, maps):
+    def jacobian(self, maps):
         """ The Jacobian for the inputs to outputs transformation.
         """
         raise NotImplementedError("Jacobian transform not implemented.")
 
-    def _jacobian_inverse(self, maps):
+    def jacobian_inverse(self, maps):
         """ The Jacobian for the outputs to inputs transformation.
         """
         raise NotImplementedError("Jacobian transform not implemented.")
 
     @staticmethod
     def format_output(old_maps, new_maps):
-        """ This function takes the returned dict from _convert and converts
-        it to the same datatype as the input to _convert.
+        """ This function takes the returned dict from convert and converts
+        it to the same datatype as the input to convert.
 
         Parameters
         ----------
@@ -106,18 +104,18 @@ class BaseTransform(object):
         vice versa. The functions ``convert`` and ``jacobian`` will now call
         the inverse transformation that instance is currently set to.
         """
-        if self.convert == self._convert and self.jacobian == self._jacobian:
+        if self.convert == self.convert and self.jacobian == self.jacobian:
             self.name = self._name_inverse
             self.inputs = set(self._outputs)
             self.outputs = set(self._inputs)
-            self.convert = self._convert_inverse
-            self.jacobian = self._jacobian_inverse
+            self.convert = self.convert_inverse
+            self.jacobian = self.jacobian_inverse
         else:
             self.name = self._name
             self.inputs = set(self._inputs)
             self.outputs = set(self._outputs)
-            self.convert = self._convert
-            self.jacobian = self._jacobian
+            self.convert = self.convert
+            self.jacobian = self.jacobian
 
 class MchirpQToMass1Mass2(BaseTransform):
     """ Converts chirp mass and mass ratio to component masses.
@@ -127,7 +125,7 @@ class MchirpQToMass1Mass2(BaseTransform):
     _inputs = [parameters.mchirp, parameters.q]
     _outputs = [parameters.mass1, parameters.mass2]
 
-    def _convert(self, maps):
+    def convert(self, maps):
         """ This function converts from chirp mass and mass ratio to component
         masses.
 
@@ -161,7 +159,7 @@ class MchirpQToMass1Mass2(BaseTransform):
                                                 maps[parameters.q])
         return self.format_output(maps, out)
 
-    def _convert_inverse(self, maps):
+    def convert_inverse(self, maps):
         """ This function converts from component masses to chirp mass and mass
         ratio.
 
@@ -198,11 +196,11 @@ class MchirpQToMass1Mass2(BaseTransform):
         out[parameters.q] = m_p / m_s
         return self.format_output(maps, out)
 
-    def _jacobian(self, maps):
+    def jacobian(self, maps):
         """ Returns the Jacobian from chirp mass and mass ratio to
         component masses.
         """
-        tmp = self._convert(maps)
+        tmp = self.convert(maps)
         return maps["mchirp"] / tmp["mass2"]**2
 
 class SphericalSpin1ToCartesianSpin1(BaseTransform):
@@ -216,7 +214,7 @@ class SphericalSpin1ToCartesianSpin1(BaseTransform):
                parameters.spin1_polar]
     _outputs = [parameters.spin1x, parameters.spin1y, parameters.spin1z]
 
-    def _convert(self, maps):
+    def convert(self, maps):
         """ This function converts from spherical to cartesian spins.
 
         Parameters
@@ -246,7 +244,7 @@ class SphericalSpin1ToCartesianSpin1(BaseTransform):
         out = {param : val for param, val in zip(self._outputs, data)}
         return self.format_output(maps, out)
 
-    def _convert_inverse(self, maps):
+    def convert_inverse(self, maps):
         """ This function converts from cartesian to spherical spins.
 
         Parameters
@@ -283,7 +281,7 @@ class DistanceToRedshift(BaseTransform):
     _inputs = [parameters.distance]
     _outputs = [parameters.redshift]
 
-    def _convert(self, maps):
+    def convert(self, maps):
         """ This function converts from distance to redshift.
 
         Parameters
@@ -320,7 +318,7 @@ class AlignedMassSpinToCartesianSpin(BaseTransform):
     _outputs = [parameters.mass1, parameters.mass2,
                parameters.spin1z, parameters.spin2z]
 
-    def _convert(self, maps):
+    def convert(self, maps):
         """ This function converts from aligned mass-weighted spins to
         cartesian spins aligned along the z-axis.
 
@@ -346,7 +344,7 @@ class AlignedMassSpinToCartesianSpin(BaseTransform):
                                maps[parameters.chi_eff], maps["chi_a"])
         return self.format_output(maps, out)
 
-    def _convert_inverse(self, maps):
+    def convert_inverse(self, maps):
         """ This function converts from component masses and cartesian spins to
         mass-weighted spin parameters aligned with the angular momentum.
 
@@ -381,7 +379,7 @@ class PrecessionMassSpinToCartesianSpin(BaseTransform):
                 parameters.spin1x, parameters.spin1y,
                 parameters.spin2x, parameters.spin2y]
 
-    def _convert(self, maps):
+    def convert(self, maps):
         """ This function converts from mass-weighted spins to caretsian spins
         in the x-y plane.
 
@@ -410,7 +408,7 @@ class PrecessionMassSpinToCartesianSpin(BaseTransform):
                                maps["xi2"], maps["phi_a"], maps["phi_s"])
         return self.format_output(maps, out)
 
-    def _convert_inverse(self, maps):
+    def convert_inverse(self, maps):
         """ This function converts from component masses and cartesian spins to
         mass-weighted spin parameters perpendicular with the angular momentum.
 
@@ -451,7 +449,7 @@ class ChiPToCartesianSpin(BaseTransform):
                 parameters.spin1x, parameters.spin1y,
                 parameters.spin2x, parameters.spin2y]
 
-    def _convert_inverse(self, maps):
+    def convert_inverse(self, maps):
         """ This function converts from component masses and caretsian spins
         to chi_p.
 
