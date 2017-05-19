@@ -163,7 +163,8 @@ def get_cached_bin_layout(bins):
         _bcache[key] = (kmin, kmax, bv) 
     return _bcache[key]
 
-def shift_sum_points(num, (corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins)):
+def shift_sum_points(num, arg_tuple):
+    corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins = arg_tuple
     #fuse = 'fuse' in corr.gpu_callback_method
     fuse = False
     
