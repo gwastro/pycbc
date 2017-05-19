@@ -106,7 +106,7 @@ class MchirpQToMass1Mass2(BaseTransform):
     _outputs = [parameters.mass1, parameters.mass2]
 
     def transform(self, maps):
-        """ This function transforms from chirp mass and mass ratio to component
+        """This function transforms from chirp mass and mass ratio to component
         masses.
 
         Parameters
@@ -119,10 +119,10 @@ class MchirpQToMass1Mass2(BaseTransform):
 
         >>> import numpy
         >>> from pycbc import transforms
-        >>> from pycbc.waveform import parameters
-        >>> cl = transforms.MchirpQToMass1Mass2()
-        >>> cl.transform({parameters.mchirp : numpy.array([10.]), parameters.q : numpy.array([2.])})
-            {'mass1': array([ 16.4375183]), 'mass2': array([ 8.21875915]), 'mchirp': array([ 10.]), 'q': array([ 2.])}
+        >>> t = transforms.MchirpQToMass1Mass2()
+        >>> t.transform({'mchirp': numpy.array([10.]), 'q': numpy.array([2.])})
+        {'mass1': array([ 16.4375183]), 'mass2': array([ 8.21875915]),
+         'mchirp': array([ 10.]), 'q': array([ 2.])}
 
         Returns
         -------
@@ -140,8 +140,8 @@ class MchirpQToMass1Mass2(BaseTransform):
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
-        """ This function transforms from component masses to chirp mass and mass
-        ratio.
+        """This function transforms from component masses to chirp mass and
+        mass ratio.
 
         Parameters
         ----------
@@ -153,11 +153,10 @@ class MchirpQToMass1Mass2(BaseTransform):
 
         >>> import numpy
         >>> from pycbc import transforms
-        >>> from pycbc.waveform import parameters
-        >>> cl = transforms.MchirpQToMass1Mass2()
-        >>> cl.inverse()
-        >>> cl.transform({parameters.mass1 : numpy.array([16.4]), parameters.mass2 : numpy.array([8.2])})
-            {'mass1': array([ 16.4]), 'mass2': array([ 8.2]), 'mchirp': array([ 9.97717521]), 'q': 2.0}
+        >>> t = transforms.MchirpQToMass1Mass2()
+        >>> t.inverse_transform({'mass1': numpy.array([16.4]), 'mass2': numpy.array([8.2])})
+            {'mass1': array([ 16.4]), 'mass2': array([ 8.2]),
+             'mchirp': array([ 9.97717521]), 'q': 2.0}
 
         Returns
         -------
@@ -222,9 +221,8 @@ class SphericalSpin1ToCartesianSpin1(BaseTransform):
 
         >>> import numpy
         >>> from pycbc import transforms
-        >>> from pycbc.waveform import parameters
-        >>> cl = transforms.SphericalSpin1ToCartesianSpin1()
-        >>> cl.transform({parameters.spin1_a : numpy.array([0.1]), parameters.spin1_azimuthal : numpy.array([0.1]), parameters.spin1_polar : numpy.array([0.1])})
+        >>> t = transforms.SphericalSpin1ToCartesianSpin1()
+        >>> t.transform({'spin1_a': numpy.array([0.1]), 'spin1_azimuthal': numpy.array([0.1]), 'spin1_polar': numpy.array([0.1])})
             {'spin1_a': array([ 0.1]), 'spin1_azimuthal': array([ 0.1]), 'spin1_polar': array([ 0.1]),
              'spin2x': array([ 0.00993347]), 'spin2y': array([ 0.00099667]), 'spin2z': array([ 0.09950042])}
 
@@ -322,9 +320,8 @@ class DistanceToRedshift(BaseTransform):
 
         >>> import numpy
         >>> from pycbc import transforms
-        >>> from pycbc.waveform import parameters
-        >>> cl = transforms.DistanceToRedshift()
-        >>> cl.transform({parameters.distance : numpy.array([1000])})
+        >>> t = transforms.DistanceToRedshift()
+        >>> t.transform({'distance': numpy.array([1000])})
             {'distance': array([1000]), 'redshift': 0.19650987609144363}
 
         Returns
