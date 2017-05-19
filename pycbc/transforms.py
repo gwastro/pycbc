@@ -656,7 +656,7 @@ def get_standard_transforms(requested_params, variable_args,
 
     return list(requested_params), all_c
 
-def apply_transforms_to_samples(samples, cs):
+def apply_transforms(samples, cs):
     """Applies a list of BaseTransform instances on a mapping object.
 
     Parameters
