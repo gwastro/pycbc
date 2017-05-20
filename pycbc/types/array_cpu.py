@@ -65,7 +65,7 @@ code_flags = [WEAVE_FLAGS] + omp_flags
 
 def abs_arg_max(self):
     if self.kind == 'real':
-        return _np.argmax(self.data)
+        return _np.argmax(abs(self.data))
     else:
         data = _np.array(self._data, # pylint:disable=unused-variable
                          copy=False).view(real_same_precision_as(self))
