@@ -495,8 +495,8 @@ class Logit(BaseTransform):
         self._inputs = [source]
         self._outputs = [target]
         self._bounds = domain
-        self._a = bounds[0]
-        self._b = bounds[1]
+        self._a = domain[0]
+        self._b = domain[1]
 
     @property
     def source(self):
