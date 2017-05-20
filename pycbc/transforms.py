@@ -474,7 +474,7 @@ class Logit(BaseTransform):
     parameter. This is the inverse of the logistic transform.
 
     Typically, the source of the logit function is assumed to have domain
-    :math:`\in [0, 1)`. However, the `domain` argument can be used to expand
+    :math:`\in (0, 1)`. However, the `domain` argument can be used to expand
     this to any finite real interval.
 
     Parameters
@@ -495,7 +495,8 @@ class Logit(BaseTransform):
         self._target = target
         self._inputs = [source]
         self._outputs = [target]
-        self._bounds = Bounds(domain[0], domain[1])
+        self._bounds = Bounds(domain[0], domain[1],
+                              btype_min='open', btype_max='open')
         # shortcuts for quick access later
         self._a = domain[0]
         self._b = domain[1]
@@ -518,7 +519,7 @@ class Logit(BaseTransform):
 
     @staticmethod
     def logit(x, a=0., b=1.):
-        r"""Computes the logit function with domain :math:`x \in [a, b)`.
+        r"""Computes the logit function with domain :math:`x \in (a, b)`.
 
         This is given by:
 
@@ -527,7 +528,7 @@ class Logit(BaseTransform):
             \mathrm{logit}(x; a, b) = \log\left(\frac{x-a}{b-x}\right).
 
         Note that this is also the inverse of the logistic function with range
-        :math:`[a, b)`.
+        :math:`(a, b)`.
 
         Parameters
         ----------
@@ -547,7 +548,7 @@ class Logit(BaseTransform):
 
     @staticmethod
     def logistic(x, a=0., b=1.):
-        r"""Computes the logistic function with range :math:`\in [a, b)`.
+        r"""Computes the logistic function with range :math:`\in (a, b)`.
 
         This is given by:
 
@@ -556,7 +557,7 @@ class Logit(BaseTransform):
             \mathrm{logistic}(x; a, b) = \frac{a + b e^x}{1 + e^x}.
 
         Note that this is also the inverse of the logit function with domain
-        :math:`[a, b)`.
+        :math:`(a, b)`.
 
         Parameters
         ----------
@@ -634,7 +635,7 @@ class Logit(BaseTransform):
         
             \frac{\mathrm{d}y}{\mathrm{d}x} = \frac{b -a}{(x-a)(b-x)},
 
-        where :math:`x \in [a, b)`.
+        where :math:`x \in (a, b)`.
 
         Parameters
         ----------
@@ -648,6 +649,12 @@ class Logit(BaseTransform):
             The value of the jacobian at the given point(s).
         """
         x = maps[self._source]
+        # check that x is in bounds
+        isin = self._bounds.__contains__(x)
+        if isinstance(isin, numpy.ndarray) and not isin.all():
+            raise ValueError("one or more values are not in bounds")
+        elif not isin:
+            raise ValueError("{} is not in bounds".format(x))
         return (self._b - self._a)/((x - self._a)*(self._b - x))
 
     def inverse_jacobian(self, maps):
@@ -659,7 +666,7 @@ class Logit(BaseTransform):
         
             \frac{\mathrm{d}y}{\mathrm{d}x} = \frac{e^x (b-a)}{(1+e^y)^2},
 
-        where :math:`y \in [a, b)`.
+        where :math:`y \in (a, b)`.
 
         Parameters
         ----------
