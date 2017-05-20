@@ -98,6 +98,14 @@ class BaseTransform(object):
             raise TypeError("Input type must be FieldArray or dict.")
 
 
+#
+# =============================================================================
+#
+#                             Forward Transforms
+#
+# =============================================================================
+#
+
 class MchirpQToMass1Mass2(BaseTransform):
     """ Converts chirp mass and mass ratio to component masses.
     """
@@ -183,21 +191,6 @@ class MchirpQToMass1Mass2(BaseTransform):
         return maps["mchirp"] / tmp["mass2"]**2
 
 
-class Mass1Mass2ToMchirpQ(MchirpQToMass1Mass2):
-    """Converts component masses to chirp mass and mass ratio.
-    """
-    name = "mass1_mass2_to_mchirp_q"
-    inverse = MchirpQToMass1Mass2
-    _inputs = inverse._outputs
-    _outputs = inverse._inputs
-    transform = inverse.inverse_transform
-    inverse_transform = inverse.transform
-    jacobian = inverse.inverse_jacobian
-    inverse_jacobian = inverse.jacobian
-
-MchirpQToMass1Mass2.inverse = Mass1Mass2ToMchirpQ
-
-
 class SphericalSpin1ToCartesianSpin1(BaseTransform):
     """ Converts spherical spin parameters (magnitude and two angles) to
     catesian spin parameters. This class only transforms spsins for the first
@@ -256,22 +249,6 @@ class SphericalSpin1ToCartesianSpin1(BaseTransform):
         return self.format_output(maps, out)
 
 
-class CartesianSpin1ToSphericalSpin1(SphericalSpin1ToCartesianSpin1):
-    """The inverse of SphericalSpin1ToCartesianSpin1.
-    """
-    name = "cartesian_spin_1_to_spherical_spin_1"
-    inverse = SphericalSpin1ToCartesianSpin1
-    _inputs = inverse._outputs
-    _outputs = inverse._inputs
-    transform = inverse.inverse_transform
-    inverse_transform = inverse.transform
-    jacobian = inverse.inverse_jacobian
-    inverse_jacobian = inverse.jacobian
-
-
-SphericalSpin1ToCartesianSpin1.inverse = CartesianSpin1ToSphericalSpin1
-
-
 class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
     """ Converts spherical spin parameters (magnitude and two angles) to
     catesian spin parameters. This class only transforms spsins for the second
@@ -281,22 +258,6 @@ class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
     _inputs = [parameters.spin2_a, parameters.spin2_azimuthal,
                parameters.spin2_polar]
     _outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
-
-
-class CartesianSpin2ToSphericalSpin2(SphericalSpin2ToCartesianSpin2):
-    """The inverse of SphericalSpin2ToCartesianSpin2.
-    """
-    name = "cartesian_spin_2_to_spherical_spin_2"
-    inverse = SphericalSpin2ToCartesianSpin2
-    _inputs = inverse._outputs
-    _outputs = inverse._inputs
-    transform = inverse.inverse_transform
-    inverse_transform = inverse.transform
-    jacobian = inverse.inverse_jacobian
-    inverse_jacobian = inverse.jacobian
-
-
-SphericalSpin2ToCartesianSpin2.inverse = CartesianSpin2ToSphericalSpin2
 
 
 class DistanceToRedshift(BaseTransform):
@@ -394,21 +355,6 @@ class AlignedMassSpinToCartesianSpin(BaseTransform):
         return self.format_output(maps, out)
 
 
-class CartesianSpinToAlignedMassSpin(AlignedMassSpinToCartesianSpin):
-    """The inverse of AlignedMassSpinToCartesianSpin."""
-    name = "cartesian_spin_to_aligned_mass_spin"
-    inverse = AlignedMassSpinToCartesianSpin
-    _inputs = inverse._outputs
-    _outputs = inverse._inputs
-    transform = inverse.inverse_transform
-    inverse_transform = inverse.transform
-    jacobian = inverse.inverse_jacobian
-    inverse_jacobian = inverse.jacobian
-
-
-AlignedMassSpinToCartesianSpin.inverse = CartesianSpinToAlignedMassSpin
-
-
 class PrecessionMassSpinToCartesianSpin(BaseTransform):
     """ Converts mass-weighted spins to cartesian x-y plane spins.
     """
@@ -480,22 +426,6 @@ class PrecessionMassSpinToCartesianSpin(BaseTransform):
         return self.format_output(maps, out)
 
 
-class CartesianSpinToPrecessionMassSpin(PrecessionMassSpinToCartesianSpin):
-    """The inverse of PrecessionMassSpinToCartesianSpin.
-    """
-    name = "cartesian_spin_to_precession_mass_spin"
-    inverse = PrecessionMassSpinToCartesianSpin
-    _inputs = inverse._outputs
-    _outputs = inverse._inputs
-    transform = inverse.inverse_transform
-    inverse_transform = inverse.transform
-    jacobian = inverse.inverse_jacobian
-    inverse_jacobian = inverse.jacobian
-
-
-PrecessionMassSpinToCartesianSpin.inverse = CartesianSpinToPrecessionMassSpin
-
-
 class ChiPToCartesianSpin(BaseTransform):
     """Converts chi_p to cartesian spins.
     """
@@ -538,6 +468,77 @@ class ChiPToCartesianSpin(BaseTransform):
         return self.format_output(maps, out)
 
 
+#
+# =============================================================================
+#
+#                             Inverse Transforms
+#
+# =============================================================================
+#
+class Mass1Mass2ToMchirpQ(MchirpQToMass1Mass2):
+    """The inverse of MchirpQToMass1Mass2.
+    """
+    name = "mass1_mass2_to_mchirp_q"
+    inverse = MchirpQToMass1Mass2
+    _inputs = inverse._outputs
+    _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+
+class CartesianSpin1ToSphericalSpin1(SphericalSpin1ToCartesianSpin1):
+    """The inverse of SphericalSpin1ToCartesianSpin1.
+    """
+    name = "cartesian_spin_1_to_spherical_spin_1"
+    inverse = SphericalSpin1ToCartesianSpin1
+    _inputs = inverse._outputs
+    _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+
+class CartesianSpin2ToSphericalSpin2(SphericalSpin2ToCartesianSpin2):
+    """The inverse of SphericalSpin2ToCartesianSpin2.
+    """
+    name = "cartesian_spin_2_to_spherical_spin_2"
+    inverse = SphericalSpin2ToCartesianSpin2
+    _inputs = inverse._outputs
+    _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+
+class CartesianSpinToAlignedMassSpin(AlignedMassSpinToCartesianSpin):
+    """The inverse of AlignedMassSpinToCartesianSpin."""
+    name = "cartesian_spin_to_aligned_mass_spin"
+    inverse = AlignedMassSpinToCartesianSpin
+    _inputs = inverse._outputs
+    _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+
+class CartesianSpinToPrecessionMassSpin(PrecessionMassSpinToCartesianSpin):
+    """The inverse of PrecessionMassSpinToCartesianSpin.
+    """
+    name = "cartesian_spin_to_precession_mass_spin"
+    inverse = PrecessionMassSpinToCartesianSpin
+    _inputs = inverse._outputs
+    _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+
 class CartesianSpinToChiP(ChiPToCartesianSpin):
     """The inverse of ChiPToCartesianSpin.
     """
@@ -551,8 +552,22 @@ class CartesianSpinToChiP(ChiPToCartesianSpin):
     inverse_jacobian = inverse.jacobian
 
 
+# set the inverse of the forward transforms to the inverse transforms
+MchirpQToMass1Mass2.inverse = Mass1Mass2ToMchirpQ
+SphericalSpin1ToCartesianSpin1.inverse = CartesianSpin1ToSphericalSpin1
+SphericalSpin2ToCartesianSpin2.inverse = CartesianSpin2ToSphericalSpin2
+AlignedMassSpinToCartesianSpin.inverse = CartesianSpinToAlignedMassSpin
+PrecessionMassSpinToCartesianSpin.inverse = CartesianSpinToPrecessionMassSpin
 ChiPToCartesianSpin.inverse = CartesianSpinToChiP
 
+
+#
+# =============================================================================
+#
+#                      Collections of transforms
+#
+# =============================================================================
+#
 
 # dictionary of all transforms
 transforms = {
