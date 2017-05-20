@@ -1104,7 +1104,7 @@ def get_common_cbc_transforms(requested_params, variable_args,
     return list(requested_params), all_c
 
 
-def apply_transforms(samples, transforms):
+def apply_transforms(samples, transforms, inverse=False):
     """Applies a list of BaseTransform instances on a mapping object.
 
     Parameters
@@ -1112,16 +1112,25 @@ def apply_transforms(samples, transforms):
     samples : {FieldArray, dict}
         Mapping object to apply transforms to.
     transforms : list
-        List of BaseTransform instances to apply.
+        List of BaseTransform instances to apply. Nested transforms are assumed
+        to be in order for forward transforms.
+    inverse : bool, optional
+        Apply inverse transforms. In this case transforms will be applied in
+        the opposite order. Default is False.
 
     Returns
     -------
     samples : {FieldArray, dict}
-        Mapping object with conversions applied. Same type as input.
+        Mapping object with transforms applied. Same type as input.
     """
+    if inverse:
+        transforms = transforms[::-1]
     for t in transforms:
         try:
-            samples = t.transform(samples)
+            if inverse:
+                samples = t.inverse_transform(samples)
+            else:
+                samples = t.transform(samples)
         except NotImplementedError:
             continue
     return samples
