@@ -208,14 +208,6 @@ class TemplateBank(object):
         the file. Note that derived parameters can only be used if the
         needed parameters are in the file; e.g., you cannot use `chi_eff` if
         `spin1z`, `spin2z`, `mass1`, and `mass2` are in the input file.
-    load_compressed : {True, bool}
-        If compressed waveforms are present in the file, load them. Only works
-        for hdf files.
-    load_compressed_now : {False, bool}
-        If compressed waveforms are present in the file, load all of them into
-        memory now. Otherwise, they will be loaded into memory on their first
-        use. Note: if not `load_compressed_now`, the filehandler to the hdf
-        file must be kept open.
     \**kwds :
         Any additional keyword arguments are stored to the `extra_args`
         attribute.
@@ -226,7 +218,7 @@ class TemplateBank(object):
     table : WaveformArray
         An instance of a WaveformArray containing all of the information about
         the parameters of the bank.
-    check_compressed_waveforms : {False, bool}
+    has_compressed_waveforms : {False, bool}
         If compressed waveforms are present in the (hdf) file, save True,
         else False .
     parameters : tuple
@@ -241,11 +233,8 @@ class TemplateBank(object):
         Any extra keyword arguments that were provided on initialization.
     """
     def __init__(self, filename, approximant=None, parameters=None,
-            load_compressed=True, load_compressed_now=False,
-            **kwds):
-        self.load_compressed = load_compressed
-        self.load_compressed_now = load_compressed_now
-        self.check_compressed_waveforms = False
+                 **kwds):
+        self.has_compressed_waveforms = False
         ext = os.path.basename(filename)
         if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
             self.filehandler = None
@@ -295,8 +284,8 @@ class TemplateBank(object):
             for key in data:
                 self.table[key] = data[key]
             # add the compressed waveforms, if they exist
-            if self.load_compressed and 'compressed_waveforms' in f:
-                self.check_compressed_waveforms = True
+            if 'compressed_waveforms' in f:
+                self.has_compressed_waveforms = True
         else:
             raise ValueError("Unsupported template bank file extension %s" %(
                 ext))
@@ -338,7 +327,8 @@ class TemplateBank(object):
         self.table = self.table.add_fields(template_hash, 'template_hash')
 
     def write_to_hdf(self, filename, start_index=None, stop_index=None,
-                     force=False, skip_fields=None):
+                     force=False, skip_fields=None,
+                     write_compressed_waveforms=True):
         """Writes self to the given hdf file.
 
         Parameters
@@ -378,11 +368,11 @@ class TemplateBank(object):
         write_tbl = self.table[start_index:stop_index]
         for p in parameters:
             f[p] = write_tbl[p]
-        if self.check_compressed_waveforms:
+        if write_compressed_waveforms and self.has_compressed_waveforms:
             for tmplt_hash in write_tbl.template_hash:
                 compressed_waveform = pycbc.waveform.compress.CompressedWaveform.from_hdf(
                                         self.filehandler, tmplt_hash,
-                                        load_now=self.load_compressed_now)
+                                        load_now=True)
                 compressed_waveform.write_to_hdf(f, tmplt_hash)
         return f
 
@@ -470,7 +460,6 @@ class TemplateBank(object):
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, sample_rate, minimum_buffer,
                        approximant=None, increment=8, parameters=None,
-                       load_compressed=True, load_compressed_now=False,
                        low_frequency_cutoff=None,
                        **kwds):
 
@@ -481,8 +470,7 @@ class LiveFilterBank(TemplateBank):
         self.f_lower = low_frequency_cutoff
 
         super(LiveFilterBank, self).__init__(filename, approximant=approximant,
-                parameters=parameters, load_compressed=load_compressed,
-                load_compressed_now=load_compressed_now, **kwds)
+                parameters=parameters, **kwds)
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
         self.hash_lookup = {}
         for i, p in enumerate(self.table):
@@ -599,8 +587,7 @@ class FilterBank(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, dtype,
                  out=None, max_template_length=None,
                  approximant=None, parameters=None,
-                 load_compressed=True,
-                 load_compressed_now=False,
+                 enable_compressed_waveforms=True,
                  low_frequency_cutoff=None,
                  waveform_decompression_method=None,
                  **kwds):
@@ -613,12 +600,11 @@ class FilterBank(TemplateBank):
         self.delta_t = 1.0 / (self.N * self.delta_f)
         self.filter_length = filter_length
         self.max_template_length = max_template_length
+        self.enable_compressed_waveforms = enable_compressed_waveforms
         self.waveform_decompression_method = waveform_decompression_method
 
         super(FilterBank, self).__init__(filename, approximant=approximant,
-            parameters=parameters, load_compressed=load_compressed,
-            load_compressed_now=load_compressed_now,
-            **kwds)
+            parameters=parameters, **kwds)
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
 
     def get_decompressed_waveform(self, tempout, index, f_lower=None,
@@ -631,14 +617,14 @@ class FilterBank(TemplateBank):
 
         from pycbc.waveform.waveform import props
         from pycbc.waveform import get_waveform_filter_length_in_time
-       
+
         # Get the template hash corresponding to the template index taken in as argument
         tmplt_hash = self.table.template_hash[index]
 
         # Read the compressed waveform from the bank file
         compressed_waveform = pycbc.waveform.compress.CompressedWaveform.from_hdf(
                                 self.filehandler, tmplt_hash,
-                                load_now=self.load_compressed_now)
+                                load_now=True)
 
         # Get the interpolation method to be used to decompress the waveform
         if self.waveform_decompression_method is not None :
@@ -685,7 +671,7 @@ class FilterBank(TemplateBank):
         if cached_mem is None:
             wav_len = int(max_freq / delta_f) + 1
             cached_mem = zeros(wav_len, dtype=np.complex64)
-        if self.check_compressed_waveforms :
+        if self.has_compressed_waveforms and self.enable_compressed_waveforms:
             htilde = self.get_decompressed_waveform(cached_mem, t_num,
                                                     f_lower=low_frequency_cutoff,
                                                     approximant=approximant,
@@ -727,7 +713,7 @@ class FilterBank(TemplateBank):
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
-        if self.check_compressed_waveforms :
+        if self.has_compressed_waveforms and self.enable_compressed_waveforms:
             htilde = self.get_decompressed_waveform(tempout, index, f_lower=f_low,
                                                     approximant=approximant, df=None)
         else :
@@ -781,9 +767,7 @@ class FilterBankSkyMax(TemplateBank):
     def __init__(self, filename, filter_length, delta_f,
                  dtype, out_plus=None, out_cross=None,
                  max_template_length=None, parameters=None,
-                 load_compressed=True, load_compressed_now=False,
-                 low_frequency_cutoff=None,
-                 **kwds):
+                 low_frequency_cutoff=None, **kwds):
         self.out_plus = out_plus
         self.out_cross = out_cross
         self.dtype = dtype
@@ -796,8 +780,7 @@ class FilterBankSkyMax(TemplateBank):
         self.max_template_length = max_template_length
 
         super(FilterBankSkyMax, self).__init__(filename, parameters=parameters,
-            load_compressed=True, load_compressed_now=False,
-            **kwds)
+              **kwds)
 
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
 
