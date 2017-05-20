@@ -689,7 +689,7 @@ def apply_transforms(samples, transforms):
     samples : {FieldArray, dict}
         Mapping object with conversions applied. Same type as input.
     """
-    for t in tranforms:
+    for t in transforms:
         try:
             samples = t.transform(samples)
         except NotImplementedError:
