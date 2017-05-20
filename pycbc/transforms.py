@@ -25,6 +25,7 @@ from pycbc import cosmology
 from pycbc.io import record
 from pycbc.waveform import parameters
 from pycbc.distributions.boundaries import Bounds
+from pycbc.distributions import VARARGS_DELIM
 
 class BaseTransform(object):
     """A base class for transforming between two sets of parameters.
@@ -97,6 +98,54 @@ class BaseTransform(object):
         # else error
         else:
             raise TypeError("Input type must be FieldArray or dict.")
+
+    @classmethod
+    def from_config(cls, cp, section, outputs, additional_opts={}):
+        """Initializes a transform from the given section.
+
+        Parameters
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the transform options.
+        section : str
+            Name of the section in the configuration file.
+        outputs : str
+            The names of the parameters that are output by this transformation,
+            separated by `VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
+        additional_opts : dict, optional
+            Any additional arguments to pass to the class. If an option is
+            provided that also exists in the config file, the value provided
+            will be used instead of being read from the file.
+
+        Returns
+        -------
+        cls
+            An instance of the class.
+        """
+        tag = outputs
+        outputs = set(outputs.split(VARARGS_DELIM))
+        special_args = ['name'] + additional_opts.keys()
+        # get any extra arguments to pass to init
+        extra_args = {}
+        for opt in cp.options("-".join([section, tag])):
+            if opt in special_args:
+                continue
+            # check if option can be cast as a float
+            val = cp.get_opt_tag(section, opt, tag)
+            try:
+                val = float(val)
+            except ValueError:
+                pass
+            # add option
+            extra_args.update({opt:val})
+        extra_args.update(additional_opts)
+        out = cls(**extra_args)
+        # check that the outputs matches
+        if outputs-out.outputs != set() or out.outputs-outputs != set():
+            raise ValueError("outputs of class do not match outputs specified "
+                             "in section")
+        return out
 
 
 #
@@ -683,6 +732,61 @@ class Logit(BaseTransform):
         expx = numpy.exp(x)
         return expx * (self._b - self._a) / (1. + expx)**2.
 
+    @classmethod
+    def from_config(cls, cp, section, outputs, additional_opts={}):
+        """Initializes a Logit transform from the given section.
+
+        The section must specify an input and output variable name. The domain
+        of the input may be specified using `min-{input}`, `max-{input}`.
+        Example:
+
+        .. code-block:: ini
+
+            [{section}-logitq]
+            name = logit
+            input = q
+            output = logitq
+            min-q = 1
+            max-q = 8
+
+        Parameters
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the transform options.
+        section : str
+            Name of the section in the configuration file.
+        outputs : str
+            The names of the parameters that are output by this transformation,
+            separated by `VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
+        additional_opts : dict, optional
+            Any additional arguments to pass to the class. If an option is
+            provided that also exists in the config file, the value provided
+            will be used instead of being read from the file.
+
+        Returns
+        -------
+        cls
+            An instance of the class.
+        """
+        # pull out the minimum, maximum values of the input variable
+        inputvar = cp.get_opt_tag(section, 'input', outputs)
+        s = '-'.join(section, outputs)
+        if cp.has_option(s, inputvar):
+            a = cp.get_opt_tag(section, 'min-{}'.format(inputvar), outputs)
+        else:
+            a = None
+        if cp.has_option(s, inputvar):
+            b = cp.get_opt_tag(section, 'max-{}'.format(inputvar), outputs)
+        else:
+            b = None
+        if a is None and b is not None or b is None and a is not None:
+            raise ValueError("if providing a min(max)-{}, must also provide "
+                             "a max(min)-{}".format(inputvar, inputvar))
+        elif a is not None:
+            additional_opts.update({'domain': (float(a), float(b))})
+        return super(Logit, cls).from_config(cp, section, outputs,
+                                             additional_opts)
 
 #
 # =============================================================================
@@ -801,6 +905,62 @@ class Logistic(Logit):
         """Returns the range of the output parameter.
         """
         return self._bounds
+
+    @classmethod
+    def from_config(cls, cp, section, outputs, additional_opts={}):
+        """Initializes a Logistic transform from the given section.
+
+        The section must specify an input and output variable name. The
+        codomain of the output may be specified using `min-{output}`,
+        `max-{output}`. Example:
+
+        .. code-block:: ini
+
+            [{section}-q]
+            name = logistic
+            input = logitq
+            output = q
+            min-q = 1
+            max-q = 8
+
+        Parameters
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the transform options.
+        section : str
+            Name of the section in the configuration file.
+        outputs : str
+            The names of the parameters that are output by this transformation,
+            separated by `VARARGS_DELIM`. These must appear in the "tag" part
+            of the section header.
+        additional_opts : dict, optional
+            Any additional arguments to pass to the class. If an option is
+            provided that also exists in the config file, the value provided
+            will be used instead of being read from the file.
+
+        Returns
+        -------
+        cls
+            An instance of the class.
+        """
+        # pull out the minimum, maximum values of the output variable
+        outputvar = cp.get_opt_tag(section, 'output', outputs)
+        s = '-'.join(section, outputs)
+        if cp.has_option(s, outputvar):
+            a = cp.get_opt_tag(section, 'min-{}'.format(outputvar), outputs)
+        else:
+            a = None
+        if cp.has_option(s, outputvar):
+            b = cp.get_opt_tag(section, 'max-{}'.format(outputvar), outputs)
+        else:
+            b = None
+        if a is None and b is not None or b is None and a is not None:
+            raise ValueError("if providing a min(max)-{}, must also provide "
+                             "a max(min)-{}".format(outputvar, outputvar))
+        elif a is not None:
+            additional_opts.update({'codomain': (float(a), float(b))})
+        return super(Logistic, cls).from_config(cp, section, outputs,
+                                             additional_opts)
 
 
 # set the inverse of the forward transforms to the inverse transforms
