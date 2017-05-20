@@ -586,22 +586,24 @@ transforms = {
     CartesianSpinToChiP.name : CartesianSpinToChiP,
 }
 
-# standard transforms: these are transforms that do not require input
+# standard CBC transforms: these are transforms that do not require input
 # arguments; they are typically used in CBC parameter estimation to transform
 # to coordinates understood by the waveform generator
-standard_transforms = [
+common_cbc_forward_transforms = [
     MchirpQToMass1Mass2(), DistanceToRedshift(),
     SphericalSpin1ToCartesianSpin1(), SphericalSpin2ToCartesianSpin2(),
     AlignedMassSpinToCartesianSpin(), PrecessionMassSpinToCartesianSpin(),
     ChiPToCartesianSpin(),
 ]
-standard_inverse_transforms = [_t.inverse()
-                               for _t in standard_transforms
-                               if _t.inverse is not None]
-all_standard_transforms = standard_transforms + standard_inverse_transforms
+common_cbc_inverse_transforms = [_t.inverse()
+                                   for _t in common_cbc_forward_transforms
+                                   if _t.inverse is not None]
+common_cbc_transforms = common_cbc_forward_transforms + \
+                        common_cbc_inverse_transforms
 
-def get_standard_transforms(requested_params, variable_args,
-                            valid_params=None):
+
+def get_common_cbc_transforms(requested_params, variable_args,
+                              valid_params=None):
     """Determines if any additional parameters from the InferenceFile are
     needed to get derived parameters that user has asked for.
 
@@ -643,10 +645,10 @@ def get_standard_transforms(requested_params, variable_args,
         valid_params = set(valid_params)
         requested_params = requested_params.intersection(valid_params)
 
-    # find all the conversions for the requested derived parameters
+    # find all the transforms for the requested derived parameters
     # calculated from base parameters
     from_base_c = []
-    for converter in standard_transforms:
+    for converter in common_cbc_forward_transforms:
         if (converter.outputs.issubset(variable_args) or
                 converter.outputs.isdisjoint(requested_params)):
             continue
@@ -656,29 +658,30 @@ def get_standard_transforms(requested_params, variable_args,
         requested_params.update(converter.inputs)
         from_base_c.append(converter)
 
-    # find all the conversions for the required base parameters
+    # find all the tranforms for the required base parameters
     # calculated from sampling parameters
     to_base_c = []
-    for converter in standard_inverse_transforms:
+    for converter in common_cbc_inverse_transforms:
         if (converter.inputs.issubset(variable_args) and
                 len(converter.outputs.intersection(requested_params)) > 0):
             requested_params.update(converter.inputs)
             to_base_c.append(converter)
 
-    # get list of conversions that converts sampling parameters to the base
+    # get list of transforms that converts sampling parameters to the base
     # parameters and then converts base parameters to the derived parameters
     all_c = to_base_c + from_base_c
 
     return list(requested_params), all_c
 
-def apply_transforms(samples, cs):
+
+def apply_transforms(samples, transforms):
     """Applies a list of BaseTransform instances on a mapping object.
 
     Parameters
     ----------
     samples : {FieldArray, dict}
         Mapping object to apply transforms to.
-    cs : list
+    transforms : list
         List of BaseTransform instances to apply.
 
     Returns
@@ -686,9 +689,9 @@ def apply_transforms(samples, cs):
     samples : {FieldArray, dict}
         Mapping object with conversions applied. Same type as input.
     """
-    for c in cs:
+    for t in tranforms:
         try:
-            samples = c.transform(samples)
+            samples = t.transform(samples)
         except NotImplementedError:
             continue
     return samples
