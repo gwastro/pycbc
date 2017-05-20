@@ -24,6 +24,7 @@ from pycbc import coordinates
 from pycbc import cosmology
 from pycbc.io import record
 from pycbc.waveform import parameters
+from pycbc.distributions.boundaries import Bounds
 
 class BaseTransform(object):
     """A base class for transforming between two sets of parameters.
@@ -494,7 +495,8 @@ class Logit(BaseTransform):
         self._target = target
         self._inputs = [source]
         self._outputs = [target]
-        self._bounds = domain
+        self._bounds = Bounds(domain[0], domain[1])
+        # shortcuts for quick access later
         self._a = domain[0]
         self._b = domain[1]
 
@@ -593,6 +595,12 @@ class Logit(BaseTransform):
             with the original variable name and value(s).
         """
         x = maps[self._source]
+        # check that x is in bounds
+        isin = self._bounds.__contains__(x)
+        if isinstance(isin, numpy.ndarray) and not isin.all():
+            raise ValueError("one or more values are not in bounds")
+        elif not isin:
+            raise ValueError("{} is not in bounds".format(x))
         out = {self._target : self.logit(x, self._a, self._b)}
         return self.format_output(maps, out)
 
@@ -642,7 +650,7 @@ class Logit(BaseTransform):
         x = maps[self._source]
         return (self._b - self._a)/((x - self._a)*(self._b - x))
 
-    def invese_jacobian(self, maps):
+    def inverse_jacobian(self, maps):
         r"""Computes the Jacobian of :math:`y = \mathrm{logistic}(x; a,b)`.
         
         This is:
