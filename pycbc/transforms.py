@@ -25,7 +25,7 @@ from pycbc import cosmology
 from pycbc.io import record
 from pycbc.waveform import parameters
 from pycbc.distributions.boundaries import Bounds
-from pycbc.distributions import VARARGS_DELIM
+from pycbc.distributions.bounded import VARARGS_DELIM
 
 class BaseTransform(object):
     """A base class for transforming between two sets of parameters.
@@ -100,7 +100,8 @@ class BaseTransform(object):
             raise TypeError("Input type must be FieldArray or dict.")
 
     @classmethod
-    def from_config(cls, cp, section, outputs, additional_opts={}):
+    def from_config(cls, cp, section, outputs, skip_opts=[],
+                    additional_opts={}):
         """Initializes a transform from the given section.
 
         Parameters
@@ -113,6 +114,8 @@ class BaseTransform(object):
             The names of the parameters that are output by this transformation,
             separated by `VARARGS_DELIM`. These must appear in the "tag" part
             of the section header.
+        skip_opts : list, optional
+            Do not read options in the given list.
         additional_opts : dict, optional
             Any additional arguments to pass to the class. If an option is
             provided that also exists in the config file, the value provided
@@ -125,7 +128,7 @@ class BaseTransform(object):
         """
         tag = outputs
         outputs = set(outputs.split(VARARGS_DELIM))
-        special_args = ['name'] + additional_opts.keys()
+        special_args = ['name'] + skip_opts + additional_opts.keys()
         # get any extra arguments to pass to init
         extra_args = {}
         for opt in cp.options("-".join([section, tag])):
@@ -733,7 +736,8 @@ class Logit(BaseTransform):
         return expx * (self._b - self._a) / (1. + expx)**2.
 
     @classmethod
-    def from_config(cls, cp, section, outputs, additional_opts={}):
+    def from_config(cls, cp, section, outputs, skip_opts=[],
+                    additional_opts={}):
         """Initializes a Logit transform from the given section.
 
         The section must specify an input and output variable name. The domain
@@ -759,6 +763,8 @@ class Logit(BaseTransform):
             The names of the parameters that are output by this transformation,
             separated by `VARARGS_DELIM`. These must appear in the "tag" part
             of the section header.
+        skip_opts : list, optional
+            Do not read options in the given list.
         additional_opts : dict, optional
             Any additional arguments to pass to the class. If an option is
             provided that also exists in the config file, the value provided
@@ -771,13 +777,17 @@ class Logit(BaseTransform):
         """
         # pull out the minimum, maximum values of the input variable
         inputvar = cp.get_opt_tag(section, 'input', outputs)
-        s = '-'.join(section, outputs)
-        if cp.has_option(s, inputvar):
-            a = cp.get_opt_tag(section, 'min-{}'.format(inputvar), outputs)
+        s = '-'.join([section, outputs])
+        opt = 'min-{}'.format(inputvar)
+        if cp.has_option(s, opt):
+            a = cp.get_opt_tag(section, opt, outputs)
+            skip_opts.append(opt)
         else:
             a = None
-        if cp.has_option(s, inputvar):
-            b = cp.get_opt_tag(section, 'max-{}'.format(inputvar), outputs)
+        opt = 'max-{}'.format(inputvar)
+        if cp.has_option(s, opt):
+            b = cp.get_opt_tag(section, opt, outputs)
+            skip_opts.append(opt)
         else:
             b = None
         if a is None and b is not None or b is None and a is not None:
@@ -785,7 +795,7 @@ class Logit(BaseTransform):
                              "a max(min)-{}".format(inputvar, inputvar))
         elif a is not None:
             additional_opts.update({'domain': (float(a), float(b))})
-        return super(Logit, cls).from_config(cp, section, outputs,
+        return super(Logit, cls).from_config(cp, section, outputs, skip_opts,
                                              additional_opts)
 
 #
@@ -907,7 +917,8 @@ class Logistic(Logit):
         return self._bounds
 
     @classmethod
-    def from_config(cls, cp, section, outputs, additional_opts={}):
+    def from_config(cls, cp, section, outputs, skip_opts=[],
+                    additional_opts={}):
         """Initializes a Logistic transform from the given section.
 
         The section must specify an input and output variable name. The
@@ -933,6 +944,8 @@ class Logistic(Logit):
             The names of the parameters that are output by this transformation,
             separated by `VARARGS_DELIM`. These must appear in the "tag" part
             of the section header.
+        skip_opts : list, optional
+            Do not read options in the given list.
         additional_opts : dict, optional
             Any additional arguments to pass to the class. If an option is
             provided that also exists in the config file, the value provided
@@ -946,12 +959,16 @@ class Logistic(Logit):
         # pull out the minimum, maximum values of the output variable
         outputvar = cp.get_opt_tag(section, 'output', outputs)
         s = '-'.join(section, outputs)
-        if cp.has_option(s, outputvar):
-            a = cp.get_opt_tag(section, 'min-{}'.format(outputvar), outputs)
+        opt = 'min-{}'.format(outputvar)
+        if cp.has_option(s, opt):
+            a = cp.get_opt_tag(section, opt, outputs)
+            skip_opts.append(opt)
         else:
             a = None
-        if cp.has_option(s, outputvar):
-            b = cp.get_opt_tag(section, 'max-{}'.format(outputvar), outputs)
+        opt = 'max-{}'.format(outputvar)
+        if cp.has_option(s, opt):
+            b = cp.get_opt_tag(section, opt, outputs)
+            skip_opts.append(opt)
         else:
             b = None
         if a is None and b is not None or b is None and a is not None:
@@ -960,7 +977,7 @@ class Logistic(Logit):
         elif a is not None:
             additional_opts.update({'codomain': (float(a), float(b))})
         return super(Logistic, cls).from_config(cp, section, outputs,
-                                             additional_opts)
+                                                skip_opts, additional_opts)
 
 
 # set the inverse of the forward transforms to the inverse transforms
@@ -1108,3 +1125,63 @@ def apply_transforms(samples, transforms):
         except NotImplementedError:
             continue
     return samples
+
+def order_transforms(transforms):
+    """Orders transforms to ensure proper chaining.
+
+    For example, if `transforms = [B, A, C]`, and `A` produces outputs needed
+    by `B`, the transforms will be re-rorderd to `[A, B, C]`.
+
+    Parameters
+    ----------
+    transforms : list
+        List of transform instances to order.
+
+    Outputs
+    -------
+    list :
+        List of transformed ordered such that forward transforms can be carried
+        out without error.
+    """
+    # get a set of all inputs and all outputs
+    outputs = set().union(*[t.outputs for t in transforms])
+    out = []
+    remaining = [t for t in transforms]
+    while remaining:
+        # pull out transforms that have no inputs in the set of outputs
+        leftover = []
+        for t in remaining:
+            if t.inputs.isdisjoint(outputs):
+                out.append(t)
+                outputs -= t.outputs
+            else:
+                leftover.append(t)
+        remaining = leftover
+    return out
+
+def read_transforms_from_config(cp, section="transforms"):
+    """Returns a list of PyCBC transform instances for a section in the
+    given configuration file.
+
+    If the transforms are nested (i.e., the output of one transform is the
+    input of another), the returned list will be sorted by the order of the
+    nests.
+
+    Parameters
+    ----------
+    cp : WorflowConfigParser
+        An open config file to read.
+    section : {"transforms", string}
+        Prefix on section names from which to retrieve the transforms.
+
+    Returns
+    -------
+    list
+        A list of the parsed transforms.
+    """
+    trans = []
+    for subsection in cp.get_subsections(section):
+        name = cp.get_opt_tag(section, "name", subsection)
+        t = transforms[name].from_config(cp, section, subsection)
+        trans.append(t)
+    return order_transforms(trans)
