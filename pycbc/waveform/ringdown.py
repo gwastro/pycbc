@@ -175,7 +175,7 @@ def lm_tfinal(mass, spin, modes):
     at which the amplitude falls to 1/1000 of the peak amplitude
     """
 
-    f_0, tau = get_lm_f0tau_allmodes(mass, spin, modes)
+    _, tau = get_lm_f0tau_allmodes(mass, spin, modes)
     t_max = {}
     for lmn in modes:
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
@@ -229,7 +229,7 @@ def lm_deltaf(mass, spin, modes):
     1/1000 of the peak amplitude.
     """
 
-    f_0, tau = get_lm_f0tau_allmodes(mass, spin, modes)
+    _, tau = get_lm_f0tau_allmodes(mass, spin, modes)
     df = {}
     for lmn in modes:
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
@@ -238,9 +238,38 @@ def lm_deltaf(mass, spin, modes):
 
     return min(df.values())
 
+# Functions for tapering #######################################################
+
+def apply_taper(delta_t, taper, f_0, tau, amp, phi):
+    """Return tapering window.
+    """
+
+    # Times of tapering do not include t=0
+    taper_times = -numpy.arange(delta_t, taper*tau, delta_t)
+    taper_times.sort()
+    taper_hp = amp * numpy.exp(10*taper_times/tau) * \
+                     numpy.cos(two_pi*f_0*taper_times + phi)
+    taper_hc = amp * numpy.exp(10*taper_times/tau) * \
+                     numpy.sin(two_pi*f_0*taper_times + phi)
+
+    return taper_hp, taper_hc, len(taper_times), taper_times[0]
+
+def taper_shift(waveform, output):
+    """Add waveform to output with waveform shifted accordingly (for tapering
+    multi-mode ringdowns)
+    """
+
+    if len(waveform) == len(output):
+        output.data += waveform.data
+        output._epoch = waveform._epoch
+    else:
+        output.data[len(output)-len(waveform):] += waveform.data
+
+    return output
+
 # Functions to generate ringdown waveforms ####################################
 
-def get_td_qnm(template=None, **kwargs):
+def get_td_qnm(template=None, taper=None, **kwargs):
     """Return a time domain damped sinusoid.
 
     Parameters
@@ -248,6 +277,13 @@ def get_td_qnm(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
+    taper: {None, float}, optional
+        Tapering at the beginning of the waveform with duration taper * tau.
+        This option is recommended with timescales taper=1./2 or 1. for
+        time-domain ringdown-only injections.
+        The abrupt turn on of the ringdown can cause issues on the waveform
+        when doing the fourier transform to the frequency domain. Setting
+        taper will add a rapid ringup with timescale tau/10.
     f_0 : float
         The ringdown-frequency.
     tau : float
@@ -291,17 +327,33 @@ def get_td_qnm(template=None, **kwargs):
         t_final = qnm_time_decay(tau, 1./1000)
     kmax = int(t_final / delta_t) + 1
 
-    times = numpy.arange(kmax)*delta_t
+    times = numpy.arange(kmax) * delta_t
 
     hp = amp * numpy.exp(-times/tau) * numpy.cos(two_pi*f_0*times + phi)
     hc = amp * numpy.exp(-times/tau) * numpy.sin(two_pi*f_0*times + phi)
 
-    hplus = TimeSeries(zeros(kmax), delta_t=delta_t)
-    hcross = TimeSeries(zeros(kmax), delta_t=delta_t)
-    hplus.data[:kmax] = hp
-    hcross.data[:kmax] = hc
+    # If size of tapering window is less than delta_t, do not apply taper.
+    if taper is None or delta_t > taper*tau:
+        hplus = TimeSeries(zeros(kmax), delta_t=delta_t)
+        hcross = TimeSeries(zeros(kmax), delta_t=delta_t)
+        hplus.data[:kmax] = hp
+        hcross.data[:kmax] = hc
 
-    return hplus, hcross
+        return hplus, hcross
+
+    else:
+        taper_hp, taper_hc, taper_window, start = apply_taper(delta_t, taper,
+                                                        f_0, tau, amp, phi)
+        hplus = TimeSeries(zeros(taper_window+kmax), delta_t=delta_t)
+        hcross = TimeSeries(zeros(taper_window+kmax), delta_t=delta_t)
+        hplus.data[:taper_window] = taper_hp
+        hplus.data[taper_window:] = hp
+        hplus._epoch = start
+        hcross.data[:taper_window] = taper_hc
+        hcross.data[taper_window:] = hc
+        hcross._epoch = start
+
+        return hplus, hcross
 
 def get_fd_qnm(template=None, **kwargs):
     """Return a frequency domain damped sinusoid.
@@ -375,7 +427,7 @@ def get_fd_qnm(template=None, **kwargs):
         time_shift = numpy.exp(-1j * two_pi * freqs * t_0) 
         norm *= time_shift
 
-    # Anallytical expression for the Fourier transform of the ringdown (damped sinusoid)
+    # Analytical expression for the Fourier transform of the ringdown (damped sinusoid)
     hp_tilde = norm * ( (1 + 2j * pi * freqs * tau) * numpy.cos(phi)
                                - two_pi * f_0 * tau * numpy.sin(phi) )
     hc_tilde = norm * ( (1 + 2j * pi * freqs * tau) * numpy.sin(phi)
@@ -388,7 +440,7 @@ def get_fd_qnm(template=None, **kwargs):
 
     return hplustilde, hcrosstilde
 
-def get_td_lm(template=None, **kwargs):
+def get_td_lm(template=None, taper=None, **kwargs):
     """Return frequency domain lm mode with the given number of overtones.
 
     Parameters
@@ -396,6 +448,15 @@ def get_td_lm(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
+    taper: {None, float}, optional
+        Tapering at the beginning of the waveform with duration taper * tau.
+        This option is recommended with timescales taper=1./2 or 1. for
+        time-domain ringdown-only injections.
+        The abrupt turn on of the ringdown can cause issues on the waveform
+        when doing the fourier transform to the frequency domain. Setting
+        taper will add a rapid ringup with timescale tau/10.
+        Each overtone will have a different taper depending on its tau, the
+        final taper being the superposition of all the tapers.
     final_mass : float
         Mass of the final black hole.
     final_spin : float
@@ -446,18 +507,30 @@ def get_td_lm(template=None, **kwargs):
         delta_t = lm_deltat(final_mass, final_spin, ['%d%d%d' %(l,m,nmodes)]) 
     if t_final is None:
         t_final = lm_tfinal(final_mass, final_spin, ['%d%d%d' %(l, m, nmodes)])
+
+    f_0, tau = get_lm_f0tau(final_mass, final_spin, l, m, nmodes)
+
     kmax = int(t_final / delta_t) + 1
+    # Different overtones will have different tapering window-size
+    # Find maximum window size to create long enough output vector
+    if taper is not None:
+        taper_window = int(taper*max(tau)/delta_t)
+        kmax += taper_window
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
 
-    f_0, tau = get_lm_f0tau(final_mass, final_spin, l, m, nmodes)
     for n in range(nmodes):
-        hplus, hcross = get_td_qnm(template=None, f_0=f_0[n], tau=tau[n],
-                            phi=phis['%d%d%d' %(l,m,n)], amp=amps['%d%d%d' %(l,m,n)],
+        hplus, hcross = get_td_qnm(template=None, taper=taper, f_0=f_0[n],
+                            tau=tau[n], phi=phis['%d%d%d' %(l,m,n)],
+                            amp=amps['%d%d%d' %(l,m,n)],
                             delta_t=delta_t, t_final=t_final)
-        outplus.data += hplus.data
-        outcross.data += hcross.data
+        if taper is None:
+            outplus.data += hplus.data
+            outcross.data += hcross.data
+        else:
+            outplus = taper_shift(hplus, outplus)
+            outcross = taper_shift(hcross, outcross)
 
     return outplus, outcross
 
@@ -535,7 +608,7 @@ def get_fd_lm(template=None, **kwargs):
 
     return outplus, outcross
 
-def get_td_lm_allmodes(template=None, **kwargs):
+def get_td_lm_allmodes(template=None, taper=None, **kwargs):
     """Return time domain ringdown with all the modes specified.
 
     Parameters
@@ -543,6 +616,15 @@ def get_td_lm_allmodes(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
+    taper: {None, float}, optional
+        Tapering at the beginning of the waveform with duration taper * tau.
+        This option is recommended with timescales taper=1./2 or 1. for
+        time-domain ringdown-only injections.
+        The abrupt turn on of the ringdown can cause issues on the waveform
+        when doing the fourier transform to the frequency domain. Setting
+        taper will add a rapid ringup with timescale tau/10.
+        Each mode and overtone will have a different taper depending on its tau,
+        the final taper being the superposition of all the tapers.
     final_mass : float
         Mass of the final black hole.
     final_spin : float
@@ -592,16 +674,27 @@ def get_td_lm_allmodes(template=None, **kwargs):
         delta_t = lm_deltat(final_mass, final_spin, lmns)
     if t_final is None:
         t_final = lm_tfinal(final_mass, final_spin, lmns)
+
     kmax = int(t_final / delta_t) + 1
+    _, tau = get_lm_f0tau_allmodes(final_mass, final_spin, lmns)
+    # Different overtones will have different tapering window-size
+    # Find maximum window size to create long enough output vector
+    if taper is not None:
+        taper_window = int(taper*max(tau.values())/delta_t)
+        kmax += taper_window
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     for lmn in lmns:
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
-        hplus, hcross = get_td_lm(l=l, m=m, nmodes=nmodes, delta_t=delta_t,
-                                    t_final=t_final, **input_params)
-        outplus.data += hplus.data
-        outcross.data += hcross.data
+        hplus, hcross = get_td_lm(taper=taper, l=l, m=m, nmodes=nmodes,
+                             delta_t=delta_t, t_final=t_final, **input_params)
+        if taper is None:
+            outplus.data += hplus.data
+            outcross.data += hcross.data
+        else:
+            outplus = taper_shift(hplus, outplus)
+            outcross = taper_shift(hcross, outcross)
 
     return outplus, outcross
 

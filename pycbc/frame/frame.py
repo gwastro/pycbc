@@ -98,7 +98,7 @@ def locations_to_cache(locations):
     for source in locations:
         for file_path in glob.glob(source):
             dir_name, file_name = os.path.split(file_path)
-            base_name, file_extension = os.path.splitext(file_name)
+            _, file_extension = os.path.splitext(file_name)
 
             if file_extension in [".lcf", ".cache"]:
                 cache = lal.CacheImport(file_path)
@@ -286,9 +286,8 @@ def frame_paths(frame_type, start_time, end_time, server=None):
     """
     site = frame_type[0]
     connection = datafind_connection(server)
-    times = connection.find_times(site, frame_type, 
-                                  gpsstart=start_time, 
-                                  gpsend=end_time)
+    connection.find_times(site, frame_type, 
+                          gpsstart=start_time, gpsend=end_time)
     cache = connection.find_frame_urls(site, frame_type, start_time, end_time)
     paths = [entry.path for entry in cache]
     return paths    
@@ -470,7 +469,7 @@ class DataBuffer(object):
         sample_rate: int
             The sample rate of the data within this channel
         """
-        data_length = lalframe.FrStreamGetVectorLength(channel_name, stream)
+        lalframe.FrStreamGetVectorLength(channel_name, stream)
         channel_type = lalframe.FrStreamGetTimeSeriesType(channel_name, stream)
         create_series_func = _fr_type_map[channel_type][2]
         get_series_metadata_func = _fr_type_map[channel_type][3]
@@ -505,7 +504,7 @@ class DataBuffer(object):
             return TimeSeries(data.data.data, delta_t=data.deltaT,
                               epoch=self.read_pos, 
                               dtype=dtype)     
-        except Exception as e:
+        except Exception:
             raise RuntimeError('Cannot read requested frame data') 
 
     def null_advance(self, blocksize):

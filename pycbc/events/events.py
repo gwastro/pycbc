@@ -132,9 +132,9 @@ def findchirp_cluster_over_window(times, values, window_length):
 
     from weave import inline
     indices = numpy.zeros(len(times), dtype=int)
-    tlen = len(times)
+    tlen = len(times) # pylint:disable=unused-variable
     k = numpy.zeros(1, dtype=int)
-    absvalues = abs(values)
+    absvalues = abs(values) # pylint:disable=unused-variable
     times = times.astype(int)
     code = """
         int j = 0;

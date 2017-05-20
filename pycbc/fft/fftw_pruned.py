@@ -147,7 +147,7 @@ def second_phase(invec, indices, N1, N2):
     out : array of floats
     """
     invec = numpy.array(invec.data, copy=False)
-    NI = len(indices)
+    NI = len(indices) # pylint:disable=unused-variable
     N1=int(N1)
     N2=int(N2)
     out = numpy.zeros(len(indices), dtype=numpy.complex64)
@@ -195,7 +195,7 @@ def fast_second_phase(invec, indices, N1, N2):
     out : array of floats
     """
     invec = numpy.array(invec.data, copy=False)
-    NI = len(indices)
+    NI = len(indices) # pylint:disable=unused-variable
     N1=int(N1)
     N2=int(N2)
     out = numpy.zeros(len(indices), dtype=numpy.complex64)

@@ -467,11 +467,12 @@ def load_frequencyseries(path, group=None):
     if data.ndim == 2:
         delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
         epoch = _lal.LIGOTimeGPS(data[0][0])
-        return FrequencySeries(data[:,1], delta_f=delta_f)
+        return FrequencySeries(data[:,1], delta_f=delta_f, epoch=epoch)
     elif data.ndim == 3:
         delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
         epoch = _lal.LIGOTimeGPS(data[0][0])
-        return FrequencySeries(data[:,1] + 1j*data[:,2], delta_f=delta_f)
+        return FrequencySeries(data[:,1] + 1j*data[:,2], delta_f=delta_f,
+                               epoch=epoch)
     else:
         raise ValueError('File has %s dimensions, cannot convert to Array, \
                           must be 2 (real) or 3 (complex)' % data.ndim)

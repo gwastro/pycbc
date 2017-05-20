@@ -48,7 +48,7 @@ def walk(chains, start, end, step):
 
     # get number of chains, parameters, and iterations
     chains = numpy.array(chains)
-    nchains, nparameters, niterations = chains.shape
+    _, nparameters, _ = chains.shape
 
     # get end index of blocks
     ends = numpy.arange(start, end, step)

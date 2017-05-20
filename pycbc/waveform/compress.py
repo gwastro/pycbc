@@ -236,7 +236,6 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         outdf = df
     else:
         outdf = None
-    out = decomp_scratch
     hdecomp = fd_decompress(comp_amp, comp_phase, sample_points,
                             out=decomp_scratch, df=outdf, f_lower=fmin,
                             interpolation=interpolation)
@@ -514,12 +513,12 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         df = out.delta_f
         hlen = len(out)
     if f_lower is None:
-        imin = 0
+        imin = 0 # pylint:disable=unused-variable
         f_lower = sample_frequencies[0]
     else:
         if f_lower >= sample_frequencies.max():
             raise ValueError("f_lower is > than the maximum sample frequency")
-        imin = int(numpy.searchsorted(sample_frequencies, f_lower))
+        imin = int(numpy.searchsorted(sample_frequencies, f_lower)) # pylint:disable=unused-variable
     start_index = int(numpy.floor(f_lower/df))
     if start_index >= hlen:
         raise ValueError('requested f_lower >= largest frequency in out')
@@ -530,9 +529,9 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         else:
             code = _linear_decompress_code
         # use custom interpolation
-        sflen = len(sample_frequencies)
-        h = numpy.array(out.data, copy=False)
-        delta_f = float(df)
+        sflen = len(sample_frequencies) # pylint:disable=unused-variable
+        h = numpy.array(out.data, copy=False) # pylint:disable=unused-variable
+        delta_f = float(df) # pylint:disable=unused-variable
         inline(code, ['h', 'hlen', 'sflen', 'delta_f', 'sample_frequencies',
                       'amp', 'phase', 'start_index', 'imin'],
                extra_compile_args=[WEAVE_FLAGS] +\

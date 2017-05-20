@@ -169,8 +169,8 @@ def get_code_version_numbers(cp):
         version string for each executable.
     """
     code_version_dict = {}
-    for item, value in cp.items('executables'):
-        path, exe_name = os.path.split(value)
+    for _, value in cp.items('executables'):
+        _, exe_name = os.path.split(value)
         version_string = None
         if value.startswith('gsiftp://') or value.startswith('http://'):
            code_version_dict[exe_name] = "Using bundle downloaded from %s" % value

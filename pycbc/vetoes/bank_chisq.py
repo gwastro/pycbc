@@ -48,9 +48,9 @@ def segment_snrs(filters, stilde, psd, low_frequency_cutoff):
     snrs = []
     norms = []
 
-    for i, bank_template in enumerate(filters):
+    for bank_template in filters:
         # For every template compute the snr against the stilde segment
-        snr, corr, norm = matched_filter_core(
+        snr, _, norm = matched_filter_core(
                 bank_template, stilde, h_norm=bank_template.sigmasq(psd),
                 psd=None, low_frequency_cutoff=low_frequency_cutoff)
         # SNR time series stored here

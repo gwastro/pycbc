@@ -74,11 +74,11 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
                     pfa6,  pfl6,  pfa7, amp_factor):
     """ Calculate the spa tmplt phase 
     """
-    kfac = numpy.array(spa_tmplt_precondition(len(htilde), delta_f, kmin).data, copy=False)
+    kfac = numpy.array(spa_tmplt_precondition(len(htilde), delta_f, kmin).data, copy=False) # pylint:disable=unused-variable
     htilde = numpy.array(htilde.data, copy=False)
-    cbrt_vec = numpy.array(get_cbrt(len(htilde)*delta_f + kmin, delta_f).data, copy=False)
-    logv_vec = numpy.array(get_log(len(htilde)*delta_f + kmin, delta_f).data, copy=False)
-    length = len(htilde)
+    cbrt_vec = numpy.array(get_cbrt(len(htilde)*delta_f + kmin, delta_f).data, copy=False) # pylint:disable=unused-variable
+    logv_vec = numpy.array(get_log(len(htilde)*delta_f + kmin, delta_f).data, copy=False) # pylint:disable=unused-variable
+    length = len(htilde) # pylint:disable=unused-variable
     
     code = """ 
     float piM13 = cbrtf(piM);

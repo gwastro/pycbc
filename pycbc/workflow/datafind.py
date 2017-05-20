@@ -400,7 +400,6 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
     # Now ready to loop over the input segments
     datafindouts = []
     datafindcaches = []
-    ifos = scienceSegs.keys()
     logging.info("Querying datafind server for all science segments.")
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
@@ -486,7 +485,6 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
     # Now ready to loop over the input segments
     datafindouts = []
     datafindcaches = []
-    ifos = scienceSegs.keys()
     logging.info("Querying datafind server for all science segments.")
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()

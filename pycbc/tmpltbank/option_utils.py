@@ -931,7 +931,7 @@ class massRangeParameters(object):
                          """
                 raise ValueError(errMsg)
             if use_eos_max_ns_mass:
-                ns_sequence, max_ns_g_mass = load_ns_sequence(self.ns_eos)
+                _, max_ns_g_mass = load_ns_sequence(self.ns_eos)
                 if(self.maxMass2 > max_ns_g_mass):
                     errMsg = """
                              The maximum NS mass supported by this EOS is

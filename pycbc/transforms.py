@@ -13,8 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
-This modules provides classes and functions for converting sampling parameters
-to a set of base parameters.
+This modules provides classes and functions for transforming parameters.
 """
 
 import copy
@@ -26,46 +25,43 @@ from pycbc import cosmology
 from pycbc.io import record
 from pycbc.waveform import parameters
 
-class BaseConversion(object):
-    """ A base class for converting between two sets of parameters.
+class BaseTransform(object):
+    """A base class for transforming between two sets of parameters.
     """
-    _name = None
-    _name_inverse = None
+    name = None
+    inverse = None
     _inputs = []
     _outputs = []
 
     def __init__(self):
-        self.name = self._name
         self.inputs = set(self._inputs)
         self.outputs = set(self._outputs)
-        self.convert = self._convert
-        self.jacobian = self._jacobian
 
-    def _convert(self, maps):
-        """ This function converts from inputs to outputs.
+    def transform(self, maps):
+        """ This function transforms from inputs to outputs.
         """
         raise NotImplementedError("Not added.")
 
-    def _convert_inverse(self, maps):
-        """ The inverse conversions of _convert. This function converts from
+    def inverse_transform(self, maps):
+        """ The inverse conversions of transform. This function transforms from
         outputs to inputs.
         """
         raise NotImplementedError("Not added.")
 
-    def _jacobian(self, maps):
+    def jacobian(self, maps):
         """ The Jacobian for the inputs to outputs transformation.
         """
         raise NotImplementedError("Jacobian transform not implemented.")
 
-    def _jacobian_inverse(self, maps):
+    def inverse_jacobian(self, maps):
         """ The Jacobian for the outputs to inputs transformation.
         """
         raise NotImplementedError("Jacobian transform not implemented.")
 
     @staticmethod
     def format_output(old_maps, new_maps):
-        """ This function takes the returned dict from _convert and converts
-        it to the same datatype as the input to _convert.
+        """ This function takes the returned dict from `transform` and converts
+        it to the same datatype as the input.
 
         Parameters
         ----------
@@ -101,34 +97,24 @@ class BaseConversion(object):
         else:
             raise TypeError("Input type must be FieldArray or dict.")
 
-    def inverse(self):
-        """ Inverts the conversions being done. Inputs become outputs and
-        vice versa. The functions ``convert`` and ``jacobian`` will now call
-        the inverse transformation that instance is currently set to.
-        """
-        if self.convert == self._convert and self.jacobian == self._jacobian:
-            self.name = self._name_inverse
-            self.inputs = set(self._outputs)
-            self.outputs = set(self._inputs)
-            self.convert = self._convert_inverse
-            self.jacobian = self._jacobian_inverse
-        else:
-            self.name = self._name
-            self.inputs = set(self._inputs)
-            self.outputs = set(self._outputs)
-            self.convert = self._convert
-            self.jacobian = self._jacobian
 
-class MchirpQToMass1Mass2(BaseConversion):
+#
+# =============================================================================
+#
+#                             Forward Transforms
+#
+# =============================================================================
+#
+
+class MchirpQToMass1Mass2(BaseTransform):
     """ Converts chirp mass and mass ratio to component masses.
     """
-    _name = "mchirp_q_to_mass1_mass2"
-    _name_inverse = "mass1_mass2_to_mchirp_q"
+    name = "mchirp_q_to_mass1_mass2"
     _inputs = [parameters.mchirp, parameters.q]
     _outputs = [parameters.mass1, parameters.mass2]
 
-    def _convert(self, maps):
-        """ This function converts from chirp mass and mass ratio to component
+    def transform(self, maps):
+        """This function transforms from chirp mass and mass ratio to component
         masses.
 
         Parameters
@@ -141,16 +127,16 @@ class MchirpQToMass1Mass2(BaseConversion):
 
         >>> import numpy
         >>> from pycbc import transforms
-        >>> from pycbc.waveform import parameters
-        >>> cl = transforms.MchirpQToMass1Mass2()
-        >>> cl.convert({parameters.mchirp : numpy.array([10.]), parameters.q : numpy.array([2.])})
-            {'mass1': array([ 16.4375183]), 'mass2': array([ 8.21875915]), 'mchirp': array([ 10.]), 'q': array([ 2.])}
+        >>> t = transforms.MchirpQToMass1Mass2()
+        >>> t.transform({'mchirp': numpy.array([10.]), 'q': numpy.array([2.])})
+        {'mass1': array([ 16.4375183]), 'mass2': array([ 8.21875915]),
+         'mchirp': array([ 10.]), 'q': array([ 2.])}
 
         Returns
         -------
         out : dict
             A dict with key as parameter name and value as numpy.array or float
-            of converted values.
+            of transformed values.
         """
         out = {}
         out[parameters.mass1] = conversions.mass1_from_mchirp_q(
@@ -161,9 +147,9 @@ class MchirpQToMass1Mass2(BaseConversion):
                                                 maps[parameters.q])
         return self.format_output(maps, out)
 
-    def _convert_inverse(self, maps):
-        """ This function converts from component masses to chirp mass and mass
-        ratio.
+    def inverse_transform(self, maps):
+        """This function transforms from component masses to chirp mass and
+        mass ratio.
 
         Parameters
         ----------
@@ -175,17 +161,16 @@ class MchirpQToMass1Mass2(BaseConversion):
 
         >>> import numpy
         >>> from pycbc import transforms
-        >>> from pycbc.waveform import parameters
-        >>> cl = transforms.MchirpQToMass1Mass2()
-        >>> cl.inverse()
-        >>> cl.convert({parameters.mass1 : numpy.array([16.4]), parameters.mass2 : numpy.array([8.2])})
-            {'mass1': array([ 16.4]), 'mass2': array([ 8.2]), 'mchirp': array([ 9.97717521]), 'q': 2.0}
+        >>> t = transforms.MchirpQToMass1Mass2()
+        >>> t.inverse_transform({'mass1': numpy.array([16.4]), 'mass2': numpy.array([8.2])})
+            {'mass1': array([ 16.4]), 'mass2': array([ 8.2]),
+             'mchirp': array([ 9.97717521]), 'q': 2.0}
 
         Returns
         -------
         out : dict
             A dict with key as parameter name and value as numpy.array or float
-            of converted values.
+            of transformed values.
         """
         out = {}
         out[parameters.mchirp] = \
@@ -198,26 +183,26 @@ class MchirpQToMass1Mass2(BaseConversion):
         out[parameters.q] = m_p / m_s
         return self.format_output(maps, out)
 
-    def _jacobian(self, maps):
+    def jacobian(self, maps):
         """ Returns the Jacobian from chirp mass and mass ratio to
         component masses.
         """
-        tmp = self._convert(maps)
+        tmp = self.transform(maps)
         return maps["mchirp"] / tmp["mass2"]**2
 
-class SphericalSpin1ToCartesianSpin1(BaseConversion):
+
+class SphericalSpin1ToCartesianSpin1(BaseTransform):
     """ Converts spherical spin parameters (magnitude and two angles) to
-    catesian spin parameters. This class only converts spsins for the first
+    catesian spin parameters. This class only transforms spsins for the first
     component mass.
     """
-    _name = "sphercal_spin_1_to_cartesian_spin_1"
-    _name_inverse = "cartesian_spin_1_to_spherical_spin_1"
+    name = "spherical_spin_1_to_cartesian_spin_1"
     _inputs = [parameters.spin1_a, parameters.spin1_azimuthal,
                parameters.spin1_polar]
     _outputs = [parameters.spin1x, parameters.spin1y, parameters.spin1z]
 
-    def _convert(self, maps):
-        """ This function converts from spherical to cartesian spins.
+    def transform(self, maps):
+        """ This function transforms from spherical to cartesian spins.
 
         Parameters
         ----------
@@ -229,9 +214,8 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
 
         >>> import numpy
         >>> from pycbc import transforms
-        >>> from pycbc.waveform import parameters
-        >>> cl = transforms.SphericalSpin1ToCartesianSpin1()
-        >>> cl.convert({parameters.spin1_a : numpy.array([0.1]), parameters.spin1_azimuthal : numpy.array([0.1]), parameters.spin1_polar : numpy.array([0.1])})
+        >>> t = transforms.SphericalSpin1ToCartesianSpin1()
+        >>> t.transform({'spin1_a': numpy.array([0.1]), 'spin1_azimuthal': numpy.array([0.1]), 'spin1_polar': numpy.array([0.1])})
             {'spin1_a': array([ 0.1]), 'spin1_azimuthal': array([ 0.1]), 'spin1_polar': array([ 0.1]),
              'spin2x': array([ 0.00993347]), 'spin2y': array([ 0.00099667]), 'spin2z': array([ 0.09950042])}
 
@@ -239,15 +223,15 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
         -------
         out : dict
             A dict with key as parameter name and value as numpy.array or float
-            of converted values.
+            of transformed values.
         """
         a, az, po = self._inputs
         data = coordinates.spherical_to_cartesian(maps[a], maps[az], maps[po])
         out = {param : val for param, val in zip(self._outputs, data)}
         return self.format_output(maps, out)
 
-    def _convert_inverse(self, maps):
-        """ This function converts from cartesian to spherical spins.
+    def inverse_transform(self, maps):
+        """ This function transforms from cartesian to spherical spins.
 
         Parameters
         ----------
@@ -257,34 +241,35 @@ class SphericalSpin1ToCartesianSpin1(BaseConversion):
         -------
         out : dict
             A dict with key as parameter name and value as numpy.array or float
-            of converted values.
+            of transformed values.
         """
         sx, sy, sz = self._outputs
         data = coordinates.cartesian_to_spherical(maps[sx], maps[sy], maps[sz])
         out = {param : val for param, val in zip(self._outputs, data)}
         return self.format_output(maps, out)
 
+
 class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
     """ Converts spherical spin parameters (magnitude and two angles) to
-    catesian spin parameters. This class only converts spsins for the second
+    catesian spin parameters. This class only transforms spsins for the second
     component mass.
     """
-    _name = "spherical_spin_2_to_cartesian_spin_2"
-    _name_inverse = "cartesian_spin_2_to_spherical_spin_2"
+    name = "spherical_spin_2_to_cartesian_spin_2"
     _inputs = [parameters.spin2_a, parameters.spin2_azimuthal,
                parameters.spin2_polar]
     _outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
 
-class DistanceToRedshift(BaseConversion):
+
+class DistanceToRedshift(BaseTransform):
     """ Converts distance to redshift.
     """
-    _name = "distance_to_redshift"
-    _name_inverse = "redshift_to_distance"
+    name = "distance_to_redshift"
+    inverse = None
     _inputs = [parameters.distance]
     _outputs = [parameters.redshift]
 
-    def _convert(self, maps):
-        """ This function converts from distance to redshift.
+    def transform(self, maps):
+        """ This function transforms from distance to redshift.
 
         Parameters
         ----------
@@ -296,32 +281,31 @@ class DistanceToRedshift(BaseConversion):
 
         >>> import numpy
         >>> from pycbc import transforms
-        >>> from pycbc.waveform import parameters
-        >>> cl = transforms.DistanceToRedshift()
-        >>> cl.convert({parameters.distance : numpy.array([1000])})
+        >>> t = transforms.DistanceToRedshift()
+        >>> t.transform({'distance': numpy.array([1000])})
             {'distance': array([1000]), 'redshift': 0.19650987609144363}
 
         Returns
         -------
         out : dict
             A dict with key as parameter name and value as numpy.array or float
-            of converted values.
+            of transformed values.
         """
         out = {parameters.redshift : cosmology.redshift(
                                                     maps[parameters.distance])}
         return self.format_output(maps, out)
 
-class AlignedMassSpinToCartesianSpin(BaseConversion):
+
+class AlignedMassSpinToCartesianSpin(BaseTransform):
     """ Converts mass-weighted spins to cartesian z-axis spins.
     """
-    _name = "aligned_mass_spin_to_cartesian_spin"
-    _name_inverse = "cartesian_spin_to_aligned_mass_spin"
+    name = "aligned_mass_spin_to_cartesian_spin"
     _inputs = [parameters.mass1, parameters.mass2, parameters.chi_eff, "chi_a"]
     _outputs = [parameters.mass1, parameters.mass2,
                parameters.spin1z, parameters.spin2z]
 
-    def _convert(self, maps):
-        """ This function converts from aligned mass-weighted spins to
+    def transform(self, maps):
+        """ This function transforms from aligned mass-weighted spins to
         cartesian spins aligned along the z-axis.
 
         Parameters
@@ -332,7 +316,7 @@ class AlignedMassSpinToCartesianSpin(BaseConversion):
         -------
         out : dict
             A dict with key as parameter name and value as numpy.array or float
-            of converted values.
+            of transformed values.
         """
         out = {}
         out[parameters.spin1z] = \
@@ -346,8 +330,8 @@ class AlignedMassSpinToCartesianSpin(BaseConversion):
                                maps[parameters.chi_eff], maps["chi_a"])
         return self.format_output(maps, out)
 
-    def _convert_inverse(self, maps):
-        """ This function converts from component masses and cartesian spins to
+    def inverse_transform(self, maps):
+        """ This function transforms from component masses and cartesian spins to
         mass-weighted spin parameters aligned with the angular momentum.
 
         Parameters
@@ -358,7 +342,7 @@ class AlignedMassSpinToCartesianSpin(BaseConversion):
         -------
         out : dict
             A dict with key as parameter name and value as numpy.array or float
-            of converted values.
+            of transformed values.
         """
         out = {
             parameters.chi_eff : conversions.chi_eff(
@@ -370,19 +354,19 @@ class AlignedMassSpinToCartesianSpin(BaseConversion):
         }
         return self.format_output(maps, out)
 
-class PrecessionMassSpinToCartesianSpin(BaseConversion):
+
+class PrecessionMassSpinToCartesianSpin(BaseTransform):
     """ Converts mass-weighted spins to cartesian x-y plane spins.
     """
-    _name = "precession_mass_spin_to_cartesian_spin"
-    _name_inverse = "cartesian_spin_to_precession_mass_spin"
+    name = "precession_mass_spin_to_cartesian_spin"
     _inputs = [parameters.mass1, parameters.mass2,
                "xi1", "xi2", "phi_a", "phi_s"]
     _outputs = [parameters.mass1, parameters.mass2,
                 parameters.spin1x, parameters.spin1y,
                 parameters.spin2x, parameters.spin2y]
 
-    def _convert(self, maps):
-        """ This function converts from mass-weighted spins to caretsian spins
+    def transform(self, maps):
+        """ This function transforms from mass-weighted spins to caretsian spins
         in the x-y plane.
 
         Parameters
@@ -393,7 +377,7 @@ class PrecessionMassSpinToCartesianSpin(BaseConversion):
         -------
         out : dict
             A dict with key as parameter name and value as numpy.array or float
-            of converted values.
+            of transformed values.
         """
         out = {}
         out[parameters.spin1x] = conversions.spin1x_from_xi1_phi_a_phi_s(
@@ -410,8 +394,8 @@ class PrecessionMassSpinToCartesianSpin(BaseConversion):
                                maps["xi2"], maps["phi_a"], maps["phi_s"])
         return self.format_output(maps, out)
 
-    def _convert_inverse(self, maps):
-        """ This function converts from component masses and cartesian spins to
+    def inverse_transform(self, maps):
+        """ This function transforms from component masses and cartesian spins to
         mass-weighted spin parameters perpendicular with the angular momentum.
 
         Parameters
@@ -422,7 +406,7 @@ class PrecessionMassSpinToCartesianSpin(BaseConversion):
         -------
         out : dict
             A dict with key as parameter name and value as numpy.array or float
-            of converted values.
+            of transformed values.
         """
         out = {}
         out["xi1"] = conversions.primary_xi(
@@ -441,18 +425,18 @@ class PrecessionMassSpinToCartesianSpin(BaseConversion):
                              maps[parameters.spin2x], maps[parameters.spin2y])
         return self.format_output(maps, out)
 
-class ChiPToCartesianSpin(BaseConversion):
-    """ Converts chi_p to cartesian spins.
+
+class ChiPToCartesianSpin(BaseTransform):
+    """Converts chi_p to cartesian spins.
     """
-    _name = "chi_p_to_cartesian_spin"
-    _name_inverse = "cartesian_spin_to_chi_p"
+    name = "chi_p_to_cartesian_spin"
     _inputs = ["chi_p"]
     _outputs = [parameters.mass1, parameters.mass2,
                 parameters.spin1x, parameters.spin1y,
                 parameters.spin2x, parameters.spin2y]
 
-    def _convert_inverse(self, maps):
-        """ This function converts from component masses and caretsian spins
+    def inverse_transform(self, maps):
+        """ This function transforms from component masses and caretsian spins
         to chi_p.
 
         Parameters
@@ -467,14 +451,14 @@ class ChiPToCartesianSpin(BaseConversion):
         >>> from pycbc import transforms
         >>> from pycbc.waveform import parameters
         >>> cl = transforms.DistanceToRedshift()
-        >>> cl.convert({parameters.distance : numpy.array([1000])})
+        >>> cl.transform({parameters.distance : numpy.array([1000])})
             {'distance': array([1000]), 'redshift': 0.19650987609144363}
 
         Returns
         -------
         out : dict
             A dict with key as parameter name and value as numpy.array or float
-            of converted values.
+            of transformed values.
         """
         out = {}
         out["chi_p"] = conversions.chi_p(
@@ -483,19 +467,144 @@ class ChiPToCartesianSpin(BaseConversion):
                              maps[parameters.spin2x], maps[parameters.spin2y])
         return self.format_output(maps, out)
 
-# list of all Conversions to/from base parameters
-to_base_converters = [
+
+#
+# =============================================================================
+#
+#                             Inverse Transforms
+#
+# =============================================================================
+#
+class Mass1Mass2ToMchirpQ(MchirpQToMass1Mass2):
+    """The inverse of MchirpQToMass1Mass2.
+    """
+    name = "mass1_mass2_to_mchirp_q"
+    inverse = MchirpQToMass1Mass2
+    _inputs = inverse._outputs
+    _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+
+class CartesianSpin1ToSphericalSpin1(SphericalSpin1ToCartesianSpin1):
+    """The inverse of SphericalSpin1ToCartesianSpin1.
+    """
+    name = "cartesian_spin_1_to_spherical_spin_1"
+    inverse = SphericalSpin1ToCartesianSpin1
+    _inputs = inverse._outputs
+    _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+
+class CartesianSpin2ToSphericalSpin2(SphericalSpin2ToCartesianSpin2):
+    """The inverse of SphericalSpin2ToCartesianSpin2.
+    """
+    name = "cartesian_spin_2_to_spherical_spin_2"
+    inverse = SphericalSpin2ToCartesianSpin2
+    _inputs = inverse._outputs
+    _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+
+class CartesianSpinToAlignedMassSpin(AlignedMassSpinToCartesianSpin):
+    """The inverse of AlignedMassSpinToCartesianSpin."""
+    name = "cartesian_spin_to_aligned_mass_spin"
+    inverse = AlignedMassSpinToCartesianSpin
+    _inputs = inverse._outputs
+    _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+
+class CartesianSpinToPrecessionMassSpin(PrecessionMassSpinToCartesianSpin):
+    """The inverse of PrecessionMassSpinToCartesianSpin.
+    """
+    name = "cartesian_spin_to_precession_mass_spin"
+    inverse = PrecessionMassSpinToCartesianSpin
+    _inputs = inverse._outputs
+    _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+
+class CartesianSpinToChiP(ChiPToCartesianSpin):
+    """The inverse of ChiPToCartesianSpin.
+    """
+    name = "cartesian_spin_to_chi_p"
+    inverse = ChiPToCartesianSpin
+    _inputs = inverse._outputs
+    _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+
+# set the inverse of the forward transforms to the inverse transforms
+MchirpQToMass1Mass2.inverse = Mass1Mass2ToMchirpQ
+SphericalSpin1ToCartesianSpin1.inverse = CartesianSpin1ToSphericalSpin1
+SphericalSpin2ToCartesianSpin2.inverse = CartesianSpin2ToSphericalSpin2
+AlignedMassSpinToCartesianSpin.inverse = CartesianSpinToAlignedMassSpin
+PrecessionMassSpinToCartesianSpin.inverse = CartesianSpinToPrecessionMassSpin
+ChiPToCartesianSpin.inverse = CartesianSpinToChiP
+
+
+#
+# =============================================================================
+#
+#                      Collections of transforms
+#
+# =============================================================================
+#
+
+# dictionary of all transforms
+transforms = {
+    MchirpQToMass1Mass2.name : MchirpQToMass1Mass2,
+    Mass1Mass2ToMchirpQ.name : Mass1Mass2ToMchirpQ,
+    SphericalSpin1ToCartesianSpin1.name : SphericalSpin1ToCartesianSpin1,
+    CartesianSpin1ToSphericalSpin1.name : CartesianSpin1ToSphericalSpin1,
+    SphericalSpin2ToCartesianSpin2.name : SphericalSpin2ToCartesianSpin2,
+    CartesianSpin2ToSphericalSpin2.name : CartesianSpin2ToSphericalSpin2,
+    DistanceToRedshift.name : DistanceToRedshift,
+    AlignedMassSpinToCartesianSpin.name : AlignedMassSpinToCartesianSpin,
+    CartesianSpinToAlignedMassSpin.name : CartesianSpinToAlignedMassSpin,
+    PrecessionMassSpinToCartesianSpin.name : PrecessionMassSpinToCartesianSpin,
+    CartesianSpinToPrecessionMassSpin.name : CartesianSpinToPrecessionMassSpin,
+    ChiPToCartesianSpin.name : ChiPToCartesianSpin,
+    CartesianSpinToChiP.name : CartesianSpinToChiP,
+}
+
+# standard CBC transforms: these are transforms that do not require input
+# arguments; they are typically used in CBC parameter estimation to transform
+# to coordinates understood by the waveform generator
+common_cbc_forward_transforms = [
     MchirpQToMass1Mass2(), DistanceToRedshift(),
     SphericalSpin1ToCartesianSpin1(), SphericalSpin2ToCartesianSpin2(),
     AlignedMassSpinToCartesianSpin(), PrecessionMassSpinToCartesianSpin(),
     ChiPToCartesianSpin(),
 ]
-from_base_converters = copy.deepcopy(to_base_converters)
-for c in from_base_converters: c.inverse()
-all_converters = from_base_converters + to_base_converters
+common_cbc_inverse_transforms = [_t.inverse()
+                                   for _t in common_cbc_forward_transforms
+                                   if _t.inverse is not None]
+common_cbc_transforms = common_cbc_forward_transforms + \
+                        common_cbc_inverse_transforms
 
-def get_conversions(requested_params, variable_args, valid_params=None):
-    """ Determines if any additional parameters from the InferenceFile are
+
+def get_common_cbc_transforms(requested_params, variable_args,
+                              valid_params=None):
+    """Determines if any additional parameters from the InferenceFile are
     needed to get derived parameters that user has asked for.
 
     First it will try to add any base parameters that are required to calculate
@@ -516,7 +625,7 @@ def get_conversions(requested_params, variable_args, valid_params=None):
     requested_params : list
         Updated list of parameters that user wants.
     all_c : list
-        List of BaseConversions to apply.
+        List of BaseTransforms to apply.
     """
 
     # try to parse any equations by putting all strings together
@@ -527,7 +636,6 @@ def get_conversions(requested_params, variable_args, valid_params=None):
         s = ""
         for ch in opt:
             s += ch if ch.isalnum() or ch == "_" else " "
-        eqn = opt.split(":")[0]
         new_params += s.split(" ")
     requested_params = set(requested_params + new_params)
 
@@ -536,10 +644,10 @@ def get_conversions(requested_params, variable_args, valid_params=None):
         valid_params = set(valid_params)
         requested_params = requested_params.intersection(valid_params)
 
-    # find all the conversions for the requested derived parameters
+    # find all the transforms for the requested derived parameters
     # calculated from base parameters
     from_base_c = []
-    for converter in from_base_converters:
+    for converter in common_cbc_inverse_transforms:
         if (converter.outputs.issubset(variable_args) or
                 converter.outputs.isdisjoint(requested_params)):
             continue
@@ -549,39 +657,40 @@ def get_conversions(requested_params, variable_args, valid_params=None):
         requested_params.update(converter.inputs)
         from_base_c.append(converter)
 
-    # find all the conversions for the required base parameters
+    # find all the tranforms for the required base parameters
     # calculated from sampling parameters
     to_base_c = []
-    for converter in to_base_converters:
+    for converter in common_cbc_forward_transforms:
         if (converter.inputs.issubset(variable_args) and
                 len(converter.outputs.intersection(requested_params)) > 0):
             requested_params.update(converter.inputs)
             to_base_c.append(converter)
 
-    # get list of conversions that converts sampling parameters to the base
+    # get list of transforms that converts sampling parameters to the base
     # parameters and then converts base parameters to the derived parameters
     all_c = to_base_c + from_base_c
 
     return list(requested_params), all_c
 
-def apply_conversions(samples, cs):
-    """ Applies a list of BaseConversion instances on a mapping object.
+
+def apply_transforms(samples, transforms):
+    """Applies a list of BaseTransform instances on a mapping object.
 
     Parameters
     ----------
     samples : {FieldArray, dict}
-        Mapping object to apply conversions to.
-    cs : list
-        List of BaseConversion instances to apply.
+        Mapping object to apply transforms to.
+    transforms : list
+        List of BaseTransform instances to apply.
 
     Returns
     -------
     samples : {FieldArray, dict}
         Mapping object with conversions applied. Same type as input.
     """
-    for c in cs:
+    for t in transforms:
         try:
-            samples = c.convert(samples)
+            samples = t.transform(samples)
         except NotImplementedError:
             continue
     return samples

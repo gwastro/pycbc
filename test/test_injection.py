@@ -131,7 +131,7 @@ class TestInjection(unittest.TestCase):
         injections = InjectionSet(self.inj_file.name)
         for det in self.detectors:
             for inj in self.injections:
-                ts = TimeSeries(numpy.zeros(10 * self.sample_rate),
+                ts = TimeSeries(numpy.zeros(int(10 * self.sample_rate)),
                                 delta_t=1/self.sample_rate,
                                 epoch=lal.LIGOTimeGPS(inj.end_time - 5),
                                 dtype=numpy.float64)
@@ -151,7 +151,7 @@ class TestInjection(unittest.TestCase):
         injections = InjectionSet(self.inj_file.name)
         for det in self.detectors:
             for epoch in clear_times:
-                ts = TimeSeries(numpy.zeros(10 * self.sample_rate),
+                ts = TimeSeries(numpy.zeros(int(10 * self.sample_rate)),
                                 delta_t=1/self.sample_rate,
                                 epoch=lal.LIGOTimeGPS(epoch),
                                 dtype=numpy.float64)

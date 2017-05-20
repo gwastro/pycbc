@@ -27,6 +27,7 @@ for parameter estimation.
 """
 
 import numpy
+from pycbc.io import record
 
 class PriorEvaluator(object):
     """
@@ -43,6 +44,12 @@ class PriorEvaluator(object):
         multiple parameters. The set of all params across the distributions
         (retrieved from the distributions' params attribute) must be the same
         as the set of variable_args provided.
+    \*\*kwargs :
+        Valid keyword arguments include `constraints`. `constraints` is a list
+        functions that accept a dict of parameters with the parameter name as
+        the key. If the constraint is satisfied the function should return
+        True, if the constraint is violated, then the function should return
+        False.
 
     Attributes
     ----------
@@ -50,14 +57,36 @@ class PriorEvaluator(object):
         The parameters expected when the evaluator is called.
     distributions : list
         The distributions for the parameters.
+    constraints : list
+        A list of functions to test if parameter values obey multi-dimensional
+        constraints.
+
+    Examples
+    --------
+    An example of creating a prior with constraint that total mass must
+    be below 30.
+
+    >>> from pycbc.inference import distributions
+    >>> from pycbc.inference import prior
+    >>> def mtotal_lt_30(params):
+        ...    return True if params["mass1"] + params["mass2"] < 30 else False
+    >>> mass_lim = (2, 50)
+    >>> uniform_prior = distributions.Uniform(mass1=mass_lim, mass2=mass_lim)
+    >>> prior_eval = prior.PriorEvaluator(["mass1", "mass2"], uniform_prior,
+        ...                               constraints=[mtotal_lt_30])
+    >>> print prior_eval([20, 1])
+
     """
 
-    def __init__(self, variable_args, *distributions):
+    def __init__(self, variable_args, *distributions, **kwargs):
 
         # store the names of the variable params
         self.variable_args = tuple(variable_args)
         # store the distributions
         self.distributions = distributions
+        # store the constraints
+        self.constraints = kwargs["constraints"] \
+                                  if "constraints" in kwargs.keys() else []
 
         # check that all of the variable args are described by the given
         # distributions
@@ -99,6 +128,36 @@ class PriorEvaluator(object):
         """ Evalualate prior for parameters.
         """
         params = dict(zip(self.variable_args, params))
-        return numpy.float64(sum([d(**params) for d in self.distributions]))
+        for constraint in self.constraints:
+            if not constraint(params):
+                return -numpy.inf
+        return sum([d(**params) for d in self.distributions])
 
+    def rvs(self, size=1):
+        """ Rejection samples the prior parameter space.
+        """
+
+        # create output FieldArray
+        out = record.FieldArray(size, dtype=[(arg, float)
+                                    for arg in self.variable_args])
+
+        # loop until enough samples accepted
+        n = 0
+        while n < size:
+
+            # draw samples
+            samples = {}
+            for dist in self.distributions:
+                draw = dist.rvs(1)
+                for param in dist.params:
+                     samples[param] = draw[param][0]
+            vals = numpy.array([samples[arg] for arg in self.variable_args])
+
+            # determine if all parameter values are in prior space
+            # if they are then add to output
+            if self(vals) > -numpy.inf:
+                 out[n] = vals
+                 n += 1
+
+        return out
 
