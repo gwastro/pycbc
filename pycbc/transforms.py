@@ -583,14 +583,14 @@ class Logit(BaseTransform):
         Parameters
         ----------
         maps : dict or FieldArray
-            A dictionary or FieldArray which provides the
-            `source -> source value(s)` mapping.
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
 
         Returns
         -------
         out : dict or FieldArray
-            A map with `target -> target value(s)` along with
-            the original `source -> source value(s)`.
+            A map between the transformed variable name and value(s), along
+            with the original variable name and value(s).
         """
         x = maps[self._source]
         out = {self._target : self.logit(x, self._a, self._b)}
@@ -604,14 +604,14 @@ class Logit(BaseTransform):
         Parameters
         ----------
         maps : dict or FieldArray
-            A dictionary or FieldArray which provides the
-            `target -> target value(s)` mapping.
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
 
         Returns
         -------
         out : dict or FieldArray
-            A map with `source -> source value(s)` along with
-            the original `target -> target value(s)`.
+            A map between the transformed variable name and value(s), along
+            with the original variable name and value(s).
         """
         y = maps[self._target]
         out = {self._source : self.logistic(y, self._a, self._b)}
@@ -631,13 +631,13 @@ class Logit(BaseTransform):
         Parameters
         ----------
         maps : dict or FieldArray
-            A dictionary or FieldArray which provides the
-            `source -> source value(s)` mapping.
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
 
         Returns
         -------
         float
-            The value of the jacobian at the given source point.
+            The value of the jacobian at the given point(s).
         """
         x = maps[self._source]
         return (self._b - self._a)/((x - self._a)*(self._b - x))
@@ -656,13 +656,13 @@ class Logit(BaseTransform):
         Parameters
         ----------
         maps : dict or FieldArray
-            A dictionary or FieldArray which provides the
-            `target -> target value(s)` mapping.
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
 
         Returns
         -------
         float
-            The value of the jacobian at the given target point.
+            The value of the jacobian at the given point(s).
         """
         x = maps[self._target]
         expx = numpy.exp(x)
