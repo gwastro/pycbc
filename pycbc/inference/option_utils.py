@@ -132,6 +132,56 @@ def read_args_from_config(cp, section_group=None):
     return variable_args, static_args
 
 
+def read_sampling_args_from_config(cp, section_group=None):
+    """Reads sampling parameters from the given config file.
+
+    Parameters are read from the `[({section_group}_)sampling_params]` section.
+    The options should list the variable args to transform; the parameters they
+    point to should list the parameters they are to be transformed to for
+    sampling. If a multiple parameters are transformed together, they should
+    be comma separated. Example:
+
+    .. code-block:: ini
+
+        [sampling_parameters]
+        mass1, mass2 = mchirp, logitq
+        spin1_a = logitspin1_a
+
+    Note that only the final sampling parameters should be listed, even if
+    multiple intermediate transforms are needed. (In the above example, a
+    transform is needed to go from mass1, mass2 to mchirp, q, then another one
+    needed to go from q to logitq.) These transforms should be specified
+    in separate sections; see `transforms.read_transforms_from_config` for
+    details.
+
+    Parameters
+    ----------
+    cp : WorkflowConfigParser
+        An open config parser to read from.
+    section_group : str, optional
+        Append `{section_group}_` to the section name. Default is None.
+
+    Returns
+    -------
+    replaced_params : set
+        The set of variable args to replace in the sampler.
+    sampling_params : set
+        The set of sampling parameters to use instead.
+    """
+    if section_group is not None:
+        section_prefix = '{}_'.format(section_group)
+    else:
+        section_prefix = ''
+    section = section_prefix + 'sampling_parameters'
+    replaced_params = set()
+    sampling_params = set()
+    for args in cp.options(section):
+        map_args = cp.get(section, args)
+        sampling_params.update(set(map(str.strip, map_args.split(','))))
+        replaced_params.update(set(map(str.strip, args.split(',')))) 
+    return replaced_params, sampling_params
+
+
 #-----------------------------------------------------------------------------
 #
 #                    Utilities for setting up a sampler
