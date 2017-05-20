@@ -470,31 +470,31 @@ class ChiPToCartesianSpin(BaseTransform):
 
 
 class Logit(BaseTransform):
-    """Applies a logit transform from a `source` parameter to a `target`
+    """Applies a logit transform from an `input` parameter to an `output`
     parameter. This is the inverse of the logistic transform.
 
-    Typically, the source of the logit function is assumed to have domain
+    Typically, the input of the logit function is assumed to have domain
     :math:`\in (0, 1)`. However, the `domain` argument can be used to expand
     this to any finite real interval.
 
     Parameters
     ----------
-    source : str
+    input : str
         The name of the parameter to transform.
-    target : str
+    output : str
         The name of the transformed parameter.
     domain : tuple or distributions.bounds.Bounds, optional
-        The domain of the source parameter. Can be any finite
+        The domain of the input parameter. Can be any finite
         interval. Default is (0., 1.).
     """
     name = 'logit'
 
-    def __init__(self, source, target, domain=(0., 1.)):
+    def __init__(self, input, output, domain=(0., 1.)):
         super(Logit, self).__init__()
-        self._source = source
-        self._target = target
-        self._inputs = [source]
-        self._outputs = [target]
+        self._input = input
+        self._output = output
+        self._inputs = [input]
+        self._outputs = [output]
         self._bounds = Bounds(domain[0], domain[1],
                               btype_min='open', btype_max='open')
         # shortcuts for quick access later
@@ -502,18 +502,18 @@ class Logit(BaseTransform):
         self._b = domain[1]
 
     @property
-    def source(self):
-        """Returns the source parameter."""
-        return self._source
+    def input(self):
+        """Returns the input parameter."""
+        return self._input
 
     @property
-    def target(self):
-        """Returns the target parameter."""
-        return self._target
+    def output(self):
+        """Returns the output parameter."""
+        return self._output
 
     @property
     def bounds(self):
-        """Returns the domain of the source parameter.
+        """Returns the domain of the input parameter.
         """
         return self._bounds
 
@@ -595,14 +595,14 @@ class Logit(BaseTransform):
             A map between the transformed variable name and value(s), along
             with the original variable name and value(s).
         """
-        x = maps[self._source]
+        x = maps[self._input]
         # check that x is in bounds
         isin = self._bounds.__contains__(x)
         if isinstance(isin, numpy.ndarray) and not isin.all():
             raise ValueError("one or more values are not in bounds")
         elif not isin:
             raise ValueError("{} is not in bounds".format(x))
-        out = {self._target : self.logit(x, self._a, self._b)}
+        out = {self._output : self.logit(x, self._a, self._b)}
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
@@ -622,8 +622,8 @@ class Logit(BaseTransform):
             A map between the transformed variable name and value(s), along
             with the original variable name and value(s).
         """
-        y = maps[self._target]
-        out = {self._source : self.logistic(y, self._a, self._b)}
+        y = maps[self._output]
+        out = {self._input : self.logistic(y, self._a, self._b)}
         return self.format_output(maps, out)
 
     def jacobian(self, maps):
@@ -648,7 +648,7 @@ class Logit(BaseTransform):
         float
             The value of the jacobian at the given point(s).
         """
-        x = maps[self._source]
+        x = maps[self._input]
         # check that x is in bounds
         isin = self._bounds.__contains__(x)
         if isinstance(isin, numpy.ndarray) and not isin.all():
@@ -679,7 +679,7 @@ class Logit(BaseTransform):
         float
             The value of the jacobian at the given point(s).
         """
-        x = maps[self._target]
+        x = maps[self._output]
         expx = numpy.exp(x)
         return expx * (self._b - self._a) / (1. + expx)**2.
 
@@ -769,21 +769,21 @@ class CartesianSpinToChiP(ChiPToCartesianSpin):
 
 
 class Logistic(Logit):
-    """Applies a logistic transform from a `source` parameter to a `target`
+    """Applies a logistic transform from an `input` parameter to an `output`
     parameter. This is the inverse of the logit transform.
 
-    Typically, the target of the logistic function has range :math:`\in [0,1)`.
+    Typically, the output of the logistic function has range :math:`\in [0,1)`.
     However, the `codomain` argument can be used to expand this to any
     finite real interval.
 
     Parameters
     ----------
-    source : str
+    input : str
         The name of the parameter to transform.
-    target : str
+    output : str
         The name of the transformed parameter.
     frange : tuple or distributions.bounds.Bounds, optional
-        The range of the target parameter. Can be any finite
+        The range of the output parameter. Can be any finite
         interval. Default is (0., 1.).
     """
     name = 'logistic'
@@ -793,12 +793,12 @@ class Logistic(Logit):
     jacobian = inverse.inverse_jacobian
     inverse_jacobian = inverse.jacobian
 
-    def __init__(self, source, target, codomain=(0.,1.)):
-        super(Logistic, self).__init__(target, source, domain=codomain)
+    def __init__(self, input, output, codomain=(0.,1.)):
+        super(Logistic, self).__init__(output, input, domain=codomain)
 
     @property
     def bounds(self):
-        """Returns the range of the target parameter.
+        """Returns the range of the output parameter.
         """
         return self._bounds
 
