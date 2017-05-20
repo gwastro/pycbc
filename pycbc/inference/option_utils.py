@@ -445,7 +445,7 @@ def results_from_cli(opts, load_samples=True, walkers=None):
     if load_samples:
         logging.info("Loading samples")
         # check if need extra parameters for a non-sampling parameter
-        file_parameters, cs = transforms.get_conversions(
+        file_parameters, ts = transforms.get_common_cbc_transforms(
                                                  parameters, fp.variable_args)
         # read samples from file
         samples = fp.read_samples(
@@ -453,8 +453,8 @@ def results_from_cli(opts, load_samples=True, walkers=None):
             thin_start=opts.thin_start, thin_interval=opts.thin_interval,
             thin_end=opts.thin_end, iteration=opts.iteration,
             samples_group=opts.parameters_group)
-        # add a parameters not included in file
-        samples = transforms.apply_conversions(samples, cs)
+        # add parameters not included in file
+        samples = transforms.apply_transforms(samples, ts)
     else:
         samples = None
 
