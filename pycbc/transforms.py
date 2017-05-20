@@ -648,7 +648,7 @@ def get_common_cbc_transforms(requested_params, variable_args,
     # find all the transforms for the requested derived parameters
     # calculated from base parameters
     from_base_c = []
-    for converter in common_cbc_forward_transforms:
+    for converter in common_cbc_inverse_transforms:
         if (converter.outputs.issubset(variable_args) or
                 converter.outputs.isdisjoint(requested_params)):
             continue
@@ -661,7 +661,7 @@ def get_common_cbc_transforms(requested_params, variable_args,
     # find all the tranforms for the required base parameters
     # calculated from sampling parameters
     to_base_c = []
-    for converter in common_cbc_inverse_transforms:
+    for converter in common_cbc_forward_transforms:
         if (converter.inputs.issubset(variable_args) and
                 len(converter.outputs.intersection(requested_params)) > 0):
             requested_params.update(converter.inputs)
