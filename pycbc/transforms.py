@@ -490,7 +490,6 @@ class Logit(BaseTransform):
     name = 'logit'
 
     def __init__(self, input, output, domain=(0., 1.)):
-        super(Logit, self).__init__()
         self._input = input
         self._output = output
         self._inputs = [input]
@@ -500,6 +499,7 @@ class Logit(BaseTransform):
         # shortcuts for quick access later
         self._a = domain[0]
         self._b = domain[1]
+        super(Logit, self).__init__()
 
     @property
     def input(self):
