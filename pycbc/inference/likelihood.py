@@ -121,14 +121,14 @@ class _BaseLikelihoodEvaluator(object):
     this class need to define their own functions.
 
     Instances of this class can be called like a function. The default is for
-    this class to call its `logposterior` function, but this can be changed by
+    this class to call its `logposterior` function, but this can be changed
     with the `set_callfunc` method.
 
     Parameters
     ----------
     waveform_generator : generator class
-        A generator class that creates waveforms. This must have a generate
-        function which takes a set of parameter values as arguments, a
+        A generator class that creates waveforms. This must have a `generate`
+        function which takes parameter values as keyword arguments, a
         detectors attribute which is a dictionary of detectors keyed by their
         names, and an epoch which specifies the start time of the generated
         waveform.
@@ -157,23 +157,21 @@ class _BaseLikelihoodEvaluator(object):
     Methods
     -------
     prior :
-        A function that returns the log of the prior given a list of
-        parameters.
+        A function that returns the log of the prior.
     loglikelihood :
-        A function that returns the log of the likelihood function of a given
-        list of parameters.
+        A function that returns the log of the likelihood function.
     logposterior :
-        A function that returns the log of the posterior of a given list of
-        parameters.
+        A function that returns the log of the posterior.
     loglr :
-        A function that returns the log of the likelihood ratio of a given list
-        of parameters.
+        A function that returns the log of the likelihood ratio.
     logplr :
-        A function that returns the log of the prior-weighted likelihood ratio
-        of a given list of parameters.
+        A function that returns the log of the prior-weighted likelihood ratio.
     snr :
         A function that returns the square root of twice the log likelihood
         ratio. If the log likelihood ratio is < 0, will return 0.
+    evaluate :
+        Maps a list of values to their parameter names and calls whatever the
+        call function is set to.
     set_callfunc :
         Set the function to use when the class is called as a function.
     """
@@ -209,6 +207,7 @@ class _BaseLikelihoodEvaluator(object):
                 raise ValueError("variable args of prior and waveform "
                     "generator do not match")
             self._prior = prior
+        self._variable_args = self._waveform_generator.variable_args
         # initialize the log nl to 0
         self._lognl = None
         self.return_meta = return_meta
@@ -217,6 +216,11 @@ class _BaseLikelihoodEvaluator(object):
     def waveform_generator(self):
         """Returns the waveform generator that was set."""
         return self._waveform_generator
+
+    @property
+    def variable_args(self):
+        """Returns the variable arguments."""
+        return self._variable_args
 
     @property
     def data(self):
@@ -232,17 +236,17 @@ class _BaseLikelihoodEvaluator(object):
         """Set the value of the log noise likelihood."""
         self._lognl = lognl
 
-    def prior(self, params):
+    def prior(self, **params):
         """This function should return the prior of the given params.
         """
-        return self._prior(params)
+        return self._prior(**params)
 
-    def loglikelihood(self, params):
+    def loglikelihood(self, **params):
         """Returns the natural log of the likelihood function.
         """
         raise NotImplementedError("Likelihood function not set.")
 
-    def loglr(self, params):
+    def loglr(self, **params):
         """Returns the natural log of the likelihood ratio.
         """
         raise NotImplementedError("Likelihood ratio function not set.")
@@ -278,31 +282,31 @@ class _BaseLikelihoodEvaluator(object):
         else:
             return val
 
-    def logplr(self, params):
+    def logplr(self, **params):
         """Returns the log of the prior-weighted likelihood ratio.
         """
         # if the prior returns -inf, just return
-        logp = self._prior(params)
+        logp = self._prior(**params)
         if logp == -numpy.inf:
             return self._formatreturn(logp, prior=logp)
-        llr = self.loglr(params)
+        llr = self.loglr(**params)
         return self._formatreturn(llr + logp, prior=logp, loglr=llr)
 
-    def logposterior(self, params):
+    def logposterior(self, **params):
         """Returns the log of the posterior of the given params.
         """
         # if the prior returns -inf, just return
-        logp = self._prior(params)
+        logp = self._prior(**params)
         if logp == -numpy.inf:
             return self._formatreturn(logp, prior=logp)
-        ll = self.loglikelihood(params)
+        ll = self.loglikelihood(**params)
         return self._formatreturn(ll + logp, prior=logp, loglr=ll-self._lognl)
 
-    def snr(self, params):
+    def snr(self, **params):
         """Returns the "SNR" of the given params. This will return
         imaginary values if the log likelihood ratio is < 0.
         """
-        return snr_from_loglr(self.loglr(params))
+        return snr_from_loglr(self.loglr(**params))
 
     _callfunc = logposterior
 
@@ -318,10 +322,29 @@ class _BaseLikelihoodEvaluator(object):
         """
         cls._callfunc = getattr(cls, funcname)
 
-    def __call__(self, params):
+    def evaluate(self, params):
+        """Evaluates the call function at the given list of parameter values.
+
+        Parameters
+        ----------
+        params : list
+            A list of values. These are assumed to be in the same order as
+            variable args.
+
+        Returns
+        -------
+        float or tuple :
+            If `return_meta` is False, the output of the call function. If
+            `return_meta` is True, a tuple of the output of the call function
+            and the meta data.
+        """
+        params = dict(zip(self._variable_args, params))
         # apply any boundary conditions to the parameters before
         # generating/evaluating
-        return self._callfunc(self._prior.apply_boundary_conditions(params))
+        return self._callfunc(**self._prior.apply_boundary_conditions(
+                              **params))
+
+    __call__ = evaluate
 
 
 
@@ -379,8 +402,8 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     Parameters
     ----------
     waveform_generator : generator class
-        A generator class that creates waveforms. This must have a generate
-        function which takes a set of parameter values as arguments, a
+        A generator class that creates waveforms. This must have a `generate`
+        function which takes parameter values as keyword arguments, a
         detectors attribute which is a dictionary of detectors keyed by their
         names, and an epoch which specifies the start time of the generated
         waveform.
@@ -512,7 +535,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     def lognl(self):
         return self._lognl
 
-    def loglr(self, params):
+    def loglr(self, **params):
         r"""Computes the log likelihood ratio,
         
         .. math::
@@ -523,8 +546,9 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
 
         Parameters
         ----------
-        params: array-like
-            An array of numerical values to pass to the waveform generator.
+        \**params :
+            The keyword arguments should give the values of each parameter to
+            evaluate.
 
         Returns
         -------
@@ -533,7 +557,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         """
         lr = 0.
         try:
-            wfs = self._waveform_generator.generate(*params)
+            wfs = self._waveform_generator.generate(**params)
         except NoWaveformError:
             # if no waveform was generated, just return 0
             return lr
@@ -563,8 +587,9 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
 
         Parameters
         ----------
-        params: array-like
-            An array of numerical values to pass to the waveform generator.
+        \**params :
+            The keyword arguments should give the values of each parameter to
+            evaluate.
 
         Returns
         -------
@@ -573,17 +598,18 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         """
         # since the loglr has fewer terms, we'll call that, then just add
         # back the noise term that canceled in the log likelihood ratio
-        return self.loglr(params) + self._lognl
+        return self.loglr(**params) + self._lognl
 
 
-    def logposterior(self, params):
+    def logposterior(self, **params):
         """Computes the log-posterior probability at the given point in
         parameter space.
 
         Parameters
         ----------
-        params: array-like
-            An array of numerical values to pass to the waveform generator.
+        \**params :
+            The keyword arguments should give the values of each parameter to
+            evaluate.
 
         Returns
         -------
@@ -596,7 +622,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         """
         # since the logplr has fewer terms, we'll call that, then just add
         # back the noise term that canceled in the log likelihood ratio
-        logplr = self.logplr(params)
+        logplr = self.logplr(**params)
         if self.return_meta:
             logplr, (pr, lr) = logplr
         else:

@@ -103,31 +103,29 @@ class PriorEvaluator(object):
             raise ValueError("variable_args %s " %(','.join(extra_params)) +
                 "are not in any of the provided distributions")
 
-    def apply_boundary_conditions(self, params):
+    def apply_boundary_conditions(self, **params):
         """Applies each distributions' boundary conditions to the given list
         of parameters, returning a new list with the conditions applied.
 
         Parameters
         ----------
-        params : list
-            List of parameters to apply conditions to. The order of the
-            parameters is assumed to be the same as self.variable_args.
+        **params :
+            Keyword arguments should give the parameters to apply the
+            conditions to.
 
         Returns
         -------
-        list
-            List of the parameters after each distribution's
+        dict
+            A dictionary of the parameters after each distribution's
             `apply_boundary_conditions` function has been applied.
         """
-        params = dict(zip(self.variable_args, params))
         for dist in self.distributions:
             params.update(dist.apply_boundary_conditions(**params))
-        return [params[p] for p in self.variable_args]
+        return params
 
-    def __call__(self, params):
-        """ Evalualate prior for parameters.
+    def __call__(self, **params):
+        """Evalualate prior for parameters.
         """
-        params = dict(zip(self.variable_args, params))
         for constraint in self.constraints:
             if not constraint(params):
                 return -numpy.inf
