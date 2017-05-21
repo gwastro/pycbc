@@ -26,6 +26,7 @@ import pycbc
 import pycbc.opt
 import pycbc.weave
 from pycbc import distributions
+from pycbc import transforms
 from pycbc import fft
 from pycbc import gate
 from pycbc import inference
@@ -155,6 +156,12 @@ with ctx:
 
     # construct class that will return the prior
     prior = inference.PriorEvaluator(variable_args, *dists)
+
+    # get sampling transformations
+    sampling_parameters, replace = \
+        option_utils.read_sampling_args_from_config(cp)
+    sampling_transforms = transforms.read_transforms_from_config(cp,
+        'sampling_transforms')
 
     # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
