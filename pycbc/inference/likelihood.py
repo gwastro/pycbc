@@ -41,10 +41,10 @@ class _NoPrior(object):
     likelihood generator.
     """
     @staticmethod
-    def apply_boundary_conditions(params):
+    def apply_boundary_conditions(**params):
         return params
 
-    def __call__(self, params):
+    def __call__(self, **params):
         return 0.
 
 def snr_from_loglr(loglr):
@@ -443,7 +443,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     >>> fmin = 30.
     >>> m1, m2, s1z, s2z, tsig, ra, dec, pol, dist = 38.6, 29.3, 0., 0., 3.1, 1.37, -1.26, 2.76, 3*500.
     >>> generator = waveform.FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=['tc'], detectors=['H1', 'L1'], delta_f=1./seglen, f_lower=fmin, approximant='SEOBNRv2_ROM_DoubleSpin', mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra, dec=dec, polarization=pol, distance=dist)
-    >>> signal = generator.generate(tsig)
+    >>> signal = generator.generate(tc=tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
     >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, fmin, psds=psds, return_meta=False)
@@ -451,13 +451,13 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     Now compute the log likelihood ratio and prior-weighted likelihood ratio;
     since we have not provided a prior, these should be equal to each other:
 
-    >>> likelihood_eval.loglr([tsig]), likelihood_eval.logplr([tsig])
+    >>> likelihood_eval.loglr(tc=tsig), likelihood_eval.logplr(tc=tsig)
         (ArrayWithAligned(277.92945279883855), ArrayWithAligned(277.92945279883855))
 
     Compute the log likelihood and log posterior; since we have not
     provided a prior, these should both be equal to zero:
 
-    >>> likelihood_eval.loglikelihood([tsig]), likelihood_eval.logposterior([tsig])
+    >>> likelihood_eval.loglikelihood(tc=tsig), likelihood_eval.logposterior(tc=tsig)
         (ArrayWithAligned(0.0), ArrayWithAligned(0.0))
 
     Compute the SNR; for this system and PSD, this should be approximately 24:
@@ -578,7 +578,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
                 )
         return numpy.float64(lr)
 
-    def loglikelihood(self, params):
+    def loglikelihood(self, **params):
         r"""Computes the log likelihood of the paramaters,
         
         .. math::
