@@ -141,6 +141,15 @@ class _BaseLikelihoodEvaluator(object):
         A callable class or function that computes the log of the prior. If
         None provided, will use `_noprior`, which returns 0 for all parameter
         values.
+    sampling_parameters : list, optional
+        Replace one or more of the variable args with the given parameters
+        for sampling.
+    replace_parameters : list, optional
+        The variable args to replace with sampling parameters. Must be the
+        same length as `sampling_parameters`.
+    sampling_transforms : list, optional
+        List of transforms to use to go between the variable args and the
+        sampling parameters. Required if `sampling_parameters` is not None.
 
     Attributes
     ----------
@@ -151,11 +160,15 @@ class _BaseLikelihoodEvaluator(object):
     lognl : {None, float}
         The log of the noise likelihood summed over the number of detectors.
     return_meta : {True, bool}
-        If True, `logposterior` and `logplr` will return the value of the
-        prior and the loglikelihood ratio, along with the posterior/plr.
+        If True, `prior`, `logposterior`, and `logplr` will return the value
+        of the prior, the loglikelihood ratio, and the log jacobian, along with
+        the posterior/plr.
 
     Methods
     -------
+    logjacobian :
+        Returns the log of the jacobian needed to go from the parameter space
+        of the variable args to the sampling args.
     prior :
         A function that returns the log of the prior.
     loglikelihood :
@@ -178,6 +191,8 @@ class _BaseLikelihoodEvaluator(object):
     name = None
 
     def __init__(self, waveform_generator, data, prior=None,
+                 sampling_parameters=None, replace_parameters=None,
+                 sampling_transforms=None,
                  return_meta=True):
         self._waveform_generator = waveform_generator
         # we'll store a copy of the data which we'll later whiten in place
@@ -190,7 +205,8 @@ class _BaseLikelihoodEvaluator(object):
                 "does not match data (%s)" %(
                 ','.join(sorted(self._data.keys()))))
         # check that the data and waveform generator have the same epoch
-        if any(waveform_generator.epoch != d.epoch for d in self._data.values()):
+        if any(waveform_generator.epoch != d.epoch
+               for d in self._data.values()):
             raise ValueError("waveform generator does not have the same epoch "
                 "as all of the data sets.")
         # check that the data sets all have the same lengths
@@ -211,6 +227,24 @@ class _BaseLikelihoodEvaluator(object):
         # initialize the log nl to 0
         self._lognl = None
         self.return_meta = return_meta
+        # store sampling parameters and transforms
+        if sampling_parameters is not None:
+            if replace_parameters is None or \
+                    len(replace_parameters) != len(sampling_parameters):
+                raise ValueError("number of sampling parameters must be the "
+                                 "same as the number of replace parameters")
+            if sampling_transforms is None:
+                raise ValueError("must provide sampling transforms for the "
+                                 "sampling parameters")
+            # pull out the replaced parameters
+            self._sampling_args = [arg for arg in self._variable_args \
+                                       if arg not in replace_parameters]
+            # add the samplign parameters
+            self._sampling_args += sampling_parameters
+            self._sampling_transforms = sampling_transforms
+        else:
+            self._sampling_args = self._variable_args
+            self._sampling_transforms = None
 
     @property
     def waveform_generator(self):
@@ -221,6 +255,16 @@ class _BaseLikelihoodEvaluator(object):
     def variable_args(self):
         """Returns the variable arguments."""
         return self._variable_args
+
+    @property
+    def sampling_args(self):
+        """Returns the sampling arguments."""
+        return self._sampling_args
+
+    @property
+    def sampling_transforms(self):
+        """Returns the sampling transforms."""
+        return self._sampling_transforms
 
     @property
     def data(self):
@@ -236,10 +280,53 @@ class _BaseLikelihoodEvaluator(object):
         """Set the value of the log noise likelihood."""
         self._lognl = lognl
 
+    def logjacobian(self, **params):
+        r"""Returns the log of the jacobian needed to transform pdfs in the
+        `variable_args` parameter space to the `sampling_args` parameter space.
+
+        Let :math:`\mathbf{x}` be the set of variable parameters,
+        :math:`\mathbf{y} = f(\mathbf{x})` the set of sampling parameters, and
+        :math:`p_x(\mathbf{x})` a probability density function defined over
+        :math:`mathbf{x}`. The corresponding pdf in :math:`\mathbf{y}` is then:
+
+        .. math::
+
+            p_y(\mathbf{y}) = p_x(\mathbf{x})\left|\mathrm{det}\,\mathbf{J}_{ij}\right|,
+
+        where :math:`\mathbf{J}_{ij}` is the Jacobian of the inverse transform
+        :math:`\mathbf{x} = g(\mathbf{y})`. This has elements:
+
+        .. math::
+
+            \mathbf{J}_{ij} = \frac{\partial g_i}{\partial{y_j}}
+
+        This function returns
+        :math:`\log \left|\mathrm{det}\,\mathbf{J}_{ij}\right|`.
+
+
+        Parameters
+        ----------
+        \**params :
+            The keyword arguments should specify values for all of the variable
+            args and all of the sampling args.
+
+        Returns
+        -------
+        float :
+            The value of the jacobian.
+        """
+        if self._transforms is None:
+            return 0.
+        else:
+            return numpy.log(abs(transforms.compute_jacobian(params,
+                self._transforms, inverse=True)))
+
     def prior(self, **params):
         """This function should return the prior of the given params.
         """
-        return self._prior(**params)
+        logj = self.logjacobian(**params)
+        logp = self._prior(**params) + logj
+        return self._formatreturn(logp, prior=logp, logjacobian=logj)
 
     def loglikelihood(self, **params):
         """Returns the natural log of the likelihood function.
@@ -254,9 +341,9 @@ class _BaseLikelihoodEvaluator(object):
 
     # the names and order of data returned by _formatreturn when
     # return_metadata is True
-    metadata_fields = ["prior", "loglr"]
+    metadata_fields = ["prior", "loglr", "logjacobian"]
 
-    def _formatreturn(self, val, prior=None, loglr=None):
+    def _formatreturn(self, val, prior=None, loglr=None, logjacobian=0.):
         """Adds the prior to the return value if return_meta is True.
         Otherwise, just returns the value.
 
@@ -264,21 +351,24 @@ class _BaseLikelihoodEvaluator(object):
         ----------
         val : float
             The value to return.
-        prior : {None, float}
+        prior : float, optional
             The value of the prior.
-        loglr : {None, float}
+        loglr : float, optional
             The value of the log likelihood-ratio.
+        logjacobian : float, optional
+            The value of the log jacobian used to go from the variable args
+            to the sampling args.
 
         Returns
         -------
         val : float
             The given value to return.
         *If return_meta is True:*
-        metadata : (prior, loglr)
-            A tuple of the prior and log likelihood ratio.
+        metadata : (prior, loglr, logjacobian)
+            A tuple of the prior, log likelihood ratio, and logjacobian.
         """
         if self.return_meta:
-            return val, (prior, loglr)
+            return val, (prior, loglr, logjacobian)
         else:
             return val
 
@@ -286,21 +376,23 @@ class _BaseLikelihoodEvaluator(object):
         """Returns the log of the prior-weighted likelihood ratio.
         """
         # if the prior returns -inf, just return
-        logp = self._prior(**params)
+        logp, _, logj = self.prior(**params)
         if logp == -numpy.inf:
-            return self._formatreturn(logp, prior=logp)
+            return self._formatreturn(logp, prior=logp, logjacobian=logj)
         llr = self.loglr(**params)
-        return self._formatreturn(llr + logp, prior=logp, loglr=llr)
+        return self._formatreturn(llr + logp, prior=logp, loglr=llr,
+                                  logjacobian=logj)
 
     def logposterior(self, **params):
         """Returns the log of the posterior of the given params.
         """
         # if the prior returns -inf, just return
-        logp = self._prior(**params)
+        logp, _, logj = self.prior(**params)
         if logp == -numpy.inf:
-            return self._formatreturn(logp, prior=logp)
+            return self._formatreturn(logp, prior=logp, logjacobian=logj)
         ll = self.loglikelihood(**params)
-        return self._formatreturn(ll + logp, prior=logp, loglr=ll-self._lognl)
+        return self._formatreturn(ll + logp, prior=logp, loglr=ll-self._lognl,
+                                  logjacobian=logj)
 
     def snr(self, **params):
         """Returns the "SNR" of the given params. This will return
@@ -338,7 +430,13 @@ class _BaseLikelihoodEvaluator(object):
             `return_meta` is True, a tuple of the output of the call function
             and the meta data.
         """
-        params = dict(zip(self._variable_args, params))
+        params = dict(zip(self._sampling_parameters, params))
+        # apply inverse transforms to go from sampling parameters to
+        # variable args
+        if self._sampling_transforms is not None:
+            params = transforms.apply_transforms(params,
+                                                 self._sampling_transforms,
+                                                 inverse=True)
         # apply any boundary conditions to the parameters before
         # generating/evaluating
         return self._callfunc(**self._prior.apply_boundary_conditions(
@@ -624,10 +722,11 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         # back the noise term that canceled in the log likelihood ratio
         logplr = self.logplr(**params)
         if self.return_meta:
-            logplr, (pr, lr) = logplr
+            logplr, (pr, lr, lj) = logplr
         else:
-            pr = lr = None
-        return self._formatreturn(logplr + self._lognl, prior=pr, loglr=lr)
+            pr = lr = lj = None
+        return self._formatreturn(logplr + self._lognl, prior=pr, loglr=lr,
+                                  logjacobian=lj)
 
 likelihood_evaluators = {GaussianLikelihood.name: GaussianLikelihood}
 
