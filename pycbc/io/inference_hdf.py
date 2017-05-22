@@ -82,6 +82,17 @@ class InferenceFile(h5py.File):
             for arg in self.attrs["static_args"]])
 
     @property
+    def sampling_args(self):
+        """Returns the parameters that were used to sample.
+
+        Returns
+        -------
+        sampling_args : {list, str}
+            List of the sampling args.
+        """
+        return self.attrs["sampling_args"]
+
+    @property
     def lognl(self):
         """Returns the log noise likelihood."""
         return self.attrs["lognl"]
