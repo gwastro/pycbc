@@ -141,7 +141,7 @@ parser.add_argument('--mass2', type=float, required=True,
                     help='Second mass of the binary in solar masses.')
 parser.add_argument('--inclination', type=float, required=True,
                     help='Inclination of the binary in radians.')
-parser.add_argument('--coa-phase', type=float, required=True,
+parser.add_argument('--coa-phase', type=float, default=0.0,
                     help='Reference orbital phase parameter in radians. '
                          'Called phiRef in LALSimulation. '
                          'Called coa_phase in sim_inspiral tables.')
