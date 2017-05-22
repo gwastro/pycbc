@@ -30,9 +30,9 @@ import unittest
 import numpy
 from pycbc import distributions
 from pycbc import inference
-from pycbc import waveform
 from pycbc import psd as pypsd
 from utils import parse_args_cpu_only, simple_exit
+from pycbc.waveform import generator
 
 # tests only need to happen on the CPU
 parse_args_cpu_only("Inference")
@@ -52,8 +52,8 @@ class TestInference(unittest.TestCase):
         # setup waveform generator and signal parameters
         m1, m2, s1z, s2z, tsig = 38.6, 29.3, 0., 0., 3.1
         ra, dec, pol, dist = 1.37, -1.26, 2.76, 3*500.
-        generator = waveform.FDomainDetFrameGenerator(
-                        waveform.FDomainCBCGenerator, 0., variable_args=["tc"],
+        generator = generator.FDomainDetFrameGenerator(
+                        generator.FDomainCBCGenerator, 0., variable_args=["tc"],
                         detectors=["H1", "L1"], delta_f=1./seglen,
                         f_lower=fmin, approximant="TaylorF2",
                         mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra,
