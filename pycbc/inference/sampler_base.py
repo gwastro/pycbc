@@ -69,7 +69,13 @@ class _BaseSampler(object):
     def variable_args(self):
         """Returns the variable args used by the likelihood evaluator.
         """
-        return self.likelihood_evaluator.waveform_generator.variable_args
+        return self.likelihood_evaluator.variable_args
+
+    @property
+    def sampling_args(self):
+        """Returns the sampling args used by the likelihood evaluator.
+        """
+        return self.likelihood_evaluator.sampling_args
 
     @property
     def chain(self):
@@ -223,17 +229,18 @@ class BaseMCMCSampler(_BaseSampler):
     def pos(self):
         return self._pos
 
-    def set_p0(self, prior_distributions, samples=None):
+    def set_p0(self, prior=None, samples=None):
         """Sets the initial position of the walkers.
 
         Parameters
         ----------
-        prior_distributions : list
-            A list of priors to retrieve random values from (the sort of
-            thing returned by `prior.read_distributions_from_config`).
-        samples : FieldArray
-            A FieldArray where each field has size (1,) for the initial
-            position.
+        prior : PriorEvaluator, optional
+            Use the given prior to set the initial positions rather than
+            `likelihood_evaultor`'s prior.
+        samples : FieldArray, optional
+            Use the given samples to set the initial positions. The samples
+            will be transformed to the likelihood evaluator's `sampling_args`
+            space.
 
         Returns
         -------
@@ -244,22 +251,18 @@ class BaseMCMCSampler(_BaseSampler):
         nwalkers = self.nwalkers
         ndim = len(self.variable_args)
         p0 = numpy.ones((nwalkers, ndim))
-
-        # if samples are given then those as initial poistions
+        # if samples are given then use those as initial poistions
         if samples is not None:
-            for i, param in enumerate(self.variable_args):
-                p0[:, i] = samples[param]
-            self._p0 = p0
-            return p0
-
-        # loop over all walkers and then parameters
-        # find the distribution that has that parameter in it and draw a
-        # random value from the distribution
-        pmap = dict([[param, k] for k, param in enumerate(self.variable_args)])
-        for dist in prior_distributions:
-            ps = dist.rvs(size=nwalkers)
-            for param in dist.params:
-                p0[:, pmap[param]] = ps[param]
+            # transform to sampling parameter space
+            samples = self.likelihood_evaluator.apply_sampling_transforms(
+                samples)
+        # draw random samples if samples are not provided
+        else:
+            samples = self.likelihood_evaluator.prior_rvs(size=nwalkers,
+                                                          prior=prior)
+        # convert to 2D array
+        for i, param in enumerate(self.sampling_args):
+            p0[:, i] = samples[param]
         self._p0 = p0
         return p0
 
