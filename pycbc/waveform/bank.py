@@ -219,8 +219,8 @@ class TemplateBank(object):
         An instance of a WaveformArray containing all of the information about
         the parameters of the bank.
     has_compressed_waveforms : {False, bool}
-        If compressed waveforms are present in the (hdf) file, save True,
-        else False .
+        True if compressed waveforms are present in the the (hdf) file; False
+        otherwise.
     parameters : tuple
         The parameters loaded from the input file. Same as `table.fieldnames`.
     indoc : {None, xmldoc}
@@ -284,8 +284,7 @@ class TemplateBank(object):
             for key in data:
                 self.table[key] = data[key]
             # add the compressed waveforms, if they exist
-            if 'compressed_waveforms' in f:
-                self.has_compressed_waveforms = True
+            self.has_compressed_waveforms = 'compressed_waveforms' in f 
         else:
             raise ValueError("Unsupported template bank file extension %s" %(
                 ext))
@@ -347,6 +346,11 @@ class TemplateBank(object):
         skip_fields : {None, (list of) strings}
             Do not write the given fields to the hdf file. Default is None,
             in which case all fields in self.table.fieldnames are written.
+        write_compressed_waveforms : {True, bool}
+            Write compressed waveforms to the output (hdf) file if this is
+            True, which is the default setting. If False, do not write the
+            compressed waveforms group, but only the template parameters to
+            the output file.
 
         Returns
         -------
