@@ -643,11 +643,15 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
     name = 'gaussian'
 
     def __init__(self, waveform_generator, data, f_lower, psds=None,
-            f_upper=None, norm=None, prior=None, return_meta=True):
+                 f_upper=None, norm=None, prior=None,
+                 sampling_parameters=None, replace_parameters=None,
+                 sampling_transforms=None, return_meta=True):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
         super(GaussianLikelihood, self).__init__(waveform_generator, data,
-            prior=prior, return_meta=return_meta)
+            prior=prior, sampling_parameters=sampling_parameters,
+            replace_parameters=replace_parameters,
+            sampling_transforms=sampling_transforms, return_meta=return_meta)
         # we'll use the first data set for setting values
         d = data.values()[0]
         N = len(d)
@@ -667,9 +671,8 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         else:
             # temporarily suppress numpy divide by 0 warning
             numpysettings = numpy.seterr(divide='ignore')
-            # FIXME: use the following when we've switched to 2.7
-            #self._weight = {det: Array(numpy.sqrt(norm/psds[det])) for det in data}
-            self._weight = dict([(det, Array(numpy.sqrt(norm/psds[det]))) for det in data])
+            self._weight = {det: Array(numpy.sqrt(norm/psds[det]))
+                            for det in data}
             numpy.seterr(**numpysettings)
         # whiten the data
         for det in self._data:
