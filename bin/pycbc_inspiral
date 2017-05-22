@@ -291,7 +291,7 @@ with ctx:
         dtype=complex64, phase_order=opt.order,
         taper=opt.taper_template, approximant=opt.approximant,
         out=template_mem, max_template_length=opt.max_template_length,
-        load_compressed=True if opt.use_compressed_waveforms else False,
+        enable_compressed_waveforms=True if opt.use_compressed_waveforms else False,
         waveform_decompression_method=
         opt.waveform_decompression_method if opt.use_compressed_waveforms else None)
 
