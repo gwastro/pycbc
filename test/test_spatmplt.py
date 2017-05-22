@@ -24,16 +24,11 @@
 """
 These are the unittests for the pycbc.waveform module
 """
-import sys
 import pycbc
 import unittest
-from pycbc.types import *
-from pycbc.scheme import *
-from pycbc.filter import *
-from pycbc.waveform import *
-import pycbc.fft
-import numpy
-from numpy import sqrt, cos, sin
+from pycbc.types import zeros, complex64
+from pycbc.filter import overlap
+from pycbc.waveform import get_fd_waveform, get_waveform_filter
 from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Waveform")
