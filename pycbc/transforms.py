@@ -477,6 +477,7 @@ class PrecessionMassSpinToCartesianSpin(BaseTransform):
                              maps[parameters.spin1x], maps[parameters.spin1y],
                              maps[parameters.spin2x], maps[parameters.spin2y])
         out["phi_a"] = conversions.phi_a(
+                             maps[parameters.mass1], maps[parameters.mass2],
                              maps[parameters.spin1x], maps[parameters.spin1y],
                              maps[parameters.spin2x], maps[parameters.spin2y])
         out["phi_s"] = conversions.phi_s(
