@@ -383,7 +383,7 @@ class BaseMCMCSampler(_BaseSampler):
                     # dataset doesn't exist yet
                     fp.create_dataset(dataset_name, (fb,),
                                       maxshape=(max_iterations,),
-                                      dtype=samples.dtype)
+                                      dtype=samples[param].dtype)
                     fp[dataset_name][fa:fb] = samples[param][wi, ma:mb]
 
     def write_chain(self, fp, start_iteration=0, end_iteration=None,

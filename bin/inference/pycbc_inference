@@ -163,6 +163,8 @@ with ctx:
             option_utils.read_sampling_args_from_config(cp)
         sampling_transforms = transforms.read_transforms_from_config(cp,
             'sampling_transforms')
+        logging.info("Sampling in {} in place of {}".format(
+            ', '.join(sampling_parameters), ', '.join(replace_parameters)))
     else:
         sampling_parameters = replace_parameters = sampling_transforms = None
 

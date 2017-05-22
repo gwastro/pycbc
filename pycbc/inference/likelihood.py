@@ -27,8 +27,10 @@ for parameter estimation.
 """
 
 from pycbc import filter
+import pycbc.transforms
 from pycbc.waveform import NoWaveformError
 from pycbc.types import Array
+from pycbc.io import FieldArray
 import numpy
 
 # Used to manage a likelihood instance across multiple cores or MPI
@@ -286,8 +288,9 @@ class _BaseLikelihoodEvaluator(object):
         """
         if self._sampling_transforms is None:
             return samples
-        return transforms.apply_transforms(samples, self._sampling_transforms,
-                                           inverse=inverse)
+        return pycbc.transforms.apply_transforms(samples,
+                                                 self._sampling_transforms,
+                                                 inverse=inverse)
 
     @property
     def data(self):
@@ -341,8 +344,8 @@ class _BaseLikelihoodEvaluator(object):
         if self._sampling_transforms is None:
             return 0.
         else:
-            return numpy.log(abs(transforms.compute_jacobian(params,
-                self._transforms, inverse=True)))
+            return numpy.log(abs(pycbc.transforms.compute_jacobian(params,
+                self._sampling_transforms, inverse=True)))
 
     def prior(self, **params):
         """This function should return the prior of the given params.
@@ -378,9 +381,9 @@ class _BaseLikelihoodEvaluator(object):
         if self._sampling_transforms is not None:
             ptrans = self.apply_sampling_transforms(p0)
             # pull out the sampling args
-            p0 = record.FieldArray.from_arrays([ptrans[arg]
-                                               for arg in self._sampling_args],
-                                               names=self._sampling_args)
+            p0 = FieldArray.from_arrays([ptrans[arg]
+                                         for arg in self._sampling_args],
+                                        names=self._sampling_args)
         return p0
 
     def loglikelihood(self, **params):

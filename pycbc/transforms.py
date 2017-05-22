@@ -1210,7 +1210,7 @@ def apply_transforms(samples, transforms, inverse=False):
     return samples
 
 
-def compute_jacobians(samples, transforms, inverse=False):
+def compute_jacobian(samples, transforms, inverse=False):
     """Computes the jacobian of the list of transforms at the given sample
     points.
 
