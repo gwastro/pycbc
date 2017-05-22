@@ -181,11 +181,10 @@ with ctx:
     likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](
                         generated_waveform, stilde_dict,
                         low_frequency_cutoff_dict.values()[0],
-                        psds=psd_dict, prior=prior
+                        psds=psd_dict, prior=prior,
                         sampling_parameters=sampling_parameters,
                         replace_parameters=replace_parameters,
-                        sampling_transforms=sampling_transforms,
-                        )
+                        sampling_transforms=sampling_transforms)
 
     # create sampler that will run
     sampler = option_utils.sampler_from_cli(opts, likelihood)
