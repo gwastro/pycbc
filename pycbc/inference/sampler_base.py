@@ -294,9 +294,11 @@ class BaseMCMCSampler(_BaseSampler):
         stats = numpy.array(self._sampler.blobs)
         if stats.size == 0:
             return None
-        arrays = dict([[field, stats[:, :, fi]]
-                       for fi, field in
-                      enumerate(self.likelihood_evaluator.metadata_fields)])
+        # we'll force arrays to float; this way, if there are `None`s in the
+        # blobs, they will be changed to `nan`s
+        arrays = {field: stats[:, :, fi].astype(float)
+                  for fi, field in
+                  enumerate(self.likelihood_evaluator.metadata_fields)}
         return FieldArray.from_kwargs(**arrays).transpose()
 
     # write and read functions
@@ -316,8 +318,7 @@ class BaseMCMCSampler(_BaseSampler):
 
     def _write_samples_group(self, fp, samples_group, parameters, samples,
                              start_iteration=0, end_iteration=None,
-                             max_iterations=None,
-                             apply_boundary_conditions=False):
+                             max_iterations=None):
         """Writes samples to the given file.
 
         Results are written to: `fp[samples_group/{vararg}/walker{i}]`, where
@@ -328,6 +329,13 @@ class BaseMCMCSampler(_BaseSampler):
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
+        samples_group : str
+            Name of samples group to write.
+        parameters : list
+            The parameters to write to the file.
+        samples : FieldArray
+            The samples to write. Should be a FieldArray with fields containing
+            the samples to write and shape nwalkers x niterations.
         start_iteration : {0, int}
             Write results starting from the given iteration.
         end_iteration : {None, int}
@@ -339,13 +347,10 @@ class BaseMCMCSampler(_BaseSampler):
             you intend to run more iterations, set this value to that size so
             that the array in the file will be large enough to accomodate
             future data.
-        samples_group : str
-            Name of samples group to write.
         """
-
         # due to clearing memory, there can be a difference between indices in
         # memory and on disk
-        nwalkers, niterations, _ = samples.shape
+        nwalkers, niterations = samples.shape
         niterations += self._lastclear
         fa = start_iteration # file start index
         if end_iteration is None:
@@ -360,18 +365,11 @@ class BaseMCMCSampler(_BaseSampler):
         elif max_iterations is None:
             max_iterations = niterations
 
-        # map sample values to the values that were actually passed to the
-        # waveform generator and prior evaluator
-        if apply_boundary_conditions:
-            samples = numpy.array(
-                self.likelihood_evaluator._prior.apply_boundary_conditions(
-                    samples.transpose(2,0,1))).transpose(1,2,0)
-
         group = samples_group + '/{name}/walker{wi}'
 
         # loop over number of dimensions
         widx = numpy.arange(nwalkers)
-        for pi, param in enumerate(parameters):
+        for param in parameters:
             # loop over number of walkers
             for wi in widx:
                 dataset_name = group.format(name=param, wi=wi)
@@ -379,13 +377,13 @@ class BaseMCMCSampler(_BaseSampler):
                     if fb > fp[dataset_name].size:
                         # resize the dataset
                         fp[dataset_name].resize(fb, axis=0)
-                    fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
+                    fp[dataset_name][fa:fb] = samples[param][wi, ma:mb]
                 except KeyError:
                     # dataset doesn't exist yet
                     fp.create_dataset(dataset_name, (fb,),
                                       maxshape=(max_iterations,),
                                       dtype=samples.dtype)
-                    fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
+                    fp[dataset_name][fa:fb] = samples[param][wi, ma:mb]
 
     def write_chain(self, fp, start_iteration=0, end_iteration=None,
                     max_iterations=None):
@@ -412,19 +410,29 @@ class BaseMCMCSampler(_BaseSampler):
         samples_group : str
             Name of samples group to write.
         """
-
         # chain is a nwalkers x niterations x ndim array
         samples = self.chain
-        parameters = fp.variable_args
+        parameters = self.variable_args
+        sampling_args = self.sampling_args
+        # convert to dictionary to apply boundary conditions
+        samples = {param: samples[:,:,ii]
+                   for ii,param in enumerate(sampling_args)}
+        samples = self.likelihood_evaluator._prior.apply_boundary_conditions(
+            **samples)
+        # now convert to field array
+        samples = FieldArray.from_arrays([samples[param]
+                                          for param in sampling_args],
+                                         names=sampling_args)
+        # apply transforms to go to variable args space
+        samples = self.likelihood_evaluator.apply_sampling_transforms(samples,
+            inverse=True)
         samples_group = fp.samples_group
-
         # write data
         self._write_samples_group(
                          fp, samples_group, parameters, samples,
                          start_iteration=start_iteration,
                          end_iteration=end_iteration,
-                         max_iterations=max_iterations,
-                         apply_boundary_conditions=True)
+                         max_iterations=max_iterations)
 
     def write_likelihood_stats(self, fp, start_iteration=0, end_iteration=None,
                                max_iterations=None):
@@ -458,19 +466,19 @@ class BaseMCMCSampler(_BaseSampler):
         """
         # likelihood_stats is a nwalkers x niterations FieldArray
         samples = self.likelihood_stats
-        parameters = samples.fieldnames
         if samples is None:
             return None
-        samples = samples.to_array(axis=-1).astype(numpy.float64)
+        # ensure the prior is in the variable args parameter space
+        if 'logjacobian' in samples.fieldnames:
+            samples['prior'] -= samples['logjacobian']
+        parameters = samples.fieldnames
         samples_group = fp.stats_group
-
         # write data
         self._write_samples_group(
                          fp, samples_group, parameters, samples,
                          start_iteration=start_iteration,
                          end_iteration=end_iteration,
                          max_iterations=max_iterations)
-
         return samples
 
     def write_acceptance_fraction(self, fp, start_iteration=0,
