@@ -24,6 +24,7 @@ from pycbc import coordinates
 from pycbc import cosmology
 from pycbc.io import record
 from pycbc.waveform import parameters
+from pycbc.distributions.boundaries import Bounds
 
 class BaseTransform(object):
     """A base class for transforming between two sets of parameters.
@@ -468,6 +469,221 @@ class ChiPToCartesianSpin(BaseTransform):
         return self.format_output(maps, out)
 
 
+class Logit(BaseTransform):
+    """Applies a logit transform from an `input` parameter to an `output`
+    parameter. This is the inverse of the logistic transform.
+
+    Typically, the input of the logit function is assumed to have domain
+    :math:`\in (0, 1)`. However, the `domain` argument can be used to expand
+    this to any finite real interval.
+
+    Parameters
+    ----------
+    input : str
+        The name of the parameter to transform.
+    output : str
+        The name of the transformed parameter.
+    domain : tuple or distributions.bounds.Bounds, optional
+        The domain of the input parameter. Can be any finite
+        interval. Default is (0., 1.).
+    """
+    name = 'logit'
+
+    def __init__(self, input, output, domain=(0., 1.)):
+        self._input = input
+        self._output = output
+        self._inputs = [input]
+        self._outputs = [output]
+        self._bounds = Bounds(domain[0], domain[1],
+                              btype_min='open', btype_max='open')
+        # shortcuts for quick access later
+        self._a = domain[0]
+        self._b = domain[1]
+        super(Logit, self).__init__()
+
+    @property
+    def input(self):
+        """Returns the input parameter."""
+        return self._input
+
+    @property
+    def output(self):
+        """Returns the output parameter."""
+        return self._output
+
+    @property
+    def bounds(self):
+        """Returns the domain of the input parameter.
+        """
+        return self._bounds
+
+    @staticmethod
+    def logit(x, a=0., b=1.):
+        r"""Computes the logit function with domain :math:`x \in (a, b)`.
+
+        This is given by:
+
+        .. math::
+
+            \mathrm{logit}(x; a, b) = \log\left(\frac{x-a}{b-x}\right).
+
+        Note that this is also the inverse of the logistic function with range
+        :math:`(a, b)`.
+
+        Parameters
+        ----------
+        x : float
+            The value to evaluate.
+        a : float, optional
+            The minimum bound of the domain of x. Default is 0.
+        b : float, optional
+            The maximum bound of the domain of x. Default is 1.
+
+        Returns
+        -------
+        float
+            The logit of x.
+        """
+        return numpy.log(x-a) - numpy.log(b-x)
+
+    @staticmethod
+    def logistic(x, a=0., b=1.):
+        r"""Computes the logistic function with range :math:`\in (a, b)`.
+
+        This is given by:
+
+        .. math::
+
+            \mathrm{logistic}(x; a, b) = \frac{a + b e^x}{1 + e^x}.
+
+        Note that this is also the inverse of the logit function with domain
+        :math:`(a, b)`.
+
+        Parameters
+        ----------
+        x : float
+            The value to evaluate.
+        a : float, optional
+            The minimum bound of the range of the logistic function. Default
+            is 0.
+        b : float, optional
+            The maximum bound of the range of the logistic function. Default
+            is 1.
+
+        Returns
+        -------
+        float
+            The logistic of x.
+        """
+        expx = numpy.exp(x)
+        return (a + b*expx)/(1. + expx)
+
+    def transform(self, maps):
+        r"""Computes :math:`\mathrm{logit}(x; a, b)`.
+        
+        The domain :math:`a, b` of :math:`x` are given by the class's bounds.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        out : dict or FieldArray
+            A map between the transformed variable name and value(s), along
+            with the original variable name and value(s).
+        """
+        x = maps[self._input]
+        # check that x is in bounds
+        isin = self._bounds.__contains__(x)
+        if isinstance(isin, numpy.ndarray) and not isin.all():
+            raise ValueError("one or more values are not in bounds")
+        elif not isin:
+            raise ValueError("{} is not in bounds".format(x))
+        out = {self._output : self.logit(x, self._a, self._b)}
+        return self.format_output(maps, out)
+
+    def inverse_transform(self, maps):
+        r"""Computes :math:`y = \mathrm{logistic}(x; a,b)`.
+
+        The codomain :math:`a, b` of :math:`y` are given by the class's bounds.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        out : dict or FieldArray
+            A map between the transformed variable name and value(s), along
+            with the original variable name and value(s).
+        """
+        y = maps[self._output]
+        out = {self._input : self.logistic(y, self._a, self._b)}
+        return self.format_output(maps, out)
+
+    def jacobian(self, maps):
+        r"""Computes the Jacobian of :math:`y = \mathrm{logit}(x; a,b)`.
+        
+        This is:
+
+        .. math::
+        
+            \frac{\mathrm{d}y}{\mathrm{d}x} = \frac{b -a}{(x-a)(b-x)},
+
+        where :math:`x \in (a, b)`.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        float
+            The value of the jacobian at the given point(s).
+        """
+        x = maps[self._input]
+        # check that x is in bounds
+        isin = self._bounds.__contains__(x)
+        if isinstance(isin, numpy.ndarray) and not isin.all():
+            raise ValueError("one or more values are not in bounds")
+        elif not isin:
+            raise ValueError("{} is not in bounds".format(x))
+        return (self._b - self._a)/((x - self._a)*(self._b - x))
+
+    def inverse_jacobian(self, maps):
+        r"""Computes the Jacobian of :math:`y = \mathrm{logistic}(x; a,b)`.
+        
+        This is:
+
+        .. math::
+        
+            \frac{\mathrm{d}y}{\mathrm{d}x} = \frac{e^x (b-a)}{(1+e^y)^2},
+
+        where :math:`y \in (a, b)`.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        float
+            The value of the jacobian at the given point(s).
+        """
+        x = maps[self._output]
+        expx = numpy.exp(x)
+        return expx * (self._b - self._a) / (1. + expx)**2.
+
+
 #
 # =============================================================================
 #
@@ -552,6 +768,41 @@ class CartesianSpinToChiP(ChiPToCartesianSpin):
     inverse_jacobian = inverse.jacobian
 
 
+class Logistic(Logit):
+    """Applies a logistic transform from an `input` parameter to an `output`
+    parameter. This is the inverse of the logit transform.
+
+    Typically, the output of the logistic function has range :math:`\in [0,1)`.
+    However, the `codomain` argument can be used to expand this to any
+    finite real interval.
+
+    Parameters
+    ----------
+    input : str
+        The name of the parameter to transform.
+    output : str
+        The name of the transformed parameter.
+    frange : tuple or distributions.bounds.Bounds, optional
+        The range of the output parameter. Can be any finite
+        interval. Default is (0., 1.).
+    """
+    name = 'logistic'
+    inverse = Logit
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+    def __init__(self, input, output, codomain=(0.,1.)):
+        super(Logistic, self).__init__(output, input, domain=codomain)
+
+    @property
+    def bounds(self):
+        """Returns the range of the output parameter.
+        """
+        return self._bounds
+
+
 # set the inverse of the forward transforms to the inverse transforms
 MchirpQToMass1Mass2.inverse = Mass1Mass2ToMchirpQ
 SphericalSpin1ToCartesianSpin1.inverse = CartesianSpin1ToSphericalSpin1
@@ -559,6 +810,7 @@ SphericalSpin2ToCartesianSpin2.inverse = CartesianSpin2ToSphericalSpin2
 AlignedMassSpinToCartesianSpin.inverse = CartesianSpinToAlignedMassSpin
 PrecessionMassSpinToCartesianSpin.inverse = CartesianSpinToPrecessionMassSpin
 ChiPToCartesianSpin.inverse = CartesianSpinToChiP
+Logit.inverse = Logistic
 
 
 #
@@ -584,6 +836,8 @@ transforms = {
     CartesianSpinToPrecessionMassSpin.name : CartesianSpinToPrecessionMassSpin,
     ChiPToCartesianSpin.name : ChiPToCartesianSpin,
     CartesianSpinToChiP.name : CartesianSpinToChiP,
+    Logit.name : Logit,
+    Logistic.name : Logistic,
 }
 
 # standard CBC transforms: these are transforms that do not require input
