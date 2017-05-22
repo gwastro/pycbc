@@ -383,10 +383,12 @@ def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     xi2 = primary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y)
     return chi_p_from_xi1_xi2(xi1, xi2)
 
-def phi_a(spin1x, spin1y, spin2x, spin2y):
+def phi_a(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """ Returns the angle between the in-plane perpendicular spins."""
-    phi1 = phi_from_spinx_spiny(spin1x, spin1y)
-    phi2 = phi_from_spinx_spiny(spin2x, spin2y)
+    phi1 = phi_from_spinx_spiny(primary_spin(mass1, mass2, spin1x, spin2x),
+                                primary_spin(mass1, mass2, spin1y, spin2y))
+    phi2 = phi_from_spinx_spiny(secondary_spin(mass1, mass2, spin1x, spin2x),
+                                secondary_spin(mass1, mass2, spin1y, spin2y))
     return phi1 - phi2
 
 def phi_s(spin1x, spin1y, spin2x, spin2y):
