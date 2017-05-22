@@ -141,10 +141,10 @@ parser.add_argument('--mass2', type=float, required=True,
                     help='Second mass of the binary in solar masses.')
 parser.add_argument('--inclination', type=float, required=True,
                     help='Inclination of the binary in radians.')
-parser.add_argument('--coaphase', type=float, required=True,
+parser.add_argument('--coa-phase', type=float, required=True,
                     help='Reference orbital phase parameter in radians. '
                          'Called phiRef in LALSimulation. '
-                         'Called coaphase in sim_inspiral tables.')
+                         'Called coa_phase in sim_inspiral tables.')
 parser.add_argument('--taper',  required=True,
                     choices=['TAPER_NONE', 'TAPER_START',
                              'TAPER_END', 'TAPER_STARTEND'],
@@ -264,7 +264,7 @@ sim.f_lower = opts.waveform_low_frequency_cutoff
 sim.geocent_end_time = int(opts.geocentric_end_time)
 sim.geocent_end_time_ns = int(opts.geocentric_end_time % 1 * 1e9)
 sim.inclination = opts.inclination
-sim.coaphase = opts.coaphase
+sim.coa_phase = opts.coa_phase
 sim.latitude = opts.dec
 sim.longitude = opts.ra
 sim.mass1 = opts.mass1
