@@ -438,20 +438,59 @@ class PrecessionMassSpinToCartesianSpin(BaseTransform):
             A dict with key as parameter name and value as numpy.array or float
             of transformed values.
         """
-        out = {}
-        out[parameters.spin1x] = conversions.spin1x_from_xi1_phi_a_phi_s(
-                               maps["xi1"], maps["phi_a"], maps["phi_s"])
-        out[parameters.spin1y] = conversions.spin1y_from_xi1_phi_a_phi_s(
-                               maps["xi1"], maps["phi_a"], maps["phi_s"])
-        out[parameters.spin2x] = \
-                         conversions.spin2x_from_mass1_mass2_xi2_phi_a_phi_s(
-                               maps[parameters.mass1], maps[parameters.mass2],
-                               maps["xi2"], maps["phi_a"], maps["phi_s"])
-        out[parameters.spin2y] = \
-                         conversions.spin2y_from_mass1_mass2_xi2_phi_a_phi_s(
-                               maps[parameters.mass1], maps[parameters.mass2],
-                               maps["xi2"], maps["phi_a"], maps["phi_s"])
+
+        # find primary and secondary masses
+        # since functions in conversions.py map to primary/secondary masses
+        m_p = conversions.primary_mass(maps["mass1"], maps["mass2"])
+        m_s = conversions.secondary_mass(maps["mass1"], maps["mass2"])
+
+        # find primary and secondary xi
+        # can re-purpose spin functions for just a generic variable
+        xi_p = conversions.primary_spin(maps["mass1"], maps["mass2"],
+                                        maps["xi1"], maps["xi2"])
+        xi_s = conversions.secondary_spin(maps["mass1"], maps["mass2"],
+                                          maps["xi1"], maps["xi2"])
+
+        # convert using convention of conversions.py that is mass1 > mass2
+        spinx_p = conversions.spin1x_from_xi1_phi_a_phi_s(
+                           xi_p, maps["phi_a"], maps["phi_s"])
+        spiny_p = conversions.spin1y_from_xi1_phi_a_phi_s(
+                           xi_p, maps["phi_a"], maps["phi_s"])
+        spinx_s = conversions.spin2x_from_mass1_mass2_xi2_phi_a_phi_s(
+                           m_p, m_s, xi_s, maps["phi_a"], maps["phi_s"])
+        spiny_s = conversions.spin2y_from_mass1_mass2_xi2_phi_a_phi_s(
+                           m_p, m_s, xi_s, maps["phi_a"], maps["phi_s"])
+
+        # map parameters from primary/secondary to indices
+        if isinstance(m_p, numpy.ndarray):
+            mass1, mass2 = map(numpy.array, [maps["mass1"], maps["mass2"]])
+            mask_mass1_gte_mass2 = mass1 >= mass2
+            mask_mass1_lt_mass2 = mass1 < mass2
+            out[parameters.spin1x] = numpy.concatenate(
+                                        spinx_p[mask_mass1_gte_mass2],
+                                        spinx_s[mask_mass1_lt_mass2])
+            out[parameters.spin1y] = numpy.concatenate(
+                                        spiny_p[mask_mass1_gte_mass2],
+                                        spiny_s[mask_mass1_lt_mass2])
+            out[parameters.spin2x] = numpy.concatenate(
+                                        spinx_p[mask_mass1_lt_mass2],
+                                        spinx_s[mask_mass1_gte_mass2])
+            out[parameters.spin2y] = numpy.concatenate(
+                                        spinx_p[mask_mass1_lt_mass2],
+                                        spinx_s[mask_mass1_gte_mass2])
+        elif maps["mass1"] > maps["mass2"]:
+            out[parameters.spin1x] = spinx_p
+            out[parameters.spin1y] = spiny_p
+            out[parameters.spin2x] = spinx_s
+            out[parameters.spin2y] = spiny_s
+        else:
+            out[parameters.spin1x] = spinx_s
+            out[parameters.spin1y] = spiny_s
+            out[parameters.spin2x] = spinx_p
+            out[parameters.spin2y] = spiny_p
+
         return self.format_output(maps, out)
+
 
     def inverse_transform(self, maps):
         """ This function transforms from component masses and cartesian spins to
