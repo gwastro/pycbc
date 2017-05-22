@@ -101,7 +101,7 @@ class BaseTransform(object):
 
     @classmethod
     def from_config(cls, cp, section, outputs, skip_opts=None,
-                    additional_opts={}):
+                    additional_opts=None):
         """Initializes a transform from the given section.
 
         Parameters
@@ -129,7 +129,10 @@ class BaseTransform(object):
         tag = outputs
         if skip_opts is None:
             skip_opts = []
-        additional_opts = additional_opts.copy()
+        if additional_opts is None:
+            additional_opts = {}
+        else:
+            additional_opts = additional_opts.copy()
         outputs = set(outputs.split(VARARGS_DELIM))
         special_args = ['name'] + skip_opts + additional_opts.keys()
         # get any extra arguments to pass to init
@@ -740,7 +743,7 @@ class Logit(BaseTransform):
 
     @classmethod
     def from_config(cls, cp, section, outputs, skip_opts=None,
-                    additional_opts={}):
+                    additional_opts=None):
         """Initializes a Logit transform from the given section.
 
         The section must specify an input and output variable name. The domain
@@ -784,6 +787,10 @@ class Logit(BaseTransform):
         opt = 'min-{}'.format(inputvar)
         if skip_opts is None:
             skip_opts = []
+        if additional_opts is None:
+            additional_opts = {}
+        else:
+            additional_opts = additional_opts.copy()
         if cp.has_option(s, opt):
             a = cp.get_opt_tag(section, opt, outputs)
             skip_opts.append(opt)
@@ -922,8 +929,8 @@ class Logistic(Logit):
         return self._bounds
 
     @classmethod
-    def from_config(cls, cp, section, outputs, skip_opts=[],
-                    additional_opts={}):
+    def from_config(cls, cp, section, outputs, skip_opts=None,
+                    additional_opts=None):
         """Initializes a Logistic transform from the given section.
 
         The section must specify an input and output variable name. The
@@ -963,7 +970,12 @@ class Logistic(Logit):
         """
         # pull out the minimum, maximum values of the output variable
         outputvar = cp.get_opt_tag(section, 'output', outputs)
-        additional_opts = additional_opts.copy()
+        if skip_opts is None:
+            skip_opts = []
+        if additional_opts is None:
+            additional_opts = {}
+        else:
+            additional_opts = additional_opts.copy()
         s = '-'.join([section, outputs])
         opt = 'min-{}'.format(outputvar)
         if cp.has_option(s, opt):
