@@ -100,7 +100,7 @@ class BaseTransform(object):
             raise TypeError("Input type must be FieldArray or dict.")
 
     @classmethod
-    def from_config(cls, cp, section, outputs, skip_opts=[],
+    def from_config(cls, cp, section, outputs, skip_opts=None,
                     additional_opts={}):
         """Initializes a transform from the given section.
 
@@ -127,6 +127,9 @@ class BaseTransform(object):
             An instance of the class.
         """
         tag = outputs
+        if skip_opts is None:
+            skip_opts = []
+        additional_opts = additional_opts.copy()
         outputs = set(outputs.split(VARARGS_DELIM))
         special_args = ['name'] + skip_opts + additional_opts.keys()
         # get any extra arguments to pass to init
@@ -522,7 +525,7 @@ class ChiPToCartesianSpin(BaseTransform):
 
 
 class Logit(BaseTransform):
-    """Applies a logit transform from an `input` parameter to an `output`
+    """Applies a logit transform from an `inputvar` parameter to an `outputvar`
     parameter. This is the inverse of the logistic transform.
 
     Typically, the input of the logit function is assumed to have domain
@@ -531,9 +534,9 @@ class Logit(BaseTransform):
 
     Parameters
     ----------
-    input : str
+    inputvar : str
         The name of the parameter to transform.
-    output : str
+    outputvar : str
         The name of the transformed parameter.
     domain : tuple or distributions.bounds.Bounds, optional
         The domain of the input parameter. Can be any finite
@@ -541,11 +544,11 @@ class Logit(BaseTransform):
     """
     name = 'logit'
 
-    def __init__(self, input, output, domain=(0., 1.)):
-        self._input = input
-        self._output = output
-        self._inputs = [input]
-        self._outputs = [output]
+    def __init__(self, inputvar, outputvar, domain=(0., 1.)):
+        self._inputvar = inputvar
+        self._outputvar = outputvar
+        self._inputs = [inputvar]
+        self._outputs = [outputvar]
         self._bounds = Bounds(domain[0], domain[1],
                               btype_min='open', btype_max='open')
         # shortcuts for quick access later
@@ -554,14 +557,14 @@ class Logit(BaseTransform):
         super(Logit, self).__init__()
 
     @property
-    def input(self):
+    def inputvar(self):
         """Returns the input parameter."""
-        return self._input
+        return self._inputvar
 
     @property
-    def output(self):
+    def outputvar(self):
         """Returns the output parameter."""
-        return self._output
+        return self._outputvar
 
     @property
     def bounds(self):
@@ -632,7 +635,7 @@ class Logit(BaseTransform):
 
     def transform(self, maps):
         r"""Computes :math:`\mathrm{logit}(x; a, b)`.
-        
+
         The domain :math:`a, b` of :math:`x` are given by the class's bounds.
 
         Parameters
@@ -647,14 +650,14 @@ class Logit(BaseTransform):
             A map between the transformed variable name and value(s), along
             with the original variable name and value(s).
         """
-        x = maps[self._input]
+        x = maps[self._inputvar]
         # check that x is in bounds
         isin = self._bounds.__contains__(x)
         if isinstance(isin, numpy.ndarray) and not isin.all():
             raise ValueError("one or more values are not in bounds")
         elif not isin:
             raise ValueError("{} is not in bounds".format(x))
-        out = {self._output : self.logit(x, self._a, self._b)}
+        out = {self._outputvar : self.logit(x, self._a, self._b)}
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
@@ -674,8 +677,8 @@ class Logit(BaseTransform):
             A map between the transformed variable name and value(s), along
             with the original variable name and value(s).
         """
-        y = maps[self._output]
-        out = {self._input : self.logistic(y, self._a, self._b)}
+        y = maps[self._outputvar]
+        out = {self._inputvar : self.logistic(y, self._a, self._b)}
         return self.format_output(maps, out)
 
     def jacobian(self, maps):
@@ -700,7 +703,7 @@ class Logit(BaseTransform):
         float
             The value of the jacobian at the given point(s).
         """
-        x = maps[self._input]
+        x = maps[self._inputvar]
         # check that x is in bounds
         isin = self._bounds.__contains__(x)
         if isinstance(isin, numpy.ndarray) and not isin.all():
@@ -731,12 +734,12 @@ class Logit(BaseTransform):
         float
             The value of the jacobian at the given point(s).
         """
-        x = maps[self._output]
+        x = maps[self._outputvar]
         expx = numpy.exp(x)
         return expx * (self._b - self._a) / (1. + expx)**2.
 
     @classmethod
-    def from_config(cls, cp, section, outputs, skip_opts=[],
+    def from_config(cls, cp, section, outputs, skip_opts=None,
                     additional_opts={}):
         """Initializes a Logit transform from the given section.
 
@@ -748,8 +751,8 @@ class Logit(BaseTransform):
 
             [{section}-logitq]
             name = logit
-            input = q
-            output = logitq
+            inputvar = q
+            outputvar = logitq
             min-q = 1
             max-q = 8
 
@@ -776,9 +779,11 @@ class Logit(BaseTransform):
             An instance of the class.
         """
         # pull out the minimum, maximum values of the input variable
-        inputvar = cp.get_opt_tag(section, 'input', outputs)
+        inputvar = cp.get_opt_tag(section, 'inputvar', outputs)
         s = '-'.join([section, outputs])
         opt = 'min-{}'.format(inputvar)
+        if skip_opts is None:
+            skip_opts = []
         if cp.has_option(s, opt):
             a = cp.get_opt_tag(section, opt, outputs)
             skip_opts.append(opt)
@@ -892,9 +897,9 @@ class Logistic(Logit):
 
     Parameters
     ----------
-    input : str
+    inputvar : str
         The name of the parameter to transform.
-    output : str
+    outputvar : str
         The name of the transformed parameter.
     frange : tuple or distributions.bounds.Bounds, optional
         The range of the output parameter. Can be any finite
@@ -907,8 +912,8 @@ class Logistic(Logit):
     jacobian = inverse.inverse_jacobian
     inverse_jacobian = inverse.jacobian
 
-    def __init__(self, input, output, codomain=(0.,1.)):
-        super(Logistic, self).__init__(output, input, domain=codomain)
+    def __init__(self, inputvar, outputvar, codomain=(0.,1.)):
+        super(Logistic, self).__init__(outputvar, inputvar, domain=codomain)
 
     @property
     def bounds(self):
@@ -929,8 +934,8 @@ class Logistic(Logit):
 
             [{section}-q]
             name = logistic
-            input = logitq
-            output = q
+            inputvar = logitq
+            outputvar = q
             min-q = 1
             max-q = 8
 
@@ -958,7 +963,8 @@ class Logistic(Logit):
         """
         # pull out the minimum, maximum values of the output variable
         outputvar = cp.get_opt_tag(section, 'output', outputs)
-        s = '-'.join(section, outputs)
+        additional_opts = additional_opts.copy()
+        s = '-'.join([section, outputs])
         opt = 'min-{}'.format(outputvar)
         if cp.has_option(s, opt):
             a = cp.get_opt_tag(section, opt, outputs)
