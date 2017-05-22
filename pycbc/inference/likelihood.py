@@ -328,6 +328,38 @@ class _BaseLikelihoodEvaluator(object):
         logp = self._prior(**params) + logj
         return self._formatreturn(logp, prior=logp, logjacobian=logj)
 
+    def prior_rvs(self, size=1, prior=None):
+        """Returns random variates drawn from the prior.
+
+        If the `sampling_args` are different from the `variable_args`, the
+        variates are transformed to the `sampling_args` parameter space before
+        being returned.
+
+        Parameters
+        ----------
+        size : int, optional
+            Number of random values to return for each parameter. Default is 1.
+        prior : PriorEvaluator, optional
+            Use the given prior to draw values rather than the saved prior.
+
+        Returns
+        -------
+        FieldArray
+            A field array of the random values.
+        """
+        # draw values from the prior
+        if prior is None:
+            prior = self._prior
+        p0 = prior.rvs(size=size)
+        # transform if necessary
+        if self._transforms is not None:
+            ptrans = transforms.apply_transforms(p0, self._transforms)
+            # pull out the sampling args
+            p0 = record.FieldArray.from_arrays([ptrans[arg]
+                                               for arg in self._sampling_args],
+                                               names=self._sampling_args)
+        return p0
+
     def loglikelihood(self, **params):
         """Returns the natural log of the likelihood function.
         """
