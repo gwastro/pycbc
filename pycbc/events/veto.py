@@ -1,9 +1,8 @@
 """ This module contains utilities to manipulate trigger lists based on 
 segment.
 """
-import numpy, urlparse, os.path
-import lal
-from pycbc_glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+import numpy
+from pycbc_glue.ligolw import table, lsctables, utils as ligolw_utils
 from pycbc_glue.segments import segment, segmentlist
 
 

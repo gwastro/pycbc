@@ -24,16 +24,11 @@
 """
 These are the unittests for the pycbc.waveform module
 """
-import sys
 import pycbc
 import unittest
-from pycbc.types import *
-from pycbc.scheme import *
-from pycbc.filter import *
-from pycbc.waveform import *
-import pycbc.fft
-import numpy
-from numpy import sqrt, cos, sin
+from pycbc.types import zeros, complex64
+from pycbc.filter import overlap
+from pycbc.waveform import get_fd_waveform, get_waveform_filter
 from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Waveform")
@@ -74,7 +69,7 @@ class TestSPAtmplt(unittest.TestCase):
                             o =  overlap(hp, hpr)
                             self.assertAlmostEqual(1.0, o, places=4)
 
-                            print "checked m1: %s m2:: %s s1z: %s s2z: %s] overlap = %s, diff = %s" % (m1, m2, s1, s2, o, diff)
+                            print("checked m1: %s m2:: %s s1z: %s s2z: %s] overlap = %s, diff = %s" % (m1, m2, s1, s2, o, diff))
 
 
 suite = unittest.TestSuite()

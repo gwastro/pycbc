@@ -48,20 +48,20 @@ class TestWaveform(unittest.TestCase):
             for waveform in td_approximants():
                 if waveform in failing_wfs:
                     continue
-                print waveform
+                print(waveform)
                 hc,hp = get_td_waveform(approximant=waveform,mass1=20,mass2=20,delta_t=1.0/4096,f_lower=40)
                 self.assertTrue(len(hc)> 0)
             for waveform in fd_approximants():
                 if waveform in failing_wfs:
                     continue
-                print waveform
+                print(waveform)
                 htilde, g = get_fd_waveform(approximant=waveform,mass1=20,mass2=20,delta_f=1.0/256,f_lower=40)
                 self.assertTrue(len(htilde)> 0)
 
 
     def test_spintaylorf2GPU(self):
     
-        print type(self.context)
+        print(type(self.context))
         if isinstance(self.context, CPUScheme):
             return
             
@@ -109,7 +109,7 @@ class TestWaveform(unittest.TestCase):
                                    self.assertTrue(PhaseDiffP < 0.00001)
                                    self.assertTrue(AmpDiffC < 0.00001)
                                    self.assertTrue(PhaseDiffC < 0.00001)
-                                   print "..checked m1: %s m2:: %s s1x: %s s1y: %s s1z: %s Inclination: %s" % (m1, m2, s1x, s1y, s1z, inclination)
+                                   print("..checked m1: %s m2:: %s s1x: %s s1y: %s s1z: %s Inclination: %s" % (m1, m2, s1x, s1y, s1z, inclination))
 
     def test_errors(self):
         func = get_fd_waveform

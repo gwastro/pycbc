@@ -181,8 +181,10 @@ class TestBase(Command):
 
         test_results.append("\n" + (self.scheme + " tests ").rjust(30))
         for test in self.test_modules:
-            test_command = 'python ' + 'test/' + test + '.py -s ' + self.scheme
-            a = subprocess.call(test_command,env=os.environ,shell=True)
+            test_command = [sys.executable,
+                            'test/' + test + '.py',
+                            '-s', self.scheme]
+            a = subprocess.call(test_command, env=os.environ)
             if a != 0:
                 result_str = str(test).ljust(30) + ": Fail : " + str(a)
             else:

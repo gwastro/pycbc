@@ -54,16 +54,16 @@ class TableData(SqliteData):
                     self.restriction += " AND " # all subsequent conditions need an AND
                 self.restriction += cond
         if limit: self.restriction += " LIMIT "+str(limit)
-        if self.verbose: print self.restriction
+        if self.verbose: print(self.restriction)
 
     def retrieve_rows(self):
         """
         assigns a list of rows of db content to self.data
         """
-        if self.verbose: print self.command+self.restriction
+        if self.verbose: print(self.command+self.restriction)
         # the result of executing is an *iterator* over rows
         self.data = list(self.curs.execute(self.command+self.restriction))
-        if self.verbose: print "Shape of data is", np.shape(self.data)
+        if self.verbose: print("Shape of data is", np.shape(self.data))
 
     def get_column(self, colname):
         """
@@ -73,13 +73,13 @@ class TableData(SqliteData):
         # data may already be cached as a list
         if self.data is not None:
             colindex = self.indices[colname]
-            if self.verbose: print "    Getting", colname, "data from pre-existing list"
+            if self.verbose: print("    Getting", colname, "data from pre-existing list")
             # allow the list to be of length 0, then return an empty array
             col = np.array([row[colindex] for row in self.data] if len(self.data)>0 else [])
         else:
             column_command = "SELECT "+colname+" FROM "+self.tablen
-            if self.verbose: print column_command+self.restriction
+            if self.verbose: print(column_command+self.restriction)
             col = np.array(val[0] for val in self.curs.execute(column_command+self.restriction))
-            if self.verbose: print "Shape of column", colname, "is", np.shape(col)
+            if self.verbose: print("Shape of column", colname, "is", np.shape(col))
         return col
 

@@ -42,10 +42,10 @@ if 'fftw' in pycbc.fft.get_backend_names():
     try:
         pycbc.fft.fftw.set_threads_backend('pthreads')
     except:
-        print "Unable to import pthreads threads backend to FFTW; skipping pthreads thread tests"
+        print("Unable to import pthreads threads backend to FFTW; skipping pthreads thread tests")
         _exit(0)
 else:
-    print "FFTW does not seem to be an available CPU backend; skipping pthreads thread tests"
+    print("FFTW does not seem to be an available CPU backend; skipping pthreads thread tests")
     _exit(0)
 
 # Most of the work is now done in fft_base.
