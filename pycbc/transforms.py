@@ -1076,6 +1076,8 @@ def get_common_cbc_transforms(requested_params, variable_args,
     all_c : list
         List of BaseTransforms to apply.
     """
+    variable_args = set(variable_args) if not isinstance(variable_args, set) \
+                                    else variable_args
 
     # try to parse any equations by putting all strings together
     # this will get some garbage but ensures all alphanumeric/underscored
@@ -1114,6 +1116,7 @@ def get_common_cbc_transforms(requested_params, variable_args,
                 len(converter.outputs.intersection(requested_params)) > 0):
             requested_params.update(converter.inputs)
             to_base_c.append(converter)
+            variable_args.update(converter.outputs)
 
     # get list of transforms that converts sampling parameters to the base
     # parameters and then converts base parameters to the derived parameters
