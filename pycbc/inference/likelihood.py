@@ -266,6 +266,29 @@ class _BaseLikelihoodEvaluator(object):
         """Returns the sampling transforms."""
         return self._sampling_transforms
 
+    def apply_sampling_transforms(self, samples, inverse=False):
+        """Applies the sampling transforms to the given samples.
+
+        If `sampling_transforms` is None, just returns the samples.
+
+        Parameters
+        ----------
+        samples : dict or FieldArray
+            The samples to apply the transforms to.
+        inverse : bool, optional
+            Whether to apply the inverse transforms (i.e., go from the sampling
+            args to the variable args). Default is False.
+
+        Returns
+        -------
+        dict or FieldArray
+            The transformed samples, along with the original samples.
+        """
+        if self._sampling_transforms is None:
+            return samples
+        return transforms.apply_transforms(samples, self._sampling_transforms,
+                                           inverse=inverse)
+
     @property
     def data(self):
         """Returns the data that was set."""
@@ -352,8 +375,8 @@ class _BaseLikelihoodEvaluator(object):
             prior = self._prior
         p0 = prior.rvs(size=size)
         # transform if necessary
-        if self._transforms is not None:
-            ptrans = transforms.apply_transforms(p0, self._transforms)
+        if self._sampling_transforms is not None:
+            ptrans = self.apply_sampling_transforms(p0)
             # pull out the sampling args
             p0 = record.FieldArray.from_arrays([ptrans[arg]
                                                for arg in self._sampling_args],
@@ -465,10 +488,7 @@ class _BaseLikelihoodEvaluator(object):
         params = dict(zip(self._sampling_parameters, params))
         # apply inverse transforms to go from sampling parameters to
         # variable args
-        if self._sampling_transforms is not None:
-            params = transforms.apply_transforms(params,
-                                                 self._sampling_transforms,
-                                                 inverse=True)
+        params = self.apply_sampling_transforms(params, inverse=True) 
         # apply any boundary conditions to the parameters before
         # generating/evaluating
         return self._callfunc(**self._prior.apply_boundary_conditions(
