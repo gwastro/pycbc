@@ -153,7 +153,7 @@ class PriorEvaluator(object):
 
             # determine if all parameter values are in prior space
             # if they are then add to output
-            if self(vals) > -numpy.inf:
+            if self(**dict(zip(self.variable_args, vals))) > -numpy.inf:
                  out[n] = vals
                  n += 1
 

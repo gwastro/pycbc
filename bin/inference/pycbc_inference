@@ -158,10 +158,13 @@ with ctx:
     prior = inference.PriorEvaluator(variable_args, *dists)
 
     # get sampling transformations
-    sampling_parameters, replace_parameters = \
-        option_utils.read_sampling_args_from_config(cp)
-    sampling_transforms = transforms.read_transforms_from_config(cp,
-        'sampling_transforms')
+    if cp.has_section('sampling_parameters'):
+        sampling_parameters, replace_parameters = \
+            option_utils.read_sampling_args_from_config(cp)
+        sampling_transforms = transforms.read_transforms_from_config(cp,
+            'sampling_transforms')
+    else:
+        sampling_parameters = replace_parameters = sampling_transforms = None
 
     # select generator that will generate waveform for a single IFO
     # for likelihood evaluator

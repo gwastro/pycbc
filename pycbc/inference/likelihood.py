@@ -338,7 +338,7 @@ class _BaseLikelihoodEvaluator(object):
         float :
             The value of the jacobian.
         """
-        if self._transforms is None:
+        if self._sampling_transforms is None:
             return 0.
         else:
             return numpy.log(abs(transforms.compute_jacobian(params,
@@ -430,8 +430,12 @@ class _BaseLikelihoodEvaluator(object):
     def logplr(self, **params):
         """Returns the log of the prior-weighted likelihood ratio.
         """
+        if self.return_meta:
+            logp, (_, _, logj) = self.prior(**params)
+        else:
+            logp = self.prior(**params)
+            logj = None
         # if the prior returns -inf, just return
-        logp, _, logj = self.prior(**params)
         if logp == -numpy.inf:
             return self._formatreturn(logp, prior=logp, logjacobian=logj)
         llr = self.loglr(**params)
@@ -441,8 +445,12 @@ class _BaseLikelihoodEvaluator(object):
     def logposterior(self, **params):
         """Returns the log of the posterior of the given params.
         """
+        if self.return_meta:
+            logp, (_, _, logj) = self.prior(**params)
+        else:
+            logp = self.prior(**params)
+            logj = None
         # if the prior returns -inf, just return
-        logp, _, logj = self.prior(**params)
         if logp == -numpy.inf:
             return self._formatreturn(logp, prior=logp, logjacobian=logj)
         ll = self.loglikelihood(**params)
@@ -485,7 +493,7 @@ class _BaseLikelihoodEvaluator(object):
             `return_meta` is True, a tuple of the output of the call function
             and the meta data.
         """
-        params = dict(zip(self._sampling_parameters, params))
+        params = dict(zip(self._sampling_args, params))
         # apply inverse transforms to go from sampling parameters to
         # variable args
         params = self.apply_sampling_transforms(params, inverse=True) 
