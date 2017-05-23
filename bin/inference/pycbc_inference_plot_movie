@@ -107,8 +107,9 @@ parser.add_argument("--log-steps", action="store_true", default=False,
                          "provides more detail of the early iterations, when "
                          "the sampler is changing most rapidly. An error will "
                          "be raised if frame-number is not provided.")
-parser.add_argument("--output-file", type=str, required=True,
-                    help="Output plot path without extension.")
+parser.add_argument("--output-prefix", type=str, required=True,
+                    help="Output path and prefix for the frame files "
+                         "(without extension).")
 parser.add_argument("--parameters", type=str, nargs="+",
                     metavar="PARAM[:LABEL]",
                     help="Name of parameters to plot in same format "
