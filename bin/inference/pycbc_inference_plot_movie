@@ -119,7 +119,7 @@ parser.add_argument('--dpi', type=int, default=200,
 parser.add_argument("--nprocesses", type=int, default=None,
                     help="Number of processes to use. If not given then "
                          "use maximum.")
-parser.add_argument("--make-movie", type=str,
+parser.add_argument("--movie-file", type=str,
                     help="Path for creating the movie automatically after "
                          "generating all the frames. If a movie with the same "
                          "name already exists, it will remove it. Format: mp4. "
@@ -286,16 +286,16 @@ else:
 logging.info("Making frames")
 mfunc(make_frame, range(len(iterations)))
 
-if opts.make_movie:
+if opts.movie_file:
     logging.info("Making movie")
-    movie_files = opts.output_file + "*.png"
-    if os.path.isfile(opts.make_movie):
-        os.remove(opts.make_movie)
+    frame_files = opts.output_file + "*.png"
+    if os.path.isfile(opts.movie_file):
+        os.remove(opts.movie_file)
     subprocess.call(["ffmpeg","-pix_fmt","yuv420p","-s","1024x768",
-                     "-pattern_type","glob","-i",movie_files,opts.make_movie])
+                     "-pattern_type","glob","-i",frame_files,opts.movie_file])
     if opts.cleanup:
         logging.info("Removing frames")
-        for frame in glob.glob(movie_files):
+        for frame in glob.glob(frame_files):
             os.remove(frame)
 
 logging.info('Done')
