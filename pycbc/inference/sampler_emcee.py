@@ -587,7 +587,7 @@ class EmceePTSampler(BaseMCMCSampler):
         tidx = numpy.arange(ntemps)
 
         # loop over number of dimensions
-        for pi, param in enumerate(self.variable_args):
+        for pi, param in enumerate(parameters):
             # loop over number of temps
             for tk in tidx:
                 # loop over number of walkers
