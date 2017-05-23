@@ -80,7 +80,8 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         self._nwalkers = nwalkers
 
     @classmethod
-    def from_cli(cls, opts, likelihood_evaluator, pool=None, likelihood_call=None):
+    def from_cli(cls, opts, likelihood_evaluator, pool=None,
+                 likelihood_call=None):
         """Create an instance of this sampler from the given command-line
         options.
 
@@ -262,6 +263,7 @@ class _callable(object):
     def __call__(self, *args, **kwds):
         return getattr(self.instance, self.method_name)(*args, **kwds)
 
+
 class EmceePTSampler(BaseMCMCSampler):
     """This class is used to construct a parallel-tempered MCMC sampler from
     the emcee package's PTSampler.
@@ -277,7 +279,8 @@ class EmceePTSampler(BaseMCMCSampler):
         Number of walkers to use in sampler.
     pool : function with map, Optional
         A provider of a map function that allows a function call to be run
-        over multiple sets of arguments and possibly maps them to cores/nodes/etc.
+        over multiple sets of arguments and possibly maps them to
+        cores/nodes/etc.
     burn_in_iterations : {None, int}, Optional
         Set the number of burn in iterations to use. If None,
         `burn_in_ieterations` will be initialized to 0.
@@ -296,7 +299,8 @@ class EmceePTSampler(BaseMCMCSampler):
         # functions separately
         ndim = len(likelihood_evaluator.waveform_generator.variable_args)
         sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-                                  _callable(likelihood_evaluator, 'loglikelihood'),
+                                  _callable(likelihood_evaluator,
+                                            'loglikelihood'),
                                   likelihood_evaluator._prior,
                                   pool=pool)
         # initialize
@@ -306,7 +310,8 @@ class EmceePTSampler(BaseMCMCSampler):
         self._ntemps = ntemps
 
     @classmethod
-    def from_cli(cls, opts, likelihood_evaluator, pool=None, likelihood_call=None):
+    def from_cli(cls, opts, likelihood_evaluator, pool=None,
+                 likelihood_call=None):
         """Create an instance of this sampler from the given command-line
         options.
 
