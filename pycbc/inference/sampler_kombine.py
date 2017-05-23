@@ -225,7 +225,7 @@ class KombineSampler(BaseMCMCSampler):
         self.burn_in_iterations = self.niterations
         return p, post, q
 
-    def _write_kde(self, fp, dataset, kde):
+    def _write_kde(self, fp, dataset_name, kde):
         """Writes the given kde to the file."""
         shape = kde.data.shape
         try:
@@ -254,7 +254,7 @@ class KombineSampler(BaseMCMCSampler):
         subgroup = "clustered_kde"
         dataset_name ="/".join([fp.sampler_group, subgroup])
         clustered_kde = self._sampler._kde
-        self._write_kde(fp, dataset, clustered_kde)
+        self._write_kde(fp, dataset_name, clustered_kde)
         # metadata
         fp[dataset_name].attrs["nclusters"] = clustered_kde.nclusters
         fp[dataset_name].attrs["assignments"] = clustered_kde._assignments
@@ -265,7 +265,7 @@ class KombineSampler(BaseMCMCSampler):
         # save individual KDE data
         for i, kde in enumerate(clustered_kde._kdes):
             dataset_name = "/".join([fp.sampler_group, "kde" + str(i)])
-            self._write_kde(fp, dataset, kde)
+            self._write_kde(fp, dataset_name, kde)
 
     def set_state_from_file(self, fp):
         """ Sets the state of the sampler back to the instance saved in a file.
