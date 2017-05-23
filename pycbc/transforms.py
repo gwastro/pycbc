@@ -246,11 +246,20 @@ class MchirpQToMass1Mass2(BaseTransform):
         return self.format_output(maps, out)
 
     def jacobian(self, maps):
-        """ Returns the Jacobian from chirp mass and mass ratio to
-        component masses.
+        """Returns the Jacobian for the transforming mchirp and q to mass1 and
+        mass2.
         """
-        tmp = self.transform(maps)
-        return maps["mchirp"] / tmp["mass2"]**2
+        mchirp = maps['mchirp']
+        q = maps['q']
+        return mchirp * ((1.+q)/q**3.)**(2./5)
+
+    def inverse_jacobian(self, maps):
+        """Returns the Jacobian for the transforming mass1 and mass2 to
+        mchirp and q.
+        """
+        m1 = conversions.primary_mass(maps['mass1'], maps['mass2'])
+        m2 = conversions.secondary_mass(maps['mass1'], maps['mass2'])
+        return conversions.mchirp_from_mass1_mass2(m1, m2)/m2**2.
 
 
 class SphericalSpin1ToCartesianSpin1(BaseTransform):
