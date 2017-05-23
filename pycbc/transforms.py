@@ -465,6 +465,7 @@ class PrecessionMassSpinToCartesianSpin(BaseTransform):
                            m_p, m_s, xi_s, maps["phi_a"], maps["phi_s"])
 
         # map parameters from primary/secondary to indices
+        out = {}
         if isinstance(m_p, numpy.ndarray):
             mass1, mass2 = map(numpy.array, [maps["mass1"], maps["mass2"]])
             mask_mass1_gte_mass2 = mass1 >= mass2
