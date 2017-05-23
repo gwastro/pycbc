@@ -1086,7 +1086,7 @@ def get_common_cbc_transforms(requested_params, variable_args,
         for ch in opt:
             s += ch if ch.isalnum() or ch == "_" else " "
         new_params += s.split(" ")
-    requested_params = set(requested_params + new_params)
+    requested_params = set(list(requested_params) + list(new_params))
 
     # can pass a list of valid parameters to remove garbage from parsing above
     if valid_params:
