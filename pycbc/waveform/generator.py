@@ -134,7 +134,7 @@ class BaseGenerator(object):
         """
         def dostuff(self):
             for func in self._pregenerate_functions:
-                self.current_params = func.transform(self.current_params)
+                self.current_params = func(self.current_params)
             res = generate_func(self) # pylint:disable=not-callable
             return self._postgenerate(res)
         return dostuff

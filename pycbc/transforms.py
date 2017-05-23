@@ -39,6 +39,9 @@ class BaseTransform(object):
         self.inputs = set(self._inputs)
         self.outputs = set(self._outputs)
 
+    def __call__(self, maps):
+        return self.transform(maps)
+
     def transform(self, maps):
         """ This function transforms from inputs to outputs.
         """
