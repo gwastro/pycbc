@@ -458,7 +458,7 @@ class BaseMCMCSampler(_BaseSampler):
         parameters = samples.fieldnames
         if samples is None:
             return None
-        samples = samples.to_array(axis=-1)
+        samples = samples.to_array(axis=-1).astype(numpy.float64)
         samples_group = fp.stats_group
 
         # write data
