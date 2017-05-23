@@ -51,25 +51,26 @@ class TestInference(unittest.TestCase):
 
         # setup waveform generator and signal parameters
         m1, m2, s1z, s2z, tsig = 38.6, 29.3, 0., 0., 3.1
-        ra, dec, pol, dist = 1.37, -1.26, 2.76, 3*500.
+        ra, dec, pol, dist = 1.37, -1.26, 2.76, 3 * 500.
         gen = generator.FDomainDetFrameGenerator(
-                        generator.FDomainCBCGenerator, 0., variable_args=["tc"],
-                        detectors=["H1", "L1"], delta_f=1./seglen,
-                        f_lower=fmin, approximant="TaylorF2",
-                        mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra,
-                        dec=dec, polarization=pol, distance=dist)
+                       generator.FDomainCBCGenerator, 0., variable_args=["tc"],
+                       detectors=["H1", "L1"], delta_f=1./seglen,
+                       f_lower=fmin, approximant="TaylorF2",
+                       mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra,
+                       dec=dec, polarization=pol, distance=dist)
         signal = gen.generate(tsig)
 
         # get PSDs
-        psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
+        psd = pypsd.aLIGOZeroDetHighPower(N, 1. / seglen, 20.)
         psds = {"H1": psd, "L1": psd}
 
         # get a prior evaluator
-        uniform_prior = distributions.Uniform(tc=(tsig-0.2,tsig+0.2))
+        uniform_prior = distributions.Uniform(tc=(tsig - 0.2,tsig + 0.2))
         prior_eval = inference.prior.PriorEvaluator(["tc"], uniform_prior)
 
         # setup likelihood evaluator
-        likelihood_eval = inference.GaussianLikelihood(generator, signal, fmin,
+        likelihood_eval = inference.GaussianLikelihood(
+                                gen, signal, fmin,
                                 psds=psds, prior=prior_eval, return_meta=False)
 
 suite = unittest.TestSuite()
