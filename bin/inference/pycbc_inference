@@ -273,7 +273,14 @@ with ctx:
                                   max_iterations=opts.niterations + n_burnin)
             logging.info("Writing state to file")
             fp.write_random_state()
-            sampler.write_state(fp)
+
+            # include a try-except statement because all samples might not
+            # have this implemented
+            try:
+                sampler.write_state(fp)
+            except NotImplementedError:
+                logging.warn("Writing state is not implemented for %s",
+                             sampler.name)
 
             if not opts.checkpoint_fast or end == opts.niterations:
 
