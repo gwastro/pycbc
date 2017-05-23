@@ -499,6 +499,8 @@ def get_td_lm(template=None, taper=None, **kwargs):
     final_spin = input_params.pop('final_spin')
     l, m = input_params.pop('l'), input_params.pop('m')
     nmodes = input_params.pop('nmodes')
+    if nmodes == 0:
+        raise ValueError('Number of overtones (nmodes) must be greater than zero.')
     # The following may not be in input_params
     delta_t = input_params.pop('delta_t', None)
     t_final = input_params.pop('t_final', None)
@@ -584,6 +586,8 @@ def get_fd_lm(template=None, **kwargs):
     final_spin = input_params.pop('final_spin')
     l, m = input_params.pop('l'), input_params.pop('m')
     nmodes = input_params.pop('nmodes')
+    if nmodes == 0:
+        raise ValueError('Number of overtones (nmodes) must be greater than zero.')
     # The following may not be in input_params
     delta_f = input_params.pop('delta_f', None)
     f_lower = input_params.pop('f_lower', None)
