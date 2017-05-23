@@ -30,106 +30,13 @@ import waveform
 import ringdown
 from pycbc import coordinates
 from pycbc import filter
+from pycbc import transforms
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
 from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries
 from pycbc.detector import Detector
 from pycbc import pnutils
 import lal as _lal
-
-#
-#   Pregenerator functions for generator
-#
-
-
-def add_attrs(**func_attrs):
-    """ Decorator for adding attributes to a function.
-    """
-    def add_attr_decorator(fn):
-        # wraps is a decorator for updating the attributes of the
-        # wrapping function to those of the original function
-        # ie. __name__, __doc__, and __module__ will point to the
-        # original function instead of the wrapped function
-        @functools.wraps(fn)
-        def wrapper(*args, **kwargs):
-            return fn(*args, **kwargs)
-        # update with attributes
-        for attr, value in func_attrs.iteritems():
-            setattr(wrapper, attr, value)
-        return wrapper
-    return add_attr_decorator
-
-
-@add_attrs(input_params=[parameters.mchirp, parameters.eta],
-           output_params=[parameters.mass1, parameters.mass2])
-def generator_mchirp_eta_to_mass1_mass2(generator):
-    """Converts mchirp and eta in `current_params`, to mass1 and mass2.
-    """
-    mchirp = generator.current_params['mchirp']
-    eta = generator.current_params['eta']
-    m1, m2 = pnutils.mchirp_eta_to_mass1_mass2(mchirp, eta)
-    generator.current_params['mass1'] = m1
-    generator.current_params['mass2'] = m2
-
-
-@add_attrs(input_params=[parameters.mtotal, parameters.eta],
-           output_params=[parameters.mass1, parameters.mass2])
-def generator_mtotal_eta_to_mass1_mass2(generator):
-    """Converts mtotal and eta in `current_params`, to mass1 and mass2.
-    """
-    mtotal = generator.current_params['mtotal']
-    eta = generator.current_params['eta']
-    m1, m2 = pnutils.mtotal_eta_to_mass1_mass2(mtotal, eta)
-    generator.current_params['mass1'] = m1
-    generator.current_params['mass2'] = m2
-
-
-@add_attrs(input_params=[parameters.mchirp, parameters.q],
-           output_params=[parameters.mass1, parameters.mass2])
-def generator_mchirp_q_to_mass1_mass2(generator):
-    """Converts mchirp and q in `current_params`, to mass1 and mass2.
-    """
-    mchirp = generator.current_params['mchirp']
-    q = generator.current_params['q']
-    m1, m2 = pnutils.mchirp_q_to_mass1_mass2(mchirp, q)
-    generator.current_params['mass1'] = m1
-    generator.current_params['mass2'] = m2
-
-
-@add_attrs(input_params=[parameters.spin1_a, parameters.spin2_a,
-                         parameters.spin1_azimuthal,
-                         parameters.spin2_azimuthal,
-                         parameters.spin1_polar, parameters.spin2_polar],
-           output_params=[parameters.spin1x, parameters.spin2x,
-                          parameters.spin1y, parameters.spin2y,
-                          parameters.spin1z, parameters.spin2z])
-def generator_spin_spherical_to_spin_cartesian(generator):
-    """Converts spherical spin magnitude and angles in `current_params`,
-    to cartesian component spins.
-    """
-    x, y, z = coordinates.spherical_to_cartesian(
-                                   generator.current_params["spin1_a"],
-                                   generator.current_params["spin1_azimuthal"],
-                                   generator.current_params["spin1_polar"])
-    generator.current_params["spin1x"] = x
-    generator.current_params["spin1y"] = y
-    generator.current_params["spin1z"] = z
-    x, y, z = coordinates.spherical_to_cartesian(
-                                   generator.current_params["spin2_a"],
-                                   generator.current_params["spin2_azimuthal"],
-                                   generator.current_params["spin2_polar"])
-    generator.current_params["spin2x"] = x
-    generator.current_params["spin2y"] = y
-    generator.current_params["spin2z"] = z
-
-
-# a list of all generator functions
-generator_functions = [
-    generator_mchirp_eta_to_mass1_mass2,
-    generator_mtotal_eta_to_mass1_mass2,
-    generator_mchirp_q_to_mass1_mass2,
-    generator_spin_spherical_to_spin_cartesian,
-]
 
 #
 #   Generator for CBC waveforms
@@ -227,7 +134,7 @@ class BaseGenerator(object):
         """
         def dostuff(self):
             for func in self._pregenerate_functions:
-                func(self)
+                self.current_params = func(self.current_params)
             res = generate_func(self) # pylint:disable=not-callable
             return self._postgenerate(res)
         return dostuff
@@ -261,11 +168,10 @@ class BaseCBCGenerator(BaseGenerator):
         # compare a set of all args of the generator to the input parameters
         # of the functions that do conversions and adds to list of pregenerate
         # functions if it is needed
-        params_used = set([])
-        for func in generator_functions:
-            if set(func.input_params).issubset(all_args):
-                self._add_pregenerate(func)
-                params_used.update(func.input_params)
+        params_used, cs = transforms.get_common_cbc_transforms(
+                                       list(self.possible_args), variable_args)
+        for c in cs:
+            self._add_pregenerate(c)
         # check that there are no unused parameters
         unused_args = all_args.difference(params_used) \
                               .difference(self.possible_args)

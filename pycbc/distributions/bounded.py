@@ -333,7 +333,7 @@ class BoundedDist(object):
         Returns
         -------
         BoundedDist
-            A distribution instance from the pycbc.inference.prior module.
+            A distribution instance from the pycbc.distribution subpackage.
         """
         return bounded_from_config(cls, cp, section, variable_args,
                                     bounds_required=bounds_required)
