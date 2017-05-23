@@ -154,8 +154,8 @@ class _BaseSampler(object):
         fp.attrs['sampler'] = self.name
         fp.attrs['likelihood_evaluator'] = self.likelihood_evaluator.name
         fp.attrs['ifos'] = self.ifos
-        fp.attrs['variable_args'] = self.variable_args
-        fp.attrs['sampling_args'] = self.sampling_args
+        fp.attrs['variable_args'] = list(self.variable_args)
+        fp.attrs['sampling_args'] = list(self.sampling_args)
         fp.attrs["niterations"] = self.niterations
         fp.attrs["lognl"] = self.likelihood_evaluator.lognl
         sargs = self.likelihood_evaluator.waveform_generator.static_args
