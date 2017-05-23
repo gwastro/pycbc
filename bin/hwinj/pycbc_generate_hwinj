@@ -127,7 +127,7 @@ parser.add_argument('--dec', type=float, required=True,
 parser.add_argument('--polarization', type=float, required=True,
                     help='The polarization of the injection in radians.')
 
-# waveform parameter options
+ waveform parameter options
 parser.add_argument('--approximant', type=str, required=True,
                     choices=td_approximants(),
                     help='Approximant to use for generating waveform.')
@@ -143,6 +143,8 @@ parser.add_argument('--inclination', type=float, required=True,
                     help='Inclination of the binary in radians.')
 parser.add_argument('--coa-phase', type=float, default=0.0,
                     help='Reference orbital phase parameter in radians. '
+                         'Note, this is not the same as '
+                         'the gravitational-wave phase.'
                          'Called phiRef in LALSimulation. '
                          'Called coa_phase in sim_inspiral tables.')
 parser.add_argument('--taper',  required=True,
