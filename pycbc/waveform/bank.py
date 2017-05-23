@@ -653,7 +653,7 @@ class FilterBank(TemplateBank):
             tmpltdur = self.table[index].template_duration
         except AttributeError:
             tmpltdur = None
-        if tmpltdur is None:
+        if tmpltdur is None or tmpltdur==0.0 :
             tmpltdur = get_waveform_filter_length_in_time(approximant, **p)
         hdecomp.chirp_length = tmpltdur
         hdecomp.length_in_time = hdecomp.chirp_length
