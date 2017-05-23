@@ -134,7 +134,7 @@ class BaseGenerator(object):
         """
         def dostuff(self):
             for func in self._pregenerate_functions:
-                self.current_params = func(self.current_params)
+                self.current_params = func.transform(self.current_params)
             res = generate_func(self) # pylint:disable=not-callable
             return self._postgenerate(res)
         return dostuff
@@ -171,7 +171,7 @@ class BaseCBCGenerator(BaseGenerator):
         params_used, cs = transforms.get_common_cbc_transforms(
                                        list(self.possible_args), variable_args)
         for c in cs:
-            self._add_pregenerate(c.transform)
+            self._add_pregenerate(c)
         # check that there are no unused parameters
         unused_args = all_args.difference(params_used) \
                               .difference(self.possible_args)
