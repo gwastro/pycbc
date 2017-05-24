@@ -709,10 +709,10 @@ class Logit(BaseTransform):
         x = maps[self._inputvar]
         # check that x is in bounds
         isin = self._bounds.__contains__(x)
-        if isinstance(isin, numpy.ndarray) and not isin.all():
+        if isinstance(isin, numpy.ndarray):
+            isin = isin.all()
+        if not isin:
             raise ValueError("one or more values are not in bounds")
-        elif not isin:
-            raise ValueError("{} is not in bounds".format(x))
         out = {self._outputvar : self.logit(x, self._a, self._b)}
         return self.format_output(maps, out)
 
