@@ -23,7 +23,7 @@ import scipy.stats
 from pycbc.distributions import bounded
 from pycbc.transforms import Logit
 
-class Arbitrary(_BoundedDist):
+class Arbitrary(bounded.BoundedDist):
     """A distribution constructed from a set of parameter values using a kde.
     Bounds may be optionally provided to limit the range.
 
@@ -37,19 +37,6 @@ class Arbitrary(_BoundedDist):
         a list of their parameter values. If multiple parameters are provided,
         a single kde will be produced with dimension equal to the number of
         parameters.
-
-    Attributes
-    ----------
-    name : 'arbitrary'
-        The name of the distribution.
-    params : list
-        Parameters read from file.
-    norm : float
-        The normalization of the multi-dimensional pdf.
-    lognorm : float
-        The log of the normalization.
-    kde :
-        The kde obtained from the values in the file.
     """
     name = 'arbitrary'
 
@@ -68,11 +55,11 @@ class Arbitrary(_BoundedDist):
         self._transforms = {}
         self._tparams = {}
         for param,bnds in self.bounds.items():
-            if numpy.isfinite(bnd[1] - bnd[0]):
+            if numpy.isfinite(bnds[1] - bnds[0]):
                 tparam = 'logit'+param
                 samples = kwargs[param]
-                t = transforms.Logit(param, tparam, domain=bnds)
-                self._transforms[tparm] = t
+                t = Logit(param, tparam, domain=bnds)
+                self._transforms[tparam] = t
                 self._tparams[param] = tparam
                 # remove any sample points that fall out side of the bounds
                 outside = bnds.__contains__(samples)
@@ -80,7 +67,7 @@ class Arbitrary(_BoundedDist):
                     samples = samples[outside]
                 # transform the sample points
                 kwargs[param] = t.transform({param: samples})[tparam]
-            elif not (~numpy.isfinite(bnd[0]) and ~numpy.isfinite(bnd[1])):
+            elif not (~numpy.isfinite(bnds[0]) and ~numpy.isfinite(bnds[1])):
                 raise ValueError("if specifying bounds, both bounds must "
                                  "be finite")
         # build the kde 
@@ -108,12 +95,20 @@ class Arbitrary(_BoundedDist):
             jacobian = 1.
             for param, tparam in self._tparams.items():
                 t = self._transforms[tparam]
-                samples = t.transform({param: kwargs[param])
+                try:
+                    samples = t.transform({param: kwargs[param]})
+                except ValueError as e:
+                    # can get a value error if the value is exactly == to
+                    # the bounds, in which case, just return 0.
+                    if kwargs[param] in self.bounds[param]:
+                        return 0.
+                    else:
+                        raise ValueError(e)
                 kwargs[param] = samples[tparam]
                 # update the jacobian for the transform; if p is the pdf
                 # in the params frame (the one we want) and p' is the pdf
                 # in the transformed frame (the one that's calculated) then:
-                # p' = J^{-1}p -> p = J * p'
+                # p = J * p', where J is the Jacobian of going from p to p'
                 jacobian *= t.jacobian(samples)
             # for scipy < 0.15.0, gaussian_kde.pdf = gaussian_kde.evaluate
             this_pdf = jacobian * self._kde.evaluate([kwargs[p]
@@ -160,25 +155,18 @@ class Arbitrary(_BoundedDist):
             dtype = [(p, float) for p in self.params]
         size = int(size)
         arr = numpy.zeros(size, dtype=dtype)
-        start = 0
-        remaining = size
-        pidx = enumerate(self.params)
-        while remaining:
-            draws = self._kde.resample(remaining)
-            draws = {param: draws[ii,...] for ii,param in pidx}
-            # transform back to param space
-            for param, tparam in self._tparams.items():
+        draws = self._kde.resample(size)
+        draws = {param: draws[ii,:] for ii,param in enumerate(self.params)}
+        for (param,_) in dtype:
+            try:
+                # transform back to param space
+                tparam = self._tparams[param]
                 tdraws = {tparam: draws[param]}
                 draws[param] = self._transforms[tparam].inverse_transform(
                     tdraws)[param]
-            # only keep those that are in bounds
-            keep = self.__contains__(draws)
-            keepcnt = int(keep.sum())
-            end = start + keepcnt
-            remaining -= keepcnt
-            for param in dtype:
-                arr[param[0]][start:end] = draws[param[0]][keep]
-            start = end
+            except KeyError:
+                pass
+            arr[param] = draws[param]
         return arr
 
     @staticmethod
