@@ -1229,11 +1229,13 @@ def compute_jacobian(samples, transforms, inverse=False):
     float :
         The product of the jacobians of all fo the transforms.
     """
+    j = 1.
     if inverse:
-        j = numpy.array([t.inverse_jacobian(samples)
-                         for t in transforms]).prod()
+        for t in transforms:
+            j *= t.inverse_jacobian(samples)
     else:
-        j = numpy.array([t.jacobian(samples) for t in transforms]).prod()
+        for t in transforms:
+            j *= t.jacobian(samples)
     return j
 
 
