@@ -18,7 +18,7 @@ probability density function of distributions.
 """
 
 from pycbc.distributions.angular import *
-from pycbc.distributions.from_file import *
+from pycbc.distributions.arbitrary import *
 from pycbc.distributions.gaussian import *
 from pycbc.distributions.power_law import *
 from pycbc.distributions.sky_location import *
