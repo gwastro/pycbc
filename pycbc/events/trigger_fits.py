@@ -191,7 +191,7 @@ def KS_test(distr, vals, alpha, thresh=None):
         Name of distribution
     vals : sequence of floats
         Values to compare to fit
-    alpha :
+    alpha : float
         Fitted distribution parameter
     thresh : float
         Threshold to apply before fitting; if None, use min(vals)
@@ -214,7 +214,21 @@ def KS_test(distr, vals, alpha, thresh=None):
 
 
 def get_masses(bank, tid):
-    """Helper function"""
+    """
+    Helper function
+
+    Parameters
+    ----------
+    bank : h5py File object
+        Bank parameter file
+    tid : integer or array of int
+        Indices of the entries to be returned
+
+    Returns
+    -------
+    m1, m2, s1z, s2z : tuple of floats or arrays of floats
+        Parameter values of the bank entries
+    """
     m1 = bank['mass1'][:][tid]
     m2 = bank['mass2'][:][tid]
     s1z = bank['spin1z'][:][tid]
@@ -223,7 +237,23 @@ def get_masses(bank, tid):
 
 
 def get_param(par, args, m1, m2, s1z, s2z):
-    """Helper function"""
+    """
+    Helper function
+
+    Parameters
+    ----------
+    par : string
+        Name of parameter to calculate
+    args : Namespace object returned from ArgumentParser instance
+        Calling code command line options, used for f_lower value
+    m1 : float or array of floats
+        First binary component mass (etc.)
+
+    Returns
+    -------
+    parvals : float or array of floats
+        Calculated parameter values
+    """
     if par == 'mchirp':
         parvals, _ = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
     elif par == 'mtotal':
@@ -244,9 +274,28 @@ def get_param(par, args, m1, m2, s1z, s2z):
 
 def which_bin(par, minpar, maxpar, nbins, log=False):
     """
-    Returns the bin index in which the parameter value belongs (from 0 through
-    nbins-1) when dividing the range between minpar and maxpar equally into
-    nbins bins.
+    Helper function
+
+    Returns bin index where a parameter value belongs (from 0 through nbins-1)
+    when dividing the range between minpar and maxpar equally into bins.
+
+    Parameters
+    ----------
+    par : float
+        Parameter value being binned
+    minpar : float
+        Minimum parameter value
+    maxpar : float
+        Maximum parameter value
+    nbins : int
+        Number of bins to use
+    log : boolean
+        If True, use log spaced bins
+
+    Returns
+    -------
+    binind : int
+        Bin index
     """
     assert (par >= minpar and par <= maxpar)
     if log:
@@ -255,7 +304,7 @@ def which_bin(par, minpar, maxpar, nbins, log=False):
     frac = float(par - minpar) / float(maxpar - minpar)
     # binind then lies between 0 and nbins - 1
     binind = int(frac * nbins)
-    # except for a corner case
+    # corner case
     if par == maxpar:
         binind = nbins - 1
     return binind
