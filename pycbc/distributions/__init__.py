@@ -26,6 +26,7 @@ from pycbc.distributions.uniform import *
 
 # a dict of all available distributions
 distribs = {
+    Arbitrary.name : Arbitrary,
     FromFile.name : FromFile,
     Gaussian.name : Gaussian,
     UniformPowerLaw.name : UniformPowerLaw,

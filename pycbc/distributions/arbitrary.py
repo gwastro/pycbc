@@ -22,32 +22,26 @@ import numpy
 import scipy.stats
 from pycbc.distributions import bounded
 
-class FromFile(bounded.BoundedDist):
-    """A distribution that reads the values of the parameter(s) from an hdf
-    file, computes the kde to construct the pdf, and draws random variables
-    from it.
+
+class Arbitrary(_BoundedDist):
+    """A distribution constructed from a set of parameter values using a kde.
+    Bounds may be optionally provided to limit the range.
 
     Parameters
     ----------
-    file_name : str
-        The path to an hdf file containing the values of the parameters that
-        want to be used to construct the distribution. Each parameter should
-        be a separate dataset in the hdf file, and all datasets should have
-        the same size. For example, to give a prior for mass1 and mass2 from
-        file f, f['mass1'] and f['mass2'] contain the n values for each
-        parameter.
+    bounds : {None, dict}
+        Independent bounds on one or more parameters may be provided to limit
+        the range of the kde.
     \**params :
-        The keyword arguments should provide the names of the parameters to be
-        read from the file and (optionally) their bounds. If no parameters are
-        provided, it will use all the parameters found in the file. To provide
-        bounds, specify e.g. mass1=[10,100]. Otherwise, mass1=None.
+        The keyword arguments should provide the names of the parameters and
+        a list of their parameter values. If multiple parameters are provided,
+        a single kde will be produced with dimension equal to the number of
+        parameters.
 
     Attributes
     ----------
-    name : 'fromfile'
+    name : 'arbitrary'
         The name of the distribution.
-    file_name : str
-        The path to the file containing values for the parameter(s).
     params : list
         Parameters read from file.
     norm : float
@@ -57,27 +51,22 @@ class FromFile(bounded.BoundedDist):
     kde :
         The kde obtained from the values in the file.
     """
-    name = 'fromfile'
-    def __init__(self, file_name=None, **params):
-        if file_name is None:
-            raise ValueError('A file must be specified for this distribution.')
-        self._filename = file_name
-        # Get the parameter names to pass to get_kde_from_file
-        if len(params) == 0:
-            ps = None
-        else:
-            ps = params.keys()
-        pnames, self._kde = self.get_kde_from_file(file_name, params=ps)
-        # If no parameters where given, populate with pnames
-        for param in pnames:
-            if param not in params:
-                params[param] = None
-        super(FromFile, self).__init__(**params)
-        # Make sure to store parameter names in same order as given by kde function
-        self._params = pnames
+    name = 'arbitrary'
+
+    def __init__(self, bounds=None, **kwargs):
+        # initialize the bounds
+        if bounds is None:
+            bounds = {}
+        bounds.update({p: None for p in kwargs if p not in bounds})
+        super(Arbitrary, self).__init__(**bounds)
+        # check that all parameters specified in bounds have samples
+        if set(self.params) != set(kwargs.keys()):
+            raise ValueError("Must provide samples for all parameters given "
+                             "in the bounds dictionary")
+        self._kde = self.get_kde_from_arrays(*[kwargs[p] for p in self.params])
         # Compute the norm and save
-        lower_bounds = [self.bounds[p][0] for p in pnames]
-        higher_bounds = [self.bounds[p][1] for p in pnames]
+        lower_bounds = [self.bounds[p][0] for p in self.params]
+        higher_bounds = [self.bounds[p][1] for p in self.params]
         # Avoid inf because of inconsistencies in integrate_box
         RANGE_LIMIT = 2 ** 31
         for ii, bnd in enumerate(lower_bounds):
@@ -93,10 +82,6 @@ class FromFile(bounded.BoundedDist):
                     self._kde.integrate_box(lower_limits, lower_bounds)
         self._norm = 1. / invnorm
         self._lognorm = numpy.log(self._norm)
-
-    @property
-    def file_name(self):
-        return self._filename
 
     @property
     def params(self):
@@ -121,7 +106,8 @@ class FromFile(bounded.BoundedDist):
         """
         for p in self._params:
             if p not in kwargs.keys():
-                raise ValueError('Missing parameter {} to construct pdf.'.format(p))
+                raise ValueError('Missing parameter {} to construct pdf.'
+                                 .format(p))
         if kwargs in self:
             # for scipy < 0.15.0, gaussian_kde.pdf = gaussian_kde.evaluate
             this_pdf = self._norm * self._kde.evaluate([kwargs[p]
@@ -140,7 +126,8 @@ class FromFile(bounded.BoundedDist):
         """
         for p in self._params:
             if p not in kwargs.keys():
-                raise ValueError('Missing parameter {} to construct pdf.'.format(p))
+                raise ValueError('Missing parameter {} to construct pdf.'
+                                 .format(p))
         if kwargs in self:
             # for scipy < 0.15.0,
             # gaussian_kde.logpdf = numpy.log(gaussian_kde.evaluate)
@@ -177,30 +164,111 @@ class FromFile(bounded.BoundedDist):
             dtype = [(param, float)]
         else:
             dtype = [(p, float) for p in self.params]
+        size = int(size)
         arr = numpy.zeros(size, dtype=dtype)
-        randoms = self._kde.resample(size)
-        for order, param in enumerate(dtype):
-            arr[param[0]] = randoms[order]
+        start = 0
+        remaining = size
+        while remaining:
+            randoms = self._kde.resample(remaining)
+            keep = numpy.array([{param: randoms[ii, jj]
+                               for ii,param in enumerate(self.params)} in self
+                               for jj in xrange(remaining)])
+            keepcnt = int(keep.sum())
+            end = start + keepcnt
+            remaining -= keepcnt
+            for order, param in enumerate(dtype):
+                arr[param[0]][start:end] = randoms[order, keep]
+            start = end
         return arr
 
     @staticmethod
-    def get_kde_from_file(params_file, params=None):
+    def get_kde_from_arrays(*arrays):
+        """Constructs a KDE from the given arrays.
+
+        *arrays :
+            Each argument should be a 1D numpy array to construct the kde from.
+            The resulting KDE will have dimension given by the number of
+            parameters.
+        """
+        return scipy.stats.gaussian_kde(numpy.vstack(arrays))
+
+    @classmethod
+    def from_config(cls, cp, section, variable_args):
+        """Raises a NotImplementedError; to load from a config file, use
+        `FromFile`.
+        """
+        raise NotImplementedError("This class does not support loading from a "
+                                  "config file. Use `FromFile` instead.")
+
+
+class FromFile(Arbitrary):
+    """A distribution that reads the values of the parameter(s) from an hdf
+    file, computes the kde to construct the pdf, and draws random variables
+    from it.
+
+    Parameters
+    ----------
+    filename : str
+        The path to an hdf file containing the values of the parameters that
+        want to be used to construct the distribution. Each parameter should
+        be a separate dataset in the hdf file, and all datasets should have
+        the same size. For example, to give a prior for mass1 and mass2 from
+        file f, f['mass1'] and f['mass2'] contain the n values for each
+        parameter.
+    \**params :
+        The keyword arguments should provide the names of the parameters to be
+        read from the file and (optionally) their bounds. If no parameters are
+        provided, it will use all the parameters found in the file. To provide
+        bounds, specify e.g. mass1=[10,100]. Otherwise, mass1=None.
+
+    Attributes
+    ----------
+    name : 'fromfile'
+        The name of the distribution.
+    filename : str
+        The path to the file containing values for the parameter(s).
+    params : list
+        Parameters to read from file.
+    norm : float
+        The normalization of the multi-dimensional pdf.
+    lognorm : float
+        The log of the normalization.
+    kde :
+        The kde obtained from the values in the file.
+    """
+    name = 'fromfile'
+    def __init__(self, filename=None, **params):
+        if filename is None:
+            raise ValueError('A file must be specified for this distribution.')
+        self._filename = filename
+        # Get the parameter names to pass to get_kde_from_file
+        if len(params) == 0:
+            ps = None
+        else:
+            ps = params.keys()
+        param_vals = self.get_arrays_from_file(filename, params=ps)
+        super(FromFile, self).__init__(bounds=params, **param_vals)
+    
+    @property
+    def filename(self):
+        return self._filename
+
+    @staticmethod
+    def get_arrays_from_file(params_file, params=None):
         """Reads the values of one or more parameters from an hdf file and
-        computes the kernel density estimate (kde).
+        returns as a dictionary.
 
         Parameters
         ----------
         params_file : str
             The hdf file that contains the values of the parameters.
         params : {None, list}
-            If provided, will just use the values for the given parameter.
-            Otherwise, uses the values for each parameter in the file.
+            If provided, will just retrieve the given parameter names.
+
         Returns
         -------
-        values
-            Array with the values of the parameters.
-        kde
-            The kde from the parameters.
+        dict
+            A dictionary of the parameters mapping `param_name -> array`.
         """
         try:
             f = h5py.File(params_file, 'r')
@@ -211,13 +279,13 @@ class FromFile(bounded.BoundedDist):
                 params = [params]
             for p in params:
                 if p not in f.keys():
-                    raise ValueError('Parameter {} is not in {}'.format(p, params_file))
+                    raise ValueError('Parameter {} is not in {}'
+                                     .format(p, params_file))
         else:
             params = [str(k) for k in f.keys()]
         params_values = {p:f[p][:] for p in params}
         f.close()
-        values = numpy.vstack((params_values[p] for p in params))
-        return params, scipy.stats.gaussian_kde(values)
+        return params_values
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
@@ -228,14 +296,14 @@ class FromFile(bounded.BoundedDist):
         "[`section`-`variable_args`]" in the config file.
 
         The file to construct the distribution from must be provided by setting
-        `file_name`. Boundary arguments can be provided in the same way as
+        `filename`. Boundary arguments can be provided in the same way as
         described in `get_param_bounds_from_config`.
 
         .. code-block:: ini
 
             [{section}-{tag}]
             name = fromfile
-            file_name = ra_prior.hdf
+            filename = ra_prior.hdf
             min-ra = 0
             max-ra = 6.28
 
@@ -253,11 +321,10 @@ class FromFile(bounded.BoundedDist):
 
         Returns
         -------
-        Uniform
+        BoundedDist
             A distribution instance from the pycbc.inference.prior module.
         """
         return super(FromFile, cls).from_config(cp, section, variable_args,
                                                 bounds_required=False)
 
-
-__all__ = ['FromFile']
+__all__ = ['Arbitrary', 'FromFile']
