@@ -480,7 +480,7 @@ class _BaseLikelihoodEvaluator(object):
         """
         cls._callfunc = getattr(cls, funcname)
 
-    def evaluate(self, params):
+    def evaluate(self, params, callfunc=None):
         """Evaluates the call function at the given list of parameter values.
 
         Parameters
@@ -488,6 +488,9 @@ class _BaseLikelihoodEvaluator(object):
         params : list
             A list of values. These are assumed to be in the same order as
             variable args.
+        callfunc : str, optional
+            The name of the function to call. If None, will use
+            `self._callfunc`. Default is None.
 
         Returns
         -------
@@ -502,8 +505,11 @@ class _BaseLikelihoodEvaluator(object):
         params = self.apply_sampling_transforms(params, inverse=True) 
         # apply any boundary conditions to the parameters before
         # generating/evaluating
-        return self._callfunc(**self._prior.apply_boundary_conditions(
-                              **params))
+        if callfunc is not None:
+            f = getattr(self, callfunc)
+        else:
+            f = self._callfunc
+        return f(**self._prior.apply_boundary_conditions(**params))
 
     __call__ = evaluate
 

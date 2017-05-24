@@ -88,6 +88,14 @@ class _BaseSampler(object):
         return NotImplementedError("chain function not set.")
 
     @property
+    def samples(self):
+        """This function should return the past samples as a [additional
+        dimensions x] niterations field array, where the fields are union
+        of the sampling args and the variable args.
+        """
+        return NotImplementedError("samples function not set.")
+        
+    @property
     def clear_chain(self):
         """This function should clear the current chain of samples from memory.
         """
@@ -285,6 +293,33 @@ class BaseMCMCSampler(_BaseSampler):
         return self._sampler.acceptance_fraction
 
     @property
+    def samples(self):
+        """Returns the samples in the chain as a FieldArray.
+
+        If the sampling args are not the same as the variable args, the
+        returned samples will have both the sampling and the variable args.
+
+        The returned FieldArray has dimension [additional dimensions x]
+        nwalkers x niterations.
+        """
+        # chain is a [additional dimensions x] niterations x ndim array
+        samples = self.chain
+        parameters = self.variable_args
+        sampling_args = self.sampling_args
+        # convert to dictionary to apply boundary conditions
+        samples = {param: samples[...,ii]
+                   for ii,param in enumerate(sampling_args)}
+        samples = self.likelihood_evaluator._prior.apply_boundary_conditions(
+            **samples)
+        # now convert to field array
+        samples = FieldArray.from_arrays([samples[param]
+                                          for param in sampling_args],
+                                         names=sampling_args)
+        # apply transforms to go to variable args space
+        return self.likelihood_evaluator.apply_sampling_transforms(samples,
+            inverse=True)
+
+    @property
     def likelihood_stats(self):
         """Returns the likelihood stats as a FieldArray, with field names
         corresponding to the type of data returned by the likelihood evaluator.
@@ -297,7 +332,7 @@ class BaseMCMCSampler(_BaseSampler):
             return None
         # we'll force arrays to float; this way, if there are `None`s in the
         # blobs, they will be changed to `nan`s
-        arrays = {field: stats[:, :, fi].astype(float)
+        arrays = {field: stats[..., fi].astype(float)
                   for fi, field in
                   enumerate(self.likelihood_evaluator.metadata_fields)}
         return FieldArray.from_kwargs(**arrays).transpose()
@@ -322,9 +357,12 @@ class BaseMCMCSampler(_BaseSampler):
                              max_iterations=None):
         """Writes samples to the given file.
 
-        Results are written to: `fp[samples_group/{vararg}/walker{i}]`, where
-        `{vararg}` is the name of a variable arg, and `{i}` is the index of
-        a walker.
+        Results are written to:
+        
+            `fp[samples_group/{vararg}/walker{i}]`,
+            
+        where `{vararg}` is the name of a variable arg, and `{i}` is the
+        index of a walker.
 
         Parameters
         -----------
@@ -388,10 +426,15 @@ class BaseMCMCSampler(_BaseSampler):
 
     def write_chain(self, fp, start_iteration=0, end_iteration=None,
                     max_iterations=None):
-        """Writes the samples from the current chain to the given file. Results
-        are written to: `fp[fp.samples_group/{vararg}/walker{i}]`, where
-        `{vararg}` is the name of a variable arg, and `{i}` is the index of
-        a walker.
+        """Writes the samples from the current chain to the given file.
+        
+        Results are written to:
+        
+            `fp[fp.samples_group/{field}/(temp{k}/)walker{i}]`,
+        
+        where `{i}` is the index of a walker, `{field}` is the name of each
+        field returned by `likelihood_stats`, and, if the sampler is
+        multitempered, `{k}` is the temperature.
 
         Parameters
         -----------
@@ -411,22 +454,9 @@ class BaseMCMCSampler(_BaseSampler):
         samples_group : str
             Name of samples group to write.
         """
-        # chain is a nwalkers x niterations x ndim array
-        samples = self.chain
+        # samples is a nwalkers x niterations field array
+        samples = self.samples
         parameters = self.variable_args
-        sampling_args = self.sampling_args
-        # convert to dictionary to apply boundary conditions
-        samples = {param: samples[:,:,ii]
-                   for ii,param in enumerate(sampling_args)}
-        samples = self.likelihood_evaluator._prior.apply_boundary_conditions(
-            **samples)
-        # now convert to field array
-        samples = FieldArray.from_arrays([samples[param]
-                                          for param in sampling_args],
-                                         names=sampling_args)
-        # apply transforms to go to variable args space
-        samples = self.likelihood_evaluator.apply_sampling_transforms(samples,
-            inverse=True)
         samples_group = fp.samples_group
         # write data
         self._write_samples_group(
@@ -437,11 +467,16 @@ class BaseMCMCSampler(_BaseSampler):
 
     def write_likelihood_stats(self, fp, start_iteration=0, end_iteration=None,
                                max_iterations=None):
-        """Writes the `likelihood_stats` to the given file.  Results are
-        written to: `fp[fp.stats_group/{field}/walker{i}]`, where `{i}` is
-        the index of a walker and `{field}` is the name of each field returned
-        by `likelihood_stats`. If nothing is returned by `likelihood_stats`,
-        this does nothing.
+        """Writes the `likelihood_stats` to the given file.
+        
+        Results are written to:
+        
+            `fp[fp.stats_group/{field}/(temp{k}/)walker{i}]`,
+        
+        where `{i}` is the index of a walker, `{field}` is the name of each
+        field returned by `likelihood_stats`, and, if the sampler is
+        multitempered, `{k}` is the temperature.  If nothing is returned by
+        `likelihood_stats`, this does nothing.
 
         Parameters
         -----------
@@ -465,7 +500,6 @@ class BaseMCMCSampler(_BaseSampler):
             The stats that were written, as a FieldArray. If there were no
             stats, returns None.
         """
-        # likelihood_stats is a nwalkers x niterations FieldArray
         samples = self.likelihood_stats
         if samples is None:
             return None
