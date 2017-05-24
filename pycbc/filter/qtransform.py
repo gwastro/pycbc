@@ -38,7 +38,7 @@ from pycbc.strain  import next_power_of_2
 from pycbc.types.timeseries import FrequencySeries, TimeSeries
 from numpy import fft as npfft
 
-__author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
+__author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>, Andrew Lundgren <andrew.lundgren@aei.mpg.de'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 def qtransform(data, Q, f0, normalized=True):
@@ -53,8 +53,6 @@ def qtransform(data, Q, f0, normalized=True):
         is the complex '~numpy.fft.ifft' output of the Q-tranform
     f0:
         central frequency
-    sampling:
-        sampling frequency of channel
     normalized:
         normalize output tile energies 
 
@@ -76,7 +74,7 @@ def qtransform(data, Q, f0, normalized=True):
     window_size = 2 * int(f0 / qprime * dur) + 1
 
     # get indices
-    indices = _get_indices(dur)
+    indices = _get_indices(dur, fseries.delta_f)
 
     # apply window to fft
     windowed = fseries[get_data_indices(dur, f0, indices)] * get_window(dur, indices, f0, qprime, Q, fseries.delta_f)
@@ -146,13 +144,15 @@ def get_data_indices(dur, f0, indices):
     return np.round(indices + 1 +
                        f0 * dur).astype(int)
 
-def _get_indices(dur):
+def _get_indices(dur, sampling):
     """ Windows indices for fft
     
     Parameters
     ---------
     dur: int
         Duration of timeseries in seconds
+    sampling:
+        sampling frequency of channel
 
     Returns
     -------
@@ -160,7 +160,7 @@ def _get_indices(dur):
         Window indices for fft using total duration of segment
 
     """
-    half = int((int(dur) - 1.) / 2.)  
+    half = int((int(dur, sampling) - 1.) / 2.)  
     return np.arange(-half, half + 1)
 
 def get_window(dur, indices, f0, qprime, Q, sampling):
