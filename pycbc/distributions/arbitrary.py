@@ -21,7 +21,7 @@ import h5py
 import numpy
 import scipy.stats
 from pycbc.distributions import bounded
-
+from pycbc.transforms import Logit
 
 class Arbitrary(_BoundedDist):
     """A distribution constructed from a set of parameter values using a kde.
@@ -63,37 +63,32 @@ class Arbitrary(_BoundedDist):
         if set(self.params) != set(kwargs.keys()):
             raise ValueError("Must provide samples for all parameters given "
                              "in the bounds dictionary")
+        # if bounds are provided use logit transform to move the points
+        # to +/- inifinity
+        self._transforms = {}
+        self._tparams = {}
+        for param,bnds in self.bounds.items():
+            if numpy.isfinite(bnd[1] - bnd[0]):
+                tparam = 'logit'+param
+                samples = kwargs[param]
+                t = transforms.Logit(param, tparam, domain=bnds)
+                self._transforms[tparm] = t
+                self._tparams[param] = tparam
+                # remove any sample points that fall out side of the bounds
+                outside = bnds.__contains__(samples)
+                if outside.any():
+                    samples = samples[outside]
+                # transform the sample points
+                kwargs[param] = t.transform({param: samples})[tparam]
+            elif not (~numpy.isfinite(bnd[0]) and ~numpy.isfinite(bnd[1])):
+                raise ValueError("if specifying bounds, both bounds must "
+                                 "be finite")
+        # build the kde 
         self._kde = self.get_kde_from_arrays(*[kwargs[p] for p in self.params])
-        # Compute the norm and save
-        lower_bounds = [self.bounds[p][0] for p in self.params]
-        higher_bounds = [self.bounds[p][1] for p in self.params]
-        # Avoid inf because of inconsistencies in integrate_box
-        RANGE_LIMIT = 2 ** 31
-        for ii, bnd in enumerate(lower_bounds):
-            if abs(bnd) == numpy.inf:
-                lower_bounds[ii] = numpy.sign(bnd) * RANGE_LIMIT
-        for ii, bnd in enumerate(higher_bounds):
-            if abs(bnd) == numpy.inf:
-                higher_bounds[ii] = numpy.sign(bnd) * RANGE_LIMIT
-        # Array of -inf for the lower limits in integrate_box
-        lower_limits = - RANGE_LIMIT * numpy.ones(shape=len(lower_bounds))
-        # CDF(-inf,b) - CDF(-inf, a)
-        invnorm = self._kde.integrate_box(lower_limits, higher_bounds) - \
-                    self._kde.integrate_box(lower_limits, lower_bounds)
-        self._norm = 1. / invnorm
-        self._lognorm = numpy.log(self._norm)
 
     @property
     def params(self):
         return self._params
-
-    @property
-    def norm(self):
-        return self._norm
-
-    @property
-    def lognorm(self):
-        return self._lognorm
 
     @property
     def kde(self):
@@ -109,9 +104,20 @@ class Arbitrary(_BoundedDist):
                 raise ValueError('Missing parameter {} to construct pdf.'
                                  .format(p))
         if kwargs in self:
+            # transform into the kde space
+            jacobian = 1.
+            for param, tparam in self._tparams.items():
+                t = self._transforms[tparam]
+                samples = t.transform({param: kwargs[param])
+                kwargs[param] = samples[tparam]
+                # update the jacobian for the transform; if p is the pdf
+                # in the params frame (the one we want) and p' is the pdf
+                # in the transformed frame (the one that's calculated) then:
+                # p' = J^{-1}p -> p = J * p'
+                jacobian *= t.jacobian(samples)
             # for scipy < 0.15.0, gaussian_kde.pdf = gaussian_kde.evaluate
-            this_pdf = self._norm * self._kde.evaluate([kwargs[p]
-                                                        for p in self._params])
+            this_pdf = jacobian * self._kde.evaluate([kwargs[p]
+                                                      for p in self._params])
             if len(this_pdf) == 1:
                 return float(this_pdf)
             else:
@@ -124,22 +130,10 @@ class Arbitrary(_BoundedDist):
         arguments must contain all of parameters in self's params.
         Unrecognized arguments are ignored.
         """
-        for p in self._params:
-            if p not in kwargs.keys():
-                raise ValueError('Missing parameter {} to construct pdf.'
-                                 .format(p))
-        if kwargs in self:
-            # for scipy < 0.15.0,
-            # gaussian_kde.logpdf = numpy.log(gaussian_kde.evaluate)
-            this_logpdf = self._lognorm + \
-                          numpy.log(self._kde.evaluate([kwargs[p]
-                                                     for p in self._params]))
-            if len(this_logpdf) == 1:
-                return float(this_logpdf)
-            else:
-                return this_logpdf
-        else:
+        if kwargs not in self:
             return -numpy.inf
+        else:
+            return numpy.log(self._pdf(**kwargs))
 
     def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from the kde.
@@ -168,16 +162,22 @@ class Arbitrary(_BoundedDist):
         arr = numpy.zeros(size, dtype=dtype)
         start = 0
         remaining = size
+        pidx = enumerate(self.params)
         while remaining:
-            randoms = self._kde.resample(remaining)
-            keep = numpy.array([{param: randoms[ii, jj]
-                               for ii,param in enumerate(self.params)} in self
-                               for jj in xrange(remaining)])
+            draws = self._kde.resample(remaining)
+            draws = {param: draws[ii,...] for ii,param in pidx}
+            # transform back to param space
+            for param, tparam in self._tparams.items():
+                tdraws = {tparam: draws[param]}
+                draws[param] = self._transforms[tparam].inverse_transform(
+                    tdraws)[param]
+            # only keep those that are in bounds
+            keep = self.__contains__(draws)
             keepcnt = int(keep.sum())
             end = start + keepcnt
             remaining -= keepcnt
-            for order, param in enumerate(dtype):
-                arr[param[0]][start:end] = randoms[order, keep]
+            for param in dtype:
+                arr[param[0]][start:end] = draws[param[0]][keep]
             start = end
         return arr
 
