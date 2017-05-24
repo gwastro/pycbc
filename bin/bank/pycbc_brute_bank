@@ -176,10 +176,18 @@ class GenUniformWaveform(object):
         self.md2 = q._data[0:100]
 
     def generate(self, **kwds):
-        hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f, 
+        if kwds['approximant'] in pycbc.waveform.fd_approximants():
+            hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f, 
                                                 f_lower=self.f_lower, **kwds)
-        if 'fratio' in kwds:
-            hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
+            if 'fratio' in kwds:
+                hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
+        else:
+            dt = 1.0 / args.sample_rate
+            hp = pycbc.waveform.get_waveform_filter(
+                        pycbc.types.zeros(self.flen, dtype=numpy.complex64), 
+                        delta_f=self.delta_f, delta_t=dt,
+                        f_lower=self.f_lower, **kwds) 
+
         hp.resize(self.flen)
         hp = hp.astype(numpy.complex64)
         hp[self.kmin:-1] *= self.w
