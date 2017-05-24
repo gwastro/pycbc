@@ -38,7 +38,7 @@ from pycbc.strain  import next_power_of_2
 from pycbc.types.timeseries import FrequencySeries, TimeSeries
 from numpy import fft as npfft
 
-__author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>'
+__author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>, Andrew Lundgren <andrew.lundgren@aei.mpg.de'
 __credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 def qtransform(data, Q, f0, normalized=True):
@@ -53,10 +53,6 @@ def qtransform(data, Q, f0, normalized=True):
         is the complex '~numpy.fft.ifft' output of the Q-tranform
     f0:
         central frequency
-    sampling:
-        sampling frequency of channel
-    normalized:
-        normalize output tile energies 
 
     Returns
     -------
@@ -76,44 +72,47 @@ def qtransform(data, Q, f0, normalized=True):
     window_size = 2 * int(f0 / qprime * dur) + 1
 
     # get indices
-    indices = _get_indices(dur)
+    indices = _get_indices(window_size)
 
     # apply window to fft
-    windowed = fseries[get_data_indices(dur, f0, indices)] * get_window(dur, indices, f0, qprime, Q, fseries.delta_f)
+    windowed = fseries[get_data_indices(dur, f0, indices)] * get_window(window_size, f0, qprime)
+
+    # Choice of output sampling rate
+    output_sampling = fseries.delta_f # Can lower this to highest bandwidth
+    output_samples = dur * output_sampling
 
     # pad data, move negative frequencies to the end, and IFFT
-    padded = np.pad(windowed, padding(window_size, dur, f0, Q), mode='constant')
+    padded = np.pad(windowed, padding(window_size, output_samples), mode='constant')
     wenergy = npfft.ifftshift(padded)
 
     # return a 'TimeSeries'
-    wenergy = FrequencySeries(wenergy, delta_f=fseries.delta_f)
-    tdenergy = FrequencySeries.to_timeseries(wenergy)
+    wenergy = FrequencySeries(wenergy, delta_f=1./dur)
+    tdenergy = TimeSeries(zeros(output_samples, dtype=np.complex128),
+                            delta_t=1./output_sampling)
+    ifft(wenergy, tdenergy)
     cenergy = TimeSeries(tdenergy,
-                         delta_t=1, copy=False)
+                         delta_t=tdenergy.delta_t, copy=False)
     if normalized:
         energy = type(cenergy)(
             cenergy.real() ** 2. + cenergy.imag() ** 2.,
             delta_t=1, copy=False)
-        meanenergy = energy.numpy().mean()
-        result = energy / meanenergy
+        medianenergy = energy.numpy().median()
+        result = energy / medianenergy
     else:
         result = cenergy
 
     return result
 
-def padding(window_size, dur, f0, Q):
+
+def padding(window_size, desired_size):
     """The (left, right) padding required for the IFFT
 
     Parameters
     ----------
     window_size: int
         Size of window
-    dur: int
-        Duration of timeseries in seconds
-    f0: int
-        Central frequency
-    Q: int
-        q value
+    desired_size: int
+        Desired size of window
 
     Returns
     -------
@@ -121,9 +120,8 @@ def padding(window_size, dur, f0, Q):
        Number of values padded to the edges of each axis. 
  
     """
-
-    pad = n_tiles(dur,f0,Q) - window_size
-    return (int((pad - 1)/2.), int((pad + 1)/2.))
+    pad = desired_size - window_size
+    return (int(pad/2.), int((pad + 1)/2.))
 
 def get_data_indices(dur, f0, indices):
     """Returns the index array of interesting frequencies for this row
@@ -146,13 +144,13 @@ def get_data_indices(dur, f0, indices):
     return np.round(indices + 1 +
                        f0 * dur).astype(int)
 
-def _get_indices(dur):
+def _get_indices(window_size):
     """ Windows indices for fft
     
     Parameters
     ---------
-    dur: int
-        Duration of timeseries in seconds
+    window_size: int
+        size of window
 
     Returns
     -------
@@ -160,41 +158,31 @@ def _get_indices(dur):
         Window indices for fft using total duration of segment
 
     """
-    half = int((int(dur) - 1.) / 2.)  
+    half = int((windowsize - 1) / 2.)
     return np.arange(-half, half + 1)
 
-def get_window(dur, indices, f0, qprime, Q, sampling):
+def get_window(size, f0, qprime):
     """Generate the bi-square window for this row
  
     Parameters
     ---------
-    dur: int
-        Duration of timeseries in seconds
-    indices: numpy.ndarray
-        Window indices
+    size: int
+        size of window
     f0: int
         Central frequency
     qprime: int
         Normalized Q (q/sqrt(11))
-    Q: int
-        q value
-    sampling: int
-        sampling frequency of timeseries
 
     Returns
     -------
     window : numpy.ndarray
     """
-    # real frequencies
-    wfrequencies = indices / dur
-
     # dimensionless frequencies
-    xfrequencies = wfrequencies * qprime / f0
+    xfrequencies = np.linspace(-1., 1., size)
 
     # normalize and generate bi-square window
     # ported from https://github.com/gwpy/gwpy/blob/master/gwpy/signal/qtransform.py
-    norm = n_tiles(dur,f0,Q) / (dur * sampling) * (  
-        315 * qprime / (128 * f0)) ** (1/2.) 
+    norm = np.sqrt(315. * qprime / (128. * f0))
     return (1 - xfrequencies ** 2) ** 2 * norm
 
 def n_tiles(dur, f0, Q):
