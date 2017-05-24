@@ -25,7 +25,7 @@ import copy, numpy as np
 
 from scipy.stats import kstest
 
-from pycbc import io, events, pnutils, bin_utils, results
+from pycbc import io, events, bin_utils, results
 from pycbc.events import trigger_fits as trstats
 import pycbc.version
 
@@ -103,10 +103,6 @@ parser.add_argument("--f-lower", type=float, default=0.,
                     "duration; if not given, duration will be read from "
                     "single trigger files")
 # FIXME : allow choice of SEOBNRv2/v4 or PhenD duration formula ?
-parser.add_argument("--min-duration", default=0.,
-                    help="Fudge factor for templates with tiny or negative "
-                    "values of template_duration: add to duration values "
-                    "before fitting. Units seconds")
 parser.add_argument("--bin-param", required=True,
                     help="Parameter over which to bin when fitting. Required. "
                     "Choose from mchirp, mtotal, template_duration or a named "
@@ -119,6 +115,12 @@ parser.add_argument("--num-bins", type=int,
                     " parameter")
 parser.add_argument("--bin-param-units",
                     help="String to display units of the binning parameter")
+parser.add_argument("--approximant", default="SEOBNRv4",
+                    help="Approximant for template duration. Default SEOBNRv4")
+parser.add_argument("--min-duration", default=0.,
+                    help="Fudge factor for templates with tiny or negative "
+                    "values of template_duration: add to duration values "
+                    "before fitting. Units seconds")
 outputchoice = parser.add_mutually_exclusive_group()
 outputchoice.add_argument("--plot-dir",
                     help="Plot the fits made, the variation of fitting "
@@ -161,7 +163,7 @@ paramtag = args.bin_param.replace("_", "")
 if args.plot_dir:
     if not args.plot_dir.endswith('/'):
         args.plot_dir += '/'
-    plotbase = outdir + args.ifo + "-" + args.user_tag
+    plotbase = args.plot_dir + args.ifo + "-" + args.user_tag
 
 logging.info('Opening trigger file: %s' % args.trigger_file)
 trigf = h5py.File(args.trigger_file, 'r')
@@ -223,14 +225,7 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
 
 ### Functions for doing the pruning (removal of trigs at loudest times)
 
-def get_masses(args, tid):
-    m1 = templatef['mass1'][:][tid]
-    m2 = templatef['mass2'][:][tid]
-    s1z = templatef['spin1z'][:][tid]
-    s2z = templatef['spin2z'][:][tid]
-    return m1, m2, s1z, s2z
-
-def get_param(args, tag, m1, m2, s1z, s2z):
+def get_pars(args, tag, m1, m2, s1z, s2z):
     # here used for both pruning and binning params
     paramarg = getattr(args, tag+'_param')
     try:
@@ -238,51 +233,18 @@ def get_param(args, tag, m1, m2, s1z, s2z):
         logging.info('Getting %s values for %i triggers' % (paramarg, len(m1)))
     except:
         pass
-    if paramarg == 'mchirp':
-        parvals, _ = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-    elif paramarg == 'mtotal':
-        parvals = m1 + m2
-    elif paramarg == 'template_duration':
-        # will default to SEOBNRv4 duration function
-        parvals = pnutils.get_imr_duration(m1, m2, s1z, s2z, args.f_lower)
-        parvals += args.min_duration
-    elif paramarg in pnutils.named_frequency_cutoffs.keys():
-        parvals = pnutils.frequency_cutoff_from_name(paramarg, m1, m2, s1z, s2z)
-    else:
-        # try asking for a LALSimulation frequency function
-        parvals = pnutils.get_freq(paramarg, m1, m2, s1z, s2z)
-    return parvals
+    return trstats.get_param(paramarg, args, m1, m2, s1z, s2z)
 
-# get min and max param values in bank
 if args.prune_param:
     logging.info('Getting min and max param values')
-    prpars = get_param(args, 'prune',
-                       templatef['mass1'][:], templatef['mass2'][:],
-                       templatef['spin1z'][:], templatef['spin2z'][:])
+    prpars = get_pars(args, 'prune',
+                      templatef['mass1'][:], templatef['mass2'][:],
+                      templatef['spin1z'][:], templatef['spin2z'][:])
     minprpar = min(prpars)
     maxprpar = max(prpars)
     del prpars
     logging.info('prune param range %f %f' % (minprpar, maxprpar))
 
-def which_bin(par, minpar, maxpar, nbins, log=False):
-    """
-    Returns the bin index in which the parameter value belongs (from 0 through
-    nbins-1) when dividing the range between minpar and maxpar equally into
-    nbins bins.
-    """
-    assert (par >= minpar and par <= maxpar)
-    if log:
-        par, minpar, maxpar = np.log(par), np.log(minpar), np.log(maxpar)
-    # par lies some fraction of the way between min and max
-    frac = float(par - minpar) / float(maxpar - minpar)
-    # binind then lies between 0 and nbins - 1
-    binind = int(frac * nbins)
-    # except for a corner case
-    if par == maxpar:
-        binind = nbins - 1
-    return binind
-
-if args.prune_param:
     # hard-coded time window of 0.1s
     args.prune_window = 0.1
     # initialize bin storage
@@ -311,10 +273,10 @@ if args.prune_param:
         lstat = statpruneall[loudest]
         ltid = tidpruneall[loudest]
         ltime = timepruneall[loudest]
-        m1, m2, s1z, s2z = get_masses(args, ltid)
-        lbin = which_bin(get_param(args, 'prune', m1, m2, s1z, s2z),
-                         minprpar, maxprpar,
-                         args.prune_bins, log=args.log_prune_param)
+        m1, m2, s1z, s2z = trstats.get_masses(templatef, ltid)
+        lbin = trstats.which_bin(get_pars(args, 'prune', m1, m2, s1z, s2z),
+                                 minprpar, maxprpar,
+                                 args.prune_bins, log=args.log_prune_param)
         # is the bin where the loudest trigger lives full already?
         if len(prunedtimes[lbin]) == args.prune_number:
             logging.info('%i - Bin %i full, not pruning event with stat %f at time '
@@ -354,9 +316,8 @@ if args.prune_param:
 if trig_dur:
     binpars = tdur + args.min_duration
 else:
-    m1, m2, s1z, s2z = get_masses(args, tid)
-    binpars = get_param(args, 'bin',
-                        m1, m2, s1z, s2z)
+    m1, m2, s1z, s2z = trstats.get_masses(templatef, tid)
+    binpars = get_pars(args, 'bin', m1, m2, s1z, s2z)
 logging.info("Parameter range of triggers: %f - %f" %
                                                   (min(binpars), max(binpars)))
 # get the bins
@@ -458,7 +419,7 @@ for th in args.stat_threshold:
         plt.title(args.ifo + " " + statname + " distribution split by " + \
               paramname)
         dest = plotbase + "_" + args.sngl_stat + "_cdf_by_" + paramtag[0:3] + \
-                                            " _fit_thresh_" + str(th) + ".png"
+                                            "_fit_thresh_" + str(th) + ".png"
         logging.info("Saving cumhist to %s" % dest)
         plt.savefig(dest)
     elif args.output_file:
