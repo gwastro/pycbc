@@ -390,7 +390,7 @@ class EmceePTSampler(BaseMCMCSampler):
         loglr = logl - self.likelihood_evaluator.lognl
         kwargs = {'loglr': loglr, 'prior': logp}
         # if different coordinates were used for sampling, get the jacobian
-        if self.likelihood_evaulator.sampling_transforms is not None:
+        if self.likelihood_evaluator.sampling_transforms is not None:
             samples = self.samples
             # convert to dict
             d = {param: samples[param] for param in samples.fieldnames}
@@ -635,7 +635,7 @@ class EmceePTSampler(BaseMCMCSampler):
                         # dataset doesn't exist yet
                         fp.create_dataset(dataset_name, (fb,),
                                           maxshape=(max_iterations,),
-                                          dtype=samples.dtype)
+                                          dtype=float)
                         fp[dataset_name][fa:fb] = samples[param][tk, wi, ma:mb]
 
     def write_results(self, fp, start_iteration=0, end_iteration=None,
@@ -964,10 +964,12 @@ class EmceePTSampler(BaseMCMCSampler):
         except ImportError:
             raise ImportError("emcee is not installed.")
 
-        logstats = cls.read_likelihood_stats(fp, thin_start=thin_start,
-                                             thin_end=thin_end,
-                                             thin_interval=thin_interval,
-                                             temps='all', flatten=False)
+        stats_group = fp.stats_group
+        parameters = fp[stats_group].keys()
+        logstats = cls.read_samples(fp, parameters, samples_group=stats_group,
+                                    thin_start=thin_start,  thin_end=thin_end,
+                                    thin_interval=thin_interval,
+                                    temps='all', flatten=False)
         # get the likelihoods
         logls = logstats['loglr'] + fp.lognl
         # we need the betas that were used
