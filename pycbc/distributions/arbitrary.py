@@ -173,7 +173,7 @@ class Arbitrary(bounded.BoundedDist):
     def get_kde_from_arrays(*arrays):
         """Constructs a KDE from the given arrays.
 
-        *arrays :
+        \*arrays :
             Each argument should be a 1D numpy array to construct the kde from.
             The resulting KDE will have dimension given by the number of
             parameters.
