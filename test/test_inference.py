@@ -58,7 +58,7 @@ class TestInference(unittest.TestCase):
                        f_lower=fmin, approximant="TaylorF2",
                        mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra,
                        dec=dec, polarization=pol, distance=dist)
-        signal = gen.generate(tsig)
+        signal = gen.generate(tc=tsig)
 
         # get PSDs
         psd = pypsd.aLIGOZeroDetHighPower(N, 1. / seglen, 20.)

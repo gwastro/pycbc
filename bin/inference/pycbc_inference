@@ -26,6 +26,7 @@ import pycbc
 import pycbc.opt
 import pycbc.weave
 from pycbc import distributions
+from pycbc import transforms
 from pycbc import fft
 from pycbc import gate
 from pycbc import inference
@@ -156,6 +157,17 @@ with ctx:
     # construct class that will return the prior
     prior = inference.PriorEvaluator(variable_args, *dists)
 
+    # get sampling transformations
+    if cp.has_section('sampling_parameters'):
+        sampling_parameters, replace_parameters = \
+            option_utils.read_sampling_args_from_config(cp)
+        sampling_transforms = transforms.read_transforms_from_config(cp,
+            'sampling_transforms')
+        logging.info("Sampling in {} in place of {}".format(
+            ', '.join(sampling_parameters), ', '.join(replace_parameters)))
+    else:
+        sampling_parameters = replace_parameters = sampling_transforms = None
+
     # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
     logging.info("Setting up sampler")
@@ -174,7 +186,10 @@ with ctx:
     likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](
                         generated_waveform, stilde_dict,
                         low_frequency_cutoff_dict.values()[0],
-                        psds=psd_dict, prior=prior)
+                        psds=psd_dict, prior=prior,
+                        sampling_parameters=sampling_parameters,
+                        replace_parameters=replace_parameters,
+                        sampling_transforms=sampling_transforms)
 
     # create sampler that will run
     sampler = option_utils.sampler_from_cli(opts, likelihood)
@@ -198,16 +213,16 @@ with ctx:
             logging.info("Initial positions taken from iteration %i in %s",
                          iteration, opts.samples_file)
             p0 = fp.read_samples(sampler.variable_args, iteration=iteration)
-        initial_dists = None
+        initial = None
     elif len(cp.get_subsections("initial")):
         initial_dists = distributions.read_distributions_from_config(
                                                          cp, section="initial")
+        initial = inference.PriorEvaluator(variable_args, *initial_dists)
         p0 = None
     else:
-        initial_dists = distributions.read_distributions_from_config(
-                                                         cp, section="prior")
+        initial = None
         p0 = None
-    sampler.set_p0(initial_dists, samples=p0)
+    sampler.set_p0(prior=initial, samples=p0)
 
     # setup checkpointing
     if opts.checkpoint_interval:

@@ -69,7 +69,13 @@ class _BaseSampler(object):
     def variable_args(self):
         """Returns the variable args used by the likelihood evaluator.
         """
-        return self.likelihood_evaluator.waveform_generator.variable_args
+        return self.likelihood_evaluator.variable_args
+
+    @property
+    def sampling_args(self):
+        """Returns the sampling args used by the likelihood evaluator.
+        """
+        return self.likelihood_evaluator.sampling_args
 
     @property
     def chain(self):
@@ -81,6 +87,14 @@ class _BaseSampler(object):
         """
         return NotImplementedError("chain function not set.")
 
+    @property
+    def samples(self):
+        """This function should return the past samples as a [additional
+        dimensions x] niterations field array, where the fields are union
+        of the sampling args and the variable args.
+        """
+        return NotImplementedError("samples function not set.")
+ 
     @property
     def clear_chain(self):
         """This function should clear the current chain of samples from memory.
@@ -148,7 +162,8 @@ class _BaseSampler(object):
         fp.attrs['sampler'] = self.name
         fp.attrs['likelihood_evaluator'] = self.likelihood_evaluator.name
         fp.attrs['ifos'] = self.ifos
-        fp.attrs['variable_args'] = self.variable_args
+        fp.attrs['variable_args'] = list(self.variable_args)
+        fp.attrs['sampling_args'] = list(self.sampling_args)
         fp.attrs["niterations"] = self.niterations
         fp.attrs["lognl"] = self.likelihood_evaluator.lognl
         sargs = self.likelihood_evaluator.waveform_generator.static_args
@@ -223,17 +238,18 @@ class BaseMCMCSampler(_BaseSampler):
     def pos(self):
         return self._pos
 
-    def set_p0(self, prior_distributions, samples=None):
+    def set_p0(self, prior=None, samples=None):
         """Sets the initial position of the walkers.
 
         Parameters
         ----------
-        prior_distributions : list
-            A list of priors to retrieve random values from (the sort of
-            thing returned by `prior.read_distributions_from_config`).
-        samples : FieldArray
-            A FieldArray where each field has size (1,) for the initial
-            position.
+        prior : PriorEvaluator, optional
+            Use the given prior to set the initial positions rather than
+            `likelihood_evaultor`'s prior.
+        samples : FieldArray, optional
+            Use the given samples to set the initial positions. The samples
+            will be transformed to the likelihood evaluator's `sampling_args`
+            space.
 
         Returns
         -------
@@ -244,22 +260,18 @@ class BaseMCMCSampler(_BaseSampler):
         nwalkers = self.nwalkers
         ndim = len(self.variable_args)
         p0 = numpy.ones((nwalkers, ndim))
-
-        # if samples are given then those as initial poistions
+        # if samples are given then use those as initial poistions
         if samples is not None:
-            for i, param in enumerate(self.variable_args):
-                p0[:, i] = samples[param]
-            self._p0 = p0
-            return p0
-
-        # loop over all walkers and then parameters
-        # find the distribution that has that parameter in it and draw a
-        # random value from the distribution
-        pmap = dict([[param, k] for k, param in enumerate(self.variable_args)])
-        for dist in prior_distributions:
-            ps = dist.rvs(size=nwalkers)
-            for param in dist.params:
-                p0[:, pmap[param]] = ps[param]
+            # transform to sampling parameter space
+            samples = self.likelihood_evaluator.apply_sampling_transforms(
+                samples)
+        # draw random samples if samples are not provided
+        else:
+            samples = self.likelihood_evaluator.prior_rvs(size=nwalkers,
+                                                          prior=prior)
+        # convert to 2D array
+        for i, param in enumerate(self.sampling_args):
+            p0[:, i] = samples[param]
         self._p0 = p0
         return p0
 
@@ -281,6 +293,32 @@ class BaseMCMCSampler(_BaseSampler):
         return self._sampler.acceptance_fraction
 
     @property
+    def samples(self):
+        """Returns the samples in the chain as a FieldArray.
+
+        If the sampling args are not the same as the variable args, the
+        returned samples will have both the sampling and the variable args.
+
+        The returned FieldArray has dimension [additional dimensions x]
+        nwalkers x niterations.
+        """
+        # chain is a [additional dimensions x] niterations x ndim array
+        samples = self.chain
+        sampling_args = self.sampling_args
+        # convert to dictionary to apply boundary conditions
+        samples = {param: samples[...,ii]
+                   for ii,param in enumerate(sampling_args)}
+        samples = self.likelihood_evaluator._prior.apply_boundary_conditions(
+            **samples)
+        # now convert to field array
+        samples = FieldArray.from_arrays([samples[param]
+                                          for param in sampling_args],
+                                         names=sampling_args)
+        # apply transforms to go to variable args space
+        return self.likelihood_evaluator.apply_sampling_transforms(samples,
+            inverse=True)
+
+    @property
     def likelihood_stats(self):
         """Returns the likelihood stats as a FieldArray, with field names
         corresponding to the type of data returned by the likelihood evaluator.
@@ -291,9 +329,11 @@ class BaseMCMCSampler(_BaseSampler):
         stats = numpy.array(self._sampler.blobs)
         if stats.size == 0:
             return None
-        arrays = dict([[field, stats[:, :, fi]]
-                       for fi, field in
-                      enumerate(self.likelihood_evaluator.metadata_fields)])
+        # we'll force arrays to float; this way, if there are `None`s in the
+        # blobs, they will be changed to `nan`s
+        arrays = {field: stats[..., fi].astype(float)
+                  for fi, field in
+                  enumerate(self.likelihood_evaluator.metadata_fields)}
         return FieldArray.from_kwargs(**arrays).transpose()
 
     # write and read functions
@@ -313,18 +353,27 @@ class BaseMCMCSampler(_BaseSampler):
 
     def _write_samples_group(self, fp, samples_group, parameters, samples,
                              start_iteration=0, end_iteration=None,
-                             max_iterations=None,
-                             apply_boundary_conditions=False):
+                             max_iterations=None):
         """Writes samples to the given file.
 
-        Results are written to: `fp[samples_group/{vararg}/walker{i}]`, where
-        `{vararg}` is the name of a variable arg, and `{i}` is the index of
-        a walker.
+        Results are written to:
+        
+            `fp[samples_group/{vararg}/walker{i}]`,
+            
+        where `{vararg}` is the name of a variable arg, and `{i}` is the
+        index of a walker.
 
         Parameters
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
+        samples_group : str
+            Name of samples group to write.
+        parameters : list
+            The parameters to write to the file.
+        samples : FieldArray
+            The samples to write. Should be a FieldArray with fields containing
+            the samples to write and shape nwalkers x niterations.
         start_iteration : {0, int}
             Write results starting from the given iteration.
         end_iteration : {None, int}
@@ -336,13 +385,10 @@ class BaseMCMCSampler(_BaseSampler):
             you intend to run more iterations, set this value to that size so
             that the array in the file will be large enough to accomodate
             future data.
-        samples_group : str
-            Name of samples group to write.
         """
-
         # due to clearing memory, there can be a difference between indices in
         # memory and on disk
-        nwalkers, niterations, _ = samples.shape
+        nwalkers, niterations = samples.shape
         niterations += self._lastclear
         fa = start_iteration # file start index
         if end_iteration is None:
@@ -357,18 +403,11 @@ class BaseMCMCSampler(_BaseSampler):
         elif max_iterations is None:
             max_iterations = niterations
 
-        # map sample values to the values that were actually passed to the
-        # waveform generator and prior evaluator
-        if apply_boundary_conditions:
-            samples = numpy.array(
-                self.likelihood_evaluator._prior.apply_boundary_conditions(
-                    samples.transpose(2,0,1))).transpose(1,2,0)
-
         group = samples_group + '/{name}/walker{wi}'
 
         # loop over number of dimensions
         widx = numpy.arange(nwalkers)
-        for pi, param in enumerate(parameters):
+        for param in parameters:
             # loop over number of walkers
             for wi in widx:
                 dataset_name = group.format(name=param, wi=wi)
@@ -376,20 +415,25 @@ class BaseMCMCSampler(_BaseSampler):
                     if fb > fp[dataset_name].size:
                         # resize the dataset
                         fp[dataset_name].resize(fb, axis=0)
-                    fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
+                    fp[dataset_name][fa:fb] = samples[param][wi, ma:mb]
                 except KeyError:
                     # dataset doesn't exist yet
                     fp.create_dataset(dataset_name, (fb,),
                                       maxshape=(max_iterations,),
-                                      dtype=samples.dtype)
-                    fp[dataset_name][fa:fb] = samples[wi, ma:mb, pi]
+                                      dtype=samples[param].dtype)
+                    fp[dataset_name][fa:fb] = samples[param][wi, ma:mb]
 
     def write_chain(self, fp, start_iteration=0, end_iteration=None,
                     max_iterations=None):
-        """Writes the samples from the current chain to the given file. Results
-        are written to: `fp[fp.samples_group/{vararg}/walker{i}]`, where
-        `{vararg}` is the name of a variable arg, and `{i}` is the index of
-        a walker.
+        """Writes the samples from the current chain to the given file.
+        
+        Results are written to:
+        
+            `fp[fp.samples_group/{field}/(temp{k}/)walker{i}]`,
+        
+        where `{i}` is the index of a walker, `{field}` is the name of each
+        field returned by `likelihood_stats`, and, if the sampler is
+        multitempered, `{k}` is the temperature.
 
         Parameters
         -----------
@@ -409,27 +453,29 @@ class BaseMCMCSampler(_BaseSampler):
         samples_group : str
             Name of samples group to write.
         """
-
-        # chain is a nwalkers x niterations x ndim array
-        samples = self.chain
-        parameters = fp.variable_args
+        # samples is a nwalkers x niterations field array
+        samples = self.samples
+        parameters = self.variable_args
         samples_group = fp.samples_group
-
         # write data
         self._write_samples_group(
                          fp, samples_group, parameters, samples,
                          start_iteration=start_iteration,
                          end_iteration=end_iteration,
-                         max_iterations=max_iterations,
-                         apply_boundary_conditions=True)
+                         max_iterations=max_iterations)
 
     def write_likelihood_stats(self, fp, start_iteration=0, end_iteration=None,
                                max_iterations=None):
-        """Writes the `likelihood_stats` to the given file.  Results are
-        written to: `fp[fp.stats_group/{field}/walker{i}]`, where `{i}` is
-        the index of a walker and `{field}` is the name of each field returned
-        by `likelihood_stats`. If nothing is returned by `likelihood_stats`,
-        this does nothing.
+        """Writes the `likelihood_stats` to the given file.
+        
+        Results are written to:
+        
+            `fp[fp.stats_group/{field}/(temp{k}/)walker{i}]`,
+        
+        where `{i}` is the index of a walker, `{field}` is the name of each
+        field returned by `likelihood_stats`, and, if the sampler is
+        multitempered, `{k}` is the temperature.  If nothing is returned by
+        `likelihood_stats`, this does nothing.
 
         Parameters
         -----------
@@ -453,21 +499,20 @@ class BaseMCMCSampler(_BaseSampler):
             The stats that were written, as a FieldArray. If there were no
             stats, returns None.
         """
-        # likelihood_stats is a nwalkers x niterations FieldArray
         samples = self.likelihood_stats
-        parameters = samples.fieldnames
         if samples is None:
             return None
-        samples = samples.to_array(axis=-1).astype(numpy.float64)
+        # ensure the prior is in the variable args parameter space
+        if 'logjacobian' in samples.fieldnames:
+            samples['prior'] -= samples['logjacobian']
+        parameters = samples.fieldnames
         samples_group = fp.stats_group
-
         # write data
         self._write_samples_group(
                          fp, samples_group, parameters, samples,
                          start_iteration=start_iteration,
                          end_iteration=end_iteration,
                          max_iterations=max_iterations)
-
         return samples
 
     def write_acceptance_fraction(self, fp, start_iteration=0,

@@ -225,6 +225,22 @@ class KombineSampler(BaseMCMCSampler):
         self.burn_in_iterations = self.niterations
         return p, post, q
 
+    def _write_kde(self, fp, dataset_name, kde):
+        """Writes the given kde to the file."""
+        shape = kde.data.shape
+        try:
+            if shape != fp[dataset_name].shape:
+                # resize the dataset
+                fp[dataset_name].resize(shape)
+            fp[dataset_name][:] = kde.data
+        except KeyError:
+            # dataset doesn't exist yet
+            fp.create_dataset(dataset_name, shape,
+                              maxshape=(self.nwalkers,
+                                        len(self.variable_args)),
+                              dtype=float)
+            fp[dataset_name][:] = kde.data
+
     def write_state(self, fp):
         """ Saves the state of the sampler in a file.
 
@@ -238,24 +254,18 @@ class KombineSampler(BaseMCMCSampler):
         subgroup = "clustered_kde"
         dataset_name ="/".join([fp.sampler_group, subgroup])
         clustered_kde = self._sampler._kde
-        if dataset_name in fp:
-            fp[dataset_name][:] = clustered_kde.data
-        else:
-            fp[dataset_name] = clustered_kde.data
+        self._write_kde(fp, dataset_name, clustered_kde)
+        # metadata
         fp[dataset_name].attrs["nclusters"] = clustered_kde.nclusters
         fp[dataset_name].attrs["assignments"] = clustered_kde._assignments
         fp[dataset_name].attrs["centroids"] = clustered_kde.centroids
         fp[dataset_name].attrs["logweights"] = clustered_kde._logweights
         fp[dataset_name].attrs["mean"] = clustered_kde._mean
         fp[dataset_name].attrs["std"] = clustered_kde._std
-
         # save individual KDE data
         for i, kde in enumerate(clustered_kde._kdes):
             dataset_name = "/".join([fp.sampler_group, "kde" + str(i)])
-            if dataset_name in fp:
-                fp[dataset_name][:] = kde.data
-            else:
-                fp[dataset_name] = kde.data
+            self._write_kde(fp, dataset_name, kde)
 
     def set_state_from_file(self, fp):
         """ Sets the state of the sampler back to the instance saved in a file.

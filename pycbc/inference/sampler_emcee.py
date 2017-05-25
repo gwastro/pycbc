@@ -80,7 +80,8 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         self._nwalkers = nwalkers
 
     @classmethod
-    def from_cli(cls, opts, likelihood_evaluator, pool=None, likelihood_call=None):
+    def from_cli(cls, opts, likelihood_evaluator, pool=None,
+                 likelihood_call=None):
         """Create an instance of this sampler from the given command-line
         options.
 
@@ -262,6 +263,29 @@ class _callable(object):
     def __call__(self, *args, **kwds):
         return getattr(self.instance, self.method_name)(*args, **kwds)
 
+
+class _callprior(object):
+    """Calls the likelihood function's prior function, and ensures that no
+    metadata is returned."""
+    def __init__(self, likelihood_evaluator):
+        self.instance = likelihood_evaluator
+
+    def __call__(self, args):
+        out = self.instance.evaluate(args, callfunc='prior')
+        if self.instance.return_meta:
+            out = out[0]
+        return out
+
+class _callloglikelihood(object):
+    """Calls the likelihood function's loglikelihood function.
+    """
+    def __init__(self, likelihood_evaluator):
+        self.instance = likelihood_evaluator
+
+    def __call__(self, args):
+        return self.instance.evaluate(args, callfunc='loglikelihood')
+
+
 class EmceePTSampler(BaseMCMCSampler):
     """This class is used to construct a parallel-tempered MCMC sampler from
     the emcee package's PTSampler.
@@ -277,7 +301,8 @@ class EmceePTSampler(BaseMCMCSampler):
         Number of walkers to use in sampler.
     pool : function with map, Optional
         A provider of a map function that allows a function call to be run
-        over multiple sets of arguments and possibly maps them to cores/nodes/etc.
+        over multiple sets of arguments and possibly maps them to
+        cores/nodes/etc.
     burn_in_iterations : {None, int}, Optional
         Set the number of burn in iterations to use. If None,
         `burn_in_ieterations` will be initialized to 0.
@@ -294,10 +319,10 @@ class EmceePTSampler(BaseMCMCSampler):
 
         # construct the sampler: PTSampler needs the likelihood and prior
         # functions separately
-        ndim = len(likelihood_evaluator.waveform_generator.variable_args)
+        ndim = len(likelihood_evaluator.variable_args)
         sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-                                  _callable(likelihood_evaluator, 'loglikelihood'),
-                                  likelihood_evaluator._prior,
+                                  _callloglikelihood(likelihood_evaluator),
+                                  _callprior(likelihood_evaluator),
                                   pool=pool)
         # initialize
         super(EmceePTSampler, self).__init__(
@@ -306,7 +331,8 @@ class EmceePTSampler(BaseMCMCSampler):
         self._ntemps = ntemps
 
     @classmethod
-    def from_cli(cls, opts, likelihood_evaluator, pool=None, likelihood_call=None):
+    def from_cli(cls, opts, likelihood_evaluator, pool=None,
+                 likelihood_call=None):
         """Create an instance of this sampler from the given command-line
         options.
 
@@ -362,7 +388,15 @@ class EmceePTSampler(BaseMCMCSampler):
         logp = self._sampler.lnprobability - logl
         # compute the likelihood ratio
         loglr = logl - self.likelihood_evaluator.lognl
-        return FieldArray.from_kwargs(loglr=loglr, prior=logp)
+        kwargs = {'loglr': loglr, 'prior': logp}
+        # if different coordinates were used for sampling, get the jacobian
+        if self.likelihood_evaluator.sampling_transforms is not None:
+            samples = self.samples
+            # convert to dict
+            d = {param: samples[param] for param in samples.fieldnames}
+            logj = self.likelihood_evaluator.logjacobian(**d)
+            kwargs['logjacobian'] = logj
+        return FieldArray.from_kwargs(**kwargs)
 
     @property
     def lnpost(self):
@@ -372,17 +406,18 @@ class EmceePTSampler(BaseMCMCSampler):
         # emcee returns ntemps x nwalkers x niterations
         return self._sampler.lnprobability
 
-    def set_p0(self, prior_distributions, samples=None):
+    def set_p0(self, prior=None, samples=None):
         """Sets the initial position of the walkers.
 
         Parameters
         ----------
-        prior_distributions : list
-            A list of priors to retrieve random values from (the sort of
-            thing returned by `prior.read_distributions_from_config`).
-        samples : FieldArray
-            A FieldArray where each field has size (1,) for the initial
-            position.
+        prior : PriorEvaluator, optional
+            Use the given prior to set the initial positions rather than
+            `likelihood_evaultor`'s prior.
+        samples : FieldArray, optional
+            Use the given samples to set the initial positions. The samples
+            will be transformed to the likelihood evaluator's `sampling_args`
+            space.
 
         Returns
         -------
@@ -390,25 +425,22 @@ class EmceePTSampler(BaseMCMCSampler):
             An ntemps x nwalkers x ndim array of the initial positions that
             were set.
         """
-        # create a (ntemps, nwalkers, ndim) array for initial positions
+        # create a (nwalker, ndim) array for initial positions
         ntemps = self.ntemps
         nwalkers = self.nwalkers
         ndim = len(self.variable_args)
         p0 = numpy.ones((ntemps, nwalkers, ndim))
-
         # if samples are given then use those as initial poistions
         if samples is not None:
             raise NotImplementedError("Cannot set initial positions from "
                                       "InferenceFile with emcee sampler.")
-
-        # loop over all walkers and then parameters
-        # find the distribution that has that parameter in it and draw a
-        # random value from the distribution
-        pmap = dict([[param, k] for k, param in enumerate(self.variable_args)])
-        for dist in prior_distributions:
-            ps = dist.rvs(size=ntemps*nwalkers).reshape(ntemps, nwalkers)
-            for param in dist.params:
-                p0[:, :, pmap[param]] = ps[param]
+        # draw random samples if samples are not provided
+        else:
+            samples = self.likelihood_evaluator.prior_rvs(
+                size=nwalkers*ntemps, prior=prior).reshape((ntemps, nwalkers))
+        # convert to array
+        for i, param in enumerate(self.sampling_args):
+            p0[..., i] = samples[param]
         self._p0 = p0
         return p0
 
@@ -533,14 +565,25 @@ class EmceePTSampler(BaseMCMCSampler):
                              apply_boundary_conditions=False):
         """Writes samples to the given file.
 
-        Results are written to: `fp[samples_group/{vararg}/walker{i}]`, where
-        `{vararg}` is the name of a variable arg, and `{i}` is the index of
-        a walker.
+        Results are written to:
+
+            `fp[samples_group/{vararg}/temp{k}/walker{i}]`,
+            
+        where
+        `{vararg}` is the name of a variable arg, `{i}` is the index of
+        a walker, and `{k}` is the temperature.
 
         Parameters
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
+        samples_group : str
+            Name of samples group to write.
+        parameters : list
+            The parameters to write to the file.
+        samples : FieldArray
+            The samples to write. Should be a FieldArray with fields containing
+            the samples to write and shape nwalkers x niterations.
         start_iteration : {0, int}
             Write results starting from the given iteration.
         end_iteration : {None, int}
@@ -552,13 +595,10 @@ class EmceePTSampler(BaseMCMCSampler):
             you intend to run more iterations, set this value to that size so
             that the array in the file will be large enough to accomodate
             future data.
-        samples_group : str
-            Name of samples group to write.
         """
-
+        ntemps, nwalkers, niterations = samples.shape
         # due to clearing memory, there can be a difference between indices in
         # memory and on disk
-        ntemps, nwalkers, niterations, _ = samples.shape
         niterations += self._lastclear
         fa = start_iteration # file start index
         if end_iteration is None:
@@ -573,13 +613,6 @@ class EmceePTSampler(BaseMCMCSampler):
         elif max_iterations is None:
             max_iterations = niterations
 
-        # map sample values to the values that were actually passed to the
-        # waveform generator and prior evaluator
-        if apply_boundary_conditions:
-            samples = numpy.array(
-                self.likelihood_evaluator._prior.apply_boundary_conditions(
-                    samples.transpose(3,0,1,2))).transpose(1,2,3,0)
-
         group = samples_group + '/{name}/temp{tk}/walker{wi}'
 
         # create indices for faster sub-looping
@@ -587,7 +620,7 @@ class EmceePTSampler(BaseMCMCSampler):
         tidx = numpy.arange(ntemps)
 
         # loop over number of dimensions
-        for pi, param in enumerate(parameters):
+        for param in parameters:
             # loop over number of temps
             for tk in tidx:
                 # loop over number of walkers
@@ -597,49 +630,13 @@ class EmceePTSampler(BaseMCMCSampler):
                         if fb > fp[dataset_name].size:
                             # resize the dataset
                             fp[dataset_name].resize(fb, axis=0)
-                        fp[dataset_name][fa:fb] = samples[tk, wi, ma:mb, pi]
+                        fp[dataset_name][fa:fb] = samples[param][tk, wi, ma:mb]
                     except KeyError:
                         # dataset doesn't exist yet
                         fp.create_dataset(dataset_name, (fb,),
                                           maxshape=(max_iterations,),
-                                          dtype=samples.dtype)
-                        fp[dataset_name][fa:fb] = samples[tk, wi, ma:mb, pi]
-
-    def write_likelihood_stats(self, fp, start_iteration=0, end_iteration=None,
-                               max_iterations=None):
-        """Writes the given likelihood array to the given file. Results are
-        written to: `fp[fp.stats_group/{field}/temp{k}/walker{i}]`, where
-        `{field}` is the name of stat (`loglr`, `prior`), `{k}` is a
-        temperature index (smaller = colder) and `{i}` is the index of a
-        walker.
-
-        Parameters
-        -----------
-        fp : InferenceFile
-            A file handler to an open inference file.
-        start_iteration : {0, int}
-            Write results starting from the given iteration.
-        end_iteration : {None, int}
-            Write results up to the given iteration.
-        max_iterations : {None, int}
-            See `write_chain` for details.
-        """
-        # likelihood_stats is a ntemps x nwalkers x niterations FieldArray
-        samples = self.likelihood_stats
-        parameters = samples.fieldnames
-        if samples is None:
-            return None
-        samples = samples.to_array(axis=-1)
-        samples_group = fp.stats_group
-
-        # write data
-        self._write_samples_group(
-                         fp, samples_group, parameters, samples,
-                         start_iteration=start_iteration,
-                         end_iteration=end_iteration,
-                         max_iterations=max_iterations)
-
-        return samples
+                                          dtype=float)
+                        fp[dataset_name][fa:fb] = samples[param][tk, wi, ma:mb]
 
     def write_results(self, fp, start_iteration=0, end_iteration=None,
                       max_iterations=None):
@@ -967,10 +964,12 @@ class EmceePTSampler(BaseMCMCSampler):
         except ImportError:
             raise ImportError("emcee is not installed.")
 
-        logstats = cls.read_likelihood_stats(fp, thin_start=thin_start,
-                                             thin_end=thin_end,
-                                             thin_interval=thin_interval,
-                                             temps='all', flatten=False)
+        stats_group = fp.stats_group
+        parameters = fp[stats_group].keys()
+        logstats = cls.read_samples(fp, parameters, samples_group=stats_group,
+                                    thin_start=thin_start,  thin_end=thin_end,
+                                    thin_interval=thin_interval,
+                                    temps='all', flatten=False)
         # get the likelihoods
         logls = logstats['loglr'] + fp.lognl
         # we need the betas that were used

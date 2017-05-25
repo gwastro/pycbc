@@ -1209,6 +1209,36 @@ def apply_transforms(samples, transforms, inverse=False):
             continue
     return samples
 
+
+def compute_jacobian(samples, transforms, inverse=False):
+    """Computes the jacobian of the list of transforms at the given sample
+    points.
+
+    Parameters
+    ----------
+    samples : {FieldArray, dict}
+        Mapping object specifying points at which to compute jacobians.
+    transforms : list
+        List of BaseTransform instances to apply. Nested transforms are assumed
+        to be in order for forward transforms.
+    inverse : bool, optional
+        Compute inverse jacobians. Default is False.
+
+    Returns
+    -------
+    float :
+        The product of the jacobians of all fo the transforms.
+    """
+    j = 1.
+    if inverse:
+        for t in transforms:
+            j *= t.inverse_jacobian(samples)
+    else:
+        for t in transforms:
+            j *= t.jacobian(samples)
+    return j
+
+
 def order_transforms(transforms):
     """Orders transforms to ensure proper chaining.
 

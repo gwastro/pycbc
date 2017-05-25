@@ -70,8 +70,9 @@ class BaseGenerator(object):
     generator : function
         The function that is called for waveform generation.
     variable_args : tuple
-        The list of names of variable arguments. Values passed to the generate
-        function must be in the same order as the arguments in this list.
+        The list of names of variable arguments. Values passed to the
+        `generate_from_args` function must be in the same order as the
+        arguments in this list.
     frozen_params : dict
         A dictionary of the frozen keyword arguments that are always passed
         to the waveform generator function.
@@ -100,15 +101,15 @@ class BaseGenerator(object):
         """Returns a dictionary of the static arguments."""
         return self.frozen_params
 
-    def generate(self, *args):
+    def generate_from_args(self, *args):
         """Generates a waveform. The list of arguments must be in the same
         order as self's variable_args attribute.
         """
         if len(args) != len(self.variable_args):
             raise ValueError("variable argument length mismatch")
-        return self.generate_from_kwargs(**dict(zip(self.variable_args, args)))
+        return self.generate(**dict(zip(self.variable_args, args)))
 
-    def generate_from_kwargs(self, **kwargs):
+    def generate(self, **kwargs):
         """Generates a waveform from the keyword args. The current params
         are updated with the given kwargs, then the generator is called.
         """
@@ -202,7 +203,7 @@ class FDomainCBCGenerator(BaseCBCGenerator):
 
     Create a waveform with the variable arguments (in this case, mass1, mass2):
 
-    >>> generator.generate(1.4, 1.4)
+    >>> generator.generate(mass1=1.4, mass2=1.4)
         (<pycbc.types.frequencyseries.FrequencySeries at 0x1110c1450>,
          <pycbc.types.frequencyseries.FrequencySeries at 0x1110c1510>)
 
@@ -210,7 +211,7 @@ class FDomainCBCGenerator(BaseCBCGenerator):
     a waveform:
 
     >>> generator = waveform.FDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
-    >>> generator.generate(1.5, 0.25)
+    >>> generator.generate(mchirp=1.5, eta=0.25)
         (<pycbc.types.frequencyseries.FrequencySeries at 0x109a104d0>,
          <pycbc.types.frequencyseries.FrequencySeries at 0x109a10b50>)
 
@@ -254,7 +255,7 @@ class TDomainCBCGenerator(BaseCBCGenerator):
 
     Create a waveform with the variable arguments (in this case, mass1, mass2):
 
-    >>> generator.generate(2., 1.3)
+    >>> generator.generate(mass1=2., mass2=1.3)
         (<pycbc.types.timeseries.TimeSeries at 0x10e546710>,
          <pycbc.types.timeseries.TimeSeries at 0x115f37690>)
 
@@ -262,7 +263,7 @@ class TDomainCBCGenerator(BaseCBCGenerator):
     a waveform:
 
     >>> generator = waveform.TDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
-    >>> generator.generate(1.75, 0.2)
+    >>> generator.generate(mchirp=1.75, eta=0.2)
         (<pycbc.types.timeseries.TimeSeries at 0x116ac6050>,
          <pycbc.types.timeseries.TimeSeries at 0x116ac6950>)
 
@@ -292,11 +293,11 @@ class FDomainRingdownGenerator(BaseGenerator):
     --------
     Initialize a generator:
 
-    >>> generator = waveform.FDomainRingdownGenerator(variable_args=['tau', 'f_0'], delta_f=1./32, f_lower=30., f_final=500)
+    >>> generator = waveform.FDomainRingdownGenerator(variable_args=['tau', 'f_0', 'amp', 'phi'], delta_f=1./32, f_lower=30., f_final=500)
 
     Create a ringdown with the variable arguments (in this case, tau, f_0):
 
-    >>> generator.generate(5, 100)
+    >>> generator.generate(tau=5., f_0=100., amp=1., phi=0.)
         (<pycbc.types.frequencyseries.FrequencySeries at 0x1110c1450>,
          <pycbc.types.frequencyseries.FrequencySeries at 0x1110c1510>)
 
@@ -315,13 +316,11 @@ class FDomainMultiModeRingdownGenerator(BaseGenerator):
     --------
     Initialize a generator:
 
-    >>> generator = waveform.FDomainMultiModeRingdownGenerator(
-            variable_args=['final_mass', 'final_spin', 'lmns','amp220','amp210','phi220','phi210'],
-            delta_f=1./32, f_lower=30., f_final=500)
+    >>> generator = waveform.FDomainMultiModeRingdownGenerator(variable_args=['final_mass', 'final_spin', 'lmns','amp220','amp210','phi220','phi210'], delta_f=1./32, f_lower=30., f_final=500)
 
     Create a ringdown with the variable arguments:
 
-    >>> generator.generate(65., 0.7, ['221','211'], 1e-21, 1./10, 0., 0.)
+    >>> generator.generate(final_mass=65., final_spin=0.7, lmns=['221','211'], amp220=1e-21, amp210=1./10, phi220=0., phi210=0.)
         (<pycbc.types.frequencyseries.FrequencySeries at 0x51614d0>,
          <pycbc.types.frequencyseries.FrequencySeries at 0x5161550>)
 
@@ -408,7 +407,7 @@ class FDomainDetFrameGenerator(object):
 
     Generate a waveform:
 
-    >>> generator.generate(38.6, 29.3, 0.33, -0.94, 2.43, 1.37, -1.26, 2.76)
+    >>> generator.generate(mass1=38.6, mass2=29.3, spin1z=0.33, spin2z=-0.94, tc=2.43, ra=1.37, dec=-1.26, polarization=2.76)
     {'H1': <pycbc.types.frequencyseries.FrequencySeries at 0x116637350>,
      'L1': <pycbc.types.frequencyseries.FrequencySeries at 0x116637a50>}
 
@@ -464,16 +463,22 @@ class FDomainDetFrameGenerator(object):
     def epoch(self):
         return _lal.LIGOTimeGPS(self._epoch)
 
-    def generate(self, *args):
+    def generate_from_args(self, *args):
         """Generates a waveform, applies a time shift and the detector response
-        function."""
-        self.current_params.update(dict(zip(self.variable_args, args)))
-        # FIXME: use the following when we switch to 2.7
-        #rfparams = {param: self.current_params[param]
-        #    for param in self.rframe_generator.variable_args}
-        rfparams = dict([(param, self.current_params[param])
-            for param in self.rframe_generator.variable_args])
-        hp, hc = self.rframe_generator.generate_from_kwargs(**rfparams)
+        function from the given args.
+
+        The args are assumed to be in the same order as the variable args.
+        """
+        return self.generate(**dict(zip(self.variable_args, args)))
+
+    def generate(self, **kwargs):
+        """Generates a waveform, applies a time shift and the detector response
+        function from the given kwargs.
+        """
+        self.current_params.update(kwargs)
+        rfparams = {param: self.current_params[param]
+            for param in self.rframe_generator.variable_args}
+        hp, hc = self.rframe_generator.generate(**rfparams)
         if isinstance(hp, TimeSeries):
             df = self.current_params['delta_f']
             hp = hp.to_frequencyseries(delta_f=df)

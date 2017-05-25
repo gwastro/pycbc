@@ -163,10 +163,10 @@ def read_sampling_args_from_config(cp, section_group=None):
 
     Returns
     -------
-    replaced_params : set
-        The set of variable args to replace in the sampler.
-    sampling_params : set
-        The set of sampling parameters to use instead.
+    sampling_params : list
+        The list of sampling parameters to use instead.
+    replaced_params : list
+        The list of variable args to replace in the sampler.
     """
     if section_group is not None:
         section_prefix = '{}_'.format(section_group)
@@ -179,7 +179,7 @@ def read_sampling_args_from_config(cp, section_group=None):
         map_args = cp.get(section, args)
         sampling_params.update(set(map(str.strip, map_args.split(','))))
         replaced_params.update(set(map(str.strip, args.split(',')))) 
-    return replaced_params, sampling_params
+    return list(sampling_params), list(replaced_params)
 
 
 #-----------------------------------------------------------------------------
