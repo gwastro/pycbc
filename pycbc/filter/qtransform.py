@@ -1,4 +1,4 @@
-# Copyright (C) 2017  Hunter A. Gabbard
+# Copyright (C) 2017  Hunter A. Gabbard, Andrew Lundgren, Duncan Macleod
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -38,8 +38,6 @@ from pycbc.strain  import next_power_of_2
 from pycbc.types.timeseries import FrequencySeries, TimeSeries
 from numpy import fft as npfft
 
-__author__ = 'Hunter Gabbard <hunter.gabbard@ligo.org>, Andrew Lundgren <andrew.lundgren@aei.mpg.de'
-__credits__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 def qtransform(data, Q, f0, normalized=True):
     """Calculate the energy 'TimeSeries' for the given fseries
