@@ -21,7 +21,7 @@ import h5py
 import numpy
 import scipy.stats
 from pycbc.distributions import bounded
-from pycbc.transforms import Logit
+import pycbc.transforms
 
 class Arbitrary(bounded.BoundedDist):
     """A distribution constructed from a set of parameter values using a kde.
@@ -58,7 +58,7 @@ class Arbitrary(bounded.BoundedDist):
             if numpy.isfinite(bnds[1] - bnds[0]):
                 tparam = 'logit'+param
                 samples = kwargs[param]
-                t = Logit(param, tparam, domain=bnds)
+                t = pycbc.transforms.Logit(param, tparam, domain=bnds)
                 self._transforms[tparam] = t
                 self._tparams[param] = tparam
                 # remove any sample points that fall out side of the bounds
@@ -70,7 +70,7 @@ class Arbitrary(bounded.BoundedDist):
             elif not (~numpy.isfinite(bnds[0]) and ~numpy.isfinite(bnds[1])):
                 raise ValueError("if specifying bounds, both bounds must "
                                  "be finite")
-        # build the kde 
+        # build the kde
         self._kde = self.get_kde_from_arrays(*[kwargs[p] for p in self.params])
 
     @property
@@ -236,7 +236,7 @@ class FromFile(Arbitrary):
             ps = params.keys()
         param_vals = self.get_arrays_from_file(filename, params=ps)
         super(FromFile, self).__init__(bounds=params, **param_vals)
-    
+
     @property
     def filename(self):
         return self._filename
