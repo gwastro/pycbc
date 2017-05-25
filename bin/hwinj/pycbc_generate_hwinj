@@ -141,6 +141,14 @@ parser.add_argument('--mass2', type=float, required=True,
                     help='Second mass of the binary in solar masses.')
 parser.add_argument('--inclination', type=float, required=True,
                     help='Inclination of the binary in radians.')
+parser.add_argument('--coa-phase', type=float, default=0.0,
+                    help='Reference orbital phase parameter in radians. '
+                         'Note, this is not the same as the constant '
+                         'frequency-domain phase shift that is maximized '
+                         'over in the standard matched-filter search and '
+                         'which is also commonly called coa-phase.'
+                         'Called phiRef in LALSimulation. '
+                         'Called coa_phase in sim_inspiral tables.')
 parser.add_argument('--taper',  required=True,
                     choices=['TAPER_NONE', 'TAPER_START',
                              'TAPER_END', 'TAPER_STARTEND'],
@@ -260,6 +268,7 @@ sim.f_lower = opts.waveform_low_frequency_cutoff
 sim.geocent_end_time = int(opts.geocentric_end_time)
 sim.geocent_end_time_ns = int(opts.geocentric_end_time % 1 * 1e9)
 sim.inclination = opts.inclination
+sim.coa_phase = opts.coa_phase
 sim.latitude = opts.dec
 sim.longitude = opts.ra
 sim.mass1 = opts.mass1
@@ -389,7 +398,7 @@ for ifo in opts.instruments:
     logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f',
                  opts.psd_low_frequency_cutoff, f_high, ifo,
                  numpy.sqrt(sigma_squared))
- 
+
     # populate IFO end time columns
     setattr(sim, ifo[0].lower()+'_end_time', int(end_time))
     setattr(sim, ifo[0].lower()+'_end_time_ns', int(end_time % 1 * 1e9))
