@@ -94,7 +94,7 @@ class _BaseSampler(object):
         of the sampling args and the variable args.
         """
         return NotImplementedError("samples function not set.")
-        
+ 
     @property
     def clear_chain(self):
         """This function should clear the current chain of samples from memory.
@@ -304,7 +304,6 @@ class BaseMCMCSampler(_BaseSampler):
         """
         # chain is a [additional dimensions x] niterations x ndim array
         samples = self.chain
-        parameters = self.variable_args
         sampling_args = self.sampling_args
         # convert to dictionary to apply boundary conditions
         samples = {param: samples[...,ii]

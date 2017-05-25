@@ -211,7 +211,7 @@ class FDomainCBCGenerator(BaseCBCGenerator):
     a waveform:
 
     >>> generator = waveform.FDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
-    >>> generator.generate(mchirp=1.5, eta=0.25) 
+    >>> generator.generate(mchirp=1.5, eta=0.25)
         (<pycbc.types.frequencyseries.FrequencySeries at 0x109a104d0>,
          <pycbc.types.frequencyseries.FrequencySeries at 0x109a10b50>)
 
@@ -320,7 +320,7 @@ class FDomainMultiModeRingdownGenerator(BaseGenerator):
 
     Create a ringdown with the variable arguments:
 
-    >>> generator.generate(final_mass=65., final_spin=0.7, lmns=['221','211'], amp220=1e-21, amp210=1./10, phi220=0., phi210=0.) 
+    >>> generator.generate(final_mass=65., final_spin=0.7, lmns=['221','211'], amp220=1e-21, amp210=1./10, phi220=0., phi210=0.)
         (<pycbc.types.frequencyseries.FrequencySeries at 0x51614d0>,
          <pycbc.types.frequencyseries.FrequencySeries at 0x5161550>)
 
@@ -466,7 +466,7 @@ class FDomainDetFrameGenerator(object):
     def generate_from_args(self, *args):
         """Generates a waveform, applies a time shift and the detector response
         function from the given args.
-        
+
         The args are assumed to be in the same order as the variable args.
         """
         return self.generate(**dict(zip(self.variable_args, args)))

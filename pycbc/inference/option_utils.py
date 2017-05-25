@@ -179,7 +179,7 @@ def read_sampling_args_from_config(cp, section_group=None):
         map_args = cp.get(section, args)
         sampling_params.update(set(map(str.strip, map_args.split(','))))
         replaced_params.update(set(map(str.strip, args.split(',')))) 
-    return list(sampling_params), list(replaced_params) 
+    return list(sampling_params), list(replaced_params)
 
 
 #-----------------------------------------------------------------------------

@@ -566,7 +566,7 @@ class EmceePTSampler(BaseMCMCSampler):
         """Writes samples to the given file.
 
         Results are written to:
-        
+
             `fp[samples_group/{vararg}/temp{k}/walker{i}]`,
             
         where

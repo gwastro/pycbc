@@ -502,7 +502,7 @@ class _BaseLikelihoodEvaluator(object):
         params = dict(zip(self._sampling_args, params))
         # apply inverse transforms to go from sampling parameters to
         # variable args
-        params = self.apply_sampling_transforms(params, inverse=True) 
+        params = self.apply_sampling_transforms(params, inverse=True)
         # apply any boundary conditions to the parameters before
         # generating/evaluating
         if callfunc is not None:
