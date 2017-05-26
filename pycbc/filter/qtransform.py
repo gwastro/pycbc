@@ -43,23 +43,23 @@ def qtiling(fseries, qrange, frange, sampling, mismatch):
 
     Parameters
     ----------
-    fseries: 'LIGO gwf frame file'
-        raw frequency-series data set
+    fseries: 'pycbc FrequencySeries'
+        frequency-series data set
     qrange:
-        lower and upper bound on q values    
+        upper and lower bounds of q range
     frange:
-        lower and upper bound on frequency values
+        upper and lower bounds of frequency range
     sampling:
-        sampling rate of channel
+        sampling rate of time-series
     mismatch:
-        fractional mismatch percentage
+        percentage of desired fractional mismatch
 
     Returns
     -------
     qplane_tile_dict: 'dict'
-        dictionary of tile values for a given Q-range and frequency range
+        dictionary containing Q-tile tuples for a set of Q-planes 
     frange: 'list'
-        lower and upper bound on freqeuncy range
+        upper and lower bounds on frequency range   
     """
 
     deltam = deltam_f(mismatch)
@@ -85,35 +85,35 @@ def qtiling(fseries, qrange, frange, sampling, mismatch):
 
     return qplane_tile_dict, frange
 
-
 def deltam_f(mismatch):
     """Fractional mismatch between neighbouring tiles
 
     Parameters
     ----------
     mismatch: 'float'
-        fractional mismatch percentage
+        percentage of desired fractional mismatch
 
     Returns
     -------
-    FracMismatch: 'float'
+    :type: 'float'
     """
     return 2 * (mismatch / 3.) ** (1/2.)
 
+
 def _iter_qs(qrange, deltam):
     """Iterate over the Q values
-
+   
     Parameters
     ----------
-    qrange: 'list'
-        lower and upper bound on q values
-    deltam: 'float'
+    qrange:
+        upper and lower bounds of q range
+    deltam:
         Fractional mismatch between neighbouring tiles
 
     Returns
     -------
-    Q's: 'list'
-        A list of Q values for a given Q-plane
+    Q-value:
+        Q value for Q-tile
     """
 
     # work out how many Qs we need
@@ -129,19 +129,19 @@ def _iter_frequencies(q, frange, mismatch, dur):
 
     Parameters
     ----------
-    q: 
+    q:
         q value
-    frange:
-        range of frequencies to iterate over
+    frange: 'list'
+        upper and lower bounds of frequency range
     mismatch:
-        fractional mismatch percentage
+        percentage of desired fractional mismatch
     dur:
-        duration of analysis period in seconds
+        duration of timeseries in seconds
 
     Returns
     -------
-    frequencies: 'list'
-        A list of frequency values for each QTile
+    frequencies:
+        Q-Tile frequency  
     """
     # work out how many frequencies we need
     minf, maxf = frange
@@ -161,28 +161,29 @@ def qtransform(fseries, Q, f0, sampling):
 
     Parameters
     ----------
-    fseries: 'LIGO gwf frame file'
-        raw frequency-series data set
+    fseries: 'pycbc FrequencySeries'
+        frequency-series data set
     Q:
-        Q value
+        q value
     f0:
         central frequency
-    sampling :
-        sampling rate of channel
+    sampling:
+        sampling rate
 
     Returns
     -------
+    norm_energy: '~pycbc.types.aligned.ArrayWithAligned'
+        A 'TimeSeries' of the normalized energy from the Q-transform of 
+        this tile against the data.
     cenergy: '~pycbc.types.aligned.ArrayWithAligned'
         A 'TimeSeries' of the complex energy from the Q-transform of 
         this tile against the data.
-    norm_energy: '~pycbc.types.aligned.ArrayWithAligned'
-        A 'TimeSeries' of the real energy from the Q-transform of this tile against the data.
     """
 
     # q-transform data for each (Q, frequency) tile
 
     # initialize parameters
-    qprime = Q / 11**(1/2.)
+    qprime = Q / 11**(1/2.) # ... self.qprime
     dur = fseries.to_timeseries().duration
 
     # window fft
@@ -205,19 +206,19 @@ def qtransform(fseries, Q, f0, sampling):
     padded = np.pad(windowed, padding(window_size, output_samples), mode='constant')
     wenergy = npfft.ifftshift(padded)
 
-    # return a `TimeSeries`
+    # return a 'TimeSeries'
     wenergy = FrequencySeries(wenergy, delta_f=1./dur)
     tdenergy = TimeSeries(zeros(output_samples, dtype=np.complex128),
                             delta_t=1./sampling)
     ifft(wenergy, tdenergy)
     cenergy = TimeSeries(tdenergy,
-                         delta_t=tdenergy.delta_t, copy=False) # Normally delta_t is dur/tdenergy.size ... must figure out better way of doing this
+                         delta_t=tdenergy.delta_t, copy=False)
     energy = type(cenergy)(
         cenergy.real() ** 2. + cenergy.imag() ** 2.,
         delta_t=1, copy=False)
     medianenergy = np.median(energy)
     norm_energy = energy / medianenergy
-
+   
     return norm_energy, cenergy
 
 def padding(window_size, desired_size):
@@ -309,4 +310,3 @@ def deltam():
     """
     mismatch = 0.2
     return 2 * (mismatch / 3.) ** (1/2.)
-
