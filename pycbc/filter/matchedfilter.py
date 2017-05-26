@@ -723,7 +723,7 @@ def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
         sqroot[indices] = 0
     sqroot = numpy.sqrt(sqroot)
     det_stat_sq = 0.5 * (hplus_magsq + hcross_magsq - \
-                         2 * rho_pluscross*hphccorr + sqroot)
+                         2 * rho_pluscross*hphccorr + sqroot) / denom
 
     det_stat = numpy.sqrt(det_stat_sq)
 
