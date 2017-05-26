@@ -38,11 +38,8 @@ from pycbc.strain  import next_power_of_2
 from pycbc.types.timeseries import FrequencySeries, TimeSeries
 from numpy import fft as npfft
 
-<<<<<<< HEAD
-=======
 def qtiling(fseries, qrange, frange, sampling, mismatch):
     """Iterable constructor of QTile tuples
->>>>>>> 1.) Added Q-tiling mechanism.
 
     Parameters
     ----------
@@ -170,6 +167,8 @@ def qtransform(fseries, Q, f0, sampling):
         q value
     f0:
         central frequency
+    sampling:
+        sampling rate
 
     Returns
     -------
@@ -190,38 +189,37 @@ def qtransform(fseries, Q, f0, sampling):
     # window fft
     window_size = 2 * int(f0 / qprime * dur) + 1
 
-    # get indices
-    indices = _get_indices(window_size)
+    # get start and end indices
+    start = (f0 - (f0 / qprime)) * dur
+    end = start + window_size
 
     # apply window to fft
-    windowed = fseries[get_data_indices(dur, f0, indices)] * get_window(window_size, f0, qprime)
+    # normalize and generate bi-square window
+    norm = np.sqrt(315. * qprime / (128. * f0))
+    windowed = fseries[start:end] * (bisquare(window_size) * norm)
 
-    # Choice of output sampling rate
-    output_sampling = fseries.delta_f # Can lower this to highest bandwidth
+    # choice of output sampling rate
+    output_sampling = sampling # Can lower this to highest bandwidth
     output_samples = dur * output_sampling
 
-    # pad data, move negative frequencies to the end, and IFFT
+    # pad data, move negative frequencies to the end, and IFFT 
     padded = np.pad(windowed, padding(window_size, output_samples), mode='constant')
     wenergy = npfft.ifftshift(padded)
 
     # return a 'TimeSeries'
     wenergy = FrequencySeries(wenergy, delta_f=1./dur)
     tdenergy = TimeSeries(zeros(output_samples, dtype=np.complex128),
-                            delta_t=1./output_sampling)
+                            delta_t=1./sampling)
     ifft(wenergy, tdenergy)
     cenergy = TimeSeries(tdenergy,
                          delta_t=tdenergy.delta_t, copy=False)
-    if normalized:
-        energy = type(cenergy)(
-            cenergy.real() ** 2. + cenergy.imag() ** 2.,
-            delta_t=1, copy=False)
-        medianenergy = energy.numpy().median()
-        result = energy / medianenergy
-    else:
-        result = cenergy
-
-    return result
-
+    energy = type(cenergy)(
+        cenergy.real() ** 2. + cenergy.imag() ** 2.,
+        delta_t=1, copy=False)
+    medianenergy = np.median(energy)
+    norm_energy = energy / medianenergy
+   
+    return norm_energy, cenergy
 
 def padding(window_size, desired_size):
     """The (left, right) padding required for the IFFT
@@ -242,26 +240,6 @@ def padding(window_size, desired_size):
     pad = desired_size - window_size
     return (int(pad/2.), int((pad + 1)/2.))
 
-def get_data_indices(dur, f0, indices):
-    """Returns the index array of interesting frequencies for this row
-
-    Parameters
-    ----------
-    dur: int
-        Duration of timeseries in seconds
-    f0: int
-        Central frequency
-    indices: numpy.ndarray
-        window indices for fft 
-
-    Returns
-    -------
-    numpy.ndarray
-        Returns index array of interesting frequencies for this row
-
-    """
-    return np.round(indices + 1 +
-                       f0 * dur).astype(int)
 
 def _get_indices(window_size):
     """ Windows indices for fft
@@ -280,17 +258,13 @@ def _get_indices(window_size):
     half = int((windowsize - 1) / 2.)
     return np.arange(-half, half + 1)
 
-def get_window(size, f0, qprime):
+def bisquare(size):
     """Generate the bi-square window for this row
  
     Parameters
     ---------
     size: int
         size of window
-    f0: int
-        Central frequency
-    qprime: int
-        Normalized Q (q/sqrt(11))
 
     Returns
     -------
@@ -300,8 +274,7 @@ def get_window(size, f0, qprime):
     xfrequencies = np.linspace(-1., 1., size)
 
     # ported from https://github.com/gwpy/gwpy/blob/master/gwpy/signal/qtransform.py
-    norm = np.sqrt(315. * qprime / (128. * f0))
-    return (1 - xfrequencies ** 2) ** 2 * norm
+    return (1 - xfrequencies ** 2) ** 2
 
 def n_tiles(dur, f0, Q):
     """The number of tiles in this row 
