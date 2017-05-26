@@ -950,9 +950,6 @@ def get_cutoff_indices(flow, fhigh, df, N):
 
     return kmin,kmax
 
-# Workspace Memory for the matchedfilter
-_qtilde_t = None
-
 def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
                   high_frequency_cutoff=None, h_norm=None, out=None, corr_out=None):
     """ Return the complex snr and normalization.
@@ -993,12 +990,6 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
     norm : float
         The normalization of the complex snr.
     """
-    if corr_out is not None:
-        _qtilde = corr_out
-    else:
-        global _qtilde_t
-        _qtilde = _qtilde_t
-
     htilde = make_frequency_series(template)
     stilde = make_frequency_series(data)
 
@@ -1009,6 +1000,11 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
     kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
                                    high_frequency_cutoff, stilde.delta_f, N)
 
+    if corr_out is not None:
+        qtilde = corr_out
+    else:
+        qtilde = zeros(N, dtype=complex_same_precision_as(data))    
+    
     if out is None:
         _q = zeros(N, dtype=complex_same_precision_as(data))
     elif (len(out) == N) and type(out) is Array and out.kind =='complex':
@@ -1016,25 +1012,18 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
     else:
         raise TypeError('Invalid Output Vector: wrong length or dtype')
 
-    if corr_out:
-        pass
-    elif (_qtilde is None) or (len(_qtilde) != N) or _qtilde.dtype != data.dtype:
-        _qtilde_t = _qtilde = zeros(N, dtype=complex_same_precision_as(data))
-    else:
-        _qtilde.clear()
-
-    correlate(htilde[kmin:kmax], stilde[kmin:kmax], _qtilde[kmin:kmax])
+    correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
 
     if psd is not None:
         if isinstance(psd, FrequencySeries):
             if psd.delta_f == stilde.delta_f :
-                _qtilde[kmin:kmax] /= psd[kmin:kmax]
+                qtilde[kmin:kmax] /= psd[kmin:kmax]
             else:
                 raise TypeError("PSD delta_f does not match data")
         else:
             raise TypeError("PSD must be a FrequencySeries")
 
-    ifft(_qtilde, _q)
+    ifft(qtilde, _q)
 
     if h_norm is None:
         h_norm = sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff)
@@ -1043,7 +1032,7 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
     delta_t = 1.0 / (N * stilde.delta_f)
 
     return (TimeSeries(_q, epoch=stilde._epoch, delta_t=delta_t, copy=False),
-           FrequencySeries(_qtilde, epoch=stilde._epoch, delta_f=htilde.delta_f, copy=False),
+           FrequencySeries(qtilde, epoch=stilde._epoch, delta_f=htilde.delta_f, copy=False),
            norm)
 
 def smear(idx, factor):
