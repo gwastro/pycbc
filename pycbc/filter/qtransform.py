@@ -335,7 +335,7 @@ def qtransform(fseries, Q, f0, sampling):
     output_sampling = sampling # Can lower this to highest bandwidth
     output_samples = dur * output_sampling
 
-    # pad data, move negative frequencies to the end, and IFFT
+    # pad data, move negative frequencies to the end, and IFFT 
     padded = np.pad(windowed, padding(window_size, output_samples), mode='constant')
     wenergy = npfft.ifftshift(padded)
 
