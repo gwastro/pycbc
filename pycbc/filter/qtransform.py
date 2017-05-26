@@ -38,23 +38,145 @@ from pycbc.strain  import next_power_of_2
 from pycbc.types.timeseries import FrequencySeries, TimeSeries
 from numpy import fft as npfft
 
+<<<<<<< HEAD
+=======
+def qtiling(fseries, qrange, frange, sampling, mismatch):
+    """Iterable constructor of QTile tuples
+>>>>>>> 1.) Added Q-tiling mechanism.
 
-def qtransform(data, Q, f0, normalized=True):
+    Parameters
+    ----------
+    fseries: 'pycbc FrequencySeries'
+        frequency-series data set
+    qrange:
+        upper and lower bounds of q range
+    frange:
+        upper and lower bounds of frequency range
+    sampling:
+        sampling rate of time-series
+    mismatch:
+        percentage of desired fractional mismatch
+
+    Returns
+    -------
+    qplane_tile_dict: 'dict'
+        dictionary containing Q-tile tuples for a set of Q-planes 
+    frange: 'list'
+        upper and lower bounds on frequency range   
+    """
+
+    deltam = deltam_f(mismatch)
+    qrange = (float(qrange[0]), float(qrange[1]))
+    frange = [float(frange[0]), float(frange[1])]
+    dur = fseries.to_timeseries().duration
+    qplane_tile_dict = {}
+
+    qs = list(_iter_qs(qrange, deltam))
+    if frange[0] == 0:  # set non-zero lower frequency
+        frange[0] = 50 * max(qs) / (2 * pi * dur)
+    if np.isinf(frange[1]):  # set non-infinite upper frequency
+        frange[1] = sampling / 2 / (1 + 11**(1/2.) / min(qs))
+
+    #lets now define the whole tiling (e.g. choosing all tiling in planes)
+    for q in qs:
+        qtilefreq = np.array(list(_iter_frequencies(q, frange, mismatch, dur)))
+        qlst = np.empty(len(qtilefreq), dtype=float)
+        qlst.fill(q)
+        qtiles_array = np.vstack((qtilefreq,qlst)).T
+        qplane_tiles_list = list(map(tuple,qtiles_array))
+        qplane_tile_dict[q] = qplane_tiles_list
+
+    return qplane_tile_dict, frange
+
+def deltam_f(mismatch):
+    """Fractional mismatch between neighbouring tiles
+
+    Parameters
+    ----------
+    mismatch: 'float'
+        percentage of desired fractional mismatch
+
+    Returns
+    -------
+    :type: 'float'
+    """
+    return 2 * (mismatch / 3.) ** (1/2.)
+
+
+def _iter_qs(qrange, deltam):
+    """Iterate over the Q values
+   
+    Parameters
+    ----------
+    qrange:
+        upper and lower bounds of q range
+    deltam:
+        Fractional mismatch between neighbouring tiles
+
+    Returns
+    -------
+    Q-value:
+        Q value for Q-tile
+    """
+
+    # work out how many Qs we need
+    cumum = log(qrange[1] / qrange[0]) / 2**(1/2.)
+    nplanes = int(max(ceil(cumum / deltam), 1))
+    dq = cumum / nplanes
+    for i in xrange(nplanes):
+        yield qrange[0] * exp(2**(1/2.) * dq * (i + .5))
+    raise StopIteration()
+
+def _iter_frequencies(q, frange, mismatch, dur):
+    """Iterate over the frequencies of this 'QPlane'
+
+    Parameters
+    ----------
+    q:
+        q value
+    frange: 'list'
+        upper and lower bounds of frequency range
+    mismatch:
+        percentage of desired fractional mismatch
+    dur:
+        duration of timeseries in seconds
+
+    Returns
+    -------
+    frequencies:
+        Q-Tile frequency  
+    """
+    # work out how many frequencies we need
+    minf, maxf = frange
+    fcum_mismatch = log(maxf / minf) * (2 + q**2)**(1/2.) / 2.
+    nfreq = int(max(1, ceil(fcum_mismatch / deltam_f(mismatch))))
+    fstep = fcum_mismatch / nfreq
+    fstepmin = 1. / dur
+    # for each frequency, yield a QTile
+    for i in xrange(nfreq):
+        yield (minf *
+               exp(2 / (2 + q**2)**(1/2.) * (i + .5) * fstep) //
+               fstepmin * fstepmin)
+    raise StopIteration()
+
+def qtransform(fseries, Q, f0, sampling):
     """Calculate the energy 'TimeSeries' for the given fseries
 
     Parameters
     ----------
-    data: 'LIGO gwf frame file'
-        raw time-series data set
-    normalized: 'bool', optional
-        normalize the energy of the output, if 'False' the output
-        is the complex '~numpy.fft.ifft' output of the Q-tranform
+    fseries: 'pycbc FrequencySeries'
+        frequency-series data set
+    Q:
+        q value
     f0:
         central frequency
 
     Returns
     -------
-    energy: '~pycbc.types.aligned.ArrayWithAligned'
+    norm_energy: '~pycbc.types.aligned.ArrayWithAligned'
+        A 'TimeSeries' of the normalized energy from the Q-transform of 
+        this tile against the data.
+    cenergy: '~pycbc.types.aligned.ArrayWithAligned'
         A 'TimeSeries' of the complex energy from the Q-transform of 
         this tile against the data.
     """
@@ -62,9 +184,8 @@ def qtransform(data, Q, f0, normalized=True):
     # q-transform data for each (Q, frequency) tile
 
     # initialize parameters
-    qprime = Q / 11**(1/2.)
-    dur = data.duration
-    fseries = TimeSeries.to_frequencyseries(data)
+    qprime = Q / 11**(1/2.) # ... self.qprime
+    dur = fseries.to_timeseries().duration
 
     # window fft
     window_size = 2 * int(f0 / qprime * dur) + 1
@@ -178,7 +299,6 @@ def get_window(size, f0, qprime):
     # dimensionless frequencies
     xfrequencies = np.linspace(-1., 1., size)
 
-    # normalize and generate bi-square window
     # ported from https://github.com/gwpy/gwpy/blob/master/gwpy/signal/qtransform.py
     norm = np.sqrt(315. * qprime / (128. * f0))
     return (1 - xfrequencies ** 2) ** 2 * norm
@@ -217,4 +337,3 @@ def deltam():
     """
     mismatch = 0.2
     return 2 * (mismatch / 3.) ** (1/2.)
-
