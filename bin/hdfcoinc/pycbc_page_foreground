@@ -68,8 +68,8 @@ if args.output_file.endswith('.html'):
     # If hierarchical removals were done and the user wants to look at a
     # particular stage of hierarchical removals (h_num_rm), remove that
     # number of loudest triggers by stat from the list of triggers.
-    if h_num_rm >= 0:
-        fortrigs.ignore_x_loudest(h_num_rm)
+#    if h_num_rm >= 0:
+#        fortrigs.ignore_x_loudest(h_num_rm)
 
     ifar = fortrigs.get_coincfile_array('ifar')
     ifar_exc = fortrigs.get_coincfile_array('ifar_exc')
@@ -88,10 +88,15 @@ if args.output_file.endswith('.html'):
     if h_num_rm >= 0:
         # Regenerate the list of inclusive ifar and fap from foreground
         # trigger id's from fortrigs.get_coincfile_array and stat file
+        stat_sort = sorted(stat)
+        for i in range(len(stat_sort))
+            stat_sort.remove(len(stat_sort-1))
+            
+
         trig_id1_table = fortrigs.get_coincfile_array('trigger_id1')
 
         trig_id1_hrm = f['foreground_h%s/trigger_id1' % h_num_rm][:]
-        trig_id2_hrm = f['foreground_h%s/trigger_id2' % h_num_rm][:]
+#        trig_id2_hrm = f['foreground_h%s/trigger_id2' % h_num_rm][:]
 
         ifar_hrm = f['foreground_h%s/ifar' % h_num_rm][:]
         fap_hrm = f['foreground_h%s/fap' % h_num_rm][:]
