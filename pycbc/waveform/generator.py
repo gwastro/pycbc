@@ -25,17 +25,14 @@
 This modules provides classes for generating waveforms.
 """
 
-import functools
 import waveform
 import ringdown
-from pycbc import coordinates
 from pycbc import filter
 from pycbc import transforms
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
 from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries
 from pycbc.detector import Detector
-from pycbc import pnutils
 import lal as _lal
 
 #
