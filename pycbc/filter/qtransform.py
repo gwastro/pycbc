@@ -32,7 +32,7 @@ Example
 
 """
 
-from math import pi
+from math import pi, ceil, log, exp
 import numpy as np
 from pycbc.strain  import next_power_of_2
 from pycbc.types.timeseries import FrequencySeries, TimeSeries
@@ -57,9 +57,9 @@ def qtiling(fseries, qrange, frange, sampling, mismatch):
     Returns
     -------
     qplane_tile_dict: 'dict'
-        dictionary containing Q-tile tuples for a set of Q-planes 
+        dictionary containing Q-tile tuples for a set of Q-planes
     frange: 'list'
-        upper and lower bounds on frequency range   
+        upper and lower bounds on frequency range
     """
 
     deltam = deltam_f(mismatch)
@@ -141,7 +141,7 @@ def _iter_frequencies(q, frange, mismatch, dur):
     Returns
     -------
     frequencies:
-        Q-Tile frequency  
+        Q-Tile frequency
     """
     # work out how many frequencies we need
     minf, maxf = frange
@@ -173,7 +173,7 @@ def qtransform(fseries, Q, f0, sampling):
     Returns
     -------
     norm_energy: '~pycbc.types.aligned.ArrayWithAligned'
-        A 'TimeSeries' of the normalized energy from the Q-transform of 
+        A 'TimeSeries' of the normalized energy from the Q-transform of
         this tile against the data.
     cenergy: '~pycbc.types.aligned.ArrayWithAligned'
         A 'TimeSeries' of the complex energy from the Q-transform of 
@@ -202,7 +202,7 @@ def qtransform(fseries, Q, f0, sampling):
     output_sampling = sampling # Can lower this to highest bandwidth
     output_samples = dur * output_sampling
 
-    # pad data, move negative frequencies to the end, and IFFT 
+    # pad data, move negative frequencies to the end, and IFFT
     padded = np.pad(windowed, padding(window_size, output_samples), mode='constant')
     wenergy = npfft.ifftshift(padded)
 
