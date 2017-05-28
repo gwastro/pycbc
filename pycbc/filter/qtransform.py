@@ -32,7 +32,7 @@ Example
 
 """
 
-from math import pi, ceil, log, exp
+from numpy import pi, ceil, log, exp
 import numpy as np
 from pycbc.strain  import next_power_of_2
 from pycbc.types.timeseries import FrequencySeries, TimeSeries
