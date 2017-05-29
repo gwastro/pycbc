@@ -37,6 +37,16 @@ import numpy as np
 from pycbc.strain  import next_power_of_2
 from pycbc.types.timeseries import FrequencySeries, TimeSeries
 from numpy import fft as npfft
+from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
+from pycbc.fft import ifft
+from pycbc.types import zeros
+
+from matplotlib import use
+use('Agg')
+from matplotlib import pyplot as plt
+from matplotlib.colors import BoundaryNorm
+from matplotlib.ticker import MaxNLocator
+from matplotlib.pyplot import specgram
 
 def plotter(interp, out_dir, now, frange, fseries, sampling, tres, fres):
     """Plotting mechanism for pycbc spectrograms
