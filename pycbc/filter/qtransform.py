@@ -77,6 +77,8 @@ def plotter(interp, out_dir, now, frange, fseries, sampling, tres=0.001, fres=1.
         matplotlib spectrogram figure
 
     """
+    # create directory where figure will be saved
+    os.makedirs('%s/run_%s' % (out_dir,now))  # Fail early if the dir already exists
 
     # plot a spectrogram of the q-plane with the loudest normalized tile energy
     print 'plotting ...'
