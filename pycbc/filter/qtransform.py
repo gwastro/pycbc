@@ -41,6 +41,7 @@ from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
 from pycbc.fft import ifft
 from pycbc.types import zeros
 from numpy import fft as npfft
+import os
 
 from matplotlib import use
 use('Agg')
