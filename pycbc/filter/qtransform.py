@@ -44,7 +44,7 @@ from numpy import fft as npfft
 import os
 
 
-def plotter(interp, out_dir, now, frange, fseries):
+def plotter(interp, out_dir, now, frange, fseries, tres, fres):
     """Plotting mechanism for pycbc spectrograms
 
     Parameters
