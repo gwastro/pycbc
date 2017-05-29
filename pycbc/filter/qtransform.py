@@ -49,7 +49,7 @@ from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 from matplotlib.pyplot import specgram
 
-def plotter(interp, out_dir, now, frange, fseries, sampling, tres, fres):
+def plotter(interp, out_dir, now, frange, fseries, sampling, tres=0.001, fres=1.):
     """Plotting mechanism for pycbc spectrograms
 
     Parameters
@@ -100,7 +100,7 @@ def plotter(interp, out_dir, now, frange, fseries, sampling, tres, fres):
 
     return plt
 
-def Qplane(qplane_tile_dict, fseries, sampling, normalized=True, out_dir, now, frange, tres=0.001, fres=1):
+def Qplane(qplane_tile_dict, fseries, sampling, out_dir, now, frange, normalized=True, tres=0.001, fres=1.):
     """Performs q-transform on each tile for each q-plane and selects 
        tile with the maximum normalized energy. Q-transform is then 
        interpolated to a desired frequency and time resolution.
