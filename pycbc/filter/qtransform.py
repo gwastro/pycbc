@@ -88,7 +88,7 @@ def plotter(interp, out_dir, now, frange, fseries, tres, fres):
     # pick the desired colormap
     cmap = plt.get_cmap('viridis')
 
-    fig = plt.plot()
+    plt.plot()
 
     p1 = plt.pcolormesh(xarr,
                         yarr,
@@ -158,7 +158,6 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=0.001, fres=
         qplane_qtrans_dict[key] = np.array(energies_lst)
 
     # record peak q calculate above and q-transform output for peak q
-    peakq = max_energy[1][1]
     result = qplane_qtrans_dict[max_energy[2]]
 
     # then interpolate the spectrogram to increase the frequency resolution
@@ -168,7 +167,7 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=0.001, fres=
         # initialize some variables
         frequencies = []
 
-        for idx, i in enumerate(qplane_tile_dict[max_energy[2]]):
+        for i in qplane_tile_dict[max_energy[2]]:
             frequencies.append(i[0])
 
         # 2-D interpolation
