@@ -44,7 +44,7 @@ from numpy import fft as npfft
 import os
 
 
-def plotter(interp, out_dir, now, frange, fseries, sampling:
+def plotter(interp, out_dir, now, frange, fseries):
     """Plotting mechanism for pycbc spectrograms
 
     Parameters
@@ -59,8 +59,6 @@ def plotter(interp, out_dir, now, frange, fseries, sampling:
         upper and lower bounds on frequency range plotted
     fseries: 'pycbc FrequencySeries'
         frequency series of data set
-    sampling:
-        sampling rate of data set
     tres:
         desired time resolution
     fres:
@@ -76,10 +74,6 @@ def plotter(interp, out_dir, now, frange, fseries, sampling:
     from matplotlib import use
     use('Agg')
     from matplotlib import pyplot as plt
-
-    # check for sampling rate
-    if not sampling:
-        sampling = (len(fseries) - 1) * 2 * fseries.delta_f
 
     # create directory where figure will be saved
     os.makedirs('%s/run_%s' % (out_dir,now))  # Fail early if the dir already exists
@@ -106,7 +100,7 @@ def plotter(interp, out_dir, now, frange, fseries, sampling:
 
     return plt
 
-def qplane(qplane_tile_dict, fseries, sampling, frange, normalized=True, tres=0.001, fres=1.):
+def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=0.001, fres=1.):
     """Performs q-transform on each tile for each q-plane and selects
        tile with the maximum normalized energy. Q-transform is then
        interpolated to a desired frequency and time resolution.
@@ -117,8 +111,6 @@ def qplane(qplane_tile_dict, fseries, sampling, frange, normalized=True, tres=0.
         Dictionary containing a list of q-tile tupples for each q-plane
     fseries: 'pycbc FrequencySeries'
         frequency-series data set
-    sampling:
-        sampling rate of data set
     normalized: 'bool'
         normalize energy time series?
     frange:
@@ -141,15 +133,14 @@ def qplane(qplane_tile_dict, fseries, sampling, frange, normalized=True, tres=0.
     dur = fseries.to_timeseries().duration
 
     # check for sampling rate
-    if not sampling:
-        sampling = (len(fseries) - 1) * 2 * fseries.delta_f
+    sampling = (len(fseries) - 1) * 2 * fseries.delta_f
 
     max_energy = []
     for i, key in enumerate(qplane_tile_dict):
         print key
         energies_lst=[]
         for tile in qplane_tile_dict[key]:
-            energies = qtransform(fseries, tile[1], tile[0], sampling)
+            energies = qtransform(fseries, tile[1], tile[0])
             if normalized:
                 energies = energies[0]
             else:
@@ -188,7 +179,7 @@ def qplane(qplane_tile_dict, fseries, sampling, frange, normalized=True, tres=0.
 
     return out, interp
 
-def qtiling(fseries, qrange, frange, sampling, mismatch):
+def qtiling(fseries, qrange, frange, mismatch):
     """Iterable constructor of QTile tuples
 
     Parameters
@@ -199,8 +190,6 @@ def qtiling(fseries, qrange, frange, sampling, mismatch):
         upper and lower bounds of q range
     frange:
         upper and lower bounds of frequency range
-    sampling:
-        sampling rate of time-series
     mismatch:
         percentage of desired fractional mismatch
 
@@ -219,8 +208,7 @@ def qtiling(fseries, qrange, frange, sampling, mismatch):
     qplane_tile_dict = {}
 
     # check for sampling rate
-    if not sampling:
-        sampling = (len(fseries) - 1) * 2 * fseries.delta_f
+    sampling = (len(fseries) - 1) * 2 * fseries.delta_f
 
     qs = list(_iter_qs(qrange, deltam))
     if frange[0] == 0:  # set non-zero lower frequency
@@ -310,7 +298,7 @@ def _iter_frequencies(q, frange, mismatch, dur):
                fstepmin * fstepmin)
     raise StopIteration()
 
-def qtransform(fseries, Q, f0, sampling):
+def qtransform(fseries, Q, f0):
     """Calculate the energy 'TimeSeries' for the given fseries
 
     Parameters
@@ -321,8 +309,6 @@ def qtransform(fseries, Q, f0, sampling):
         q value
     f0:
         central frequency
-    sampling:
-        sampling rate
 
     Returns
     -------
@@ -341,8 +327,7 @@ def qtransform(fseries, Q, f0, sampling):
     dur = fseries.to_timeseries().duration
 
     # check for sampling rate
-    if not sampling:
-        sampling = (len(fseries) - 1) * 2 * fseries.delta_f
+    sampling = (len(fseries) - 1) * 2 * fseries.delta_f
 
     # window fft
     window_size = 2 * int(f0 / qprime * dur) + 1
