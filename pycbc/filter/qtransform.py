@@ -37,20 +37,14 @@ from numpy import pi, ceil, log, exp
 import numpy as np
 from pycbc.strain  import next_power_of_2
 from pycbc.types.timeseries import FrequencySeries, TimeSeries
-from scipy.interpolate import (interp2d, InterpolatedUnivariateSpline)
+from scipy.interpolate import (interp2d)
 from pycbc.fft import ifft
 from pycbc.types import zeros
 from numpy import fft as npfft
 import os
 
-from matplotlib import use
-use('Agg')
-from matplotlib import pyplot as plt
-from matplotlib.colors import BoundaryNorm
-from matplotlib.ticker import MaxNLocator
-from matplotlib.pyplot import specgram
 
-def plotter(interp, out_dir, now, frange, fseries, sampling, tres=0.001, fres=1.):
+def plotter(interp, out_dir, now, frange, fseries, sampling:
     """Plotting mechanism for pycbc spectrograms
 
     Parameters
@@ -78,6 +72,15 @@ def plotter(interp, out_dir, now, frange, fseries, sampling, tres=0.001, fres=1.
         matplotlib spectrogram figure
 
     """
+
+    from matplotlib import use
+    use('Agg')
+    from matplotlib import pyplot as plt
+
+    # check for sampling rate
+    if not sampling:
+        sampling = (len(fseries) - 1) * 2 * fseries.delta_f
+
     # create directory where figure will be saved
     os.makedirs('%s/run_%s' % (out_dir,now))  # Fail early if the dir already exists
 
@@ -103,9 +106,9 @@ def plotter(interp, out_dir, now, frange, fseries, sampling, tres=0.001, fres=1.
 
     return plt
 
-def Qplane(qplane_tile_dict, fseries, sampling, out_dir, now, frange, normalized=True, tres=0.001, fres=1.):
-    """Performs q-transform on each tile for each q-plane and selects 
-       tile with the maximum normalized energy. Q-transform is then 
+def qplane(qplane_tile_dict, fseries, sampling, frange, normalized=True, tres=0.001, fres=1.):
+    """Performs q-transform on each tile for each q-plane and selects
+       tile with the maximum normalized energy. Q-transform is then
        interpolated to a desired frequency and time resolution.
 
     Parameters
@@ -118,10 +121,6 @@ def Qplane(qplane_tile_dict, fseries, sampling, out_dir, now, frange, normalized
         sampling rate of data set
     normalized: 'bool'
         normalize energy time series?
-    out_dir:
-        path to output directory
-    now:
-        unique label for output directory name
     frange:
         upper and lower bounds on frequency range
     tres:
@@ -141,12 +140,16 @@ def Qplane(qplane_tile_dict, fseries, sampling, out_dir, now, frange, normalized
     qplane_qtrans_dict = {}
     dur = fseries.to_timeseries().duration
 
+    # check for sampling rate
+    if not sampling:
+        sampling = (len(fseries) - 1) * 2 * fseries.delta_f
+
     max_energy = []
     for i, key in enumerate(qplane_tile_dict):
         print key
         energies_lst=[]
         for tile in qplane_tile_dict[key]:
-            energies = qtransform(fseries, tile[1], tile[0])
+            energies = qtransform(fseries, tile[1], tile[0], sampling)
             if normalized:
                 energies = energies[0]
             else:
@@ -214,6 +217,10 @@ def qtiling(fseries, qrange, frange, sampling, mismatch):
     frange = [float(frange[0]), float(frange[1])]
     dur = fseries.to_timeseries().duration
     qplane_tile_dict = {}
+
+    # check for sampling rate
+    if not sampling:
+        sampling = (len(fseries) - 1) * 2 * fseries.delta_f
 
     qs = list(_iter_qs(qrange, deltam))
     if frange[0] == 0:  # set non-zero lower frequency
@@ -332,6 +339,10 @@ def qtransform(fseries, Q, f0, sampling):
     # initialize parameters
     qprime = Q / 11**(1/2.) # ... self.qprime
     dur = fseries.to_timeseries().duration
+
+    # check for sampling rate
+    if not sampling:
+        sampling = (len(fseries) - 1) * 2 * fseries.delta_f
 
     # window fft
     window_size = 2 * int(f0 / qprime * dur) + 1
