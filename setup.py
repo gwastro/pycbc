@@ -342,7 +342,7 @@ setup (
     description = 'Analyze gravitational-wave data, find signals, and study their parameters.',
     author = 'Ligo Virgo Collaboration - PyCBC team',
     author_email = 'alex.nitz@ligo.org',
-    url = 'ligo-cbc.github.io',
+    url = 'https://ligo-cbc.github.io',
     download_url = 'https://github.com/ligo-cbc/pycbc/tarball/v%s' % VERSION,
     keywords = ['ligo', 'physics', 'gravity', 'signal processing', 'gravitational waves'],
     cmdclass = cmdclass,
