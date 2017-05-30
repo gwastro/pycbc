@@ -44,7 +44,7 @@ from numpy import fft as npfft
 import os
 
 
-def plotter(interp, out_dir, now, frange, fseries, tres, fres):
+def plotter(interp, out_dir, now, frange, tres, fres):
     """Plotting mechanism for pycbc spectrograms
 
     Parameters
@@ -57,8 +57,6 @@ def plotter(interp, out_dir, now, frange, fseries, tres, fres):
         unique label for output directory
     frange:
         upper and lower bounds on frequency range plotted
-    fseries: 'pycbc FrequencySeries'
-        frequency series of data set
     tres:
         desired time resolution
     fres:
@@ -397,7 +395,7 @@ def _get_indices(window_size):
         Window indices for fft using total duration of segment
 
     """
-    half = int((windowsize - 1) / 2.)
+    half = int((window_size - 1) / 2.)
     return np.arange(-half, half + 1)
 
 def bisquare(size):
