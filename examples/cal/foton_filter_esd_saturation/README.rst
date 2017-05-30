@@ -74,7 +74,7 @@ Generate a CBC waveform
 
 Now we generate a CBC waveform using the hardware injection executable ::
 
-  pycbc_generate_hwinj --instruments ${IFO} --waveform-low-frequency-cutoff 30 --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --frame-type ${IFO}:${FRAME_TYPE} --channel-name ${IFO}:${CHANNEL_NAME} --approximant SEOBNRv2 --order pseudoFourPN --mass1 26.6637001 --mass2 23.2229004 --inclination 1.04719755 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 18.424 --spin1z -0.963 --spin2z  -0.988 --psd-low-frequency-cutoff 40.0 --sample-rate ${IFO}:${SAMPLE_RATE} --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8
+  pycbc_generate_hwinj --instruments ${IFO} --waveform-low-frequency-cutoff 30 --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --frame-type ${IFO}:${FRAME_TYPE} --channel-name ${IFO}:${CHANNEL_NAME} --approximant SEOBNRv2 --order pseudoFourPN --mass1 26.6637001 --mass2 23.2229004 --inclination 1.04719755 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 18.424 --spin1z -0.963 --spin2z  -0.988 --low-frequency-cutoff 40.0 --sample-rate ${IFO}:${SAMPLE_RATE} --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8
   
 There are a number of command line options you can change. See the hardware injection documentation for more details.
 

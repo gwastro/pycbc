@@ -79,9 +79,9 @@ We specify the network SNR we want the coherent injection to have on the command
 
     --network-snr 28
 
-In calculating the network SNR the executable ``pycbc_generate_hwinj`` will generate a PSD and calculate an SNR for the waveform. The options ``--psd-low-frequency-cutoff`` and ``--psd-high-frequency-cutoff`` set the min and max frequency for the SNR calculation. The waveform used in the SNR calculation is also generated at this low-frequency cutoff, note the waveform is not written to disk with this low-frequency cutoff. Example usage of the PSD options is ::
+In calculating the network SNR the executable ``pycbc_generate_hwinj`` will generate a PSD and calculate an SNR for the waveform. The options ``--low-frequency-cutoff`` and ``--high-frequency-cutoff`` set the min and max frequency for the SNR calculation. The waveform used in the SNR calculation is also generated at this low-frequency cutoff, note the waveform is not written to disk with this low-frequency cutoff. Example usage of the PSD options is ::
 
-    --psd-low-frequency-cutoff 40.0 --psd-high-frequency-cutoff 1000.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --pad-data 8
+    --low-frequency-cutoff 40.0 --high-frequency-cutoff 1000.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --pad-data 8
 
 The additional PSD options dictate how the PSD will be calculated, ie. how many seconds per FFT and how much overlap. The ``--pad-data`` option is how much data to disgard at the edges of our time series used in PSD estimation to avoid data corruption.
 
@@ -89,7 +89,7 @@ The ``--waveform-low-frequency-cutoff`` option is the frequency that ``pycbc_gen
 
 Here is a full example command for generating an injection in only H1 ::
 
-  pycbc_generate_hwinj --psd-high-frequency-cutoff 1000.0 --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time H1:${GPS_START_TIME} --gps-end-time H1:${GPS_END_TIME} --frame-type H1:${FRAME_TYPE} --channel-name H1:${CHANNEL_NAME} --approximant SEOBNRv2 --order pseudoFourPN --mass1 25.0 --mass2 25.0 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 28 --waveform-low-frequency-cutoff 10.0 --psd-low-frequency-cutoff 40.0 --sample-rate 16384 --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --instruments H1
+  pycbc_generate_hwinj --high-frequency-cutoff 1000.0 --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time H1:${GPS_START_TIME} --gps-end-time H1:${GPS_END_TIME} --frame-type H1:${FRAME_TYPE} --channel-name H1:${CHANNEL_NAME} --approximant SEOBNRv2 --order pseudoFourPN --mass1 25.0 --mass2 25.0 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 28 --waveform-low-frequency-cutoff 10.0 --low-frequency-cutoff 40.0 --sample-rate 16384 --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --instruments H1
 
 This will generate a single-column ASCII files that contains the h(t) time series for each detector and a LIGOLW XML file with the waveform parameters. The output filenames are not specified on the command line, they are determined internally by ``pycbc_generate_hwinj``. In this example the ASCII file with the waveform will be named ``L1-HWINJ_CBC-${START}-${DURATION}.txt`` where ``${START}`` is the start time stamp of the time series and ``${DURATION}`` is the length in seconds of the ASCII waveform file. The LIGOLW XML file will be named ``H1L1-HWINJ_CBC-${START}-${DURATION}.xml.gz``.
 
@@ -177,7 +177,9 @@ Plot ASCII waveform files with ``pycbc_plot_hwinj``
 
 You can plot the ASCII waveform files with an X11 connection. It's strongly recommended to use the X11 connection instead of saving a static image of the entire waveform. The X11 connection allows the user to zoom in and inspect the waveform more closely. A basic inspection would include checking the amplitude, the tapering, and the ringdown  of the waveforms are reasonable. For the ``pycbc_generate_hwinj`` example above one would do ::
 
-  pycbc_plot_hwinj L1-HWINJ_CBC-${START}-${DURATION}.txt
+  pycbc_plot_hwinj --input-file L1-HWINJ_CBC-${START}-${DURATION}.txt --output-file ${OUTPUT_PATH}
+
+where ``${OUTPUT_PATH}`` is the path to the output plot.
 
 If you are using ``ssh`` or ``gsissh`` to log into a cluster, you can provide the ``-Y`` option to open an X11 connection. For example ::
 
