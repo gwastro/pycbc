@@ -19,6 +19,7 @@
 
 import logging
 import numpy
+from pycbc import conversions
 from pycbc import transforms
 from pycbc.io import InferenceFile
 from pycbc.workflow import WorkflowConfigParser
@@ -538,7 +539,7 @@ def get_zvalues(fp, arg, likelihood_stats):
         zvals = likelihood_stats.loglr
         zlbl = r'$\log\mathcal{L}(\vec{\vartheta})$'
     elif arg == 'snr':
-        zvals = likelihood.snr_from_loglr(likelihood_stats.loglr)
+        zvals = conversions.snr_from_loglr(likelihood_stats.loglr)
         zlbl = r'$\rho(\vec{\vartheta})$'
     elif arg == 'logplr':
         zvals = likelihood_stats.loglr + likelihood_stats.prior
