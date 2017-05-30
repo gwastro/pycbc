@@ -131,11 +131,6 @@ class UniformPowerLaw(bounded.BoundedDist):
         self._norm = 1.0
         self._lognorm = 0.0
         for p in self._params:
-            if self._bounds[p][0] != 0:
-                raise ValueError("Lower bound must be 0 for %s" % p)
-            if not self.bounds[p][1] > 0:
-                raise ValueError("Upper bound must be greater than 0 "
-                                 "for %s" % p)
             self._norm *= self.dim  / \
                                    (self._bounds[p][1]**(self.dim) -
                                     self._bounds[p][0]**(self.dim))
@@ -173,10 +168,10 @@ class UniformPowerLaw(bounded.BoundedDist):
         else:
             dtype = [(p, float) for p in self.params]
         arr = numpy.zeros(size, dtype=dtype)
-        offset = numpy.power(self._bounds[p][0], self.dim)
-        factor = numpy.power(self._bounds[p][1], self.dim) - \
-                                      numpy.power(self._bounds[p][0], self.dim)
         for (p,_) in dtype:
+            offset = numpy.power(self._bounds[p][0], self.dim)
+            factor = numpy.power(self._bounds[p][1], self.dim) - \
+                                      numpy.power(self._bounds[p][0], self.dim)
             arr[p] = numpy.random.uniform(0.0, 1.0, size=size)
             arr[p] = numpy.power(factor * arr[p] + offset, 1.0 / self.dim)
         return arr
