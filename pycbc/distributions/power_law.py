@@ -50,31 +50,32 @@ class UniformPowerLaw(bounded.BoundedDist):
 
         F(r) = \int f(r) dr = \int c r^n dr = \frac{1}{n + 1} c r^{n + 1} + k
 
-    Now with the definition of the CDF at radius 0 is equal to 0 and at
-    radius :math:`R` is equal to 1 we find that the constant from
-    integration is:
+    Now with the definition of the CDF at radius :math:`r_{l}` is equal to 0
+    and at radius :math:`r_{h}` is equal to 1 we find that the constant from
+    integration from this system of equations:
 
     .. math::
 
-        0 = \frac{1}{n + 1} c (0)^{n + 1} + k
+        1 = \frac{1}{n + 1} c ((r_{h})^{n + 1} - (r_{l})^{n + 1}) + k
 
-    Can see that :math:`k=0`. And :math:`c` is:
+    Can see that :math:`c = (n + 1) / ((r_{h})^{n + 1} - (r_{l})^{n + 1}))`.
+    And :math:`k` is:
 
     .. math::
 
-        1 = \frac{1}{n + 1} c (R)^{n + 1}
+        k = - \frac{r_{l}^{n + 1}}{(r_{h})^{n + 1} - (r_{l})^{n + 1}}
 
     Can see that :math:`c= \frac{n + 1}{R^{n + 1}}`. So can see that the CDF is:
 
     .. math::
 
-        F(r) = \frac{1}{n + 1} \frac{n + 1}{R^{n + 1}} r^{n + 1} = (\frac{r}{R})^{n + 1}
+        F(r) = \frac{r}{n + 1} \frac{(r_{h})^{n + 1} - (r_{l})^{n + 1}} - \frac{r_{l}^{n + 1}}{(r_{h})^{n + 1} - (r_{l})^{n + 1}}
 
     And the PDF is the derivative of the CDF:
 
     .. math::
 
-        f(r) = \frac{(n + 1)}{R} \left(\frac{r}{R} \right)^n
+        f(r) = \frac{(n + 1)}{(r_{h})^{n + 1} - (r_{l})^{n + 1}} (r)^n
 
     Now we use the probabilty integral transform method to get sampling on
     uniform numbers from a continuous random variable. To do this we find
@@ -82,21 +83,22 @@ class UniformPowerLaw(bounded.BoundedDist):
 
     .. math::
 
-        F(r) = u = \left(\frac{r}{R}\right)^{n + 1}
+        F(r) = u = \frac{r}{n + 1} \frac{(r_{h})^{n + 1} - (r_{l})^{n + 1}} - \frac{r_{l}^{n + 1}}{(r_{h})^{n + 1} - (r_{l})^{n + 1}}
 
     And find :math:`F^{-1}(u)` gives:
 
     .. math::
 
-        u = (\frac{r}{R})^{n + 1}
+        u = \frac{r}{n + 1} \frac{(r_{h})^{n + 1} - (r_{l})^{n + 1}} - \frac{r_{l}^{n + 1}}{(r_{h})^{n + 1} - (r_{l})^{n + 1}}
 
     And solving for :math:`r` gives:
 
     .. math::
-        r = R u^{\frac{1}{n + 1}}
+
+        r = ( ((r_{h})^{n + 1} - (r_{l})^{n + 1}) u + (r_{l})^{n + 1})^{\frac{1}{n + 1}}
 
     Therefore the radius can be sampled by taking the n-th root of uniform
-    numbers and multiplying by the radius.
+    numbers and multiplying by the radius offset by the lower bound radius.
 
     \**params :
         The keyword arguments should provide the names of parameters and their
@@ -108,7 +110,8 @@ class UniformPowerLaw(bounded.BoundedDist):
     name : 'uniform_radius'
         The name of this distribution.
     dim : int
-        The dimension of volume space. For a 3-dimensional sphere this is 3.
+        The dimension of volume space. In the notation above `dim`
+        is :math:`n+1`. For a 3-dimensional sphere this is 3.
 
     Attributes
     ----------
@@ -133,7 +136,9 @@ class UniformPowerLaw(bounded.BoundedDist):
             if not self.bounds[p][1] > 0:
                 raise ValueError("Upper bound must be greater than 0 "
                                  "for %s" % p)
-            self._norm *= self.dim  / self._bounds[p][1]**(self.dim)
+            self._norm *= self.dim  / \
+                                   (self._bounds[p][1]**(self.dim) -
+                                    self._bounds[p][0]**(self.dim))
             self._lognorm = numpy.log(self._norm)
 
     @property
@@ -168,9 +173,12 @@ class UniformPowerLaw(bounded.BoundedDist):
         else:
             dtype = [(p, float) for p in self.params]
         arr = numpy.zeros(size, dtype=dtype)
+        offset = numpy.power(self._bounds[p][0], self.dim)
+        factor = numpy.power(self._bounds[p][1], self.dim) - \
+                                      numpy.power(self._bounds[p][0], self.dim)
         for (p,_) in dtype:
             arr[p] = numpy.random.uniform(0.0, 1.0, size=size)
-            arr[p] = self._bounds[p][1] * numpy.power(arr[p], 1.0 / self.dim)
+            arr[p] = numpy.power(factor * arr[p] + offset, 1.0 / self.dim)
         return arr
 
     def _pdf(self, **kwargs):
