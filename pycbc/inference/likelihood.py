@@ -682,9 +682,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         # we'll store the weight to apply to the inner product
         if psds is None:
             w = Array(numpy.sqrt(norm)*numpy.ones(N))
-            # FIXME: use the following when we've switched to 2.7
-            #self._weight = {det: w for det in data} 
-            self._weight = dict([(det, w) for det in data])
+            self._weight = {det: w for det in data} 
         else:
             # temporarily suppress numpy divide by 0 warning
             numpysettings = numpy.seterr(divide='ignore')
