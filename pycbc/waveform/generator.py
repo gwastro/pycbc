@@ -433,9 +433,7 @@ class FDomainDetFrameGenerator(object):
         # if detectors are provided, convert to detector type; also ensure that
         # location variables are specified
         if detectors is not None:
-            # FIXME: use the following when we switch to 2.7
-            #self.detectors = {det: Detector(det) for det in detectors}
-            self.detectors = dict([(det, Detector(det)) for det in detectors])
+            self.detectors = {det: Detector(det) for det in detectors}
             missing_args = [arg for arg in self.location_args if not
                 (arg in self.current_params or arg in self.variable_args)]
             if any(missing_args):
