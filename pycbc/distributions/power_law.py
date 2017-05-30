@@ -69,7 +69,7 @@ class UniformPowerLaw(bounded.BoundedDist):
 
     .. math::
 
-        F(r) = \frac{1}{n + 1} \frac{(r_{h})^{n + 1} - (r_{l})^{n + 1}} - \frac{r_{l}^{n + 1}}{(r_{h})^{n + 1} - (r_{l})^{n + 1}}
+        F(r) = \frac{1}{(r_{h})^{n + 1} - (r_{l})^{n + 1}} r^{n + 1} - \frac{r_{l}^{n + 1}}{(r_{h})^{n + 1} - (r_{l})^{n + 1}}
 
     And the PDF is the derivative of the CDF:
 
@@ -83,7 +83,7 @@ class UniformPowerLaw(bounded.BoundedDist):
 
     .. math::
 
-        F(r) = u = \frac{1}{n + 1} \frac{(r_{h})^{n + 1} - (r_{l})^{n + 1}} - \frac{r_{l}^{n + 1}}{(r_{h})^{n + 1} - (r_{l})^{n + 1}}
+        F(r) = u = \frac{1}{(r_{h})^{n + 1} - (r_{l})^{n + 1}} r^{n + 1} - \frac{r_{l}^{n + 1}}{(r_{h})^{n + 1} - (r_{l})^{n + 1}}
 
     And find :math:`F^{-1}(u)` gives:
 
