@@ -180,10 +180,10 @@ parser.add_argument('--geocentric-end-time', type=float, required=True,
                     help='The geocentric GPS end time of the injection.')
 
 # data conditioning options
-parser.add_argument('--psd-low-frequency-cutoff', type=float, required=True,
+parser.add_argument('--low-frequency-cutoff', type=float, required=True,
                     help='Frequency to begin generating the PSD in Hz. This '
                          'is the start frequency of the SNR calculation.')
-parser.add_argument('--psd-high-frequency-cutoff', type=float,
+parser.add_argument('--high-frequency-cutoff', type=float,
                     help='(optional) Upper frequency to terminate the SNR '
                          'calculation. Default will be Nyquist frequency, '
                          'ie. int(sample_rate/2).')
@@ -223,8 +223,8 @@ for ifo in opts.instruments:
 sample_rate = opts.sample_rate[opts.instruments[0]]
 
 # set upper frequency cutoff if not given
-if opts.psd_high_frequency_cutoff:
-    f_high = opts.psd_high_frequency_cutoff
+if opts.high_frequency_cutoff:
+    f_high = opts.high_frequency_cutoff
 else:
     f_high = int(sample_rate / 2)
 
@@ -314,10 +314,10 @@ sngl.spin2x = opts.spin2x
 
 # generate waveform
 logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for '
-             'SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+             'SNR calculation', sim.distance, opts.low_frequency_cutoff)
 h_plus, h_cross = get_td_waveform(sim, approximant=name,
                                   phase_order=phase_order,
-                                  f_lower=opts.psd_low_frequency_cutoff,
+                                  f_lower=opts.low_frequency_cutoff,
                                   delta_t=1.0 / sample_rate)
 
 # zero pad polarizations to get integer second time series
@@ -342,7 +342,7 @@ for ifo in opts.instruments:
     stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
     length_dict[ifo] = len(stilde_dict[ifo])
     delta_f_dict[ifo] = stilde_dict[ifo].delta_f
-    low_frequency_cutoff_dict[ifo] = opts.psd_low_frequency_cutoff
+    low_frequency_cutoff_dict[ifo] = opts.low_frequency_cutoff
 
 # get PSD
 logging.info('Generating PSDs')
@@ -393,10 +393,10 @@ for ifo in opts.instruments:
     sigma_squared = sigmasq(
                         DYN_RANGE_FAC * strain_tilde,
                         psd=psd_dict[ifo],
-                        low_frequency_cutoff=opts.psd_low_frequency_cutoff,
+                        low_frequency_cutoff=opts.low_frequency_cutoff,
                         high_frequency_cutoff=f_high)
     logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f',
-                 opts.psd_low_frequency_cutoff, f_high, ifo,
+                 opts.low_frequency_cutoff, f_high, ifo,
                  numpy.sqrt(sigma_squared))
 
     # populate IFO end time columns
@@ -426,10 +426,10 @@ for ifo in opts.instruments:
 
 # generate waveform
 logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for '
-             'SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+             'SNR calculation', sim.distance, opts.low_frequency_cutoff)
 h_plus, h_cross = get_td_waveform(sim, approximant=name,
                                   phase_order=phase_order,
-                                  f_lower=opts.psd_low_frequency_cutoff,
+                                  f_lower=opts.low_frequency_cutoff,
                                   delta_t=1.0 / sample_rate)
 
 # zero pad polarizations to get integer second time series
