@@ -247,7 +247,7 @@ def _make_frame(frame):
         z = None
     sample_num = str(iterations[frame] + 1)
     sample_num = sample_num.zfill(len(str(max_sample_num)))
-    output = opts.output_file + '-{}.png'.format(sample_num)
+    output = opts.output_prefix + '-{}.png'.format(sample_num)
 
     fig, axis_dict = create_multidim_plot(parameters, plotargs, labels=labels,
                         mins=mins, maxs=maxs,
