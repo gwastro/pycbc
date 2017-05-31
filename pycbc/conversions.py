@@ -579,6 +579,39 @@ def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
 
 det_tc = numpy.vectorize(_det_tc)
 
+#
+# =============================================================================
+#
+#                         Likelihood statistic parameter functions
+#
+# =============================================================================
+#
+def snr_from_loglr(loglr):
+    """Returns SNR computed from the given log likelihood ratio(s). This is
+    defined as `sqrt(2*loglr)`.If the log likelihood ratio is < 0, returns 0.
+
+    Parameters
+    ----------
+    loglr : array or float
+        The log likelihood ratio(s) to evaluate.
+
+    Returns
+    -------
+    array or float
+        The SNRs computed from the log likelihood ratios.
+    """
+    singleval = isinstance(loglr, float)
+    if singleval:
+        loglr = numpy.array([loglr])
+    # temporarily quiet sqrt(-1) warnings
+    numpysettings = numpy.seterr(invalid='ignore')
+    snrs = numpy.sqrt(2*loglr)
+    numpy.seterr(**numpysettings)
+    snrs[numpy.isnan(snrs)] = 0.
+    if singleval:
+        snrs = snrs[0]
+    return snrs
+
 
 __all__ = ['primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'q_from_mass1_mass2', 'invq_from_mass1_mass2',
@@ -605,5 +638,5 @@ __all__ = ['primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'spin1x_from_xi1_phi_a_phi_s', 'spin1y_from_xi1_phi_a_phi_s',
            'spin2x_from_mass1_mass2_xi2_phi_a_phi_s',
            'spin2y_from_mass1_mass2_xi2_phi_a_phi_s',
-           'chirp_distance', 'det_tc'
+           'chirp_distance', 'det_tc', 'snr_from_loglr',
           ]
