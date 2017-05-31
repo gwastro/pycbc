@@ -28,6 +28,9 @@
 import argparse
 import logging
 import numpy
+import subprocess
+import os
+import glob
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot
@@ -104,8 +107,9 @@ parser.add_argument("--log-steps", action="store_true", default=False,
                          "provides more detail of the early iterations, when "
                          "the sampler is changing most rapidly. An error will "
                          "be raised if frame-number is not provided.")
-parser.add_argument("--output-file", type=str, required=True,
-                    help="Output plot path without extension.")
+parser.add_argument("--output-prefix", type=str, required=True,
+                    help="Output path and prefix for the frame files "
+                         "(without extension).")
 parser.add_argument("--parameters", type=str, nargs="+",
                     metavar="PARAM[:LABEL]",
                     help="Name of parameters to plot in same format "
@@ -116,6 +120,14 @@ parser.add_argument('--dpi', type=int, default=200,
 parser.add_argument("--nprocesses", type=int, default=None,
                     help="Number of processes to use. If not given then "
                          "use maximum.")
+parser.add_argument("--movie-file", type=str,
+                    help="Path for creating the movie automatically after "
+                         "generating all the frames. If a movie with the same "
+                         "name already exists, it will remove it. Format: mp4. "
+                         "Installation of FFMPEG required.")
+parser.add_argument("--cleanup", action='store_true',
+                    help="Delete all plots generated after creating the movie."
+                         " Only works together with option make-movie.")
 # add options for what plots to create
 option_utils.add_plot_posterior_option_group(parser)
 # add scatter and density configuration options
@@ -274,5 +286,17 @@ else:
 
 logging.info("Making frames")
 mfunc(make_frame, range(len(iterations)))
+
+if opts.movie_file:
+    logging.info("Making movie")
+    frame_files = opts.output_file + "*.png"
+    if os.path.isfile(opts.movie_file):
+        os.remove(opts.movie_file)
+    subprocess.call(["ffmpeg","-pix_fmt","yuv420p","-s","1024x768",
+                     "-pattern_type","glob","-i",frame_files,opts.movie_file])
+    if opts.cleanup:
+        logging.info("Removing frames")
+        for frame in glob.glob(frame_files):
+            os.remove(frame)
 
 logging.info('Done')
